@@ -870,3 +870,7 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   .nav-drop { flex-direction: column; }
   .nav-drop-menu { position: static; display: flex; min-width: 0; border: 0; box-shadow: none; padding: 0 0 0 1rem; background: none; }
 }
+
+/* "new version available" bar */
+.version-notice { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 3500; display: flex; align-items: center; gap: .75rem; padding: .6rem .9rem; max-width: calc(100vw - 2rem); border-radius: var(--radius); background: var(--card); color: var(--text); border: 1px solid var(--blue); box-shadow: var(--shadow); flex-wrap: wrap; }
+.version-notice svg { color: var(--blue); flex: none; }

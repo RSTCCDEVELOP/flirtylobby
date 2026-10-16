@@ -12,6 +12,8 @@ import DomTranslate from "../components/DomTranslate";
 import { MenuProvider } from "../components/SiteMenu";
 import { getMenu } from "../lib/pages-server";
 import LangRoot from "../components/LangRoot";
+import VersionNotice from "../components/VersionNotice";
+import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
 import { getModules } from "../lib/modules-server";
@@ -138,6 +140,7 @@ export default async function RootLayout({ children }) {
           </BrandingProvider>
         <ChatWidget />
         <DialogHost />
+        <VersionNotice current={getBuildId()} />
         <DomTranslate />
         <AdminBar />
         <DeviceGate devices={{ mobile: theme?.values?.device_mobile !== "no", tablet: theme?.values?.device_tablet !== "no", desktop: theme?.values?.device_desktop !== "no", app: theme?.values?.device_app === "yes" }} />

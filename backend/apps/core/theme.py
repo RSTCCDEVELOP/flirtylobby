@@ -115,6 +115,7 @@ SCHEMA = [
     {"key": "defaults", "label": "Standaardinstellingen", "fields": [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
+        choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
     ]},
     {"key": "brand", "label": "Merkkleuren", "fields": [
         color("primary", "Primaire kleur (knoppen, links, actief menu)", "#1b97d3", "--blue"),

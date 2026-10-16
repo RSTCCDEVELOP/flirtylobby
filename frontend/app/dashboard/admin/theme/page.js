@@ -104,10 +104,11 @@ export default function ThemePage() {
   // interface defaults act immediately on this page; revert when leaving without saving
   const remember = values?.remember_collapse;
   const sidebarAuto = values?.sidebar_auto;
+  const versionNotice = values?.version_notice;
   useEffect(() => {
-    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label });
+    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label, version_notice: versionNotice });
     return () => previewUi(null);
-  }, [remember, sidebarAuto, values?.chat_label, previewUi]);
+  }, [remember, sidebarAuto, versionNotice, values?.chat_label, previewUi]);
 
   const preview = useCallback((next) => {
     clearTimeout(timer.current);
@@ -149,7 +150,7 @@ export default function ThemePage() {
 
   function applyPreset(p) {
     // a theme changes the look, not the interface behaviour
-    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, ...Object.fromEntries(DEVICES.map(([k]) => [k, values[k]])), ...Object.fromEntries(Object.keys(values).filter((k) => k.startsWith("chat_")).map((k) => [k, values[k]])) };
+    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, version_notice: values.version_notice, ...Object.fromEntries(DEVICES.map(([k]) => [k, values[k]])), ...Object.fromEntries(Object.keys(values).filter((k) => k.startsWith("chat_")).map((k) => [k, values[k]])) };
     showMode(next.default_mode);
     setValues(next);
     setMsg(null);
