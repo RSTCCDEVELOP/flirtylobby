@@ -24,8 +24,8 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:8000   # browser -> host port
       API_URL_INTERNAL: http://backend:8000        # SSR -> compose network
     volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
-      - /app/frontend/.next
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
       - backend
