@@ -60,3 +60,32 @@ class IntegrationViewSet(viewsets.ModelViewSet):
         obj.save(update_fields=["last_test_ok", "last_test_message", "last_test_at"])
         logger.info("Integration test %s: %s", obj.slug, "ok" if ok else "failed")
         return Response(self.get_serializer(obj).data)
+
+
+@api_view(["POST"])
+@permission_classes([has_level("integrations", "manage"), module_required("integrations")])
+def export_all(request):
+    """All links including their keys, locked with a password."""
+    from . import backup, transfer
+
+    pw = str(request.data.get("password") or "")
+    if len(pw) < 8:
+        return Response({"detail": "Kies een wachtwoord van minstens 8 tekens om het bestand te beveiligen."}, status=400)
+    rows = backup._export({"include_secrets": True})
+    logger.info("API links exported by %s (%s links)", request.user.email, len(rows))
+    return Response(transfer.pack(rows, pw))
+
+
+@api_view(["POST"])
+@permission_classes([has_level("integrations", "manage"), module_required("integrations")])
+def import_all(request):
+    """Load an export file: new links are created, existing ones (same name) are updated, keys included."""
+    from . import backup, transfer
+
+    try:
+        rows = transfer.unpack(request.data.get("bundle"), str(request.data.get("password") or ""))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=400)
+    msg = backup._apply(rows, None)
+    logger.info("API links imported by %s (%s links)", request.user.email, len(rows))
+    return Response({"detail": msg, "count": len(rows)})

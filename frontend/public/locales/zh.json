@@ -2272,5 +2272,12 @@
   "Gebruik PostgreSQL voor een live website.": "线上网站请使用 PostgreSQL。",
   "Alleen nodig om de eerste keer in te loggen.": "仅首次登录时需要。",
   "Gebruik een lange willekeurige waarde (minstens 32 tekens) en bewaar die veilig.": "请使用较长的随机值（至少 32 个字符）并妥善保管。",
-  "De map bestaat niet of is niet beschrijfbaar.": "文件夹不存在或不可写。"
+  "De map bestaat niet of is niet beschrijfbaar.": "文件夹不存在或不可写。",
+  "Het bestand is gedownload en met je wachtwoord beveiligd. Bewaar het veilig en verwijder het na het importeren.": "文件已下载并用您的密码保护。请妥善保管，导入后将其删除。",
+  "Dit bestand kan niet gelezen worden.": "无法读取此文件。",
+  "API-koppelingen exporteren": "导出 API 连接",
+  "API-koppelingen importeren": "导入 API 连接",
+  "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "所有连接及其密钥将保存在一个文件中，并用您现在设置的密码保护。没有该密码，文件无法读取。",
+  "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "选择导出文件并输入密码。将创建新的连接，同名密钥的现有连接将被更新。",
+  "Exportbestand": "导出文件"
 }

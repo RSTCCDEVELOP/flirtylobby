@@ -2272,5 +2272,12 @@
   "Gebruik PostgreSQL voor een live website.": "Use PostgreSQL num site online.",
   "Alleen nodig om de eerste keer in te loggen.": "Só necessário para iniciar sessão da primeira vez.",
   "Gebruik een lange willekeurige waarde (minstens 32 tekens) en bewaar die veilig.": "Use um valor aleatório longo (pelo menos 32 caracteres) e guarde-o em segurança.",
-  "De map bestaat niet of is niet beschrijfbaar.": "A pasta não existe ou não tem permissão de escrita."
+  "De map bestaat niet of is niet beschrijfbaar.": "A pasta não existe ou não tem permissão de escrita.",
+  "Het bestand is gedownload en met je wachtwoord beveiligd. Bewaar het veilig en verwijder het na het importeren.": "O ficheiro foi descarregado e protegido com a sua palavra-passe. Guarde-o em segurança e apague-o após importar.",
+  "Dit bestand kan niet gelezen worden.": "Não é possível ler este ficheiro.",
+  "API-koppelingen exporteren": "Exportar ligações API",
+  "API-koppelingen importeren": "Importar ligações API",
+  "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "Todas as ligações, com as chaves, vão para um só ficheiro protegido por uma palavra-passe que escolhe agora. Sem ela o ficheiro é ilegível.",
+  "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "Escolha o ficheiro de exportação e indique a palavra-passe. As ligações novas são criadas e as existentes com o mesmo nome de chave são atualizadas.",
+  "Exportbestand": "Ficheiro de exportação"
 }

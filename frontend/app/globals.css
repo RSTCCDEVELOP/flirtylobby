@@ -1215,3 +1215,10 @@ html[data-popup="header"] .modal > h2:first-child { margin-bottom: 1rem !importa
 .sys-check { display: flex; gap: .65rem; align-items: flex-start; }
 .sys-check > i { flex: none; width: .65rem; height: .65rem; border-radius: 50%; margin-top: .4rem; }
 .sys-check code { font-size: .72rem; color: var(--muted); }
+
+/* ── API links: wide popup, header actions ── */
+.modal.int-modal { max-width: 920px; }
+.modal.int-modal .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 1.25rem; }
+@media (max-width: 900px) { .modal.int-modal .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .modal.int-modal .form-grid { grid-template-columns: 1fr; } }
+.head-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }

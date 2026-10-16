@@ -2272,5 +2272,12 @@
   "Gebruik PostgreSQL voor een live website.": "استخدم PostgreSQL لموقع مباشر.",
   "Alleen nodig om de eerste keer in te loggen.": "مطلوب فقط لتسجيل الدخول أول مرة.",
   "Gebruik een lange willekeurige waarde (minstens 32 tekens) en bewaar die veilig.": "استخدم قيمة عشوائية طويلة (32 حرفًا على الأقل) واحفظها بأمان.",
-  "De map bestaat niet of is niet beschrijfbaar.": "المجلد غير موجود أو غير قابل للكتابة."
+  "De map bestaat niet of is niet beschrijfbaar.": "المجلد غير موجود أو غير قابل للكتابة.",
+  "Het bestand is gedownload en met je wachtwoord beveiligd. Bewaar het veilig en verwijder het na het importeren.": "تم تنزيل الملف وحمايته بكلمة المرور الخاصة بك. احفظه بأمان واحذفه بعد الاستيراد.",
+  "Dit bestand kan niet gelezen worden.": "لا يمكن قراءة هذا الملف.",
+  "API-koppelingen exporteren": "تصدير روابط API",
+  "API-koppelingen importeren": "استيراد روابط API",
+  "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "تُحفظ كل الروابط مع مفاتيحها في ملف واحد محمي بكلمة مرور تختارها الآن. بدونها لا يمكن قراءة الملف.",
+  "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "اختر ملف التصدير وأدخل كلمة المرور. تُنشأ الروابط الجديدة وتُحدَّث الموجودة بالاسم نفسه.",
+  "Exportbestand": "ملف التصدير"
 }

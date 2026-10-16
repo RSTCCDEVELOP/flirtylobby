@@ -7,6 +7,7 @@ import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
+import { alertDialog } from "../../../../lib/dialog";
 import { resetIntegrationsCache } from "../../../../lib/integrations";
 
 const statusOf = (i) => (i.last_test_ok === true ? "ok" : i.last_test_ok === false ? "fail" : "none");
@@ -38,6 +39,33 @@ export default function Integrations() {
     setError("");
     try { await fn(); await load(); } catch (e) { setError(errorText(e)); }
     setBusy(null);
+  }
+
+  // export / import of all links (with keys), locked with a password, to move them to the live site
+  const [xfer, setXfer] = useState(null); // { mode: "export" | "import", password, bundle, name, error }
+  async function runXfer(e) {
+    e.preventDefault();
+    try {
+      if (xfer.mode === "export") {
+        const b = await api("/admin/integrations/export/", { method: "POST", body: { password: xfer.password } });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }));
+        a.download = "flirtylobby-api-koppelingen.json";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        setXfer(null);
+        await alertDialog(tx("Het bestand is gedownload en met je wachtwoord beveiligd. Bewaar het veilig en verwijder het na het importeren."));
+      } else {
+        const r = await api("/admin/integrations/import/", { method: "POST", body: { bundle: xfer.bundle, password: xfer.password } });
+        setXfer(null); await load();
+        await alertDialog(r.detail);
+      }
+    } catch (err) { setXfer((x) => ({ ...x, error: errorText(err) })); }
+  }
+  async function pickFile(f) {
+    if (!f) return;
+    try { const bundle = JSON.parse(await f.text()); setXfer((x) => ({ ...x, bundle, name: f.name, error: "" })); }
+    catch { setXfer((x) => ({ ...x, bundle: null, name: "", error: tx("Dit bestand kan niet gelezen worden.") })); }
   }
 
   const toggle = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "PATCH", body: { enabled: !i.enabled } }));
@@ -82,7 +110,11 @@ export default function Integrations() {
           <h1>{tx("API keys")}</h1>
           <p className="muted" style={{ margin: 0 }}>{tx("Koppel externe systemen. Staat een koppeling uit, dan is de bijbehorende functie in de portal niet actief.")}</p>
         </div>
-        {L >= 3 && <button className="btn primary" onClick={openNew} disabled={!providers.length}>{tx("+ Nieuwe koppeling")}</button>}
+        <div className="head-actions">
+          {L >= 3 && <button className="btn" onClick={() => setXfer({ mode: "export", password: "" })}>{tx("Exporteren")}</button>}
+          {L >= 3 && <button className="btn" onClick={() => setXfer({ mode: "import", password: "", bundle: null })}>{tx("Importeren")}</button>}
+          {L >= 3 && <button className="btn primary" onClick={openNew} disabled={!providers.length}>{tx("+ Nieuwe koppeling")}</button>}
+        </div>
       </div>
       {error && <div className="alert">{error}</div>}
 
@@ -116,9 +148,31 @@ export default function Integrations() {
       </div>
       </Collapsible>
 
+      {xfer && (
+        <div className="overlay" onClick={() => setXfer(null)}>
+          <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={runXfer}>
+            <h2>{xfer.mode === "export" ? tx("API-koppelingen exporteren") : tx("API-koppelingen importeren")}</h2>
+            <p className="muted" style={{ margin: 0, fontSize: ".9rem" }}>
+              {xfer.mode === "export"
+                ? tx("Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.")
+                : tx("Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.")}
+            </p>
+            {xfer.mode === "import" && (
+              <label>{tx("Exportbestand")}<input type="file" accept="application/json,.json" onChange={(e) => pickFile(e.target.files?.[0])} required /></label>
+            )}
+            <label>{tx("Wachtwoord")}<input type="password" autoComplete="new-password" minLength={8} required value={xfer.password} onChange={(e) => setXfer({ ...xfer, password: e.target.value })} /></label>
+            {xfer.error && <div className="alert">{xfer.error}</div>}
+            <div className="row">
+              <button type="button" className="btn" onClick={() => setXfer(null)}>{tx("Annuleren")}</button>
+              <button className="btn primary" disabled={xfer.mode === "import" && !xfer.bundle}>{xfer.mode === "export" ? tx("Exporteren") : tx("Importeren")}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {modal && fields && (
         <div className="overlay" onClick={() => setModal(null)}>
-          <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
+          <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save}>
             <h2>{modal.id ? tx("Koppeling wijzigen") : tx("Nieuwe koppeling")}</h2>
             <div className="form-grid">
               <label>{tx("Systeem")}
