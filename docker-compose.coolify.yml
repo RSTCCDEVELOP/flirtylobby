@@ -21,6 +21,7 @@ services:
     restart: unless-stopped
     expose:
       - "8000"
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in Coolify}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
@@ -38,9 +39,6 @@ services:
       POSTGRES_PORT: "5432"
       MEDIA_ROOT: ${MEDIA_ROOT:-}
       STATIC_ROOT: ${STATIC_ROOT:-}
-    volumes:
-      - ./backend:/app/backend
-      - ./Database:/app/Database
     depends_on:
       db:
         condition: service_healthy
@@ -48,16 +46,12 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: dev
+      target: prod
     expose:
       - "5173"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
       API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000}
-    volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
-      - /app/frontend/.next
     depends_on:
       - backend
 
