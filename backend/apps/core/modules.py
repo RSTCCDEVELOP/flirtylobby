@@ -45,6 +45,8 @@ MODULES = [
      "desc": "Koppelingen met externe systemen (Claude, Stripe, S3, Postmark, …). Uit = alle koppelingen inactief."},
     {"key": "communication", "group": "Systeem", "label": "Communicatie",
      "desc": "E-mailadressen, antwoordadressen en mobiele nummers die het systeem mag gebruiken."},
+    {"key": "sandbox", "group": "Systeem", "label": "Sandbox",
+     "desc": "Testomgeving: e-mail, sms, betalingen en andere externe diensten simuleren zonder dat de echte API's worden aangeroepen."},
     {"key": "roles", "group": "Systeem", "label": "Rollen",
      "desc": "Rollen en rechten. Uit = alleen superadmins hebben rechten."},
     # ── Kern (altijd aan) ──

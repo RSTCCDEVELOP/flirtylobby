@@ -50,7 +50,12 @@ class IntegrationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def test(self, request, pk=None):
         obj = self.get_object()
-        ok, message = providers.PROVIDERS[obj.provider]["test"](obj.config)
+        from apps.sandbox import service as sandbox
+
+        if sandbox.active("integrations"):
+            ok, message = True, "Gesimuleerd (sandbox): er is geen echte verbinding gemaakt."
+        else:
+            ok, message = providers.PROVIDERS[obj.provider]["test"](obj.config)
         obj.last_test_ok, obj.last_test_message, obj.last_test_at = ok, message[:300], timezone.now()
         obj.save(update_fields=["last_test_ok", "last_test_message", "last_test_at"])
         logger.info("Integration test %s: %s", obj.slug, "ok" if ok else "failed")

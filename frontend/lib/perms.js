@@ -15,6 +15,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/media", module: "media" },
   { href: "/dashboard/admin/security", modules: ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_filter", "twofa"] },
   { href: "/dashboard/admin/seo", module: "seo" },
+  { href: "/dashboard/admin/sandbox", module: "sandbox" },
   { href: "/dashboard/admin/theme", module: "theme" },
 ];
 

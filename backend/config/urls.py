@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/", include("apps.medialib.urls")),
     path("api/", include("apps.communication.urls")),
     path("api/", include("apps.seo.urls")),
+    path("api/", include("apps.sandbox.urls")),
 ]
 
 if settings.DEBUG:

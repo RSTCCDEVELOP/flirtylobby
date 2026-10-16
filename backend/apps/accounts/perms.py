@@ -12,6 +12,7 @@ PERMISSIONS = [
     ("roles.manage", "Rollen beheren", "Beheer"),
     ("languages.manage", "Talen beheren", "Beheer"),
     ("seo.manage", "SEO beheren", "Beheer"),
+    ("sandbox.manage", "Sandbox beheren", "Beheer"),
     ("integrations.manage", "API keys beheren", "Beheer"),
     ("communication.manage", "Communicatie beheren", "Beheer"),
     ("branding.manage", "Logo's en beeld beheren", "Beheer"),

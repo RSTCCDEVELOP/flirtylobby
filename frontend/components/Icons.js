@@ -17,3 +17,4 @@ export const IconGrid = () => <svg {...p}><rect x="3" y="3" width="7" height="7"
 export const IconGroup = () => <svg {...p}><circle cx="8" cy="9" r="3" /><circle cx="17" cy="10" r="2.5" /><path d="M2.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M15 15c3 0 6 1.4 6 4" /></svg>;
 export const IconMail = () => <svg {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>;
 export const IconSearch = () => <svg {...p}><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>;
+export const IconFlask = () => <svg {...p}><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 001.3 2.2h12.4a1.5 1.5 0 001.3-2.2L14 9V3" /><path d="M7.5 15h9" /></svg>;

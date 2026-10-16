@@ -115,7 +115,9 @@ def issue_code(user):
     cfg = service.get()["twofa"]
     if user.otp_sent_at and (timezone.now() - user.otp_sent_at).total_seconds() < RESEND_SECONDS:
         raise DeliveryError(f"Wacht even voordat je een nieuwe code aanvraagt ({RESEND_SECONDS} seconden).")
-    code = f"{secrets.randbelow(10**6):06d}"
+    from apps.sandbox import service as sandbox
+
+    code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
     fmt = lambda t: t.replace("{code}", code).replace("{minutes}", str(cfg["code_minutes"]))  # noqa: E731
     deliver(user, fmt(_text("email_subject")), fmt(_text("email_body")), fmt(_text("sms_body")))
     user.otp_token = _hash(user, code)
@@ -158,7 +160,12 @@ def _post_json(url, headers, payload):
 
 
 def deliver(user, subject, email_body, sms_body):
+    from apps.sandbox import service as sandbox
+
     if user.twofa_method == "sms":
+        if sandbox.active("sms"):
+            sandbox.capture("sms", user.phone, "", sms_body)
+            return
         obj = _integration(["bird"])
         if not obj:
             if dj_settings.DEBUG:

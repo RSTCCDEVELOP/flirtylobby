@@ -8,6 +8,7 @@ import { UiProvider } from "../components/Ui";
 import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
 import { LOGO_SETS } from "../lib/logos";
+import SandboxBadge from "../components/SandboxBadge";
 import { absoluteUrl, getSeo } from "../lib/seo";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -62,6 +63,16 @@ export async function generateMetadata() {
   };
 }
 
+async function getSandbox() {
+  try {
+    const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
+    const res = await fetch(`${base}/api/sandbox/status/`, { cache: "no-store" });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
 async function getContent() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
@@ -83,7 +94,7 @@ async function getLanguages() {
 }
 
 export default async function RootLayout({ children }) {
-  const [theme, langs, branding, security, content, modules, seo] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo()]);
+  const [theme, langs, branding, security, content, modules, seo, sandbox] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox()]);
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
@@ -103,6 +114,7 @@ export default async function RootLayout({ children }) {
               <EditBanner />
             </ContentProvider>
             <Gates cfg={security} />
+        <SandboxBadge status={sandbox} />
         {jsonld.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld).replace(/</g, "\\u003c") }} />}
           </BrandingProvider>
         </SessionProvider>

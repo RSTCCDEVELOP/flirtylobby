@@ -47,6 +47,8 @@ class CommAddressViewSet(viewsets.ModelViewSet):
                                purpose=obj.purpose if obj.purpose != "all" else None, from_addr=obj.value)
         except sending.DeliveryError as e:
             return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+        if result == "sandbox":
+            return Response({"detail": "Gesimuleerd (sandbox): het bericht staat in het sandbox-postvak, er is niets verstuurd."})
         if result == "logged":
             return Response({"detail": "Niet echt verstuurd: er is geen e-mailkoppeling (Postmark of SMTP) actief. Het bericht staat in het serverlog."})
         return Response({"detail": f"Testbericht verstuurd naar {request.user.email}."})

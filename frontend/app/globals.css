@@ -513,3 +513,8 @@ html[data-theme="dark"] img.logo-light.has-dark { display: none !important; }
 .ok-text { color: var(--ok); }
 .bot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .5rem 1rem; }
 .preview { margin: .5rem 0 0; padding: 1rem; background: var(--bg); border: 1px solid var(--line); border-radius: var(--btn-radius); max-height: 260px; overflow: auto; font-size: .8rem; white-space: pre-wrap; word-break: break-word; }
+
+/* ── Sandbox ───────────────────────────────────────────── */
+.sandbox-badge { position: fixed; left: 1rem; bottom: 1rem; z-index: 1200; padding: .3rem .7rem; border-radius: 999px; background: #f59e0b; color: #1f1300; font-size: .7rem; font-weight: 800; letter-spacing: .08em; box-shadow: var(--shadow); pointer-events: none; }
+.inbox-msg { padding: .75rem 1rem; border: 1px solid var(--line); border-radius: var(--btn-radius); display: flex; flex-direction: column; gap: .25rem; }
+.inbox-msg pre { margin: 0; white-space: pre-wrap; font: inherit; color: var(--muted); font-size: .875rem; }

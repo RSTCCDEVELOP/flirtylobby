@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "apps.medialib",
     "apps.communication",
     "apps.seo",
+    "apps.sandbox",
 ]
 
 MIDDLEWARE = [

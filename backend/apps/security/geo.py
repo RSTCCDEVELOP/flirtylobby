@@ -35,6 +35,12 @@ def check(ip, header_country=None):
     cfg = service.get()["geo"]
     if not cfg["enabled"]:
         return True, None
+    from apps.sandbox import service as sandbox
+
+    if sandbox.active("geo"):  # sandbox: every visitor comes from the chosen country
+        country = sandbox.get()["geo_country"]
+        listed = country in cfg["countries"]
+        return (not listed if cfg["mode"] == "block" else listed), country
     try:
         addr = ipaddress.ip_address(ip)
     except ValueError:

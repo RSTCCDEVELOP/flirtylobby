@@ -42,8 +42,13 @@ def email_integration():
 
 def send_email(to, subject, body, purpose=None, from_addr=None):
     """Send a text e-mail. Sender and reply-to come from the communication page (fallback: the integration's own sender)."""
+    from apps.sandbox import service as sandbox
+
     from .service import sender
 
+    if sandbox.active("email"):  # sandbox: capture instead of sending
+        sandbox.capture("email", to, subject, body, sender=from_addr or sender("email_from", purpose) or "")
+        return "sandbox"
     obj = email_integration()
     if not obj:
         if dj_settings.DEBUG:
