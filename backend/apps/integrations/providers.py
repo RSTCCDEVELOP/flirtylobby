@@ -82,8 +82,11 @@ def test_s3(c):
         return False, "Bucket, access key en secret key zijn verplicht."
     endpoint = (c.get("endpoint") or "").strip() or None
     if endpoint:
-        host = urllib.parse.urlparse(endpoint).hostname
-        if not host or not _is_public_host(host):
+        parsed = urllib.parse.urlparse(endpoint)
+        host = parsed.hostname
+        if parsed.scheme not in ("http", "https") or not host or "." not in host:
+            return False, "Het endpoint moet een volledig adres zijn, bv. https://ams3.digitaloceanspaces.com (niet de naam van de bucket)."
+        if not _is_public_host(host):
             return False, "Alleen publieke endpoints zijn toegestaan."
     try:
         client = boto3.client(
