@@ -2280,5 +2280,18 @@
   "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "All links including their keys go into one file, protected with a password you choose now. Without that password the file is unreadable.",
   "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "Choose the export file and enter the password. New links are created, existing ones with the same key name are updated.",
   "Exportbestand": "Export file",
-  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "This link no longer exists; the list has been refreshed. Try again."
+  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "This link no longer exists; the list has been refreshed. Try again.",
+  "S3-bestanden": "S3 files",
+  "Nieuwe map": "New folder",
+  "Naam van de nieuwe map": "Name of the new folder",
+  "bestand(en) geüpload.": "file(s) uploaded.",
+  "{0} onderdeel/onderdelen definitief verwijderen van S3? Mappen worden met alles erin gewist.": "Permanently delete {0} item(s) from S3? Folders are erased with everything in them.",
+  "Staat in de mediabibliotheek: verwijder via Media": "Is in the media library: delete via Media",
+  "bibliotheek": "library",
+  "Download": "Download",
+  "Meer laden": "Load more",
+  "Deze map is leeg. Sleep bestanden hierheen om te uploaden.": "This folder is empty. Drop files here to upload.",
+  "Je ziet de map van de koppeling. Bestanden die de mediabibliotheek gebruikt zijn beveiligd tegen verwijderen.": "You see the folder of the link. Files the media library uses are protected against deletion.",
+  "Bladeren": "Browse",
+  "Zet de koppeling eerst aan": "Switch the link on first"
 }

@@ -2280,5 +2280,18 @@
   "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "Alle Verbindungen samt Schlüsseln kommen in eine Datei, geschützt mit einem Passwort, das Sie jetzt wählen. Ohne dieses Passwort ist die Datei unlesbar.",
   "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "Wählen Sie die Exportdatei und geben Sie das Passwort ein. Neue Verbindungen werden angelegt, bestehende mit gleichem Schlüsselnamen aktualisiert.",
   "Exportbestand": "Exportdatei",
-  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "Diese Verbindung existiert nicht mehr; die Liste wurde aktualisiert. Versuchen Sie es erneut."
+  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "Diese Verbindung existiert nicht mehr; die Liste wurde aktualisiert. Versuchen Sie es erneut.",
+  "S3-bestanden": "S3-Dateien",
+  "Nieuwe map": "Neuer Ordner",
+  "Naam van de nieuwe map": "Name des neuen Ordners",
+  "bestand(en) geüpload.": "Datei(en) hochgeladen.",
+  "{0} onderdeel/onderdelen definitief verwijderen van S3? Mappen worden met alles erin gewist.": "{0} Element(e) endgültig von S3 löschen? Ordner werden mit allem Inhalt gelöscht.",
+  "Staat in de mediabibliotheek: verwijder via Media": "Ist in der Mediathek: über Medien löschen",
+  "bibliotheek": "Mediathek",
+  "Download": "Herunterladen",
+  "Meer laden": "Mehr laden",
+  "Deze map is leeg. Sleep bestanden hierheen om te uploaden.": "Dieser Ordner ist leer. Ziehen Sie Dateien hierher zum Hochladen.",
+  "Je ziet de map van de koppeling. Bestanden die de mediabibliotheek gebruikt zijn beveiligd tegen verwijderen.": "Sie sehen den Ordner der Verbindung. Dateien, die die Mediathek nutzt, sind vor dem Löschen geschützt.",
+  "Bladeren": "Durchsuchen",
+  "Zet de koppeling eerst aan": "Schalten Sie die Verbindung zuerst ein"
 }

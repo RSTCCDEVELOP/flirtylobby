@@ -8,6 +8,7 @@ import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
 import { alertDialog } from "../../../../lib/dialog";
+import S3Browser from "../../../../components/S3Browser";
 import { resetIntegrationsCache } from "../../../../lib/integrations";
 
 const statusOf = (i) => (i.last_test_ok === true ? "ok" : i.last_test_ok === false ? "fail" : "none");
@@ -21,6 +22,7 @@ export default function Integrations() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(null);
   const [modal, setModal] = useState(null);
+  const [browse, setBrowse] = useState(null); // S3 link whose files are being browsed
 
   const load = useCallback(() => {
     resetIntegrationsCache();
@@ -142,6 +144,7 @@ export default function Integrations() {
                 <span className={`int-msg ${st}`}>{i.last_test_message || STATUS_TEXT[st]}</span>
               </div>
               <div className="api-actions">
+                {i.provider === "s3" && L >= 3 && <button className="btn sm" onClick={() => setBrowse(i)} disabled={!i.enabled} title={i.enabled ? "" : tx("Zet de koppeling eerst aan")}>{tx("Bladeren")}</button>}
                 {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
                 {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
                 {L >= 3 && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
@@ -152,6 +155,8 @@ export default function Integrations() {
         {!items.length && <p className="muted">{tx("Nog geen koppelingen.")}</p>}
       </div>
       </Collapsible>
+
+      {browse && <S3Browser integration={browse} onClose={() => setBrowse(null)} />}
 
       {xfer && (
         <div className="overlay" onClick={() => setXfer(null)}>

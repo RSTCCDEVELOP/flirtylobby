@@ -2280,5 +2280,18 @@
   "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "所有连接及其密钥将保存在一个文件中，并用您现在设置的密码保护。没有该密码，文件无法读取。",
   "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "选择导出文件并输入密码。将创建新的连接，同名密钥的现有连接将被更新。",
   "Exportbestand": "导出文件",
-  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "此连接已不存在；列表已刷新。请重试。"
+  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "此连接已不存在；列表已刷新。请重试。",
+  "S3-bestanden": "S3 文件",
+  "Nieuwe map": "新建文件夹",
+  "Naam van de nieuwe map": "新文件夹名称",
+  "bestand(en) geüpload.": "个文件已上传。",
+  "{0} onderdeel/onderdelen definitief verwijderen van S3? Mappen worden met alles erin gewist.": "从 S3 永久删除 {0} 项？文件夹将连同其中所有内容一起删除。",
+  "Staat in de mediabibliotheek: verwijder via Media": "在媒体库中：请通过媒体删除",
+  "bibliotheek": "媒体库",
+  "Download": "下载",
+  "Meer laden": "加载更多",
+  "Deze map is leeg. Sleep bestanden hierheen om te uploaden.": "此文件夹为空。将文件拖到此处上传。",
+  "Je ziet de map van de koppeling. Bestanden die de mediabibliotheek gebruikt zijn beveiligd tegen verwijderen.": "您看到的是该连接的文件夹。媒体库使用的文件受删除保护。",
+  "Bladeren": "浏览",
+  "Zet de koppeling eerst aan": "请先启用该连接"
 }

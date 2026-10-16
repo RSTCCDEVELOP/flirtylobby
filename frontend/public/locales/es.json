@@ -2280,5 +2280,18 @@
   "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "Todos los vínculos con sus claves van a un solo archivo, protegido con una contraseña que eliges ahora. Sin ella el archivo es ilegible.",
   "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "Elige el archivo de exportación e introduce la contraseña. Se crean los vínculos nuevos y se actualizan los existentes con el mismo nombre de clave.",
   "Exportbestand": "Archivo de exportación",
-  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "Este vínculo ya no existe; se ha actualizado la lista. Inténtalo de nuevo."
+  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "Este vínculo ya no existe; se ha actualizado la lista. Inténtalo de nuevo.",
+  "S3-bestanden": "Archivos de S3",
+  "Nieuwe map": "Nueva carpeta",
+  "Naam van de nieuwe map": "Nombre de la nueva carpeta",
+  "bestand(en) geüpload.": "archivo(s) subido(s).",
+  "{0} onderdeel/onderdelen definitief verwijderen van S3? Mappen worden met alles erin gewist.": "¿Eliminar definitivamente {0} elemento(s) de S3? Las carpetas se borran con todo su contenido.",
+  "Staat in de mediabibliotheek: verwijder via Media": "Está en la biblioteca multimedia: elimínalo desde Medios",
+  "bibliotheek": "biblioteca",
+  "Download": "Descargar",
+  "Meer laden": "Cargar más",
+  "Deze map is leeg. Sleep bestanden hierheen om te uploaden.": "Esta carpeta está vacía. Suelta archivos aquí para subirlos.",
+  "Je ziet de map van de koppeling. Bestanden die de mediabibliotheek gebruikt zijn beveiligd tegen verwijderen.": "Ves la carpeta del vínculo. Los archivos que usa la biblioteca multimedia están protegidos contra el borrado.",
+  "Bladeren": "Explorar",
+  "Zet de koppeling eerst aan": "Activa primero el vínculo"
 }

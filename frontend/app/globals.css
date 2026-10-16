@@ -1222,3 +1222,27 @@ html[data-popup="header"] .modal > h2:first-child { margin-bottom: 1rem !importa
 @media (max-width: 900px) { .modal.int-modal .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .modal.int-modal .form-grid { grid-template-columns: 1fr; } }
 .head-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+
+/* ── S3 browser ── */
+.modal.s3b { max-width: 980px; display: grid; gap: .8rem; }
+.s3b-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; }
+.s3b-head h2 { margin: 0; font-size: 1.1rem; }
+.s3b-bar { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.s3b-crumbs { display: flex; align-items: center; gap: .15rem; flex-wrap: wrap; font-size: .9rem; min-width: 0; }
+.s3b-crumb { background: none; border: 0; padding: .2rem .3rem; color: var(--blue); cursor: pointer; font: inherit; border-radius: 6px; }
+.s3b-crumb:hover { background: var(--hover); }
+.s3b-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+.s3b-list { border: 1px solid var(--line); border-radius: var(--btn-radius, 10px); max-height: 52vh; overflow: auto; min-height: 160px; }
+.s3b-list.over { outline: 2px dashed var(--blue); outline-offset: -4px; background: color-mix(in srgb, var(--blue) 8%, transparent); }
+.s3b-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: .6rem; align-items: center; padding: .4rem .7rem; border-bottom: 1px solid var(--line); }
+.s3b-row:last-child { border-bottom: 0; }
+.s3b-row:hover { background: var(--hover); }
+.s3b-name { display: flex; align-items: center; gap: .6rem; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; text-align: left; min-width: 0; }
+.s3b-fn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s3b-ico { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 6px; overflow: hidden; color: var(--muted); }
+.s3b-ico img { width: 100%; height: 100%; object-fit: cover; }
+.s3b-ico svg { width: 22px; height: 22px; }
+.s3b-file { width: 16px; height: 20px; border: 2px solid currentColor; border-radius: 3px; }
+.s3b-meta { font-size: .78rem; white-space: nowrap; }
+.s3b-empty { padding: 2.5rem 1rem; text-align: center; }
+@media (max-width: 640px) { .s3b-row { grid-template-columns: auto minmax(0, 1fr); } .s3b-meta, .s3b-row > .btn { grid-column: 2; } }
