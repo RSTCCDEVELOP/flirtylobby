@@ -21,3 +21,9 @@ class CommAddress(models.Model):
 
     def __str__(self):
         return f"{self.label} <{self.value}>"
+
+
+class EmailSettings(models.Model):
+    """How system e-mails look (one row): HTML or plain text, and the design (follow the theme, or own settings)."""
+
+    data = models.JSONField(default=dict, blank=True)  # only values that differ from the defaults

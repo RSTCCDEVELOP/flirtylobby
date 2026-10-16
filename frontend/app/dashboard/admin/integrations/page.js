@@ -87,25 +87,27 @@ export default function Integrations() {
       {error && <div className="alert">{error}</div>}
 
       <Collapsible id="integrations-list" title={tx("Koppelingen")}>
-      <div className="int-list">
+      <div className="api-grid">
         {items.map((i) => {
           const st = statusOf(i);
           return (
-            <div className="card int-item" key={i.id}>
-              <span className={`dot ${st}`} title={STATUS_TEXT[st]} />
-              <div className="int-main">
+            <div className="card api-card" key={i.id}>
+              <div className="api-head">
+                <span className={`dot ${st}`} title={STATUS_TEXT[st]} />
                 <strong>{i.name}</strong>
-                <span className="muted">{i.provider_label} · <code>{i.slug}</code></span>
-                <span className={`int-msg ${st}`}>{i.last_test_message || STATUS_TEXT[st]}</span>
-              </div>
-              <div className="int-actions">
-                {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
-                {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
-                {L >= 3 && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
                 <label className="switch" title={i.enabled ? tx("Actief") : tx("Uit")}>
                   <input type="checkbox" checked={i.enabled} disabled={L < 2} onChange={() => toggle(i)} />
                   <span />
                 </label>
+              </div>
+              <div className="api-body">
+                <span className="muted">{i.provider_label} · <code>{i.slug}</code></span>
+                <span className={`int-msg ${st}`}>{i.last_test_message || STATUS_TEXT[st]}</span>
+              </div>
+              <div className="api-actions">
+                {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
+                {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
+                {L >= 3 && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
               </div>
             </div>
           );
@@ -118,7 +120,7 @@ export default function Integrations() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
             <h2>{modal.id ? tx("Koppeling wijzigen") : tx("Nieuwe koppeling")}</h2>
-            <div className="grid2">
+            <div className="form-grid">
               <label>{tx("Systeem")}
                 <select value={modal.provider} disabled={!!modal.id}
                   onChange={(e) => pick(e.target.value, modal)}>
@@ -129,8 +131,6 @@ export default function Integrations() {
               <label>{tx("Sleutelnaam (slug)")}
                 <input value={modal.slug} onChange={(e) => setModal({ ...modal, slug: e.target.value.toLowerCase() })} pattern="[a-z0-9\-]+" required disabled={!!modal.id} placeholder={tx("bv. anthropic")} />
               </label>
-            </div>
-            <div className="grid2">
               {fields.map((f) => (
                 <label key={f.key}>{f.label}
                   {f.type === "select" ? (

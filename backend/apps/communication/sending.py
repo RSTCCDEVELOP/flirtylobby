@@ -40,8 +40,8 @@ def email_integration():
     return None
 
 
-def send_email(to, subject, body, purpose=None, from_addr=None):
-    """Send a text e-mail. Sender and reply-to come from the communication page (fallback: the integration's own sender)."""
+def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None):
+    """Send an e-mail (plain text or HTML, see Communicatie -> E-mailopmaak). Sender and reply-to come from the communication page (fallback: the integration's own sender)."""
     from apps.sandbox import service as sandbox
 
     from .service import sender
@@ -55,13 +55,18 @@ def send_email(to, subject, body, purpose=None, from_addr=None):
             logger.warning("E-mail to %s (DEBUG, not sent): %s", to, subject)
             return "logged"
         raise DeliveryError("E-mail is niet gekoppeld.")
+    from . import layout
+
+    text, html_body = layout.build(subject, body, base_url, api_base)
     c = obj.config
     frm = from_addr or sender("email_from", purpose) or c.get("from_email")
     if not frm:
         raise DeliveryError("Geen afzender ingesteld: voeg er een toe bij Admin → Communicatie.")
     reply = sender("email_reply", purpose)
     if obj.provider == "postmark":
-        payload = {"From": frm, "To": to, "Subject": subject, "TextBody": body, "MessageStream": "outbound"}
+        payload = {"From": frm, "To": to, "Subject": subject, "TextBody": text, "MessageStream": "outbound"}
+        if html_body:
+            payload["HtmlBody"] = html_body
         if reply:
             payload["ReplyTo"] = reply
         return post_json("https://api.postmarkapp.com/email", {"X-Postmark-Server-Token": c["server_token"]}, payload)
@@ -69,7 +74,9 @@ def send_email(to, subject, body, purpose=None, from_addr=None):
     msg["From"], msg["To"], msg["Subject"] = frm, to, subject
     if reply:
         msg["Reply-To"] = reply
-    msg.set_content(body)
+    msg.set_content(text)
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
     try:
         security = c.get("security", "starttls")
         port = int(c.get("port") or (465 if security == "ssl" else 587))

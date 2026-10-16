@@ -5,6 +5,7 @@ import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
+import EmailLayoutAdmin from "../../../../components/EmailLayoutAdmin";
 import { api, errorText } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
 
@@ -63,6 +64,10 @@ export default function Communication() {
         <CollapseAll />
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
+
+      <Collapsible id="comm-email-layout" title={tx("E-mailopmaak")}>
+        <EmailLayoutAdmin canEdit={L >= 2} onMessage={setMsg} />
+      </Collapsible>
 
       {SECTIONS.map((s) => {
         const list = items.filter((a) => a.kind === s.kind);
