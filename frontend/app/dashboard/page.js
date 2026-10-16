@@ -3,6 +3,8 @@
 import { tx } from "../../lib/t";
 import { confirmDialog } from "../../lib/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { IconChat, IconX } from "../../components/Icons";
 import { useAuth } from "../../components/AuthContext";
 import { useChat } from "../../components/Chat";
 import { useModules } from "../../components/Modules";
@@ -64,6 +66,21 @@ export default function DashboardHome() {
 
   const applyLayout = (kind) => save(themeLayout(ctx, state.theme, kind).map((w, i) => ({ id: w.id, col: w.size === 2 ? -1 : i % columns })));
 
+  // one direct connection at a time: while someone is connected a small tile shows up (under Swipen / the second column), also when the block is not on this dashboard
+  const showTile = chat?.directActive?.length > 0 && !layout.some((l) => l.id === "direct");
+  const tileCol = columns > 1 ? 1 : 0;
+  const live = chat?.directActive?.[0];
+  const directTile = showTile && live && (
+    <div className="dash-live-tile">
+      <span className="dlt-av"><span>{(live.name || "?")[0].toUpperCase()}</span><i className="dlt-dot" aria-hidden="true" /></span>
+      <span className="dlt-txt"><strong>{live.name}</strong><small>{tx("Rechtstreeks verbonden")}</small></span>
+      <span className="dlt-actions">
+        <Link className="btn sm primary" href={`/dashboard/community/direct?room=${live.token}`}><IconChat /> {tx("Chat")}</Link>
+        <button type="button" className="btn sm" title={tx("Verbreek verbinding")} aria-label={tx("Verbreek verbinding")}
+          onClick={async () => { if (await confirmDialog(tx("De verbinding met {0} verbreken?", live.name), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken"), danger: true })) await api(`/direct/rooms/${live.token}/disconnect/`, { method: "POST" }).catch(() => {}); }}><IconX /></button>
+      </span>
+    </div>
+  );
   const renderCol = (c) => {
     if (c === -1 && !colOf(-1).length && !editing) return null;
     return (
@@ -95,6 +112,7 @@ export default function DashboardHome() {
                 </section>
               );
             })}
+            {c === tileCol && !editing && directTile}
           </div>
     );
   };

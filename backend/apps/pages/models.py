@@ -19,6 +19,7 @@ class Page(models.Model):
     audience = models.CharField(max_length=8, choices=AUDIENCE, default="all")
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
     order = models.PositiveIntegerField(default=0)
+    source = models.CharField(max_length=40, blank=True, db_index=True)  # "import:<id>" for pages that come from a site import
     background = models.JSONField(default=dict, blank=True)  # {"type": "image"|"video", "media": MediaItem id, "overlay": 0-0.9}
     updated_at = models.DateTimeField(auto_now=True)
 

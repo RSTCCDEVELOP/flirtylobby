@@ -12,7 +12,8 @@ import PublicProfileBlock from "../../../components/PublicProfileBlock";
 import { IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../components/Icons";
 import { countryOptions } from "../../../lib/countries";
 import { useAuth } from "../../../components/AuthContext";
-import { api, setToken, errorText, mediaUrl } from "../../../lib/api";
+import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
+import { confirmDialog, promptDialog } from "../../../lib/dialog";
 
 export default function Profile() {
   const { user, setUser } = useAuth();
@@ -46,6 +47,19 @@ export default function Profile() {
       setToken(token);
       setPw({ old_password: "", new_password: "" });
       setPwMsg({ ok: true, text: tx("Wachtwoord gewijzigd.") });
+    } catch (err) {
+      setPwMsg({ ok: false, text: errorText(err) });
+    }
+  }
+
+  async function deleteAccount() {
+    if (!(await confirmDialog(tx("Je account verwijderen? Al je bestanden en gegevens worden definitief gewist. Dit kan niet ongedaan worden gemaakt."), { danger: true }))) return;
+    const password = await promptDialog(tx("Typ ter bevestiging je wachtwoord"), "", { password: true });
+    if (!password) return;
+    try {
+      await api("/auth/delete/", { method: "POST", body: { password } });
+      clearToken();
+      window.location.href = "/";
     } catch (err) {
       setPwMsg({ ok: false, text: errorText(err) });
     }
@@ -126,6 +140,11 @@ export default function Profile() {
           <div><button className="btn">{tx("Wachtwoord wijzigen")}</button></div>
         </form>
         <TwoFactorProfile />
+        <div className="danger-zone">
+          <strong style={{ fontSize: ".9rem" }}>{tx("Account verwijderen")}</strong>
+          <p className="muted" style={{ margin: ".25rem 0 .6rem", fontSize: ".85rem" }}>{tx("Wist je profiel, foto's, berichten en bestanden definitief, en haalt je weg uit alle groepen en rechten.")}</p>
+          <button type="button" className="btn danger" onClick={deleteAccount}>{tx("Account verwijderen")}</button>
+        </div>
       </ProfileBlock>
       </div>
       <div className="profile-col">

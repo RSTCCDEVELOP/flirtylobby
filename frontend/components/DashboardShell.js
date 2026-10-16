@@ -15,7 +15,7 @@ import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
-import { IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat } from "./Icons";
+import { IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
@@ -52,6 +52,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/roles", label: "Rollen", icon: <IconShield />, perm: "roles.manage" },
   { href: "/dashboard/admin/languages", label: "Talen", icon: <IconGlobe />, perm: "languages.manage" },
   { href: "/dashboard/admin/pages", label: "Pagina's", icon: <IconFolder /> },
+  { href: "/dashboard/admin/siteimport", label: "Site importeren", icon: <IconGlobe /> },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
   { href: "/dashboard/admin/products", label: "Producten", icon: <IconBag /> },
@@ -61,6 +62,8 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/security", label: "Beveiliging", icon: <IconLock />, perm: "security.manage" },
   { href: "/dashboard/admin/community", label: "Community", icon: <IconChat /> },
   { href: "/dashboard/admin/seo", label: "SEO", icon: <IconSearch /> },
+  { href: "/dashboard/admin/system", label: "Basisgegevens", icon: <IconSettings />, perm: "system.manage" },
+  { href: "/dashboard/admin/storage", label: "Mappenstructuur", icon: <IconFolder />, perm: "storage.manage" },
   { href: "/dashboard/admin/sandbox", label: "Sandbox", icon: <IconFlask /> },
   { href: "/dashboard/admin/theme", label: "Vormgeving", icon: <IconPalette />, perm: "theme.manage" },
 ];
@@ -77,10 +80,10 @@ const ADMIN_GROUPS = [
 ];
 const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
-  "/dashboard/admin/pages": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
+  "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/products": "a-shop", "/dashboard/admin/orders": "a-shop",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
 };
 
 // A collapsible group of menu items. Open state is remembered; the group with the current page opens by itself.
@@ -143,7 +146,7 @@ export default function DashboardShell({ children }) {
   const NavLink = ({ n, exact }) => (
     <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname.startsWith(n.href)) ? "active" : ""} onClick={closeMenu}>
       {n.icon}
-      <span className="label">{tx(n.label)}</span>
+      <span className="label">{n.badge === "direct_active" && n.badgeCount > 0 ? (chat?.directActive || []).map((x) => x.name).join(", ") : tx(n.label)}</span>
       {n.badgeCount > 0 && (n.badge === "direct_active" ? <span className="nav-live" title={tx("Directe verbinding actief")}><span className="live-dot" />{n.badgeCount}</span> : <span className="cart-count" style={{ marginLeft: "auto" }}>{n.badgeCount}</span>)}
     </Link>
   );

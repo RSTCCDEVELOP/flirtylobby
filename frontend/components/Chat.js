@@ -395,7 +395,7 @@ export function DirectIndicator() {
   return (
     <Link href={`/dashboard/community/direct?room=${list[0].token}`} className="direct-pill" title={tx("Directe verbinding actief: {0}", names)}>
       <span className="live-dot" />
-      <span className="direct-pill-text">{tx("Verbonden:")} {names}</span>
+      <span className="direct-pill-text">{names}</span>
     </Link>
   );
 }

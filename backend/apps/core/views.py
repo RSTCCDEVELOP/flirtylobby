@@ -248,3 +248,19 @@ def module_update(request, key):
     security_service.invalidate()
     logger.info("Module %s %s by %s", key, "enabled" if on else "disabled", request.user.email)
     return Response(_module_payload())
+
+
+# ── Basic data / deployment ─────────────────────────────────────────────────
+from . import system  # noqa: E402
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([has_level("system", "manage"), module_required("system")])
+def system_settings(request):
+    if request.method == "PUT":
+        cleaned, errors = system.clean(request.data)
+        if errors:
+            return Response({"detail": " ".join(errors.values()), "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+        system.save(cleaned)
+    return Response({"settings": system.get(), "checks": system.checks(request), "env": system.env_files(), "environments": system.ENVIRONMENTS,
+                     "request_origin": f"{request.scheme}://{request.get_host()}"})

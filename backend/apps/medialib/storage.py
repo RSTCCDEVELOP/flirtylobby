@@ -18,13 +18,29 @@ class LibraryStorage(FileSystemStorage):
         return MediaItem.objects.filter(key=name).first()
 
     def _save(self, name, content):
+        from . import areas, filecrypt
         from .models import MediaItem
 
         name = super()._save(name, content)
-        MediaItem.objects.update_or_create(key=name, defaults={
+        cfg = areas.config()
+        area = areas.area_of(name, cfg)
+        item, _ = MediaItem.objects.update_or_create(key=name, defaults={
             "name": os.path.basename(name), "kind": kind_of(name), "mime": mimetypes.guess_type(name)[0] or "",
-            "size": os.path.getsize(self.path(name)), "storage": "local",
+            "size": os.path.getsize(self.path(name)), "storage": "local", "owner_id": areas.owner_of(name, cfg), "encrypted": False, "enc_scope": "",
         })
+        if cfg[area]["encrypt"]:  # the file's own key: one per user for members' files
+            scope = areas.scope_of(name, cfg=cfg)
+            filecrypt.encrypt_file(self.path(name), scope)
+            item.encrypted, item.enc_scope, item.size = True, scope, os.path.getsize(self.path(name))
+            item.save(update_fields=["encrypted", "enc_scope", "size"])
+        if cfg[area]["storage"] == "s3":
+            from . import s3, service
+
+            if s3.available():
+                try:
+                    service.move(item, "s3")
+                except Exception:  # noqa: BLE001  the file stays local; the admin sees it in the library
+                    pass
         return name
 
     def exists(self, name):
@@ -32,6 +48,10 @@ class LibraryStorage(FileSystemStorage):
 
     def url(self, name):
         item = self._item(name)
+        if item and item.encrypted:
+            from . import filecrypt
+
+            return filecrypt.signed_url(name)
         if item and item.storage == "s3":
             from . import s3
 
@@ -54,6 +74,22 @@ class LibraryStorage(FileSystemStorage):
 
     def open(self, name, mode="rb"):
         item = self._item(name)
+        if item and item.encrypted:  # decrypted in memory, for whoever may see this file
+            from io import BytesIO
+
+            from . import filecrypt
+
+            if item.storage == "s3":
+                from . import s3
+
+                cfg = s3.config()
+                raw = BytesIO(s3.client(cfg).get_object(Bucket=cfg["bucket"], Key=s3.object_key(cfg, name))["Body"].read())
+            else:
+                raw = open(self.path(name), "rb")
+            try:
+                return ContentFile(filecrypt.decrypt_bytes(raw, item.enc_scope), name=name)
+            finally:
+                raw.close()
         if item and item.storage == "s3":
             from . import s3
 

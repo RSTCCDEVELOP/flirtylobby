@@ -7,7 +7,7 @@ import QRCode from "qrcode";
 import { useCallback, useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
 import { useChat } from "../../../../components/Chat";
-import DirectConnection from "../../../../components/DirectConnection";
+import { DirectSlot, useDirectHost } from "../../../../components/DirectHost";
 import { api, errorText } from "../../../../lib/api";
 
 function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew }) {
@@ -28,6 +28,7 @@ function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew }) 
             {" "}<small className="muted">{tx("geldig tot")} {new Date(room.expires_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" })}</small>
           </span>
           <input readOnly value={url} onFocus={(e) => e.target.select()} />
+          {room.code && <span className="invite-code" title={tx("Verbinden zonder link: voer deze code in op de pagina Verbind opnieuw")}><small className="muted">{tx("Code")}</small> <strong>{room.code.slice(0, 3)} {room.code.slice(3)}</strong> <small className="muted">· {tx("verbinden zonder link")}</small></span>}
           <div className="row" style={{ justifyContent: "flex-start", flexWrap: "wrap" }}>
             <button className="btn" onClick={copy}>{copied ? <>{tx("Gekopieerd")} <IconCheck /></> : tx("Link kopiëren")}</button>
             {typeof navigator !== "undefined" && navigator.share && <button className="btn" onClick={share}>{tx("Delen…")}</button>}
@@ -46,7 +47,9 @@ function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew }) 
 export default function Direct() {
   const chat = useChat();
   const [rooms, setRooms] = useState(null);
-  const [open, setOpen] = useState(null); // {token, info}
+  const host = useDirectHost();
+  const open = host?.session || null; // {token, info, mode}: lives in the host, so it keeps running when you leave this page
+  const setOpen = (s) => (s ? host.open(s) : host.close());
   const [error, setError] = useState("");
   const [view, setView] = useState("popup"); // where "Start chat" opens the connection: popup (bottom right) or on this page
   const [mini, setMini] = useState(false); // popup folded to a bar (the connection stays)
@@ -67,7 +70,7 @@ export default function Direct() {
   };
   useEffect(() => { // coming from the dashboard block or the "connected" popup
     const t = new URLSearchParams(window.location.search).get("room");
-    if (t) api(`/direct/${t}/`).then((info) => setOpen({ token: t, info })).catch(() => {});
+    if (t) api(`/direct/${t}/`).then((info) => host.open({ token: t, info, mode: "page" })).catch(() => {});
   }, []);
   // new code: the old link and QR stop working, a fresh invitation takes its place
   const renew = async (r) => {
@@ -95,11 +98,11 @@ export default function Direct() {
       <div className="page-head">
         <h1>{tx("Directe verbinding")}</h1>
         <div className="row">
-          <label className="row" style={{ gap: ".5rem", flexWrap: "nowrap", fontWeight: 600 }}>{tx("Chat openen als")}
+          <label className="inline-field">{tx("Chat openen als")}
             <select style={{ width: "auto" }} value={view} onChange={(e) => pickView(e.target.value)}><option value="popup">{tx("Popup")}</option><option value="page">{tx("Op de pagina")}</option></select>
           </label>
           <button className="btn" onClick={load} title={tx("Verversen")}><IconRefresh /> {tx("Verversen")}</button>
-          <button className="btn primary" onClick={create}>{tx("+ Nieuwe uitnodiging")}</button>
+          {!(rooms || []).length && <button className="btn primary" onClick={create}>{tx("+ Nieuwe uitnodiging")}</button>}
         </div>
       </div>
       <p className="muted" style={{ marginTop: 0 }}>{tx("Maak een link of QR-code en stuur die naar iemand. Zodra de ander de link opent, zie je hier dat jullie verbonden zijn en kun je rechtstreeks chatten, foto's delen en videobellen. De ander heeft geen account nodig.")}</p>
@@ -116,13 +119,13 @@ export default function Direct() {
             </span>
           </div>
           <div className="direct-pop-body" hidden={mini}>
-            <DirectConnection key={open.token} token={open.token} role="owner" info={open.info} onClosed={() => { setOpen(null); load(); }} />
+            <DirectSlot />
           </div>
         </div>
       )}
       {open && open.mode !== "popup" && (
         <Collapsible id="direct-live" title={tx("Verbinding")} defaultOpen>
-          <DirectConnection key={open.token} token={open.token} role="owner" info={open.info} onClosed={() => { setOpen(null); load(); }} />
+          <DirectSlot />
         </Collapsible>
       )}
     </>

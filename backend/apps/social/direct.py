@@ -15,7 +15,7 @@ from .models import DirectRoom, DirectSignal
 
 ONLINE = timedelta(seconds=12)
 MAX_ACTIVE = 5
-KINDS = ("sdp", "ice", "call", "accept", "decline", "end")
+KINDS = ("sdp", "ice", "call", "accept", "decline", "end", "chat", "ack")
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 
 
@@ -38,6 +38,16 @@ def _alive(room):
 
 def _recent(t):
     return bool(t and timezone.now() - t < ONLINE)
+
+
+CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I: easy to read out and type
+
+
+def _new_code():
+    while True:
+        code = "".join(secrets.choice(CODE_CHARS) for _ in range(6))
+        if not DirectRoom.objects.filter(code=code, closed=False, expires_at__gt=timezone.now()).exists():
+            return code
 
 
 def _state(room):
@@ -68,11 +78,11 @@ def rooms(request):
         if not _enabled():
             return bad("Directe verbinding staat uit.", status.HTTP_403_FORBIDDEN)
         DirectRoom.objects.filter(owner=request.user, expires_at__lt=timezone.now()).delete()
-        if DirectRoom.objects.filter(owner=request.user, closed=False).count() >= MAX_ACTIVE:
-            return bad(f"Je hebt al {MAX_ACTIVE} open uitnodigingen. Sluit er eerst een.")
+        # one direct connection at a time: a new invitation replaces (closes) the open one
+        DirectRoom.objects.filter(owner=request.user, closed=False).update(closed=True)
         hours = service.get()["chat"]["direct_hours"]
-        room = DirectRoom.objects.create(token=secrets.token_urlsafe(24), owner=request.user, expires_at=timezone.now() + timedelta(hours=hours))
-    out = [{"token": r.token, **_state(r)} for r in DirectRoom.objects.filter(owner=request.user, closed=False, expires_at__gt=timezone.now()).order_by("-id")]
+        room = DirectRoom.objects.create(token=secrets.token_urlsafe(24), code=_new_code(), owner=request.user, expires_at=timezone.now() + timedelta(hours=hours))
+    out = [{"token": r.token, "code": r.code, **_state(r)} for r in DirectRoom.objects.filter(owner=request.user, closed=False, expires_at__gt=timezone.now()).order_by("-id")]
     return Response(out, status=status.HTTP_201_CREATED if request.method == "POST" else 200)
 
 
@@ -108,6 +118,25 @@ def room_leave(request, token):
     if room and _role(request, room) == "guest":
         _reset_guest(room)
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def room_by_code(request):
+    """Connect without the link: a short code (shown next to the QR code) leads to the invitation. Limited per address against guessing."""
+    from django.core.cache import cache
+
+    ip = request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
+    key = f"direct-code:{ip}"
+    tries = cache.get(key, 0)
+    if tries >= 12:
+        return bad("Te veel pogingen. Probeer het over een paar minuten opnieuw.", status.HTTP_429_TOO_MANY_REQUESTS)
+    cache.set(key, tries + 1, 600)
+    code = "".join(ch for ch in str(request.data.get("code") or "").upper() if ch.isalnum())
+    room = DirectRoom.objects.filter(code=code, closed=False, expires_at__gt=timezone.now()).select_related("owner").first() if len(code) == 6 else None
+    if not room or not _enabled() or not _alive(room) or not room.owner.is_active:
+        return bad("Deze code klopt niet of is verlopen.", status.HTTP_404_NOT_FOUND)
+    return Response({"token": room.token})
 
 
 @api_view(["GET"])

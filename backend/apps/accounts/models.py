@@ -2,6 +2,16 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+
+def avatar_path(instance, filename):
+    import os
+    import uuid
+
+    from apps.medialib import areas
+
+    return areas.user_path(instance.pk, "profile", f"{uuid.uuid4().hex[:12]}{os.path.splitext(filename)[1].lower()[:6]}")
+
+
 class Role(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
@@ -80,7 +90,7 @@ class User(AbstractUser):
     postal_code = models.CharField(max_length=12, blank=True)
     city = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=2, blank=True)  # ISO 3166-1 alpha-2
-    image = models.ImageField(upload_to="images/tms/coaches/", blank=True)  # profile photo
+    image = models.ImageField(upload_to=avatar_path, blank=True)  # profile photo
     show_public = models.BooleanField(default=False)  # show as member on the website
     last_seen = models.DateTimeField(null=True, blank=True)  # presence for chat
     otp_expires = models.DateTimeField(null=True, blank=True)

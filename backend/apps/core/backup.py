@@ -94,3 +94,22 @@ register("modules", "Modules", _modules_export, _modules_apply, description="Wel
 register("languages", "Talen", _lang_export, _lang_apply, description="Welke talen aan staan, de standaardtaal en de taalkeuze.", order=30)
 register("content", "Teksten van de website", _content_export, _content_apply, description="Alle teksten die in de bewerkmodus zijn aangepast.", order=40)
 register("dashboard", "Standaard dashboard", _dash_export, _dash_apply, description="De standaardindeling van het dashboard voor iedereen.", order=90)
+
+
+def _system_export(opts):
+    from . import system
+
+    return system.get()
+
+
+def _system_apply(data, ctx):
+    from . import system
+
+    # the addresses belong to the installation: only take over what was entered as content (name, contact), never the addresses
+    keep = {k: v for k, v in (data or {}).items() if k not in ("frontend_url", "backend_url", "extra_origins", "environment")}
+    cleaned, _ = system.clean(keep)
+    system.save({k: v for k, v in cleaned.items() if k in keep})
+    return "Basisgegevens geladen (adressen van deze installatie blijven staan)."
+
+
+register("system", "Basisgegevens", _system_export, _system_apply, description="Naam, bedrijf en contactgegevens van de website.", order=5)

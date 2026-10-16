@@ -13,6 +13,7 @@ import { MenuProvider } from "../components/SiteMenu";
 import { getBackgrounds, getMenu } from "../lib/pages-server";
 import PageBackdrop from "../components/PageBackdrop";
 import PageSettingsButton from "../components/PageSettingsButton";
+import { DirectHostProvider } from "../components/DirectHost";
 import LangRoot from "../components/LangRoot";
 import VersionNotice from "../components/VersionNotice";
 import { getBuildId } from "../lib/version-server";
@@ -133,10 +134,12 @@ export default async function RootLayout({ children }) {
         <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>
           <BrandingProvider value={branding} logoSet={theme?.values?.brand_logo}>
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
+              <DirectHostProvider>
               <PageBackdrop map={backgrounds} />
               {children}
               <EditBanner />
               <PageSettingsButton />
+              </DirectHostProvider>
             </ContentProvider>
             <Gates cfg={security} />
         <SandboxBadge status={sandbox} />

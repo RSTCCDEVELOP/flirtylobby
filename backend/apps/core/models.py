@@ -65,3 +65,9 @@ class ModuleState(models.Model):
     key = models.CharField(max_length=50, unique=True)
     enabled = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class SystemSettings(models.Model):
+    """Singleton (pk=1): basic data of this installation (name, addresses, contact). Secrets and server settings stay in the environment."""
+
+    data = models.JSONField(default=dict, blank=True)

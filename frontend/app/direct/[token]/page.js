@@ -44,7 +44,8 @@ export default function DirectGuest() {
         <h1>{tx("Directe verbinding")}</h1>
         {!info && !error && <p className="muted">{tx("Laden…")}</p>}
         {error && <div className="alert">{error}</div>}
-        {info && !info.role && !info.taken && !error && (
+        {error && !secret && <Link href="/direct" className="btn primary">{tx("Verbind opnieuw")}</Link>}
+        {info && !info.role && !info.taken && !error && !secret && (
           <form className="form" onSubmit={join}>
             <p><strong>{info.owner_name}</strong> {tx("nodigt je uit voor een rechtstreekse verbinding: chat, foto's en video.")}</p>
             <label>{tx("Jouw naam")}<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoFocus /></label>
@@ -53,6 +54,7 @@ export default function DirectGuest() {
         )}
         {info?.taken && !secret && <div className="alert">{tx("Er is al iemand verbonden met deze uitnodiging.")}</div>}
         {secret && info && <DirectConnection token={token} role="guest" secret={secret} info={info} onClosed={(why) => { setSecret(null); try { sessionStorage.removeItem(`direct:${token}`); } catch {} setError(why === "left" ? tx("Je hebt de verbinding verbroken.") : tx("De verbinding is verbroken of de uitnodiging is gesloten.")); }} />}
+        {!secret && <Link href="/direct" className="muted center">{tx("Heb je een code? Verbind zonder link")}</Link>}
         <Link href="/" className="muted center">{tx("← Naar de website")}</Link>
       </div>
     </main>

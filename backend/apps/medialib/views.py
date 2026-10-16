@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from apps.accounts.permissions import has_level
 from apps.core.modules import module_required
 
-from . import s3, service
+from . import areas, s3, service
 import re
 
 from django.db.models import Q
@@ -51,7 +51,7 @@ def _scope(request, user_data=None):
     show = request.user.is_staff and (request.query_params.get("user_data") == "1" if user_data is None else user_data)
     qs = MediaItem.objects.all()
     if not show:
-        for p in USER_PREFIXES:
+        for p in areas.user_prefixes():
             qs = qs.exclude(key__startswith=p)
     return qs
 
@@ -105,7 +105,7 @@ def upload(request):
                 errors.append(f"{f.name}: geen geldige afbeelding.")
                 continue
         today = date.today()
-        name = default_storage.save(f"library/{today:%Y/%m}/{uuid.uuid4().hex[:8]}-{get_valid_filename(f.name)}", f)
+        name = default_storage.save(areas.site_path("library", f"{today:%Y/%m}/{uuid.uuid4().hex[:8]}-{get_valid_filename(f.name)}"), f)
         item = MediaItem.objects.get(key=name)
         item.name, item.uploaded_by = f.name[:255], request.user
         item.tags = clean_tags(request.data.get("tags", ""))

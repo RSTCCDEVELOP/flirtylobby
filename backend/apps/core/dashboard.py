@@ -139,10 +139,10 @@ def stats(request):
 
         from apps.medialib import s3
 
-        from apps.medialib.models import USER_PREFIXES
+        from apps.medialib.areas import user_prefixes
 
         lib = MediaItem.objects.all()
-        for p in USER_PREFIXES:  # member files are not part of the site library
+        for p in user_prefixes():  # member files are not part of the site library
             lib = lib.exclude(key__startswith=p)
         rows = list(lib.values("kind", "storage").annotate(n=Count("id"), b=Sum("size")))
         with_s3 = s3.available() or any(r["storage"] == "s3" for r in rows)  # no S3 linked: no mention of local/S3

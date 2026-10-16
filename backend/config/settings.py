@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "apps.shop",
     "apps.social",
     "apps.pages",
+    "apps.siteimport",
 ]
 
 MIDDLEWARE = [

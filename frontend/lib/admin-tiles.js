@@ -15,8 +15,11 @@ export const TILES = [
   { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat"] },
   { href: "/dashboard/admin/seo", title: "SEO", big: "Zoekmachines, bots en AI-agents", small: "robots.txt, sitemap, llms.txt, titels", modules: ["seo"] },
   { href: "/dashboard/admin/security", title: "Beveiliging", big: "Landen, 18+, cookies", small: "Toegang, popups en verboden woorden", modules: SEC },
+  { href: "/dashboard/admin/system", title: "Basisgegevens", big: "Naam, adressen en deployment", small: "Website- en API-adres, contact en controlelijst", modules: ["system"] },
+  { href: "/dashboard/admin/storage", title: "Mappenstructuur", big: "Waar bestanden staan", small: "Mappen, lokaal of S3 en versleuteling per gebruiker", modules: ["storage"] },
   { href: "/dashboard/admin/sandbox", title: "Sandbox", big: "Testomgeving", small: "Betalingen, e-mail en sms simuleren", modules: ["sandbox"] },
   { href: "/dashboard/admin/pages", title: "Pagina's", big: "Pagina's en header-menu", small: "Overzicht, menu-editor, eigen pagina's en links", modules: ["pages"] },
+  { href: "/dashboard/admin/siteimport", title: "Site importeren", big: "Een andere site inlezen", small: "Thema, pagina's, startpagina en afbeeldingen; weer te verwijderen", modules: ["siteimport"] },
   { href: "/dashboard/admin/theme", title: "Vormgeving", big: "Kleuren & lettertypen", small: "Stijl van de hele website", modules: ["theme"] },
 ];
 

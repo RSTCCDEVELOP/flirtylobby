@@ -64,3 +64,4 @@ start-claude.sh
 frontend/.next/
 frontend/next-env.d.ts
 frontend/.next-build/
+backend/imports/

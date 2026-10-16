@@ -25,4 +25,5 @@ urlpatterns = [
     path("auth/me/", views.me),
     path("auth/me/image/", views.my_photo),
     path("auth/password/", views.change_password),
+    path("auth/delete/", views.delete_me),
 ] + router.urls

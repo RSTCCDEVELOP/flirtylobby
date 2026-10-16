@@ -10,14 +10,26 @@ SLOTS = {
 }
 
 
+def branding_path(instance, filename):
+    from apps.medialib import areas
+
+    return areas.site_path("branding", filename)
+
+
+def home_path(instance, filename):
+    from apps.medialib import areas
+
+    return areas.site_path("home", filename)
+
+
 class SiteAsset(models.Model):
     slot = models.CharField(max_length=30, unique=True)
-    image = models.ImageField(upload_to="branding/")
+    image = models.ImageField(upload_to=branding_path)
     updated_at = models.DateTimeField(auto_now=True)
 
 
 class HomePhoto(models.Model):
-    image = models.ImageField(upload_to="home/")
+    image = models.ImageField(upload_to=home_path)
     caption = models.CharField(max_length=255, blank=True)
     order = models.PositiveIntegerField(default=0)
 

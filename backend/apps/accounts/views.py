@@ -221,6 +221,20 @@ def change_password(request):
     return Response({"token": token.key})
 
 
+@api_view(["POST"])
+def delete_me(request):
+    """A member deletes their own account: after confirming with the password, everything of them is erased."""
+    from .erasure import erase_user
+
+    user = request.user
+    if not user.check_password(str(request.data.get("password", ""))):
+        return Response({"password": ["Wachtwoord is onjuist."]}, status=status.HTTP_400_BAD_REQUEST)
+    if user.is_superuser and not User.objects.filter(is_superuser=True, is_active=True).exclude(pk=user.pk).exists():
+        return Response({"detail": "Je bent de enige superadmin; maak eerst iemand anders superadmin."}, status=status.HTTP_400_BAD_REQUEST)
+    erase_user(user)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 def _set_photo(user, request):
     """Upload (POST) or remove (DELETE) a profile photo. Images only, max 5 MB."""
     from apps.medialib import service as media_service
@@ -251,7 +265,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if self.get_object() == request.user:
             return Response({"detail": "Je kunt jezelf niet verwijderen."}, status=status.HTTP_400_BAD_REQUEST)
-        return super().destroy(request, *args, **kwargs)
+        from .erasure import erase_user
+
+        erase_user(self.get_object())  # files, keys, group/role links and records go too
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"])
     def block(self, request, pk=None):

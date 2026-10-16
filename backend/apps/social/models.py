@@ -51,13 +51,17 @@ def photo_path(instance, filename):
     import os
     import uuid
 
-    return f"profiles/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()[:6]}"
+    from apps.medialib import areas
+
+    return areas.user_path(instance.profile.user_id, "photos", f"{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()[:6]}")
 
 
 def blur_path(instance, filename):
     import uuid
 
-    return f"profiles/blur/{uuid.uuid4().hex}.jpg"
+    from apps.medialib import areas
+
+    return areas.user_path(instance.profile.user_id, "photos/blur", f"{uuid.uuid4().hex}.jpg")
 
 
 class ProfilePhoto(models.Model):
@@ -112,13 +116,22 @@ class DirectMessage(models.Model):
         ordering = ["created_at", "id"]
 
 
+def chat_path(instance, filename):
+    import os
+    import uuid
+
+    from apps.medialib import areas
+
+    return areas.user_path(instance.sender_id, "chat", f"{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()[:6]}")
+
+
 class ChatMessage(models.Model):
     """Chat via the portal (method 'portal'); with WebRTC nothing is stored."""
 
     sender = models.ForeignKey(U, on_delete=models.CASCADE, related_name="chat_sent")
     recipient = models.ForeignKey(U, on_delete=models.CASCADE, related_name="chat_received")
     body = models.TextField(blank=True)
-    attachment = models.FileField(upload_to="chat/", blank=True)
+    attachment = models.FileField(upload_to=chat_path, blank=True)
     attachment_kind = models.CharField(max_length=10, blank=True)  # image | video
     attachment_name = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -193,6 +206,7 @@ class DirectRoom(models.Model):
     The server only relays the signaling; text, files and video go device to device."""
 
     token = models.CharField(max_length=64, unique=True)
+    code = models.CharField(max_length=8, blank=True, db_index=True)  # short code to connect without the link
     owner = models.ForeignKey(U, on_delete=models.CASCADE, related_name="direct_rooms")
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
