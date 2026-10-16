@@ -30,6 +30,12 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.accounts",
     "apps.members",
+    "apps.integrations",
+    "apps.branding",
+    "apps.security",
+    "apps.medialib",
+    "apps.communication",
+    "apps.seo",
 ]
 
 MIDDLEWARE = [
@@ -83,7 +89,7 @@ else:
 AUTH_USER_MODEL = "accounts.User"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "apps.security.validators.ConfiguredPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -95,6 +101,11 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = Path(os.getenv("STATIC_ROOT") or BASE_DIR / "staticfiles")
+STORAGES = {
+    # files are registered in the media library; each lives on local disk or S3 (see apps/medialib)
+    "default": {"BACKEND": "apps.medialib.storage.LibraryStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or BASE_DIR / "media")
 
@@ -102,7 +113,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["apps.security.authentication.ExpiringTokenAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
 }
 

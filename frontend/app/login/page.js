@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Logo } from "../../components/BrandingContext";
 import ThemeToggle from "../../components/ThemeToggle";
 import { api, setToken, errorText } from "../../lib/api";
 
@@ -33,7 +33,7 @@ export default function Login() {
     <main className="login-page">
       <div className="login-theme"><ThemeToggle /></div>
       <form className="card login-card" onSubmit={submit}>
-        <Image src="/logo-rstcc.png" alt="RST Coaching & Consultancy" width={316} height={346} priority />
+        <Logo />
         <h1>Inloggen</h1>
         <label>E-mailadres
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" />

@@ -1,18 +1,25 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "./BrandingContext";
+import { ImageEdit } from "./EditMode";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSwitcher from "./LanguageSwitcher";
 import SiteUserArea from "./SiteUserArea";
+import { EditModeSwitch } from "./EditMode";
 
 export default function SiteHeader() {
   return (
     <header className="site-header">
-      <Link href="/" className="brand">
-        <Image src="/logo-rstcc.png" alt="RST Coaching & Consultancy" width={316} height={346} priority />
-      </Link>
+      <ImageEdit target="asset:logo">
+        <Link href="/" className="brand">
+          <Logo />
+        </Link>
+      </ImageEdit>
       <nav className="site-nav">
         <Link href="/">Home</Link>
       </nav>
       <div className="site-actions">
+        <EditModeSwitch />
+        <LanguageSwitcher />
         <ThemeToggle />
         <SiteUserArea />
       </div>

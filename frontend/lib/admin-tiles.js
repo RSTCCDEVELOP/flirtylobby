@@ -1,0 +1,18 @@
+// Tiles of the admin dashboards: one entry per admin page. `modules` decide access (see lib/perms.js).
+const SEC = ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_filter", "twofa"];
+
+export const TILES = [
+  { href: "/dashboard/admin/users", title: "Users", big: "Accounts en openbare profielen", small: "Aanmaken, blokkeren, foto en rollen", modules: ["users"] },
+  { href: "/dashboard/admin/groups", title: "User groups", big: "Groepen van users", small: "Rollen en module-toegang per groep", modules: ["users"] },
+  { href: "/dashboard/admin/roles", title: "Rollen", big: "Rechten per rol", small: "Content manager, moderator, …", modules: ["roles"] },
+  { href: "/dashboard/admin/languages", title: "Talen", big: "Talen & standaardtaal", small: "Welke talen de website aanbiedt", modules: ["languages"] },
+  { href: "/dashboard/admin/communication", title: "Communicatie", big: "E-mail en mobiele nummers", small: "Afzenders, antwoordadressen en nummers", modules: ["communication"] },
+  { href: "/dashboard/admin/integrations", title: "API keys", big: "Externe koppelingen", small: "Aan/uit, testen en beheren", modules: ["integrations"] },
+  { href: "/dashboard/admin/media", title: "Media", big: "Afbeeldingen & video's", small: "Lokaal of S3, per bestand", modules: ["media"] },
+  { href: "/dashboard/admin/branding", title: "Logo's & beeld", big: "Logo, favicon, foto's", small: "Voor de website en onderhoudspagina", modules: ["branding"] },
+  { href: "/dashboard/admin/seo", title: "SEO", big: "Zoekmachines, bots en AI-agents", small: "robots.txt, sitemap, llms.txt, titels", modules: ["seo"] },
+  { href: "/dashboard/admin/security", title: "Beveiliging", big: "Landen, 18+, cookies", small: "Toegang, popups en verboden woorden", modules: SEC },
+  { href: "/dashboard/admin/theme", title: "Vormgeving", big: "Kleuren & lettertypen", small: "Stijl van de hele website", modules: ["theme"] },
+];
+
+export const LEVEL_LABEL = { 1: "Gebruik", 2: "Bewerken", 3: "Beheer" };

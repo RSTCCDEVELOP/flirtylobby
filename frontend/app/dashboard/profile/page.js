@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Collapsible from "../../../components/Collapsible";
 import { useAuth } from "../../../components/AuthContext";
-import { api, setToken, errorText } from "../../../lib/api";
+import { api, setToken, errorText, mediaUrl } from "../../../lib/api";
 
 export default function Profile() {
   const { user, setUser } = useAuth();
@@ -41,8 +42,23 @@ export default function Profile() {
   return (
     <>
       <h1>Mijn profiel</h1>
-      <form className="card form" onSubmit={save}>
-        <h2>Gegevens</h2>
+      <Collapsible id="profile-data" title="Gegevens" className="form-card">
+      <form className="form" onSubmit={save}>
+        <div className="photo-row">
+          {user.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(user.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{(user.first_name?.[0] || user.email[0]).toUpperCase()}</span>}
+          <span className="row" style={{ justifyContent: "flex-start" }}>
+            <label className="btn sm" style={{ cursor: "pointer" }}>
+              {user.image ? "Foto vervangen" : "Foto uploaden"}
+              <input type="file" accept="image/*" hidden onChange={async (e) => {
+                const f = e.target.files[0]; e.target.value = "";
+                if (!f) return;
+                const fd = new FormData(); fd.append("image", f);
+                try { setUser(await api("/auth/me/image/", { method: "POST", body: fd })); } catch (err) { setMsg({ ok: false, text: errorText(err) }); }
+              }} />
+            </label>
+            {user.image && <button type="button" className="btn sm danger" onClick={async () => { try { setUser(await api("/auth/me/image/", { method: "DELETE" })); } catch (err) { setMsg({ ok: false, text: errorText(err) }); } }}>Foto verwijderen</button>}
+          </span>
+        </div>
         <div className="grid2">
           <label>Voornaam<input value={form.first_name} onChange={set("first_name")} /></label>
           <label>Achternaam<input value={form.last_name} onChange={set("last_name")} /></label>
@@ -56,9 +72,10 @@ export default function Profile() {
         {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
         <div><button className="btn primary">Opslaan</button></div>
       </form>
+      </Collapsible>
 
-      <form className="card form" onSubmit={changePassword}>
-        <h2>Wachtwoord wijzigen</h2>
+      <Collapsible id="profile-password" title="Wachtwoord wijzigen" className="form-card">
+      <form className="form" onSubmit={changePassword}>
         <div className="grid2">
           <label>Huidig wachtwoord<input type="password" value={pw.old_password} onChange={(e) => setPw({ ...pw, old_password: e.target.value })} required autoComplete="current-password" /></label>
           <label>Nieuw wachtwoord<input type="password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} required autoComplete="new-password" /></label>
@@ -66,6 +83,7 @@ export default function Profile() {
         {pwMsg && <div className={pwMsg.ok ? "alert ok" : "alert"}>{pwMsg.text}</div>}
         <div><button className="btn">Wachtwoord wijzigen</button></div>
       </form>
+      </Collapsible>
     </>
   );
 }

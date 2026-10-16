@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../../components/AuthContext";
+import { lvl } from "../../../../lib/perms";
+import { useUi } from "../../../../components/Ui";
+import { useBranding } from "../../../../components/BrandingContext";
 import { api, errorText } from "../../../../lib/api";
 
 // Apply css returned by the API to the live page (same specificity as the server-rendered one, later in <head>)
@@ -19,6 +25,17 @@ function applyPreview({ css, fonts_url }) {
     document.head.appendChild(link);
   }
 }
+
+// Ready-made popup versions (values of the "popups" fields)
+const POPUP_VERSIONS = [
+  { name: "Klassiek", desc: "Gecentreerd venster, donkere achtergrond", v: { popup_overlay: 0.72, popup_blur: 6, popup_radius: 14, popup_width: 480, popup_pad: 2, popup_bg_opacity: 1, popup_position: "center", popup_anim: "scale", popup_border_width: 0, popup_border_color: "#e5e8ef", popup_shadow: "soft", popup_btn_radius: 10, popup_image_radius: 8 } },
+  { name: "Glas", desc: "Doorzichtig venster, sterke vervaging", v: { popup_overlay: 0.35, popup_blur: 18, popup_radius: 24, popup_width: 520, popup_pad: 2, popup_bg_opacity: 0.72, popup_position: "center", popup_anim: "scale", popup_border_width: 1, popup_border_color: "#e5e8ef", popup_shadow: "strong", popup_btn_radius: 14, popup_image_radius: 14 } },
+  { name: "Zijpaneel", desc: "Schuift van rechts in, volle hoogte", v: { popup_overlay: 0.5, popup_blur: 0, popup_radius: 0, popup_width: 440, popup_pad: 2, popup_bg_opacity: 1, popup_position: "right", popup_anim: "right", popup_border_width: 1, popup_border_color: "#e5e8ef", popup_shadow: "strong", popup_btn_radius: 6, popup_image_radius: 6 } },
+  { name: "Onderaan", desc: "Schuift omhoog van onderen", v: { popup_overlay: 0.5, popup_blur: 2, popup_radius: 24, popup_width: 680, popup_pad: 2, popup_bg_opacity: 1, popup_position: "bottom", popup_anim: "up", popup_border_width: 0, popup_border_color: "#e5e8ef", popup_shadow: "strong", popup_btn_radius: 14, popup_image_radius: 14 } },
+  { name: "Minimaal", desc: "Klein, scherp en bijna onzichtbare achtergrond", v: { popup_overlay: 0.2, popup_blur: 0, popup_radius: 4, popup_width: 400, popup_pad: 1.5, popup_bg_opacity: 1, popup_position: "center", popup_anim: "fade", popup_border_width: 1, popup_border_color: "#d1d5db", popup_shadow: "none", popup_btn_radius: 4, popup_image_radius: 4 } },
+  { name: "Groot en luchtig", desc: "Veel ruimte, zachte afronding", v: { popup_overlay: 0.85, popup_blur: 10, popup_radius: 28, popup_width: 640, popup_pad: 3, popup_bg_opacity: 1, popup_position: "center", popup_anim: "scale", popup_border_width: 0, popup_border_color: "#e5e8ef", popup_shadow: "soft", popup_btn_radius: 20, popup_image_radius: 20 } },
+];
+const POPUP_TESTS = [["example", "Voorbeeld met afbeelding"], ["age", "Leeftijdscontrole"], ["gambling", "Gokken-popup"], ["cookies", "Cookiebanner"], ["policy", "Cookiebeleid"]];
 
 function Field({ f, value, onChange }) {
   if (f.type === "color")
@@ -52,14 +69,35 @@ function Field({ f, value, onChange }) {
 }
 
 export default function ThemePage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const L = lvl(user, "theme");
+  const { previewLogoSet } = useBranding();
+  const { previewUi } = useUi();
   const [schema, setSchema] = useState([]);
+  const [presets, setPresets] = useState([]);
   const [values, setValues] = useState(null);
   const [msg, setMsg] = useState(null);
   const timer = useRef(null);
 
   useEffect(() => {
-    api("/theme/").then((d) => { setSchema(d.schema); setValues(d.values); }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
+    api("/theme/").then((d) => { setSchema(d.schema); setPresets(d.presets || []); setValues(d.values); }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
   }, []);
+
+  // the logo follows the theme: preview it here, revert when leaving the page without saving
+  const logoSet = values?.brand_logo;
+  useEffect(() => {
+    if (logoSet) previewLogoSet(logoSet);
+    return () => previewLogoSet(null);
+  }, [logoSet, previewLogoSet]);
+
+  // interface defaults act immediately on this page; revert when leaving without saving
+  const remember = values?.remember_collapse;
+  const sidebarAuto = values?.sidebar_auto;
+  useEffect(() => {
+    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto });
+    return () => previewUi(null);
+  }, [remember, sidebarAuto, previewUi]);
 
   const preview = useCallback((next) => {
     clearTimeout(timer.current);
@@ -68,12 +106,38 @@ export default function ThemePage() {
     }, 250);
   }, []);
 
+  // switch the admin's own view so you see the chosen start mode
+  function showMode(mode) {
+    if (mode !== "light" && mode !== "dark") return;
+    document.documentElement.dataset.theme = mode;
+    try { localStorage.setItem("theme", mode); } catch {}
+    window.dispatchEvent(new CustomEvent("themechange", { detail: mode }));
+  }
+
   function change(key, v) {
+    if (key === "default_mode") showMode(v);
     const next = { ...values, [key]: v };
     setValues(next);
     setMsg(null);
     preview(next);
   }
+
+  function applyValues(patch) {
+    const next = { ...values, ...patch };
+    setValues(next);
+    setMsg(null);
+    preview(next);
+  }
+
+  function applyPreset(p) {
+    // a theme changes the look, not the interface behaviour
+    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto };
+    showMode(next.default_mode);
+    setValues(next);
+    setMsg(null);
+    preview(next);
+  }
+  const isActive = (p) => Object.keys(p.values).every((k) => p.values[k] === values[k]);
 
   async function save() {
     try {
@@ -81,6 +145,7 @@ export default function ThemePage() {
       applyPreview(d);
       document.getElementById("theme-live")?.remove();
       setMsg({ ok: true, text: "Vormgeving opgeslagen voor de hele website." });
+      router.refresh(); // logo/favicon come from the server layout
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
     }
@@ -105,14 +170,64 @@ export default function ThemePage() {
           <p className="muted" style={{ margin: 0 }}>Wijzigingen zie je direct hier. Pas na opslaan gelden ze voor de hele website.</p>
         </div>
         <div className="row">
-          <button className="btn" onClick={reset}>Standaard herstellen</button>
-          <button className="btn primary" onClick={save}>Opslaan</button>
+          <CollapseAll />
+          <button className="btn" onClick={reset} disabled={L < 2}>Standaard herstellen</button>
+          <button className="btn primary" onClick={save} disabled={L < 2}>Opslaan</button>
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
-      <div className="card sample">
-        <h2>Voorbeeld</h2>
+      {schema.filter((g) => g.key === "defaults").map((g) => (
+        <Collapsible key={g.key} id="theme-defaults" title={g.label} className="theme-group">
+          <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Gedrag van de interface. Wordt niet veranderd door een ander thema te kiezen.</p>
+          <div className="theme-grid">
+            {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}
+          </div>
+        </Collapsible>
+      ))}
+
+      <Collapsible id="theme-presets" title="Thema's" className="theme-group">
+        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Kies een thema om alle kleuren, lettertypen en vormen in één keer te veranderen. Daarna kun je nog alles hieronder fijn afstellen.</p>
+        <div className="preset-grid">
+          {presets.map((p) => (
+            <button key={p.key} className={`preset ${isActive(p) ? "active" : ""}`} onClick={() => applyPreset(p)} title={p.description}>
+              <span className="swatches">
+                <i style={{ background: p.values.light_bg }} />
+                <i style={{ background: p.values.light_card, borderColor: p.values.light_line }} />
+                <i style={{ background: p.values.primary }} />
+                <i style={{ background: p.values.secondary }} />
+                <i style={{ background: p.values.dark_card }} />
+                <i style={{ background: p.values.dark_bg }} />
+              </span>
+              <strong>{p.name}</strong>
+              <small>{p.description}</small>
+            </button>
+          ))}
+        </div>
+      </Collapsible>
+
+      <Collapsible id="theme-popups" title="Popup-versies en test" className="theme-group">
+        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Kies een versie voor de standaardpopups (leeftijd, gokken, cookies). Daarna kun je alles fijn afstellen onder "Popups". Met de testknoppen zie je meteen het resultaat, ook voordat je opslaat.</p>
+        <div className="popup-presets">
+          {POPUP_VERSIONS.map((p) => {
+            const active = Object.keys(p.v).every((k) => values[k] === p.v[k]);
+            return (
+              <button key={p.name} className={`preset ${active ? "active" : ""}`} onClick={() => applyValues(p.v)}>
+                <strong>{p.name}</strong>
+                <small>{p.desc}</small>
+              </button>
+            );
+          })}
+        </div>
+        <div className="popup-test" style={{ marginTop: "1rem" }}>
+          <strong>Test:</strong>
+          {POPUP_TESTS.map(([t, label]) => (
+            <button key={t} type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent("test-popup", { detail: t }))}>{label}</button>
+          ))}
+        </div>
+      </Collapsible>
+
+      <Collapsible id="theme-sample" title="Voorbeeld" className="sample">
         <p>Zo ziet gewone tekst eruit, met een <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "var(--blue)" }}>link</a> en <span className="muted">gedempte tekst</span>.</p>
         <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
           <button className="btn primary">Primair</button>
@@ -121,15 +236,14 @@ export default function ThemePage() {
           <span className="badge ok">Actief</span>
           <span className="badge off">Geblokkeerd</span>
         </div>
-      </div>
+      </Collapsible>
 
-      {schema.map((g) => (
-        <div className="card theme-group" key={g.key}>
-          <h2>{g.label}</h2>
+      {schema.filter((g) => g.key !== "defaults").map((g) => (
+        <Collapsible key={g.key} id={`theme-${g.key}`} title={g.label} className="theme-group">
           <div className="theme-grid">
             {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}
           </div>
-        </div>
+        </Collapsible>
       ))}
     </>
   );

@@ -1,5 +1,7 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+export const mediaUrl = (path) => (path?.startsWith("http") ? path : `${BASE}${path}`);
+
 export const getToken = () => (typeof window === "undefined" ? null : localStorage.getItem("token"));
 export const setToken = (t) => localStorage.setItem("token", t);
 export const clearToken = () => localStorage.removeItem("token");

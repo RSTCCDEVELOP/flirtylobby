@@ -1,18 +1,15 @@
 from rest_framework import viewsets
-from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAdminUser
+from rest_framework.permissions import AllowAny
 
-from .models import Members
-from .serializers import MembersSerializer
+from apps.accounts.models import User
+from apps.core.modules import module_required
 
-
-class ReadOnlyOrStaff(BasePermission):
-    """Anyone may read members; only staff may create, change or delete."""
-
-    def has_permission(self, request, view):
-        return request.method in SAFE_METHODS or IsAdminUser().has_permission(request, view)
+from .serializers import MemberSerializer
 
 
-class MembersViewSet(viewsets.ModelViewSet):
-    queryset = Members.objects.all().order_by("name")
-    serializer_class = MembersSerializer
-    permission_classes = [ReadOnlyOrStaff]
+class MembersViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public list of users that are shown on the website (Admin -> Gebruikers -> 'Tonen op de website')."""
+
+    queryset = User.objects.filter(show_public=True, is_active=True).order_by("last_name", "first_name", "id")
+    serializer_class = MemberSerializer
+    permission_classes = [AllowAny, module_required("users")]
