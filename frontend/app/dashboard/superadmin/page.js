@@ -4,6 +4,7 @@ import { tx } from "../../../lib/t";
 import Link from "next/link";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
+import SettingsBackup from "../../../components/SettingsBackup";
 
 export default function SuperAdminHome() {
   return (
@@ -18,6 +19,9 @@ export default function SuperAdminHome() {
             <small>{tx("En bepaal wie ze mag gebruiken")}</small>
           </Link>
         </div>
+      </Collapsible>
+      <Collapsible id="super-backup" title={tx("Instellingen back-up")}>
+        <SettingsBackup />
       </Collapsible>
       <Collapsible id="super-all" title={tx("Alle beheeronderdelen")}>
         <AdminTiles all />

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import dashboard, views
+from . import backup_views, dashboard, views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
@@ -17,6 +17,10 @@ urlpatterns = [
     path("modules/<str:key>/", views.module_update),
     path("content/", views.content_public),
     path("content/save/", views.content_save),
+    path("settings-backup/sections/", backup_views.sections),
+    path("settings-backup/export/", backup_views.export),
+    path("settings-backup/inspect/", backup_views.inspect),
+    path("settings-backup/load/", backup_views.load),
     path("theme/", views.theme_settings, name="theme"),
     path("theme/preview/", views.theme_preview, name="theme-preview"),
     path("theme/reset/", views.theme_reset, name="theme-reset"),
