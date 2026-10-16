@@ -45,10 +45,13 @@ def _integration(providers):
 
 
 def availability():
-    """{'email': 'Postmark'|None, 'sms': 'Bird'|None}. In DEBUG codes are printed to the log instead."""
+    """{'email': 'Postmark'|None, 'sms': 'Bird'|None}: only what is really linked and switched on (API keys). With the sandbox on,
+    mails/sms are simulated and count as available. Nothing is offered for a service that is not in use."""
+    from apps.sandbox import service as sandbox
+
     email, sms = _integration(["postmark", "smtp"]), _integration(["bird"])
-    return {"email": email.name if email else ("log (DEBUG)" if dj_settings.DEBUG else None),
-            "sms": sms.name if sms else ("log (DEBUG)" if dj_settings.DEBUG else None)}
+    return {"email": email.name if email else ("Sandbox" if sandbox.active("email") else None),
+            "sms": sms.name if sms else ("Sandbox" if sandbox.active("sms") else None)}
 
 
 def allowed_methods():

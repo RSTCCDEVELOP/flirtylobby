@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../components/AuthContext";
 import { useChat } from "../../components/Chat";
 import { useModules } from "../../components/Modules";
-import { byId, defaultLayout, WIDGETS } from "../../components/Widgets";
+import { byId, DASH_LAYOUTS, DASH_THEMES, defaultLayout, suggestedFor, themeLayout, WIDGETS } from "../../components/Widgets";
 import { api, errorText } from "../../lib/api";
 
 // The user's start page: blocks (charts, content, module items) that he can rearrange, extend and remove.
@@ -18,6 +18,7 @@ export default function DashboardHome() {
   const [state, setState] = useState(null); // {widgets, own, has_default, can_set_default}
   const [editing, setEditing] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [more, setMore] = useState(false); // all blocks, not only the ones that fit the theme
   const [drag, setDrag] = useState(null);
   const timer = useRef(null);
 
@@ -26,7 +27,7 @@ export default function DashboardHome() {
 
   const columns = state.columns || 2;
   // every block gets a column: -1 = full width on top, 0..n-1 = column (legacy blocks are spread over the columns)
-  const layout = (state.widgets || defaultLayout(ctx)).filter((w) => byId[w.id]?.ok(ctx)) // blocks of switched-off modules disappear
+  const layout = (state.widgets || defaultLayout(ctx, state.theme)).filter((w) => byId[w.id]?.ok(ctx)) // blocks of switched-off modules disappear
     .map((w, i) => ({ id: w.id, col: typeof w.col === "number" ? Math.min(w.col, columns - 1) : w.size === 2 ? -1 : i % columns }));
   const colOf = (c) => layout.filter((w) => w.col === c);
   const save = (widgets, cols = columns) => {
@@ -60,7 +61,10 @@ export default function DashboardHome() {
   const setDefault = async () => { if ((await confirmDialog(tx("Deze indeling als standaard instellen voor iedereen die nog geen eigen indeling heeft?")))) { await api("/dashboard/layout/default/", { method: "PUT", body: { widgets: layout, columns } }); setMsg({ ok: true, text: tx("Standaardindeling opgeslagen.") }); } };
 
   const free = WIDGETS.filter((w) => w.ok(ctx) && !layout.some((l) => l.id === w.id));
-  const groups = [...new Set(free.map((w) => w.group))];
+  const suggested = suggestedFor(state.theme).map((id) => free.find((w) => w.id === id)).filter(Boolean);
+  const rest = free.filter((w) => !suggested.includes(w));
+  const groups = [...new Set(rest.map((w) => w.group))];
+  const applyLayout = (kind) => save(themeLayout(ctx, state.theme, kind).map((w, i) => ({ id: w.id, col: w.size === 2 ? -1 : i % columns })));
 
   const renderCol = (c) => {
     if (c === -1 && !colOf(-1).length && !editing) return null;
@@ -110,17 +114,30 @@ export default function DashboardHome() {
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       {editing && (
-        <div className="card" style={{ marginBottom: "1rem" }}>
-          <h2>{tx("Blok toevoegen")}</h2>
-          {!free.length && <p className="muted" style={{ margin: 0 }}>{tx("Alle beschikbare blokken staan al op je dashboard.")}</p>}
-          {groups.map((g) => (
-            <div key={g} style={{ marginBottom: ".5rem" }}>
-              <strong style={{ fontSize: ".8rem" }} className="muted">{tx(g)}</strong>
-              <div className="row" style={{ justifyContent: "flex-start", marginTop: ".25rem" }}>
-                {free.filter((w) => w.group === g).map((w) => <button key={w.id} className="btn sm" title={tx(w.desc)} onClick={() => add(w)}>+ {tx(w.title)}</button>)}
-              </div>
-            </div>
-          ))}
+        <div className="card dash-panel" style={{ marginBottom: "1rem" }}>
+          <h2>{tx("Indeling")} <span className="badge">{tx(DASH_THEMES[state.theme] || DASH_THEMES.normal)}</span></h2>
+          <p className="muted" style={{ margin: 0 }}>{tx("Kies een kant-en-klare indeling die past bij je stijl. Daarna kun je alles nog aanpassen.")}</p>
+          <div className="row" style={{ justifyContent: "flex-start" }}>
+            {DASH_LAYOUTS.map(([k, l]) => <button key={k} className="btn" onClick={() => applyLayout(k)}>{tx(l)}</button>)}
+          </div>
+          <h2 style={{ marginTop: "1rem" }}>{tx("Aanbevolen blokken")}</h2>
+          {!suggested.length && <p className="muted" style={{ margin: 0 }}>{tx("Alle aanbevolen blokken staan al op je dashboard.")}</p>}
+          <div className="row" style={{ justifyContent: "flex-start" }}>
+            {suggested.map((w) => <button key={w.id} className="btn sm" title={tx(w.desc)} onClick={() => add(w)}>+ {tx(w.title)}</button>)}
+          </div>
+          {rest.length > 0 && (
+            <>
+              <div><button className="btn sm" onClick={() => setMore(!more)}>{more ? tx("Minder blokken tonen") : tx("Meer blokken toevoegen")} ({rest.length})</button></div>
+              {more && groups.map((g) => (
+                <div key={g}>
+                  <strong style={{ fontSize: ".8rem" }} className="muted">{tx(g)}</strong>
+                  <div className="row" style={{ justifyContent: "flex-start", marginTop: ".25rem" }}>
+                    {rest.filter((w) => w.group === g).map((w) => <button key={w.id} className="btn sm" title={tx(w.desc)} onClick={() => add(w)}>+ {tx(w.title)}</button>)}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
           <small className="muted">{tx("Blokken verschijnen alleen voor modules die aan staan en waar je toegang toe hebt.")}</small>
         </div>
       )}

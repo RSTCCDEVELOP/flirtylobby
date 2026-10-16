@@ -52,7 +52,7 @@ export default function TwoFactorProfile() {
       <label className="check sec-toggle">
         <span className="switch"><input type="checkbox" checked={on} disabled={busy || locked || fixed} onChange={toggle} /><span /></span>
         <span>{tx("Inloggen met 2-staps verificatie")}
-          <small className="muted"> {tf.active ? (tf.method === "app" ? tx("Authenticator-app") : `${tf.method === "sms" ? "sms" : tx("e-mail")} → ${tf.destination}`) : tx("na je wachtwoord vragen we om een code (e-mail, sms of authenticator-app)")}</small>
+          <small className="muted"> {tf.active ? (tf.method === "app" ? tx("Authenticator-app") : `${tf.method === "sms" ? "sms" : tx("e-mail")} → ${tf.destination}`) : `${tx("na je wachtwoord vragen we om een code")}${(tf.available || []).length ? ` (${tf.available.map((m) => (m === "sms" ? "sms" : m === "app" ? tx("authenticator-app") : tx("e-mail"))).join(", ")})` : ""}`}</small>
         </span>
       </label>
       {locked && <p className="muted" style={{ margin: 0 }}>{!tf.enabled_system ? <>{tx("Twee-staps verificatie is uitgeschakeld door de beheerder.")} {user.is_staff && <Link href="/dashboard/admin/security" style={{ color: "var(--blue)" }}>{tx("Zet het aan bij Beveiliging")}</Link>}</> : tx("Nog niet beschikbaar: er is geen e-mail- of sms-koppeling actief.")}</p>}

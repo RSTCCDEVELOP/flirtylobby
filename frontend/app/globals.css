@@ -975,3 +975,50 @@ body[data-pagebg="1"] .doc, body[data-pagebg="1"] .shop { color: #fff; }
 .page-settings-btn { position: fixed; top: 4.75rem; right: 1rem; z-index: 880; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--blue); cursor: pointer; box-shadow: var(--shadow); }
 .page-settings-btn:hover { border-color: var(--blue); }
 .page-settings-btn:disabled { opacity: .6; cursor: wait; }
+
+/* ── nicer tabs for edit and system screens ── */
+.tabs-pro { display: flex; gap: .25rem; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs-pro::-webkit-scrollbar { display: none; }
+.tab-pro { display: inline-flex; align-items: center; gap: .55rem; white-space: nowrap; padding: .7rem 1.05rem; margin-bottom: -1px; border: 0; border-bottom: 2px solid transparent; border-radius: 10px 10px 0 0; background: none; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; transition: color .12s, background .12s, border-color .12s; }
+.tab-pro:hover { color: var(--text); background: color-mix(in srgb, var(--blue) 7%, transparent); }
+.tab-pro.active { color: var(--blue); border-bottom-color: var(--blue); background: color-mix(in srgb, var(--blue) 11%, transparent); }
+.tab-pro .tab-ico { display: grid; place-items: center; }
+.tab-pro .tab-ico svg { width: 18px; height: 18px; }
+.tab-pro .tab-badge { min-width: 1.4rem; padding: .05rem .4rem; border-radius: 999px; font-size: .75rem; text-align: center; background: color-mix(in srgb, var(--muted) 22%, transparent); color: var(--text); }
+.tab-pro.active .tab-badge { background: var(--blue); color: #fff; }
+
+/* ── system pop-up looks (Vormgeving → Systeem-popups en vensters): html[data-popup] + the sample windows .pw-* ── */
+.pw-header {overflow:hidden;}
+html[data-popup="header"] .modal > h2:first-child, .pw-header .pw-title {background:var(--blue);color:#fff;margin:-1.5rem -1.5rem 1rem !important;padding:.9rem 1.5rem !important;font-size:1.05rem !important;border-radius:calc(var(--popup-radius, var(--radius)) - 1px) calc(var(--popup-radius, var(--radius)) - 1px) 0 0;}
+html[data-popup="header"] .tabs-pro, .pw-header .tabs-pro {border-bottom:0;background:var(--bg);border-radius:12px;padding:4px;gap:4px;}
+html[data-popup="header"] .tabs-pro .tab-pro, .pw-header .tabs-pro .tab-pro {flex:1;justify-content:center;border:0;border-radius:9px;margin:0;}
+html[data-popup="header"] .tabs-pro .tab-pro.active, .pw-header .tabs-pro .tab-pro.active {background:var(--card);color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.25);border:0;}
+html[data-popup="glass"] .modal, .pw-glass {background:color-mix(in srgb,var(--card) 68%,transparent) !important;backdrop-filter:blur(18px) saturate(1.3);border:1px solid color-mix(in srgb,#fff 22%,transparent) !important;border-radius:22px !important;box-shadow:0 20px 60px rgba(0,0,0,.35) !important;}
+html[data-popup="glass"] .tabs-pro, .pw-glass .tabs-pro {border-bottom:0;gap:.4rem;}
+html[data-popup="glass"] .tabs-pro .tab-pro, .pw-glass .tabs-pro .tab-pro {border:1px solid var(--line);border-radius:999px;margin:0;padding:.45rem .95rem;background:color-mix(in srgb,var(--card) 50%,transparent);}
+html[data-popup="glass"] .tabs-pro .tab-pro.active, .pw-glass .tabs-pro .tab-pro.active {background:var(--blue);color:#fff;border-color:var(--blue);}
+html[data-popup="glass"] .tabs-pro .tab-pro.active .tab-badge, .pw-glass .tabs-pro .tab-pro.active .tab-badge {background:#fff;color:var(--blue);}
+html[data-popup="minimal"] .modal, .pw-minimal {border:0 !important;border-radius:6px !important;box-shadow:0 2px 14px rgba(0,0,0,.18) !important;}
+html[data-popup="minimal"] .modal > h2:first-child, .pw-minimal .pw-title {font-weight:600;}
+html[data-popup="minimal"] .tabs-pro, .pw-minimal .tabs-pro {border-bottom:0;gap:1.25rem;}
+html[data-popup="minimal"] .tabs-pro .tab-pro, .pw-minimal .tabs-pro .tab-pro {padding:.3rem 0;border-radius:0;background:none !important;margin:0;}
+html[data-popup="minimal"] .tabs-pro .tab-pro .tab-ico, .pw-minimal .tabs-pro .tab-pro .tab-ico {display:none;}
+html[data-popup="minimal"] .tabs-pro .tab-pro.active, .pw-minimal .tabs-pro .tab-pro.active {border-bottom:2px solid var(--blue);}
+html[data-popup="bold"] .modal, .pw-bold {border:2px solid var(--blue) !important;border-radius:4px !important;box-shadow:7px 7px 0 var(--blue) !important;}
+html[data-popup="bold"] .modal > h2:first-child, .pw-bold .pw-title {text-transform:uppercase;letter-spacing:.05em;font-size:1rem !important;}
+html[data-popup="bold"] .tabs-pro, .pw-bold .tabs-pro {border-bottom:2px solid var(--blue);gap:.3rem;}
+html[data-popup="bold"] .tabs-pro .tab-pro, .pw-bold .tabs-pro .tab-pro {border:2px solid var(--line);border-bottom:0;border-radius:4px 4px 0 0;margin:0 0 -2px;background:var(--bg);}
+html[data-popup="bold"] .tabs-pro .tab-pro.active, .pw-bold .tabs-pro .tab-pro.active {background:var(--blue);color:#fff;border-color:var(--blue);}
+html[data-popup="bold"] .tabs-pro .tab-pro.active .tab-badge, .pw-bold .tabs-pro .tab-pro.active .tab-badge {background:#fff;color:var(--blue);}
+
+.pw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 1.25rem; }
+.pw-card { display: flex; flex-direction: column; gap: .75rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.pw-card.active { border-color: var(--blue); }
+.pw-meta { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
+.pw { display: flex; flex-direction: column; gap: .85rem; padding: 1.5rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.pw-title { font-weight: 700; font-size: 1.15rem; }
+.pw-body { display: flex; flex-direction: column; gap: .5rem; min-height: 64px; }
+.pw-line { display: block; height: 9px; border-radius: 5px; background: var(--line); }
+.pw-foot { display: flex; justify-content: flex-end; gap: .5rem; }
+.pw-foot .btn { cursor: default; }
+html[data-popup="header"] .modal > h2:first-child { margin-bottom: 1rem !important; }

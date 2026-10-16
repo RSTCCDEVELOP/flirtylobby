@@ -3,6 +3,7 @@
 import { tx } from "../../../../lib/t";
 import { alertDialog, confirmDialog, promptDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
+import PopupStyleGallery from "../../../../components/PopupStyleGallery";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../components/AuthContext";
@@ -106,10 +107,11 @@ export default function ThemePage() {
   const sidebarAuto = values?.sidebar_auto;
   const versionNotice = values?.version_notice;
   const tabStyle = values?.tab_style;
+  const sysPopup = values?.system_popup;
   useEffect(() => {
-    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label, version_notice: versionNotice, tab_style: tabStyle });
+    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label, version_notice: versionNotice, tab_style: tabStyle, system_popup: sysPopup });
     return () => previewUi(null);
-  }, [remember, sidebarAuto, versionNotice, tabStyle, values?.chat_label, previewUi]);
+  }, [remember, sidebarAuto, versionNotice, tabStyle, sysPopup, values?.chat_label, previewUi]);
 
   const preview = useCallback((next) => {
     clearTimeout(timer.current);
@@ -151,7 +153,7 @@ export default function ThemePage() {
 
   function applyPreset(p) {
     // a theme changes the look, not the interface behaviour
-    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, version_notice: values.version_notice, tab_style: values.tab_style, ...Object.fromEntries(DEVICES.map(([k]) => [k, values[k]])), ...Object.fromEntries(Object.keys(values).filter((k) => k.startsWith("chat_")).map((k) => [k, values[k]])) };
+    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, version_notice: values.version_notice, tab_style: values.tab_style, system_popup: values.system_popup, ...Object.fromEntries(DEVICES.map(([k]) => [k, values[k]])), ...Object.fromEntries(Object.keys(values).filter((k) => k.startsWith("chat_")).map((k) => [k, values[k]])) };
     showMode(next.default_mode);
     setValues(next);
     setMsg(null);
@@ -232,10 +234,15 @@ export default function ThemePage() {
         <Collapsible key={g.key} id="theme-defaults" title={g.label} className="theme-group">
           <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Gedrag van de interface. Wordt niet veranderd door een ander thema te kiezen.")}</p>
           <div className="theme-grid">
-            {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}
+            {g.fields.filter((f) => f.key !== "system_popup").map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}
           </div>
         </Collapsible>
       ))}
+
+      <Collapsible id="theme-syspopup" title={tx("Systeem-popups en vensters")} className="theme-group">
+        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Kies hoe alle popups, vensters en tabbladen van het systeem eruitzien. Dit uiterlijk wordt overal gebruikt (beheer, bewerken, meldingen). De keuze is direct zichtbaar; sla daarna op.")}</p>
+        <PopupStyleGallery value={values.system_popup || "clean"} onChange={(v) => change("system_popup", v)} />
+      </Collapsible>
 
       <Collapsible id="theme-presets" title={tx("Thema's")} className="theme-group">
         <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Kies een thema om alle kleuren, lettertypen en vormen in één keer te veranderen. Daarna kun je nog alles hieronder fijn afstellen.")}</p>

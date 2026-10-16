@@ -80,6 +80,14 @@ TAB_STYLES = [
     {"value": "folder", "label": "Mappen (tabbladen boven het blok)", "css": ""},
 ]
 
+SYSTEM_POPUPS = [
+    {"value": "clean", "label": "Strak (standaard)", "css": ""},
+    {"value": "header", "label": "Kopbalk in de huisstijlkleur", "css": ""},
+    {"value": "glass", "label": "Glas (doorzichtig, afgerond)", "css": ""},
+    {"value": "minimal", "label": "Minimaal", "css": ""},
+    {"value": "bold", "label": "Gedurfd (dikke rand en schaduw)", "css": ""},
+]
+
 CHAT_SIDES = [{"value": "right", "label": "Rechtsonder", "css": "flex-end"}, {"value": "left", "label": "Linksonder", "css": "flex-start"}]
 CHAT_LABELS = [{"value": "icon", "label": "Alleen een icoon 💬", "css": ""}, {"value": "text", "label": "Icoon met tekst 'Chat'", "css": ""}]
 
@@ -122,6 +130,7 @@ SCHEMA = [
     {"key": "defaults", "label": "Standaardinstellingen", "fields": [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
+        choice("system_popup", "Uiterlijk van systeem-popups, vensters en bijbehorende tabbladen", "clean", None, SYSTEM_POPUPS),
         choice("tab_style", "Uiterlijk van tabbladen (standaard voor de hele website)", "pills", None, TAB_STYLES),
         choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
     ]},

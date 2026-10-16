@@ -3,7 +3,9 @@
 import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
+import { IconImage, IconSearch, IconSliders } from "./Icons";
 import MediaPicker from "./MediaPicker";
+import Tabs from "./Tabs";
 
 const AUDIENCE = { all: "Iedereen", members: "Alleen ingelogde users", guests: "Alleen bezoekers (niet ingelogd)" };
 const BG = [["none", "Geen"], ["image", "Afbeelding"], ["video", "Video"]];
@@ -59,14 +61,12 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
     } catch (err) { setError(errorText(err)); setBusy(false); }
   }
 
-  const tabs = [["general", "Algemeen"], ["seo", "SEO"], ["background", "Achtergrond"]];
+  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />]];
   return (
     <div className="overlay" onClick={onClose}>
       <form className="card modal pgs form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
         <h2 style={{ margin: 0 }}>{tx("Pagina-instellingen")}: {form.title[defaultLang] || page.key}</h2>
-        <div className="tabs tabset" role="tablist" style={{ marginTop: 0 }}>
-          {tabs.map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={`btn ${tab === k ? "primary" : ""}`} onClick={() => setTab(k)}>{tx(l)}</button>)}
-        </div>
+        <Tabs tabs={tabs} value={tab} onChange={setTab} />
 
         <div className="pgs-body">
           {tab === "general" && (

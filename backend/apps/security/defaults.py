@@ -76,7 +76,7 @@ DEFAULTS = {
     },
     "email_verify": {"enabled": False},  # make every user confirm the e-mail address with a code at login
     "twofa": {
-        "enabled": True, "required_for": "none", "allow_email": True, "allow_sms": False, "allow_app": False,
+        "enabled": True, "required_for": "none", "allow_email": True, "allow_sms": False, "allow_app": True,
         "code_minutes": 10, "max_attempts": 5,
         "texts": {
             "nl": {"email_subject": "Je verificatiecode", "email_body": "Je verificatiecode is {code}. Deze is {minutes} minuten geldig. Heb je dit niet aangevraagd? Negeer dit bericht dan.",

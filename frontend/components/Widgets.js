@@ -226,6 +226,21 @@ export const WIDGETS = [
 ];
 export const byId = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
 
-// What a user gets when nobody customised anything: the basics plus every block that fits his modules and rights
-const DEFAULT_ORDER = ["welcome", "notice", "shortcuts", "direct", "profile", "messages", "chat", "matches", "users_stats", "users_chart", "orders_chart", "orders_recent", "low_stock", "media_usage"];
-export const defaultLayout = (ctx) => DEFAULT_ORDER.map((id) => byId[id]).filter((w) => w.ok(ctx)).map((w) => ({ id: w.id, size: w.size }));
+// The dashboard follows the community theme chosen in the setup (Admin -> Community -> Profielthema):
+// per theme three ready-made layouts (calm / standard / full) and the blocks that fit it best.
+export const DASH_THEMES = { normal: "Normaal", dating: "Dating", sporters: "Sporters", business: "Business", webshop: "Webshop" };
+export const DASH_LAYOUTS = [["calm", "Rustig"], ["standard", "Standaard"], ["full", "Uitgebreid"]];
+const THEME_DASH = {
+  normal: { calm: ["welcome", "messages", "profile"], standard: ["welcome", "shortcuts", "messages", "chat", "profile"], full: ["welcome", "notice", "shortcuts", "messages", "chat", "direct", "profile", "matches", "visits_chart"], suggested: ["shortcuts", "chat", "direct", "notice"] },
+  dating: { calm: ["welcome", "matches", "messages", "profile"], standard: ["welcome", "matches", "messages", "visits_chart", "profile", "chat"], full: ["welcome", "notice", "shortcuts", "matches", "messages", "visits_chart", "profile", "chat", "direct"], suggested: ["visits_chart", "direct", "chat", "shortcuts"] },
+  sporters: { calm: ["welcome", "profile", "messages"], standard: ["welcome", "shortcuts", "profile", "messages", "chat", "direct"], full: ["welcome", "notice", "shortcuts", "profile", "messages", "chat", "direct", "matches", "visits_chart"], suggested: ["notice", "direct", "chat", "matches"] },
+  business: { calm: ["welcome", "messages", "profile"], standard: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart"], full: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart", "chat", "direct", "users_stats"], suggested: ["notice", "visits_chart", "direct", "users_stats"] },
+  webshop: { calm: ["welcome", "orders_recent", "low_stock", "messages"], standard: ["welcome", "orders_chart", "orders_recent", "low_stock", "messages", "shortcuts"], full: ["welcome", "notice", "orders_chart", "orders_recent", "low_stock", "media_usage", "messages", "shortcuts", "profile"], suggested: ["orders_chart", "orders_recent", "low_stock", "media_usage"] },
+};
+const dash = (theme) => THEME_DASH[theme] || THEME_DASH.normal;
+export const suggestedFor = (theme) => dash(theme).suggested;
+
+// A ready-made layout for a theme, only with blocks this user may see
+export const themeLayout = (ctx, theme, kind = "calm") => dash(theme)[kind].map((id) => byId[id]).filter((w) => w && w.ok(ctx)).map((w) => ({ id: w.id, size: w.size }));
+// What a user gets when nobody customised anything: the calm layout of the chosen theme
+export const defaultLayout = (ctx, theme = "normal") => themeLayout(ctx, theme, "calm");

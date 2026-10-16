@@ -16,6 +16,16 @@ from . import modules
 from .models import DashboardLayout
 
 
+def _theme():
+    """The community theme chosen in the setup (normal, dating, sporters, business, webshop): the dashboard layout follows it."""
+    try:
+        from apps.social import service as social
+
+        return social.get()["profiles"].get("theme") or "normal"
+    except Exception:
+        return "normal"
+
+
 def _cols(value, fallback=2):
     try:
         return min(4, max(1, int(value)))
@@ -49,7 +59,7 @@ def layout(request):
         own = None
     default = DashboardLayout.objects.filter(user=None).first()
     chosen = own or default
-    return Response({"widgets": chosen.widgets if chosen else None, "columns": chosen.columns if chosen else 2, "own": own is not None, "has_default": default is not None, "can_set_default": request.user.is_staff})
+    return Response({"widgets": chosen.widgets if chosen else None, "columns": chosen.columns if chosen else 2, "own": own is not None, "has_default": default is not None, "can_set_default": request.user.is_staff, "theme": _theme()})
 
 
 @api_view(["PUT", "DELETE"])

@@ -5,6 +5,8 @@ import { useState } from "react";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog, promptDialog } from "../lib/dialog";
 import { FIELD_TYPES, FIELD_VISIBILITY } from "./ProfileFields";
+import { IconEdit, IconPalette, IconSliders } from "./Icons";
+import Tabs from "./Tabs";
 
 const slug = (t) => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 28);
 
@@ -42,13 +44,7 @@ export default function ProfileFieldsAdmin({ prof, setProf, themes, builtinLabel
 
   return (
     <>
-      <div className="tabs tabset ptabs" role="tablist" style={{ marginTop: 0 }}>
-        {[["theme", "Thema"], ["builtin", "Standaardvelden"], ["custom", "Eigen velden"]].map(([k, l]) => (
-          <button key={k} type="button" role="tab" aria-selected={tab === k} className={`btn ${tab === k ? "primary" : ""}`} onClick={() => setTab(k)}>
-            {tx(l)}{k === "custom" && <span className="badge" style={{ marginLeft: ".4rem" }}>{fields.length}</span>}
-          </button>
-        ))}
-      </div>
+      <Tabs value={tab} onChange={setTab} tabs={[["theme", "Thema", <IconPalette key="t" />], ["builtin", "Standaardvelden", <IconSliders key="b" />], ["custom", "Eigen velden", <IconEdit key="c" />, fields.length]]} />
 
       {tab === "theme" && (<>
       <h3>{tx("Thema")}</h3>
