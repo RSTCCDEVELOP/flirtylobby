@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../../../lib/t";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useModules } from "../../../components/Modules";
@@ -15,6 +16,6 @@ export default function CommunityLayout({ children }) {
   const off = needed && mods[needed] === false;
   const none = !path.split("/")[3] && ["profiles", "discover", "messages", "chat"].every((m) => mods[m] === false);
   useEffect(() => { if (off) router.replace("/dashboard/community"); }, [off, router]);
-  if (none) return <p className="muted">Er zijn geen community-onderdelen ingeschakeld.</p>;
+  if (none) return <p className="muted">{tx("Er zijn geen community-onderdelen ingeschakeld.")}</p>;
   return off ? null : children;
 }

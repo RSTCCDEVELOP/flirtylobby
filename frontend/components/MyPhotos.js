@@ -1,11 +1,15 @@
 "use client";
 
+import { tx } from "../lib/t";
+import { IconCheck, IconX } from "./Icons";
+import { confirmDialog } from "../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { useAuth } from "./AuthContext";
 import { useModule } from "./Modules";
 import PhotoDrop from "./PhotoDrop";
-import { visibilityHint, visibilityOptions } from "../lib/photo-visibility";
+import { visibilityHint } from "../lib/photo-visibility";
+import VisibilityPicker, { VISIBILITY_ICON } from "./VisibilityPicker";
 
 // Own profile-page photos: add (select or drop), blur for others, reorder and delete. Used next to the account data.
 export default function MyPhotos() {
@@ -29,7 +33,7 @@ export default function MyPhotos() {
     }
     if (files.length > room) return `Maximaal ${p.max_photos} foto's: ${files.length - room} niet toegevoegd.`;
   };
-  const del = (ph) => confirm("Deze foto verwijderen?") && run(() => api(`/profile/me/photos/${ph.id}/`, { method: "DELETE" }));
+  const del = async (ph) => (await confirmDialog(tx("Deze foto verwijderen?"), { danger: true })) && run(() => api(`/profile/me/photos/${ph.id}/`, { method: "DELETE" }));
   const setVisibility = (ph, visibility) => run(() => api(`/profile/me/photos/${ph.id}/edit/`, { method: "PATCH", body: { visibility } }));
   const makeAvatar = async (ph) => {
     setError("");
@@ -39,7 +43,7 @@ export default function MyPhotos() {
 
   return (
     <section className="my-photos">
-      <strong style={{ fontSize: ".85rem" }}>Mijn foto&apos;s <span className="muted">({p.photos.length}/{p.max_photos})</span></strong>
+      <strong style={{ fontSize: ".85rem" }}>{tx("Mijn foto's")} <span className="muted">({p.photos.length}/{p.max_photos})</span></strong>
       {error && <small style={{ color: "var(--danger, #d92d20)" }}>{error}</small>}
       <div className="thumb-grid">
         {p.photos.map((ph, i) => (
@@ -47,23 +51,19 @@ export default function MyPhotos() {
             <div className="thumb">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={mediaUrl(ph.url)} alt="" />
-              {i === 0 && <span className="badge ok thumb-main">Profielfoto</span>}
-              {ph.visibility !== "public" && <span className="thumb-lock" title={visibilityHint(ph.visibility)}>{ph.visibility === "private" ? "🔒" : ph.visibility === "hidden" ? "🚫" : "👥"}</span>}
-              <button type="button" className="thumb-del" title="Verwijderen" onClick={() => del(ph)}>✕</button>
+              {i === 0 && <span className="badge ok thumb-main">{tx("Profielfoto")}</span>}
+              {ph.visibility !== "public" && <span className="thumb-lock" title={visibilityHint(ph.visibility)}>{VISIBILITY_ICON[ph.visibility]}</span>}
+              <button type="button" className="thumb-del" title={tx("Verwijderen")} onClick={() => del(ph)} aria-label={tx("Verwijderen")}><IconX width={14} height={14} /></button>
             </div>
-            <select className="thumb-vis" value={ph.visibility} title={visibilityHint(ph.visibility)} onChange={(e) => setVisibility(ph, e.target.value)}>
-              {visibilityOptions(p.private_photos || ph.visibility === "private").map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-            <button type="button" className="btn sm" disabled={i === 0} onClick={() => makeAvatar(ph)}>{i === 0 ? "✓ Profielfoto" : "Maak profielfoto"}</button>
+            <VisibilityPicker value={ph.visibility} allowPrivate={p.private_photos} onChange={(v) => setVisibility(ph, v)} showLabel={false} />
+            <button type="button" className="btn sm" disabled={i === 0} onClick={() => makeAvatar(ph)}>{i === 0 ? <><IconCheck /> {tx("Profielfoto")}</> : tx("Maak profielfoto")}</button>
           </div>
         ))}
       </div>
       {p.photos.length < p.max_photos && (
         <>
-          <PhotoDrop multiple vertical onFiles={upload} label="Sleep foto's hierheen of klik" />
-          <label style={{ fontWeight: 500, fontSize: ".85rem" }}>Nieuwe foto&apos;s zichtbaar voor
-            <select value={vis} onChange={(e) => setVis(e.target.value)}>{visibilityOptions(p.private_photos).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-          </label>
+          <PhotoDrop multiple vertical onFiles={upload} label={tx("Sleep foto's hierheen of klik")} />
+          <div style={{ fontWeight: 500, fontSize: ".85rem", display: "flex", flexDirection: "column", gap: ".3rem" }}>{tx("Nieuwe foto's zichtbaar voor")}<VisibilityPicker value={vis} allowPrivate={p.private_photos} onChange={setVis} /></div>
         </>
       )}
     </section>

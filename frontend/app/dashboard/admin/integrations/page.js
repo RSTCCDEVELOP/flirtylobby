@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../../../../lib/t";
+import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
@@ -40,7 +42,7 @@ export default function Integrations() {
 
   const toggle = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "PATCH", body: { enabled: !i.enabled } }));
   const test = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/test/`, { method: "POST" }));
-  const remove = (i) => confirm(`Koppeling "${i.name}" verwijderen? Functies die ervan afhangen stoppen.`) && act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "DELETE" }));
+  const remove = async (i) => (await confirmDialog(tx("Koppeling \"{0}\" verwijderen? Functies die ervan afhangen stoppen.", i.name), { danger: true })) && act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "DELETE" }));
 
   function openNew() {
     pick(providers[0].provider, { name: "", slug: "", config: {} });
@@ -77,14 +79,14 @@ export default function Integrations() {
     <>
       <div className="page-head">
         <div>
-          <h1>API keys</h1>
-          <p className="muted" style={{ margin: 0 }}>Koppel externe systemen. Staat een koppeling uit, dan is de bijbehorende functie in de portal niet actief.</p>
+          <h1>{tx("API keys")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{tx("Koppel externe systemen. Staat een koppeling uit, dan is de bijbehorende functie in de portal niet actief.")}</p>
         </div>
-        {L >= 3 && <button className="btn primary" onClick={openNew} disabled={!providers.length}>+ Nieuwe koppeling</button>}
+        {L >= 3 && <button className="btn primary" onClick={openNew} disabled={!providers.length}>{tx("+ Nieuwe koppeling")}</button>}
       </div>
       {error && <div className="alert">{error}</div>}
 
-      <Collapsible id="integrations-list" title="Koppelingen">
+      <Collapsible id="integrations-list" title={tx("Koppelingen")}>
       <div className="int-list">
         {items.map((i) => {
           const st = statusOf(i);
@@ -97,10 +99,10 @@ export default function Integrations() {
                 <span className={`int-msg ${st}`}>{i.last_test_message || STATUS_TEXT[st]}</span>
               </div>
               <div className="int-actions">
-                {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? "Testen…" : "Test"}</button>}
-                {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>Wijzig</button>}
-                {L >= 3 && <button className="btn sm danger" onClick={() => remove(i)}>Verwijder</button>}
-                <label className="switch" title={i.enabled ? "Actief" : "Uit"}>
+                {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
+                {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
+                {L >= 3 && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
+                <label className="switch" title={i.enabled ? tx("Actief") : tx("Uit")}>
                   <input type="checkbox" checked={i.enabled} disabled={L < 2} onChange={() => toggle(i)} />
                   <span />
                 </label>
@@ -108,24 +110,24 @@ export default function Integrations() {
             </div>
           );
         })}
-        {!items.length && <p className="muted">Nog geen koppelingen.</p>}
+        {!items.length && <p className="muted">{tx("Nog geen koppelingen.")}</p>}
       </div>
       </Collapsible>
 
       {modal && fields && (
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
-            <h2>{modal.id ? "Koppeling wijzigen" : "Nieuwe koppeling"}</h2>
+            <h2>{modal.id ? tx("Koppeling wijzigen") : tx("Nieuwe koppeling")}</h2>
             <div className="grid2">
-              <label>Systeem
+              <label>{tx("Systeem")}
                 <select value={modal.provider} disabled={!!modal.id}
                   onChange={(e) => pick(e.target.value, modal)}>
                   {providers.map((p) => <option key={p.provider} value={p.provider}>{p.label}</option>)}
                 </select>
               </label>
-              <label>Naam<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required /></label>
-              <label>Sleutelnaam (slug)
-                <input value={modal.slug} onChange={(e) => setModal({ ...modal, slug: e.target.value.toLowerCase() })} pattern="[a-z0-9\-]+" required disabled={!!modal.id} placeholder="bv. anthropic" />
+              <label>{tx("Naam")}<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required /></label>
+              <label>{tx("Sleutelnaam (slug)")}
+                <input value={modal.slug} onChange={(e) => setModal({ ...modal, slug: e.target.value.toLowerCase() })} pattern="[a-z0-9\-]+" required disabled={!!modal.id} placeholder={tx("bv. anthropic")} />
               </label>
             </div>
             <div className="grid2">
@@ -141,18 +143,18 @@ export default function Integrations() {
                       autoComplete="off"
                       value={modal.config[f.key] ?? ""}
                       required={f.required && !(f.secret && modal.id)}
-                      placeholder={f.secret && modal.id ? "Leeg laten = ongewijzigd" : ""}
+                      placeholder={f.secret && modal.id ? tx("Leeg laten = ongewijzigd") : ""}
                       onChange={(e) => setModal({ ...modal, config: { ...modal.config, [f.key]: e.target.value } })}
                     />
                   )}
                 </label>
               ))}
             </div>
-            <p className="muted" style={{ margin: 0, fontSize: ".8rem" }}>Sleutels worden versleuteld opgeslagen en nooit meer getoond. Na het opslaan druk je op Test.</p>
+            <p className="muted" style={{ margin: 0, fontSize: ".8rem" }}>{tx("Sleutels worden versleuteld opgeslagen en nooit meer getoond. Na het opslaan druk je op Test.")}</p>
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
-              <button type="button" className="btn" onClick={() => setModal(null)}>Annuleren</button>
-              <button className="btn primary">Opslaan</button>
+              <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
+              <button className="btn primary">{tx("Opslaan")}</button>
             </div>
           </form>
         </div>

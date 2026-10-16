@@ -1,9 +1,10 @@
 "use client";
 
+import { tx } from "../lib/t";
 import { useRef, useState } from "react";
 
 // Photo uploader: click to select or drop image files on it. onFiles(files) does the upload; it may return an error text.
-export default function PhotoDrop({ onFiles, multiple = false, label = "Sleep een foto hierheen of klik om te kiezen", busyLabel = "Uploaden…", preview = null, vertical = false, accept = "image/*" }) {
+export default function PhotoDrop({ onFiles, multiple = false, label = tx("Sleep een foto hierheen of klik om te kiezen"), busyLabel = tx("Uploaden…"), preview = null, vertical = false, accept = "image/*" }) {
   const input = useRef(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -11,10 +12,10 @@ export default function PhotoDrop({ onFiles, multiple = false, label = "Sleep ee
 
   async function take(list) {
     const files = [...list].filter((f) => f.type.startsWith("image/"));
-    if (!files.length) return setError("Kies een afbeelding (JPG, PNG, WebP).");
+    if (!files.length) return setError(tx("Kies een afbeelding (JPG, PNG, WebP)."));
     setError(""); setBusy(true);
     try { const err = await onFiles(multiple ? files : files.slice(0, 1)); if (err) setError(err); }
-    catch (e) { setError(e.message || "Uploaden mislukt."); }
+    catch (e) { setError(e.message || tx("Uploaden mislukt.")); }
     setBusy(false);
   }
 

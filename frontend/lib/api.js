@@ -1,3 +1,4 @@
+import { tx, translateTree } from "./t";
 const CONFIGURED = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Opened via a LAN address (phone, other computer)? Then "localhost" for the API would be that device itself: use the page's host.
@@ -40,14 +41,14 @@ export async function api(path, { method = "GET", body } = {}) {
   });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) throw new ApiError(res.status, data);
-  return data;
+  return translateTree(data);
 }
 
 // Flatten DRF field errors into one readable string
 export function errorText(err) {
-  if (!(err instanceof ApiError) || !err.data) return err.message || "Er ging iets mis.";
-  if (err.data.detail) return err.data.detail;
+  if (!(err instanceof ApiError) || !err.data) return tx(err.message || "Er ging iets mis.");
+  if (err.data.detail) return tx(err.data.detail);
   return Object.entries(err.data)
-    .map(([k, v]) => `${k}: ${[].concat(v).join(" ")}`)
+    .map(([k, v]) => `${k}: ${[].concat(v).map((m) => tx(m)).join(" ")}`)
     .join(" · ");
 }

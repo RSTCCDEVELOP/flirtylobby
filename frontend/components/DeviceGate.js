@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -47,17 +48,17 @@ export default function DeviceGate({ devices }) {
   return (
     <div className="device-block" role="dialog" aria-modal="true">
       <div className="card">
-        <h1>{canInstall ? "Installeer de app" : "Niet beschikbaar op dit apparaat"}</h1>
+        <h1>{canInstall ? tx("Installeer de app") : tx("Niet beschikbaar op dit apparaat")}</h1>
         {canInstall ? (
           <>
-            <p className="muted">Deze site gebruik je op {NAMES[cls]} als app. Installeer hem op je beginscherm.</p>
-            {prompt && <button className="btn primary" onClick={() => prompt.prompt()}>Installeer de app</button>}
+            <p className="muted">{tx("Deze site gebruik je op")} {NAMES[cls]} {tx("als app. Installeer hem op je beginscherm.")}</p>
+            {prompt && <button className="btn primary" onClick={() => prompt.prompt()}>{tx("Installeer de app")}</button>}
             <p className="muted" style={{ fontSize: ".875rem" }}>
-              {/iPhone|iPad|Macintosh/.test(navigator.userAgent) ? "Tik op de deelknop in Safari en kies 'Zet op beginscherm'." : "Open het browsermenu en kies 'App installeren' of 'Toevoegen aan startscherm'."}
+              {/iPhone|iPad|Macintosh/.test(navigator.userAgent) ? tx("Tik op de deelknop in Safari en kies 'Zet op beginscherm'.") : tx("Open het browsermenu en kies 'App installeren' of 'Toevoegen aan startscherm'.")}
             </p>
           </>
         ) : (
-          <p className="muted">Deze website is niet bedoeld voor {NAMES[cls]}. Probeer een ander apparaat.</p>
+          <p className="muted">{tx("Deze website is niet bedoeld voor")} {NAMES[cls]}{tx(". Probeer een ander apparaat.")}</p>
         )}
       </div>
     </div>

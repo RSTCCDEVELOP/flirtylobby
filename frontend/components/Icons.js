@@ -21,3 +21,21 @@ export const IconFlask = () => <svg {...p}><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5
 export const IconBag = () => <svg {...p}><path d="M5 8h14l-1 12H6L5 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>;
 export const IconReceipt = () => <svg {...p}><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" /><path d="M9 8h6M9 12h6" /></svg>;
 export const IconChat = () => <svg {...p}><path d="M4 5h16v11H9l-5 4V5z" /></svg>;
+
+// Single-colour line icons (currentColor): they take the text / house colour. No emoji in the UI.
+const I = (d) => (props) => <svg {...p} {...props}>{d}</svg>;
+export const IconHeart = I(<path d="M12 20.5C5 16 3 12.5 3 9.5a4.5 4.5 0 018-2.8 4.5 4.5 0 018 2.8c0 3-2 6.5-9 11z" />);
+export const IconStar = I(<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z" />);
+export const IconFriends = I(<><circle cx="8" cy="8" r="3" /><circle cx="16.5" cy="9" r="2.5" /><path d="M2.5 19c0-3.1 2.5-5 5.5-5s5.5 1.9 5.5 5M14 14.3c.8-.2 1.6-.3 2.5-.3 2.7 0 5 1.7 5 4.5" /></>);
+export const IconPhone = I(<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z" />);
+export const IconVideo = I(<><rect x="3" y="6" width="12.5" height="12" rx="2" /><path d="M15.5 10.5l5.5-3v9l-5.5-3z" /></>);
+export const IconPaperclip = I(<path d="M20 11.5l-8 8a5 5 0 01-7-7l8.5-8.5a3.4 3.4 0 014.8 4.8L9.8 17.3a1.7 1.7 0 01-2.4-2.4l7.6-7.6" />);
+export const IconMic = I(<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0014 0M12 18v3" /></>);
+export const IconCamera = I(<><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>);
+export const IconEdit = I(<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />);
+export const IconCheck = I(<path d="M4.5 12.5l5 5 10-11" />);
+export const IconX = I(<path d="M6 6l12 12M18 6L6 18" />);
+export const IconCart = I(<><path d="M3 4h2.5l2 11h10l2-8H7" /><circle cx="9" cy="19.5" r="1.2" /><circle cx="17" cy="19.5" r="1.2" /></>);
+export const IconSend = I(<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z" />);
+export const IconGlobe2 = I(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.6 2.7 4 5.7 4 9s-1.4 6.3-4 9c-2.6-2.7-4-5.7-4-9s1.4-6.3 4-9z" /></>);
+export const IconSmile = I(<><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8M9 9.5h.01M15 9.5h.01" /></>);

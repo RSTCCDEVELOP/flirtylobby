@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api, getToken, clearToken, setToken } from "../lib/api";
@@ -36,6 +37,6 @@ export function AuthProvider({ children }) {
 
   const replaceToken = (t) => setToken(t);
 
-  if (loading || !user) return <div className="splash">Laden…</div>;
+  if (loading || !user) return <div className="splash">{tx("Laden…")}</div>;
   return <AuthContext.Provider value={{ user, setUser, logout, replaceToken }}>{children}</AuthContext.Provider>;
 }

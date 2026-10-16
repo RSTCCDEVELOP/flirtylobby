@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../../../../lib/t";
+import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
@@ -36,7 +38,7 @@ export default function Communication() {
   const toggle = (a) => act(a.id, () => api(`/communication/${a.id}/`, { method: "PATCH", body: { enabled: !a.enabled } }));
   const makeDefault = (a) => act(a.id, () => api(`/communication/${a.id}/make_default/`, { method: "POST" }));
   const test = (a) => act(a.id, () => api(`/communication/${a.id}/test/`, { method: "POST" }));
-  const remove = (a) => confirm(`${a.value} verwijderen?`) && act(a.id, () => api(`/communication/${a.id}/`, { method: "DELETE" }));
+  const remove = async (a) => (await confirmDialog(tx("{0} verwijderen?", a.value), { danger: true })) && act(a.id, () => api(`/communication/${a.id}/`, { method: "DELETE" }));
 
   async function save(e) {
     e.preventDefault();
@@ -55,8 +57,8 @@ export default function Communication() {
     <>
       <div className="page-head">
         <div>
-          <h1>Communicatie</h1>
-          <p className="muted" style={{ margin: 0 }}>De e-mailadressen en nummers die het systeem mag gebruiken. Per soort is één adres de standaard; met een doel kun je een adres voor bepaalde berichten reserveren (bijvoorbeeld inlogcodes).</p>
+          <h1>{tx("Communicatie")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{tx("De e-mailadressen en nummers die het systeem mag gebruiken. Per soort is één adres de standaard; met een doel kun je een adres voor bepaalde berichten reserveren (bijvoorbeeld inlogcodes).")}</p>
         </div>
         <CollapseAll />
       </div>
@@ -71,23 +73,23 @@ export default function Communication() {
               {list.map((a) => (
                 <div className="card int-item" key={a.id}>
                   <div className="int-main">
-                    <strong>{a.label} {a.is_default && <span className="badge ok" style={{ marginLeft: ".4rem" }}>Standaard</span>}</strong>
+                    <strong>{a.label} {a.is_default && <span className="badge ok" style={{ marginLeft: ".4rem" }}>{tx("Standaard")}</span>}</strong>
                     <span><code>{a.value}</code></span>
-                    <span className="muted" style={{ fontSize: ".85rem" }}>Doel: {purposeLabel[a.purpose]}</span>
+                    <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Doel:")} {purposeLabel[a.purpose]}</span>
                   </div>
                   <div className="int-actions">
-                    {L >= 2 && s.kind === "email_from" && <button className="btn sm" disabled={busy === a.id} onClick={() => test(a)}>Test</button>}
-                    {L >= 2 && !a.is_default && <button className="btn sm" disabled={busy === a.id} onClick={() => makeDefault(a)}>Maak standaard</button>}
-                    {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...a })}>Wijzig</button>}
-                    {L >= 3 && <button className="btn sm danger" onClick={() => remove(a)}>Verwijder</button>}
-                    <label className="switch" title={a.enabled ? "Actief" : "Uit"}>
+                    {L >= 2 && s.kind === "email_from" && <button className="btn sm" disabled={busy === a.id} onClick={() => test(a)}>{tx("Test")}</button>}
+                    {L >= 2 && !a.is_default && <button className="btn sm" disabled={busy === a.id} onClick={() => makeDefault(a)}>{tx("Maak standaard")}</button>}
+                    {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...a })}>{tx("Wijzig")}</button>}
+                    {L >= 3 && <button className="btn sm danger" onClick={() => remove(a)}>{tx("Verwijder")}</button>}
+                    <label className="switch" title={a.enabled ? tx("Actief") : tx("Uit")}>
                       <input type="checkbox" checked={a.enabled} disabled={L < 2 || a.is_default} onChange={() => toggle(a)} />
                       <span />
                     </label>
                   </div>
                 </div>
               ))}
-              {!list.length && <p className="muted">Nog niets toegevoegd.</p>}
+              {!list.length && <p className="muted">{tx("Nog niets toegevoegd.")}</p>}
             </div>
             {L >= 3 && <button className="btn primary" style={{ marginTop: "1rem" }} onClick={() => setModal({ kind: s.kind, label: "", value: "", purpose: "all", enabled: true, is_default: false })}>{s.add}</button>}
           </Collapsible>
@@ -97,21 +99,21 @@ export default function Communication() {
       {modal && (
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
-            <h2>{modal.id ? "Wijzigen" : SECTIONS.find((s) => s.kind === modal.kind).add.replace("+ ", "Nieuw: ")}</h2>
+            <h2>{modal.id ? tx("Wijzigen") : SECTIONS.find((s) => s.kind === modal.kind).add.replace("+ ", "Nieuw: ")}</h2>
             <div className="grid2">
-              <label>Naam<input value={modal.label} onChange={set("label")} required maxLength={100} placeholder="bv. Systeem" /></label>
-              <label>{modal.kind === "mobile" ? "Mobiel nummer" : "E-mailadres"}
+              <label>{tx("Naam")}<input value={modal.label} onChange={set("label")} required maxLength={100} placeholder={tx("bv. Systeem")} /></label>
+              <label>{modal.kind === "mobile" ? tx("Mobiel nummer") : tx("E-mailadres")}
                 <input value={modal.value} onChange={set("value")} required placeholder={SECTIONS.find((s) => s.kind === modal.kind).valuePlaceholder} />
               </label>
-              <label>Doel
+              <label>{tx("Doel")}
                 <select value={modal.purpose} onChange={set("purpose")}>{PURPOSES.map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select>
               </label>
-              <label className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={modal.is_default} onChange={set("is_default")} /> Standaard voor deze soort</label>
+              <label className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={modal.is_default} onChange={set("is_default")} /> {tx("Standaard voor deze soort")}</label>
             </div>
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
-              <button type="button" className="btn" onClick={() => setModal(null)}>Annuleren</button>
-              <button className="btn primary">Opslaan</button>
+              <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
+              <button className="btn primary">{tx("Opslaan")}</button>
             </div>
           </form>
         </div>

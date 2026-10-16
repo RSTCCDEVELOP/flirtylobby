@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../../lib/t";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -65,62 +66,62 @@ export default function Checkout() {
     }
   }
 
-  if (!enabled) return <div className="site"><SiteHeader /><main className="shop"><p className="muted">De webshop is niet beschikbaar.</p></main></div>;
-  if (!items.length) return <div className="site"><SiteHeader /><main className="shop"><p className="muted">Je winkelwagen is leeg. <Link href="/producten" style={{ color: "var(--blue)" }}>Bekijk de producten</Link></p></main></div>;
+  if (!enabled) return <div className="site"><SiteHeader /><main className="shop"><p className="muted">{tx("De webshop is niet beschikbaar.")}</p></main></div>;
+  if (!items.length) return <div className="site"><SiteHeader /><main className="shop"><p className="muted">{tx("Je winkelwagen is leeg.")} <Link href="/producten" style={{ color: "var(--blue)" }}>{tx("Bekijk de producten")}</Link></p></main></div>;
   return (
     <div className="site">
       <SiteHeader />
       <main className="shop">
-        <h1>Afrekenen</h1>
+        <h1>{tx("Afrekenen")}</h1>
         <div className="checkout">
           <form className="card form" style={{ maxWidth: "none" }} onSubmit={submit}>
-            <h2>Jouw gegevens</h2>
+            <h2>{tx("Jouw gegevens")}</h2>
             <div className="grid2">
-              <label>Naam<input value={f.name} onChange={set("name")} required autoComplete="name" /></label>
-              <label>E-mailadres<input type="email" value={f.email} onChange={set("email")} required autoComplete="email" /></label>
-              <label>Telefoon (optioneel)<input value={f.phone} onChange={set("phone")} autoComplete="tel" /></label>
-              <label>Land (code)<input value={f.country} onChange={set("country")} maxLength={2} required /></label>
-              <label>Straat en huisnummer<input value={f.street} onChange={set("street")} required autoComplete="street-address" /></label>
-              <label>Postcode<input value={f.postal_code} onChange={set("postal_code")} required autoComplete="postal-code" /></label>
-              <label>Plaats<input value={f.city} onChange={set("city")} required autoComplete="address-level2" /></label>
+              <label>{tx("Naam")}<input value={f.name} onChange={set("name")} required autoComplete="name" /></label>
+              <label>{tx("E-mailadres")}<input type="email" value={f.email} onChange={set("email")} required autoComplete="email" /></label>
+              <label>{tx("Telefoon (optioneel)")}<input value={f.phone} onChange={set("phone")} autoComplete="tel" /></label>
+              <label>{tx("Land (code)")}<input value={f.country} onChange={set("country")} maxLength={2} required /></label>
+              <label>{tx("Straat en huisnummer")}<input value={f.street} onChange={set("street")} required autoComplete="street-address" /></label>
+              <label>{tx("Postcode")}<input value={f.postal_code} onChange={set("postal_code")} required autoComplete="postal-code" /></label>
+              <label>{tx("Plaats")}<input value={f.city} onChange={set("city")} required autoComplete="address-level2" /></label>
             </div>
-            <label>Opmerking (optioneel)<textarea rows={3} value={f.note} onChange={set("note")} /></label>
+            <label>{tx("Opmerking (optioneel)")}<textarea rows={3} value={f.note} onChange={set("note")} /></label>
             <div>
-              <strong style={{ fontSize: ".85rem" }}>Verzending</strong>
+              <strong style={{ fontSize: ".85rem" }}>{tx("Verzending")}</strong>
               <div className="perm-list" style={{ gridTemplateColumns: "1fr" }}>
                 {methods.map((m) => (
                   <label className="check" key={m.id} style={{ fontWeight: 500 }}>
                     <input type="radio" name="method" checked={method === m.id} onChange={() => setMethod(m.id)} />
-                    <span>{m.name} · {Number(m.price) ? money(m.price) : "Gratis"}{m.delivery_time && <small className="muted"> {m.delivery_time}</small>}{m.free_from && Number(m.price) ? <small className="muted"> (gratis vanaf {money(m.free_from)})</small> : null}</span>
+                    <span>{m.name} · {Number(m.price) ? money(m.price) : tx("Gratis")}{m.delivery_time && <small className="muted"> {m.delivery_time}</small>}{m.free_from && Number(m.price) ? <small className="muted"> {tx("(gratis vanaf")} {money(m.free_from)})</small> : null}</span>
                   </label>
                 ))}
-                {!methods.length && <span className="muted">Geen verzendmethode beschikbaar voor dit land.</span>}
+                {!methods.length && <span className="muted">{tx("Geen verzendmethode beschikbaar voor dit land.")}</span>}
               </div>
             </div>
-            {blocked && <div className="alert">Online betalen is nog niet beschikbaar.</div>}
+            {blocked && <div className="alert">{tx("Online betalen is nog niet beschikbaar.")}</div>}
             {error && <div className="alert">{error}</div>}
-            <div><button className="btn primary" disabled={busy || blocked || !method}>{busy ? "Bezig…" : cfg && !cfg.pay_online ? "Bestelling plaatsen" : "Naar betalen"}</button></div>
+            <div><button className="btn primary" disabled={busy || blocked || !method}>{busy ? tx("Bezig…") : cfg && !cfg.pay_online ? tx("Bestelling plaatsen") : tx("Naar betalen")}</button></div>
           </form>
           <div className="card">
-            <h2>Je bestelling</h2>
+            <h2>{tx("Je bestelling")}</h2>
             {rows.map((r) => <div key={r.id} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", padding: ".3rem 0" }}><span>{r.qty} × {r.p.name}</span><span>{money(Number(r.p.price) * r.qty)}</span></div>)}
             {(!cfg || cfg.discounts) && (
               <div className="grid2" style={{ marginTop: ".75rem" }}>
-                <label>Kortingscode<input value={codeInput} onChange={(e) => setCodeInput(e.target.value.toUpperCase())} placeholder="Heb je een code?" /></label>
-                <span style={{ alignSelf: "end" }}><button type="button" className="btn" disabled={!codeInput} onClick={() => setCode(codeInput)}>Toepassen</button></span>
+                <label>{tx("Kortingscode")}<input value={codeInput} onChange={(e) => setCodeInput(e.target.value.toUpperCase())} placeholder={tx("Heb je een code?")} /></label>
+                <span style={{ alignSelf: "end" }}><button type="button" className="btn" disabled={!codeInput} onClick={() => setCode(codeInput)}>{tx("Toepassen")}</button></span>
               </div>
             )}
             {codeError && <div className="alert" style={{ marginTop: ".5rem" }}>{codeError}</div>}
             {qt && (
               <div className="totals" style={{ width: "100%" }}>
-                <div><span>Subtotaal</span><span>{money(qt.subtotal)}</span></div>
-                {Number(qt.discount) > 0 && <div><span>Korting ({qt.code})</span><span>- {money(qt.discount)}</span></div>}
-                <div><span>Verzendkosten</span><span>{method ? (Number(qt.shipping) ? money(qt.shipping) : "Gratis") : "—"}</span></div>
-                <div className="grand"><span>Totaal</span><span>{money(qt.total)}</span></div>
-                <small className="muted">waarvan {money(qt.vat_total)} btw {cfg && !cfg.prices_include_vat ? "(bovenop de getoonde prijzen)" : ""}</small>
+                <div><span>{tx("Subtotaal")}</span><span>{money(qt.subtotal)}</span></div>
+                {Number(qt.discount) > 0 && <div><span>{tx("Korting (")}{qt.code})</span><span>- {money(qt.discount)}</span></div>}
+                <div><span>{tx("Verzendkosten")}</span><span>{method ? (Number(qt.shipping) ? money(qt.shipping) : tx("Gratis")) : "—"}</span></div>
+                <div className="grand"><span>{tx("Totaal")}</span><span>{money(qt.total)}</span></div>
+                <small className="muted">{tx("waarvan")} {money(qt.vat_total)} {tx("btw")} {cfg && !cfg.prices_include_vat ? tx("(bovenop de getoonde prijzen)") : ""}</small>
               </div>
             )}
-            {cfg && !cfg.pay_online && <p className="muted" style={{ fontSize: ".85rem" }}>Je ontvangt een bevestiging per e-mail. Betalen kan achteraf per factuur.</p>}
+            {cfg && !cfg.pay_online && <p className="muted" style={{ fontSize: ".85rem" }}>{tx("Je ontvangt een bevestiging per e-mail. Betalen kan achteraf per factuur.")}</p>}
           </div>
         </div>
       </main>

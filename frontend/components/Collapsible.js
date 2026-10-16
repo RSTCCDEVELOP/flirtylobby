@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
 import { useUi } from "./Ui";
 
@@ -46,8 +47,8 @@ export function CollapseAll() {
   };
   return (
     <span className="collapse-all">
-      <button type="button" className="btn sm" onClick={() => send(false)}>Alles inklappen</button>
-      <button type="button" className="btn sm" onClick={() => send(true)}>Alles uitklappen</button>
+      <button type="button" className="btn sm" onClick={() => send(false)}>{tx("Alles inklappen")}</button>
+      <button type="button" className="btn sm" onClick={() => send(true)}>{tx("Alles uitklappen")}</button>
     </span>
   );
 }

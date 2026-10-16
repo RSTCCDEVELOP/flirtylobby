@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import Link from "next/link";
 import { useSession } from "./Session";
 import UserMenu from "./UserMenu";
@@ -8,6 +9,6 @@ import UserMenu from "./UserMenu";
 export default function SiteUserArea() {
   const { user, ready, logout } = useSession();
   if (!ready) return null;
-  if (!user) return <Link href="/login" className="btn primary">Inloggen</Link>;
+  if (!user) return <Link href="/login" className="btn primary">{tx("Inloggen")}</Link>;
   return <UserMenu user={user} onLogout={logout} />;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { canAdmin } from "../lib/perms";
@@ -15,11 +16,11 @@ export default function AdminBar() {
   const admin = canAdmin(user, mods);
   if (!admin && !user.is_staff) return null;
   return (
-    <nav className="admin-bar" aria-label="Beheer">
-      <span>Beheer</span>
-      <Link href="/dashboard">Dashboard</Link>
-      {admin && <Link href="/dashboard/admin">Admin</Link>}
-      {user.is_staff && <Link href="/dashboard/superadmin">Super admin</Link>}
+    <nav className="admin-bar" aria-label={tx("Beheer")}>
+      <span>{tx("Beheer")}</span>
+      <Link href="/dashboard">{tx("Dashboard")}</Link>
+      {admin && <Link href="/dashboard/admin">{tx("Admin")}</Link>}
+      {user.is_staff && <Link href="/dashboard/superadmin">{tx("Super admin")}</Link>}
     </nav>
   );
 }

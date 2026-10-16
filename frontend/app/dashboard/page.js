@@ -1,7 +1,10 @@
 "use client";
 
+import { tx } from "../../lib/t";
+import { confirmDialog } from "../../lib/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../components/AuthContext";
+import { useChat } from "../../components/Chat";
 import { useModules } from "../../components/Modules";
 import { byId, defaultLayout, WIDGETS } from "../../components/Widgets";
 import { api, errorText } from "../../lib/api";
@@ -10,7 +13,8 @@ import { api, errorText } from "../../lib/api";
 export default function DashboardHome() {
   const { user } = useAuth();
   const mods = useModules();
-  const ctx = useMemo(() => ({ user, mods }), [user, mods]);
+  const chat = useChat();
+  const ctx = useMemo(() => ({ user, mods, chat: chat?.cfg }), [user, mods, chat?.cfg]);
   const [state, setState] = useState(null); // {widgets, own, has_default, can_set_default}
   const [editing, setEditing] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -18,7 +22,7 @@ export default function DashboardHome() {
   const timer = useRef(null);
 
   useEffect(() => { api("/dashboard/layout/").then(setState).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
-  if (!state) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">Laden…</p>;
+  if (!state) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
 
   const columns = state.columns || 2;
   // every block gets a column: -1 = full width on top, 0..n-1 = column (legacy blocks are spread over the columns)
@@ -52,8 +56,8 @@ export default function DashboardHome() {
   const setColumns = (n) => save(layout.map((w) => ({ ...w, col: w.col < 0 ? -1 : Math.min(w.col, n - 1) })), n);
   const remove = (id) => save(layout.filter((w) => w.id !== id));
   const add = (w) => save([...layout, { id: w.id, col: w.size === 2 ? -1 : [...Array(columns).keys()].sort((a, b) => colOf(a).length - colOf(b).length)[0] }]);
-  const reset = async () => { if (confirm("Je dashboard terugzetten naar de standaardindeling?")) setState(await api("/dashboard/layout/", { method: "DELETE" })); };
-  const setDefault = async () => { if (confirm("Deze indeling als standaard instellen voor iedereen die nog geen eigen indeling heeft?")) { await api("/dashboard/layout/default/", { method: "PUT", body: { widgets: layout, columns } }); setMsg({ ok: true, text: "Standaardindeling opgeslagen." }); } };
+  const reset = async () => { if ((await confirmDialog(tx("Je dashboard terugzetten naar de standaardindeling?")))) setState(await api("/dashboard/layout/", { method: "DELETE" })); };
+  const setDefault = async () => { if ((await confirmDialog(tx("Deze indeling als standaard instellen voor iedereen die nog geen eigen indeling heeft?")))) { await api("/dashboard/layout/default/", { method: "PUT", body: { widgets: layout, columns } }); setMsg({ ok: true, text: tx("Standaardindeling opgeslagen.") }); } };
 
   const free = WIDGETS.filter((w) => w.ok(ctx) && !layout.some((l) => l.id === w.id));
   const groups = [...new Set(free.map((w) => w.group))];
@@ -64,8 +68,8 @@ export default function DashboardHome() {
           <div key={c} className={c === -1 ? "dash-full" : "dash-col"} data-col={c} style={c === -1 ? undefined : { gridColumn: c + 1 }}
             onDragOver={(e) => editing && e.preventDefault()}
             onDrop={(e) => { if (!editing) return; e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (id) place(id, c); }}>
-            {editing && c === -1 && !colOf(-1).length && <div className="dash-drop muted">Volle breedte: sleep een blok hierheen</div>}
-            {editing && c >= 0 && !colOf(c).length && <div className="dash-drop muted">Sleep een blok hierheen</div>}
+            {editing && c === -1 && !colOf(-1).length && <div className="dash-drop muted">{tx("Volle breedte: sleep een blok hierheen")}</div>}
+            {editing && c >= 0 && !colOf(c).length && <div className="dash-drop muted">{tx("Sleep een blok hierheen")}</div>}
             {colOf(c).map((l) => {
               const w = byId[l.id], C = w.C;
               return (
@@ -73,16 +77,16 @@ export default function DashboardHome() {
                   draggable={editing} onDragStart={(e) => { e.dataTransfer.setData("text/plain", l.id); setDrag(l.id); }} onDragEnd={() => setDrag(null)}
                   onDragOver={(e) => editing && e.preventDefault()}
                   onDrop={(e) => { if (!editing) return; e.preventDefault(); e.stopPropagation(); const id = e.dataTransfer.getData("text/plain"); if (id && id !== l.id) place(id, c, l.id); }}>
-                  {l.id !== "welcome" && <div className="widget-head"><h2>{w.title}</h2></div>}
+                  {l.id !== "welcome" && <div className="widget-head"><h2>{tx(w.title)}</h2></div>}
                   {editing && (
                     <div className="widget-controls">
-                      <span className="drag-handle" title="Sleep om te verplaatsen">⠿</span>
-                      <button className="btn sm" onClick={() => nudge(l.id, -1)} title="Omhoog">↑</button>
-                      <button className="btn sm" onClick={() => nudge(l.id, 1)} title="Omlaag">↓</button>
-                      {columns > 1 && <button className="btn sm" disabled={c === 0} onClick={() => side(l.id, -1)} title="Kolom links">←</button>}
-                      {columns > 1 && <button className="btn sm" disabled={c === columns - 1} onClick={() => side(l.id, 1)} title="Kolom rechts">→</button>}
-                      {columns > 1 && <button className="btn sm" onClick={() => place(l.id, c === -1 ? 0 : -1)}>{c === -1 ? "In kolom" : "Volle breedte"}</button>}
-                      <button className="btn sm danger" onClick={() => remove(l.id)}>Weg</button>
+                      <span className="drag-handle" title={tx("Sleep om te verplaatsen")}>⠿</span>
+                      <button className="btn sm" onClick={() => nudge(l.id, -1)} title={tx("Omhoog")}>↑</button>
+                      <button className="btn sm" onClick={() => nudge(l.id, 1)} title={tx("Omlaag")}>↓</button>
+                      {columns > 1 && <button className="btn sm" disabled={c === 0} onClick={() => side(l.id, -1)} title={tx("Kolom links")}>←</button>}
+                      {columns > 1 && <button className="btn sm" disabled={c === columns - 1} onClick={() => side(l.id, 1)} title={tx("Kolom rechts")}>→</button>}
+                      {columns > 1 && <button className="btn sm" onClick={() => place(l.id, c === -1 ? 0 : -1)}>{c === -1 ? tx("In kolom") : tx("Volle breedte")}</button>}
+                      <button className="btn sm danger" onClick={() => remove(l.id)}>{tx("Weg")}</button>
                     </div>
                   )}
                   <C ctx={ctx} />
@@ -96,37 +100,37 @@ export default function DashboardHome() {
   return (
     <>
       <div className="page-head">
-        <div><h1 style={{ margin: 0 }}>Dashboard</h1></div>
+        <div><h1 style={{ margin: 0 }}>{tx("Dashboard")}</h1></div>
         <div className="row">
-          {editing && <button className="btn" onClick={reset}>Standaard herstellen</button>}
-          {editing && state.can_set_default && <button className="btn" onClick={setDefault}>Opslaan als standaard voor iedereen</button>}
-          <button className={`btn ${editing ? "primary" : ""}`} onClick={() => setEditing(!editing)}>{editing ? "Klaar" : "Dashboard aanpassen"}</button>
+          {editing && <button className="btn" onClick={reset}>{tx("Standaard herstellen")}</button>}
+          {editing && state.can_set_default && <button className="btn" onClick={setDefault}>{tx("Opslaan als standaard voor iedereen")}</button>}
+          <button className={`btn ${editing ? "primary" : ""}`} onClick={() => setEditing(!editing)}>{editing ? tx("Klaar") : tx("Dashboard aanpassen")}</button>
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       {editing && (
         <div className="card" style={{ marginBottom: "1rem" }}>
-          <h2>Blok toevoegen</h2>
-          {!free.length && <p className="muted" style={{ margin: 0 }}>Alle beschikbare blokken staan al op je dashboard.</p>}
+          <h2>{tx("Blok toevoegen")}</h2>
+          {!free.length && <p className="muted" style={{ margin: 0 }}>{tx("Alle beschikbare blokken staan al op je dashboard.")}</p>}
           {groups.map((g) => (
             <div key={g} style={{ marginBottom: ".5rem" }}>
-              <strong style={{ fontSize: ".8rem" }} className="muted">{g}</strong>
+              <strong style={{ fontSize: ".8rem" }} className="muted">{tx(g)}</strong>
               <div className="row" style={{ justifyContent: "flex-start", marginTop: ".25rem" }}>
-                {free.filter((w) => w.group === g).map((w) => <button key={w.id} className="btn sm" title={w.desc} onClick={() => add(w)}>+ {w.title}</button>)}
+                {free.filter((w) => w.group === g).map((w) => <button key={w.id} className="btn sm" title={tx(w.desc)} onClick={() => add(w)}>+ {tx(w.title)}</button>)}
               </div>
             </div>
           ))}
-          <small className="muted">Blokken verschijnen alleen voor modules die aan staan en waar je toegang toe hebt.</small>
+          <small className="muted">{tx("Blokken verschijnen alleen voor modules die aan staan en waar je toegang toe hebt.")}</small>
         </div>
       )}
 
       {editing && (
         <div className="card" style={{ marginBottom: "1rem" }}>
           <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap" }}>
-            <strong>Kolommen</strong>
+            <strong>{tx("Kolommen")}</strong>
             {[1, 2, 3, 4].map((n) => <button key={n} className={`btn sm ${columns === n ? "primary" : ""}`} onClick={() => setColumns(n)}>{n}</button>)}
-            <small className="muted">Sleep blokken naar een andere plek of kolom, of gebruik de pijltjes.</small>
+            <small className="muted">{tx("Sleep blokken naar een andere plek of kolom, of gebruik de pijltjes.")}</small>
           </div>
         </div>
       )}
@@ -134,7 +138,7 @@ export default function DashboardHome() {
       <div className="dash-cols" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
         {Array.from({ length: columns }, (_, c) => renderCol(c))}
       </div>
-      {!layout.length && <p className="muted">Je dashboard is leeg. Kies "Dashboard aanpassen" en voeg blokken toe.</p>}
+      {!layout.length && <p className="muted">{tx("Je dashboard is leeg. Kies \"Dashboard aanpassen\" en voeg blokken toe.")}</p>}
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { tx } from "../../lib/t";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getModules } from "../../lib/modules-server";
@@ -9,7 +10,7 @@ import { detectLang, pick } from "../../lib/i18n";
 import { getSecurity } from "../../lib/security-server";
 
 export const dynamic = "force-dynamic";
-export const generateMetadata = async () => ({ title: "Cookiebeleid", ...(await pageMetadata("/cookies")) });
+export const generateMetadata = async () => ({ title: tx("Cookiebeleid"), ...(await pageMetadata("/cookies")) });
 
 export default async function Cookies() {
   if ((await getModules()).privacy_pages === false) notFound();

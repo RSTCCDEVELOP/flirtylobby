@@ -33,6 +33,7 @@ class Profile(models.Model):
     city = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=2, blank=True)
     interests = models.JSONField(default=list, blank=True)
+    data = models.JSONField(default=dict, blank=True)  # values of the configurable profile fields (Admin -> Community -> Profielvelden)
     looking_for_genders = models.JSONField(default=list, blank=True)  # empty = everybody
     aim = models.CharField(max_length=15, blank=True)  # dating | relationship | friends | chat
     age_min = models.PositiveSmallIntegerField(default=18)

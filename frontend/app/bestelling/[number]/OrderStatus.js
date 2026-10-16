@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../../../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import SiteHeader from "../../../components/SiteHeader";
@@ -20,23 +21,23 @@ export default function OrderStatus({ number, token }) {
     <div className="site">
       <SiteHeader />
       <main className="shop">
-        {o === undefined && <p className="muted">Laden…</p>}
-        {o === null && <p className="muted">Deze bestelling is niet gevonden.</p>}
+        {o === undefined && <p className="muted">{tx("Laden…")}</p>}
+        {o === null && <p className="muted">{tx("Deze bestelling is niet gevonden.")}</p>}
         {o && (
           <>
-            <h1>Bestelling {o.number}</h1>
+            <h1>{tx("Bestelling")} {o.number}</h1>
             <p><span className={`badge ${ORDER_STATUS[o.status][1]}`}>{ORDER_STATUS[o.status][0]}</span> {MESSAGE[o.status] || ""}</p>
             <div className="card">
               {o.items.map((i) => <div key={i.id} style={{ display: "flex", justifyContent: "space-between", padding: ".3rem 0" }}><span>{i.quantity} × {i.name}</span><span>{money(i.line_total, o.currency)}</span></div>)}
               <div className="totals" style={{ width: "100%" }}>
-                {Number(o.discount) > 0 && <div><span>Korting ({o.discount_code})</span><span>- {money(o.discount, o.currency)}</span></div>}
-                <div><span>Verzending{o.shipping_method ? ` (${o.shipping_method})` : ""}</span><span>{Number(o.shipping) ? money(o.shipping, o.currency) : "Gratis"}</span></div>
-                <div className="grand"><span>Totaal</span><span>{money(o.total, o.currency)}</span></div>
-                <small className="muted">waarvan {money(o.vat_total, o.currency)} btw</small>
+                {Number(o.discount) > 0 && <div><span>{tx("Korting (")}{o.discount_code})</span><span>- {money(o.discount, o.currency)}</span></div>}
+                <div><span>{tx("Verzending")}{o.shipping_method ? ` (${o.shipping_method})` : ""}</span><span>{Number(o.shipping) ? money(o.shipping, o.currency) : tx("Gratis")}</span></div>
+                <div className="grand"><span>{tx("Totaal")}</span><span>{money(o.total, o.currency)}</span></div>
+                <small className="muted">{tx("waarvan")} {money(o.vat_total, o.currency)} {tx("btw")}</small>
               </div>
-              <p className="muted" style={{ fontSize: ".875rem" }}>Bezorgadres: {o.name}, {o.street}, {o.postal_code} {o.city}</p>
+              <p className="muted" style={{ fontSize: ".875rem" }}>{tx("Bezorgadres:")} {o.name}, {o.street}, {o.postal_code} {o.city}</p>
             </div>
-            <p><Link href="/producten" style={{ color: "var(--blue)" }}>Verder winkelen</Link></p>
+            <p><Link href="/producten" style={{ color: "var(--blue)" }}>{tx("Verder winkelen")}</Link></p>
           </>
         )}
       </main>

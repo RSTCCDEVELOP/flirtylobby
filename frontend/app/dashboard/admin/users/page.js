@@ -1,13 +1,16 @@
 "use client";
 
+import { tx } from "../../../../lib/t";
+import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../components/AuthContext";
+import VerifyBadge, { VERIFY } from "../../../../components/VerifyBadge";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
 
-const EMPTY = { user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, roles: [], is_staff: false, file: null };
+const EMPTY = { user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
 const initials = (u) => (u.first_name?.[0] || u.email[0]).toUpperCase();
 
 export default function Users() {
@@ -33,7 +36,7 @@ export default function Users() {
   }
 
   const toggleBlock = (u) => act(() => api(`/users/${u.id}/${u.is_active ? "block" : "unblock"}/`, { method: "POST" }));
-  const remove = (u) => confirm(`Gebruiker ${u.email} definitief verwijderen?`) && act(() => api(`/users/${u.id}/`, { method: "DELETE" }));
+  const remove = async (u) => (await confirmDialog(tx("Gebruiker {0} definitief verwijderen?", u.email), { danger: true })) && act(() => api(`/users/${u.id}/`, { method: "DELETE" }));
 
   async function save(e) {
     e.preventDefault();
@@ -71,16 +74,16 @@ export default function Users() {
   return (
     <>
       <div className="page-head">
-        <h1>Users</h1>
-        {L >= 3 && <button className="btn primary" onClick={() => setModal({ ...EMPTY })}>+ Nieuwe gebruiker</button>}
+        <h1>{tx("Users")}</h1>
+        {L >= 3 && <button className="btn primary" onClick={() => setModal({ ...EMPTY })}>{tx("+ Nieuwe gebruiker")}</button>}
       </div>
       {error && <div className="alert">{error}</div>}
 
-      <Collapsible id="users-list" title="Gebruikers">
+      <Collapsible id="users-list" title={tx("Gebruikers")}>
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>Naam</th><th>E-mail</th><th>Functie</th><th>Rol</th><th>Status</th><th></th></tr>
+            <tr><th>{tx("Naam")}</th><th>{tx("E-mail")}</th><th>{tx("Functie")}</th><th>{tx("Rol")}</th><th>{tx("Verificatie")}</th><th>{tx("Status")}</th><th></th></tr>
           </thead>
           <tbody>
             {users.map((u) => (
@@ -89,24 +92,25 @@ export default function Users() {
                   <span className="user-cell">
                     {u.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.image)} alt="" className="avatar-img" /> : <span className="avatar">{initials(u)}</span>}
                     {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
-                    {u.show_public && <span className="badge ok" title="Wordt getoond op de website">Op website</span>}
+                    {u.show_public && <span className="badge ok" title={tx("Wordt getoond op de website")}>{tx("Op website")}</span>}
                   </span>
                 </td>
                 <td>{u.email}</td>
                 <td>{u.function || "—"}</td>
                 <td>
-                  {u.is_staff && <span className="badge ok" style={{ marginRight: ".3rem" }}>Superadmin</span>}
+                  {u.is_staff && <span className="badge ok" style={{ marginRight: ".3rem" }}>{tx("Superadmin")}</span>}
                   {u.roles.map((id) => <span key={id} className="chip" style={{ cursor: "default", marginRight: ".3rem" }}>{roles.find((r) => r.id === id)?.name || "…"}</span>)}
                   {u.user_groups.map((id) => <span key={id} className="chip" style={{ cursor: "default", marginRight: ".3rem" }}>{groups.find((g) => g.id === id)?.name || "…"}</span>)}
-                  {!u.is_staff && !u.roles.length && !u.user_groups.length && <span className="muted">User</span>}
+                  {!u.is_staff && !u.roles.length && !u.user_groups.length && <span className="muted">{tx("User")}</span>}
                 </td>
-                <td><span className={`badge ${u.is_active ? "ok" : "off"}`}>{u.is_active ? "Actief" : "Geblokkeerd"}</span></td>
+                <td><VerifyBadge status={u.verification} label /></td>
+                <td><span className={`badge ${u.is_active ? "ok" : "off"}`}>{u.is_active ? tx("Actief") : tx("Geblokkeerd")}</span></td>
                 <td className="actions">
-                  {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...EMPTY, ...u, password: "" })}>Wijzig</button>}
+                  {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...EMPTY, ...u, password: "" })}>{tx("Wijzig")}</button>}
                   {u.id !== me.id && (
                     <>
-                      {L >= 2 && <button className="btn sm" onClick={() => toggleBlock(u)}>{u.is_active ? "Blokkeer" : "Deblokkeer"}</button>}
-                      {L >= 3 && <button className="btn sm danger" onClick={() => remove(u)}>Verwijder</button>}
+                      {L >= 2 && <button className="btn sm" onClick={() => toggleBlock(u)}>{u.is_active ? tx("Blokkeer") : tx("Deblokkeer")}</button>}
+                      {L >= 3 && <button className="btn sm danger" onClick={() => remove(u)}>{tx("Verwijder")}</button>}
                     </>
                   )}
                 </td>
@@ -120,35 +124,40 @@ export default function Users() {
       {modal && (
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
-            <h2>{modal.id ? "Gebruiker wijzigen" : "Nieuwe gebruiker"}</h2>
+            <h2>{modal.id ? tx("Gebruiker wijzigen") : tx("Nieuwe gebruiker")}</h2>
             <div className="grid2">
-              <label>Voornaam<input value={modal.first_name} onChange={set("first_name")} /></label>
-              <label>Achternaam<input value={modal.last_name} onChange={set("last_name")} /></label>
-              <label>E-mailadres<input type="email" value={modal.email} onChange={set("email")} required /></label>
-              <label>{modal.id ? "Nieuw wachtwoord (optioneel)" : "Wachtwoord"}
+              <label>{tx("Voornaam")}<input value={modal.first_name} onChange={set("first_name")} /></label>
+              <label>{tx("Achternaam")}<input value={modal.last_name} onChange={set("last_name")} /></label>
+              <label>{tx("E-mailadres")}<input type="email" value={modal.email} onChange={set("email")} required /></label>
+              <label>{modal.id ? tx("Nieuw wachtwoord (optioneel)") : tx("Wachtwoord")}
                 <input type="password" value={modal.password} onChange={set("password")} required={!modal.id} autoComplete="new-password" />
               </label>
-              <label>Functie<input value={modal.function} onChange={set("function")} /></label>
-              <label>Korte tekst<input value={modal.short} onChange={set("short")} maxLength={255} /></label>
+              <label>{tx("Verificatiestatus")}
+                <select value={modal.verification} onChange={set("verification")} disabled={L < 2}>
+                  {Object.entries(VERIFY).map(([k, v]) => <option key={k} value={k}>{tx(v.label)}: {tx(v.hint)}</option>)}
+                </select>
+              </label>
+              <label>{tx("Functie")}<input value={modal.function} onChange={set("function")} /></label>
+              <label>{tx("Korte tekst")}<input value={modal.short} onChange={set("short")} maxLength={255} /></label>
             </div>
-            <label>Omschrijving / biografie<textarea rows={4} value={modal.description} onChange={set("description")} /></label>
+            <label>{tx("Omschrijving / biografie")}<textarea rows={4} value={modal.description} onChange={set("description")} /></label>
             <div className="grid2">
-              <label>Link<input value={modal.link} onChange={set("link")} maxLength={255} placeholder="https://…" /></label>
-              <label className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={modal.link_external} onChange={set("link_external")} /> Link opent extern</label>
+              <label>{tx("Link")}<input value={modal.link} onChange={set("link")} maxLength={255} placeholder="https://…" /></label>
+              <label className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={modal.link_external} onChange={set("link_external")} /> {tx("Link opent extern")}</label>
             </div>
             <div className="photo-row">
               {modal.preview || modal.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={modal.preview || mediaUrl(modal.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{initials(modal)}</span>}
               <span className="row" style={{ justifyContent: "flex-start" }}>
                 <label className="btn sm" style={{ cursor: "pointer" }}>
-                  {modal.preview || modal.image ? "Foto vervangen" : "Foto uploaden"}
+                  {modal.preview || modal.image ? tx("Foto vervangen") : tx("Foto uploaden")}
                   <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files[0]; e.target.value = ""; if (f) photo(f); }} />
                 </label>
-                {(modal.image || modal.preview) && <button type="button" className="btn sm danger" onClick={() => photo(null)}>Foto verwijderen</button>}
+                {(modal.image || modal.preview) && <button type="button" className="btn sm danger" onClick={() => photo(null)}>{tx("Foto verwijderen")}</button>}
               </span>
             </div>
-            <label className="check"><input type="checkbox" checked={modal.show_public} onChange={set("show_public")} /> Tonen op de website als member (foto, functie en omschrijving)</label>
+            <label className="check"><input type="checkbox" checked={modal.show_public} onChange={set("show_public")} /> {tx("Tonen op de website als member (foto, functie en omschrijving)")}</label>
             <div>
-              <strong style={{ fontSize: ".85rem" }}>Rollen</strong>
+              <strong style={{ fontSize: ".85rem" }}>{tx("Rollen")}</strong>
               <div className="perm-list">
                 {roles.map((r) => (
                   <label className="check" key={r.id}>
@@ -157,11 +166,11 @@ export default function Users() {
                     {r.name} <small className="muted">{r.description}</small>
                   </label>
                 ))}
-                {!roles.length && <span className="muted">Geen rollen beschikbaar.</span>}
+                {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
               </div>
             </div>
             <div>
-              <strong style={{ fontSize: ".85rem" }}>User groups</strong>
+              <strong style={{ fontSize: ".85rem" }}>{tx("User groups")}</strong>
               <div className="perm-list">
                 {groups.map((g) => (
                   <label className="check" key={g.id}>
@@ -170,16 +179,16 @@ export default function Users() {
                     {g.name} <small className="muted">{g.description}</small>
                   </label>
                 ))}
-                {!groups.length && <span className="muted">Nog geen groepen.</span>}
+                {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
               </div>
             </div>
             {me.is_staff && <label className="check">
-              <input type="checkbox" checked={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} /> Superadmin (alle rechten, beheert ook admins en superadmins)
+              <input type="checkbox" checked={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} /> {tx("Superadmin (alle rechten, beheert ook admins en superadmins)")}
             </label>}
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
-              <button type="button" className="btn" onClick={() => setModal(null)}>Annuleren</button>
-              <button className="btn primary">Opslaan</button>
+              <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
+              <button className="btn primary">{tx("Opslaan")}</button>
             </div>
           </form>
         </div>

@@ -7,6 +7,9 @@ import { ModulesProvider } from "../components/Modules";
 import { UiProvider } from "../components/Ui";
 import { CartProvider } from "../components/Cart";
 import { ChatProvider, ChatWidget } from "../components/Chat";
+import DialogHost from "../components/DialogHost";
+import DomTranslate from "../components/DomTranslate";
+import LangRoot from "../components/LangRoot";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
 import { getModules } from "../lib/modules-server";
@@ -120,6 +123,7 @@ export default async function RootLayout({ children }) {
         <SessionProvider>
         <CartProvider>
         <ChatProvider>
+        <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>
           <BrandingProvider value={branding} logoSet={theme?.values?.brand_logo}>
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
               {children}
@@ -130,8 +134,11 @@ export default async function RootLayout({ children }) {
         {jsonld.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld).replace(/</g, "\\u003c") }} />}
           </BrandingProvider>
         <ChatWidget />
+        <DialogHost />
+        <DomTranslate />
         <AdminBar />
         <DeviceGate devices={{ mobile: theme?.values?.device_mobile !== "no", tablet: theme?.values?.device_tablet !== "no", desktop: theme?.values?.device_desktop !== "no", app: theme?.values?.device_app === "yes" }} />
+        </LangRoot>
         </ChatProvider>
         </CartProvider>
         </SessionProvider>

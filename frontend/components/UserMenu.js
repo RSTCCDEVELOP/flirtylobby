@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -44,19 +45,19 @@ export default function UserMenu({ user, onLogout, showDashboard = true }) {
             <span>{user.email}</span>
           </div>
           {showDashboard && (
-            <Link href="/dashboard" role="menuitem" onClick={() => setOpen(false)}><IconHome /> Dashboard</Link>
+            <Link href="/dashboard" role="menuitem" onClick={() => setOpen(false)}><IconHome /> {tx("Dashboard")}</Link>
           )}
           {last && last !== pathname && (
-            <Link href={last} role="menuitem" onClick={() => setOpen(false)}><IconHistory /> Laatste pagina</Link>
+            <Link href={last} role="menuitem" onClick={() => setOpen(false)}><IconHistory /> {tx("Laatste pagina")}</Link>
           )}
           {user.is_staff && !pathname.startsWith("/dashboard/superadmin") && (
-            <Link href="/dashboard/superadmin" role="menuitem" onClick={() => setOpen(false)}><IconShield /> Super admin</Link>
+            <Link href="/dashboard/superadmin" role="menuitem" onClick={() => setOpen(false)}><IconShield /> {tx("Super admin")}</Link>
           )}
           {canAdmin(user, mods) && !pathname.startsWith("/dashboard/admin") && (
-            <Link href="/dashboard/admin" role="menuitem" onClick={() => setOpen(false)}><IconShield /> Admin</Link>
+            <Link href="/dashboard/admin" role="menuitem" onClick={() => setOpen(false)}><IconShield /> {tx("Admin")}</Link>
           )}
-          <Link href="/dashboard/profile" role="menuitem" onClick={() => setOpen(false)}><IconUser /> Wijzig profiel</Link>
-          <button role="menuitem" onClick={onLogout} className="danger"><IconLogout /> Uitloggen</button>
+          <Link href="/dashboard/profile" role="menuitem" onClick={() => setOpen(false)}><IconUser /> {tx("Wijzig profiel")}</Link>
+          <button role="menuitem" onClick={onLogout} className="danger"><IconLogout /> {tx("Uitloggen")}</button>
         </div>
       )}
     </div>

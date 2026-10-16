@@ -709,3 +709,57 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
 .thumb-del:hover { background: var(--danger, #d92d20); }
 .thumb-lock { position: absolute; left: 4px; bottom: 4px; background: rgba(0, 0, 0, .65); border-radius: 999px; padding: 0 .3rem; font-size: .75rem; }
 .thumb-vis, .photo-item select { font-size: .78rem; padding: .3rem .4rem; min-height: 0; }
+
+/* verification badge */
+.verify { display: inline-flex; align-items: center; gap: .3rem; vertical-align: middle; flex: none; white-space: nowrap; }
+.verify-label { font-size: .8rem; font-weight: 600; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* photo visibility picker (icons follow the text colour / house colour) */
+.vis-picker { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.vis-buttons { display: inline-flex; border: 1px solid var(--line); border-radius: var(--btn-radius); overflow: hidden; background: var(--card); flex: none; }
+.vis-btn { display: grid; place-items: center; width: 2rem; height: 1.9rem; border: 0; background: transparent; color: var(--text); cursor: pointer; padding: 0; }
+.vis-btn + .vis-btn { border-left: 1px solid var(--line); }
+.vis-btn:hover { background: var(--hover); }
+.vis-btn.active { background: var(--blue); color: #fff; }
+.vis-label { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.thumb-lock { display: grid; place-items: center; color: #fff; padding: .2rem; }
+
+/* profile fields */
+.chip.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.field-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+.field-list h3 { margin: 0 0 .4rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.field-list dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .6rem 1.25rem; margin: 0; }
+.field-list dt { font-size: .78rem; color: var(--muted); }
+.field-list dd { margin: 0; font-weight: 500; }
+.field-card { display: flex; flex-direction: column; gap: .75rem; padding: 1rem; }
+.field-card .theme-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+
+/* dashboard shortcut tiles */
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: .75rem; }
+.tile { display: flex; flex-direction: column; gap: .15rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--text); text-decoration: none; transition: transform .15s, border-color .15s, box-shadow .15s; min-width: 0; }
+.tile:hover { transform: translateY(-2px); border-color: var(--tile-c, var(--blue)); box-shadow: var(--shadow); }
+.tile strong { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile small { color: var(--muted); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin-bottom: .6rem; border-radius: 12px; color: var(--tile-c, var(--blue)); background: color-mix(in srgb, var(--tile-c, var(--blue)) 14%, transparent); }
+.tile-icon svg { width: 1.35rem; height: 1.35rem; }
+.tile-blue { --tile-c: var(--blue); }
+.tile-orange { --tile-c: var(--orange); }
+
+/* icons inside buttons, chips, badges and tabs take the text colour and size */
+.btn svg, .chip svg, .badge svg, .tabs button svg, .lock-badge svg { width: 1.1em; height: 1.1em; vertical-align: -.17em; flex: none; }
+.btn:has(svg), .badge:has(svg) { display: inline-flex; align-items: center; gap: .35rem; }
+
+/* active direct connection: header pill + menu indicator */
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: #12b76a; flex: none; box-shadow: 0 0 0 0 rgba(18, 183, 106, .6); animation: livePulse 1.8s infinite; }
+@keyframes livePulse { 70% { box-shadow: 0 0 0 7px rgba(18, 183, 106, 0); } 100% { box-shadow: 0 0 0 0 rgba(18, 183, 106, 0); } }
+.direct-pill { display: inline-flex; align-items: center; gap: .45rem; padding: .3rem .75rem; border-radius: 999px; border: 1px solid #12b76a; background: color-mix(in srgb, #12b76a 12%, transparent); color: var(--text); font-size: .8rem; font-weight: 600; text-decoration: none; white-space: nowrap; max-width: 220px; }
+.direct-pill-text { overflow: hidden; text-overflow: ellipsis; }
+.nav-live { margin-left: auto; display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 700; }
+@media (max-width: 720px) { .direct-pill-text { display: none; } .direct-pill { padding: .35rem .5rem; } }
+/* collapsed menu: the live indicator and counters sit on the icon instead of next to the (hidden) label */
+.sidebar a { position: relative; }
+.shell.collapsed .sidebar .nav-live, .shell.collapsed .sidebar .cart-count { position: absolute; top: 4px; right: 8px; margin: 0; }
+.shell.collapsed .sidebar .nav-live { font-size: 0; gap: 0; }
+.shell.collapsed .sidebar .nav-live .live-dot { width: 10px; height: 10px; }
+@media (max-width: 860px) { .shell.collapsed .sidebar .nav-live { font-size: .75rem; gap: .35rem; position: static; margin-left: auto; } }

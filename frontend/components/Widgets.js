@@ -1,10 +1,13 @@
 "use client";
 
+import { tx } from "../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
+import { confirmDialog } from "../lib/dialog";
 import { money, ORDER_STATUS } from "../lib/format";
 import { canAdmin, lvl } from "../lib/perms";
+import { IconBag, IconChat, IconGrid, IconGroup, IconKey, IconMail, IconSearch, IconShield, IconUser, IconUsers } from "./Icons";
 import { BarChart, Donut } from "./Charts";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
 
@@ -16,27 +19,40 @@ const useData = (path, deps = []) => {
   useEffect(() => { api(path).then(setD).catch(() => setD(null)); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   return d;
 };
-const Loading = ({ d }) => (d === undefined ? <p className="muted">Laden…</p> : d === null ? <p className="muted">Niet beschikbaar.</p> : null);
+const Loading = ({ d }) => (d === undefined ? <p className="muted">{tx("Laden…")}</p> : d === null ? <p className="muted">{tx("Niet beschikbaar.")}</p> : null);
 const monthName = (ym) => new Date(`${ym}-01`).toLocaleDateString("nl-NL", { month: "short" });
 
 function Welcome({ ctx }) {
   const name = ctx.user.first_name || ctx.user.email.split("@")[0];
-  return <><h2 style={{ fontSize: "1.5rem", margin: 0 }}>Welkom, {name} 👋</h2><p className="muted" style={{ margin: ".35rem 0 0" }}>Dit is jouw dashboard. Gebruik "Dashboard aanpassen" om blokken toe te voegen, te verplaatsen of te verwijderen.</p></>;
+  return <><h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tx("Welkom,")} {name}</h2><p className="muted" style={{ margin: ".35rem 0 0" }}>{tx("Dit is jouw dashboard. Gebruik \"Dashboard aanpassen\" om blokken toe te voegen, te verplaatsen of te verwijderen.")}</p></>;
 }
 
 function Shortcuts({ ctx }) {
-  const { user, mods } = ctx;
-  const links = [
-    ["/dashboard/profile", "Mijn account"],
-    on(mods, "profiles") && ["/dashboard/community/profile", "Mijn profielpagina"],
-    on(mods, "discover") && ["/dashboard/community/discover", "Zoeken & matchen"],
-    on(mods, "messages") && ["/dashboard/community/messages", "Berichten"],
-    on(mods, "chat") && ["/dashboard/community/chat", "Chat"],
-    on(mods, "products") && ["/producten", "Webshop"],
-    canAdmin(user, mods) && ["/dashboard/admin", "Admin"],
-    user.is_staff && ["/dashboard/superadmin", "Super admin"],
+  const { user, mods, chat } = ctx;
+  // [href, label, short text, icon, colour] — colours follow the house style (primary / secondary)
+  const tiles = [
+    ["/dashboard/profile", tx("Mijn account"), tx("Gegevens en foto's"), <IconUser key="i" />, "blue"],
+    on(mods, "profiles") && ["/dashboard/community/profile", tx("Mijn profielpagina"), tx("Zo word je gevonden"), <IconUsers key="i" />, "orange"],
+    on(mods, "discover") && ["/dashboard/community/discover", tx("Zoeken & matchen"), tx("Vind nieuwe mensen"), <IconSearch key="i" />, "blue"],
+    on(mods, "messages") && ["/dashboard/community/messages", tx("Berichten"), tx("Je postvak"), <IconMail key="i" />, "orange"],
+    on(mods, "chat") && ["/dashboard/community/chat", tx("Chat"), tx("Praat live"), <IconChat key="i" />, "blue"],
+    on(mods, "chat") && chat?.method === "webrtc" && ["/dashboard/community/direct", tx("Directe verbinding"), tx("Uitnodigen via link"), <IconKey key="i" />, "orange"],
+    on(mods, "profiles") && ["/dashboard/community/requests", tx("Vrienden & verzoeken"), tx("Wie wil je kennen"), <IconGroup key="i" />, "blue"],
+    on(mods, "products") && ["/producten", tx("Webshop"), tx("Bekijk de producten"), <IconBag key="i" />, "orange"],
+    canAdmin(user, mods) && ["/dashboard/admin", tx("Admin"), tx("Beheer de site"), <IconShield key="i" />, "blue"],
+    user.is_staff && ["/dashboard/superadmin", tx("Super admin"), tx("Modules en rechten"), <IconGrid key="i" />, "orange"],
   ].filter(Boolean);
-  return <div className="row" style={{ justifyContent: "flex-start" }}>{links.map(([h, l]) => <Link key={h} href={h} className="btn sm">{l}</Link>)}</div>;
+  return (
+    <div className="tile-grid">
+      {tiles.map(([h, l, d, icon, c]) => (
+        <Link key={h} href={h} className={`tile tile-${c}`}>
+          <span className="tile-icon">{icon}</span>
+          <strong>{l}</strong>
+          <small>{d}</small>
+        </Link>
+      ))}
+    </div>
+  );
 }
 
 function Notice({ ctx }) {
@@ -52,9 +68,9 @@ function Notice({ ctx }) {
   const save = (body) => api("/content/save/", { method: "PUT", body: { key: KEY, lang, ...body } }).then(load).catch((e) => { throw new Error(errorText(e)); });
   return (
     <>
-      {html ? <div className="rich-text" dangerouslySetInnerHTML={{ __html: toDisplay(html) }} /> : <p className="muted">Hier kan een mededeling voor alle gebruikers staan.</p>}
-      {canEdit && <button className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setEdit(true)}>Mededeling bewerken</button>}
-      {edit && <RichEditor title="Mededeling" initialHtml={html} onSave={(h) => save({ html: true, text: h })} onPlain={(t) => save({ text: t })} onClose={() => setEdit(false)} />}
+      {html ? <div className="rich-text" dangerouslySetInnerHTML={{ __html: toDisplay(html) }} /> : <p className="muted">{tx("Hier kan een mededeling voor alle gebruikers staan.")}</p>}
+      {canEdit && <button className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setEdit(true)}>{tx("Mededeling bewerken")}</button>}
+      {edit && <RichEditor title={tx("Mededeling")} initialHtml={html} onSave={(h) => save({ html: true, text: h })} onPlain={(t) => save({ text: t })} onClose={() => setEdit(false)} />}
     </>
   );
 }
@@ -62,8 +78,8 @@ function Notice({ ctx }) {
 function ProfileBlock() {
   const s = useData("/community/summary/");
   if (!s) return <Loading d={s} />;
-  const vis = { public: "iedereen", members: "alle leden", selected: "geselecteerde leden" }[s.profile.visibility];
-  return <><p style={{ margin: 0 }}><strong>{s.profile.enabled ? "Je pagina is actief" : "Je pagina is nog niet actief"}</strong></p><p className="muted" style={{ margin: ".25rem 0 .75rem" }}>{s.profile.photos} foto's{vis ? ` · zichtbaar voor ${vis}` : ""}</p><Link className="btn sm" href="/dashboard/community/profile">Profiel bewerken</Link>{s.profile.enabled && <> <Link className="btn sm" href={`/leden/${s.profile.slug}`}>Bekijk</Link></>}</>;
+  const vis = { public: tx("iedereen"), members: tx("alle leden"), selected: tx("geselecteerde leden") }[s.profile.visibility];
+  return <><p style={{ margin: 0 }}><strong>{s.profile.enabled ? tx("Je pagina is actief") : tx("Je pagina is nog niet actief")}</strong></p><p className="muted" style={{ margin: ".25rem 0 .75rem" }}>{s.profile.photos} {tx("foto's")}{vis ? tx(" · zichtbaar voor {0}", vis) : ""}</p><Link className="btn sm" href="/dashboard/community/profile">{tx("Profiel bewerken")}</Link>{s.profile.enabled && <> <Link className="btn sm" href={`/leden/${s.profile.slug}`}>{tx("Bekijk")}</Link></>}</>;
 }
 
 function MessagesBlock() {
@@ -72,10 +88,10 @@ function MessagesBlock() {
   const unread = d.reduce((n, c) => n + c.unread, 0);
   return (
     <>
-      <p style={{ margin: 0 }}><strong>{unread}</strong> ongelezen</p>
+      <p style={{ margin: 0 }}><strong>{unread}</strong> {tx("ongelezen")}</p>
       <ul className="widget-list">{d.slice(0, 4).map((c) => <li key={c.user.id}><span>{c.user.name}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}</span><small className="muted">{c.last.subject || c.last.body}</small></li>)}</ul>
-      {!d.length && <p className="muted">Nog geen berichten.</p>}
-      <Link className="btn sm" href="/dashboard/community/messages">Naar berichten</Link>
+      {!d.length && <p className="muted">{tx("Nog geen berichten.")}</p>}
+      <Link className="btn sm" href="/dashboard/community/messages">{tx("Naar berichten")}</Link>
     </>
   );
 }
@@ -83,25 +99,25 @@ function MessagesBlock() {
 function ChatBlock() {
   const d = useData("/community/summary/");
   if (!d) return <Loading d={d} />;
-  return <><p style={{ margin: 0 }}><strong>{d.unread_chat}</strong> ongelezen chatberichten</p><p className="muted">De chat staat ook als popup rechtsonder.</p><Link className="btn sm" href="/dashboard/community/chat">Open chat</Link></>;
+  return <><p style={{ margin: 0 }}><strong>{d.unread_chat}</strong> {tx("ongelezen chatberichten")}</p><p className="muted">{tx("De chat staat ook als popup rechtsonder.")}</p><Link className="btn sm" href="/dashboard/community/chat">{tx("Open chat")}</Link></>;
 }
 
 function MatchesBlock() {
   const d = useData("/community/summary/");
   if (!d?.discover) return <Loading d={d === undefined ? d : null} />;
-  return <><div className="cards" style={{ margin: 0 }}><div className="stat"><span>Matches</span><strong>{d.discover.matches}</strong></div><div className="stat"><span>Nieuwe likes</span><strong>{d.discover.likes_new}</strong></div><div className="stat"><span>Favorieten</span><strong>{d.discover.favorites}</strong></div></div><Link className="btn sm" style={{ marginTop: ".75rem" }} href="/dashboard/community/discover">Zoeken & matchen</Link></>;
+  return <><div className="cards" style={{ margin: 0 }}><div className="stat"><span>{tx("Matches")}</span><strong>{d.discover.matches}</strong></div><div className="stat"><span>{tx("Nieuwe likes")}</span><strong>{d.discover.likes_new}</strong></div><div className="stat"><span>{tx("Favorieten")}</span><strong>{d.discover.favorites}</strong></div></div><Link className="btn sm" style={{ marginTop: ".75rem" }} href="/dashboard/community/discover">{tx("Zoeken & matchen")}</Link></>;
 }
 
 function VisitsChart() {
   const d = useData("/dashboard/stats/?kind=visits_daily");
   if (!d) return <Loading d={d} />;
-  return <><p style={{ margin: "0 0 .5rem" }}><strong>{d.total}</strong> bezoekers in 30 dagen</p><BarChart points={d.points} /></>;
+  return <><p style={{ margin: "0 0 .5rem" }}><strong>{d.total}</strong> {tx("bezoekers in 30 dagen")}</p><BarChart points={d.points} /></>;
 }
 
 function UsersStats() {
   const d = useData("/dashboard/stats/?kind=users_growth");
   if (!d) return <Loading d={d} />;
-  return <div className="cards" style={{ margin: 0 }}><div className="stat"><span>Users</span><strong>{d.total}</strong></div><div className="stat"><span>Actief</span><strong>{d.active}</strong></div><div className="stat"><span>Geblokkeerd</span><strong>{d.blocked}</strong></div></div>;
+  return <div className="cards" style={{ margin: 0 }}><div className="stat"><span>{tx("Users")}</span><strong>{d.total}</strong></div><div className="stat"><span>{tx("Actief")}</span><strong>{d.active}</strong></div><div className="stat"><span>{tx("Geblokkeerd")}</span><strong>{d.blocked}</strong></div></div>;
 }
 
 function UsersChart() {
@@ -113,7 +129,7 @@ function UsersChart() {
 function OrdersChart() {
   const d = useData("/dashboard/stats/?kind=orders_daily");
   if (!d) return <Loading d={d} />;
-  return <><p style={{ margin: "0 0 .5rem" }}><strong>{money(d.revenue)}</strong> omzet · {d.orders} orders (30 dagen)</p><BarChart points={d.points} format={(v) => money(v)} color="var(--orange)" /></>;
+  return <><p style={{ margin: "0 0 .5rem" }}><strong>{money(d.revenue)}</strong> {tx("omzet ·")} {d.orders} {tx("orders (30 dagen)")}</p><BarChart points={d.points} format={(v) => money(v)} color="var(--orange)" /></>;
 }
 
 function OrdersRecent() {
@@ -122,8 +138,8 @@ function OrdersRecent() {
   return (
     <>
       <ul className="widget-list">{d.map((o) => <li key={o.number}><span><strong>{o.number}</strong> {o.name}</span><span>{money(o.total)} <span className={`badge ${ORDER_STATUS[o.status][1]}`}>{ORDER_STATUS[o.status][0]}</span></span></li>)}</ul>
-      {!d.length && <p className="muted">Nog geen bestellingen.</p>}
-      <Link className="btn sm" href="/dashboard/admin/orders">Alle orders</Link>
+      {!d.length && <p className="muted">{tx("Nog geen bestellingen.")}</p>}
+      <Link className="btn sm" href="/dashboard/admin/orders">{tx("Alle orders")}</Link>
     </>
   );
 }
@@ -131,29 +147,64 @@ function OrdersRecent() {
 function LowStock() {
   const d = useData("/dashboard/stats/?kind=low_stock");
   if (!d) return <Loading d={d} />;
-  return <><ul className="widget-list">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "stock-out" : "stock-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">Alle producten hebben voldoende voorraad. 👍</p>}<Link className="btn sm" href="/dashboard/admin/products">Producten</Link></>;
+  return <><ul className="widget-list">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "stock-out" : "stock-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">{tx("Alle producten hebben voldoende voorraad.")}</p>}<Link className="btn sm" href="/dashboard/admin/products">{tx("Producten")}</Link></>;
 }
 
 function MediaUsage() {
   const d = useData("/dashboard/stats/?kind=media_usage");
   if (!d) return <Loading d={d} />;
-  return <><Donut parts={d.parts} /><p className="muted" style={{ margin: ".5rem 0 0" }}>{(d.bytes / 1048576).toFixed(1)} MB in {d.total} bestanden</p></>;
+  return <><Donut parts={d.parts} /><p className="muted" style={{ margin: ".5rem 0 0" }}>{tx("{0} MB in {1} bestanden", (d.bytes / 1048576).toFixed(1), d.total)}</p></>;
 }
 
 function ModulesBlock() {
   const d = useData("/modules/all/");
   if (!d) return <Loading d={d} />;
   const off = d.filter((m) => !m.enabled);
-  return <><p style={{ margin: 0 }}><strong>{d.length - off.length}</strong> van {d.length} modules aan</p>{off.length > 0 && <p className="muted">Uit: {off.map((m) => m.label).join(", ")}</p>}<Link className="btn sm" href="/dashboard/superadmin/modules">Modules beheren</Link></>;
+  return <><p style={{ margin: 0 }}><strong>{d.length - off.length}</strong> {tx("van {0} modules aan", d.length)}</p>{off.length > 0 && <p className="muted">{tx("Uit:")} {off.map((m) => m.label).join(", ")}</p>}<Link className="btn sm" href="/dashboard/superadmin/modules">{tx("Modules beheren")}</Link></>;
 }
 
 function SandboxBlock() {
   const d = useData("/sandbox/settings/");
   if (!d) return <Loading d={d} />;
-  return <><p style={{ margin: 0 }}><span className={`badge ${d.settings.enabled ? "off" : "ok"}`}>{d.settings.enabled ? "Sandbox AAN" : "Sandbox uit"}</span></p><p className="muted">{d.settings.enabled ? "Externe diensten worden gesimuleerd." : "Echte e-mail, sms en betalingen."}</p><Link className="btn sm" href="/dashboard/admin/sandbox">Sandbox</Link></>;
+  return <><p style={{ margin: 0 }}><span className={`badge ${d.settings.enabled ? "off" : "ok"}`}>{d.settings.enabled ? tx("Sandbox AAN") : tx("Sandbox uit")}</span></p><p className="muted">{d.settings.enabled ? tx("Externe diensten worden gesimuleerd.") : tx("Echte e-mail, sms en betalingen.")}</p><Link className="btn sm" href="/dashboard/admin/sandbox">{tx("Sandbox")}</Link></>;
 }
 
 // id, group, title, description, default size, availability (module on + access) and component
+// Who is connected through a direct (WebRTC) invitation right now
+function DirectBlock() {
+  const [rooms, setRooms] = useState(null);
+  useEffect(() => {
+    let stop = false;
+    const load = () => api("/direct/rooms/").then((r) => !stop && setRooms(r)).catch(() => !stop && setRooms([]));
+    load();
+    const t = setInterval(load, 4000);
+    return () => { stop = true; clearInterval(t); };
+  }, []);
+  if (!rooms) return <p className="muted">{tx("Laden…")}</p>;
+  const connected = rooms.filter((r) => r.guest_online);
+  return (
+    <>
+      {connected.length > 0 ? (
+        <div className="direct-people">
+          {connected.map((r) => (
+            <div key={r.token} className="request-row">
+              <span className="avatar">{(r.guest_name || "?")[0].toUpperCase()}</span>
+              <span className="grow"><strong>{r.guest_name}</strong><span className="muted" style={{ fontSize: ".8rem" }}><span className="dot ok" style={{ display: "inline-block", width: 8, height: 8, marginRight: 6, boxShadow: "none" }} />{tx("Verbonden")}</span></span>
+              <span className="request-actions">
+                <Link className="btn sm primary" href={`/dashboard/community/direct?room=${r.token}`}>{tx("Openen")}</Link>
+                <button type="button" className="btn sm danger" onClick={async () => { if (await confirmDialog(tx("De verbinding met {0} verbreken?", r.guest_name), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken"), danger: true })) { await api(`/direct/rooms/${r.token}/disconnect/`, { method: "POST" }).catch(() => {}); setRooms((l) => l.map((x) => (x.token === r.token ? { ...x, guest_online: false, guest_name: "" } : x))); } }}>{tx("Verbreek")}</button>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="muted" style={{ margin: 0 }}>{tx("Er is niemand verbonden.")} {rooms.length ? tx("{0} uitnodiging(en) staan open.", rooms.length) : ""}</p>
+      )}
+      <Link className="btn sm" href="/dashboard/community/direct" style={{ marginTop: ".75rem" }}>{rooms.length ? tx("Uitnodigingen") : tx("Iemand uitnodigen")}</Link>
+    </>
+  );
+}
+
 export const WIDGETS = [
   { id: "welcome", group: "Algemeen", title: "Welkom", desc: "Begroeting", size: 2, ok: () => true, C: Welcome },
   { id: "notice", group: "Algemeen", title: "Mededeling", desc: "Een bericht van de beheerders voor alle gebruikers", size: 2, ok: () => true, C: Notice },
@@ -161,6 +212,7 @@ export const WIDGETS = [
   { id: "profile", group: "Community", title: "Mijn profielpagina", desc: "Status van je profiel", size: 1, ok: ({ mods }) => on(mods, "profiles"), C: ProfileBlock },
   { id: "messages", group: "Community", title: "Berichten", desc: "Ongelezen berichten en laatste gesprekken", size: 1, ok: ({ mods }) => on(mods, "messages"), C: MessagesBlock },
   { id: "chat", group: "Community", title: "Chat", desc: "Ongelezen chatberichten", size: 1, ok: ({ mods }) => on(mods, "chat"), C: ChatBlock },
+  { id: "direct", group: "Community", title: "Directe verbinding", desc: "Wie nu rechtstreeks met je verbonden is", size: 1, ok: ({ mods, chat }) => on(mods, "chat") && chat?.method === "webrtc", C: DirectBlock },
   { id: "matches", group: "Community", title: "Matches & likes", desc: "Je matches, nieuwe likes en favorieten", size: 1, ok: ({ mods }) => on(mods, "profiles", "discover"), C: MatchesBlock },
   { id: "visits_chart", group: "Community", title: "Profielbezoeken", desc: "Grafiek van de afgelopen 30 dagen", size: 2, ok: ({ mods }) => on(mods, "profiles", "discover"), C: VisitsChart },
   { id: "users_stats", group: "Beheer", title: "Users", desc: "Aantal users, actief en geblokkeerd", size: 2, ok: ({ user }) => lvl(user, "users") >= 1, C: UsersStats },
@@ -175,5 +227,5 @@ export const WIDGETS = [
 export const byId = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
 
 // What a user gets when nobody customised anything: the basics plus every block that fits his modules and rights
-const DEFAULT_ORDER = ["welcome", "notice", "shortcuts", "profile", "messages", "chat", "matches", "users_stats", "users_chart", "orders_chart", "orders_recent", "low_stock", "media_usage"];
+const DEFAULT_ORDER = ["welcome", "notice", "shortcuts", "direct", "profile", "messages", "chat", "matches", "users_stats", "users_chart", "orders_chart", "orders_recent", "low_stock", "media_usage"];
 export const defaultLayout = (ctx) => DEFAULT_ORDER.map((id) => byId[id]).filter((w) => w.ok(ctx)).map((w) => ({ id: w.id, size: w.size }));

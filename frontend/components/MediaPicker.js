@@ -1,10 +1,11 @@
 "use client";
 
+import { tx } from "../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 
 // Modal to choose an image from the media library, or upload a new one
-export default function MediaPicker({ onPick, onClose, title = "Kies een afbeelding" }) {
+export default function MediaPicker({ onPick, onClose, title = tx("Kies een afbeelding") }) {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [error, setError] = useState("");
@@ -40,11 +41,11 @@ export default function MediaPicker({ onPick, onClose, title = "Kies een afbeeld
           <h2 style={{ margin: 0 }}>{title}</h2>
           <div className="row">
             <input ref={input} type="file" accept="image/*" multiple hidden onChange={upload} />
-            <button className="btn primary" onClick={() => input.current.click()} disabled={busy}>{busy ? "Uploaden…" : "Nieuwe uploaden"}</button>
-            <button className="btn" onClick={onClose}>Sluiten</button>
+            <button className="btn primary" onClick={() => input.current.click()} disabled={busy}>{busy ? tx("Uploaden…") : tx("Nieuwe uploaden")}</button>
+            <button className="btn" onClick={onClose}>{tx("Sluiten")}</button>
           </div>
         </div>
-        <input placeholder="Zoek op naam…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input placeholder={tx("Zoek op naam…")} value={q} onChange={(e) => setQ(e.target.value)} />
         {error && <div className="alert">{error}</div>}
         <div className="media-grid">
           {items.map((i) => (
@@ -54,7 +55,7 @@ export default function MediaPicker({ onPick, onClose, title = "Kies een afbeeld
               <span>{i.name}</span>
             </button>
           ))}
-          {!items.length && <p className="muted">Geen afbeeldingen gevonden.</p>}
+          {!items.length && <p className="muted">{tx("Geen afbeeldingen gevonden.")}</p>}
         </div>
       </div>
     </div>

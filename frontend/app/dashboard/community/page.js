@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../../../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useModules } from "../../../components/Modules";
@@ -13,49 +14,49 @@ export default function Community() {
   const on = (m) => mods[m] !== false;
   return (
     <>
-      <h1>Community</h1>
-      <p className="muted">Je eigen pagina, berichten en chat met andere leden, en wie je geblokkeerd hebt.</p>
+      <h1>{tx("Community")}</h1>
+      <p className="muted">{tx("Je eigen pagina, berichten en chat met andere leden, en wie je geblokkeerd hebt.")}</p>
       <div className="cards" style={{ marginTop: "1.25rem" }}>
         {on("profiles") && (
           <Link href="/dashboard/community/profile" className="card stat link-card">
-            <span>Mijn profielpagina</span>
-            <strong style={{ fontSize: "1.25rem" }}>{s?.profile.enabled ? "Actief" : "Nog niet actief"}</strong>
-            <small>{s ? `${s.profile.photos} foto's · zichtbaar voor ${{ public: "iedereen", members: "alle leden", selected: "geselecteerde leden" }[s.profile.visibility] || "niemand (nog niet ingesteld)"}` : "…"}</small>
+            <span>{tx("Mijn profielpagina")}</span>
+            <strong style={{ fontSize: "1.25rem" }}>{s?.profile.enabled ? tx("Actief") : tx("Nog niet actief")}</strong>
+            <small>{s ? tx("{0} foto's · zichtbaar voor {1}", s.profile.photos, { public: tx("iedereen"), members: tx("alle leden"), selected: tx("geselecteerde leden") }[s.profile.visibility] || tx("niemand (nog niet ingesteld)")) : "…"}</small>
           </Link>
         )}
         {on("discover") && (
           <Link href="/dashboard/community/discover" className="card stat link-card">
-            <span>Zoeken & matchen</span>
+            <span>{tx("Zoeken & matchen")}</span>
             <strong>{s?.discover ? s.discover.matches : "…"}</strong>
-            <small>{s?.discover ? `matches · ${s.discover.likes_new} nieuwe likes · ${s.discover.favorites} favorieten` : "Vind andere leden"}</small>
+            <small>{s?.discover ? tx("matches · {0} nieuwe likes · {1} favorieten", s.discover.likes_new, s.discover.favorites) : tx("Vind andere leden")}</small>
           </Link>
         )}
         {on("messages") && (
           <Link href="/dashboard/community/messages" className="card stat link-card">
-            <span>Berichten</span>
+            <span>{tx("Berichten")}</span>
             <strong>{s ? s.unread_messages : "…"}</strong>
-            <small>ongelezen</small>
+            <small>{tx("ongelezen")}</small>
           </Link>
         )}
         {on("chat") && (
           <Link href="/dashboard/community/chat" className="card stat link-card">
-            <span>Chat</span>
+            <span>{tx("Chat")}</span>
             <strong>{s ? s.unread_chat : "…"}</strong>
-            <small>ongelezen chatberichten</small>
+            <small>{tx("ongelezen chatberichten")}</small>
           </Link>
         )}
         {on("profiles") && (
           <Link href="/dashboard/community/blocked" className="card stat link-card">
-            <span>Geblokkeerd</span>
+            <span>{tx("Geblokkeerd")}</span>
             <strong>{s ? s.blocked : "…"}</strong>
-            <small>users die je niet meer kunnen zien of vinden</small>
+            <small>{tx("users die je niet meer kunnen zien of vinden")}</small>
           </Link>
         )}
         {on("profiles") && (
           <Link href="/leden" className="card stat link-card">
-            <span>Ledenlijst</span>
-            <strong style={{ fontSize: "1.25rem" }}>Leden zoeken</strong>
-            <small>Bekijk profielen waar je bij mag</small>
+            <span>{tx("Ledenlijst")}</span>
+            <strong style={{ fontSize: "1.25rem" }}>{tx("Leden zoeken")}</strong>
+            <small>{tx("Bekijk profielen waar je bij mag")}</small>
           </Link>
         )}
       </div>

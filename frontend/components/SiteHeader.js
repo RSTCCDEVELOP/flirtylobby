@@ -1,3 +1,4 @@
+import { tx } from "../lib/t";
 import Link from "next/link";
 import { Logo } from "./BrandingContext";
 import { ImageEdit } from "./EditMode";
@@ -6,7 +7,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import SiteUserArea from "./SiteUserArea";
 import { EditModeSwitch } from "./EditMode";
 import { ShopLinks } from "./Cart";
-import { ChatButton } from "./Chat";
+import { ChatButton, DirectIndicator } from "./Chat";
 
 export default function SiteHeader() {
   return (
@@ -17,11 +18,12 @@ export default function SiteHeader() {
         </Link>
       </ImageEdit>
       <nav className="site-nav">
-        <Link href="/">Home</Link>
+        <Link href="/">{tx("Home")}</Link>
         <ShopLinks />
       </nav>
       <div className="site-actions">
-        <ChatButton />
+        <DirectIndicator />
+          <ChatButton />
         <EditModeSwitch />
         <LanguageSwitcher />
         <ThemeToggle />

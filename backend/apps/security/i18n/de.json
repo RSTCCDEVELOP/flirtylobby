@@ -1,0 +1,53 @@
+{
+ "geo": {
+  "title": "In deinem Land nicht verfügbar",
+  "message": "Diese Website ist in deiner Region leider nicht verfügbar."
+ },
+ "age": {
+  "title": "Bist du {age} Jahre oder älter?",
+  "message": "Diese Website ist nur für Besucher ab {age} Jahren bestimmt.",
+  "yes": "Ja, ich bin {age}+",
+  "no": "Nein",
+  "deny_message": "Du hast leider keinen Zugang zu dieser Website."
+ },
+ "gambling": {
+  "title": "Spiele verantwortungsvoll",
+  "message": "Du musst mindestens {age} Jahre alt sein, um zu spielen. Glücksspiel kann süchtig machen.",
+  "warnings": [
+   "Spiele nie mit Geld, das du brauchst.",
+   "Glücksspiel kann zu Sucht führen.",
+   "Such dir Hilfe, wenn Glücksspiel zum Problem wird."
+  ],
+  "confirm": "Ich bin {age}+ und verstehe die Risiken",
+  "deny": "Verlassen"
+ },
+ "cookies": {
+  "title": "Cookies",
+  "message": "Wir verwenden Cookies, damit die Website funktioniert und um sie zu verbessern.",
+  "accept_all": "Alle akzeptieren",
+  "reject": "Nur notwendige",
+  "settings": "Einstellungen",
+  "save": "Auswahl speichern",
+  "policy_link": "Cookie-Richtlinie",
+  "cat_necessary": "Notwendig",
+  "cat_necessary_desc": "Erforderlich, damit die Website funktioniert. Immer an.",
+  "cat_analytics": "Statistiken",
+  "cat_analytics_desc": "Anonymer Einblick in die Nutzung der Website.",
+  "cat_marketing": "Marketing",
+  "cat_marketing_desc": "Um Werbung relevanter zu machen.",
+  "cat_preferences": "Präferenzen",
+  "cat_preferences_desc": "Merkt sich deine Einstellungen, wie die Sprache.",
+  "policy_title": "Cookie-Richtlinie",
+  "policy_body": "Hier beschreibst du, welche Cookies du verwendest und warum."
+ },
+ "twofa": {
+  "email_subject": "Dein Bestätigungscode",
+  "email_body": "Dein Bestätigungscode lautet {code}. Er ist {minutes} Minuten gültig. Hast du ihn nicht angefordert? Dann ignoriere diese Nachricht.",
+  "sms_body": "Dein Bestätigungscode lautet {code}. Gültig {minutes} Min."
+ },
+ "registration": {
+  "email_subject": "Bestätige deine E-Mail-Adresse",
+  "email_body": "Dein Bestätigungscode lautet {code}. Er ist {minutes} Minuten gültig. Hast du kein Konto erstellt? Dann ignoriere diese Nachricht.",
+  "sms_body": "Dein Bestätigungscode lautet {code}. Gültig {minutes} Min."
+ }
+}

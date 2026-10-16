@@ -83,6 +83,33 @@ def room_close(request, token):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+def _reset_guest(room):
+    """End the current connection: the guest is out; the invitation stays open for a new guest."""
+    room.guest_name, room.guest_key, room.guest_seen = "", "", None
+    room.save(update_fields=["guest_name", "guest_key", "guest_seen"])
+    room.signals.all().delete()
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def room_disconnect(request, token):
+    """Owner: disconnect the person who is connected (the link keeps working for someone else)."""
+    room = DirectRoom.objects.filter(token=token, owner=request.user).first()
+    if room:
+        _reset_guest(room)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def room_leave(request, token):
+    """Guest: leave the connection."""
+    room = _room(token)
+    if room and _role(request, room) == "guest":
+        _reset_guest(room)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def room_info(request, token):

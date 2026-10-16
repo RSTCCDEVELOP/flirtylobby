@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../../lib/t";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,7 +37,7 @@ export default function Register() {
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
   const finish = (r) => { setToken(r.token); router.push("/dashboard"); };
   const fail = (err) => {
-    if (err.data && !err.data.detail) setErrors(err.data), setError("Controleer de gemarkeerde velden.");
+    if (err.data && !err.data.detail) setErrors(err.data), setError(tx("Controleer de gemarkeerde velden."));
     else setError(errorText(err));
     setBusy(false);
   };
@@ -45,7 +46,7 @@ export default function Register() {
   async function submit(e) {
     e.preventDefault();
     setError(""); setErrors({});
-    if (f.password !== f.password2) { setErrors({ password2: "De wachtwoorden zijn niet gelijk." }); return; }
+    if (f.password !== f.password2) { setErrors({ password2: tx("De wachtwoorden zijn niet gelijk.") }); return; }
     setBusy(true);
     try {
       const { password2, accept, ...body } = f;
@@ -62,34 +63,34 @@ export default function Register() {
       const r = await api("/auth/register/verify/", { method: "POST", body: { token: step.token, code } });
       if (r.done) return finish(r);
       setStep(r); setCode(""); setBusy(false);
-      setInfo("Gelukt. Nog één controle.");
+      setInfo(tx("Gelukt. Nog één controle."));
     } catch (e2) { fail(e2); }
   }
 
   async function resend() {
     setError(""); setInfo("");
-    try { await api("/auth/register/resend/", { method: "POST", body: { token: step.token } }); setInfo("Nieuwe code verstuurd."); }
+    try { await api("/auth/register/resend/", { method: "POST", body: { token: step.token } }); setInfo(tx("Nieuwe code verstuurd.")); }
     catch (e2) { setError(errorText(e2)); }
   }
 
-  if (!cfg) return <Shell onSubmit={(e) => e.preventDefault()}><Logo />{error ? <div className="alert">{error}</div> : <p className="muted">Laden…</p>}</Shell>;
-  if (!cfg.enabled) return <Shell onSubmit={(e) => e.preventDefault()}><Logo /><h1>Aanmelden</h1><p className="muted">Aanmelden is op dit moment niet mogelijk.</p><Link href="/login" className="btn">Naar inloggen</Link></Shell>;
-  if (cfg.unavailable) return <Shell onSubmit={(e) => e.preventDefault()}><Logo /><h1>Aanmelden</h1><div className="alert">Aanmelden is tijdelijk niet mogelijk. Probeer het later opnieuw.</div><Link href="/login" className="btn">Naar inloggen</Link></Shell>;
+  if (!cfg) return <Shell onSubmit={(e) => e.preventDefault()}><Logo />{error ? <div className="alert">{error}</div> : <p className="muted">{tx("Laden…")}</p>}</Shell>;
+  if (!cfg.enabled) return <Shell onSubmit={(e) => e.preventDefault()}><Logo /><h1>{tx("Aanmelden")}</h1><p className="muted">{tx("Aanmelden is op dit moment niet mogelijk.")}</p><Link href="/login" className="btn">{tx("Naar inloggen")}</Link></Shell>;
+  if (cfg.unavailable) return <Shell onSubmit={(e) => e.preventDefault()}><Logo /><h1>{tx("Aanmelden")}</h1><div className="alert">{tx("Aanmelden is tijdelijk niet mogelijk. Probeer het later opnieuw.")}</div><Link href="/login" className="btn">{tx("Naar inloggen")}</Link></Shell>;
 
   if (step) {
     return (
       <Shell onSubmit={verify}>
         <Logo />
-        <h1>{step.step === "sms" ? "Bevestig je telefoonnummer" : "Bevestig je e-mailadres"}</h1>
-        <p className="muted" style={{ margin: 0 }}>We hebben een code gestuurd naar {step.destination}. Je account wordt aangemaakt zodra dit gelukt is.</p>
-        <label>Code
+        <h1>{step.step === "sms" ? tx("Bevestig je telefoonnummer") : tx("Bevestig je e-mailadres")}</h1>
+        <p className="muted" style={{ margin: 0 }}>{tx("We hebben een code gestuurd naar")} {step.destination}{tx(". Je account wordt aangemaakt zodra dit gelukt is.")}</p>
+        <label>{tx("Code")}
           <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={8} />
         </label>
         {error && <div className="alert">{error}</div>}
         {info && <div className="alert ok">{info}</div>}
-        <button className="btn primary" disabled={busy}>{busy ? "Bezig…" : "Bevestigen"}</button>
-        <button type="button" className="btn" onClick={resend}>Code opnieuw sturen</button>
-        <button type="button" className="muted center" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setStep(null); setCode(""); setError(""); setInfo(""); }}>← Gegevens aanpassen</button>
+        <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Bevestigen")}</button>
+        <button type="button" className="btn" onClick={resend}>{tx("Code opnieuw sturen")}</button>
+        <button type="button" className="muted center" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setStep(null); setCode(""); setError(""); setInfo(""); }}>{tx("← Gegevens aanpassen")}</button>
       </Shell>
     );
   }
@@ -98,33 +99,33 @@ export default function Register() {
   return (
     <Shell onSubmit={submit}>
       <Logo />
-      <h1>Aanmelden</h1>
+      <h1>{tx("Aanmelden")}</h1>
       <div className="grid2">
-        <label>Voornaam<input value={f.first_name} onChange={set("first_name")} required autoFocus autoComplete="given-name" />{err("first_name")}</label>
-        <label>Achternaam<input value={f.last_name} onChange={set("last_name")} autoComplete="family-name" />{err("last_name")}</label>
-        <label>Profielnaam<input value={f.display_name} onChange={set("display_name")} maxLength={60} placeholder="Zo zien anderen je" />{err("display_name")}</label>
-        <label>E-mailadres<input type="email" value={f.email} onChange={set("email")} required autoComplete="email" />{err("email")}</label>
-        {cfg.birth_date && <label>Geboortedatum{cfg.min_age ? <em className="muted"> ({cfg.min_age}+)</em> : null}
+        <label>{tx("Voornaam")}<input value={f.first_name} onChange={set("first_name")} required autoFocus autoComplete="given-name" />{err("first_name")}</label>
+        <label>{tx("Achternaam")}<input value={f.last_name} onChange={set("last_name")} autoComplete="family-name" />{err("last_name")}</label>
+        <label>{tx("Profielnaam")}<input value={f.display_name} onChange={set("display_name")} maxLength={60} placeholder={tx("Zo zien anderen je")} />{err("display_name")}</label>
+        <label>{tx("E-mailadres")}<input type="email" value={f.email} onChange={set("email")} required autoComplete="email" />{err("email")}</label>
+        {cfg.birth_date && <label>{tx("Geboortedatum")}{cfg.min_age ? <em className="muted"> ({cfg.min_age}+)</em> : null}
           <input type="date" value={f.birth_date} max={new Date().toISOString().slice(0, 10)} onChange={set("birth_date")} required />{err("birth_date")}</label>}
-        <label>Geslacht
-          <select value={f.gender} onChange={set("gender")}><option value="">Niet opgegeven</option><option value="m">Man</option><option value="f">Vrouw</option><option value="x">Anders</option></select>
+        <label>{tx("Geslacht")}
+          <select value={f.gender} onChange={set("gender")}><option value="">{tx("Niet opgegeven")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Anders")}</option></select>
           {err("gender")}
         </label>
-        <label>Wachtwoord<input type="password" value={f.password} onChange={set("password")} required autoComplete="new-password" minLength={cfg.password_min_length} />{err("password")}</label>
-        <label>Herhaal wachtwoord<input type="password" value={f.password2} onChange={set("password2")} required autoComplete="new-password" />{err("password2")}</label>
-        {(phoneNeeded || f.phone) && <label>Telefoon<input type="tel" value={f.phone} onChange={set("phone")} required={phoneNeeded} placeholder="+31612345678" autoComplete="tel" />{err("phone")}</label>}
+        <label>{tx("Wachtwoord")}<input type="password" value={f.password} onChange={set("password")} required autoComplete="new-password" minLength={cfg.password_min_length} />{err("password")}</label>
+        <label>{tx("Herhaal wachtwoord")}<input type="password" value={f.password2} onChange={set("password2")} required autoComplete="new-password" />{err("password2")}</label>
+        {(phoneNeeded || f.phone) && <label>{tx("Telefoon")}<input type="tel" value={f.phone} onChange={set("phone")} required={phoneNeeded} placeholder="+31612345678" autoComplete="tel" />{err("phone")}</label>}
         {cfg.twofa_methods?.length > 0 && (
-          <label>Verificatiecode ontvangen via
-            <select value={f.method} onChange={set("method")}>{cfg.twofa_methods.map((m) => <option key={m} value={m}>{m === "sms" ? "Sms" : "E-mail"}</option>)}</select>
+          <label>{tx("Verificatiecode ontvangen via")}
+            <select value={f.method} onChange={set("method")}>{cfg.twofa_methods.map((m) => <option key={m} value={m}>{m === "sms" ? tx("Sms") : tx("E-mail")}</option>)}</select>
             {err("method")}
           </label>
         )}
       </div>
-      <small className="muted">Wachtwoord: minimaal {cfg.password_min_length} tekens{cfg.password_complexity ? ", met hoofdletter, kleine letter, cijfer en leesteken" : ""}.
-        {cfg.twofa_methods?.length > 0 && " Twee-staps verificatie is verplicht en wordt direct voor je account ingesteld."}</small>
+      <small className="muted">{tx("Wachtwoord: minimaal {0} tekens", cfg.password_min_length)}{cfg.password_complexity ? tx(", met hoofdletter, kleine letter, cijfer en leesteken") : ""}.
+        {cfg.twofa_methods?.length > 0 && tx(" Twee-staps verificatie is verplicht en wordt direct voor je account ingesteld.")}</small>
       {error && <div className="alert">{error}</div>}
-      <button className="btn primary" disabled={busy}>{busy ? "Bezig…" : cfg.verify_email || cfg.twofa_required ? "Doorgaan" : "Account aanmaken"}</button>
-      <Link href="/login" className="muted center">Al een account? Inloggen</Link>
+      <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : cfg.verify_email || cfg.twofa_required ? tx("Doorgaan") : tx("Account aanmaken")}</button>
+      <Link href="/login" className="muted center">{tx("Al een account? Inloggen")}</Link>
     </Shell>
   );
 }

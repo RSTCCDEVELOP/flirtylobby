@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../../lib/t";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -52,7 +53,7 @@ export default function Login() {
 
   async function resend() {
     setError(""); setInfo("");
-    try { await api("/auth/login/resend/", { method: "POST", body: { challenge: challenge.challenge } }); setInfo("Nieuwe code verstuurd."); }
+    try { await api("/auth/login/resend/", { method: "POST", body: { challenge: challenge.challenge } }); setInfo(tx("Nieuwe code verstuurd.")); }
     catch (err) { setError(errorText(err)); }
   }
 
@@ -62,16 +63,16 @@ export default function Login() {
         <div className="login-theme"><ThemeToggle /></div>
         <form className="card login-card" onSubmit={verify}>
           <Logo />
-          <h1>Verificatiecode</h1>
-          <p className="muted" style={{ margin: 0 }}>We hebben een code gestuurd naar {challenge.destination} ({challenge.method === "sms" ? "sms" : "e-mail"}).</p>
-          <label>Code
+          <h1>{tx("Verificatiecode")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{tx("We hebben een code gestuurd naar")} {challenge.destination} ({challenge.method === "sms" ? "sms" : "e-mail"}).</p>
+          <label>{tx("Code")}
             <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={8} />
           </label>
           {error && <div className="alert">{error}</div>}
           {info && <div className="alert ok">{info}</div>}
-          <button className="btn primary" disabled={busy}>{busy ? "Bezig…" : "Bevestigen"}</button>
-          <button type="button" className="btn" onClick={resend}>Code opnieuw sturen</button>
-          <button type="button" className="muted center" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setChallenge(null); setCode(""); setError(""); setInfo(""); }}>← Terug</button>
+          <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Bevestigen")}</button>
+          <button type="button" className="btn" onClick={resend}>{tx("Code opnieuw sturen")}</button>
+          <button type="button" className="muted center" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setChallenge(null); setCode(""); setError(""); setInfo(""); }}>{tx("← Terug")}</button>
         </form>
       </main>
     );
@@ -82,18 +83,18 @@ export default function Login() {
       <div className="login-theme"><ThemeToggle /></div>
       <form className="card login-card" onSubmit={submit}>
         <Logo />
-        <h1>Inloggen</h1>
-        <label>E-mailadres
+        <h1>{tx("Inloggen")}</h1>
+        <label>{tx("E-mailadres")}
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" />
         </label>
-        <label>Wachtwoord
+        <label>{tx("Wachtwoord")}
           <input type={show ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
         </label>
-        <label className="check"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /> Toon wachtwoord</label>
+        <label className="check"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /> {tx("Toon wachtwoord")}</label>
         {error && <div className="alert">{error}</div>}
-        <button className="btn primary" disabled={busy}>{busy ? "Bezig…" : "Inloggen"}</button>
-        {canRegister && <Link href="/registreren" className="center">Nog geen account? Aanmelden</Link>}
-        <Link href="/" className="muted center">← Terug naar website</Link>
+        <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Inloggen")}</button>
+        {canRegister && <Link href="/registreren" className="center">{tx("Nog geen account? Aanmelden")}</Link>}
+        <Link href="/" className="muted center">{tx("← Terug naar website")}</Link>
       </form>
     </main>
   );

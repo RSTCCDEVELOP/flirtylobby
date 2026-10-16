@@ -86,6 +86,27 @@ DEFAULTS = {
     },
 }
 
+# Default texts in the other languages (zh, ar, pt, es, de, fr) live in i18n/<code>.json: { section: { text_key: value } }
+def _load_default_texts():
+    import json
+    import os
+
+    base = os.path.join(os.path.dirname(__file__), "i18n")
+    if not os.path.isdir(base):
+        return
+    for fn in sorted(os.listdir(base)):
+        if not fn.endswith(".json"):
+            continue
+        lang = fn[:-5]
+        with open(os.path.join(base, fn), encoding="utf-8") as fh:
+            data = json.load(fh)
+        for section, texts in data.items():
+            if section in DEFAULTS and "texts" in DEFAULTS[section] and isinstance(texts, dict):
+                DEFAULTS[section]["texts"].setdefault(lang, texts)
+
+
+_load_default_texts()
+
 # Keys allowed in the per-language "texts" of each section ("warnings" is a list)
 TEXT_KEYS = {
     "geo": ["title", "message"],

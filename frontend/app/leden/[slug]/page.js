@@ -1,3 +1,4 @@
+import { tx } from "../../../lib/t";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { absoluteUrl } from "../../../lib/seo";
@@ -15,7 +16,7 @@ async function anonymous(slug) {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const p = await anonymous(slug);
-  if (!p) return { title: "Profiel", robots: "noindex, nofollow" };
+  if (!p) return { title: tx("Profiel"), robots: "noindex, nofollow" };
   return {
     title: p.name, description: p.headline || undefined,
     robots: p.indexable ? undefined : "noindex, nofollow",

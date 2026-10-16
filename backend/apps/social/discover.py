@@ -113,10 +113,10 @@ def validate_dating_fields(p, b):
 def _card(p, me, likes=None, favs=None, matches=None, mine=None):
     u = p.user
     liked, fav, match = (u.id in likes if likes is not None else False), (u.id in favs if favs is not None else False), (u.id in matches if matches is not None else False)
-    return {"id": u.id, "slug": p.slug, "name": service.display_name(u), "headline": p.headline, "photo": service.photo_url(u, me),
+    return service.mask({"id": u.id, "slug": p.slug, "name": service.display_name(u), "headline": p.headline, "photo": service.photo_url(u, me),
             "age": age_of(p) if p.show_age else None, "city": p.city if p.show_city else "", "country": p.country if p.show_city else "",
-            "gender": p.gender, "aim": p.aim, "interests": p.interests[:6], "online": service.online(u),
-            "distance_km": _distance(mine, p), "liked": liked, "favorite": fav, "match": match, "accept_messages": p.accept_messages, "accept_chat": p.accept_chat}
+            "gender": p.gender, "aim": p.aim, "interests": p.interests[:6], "online": service.online(u), "verification": u.verification, "card_fields": service.visible_fields(p, me, only_card=True),
+            "distance_km": _distance(mine, p), "liked": liked, "favorite": fav, "match": match, "accept_messages": p.accept_messages, "accept_chat": p.accept_chat})
 
 
 def _distance(mine, p):
@@ -182,6 +182,34 @@ def search(request):
     lang = g("lang")
     sort = g("sort") or cfg["default_sort"]
     results = [p for p in qs.order_by("-id" if sort == "newest" else "-user__last_seen")[:600] if service.can_view(me, p, lang)]
+
+    # filters on the configured profile fields (only fields this member may see)
+    for fl in service.get()["profiles"]["fields"]:
+        if not fl["filter"]:
+            continue
+        k, t = fl["key"], fl["type"]
+        val, vmin, vmax = g(f"f_{k}"), g(f"f_{k}_min"), g(f"f_{k}_max")
+        if not (val or vmin or vmax):
+            continue
+
+        def match(p, fl=fl, k=k, t=t, val=val, vmin=vmin, vmax=vmax):
+            if not service.can_see_field(fl, me, p.user_id):
+                return False
+            v = (p.data or {}).get(k)
+            if t == "checkbox":
+                return bool(v) == (val == "1")
+            if t == "number":
+                try:
+                    return v not in (None, "") and (not vmin or v >= float(vmin)) and (not vmax or v <= float(vmax))
+                except ValueError:
+                    return False
+            if t == "multiselect":
+                return val in (v or [])
+            if t == "select":
+                return v == val
+            return val.lower() in str(v or "").lower()
+
+        results = [p for p in results if match(p)]
 
     if g("distance_km") and cfg["distance_enabled"]:
         if not mine or mine.lat is None:

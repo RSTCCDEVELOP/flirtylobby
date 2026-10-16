@@ -1,3 +1,4 @@
+import { tx } from "../../lib/t";
 import { notFound } from "next/navigation";
 import { getModules } from "../../lib/modules-server";
 import { pageMetadata } from "../../lib/seo";
@@ -7,7 +8,7 @@ import { EditableText } from "../../components/EditMode";
 import { PRIVACY_BODY, PRIVACY_TITLE } from "../../lib/privacy-defaults";
 
 export const dynamic = "force-dynamic";
-export const generateMetadata = async () => ({ title: "Privacybeleid", ...(await pageMetadata("/privacy")) });
+export const generateMetadata = async () => ({ title: tx("Privacybeleid"), ...(await pageMetadata("/privacy")) });
 
 // Default privacy page. Texts come with defaults per language and can be edited in edit mode (✎ Uitgebreid).
 export default async function Privacy() {

@@ -63,3 +63,4 @@ start-claude.sh
 # ── Next.js ───────────────────────────────────────────────────────────────
 frontend/.next/
 frontend/next-env.d.ts
+frontend/.next-build/

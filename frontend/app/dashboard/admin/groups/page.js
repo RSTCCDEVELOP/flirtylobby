@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../../../../lib/t";
+import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
@@ -44,7 +46,7 @@ export default function Groups() {
   }
 
   async function remove(g) {
-    if (!confirm(`Groep "${g.name}" verwijderen? Leden verliezen de rollen en module-toegang van deze groep.`)) return;
+    if (!(await confirmDialog(tx("Groep \"{0}\" verwijderen? Leden verliezen de rollen en module-toegang van deze groep.", g.name), { danger: true }))) return;
     try { await api(`/user-groups/${g.id}/`, { method: "DELETE" }); load(); } catch (e) { setError(errorText(e)); }
   }
 
@@ -77,58 +79,58 @@ export default function Groups() {
     <>
       <div className="page-head">
         <div>
-          <h1>User groups</h1>
-          <p className="muted" style={{ margin: 0 }}>Groepen van users. Een groep kun je koppelen aan rollen en aan modules: alle leden krijgen die rechten.</p>
+          <h1>{tx("User groups")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{tx("Groepen van users. Een groep kun je koppelen aan rollen en aan modules: alle leden krijgen die rechten.")}</p>
         </div>
-        {L >= 3 && <button className="btn primary" onClick={() => openEdit(null)}>+ Nieuwe groep</button>}
+        {L >= 3 && <button className="btn primary" onClick={() => openEdit(null)}>{tx("+ Nieuwe groep")}</button>}
       </div>
       {error && <div className="alert">{error}</div>}
 
-      <Collapsible id="groups-list" title="User groups">
+      <Collapsible id="groups-list" title={tx("User groups")}>
         <div className="int-list">
           {groups.map((g) => (
             <div className="card int-item" key={g.id}>
               <div className="int-main">
-                <strong>{g.name} <span className="badge ok" style={{ marginLeft: ".4rem" }}>{g.member_count} user{g.member_count === 1 ? "" : "s"}</span></strong>
+                <strong>{g.name} <span className="badge ok" style={{ marginLeft: ".4rem" }}>{g.member_count} {tx("user")}{g.member_count === 1 ? "" : "s"}</span></strong>
                 <span className="muted">{g.description || "—"}</span>
                 <span className="chips" style={{ margin: ".4rem 0 0" }}>
-                  {g.roles.length ? g.roles.map((id) => <span key={id} className="chip" style={{ cursor: "default" }}>{roleName[id] || "…"}</span>) : <span className="muted" style={{ fontSize: ".85rem" }}>Geen rollen gekoppeld</span>}
+                  {g.roles.length ? g.roles.map((id) => <span key={id} className="chip" style={{ cursor: "default" }}>{roleName[id] || "…"}</span>) : <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Geen rollen gekoppeld")}</span>}
                 </span>
               </div>
               <div className="int-actions">
-                {L >= 2 && <button className="btn sm" onClick={() => openEdit(g)}>Wijzig</button>}
-                {L >= 3 && <button className="btn sm danger" onClick={() => remove(g)}>Verwijder</button>}
+                {L >= 2 && <button className="btn sm" onClick={() => openEdit(g)}>{tx("Wijzig")}</button>}
+                {L >= 3 && <button className="btn sm danger" onClick={() => remove(g)}>{tx("Verwijder")}</button>}
               </div>
             </div>
           ))}
-          {!groups.length && <p className="muted">Nog geen groepen.</p>}
+          {!groups.length && <p className="muted">{tx("Nog geen groepen.")}</p>}
         </div>
       </Collapsible>
 
       {modal && (
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
-            <h2>{modal.id ? "Groep wijzigen" : "Nieuwe groep"}</h2>
+            <h2>{modal.id ? tx("Groep wijzigen") : tx("Nieuwe groep")}</h2>
             <div className="grid2">
-              <label>Naam<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required maxLength={100} placeholder="bv. Redactie" /></label>
-              <label>Omschrijving<input value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} maxLength={255} /></label>
+              <label>{tx("Naam")}<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required maxLength={100} placeholder={tx("bv. Redactie")} /></label>
+              <label>{tx("Omschrijving")}<input value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} maxLength={255} /></label>
             </div>
 
             <div>
-              <strong style={{ fontSize: ".85rem" }}>Rollen van deze groep</strong>
+              <strong style={{ fontSize: ".85rem" }}>{tx("Rollen van deze groep")}</strong>
               <div className="perm-list">
                 {roles.map((r) => (
                   <label className="check" key={r.id}>
                     <input type="checkbox" checked={modal.roles.includes(r.id)} onChange={() => toggle("roles", r.id)} /> {r.name} <small className="muted">{r.description}</small>
                   </label>
                 ))}
-                {!roles.length && <span className="muted">Geen rollen beschikbaar.</span>}
+                {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
               </div>
             </div>
 
             {user.is_staff && modules.length > 0 && (
               <div>
-                <strong style={{ fontSize: ".85rem" }}>Toegang tot modules</strong>
+                <strong style={{ fontSize: ".85rem" }}>{tx("Toegang tot modules")}</strong>
                 <div className="access-grid">
                   {modules.map((m) => (
                     <label key={m.key}>{m.label}
@@ -143,22 +145,22 @@ export default function Groups() {
             )}
 
             <div>
-              <strong style={{ fontSize: ".85rem" }}>Leden ({modal.members.length})</strong>
-              <input style={{ margin: ".4rem 0" }} placeholder="Zoek een user…" value={q} onChange={(e) => setQ(e.target.value)} />
+              <strong style={{ fontSize: ".85rem" }}>{tx("Leden (")}{modal.members.length})</strong>
+              <input style={{ margin: ".4rem 0" }} placeholder={tx("Zoek een user…")} value={q} onChange={(e) => setQ(e.target.value)} />
               <div className="member-pick">
                 {shownUsers.map((u) => (
                   <label className="check" key={u.id}>
                     <input type="checkbox" checked={modal.members.includes(u.id)} onChange={() => toggle("members", u.id)} /> {nameOf(u)} <small className="muted">{u.email}</small>
                   </label>
                 ))}
-                {!shownUsers.length && <span className="muted">Geen users gevonden.</span>}
+                {!shownUsers.length && <span className="muted">{tx("Geen users gevonden.")}</span>}
               </div>
             </div>
 
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
-              <button type="button" className="btn" onClick={() => setModal(null)}>Annuleren</button>
-              <button className="btn primary">Opslaan</button>
+              <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
+              <button className="btn primary">{tx("Opslaan")}</button>
             </div>
           </form>
         </div>

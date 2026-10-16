@@ -9,10 +9,12 @@ from django.utils.text import slugify
 from apps.core import modules
 from apps.core.models import Language
 
+from . import themes
 from .models import Block, Profile, ProfileAllow, SocialSettings
 
 DEFAULTS = {
-    "profiles": {"max_photos": 10, "default_visibility": "members", "private_photos": True, "requests_enabled": True, "decline_days": 14, "max_private_photos": 10},
+    "profiles": {"max_photos": 10, "default_visibility": "members", "private_photos": True, "requests_enabled": True, "decline_days": 14, "max_private_photos": 10,
+                 **themes.theme_payload("normal")},
     "messages": {"max_length": 5000, "rate_per_minute": 20},
     "discover": {
         "min_age": 18, "max_age": 99, "max_results": 60, "require_photo": 0, "default_sort": "active", "suggestions": True,
@@ -32,6 +34,130 @@ INTS = {("discover", "min_age"): (13, 99), ("discover", "max_age"): (18, 120), (
 BOOLS = {("profiles", "private_photos"), ("profiles", "requests_enabled"), ("discover", "show_visitors"), ("discover", "suggestions"), ("discover", "require_to_search"), ("discover", "require_to_like"),
          ("discover", "show_non_participants"), ("discover", "show_likes_received"), ("discover", "match_email"), ("discover", "distance_enabled"), ("chat", "photos"), ("chat", "videos"), ("chat", "video_chat")}
 STRS = {("discover", "geocoder_contact"), ("chat", "turn_url"), ("chat", "turn_user"), ("chat", "turn_credential")}
+
+
+import re as _re
+
+
+def clean_fields(raw):
+    """Validate the admin-defined profile fields (see themes.py for the spec)."""
+    if not isinstance(raw, list):
+        raise Invalid("Velden moeten een lijst zijn.")
+    out, seen = [], set()
+    for n, x in enumerate(raw[:40], 1):
+        if not isinstance(x, dict):
+            raise Invalid(f"Veld {n} is ongeldig.")
+        key, label = str(x.get("key", "")).strip(), str(x.get("label", "")).strip()[:60]
+        if not _re.fullmatch(r"[a-z][a-z0-9_]{1,30}", key) or key in seen:
+            raise Invalid(f"Veld {n}: de sleutel moet uniek zijn (a-z, 0-9, _; 2-31 tekens).")
+        if not label:
+            raise Invalid(f"Veld {key}: geef een naam.")
+        typ = x.get("type")
+        if typ not in themes.TYPES:
+            raise Invalid(f"Veld {label}: ongeldig type.")
+        options = [str(o).strip()[:60] for o in (x.get("options") or []) if str(o).strip()][:40]
+        if typ in ("select", "multiselect") and len(set(options)) < 1:
+            raise Invalid(f"Veld {label}: voeg minimaal één keuze toe.")
+        vis = x.get("visibility", "members")
+        if vis not in themes.VISIBILITY:
+            raise Invalid(f"Veld {label}: ongeldige zichtbaarheid.")
+        seen.add(key)
+        out.append({"key": key, "label": label, "type": typ, "options": list(dict.fromkeys(options)) if typ in ("select", "multiselect") else [],
+                    "unit": str(x.get("unit", ""))[:12], "required": bool(x.get("required")), "visibility": vis, "card": bool(x.get("card")),
+                    "filter": bool(x.get("filter")) and typ != "textarea", "group": str(x.get("group", "")).strip()[:40]})
+    return out
+
+
+def clean_values(fields, incoming, old):
+    """Validate the member's values for the configured fields. Returns (data, error)."""
+    from apps.security.words import find_forbidden
+
+    data = dict(old or {})
+    inc = incoming if isinstance(incoming, dict) else {}
+    for fl in fields:
+        k = fl["key"]
+        if k not in inc:
+            continue
+        v, t = inc[k], fl["type"]
+        if t == "checkbox":
+            v = bool(v)
+        elif v in (None, "", []):
+            v = [] if t == "multiselect" else ""
+        elif t == "number":
+            try:
+                v = float(v)
+            except (TypeError, ValueError):
+                return None, f"{fl['label']}: vul een getal in."
+            if not -1e9 < v < 1e9:
+                return None, f"{fl['label']}: getal buiten bereik."
+            v = int(v) if v == int(v) else round(v, 2)
+        elif t == "select":
+            if v not in fl["options"]:
+                return None, f"{fl['label']}: ongeldige keuze."
+        elif t == "multiselect":
+            if not isinstance(v, list) or any(o not in fl["options"] for o in v):
+                return None, f"{fl['label']}: ongeldige keuze."
+            v = list(dict.fromkeys(v))
+        elif t == "date":
+            from datetime import date as _d
+            try:
+                v = _d.fromisoformat(str(v)).isoformat()
+            except ValueError:
+                return None, f"{fl['label']}: ongeldige datum."
+        elif t == "url":
+            v = str(v).strip()[:300]
+            if not _re.fullmatch(r"https?://[^\s]{3,290}", v):
+                return None, f"{fl['label']}: gebruik een volledige link (https://…)."
+        else:
+            v = str(v).strip()[: 4000 if t == "textarea" else 200]
+            if words := find_forbidden(v):
+                return None, f"{fl['label']}: bevat niet toegestane woorden ({', '.join(words)})."
+        data[k] = v
+    return data, None
+
+
+def can_see_field(fl, viewer, owner_id):
+    vis = fl["visibility"]
+    authed = bool(viewer and getattr(viewer, "is_authenticated", False))
+    if authed and (viewer.id == owner_id or viewer.is_staff):
+        return True
+    if vis == "public":
+        return True
+    if vis == "members":
+        return authed
+    if vis == "friends":
+        return authed and are_friends(viewer.id, owner_id)
+    return False
+
+
+def mask(card, builtin=None):
+    """Hide the built-in profile fields the admin switched off (Admin -> Community -> Profielvelden)."""
+    b = builtin or get()["profiles"]["builtin"]
+    off = {"headline": ["headline"], "bio": ["bio"], "gender": ["gender"], "birth_date": ["age"], "city": ["city", "country", "distance_km"],
+           "interests": ["interests"], "aim": ["aim"]}
+    for key, names in off.items():
+        if not b.get(key, True):
+            for n in names:
+                if n in card:
+                    card[n] = [] if isinstance(card[n], list) else None if n in ("age", "distance_km") else ""
+    return card
+
+
+def empty(v):
+    return v in (None, "", [], False)
+
+
+def visible_fields(p, viewer, only_card=False):
+    """[{key,label,type,group,unit,value}] of the configured fields this viewer may see, with a value."""
+    out = []
+    for fl in get()["profiles"]["fields"]:
+        if only_card and not fl["card"]:
+            continue
+        v = (p.data or {}).get(fl["key"])
+        if empty(v) or not can_see_field(fl, viewer, p.user_id):
+            continue
+        out.append({"key": fl["key"], "label": fl["label"], "type": fl["type"], "group": fl["group"], "unit": fl["unit"], "value": v})
+    return out
 
 
 def get():
@@ -71,6 +197,13 @@ def save(incoming, sections):
                 v = sorted({int(x) for x in (v or []) if str(x).isdigit() and 1 <= int(x) <= 5000})[:10]
                 if not v:
                     raise Invalid("Minimaal één afstand.")
+            elif key == ("profiles", "theme"):
+                if v not in themes.THEMES:
+                    raise Invalid("Onbekend thema.")
+            elif key == ("profiles", "builtin"):
+                v = {b: bool((v or {}).get(b, cur[sec]["builtin"].get(b, True))) for b in themes.BUILTIN_KEYS}
+            elif key == ("profiles", "fields"):
+                v = clean_fields(v)
             elif k == "show_on":
                 v = [x for x in dict.fromkeys(v or []) if x in ("home", "website", "dashboard", "backend")]
             elif k == "stun":

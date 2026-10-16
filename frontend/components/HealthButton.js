@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import { useState } from "react";
 
 export default function HealthButton() {
@@ -18,7 +19,7 @@ export default function HealthButton() {
 
   return (
     <div>
-      <button onClick={check}>Check API</button>
+      <button onClick={check}>{tx("Check API")}</button>
       {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
     </div>
   );

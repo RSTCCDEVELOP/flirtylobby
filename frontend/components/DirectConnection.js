@@ -1,7 +1,10 @@
 "use client";
 
+import { tx } from "../lib/t";
+import { IconPaperclip, IconPhone, IconVideo } from "./Icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
+import { confirmDialog } from "../lib/dialog";
 
 const CHUNK = 16 * 1024;
 
@@ -76,11 +79,11 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
   };
   const startCall = async () => {
     try { const local = await media(); setCall({ status: "calling", local, remote: null }); send("call"); }
-    catch (e) { setError("Camera of microfoon niet beschikbaar: " + (e.message || e)); }
+    catch (e) { setError(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e)); }
   };
   const accept = async () => {
     try { const local = await media(); setCall({ status: "active", local, remote: null }); send("accept"); }
-    catch (e) { setError("Camera of microfoon niet beschikbaar: " + (e.message || e)); send("decline"); setCall(null); }
+    catch (e) { setError(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e)); send("decline"); setCall(null); }
   };
 
   const handle = useCallback(async (sig) => {
@@ -126,6 +129,14 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
   useEffect(() => { if (rv.current) rv.current.srcObject = call?.remote || null; }, [call?.remote, call?.status]);
   useEffect(() => { box.current?.scrollTo(0, box.current.scrollHeight); }, [msgs]);
 
+  const disconnect = async () => {
+    if (!(await confirmDialog(role === "owner" ? tx("De verbinding met {0} verbreken? De link blijft werken voor iemand anders.", peer.guest_name || tx("de ander")) : tx("De verbinding verbreken?"), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken"), danger: true }))) return;
+    hangup(false);
+    const body = { key: secret };
+    try { await api(role === "owner" ? `/direct/rooms/${token}/disconnect/` : `/direct/${token}/leave/`, { method: "POST", body }); } catch {}
+    st.current.dc?.close(); st.current.pc?.close(); st.current.pc = null;
+    onClosed?.("left");
+  };
   const other = role === "owner" ? peer.guest_name : peer.owner_name;
   const otherOnline = role === "owner" ? peer.guest_online : peer.owner_online;
   const connected = link === "open";
@@ -141,9 +152,9 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
   const sendFile = async (f) => {
     const dc = st.current.dc, c = info.chat;
     const kind = f.type.startsWith("image/") ? "image" : f.type.startsWith("video/") ? "video" : null;
-    if (!dc || dc.readyState !== "open") return setError("Niet verbonden.");
-    if (!kind || (kind === "image" && !c.photos) || (kind === "video" && !c.videos)) return setError("Dit bestandstype mag niet gedeeld worden.");
-    if (f.size > (kind === "image" ? c.max_image_mb : c.max_video_mb) * 1048576) return setError("Bestand is te groot.");
+    if (!dc || dc.readyState !== "open") return setError(tx("Niet verbonden."));
+    if (!kind || (kind === "image" && !c.photos) || (kind === "video" && !c.videos)) return setError(tx("Dit bestandstype mag niet gedeeld worden."));
+    if (f.size > (kind === "image" ? c.max_image_mb : c.max_video_mb) * 1048576) return setError(tx("Bestand is te groot."));
     setError("");
     dc.send(JSON.stringify({ t: "file", name: f.name, kind, mime: f.type, size: f.size }));
     const buf = await f.arrayBuffer();
@@ -159,30 +170,31 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
     <div className="direct-room">
       <div className={`direct-status ${connected ? "on" : ""}`}>
         <span className={`dot ${connected ? "ok" : ""}`} style={{ width: 10, height: 10, display: "inline-block", boxShadow: "none" }} />
-        {connected ? <strong>Verbonden met {other || "de ander"}</strong>
-          : otherOnline ? <span>{other || "De ander"} is online, verbinding maken…</span>
-          : <span>{role === "owner" ? "Wachten tot iemand de uitnodiging opent…" : `Wachten op ${peer.owner_name || "de uitnodiger"}…`}</span>}
-        {link === "closed" && !connected && <small className="muted"> De verbinding is verbroken.</small>}
+        {connected ? <strong>{tx("Verbonden met")} {other || tx("de ander")}</strong>
+          : otherOnline ? <span>{other || tx("De ander")} {tx("is online, verbinding maken…")}</span>
+          : <span>{role === "owner" ? tx("Wachten tot iemand de uitnodiging opent…") : tx("Wachten op {0}…", peer.owner_name || tx("de uitnodiger"))}</span>}
+        {link === "closed" && !connected && <small className="muted"> {tx("De verbinding is verbroken.")}</small>}
+        {(connected || otherOnline) && <button type="button" className="btn sm danger" style={{ marginLeft: "auto" }} onClick={disconnect}>{tx("Verbreek verbinding")}</button>}
       </div>
       {error && <div className="alert">{error}</div>}
 
       {call?.status === "incoming" && (
         <div className="card" style={{ textAlign: "center" }}>
-          <strong>📞 {other || "De ander"} belt je</strong>
-          <div className="row" style={{ justifyContent: "center", marginTop: ".5rem" }}><button className="btn danger" onClick={() => { send("decline"); setCall(null); }}>Weigeren</button><button className="btn primary" onClick={accept}>Opnemen</button></div>
+          <strong><IconPhone /> {other || tx("De ander")} {tx("belt je")}</strong>
+          <div className="row" style={{ justifyContent: "center", marginTop: ".5rem" }}><button className="btn danger" onClick={() => { send("decline"); setCall(null); }}>{tx("Weigeren")}</button><button className="btn primary" onClick={accept}>{tx("Opnemen")}</button></div>
         </div>
       )}
       {call && call.status !== "incoming" && (
         <div className="direct-video">
           <video ref={rv} autoPlay playsInline className="remote" />
           <video ref={lv} autoPlay playsInline muted className="local" />
-          <div className="call-bar"><span>{call.status === "calling" ? `Bellen naar ${other || "de ander"}…` : `Videochat met ${other || "de ander"}`}</span><button className="btn danger" onClick={() => hangup(true)}>Ophangen</button></div>
+          <div className="call-bar"><span>{call.status === "calling" ? tx("Bellen naar {0}…", other || tx("de ander")) : tx("Videochat met {0}", other || tx("de ander"))}</span><button className="btn danger" onClick={() => hangup(true)}>{tx("Ophangen")}</button></div>
         </div>
       )}
 
       <div className="direct-chat card">
         <div className="chat-msgs" ref={box} style={{ minHeight: 220, maxHeight: 420, overflow: "auto", display: "flex", flexDirection: "column", gap: ".4rem" }}>
-          {!msgs.length && <p className="muted" style={{ margin: "auto" }}>{connected ? "Zeg hallo 👋" : "Je kunt schrijven zodra jullie verbonden zijn."}</p>}
+          {!msgs.length && <p className="muted" style={{ margin: "auto" }}>{connected ? tx("Zeg hallo") : tx("Je kunt schrijven zodra jullie verbonden zijn.")}</p>}
           {msgs.map((m) => (
             <div key={m.id} className={`bubble ${m.me ? "me" : ""}`}>
               {m.kind === "image" && /* eslint-disable-next-line @next/next/no-img-element */ <img src={m.url} alt={m.name} />}
@@ -192,13 +204,13 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
           ))}
         </div>
         <form className="row" style={{ flexWrap: "nowrap", marginTop: ".5rem" }} onSubmit={sendText}>
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Typ een bericht…" disabled={!connected} />
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={tx("Typ een bericht…")} disabled={!connected} />
           <input ref={fileInput} type="file" accept="image/*,video/*" hidden onChange={(e) => { const f = e.target.files[0]; e.target.value = ""; if (f) sendFile(f); }} />
-          {(info.chat.photos || info.chat.videos) && <button type="button" className="btn" disabled={!connected} title="Foto of video sturen" onClick={() => fileInput.current.click()}>📎</button>}
-          {info.chat.video_chat && <button type="button" className="btn" disabled={!connected || !!call} title="Videobellen" onClick={startCall}>🎥</button>}
-          <button className="btn primary" disabled={!connected || !text.trim()}>Verstuur</button>
+          {(info.chat.photos || info.chat.videos) && <button type="button" className="btn" disabled={!connected} title={tx("Foto of video sturen")} onClick={() => fileInput.current.click()}><IconPaperclip /></button>}
+          {info.chat.video_chat && <button type="button" className="btn" disabled={!connected || !!call} title={tx("Videobellen")} onClick={startCall} aria-label={tx("Videobellen")}><IconVideo /></button>}
+          <button className="btn primary" disabled={!connected || !text.trim()}>{tx("Verstuur")}</button>
         </form>
-        <small className="muted">Rechtstreeks tussen jullie twee apparaten. Er wordt niets op de server bewaard en alles verdwijnt als je de pagina sluit.</small>
+        <small className="muted">{tx("Rechtstreeks tussen jullie twee apparaten. Er wordt niets op de server bewaard en alles verdwijnt als je de pagina sluit.")}</small>
       </div>
     </div>
   );

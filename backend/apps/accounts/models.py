@@ -71,6 +71,8 @@ class User(AbstractUser):
     display_name = models.CharField(max_length=60, blank=True)  # profile name shown to others
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=1, blank=True)  # m | f | x
+    VERIFICATION = [("open", "Open"), ("checked", "Gecontroleerd"), ("verified", "Geverifieerd")]
+    verification = models.CharField(max_length=8, choices=VERIFICATION, default="open")  # set by admins; shown on profiles
     address = models.CharField(max_length=200, blank=True)  # street + number
     postal_code = models.CharField(max_length=12, blank=True)
     city = models.CharField(max_length=100, blank=True)

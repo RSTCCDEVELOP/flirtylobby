@@ -1,5 +1,8 @@
 "use client";
 
+import { tx } from "../lib/t";
+import { IconEdit } from "./Icons";
+import { alertDialog } from "../lib/dialog";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
@@ -68,7 +71,7 @@ export function EditableText({ id, as: Tag = "p", fallback = "", fallbacks, clas
       setTimeout(() => setStatus(""), 1500);
     } catch (e) {
       setStatus("error");
-      alert(errorText(e));
+      (await alertDialog(errorText(e)));
       ref.current.innerText = text;
     }
   }
@@ -90,10 +93,10 @@ export function EditableText({ id, as: Tag = "p", fallback = "", fallbacks, clas
           suppressContentEditableWarning
           spellCheck
           onBlur={save}
-          title={`Bewerken (${lang})`}
+          title={tx("Bewerken ({0})", lang)}
         />
       )}
-      {rich && <button type="button" className="img-edit-btn" onClick={() => setPopup(true)}>✎ Uitgebreid</button>}
+      {rich && <button type="button" className="img-edit-btn" onClick={() => setPopup(true)}><IconEdit width={14} height={14} /> {tx("Uitgebreid")}</button>}
       {popup && (
         <RichEditor
           initialHtml={isHtml ? text.slice(5) : plainToHtml(text)}
@@ -110,12 +113,12 @@ export function EditModeSwitch() {
   const { canEdit, editMode, setEditMode } = useSession();
   if (!canEdit) return null;
   return (
-    <label className="edit-switch" title="Website in bewerkmodus zetten">
+    <label className="edit-switch" title={tx("Website in bewerkmodus zetten")}>
       <span className="switch">
         <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
         <span />
       </span>
-      <span>Bewerken</span>
+      <span>{tx("Bewerken")}</span>
     </label>
   );
 }
@@ -123,7 +126,7 @@ export function EditModeSwitch() {
 export function EditBanner() {
   const { editing } = useSession();
   if (!editing) return null;
-  return <div className="edit-banner">Bewerkmodus aan: klik op een tekst met stippellijn om hem te wijzigen. Opslaan gebeurt automatisch.</div>;
+  return <div className="edit-banner">{tx("Bewerkmodus aan: klik op een tekst met stippellijn om hem te wijzigen. Opslaan gebeurt automatisch.")}</div>;
 }
 
 // Edit mode: wrap any image so a content editor can swap it from the media library.
@@ -140,12 +143,12 @@ export function ImageEdit({ target, children, className = "" }) {
       await api("/media/replace/", { method: "POST", body: { target, media_id: item?.id ?? null } });
       setOpen(false);
       router.refresh();
-    } catch (e) { alert(errorText(e)); }
+    } catch (e) { (await alertDialog(errorText(e))); }
   }
   return (
     <span className={`img-edit ${className}`}>
       {children}
-      <button type="button" className="img-edit-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }} title="Afbeelding wijzigen">✎ Wijzig</button>
+      <button type="button" className="img-edit-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }} title={tx("Afbeelding wijzigen")}><IconEdit width={14} height={14} /> {tx("Wijzig")}</button>
       {open && <MediaPicker onPick={pick} onClose={() => setOpen(false)} />}
     </span>
   );

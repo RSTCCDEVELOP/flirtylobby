@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../../../../lib/t";
+import { alertDialog, confirmDialog, promptDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { useRouter } from "next/navigation";
@@ -124,7 +126,7 @@ export default function ThemePage() {
 
   function toggleDevice(key, on) {
     const next = { ...values, [key]: on ? "yes" : "no" };
-    if (!DEVICES.some(([k]) => next[k] === "yes")) return setMsg({ ok: false, text: "Minimaal één weergave moet actief blijven." });
+    if (!DEVICES.some(([k]) => next[k] === "yes")) return setMsg({ ok: false, text: tx("Minimaal één weergave moet actief blijven.") });
     setValues(next);
     if (next[view] !== "yes") setView(DEVICES.find(([k]) => next[k] === "yes")[0]);
     setMsg(null);
@@ -160,7 +162,7 @@ export default function ThemePage() {
       const d = await api("/theme/", { method: "PUT", body: { values } });
       applyPreview(d);
       document.getElementById("theme-live")?.remove();
-      setMsg({ ok: true, text: "Vormgeving opgeslagen voor de hele website." });
+      setMsg({ ok: true, text: tx("Vormgeving opgeslagen voor de hele website.") });
       setPreviewKey((k) => k + 1);
       router.refresh(); // logo/favicon come from the server layout
     } catch (e) {
@@ -169,33 +171,33 @@ export default function ThemePage() {
   }
 
   async function reset() {
-    if (!confirm("Alle vormgeving terugzetten naar de standaardwaarden?")) return;
+    if (!(await confirmDialog(tx("Alle vormgeving terugzetten naar de standaardwaarden?")))) return;
     const d = await api("/theme/reset/", { method: "POST" });
     setValues(d.values);
     applyPreview(d);
     document.getElementById("theme-live")?.remove();
-    setMsg({ ok: true, text: "Standaardwaarden hersteld." });
+    setMsg({ ok: true, text: tx("Standaardwaarden hersteld.") });
   }
 
-  if (!values) return <p className="muted">Laden…</p>;
+  if (!values) return <p className="muted">{tx("Laden…")}</p>;
 
   return (
     <>
       <div className="page-head">
         <div>
-          <h1>Vormgeving</h1>
-          <p className="muted" style={{ margin: 0 }}>Wijzigingen zie je direct hier. Pas na opslaan gelden ze voor de hele website.</p>
+          <h1>{tx("Vormgeving")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{tx("Wijzigingen zie je direct hier. Pas na opslaan gelden ze voor de hele website.")}</p>
         </div>
         <div className="row">
           <CollapseAll />
-          <button className="btn" onClick={reset} disabled={L < 2}>Standaard herstellen</button>
-          <button className="btn primary" onClick={save} disabled={L < 2}>Opslaan</button>
+          <button className="btn" onClick={reset} disabled={L < 2}>{tx("Standaard herstellen")}</button>
+          <button className="btn primary" onClick={save} disabled={L < 2}>{tx("Opslaan")}</button>
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
-      <Collapsible id="theme-devices" title="Weergave per apparaat" className="theme-group">
-        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Op welke apparaten is de site beschikbaar? Minimaal één moet actief zijn. Een bezoeker op een uitgezet apparaat ziet een melding. Staat <strong>App op mobiel</strong> aan, dan is de site te installeren op het beginscherm; staat Mobiel dan uit, dan krijgt een telefoon in de browser de vraag de app te installeren.</p>
+      <Collapsible id="theme-devices" title={tx("Weergave per apparaat")} className="theme-group">
+        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Op welke apparaten is de site beschikbaar? Minimaal één moet actief zijn. Een bezoeker op een uitgezet apparaat ziet een melding. Staat")} <strong>{tx("App op mobiel")}</strong> {tx("aan, dan is de site te installeren op het beginscherm; staat Mobiel dan uit, dan krijgt een telefoon in de browser de vraag de app te installeren.")}</p>
         <div className="vis-options">
           {DEVICES.map(([k, label, hint]) => (
             <label key={k} className="check sec-toggle">
@@ -206,18 +208,18 @@ export default function ThemePage() {
         </div>
       </Collapsible>
 
-      <Collapsible id="theme-preview" title="Live voorbeeld per apparaat" className="theme-group">
+      <Collapsible id="theme-preview" title={tx("Live voorbeeld per apparaat")} className="theme-group">
         <div className="row" style={{ justifyContent: "flex-start", marginBottom: ".75rem" }}>
           {DEVICES.filter(([k]) => values[k] === "yes").map(([k, label]) => <button key={k} className={`btn sm ${view === k ? "primary" : ""}`} onClick={() => setView(k)}>{label}</button>)}
-          <button className="btn sm" onClick={() => setPreviewKey((n) => n + 1)}>Verversen</button>
-          <small className="muted">Het voorbeeld toont de opgeslagen vormgeving; sla eerst op om wijzigingen te zien.</small>
+          <button className="btn sm" onClick={() => setPreviewKey((n) => n + 1)}>{tx("Verversen")}</button>
+          <small className="muted">{tx("Het voorbeeld toont de opgeslagen vormgeving; sla eerst op om wijzigingen te zien.")}</small>
         </div>
         {(() => {
           const d = DEVICES.find(([k]) => k === view)?.[3] || DEVICES[2][3];
           return (
             <div className="device-preview">
               <div className={`device-frame ${d.kind}`} style={{ width: d.kind === "desktop" ? "100%" : d.w + 24, maxWidth: "100%", height: d.h + 24 }}>
-                <iframe key={`${view}-${previewKey}`} src="/" title="Voorbeeld" style={{ height: d.h }} />
+                <iframe key={`${view}-${previewKey}`} src="/" title={tx("Voorbeeld")} style={{ height: d.h }} />
               </div>
             </div>
           );
@@ -226,15 +228,15 @@ export default function ThemePage() {
 
       {schema.filter((g) => g.key === "defaults").map((g) => (
         <Collapsible key={g.key} id="theme-defaults" title={g.label} className="theme-group">
-          <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Gedrag van de interface. Wordt niet veranderd door een ander thema te kiezen.</p>
+          <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Gedrag van de interface. Wordt niet veranderd door een ander thema te kiezen.")}</p>
           <div className="theme-grid">
             {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}
           </div>
         </Collapsible>
       ))}
 
-      <Collapsible id="theme-presets" title="Thema's" className="theme-group">
-        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Kies een thema om alle kleuren, lettertypen en vormen in één keer te veranderen. Daarna kun je nog alles hieronder fijn afstellen.</p>
+      <Collapsible id="theme-presets" title={tx("Thema's")} className="theme-group">
+        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Kies een thema om alle kleuren, lettertypen en vormen in één keer te veranderen. Daarna kun je nog alles hieronder fijn afstellen.")}</p>
         <div className="preset-grid">
           {presets.map((p) => (
             <button key={p.key} className={`preset ${isActive(p) ? "active" : ""}`} onClick={() => applyPreset(p)} title={p.description}>
@@ -253,8 +255,8 @@ export default function ThemePage() {
         </div>
       </Collapsible>
 
-      <Collapsible id="theme-popups" title="Popup-versies en test" className="theme-group">
-        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Kies een versie voor de standaardpopups (leeftijd, gokken, cookies). Daarna kun je alles fijn afstellen onder "Popups". Met de testknoppen zie je meteen het resultaat, ook voordat je opslaat.</p>
+      <Collapsible id="theme-popups" title={tx("Popup-versies en test")} className="theme-group">
+        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Kies een versie voor de standaardpopups (leeftijd, gokken, cookies). Daarna kun je alles fijn afstellen onder \"Popups\". Met de testknoppen zie je meteen het resultaat, ook voordat je opslaat.")}</p>
         <div className="popup-presets">
           {POPUP_VERSIONS.map((p) => {
             const active = Object.keys(p.v).every((k) => values[k] === p.v[k]);
@@ -267,21 +269,25 @@ export default function ThemePage() {
           })}
         </div>
         <div className="popup-test" style={{ marginTop: "1rem" }}>
-          <strong>Test:</strong>
+          <strong>{tx("Test:")}</strong>
           {POPUP_TESTS.map(([t, label]) => (
             <button key={t} type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent("test-popup", { detail: t }))}>{label}</button>
           ))}
+          <button type="button" className="btn" onClick={() => confirmDialog(tx("Weet je zeker dat je dit wilt doen?"), { title: tx("Systeempopup: bevestigen") })}>{tx("Systeempopup: bevestigen")}</button>
+          <button type="button" className="btn" onClick={() => confirmDialog(tx("Dit item definitief verwijderen?"), { title: tx("Systeempopup: verwijderen"), danger: true })}>{tx("Systeempopup: verwijderen")}</button>
+          <button type="button" className="btn" onClick={() => alertDialog(tx("Je wijzigingen zijn opgeslagen."), { title: tx("Systeempopup: melding") })}>{tx("Systeempopup: melding")}</button>
+          <button type="button" className="btn" onClick={() => promptDialog(tx("Geef een nieuwe naam"), tx("Voorbeeld"), { title: tx("Systeempopup: invullen") })}>{tx("Systeempopup: invullen")}</button>
         </div>
       </Collapsible>
 
-      <Collapsible id="theme-sample" title="Voorbeeld" className="sample">
-        <p>Zo ziet gewone tekst eruit, met een <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "var(--blue)" }}>link</a> en <span className="muted">gedempte tekst</span>.</p>
+      <Collapsible id="theme-sample" title={tx("Voorbeeld")} className="sample">
+        <p>{tx("Zo ziet gewone tekst eruit, met een")} <a href="#" onClick={(e) => e.preventDefault()} style={{ color: "var(--blue)" }}>{tx("link")}</a> {tx("en")} <span className="muted">{tx("gedempte tekst")}</span>.</p>
         <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
-          <button className="btn primary">Primair</button>
-          <button className="btn">Standaard</button>
-          <button className="btn danger">Verwijderen</button>
-          <span className="badge ok">Actief</span>
-          <span className="badge off">Geblokkeerd</span>
+          <button className="btn primary">{tx("Primair")}</button>
+          <button className="btn">{tx("Standaard")}</button>
+          <button className="btn danger">{tx("Verwijderen")}</button>
+          <span className="badge ok">{tx("Actief")}</span>
+          <span className="badge off">{tx("Geblokkeerd")}</span>
         </div>
       </Collapsible>
 

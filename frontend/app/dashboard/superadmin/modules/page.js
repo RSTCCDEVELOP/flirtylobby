@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../../../../lib/t";
+import { confirmDialog } from "../../../../lib/dialog";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -44,38 +46,38 @@ function AccessModal({ module, onClose, onChange }) {
   return (
     <div className="overlay" onClick={onClose}>
       <div className="card modal form" onClick={(e) => e.stopPropagation()}>
-        <h2>Toegang tot "{module.label}"</h2>
-        <p className="muted" style={{ margin: 0 }}>Kies rollen, user groups of users en wat ze mogen. Superadmins hebben altijd alles. Een hoger niveau omvat de lagere. Rechten uit rollen tellen ook mee.</p>
+        <h2>{tx("Toegang tot \"")}{module.label}"</h2>
+        <p className="muted" style={{ margin: 0 }}>{tx("Kies rollen, user groups of users en wat ze mogen. Superadmins hebben altijd alles. Een hoger niveau omvat de lagere. Rechten uit rollen tellen ook mee.")}</p>
         <ul className="level-help">{LEVELS.map(([v, n, d]) => <li key={v}><strong>{v}. {n}</strong> <span className="muted">{d}</span></li>)}</ul>
 
         <div className="table-wrap" style={{ border: "1px solid var(--line)", borderRadius: "var(--btn-radius)" }}>
           <table>
-            <thead><tr><th>Wie</th><th>Soort</th><th>Niveau</th><th></th></tr></thead>
+            <thead><tr><th>{tx("Wie")}</th><th>{tx("Soort")}</th><th>{tx("Niveau")}</th><th></th></tr></thead>
             <tbody>
               {grants.map((g) => (
                 <tr key={g.id}>
                   <td>{g.subject}{g.email && <small className="muted"> {g.email}</small>}</td>
-                  <td>{g.type === "role" ? "Rol" : g.type === "group" ? "User group" : "User"}</td>
+                  <td>{g.type === "role" ? tx("Rol") : g.type === "group" ? tx("User group") : tx("User")}</td>
                   <td>
                     <select style={{ width: "auto" }} value={g.level} onChange={(e) => run(() => api(`/module-grants/${g.id}/`, { method: "PATCH", body: { level: Number(e.target.value) } }))}>
                       {LEVELS.map(([v, n]) => <option key={v} value={v}>{v}. {n}</option>)}
                     </select>
                   </td>
-                  <td className="actions"><button className="btn sm danger" onClick={() => run(() => api(`/module-grants/${g.id}/`, { method: "DELETE" }))}>Verwijder</button></td>
+                  <td className="actions"><button className="btn sm danger" onClick={() => run(() => api(`/module-grants/${g.id}/`, { method: "DELETE" }))}>{tx("Verwijder")}</button></td>
                 </tr>
               ))}
-              {!grants.length && <tr><td colSpan={4} className="muted">Nog niemand toegevoegd.</td></tr>}
+              {!grants.length && <tr><td colSpan={4} className="muted">{tx("Nog niemand toegevoegd.")}</td></tr>}
             </tbody>
           </table>
         </div>
 
-        <h3 style={{ margin: ".5rem 0 0" }}>Toevoegen</h3>
+        <h3 style={{ margin: ".5rem 0 0" }}>{tx("Toevoegen")}</h3>
         <div className="grant-add">
           <select value={add.type} onChange={(e) => setAdd({ type: e.target.value, id: "", level: add.level })}>
-            <option value="role">Rol</option><option value="group">User group</option><option value="user">User</option>
+            <option value="role">{tx("Rol")}</option><option value="group">{tx("User group")}</option><option value="user">{tx("User")}</option>
           </select>
           <select value={add.id} onChange={(e) => setAdd({ ...add, id: e.target.value })}>
-            <option value="">{add.type === "role" ? "Kies een rol…" : add.type === "group" ? "Kies een groep…" : "Kies een user…"}</option>
+            <option value="">{add.type === "role" ? tx("Kies een rol…") : add.type === "group" ? tx("Kies een groep…") : tx("Kies een user…")}</option>
             {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
           <select value={add.level} onChange={(e) => setAdd({ ...add, level: Number(e.target.value) })}>
@@ -84,10 +86,10 @@ function AccessModal({ module, onClose, onChange }) {
           <button className="btn primary" disabled={!add.id} onClick={() => run(async () => {
             await api("/module-grants/", { method: "POST", body: { module: module.key, type: add.type, id: Number(add.id), level: add.level } });
             setAdd({ ...add, id: "" });
-          })}>Toevoegen</button>
+          })}>{tx("Toevoegen")}</button>
         </div>
         {error && <div className="alert">{error}</div>}
-        <div className="row"><button className="btn primary" onClick={onClose}>Sluiten</button></div>
+        <div className="row"><button className="btn primary" onClick={onClose}>{tx("Sluiten")}</button></div>
       </div>
     </div>
   );
@@ -107,12 +109,12 @@ export default function ModulesPage() {
   async function toggle(m) {
     if (m.core) return;
     const next = !m.enabled;
-    if (!next && !confirm(`Module "${m.label}" uitzetten? De functie is dan overal inactief.`)) return;
+    if (!next && !(await confirmDialog(tx("Module \"{0}\" uitzetten? De functie is dan overal inactief.", m.label)))) return;
     setBusy(m.key);
     setMsg(null);
     try {
       setMods(await api(`/modules/${m.key}/`, { method: "PATCH", body: { enabled: next } }));
-      setMsg({ ok: true, text: `${m.label} staat nu ${next ? "aan" : "uit"}.` });
+      setMsg({ ok: true, text: tx("{0} staat nu {1}.", m.label, next ? "aan" : "uit") });
       router.refresh(); // menus and the website read the module state from the server layout
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
@@ -127,8 +129,8 @@ export default function ModulesPage() {
     <>
       <div className="page-head">
         <div>
-          <h1>Modules</h1>
-          <p className="muted" style={{ margin: 0 }}>Zet onderdelen aan of uit en bepaal met het poppetje wie ze mag gebruiken, bewerken of beheren. Een module die uit staat is nergens meer actief; je data blijft bewaard. {on} van {mods.length} aan.</p>
+          <h1>{tx("Modules")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{tx("Zet onderdelen aan of uit en bepaal met het poppetje wie ze mag gebruiken, bewerken of beheren. Een module die uit staat is nergens meer actief; je data blijft bewaard.")} {tx("{0} van {1} aan.", on, mods.length)}</p>
         </div>
         <CollapseAll />
       </div>
@@ -137,7 +139,7 @@ export default function ModulesPage() {
       {GROUPS.map((g) => {
         const list = mods.filter((m) => m.group === g);
         return (
-          <Collapsible key={g} id={`modules-${g}`} title={`${g} (${list.filter((m) => m.enabled).length}/${list.length})`}>
+          <Collapsible key={g} id={`modules-${g}`} title={`${tx(g)} (${list.filter((m) => m.enabled).length}/${list.length})`}>
             <div className="module-grid">
               {list.map((m) => (
                 <div key={m.key} className={`card module-tile ${m.enabled ? "" : "off"}`}>
@@ -145,19 +147,19 @@ export default function ModulesPage() {
                     <strong>{m.label}</strong>
                     <span className="module-controls">
                       {m.acl && (
-                        <button className="icon-btn module-people" onClick={() => setAccess(m)} title="Wie heeft toegang?" aria-label={`Toegang tot ${m.label}`}>
+                        <button className="icon-btn module-people" onClick={() => setAccess(m)} title={tx("Wie heeft toegang?")} aria-label={tx("Toegang tot {0}", m.label)}>
                           <IconUser />
                           {m.grants > 0 && <span className="module-count">{m.grants}</span>}
                         </button>
                       )}
-                      <label className="switch" title={m.core ? "Kernmodule: altijd aan" : m.enabled ? "Uitzetten" : "Aanzetten"}>
+                      <label className="switch" title={m.core ? tx("Kernmodule: altijd aan") : m.enabled ? tx("Uitzetten") : tx("Aanzetten")}>
                         <input type="checkbox" checked={m.enabled} disabled={m.core || busy === m.key} onChange={() => toggle(m)} />
                         <span />
                       </label>
                     </span>
                   </div>
                   <p className="muted">{m.desc}</p>
-                  <span className={`badge ${m.enabled ? "ok" : "off"}`}>{m.core ? "Kern" : m.enabled ? "Aan" : "Uit"}</span>
+                  <span className={`badge ${m.enabled ? "ok" : "off"}`}>{m.core ? tx("Kern") : m.enabled ? tx("Aan") : tx("Uit")}</span>
                 </div>
               ))}
             </div>

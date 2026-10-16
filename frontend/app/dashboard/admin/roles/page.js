@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../../../../lib/t";
+import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
@@ -25,7 +27,7 @@ export default function Roles() {
   const label = Object.fromEntries(catalog.flatMap((g) => g.permissions.map((p) => [p.key, p.label])));
 
   async function remove(r) {
-    if (!confirm(`Rol "${r.name}" verwijderen? ${r.user_count ? `${r.user_count} gebruiker(s) verliezen deze rol.` : ""}`)) return;
+    if (!(await confirmDialog(tx("Rol \"{0}\" verwijderen? {1}", r.name, r.user_count ? `${r.user_count} gebruiker(s) verliezen deze rol.` : ""), { danger: true }))) return;
     try { await api(`/roles/${r.id}/`, { method: "DELETE" }); load(); } catch (e) { setError(errorText(e)); }
   }
 
@@ -47,35 +49,35 @@ export default function Roles() {
     <>
       <div className="page-head">
         <div>
-          <h1>Rollen</h1>
-          <p className="muted" style={{ margin: 0 }}>Bepaal wat gebruikers mogen. Een gebruiker kan meerdere rollen hebben. Een superadmin heeft altijd alle rechten, een Admin ook maar ziet en wijzigt geen superadmins. Een rol zonder rechten geeft alleen een eigen dashboard en profiel.</p>
+          <h1>{tx("Rollen")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{tx("Bepaal wat gebruikers mogen. Een gebruiker kan meerdere rollen hebben. Een superadmin heeft altijd alle rechten, een Admin ook maar ziet en wijzigt geen superadmins. Een rol zonder rechten geeft alleen een eigen dashboard en profiel.")}</p>
         </div>
-        {L >= 3 && <button className="btn primary" onClick={() => setModal({ ...EMPTY })}>+ Nieuwe rol</button>}
+        {L >= 3 && <button className="btn primary" onClick={() => setModal({ ...EMPTY })}>{tx("+ Nieuwe rol")}</button>}
       </div>
       {error && <div className="alert">{error}</div>}
 
-      <Collapsible id="roles-list" title="Rollen">
+      <Collapsible id="roles-list" title={tx("Rollen")}>
       <div className="int-list">
         <div className="card int-item">
           <div className="int-main">
-            <strong>Superadmin <span className="badge ok" style={{ marginLeft: ".4rem" }}>ingebouwd</span></strong>
-            <span className="muted">Alle rechten. Als enige te beheren: andere superadmins, en wie een Admin of superadmin mag zijn.</span>
-            <span className="muted" style={{ fontSize: ".85rem" }}>Instellen via het vinkje "Superadmin" bij een gebruiker.</span>
+            <strong>{tx("Superadmin")} <span className="badge ok" style={{ marginLeft: ".4rem" }}>{tx("ingebouwd")}</span></strong>
+            <span className="muted">{tx("Alle rechten. Als enige te beheren: andere superadmins, en wie een Admin of superadmin mag zijn.")}</span>
+            <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Instellen via het vinkje \"Superadmin\" bij een gebruiker.")}</span>
           </div>
         </div>
         {roles.map((r) => (
           <div className="card int-item" key={r.id}>
             <div className="int-main">
-              <strong>{r.name} <span className="badge ok" style={{ marginLeft: ".4rem" }}>{r.user_count} gebruiker{r.user_count === 1 ? "" : "s"}</span></strong>
+              <strong>{r.name} <span className="badge ok" style={{ marginLeft: ".4rem" }}>{r.user_count} {tx("gebruiker")}{r.user_count === 1 ? "" : "s"}</span></strong>
               <span className="muted">{r.description || "—"}</span>
               <span className="chips" style={{ margin: ".4rem 0 0" }}>
-                {r.all_permissions ? <span className="chip" style={{ cursor: "default" }}>Alle rechten</span> : r.permissions.length ? r.permissions.map((k) => <span key={k} className="chip" style={{ cursor: "default" }}>{label[k] || k}</span>) : <span className="muted" style={{ fontSize: ".85rem" }}>Geen extra rechten: alleen eigen dashboard</span>}
+                {r.all_permissions ? <span className="chip" style={{ cursor: "default" }}>{tx("Alle rechten")}</span> : r.permissions.length ? r.permissions.map((k) => <span key={k} className="chip" style={{ cursor: "default" }}>{label[k] || k}</span>) : <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Geen extra rechten: alleen eigen dashboard")}</span>}
               </span>
             </div>
-            {r.locked ? <span className="badge ok">ingebouwd</span> : (
+            {r.locked ? <span className="badge ok">{tx("ingebouwd")}</span> : (
               <div className="int-actions">
-                {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...r })}>Wijzig</button>}
-                {L >= 3 && <button className="btn sm danger" onClick={() => remove(r)}>Verwijder</button>}
+                {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...r })}>{tx("Wijzig")}</button>}
+                {L >= 3 && <button className="btn sm danger" onClick={() => remove(r)}>{tx("Verwijder")}</button>}
               </div>
             )}
           </div>
@@ -86,12 +88,12 @@ export default function Roles() {
       {modal && (
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
-            <h2>{modal.id ? "Rol wijzigen" : "Nieuwe rol"}</h2>
-            <label>Naam<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required maxLength={100} placeholder="bv. Content manager" /></label>
-            <label>Omschrijving<input value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} maxLength={255} /></label>
+            <h2>{modal.id ? tx("Rol wijzigen") : tx("Nieuwe rol")}</h2>
+            <label>{tx("Naam")}<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required maxLength={100} placeholder={tx("bv. Content manager")} /></label>
+            <label>{tx("Omschrijving")}<input value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} maxLength={255} /></label>
             {catalog.map((g) => (
               <div key={g.group}>
-                <strong style={{ fontSize: ".85rem" }}>{g.group}</strong>
+                <strong style={{ fontSize: ".85rem" }}>{tx(g.group)}</strong>
                 <div className="perm-list">
                   {g.permissions.map((p) => (
                     <label className="check" key={p.key}>
@@ -103,8 +105,8 @@ export default function Roles() {
             ))}
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
-              <button type="button" className="btn" onClick={() => setModal(null)}>Annuleren</button>
-              <button className="btn primary">Opslaan</button>
+              <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
+              <button className="btn primary">{tx("Opslaan")}</button>
             </div>
           </form>
         </div>

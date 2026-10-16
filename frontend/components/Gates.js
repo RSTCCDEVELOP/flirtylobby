@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../lib/t";
+import { IconCamera, IconChat, IconMic, IconPaperclip, IconVideo } from "./Icons";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { pick } from "../lib/i18n";
@@ -66,36 +68,36 @@ function CookiePolicyModal({ cfg, lang }) {
 // Sample window with tabs (chat / video chat / files) to judge the popup style; shows fake content only
 function SampleWindow({ start, onClose }) {
   const [tab, setTab] = useState(start);
-  const tabs = [["chat", "💬 Chat"], ["video", "🎥 Videochat"], ["files", "📎 Bestanden"]];
+  const tabs = [["chat", <><IconChat /> {tx("Chat")}</>], ["video", <><IconVideo /> {tx("Videochat")}</>], ["files", <><IconPaperclip /> {tx("Bestanden")}</>]];
   return (
     <div className="gate-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="gate-modal sample-window" onClick={(e) => e.stopPropagation()}>
-        <div className="sample-head"><strong>Voorbeeldvenster</strong><button className="btn sm" onClick={onClose}>Sluiten</button></div>
+        <div className="sample-head"><strong>{tx("Voorbeeldvenster")}</strong><button className="btn sm" onClick={onClose}>{tx("Sluiten")}</button></div>
         <div className="sample-tabs" role="tablist">
           {tabs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={`btn sm ${tab === k ? "primary" : ""}`} onClick={() => setTab(k)}>{l}</button>)}
         </div>
         {tab === "chat" && (
           <div className="sample-body">
-            <div className="bubble">Hoi! Leuk je te zien 👋</div>
-            <div className="bubble me">Hoi, hoe gaat het?</div>
-            <div className="bubble">Goed! Zullen we videobellen?</div>
-            <div className="row" style={{ flexWrap: "nowrap" }}><input placeholder="Typ een bericht…" readOnly /><button className="btn primary">Verstuur</button></div>
+            <div className="bubble">{tx("Hoi! Leuk je te zien")}</div>
+            <div className="bubble me">{tx("Hoi, hoe gaat het?")}</div>
+            <div className="bubble">{tx("Goed! Zullen we videobellen?")}</div>
+            <div className="row" style={{ flexWrap: "nowrap" }}><input placeholder={tx("Typ een bericht…")} readOnly /><button className="btn primary">{tx("Verstuur")}</button></div>
           </div>
         )}
         {tab === "video" && (
           <div className="sample-body">
-            <div className="sample-video"><span>🎥</span><small>Video van de ander</small><div className="sample-self">Jij</div></div>
-            <div className="row" style={{ justifyContent: "center" }}><button className="btn">🎤 Microfoon</button><button className="btn">📷 Camera</button><button className="btn danger">Ophangen</button></div>
+            <div className="sample-video"><span><IconVideo width={48} height={48} /></span><small>{tx("Video van de ander")}</small><div className="sample-self">{tx("Jij")}</div></div>
+            <div className="row" style={{ justifyContent: "center" }}><button className="btn"><IconMic /> {tx("Microfoon")}</button><button className="btn"><IconCamera /> {tx("Camera")}</button><button className="btn danger">{tx("Ophangen")}</button></div>
           </div>
         )}
         {tab === "files" && (
           <div className="sample-body">
             <ul className="doc-list">
-              <li><strong>vakantie.jpg</strong><span>Afbeelding · 2,4 MB</span></li>
-              <li><strong>kennismaking.mp4</strong><span>Video · 18 MB</span></li>
-              <li><strong>cv.pdf</strong><span>Document · 310 KB</span></li>
+              <li><strong>vakantie.jpg</strong><span>{tx("Afbeelding · 2,4 MB")}</span></li>
+              <li><strong>kennismaking.mp4</strong><span>{tx("Video · 18 MB")}</span></li>
+              <li><strong>cv.pdf</strong><span>{tx("Document · 310 KB")}</span></li>
             </ul>
-            <button className="btn">Bestand delen</button>
+            <button className="btn">{tx("Bestand delen")}</button>
           </div>
         )}
       </div>
@@ -172,11 +174,11 @@ export default function Gates({ cfg }) {
         <div className="gate-overlay" role="dialog" aria-modal="true" onClick={() => setTest(null)}>
           <div className="gate-modal gate-example" onClick={(e) => e.stopPropagation()}>
             <Logo className="gate-logo" />
-            <h2>Voorbeeld-popup</h2>
-            <p>Zo ziet een popup met een afbeelding eruit. Het logo komt uit je logo-instellingen en past zich aan de lichte of donkere modus aan.</p>
+            <h2>{tx("Voorbeeld-popup")}</h2>
+            <p>{tx("Zo ziet een popup met een afbeelding eruit. Het logo komt uit je logo-instellingen en past zich aan de lichte of donkere modus aan.")}</p>
             <div className="row">
-              <button className="btn" onClick={() => setTest(null)}>Sluiten</button>
-              <button className="btn primary" onClick={() => setTest(null)}>Doorgaan</button>
+              <button className="btn" onClick={() => setTest(null)}>{tx("Sluiten")}</button>
+              <button className="btn primary" onClick={() => setTest(null)}>{tx("Doorgaan")}</button>
             </div>
           </div>
         </div>

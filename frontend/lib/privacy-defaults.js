@@ -68,3 +68,16 @@ export const PRIVACY_BODY = {
 <h2>10. Contact</h2>
 <p>[company name]<br>[address]<br>[email address]<br>[phone number]</p>`,
 };
+
+// Other languages (zh, ar, pt, es, de, fr): { title, body } per language in lib/privacy-i18n/<code>.json
+import ar from "./privacy-i18n/ar.json";
+import de from "./privacy-i18n/de.json";
+import es from "./privacy-i18n/es.json";
+import fr from "./privacy-i18n/fr.json";
+import pt from "./privacy-i18n/pt.json";
+import zh from "./privacy-i18n/zh.json";
+
+for (const [code, d] of Object.entries({ ar, de, es, fr, pt, zh })) {
+  PRIVACY_TITLE[code] = d.title;
+  PRIVACY_BODY[code] = d.body;
+}

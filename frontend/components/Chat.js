@@ -1,6 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { tx } from "../lib/t";
+import { IconChat, IconPaperclip, IconPhone, IconVideo } from "./Icons";
+import { alertDialog } from "../lib/dialog";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { confirmDialog } from "../lib/dialog";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { api, errorText, getToken, mediaUrl } from "../lib/api";
 import { useSession } from "./Session";
@@ -27,6 +32,12 @@ export function ChatProvider({ children }) {
   const [rtc, setRtc] = useState({}); // uid -> [{id, from_me, body, kind, url, filename, at}]
   const [peerState, setPeerState] = useState({}); // uid -> "connecting" | "open" | "closed"
   const [call, setCall] = useState(null); // {uid, name, status: "calling"|"incoming"|"active", local, remote}
+  const router = useRouter();
+  const pathRef = useRef("");
+  const pathname = usePathname();
+  pathRef.current = pathname;
+  const [directActive, setDirectActive] = useState([]); // people connected through my invitations right now: [{token, name}]
+  const seenGuests = useRef(null); // tokens whose guest was already connected (null = first look: no popup)
   const peers = useRef({});
   const lastSignal = useRef(0);
   const incomingFiles = useRef({});
@@ -40,6 +51,31 @@ export function ChatProvider({ children }) {
     if (!user || !getToken()) return setCfg(null);
     api("/community/config/").then((d) => setCfg(d.chat)).catch(() => setCfg(null));
   }, [user]);
+
+  // someone opened my invitation link and connected: take me to the dashboard, where a block shows who it is
+  useEffect(() => {
+    if (!user || cfg?.method !== "webrtc") { setDirectActive([]); return; }
+    let stop = false;
+    const check = async () => {
+      try {
+        const rooms = await api("/direct/rooms/");
+        const online = new Map(rooms.filter((r) => r.guest_online).map((r) => [r.token, r.guest_name]));
+        const prev = seenGuests.current;
+        setDirectActive([...online].map(([token, name]) => ({ token, name })));
+        seenGuests.current = new Set(online.keys());
+        if (!prev || stop) return;
+        const fresh = [...online].filter(([t]) => !prev.has(t));
+        if (!fresh.length) return;
+        const where = pathRef.current;
+        if (where === "/dashboard") return; // the block is already in view
+        if (where.startsWith("/dashboard/community/direct")) return router.push("/dashboard");
+        if (await confirmDialog(tx("{0} is verbonden via je uitnodiging.", fresh.map(([, n]) => n).join(", ")), { title: tx("Nieuwe verbinding"), okLabel: tx("Naar het dashboard"), cancelLabel: tx("Later") })) router.push("/dashboard");
+      } catch {}
+    };
+    check();
+    const t = setInterval(check, 5000);
+    return () => { stop = true; clearInterval(t); };
+  }, [user, cfg?.method, router]);
 
   const loadConvs = useCallback(() => {
     if (cfgRef.current?.method === "portal") api("/chat/conversations/").then(setConvs).catch(() => {});
@@ -153,7 +189,7 @@ export function ChatProvider({ children }) {
       const local = await attachMedia(partner.id);
       setCall({ uid: partner.id, name: partner.name, status: "calling", local, remote: null });
       signal(partner.id, "call");
-    } catch (e) { alert("Camera of microfoon niet beschikbaar: " + (e.message || e)); }
+    } catch (e) { (await alertDialog(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e))); }
   };
   const acceptCall = async () => {
     const c = callRef.current;
@@ -161,7 +197,7 @@ export function ChatProvider({ children }) {
       const local = await attachMedia(c.uid);
       setCall({ ...c, status: "active", local });
       signal(c.uid, "accept");
-    } catch (e) { alert("Camera of microfoon niet beschikbaar: " + (e.message || e)); declineCall(); }
+    } catch (e) { (await alertDialog(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e))); declineCall(); }
   };
   const declineCall = () => { const c = callRef.current; if (c) signal(c.uid, "decline"); setCall(null); };
 
@@ -184,9 +220,9 @@ export function ChatProvider({ children }) {
     const dc = peers.current[uid]?.dc;
     const c = cfgRef.current;
     const kind = file.type.startsWith("image/") ? "image" : file.type.startsWith("video/") ? "video" : null;
-    if (!dc || dc.readyState !== "open") return "Niet verbonden.";
-    if (!kind || (kind === "image" && !c.photos) || (kind === "video" && !c.videos)) return "Dit bestandstype mag niet gedeeld worden.";
-    if (file.size > (kind === "image" ? c.max_image_mb : c.max_video_mb) * 1048576) return "Bestand is te groot.";
+    if (!dc || dc.readyState !== "open") return tx("Niet verbonden.");
+    if (!kind || (kind === "image" && !c.photos) || (kind === "video" && !c.videos)) return tx("Dit bestandstype mag niet gedeeld worden.");
+    if (file.size > (kind === "image" ? c.max_image_mb : c.max_video_mb) * 1048576) return tx("Bestand is te groot.");
     dc.send(JSON.stringify({ t: "file", name: file.name, kind, mime: file.type, size: file.size }));
     const buf = await file.arrayBuffer();
     for (let i = 0; i < buf.byteLength; i += CHUNK) {
@@ -200,7 +236,7 @@ export function ChatProvider({ children }) {
 
   const unread = convs.reduce((n, c) => n + c.unread, 0);
   return (
-    <ChatContext.Provider value={{ cfg, convs, loadConvs, active, setActive, openPartner, widgetOpen, setWidgetOpen, rtc, peerState, call, unread,
+    <ChatContext.Provider value={{ directActive, cfg, convs, loadConvs, active, setActive, openPartner, widgetOpen, setWidgetOpen, rtc, peerState, call, unread,
       startCall, acceptCall, declineCall, endCall, sendRtcText, sendRtcFile, user }}>
       {children}
     </ChatContext.Provider>
@@ -208,7 +244,7 @@ export function ChatProvider({ children }) {
 }
 
 // ── UI ─────────────────────────────────────────────────────────────────────
-const Dot = ({ on }) => <span className={`dot ${on ? "ok" : ""}`} style={{ width: 9, height: 9, display: "inline-block", boxShadow: "none" }} title={on ? "Online" : "Offline"} />;
+const Dot = ({ on }) => <span className={`dot ${on ? "ok" : ""}`} style={{ width: 9, height: 9, display: "inline-block", boxShadow: "none" }} title={on ? tx("Online") : tx("Offline")} />;
 
 function Bubble({ m }) {
   return (
@@ -230,7 +266,7 @@ function CallView() {
     <div className="call-view">
       <video ref={rv} autoPlay playsInline className="remote" />
       <video ref={lv} autoPlay playsInline muted className="local" />
-      <div className="call-bar"><span>{call.status === "calling" ? `Bellen naar ${call.name}…` : `Videochat met ${call.name}`}</span><button className="btn danger" onClick={() => endCall(true)}>Ophangen</button></div>
+      <div className="call-bar"><span>{call.status === "calling" ? tx("Bellen naar {0}…", call.name) : tx("Videochat met {0}", call.name)}</span><button className="btn danger" onClick={() => endCall(true)}>{tx("Ophangen")}</button></div>
     </div>
   );
 }
@@ -282,7 +318,7 @@ export function ChatPanel({ compact = false }) {
     if (portal) {
       try { const d = await api(`/chat/with/${active.id}/`, { method: "POST", body: { body } }); setText(""); last.current = d.messages.length ? Math.max(last.current, d.messages[d.messages.length - 1].id) : last.current; setMsgs((m) => [...m, ...d.messages.filter((x) => x.id > (m[m.length - 1]?.id || 0))]); loadConvs(); } catch (ex) { setErr(errorText(ex)); }
     } else if (c.sendRtcText(active.id, body)) setText("");
-    else setErr("Nog niet verbonden. De ander moet online zijn.");
+    else setErr(tx("Nog niet verbonden. De ander moet online zijn."));
   }
 
   async function sendFile(e) {
@@ -302,15 +338,15 @@ export function ChatPanel({ compact = false }) {
     <div className={`chat ${compact ? "compact" : ""}`}>
       {(!compact || !active) && (
         <div className="chat-list">
-          <input placeholder="Zoek een lid om te chatten…" value={q} onChange={(e) => setQ(e.target.value)} />
-          {people.filter((p) => p.accept_chat).map((p) => <button key={p.id} className="chat-row" onClick={() => { openPartner(p); setQ(""); }}><Dot on={p.online} /> {p.name} <small className="muted">nieuw gesprek</small></button>)}
+          <input placeholder={tx("Zoek een lid om te chatten…")} value={q} onChange={(e) => setQ(e.target.value)} />
+          {people.filter((p) => p.accept_chat).map((p) => <button key={p.id} className="chat-row" onClick={() => { openPartner(p); setQ(""); }}><Dot on={p.online} /> {p.name} <small className="muted">{tx("nieuw gesprek")}</small></button>)}
           {convs.map((cv) => (
             <button key={cv.user.id} className={`chat-row ${active?.id === cv.user.id ? "active" : ""}`} onClick={() => openPartner(cv.user)}>
               <Dot on={cv.user.online} /> <span><strong>{cv.user.name}</strong><small className="muted">{cv.last}</small></span>{cv.unread > 0 && <span className="cart-count">{cv.unread}</span>}
             </button>
           ))}
-          {!portal && <small className="muted" style={{ padding: ".5rem" }}>Directe verbinding (WebRTC): zoek een lid; berichten worden niet opgeslagen.</small>}
-          {portal && !convs.length && !people.length && <small className="muted" style={{ padding: ".5rem" }}>Nog geen gesprekken. Zoek hierboven een lid.</small>}
+          {!portal && <small className="muted" style={{ padding: ".5rem" }}>{tx("Directe verbinding (WebRTC): zoek een lid; berichten worden niet opgeslagen.")}</small>}
+          {portal && !convs.length && !people.length && <small className="muted" style={{ padding: ".5rem" }}>{tx("Nog geen gesprekken. Zoek hierboven een lid.")}</small>}
         </div>
       )}
       {active && (
@@ -318,24 +354,24 @@ export function ChatPanel({ compact = false }) {
           <div className="chat-head">
             {compact && <button className="btn sm" onClick={() => setActive(null)}>←</button>}
             <strong>{active.name}</strong>
-            {!portal && <small className="muted">{state === "open" ? "verbonden" : state === "connecting" ? "verbinden…" : "niet verbonden"}</small>}
+            {!portal && <small className="muted">{state === "open" ? "verbonden" : state === "connecting" ? tx("verbinden…") : tx("niet verbonden")}</small>}
             <span style={{ marginLeft: "auto" }}>
-              {cfg.video_chat && <button className="btn sm" title="Videochat" onClick={() => c.startCall(active)} disabled={!!c.call}>🎥 Bel</button>}
+              {cfg.video_chat && <button className="btn sm" title={tx("Videochat")} onClick={() => c.startCall(active)} disabled={!!c.call}><IconVideo /> {tx("Bel")}</button>}
             </span>
           </div>
           <div className="chat-msgs" ref={box}>
             {list.map((m) => <Bubble key={m.id} m={m} />)}
-            {!list.length && <p className="muted" style={{ textAlign: "center" }}>Zeg hallo 👋</p>}
+            {!list.length && <p className="muted" style={{ textAlign: "center" }}>{tx("Zeg hallo")}</p>}
           </div>
           {err && <div className="alert" style={{ margin: ".25rem" }}>{err}</div>}
           <form className="chat-input" onSubmit={send}>
-            {accept && <><input ref={files} type="file" accept={accept} hidden onChange={sendFile} /><button type="button" className="btn sm" title="Foto of video delen" onClick={() => files.current.click()}>📎</button></>}
-            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Typ een bericht…" />
-            <button className="btn primary sm">Stuur</button>
+            {accept && <><input ref={files} type="file" accept={accept} hidden onChange={sendFile} /><button type="button" className="btn sm" title={tx("Foto of video delen")} onClick={() => files.current.click()}><IconPaperclip /></button></>}
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder={tx("Typ een bericht…")} />
+            <button className="btn primary sm">{tx("Stuur")}</button>
           </form>
         </div>
       )}
-      {!active && !compact && <div className="chat-thread" style={{ display: "grid", placeItems: "center" }}><p className="muted">Kies een gesprek of zoek een lid.</p></div>}
+      {!active && !compact && <div className="chat-thread" style={{ display: "grid", placeItems: "center" }}><p className="muted">{tx("Kies een gesprek of zoek een lid.")}</p></div>}
       <CallView />
     </div>
   );
@@ -350,6 +386,20 @@ export function chatArea(path) {
 }
 const chatVisible = (cfg, path) => !!cfg && cfg.show_on.includes(chatArea(path));
 
+// Shown in every header while somebody is connected through a direct invitation
+export function DirectIndicator() {
+  const c = useChat();
+  const list = c?.directActive || [];
+  if (!list.length) return null;
+  const names = list.map((x) => x.name).join(", ");
+  return (
+    <Link href={`/dashboard/community/direct?room=${list[0].token}`} className="direct-pill" title={tx("Directe verbinding actief: {0}", names)}>
+      <span className="live-dot" />
+      <span className="direct-pill-text">{tx("Verbonden:")} {names}</span>
+    </Link>
+  );
+}
+
 // Launcher in a header (style "button"): opens the popup or goes to the chat page
 export function ChatButton() {
   const c = useChat();
@@ -358,8 +408,8 @@ export function ChatButton() {
   if (!c?.cfg || c.cfg.style !== "button" || !chatVisible(c.cfg, path)) return null;
   const onClick = () => (c.cfg.display === "page" ? (window.location.href = "/dashboard/community/chat") : c.setWidgetOpen(!c.widgetOpen));
   return (
-    <button className="btn sm chat-btn" onClick={onClick} title="Chat" aria-label="Chat">
-      💬{label === "text" && <span> Chat</span>}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}
+    <button className="btn sm chat-btn" onClick={onClick} title={tx("Chat")} aria-label={tx("Chat")}>
+      <IconChat />{label === "text" && <span> {tx("Chat")}</span>}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}
     </button>
   );
 }
@@ -378,23 +428,23 @@ export function ChatWidget() {
     <>
       {popup && !onChatPage && visible && (
         <div className="chat-widget">
-          {c.widgetOpen && <div className="card chat-pop"><div className="chat-pop-head"><strong>Chat</strong><button className="btn sm" onClick={() => c.setWidgetOpen(false)}>Sluiten</button></div><ChatPanel compact /></div>}
+          {c.widgetOpen && <div className="card chat-pop"><div className="chat-pop-head"><strong>{tx("Chat")}</strong><button className="btn sm" onClick={() => c.setWidgetOpen(false)}>{tx("Sluiten")}</button></div><ChatPanel compact /></div>}
           {floating && (
-            <button className={`chat-fab ${label === "text" ? "with-text" : ""}`} onClick={() => c.setWidgetOpen(!c.widgetOpen)} aria-label="Chat">
-              💬{label === "text" && <span> Chat</span>}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}
+            <button className={`chat-fab ${label === "text" ? "with-text" : ""}`} onClick={() => c.setWidgetOpen(!c.widgetOpen)} aria-label={tx("Chat")}>
+              <IconChat />{label === "text" && <span> {tx("Chat")}</span>}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}
             </button>
           )}
         </div>
       )}
       {floating && !popup && visible && !onChatPage && (
-        <div className="chat-widget"><button className={`chat-fab ${label === "text" ? "with-text" : ""}`} onClick={() => (window.location.href = "/dashboard/community/chat")} aria-label="Chat">💬{label === "text" && <span> Chat</span>}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}</button></div>
+        <div className="chat-widget"><button className={`chat-fab ${label === "text" ? "with-text" : ""}`} onClick={() => (window.location.href = "/dashboard/community/chat")} aria-label={tx("Chat")}><IconChat />{label === "text" && <span> {tx("Chat")}</span>}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}</button></div>
       )}
       {c.call?.status === "incoming" && (
         <div className="overlay" style={{ zIndex: 2000 }}>
           <div className="card modal form" style={{ textAlign: "center" }}>
-            <h2>📞 {c.call.name} belt je</h2>
-            <p className="muted">Videochat</p>
-            <div className="row" style={{ justifyContent: "center" }}><button className="btn danger" onClick={c.declineCall}>Weigeren</button><button className="btn primary" onClick={c.acceptCall}>Opnemen</button></div>
+            <h2><IconPhone /> {c.call.name} {tx("belt je")}</h2>
+            <p className="muted">{tx("Videochat")}</p>
+            <div className="row" style={{ justifyContent: "center" }}><button className="btn danger" onClick={c.declineCall}>{tx("Weigeren")}</button><button className="btn primary" onClick={c.acceptCall}>{tx("Opnemen")}</button></div>
           </div>
         </div>
       )}

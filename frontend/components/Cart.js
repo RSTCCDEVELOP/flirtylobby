@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../lib/t";
+import { IconCart, IconCheck } from "./Icons";
 import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useModule } from "./Modules";
@@ -26,11 +28,11 @@ export function ShopLinks() {
   const orders = useModule("orders");
   return (
     <>
-      {useModule("profiles") && <Link href="/leden" className="shop-link">Leden</Link>}
-      {products && <Link href="/producten" className="shop-link">Producten</Link>}
+      {useModule("profiles") && <Link href="/leden" className="shop-link">{tx("Leden")}</Link>}
+      {products && <Link href="/producten" className="shop-link">{tx("Producten")}</Link>}
       {orders && (
-        <Link href="/winkelwagen" className="shop-link" title="Winkelwagen">
-          🛒 Winkelwagen{count > 0 && <span className="cart-count">{count}</span>}
+        <Link href="/winkelwagen" className="shop-link" title={tx("Winkelwagen")}>
+          <IconCart /> {tx("Winkelwagen")}{count > 0 && <span className="cart-count">{count}</span>}
         </Link>
       )}
     </>
@@ -45,11 +47,11 @@ export function AddToCart({ id, disabled }) {
   if (!orders) return null;
   return (
     <div className="add-cart">
-      <input type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} aria-label="Aantal" />
+      <input type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} aria-label={tx("Aantal")} />
       <button className="btn primary" disabled={disabled} onClick={() => { add(id, qty); setDone(true); setTimeout(() => setDone(false), 1800); }}>
-        {disabled ? "Uitverkocht" : done ? "Toegevoegd ✓" : "In winkelwagen"}
+        {disabled ? tx("Uitverkocht") : done ? <>{tx("Toegevoegd")} <IconCheck /></> : tx("In winkelwagen")}
       </button>
-      {done && <Link href="/winkelwagen" className="btn">Naar winkelwagen</Link>}
+      {done && <Link href="/winkelwagen" className="btn">{tx("Naar winkelwagen")}</Link>}
     </div>
   );
 }

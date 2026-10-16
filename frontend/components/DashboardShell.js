@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -8,7 +9,7 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Logo } from "./BrandingContext";
 import UserMenu from "./UserMenu";
-import { ChatButton, useChat } from "./Chat";
+import { ChatButton, DirectIndicator, useChat } from "./Chat";
 import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useUi } from "./Ui";
@@ -33,7 +34,7 @@ const COMMUNITY = [
   { href: "/dashboard/community/discover", label: "Zoeken & matchen", icon: <IconSearch />, module: "discover", badge: "discover_new" },
   { href: "/dashboard/community/messages", label: "Berichten", icon: <IconMail />, module: "messages", badge: "unread_messages" },
   { href: "/dashboard/community/chat", label: "Chat", icon: <IconChat />, module: "chat", badge: "unread_chat" },
-  { href: "/dashboard/community/direct", label: "Directe verbinding", icon: <IconChat />, module: "chat", needs: "webrtc" },
+  { href: "/dashboard/community/direct", label: "Directe verbinding", icon: <IconChat />, module: "chat", needs: "webrtc", badge: "direct_active" },
   { href: "/dashboard/community/requests", label: "Vrienden & verzoeken", icon: <IconUsers />, module: "profiles", badge: "requests" },
   { href: "/dashboard/community/blocked", label: "Geblokkeerd", icon: <IconLock />, module: "profiles" },
 ];
@@ -101,29 +102,30 @@ export default function DashboardShell({ children }) {
   const allowedAdminNav = ADMIN_NAV.filter((n) => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
-    <Link href={n.href} title={n.label} className={(exact ? pathname === n.href : pathname.startsWith(n.href)) ? "active" : ""} onClick={closeMenu}>
+    <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname.startsWith(n.href)) ? "active" : ""} onClick={closeMenu}>
       {n.icon}
-      <span className="label">{n.label}</span>
-      {n.badgeCount > 0 && <span className="cart-count" style={{ marginLeft: "auto" }}>{n.badgeCount}</span>}
+      <span className="label">{tx(n.label)}</span>
+      {n.badgeCount > 0 && (n.badge === "direct_active" ? <span className="nav-live" title={tx("Directe verbinding actief")}><span className="live-dot" />{n.badgeCount}</span> : <span className="cart-count" style={{ marginLeft: "auto" }}>{n.badgeCount}</span>)}
     </Link>
   );
 
   return (
     <div className={`shell ${collapsed ? "collapsed" : ""}`}>
       <header className="topbar">
-        <button className="icon-btn menu-toggle" onClick={() => setOpen(!open)} aria-label="Menu">
+        <button className="icon-btn menu-toggle" onClick={() => setOpen(!open)} aria-label={tx("Menu")}>
           <IconMenu />
         </button>
-        <button className="icon-btn collapse-toggle" onClick={toggleCollapsed} aria-label={collapsed ? "Menu uitklappen" : "Menu inklappen"} title={collapsed ? "Menu uitklappen" : "Menu inklappen"}>
+        <button className="icon-btn collapse-toggle" onClick={toggleCollapsed} aria-label={collapsed ? tx("Menu uitklappen") : tx("Menu inklappen")} title={collapsed ? tx("Menu uitklappen") : tx("Menu inklappen")}>
           <IconMenu />
         </button>
         <Link href="/dashboard" className="brand">
           <Logo />
         </Link>
         <nav className="topnav">
-          <Link href="/">Homepage</Link>
+          <Link href="/">{tx("Homepage")}</Link>
         </nav>
         <div className="topbar-user">
+          <DirectIndicator />
           <ChatButton />
           <LanguageSwitcher />
           <ThemeToggle />
@@ -137,28 +139,28 @@ export default function DashboardShell({ children }) {
       >
         {inSuper ? (
           <>
-            <Link href="/dashboard" className="back" title="Terug naar dashboard" onClick={closeMenu}><IconBack /> <span className="label">Terug naar dashboard</span></Link>
-            <div className="side-title">Super admin</div>
+            <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>
+            <div className="side-title">{tx("Super admin")}</div>
             {SUPER_NAV.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/superadmin"} />)}
-            <div className="side-title">Alle beheerpagina's</div>
+            <div className="side-title">{tx("Alle beheerpagina's")}</div>
             {allowedAdminNav.filter((n) => n.href !== "/dashboard/admin").map((n) => <NavLink key={n.href} n={n} />)}
           </>
         ) : inAdmin ? (
           <>
-            <Link href="/dashboard" className="back" title="Terug naar dashboard" onClick={closeMenu}><IconBack /> <span className="label">Terug naar dashboard</span></Link>
-            <div className="side-title">Admin</div>
+            <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>
+            <div className="side-title">{tx("Admin")}</div>
             {allowedAdminNav.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/admin"} />)}
           </>
         ) : (
           <>
             {NAV.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
-            {communityLinks.length > 0 && <div className="side-title">Community</div>}
-            {communityLinks.map((n) => <NavLink key={n.href} n={{ ...n, badgeCount: n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) : 0 }} exact={n.href === "/dashboard/community"} />)}
+            {communityLinks.length > 0 && <div className="side-title">{tx("Community")}</div>}
+            {communityLinks.map((n) => <NavLink key={n.href} n={{ ...n, badgeCount: n.badge === "direct_active" ? (chat?.directActive?.length || 0) : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) : 0 }} exact={n.href === "/dashboard/community"} />)}
           </>
         )}
         {(canAdmin(user, mods) || user.is_staff) && (
           <div className="side-bottom">
-            <div className="side-title">Beheer</div>
+            <div className="side-title">{tx("Beheer")}</div>
             {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
             {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}
           </div>

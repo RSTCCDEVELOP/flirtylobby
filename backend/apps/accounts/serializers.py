@@ -20,7 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "roles", "user_groups", "is_active", "is_staff", "last_login", "date_joined", "password", "otp_active", "twofa_method", "image", "show_public"] + PROFILE_FIELDS
+        fields = ["id", "email", "role", "roles", "user_groups", "is_active", "is_staff", "last_login", "date_joined", "password", "otp_active", "twofa_method", "image", "show_public", "verification"] + PROFILE_FIELDS
         read_only_fields = ["last_login", "date_joined", "otp_active", "twofa_method", "image"]
         extra_kwargs = {"email": {"required": True}, **WORD_KWARGS}
 
@@ -168,8 +168,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "is_staff", "twofa", "permissions", "roles", "module_levels", "image", "show_public"] + PROFILE_FIELDS
-        read_only_fields = ["id", "email", "role", "is_staff", "twofa", "permissions", "roles", "module_levels", "image", "show_public"]
+        fields = ["id", "email", "role", "is_staff", "twofa", "permissions", "roles", "module_levels", "image", "show_public", "verification"] + PROFILE_FIELDS
+        read_only_fields = ["id", "email", "role", "is_staff", "twofa", "permissions", "roles", "module_levels", "image", "show_public", "verification"]
         extra_kwargs = WORD_KWARGS
 
 

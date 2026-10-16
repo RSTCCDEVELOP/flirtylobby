@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
@@ -34,7 +35,7 @@ export default function LanguageSwitcher() {
   }
 
   return (
-    <select className="lang-select" value={current} onChange={change} aria-label="Taal">
+    <select className="lang-select" value={current} onChange={change} aria-label={tx("Taal")}>
       {data.languages.map((l) => <option key={l.code} value={l.code}>{l.native_name}</option>)}
     </select>
   );

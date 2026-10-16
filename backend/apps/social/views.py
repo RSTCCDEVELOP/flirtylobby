@@ -31,7 +31,7 @@ PROFILES = [IsAuthenticated, module_required("profiles")]
 MESSAGES = [IsAuthenticated, module_required("messages")]
 CHAT = [IsAuthenticated, module_required("chat")]
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
-person = lambda u, viewer=None: {"id": u.id, "name": service.display_name(u), "photo": service.photo_url(u, viewer), "online": service.online(u)}  # noqa: E731
+person = lambda u, viewer=None: {"id": u.id, "name": service.display_name(u), "photo": service.photo_url(u, viewer), "online": service.online(u), "verification": u.verification}  # noqa: E731
 
 
 def _partner(request, uid):
@@ -51,6 +51,7 @@ def _own(p):
             "require_photo": cfg["discover"]["require_photo"],
             "max_photos": cfg["profiles"]["max_photos"], "available_languages": service.active_languages(),
             "photos": [{"id": ph.id, "url": default_storage.url(ph.image.name), "caption": ph.caption, "visibility": ph.visibility, "private": ph.private} for ph in p.photos.all()],
+            "profile_cfg": {"theme": cfg["profiles"]["theme"], "builtin": cfg["profiles"]["builtin"], "fields": cfg["profiles"]["fields"]}, "data": p.data or {},
             "private_photos": cfg["profiles"]["private_photos"], "max_private_photos": cfg["profiles"]["max_private_photos"],
             "allowed": [person(a.user, p.user) for a in p.allowed.select_related("user")]}
 
@@ -80,6 +81,16 @@ def profile_me(request):
         p.headline, p.bio, p.visibility, p.languages = text["headline"], text["bio"], vis, langs
         if err := dsc.validate_dating_fields(p, b):
             return bad(err)
+        fields = service.get()["profiles"]["fields"]
+        if "data" in b:
+            data, err = service.clean_values(fields, b["data"], p.data)
+            if err:
+                return bad(err)
+            p.data = data
+        if p.enabled:
+            for fl in fields:
+                if fl["required"] and service.empty((p.data or {}).get(fl["key"])):
+                    return bad(f"{fl['label']} is verplicht.")
         p.save()
     return Response(_own(p))
 
@@ -211,7 +222,7 @@ def profile_allowed(request):
 
 # ═══ directory / public profile ═════════════════════════════════════════════
 def _card(p, viewer=None):
-    return {"slug": p.slug, "id": p.user_id, "name": service.display_name(p.user), "headline": p.headline, "photo": service.photo_url(p.user, viewer)}
+    return {"slug": p.slug, "id": p.user_id, "name": service.display_name(p.user), "headline": p.headline, "card_fields": service.visible_fields(p, viewer, only_card=True), "photo": service.photo_url(p.user, viewer), "verification": p.user.verification}
 
 
 @api_view(["GET"])
@@ -245,17 +256,18 @@ def profile_detail(request, slug):
         return Response(status=status.HTTP_404_NOT_FOUND)  # never reveal that a hidden profile exists
     dsc.record_visit(me, p)
     likes, _, favs, matches = dsc._sets(me) if authed else (set(), set(), set(), set())
-    return Response({
+    return Response(service.mask({
         **_card(p, me), "age": dsc.age_of(p) if p.show_age else None, "city": p.city if p.show_city else "", "gender": p.gender, "aim": p.aim,
         "interests": p.interests, "discover": p.discover, "liked": p.user_id in likes, "favorite": p.user_id in favs, "match": p.user_id in matches,
         "can_like": authed and me.id != p.user_id and (p.discover or service.get()["discover"]["show_non_participants"]) and service.module_on("discover"), "bio": p.bio, "photos": [{"url": u, "caption": ph.caption, "blurred": bl} for ph in p.photos.all() for u, bl in [service.photo_for(ph, me, p.user_id)] if u],
+        "fields": service.visible_fields(p, me), "builtin": service.get()["profiles"]["builtin"], "theme": service.get()["profiles"]["theme"],
         "has_private": any(ph.visibility == "private" for ph in p.photos.all()), "relation": _relation(me, p.user) if authed and me.id != p.user_id else None,
         "is_self": authed and me.id == p.user_id, "languages": p.languages,
         "can_message": authed and me.id != p.user_id and p.accept_messages and service.module_on("messages"),
         "can_chat": authed and me.id != p.user_id and p.accept_chat and service.module_on("chat"),
         "blocked_by_me": authed and Block.objects.filter(blocker=me, blocked=p.user).exists(),
         "indexable": p.visibility == "public" and p.searchable_public and p.enabled, "enabled": p.enabled,
-    })
+    }))
 
 
 @api_view(["GET"])
@@ -598,7 +610,23 @@ def config(request):
                                   "show_visitors": d["show_visitors"], "show_likes_received": d["show_likes_received"], "default_sort": d["default_sort"],
                                   "require_to_search": d["require_to_search"], "require_photo": d["require_photo"]},
                      "chat": {**{k: c[k] for k in ("method", "display", "style", "show_on", "photos", "videos", "video_chat", "max_image_mb", "max_video_mb", "direct_hours")}, "ice_servers": ice} if on else None,
+                     "profile": {k: service.get()["profiles"][k] for k in ("theme", "builtin", "fields")},
                      "modules": {k: service.module_on(k) for k in ("profiles", "discover", "messages", "chat")}})
+
+
+@api_view(["POST"])
+@permission_classes(AUTH)
+def apply_theme(request):
+    """Admin: start from a ready-made community theme (replaces the profile fields; member data is kept)."""
+    from . import themes
+
+    if level(request.user, "profiles") < 2:
+        return bad("Je hebt hier geen rechten voor.", status.HTTP_403_FORBIDDEN)
+    key = request.data.get("theme")
+    if key not in themes.THEMES:
+        return bad("Onbekend thema.")
+    cfg = service.save({"profiles": themes.theme_payload(key)}, ["profiles"])
+    return Response({"settings": cfg, "themes": themes.public_list()})
 
 
 SECTION_MODULE = {"profiles": "profiles", "discover": "discover", "messages": "messages", "chat": "chat"}
@@ -621,6 +649,8 @@ def settings_admin(request):
         except service.Invalid as e:
             return bad(str(e))
         logger.info("Community settings changed by %s", me.email)
-    return Response({"settings": service.get(), "sections": {s: level(me, m) for s, m in SECTION_MODULE.items()}, "counts": {
+    from . import themes
+
+    return Response({"settings": service.get(), "themes": themes.public_list(), "builtin_labels": themes.BUILTIN_LABELS, "sections": {s: level(me, m) for s, m in SECTION_MODULE.items()}, "counts": {
         "profiles": Profile.objects.filter(enabled=True).count(), "messages": DirectMessage.objects.count(), "chat_messages": ChatMessage.objects.count(),
         "blocks": Block.objects.count(), "online": User.objects.filter(last_seen__gt=timezone.now() - timedelta(seconds=45)).count()}})

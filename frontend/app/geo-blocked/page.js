@@ -1,3 +1,4 @@
+import { tx } from "../../lib/t";
 import { headers } from "next/headers";
 import { detectLang, pick } from "../../lib/i18n";
 import { getSecurity } from "../../lib/security-server";
@@ -12,7 +13,7 @@ export default async function GeoBlocked() {
   const texts = cfg?.geo?.texts;
   return (
     <main className="uc">
-      <h1>{pick(texts, lang, cfg?.default_language, "title") || "Not available"}</h1>
+      <h1>{pick(texts, lang, cfg?.default_language, "title") || tx("Not available")}</h1>
       <p>{pick(texts, lang, cfg?.default_language, "message")}</p>
     </main>
   );

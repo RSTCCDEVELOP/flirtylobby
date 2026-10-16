@@ -1,4 +1,5 @@
 "use client";
+import { tx } from "../lib/t";
 
 // Small dependency-free SVG charts that follow the theme colors.
 export function BarChart({ points, format = (v) => v, height = 150, color = "var(--blue)" }) {
@@ -13,7 +14,7 @@ export function BarChart({ points, format = (v) => v, height = 150, color = "var
           return <rect key={i} x={i * w + w * 0.15} y={height / 3 - 0.5 - h} width={w * 0.7} height={h} rx="0.6" fill={color}><title>{`${p.label}: ${format(p.value)}`}</title></rect>;
         })}
       </svg>
-      <div className="chart-axis"><span>{points[0]?.label}</span><span>max {format(max)}</span><span>{points[points.length - 1]?.label}</span></div>
+      <div className="chart-axis"><span>{points[0]?.label}</span><span>{tx("max {0}", format(max))}</span><span>{points[points.length - 1]?.label}</span></div>
     </div>
   );
 }

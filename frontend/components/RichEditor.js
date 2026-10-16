@@ -1,5 +1,7 @@
 "use client";
 
+import { tx } from "../lib/t";
+import { confirmDialog } from "../lib/dialog";
 import { useEffect, useRef, useState } from "react";
 import { mediaUrl } from "../lib/api";
 import MediaPicker from "./MediaPicker";
@@ -14,7 +16,7 @@ const escapeHtml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace
 export const plainToHtml = (t) => t.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("");
 
 // WYSIWYG editor in a popup. onSave(html) must return a promise; onPlain(text) saves as plain text.
-export default function RichEditor({ initialHtml, title = "Tekst bewerken", onSave, onPlain, onClose }) {
+export default function RichEditor({ initialHtml, title = tx("Tekst bewerken"), onSave, onPlain, onClose }) {
   const area = useRef(null);
   const saved = useRef(null);
   const [link, setLink] = useState(null); // null | url string while the link field is open
@@ -60,7 +62,7 @@ export default function RichEditor({ initialHtml, title = "Tekst bewerken", onSa
       else await onSave(toStored(area.current.innerHTML));
       onClose();
     } catch (e) {
-      setError(e.message || "Opslaan mislukt.");
+      setError(e.message || tx("Opslaan mislukt."));
       setBusy(false);
     }
   }
@@ -72,46 +74,46 @@ export default function RichEditor({ initialHtml, title = "Tekst bewerken", onSa
       <div className="card modal rich-modal" onMouseDown={(e) => e.stopPropagation()}>
         <h2 style={{ margin: 0 }}>{title}</h2>
         <div className="rt-toolbar" onMouseDown={keep}>
-          <select onChange={(e) => { cmd("formatBlock", e.target.value); e.target.value = ""; }} defaultValue="" aria-label="Opmaak">
-            <option value="" disabled>Opmaak</option>
-            <option value="p">Alinea</option><option value="h2">Kop 1</option><option value="h3">Kop 2</option>
-            <option value="h4">Kop 3</option><option value="blockquote">Citaat</option>
+          <select onChange={(e) => { cmd("formatBlock", e.target.value); e.target.value = ""; }} defaultValue="" aria-label={tx("Opmaak")}>
+            <option value="" disabled>{tx("Opmaak")}</option>
+            <option value="p">{tx("Alinea")}</option><option value="h2">{tx("Kop 1")}</option><option value="h3">{tx("Kop 2")}</option>
+            <option value="h4">{tx("Kop 3")}</option><option value="blockquote">{tx("Citaat")}</option>
           </select>
-          <B c="bold" label={<b>B</b>} title="Vet" />
-          <B c="italic" label={<i>I</i>} title="Cursief" />
-          <B c="underline" label={<u>U</u>} title="Onderstreept" />
-          <B c="strikeThrough" label={<s>S</s>} title="Doorgestreept" />
+          <B c="bold" label={<b>B</b>} title={tx("Vet")} />
+          <B c="italic" label={<i>I</i>} title={tx("Cursief")} />
+          <B c="underline" label={<u>U</u>} title={tx("Onderstreept")} />
+          <B c="strikeThrough" label={<s>S</s>} title={tx("Doorgestreept")} />
           <span className="rt-sep" />
-          <B c="insertUnorderedList" label="• Lijst" />
-          <B c="insertOrderedList" label="1. Lijst" />
+          <B c="insertUnorderedList" label={tx("• Lijst")} />
+          <B c="insertOrderedList" label={tx("1. Lijst")} />
           <span className="rt-sep" />
-          <B c="justifyLeft" label="Links" /><B c="justifyCenter" label="Midden" /><B c="justifyRight" label="Rechts" />
+          <B c="justifyLeft" label={tx("Links")} /><B c="justifyCenter" label={tx("Midden")} /><B c="justifyRight" label={tx("Rechts")} />
           <span className="rt-sep" />
-          <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => { saveSel(); setLink(""); }}>Link</button>
-          {mediaOn && <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => { saveSel(); setPicker(true); }}>Afbeelding</button>}
-          <B c="insertHorizontalRule" label="Lijn" />
+          <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => { saveSel(); setLink(""); }}>{tx("Link")}</button>
+          {mediaOn && <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => { saveSel(); setPicker(true); }}>{tx("Afbeelding")}</button>}
+          <B c="insertHorizontalRule" label={tx("Lijn")} />
           <span className="rt-sep" />
-          <B c="undo" label="↶" title="Ongedaan maken" /><B c="redo" label="↷" title="Opnieuw" />
-          <B c="removeFormat" label="Opmaak wissen" />
+          <B c="undo" label="↶" title={tx("Ongedaan maken")} /><B c="redo" label="↷" title={tx("Opnieuw")} />
+          <B c="removeFormat" label={tx("Opmaak wissen")} />
         </div>
         {link !== null && (
           <div className="rt-link">
             <input autoFocus placeholder="https://… (leeg laten om de link te verwijderen)" value={link} onChange={(e) => setLink(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyLink()} />
-            <button type="button" className="btn primary" onClick={applyLink}>Toepassen</button>
-            <button type="button" className="btn" onClick={() => setLink(null)}>Annuleren</button>
+            <button type="button" className="btn primary" onClick={applyLink}>{tx("Toepassen")}</button>
+            <button type="button" className="btn" onClick={() => setLink(null)}>{tx("Annuleren")}</button>
           </div>
         )}
         <div ref={area} className="rt-area rich-text" contentEditable suppressContentEditableWarning spellCheck />
         {error && <div className="alert">{error}</div>}
         <div className="row" style={{ justifyContent: "space-between" }}>
-          <button type="button" className="btn" disabled={busy} onClick={() => confirm("Alle opmaak verwijderen en als gewone tekst opslaan?") && save(true)}>Opslaan als gewone tekst</button>
+          <button type="button" className="btn" disabled={busy} onClick={async () => (await confirmDialog(tx("Alle opmaak verwijderen en als gewone tekst opslaan?"), { danger: true })) && save(true)}>{tx("Opslaan als gewone tekst")}</button>
           <span className="row">
-            <button type="button" className="btn" onClick={onClose}>Annuleren</button>
-            <button type="button" className="btn primary" disabled={busy} onClick={() => save(false)}>{busy ? "Opslaan…" : "Opslaan"}</button>
+            <button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button>
+            <button type="button" className="btn primary" disabled={busy} onClick={() => save(false)}>{busy ? tx("Opslaan…") : tx("Opslaan")}</button>
           </span>
         </div>
-        {picker && <MediaPicker onPick={insertImage} onClose={() => setPicker(false)} title="Afbeelding invoegen" />}
+        {picker && <MediaPicker onPick={insertImage} onClose={() => setPicker(false)} title={tx("Afbeelding invoegen")} />}
       </div>
     </div>
   );

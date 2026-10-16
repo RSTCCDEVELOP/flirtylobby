@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../lib/t";
 import Link from "next/link";
 import { TILES, LEVEL_LABEL } from "../lib/admin-tiles";
 import { lvl } from "../lib/perms";
@@ -23,10 +24,10 @@ export default function AdminTiles({ all = false }) {
           <span>{t.title}</span>
           <strong style={{ fontSize: "1.25rem" }}>{t.big}</strong>
           <small>{t.small}</small>
-          <span className="tile-level">{t.on ? (all ? "Aan" : LEVEL_LABEL[t.level]) : "Module uit"}</span>
+          <span className="tile-level">{t.on ? (all ? tx("Aan") : LEVEL_LABEL[t.level]) : tx("Module uit")}</span>
         </Link>
       ))}
-      {!tiles.length && <p className="muted">Je hebt nog geen toegang tot beheeronderdelen.</p>}
+      {!tiles.length && <p className="muted">{tx("Je hebt nog geen toegang tot beheeronderdelen.")}</p>}
     </div>
   );
 }

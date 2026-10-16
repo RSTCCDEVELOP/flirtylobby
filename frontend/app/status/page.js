@@ -1,3 +1,4 @@
+import { tx } from "../../lib/t";
 import HealthButton from "../../components/HealthButton";
 
 // Render on every request so SSR really hits the API
@@ -18,10 +19,10 @@ export default async function Home() {
   const health = await getHealth();
   return (
     <main>
-      <h1>Flirtylobby</h1>
-      <h2>Server-side (SSR)</h2>
+      <h1>{tx("Flirtylobby")}</h1>
+      <h2>{tx("Server-side (SSR)")}</h2>
       <pre>{JSON.stringify(health, null, 2)}</pre>
-      <h2>Client-side (browser)</h2>
+      <h2>{tx("Client-side (browser)")}</h2>
       <HealthButton />
     </main>
   );

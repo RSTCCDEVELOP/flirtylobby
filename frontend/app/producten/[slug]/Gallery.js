@@ -1,10 +1,11 @@
 "use client";
 
+import { tx } from "../../../lib/t";
 import { useState } from "react";
 
 export default function ProductGallery({ images }) {
   const [i, setI] = useState(0);
-  if (!images.length) return <div className="gallery"><div className="main card" style={{ aspectRatio: "4/3", display: "grid", placeItems: "center" }}><span className="muted">Geen foto</span></div></div>;
+  if (!images.length) return <div className="gallery"><div className="main card" style={{ aspectRatio: "4/3", display: "grid", placeItems: "center" }}><span className="muted">{tx("Geen foto")}</span></div></div>;
   return (
     <div className="gallery">
       {/* eslint-disable-next-line @next/next/no-img-element */}

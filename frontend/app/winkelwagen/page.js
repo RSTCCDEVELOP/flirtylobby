@@ -1,5 +1,6 @@
 "use client";
 
+import { tx } from "../../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "../../components/Cart";
@@ -30,35 +31,35 @@ export default function CartPage() {
 
   const rows = items.map((i) => ({ ...i, p: lines.find((l) => l.id === i.id) })).filter((r) => r.p);
 
-  if (!enabled) return <div className="site"><SiteHeader /><main className="shop"><p className="muted">De webshop is niet beschikbaar.</p></main></div>;
+  if (!enabled) return <div className="site"><SiteHeader /><main className="shop"><p className="muted">{tx("De webshop is niet beschikbaar.")}</p></main></div>;
   return (
     <div className="site">
       <SiteHeader />
       <main className="shop">
-        <h1>Winkelwagen</h1>
+        <h1>{tx("Winkelwagen")}</h1>
         {!rows.length ? (
-          <p className="muted">Je winkelwagen is leeg. <Link href="/producten" style={{ color: "var(--blue)" }}>Bekijk de producten</Link></p>
+          <p className="muted">{tx("Je winkelwagen is leeg.")} <Link href="/producten" style={{ color: "var(--blue)" }}>{tx("Bekijk de producten")}</Link></p>
         ) : (
           <>
             <table className="cart-table">
-              <thead><tr><th></th><th>Product</th><th>Prijs</th><th>Aantal</th><th>Totaal</th><th></th></tr></thead>
+              <thead><tr><th></th><th>{tx("Product")}</th><th>{tx("Prijs")}</th><th>{tx("Aantal")}</th><th>{tx("Totaal")}</th><th></th></tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
                     <td>{r.p.image && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(r.p.image.url)} alt="" />}</td>
                     <td><Link href={`/producten/${r.p.slug}`}>{r.p.name}</Link></td>
-                    <td>{money(r.p.price)}{cfg && <small className="muted"> {cfg.prices_include_vat ? "incl." : "excl."} btw</small>}</td>
+                    <td>{money(r.p.price)}{cfg && <small className="muted"> {cfg.prices_include_vat ? "incl." : "excl."} {tx("btw")}</small>}</td>
                     <td><input type="number" min={1} max={r.p.max_quantity ?? 99} value={r.qty} style={{ width: 80 }} onChange={(e) => setQty(r.id, Number(e.target.value) || 1)} /></td>
                     <td>{money(Number(r.p.price) * r.qty)}</td>
-                    <td><button className="btn sm danger" onClick={() => remove(r.id)}>Verwijder</button></td>
+                    <td><button className="btn sm danger" onClick={() => remove(r.id)}>{tx("Verwijder")}</button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="totals">
-              {qt && <div><span>Subtotaal {cfg && !cfg.prices_include_vat ? "(incl. btw)" : ""}</span><span>{money(qt.subtotal)}</span></div>}
-              <small className="muted">Verzendkosten en een eventuele kortingscode kies je bij het afrekenen.</small>
-              <Link href="/afrekenen" className="btn primary" style={{ marginTop: ".75rem" }}>Afrekenen</Link>
+              {qt && <div><span>{tx("Subtotaal")} {cfg && !cfg.prices_include_vat ? tx("(incl. btw)") : ""}</span><span>{money(qt.subtotal)}</span></div>}
+              <small className="muted">{tx("Verzendkosten en een eventuele kortingscode kies je bij het afrekenen.")}</small>
+              <Link href="/afrekenen" className="btn primary" style={{ marginTop: ".75rem" }}>{tx("Afrekenen")}</Link>
             </div>
           </>
         )}
