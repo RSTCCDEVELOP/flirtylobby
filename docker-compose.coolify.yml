@@ -37,8 +37,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
-      MEDIA_ROOT: ${MEDIA_ROOT:-}
-      STATIC_ROOT: ${STATIC_ROOT:-}
+      # Coolify exposes the backend directly, so WhiteNoise serves these files.
+      # They must match the mounted volumes for collectstatic to persist them.
+      MEDIA_ROOT: /data/media
+      STATIC_ROOT: /data/static
     volumes:
       - media:/data/media
       - static:/data/static
