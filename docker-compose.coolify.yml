@@ -39,6 +39,9 @@ services:
       POSTGRES_PORT: "5432"
       MEDIA_ROOT: ${MEDIA_ROOT:-}
       STATIC_ROOT: ${STATIC_ROOT:-}
+    volumes:
+      - media:/data/media
+      - static:/data/static
     depends_on:
       db:
         condition: service_healthy
@@ -57,3 +60,5 @@ services:
 
 volumes:
   postgres_data:
+  media:
+  static:
