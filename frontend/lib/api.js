@@ -1,4 +1,20 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const CONFIGURED = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Opened via a LAN address (phone, other computer)? Then "localhost" for the API would be that device itself: use the page's host.
+function base() {
+  if (typeof window === "undefined") return CONFIGURED;
+  try {
+    const u = new URL(CONFIGURED);
+    if (["localhost", "127.0.0.1"].includes(u.hostname) && !["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+      return `${u.protocol}//${window.location.hostname}:${u.port || 8000}`;
+    }
+  } catch {}
+  return CONFIGURED;
+}
+const BASE_CACHE = { v: null };
+const getBase = () => (BASE_CACHE.v ??= base());
+
+export const mediaUrl = (path) => (path?.startsWith("http") ? path : `${getBase()}${path}`);
 
 export const getToken = () => (typeof window === "undefined" ? null : localStorage.getItem("token"));
 export const setToken = (t) => localStorage.setItem("token", t);
@@ -14,7 +30,7 @@ export class ApiError extends Error {
 
 export async function api(path, { method = "GET", body } = {}) {
   const token = getToken();
-  const res = await fetch(`${BASE}/api${path}`, {
+  const res = await fetch(`${getBase()}/api${path}`, {
     method,
     headers: {
       ...(body && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}),

@@ -8,6 +8,15 @@ urlpatterns = [
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.members.urls")),
     path("api/", include("apps.accounts.urls")),
+    path("api/", include("apps.integrations.urls")),
+    path("api/", include("apps.branding.urls")),
+    path("api/", include("apps.security.urls")),
+    path("api/", include("apps.medialib.urls")),
+    path("api/", include("apps.communication.urls")),
+    path("api/", include("apps.seo.urls")),
+    path("api/", include("apps.sandbox.urls")),
+    path("api/", include("apps.shop.urls")),
+    path("api/", include("apps.social.urls")),
 ]
 
 if settings.DEBUG:

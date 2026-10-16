@@ -10,6 +10,9 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     setTheme(document.documentElement.dataset.theme || "light");
+    const sync = (e) => setTheme(e.detail);
+    window.addEventListener("themechange", sync);
+    return () => window.removeEventListener("themechange", sync);
   }, []);
 
   function toggle() {

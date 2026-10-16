@@ -19,7 +19,10 @@ def health(request):
 
 # ── Theme / "Vormgeving" ────────────────────────────────────────────────────
 from rest_framework import status  # noqa: E402
-from rest_framework.permissions import IsAdminUser  # noqa: E402
+from apps.accounts.access import level as access_level  # noqa: E402
+from apps.accounts.permissions import has_level  # noqa: E402
+from . import modules  # noqa: E402
+from .modules import module_required  # noqa: E402
 
 from . import theme  # noqa: E402
 from .models import SiteSettings  # noqa: E402
@@ -30,6 +33,7 @@ def _theme_payload(values, with_schema=False):
     payload = {"values": values, "css": css, "fonts_url": fonts_url}
     if with_schema:
         payload["schema"] = theme.SCHEMA
+        payload["presets"] = theme.presets()
     return payload
 
 
@@ -38,14 +42,17 @@ def _theme_payload(values, with_schema=False):
 def theme_settings(request):
     """GET: public (the site needs it to render). PUT: staff only, partial values allowed."""
     if request.method == "GET":
-        values = theme.merged(SiteSettings.load().theme)
-        return Response(_theme_payload(values, with_schema=request.user.is_authenticated and request.user.is_staff))
+        values = theme.merged(SiteSettings.load().theme if modules.enabled("theme") else {})
+        return Response(_theme_payload(values, with_schema=access_level(request.user, "theme") >= 1))
 
-    if not (request.user.is_authenticated and request.user.is_staff):
+    if not modules.enabled("theme") or not access_level(request.user, "theme") >= 2:
         return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
     clean, errors = theme.validate(request.data.get("values"))
     if errors:
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+    final = theme.merged(clean)
+    if not any(final[k] == "yes" for k in ("device_mobile", "device_tablet", "device_desktop", "device_app")):
+        return Response({"detail": "Minimaal één weergave (mobiel, iPad, website of app) moet actief zijn."}, status=status.HTTP_400_BAD_REQUEST)
     settings_obj = SiteSettings.load()
     settings_obj.theme = {k: v for k, v in clean.items() if v != theme.DEFAULTS[k]}
     settings_obj.save()
@@ -54,7 +61,7 @@ def theme_settings(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([has_level("theme", "edit"), module_required("theme")])
 def theme_preview(request):
     clean, errors = theme.validate(request.data.get("values"))
     if errors:
@@ -63,9 +70,161 @@ def theme_preview(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([has_level("theme", "edit"), module_required("theme")])
 def theme_reset(request):
     settings_obj = SiteSettings.load()
     settings_obj.theme = {}
     settings_obj.save()
     return Response(_theme_payload(theme.merged({}), with_schema=True))
+
+
+# ── Languages ───────────────────────────────────────────────────────────────
+from django.db import transaction  # noqa: E402
+from django.shortcuts import get_object_or_404  # noqa: E402
+
+from .models import Language  # noqa: E402
+
+
+def _lang(l):
+    return {"code": l.code, "name": l.name, "native_name": l.native_name, "rtl": l.rtl,
+            "enabled": l.enabled, "is_default": l.is_default}
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def languages_public(request):
+    default = Language.objects.filter(is_default=True).first()
+    langs = Language.objects.filter(enabled=True)
+    if not modules.enabled("languages"):  # module off: only the default language
+        langs = langs.filter(is_default=True)
+    return Response({"default": default.code if default else None, "languages": [_lang(l) for l in langs]})
+
+
+@api_view(["GET"])
+@permission_classes([has_level("languages", "use"), module_required("languages")])
+def languages_all(request):
+    return Response([_lang(l) for l in Language.objects.all()])
+
+
+@api_view(["PATCH"])
+@permission_classes([has_level("languages", "edit"), module_required("languages")])
+def language_update(request, code):
+    lang = get_object_or_404(Language, code=code)
+    enabled = bool(request.data.get("enabled"))
+    if not enabled and lang.is_default:
+        return Response({"detail": "De standaardtaal kan niet worden uitgezet."}, status=status.HTTP_400_BAD_REQUEST)
+    lang.enabled = enabled
+    lang.save(update_fields=["enabled"])
+    return Response(_lang(lang))
+
+
+@api_view(["POST"])
+@permission_classes([has_level("languages", "edit"), module_required("languages")])
+def language_set_default(request, code):
+    lang = get_object_or_404(Language, code=code)
+    with transaction.atomic():
+        Language.objects.update(is_default=False)
+        lang.is_default = lang.enabled = True
+        lang.save(update_fields=["is_default", "enabled"])
+    logger.info("Default language set to %s by %s", code, request.user.email)
+    return Response([_lang(l) for l in Language.objects.all()])
+
+
+# ── Editable content (bewerkmodus) ──────────────────────────────────────────
+import re  # noqa: E402
+
+from . import richtext  # noqa: E402
+
+from apps.security.words import find_forbidden  # noqa: E402
+
+from .models import ContentBlock  # noqa: E402
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def content_public(request):
+    out = {}
+    from django.core.files.storage import default_storage
+
+    from apps.medialib.models import MediaItem
+
+    items = {i.id: i for i in MediaItem.objects.all()}
+    for b in ContentBlock.objects.all():
+        text = b.text
+        if text.startswith(richtext.PREFIX):
+            def url_for(i):
+                item = items.get(i)
+                return default_storage.url(item.key) if item else None
+
+            text = richtext.PREFIX + richtext.resolve(text[len(richtext.PREFIX):], url_for)
+        elif text.startswith("media:"):  # image block: resolve to the file's current URL (local or S3)
+            item = items.get(int(text[6:] or 0))
+            text = default_storage.url(item.key) if item else ""
+        out.setdefault(b.key, {})[b.lang] = text
+    return Response(out)
+
+
+@api_view(["PUT"])
+@permission_classes([has_level("edit_mode", "edit"), module_required("edit_mode")])
+def content_save(request):
+    key, lang, text = request.data.get("key", ""), request.data.get("lang", ""), str(request.data.get("text", ""))
+    rich = bool(request.data.get("html"))
+    if not re.fullmatch(r"[a-z0-9._-]{1,100}", key) or not Language.objects.filter(code=lang).exists():
+        return Response({"detail": "Ongeldige sleutel of taal."}, status=status.HTTP_400_BAD_REQUEST)
+    if len(text) > (richtext.MAX if rich else 5000):
+        return Response({"detail": "Tekst is te lang."}, status=status.HTTP_400_BAD_REQUEST)
+    if rich:
+        text = richtext.clean(text)
+    found = find_forbidden(richtext.plain(text) if rich else text)
+    if found:
+        return Response({"detail": f"Bevat niet toegestane woorden: {', '.join(found)}."}, status=status.HTTP_400_BAD_REQUEST)
+    ContentBlock.objects.update_or_create(key=key, lang=lang, defaults={"text": (richtext.PREFIX + text) if rich else text})
+    logger.info("Content '%s' (%s) edited by %s", key, lang, request.user.email)
+    return Response({"ok": True, "text": text})
+
+
+# ── Modules ─────────────────────────────────────────────────────────────────
+from rest_framework.permissions import IsAdminUser  # noqa: E402
+
+from .models import ModuleState  # noqa: E402
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def modules_public(request):
+    return Response(modules.states())
+
+
+def _module_payload():
+    st = modules.states()
+    from django.db.models import Count
+
+    from apps.accounts.models import ModuleGrant
+
+    counts = dict(ModuleGrant.objects.values_list("module").annotate(n=Count("id")))
+    return [{**m, "enabled": st[m["key"]], "core": bool(m.get("core")), "acl": m.get("acl", True), "grants": counts.get(m["key"], 0)}
+            for m in modules.MODULES]
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])  # superadmins only (is_staff)
+def modules_admin(request):
+    return Response(_module_payload())
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAdminUser])
+def module_update(request, key):
+    m = modules.BY_KEY.get(key)
+    if not m:
+        return Response({"detail": "Onbekende module."}, status=status.HTTP_404_NOT_FOUND)
+    if m.get("core"):
+        return Response({"detail": "Kernmodules kunnen niet worden uitgezet."}, status=status.HTTP_400_BAD_REQUEST)
+    on = bool(request.data.get("enabled"))
+    ModuleState.objects.update_or_create(key=key, defaults={"enabled": on})
+    modules.invalidate()
+    from apps.security import service as security_service
+
+    security_service.invalidate()
+    logger.info("Module %s %s by %s", key, "enabled" if on else "disabled", request.user.email)
+    return Response(_module_payload())

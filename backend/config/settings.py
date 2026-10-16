@@ -30,6 +30,15 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.accounts",
     "apps.members",
+    "apps.integrations",
+    "apps.branding",
+    "apps.security",
+    "apps.medialib",
+    "apps.communication",
+    "apps.seo",
+    "apps.sandbox",
+    "apps.shop",
+    "apps.social",
 ]
 
 MIDDLEWARE = [
@@ -84,7 +93,7 @@ else:
 AUTH_USER_MODEL = "accounts.User"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "apps.security.validators.ConfiguredPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -96,6 +105,11 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = Path(os.getenv("STATIC_ROOT") or BASE_DIR / "staticfiles")
+STORAGES = {
+    # files are registered in the media library; each lives on local disk or S3 (see apps/medialib)
+    "default": {"BACKEND": "apps.medialib.storage.LibraryStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or BASE_DIR / "media")
 
@@ -103,7 +117,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.TokenAuthentication"],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["apps.security.authentication.ExpiringTokenAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
 }
 
@@ -111,7 +125,11 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
-if not DEBUG:
+if DEBUG:
+    # development only: also reachable from phones / other computers on the local network (10.x, 192.168.x, 172.16-31.x)
+    ALLOWED_HOSTS = ["*"]
+    CORS_ALLOWED_ORIGIN_REGEXES = [r"^http://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+):5173$"]
+else:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # ── Logging ─────────────────────────────────────────────────────────────────

@@ -1,28 +1,140 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../components/AuthContext";
-import { api } from "../../lib/api";
+import { useModules } from "../../components/Modules";
+import { byId, defaultLayout, WIDGETS } from "../../components/Widgets";
+import { api, errorText } from "../../lib/api";
 
+// The user's start page: blocks (charts, content, module items) that he can rearrange, extend and remove.
 export default function DashboardHome() {
   const { user } = useAuth();
-  const [users, setUsers] = useState(null);
+  const mods = useModules();
+  const ctx = useMemo(() => ({ user, mods }), [user, mods]);
+  const [state, setState] = useState(null); // {widgets, own, has_default, can_set_default}
+  const [editing, setEditing] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const [drag, setDrag] = useState(null);
+  const timer = useRef(null);
 
-  useEffect(() => {
-    if (user.is_staff) api("/users/").then(setUsers).catch(() => {});
-  }, [user]);
+  useEffect(() => { api("/dashboard/layout/").then(setState).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
+  if (!state) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">Laden…</p>;
+
+  const columns = state.columns || 2;
+  // every block gets a column: -1 = full width on top, 0..n-1 = column (legacy blocks are spread over the columns)
+  const layout = (state.widgets || defaultLayout(ctx)).filter((w) => byId[w.id]?.ok(ctx)) // blocks of switched-off modules disappear
+    .map((w, i) => ({ id: w.id, col: typeof w.col === "number" ? Math.min(w.col, columns - 1) : w.size === 2 ? -1 : i % columns }));
+  const colOf = (c) => layout.filter((w) => w.col === c);
+  const save = (widgets, cols = columns) => {
+    setState((s) => ({ ...s, widgets, columns: cols, own: true }));
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => api("/dashboard/layout/", { method: "PUT", body: { widgets, columns: cols } }).catch((e) => setMsg({ ok: false, text: errorText(e) })), 400);
+  };
+  const flat = (cols) => [-1, ...Array.from({ length: columns }, (_, c) => c)].flatMap((c) => cols[c] || []);
+  const grouped = () => Object.fromEntries([-1, ...Array.from({ length: columns }, (_, c) => c)].map((c) => [c, colOf(c)]));
+  // move block `id` to column `col`, before block `before` (or to the end)
+  const place = (id, col, before = null) => {
+    const g = grouped();
+    let item;
+    for (const c of Object.keys(g)) { const f = g[c].find((w) => w.id === id); if (f) { item = f; g[c] = g[c].filter((w) => w.id !== id); } }
+    if (!item) return;
+    const list = g[col];
+    const at = before ? list.findIndex((w) => w.id === before) : -1;
+    list.splice(at < 0 ? list.length : at, 0, { ...item, col });
+    save(flat(g));
+  };
+  const nudge = (id, d) => { // up/down inside the column
+    const w = layout.find((x) => x.id === id), list = colOf(w.col), i = list.findIndex((x) => x.id === id), j = i + d;
+    if (j < 0 || j >= list.length) return;
+    place(id, w.col, d < 0 ? list[j].id : list[j + 1]?.id || null);
+  };
+  const side = (id, d) => { const w = layout.find((x) => x.id === id); place(id, Math.min(columns - 1, Math.max(0, (w.col < 0 ? 0 : w.col) + d))); };
+  const setColumns = (n) => save(layout.map((w) => ({ ...w, col: w.col < 0 ? -1 : Math.min(w.col, n - 1) })), n);
+  const remove = (id) => save(layout.filter((w) => w.id !== id));
+  const add = (w) => save([...layout, { id: w.id, col: w.size === 2 ? -1 : [...Array(columns).keys()].sort((a, b) => colOf(a).length - colOf(b).length)[0] }]);
+  const reset = async () => { if (confirm("Je dashboard terugzetten naar de standaardindeling?")) setState(await api("/dashboard/layout/", { method: "DELETE" })); };
+  const setDefault = async () => { if (confirm("Deze indeling als standaard instellen voor iedereen die nog geen eigen indeling heeft?")) { await api("/dashboard/layout/default/", { method: "PUT", body: { widgets: layout, columns } }); setMsg({ ok: true, text: "Standaardindeling opgeslagen." }); } };
+
+  const free = WIDGETS.filter((w) => w.ok(ctx) && !layout.some((l) => l.id === w.id));
+  const groups = [...new Set(free.map((w) => w.group))];
+
+  const renderCol = (c) => {
+    if (c === -1 && !colOf(-1).length && !editing) return null;
+    return (
+          <div key={c} className={c === -1 ? "dash-full" : "dash-col"} data-col={c} style={c === -1 ? undefined : { gridColumn: c + 1 }}
+            onDragOver={(e) => editing && e.preventDefault()}
+            onDrop={(e) => { if (!editing) return; e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (id) place(id, c); }}>
+            {editing && c === -1 && !colOf(-1).length && <div className="dash-drop muted">Volle breedte: sleep een blok hierheen</div>}
+            {editing && c >= 0 && !colOf(c).length && <div className="dash-drop muted">Sleep een blok hierheen</div>}
+            {colOf(c).map((l) => {
+              const w = byId[l.id], C = w.C;
+              return (
+                <section key={l.id} className={`card dash-widget ${editing ? "editing" : ""} ${drag === l.id ? "dragging" : ""}`}
+                  draggable={editing} onDragStart={(e) => { e.dataTransfer.setData("text/plain", l.id); setDrag(l.id); }} onDragEnd={() => setDrag(null)}
+                  onDragOver={(e) => editing && e.preventDefault()}
+                  onDrop={(e) => { if (!editing) return; e.preventDefault(); e.stopPropagation(); const id = e.dataTransfer.getData("text/plain"); if (id && id !== l.id) place(id, c, l.id); }}>
+                  {l.id !== "welcome" && <div className="widget-head"><h2>{w.title}</h2></div>}
+                  {editing && (
+                    <div className="widget-controls">
+                      <span className="drag-handle" title="Sleep om te verplaatsen">⠿</span>
+                      <button className="btn sm" onClick={() => nudge(l.id, -1)} title="Omhoog">↑</button>
+                      <button className="btn sm" onClick={() => nudge(l.id, 1)} title="Omlaag">↓</button>
+                      {columns > 1 && <button className="btn sm" disabled={c === 0} onClick={() => side(l.id, -1)} title="Kolom links">←</button>}
+                      {columns > 1 && <button className="btn sm" disabled={c === columns - 1} onClick={() => side(l.id, 1)} title="Kolom rechts">→</button>}
+                      {columns > 1 && <button className="btn sm" onClick={() => place(l.id, c === -1 ? 0 : -1)}>{c === -1 ? "In kolom" : "Volle breedte"}</button>}
+                      <button className="btn sm danger" onClick={() => remove(l.id)}>Weg</button>
+                    </div>
+                  )}
+                  <C ctx={ctx} />
+                </section>
+              );
+            })}
+          </div>
+    );
+  };
 
   return (
     <>
-      <h1>Welkom{user.first_name ? `, ${user.first_name}` : ""} 👋</h1>
-      <p className="muted">Dit is het beheer van RST Coaching & Consultancy.</p>
-      {users && (
-        <div className="cards">
-          <div className="card stat"><span>Gebruikers</span><strong>{users.length}</strong></div>
-          <div className="card stat"><span>Actief</span><strong>{users.filter((u) => u.is_active).length}</strong></div>
-          <div className="card stat"><span>Geblokkeerd</span><strong>{users.filter((u) => !u.is_active).length}</strong></div>
+      <div className="page-head">
+        <div><h1 style={{ margin: 0 }}>Dashboard</h1></div>
+        <div className="row">
+          {editing && <button className="btn" onClick={reset}>Standaard herstellen</button>}
+          {editing && state.can_set_default && <button className="btn" onClick={setDefault}>Opslaan als standaard voor iedereen</button>}
+          <button className={`btn ${editing ? "primary" : ""}`} onClick={() => setEditing(!editing)}>{editing ? "Klaar" : "Dashboard aanpassen"}</button>
+        </div>
+      </div>
+      {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
+
+      {editing && (
+        <div className="card" style={{ marginBottom: "1rem" }}>
+          <h2>Blok toevoegen</h2>
+          {!free.length && <p className="muted" style={{ margin: 0 }}>Alle beschikbare blokken staan al op je dashboard.</p>}
+          {groups.map((g) => (
+            <div key={g} style={{ marginBottom: ".5rem" }}>
+              <strong style={{ fontSize: ".8rem" }} className="muted">{g}</strong>
+              <div className="row" style={{ justifyContent: "flex-start", marginTop: ".25rem" }}>
+                {free.filter((w) => w.group === g).map((w) => <button key={w.id} className="btn sm" title={w.desc} onClick={() => add(w)}>+ {w.title}</button>)}
+              </div>
+            </div>
+          ))}
+          <small className="muted">Blokken verschijnen alleen voor modules die aan staan en waar je toegang toe hebt.</small>
         </div>
       )}
+
+      {editing && (
+        <div className="card" style={{ marginBottom: "1rem" }}>
+          <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap" }}>
+            <strong>Kolommen</strong>
+            {[1, 2, 3, 4].map((n) => <button key={n} className={`btn sm ${columns === n ? "primary" : ""}`} onClick={() => setColumns(n)}>{n}</button>)}
+            <small className="muted">Sleep blokken naar een andere plek of kolom, of gebruik de pijltjes.</small>
+          </div>
+        </div>
+      )}
+      {renderCol(-1)}
+      <div className="dash-cols" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+        {Array.from({ length: columns }, (_, c) => renderCol(c))}
+      </div>
+      {!layout.length && <p className="muted">Je dashboard is leeg. Kies "Dashboard aanpassen" en voeg blokken toe.</p>}
     </>
   );
 }
