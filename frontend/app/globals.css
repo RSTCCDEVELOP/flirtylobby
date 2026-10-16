@@ -763,3 +763,26 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
 .shell.collapsed .sidebar .nav-live { font-size: 0; gap: 0; }
 .shell.collapsed .sidebar .nav-live .live-dot { width: 10px; height: 10px; }
 @media (max-width: 860px) { .shell.collapsed .sidebar .nav-live { font-size: .75rem; gap: .35rem; position: static; margin-left: auto; } }
+
+/* header menu with dropdowns + the menu editor */
+.site-nav a.active { color: var(--text); }
+.nav-drop { position: relative; display: inline-flex; }
+.nav-drop-menu { position: absolute; top: 100%; left: 0; min-width: 190px; display: none; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: .35rem; z-index: 40; }
+.nav-drop:hover .nav-drop-menu, .nav-drop:focus-within .nav-drop-menu { display: flex; }
+.nav-drop-menu a { white-space: nowrap; }
+.menu-preview { margin-left: 0; margin-top: .4rem; display: flex; flex-wrap: wrap; padding: .5rem; border: 1px dashed var(--line); border-radius: var(--radius); min-height: 2.8rem; align-items: center; }
+.menu-preview .nav-drop-menu { position: static; display: flex; box-shadow: none; border: 0; padding: 0 0 0 .75rem; background: none; }
+.menu-preview .nav-drop { flex-direction: column; }
+.menu-edit { display: flex; flex-direction: column; gap: .35rem; }
+.menu-row { display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: var(--btn-radius); background: var(--bg); }
+.menu-row.child { margin-left: 2rem; }
+.menu-row .grow { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; }
+@media (max-width: 640px) { .site-nav { display: flex; flex-wrap: wrap; margin-left: 0; } }
+
+/* language switch as flags */
+.lang-flags { display: inline-flex; gap: .3rem; align-items: center; }
+.lang-flag { display: inline-grid; place-items: center; padding: 3px; border-radius: 8px; border: 2px solid transparent; background: none; cursor: pointer; opacity: .7; transition: opacity .15s, border-color .15s, transform .15s; }
+.lang-flag:hover { opacity: 1; transform: translateY(-1px); }
+.lang-flag.active { opacity: 1; border-color: var(--blue); }
+.lang-flag .flag { display: block; border-radius: 3px; }
+.flag-pick { display: flex; align-items: center; gap: .5rem; }

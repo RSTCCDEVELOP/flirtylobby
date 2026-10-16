@@ -2,6 +2,7 @@ import { tx } from "../../lib/t";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getModules } from "../../lib/modules-server";
+import { requirePage } from "../../lib/pages-server";
 import CookieSettingsButton from "../../components/CookieSettingsButton";
 import { pageMetadata } from "../../lib/seo";
 import SiteFooter from "../../components/SiteFooter";
@@ -14,6 +15,7 @@ export const generateMetadata = async () => ({ title: tx("Cookiebeleid"), ...(aw
 
 export default async function Cookies() {
   if ((await getModules()).privacy_pages === false) notFound();
+  await requirePage("cookies");
   const cfg = await getSecurity();
   const lang = detectLang((await headers()).get("accept-language"), cfg?.languages, cfg?.default_language);
   const t = (k) => pick(cfg?.cookies?.texts, lang, cfg?.default_language, k);

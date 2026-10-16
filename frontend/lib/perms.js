@@ -19,6 +19,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/community", modules: ["profiles", "discover", "messages", "chat"] },
   { href: "/dashboard/admin/seo", module: "seo" },
   { href: "/dashboard/admin/sandbox", module: "sandbox" },
+  { href: "/dashboard/admin/pages", module: "pages" },
   { href: "/dashboard/admin/theme", module: "theme" },
 ];
 

@@ -21,6 +21,7 @@ PERMISSIONS = [
     ("branding.manage", "Logo's en beeld beheren", "Beheer"),
     ("media.manage", "Mediabibliotheek beheren (S3/lokaal)", "Beheer"),
     ("theme.manage", "Vormgeving beheren", "Beheer"),
+    ("pages.manage", "Pagina's en menu beheren", "Beheer"),
     ("security.manage", "Beveiliging beheren", "Beheer"),
 ]
 KEYS = [p[0] for p in PERMISSIONS]

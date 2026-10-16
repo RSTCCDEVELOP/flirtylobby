@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "apps.sandbox",
     "apps.shop",
     "apps.social",
+    "apps.pages",
 ]
 
 MIDDLEWARE = [

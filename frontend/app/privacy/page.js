@@ -1,6 +1,7 @@
 import { tx } from "../../lib/t";
 import { notFound } from "next/navigation";
 import { getModules } from "../../lib/modules-server";
+import { requirePage } from "../../lib/pages-server";
 import { pageMetadata } from "../../lib/seo";
 import SiteFooter from "../../components/SiteFooter";
 import SiteHeader from "../../components/SiteHeader";
@@ -13,6 +14,7 @@ export const generateMetadata = async () => ({ title: tx("Privacybeleid"), ...(a
 // Default privacy page. Texts come with defaults per language and can be edited in edit mode (✎ Uitgebreid).
 export default async function Privacy() {
   if ((await getModules()).privacy_pages === false) notFound();
+  await requirePage("privacy");
   return (
     <div className="site">
       <SiteHeader />

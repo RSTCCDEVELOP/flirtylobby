@@ -43,6 +43,13 @@ class ContentBlock(models.Model):
         unique_together = ("key", "lang")
 
 
+class LanguageSettings(models.Model):
+    """Site-wide language options (one row): how the language switch looks in the header."""
+
+    SWITCHER = [("dropdown", "Tekst (pulldown)"), ("flags", "Vlaggetjes")]
+    switcher = models.CharField(max_length=10, choices=SWITCHER, default="dropdown")
+
+
 class DashboardLayout(models.Model):
     """Block layout of the user dashboard. user=None is the default for everybody without own layout."""
 

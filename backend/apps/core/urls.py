@@ -6,6 +6,7 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("languages/", views.languages_public),
     path("languages/all/", views.languages_all),
+    path("languages/config/", views.languages_config),
     path("languages/<str:code>/", views.language_update),
     path("languages/<str:code>/default/", views.language_set_default),
     path("dashboard/layout/", dashboard.layout),

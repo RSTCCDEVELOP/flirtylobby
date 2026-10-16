@@ -13,6 +13,8 @@ from rest_framework.permissions import BasePermission
 # group, key, label, description, flags
 MODULES = [
     # ── Content ──
+    {"key": "pages", "group": "Content", "label": "Pagina's en menu",
+     "desc": "Overzicht van de pagina's, het menu in de header en eigen pagina's en links."},
     {"key": "edit_mode", "group": "Content", "label": "Bewerkmodus",
      "desc": "Teksten, uitgebreide opmaak en afbeeldingen op de website zelf bewerken (schakelaar in de header)."},
     {"key": "media", "group": "Content", "label": "Mediabibliotheek",

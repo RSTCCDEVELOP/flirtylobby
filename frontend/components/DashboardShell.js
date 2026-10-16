@@ -50,6 +50,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/groups", label: "User groups", icon: <IconGroup /> },
   { href: "/dashboard/admin/roles", label: "Rollen", icon: <IconShield />, perm: "roles.manage" },
   { href: "/dashboard/admin/languages", label: "Talen", icon: <IconGlobe />, perm: "languages.manage" },
+  { href: "/dashboard/admin/pages", label: "Pagina's", icon: <IconFolder /> },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
   { href: "/dashboard/admin/products", label: "Producten", icon: <IconBag /> },

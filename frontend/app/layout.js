@@ -9,6 +9,8 @@ import { CartProvider } from "../components/Cart";
 import { ChatProvider, ChatWidget } from "../components/Chat";
 import DialogHost from "../components/DialogHost";
 import DomTranslate from "../components/DomTranslate";
+import { MenuProvider } from "../components/SiteMenu";
+import { getMenu } from "../lib/pages-server";
 import LangRoot from "../components/LangRoot";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
@@ -107,7 +109,7 @@ async function getLanguages() {
 }
 
 export default async function RootLayout({ children }) {
-  const [theme, langs, branding, security, content, modules, seo, sandbox] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox()]);
+  const [theme, langs, branding, security, content, modules, seo, sandbox, menu] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox(), getMenu()]);
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
@@ -123,6 +125,7 @@ export default async function RootLayout({ children }) {
         <SessionProvider>
         <CartProvider>
         <ChatProvider>
+        <MenuProvider value={menu}>
         <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>
           <BrandingProvider value={branding} logoSet={theme?.values?.brand_logo}>
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
@@ -139,6 +142,7 @@ export default async function RootLayout({ children }) {
         <AdminBar />
         <DeviceGate devices={{ mobile: theme?.values?.device_mobile !== "no", tablet: theme?.values?.device_tablet !== "no", desktop: theme?.values?.device_desktop !== "no", app: theme?.values?.device_app === "yes" }} />
         </LangRoot>
+        </MenuProvider>
         </ChatProvider>
         </CartProvider>
         </SessionProvider>

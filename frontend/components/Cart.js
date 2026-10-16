@@ -21,15 +21,12 @@ export function CartProvider({ children }) {
   return <CartContext.Provider value={{ items, count: items.reduce((n, i) => n + i.qty, 0), add, setQty, remove, clear }}>{children}</CartContext.Provider>;
 }
 
-// Header links of the webshop: only when the modules are on
+// Cart button in the header (only when the orders module is on). Page links come from the menu (Admin -> Pagina's).
 export function ShopLinks() {
   const { count } = useCart();
-  const products = useModule("products");
   const orders = useModule("orders");
   return (
     <>
-      {useModule("profiles") && <Link href="/leden" className="shop-link">{tx("Leden")}</Link>}
-      {products && <Link href="/producten" className="shop-link">{tx("Producten")}</Link>}
       {orders && (
         <Link href="/winkelwagen" className="shop-link" title={tx("Winkelwagen")}>
           <IconCart /> {tx("Winkelwagen")}{count > 0 && <span className="cart-count">{count}</span>}

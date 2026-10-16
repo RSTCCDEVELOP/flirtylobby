@@ -7,6 +7,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import SiteUserArea from "./SiteUserArea";
 import { EditModeSwitch } from "./EditMode";
 import { ShopLinks } from "./Cart";
+import SiteMenu from "./SiteMenu";
 import { ChatButton, DirectIndicator } from "./Chat";
 
 export default function SiteHeader() {
@@ -17,11 +18,9 @@ export default function SiteHeader() {
           <Logo />
         </Link>
       </ImageEdit>
-      <nav className="site-nav">
-        <Link href="/">{tx("Home")}</Link>
-        <ShopLinks />
-      </nav>
+      <SiteMenu />
       <div className="site-actions">
+        <ShopLinks />
         <DirectIndicator />
           <ChatButton />
         <EditModeSwitch />

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
+import Flag from "../../../../components/Flag";
 import { api, errorText } from "../../../../lib/api";
 
 export default function Languages() {
@@ -12,13 +13,15 @@ export default function Languages() {
   const L = lvl(user, "languages");
   const [langs, setLangs] = useState([]);
   const [error, setError] = useState("");
+  const [switcher, setSwitcher] = useState("dropdown");
 
   const load = useCallback(() => api("/languages/all/").then(setLangs).catch((e) => setError(errorText(e))), []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); api("/languages/config/").then((c) => setSwitcher(c.switcher)).catch(() => {}); }, [load]);
+  const chooseSwitcher = (v) => act(async () => { const c = await api("/languages/config/", { method: "PUT", body: { switcher: v } }); setSwitcher(c.switcher); window.dispatchEvent(new Event("languages-changed")); });
 
   async function act(fn) {
     setError("");
-    try { await fn(); await load(); } catch (e) { setError(errorText(e)); }
+    try { await fn(); await load(); window.dispatchEvent(new Event("languages-changed")); } catch (e) { setError(errorText(e)); }
   }
 
   const toggle = (l) => act(() => api(`/languages/${l.code}/`, { method: "PATCH", body: { enabled: !l.enabled } }));
@@ -62,6 +65,22 @@ export default function Languages() {
           </tbody>
         </table>
       </div>
+      </Collapsible>
+
+      <Collapsible id="languages-switcher" title={tx("Taalkeuze in de header")}>
+        <p className="muted" style={{ margin: 0 }}>{tx("Kies hoe bezoekers van taal wisselen. De keuze verschijnt alleen als er meer dan één taal aan staat.")}</p>
+        <div className="popup-presets">
+          {[["dropdown", tx("Tekst (pulldown)"), tx("Een keuzelijst met de naam van de taal")], ["flags", tx("Vlaggetjes"), tx("Een rij kleine vlaggen, één per taal")]].map(([v, title, hint]) => (
+            <button key={v} type="button" className="card" disabled={L < 2} onClick={() => chooseSwitcher(v)}
+              style={{ textAlign: "left", cursor: L < 2 ? "default" : "pointer", display: "flex", flexDirection: "column", gap: ".5rem", borderColor: switcher === v ? "var(--blue)" : undefined }}>
+              <strong>{title} {switcher === v && <span className="badge ok">{tx("Actief")}</span>}</strong>
+              <span className="muted" style={{ fontSize: ".82rem" }}>{hint}</span>
+              {v === "flags"
+                ? <span className="lang-flags">{langs.filter((l) => l.enabled).map((l) => <span key={l.code} className="lang-flag"><Flag code={l.code} width={24} title={l.native_name} /></span>)}</span>
+                : <span className="lang-select" style={{ display: "inline-block", pointerEvents: "none" }}>{langs.find((l) => l.is_default)?.native_name || "Nederlands"} ▾</span>}
+            </button>
+          ))}
+        </div>
       </Collapsible>
     </>
   );

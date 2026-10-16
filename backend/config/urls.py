@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/", include("apps.sandbox.urls")),
     path("api/", include("apps.shop.urls")),
     path("api/", include("apps.social.urls")),
+    path("api/", include("apps.pages.urls")),
 ]
 
 if settings.DEBUG:

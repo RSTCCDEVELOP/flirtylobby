@@ -5,6 +5,7 @@ import SiteHeader from "../../components/SiteHeader";
 import { mediaUrl } from "../../lib/api";
 import { money } from "../../lib/format";
 import { pageMetadata } from "../../lib/seo";
+import { requirePage } from "../../lib/pages-server";
 import { requireModule, shopGet } from "../../lib/shop-server";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export const generateMetadata = async () => ({ title: tx("Producten"), ...(await
 
 export default async function Products({ searchParams }) {
   await requireModule("products");
+  await requirePage("products");
   const { groep } = await searchParams;
   const [groups, products] = await Promise.all([shopGet("/shop/groups/"), shopGet(`/shop/products/${groep ? `?group=${encodeURIComponent(groep)}` : ""}`)]);
   const roots = (groups || []).filter((g) => !g.parent);

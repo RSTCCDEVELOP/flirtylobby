@@ -20,7 +20,7 @@ def health(request):
 # ── Theme / "Vormgeving" ────────────────────────────────────────────────────
 from rest_framework import status  # noqa: E402
 from apps.accounts.access import level as access_level  # noqa: E402
-from apps.accounts.permissions import has_level  # noqa: E402
+from apps.accounts.permissions import has_level, has_level_for  # noqa: E402
 from . import modules  # noqa: E402
 from .modules import module_required  # noqa: E402
 
@@ -90,6 +90,26 @@ def _lang(l):
             "enabled": l.enabled, "is_default": l.is_default}
 
 
+def _switcher():
+    from .models import LanguageSettings
+
+    return LanguageSettings.objects.filter(pk=1).values_list("switcher", flat=True).first() or "dropdown"
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([has_level_for("languages", {"GET": "use", "PUT": "edit"}), module_required("languages")])
+def languages_config(request):
+    """How the language switch is shown in the header: a text pulldown or little flags."""
+    from .models import LanguageSettings
+
+    if request.method == "PUT":
+        value = request.data.get("switcher")
+        if value not in ("dropdown", "flags"):
+            return Response({"detail": "Kies tekst (pulldown) of vlaggetjes."}, status=status.HTTP_400_BAD_REQUEST)
+        LanguageSettings.objects.update_or_create(pk=1, defaults={"switcher": value})
+    return Response({"switcher": _switcher()})
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def languages_public(request):
@@ -97,7 +117,7 @@ def languages_public(request):
     langs = Language.objects.filter(enabled=True)
     if not modules.enabled("languages"):  # module off: only the default language
         langs = langs.filter(is_default=True)
-    return Response({"default": default.code if default else None, "languages": [_lang(l) for l in langs]})
+    return Response({"default": default.code if default else None, "languages": [_lang(l) for l in langs], "switcher": _switcher()})
 
 
 @api_view(["GET"])
