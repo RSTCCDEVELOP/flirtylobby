@@ -39,3 +39,9 @@ export const IconCart = I(<><path d="M3 4h2.5l2 11h10l2-8H7" /><circle cx="9" cy
 export const IconSend = I(<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z" />);
 export const IconGlobe2 = I(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.6 2.7 4 5.7 4 9s-1.4 6.3-4 9c-2.6-2.7-4-5.7-4-9s1.4-6.3 4-9z" /></>);
 export const IconSmile = I(<><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8M9 9.5h.01M15 9.5h.01" /></>);
+export const IconPin = I(<><path d="M12 21s-6.5-5.7-6.5-11A6.5 6.5 0 0112 3.5 6.5 6.5 0 0118.5 10c0 5.3-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></>);
+export const IconTrophy = I(<><path d="M8 4h8v5a4 4 0 01-8 0zM8 6H4.5v1.5A3.5 3.5 0 008 11M16 6h3.5v1.5A3.5 3.5 0 0116 11M12 13v4M8.5 20h7" /></>);
+export const IconBolt = I(<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" />);
+export const IconLink = I(<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1" />);
+export const IconBriefcase = I(<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2M3 13h18" /></>);
+export const IconTruck = I(<><path d="M2.5 6h11v10h-11zM13.5 9.5H18l3 3.5v3h-7.5" /><circle cx="7" cy="17.5" r="1.8" /><circle cx="17" cy="17.5" r="1.8" /></>);

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { tx } from "../lib/t";
+import { IconMenu, IconX } from "./Icons";
 import { getLanguage } from "../lib/t";
 import { useSession } from "./Session";
 
@@ -34,12 +36,17 @@ export default function SiteMenu() {
   const items = useContext(MenuContext);
   const { user } = useSession();
   const pathname = usePathname();
+  const [open, setOpen] = useState(false); // small screens: the menu is a dropdown behind a button
+  useEffect(() => setOpen(false), [pathname]);
   const show = (i) => i.audience === "all" || (i.audience === "members" && user) || (i.audience === "guests" && !user);
   const list = items.filter(show);
   if (!list.length) return null;
   return (
-    <nav className="site-nav">
-      {list.map((it) => <Item key={it.id} it={{ ...it, children: it.children.filter(show) }} pathname={pathname} />)}
-    </nav>
+    <>
+      <button type="button" className="icon-btn nav-toggle" aria-expanded={open} aria-label={open ? tx("Menu sluiten") : tx("Menu openen")} onClick={() => setOpen(!open)}>{open ? <IconX /> : <IconMenu />}</button>
+      <nav className={`site-nav ${open ? "open" : ""}`}>
+        {list.map((it) => <Item key={it.id} it={{ ...it, children: it.children.filter(show) }} pathname={pathname} />)}
+      </nav>
+    </>
   );
 }

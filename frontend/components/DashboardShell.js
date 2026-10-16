@@ -64,6 +64,43 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/theme", label: "Vormgeving", icon: <IconPalette />, perm: "theme.manage" },
 ];
 
+// Menu groups (collapsible). Items are assigned by href; items without a group stay at the top.
+const COMMUNITY_GROUPS = [{ id: "c-mine", title: "Mijn community" }, { id: "c-contact", title: "Contact" }];
+const COMMUNITY_GROUP_OF = {
+  "/dashboard/community": "c-mine", "/dashboard/community/profile": "c-mine", "/dashboard/community/requests": "c-mine", "/dashboard/community/blocked": "c-mine",
+  "/dashboard/community/discover": "c-contact", "/dashboard/community/messages": "c-contact", "/dashboard/community/chat": "c-contact", "/dashboard/community/direct": "c-contact",
+};
+const ADMIN_GROUPS = [
+  { id: "a-people", title: "Gebruikers" }, { id: "a-site", title: "Website" }, { id: "a-community", title: "Community" },
+  { id: "a-shop", title: "Webshop" }, { id: "a-system", title: "Systeem" },
+];
+const ADMIN_GROUP_OF = {
+  "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
+  "/dashboard/admin/pages": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
+  "/dashboard/admin/community": "a-community",
+  "/dashboard/admin/products": "a-shop", "/dashboard/admin/orders": "a-shop",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system",
+};
+
+// A collapsible group of menu items. Open state is remembered; the group with the current page opens by itself.
+// In the icon-only (collapsed) sidebar all items stay visible as icons.
+function NavGroup({ id, title, active, badge, children }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => { try { setOpen(localStorage.getItem(`navg:${id}`) === "1"); } catch {} }, [id]);
+  useEffect(() => { if (active) setOpen(true); }, [active]);
+  const toggle = () => { const next = !open; setOpen(next); try { localStorage.setItem(`navg:${id}`, next ? "1" : "0"); } catch {} };
+  return (
+    <div className={`nav-group ${open ? "open" : ""} ${active ? "has-active" : ""}`}>
+      <button type="button" className="nav-group-head" aria-expanded={open} onClick={toggle}>
+        <span className="label">{tx(title)}</span>
+        {!open && badge > 0 && <span className="cart-count">{badge}</span>}
+        <svg className="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+      </button>
+      <div className="nav-group-body">{children}</div>
+    </div>
+  );
+}
+
 export default function DashboardShell({ children }) {
   const { user, logout } = useAuth();
   const chat = useChat();
@@ -110,6 +147,18 @@ export default function DashboardShell({ children }) {
     </Link>
   );
 
+  const withBadge = (n) => ({ ...n, badgeCount: n.badge === "direct_active" ? (chat?.directActive?.length || 0) : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) || 0 : 0 });
+  const isActive = (n) => (n.href === "/dashboard/community" || n.href === "/dashboard/admin" ? pathname === n.href : pathname.startsWith(n.href));
+  const renderGroups = (items, groups, groupOf) => groups.map((g) => {
+    const list = items.filter((n) => groupOf[n.href] === g.id);
+    if (!list.length) return null;
+    return (
+      <NavGroup key={g.id} id={g.id} title={g.title} active={list.some(isActive)} badge={list.reduce((a, n) => a + (n.badgeCount || 0), 0)}>
+        {list.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/community" || n.href === "/dashboard/admin"} />)}
+      </NavGroup>
+    );
+  });
+
   return (
     <div className={`shell ${collapsed ? "collapsed" : ""}`}>
       <header className="topbar">
@@ -144,26 +193,27 @@ export default function DashboardShell({ children }) {
             <div className="side-title">{tx("Super admin")}</div>
             {SUPER_NAV.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/superadmin"} />)}
             <div className="side-title">{tx("Alle beheerpagina's")}</div>
-            {allowedAdminNav.filter((n) => n.href !== "/dashboard/admin").map((n) => <NavLink key={n.href} n={n} />)}
+            {renderGroups(allowedAdminNav.filter((n) => n.href !== "/dashboard/admin"), ADMIN_GROUPS, ADMIN_GROUP_OF)}
           </>
         ) : inAdmin ? (
           <>
             <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>
             <div className="side-title">{tx("Admin")}</div>
-            {allowedAdminNav.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/admin"} />)}
+            <NavLink n={allowedAdminNav[0]} exact />
+            {renderGroups(allowedAdminNav.slice(1), ADMIN_GROUPS, ADMIN_GROUP_OF)}
           </>
         ) : (
           <>
             {NAV.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
-            {communityLinks.length > 0 && <div className="side-title">{tx("Community")}</div>}
-            {communityLinks.map((n) => <NavLink key={n.href} n={{ ...n, badgeCount: n.badge === "direct_active" ? (chat?.directActive?.length || 0) : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) : 0 }} exact={n.href === "/dashboard/community"} />)}
+            {renderGroups(communityLinks.map(withBadge), COMMUNITY_GROUPS, COMMUNITY_GROUP_OF)}
           </>
         )}
         {(canAdmin(user, mods) || user.is_staff) && (
           <div className="side-bottom">
-            <div className="side-title">{tx("Beheer")}</div>
-            {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
-            {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}
+            <NavGroup id="a-manage" title="Beheer" active={inAdmin || inSuper} badge={0}>
+              {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
+              {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}
+            </NavGroup>
           </div>
         )}
       </aside>
