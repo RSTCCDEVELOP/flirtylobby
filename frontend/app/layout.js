@@ -10,7 +10,9 @@ import { ChatProvider, ChatWidget } from "../components/Chat";
 import DialogHost from "../components/DialogHost";
 import DomTranslate from "../components/DomTranslate";
 import { MenuProvider } from "../components/SiteMenu";
-import { getMenu } from "../lib/pages-server";
+import { getBackgrounds, getMenu } from "../lib/pages-server";
+import PageBackdrop from "../components/PageBackdrop";
+import PageSettingsButton from "../components/PageSettingsButton";
 import LangRoot from "../components/LangRoot";
 import VersionNotice from "../components/VersionNotice";
 import { getBuildId } from "../lib/version-server";
@@ -111,11 +113,11 @@ async function getLanguages() {
 }
 
 export default async function RootLayout({ children }) {
-  const [theme, langs, branding, security, content, modules, seo, sandbox, menu] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox(), getMenu()]);
+  const [theme, langs, branding, security, content, modules, seo, sandbox, menu, backgrounds] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox(), getMenu(), getBackgrounds()]);
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
-    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} suppressHydrationWarning>
+    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-tabs={theme?.values?.tab_style || "pills"} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript(theme?.values?.default_mode) }} />
         {theme?.fonts_url && <link rel="stylesheet" href={theme.fonts_url} />}
@@ -131,8 +133,10 @@ export default async function RootLayout({ children }) {
         <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>
           <BrandingProvider value={branding} logoSet={theme?.values?.brand_logo}>
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
+              <PageBackdrop map={backgrounds} />
               {children}
               <EditBanner />
+              <PageSettingsButton />
             </ContentProvider>
             <Gates cfg={security} />
         <SandboxBadge status={sandbox} />

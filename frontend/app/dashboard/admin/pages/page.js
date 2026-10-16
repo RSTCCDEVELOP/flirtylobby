@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { useModules } from "../../../../components/Modules";
+import { useSession } from "../../../../components/Session";
+import PageSettingsModal from "../../../../components/PageSettingsModal";
 import { menuLabel } from "../../../../components/SiteMenu";
 import { IconUser } from "../../../../components/Icons";
 import { VISIBILITY_ICON } from "../../../../components/VisibilityPicker";
@@ -28,6 +30,10 @@ export default function PagesAdmin() {
   const { user } = useAuth();
   const mods = useModules();
   const router = useRouter();
+  const [settings, setSettings] = useState(null); // page whose settings pop-up is open
+  const { canEdit, setEditMode } = useSession();
+  // open the page with edit mode switched on, so the texts can be changed right there
+  const editPage = (p) => { setEditMode(true); router.push(p.path); };
   const L = lvl(user, "pages");
   const [pages, setPages] = useState(null);
   const [langs, setLangs] = useState({ languages: [], default: "nl" });
@@ -110,7 +116,8 @@ export default function PagesAdmin() {
                     <td><Sw checked={p.in_menu} disabled={L < 2} onChange={(v) => patch(p, { in_menu: v })} /></td>
                     <td className="actions">
                       <a className="btn sm" href={p.path} target="_blank" rel="noreferrer">{tx("Openen")}</a>
-                      {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...p })}>{p.kind === "system" ? tx("Naam") : tx("Wijzig")}</button>}
+                      {p.editable && canEdit && <button className="btn sm" onClick={() => editPage(p)}>{tx("Bewerk pagina")}</button>}
+                      {L >= 2 && <button className="btn sm" onClick={() => setSettings(p)}>{tx("Instellingen")}</button>}
                       {L >= 3 && p.kind !== "system" && <button className="btn sm danger" onClick={() => remove(p)}>{tx("Verwijder")}</button>}
                     </td>
                   </tr>
@@ -158,6 +165,11 @@ export default function PagesAdmin() {
         )}
         <small className="muted">{tx("Maak een dropdown door een item met → onder het vorige item te zetten. Een dropdown kan één niveau diep.")}</small>
       </Collapsible>
+
+      {settings && (
+        <PageSettingsModal page={settings} languages={langs.languages} defaultLang={langs.default} canSeo={mods?.seo !== false && lvl(user, "seo") >= 1}
+          onClose={() => setSettings(null)} onSaved={async () => { setSettings(null); await load(); router.refresh(); setMsg({ ok: true, text: tx("Pagina-instellingen opgeslagen.") }); }} />
+      )}
 
       {modal && (
         <div className="overlay" onClick={() => setModal(null)}>

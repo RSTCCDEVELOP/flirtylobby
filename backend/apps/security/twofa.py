@@ -20,7 +20,7 @@ from apps.integrations.models import Integration
 
 from apps.communication import sending
 
-from . import service
+from . import service, totp
 
 logger = logging.getLogger(__name__)
 PHONE_RE = re.compile(r"^\+[1-9]\d{7,14}$")
@@ -55,7 +55,8 @@ def allowed_methods():
     cfg, avail = service.get()["twofa"], availability()
     if not cfg["enabled"]:
         return []
-    return [m for m in ("email", "sms") if cfg[f"allow_{m}"] and avail[m]]
+    # the app needs no delivery channel (works offline), e-mail / sms need a linked service
+    return [m for m in ("email", "sms", "app") if cfg.get(f"allow_{m}") and (m == "app" or avail[m])]
 
 
 def is_admin(user):
@@ -71,6 +72,11 @@ def needs_setup(user):
     return cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user))
 
 
+def email_verify_required(user):
+    """Policy asks every user to confirm the e-mail address, this one has not yet, and a mail can be sent."""
+    return bool(service.get()["email_verify"]["enabled"] and not user.email_verified and availability()["email"])
+
+
 def required_for(user):
     cfg = service.get()["twofa"]
     return cfg["enabled"] and (cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user)))
@@ -81,6 +87,7 @@ def state(user):
         "enabled_system": service.get()["twofa"]["enabled"],
         "active": user.otp_active, "method": user.twofa_method,
         "destination": destination_hint(user) if user.twofa_method else "",
+        "email_verified": user.email_verified, "email_verify_required": bool(service.get()["email_verify"]["enabled"]),
         "available": allowed_methods(), "required": required_for(user), "setup_required": needs_setup(user),
     }
 
@@ -96,6 +103,8 @@ def mask_email(e):
 
 
 def destination_hint(user):
+    if user.twofa_method == "app":
+        return "Authenticator"
     if user.twofa_method == "sms":
         return f"{user.phone[:3]}{'•' * 5}{user.phone[-2:]}" if user.phone else ""
     return mask_email(user.email)
@@ -110,7 +119,7 @@ def _text(key):
     return ""
 
 
-def issue_code(user):
+def issue_code(user, force_email=False):
     """Create + send a fresh code via the user's chosen method. Raises DeliveryError."""
     cfg = service.get()["twofa"]
     if user.otp_sent_at and (timezone.now() - user.otp_sent_at).total_seconds() < RESEND_SECONDS:
@@ -119,7 +128,7 @@ def issue_code(user):
 
     code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
     fmt = lambda t: t.replace("{code}", code).replace("{minutes}", str(cfg["code_minutes"]))  # noqa: E731
-    deliver(user, fmt(_text("email_subject")), fmt(_text("email_body")), fmt(_text("sms_body")))
+    deliver(user, fmt(_text("email_subject")), fmt(_text("email_body")), fmt(_text("sms_body")), force_email)
     user.otp_token = _hash(user, code)
     user.otp_expires = timezone.now() + timedelta(minutes=cfg["code_minutes"])
     user.otp_attempts = 0
@@ -127,6 +136,31 @@ def issue_code(user):
     user.save(update_fields=["otp_token", "otp_expires", "otp_attempts", "otp_sent_at"])
     if dj_settings.DEBUG:
         logger.warning("2FA code for %s (DEBUG only): %s", user.email, code)
+
+
+def app_start(user):
+    """New pending secret for the authenticator app. Returns (secret, otpauth uri); nothing changes for the user until confirmed."""
+    secret = totp.new_secret()
+    user.totp_secret = totp.seal(secret)
+    user.save(update_fields=["totp_secret"])
+    issuer = getattr(dj_settings, "SITE_NAME", "") or "Studio2"
+    return secret, totp.uri(secret, user.email, issuer)
+
+
+def check_app_code(user, code):
+    """Check an authenticator code against the user's secret; a code can be used once."""
+    cfg = service.get()["twofa"]
+    if user.otp_attempts >= cfg["max_attempts"] and user.otp_expires and user.otp_expires > timezone.now():
+        return False
+    step = totp.verify(totp.unseal(user.totp_secret), code, user.totp_last_step)
+    if step is None:
+        user.otp_attempts += 1
+        user.otp_expires = user.otp_expires if user.otp_expires and user.otp_expires > timezone.now() else timezone.now() + timedelta(minutes=cfg["code_minutes"])
+        user.save(update_fields=["otp_attempts", "otp_expires"])
+        return False
+    user.totp_last_step, user.otp_attempts, user.otp_expires = step, 0, None
+    user.save(update_fields=["totp_last_step", "otp_attempts", "otp_expires"])
+    return True
 
 
 def check_code(user, code):
@@ -181,10 +215,10 @@ def send_sms(phone, text):
                 "body": {"type": "text", "text": {"text": text}}})
 
 
-def deliver(user, subject, email_body, sms_body):
+def deliver(user, subject, email_body, sms_body, force_email=False):
     from apps.sandbox import service as sandbox
 
-    if user.twofa_method == "sms":
+    if user.twofa_method == "sms" and not force_email:
         return send_sms(user.phone, sms_body)
 
     try:

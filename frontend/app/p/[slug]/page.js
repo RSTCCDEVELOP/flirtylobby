@@ -3,13 +3,15 @@ import { EditableText } from "../../../components/EditMode";
 import SiteFooter from "../../../components/SiteFooter";
 import SiteHeader from "../../../components/SiteHeader";
 import { getOwnPage } from "../../../lib/pages-server";
+import { pageMetadata } from "../../../lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const p = await getOwnPage(slug);
-  return { title: p ? p.title.nl || Object.values(p.title)[0] : "Pagina" };
+  const seo = await pageMetadata(`/p/${slug}`);
+  return { title: p ? p.title.nl || Object.values(p.title)[0] : "Pagina", ...seo };
 }
 
 // An own page from Admin -> Pagina's. Title and text are edited in edit mode, per language.

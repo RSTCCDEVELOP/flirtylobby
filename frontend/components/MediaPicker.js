@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 
 // Modal to choose an image from the media library, or upload a new one
-export default function MediaPicker({ onPick, onClose, title = tx("Kies een afbeelding") }) {
+export default function MediaPicker({ onPick, onClose, kind = "image", title = kind === "video" ? tx("Kies een video") : tx("Kies een afbeelding") }) {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [error, setError] = useState("");
@@ -13,8 +13,8 @@ export default function MediaPicker({ onPick, onClose, title = tx("Kies een afbe
   const input = useRef(null);
 
   const load = useCallback(() => {
-    api(`/media/?kind=image${q ? `&q=${encodeURIComponent(q)}` : ""}`).then((d) => setItems(d.items)).catch((e) => setError(errorText(e)));
-  }, [q]);
+    api(`/media/?kind=${kind}${q ? `&q=${encodeURIComponent(q)}` : ""}`).then((d) => setItems(d.items)).catch((e) => setError(errorText(e)));
+  }, [q, kind]);
   useEffect(() => { load(); }, [load]);
 
   async function upload(e) {
@@ -40,7 +40,7 @@ export default function MediaPicker({ onPick, onClose, title = tx("Kies een afbe
         <div className="page-head" style={{ marginBottom: ".5rem" }}>
           <h2 style={{ margin: 0 }}>{title}</h2>
           <div className="row">
-            <input ref={input} type="file" accept="image/*" multiple hidden onChange={upload} />
+            <input ref={input} type="file" accept={kind === "video" ? "video/*" : "image/*"} multiple hidden onChange={upload} />
             <button className="btn primary" onClick={() => input.current.click()} disabled={busy}>{busy ? tx("Uploaden…") : tx("Nieuwe uploaden")}</button>
             <button className="btn" onClick={onClose}>{tx("Sluiten")}</button>
           </div>
@@ -50,12 +50,13 @@ export default function MediaPicker({ onPick, onClose, title = tx("Kies een afbe
         <div className="media-grid">
           {items.map((i) => (
             <button key={i.id} className="media-tile" onClick={() => onPick(i)} title={i.name}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={mediaUrl(i.url)} alt={i.name} loading="lazy" />
+              {kind === "video"
+                ? <video src={mediaUrl(i.url)} muted preload="metadata" />
+                : /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(i.url)} alt={i.name} loading="lazy" />}
               <span>{i.name}</span>
             </button>
           ))}
-          {!items.length && <p className="muted">{tx("Geen afbeeldingen gevonden.")}</p>}
+          {!items.length && <p className="muted">{kind === "video" ? tx("Geen video's gevonden.") : tx("Geen afbeeldingen gevonden.")}</p>}
         </div>
       </div>
     </div>

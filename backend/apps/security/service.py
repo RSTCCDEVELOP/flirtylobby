@@ -33,7 +33,7 @@ def get():
 
     s = dict(raw())
     for section, module in (("geo", "geo"), ("age", "age_gate"), ("gambling", "gambling"), ("cookies", "cookies"),
-                            ("words", "word_filter"), ("twofa", "twofa"), ("registration", "registration")):
+                            ("words", "word_filter"), ("twofa", "twofa"), ("email_verify", "security_basic"), ("registration", "registration")):
         if not modules.enabled(module):
             s[section] = {**s[section], "enabled": False}
     return s

@@ -25,6 +25,16 @@ def usage_map():
         add(p.image.name, "Homepagefoto")
     for u in AccountUser.objects.exclude(image=""):
         add(u.image.name, f"Gebruiker: {u.email}")
+    from apps.pages.models import Page
+
+    for pg in Page.objects.exclude(background={}):
+        item = MediaItem.objects.filter(pk=(pg.background or {}).get("media")).first()
+        if item:
+            add(item.key, f"Pagina-achtergrond: {pg.key}")
+    from apps.seo.models import SeoPage
+
+    for sp in SeoPage.objects.exclude(og_media=None).select_related("og_media"):
+        add(sp.og_media.key, f"SEO-afbeelding: {sp.path}")
     from apps.social.models import ProfilePhoto
 
     for ph in ProfilePhoto.objects.all():

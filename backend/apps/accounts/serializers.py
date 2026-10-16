@@ -168,8 +168,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "is_staff", "twofa", "permissions", "roles", "module_levels", "image", "show_public", "verification"] + PROFILE_FIELDS
-        read_only_fields = ["id", "email", "role", "is_staff", "twofa", "permissions", "roles", "module_levels", "image", "show_public", "verification"]
+        fields = ["id", "email", "role", "is_staff", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"] + PROFILE_FIELDS
+        read_only_fields = ["id", "email", "role", "is_staff", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"]
         extra_kwargs = WORD_KWARGS
 
 

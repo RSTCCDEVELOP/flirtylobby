@@ -8,6 +8,7 @@ import { Logo } from "../../components/BrandingContext";
 import ThemeToggle from "../../components/ThemeToggle";
 import { useEffect } from "react";
 import { api, setToken, errorText } from "../../lib/api";
+import { EditableText } from "../../components/EditMode";
 
 export default function Login() {
   const router = useRouter();
@@ -63,15 +64,15 @@ export default function Login() {
         <div className="login-theme"><ThemeToggle /></div>
         <form className="card login-card" onSubmit={verify}>
           <Logo />
-          <h1>{tx("Verificatiecode")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{tx("We hebben een code gestuurd naar")} {challenge.destination} ({challenge.method === "sms" ? "sms" : "e-mail"}).</p>
+          <h1>{challenge.email_verify ? tx("E-mailadres bevestigen") : tx("Verificatiecode")}</h1>
+          <p className="muted" style={{ margin: 0 }}>{challenge.method === "app" ? tx("Open je authenticator-app en vul de 6-cijferige code in.") : <>{tx("We hebben een code gestuurd naar")} {challenge.destination} ({challenge.method === "sms" ? "sms" : "e-mail"}).</>}</p>
           <label>{tx("Code")}
             <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={8} />
           </label>
           {error && <div className="alert">{error}</div>}
           {info && <div className="alert ok">{info}</div>}
           <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Bevestigen")}</button>
-          <button type="button" className="btn" onClick={resend}>{tx("Code opnieuw sturen")}</button>
+          {challenge.method !== "app" && <button type="button" className="btn" onClick={resend}>{tx("Code opnieuw sturen")}</button>}
           <button type="button" className="muted center" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setChallenge(null); setCode(""); setError(""); setInfo(""); }}>{tx("← Terug")}</button>
         </form>
       </main>
@@ -83,7 +84,8 @@ export default function Login() {
       <div className="login-theme"><ThemeToggle /></div>
       <form className="card login-card" onSubmit={submit}>
         <Logo />
-        <h1>{tx("Inloggen")}</h1>
+        <EditableText id="login.title" as="h1" fallbacks={{ nl: "Inloggen", en: "Log in", de: "Anmelden", fr: "Connexion", es: "Iniciar sesión", pt: "Entrar", zh: "登录", ar: "تسجيل الدخول" }} fallback="Inloggen" />
+        <EditableText id="login.intro" as="p" fallback="" className="muted" />
         <label>{tx("E-mailadres")}
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" />
         </label>

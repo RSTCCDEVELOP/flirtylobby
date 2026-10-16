@@ -188,7 +188,7 @@ export default function CommunityAdmin() {
             <Num label={tx("Max. aantal foto's per profiel")} min={1} max={30} value={s.profiles.max_photos} disabled={!can("profiles")} onChange={(v) => set("profiles", "max_photos", v)} />
             <label>{tx("Standaard zichtbaarheid van een nieuw profiel")}
               <select value={s.profiles.default_visibility} disabled={!can("profiles")} onChange={(e) => set("profiles", "default_visibility", e.target.value)}>
-                <option value="members">{tx("Alleen leden")}</option><option value="selected">{tx("Alleen geselecteerde leden")}</option><option value="public">{tx("Iedereen")}</option>
+                <option value="members">{tx("Alleen leden")}</option><option value="friends">{tx("Alleen vrienden")}</option><option value="selected">{tx("Alleen geselecteerde leden")}</option><option value="public">{tx("Iedereen")}</option>
               </select>
             </label>
           </div>

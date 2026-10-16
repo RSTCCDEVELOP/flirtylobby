@@ -83,7 +83,7 @@ export default function Discover() {
       {data && !data.locked && !data.participating && (
         <div className="alert" style={{ marginBottom: "1rem" }}>{tx("Je doet zelf nog niet mee.")} <Link href="/dashboard/community/profile" style={{ textDecoration: "underline" }}>{tx("Zet je profiel aan en kies \"Zoeken & matchen\"")}</Link> {tx("om gevonden te worden en leuk te kunnen vinden.")}</div>
       )}
-      <div className="tabs">
+      <div className="tabs tabset">
         {TABS.filter(([k]) => !cfg || (k !== "suggested" || cfg.suggestions) && (k !== "visitors" || cfg.show_visitors) && (k !== "likedme" || cfg.show_likes_received)).map(([k, label]) => <button key={k} className={`btn sm ${tab === k ? "primary" : ""}`} onClick={() => { setTab(k); setList(null); }}>{label}</button>)}
       </div>
       {tab === "search" && (

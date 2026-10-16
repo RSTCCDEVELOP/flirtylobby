@@ -44,7 +44,7 @@ def check_visitor(request):
 
 # which module each settings section belongs to (access is checked per section)
 SECTION_MODULE = {"basic": "security_basic", "geo": "geo", "age": "age_gate", "gambling": "gambling",
-                  "cookies": "cookies", "words": "word_filter", "twofa": "twofa", "registration": "security_basic"}
+                  "cookies": "cookies", "words": "word_filter", "twofa": "twofa", "email_verify": "security_basic", "registration": "security_basic"}
 
 
 @api_view(["GET", "PUT"])

@@ -12,6 +12,16 @@ export async function getMenu() {
   }
 }
 
+// Page backgrounds (picture/video from the media library), by page path
+export async function getBackgrounds() {
+  try {
+    const res = await fetch(`${base()}/api/pages/backgrounds/`, { cache: "no-store" });
+    return res.ok ? await res.json() : {};
+  } catch {
+    return {};
+  }
+}
+
 // Is a built-in page switched on? (unknown or unreachable = on, so the site never breaks)
 export async function pageOn(key) {
   try {

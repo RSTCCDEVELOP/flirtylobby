@@ -1,11 +1,15 @@
 "use client";
 
 import { tx } from "../../../lib/t";
+import Link from "next/link";
 import { useState } from "react";
-import Collapsible from "../../../components/Collapsible";
 import VerifyBadge from "../../../components/VerifyBadge";
 import MyPhotos from "../../../components/MyPhotos";
 import PhotoDrop from "../../../components/PhotoDrop";
+import TwoFactorProfile from "../../../components/TwoFactorProfile";
+import ProfileBlock from "../../../components/ProfileBlock";
+import PublicProfileBlock from "../../../components/PublicProfileBlock";
+import { IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../components/Icons";
 import { countryOptions } from "../../../lib/countries";
 import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, errorText, mediaUrl } from "../../../lib/api";
@@ -58,11 +62,15 @@ export default function Profile() {
           </div>
         </div>
       )}
-      <h1>{tx("Mijn profiel")} <VerifyBadge status={user.verification} size={26} label /></h1>
+      <div className="page-head">
+        <h1 style={{ margin: 0 }}>{tx("Mijn profiel")} <VerifyBadge status={user.verification} size={26} label /></h1>
+        <Link className="btn" href="/dashboard/community/profile">{tx("Instellingen openbaar profiel")}</Link>
+      </div>
       <div className="profile-cols">
       <div className="profile-col">
-      <Collapsible id="profile-data" title={tx("Gegevens")} className="form-card wide">
-      <form className="form" onSubmit={save}>
+      <PublicProfileBlock />
+      <form onSubmit={save}>
+      <ProfileBlock id="p-personal" icon={<IconUser />} title={tx("Persoonlijk")} hint={tx("Zo ben je bekend op de website.")}>
         <div className="grid2">
           <label>{tx("Voornaam")}<input value={form.first_name} onChange={set("first_name")} /></label>
           <label>{tx("Achternaam")}<input value={form.last_name} onChange={set("last_name")} /></label>
@@ -74,6 +82,11 @@ export default function Profile() {
               <option value="">{tx("Niet opgegeven")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Anders")}</option>
             </select>
           </label>
+        </div>
+      </ProfileBlock>
+
+      <ProfileBlock id="p-contact" icon={<IconPin />} title={tx("Contact & adres")} hint={tx("Telefoon en woonplaats.")}>
+        <div className="grid2">
           <label>{tx("Telefoon")}<input type="tel" value={form.phone} onChange={set("phone")} maxLength={20} placeholder="+31612345678" autoComplete="tel" /></label>
           <label>{tx("Adres")}<input value={form.address} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} autoComplete="street-address" /></label>
           <label>{tx("Postcode")}<input value={form.postal_code} onChange={set("postal_code")} maxLength={12} autoComplete="postal-code" /></label>
@@ -84,30 +97,39 @@ export default function Profile() {
               {countryOptions("nl").map(([c, n]) => <option key={c} value={c}>{n}</option>)}
             </select>
           </label>
+        </div>
+      </ProfileBlock>
+
+      <ProfileBlock id="p-work" icon={<IconBriefcase />} title={tx("Werk & over mij")} hint={tx("Functie, link en een korte omschrijving.")}>
+        <div className="grid2">
           <label>{tx("Functie")}<input value={form.function} onChange={set("function")} maxLength={255} /></label>
           <label>{tx("Korte tekst")}<input value={form.short} onChange={set("short")} maxLength={255} /></label>
           <label>{tx("Link")}<input value={form.link} onChange={set("link")} maxLength={255} /></label>
         </div>
         <label className="check"><input type="checkbox" checked={form.link_external} onChange={set("link_external")} /> {tx("Link opent extern")}</label>
         <label>{tx("Omschrijving")}<textarea rows={5} value={form.description} onChange={set("description")} /></label>
+      </ProfileBlock>
+      <div className="profile-save">
+        <button className="btn primary">{tx("Opslaan")}</button>
         {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-        <div><button className="btn primary">{tx("Opslaan")}</button></div>
+      </div>
       </form>
-      </Collapsible>
 
-      <Collapsible id="profile-password" title={tx("Wachtwoord wijzigen")} className="form-card wide">
-      <form className="form" onSubmit={changePassword}>
-        <div className="grid2">
-          <label>{tx("Huidig wachtwoord")}<input type="password" value={pw.old_password} onChange={(e) => setPw({ ...pw, old_password: e.target.value })} required autoComplete="current-password" /></label>
-          <label>{tx("Nieuw wachtwoord")}<input type="password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} required autoComplete="new-password" /></label>
-        </div>
-        {pwMsg && <div className={pwMsg.ok ? "alert ok" : "alert"}>{pwMsg.text}</div>}
-        <div><button className="btn">{tx("Wachtwoord wijzigen")}</button></div>
-      </form>
-      </Collapsible>
+      <ProfileBlock id="p-security" icon={<IconLock />} title={tx("Beveiliging")} hint={tx("Wachtwoord en inloggen met een code.")}>
+        <form className="form" onSubmit={changePassword}>
+          <strong style={{ fontSize: ".9rem" }}>{tx("Wachtwoord wijzigen")}</strong>
+          <div className="grid2">
+            <label>{tx("Huidig wachtwoord")}<input type="password" value={pw.old_password} onChange={(e) => setPw({ ...pw, old_password: e.target.value })} required autoComplete="current-password" /></label>
+            <label>{tx("Nieuw wachtwoord")}<input type="password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} required autoComplete="new-password" /></label>
+          </div>
+          {pwMsg && <div className={pwMsg.ok ? "alert ok" : "alert"}>{pwMsg.text}</div>}
+          <div><button className="btn">{tx("Wachtwoord wijzigen")}</button></div>
+        </form>
+        <TwoFactorProfile />
+      </ProfileBlock>
       </div>
       <div className="profile-col">
-      <Collapsible id="profile-photos" title={tx("Foto's")} className="form-card wide" defaultOpen>
+      <ProfileBlock id="p-photos" icon={<IconImage />} title={tx("Foto's")} hint={tx("Profielfoto en je fotoalbum.")}>
         <div className="photo-side">
           <PhotoDrop vertical
               label={user.image ? tx("Nieuwe foto: sleep hierheen of klik") : tx("Sleep een foto hierheen of klik om te kiezen")}
@@ -122,7 +144,7 @@ export default function Profile() {
             <MyPhotos />
             {user.show_public && <span className="badge ok" title={tx("Wordt getoond op de website")}>{tx("Op website")}</span>}
         </div>
-      </Collapsible>
+      </ProfileBlock>
       </div>
       </div>
     </>

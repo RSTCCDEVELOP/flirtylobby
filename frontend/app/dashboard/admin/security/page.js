@@ -317,6 +317,7 @@ export default function Security() {
           <Num label={tx("Max. foutieve codes")} min={1} max={10} value={data.twofa.max_attempts} onChange={(v) => set("twofa")("max_attempts", v)} />
         </div>
         <Toggle label={tx("Code per e-mail toestaan")} hint={avail.email ? `via ${avail.email}` : tx("niet beschikbaar: koppel e-mail bij API keys")} checked={data.twofa.allow_email} onChange={(v) => set("twofa")("allow_email", v)} />
+        <Toggle label={tx("Authenticator-app toestaan")} hint={tx("QR-code of sleutel voor Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden…")} checked={data.twofa.allow_app} onChange={(v) => set("twofa")("allow_app", v)} />
         <Toggle label={tx("Code per sms toestaan")} hint={avail.sms ? `via ${avail.sms}` : tx("niet beschikbaar: koppel Bird bij API keys")} checked={data.twofa.allow_sms} onChange={(v) => set("twofa")("allow_sms", v)} />
         <h3>{tx("Teksten")} <small className="muted">{tx("gebruik")} {tx("{code}")} {tx("en")} {tx("{minutes}")}</small></h3>
         <div className="grid2">
@@ -324,6 +325,15 @@ export default function Security() {
           {T("twofa", "email_body", tx("E-mail bericht"), { rows: 3 })}
           {T("twofa", "sms_body", tx("Sms-bericht"), { rows: 2 })}
         </div>
+      </Collapsible>
+      )}
+
+      {on("security_basic") && (
+      <Collapsible id="sec-email-verify" title={tx("E-mailverificatie")}>
+        <Toggle label={tx("E-mailverificatie verplicht")}
+          hint={avail.email ? tx("elke gebruiker bevestigt eenmalig bij het inloggen het e-mailadres met een code, via {0}", avail.email) : tx("niet beschikbaar: koppel e-mail (Postmark) bij API keys")}
+          checked={data.email_verify.enabled} onChange={(v) => set("email_verify")("enabled", v)} />
+        <p className="muted" style={{ margin: 0 }}>{tx("Staat standaard uit. Gebruikers die al bevestigd hebben (of zich met e-mailbevestiging hebben aangemeld) worden niet opnieuw gevraagd.")}</p>
       </Collapsible>
       )}
 

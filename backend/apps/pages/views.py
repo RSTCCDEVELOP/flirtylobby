@@ -21,10 +21,23 @@ KEY_RE = re.compile(r"[a-z0-9][a-z0-9-]{1,58}")
 RESERVED = {"admin", "api", "login", "dashboard", "p", "static", "media"}
 
 
+def _bg(p):
+    """Background of a page from the media library: {type, media, name, url, overlay} or {} when none."""
+    from django.core.files.storage import default_storage
+
+    from apps.medialib.models import MediaItem
+
+    b = p.background or {}
+    item = MediaItem.objects.filter(pk=b.get("media")).first() if b.get("type") in ("image", "video") else None
+    if not item or item.kind != b["type"]:
+        return {}
+    return {"type": b["type"], "media": item.id, "name": item.name, "url": default_storage.url(item.key), "overlay": b.get("overlay", 0.35)}
+
+
 def _out(p):
-    return {"id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
+    return {"background": _bg(p), "id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
             "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
-            "available": service.available(p), "locked": p.key in service.ALWAYS_ON}
+            "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "editable": p.kind == "content" or p.key in service.EDITABLE}
 
 
 @api_view(["GET"])
@@ -32,6 +45,18 @@ def _out(p):
 def menu(request):
     """Public: the header menu (only what is switched on)."""
     return Response({"items": service.menu() if modules.enabled("pages") else service.default_menu()})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def backgrounds(request):
+    """Public: {path: {type, url, overlay}} of the pages that are on and have a background (picture or video from the media library)."""
+    out = {}
+    if modules.enabled("pages"):
+        for p in Page.objects.exclude(background={}):
+            if service.available(p) and (bg := _bg(p)) and p.path:
+                out[p.path] = {"type": bg["type"], "url": bg["url"], "overlay": bg["overlay"]}
+    return Response(out)
 
 
 @api_view(["GET"])
@@ -125,6 +150,21 @@ def page(request, pk):
         if not service.URL_RE.match(url):
             return bad("Geef een geldige link (https://… of /pad).")
         p.url = url
+    if "background" in d:
+        b = d["background"] or {}
+        if not b or b.get("type") in (None, "", "none"):
+            p.background = {}
+        else:
+            from apps.medialib.models import MediaItem
+
+            item = MediaItem.objects.filter(pk=b.get("media")).first()
+            if b.get("type") not in ("image", "video") or not item or item.kind != b["type"]:
+                return bad("Kies een afbeelding of video uit de mediabibliotheek.")
+            try:
+                overlay = min(max(float(b.get("overlay", 0.35)), 0), 0.9)
+            except (TypeError, ValueError):
+                return bad("Ongeldige donkerte.")
+            p.background = {"type": b["type"], "media": item.id, "overlay": round(overlay, 2)}
     if "parent" in d:
         par = Page.objects.filter(pk=d["parent"]).first() if d["parent"] else None
         if par and (par.pk == p.pk or par.parent_id):

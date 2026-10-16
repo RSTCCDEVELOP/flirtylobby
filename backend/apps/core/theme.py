@@ -73,6 +73,13 @@ SIDEBAR_AUTO = [
     {"value": "on_leave", "label": "Zodra de muis het menu verlaat", "css": ""},
 ]
 
+TAB_STYLES = [
+    {"value": "pills", "label": "Knoppen (afgeronde knoppen)", "css": ""},
+    {"value": "underline", "label": "Onderstreept (lijn onder het actieve tabblad)", "css": ""},
+    {"value": "segmented", "label": "Segmenten (aaneengesloten balk)", "css": ""},
+    {"value": "folder", "label": "Mappen (tabbladen boven het blok)", "css": ""},
+]
+
 CHAT_SIDES = [{"value": "right", "label": "Rechtsonder", "css": "flex-end"}, {"value": "left", "label": "Linksonder", "css": "flex-start"}]
 CHAT_LABELS = [{"value": "icon", "label": "Alleen een icoon 💬", "css": ""}, {"value": "text", "label": "Icoon met tekst 'Chat'", "css": ""}]
 
@@ -115,6 +122,7 @@ SCHEMA = [
     {"key": "defaults", "label": "Standaardinstellingen", "fields": [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
+        choice("tab_style", "Uiterlijk van tabbladen (standaard voor de hele website)", "pills", None, TAB_STYLES),
         choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
     ]},
     {"key": "brand", "label": "Merkkleuren", "fields": [

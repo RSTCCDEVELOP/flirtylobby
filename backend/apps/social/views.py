@@ -6,6 +6,7 @@ import uuid
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.core.files.storage import default_storage
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -67,7 +68,7 @@ def profile_me(request):
         if words:
             return bad(f"Bevat niet toegestane woorden: {', '.join(words)}.")
         vis = b.get("visibility", p.visibility)
-        if vis not in ("public", "members", "selected"):
+        if vis not in ("public", "members", "friends", "selected"):
             return bad("Ongeldige zichtbaarheid.")
         langs = [l for l in (b.get("languages", p.languages) or []) if l in service.active_languages()]
         slug = str(b.get("slug", p.slug)).strip().lower()
@@ -248,13 +249,20 @@ def profiles_directory(request):
 def profile_detail(request, slug):
     p = Profile.objects.filter(slug=slug).select_related("user").prefetch_related("photos").first()
     me, authed = request.user, request.user.is_authenticated
+    # owner's preview: show the page exactly as a visitor who is not logged in sees it
+    preview = bool(p and authed and request.query_params.get("preview") == "public" and p.user_id == me.id)
+    if preview:
+        me, authed = AnonymousUser(), False
+        if not service.can_view(me, p, request.query_params.get("lang")):
+            return Response({"preview_hidden": True, "enabled": p.enabled, "visibility": p.visibility, "name": service.display_name(p.user)})
     if p and authed and p.visibility == "selected" and p.enabled and p.user.is_active and not service.can_view(me, p, request.query_params.get("lang")) \
             and not service.is_blocked_between(me, p.user):
         # members see that this page is for selected members only, so they can ask for access
         return Response({**_card(p, me), "locked": True, "id": p.user_id, "photos": [], "relation": _relation(me, p.user)})
-    if not p or not service.can_view(request.user, p, request.query_params.get("lang")):
+    if not p or not service.can_view(me, p, request.query_params.get("lang")):
         return Response(status=status.HTTP_404_NOT_FOUND)  # never reveal that a hidden profile exists
-    dsc.record_visit(me, p)
+    if not preview:
+        dsc.record_visit(me, p)
     likes, _, favs, matches = dsc._sets(me) if authed else (set(), set(), set(), set())
     return Response(service.mask({
         **_card(p, me), "age": dsc.age_of(p) if p.show_age else None, "city": p.city if p.show_city else "", "gender": p.gender, "aim": p.aim,

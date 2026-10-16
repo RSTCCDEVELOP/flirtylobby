@@ -14,7 +14,7 @@ from django.core.validators import validate_email
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
@@ -46,7 +46,7 @@ def _twofa_method_needed():
     """Which 2-step methods a new account must choose from (empty list = not required)."""
     cfg = security.get()["twofa"]
     if cfg["enabled"] and cfg["required_for"] == "all":
-        return twofa.allowed_methods() or None  # None = required but impossible
+        return [m for m in twofa.allowed_methods() if m != "app"] or None  # None = required but impossible (the app is set up in the profile)
     return []
 
 
@@ -101,6 +101,7 @@ def _step_info(p):
 
 
 @api_view(["GET"])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def config(request):
     """Public: what the sign-up form has to ask for."""
@@ -125,6 +126,7 @@ def _fail(field, text, code=status.HTTP_400_BAD_REQUEST):
 
 
 @api_view(["POST"])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def start(request):
     if not (modules.enabled("registration") and _cfg()["enabled"]):
@@ -221,6 +223,7 @@ def _finish(request, p):
     user = User(username=p.email, email=p.email, first_name=d["first_name"], last_name=d["last_name"], display_name=d["display_name"],
                 gender=d["gender"], birth_date=date.fromisoformat(d["birth_date"]) if d["birth_date"] else None,
                 phone=d["phone"], password=d["password"], is_active=True)
+    user.email_verified = bool(p.twofa_method == "email" or security.get()["registration"]["verify_email"])
     if p.twofa_method:
         user.otp_active, user.twofa_method = True, p.twofa_method
     user.save()
@@ -231,6 +234,7 @@ def _finish(request, p):
 
 
 @api_view(["POST"])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def verify(request):
     p = _pending(request)
@@ -259,6 +263,7 @@ def verify(request):
 
 
 @api_view(["POST"])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def resend(request):
     p = _pending(request)

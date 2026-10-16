@@ -74,8 +74,9 @@ DEFAULTS = {
                    "sms_body": "Your confirmation code is {code}. Valid {minutes} min."},
         },
     },
+    "email_verify": {"enabled": False},  # make every user confirm the e-mail address with a code at login
     "twofa": {
-        "enabled": False, "required_for": "none", "allow_email": True, "allow_sms": False,
+        "enabled": True, "required_for": "none", "allow_email": True, "allow_sms": False, "allow_app": False,
         "code_minutes": 10, "max_attempts": 5,
         "texts": {
             "nl": {"email_subject": "Je verificatiecode", "email_body": "Je verificatiecode is {code}. Deze is {minutes} minuten geldig. Heb je dit niet aangevraagd? Negeer dit bericht dan.",
@@ -143,9 +144,10 @@ SPEC = {
         }.items()
     },
     "words": {"enabled": "bool"},
+    "email_verify": {"enabled": "bool"},
     "registration": {"enabled": "bool", "verify_email": "bool", "require_phone": "bool", "require_birth_date": "bool", "code_minutes": ("int", 1, 60)},
     "twofa": {
-        "enabled": "bool", "required_for": ("choice", ["none", "admins", "all"]), "allow_email": "bool", "allow_sms": "bool",
+        "enabled": "bool", "required_for": ("choice", ["none", "admins", "all"]), "allow_email": "bool", "allow_sms": "bool", "allow_app": "bool",
         "code_minutes": ("int", 1, 60), "max_attempts": ("int", 1, 10),
     },
 }

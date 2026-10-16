@@ -73,7 +73,7 @@ function SampleWindow({ start, onClose }) {
     <div className="gate-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="gate-modal sample-window" onClick={(e) => e.stopPropagation()}>
         <div className="sample-head"><strong>{tx("Voorbeeldvenster")}</strong><button className="btn sm" onClick={onClose}>{tx("Sluiten")}</button></div>
-        <div className="sample-tabs" role="tablist">
+        <div className="sample-tabs tabset" role="tablist">
           {tabs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={`btn sm ${tab === k ? "primary" : ""}`} onClick={() => setTab(k)}>{l}</button>)}
         </div>
         {tab === "chat" && (

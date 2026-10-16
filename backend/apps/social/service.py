@@ -26,7 +26,7 @@ DEFAULTS = {
              "max_image_mb": 10, "max_video_mb": 50, "direct_hours": 2, "stun": ["stun:stun.l.google.com:19302"],
              "turn_url": "", "turn_user": "", "turn_credential": ""},
 }
-CHOICES = {("discover", "default_sort"): ["active", "newest", "distance"], ("profiles", "default_visibility"): ["public", "members", "selected"], ("chat", "method"): ["portal", "webrtc"],
+CHOICES = {("discover", "default_sort"): ["active", "newest", "distance"], ("profiles", "default_visibility"): ["public", "members", "friends", "selected"], ("chat", "method"): ["portal", "webrtc"],
            ("chat", "display"): ["popup", "page", "both"], ("chat", "style"): ["floating", "button"]}
 INTS = {("discover", "min_age"): (13, 99), ("discover", "max_age"): (18, 120), ("discover", "max_results"): (10, 200), ("discover", "require_photo"): (0, 5),
         ("discover", "visitors_days"): (1, 365), ("discover", "max_distance_km"): (5, 2000), ("profiles", "max_photos"): (1, 30), ("profiles", "decline_days"): (0, 365), ("profiles", "max_private_photos"): (0, 30), ("messages", "max_length"): (100, 20000), ("messages", "rate_per_minute"): (1, 120),
@@ -344,6 +344,8 @@ def can_view(viewer, p, lang=None):
         return False
     if p.visibility == "members":
         return True
+    if p.visibility == "friends":
+        return are_friends(viewer.id, p.user_id)
     if ProfileAllow.objects.filter(profile=p, user=viewer).exists() or are_friends(viewer.id, p.user_id):
         return True
     from .models import Connection

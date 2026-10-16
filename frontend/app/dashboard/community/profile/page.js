@@ -5,16 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import VisibilityPicker from "../../../../components/VisibilityPicker";
 import { FieldInput } from "../../../../components/ProfileFields";
 import PhotoDrop from "../../../../components/PhotoDrop";
-import Collapsible from "../../../../components/Collapsible";
+import ProfileBlock from "../../../../components/ProfileBlock";
+import PageVisibility from "../../../../components/PageVisibility";
+import { IconEdit, IconFriends, IconHeart, IconImage, IconSearch, IconSliders, IconEye } from "../../../../components/Icons";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 
 const GENDERS = [["", "Zeg ik liever niet"], ["m", "Man"], ["f", "Vrouw"], ["x", "Anders"]];
 const AIMS = [["", "Niet ingevuld"], ["dating", "Daten"], ["relationship", "Een relatie"], ["friends", "Vriendschap"], ["chat", "Gewoon chatten"]];
-const VIS = [
-  ["public", "Iedereen", "Ook bezoekers die niet ingelogd zijn"],
-  ["members", "Alleen leden", "Alleen ingelogde leden"],
-  ["selected", "Alleen geselecteerde leden", "Alleen de leden die jij hieronder aanwijst"],
-];
 
 export default function MyProfile() {
   const [p, setP] = useState(null);
@@ -23,6 +20,7 @@ export default function MyProfile() {
   const [uploadVis, setUploadVis] = useState("public");
   const [q, setQ] = useState("");
   const [found, setFound] = useState([]);
+  const [modeBusy, setModeBusy] = useState(false);
 
   const load = useCallback(() => api("/profile/me/").then(setP).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
@@ -62,6 +60,16 @@ export default function MyProfile() {
     api("/profile/me/photos/order/", { method: "POST", body: { ids } }).then(setP);
   };
   const setAllowed = (users) => api("/profile/me/allowed/", { method: "PUT", body: { users: users.map((u) => u.id) } }).then((a) => setP({ ...p, allowed: a }));
+  const setMode = async (m) => {
+    setModeBusy(true);
+    try {
+      const body = m === "off" ? { enabled: false } : { enabled: true, visibility: m };
+      const d = await api("/profile/me/", { method: "PUT", body });
+      setP((cur) => ({ ...cur, enabled: d.enabled, visibility: d.visibility }));
+      setMsg({ ok: true, text: m === "off" ? tx("Je profielpagina staat uit.") : tx("Zichtbaarheid opgeslagen.") });
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setModeBusy(false);
+  };
   const toggleLang = (l) => set("languages", p.languages.includes(l) ? p.languages.filter((x) => x !== l) : [...p.languages, l]);
   const Sw = ({ k, label, hint }) => (
     <label className="check sec-toggle">
@@ -87,23 +95,25 @@ export default function MyProfile() {
           <p className="muted" style={{ margin: 0 }}>{tx("Maak je eigen pagina en bepaal precies wie hem ziet en vindt.")}</p>
         </div>
         <div className="row">
-          {p.enabled && <a className="btn" href={`/leden/${p.slug}`} target="_blank" rel="noreferrer">{tx("Bekijk mijn pagina")}</a>}
-          <button className="btn primary" onClick={save}>{tx("Opslaan")}</button>
+                    <button className="btn primary" onClick={save}>{tx("Opslaan")}</button>
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
-      <Collapsible id="prof-content" title={tx("Inhoud")}>
-        <Sw k="enabled" label={tx("Mijn profielpagina is actief")} hint={tx("Uit = niemand ziet hem (alleen jijzelf)")} />
+      <ProfileBlock id="c-visibility" icon={<IconEye />} title={tx("Zichtbaarheid")} hint={tx("Wie ziet je profielpagina? Een wijziging geldt direct.")}>
+        <PageVisibility p={p} busy={modeBusy} onChange={setMode} onPreview={() => window.open(`/leden/${p.slug}?preview=1`, "_blank")} />
+      </ProfileBlock>
+
+      <ProfileBlock id="c-about" icon={<IconEdit />} title={tx("Over jou")} hint={tx("Je adres, kopregel en eigen tekst.")}>
         <div className="grid2">
           <label>{tx("Adres van je pagina")} <small className="muted">/leden/…</small><input value={p.slug} onChange={(e) => set("slug", e.target.value.toLowerCase())} /></label>
           {bi("headline") && <label>{tx("Kopregel")}<input value={p.headline} maxLength={150} onChange={(e) => set("headline", e.target.value)} placeholder={tx("Wie ben je in één zin?")} /></label>}
         </div>
         {bi("bio") && <label>{tx("Over mij")}<textarea rows={6} value={p.bio} maxLength={4000} onChange={(e) => set("bio", e.target.value)} /></label>}
-      </Collapsible>
+      </ProfileBlock>
 
       {(p.profile_cfg?.fields || []).length > 0 && (
-        <Collapsible id="prof-fields" title={tx("Profielgegevens")}>
+        <ProfileBlock id="c-fields" icon={<IconSliders />} title={tx("Profielgegevens")} hint={tx("De velden die bij deze website horen.")}>
           {fieldGroups.map((g) => (
             <div key={g} style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
               {g && <strong style={{ fontSize: ".8rem", textTransform: "uppercase", letterSpacing: ".04em" }} className="muted">{g}</strong>}
@@ -117,10 +127,10 @@ export default function MyProfile() {
             </div>
           ))}
           <small className="muted">{tx("Per veld bepaalt de beheerder wie het ziet: openbaar, ingelogde leden, alleen vrienden of niemand.")}</small>
-        </Collapsible>
+        </ProfileBlock>
       )}
 
-      <Collapsible id="prof-dating" title={tx("Zoeken & matchen")}>
+      <ProfileBlock id="c-dating" icon={<IconHeart />} title={tx("Zoeken & matchen")} hint={tx("Wie je bent en wie je zoekt.")}>
         <Sw k="discover" label={tx("Doe mee aan zoeken & matchen")} hint={tx("Je kunt dan andere leden zoeken en gevonden worden. Van {0} tot {1} jaar{2}; geboortedatum is verplicht.", p.min_age, p.max_age, p.require_photo ? `, met minimaal ${p.require_photo} foto('s)` : "")} />
         <div className="theme-grid">
           {bi("gender") && <label>{tx("Ik ben")}<select value={p.gender} onChange={(e) => set("gender", e.target.value)}>{GENDERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>}
@@ -144,9 +154,9 @@ export default function MyProfile() {
         <Sw k="show_age" label={tx("Mijn leeftijd tonen")} />
         {p.distance_enabled && <Sw k="show_distance" label={tx("Mijn afstand tot anderen tonen")} hint={p.location_found ? tx("Je plaats is gevonden: je kunt op afstand zoeken.") : p.city ? tx("Je plaats is niet gevonden; controleer de spelling en het land.") : tx("Vul je plaats in om op afstand te kunnen zoeken.")} />}
         <Sw k="show_city" label={tx("Mijn plaats tonen")} />
-      </Collapsible>
+      </ProfileBlock>
 
-      <Collapsible id="prof-photos" title={tx("Foto's ({0}/{1})", p.photos.length, p.max_photos)}>
+      <ProfileBlock id="c-photos" icon={<IconImage />} title={tx("Foto's ({0}/{1})", p.photos.length, p.max_photos)} hint={tx("Per foto bepaal je wie hem ziet.")}>
         <div className="photo-admin">
           {p.photos.map((ph, i) => (
             <div className="photo-item" key={ph.id}>
@@ -170,17 +180,10 @@ export default function MyProfile() {
           {tx("De eerste foto is je hoofdfoto. Maximaal")} {p.max_photos} {tx("foto's")}{p.private_photos ? tx(", waarvan {0} privé (wazig)", p.max_private_photos) : ""}{tx(". Per foto kies je wie hem ziet: openbaar, alleen ingelogde leden (portal), privé of onzichtbaar.")}
           {p.private_photos && tx(" Wazige foto's zien anderen pas scherp als je een verzoek accepteert of als jullie vrienden zijn (Vrienden & verzoeken).")}
         </small>
-      </Collapsible>
+      </ProfileBlock>
 
-      <Collapsible id="prof-visibility" title={tx("Wie mag mijn pagina zien?")}>
-        <div className="vis-options">
-          {VIS.map(([v, label, hint]) => (
-            <label key={v} className={`card vis ${p.visibility === v ? "active" : ""}`}>
-              <input type="radio" name="vis" checked={p.visibility === v} onChange={() => set("visibility", v)} />
-              <span><strong>{label}</strong><small className="muted"> {hint}</small></span>
-            </label>
-          ))}
-        </div>
+      <ProfileBlock id="c-access" icon={<IconFriends />} title={tx("Toegang & talen")} hint={tx("Geselecteerde leden en de talen waarin je pagina zichtbaar is.")}>
+        {p.visibility !== "selected" && <small className="muted">{tx("Kies bij Zichtbaarheid 'Geselecteerd' om zelf leden aan te wijzen.")}</small>}
         {p.visibility === "selected" && (
           <div>
             <strong style={{ fontSize: ".85rem" }}>{tx("Geselecteerde leden (")}{p.allowed.length})</strong>
@@ -203,14 +206,14 @@ export default function MyProfile() {
           </div>
           <small className="muted">{p.languages.length ? tx("Alleen bezoekers die de site in deze talen bekijken zien je pagina.") : tx("Geen taal aangevinkt = zichtbaar in alle talen.")}</small>
         </div>
-      </Collapsible>
+      </ProfileBlock>
 
-      <Collapsible id="prof-find" title={tx("Gevonden worden")}>
+      <ProfileBlock id="c-find" icon={<IconSearch />} title={tx("Gevonden worden & contact")} hint={tx("Zoeken, berichten en chat.")}>
         <Sw k="searchable_local" label={tx("Vindbaar in de ledenzoeker van dit systeem")} />
         <Sw k="searchable_public" label={tx("Vindbaar in openbare zoekmachines (Google, Bing, …)")} hint={tx("Werkt alleen als je pagina voor iedereen zichtbaar is.")} />
         <Sw k="accept_messages" label={tx("Andere leden mogen mij berichten sturen")} />
         <Sw k="accept_chat" label={tx("Andere leden mogen mij chatten")} />
-      </Collapsible>
+      </ProfileBlock>
     </>
   );
 }

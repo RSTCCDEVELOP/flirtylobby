@@ -1,6 +1,7 @@
 "use client";
 
 import { tx } from "../lib/t";
+import { useState } from "react";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog, promptDialog } from "../lib/dialog";
 import { FIELD_TYPES, FIELD_VISIBILITY } from "./ProfileFields";
@@ -16,6 +17,7 @@ const Sw = ({ label, checked, onChange, disabled }) => (
 
 // Admin: community theme + which built-in profile fields are shown + the own (configurable) profile fields
 export default function ProfileFieldsAdmin({ prof, setProf, themes, builtinLabels, can, onThemeApplied }) {
+  const [tab, setTab] = useState("theme");
   const fields = prof.fields || [];
   const setField = (i, patch) => setProf({ fields: fields.map((f, n) => (n === i ? { ...f, ...patch } : f)) });
   const move = (i, d) => { const a = [...fields]; [a[i], a[i + d]] = [a[i + d], a[i]]; setProf({ fields: a }); };
@@ -40,6 +42,15 @@ export default function ProfileFieldsAdmin({ prof, setProf, themes, builtinLabel
 
   return (
     <>
+      <div className="tabs tabset ptabs" role="tablist" style={{ marginTop: 0 }}>
+        {[["theme", "Thema"], ["builtin", "Standaardvelden"], ["custom", "Eigen velden"]].map(([k, l]) => (
+          <button key={k} type="button" role="tab" aria-selected={tab === k} className={`btn ${tab === k ? "primary" : ""}`} onClick={() => setTab(k)}>
+            {tx(l)}{k === "custom" && <span className="badge" style={{ marginLeft: ".4rem" }}>{fields.length}</span>}
+          </button>
+        ))}
+      </div>
+
+      {tab === "theme" && (<>
       <h3>{tx("Thema")}</h3>
       <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Kies een startpunt voor je community. Daarna pas je alles hieronder aan, zonder programmeren.")}</p>
       <div className="popup-presets">
@@ -53,12 +64,18 @@ export default function ProfileFieldsAdmin({ prof, setProf, themes, builtinLabel
         ))}
       </div>
 
+      </>)}
+
+      {tab === "builtin" && (<>
       <h3>{tx("Standaardvelden")}</h3>
       <div className="theme-grid">
         {Object.entries(builtinLabels).map(([k, l]) => <Sw key={k} label={l} disabled={!can} checked={prof.builtin?.[k] !== false} onChange={(v) => setProf({ builtin: { ...prof.builtin, [k]: v } })} />)}
       </div>
       <small className="muted">{tx("Uitgezet = het veld verdwijnt van het profielformulier, de profielpagina, de kaarten en de zoekfilters.")}</small>
 
+      </>)}
+
+      {tab === "custom" && (<>
       <h3>{tx("Eigen velden")} <small className="muted">({fields.length})</small></h3>
       {!fields.length && <p className="muted" style={{ margin: 0 }}>{tx("Nog geen eigen velden. Voeg er een toe of kies een thema.")}</p>}
       {fields.map((f, i) => (
@@ -102,6 +119,7 @@ export default function ProfileFieldsAdmin({ prof, setProf, themes, builtinLabel
       ))}
       {can && <div><button type="button" className="btn primary" onClick={add}>{tx("+ Veld toevoegen")}</button></div>}
       <small className="muted">{tx("Vergeet niet bovenaan op")} <strong>{tx("Opslaan")}</strong> {tx("te klikken na het aanpassen van velden. Een thema toepassen wordt direct opgeslagen.")}</small>
+      </>)}
     </>
   );
 }

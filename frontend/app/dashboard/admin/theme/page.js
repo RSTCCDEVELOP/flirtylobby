@@ -105,10 +105,11 @@ export default function ThemePage() {
   const remember = values?.remember_collapse;
   const sidebarAuto = values?.sidebar_auto;
   const versionNotice = values?.version_notice;
+  const tabStyle = values?.tab_style;
   useEffect(() => {
-    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label, version_notice: versionNotice });
+    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label, version_notice: versionNotice, tab_style: tabStyle });
     return () => previewUi(null);
-  }, [remember, sidebarAuto, versionNotice, values?.chat_label, previewUi]);
+  }, [remember, sidebarAuto, versionNotice, tabStyle, values?.chat_label, previewUi]);
 
   const preview = useCallback((next) => {
     clearTimeout(timer.current);
@@ -150,7 +151,7 @@ export default function ThemePage() {
 
   function applyPreset(p) {
     // a theme changes the look, not the interface behaviour
-    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, version_notice: values.version_notice, ...Object.fromEntries(DEVICES.map(([k]) => [k, values[k]])), ...Object.fromEntries(Object.keys(values).filter((k) => k.startsWith("chat_")).map((k) => [k, values[k]])) };
+    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, version_notice: values.version_notice, tab_style: values.tab_style, ...Object.fromEntries(DEVICES.map(([k]) => [k, values[k]])), ...Object.fromEntries(Object.keys(values).filter((k) => k.startsWith("chat_")).map((k) => [k, values[k]])) };
     showMode(next.default_mode);
     setValues(next);
     setMsg(null);

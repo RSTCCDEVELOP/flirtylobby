@@ -13,7 +13,7 @@ class SocialSettings(models.Model):
 class Profile(models.Model):
     """A member's own page. Who may see it is decided by `visibility` (+ the allow list), language and blocks."""
 
-    VISIBILITY = [("public", "Iedereen"), ("members", "Alleen leden"), ("selected", "Alleen geselecteerde leden")]
+    VISIBILITY = [("public", "Iedereen"), ("members", "Alleen leden"), ("friends", "Alleen vrienden"), ("selected", "Alleen geselecteerde leden")]
 
     user = models.OneToOneField(U, on_delete=models.CASCADE, related_name="profile")
     slug = models.SlugField(max_length=80, unique=True)

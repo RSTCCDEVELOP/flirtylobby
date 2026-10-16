@@ -11,16 +11,22 @@ SYSTEM = [
     ("products", "/producten", "products", True, "all", {"nl": "Producten", "en": "Products", "de": "Produkte", "fr": "Produits", "es": "Productos", "pt": "Produtos", "zh": "产品", "ar": "المنتجات"}),
     ("members", "/leden", "profiles", True, "all", {"nl": "Leden", "en": "Members", "de": "Mitglieder", "fr": "Membres", "es": "Miembros", "pt": "Membros", "zh": "会员", "ar": "الأعضاء"}),
     ("register", "/registreren", "registration", False, "guests", {"nl": "Aanmelden", "en": "Sign up", "de": "Registrieren", "fr": "S’inscrire", "es": "Registrarse", "pt": "Registar", "zh": "注册", "ar": "إنشاء حساب"}),
+    ("login", "/login", "", False, "guests", {"nl": "Inloggen", "en": "Log in", "de": "Anmelden", "fr": "Connexion", "es": "Iniciar sesión", "pt": "Entrar", "zh": "登录", "ar": "تسجيل الدخول"}),
+    ("notfound", "/404", "", False, "all", {"nl": "Pagina niet gevonden (404)", "en": "Page not found (404)", "de": "Seite nicht gefunden (404)", "fr": "Page introuvable (404)", "es": "Página no encontrada (404)", "pt": "Página não encontrada (404)", "zh": "页面未找到 (404)", "ar": "الصفحة غير موجودة (404)"}),
     ("privacy", "/privacy", "privacy_pages", False, "all", {"nl": "Privacybeleid", "en": "Privacy policy", "de": "Datenschutz", "fr": "Confidentialité", "es": "Privacidad", "pt": "Privacidade", "zh": "隐私政策", "ar": "سياسة الخصوصية"}),
     ("cookies", "/cookies", "privacy_pages", False, "all", {"nl": "Cookiebeleid", "en": "Cookie policy", "de": "Cookie-Richtlinie", "fr": "Politique de cookies", "es": "Política de cookies", "pt": "Política de cookies", "zh": "Cookie 政策", "ar": "سياسة ملفات الارتباط"}),
 ]
-ALWAYS_ON = {"home"}
+ALWAYS_ON = {"home", "login", "notfound"}  # cannot be switched off
+# pages whose texts can be edited in edit mode (own pages always can)
+EDITABLE = {"home", "login", "notfound"}
 
 
 def ensure_defaults():
     """Create the built-in pages that do not exist yet (idempotent; new ones are added as the app grows)."""
     have = set(Page.objects.filter(kind="system").values_list("key", flat=True))
     n = Page.objects.count()
+    for key, url, *_ in SYSTEM:  # built-in addresses are fixed: bring an older value in line
+        Page.objects.filter(kind="system", key=key).exclude(url=url).update(url=url)
     for i, (key, url, module, in_menu, audience, titles) in enumerate(SYSTEM):
         if key not in have:
             Page.objects.create(key=key, kind="system", title=titles, url=url, module=module, in_menu=in_menu, audience=audience, order=n + i)

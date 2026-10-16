@@ -8,7 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.decorators import action, api_view, parser_classes, permission_classes
+from rest_framework.decorators import action, api_view, authentication_classes, parser_classes, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
@@ -35,6 +35,7 @@ def client_ip(request):
 
 
 @api_view(["POST"])
+@authentication_classes([])  # a stale token in the browser must not block logging in
 @permission_classes([AllowAny])
 def login(request):
     email = (request.data.get("email") or "").strip().lower()
@@ -62,14 +63,24 @@ def login(request):
         return Response({"detail": "Dit account is geblokkeerd."}, status=status.HTTP_403_FORBIDDEN)
 
     throttle.delete()
+    if twofa.email_verify_required(user):
+        return _challenge_response(user, email_verify=True)
     if user.otp_active and security_service.get()["twofa"]["enabled"]:
+        return _challenge_response(user)
+    return _finish_login(request, user)
+
+
+def _challenge_response(user, email_verify=False):
+    """Send a code and hand the browser a signed challenge. email_verify: confirm the address (always by e-mail) before anything else."""
+    method = "email" if email_verify else user.twofa_method
+    if method != "app":  # with an authenticator app there is nothing to send
         try:
-            twofa.issue_code(user)
+            twofa.issue_code(user, force_email=email_verify)
         except twofa.DeliveryError as e:
             return Response({"detail": f"Code versturen mislukt: {e}"}, status=status.HTTP_502_BAD_GATEWAY)
-        return Response({"twofa_required": True, "method": user.twofa_method, "destination": twofa.destination_hint(user),
-                         "challenge": signing.dumps({"uid": user.pk}, salt=CHALLENGE_SALT)})
-    return _finish_login(request, user)
+    return Response({"twofa_required": True, "method": method, "email_verify": email_verify,
+                     "destination": twofa.mask_email(user.email) if method == "email" else twofa.destination_hint(user),
+                     "challenge": signing.dumps({"uid": user.pk, "ev": email_verify}, salt=CHALLENGE_SALT)})
 
 
 def _finish_login(request, user):
@@ -83,33 +94,45 @@ def _finish_login(request, user):
 
 
 def _challenge_user(request):
+    """(user, email_verify) from the signed challenge, or (None, False)."""
     try:
-        uid = signing.loads(request.data.get("challenge", ""), salt=CHALLENGE_SALT, max_age=900)["uid"]
-        return User.objects.get(pk=uid, is_active=True)
+        data = signing.loads(request.data.get("challenge", ""), salt=CHALLENGE_SALT, max_age=900)
+        return User.objects.get(pk=data["uid"], is_active=True), bool(data.get("ev"))
     except (signing.BadSignature, User.DoesNotExist):
-        return None
+        return None, False
 
 
 @api_view(["POST"])
+@authentication_classes([])  # a stale token in the browser must not block logging in
 @permission_classes([AllowAny])
 def login_verify(request):
-    user = _challenge_user(request)
+    user, email_verify = _challenge_user(request)
     if not user:
         return Response({"detail": "Inlogsessie verlopen, log opnieuw in."}, status=status.HTTP_400_BAD_REQUEST)
-    if not twofa.check_code(user, request.data.get("code", "")):
+    use_app = user.twofa_method == "app" and not email_verify
+    if not (twofa.check_app_code if use_app else twofa.check_code)(user, request.data.get("code", "")):
         logger.warning("Failed 2FA code for %s", user.email)
         return Response({"detail": "Onjuiste of verlopen code."}, status=status.HTTP_400_BAD_REQUEST)
+    if email_verify or user.twofa_method == "email":  # a code that arrived by e-mail proves the address
+        if not user.email_verified:
+            user.email_verified = True
+            user.save(update_fields=["email_verified"])
+    if email_verify and user.otp_active and security_service.get()["twofa"]["enabled"]:
+        return _challenge_response(user)  # address confirmed, now the normal 2FA step
     return _finish_login(request, user)
 
 
 @api_view(["POST"])
+@authentication_classes([])  # a stale token in the browser must not block logging in
 @permission_classes([AllowAny])
 def login_resend(request):
-    user = _challenge_user(request)
+    user, email_verify = _challenge_user(request)
     if not user:
         return Response({"detail": "Inlogsessie verlopen, log opnieuw in."}, status=status.HTTP_400_BAD_REQUEST)
+    if user.twofa_method == "app" and not email_verify:
+        return Response({"detail": "Open je authenticator-app voor de code."}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        twofa.issue_code(user)
+        twofa.issue_code(user, force_email=email_verify)
     except twofa.DeliveryError as e:
         return Response({"detail": str(e)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
     return Response({"ok": True})
@@ -121,6 +144,9 @@ def twofa_start(request):
     method, user = request.data.get("method"), request.user
     if method not in twofa.allowed_methods():
         return Response({"detail": "Deze methode is niet beschikbaar."}, status=status.HTTP_400_BAD_REQUEST)
+    if method == "app":  # QR code + key; the app is switched on once the first code is confirmed
+        secret, uri = twofa.app_start(user)
+        return Response({"app": True, "secret": secret, "uri": uri})
     phone = (request.data.get("phone") or "").replace(" ", "")
     if method == "sms" and not twofa.PHONE_RE.match(phone):
         return Response({"detail": "Geef een telefoonnummer met landcode, bv. +31612345678."}, status=status.HTTP_400_BAD_REQUEST)
@@ -138,10 +164,17 @@ def twofa_start(request):
 @api_view(["POST"])
 def twofa_confirm(request):
     user = request.user
-    if not twofa.check_code(user, request.data.get("code", "")):
+    if request.data.get("method") == "app":
+        if "app" not in twofa.allowed_methods() or not twofa.check_app_code(user, request.data.get("code", "")):
+            return Response({"detail": "Onjuiste of verlopen code."}, status=status.HTTP_400_BAD_REQUEST)
+        user.twofa_method = "app"
+        user.save(update_fields=["twofa_method"])
+    elif not twofa.check_code(user, request.data.get("code", "")):
         return Response({"detail": "Onjuiste of verlopen code."}, status=status.HTTP_400_BAD_REQUEST)
     user.otp_active = True
-    user.save(update_fields=["otp_active"])
+    if user.twofa_method == "email":
+        user.email_verified = True
+    user.save(update_fields=["otp_active", "email_verified"])
     logger.info("2FA enabled for %s (%s)", user.email, user.twofa_method)
     return Response(ProfileSerializer(user).data)
 
@@ -153,8 +186,8 @@ def twofa_disable(request):
         return Response({"detail": "Twee-staps verificatie is verplicht voor jouw account."}, status=status.HTTP_400_BAD_REQUEST)
     if not user.check_password(request.data.get("password", "")):
         return Response({"detail": "Wachtwoord onjuist."}, status=status.HTTP_400_BAD_REQUEST)
-    user.otp_active, user.twofa_method, user.otp_token = False, "", ""
-    user.save(update_fields=["otp_active", "twofa_method", "otp_token"])
+    user.otp_active, user.twofa_method, user.otp_token, user.totp_secret = False, "", "", ""
+    user.save(update_fields=["otp_active", "twofa_method", "otp_token", "totp_secret"])
     logger.info("2FA disabled for %s", user.email)
     return Response(ProfileSerializer(user).data)
 
@@ -237,8 +270,8 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def reset_2fa(self, request, pk=None):
         user = self.get_object()
-        user.otp_active, user.twofa_method, user.otp_token, user.phone = False, "", "", ""
-        user.save(update_fields=["otp_active", "twofa_method", "otp_token", "phone"])
+        user.otp_active, user.twofa_method, user.otp_token, user.phone, user.totp_secret = False, "", "", "", ""
+        user.save(update_fields=["otp_active", "twofa_method", "otp_token", "phone", "totp_secret"])
         Token.objects.filter(user=user).delete()
         logger.info("2FA reset for %s by %s", user.email, request.user.email)
         return Response(self.get_serializer(user).data)

@@ -66,7 +66,10 @@ class User(AbstractUser):
     description = models.TextField(blank=True)
     otp_token = models.CharField(max_length=255, blank=True)
     otp_active = models.BooleanField(default=False)  # two-step verification switched on
-    twofa_method = models.CharField(max_length=10, blank=True)  # "email" | "sms"
+    twofa_method = models.CharField(max_length=10, blank=True)  # "email" | "sms" | "app"
+    totp_secret = models.TextField(blank=True)  # authenticator-app secret, encrypted (pending until confirmed)
+    totp_last_step = models.BigIntegerField(default=0)  # last accepted 30 s step: a code works only once
+    email_verified = models.BooleanField(default=False)  # confirmed with a code sent to the address
     phone = models.CharField(max_length=20, blank=True)  # E.164, for SMS (and the profile)
     display_name = models.CharField(max_length=60, blank=True)  # profile name shown to others
     birth_date = models.DateField(null=True, blank=True)
