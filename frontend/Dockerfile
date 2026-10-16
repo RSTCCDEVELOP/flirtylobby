@@ -19,5 +19,7 @@ WORKDIR /app
 ENV NODE_ENV=production PORT=5173 HOSTNAME=0.0.0.0
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+# Next.js serves root-relative static assets (such as /logo-rstcc.png) from public/.
+COPY --from=build /app/public ./public
 EXPOSE 5173
 CMD ["node", "server.js"]
