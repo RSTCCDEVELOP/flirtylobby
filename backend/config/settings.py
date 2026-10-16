@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     "apps.communication",
     "apps.seo",
     "apps.sandbox",
+    "apps.shop",
+    "apps.social",
 ]
 
 MIDDLEWARE = [
@@ -122,7 +124,11 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
-if not DEBUG:
+if DEBUG:
+    # development only: also reachable from phones / other computers on the local network (10.x, 192.168.x, 172.16-31.x)
+    ALLOWED_HOSTS = ["*"]
+    CORS_ALLOWED_ORIGIN_REGEXES = [r"^http://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+):5173$"]
+else:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # ── Logging ─────────────────────────────────────────────────────────────────

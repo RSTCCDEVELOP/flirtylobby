@@ -116,6 +116,21 @@ def pages():
     return out
 
 
+def sitemap_urls():
+    """[(path, label)] for sitemap.xml and llms.txt: the pages above plus products and public member profiles."""
+    out = list(pages())
+    if modules.enabled("products"):
+        from apps.shop.models import Product
+
+        out += [(f"/producten/{slug}", name) for slug, name in Product.objects.filter(active=True).values_list("slug", "name")]
+    if modules.enabled("profiles"):
+        from apps.social.models import Profile
+
+        out += [(f"/leden/{slug}", name or slug) for slug, name in
+                Profile.objects.filter(enabled=True, visibility="public", searchable_public=True, user__is_active=True).values_list("slug", "headline")]
+    return out
+
+
 def base_url(request_base=None):
     s = get()["site"]["site_url"] or (request_base or "").rstrip("/")
     return s

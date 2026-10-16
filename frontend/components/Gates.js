@@ -63,6 +63,46 @@ function CookiePolicyModal({ cfg, lang }) {
   );
 }
 
+// Sample window with tabs (chat / video chat / files) to judge the popup style; shows fake content only
+function SampleWindow({ start, onClose }) {
+  const [tab, setTab] = useState(start);
+  const tabs = [["chat", "💬 Chat"], ["video", "🎥 Videochat"], ["files", "📎 Bestanden"]];
+  return (
+    <div className="gate-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="gate-modal sample-window" onClick={(e) => e.stopPropagation()}>
+        <div className="sample-head"><strong>Voorbeeldvenster</strong><button className="btn sm" onClick={onClose}>Sluiten</button></div>
+        <div className="sample-tabs" role="tablist">
+          {tabs.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={`btn sm ${tab === k ? "primary" : ""}`} onClick={() => setTab(k)}>{l}</button>)}
+        </div>
+        {tab === "chat" && (
+          <div className="sample-body">
+            <div className="bubble">Hoi! Leuk je te zien 👋</div>
+            <div className="bubble me">Hoi, hoe gaat het?</div>
+            <div className="bubble">Goed! Zullen we videobellen?</div>
+            <div className="row" style={{ flexWrap: "nowrap" }}><input placeholder="Typ een bericht…" readOnly /><button className="btn primary">Verstuur</button></div>
+          </div>
+        )}
+        {tab === "video" && (
+          <div className="sample-body">
+            <div className="sample-video"><span>🎥</span><small>Video van de ander</small><div className="sample-self">Jij</div></div>
+            <div className="row" style={{ justifyContent: "center" }}><button className="btn">🎤 Microfoon</button><button className="btn">📷 Camera</button><button className="btn danger">Ophangen</button></div>
+          </div>
+        )}
+        {tab === "files" && (
+          <div className="sample-body">
+            <ul className="doc-list">
+              <li><strong>vakantie.jpg</strong><span>Afbeelding · 2,4 MB</span></li>
+              <li><strong>kennismaking.mp4</strong><span>Video · 18 MB</span></li>
+              <li><strong>cv.pdf</strong><span>Document · 310 KB</span></li>
+            </ul>
+            <button className="btn">Bestand delen</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Gates({ cfg }) {
   const pathname = usePathname();
   const [lang, setLang] = useState(cfg?.default_language || "nl");
@@ -123,6 +163,7 @@ export default function Gates({ cfg }) {
   const policy = <CookiePolicyModal cfg={cfg} lang={lang} />;
   const current = test || active;
   if (!current) return policy;
+  if (current.startsWith("window:")) return <>{policy}<SampleWindow start={current.slice(7)} onClose={() => setTest(null)} /></>;
   if (current === "example") {
     // sample popup with an image (the site logo) to judge the popup style
     return (

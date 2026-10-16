@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import views
+from . import registration, views
 
 router = DefaultRouter()
 router.register("users", views.UserViewSet, basename="users")
@@ -12,6 +12,10 @@ urlpatterns = [
     path("auth/login/", views.login),
     path("auth/login/verify/", views.login_verify),
     path("auth/login/resend/", views.login_resend),
+    path("auth/register/config/", registration.config),
+    path("auth/register/", registration.start),
+    path("auth/register/verify/", registration.verify),
+    path("auth/register/resend/", registration.resend),
     path("auth/2fa/start/", views.twofa_start),
     path("auth/2fa/confirm/", views.twofa_confirm),
     path("auth/2fa/disable/", views.twofa_disable),

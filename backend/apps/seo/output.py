@@ -39,7 +39,7 @@ def sitemap(base):
         return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>\n'
     noindex = set(SeoPage.objects.filter(noindex=True).values_list("path", flat=True))
     urls = []
-    for path, _ in service.pages():
+    for path, _ in service.sitemap_urls():
         if path in noindex:
             continue
         loc = f"{base}{path if path != '/' else '/'}"
@@ -60,7 +60,7 @@ def llms(base):
     if s["llms"]["include_pages"]:
         lines += ["## Pagina's", ""]
         by = {(p.path, p.lang): p for p in SeoPage.objects.all() if not p.noindex}
-        for path, label in service.pages():
+        for path, label in service.sitemap_urls()[:300]:
             p = by.get((path, default)) or next((v for (pp, _), v in by.items() if pp == path), None)
             if any(sp.path == path and sp.noindex for sp in SeoPage.objects.filter(path=path)):
                 continue

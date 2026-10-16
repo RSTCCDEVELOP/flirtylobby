@@ -7,7 +7,7 @@ import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { IconUser } from "../../../../components/Icons";
 import { api, errorText } from "../../../../lib/api";
 
-const GROUPS = ["Content", "Beveiliging", "Systeem", "Kern"];
+const GROUPS = ["Content", "Community", "Webshop", "Beveiliging", "Systeem", "Kern"];
 const LEVELS = [
   [1, "Gebruik", "Openen en bekijken"],
   [2, "Bewerken", "Ook wijzigen en instellingen aanpassen"],

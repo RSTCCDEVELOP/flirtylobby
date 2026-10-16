@@ -35,7 +35,13 @@ const POPUP_VERSIONS = [
   { name: "Minimaal", desc: "Klein, scherp en bijna onzichtbare achtergrond", v: { popup_overlay: 0.2, popup_blur: 0, popup_radius: 4, popup_width: 400, popup_pad: 1.5, popup_bg_opacity: 1, popup_position: "center", popup_anim: "fade", popup_border_width: 1, popup_border_color: "#d1d5db", popup_shadow: "none", popup_btn_radius: 4, popup_image_radius: 4 } },
   { name: "Groot en luchtig", desc: "Veel ruimte, zachte afronding", v: { popup_overlay: 0.85, popup_blur: 10, popup_radius: 28, popup_width: 640, popup_pad: 3, popup_bg_opacity: 1, popup_position: "center", popup_anim: "scale", popup_border_width: 0, popup_border_color: "#e5e8ef", popup_shadow: "soft", popup_btn_radius: 20, popup_image_radius: 20 } },
 ];
-const POPUP_TESTS = [["example", "Voorbeeld met afbeelding"], ["age", "Leeftijdscontrole"], ["gambling", "Gokken-popup"], ["cookies", "Cookiebanner"], ["policy", "Cookiebeleid"]];
+const DEVICES = [
+  ["device_mobile", "Mobiel", "Telefoon in de browser", { w: 375, h: 680, kind: "phone" }],
+  ["device_tablet", "iPad", "iPad of tablet", { w: 820, h: 620, kind: "tablet" }],
+  ["device_desktop", "Website", "Computer", { w: 1180, h: 560, kind: "desktop" }],
+  ["device_app", "App op mobiel", "Geïnstalleerd op het beginscherm, zonder browserbalk", { w: 375, h: 680, kind: "app" }],
+];
+const POPUP_TESTS = [["example", "Voorbeeld met afbeelding"], ["age", "Leeftijdscontrole"], ["gambling", "Gokken-popup"], ["cookies", "Cookiebanner"], ["policy", "Cookiebeleid"], ["window:chat", "Venster: Chat"], ["window:video", "Venster: Videochat"], ["window:files", "Venster: Bestanden"]];
 
 function Field({ f, value, onChange }) {
   if (f.type === "color")
@@ -78,6 +84,8 @@ export default function ThemePage() {
   const [presets, setPresets] = useState([]);
   const [values, setValues] = useState(null);
   const [msg, setMsg] = useState(null);
+  const [view, setView] = useState("device_desktop");
+  const [previewKey, setPreviewKey] = useState(0);
   const timer = useRef(null);
 
   useEffect(() => {
@@ -95,9 +103,9 @@ export default function ThemePage() {
   const remember = values?.remember_collapse;
   const sidebarAuto = values?.sidebar_auto;
   useEffect(() => {
-    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto });
+    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label });
     return () => previewUi(null);
-  }, [remember, sidebarAuto, previewUi]);
+  }, [remember, sidebarAuto, values?.chat_label, previewUi]);
 
   const preview = useCallback((next) => {
     clearTimeout(timer.current);
@@ -112,6 +120,14 @@ export default function ThemePage() {
     document.documentElement.dataset.theme = mode;
     try { localStorage.setItem("theme", mode); } catch {}
     window.dispatchEvent(new CustomEvent("themechange", { detail: mode }));
+  }
+
+  function toggleDevice(key, on) {
+    const next = { ...values, [key]: on ? "yes" : "no" };
+    if (!DEVICES.some(([k]) => next[k] === "yes")) return setMsg({ ok: false, text: "Minimaal één weergave moet actief blijven." });
+    setValues(next);
+    if (next[view] !== "yes") setView(DEVICES.find(([k]) => next[k] === "yes")[0]);
+    setMsg(null);
   }
 
   function change(key, v) {
@@ -131,7 +147,7 @@ export default function ThemePage() {
 
   function applyPreset(p) {
     // a theme changes the look, not the interface behaviour
-    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto };
+    const next = { ...p.values, remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, ...Object.fromEntries(DEVICES.map(([k]) => [k, values[k]])), ...Object.fromEntries(Object.keys(values).filter((k) => k.startsWith("chat_")).map((k) => [k, values[k]])) };
     showMode(next.default_mode);
     setValues(next);
     setMsg(null);
@@ -145,6 +161,7 @@ export default function ThemePage() {
       applyPreview(d);
       document.getElementById("theme-live")?.remove();
       setMsg({ ok: true, text: "Vormgeving opgeslagen voor de hele website." });
+      setPreviewKey((k) => k + 1);
       router.refresh(); // logo/favicon come from the server layout
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
@@ -176,6 +193,36 @@ export default function ThemePage() {
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
+
+      <Collapsible id="theme-devices" title="Weergave per apparaat" className="theme-group">
+        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>Op welke apparaten is de site beschikbaar? Minimaal één moet actief zijn. Een bezoeker op een uitgezet apparaat ziet een melding. Staat <strong>App op mobiel</strong> aan, dan is de site te installeren op het beginscherm; staat Mobiel dan uit, dan krijgt een telefoon in de browser de vraag de app te installeren.</p>
+        <div className="vis-options">
+          {DEVICES.map(([k, label, hint]) => (
+            <label key={k} className="check sec-toggle">
+              <span className="switch"><input type="checkbox" checked={values[k] === "yes"} onChange={(e) => toggleDevice(k, e.target.checked)} /><span /></span>
+              <span><strong>{label}</strong><small className="muted"> {hint}</small></span>
+            </label>
+          ))}
+        </div>
+      </Collapsible>
+
+      <Collapsible id="theme-preview" title="Live voorbeeld per apparaat" className="theme-group">
+        <div className="row" style={{ justifyContent: "flex-start", marginBottom: ".75rem" }}>
+          {DEVICES.filter(([k]) => values[k] === "yes").map(([k, label]) => <button key={k} className={`btn sm ${view === k ? "primary" : ""}`} onClick={() => setView(k)}>{label}</button>)}
+          <button className="btn sm" onClick={() => setPreviewKey((n) => n + 1)}>Verversen</button>
+          <small className="muted">Het voorbeeld toont de opgeslagen vormgeving; sla eerst op om wijzigingen te zien.</small>
+        </div>
+        {(() => {
+          const d = DEVICES.find(([k]) => k === view)?.[3] || DEVICES[2][3];
+          return (
+            <div className="device-preview">
+              <div className={`device-frame ${d.kind}`} style={{ width: d.kind === "desktop" ? "100%" : d.w + 24, maxWidth: "100%", height: d.h + 24 }}>
+                <iframe key={`${view}-${previewKey}`} src="/" title="Voorbeeld" style={{ height: d.h }} />
+              </div>
+            </div>
+          );
+        })()}
+      </Collapsible>
 
       {schema.filter((g) => g.key === "defaults").map((g) => (
         <Collapsible key={g.key} id="theme-defaults" title={g.label} className="theme-group">
@@ -238,7 +285,7 @@ export default function ThemePage() {
         </div>
       </Collapsible>
 
-      {schema.filter((g) => g.key !== "defaults").map((g) => (
+      {schema.filter((g) => g.key !== "defaults" && g.key !== "devices").map((g) => (
         <Collapsible key={g.key} id={`theme-${g.key}`} title={g.label} className="theme-group">
           <div className="theme-grid">
             {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}

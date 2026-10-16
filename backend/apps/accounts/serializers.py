@@ -6,8 +6,8 @@ from apps.security.words import validate_no_forbidden_words
 from .models import Role, User, UserGroup
 from .perms import KEYS
 
-PROFILE_FIELDS = ["first_name", "last_name", "function", "short", "description", "link", "link_external"]
-WORD_FIELDS = ["first_name", "last_name", "function", "role", "short", "description"]
+PROFILE_FIELDS = ["first_name", "last_name", "display_name", "birth_date", "gender", "phone", "address", "postal_code", "city", "country", "function", "short", "description", "link", "link_external"]
+WORD_FIELDS = ["first_name", "last_name", "display_name", "address", "city", "function", "role", "short", "description"]
 WORD_KWARGS = {f: {"validators": [validate_no_forbidden_words]} for f in WORD_FIELDS}
 
 
@@ -104,6 +104,67 @@ class ProfileSerializer(serializers.ModelSerializer):
         from apps.security.twofa import state
 
         return state(obj)
+
+    def validate_phone(self, value):
+        import re
+
+        from apps.security.twofa import PHONE_RE
+
+        value = re.sub(r"[ \-()]", "", value or "")
+        if value and not PHONE_RE.match(value):
+            raise serializers.ValidationError("Geef een telefoonnummer met landcode, bv. +31612345678.")
+        u = self.instance
+        if u and u.otp_active and u.twofa_method == "sms" and value != u.phone:
+            raise serializers.ValidationError("Dit nummer is je 2-stapsverificatie-nummer. Wijzig het via je beveiligingsinstellingen.")
+        return value
+
+    def validate_country(self, value):
+        from apps.security.countries import COUNTRY_CODES
+
+        value = (value or "").strip().upper()
+        if value and value not in COUNTRY_CODES:
+            raise serializers.ValidationError("Onbekend land.")
+        return value
+
+    def validate_postal_code(self, value):
+        value = (value or "").strip().upper()
+        if len(value) > 12 or not all(ch.isalnum() or ch in " -" for ch in value):
+            raise serializers.ValidationError("Ongeldige postcode.")
+        return value
+
+    def validate_gender(self, value):
+        if value not in ("", "m", "f", "x"):
+            raise serializers.ValidationError("Ongeldig geslacht.")
+        return value
+
+    def validate_birth_date(self, value):
+        from datetime import date
+
+        if value and (value > date.today() or value.year < 1900):
+            raise serializers.ValidationError("Ongeldige geboortedatum.")
+        from apps.security.service import underage_message
+
+        if msg := underage_message(value):
+            raise serializers.ValidationError(msg)
+        return value
+
+    def update(self, instance, validated):
+        user = super().update(instance, validated)
+        prof = getattr(user, "profile", None)  # keep the dating profile in step
+        if prof and ("gender" in validated or "birth_date" in validated):
+            prof.gender, prof.birth_date = user.gender, user.birth_date
+            prof.save(update_fields=["gender", "birth_date"])
+        if prof and ("city" in validated or "country" in validated) and (prof.city, prof.country) != (user.city, user.country):
+            from apps.social import geocode
+
+            prof.city, prof.country = user.city, user.country  # the community profile uses the same place (distance search)
+            try:
+                c = geocode.geocode(prof.city, prof.country)
+            except Exception:  # noqa: BLE001 - never fail a profile save on a lookup
+                c = None
+            prof.lat, prof.lon = c if c else (None, None)
+            prof.save(update_fields=["city", "country", "lat", "lon"])
+        return user
 
     class Meta:
         model = User

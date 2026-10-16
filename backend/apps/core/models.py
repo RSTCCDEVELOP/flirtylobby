@@ -43,6 +43,15 @@ class ContentBlock(models.Model):
         unique_together = ("key", "lang")
 
 
+class DashboardLayout(models.Model):
+    """Block layout of the user dashboard. user=None is the default for everybody without own layout."""
+
+    user = models.OneToOneField("accounts.User", null=True, blank=True, on_delete=models.CASCADE, related_name="dashboard_layout")
+    widgets = models.JSONField(default=list)  # [{"id": "messages", "col": 0}, ...] (order = order inside the column)
+    columns = models.PositiveSmallIntegerField(default=2)  # 1-4 columns
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class ModuleState(models.Model):
     """Switch for a module (see apps/core/modules.py). No row = default (on)."""
 

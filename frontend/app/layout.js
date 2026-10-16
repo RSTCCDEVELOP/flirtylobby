@@ -5,6 +5,10 @@ import { ContentProvider, EditBanner } from "../components/EditMode";
 import { SessionProvider } from "../components/Session";
 import { ModulesProvider } from "../components/Modules";
 import { UiProvider } from "../components/Ui";
+import { CartProvider } from "../components/Cart";
+import { ChatProvider, ChatWidget } from "../components/Chat";
+import AdminBar from "../components/AdminBar";
+import DeviceGate from "../components/DeviceGate";
 import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
 import { LOGO_SETS } from "../lib/logos";
@@ -15,6 +19,11 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const absolute = (p) => (p ? (p.startsWith("http") || p.startsWith("/logos/") ? p : API + p) : undefined);
 
 export const dynamic = "force-dynamic"; // theme comes from the API on every request
+
+export async function generateViewport() {
+  const t = await getTheme();
+  return { themeColor: t?.values?.device_app === "yes" ? t.values.primary : undefined, width: "device-width", initialScale: 1 };
+}
 
 // Runs before first paint: saved choice, else the OS preference (prevents a light flash)
 const themeScript = (mode) => `try{var t=localStorage.getItem("theme");if(!t){var d="${mode}";t=d==="light"||d==="dark"?d:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){}`;
@@ -53,6 +62,7 @@ export async function generateMetadata() {
     title: { default: name, template: site.title_template || "%s" },
     description: site.default_description || undefined,
     icons: { icon: absolute(a.favicon) || undefined, apple: absolute(a.icon) || undefined },
+    ...(theme?.values?.device_app === "yes" ? { manifest: "/manifest.webmanifest", appleWebApp: { capable: true, title: site.name || name, statusBarStyle: "default" } } : {}),
     robots: site.allow_indexing === false ? "noindex, nofollow" : site.ai_meta === "noai" ? "index, follow, noai, noimageai" : undefined,
     verification: {
       google: verify.google || undefined, yandex: verify.yandex || undefined,
@@ -108,6 +118,8 @@ export default async function RootLayout({ children }) {
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>
         <SessionProvider>
+        <CartProvider>
+        <ChatProvider>
           <BrandingProvider value={branding} logoSet={theme?.values?.brand_logo}>
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
               {children}
@@ -117,6 +129,11 @@ export default async function RootLayout({ children }) {
         <SandboxBadge status={sandbox} />
         {jsonld.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld).replace(/</g, "\\u003c") }} />}
           </BrandingProvider>
+        <ChatWidget />
+        <AdminBar />
+        <DeviceGate devices={{ mobile: theme?.values?.device_mobile !== "no", tablet: theme?.values?.device_tablet !== "no", desktop: theme?.values?.device_desktop !== "no", app: theme?.values?.device_app === "yes" }} />
+        </ChatProvider>
+        </CartProvider>
         </SessionProvider>
         </UiProvider>
         </ModulesProvider>

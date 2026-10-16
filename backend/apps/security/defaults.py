@@ -65,6 +65,15 @@ DEFAULTS = {
         },
     },
     "words": {"enabled": False, "lists": {}},
+    "registration": {
+        "enabled": False, "verify_email": True, "require_phone": False, "require_birth_date": True, "code_minutes": 15,
+        "texts": {
+            "nl": {"email_subject": "Bevestig je e-mailadres", "email_body": "Je bevestigingscode is {code}. Deze is {minutes} minuten geldig. Heb je geen account aangemaakt? Negeer dit bericht dan.",
+                   "sms_body": "Je bevestigingscode is {code}. Geldig {minutes} min."},
+            "en": {"email_subject": "Confirm your e-mail address", "email_body": "Your confirmation code is {code}. It is valid for {minutes} minutes. Did not create an account? Ignore this message.",
+                   "sms_body": "Your confirmation code is {code}. Valid {minutes} min."},
+        },
+    },
     "twofa": {
         "enabled": False, "required_for": "none", "allow_email": True, "allow_sms": False,
         "code_minutes": 10, "max_attempts": 5,
@@ -83,6 +92,7 @@ TEXT_KEYS = {
     "age": ["title", "message", "yes", "no", "deny_message"],
     "gambling": ["title", "message", "warnings", "confirm", "deny"],
     "twofa": ["email_subject", "email_body", "sms_body"],
+    "registration": ["email_subject", "email_body", "sms_body"],
     "cookies": ["title", "message", "accept_all", "reject", "settings", "save", "policy_link", "cat_necessary",
                 "cat_necessary_desc", "cat_analytics", "cat_analytics_desc", "cat_marketing", "cat_marketing_desc",
                 "cat_preferences", "cat_preferences_desc", "policy_title", "policy_body"],
@@ -112,6 +122,7 @@ SPEC = {
         }.items()
     },
     "words": {"enabled": "bool"},
+    "registration": {"enabled": "bool", "verify_email": "bool", "require_phone": "bool", "require_birth_date": "bool", "code_minutes": ("int", 1, 60)},
     "twofa": {
         "enabled": "bool", "required_for": ("choice", ["none", "admins", "all"]), "allow_email": "bool", "allow_sms": "bool",
         "code_minutes": ("int", 1, 60), "max_attempts": ("int", 1, 10),

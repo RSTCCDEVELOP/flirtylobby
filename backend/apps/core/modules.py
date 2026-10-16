@@ -27,6 +27,20 @@ MODULES = [
      "desc": "Zoekmachines, bots en AI-agents: robots.txt, sitemap, llms.txt, paginatitels, omschrijvingen en structured data."},
     {"key": "privacy_pages", "group": "Content", "label": "Privacy- en cookiepagina",
      "desc": "De publieke pagina's /privacy en /cookies met links in de footer."},
+    # ── Webshop ──
+    {"key": "products", "group": "Webshop", "label": "Producten",
+     "desc": "Producten en productgroepen met beheerpagina's en de productpagina's op de website."},
+    {"key": "orders", "group": "Webshop", "label": "Orders & webshop",
+     "desc": "Orderbeheer en de webshop op de website: winkelwagen, afrekenen en bestelstatus."},
+    # ── Community ──
+    {"key": "profiles", "group": "Community", "label": "Profielen & blokkeren",
+     "desc": "Eigen profielpagina met meerdere foto's, zichtbaarheid per taal en groep, ledenzoeker en het blokkeren van andere users."},
+    {"key": "discover", "group": "Community", "label": "Zoeken & matchen",
+     "desc": "Andere users zoeken en ontmoeten zoals bij een datingsite: filters, aanbevelingen, leuk vinden, matches, favorieten en bezoekers."},
+    {"key": "messages", "group": "Community", "label": "Berichten",
+     "desc": "Berichtensysteem tussen users (postvak)."},
+    {"key": "chat", "group": "Community", "label": "Chat",
+     "desc": "Chat in een popup of scherm, via de portal of rechtstreeks (WebRTC), met foto's, video's en videochat."},
     # ── Beveiliging ──
     {"key": "geo", "group": "Beveiliging", "label": "Landcontrole",
      "desc": "Website blokkeren of toestaan per land via IP-controle."},
@@ -38,6 +52,8 @@ MODULES = [
      "desc": "Cookiebanner, voorkeuren en cookiebeleid-popup."},
     {"key": "word_filter", "group": "Beveiliging", "label": "Woordfilter",
      "desc": "Verboden woorden in teksten, namen en bijschriften."},
+    {"key": "registration", "group": "Beveiliging", "label": "Aanmelden",
+     "desc": "Bezoekers kunnen zelf een account aanmaken, met e-mailbevestiging en 2-staps verificatie volgens de beveiligingsregels."},
     {"key": "twofa", "group": "Beveiliging", "label": "Twee-staps verificatie",
      "desc": "Inloggen met een code per e-mail of sms."},
     # ── Systeem ──

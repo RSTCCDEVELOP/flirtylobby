@@ -159,28 +159,33 @@ def _post_json(url, headers, payload):
         raise DeliveryError(f"Verzenden mislukt: {e}")
 
 
+def send_sms(phone, text):
+    from apps.sandbox import service as sandbox
+
+    if sandbox.active("sms"):
+        sandbox.capture("sms", phone, "", text)
+        return
+    obj = _integration(["bird"])
+    if not obj:
+        if dj_settings.DEBUG:
+            return
+        raise DeliveryError("SMS is niet gekoppeld.")
+    c = obj.config
+    if not c.get("sms_channel_id"):
+        raise DeliveryError("Bird: SMS-kanaal-ID ontbreekt in de koppeling.")
+    ws = urllib.parse.quote(c["workspace_id"], safe="")
+    ch = urllib.parse.quote(c["sms_channel_id"], safe="")
+    _post_json(f"https://api.bird.com/workspaces/{ws}/channels/{ch}/messages",
+               {"Authorization": f"AccessKey {c['access_key']}"},
+               {"receiver": {"contacts": [{"identifierKey": "phonenumber", "identifierValue": phone}]},
+                "body": {"type": "text", "text": {"text": text}}})
+
+
 def deliver(user, subject, email_body, sms_body):
     from apps.sandbox import service as sandbox
 
     if user.twofa_method == "sms":
-        if sandbox.active("sms"):
-            sandbox.capture("sms", user.phone, "", sms_body)
-            return
-        obj = _integration(["bird"])
-        if not obj:
-            if dj_settings.DEBUG:
-                return
-            raise DeliveryError("SMS is niet gekoppeld.")
-        c = obj.config
-        if not c.get("sms_channel_id"):
-            raise DeliveryError("Bird: SMS-kanaal-ID ontbreekt in de koppeling.")
-        ws = urllib.parse.quote(c["workspace_id"], safe="")
-        ch = urllib.parse.quote(c["sms_channel_id"], safe="")
-        _post_json(f"https://api.bird.com/workspaces/{ws}/channels/{ch}/messages",
-                   {"Authorization": f"AccessKey {c['access_key']}"},
-                   {"receiver": {"contacts": [{"identifierKey": "phonenumber", "identifierValue": user.phone}]},
-                    "body": {"type": "text", "text": {"text": sms_body}}})
-        return
+        return send_sms(user.phone, sms_body)
 
     try:
         sending.send_email(user.email, subject, email_body, purpose="security")

@@ -12,6 +12,7 @@ const SIM = [
   ["payments", "Betalingen", "Betalingen krijgen een nagemaakte betaalpagina. Geen echt geld, geen Mollie of Stripe."],
   ["integrations", "Koppelingen testen", "De testknop bij API keys meldt 'gelukt' zonder echte verbinding."],
   ["geo", "Landcontrole", "Elke bezoeker komt uit het hieronder gekozen land, zonder IP-opzoeking."],
+  ["geocoding", "Plaatsbepaling", "Zoeken op afstand: een plaats krijgt een vaste nagemaakte locatie, zonder OpenStreetMap."],
 ];
 const STATUS = { open: ["Open", "off"], paid: ["Betaald", "ok"], failed: ["Mislukt", "off"], canceled: ["Geannuleerd", "off"], expired: ["Verlopen", "off"], refunded: ["Terugbetaald", "ok"] };
 const money = (p) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: p.currency }).format(p.amount);

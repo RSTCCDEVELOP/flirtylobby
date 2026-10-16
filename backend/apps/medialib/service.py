@@ -25,6 +25,10 @@ def usage_map():
         add(p.image.name, "Homepagefoto")
     for u in AccountUser.objects.exclude(image=""):
         add(u.image.name, f"Gebruiker: {u.email}")
+    from apps.social.models import ProfilePhoto
+
+    for ph in ProfilePhoto.objects.all():
+        add(ph.image.name, "Profielfoto")
     ids = {}
     for b in ContentBlock.objects.filter(text__startswith="media:"):
         ids.setdefault(int(b.text[6:] or 0), []).append(b.key)

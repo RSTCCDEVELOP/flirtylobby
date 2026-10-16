@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import dashboard, views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
@@ -8,6 +8,9 @@ urlpatterns = [
     path("languages/all/", views.languages_all),
     path("languages/<str:code>/", views.language_update),
     path("languages/<str:code>/default/", views.language_set_default),
+    path("dashboard/layout/", dashboard.layout),
+    path("dashboard/layout/default/", dashboard.default_layout),
+    path("dashboard/stats/", dashboard.stats),
     path("modules/", views.modules_public),
     path("modules/all/", views.modules_admin),
     path("modules/<str:key>/", views.module_update),

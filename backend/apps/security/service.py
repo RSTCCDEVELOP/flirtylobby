@@ -33,10 +33,24 @@ def get():
 
     s = dict(raw())
     for section, module in (("geo", "geo"), ("age", "age_gate"), ("gambling", "gambling"), ("cookies", "cookies"),
-                            ("words", "word_filter"), ("twofa", "twofa")):
+                            ("words", "word_filter"), ("twofa", "twofa"), ("registration", "registration")):
         if not modules.enabled(module):
             s[section] = {**s[section], "enabled": False}
     return s
+
+
+def underage_message(birth_date):
+    """Text when the birth date is below the site's age limit (18+ gate), else None."""
+    from datetime import date
+
+    cfg = get()["age"]
+    if not birth_date or not cfg.get("enabled"):
+        return None
+    t = date.today()
+    age = t.year - birth_date.year - ((t.month, t.day) < (birth_date.month, birth_date.day))
+    if age < cfg["min_age"]:
+        return f"Deze website is alleen voor bezoekers van {cfg['min_age']} jaar en ouder. Met deze geboortedatum kun je geen gegevens opslaan."
+    return None
 
 
 def invalidate():

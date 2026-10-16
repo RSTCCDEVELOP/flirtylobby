@@ -50,6 +50,9 @@ def theme_settings(request):
     clean, errors = theme.validate(request.data.get("values"))
     if errors:
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+    final = theme.merged(clean)
+    if not any(final[k] == "yes" for k in ("device_mobile", "device_tablet", "device_desktop", "device_app")):
+        return Response({"detail": "Minimaal één weergave (mobiel, iPad, website of app) moet actief zijn."}, status=status.HTTP_400_BAD_REQUEST)
     settings_obj = SiteSettings.load()
     settings_obj.theme = {k: v for k, v in clean.items() if v != theme.DEFAULTS[k]}
     settings_obj.save()

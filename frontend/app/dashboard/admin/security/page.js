@@ -92,6 +92,7 @@ export default function Security() {
   const [data, setData] = useState(null);
   const [langs, setLangs] = useState([]);
   const [codes, setCodes] = useState([]);
+  const [avail, setAvail] = useState({});
   const [lang, setLang] = useState("nl");
   const [msg, setMsg] = useState(null);
   const [test, setTest] = useState({ text: "", found: null });
@@ -105,6 +106,7 @@ export default function Security() {
     api("/security/settings/").then((d) => {
       setData(d.settings);
       setCodes(d.country_codes);
+      setAvail(d.twofa_availability || {});
       const enabled = d.languages.filter((l) => l.enabled);
       setLangs(enabled);
       setLang((enabled.find((l) => l.is_default) || enabled[0] || { code: "nl" }).code);
@@ -296,6 +298,50 @@ export default function Security() {
         {T("cookies", "policy_title", "Titel")}
         {T("cookies", "policy_body", "Tekst", { rows: 8 })}
         <a className="btn sm" href="/cookies" target="_blank" rel="noreferrer">Bekijk pagina</a>
+      </Collapsible>
+      )}
+
+      {on("twofa") && (
+      <Collapsible id="sec-twofa" title="Twee-staps verificatie">
+        <Toggle label="Twee-staps verificatie ingeschakeld" hint="inloggen met een code per e-mail of sms" checked={data.twofa.enabled} onChange={(v) => set("twofa")("enabled", v)} />
+        <div className="grid2">
+          <label>Verplicht voor
+            <select value={data.twofa.required_for} onChange={(e) => set("twofa")("required_for", e.target.value)}>
+              <option value="none">Niemand (gebruiker kiest zelf)</option>
+              <option value="admins">Admins en superadmins</option>
+              <option value="all">Alle gebruikers (ook bij aanmelden)</option>
+            </select>
+          </label>
+          <Num label="Code geldig" suffix="minuten" min={1} max={60} value={data.twofa.code_minutes} onChange={(v) => set("twofa")("code_minutes", v)} />
+          <Num label="Max. foutieve codes" min={1} max={10} value={data.twofa.max_attempts} onChange={(v) => set("twofa")("max_attempts", v)} />
+        </div>
+        <Toggle label="Code per e-mail toestaan" hint={avail.email ? `via ${avail.email}` : "niet beschikbaar: koppel e-mail bij API keys"} checked={data.twofa.allow_email} onChange={(v) => set("twofa")("allow_email", v)} />
+        <Toggle label="Code per sms toestaan" hint={avail.sms ? `via ${avail.sms}` : "niet beschikbaar: koppel Bird bij API keys"} checked={data.twofa.allow_sms} onChange={(v) => set("twofa")("allow_sms", v)} />
+        <h3>Teksten <small className="muted">gebruik {"{code}"} en {"{minutes}"}</small></h3>
+        <div className="grid2">
+          {T("twofa", "email_subject", "E-mail onderwerp")}
+          {T("twofa", "email_body", "E-mail bericht", { rows: 3 })}
+          {T("twofa", "sms_body", "Sms-bericht", { rows: 2 })}
+        </div>
+      </Collapsible>
+      )}
+
+      {on("registration") && (
+      <Collapsible id="sec-registration" title="Aanmelden (nieuwe gebruikers)">
+        <Toggle label="Bezoekers mogen zelf een account aanmaken" hint="pagina /registreren, met link op de inlogpagina" checked={data.registration.enabled} onChange={(v) => set("registration")("enabled", v)} />
+        <Toggle label="E-mailadres eerst bevestigen met een code" checked={data.registration.verify_email} onChange={(v) => set("registration")("verify_email", v)} />
+        <Toggle label="Geboortedatum verplicht" hint={data.age.enabled ? "staat altijd aan: de leeftijdscontrole is actief" : "de leeftijdsgrens uit 'Leeftijdscontrole' wordt gebruikt zodra die aan staat"} checked={data.registration.require_birth_date || data.age.enabled} onChange={(v) => set("registration")("require_birth_date", v)} />
+        <Toggle label="Telefoonnummer verplicht" checked={data.registration.require_phone} onChange={(v) => set("registration")("require_phone", v)} />
+        <div className="grid2"><Num label="Bevestigingscode geldig" suffix="minuten" min={1} max={60} value={data.registration.code_minutes} onChange={(v) => set("registration")("code_minutes", v)} /></div>
+        <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>
+          Er wordt <strong>geen account aangemaakt</strong> voordat alle verplichte controles zijn gedaan. Is twee-staps verificatie verplicht voor alle gebruikers, dan kiest de nieuwe gebruiker e-mail of sms en wordt dit direct geactiveerd. Wachtwoordregels, leeftijdsgrens en het woordenfilter gelden ook bij aanmelden.
+        </p>
+        <h3>Teksten bevestigingscode <small className="muted">gebruik {"{code}"} en {"{minutes}"}</small></h3>
+        <div className="grid2">
+          {T("registration", "email_subject", "E-mail onderwerp")}
+          {T("registration", "email_body", "E-mail bericht", { rows: 3 })}
+          {T("registration", "sms_body", "Sms-bericht", { rows: 2 })}
+        </div>
       </Collapsible>
       )}
 

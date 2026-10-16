@@ -73,6 +73,9 @@ SIDEBAR_AUTO = [
     {"value": "on_leave", "label": "Zodra de muis het menu verlaat", "css": ""},
 ]
 
+CHAT_SIDES = [{"value": "right", "label": "Rechtsonder", "css": "flex-end"}, {"value": "left", "label": "Linksonder", "css": "flex-start"}]
+CHAT_LABELS = [{"value": "icon", "label": "Alleen een icoon 💬", "css": ""}, {"value": "text", "label": "Icoon met tekst 'Chat'", "css": ""}]
+
 WEIGHTS = [{"value": str(w), "label": str(w), "css": str(w)} for w in (500, 600, 700, 800)]
 
 
@@ -103,6 +106,12 @@ def _mode_colors(prefix, mode, d):
 
 
 SCHEMA = [
+    {"key": "devices", "label": "Weergave per apparaat", "fields": [
+        choice("device_mobile", "Mobiel (telefoon in de browser)", "yes", None, YESNO),
+        choice("device_tablet", "iPad / tablet", "yes", None, YESNO),
+        choice("device_desktop", "Website (computer)", "yes", None, YESNO),
+        choice("device_app", "App op mobiel (installeerbaar, zonder browserbalk)", "no", None, YESNO),
+    ]},
     {"key": "defaults", "label": "Standaardinstellingen", "fields": [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
@@ -127,6 +136,16 @@ SCHEMA = [
         number("popup_image_radius", "Afronding van afbeeldingen in popups", 8, "--popup-image-radius", "px", 0, 40),
         choice("popup_position", "Positie", "center", "--popup-pos", POSITIONS),
         choice("popup_anim", "Animatie", "scale", "--popup-anim", ANIMS),
+    ]},
+    {"key": "chat_look", "label": "Chat-weergave", "fields": [
+        color("chat_color", "Chatkleur (knop en eigen berichten)", "#1b97d3", "--chat-color"),
+        choice("chat_position", "Positie van de zwevende knop en popup", "right", "--chat-justify", CHAT_SIDES),
+        choice("chat_label", "Knop toont", "icon", None, CHAT_LABELS),
+        number("chat_size", "Grootte van de knop", 56, "--chat-size", "px", 40, 96),
+        number("chat_radius", "Afronding van de knop", 50, "--chat-radius", "%", 0, 50),
+        number("chat_panel_w", "Breedte van de chatpopup", 380, "--chat-panel-w", "px", 300, 560),
+        number("chat_panel_h", "Hoogte van de chatpopup", 540, "--chat-panel-h", "px", 360, 800),
+        number("chat_bubble_radius", "Afronding van berichten", 14, "--chat-bubble-radius", "px", 0, 28),
     ]},
     {"key": "mode", "label": "Startweergave", "fields": [
         choice("default_mode", "Start in (voor bezoekers die zelf nog niets gekozen hebben)", "system", None, MODES),

@@ -5,6 +5,8 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import SiteUserArea from "./SiteUserArea";
 import { EditModeSwitch } from "./EditMode";
+import { ShopLinks } from "./Cart";
+import { ChatButton } from "./Chat";
 
 export default function SiteHeader() {
   return (
@@ -16,8 +18,10 @@ export default function SiteHeader() {
       </ImageEdit>
       <nav className="site-nav">
         <Link href="/">Home</Link>
+        <ShopLinks />
       </nav>
       <div className="site-actions">
+        <ChatButton />
         <EditModeSwitch />
         <LanguageSwitcher />
         <ThemeToggle />

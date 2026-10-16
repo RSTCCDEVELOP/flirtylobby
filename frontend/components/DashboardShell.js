@@ -8,10 +8,12 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Logo } from "./BrandingContext";
 import UserMenu from "./UserMenu";
+import { ChatButton, useChat } from "./Chat";
 import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useUi } from "./Ui";
-import { IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask } from "./Icons";
+import { api } from "../lib/api";
+import { IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
@@ -22,6 +24,18 @@ const NAV = [
 const ADMIN_LINKS = [
   { href: "/dashboard/admin", label: "Admin", icon: <IconShield /> },
   { href: "/dashboard/superadmin", label: "Super admin", icon: <IconGrid /> },
+];
+
+// Everybody's own community area (module-dependent)
+const COMMUNITY = [
+  { href: "/dashboard/community", label: "Community", icon: <IconChat />, module: "any" },
+  { href: "/dashboard/community/profile", label: "Mijn profielpagina", icon: <IconUser />, module: "profiles" },
+  { href: "/dashboard/community/discover", label: "Zoeken & matchen", icon: <IconSearch />, module: "discover", badge: "discover_new" },
+  { href: "/dashboard/community/messages", label: "Berichten", icon: <IconMail />, module: "messages", badge: "unread_messages" },
+  { href: "/dashboard/community/chat", label: "Chat", icon: <IconChat />, module: "chat", badge: "unread_chat" },
+  { href: "/dashboard/community/direct", label: "Directe verbinding", icon: <IconChat />, module: "chat", needs: "webrtc" },
+  { href: "/dashboard/community/requests", label: "Vrienden & verzoeken", icon: <IconUsers />, module: "profiles", badge: "requests" },
+  { href: "/dashboard/community/blocked", label: "Geblokkeerd", icon: <IconLock />, module: "profiles" },
 ];
 
 const SUPER_NAV = [
@@ -37,9 +51,12 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/languages", label: "Talen", icon: <IconGlobe />, perm: "languages.manage" },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
+  { href: "/dashboard/admin/products", label: "Producten", icon: <IconBag /> },
+  { href: "/dashboard/admin/orders", label: "Orders", icon: <IconReceipt /> },
   { href: "/dashboard/admin/media", label: "Media", icon: <IconFolder />, perm: "media.manage" },
   { href: "/dashboard/admin/branding", label: "Logo's & beeld", icon: <IconImage />, perm: "branding.manage" },
   { href: "/dashboard/admin/security", label: "Beveiliging", icon: <IconLock />, perm: "security.manage" },
+  { href: "/dashboard/admin/community", label: "Community", icon: <IconChat /> },
   { href: "/dashboard/admin/seo", label: "SEO", icon: <IconSearch /> },
   { href: "/dashboard/admin/sandbox", label: "Sandbox", icon: <IconFlask /> },
   { href: "/dashboard/admin/theme", label: "Vormgeving", icon: <IconPalette />, perm: "theme.manage" },
@@ -47,11 +64,13 @@ const ADMIN_NAV = [
 
 export default function DashboardShell({ children }) {
   const { user, logout } = useAuth();
+  const chat = useChat();
   const mods = useModules();
   const { sidebar_auto: auto } = useUi();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(true); // default: collapsed, until the user opens it once
+  const [collapsed, setCollapsed] = useState(true);
+  const [summary, setSummary] = useState(null); // default: collapsed, until the user opens it once
 
   // remember where the user was, for "Laatste pagina" in the user menu
   useEffect(() => {
@@ -68,6 +87,15 @@ export default function DashboardShell({ children }) {
     try { localStorage.setItem("sidebar", next ? "collapsed" : "open"); } catch {}
   }
 
+  const communityOn = ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false);
+  useEffect(() => {
+    if (!communityOn) return;
+    const load = () => api("/community/summary/").then(setSummary).catch(() => {});
+    load();
+    const t = setInterval(load, 20000);
+    return () => clearInterval(t);
+  }, [communityOn, pathname]);
+  const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false) && (!n.needs || chat?.cfg?.method === n.needs));
   const inSuper = pathname.startsWith("/dashboard/superadmin");
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const allowedAdminNav = ADMIN_NAV.filter((n) => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
@@ -76,6 +104,7 @@ export default function DashboardShell({ children }) {
     <Link href={n.href} title={n.label} className={(exact ? pathname === n.href : pathname.startsWith(n.href)) ? "active" : ""} onClick={closeMenu}>
       {n.icon}
       <span className="label">{n.label}</span>
+      {n.badgeCount > 0 && <span className="cart-count" style={{ marginLeft: "auto" }}>{n.badgeCount}</span>}
     </Link>
   );
 
@@ -95,6 +124,7 @@ export default function DashboardShell({ children }) {
           <Link href="/">Homepage</Link>
         </nav>
         <div className="topbar-user">
+          <ChatButton />
           <LanguageSwitcher />
           <ThemeToggle />
           <UserMenu user={user} onLogout={logout} showDashboard={false} />
@@ -122,14 +152,16 @@ export default function DashboardShell({ children }) {
         ) : (
           <>
             {NAV.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
-            {(canAdmin(user, mods) || user.is_staff) && (
-              <div className="side-bottom">
-                <div className="side-title">Beheer</div>
-                {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
-                {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}
-              </div>
-            )}
+            {communityLinks.length > 0 && <div className="side-title">Community</div>}
+            {communityLinks.map((n) => <NavLink key={n.href} n={{ ...n, badgeCount: n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) : 0 }} exact={n.href === "/dashboard/community"} />)}
           </>
+        )}
+        {(canAdmin(user, mods) || user.is_staff) && (
+          <div className="side-bottom">
+            <div className="side-title">Beheer</div>
+            {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
+            {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}
+          </div>
         )}
       </aside>
 

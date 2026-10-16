@@ -17,9 +17,10 @@ logger = logging.getLogger(__name__)
 
 DEFAULTS = {
     "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL",
-    "simulate": {"email": True, "sms": True, "payments": True, "integrations": True, "geo": False},
+    "simulate": {"email": True, "sms": True, "payments": True, "integrations": True, "geo": False, "geocoding": True},
 }
 OUTCOMES = {"paid", "failed", "canceled", "expired"}
+HOOKS = []  # callables(payment) run after every status change (the shop registers one)
 
 
 class NotConfigured(Exception):
@@ -106,4 +107,6 @@ def apply_outcome(p, outcome):
     p.status = outcome
     _event(p, f"Status: {outcome} (gesimuleerde webhook)")
     p.save()
+    for hook in HOOKS:
+        hook(p)
     return p

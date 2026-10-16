@@ -18,3 +18,6 @@ export const IconGroup = () => <svg {...p}><circle cx="8" cy="9" r="3" /><circle
 export const IconMail = () => <svg {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>;
 export const IconSearch = () => <svg {...p}><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>;
 export const IconFlask = () => <svg {...p}><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 001.3 2.2h12.4a1.5 1.5 0 001.3-2.2L14 9V3" /><path d="M7.5 15h9" /></svg>;
+export const IconBag = () => <svg {...p}><path d="M5 8h14l-1 12H6L5 8z" /><path d="M9 8V6a3 3 0 016 0v2" /></svg>;
+export const IconReceipt = () => <svg {...p}><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" /><path d="M9 8h6M9 12h6" /></svg>;
+export const IconChat = () => <svg {...p}><path d="M4 5h16v11H9l-5 4V5z" /></svg>;

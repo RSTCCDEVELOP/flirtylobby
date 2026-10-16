@@ -67,9 +67,17 @@ class User(AbstractUser):
     otp_token = models.CharField(max_length=255, blank=True)
     otp_active = models.BooleanField(default=False)  # two-step verification switched on
     twofa_method = models.CharField(max_length=10, blank=True)  # "email" | "sms"
-    phone = models.CharField(max_length=20, blank=True)  # E.164, for SMS
+    phone = models.CharField(max_length=20, blank=True)  # E.164, for SMS (and the profile)
+    display_name = models.CharField(max_length=60, blank=True)  # profile name shown to others
+    birth_date = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=1, blank=True)  # m | f | x
+    address = models.CharField(max_length=200, blank=True)  # street + number
+    postal_code = models.CharField(max_length=12, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=2, blank=True)  # ISO 3166-1 alpha-2
     image = models.ImageField(upload_to="images/tms/coaches/", blank=True)  # profile photo
     show_public = models.BooleanField(default=False)  # show as member on the website
+    last_seen = models.DateTimeField(null=True, blank=True)  # presence for chat
     otp_expires = models.DateTimeField(null=True, blank=True)
     otp_attempts = models.PositiveSmallIntegerField(default=0)
     otp_sent_at = models.DateTimeField(null=True, blank=True)
@@ -92,3 +100,19 @@ class User(AbstractUser):
             else:
                 self._perm_cache = {k for r in self.all_roles() for k in r.keys()}
         return self._perm_cache
+
+
+class PendingRegistration(models.Model):
+    """A sign-up that is not finished: the account is only created after the required verifications (see registration.py)."""
+
+    token = models.CharField(max_length=64, unique=True)
+    email = models.EmailField()
+    data = models.JSONField(default=dict)  # name, birth date, ... and the password HASH (never the password)
+    steps = models.JSONField(default=list)  # ["email"] | ["sms"] | ["email", "sms"] ...: still to do, first = current
+    twofa_method = models.CharField(max_length=10, blank=True)  # set when 2FA is required for the new account
+    code_hash = models.CharField(max_length=64, blank=True)
+    code_expires = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    decoy = models.BooleanField(default=False)  # e-mail already has an account: look the same, never succeed
+    created_at = models.DateTimeField(auto_now_add=True)

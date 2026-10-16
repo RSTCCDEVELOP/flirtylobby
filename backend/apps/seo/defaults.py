@@ -41,6 +41,6 @@ DEFAULTS = {
     "llms": {"enabled": True, "summary": "", "include_pages": True, "extra": ""},
     "schema": {"enabled": True, "type": "Organization", "legal_name": "", "description": "", "email": "", "phone": "", "same_as": []},
 }
-KNOWN_PAGES = [("/", "Homepage", None), ("/privacy", "Privacybeleid", "privacy_pages"), ("/cookies", "Cookiebeleid", "privacy_pages")]
+KNOWN_PAGES = [("/", "Homepage", None), ("/producten", "Producten", "products"), ("/leden", "Leden", "profiles"), ("/privacy", "Privacybeleid", "privacy_pages"), ("/cookies", "Cookiebeleid", "privacy_pages")]
 FREQ = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"]
 SCHEMA_TYPES = ["Organization", "LocalBusiness", "Person", "EducationalOrganization", "ProfessionalService"]
