@@ -209,3 +209,29 @@ class DirectSignal(models.Model):
     kind = models.CharField(max_length=10)  # sdp | ice | call | accept | decline | end
     payload = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Pass(models.Model):
+    """from_user swiped to_user away: not shown again in the swipe deck for a while."""
+
+    from_user = models.ForeignKey(U, on_delete=models.CASCADE, related_name="passes_given")
+    to_user = models.ForeignKey(U, on_delete=models.CASCADE, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("from_user", "to_user")
+
+
+class Notification(models.Model):
+    """In-app notice for a member: someone liked them, a match, a short message with a like."""
+
+    KINDS = [("like", "Like"), ("match", "Match"), ("message", "Bericht")]
+    user = models.ForeignKey(U, on_delete=models.CASCADE, related_name="notifications")
+    kind = models.CharField(max_length=10, choices=KINDS)
+    from_user = models.ForeignKey(U, null=True, blank=True, on_delete=models.CASCADE, related_name="+")
+    text = models.CharField(max_length=200, blank=True)
+    seen = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]

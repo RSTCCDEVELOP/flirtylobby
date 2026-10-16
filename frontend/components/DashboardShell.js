@@ -10,6 +10,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { Logo } from "./BrandingContext";
 import UserMenu from "./UserMenu";
 import { ChatButton, DirectIndicator, useChat } from "./Chat";
+import NotificationBell from "./NotificationBell";
 import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useUi } from "./Ui";
@@ -176,6 +177,7 @@ export default function DashboardShell({ children }) {
         </nav>
         <div className="topbar-user">
           <DirectIndicator />
+          <NotificationBell />
           <ChatButton />
           <LanguageSwitcher />
           <ThemeToggle />

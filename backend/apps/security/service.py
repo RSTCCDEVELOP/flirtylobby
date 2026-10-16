@@ -86,6 +86,11 @@ def _val(kind, v, where):
         if any(not p.startswith("/") or len(p) > 200 for p in paths):
             raise Invalid(f"{where}: paden beginnen met / (bv. /privacy).")
         return paths[:100]
+    if kind == "text":
+        v = str(v).strip()
+        if len(v) > 60:
+            raise Invalid(f"{where}: maximaal 60 tekens.")
+        return v
     if kind == "url":
         v = str(v).strip()
         if v and not re.fullmatch(r"https?://[^\s]{1,500}", v):

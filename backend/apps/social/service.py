@@ -19,19 +19,19 @@ DEFAULTS = {
     "discover": {
         "min_age": 18, "max_age": 99, "max_results": 60, "require_photo": 0, "default_sort": "active", "suggestions": True,
         "require_to_search": True, "require_to_like": True, "show_non_participants": False,
-        "show_visitors": True, "visitors_days": 30, "show_likes_received": True, "match_email": True,
+        "show_visitors": True, "visitors_days": 30, "show_likes_received": True, "match_email": True, "like_email": False, "swipe": "auto", "pass_days": 30,
         "distance_enabled": True, "radii": [5, 10, 25, 50, 100, 250], "max_distance_km": 500, "geocoder_contact": "",
     },
     "chat": {"method": "portal", "display": "both", "style": "floating", "show_on": ["home", "website", "dashboard", "backend"], "photos": True, "videos": True, "video_chat": True,
              "max_image_mb": 10, "max_video_mb": 50, "direct_hours": 2, "stun": ["stun:stun.l.google.com:19302"],
              "turn_url": "", "turn_user": "", "turn_credential": ""},
 }
-CHOICES = {("discover", "default_sort"): ["active", "newest", "distance"], ("profiles", "default_visibility"): ["public", "members", "friends", "selected"], ("chat", "method"): ["portal", "webrtc"],
+CHOICES = {("discover", "default_sort"): ["active", "newest", "distance"], ("discover", "swipe"): ["auto", "on", "off"], ("profiles", "default_visibility"): ["public", "members", "friends", "selected"], ("chat", "method"): ["portal", "webrtc"],
            ("chat", "display"): ["popup", "page", "both"], ("chat", "style"): ["floating", "button"]}
 INTS = {("discover", "min_age"): (13, 99), ("discover", "max_age"): (18, 120), ("discover", "max_results"): (10, 200), ("discover", "require_photo"): (0, 5),
-        ("discover", "visitors_days"): (1, 365), ("discover", "max_distance_km"): (5, 2000), ("profiles", "max_photos"): (1, 30), ("profiles", "decline_days"): (0, 365), ("profiles", "max_private_photos"): (0, 30), ("messages", "max_length"): (100, 20000), ("messages", "rate_per_minute"): (1, 120),
+        ("discover", "visitors_days"): (1, 365), ("discover", "pass_days"): (1, 365), ("discover", "max_distance_km"): (5, 2000), ("profiles", "max_photos"): (1, 30), ("profiles", "decline_days"): (0, 365), ("profiles", "max_private_photos"): (0, 30), ("messages", "max_length"): (100, 20000), ("messages", "rate_per_minute"): (1, 120),
         ("chat", "max_image_mb"): (1, 50), ("chat", "direct_hours"): (1, 72), ("chat", "max_video_mb"): (1, 500)}
-BOOLS = {("profiles", "private_photos"), ("profiles", "requests_enabled"), ("discover", "show_visitors"), ("discover", "suggestions"), ("discover", "require_to_search"), ("discover", "require_to_like"),
+BOOLS = {("discover", "like_email"), ("profiles", "private_photos"), ("profiles", "requests_enabled"), ("discover", "show_visitors"), ("discover", "suggestions"), ("discover", "require_to_search"), ("discover", "require_to_like"),
          ("discover", "show_non_participants"), ("discover", "show_likes_received"), ("discover", "match_email"), ("discover", "distance_enabled"), ("chat", "photos"), ("chat", "videos"), ("chat", "video_chat")}
 STRS = {("discover", "geocoder_contact"), ("chat", "turn_url"), ("chat", "turn_user"), ("chat", "turn_credential")}
 

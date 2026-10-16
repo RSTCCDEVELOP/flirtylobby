@@ -9,6 +9,7 @@ import { EditModeSwitch } from "./EditMode";
 import { ShopLinks } from "./Cart";
 import SiteMenu from "./SiteMenu";
 import { ChatButton, DirectIndicator } from "./Chat";
+import NotificationBell from "./NotificationBell";
 
 export default function SiteHeader() {
   return (
@@ -22,6 +23,7 @@ export default function SiteHeader() {
       <div className="site-actions">
         <ShopLinks />
         <DirectIndicator />
+          <NotificationBell />
           <ChatButton />
         <EditModeSwitch />
         <LanguageSwitcher />

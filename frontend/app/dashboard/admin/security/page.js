@@ -15,9 +15,9 @@ const FREQ = [
   ["once", "Eénmalig (tot je 'opnieuw vragen' kiest)"],
 ];
 
-const Toggle = ({ label, checked, onChange, hint }) => (
+const Toggle = ({ label, checked, onChange, hint, disabled }) => (
   <label className="check sec-toggle">
-    <span className="switch"><input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} /><span /></span>
+    <span className="switch"><input type="checkbox" checked={checked && !disabled} disabled={disabled} onChange={(e) => onChange(e.target.checked)} /><span /></span>
     <span>{label}{hint && <small className="muted"> {hint}</small>}</span>
   </label>
 );
@@ -316,19 +316,30 @@ export default function Security() {
           <Num label={tx("Code geldig")} suffix={tx("minuten")} min={1} max={60} value={data.twofa.code_minutes} onChange={(v) => set("twofa")("code_minutes", v)} />
           <Num label={tx("Max. foutieve codes")} min={1} max={10} value={data.twofa.max_attempts} onChange={(v) => set("twofa")("max_attempts", v)} />
         </div>
-        <Toggle label={tx("Code per e-mail toestaan")} hint={avail.email ? `via ${avail.email}` : tx("niet beschikbaar: koppel e-mail bij API keys")} checked={data.twofa.allow_email} onChange={(v) => set("twofa")("allow_email", v)} />
+        {avail.email && <Toggle label={tx("Code per e-mail toestaan")} hint={avail.email ? `via ${avail.email}` : tx("niet beschikbaar: koppel e-mail bij API keys")} checked={data.twofa.allow_email} onChange={(v) => set("twofa")("allow_email", v)} />}
         <Toggle label={tx("Authenticator-app toestaan")} hint={tx("QR-code of sleutel voor Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden…")} checked={data.twofa.allow_app} onChange={(v) => set("twofa")("allow_app", v)} />
-        <Toggle label={tx("Code per sms toestaan")} hint={avail.sms ? `via ${avail.sms}` : tx("niet beschikbaar: koppel Bird bij API keys")} checked={data.twofa.allow_sms} onChange={(v) => set("twofa")("allow_sms", v)} />
-        <h3>{tx("Teksten")} <small className="muted">{tx("gebruik")} {tx("{code}")} {tx("en")} {tx("{minutes}")}</small></h3>
-        <div className="grid2">
-          {T("twofa", "email_subject", tx("E-mail onderwerp"))}
-          {T("twofa", "email_body", tx("E-mail bericht"), { rows: 3 })}
-          {T("twofa", "sms_body", tx("Sms-bericht"), { rows: 2 })}
-        </div>
+        {data.twofa.allow_app && (
+          <div className="grid2">
+            <label>{tx("Naam in de authenticator-app")}
+              <input value={data.twofa.app_issuer || ""} maxLength={60} placeholder="Studio2" onChange={(e) => set("twofa")("app_issuer", e.target.value)} />
+            </label>
+          </div>
+        )}
+        {avail.sms && <Toggle label={tx("Code per sms toestaan")} hint={avail.sms ? `via ${avail.sms}` : tx("niet beschikbaar: koppel Bird bij API keys")} checked={data.twofa.allow_sms} onChange={(v) => set("twofa")("allow_sms", v)} />}
+        {(avail.email || avail.sms) && (
+          <>
+            <h3>{tx("Teksten")} <small className="muted">{tx("gebruik")} {tx("{code}")} {tx("en")} {tx("{minutes}")}</small></h3>
+            <div className="grid2">
+              {avail.email && T("twofa", "email_subject", tx("E-mail onderwerp"))}
+              {avail.email && T("twofa", "email_body", tx("E-mail bericht"), { rows: 3 })}
+              {avail.sms && T("twofa", "sms_body", tx("Sms-bericht"), { rows: 2 })}
+            </div>
+          </>
+        )}
       </Collapsible>
       )}
 
-      {on("security_basic") && (
+      {on("security_basic") && avail.email && (
       <Collapsible id="sec-email-verify" title={tx("E-mailverificatie")}>
         <Toggle label={tx("E-mailverificatie verplicht")}
           hint={avail.email ? tx("elke gebruiker bevestigt eenmalig bij het inloggen het e-mailadres met een code, via {0}", avail.email) : tx("niet beschikbaar: koppel e-mail (Postmark) bij API keys")}
@@ -340,19 +351,23 @@ export default function Security() {
       {on("registration") && (
       <Collapsible id="sec-registration" title={tx("Aanmelden (nieuwe gebruikers)")}>
         <Toggle label={tx("Bezoekers mogen zelf een account aanmaken")} hint={tx("pagina /registreren, met link op de inlogpagina")} checked={data.registration.enabled} onChange={(v) => set("registration")("enabled", v)} />
-        <Toggle label={tx("E-mailadres eerst bevestigen met een code")} checked={data.registration.verify_email} onChange={(v) => set("registration")("verify_email", v)} />
+        {avail.email && <Toggle label={tx("E-mailadres eerst bevestigen met een code")} checked={data.registration.verify_email} onChange={(v) => set("registration")("verify_email", v)} />}
         <Toggle label={tx("Geboortedatum verplicht")} hint={data.age.enabled ? tx("staat altijd aan: de leeftijdscontrole is actief") : tx("de leeftijdsgrens uit 'Leeftijdscontrole' wordt gebruikt zodra die aan staat")} checked={data.registration.require_birth_date || data.age.enabled} onChange={(v) => set("registration")("require_birth_date", v)} />
         <Toggle label={tx("Telefoonnummer verplicht")} checked={data.registration.require_phone} onChange={(v) => set("registration")("require_phone", v)} />
-        <div className="grid2"><Num label={tx("Bevestigingscode geldig")} suffix={tx("minuten")} min={1} max={60} value={data.registration.code_minutes} onChange={(v) => set("registration")("code_minutes", v)} /></div>
+        {(avail.email || avail.sms) && <div className="grid2"><Num label={tx("Bevestigingscode geldig")} suffix={tx("minuten")} min={1} max={60} value={data.registration.code_minutes} onChange={(v) => set("registration")("code_minutes", v)} /></div>}
         <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>
           {tx("Er wordt")} <strong>{tx("geen account aangemaakt")}</strong> {tx("voordat alle verplichte controles zijn gedaan. Is twee-staps verificatie verplicht voor alle gebruikers, dan kiest de nieuwe gebruiker e-mail of sms en wordt dit direct geactiveerd. Wachtwoordregels, leeftijdsgrens en het woordenfilter gelden ook bij aanmelden.")}
         </p>
-        <h3>{tx("Teksten bevestigingscode")} <small className="muted">{tx("gebruik")} {tx("{code}")} {tx("en")} {tx("{minutes}")}</small></h3>
-        <div className="grid2">
-          {T("registration", "email_subject", tx("E-mail onderwerp"))}
-          {T("registration", "email_body", tx("E-mail bericht"), { rows: 3 })}
-          {T("registration", "sms_body", tx("Sms-bericht"), { rows: 2 })}
-        </div>
+        {(avail.email || avail.sms) && (
+          <>
+            <h3>{tx("Teksten bevestigingscode")} <small className="muted">{tx("gebruik")} {tx("{code}")} {tx("en")} {tx("{minutes}")}</small></h3>
+            <div className="grid2">
+              {avail.email && T("registration", "email_subject", tx("E-mail onderwerp"))}
+              {avail.email && T("registration", "email_body", tx("E-mail bericht"), { rows: 3 })}
+              {avail.sms && T("registration", "sms_body", tx("Sms-bericht"), { rows: 2 })}
+            </div>
+          </>
+        )}
       </Collapsible>
       )}
 

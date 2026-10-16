@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../components/AuthContext";
 import { useChat } from "../../components/Chat";
 import { useModules } from "../../components/Modules";
-import { byId, DASH_LAYOUTS, DASH_THEMES, defaultLayout, suggestedFor, themeLayout, WIDGETS } from "../../components/Widgets";
+import DashboardLibrary from "../../components/DashboardLibrary";
+import { byId, defaultLayout, themeLayout, WIDGETS } from "../../components/Widgets";
 import { api, errorText } from "../../lib/api";
 
 // The user's start page: blocks (charts, content, module items) that he can rearrange, extend and remove.
@@ -14,15 +15,15 @@ export default function DashboardHome() {
   const { user } = useAuth();
   const mods = useModules();
   const chat = useChat();
-  const ctx = useMemo(() => ({ user, mods, chat: chat?.cfg }), [user, mods, chat?.cfg]);
+  const [meta, setMeta] = useState({ theme: "normal", swipe: false });
+  const ctx = useMemo(() => ({ user, mods, chat: chat?.cfg, theme: meta.theme, swipe: meta.swipe }), [user, mods, chat?.cfg, meta]);
   const [state, setState] = useState(null); // {widgets, own, has_default, can_set_default}
   const [editing, setEditing] = useState(false);
   const [msg, setMsg] = useState(null);
-  const [more, setMore] = useState(false); // all blocks, not only the ones that fit the theme
   const [drag, setDrag] = useState(null);
   const timer = useRef(null);
 
-  useEffect(() => { api("/dashboard/layout/").then(setState).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
+  useEffect(() => { api("/dashboard/layout/").then((s) => { setState(s); setMeta({ theme: s.theme || "normal", swipe: !!s.swipe }); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
   if (!state) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
 
   const columns = state.columns || 2;
@@ -42,6 +43,7 @@ export default function DashboardHome() {
     const g = grouped();
     let item;
     for (const c of Object.keys(g)) { const f = g[c].find((w) => w.id === id); if (f) { item = f; g[c] = g[c].filter((w) => w.id !== id); } }
+    if (!item && byId[id]?.ok(ctx)) item = { id, col };  // new block dragged in from the library
     if (!item) return;
     const list = g[col];
     const at = before ? list.findIndex((w) => w.id === before) : -1;
@@ -60,10 +62,6 @@ export default function DashboardHome() {
   const reset = async () => { if ((await confirmDialog(tx("Je dashboard terugzetten naar de standaardindeling?")))) setState(await api("/dashboard/layout/", { method: "DELETE" })); };
   const setDefault = async () => { if ((await confirmDialog(tx("Deze indeling als standaard instellen voor iedereen die nog geen eigen indeling heeft?")))) { await api("/dashboard/layout/default/", { method: "PUT", body: { widgets: layout, columns } }); setMsg({ ok: true, text: tx("Standaardindeling opgeslagen.") }); } };
 
-  const free = WIDGETS.filter((w) => w.ok(ctx) && !layout.some((l) => l.id === w.id));
-  const suggested = suggestedFor(state.theme).map((id) => free.find((w) => w.id === id)).filter(Boolean);
-  const rest = free.filter((w) => !suggested.includes(w));
-  const groups = [...new Set(rest.map((w) => w.group))];
   const applyLayout = (kind) => save(themeLayout(ctx, state.theme, kind).map((w, i) => ({ id: w.id, col: w.size === 2 ? -1 : i % columns })));
 
   const renderCol = (c) => {
@@ -113,34 +111,7 @@ export default function DashboardHome() {
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
-      {editing && (
-        <div className="card dash-panel" style={{ marginBottom: "1rem" }}>
-          <h2>{tx("Indeling")} <span className="badge">{tx(DASH_THEMES[state.theme] || DASH_THEMES.normal)}</span></h2>
-          <p className="muted" style={{ margin: 0 }}>{tx("Kies een kant-en-klare indeling die past bij je stijl. Daarna kun je alles nog aanpassen.")}</p>
-          <div className="row" style={{ justifyContent: "flex-start" }}>
-            {DASH_LAYOUTS.map(([k, l]) => <button key={k} className="btn" onClick={() => applyLayout(k)}>{tx(l)}</button>)}
-          </div>
-          <h2 style={{ marginTop: "1rem" }}>{tx("Aanbevolen blokken")}</h2>
-          {!suggested.length && <p className="muted" style={{ margin: 0 }}>{tx("Alle aanbevolen blokken staan al op je dashboard.")}</p>}
-          <div className="row" style={{ justifyContent: "flex-start" }}>
-            {suggested.map((w) => <button key={w.id} className="btn sm" title={tx(w.desc)} onClick={() => add(w)}>+ {tx(w.title)}</button>)}
-          </div>
-          {rest.length > 0 && (
-            <>
-              <div><button className="btn sm" onClick={() => setMore(!more)}>{more ? tx("Minder blokken tonen") : tx("Meer blokken toevoegen")} ({rest.length})</button></div>
-              {more && groups.map((g) => (
-                <div key={g}>
-                  <strong style={{ fontSize: ".8rem" }} className="muted">{tx(g)}</strong>
-                  <div className="row" style={{ justifyContent: "flex-start", marginTop: ".25rem" }}>
-                    {rest.filter((w) => w.group === g).map((w) => <button key={w.id} className="btn sm" title={tx(w.desc)} onClick={() => add(w)}>+ {tx(w.title)}</button>)}
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-          <small className="muted">{tx("Blokken verschijnen alleen voor modules die aan staan en waar je toegang toe hebt.")}</small>
-        </div>
-      )}
+      {editing && <DashboardLibrary theme={state.theme} ctx={ctx} onDashIds={layout.map((l) => l.id)} onAdd={add} onLayout={applyLayout} />}
 
       {editing && (
         <div className="card" style={{ marginBottom: "1rem" }}>

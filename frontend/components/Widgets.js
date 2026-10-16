@@ -24,7 +24,7 @@ const monthName = (ym) => new Date(`${ym}-01`).toLocaleDateString("nl-NL", { mon
 
 function Welcome({ ctx }) {
   const name = ctx.user.first_name || ctx.user.email.split("@")[0];
-  return <><h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tx("Welkom,")} {name}</h2><p className="muted" style={{ margin: ".35rem 0 0" }}>{tx("Dit is jouw dashboard. Gebruik \"Dashboard aanpassen\" om blokken toe te voegen, te verplaatsen of te verwijderen.")}</p></>;
+  return <><h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tx("Welkom,")} {name}</h2><p className="muted" style={{ margin: ".35rem 0 0" }}>{tx("Dit is jouw dashboard. Kies \"Dashboard aanpassen\" om blokken uit de bibliotheek toe te voegen en te verslepen.")}</p></>;
 }
 
 function Shortcuts({ ctx }) {
@@ -106,6 +106,23 @@ function MatchesBlock() {
   const d = useData("/community/summary/");
   if (!d?.discover) return <Loading d={d === undefined ? d : null} />;
   return <><div className="cards" style={{ margin: 0 }}><div className="stat"><span>{tx("Matches")}</span><strong>{d.discover.matches}</strong></div><div className="stat"><span>{tx("Nieuwe likes")}</span><strong>{d.discover.likes_new}</strong></div><div className="stat"><span>{tx("Favorieten")}</span><strong>{d.discover.favorites}</strong></div></div><Link className="btn sm" style={{ marginTop: ".75rem" }} href="/dashboard/community/discover">{tx("Zoeken & matchen")}</Link></>;
+}
+
+// Start of the search for this profile type: the text and the button follow the theme (Dating / Business / Sporters / …)
+const FIND = {
+  dating: ["Ontmoeten", "Zoek op leeftijd en afstand, of swipe door nieuwe profielen.", "Zoeken & swipen"],
+  business: ["Netwerk", "Zoek zakelijke contacten, functies en banen.", "Netwerk zoeken"],
+  sporters: ["Trainingsmaatjes", "Vind sporters in de buurt die bij jouw niveau passen.", "Sporters zoeken"],
+  webshop: ["Winkels", "Zoek verkopers en winkels op categorie en plaats.", "Winkels zoeken"],
+  normal: ["Leden", "Zoek andere leden op naam, plaats of interesse.", "Leden zoeken"],
+};
+function FindBlock({ ctx }) {
+  const [, text, button] = FIND[ctx.theme] || FIND.normal;
+  return <><p style={{ margin: 0 }}>{tx(text)}</p><Link className="btn sm primary" style={{ marginTop: ".75rem" }} href="/dashboard/community/discover">{tx(button)}</Link></>;
+}
+function SwipeBlock() {
+  const d = useData("/community/summary/");
+  return <><p style={{ margin: 0 }}>{d?.discover?.likes_new > 0 ? tx("{0} nieuwe likes wachten op je. Swipe door nieuwe profielen.", d.discover.likes_new) : tx("Swipe door nieuwe profielen: like, sla over of stuur een kort bericht.")}</p><Link className="btn sm primary" style={{ marginTop: ".75rem" }} href="/dashboard/community/discover?tab=swipe">{tx("Start met swipen")}</Link></>;
 }
 
 function VisitsChart() {
@@ -214,13 +231,15 @@ export const WIDGETS = [
   { id: "chat", group: "Community", title: "Chat", desc: "Ongelezen chatberichten", size: 1, ok: ({ mods }) => on(mods, "chat"), C: ChatBlock },
   { id: "direct", group: "Community", title: "Directe verbinding", desc: "Wie nu rechtstreeks met je verbonden is", size: 1, ok: ({ mods, chat }) => on(mods, "chat") && chat?.method === "webrtc", C: DirectBlock },
   { id: "matches", group: "Community", title: "Matches & likes", desc: "Je matches, nieuwe likes en favorieten", size: 1, ok: ({ mods }) => on(mods, "profiles", "discover"), C: MatchesBlock },
+  { id: "find", group: "Community", title: "Zoeken", desc: "Snel naar de zoekpagina van jouw profieltype", size: 1, ok: ({ mods }) => on(mods, "profiles", "discover"), C: FindBlock },
+  { id: "swipe", group: "Community", title: "Swipen", desc: "Like, sla over of stuur een kort bericht", size: 1, ok: ({ mods, swipe }) => on(mods, "profiles", "discover") && !!swipe, C: SwipeBlock },
   { id: "visits_chart", group: "Community", title: "Profielbezoeken", desc: "Grafiek van de afgelopen 30 dagen", size: 2, ok: ({ mods }) => on(mods, "profiles", "discover"), C: VisitsChart },
   { id: "users_stats", group: "Beheer", title: "Users", desc: "Aantal users, actief en geblokkeerd", size: 2, ok: ({ user }) => lvl(user, "users") >= 1, C: UsersStats },
   { id: "users_chart", group: "Beheer", title: "Nieuwe users per maand", desc: "Grafiek van de laatste 12 maanden", size: 2, ok: ({ user }) => lvl(user, "users") >= 1, C: UsersChart },
   { id: "orders_chart", group: "Beheer", title: "Omzet per dag", desc: "Grafiek van de laatste 30 dagen", size: 2, ok: ({ user, mods }) => on(mods, "orders") && lvl(user, "orders") >= 1, C: OrdersChart },
   { id: "orders_recent", group: "Beheer", title: "Laatste bestellingen", desc: "De nieuwste orders", size: 1, ok: ({ user, mods }) => on(mods, "orders") && lvl(user, "orders") >= 1, C: OrdersRecent },
   { id: "low_stock", group: "Beheer", title: "Lage voorraad", desc: "Producten die bijna op zijn", size: 1, ok: ({ user, mods }) => on(mods, "products") && lvl(user, "products") >= 1, C: LowStock },
-  { id: "media_usage", group: "Beheer", title: "Mediagebruik", desc: "Bestanden lokaal en op S3", size: 1, ok: ({ user, mods }) => on(mods, "media") && lvl(user, "media") >= 1, C: MediaUsage },
+  { id: "media_usage", group: "Beheer", title: "Mediagebruik", desc: "Aantal en grootte van je bestanden", size: 1, ok: ({ user, mods }) => on(mods, "media") && lvl(user, "media") >= 1, C: MediaUsage },
   { id: "sandbox", group: "Beheer", title: "Sandbox", desc: "Staat de testomgeving aan?", size: 1, ok: ({ user, mods }) => on(mods, "sandbox") && lvl(user, "sandbox") >= 1, C: SandboxBlock },
   { id: "modules", group: "Beheer", title: "Modules", desc: "Welke modules aan staan", size: 1, ok: ({ user }) => user.is_staff, C: ModulesBlock },
 ];
@@ -231,11 +250,11 @@ export const byId = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
 export const DASH_THEMES = { normal: "Normaal", dating: "Dating", sporters: "Sporters", business: "Business", webshop: "Webshop" };
 export const DASH_LAYOUTS = [["calm", "Rustig"], ["standard", "Standaard"], ["full", "Uitgebreid"]];
 const THEME_DASH = {
-  normal: { calm: ["welcome", "messages", "profile"], standard: ["welcome", "shortcuts", "messages", "chat", "profile"], full: ["welcome", "notice", "shortcuts", "messages", "chat", "direct", "profile", "matches", "visits_chart"], suggested: ["shortcuts", "chat", "direct", "notice"] },
-  dating: { calm: ["welcome", "matches", "messages", "profile"], standard: ["welcome", "matches", "messages", "visits_chart", "profile", "chat"], full: ["welcome", "notice", "shortcuts", "matches", "messages", "visits_chart", "profile", "chat", "direct"], suggested: ["visits_chart", "direct", "chat", "shortcuts"] },
-  sporters: { calm: ["welcome", "profile", "messages"], standard: ["welcome", "shortcuts", "profile", "messages", "chat", "direct"], full: ["welcome", "notice", "shortcuts", "profile", "messages", "chat", "direct", "matches", "visits_chart"], suggested: ["notice", "direct", "chat", "matches"] },
-  business: { calm: ["welcome", "messages", "profile"], standard: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart"], full: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart", "chat", "direct", "users_stats"], suggested: ["notice", "visits_chart", "direct", "users_stats"] },
-  webshop: { calm: ["welcome", "orders_recent", "low_stock", "messages"], standard: ["welcome", "orders_chart", "orders_recent", "low_stock", "messages", "shortcuts"], full: ["welcome", "notice", "orders_chart", "orders_recent", "low_stock", "media_usage", "messages", "shortcuts", "profile"], suggested: ["orders_chart", "orders_recent", "low_stock", "media_usage"] },
+  normal: { calm: ["welcome", "find", "messages"], standard: ["welcome", "shortcuts", "messages", "chat", "profile"], full: ["welcome", "notice", "shortcuts", "messages", "chat", "direct", "profile", "matches", "visits_chart"], suggested: ["find", "shortcuts", "chat", "direct", "notice"] },
+  dating: { calm: ["welcome", "swipe", "matches"], standard: ["welcome", "swipe", "matches", "messages", "visits_chart", "profile", "chat"], full: ["welcome", "notice", "shortcuts", "matches", "messages", "visits_chart", "profile", "chat", "direct"], suggested: ["find", "visits_chart", "direct", "chat", "shortcuts"] },
+  sporters: { calm: ["welcome", "find", "profile"], standard: ["welcome", "shortcuts", "profile", "messages", "chat", "direct"], full: ["welcome", "notice", "shortcuts", "profile", "messages", "chat", "direct", "matches", "visits_chart"], suggested: ["find", "notice", "direct", "chat", "matches"] },
+  business: { calm: ["welcome", "find", "messages"], standard: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart"], full: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart", "chat", "direct", "users_stats"], suggested: ["find", "notice", "visits_chart", "direct", "users_stats"] },
+  webshop: { calm: ["welcome", "orders_recent", "low_stock"], standard: ["welcome", "orders_chart", "orders_recent", "low_stock", "messages", "shortcuts"], full: ["welcome", "notice", "orders_chart", "orders_recent", "low_stock", "media_usage", "messages", "shortcuts", "profile"], suggested: ["orders_chart", "orders_recent", "low_stock", "media_usage"] },
 };
 const dash = (theme) => THEME_DASH[theme] || THEME_DASH.normal;
 export const suggestedFor = (theme) => dash(theme).suggested;

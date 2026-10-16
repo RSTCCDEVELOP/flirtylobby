@@ -160,6 +160,15 @@ export default function CommunityAdmin() {
           {s.discover.show_visitors && <Num label={tx("Bezoekers bewaren")} hint="dagen" min={1} max={365} value={s.discover.visitors_days} disabled={!can("discover")} onChange={(v) => set("discover", "visitors_days", v)} />}
           <Sw label={tx("Overzicht 'Vonden mij leuk'")} hint={tx("Uit = leden zien alleen wederzijdse matches.")} checked={s.discover.show_likes_received} disabled={!can("discover")} onChange={(v) => set("discover", "show_likes_received", v)} />
           <Sw label={tx("E-mail bij een nieuwe match")} checked={s.discover.match_email} disabled={!can("discover")} onChange={(v) => set("discover", "match_email", v)} />
+          <Sw label={tx("E-mail als iemand je leuk vindt")} hint={tx("Naast de melding in het belletje bovenaan.")} checked={s.discover.like_email} disabled={!can("discover")} onChange={(v) => set("discover", "like_email", v)} />
+          <div className="theme-grid">
+            <label>{tx("Swipen (kaartjes stapel)")}
+              <select value={s.discover.swipe} disabled={!can("discover")} onChange={(e) => set("discover", "swipe", e.target.value)}>
+                <option value="auto">{tx("Automatisch (aan bij het thema Dating)")}</option><option value="on">{tx("Altijd aan")}</option><option value="off">{tx("Uit")}</option>
+              </select>
+            </label>
+            <Num label={tx("Weggeswipete profielen verbergen")} hint="dagen" min={1} max={365} value={s.discover.pass_days} disabled={!can("discover")} onChange={(v) => set("discover", "pass_days", v)} />
+          </div>
           <small className="muted">{tx("Leden doen zelf mee via hun profiel (geboortedatum nodig). Een zoeker ziet alleen profielen die hij mag zien volgens zichtbaarheid, taal en blokkades.")}</small>
         </Collapsible>
       )}

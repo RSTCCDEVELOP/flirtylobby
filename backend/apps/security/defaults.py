@@ -76,7 +76,7 @@ DEFAULTS = {
     },
     "email_verify": {"enabled": False},  # make every user confirm the e-mail address with a code at login
     "twofa": {
-        "enabled": True, "required_for": "none", "allow_email": True, "allow_sms": False, "allow_app": True,
+        "enabled": True, "required_for": "none", "allow_email": True, "allow_sms": False, "allow_app": True, "app_issuer": "",
         "code_minutes": 10, "max_attempts": 5,
         "texts": {
             "nl": {"email_subject": "Je verificatiecode", "email_body": "Je verificatiecode is {code}. Deze is {minutes} minuten geldig. Heb je dit niet aangevraagd? Negeer dit bericht dan.",
@@ -147,7 +147,7 @@ SPEC = {
     "email_verify": {"enabled": "bool"},
     "registration": {"enabled": "bool", "verify_email": "bool", "require_phone": "bool", "require_birth_date": "bool", "code_minutes": ("int", 1, 60)},
     "twofa": {
-        "enabled": "bool", "required_for": ("choice", ["none", "admins", "all"]), "allow_email": "bool", "allow_sms": "bool", "allow_app": "bool",
+        "enabled": "bool", "required_for": ("choice", ["none", "admins", "all"]), "allow_email": "bool", "allow_sms": "bool", "allow_app": "bool", "app_issuer": "text",
         "code_minutes": ("int", 1, 60), "max_attempts": ("int", 1, 10),
     },
 }

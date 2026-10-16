@@ -4,6 +4,7 @@ import { tx } from "../../../../lib/t";
 import { IconChat, IconHeart, IconMail, IconStar } from "../../../../components/Icons";
 import { alertDialog } from "../../../../lib/dialog";
 import { cardFieldsText } from "../../../../components/ProfileFields";
+import Swiper from "../../../../components/Swiper";
 import VerifyBadge from "../../../../components/VerifyBadge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -12,7 +13,7 @@ import { useModules } from "../../../../components/Modules";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 
 const TABS = [
-  ["suggested", "Voor jou"], ["search", "Zoeken"], ["matches", "Matches"], ["liked", "Ik vond leuk"],
+  ["swipe", "Swipen"], ["suggested", "Voor jou"], ["search", "Zoeken"], ["matches", "Matches"], ["liked", "Ik vond leuk"],
   ["likedme", "Vonden mij leuk"], ["favorites", "Favorieten"], ["visitors", "Bezoekers"],
 ];
 const AIMS = { dating: "Daten", relationship: "Relatie", friends: "Vriendschap", chat: "Chatten" };
@@ -50,17 +51,28 @@ function Card({ m, onChange }) {
 export default function Discover() {
   const mods = useModules();
   const [tab, setTab] = useState("suggested");
+  const [pageTitle, setPageTitle] = useState("");
   const [f, setF] = useState(EMPTY);
   const [data, setData] = useState(null);
   const [list, setList] = useState(null);
   const [err, setErr] = useState("");
   const [cfg, setCfg] = useState(null);
   const [pcfg, setPcfg] = useState(null); // profile theme: built-in fields on/off + configurable fields
-  useEffect(() => { api("/community/config/").then((d) => { setCfg(d.discover); setPcfg(d.profile); if (d.discover && !d.discover.suggestions) setTab("search"); }).catch(() => {}); }, []);
+  const [search, setSearch] = useState(null); // per profile type: title + which filters show, swipe deck on/off
+  useEffect(() => {
+    api("/community/config/").then((d) => {
+      setCfg(d.discover); setPcfg(d.profile); setSearch(d.search); setPageTitle(d.search?.title || "");
+      const want = new URLSearchParams(window.location.search).get("tab");
+      if (want) setTab(want);
+      else if (d.discover?.swipe) setTab("swipe");
+      else if (d.discover && !d.discover.suggestions) setTab("search");
+    }).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setErr("");
     try {
+      if (tab === "swipe") return;
       if (tab === "suggested" || tab === "search") {
         let lang = "";
         try { lang = localStorage.getItem("lang") || ""; } catch {}
@@ -74,31 +86,32 @@ export default function Discover() {
 
   if (mods.discover === false) return <p className="muted">{tx("Zoeken & matchen staat uit.")}</p>;
   const on = (b) => pcfg?.builtin?.[b] !== false;
+  const show = (id) => !search?.filters || search.filters.includes(id); // filters that belong to this profile type
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
   return (
     <>
-      <h1>{tx("Zoeken & matchen")}</h1>
+      <h1>{tx(pageTitle || "Zoeken & matchen")}</h1>
       <p className="muted">{tx("Vind andere leden, geef een hartje, en bij wederzijds hartje is het een match.")}</p>
       {data?.locked && <div className="alert" style={{ marginBottom: "1rem" }}>{tx("Zoeken is alleen voor leden die zelf meedoen.")} <Link href="/dashboard/community/profile" style={{ textDecoration: "underline" }}>{tx("Doe mee via je profiel")}</Link>.</div>}
       {data && !data.locked && !data.participating && (
         <div className="alert" style={{ marginBottom: "1rem" }}>{tx("Je doet zelf nog niet mee.")} <Link href="/dashboard/community/profile" style={{ textDecoration: "underline" }}>{tx("Zet je profiel aan en kies \"Zoeken & matchen\"")}</Link> {tx("om gevonden te worden en leuk te kunnen vinden.")}</div>
       )}
       <div className="tabs tabset">
-        {TABS.filter(([k]) => !cfg || (k !== "suggested" || cfg.suggestions) && (k !== "visitors" || cfg.show_visitors) && (k !== "likedme" || cfg.show_likes_received)).map(([k, label]) => <button key={k} className={`btn sm ${tab === k ? "primary" : ""}`} onClick={() => { setTab(k); setList(null); }}>{label}</button>)}
+        {TABS.filter(([k]) => !cfg || (k !== "swipe" || cfg.swipe) && (k !== "suggested" || cfg.suggestions) && (k !== "visitors" || cfg.show_visitors) && (k !== "likedme" || cfg.show_likes_received)).map(([k, label]) => <button key={k} className={`btn sm ${tab === k ? "primary" : ""}`} onClick={() => { setTab(k); setList(null); }}>{label}</button>)}
       </div>
       {tab === "search" && (
         <div className="card" style={{ margin: "1rem 0" }}>
           <div className="theme-grid">
             <label>{tx("Naam of tekst")}<input value={f.q} onChange={set("q")} /></label>
-            {on("gender") && <label>{tx("Geslacht")}<select value={f.gender} onChange={set("gender")}><option value="">{tx("Maakt niet uit")}</option>{Object.entries(GENDER).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>}
-            {on("birth_date") && <label>{tx("Leeftijd van")}<input type="number" min={18} max={99} value={f.age_min} onChange={set("age_min")} /></label>}
-            {on("birth_date") && <label>{tx("Leeftijd tot")}<input type="number" min={18} max={99} value={f.age_max} onChange={set("age_max")} /></label>}
-            {on("city") && <label>{tx("Plaats")}<input value={f.city} onChange={set("city")} /></label>}
-            {on("city") && <label>{tx("Land (code)")}<input value={f.country} maxLength={2} onChange={set("country")} placeholder="NL" /></label>}
-            {on("interests") && <label>{tx("Interesse")}<input value={f.interest} onChange={set("interest")} placeholder={tx("bv. wandelen")} /></label>}
-            {cfg?.distance_enabled && <label>{tx("Binnen")}<select value={f.distance_km} onChange={set("distance_km")}><option value="">{tx("Overal")}</option>{cfg.radii.map((r) => <option key={r} value={r}>{r} {tx("km")}</option>)}</select></label>}
-            <label>{tx("Sorteren")}<select value={f.sort} onChange={set("sort")}><option value="">{tx("Standaard")}</option><option value="active">{tx("Laatst actief")}</option><option value="newest">{tx("Nieuwste")}</option>{cfg?.distance_enabled && <option value="distance">{tx("Dichtstbij")}</option>}</select></label>
-            {on("aim") && <label>{tx("Zoekt")}<select value={f.aim} onChange={set("aim")}><option value="">{tx("Alles")}</option>{Object.entries(AIMS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>}
+            {on("gender") && show("gender") && <label>{tx("Geslacht")}<select value={f.gender} onChange={set("gender")}><option value="">{tx("Maakt niet uit")}</option>{Object.entries(GENDER).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>}
+            {on("birth_date") && show("age") && <label>{tx("Leeftijd van")}<input type="number" min={18} max={99} value={f.age_min} onChange={set("age_min")} /></label>}
+            {on("birth_date") && show("age") && <label>{tx("Leeftijd tot")}<input type="number" min={18} max={99} value={f.age_max} onChange={set("age_max")} /></label>}
+            {on("city") && show("city") && <label>{tx("Plaats")}<input value={f.city} onChange={set("city")} /></label>}
+            {on("city") && show("country") && <label>{tx("Land (code)")}<input value={f.country} maxLength={2} onChange={set("country")} placeholder="NL" /></label>}
+            {on("interests") && show("interest") && <label>{tx("Interesse")}<input value={f.interest} onChange={set("interest")} placeholder={tx("bv. wandelen")} /></label>}
+            {cfg?.distance_enabled && show("distance") && <label>{tx("Binnen")}<select value={f.distance_km} onChange={set("distance_km")}><option value="">{tx("Overal")}</option>{cfg.radii.map((r) => <option key={r} value={r}>{r} {tx("km")}</option>)}</select></label>}
+            {show("sort") && <label>{tx("Sorteren")}<select value={f.sort} onChange={set("sort")}><option value="">{tx("Standaard")}</option><option value="active">{tx("Laatst actief")}</option><option value="newest">{tx("Nieuwste")}</option>{cfg?.distance_enabled && <option value="distance">{tx("Dichtstbij")}</option>}</select></label>}
+            {on("aim") && show("aim") && <label>{tx("Zoekt")}<select value={f.aim} onChange={set("aim")}><option value="">{tx("Alles")}</option>{Object.entries(AIMS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>}
             {(pcfg?.fields || []).filter((x) => x.filter).map((x) => (
               x.type === "checkbox" ? <label key={x.key} className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={f[`f_${x.key}`] === "1"} onChange={(e) => setF({ ...f, [`f_${x.key}`]: e.target.checked ? "1" : "" })} /> {x.label}</label>
               : x.type === "number" ? <label key={x.key}>{x.label}{x.unit && <small className="muted"> ({x.unit})</small>}<span className="row" style={{ flexWrap: "nowrap" }}><input type="number" placeholder="van" value={f[`f_${x.key}_min`] || ""} onChange={(e) => setF({ ...f, [`f_${x.key}_min`]: e.target.value })} /><input type="number" placeholder="tot" value={f[`f_${x.key}_max`] || ""} onChange={(e) => setF({ ...f, [`f_${x.key}_max`]: e.target.value })} /></span></label>
@@ -107,17 +120,18 @@ export default function Discover() {
             ))}
           </div>
           <div className="row" style={{ justifyContent: "flex-start", marginTop: ".75rem" }}>
-            <label className="check"><input type="checkbox" checked={f.online} onChange={set("online")} /> {tx("Nu online")}</label>
-            <label className="check"><input type="checkbox" checked={f.photo} onChange={set("photo")} /> {tx("Met foto")}</label>
+            {show("online") && <label className="check"><input type="checkbox" checked={f.online} onChange={set("online")} /> {tx("Nu online")}</label>}
+            {show("photo") && <label className="check"><input type="checkbox" checked={f.photo} onChange={set("photo")} /> {tx("Met foto")}</label>}
             <button className="btn sm" onClick={() => setF(EMPTY)}>{tx("Wissen")}</button>
           </div>
         </div>
       )}
-      {err && <div className="alert" style={{ margin: "1rem 0" }}>{err}</div>}
-      <div className="product-grid" style={{ marginTop: "1rem" }}>
+      {tab === "swipe" && <Swiper />}
+      {err && tab !== "swipe" && <div className="alert" style={{ margin: "1rem 0" }}>{err}</div>}
+      {tab !== "swipe" && <div className="product-grid" style={{ marginTop: "1rem" }}>
         {(list || []).map((m) => <Card key={m.id} m={m} onChange={load} />)}
-      </div>
-      {list && !list.length && !err && <p className="muted" style={{ marginTop: "1rem" }}>
+      </div>}
+      {tab !== "swipe" && list && !list.length && !err && <p className="muted" style={{ marginTop: "1rem" }}>
         {tab === "suggested" ? tx("Nog geen aanbevelingen. Vul je geboortedatum, geslacht en voorkeuren in op je profiel.") : tx("Niets gevonden.")}
       </p>}
     </>

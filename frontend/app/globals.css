@@ -1022,3 +1022,61 @@ html[data-popup="bold"] .tabs-pro .tab-pro.active .tab-badge, .pw-bold .tabs-pro
 .pw-foot { display: flex; justify-content: flex-end; gap: .5rem; }
 .pw-foot .btn { cursor: default; }
 html[data-popup="header"] .modal > h2:first-child { margin-bottom: 1rem !important; }
+
+.grid2:has(textarea), .theme-grid:has(textarea) { align-items: start; }
+
+/* ── dashboard element library ── */
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .6rem; }
+.lib-item { display: flex; align-items: center; gap: .75rem; padding: .7rem .8rem; border: 1px dashed var(--line); border-radius: 12px; background: var(--bg); cursor: grab; }
+.lib-item:hover { border-color: var(--blue); }
+.lib-item.on { opacity: .6; cursor: default; border-style: solid; }
+.lib-item:active { cursor: grabbing; }
+.lib-ico { flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; color: var(--blue); background: color-mix(in srgb, var(--blue) 14%, transparent); }
+.lib-ico svg { width: 20px; height: 20px; }
+.lib-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.lib-txt small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-item .btn { white-space: nowrap; }
+.dash-drop { border: 2px dashed var(--line); border-radius: 12px; padding: 1.25rem; text-align: center; }
+
+/* ── notifications bell ── */
+.notif { position: relative; display: inline-flex; }
+.notif-btn { position: relative; }
+.notif-pop { position: absolute; right: 0; top: calc(100% + .5rem); width: min(340px, 90vw); z-index: 950; display: flex; flex-direction: column; gap: .35rem; padding: .85rem; max-height: 70vh; overflow-y: auto; }
+.notif-item { display: flex; align-items: center; gap: .6rem; padding: .5rem .55rem; border-radius: 10px; color: var(--text); font-size: .9rem; }
+.notif-item:hover { background: var(--bg); }
+.notif-item.new { background: color-mix(in srgb, var(--blue) 12%, transparent); font-weight: 600; }
+.notif-av { flex: none; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--bg); color: var(--blue); }
+.notif-av img { width: 100%; height: 100%; object-fit: cover; }
+.notif-toast { position: fixed; top: 4.5rem; right: 1rem; z-index: 4500; display: flex; align-items: center; gap: .5rem; max-width: min(360px, 92vw); padding: .75rem 1rem; border-radius: 12px; background: var(--blue); color: #fff; font-weight: 600; box-shadow: var(--shadow); animation: popUp .25s ease both; }
+
+/* ── swipe deck ── */
+.swipe { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1rem; }
+.swipe-stack { position: relative; width: min(420px, 100%); aspect-ratio: 3 / 4.2; touch-action: pan-y; }
+.swipe-card { position: absolute; inset: 0; border-radius: 20px; overflow: hidden; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); cursor: grab; user-select: none; }
+.swipe-card:active { cursor: grabbing; }
+.swipe-card.back { transform: scale(.95) translateY(12px); opacity: .7; cursor: default; }
+.swipe-card img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.swipe-nophoto { display: grid; place-items: center; height: 100%; }
+.swipe-dots { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; gap: 4px; }
+.swipe-dots i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, .45); }
+.swipe-dots i.on { background: #fff; }
+.swipe-info { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: .2rem; padding: 2.5rem 1.1rem 1rem; color: #fff; background: linear-gradient(to top, rgba(0, 0, 0, .78), transparent); }
+.swipe-info strong { font-size: 1.35rem; }
+.swipe-fields { font-size: .8rem; opacity: .9; }
+.swipe-more { align-self: flex-start; margin-top: .3rem; padding: .25rem .7rem; border-radius: 999px; background: rgba(255, 255, 255, .22); color: #fff; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.swipe-stamp { position: absolute; top: 28px; padding: .2rem .8rem; border: 4px solid; border-radius: 8px; font-weight: 800; font-size: 1.6rem; letter-spacing: .06em; pointer-events: none; }
+.swipe-stamp.like { left: 22px; color: #22c55e; transform: rotate(-14deg); }
+.swipe-stamp.pass { right: 22px; color: #ef4444; transform: rotate(14deg); }
+.swipe-likesme { position: absolute; top: 22px; right: 14px; }
+.swipe-actions { display: flex; gap: 1.25rem; align-items: center; }
+.swipe-btn { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line); background: var(--card); cursor: pointer; box-shadow: var(--shadow); transition: transform .12s; }
+.swipe-btn:hover { transform: scale(1.08); }
+.swipe-btn:disabled { opacity: .5; cursor: default; }
+.swipe-btn.pass { color: #ef4444; border-color: #ef4444; }
+.swipe-btn.like { color: #fff; background: var(--blue); border-color: var(--blue); }
+.swipe-btn.msg { width: 50px; height: 50px; color: var(--blue); border-color: var(--blue); }
+.swipe-msg { width: min(420px, 100%); display: flex; flex-direction: column; gap: .6rem; }
+.swipe-hint { text-align: center; max-width: 420px; }
+.swipe-empty { text-align: center; max-width: 420px; display: flex; flex-direction: column; gap: .75rem; align-items: center; }
+.swipe-match { text-align: center; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+.swipe-match-img { width: 160px; height: 160px; border-radius: 50%; object-fit: cover; }

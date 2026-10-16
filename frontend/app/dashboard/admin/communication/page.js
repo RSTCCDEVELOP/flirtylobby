@@ -15,7 +15,7 @@ const purposeLabel = Object.fromEntries(PURPOSES);
 const SECTIONS = [
   { kind: "email_from", title: "Afzender-e-mailadressen", hint: "Adressen waarmee het systeem e-mail mag versturen. Het adres moet bij je e-mailkoppeling (Postmark of SMTP) zijn toegestaan.", valuePlaceholder: "no-reply@jouwdomein.nl", add: "+ Afzender" },
   { kind: "email_reply", title: "Antwoord-e-mailadressen", hint: "Waar antwoorden op systeemmail naartoe gaan (Reply-To).", valuePlaceholder: "support@jouwdomein.nl", add: "+ Antwoordadres" },
-  { kind: "mobile", title: "Mobiele nummers", hint: "Nummers die het systeem mag gebruiken voor sms en contact, met landcode.", valuePlaceholder: "+31612345678", add: "+ Nummer" },
+  { kind: "mobile", title: "Mobiele nummers", hint: "Nummers die het systeem mag gebruiken voor contact, met landcode.", valuePlaceholder: "+31612345678", add: "+ Nummer" },
 ];
 
 export default function Communication() {

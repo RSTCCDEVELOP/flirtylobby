@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from apps.core.modules import module_required
 
 from . import geocode, service
-from .models import Favorite, Like, Profile, ProfileVisit
+from .models import DirectMessage, Favorite, Like, Notification, Pass, Profile, ProfileVisit
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -250,6 +250,7 @@ def like(request, uid=None):
         return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == "DELETE":
         Like.objects.filter(from_user=me, to_user=target).delete()
+        Notification.objects.filter(user=target, kind="like", from_user=me, seen=False).delete()
         return Response({"liked": False, "match": False})
     cfg = service.get()["discover"]
     if cfg["require_to_like"] and not _my_profile(me):
@@ -258,7 +259,35 @@ def like(request, uid=None):
     if not tp or not service.can_view(me, tp):
         return Response(status=status.HTTP_404_NOT_FOUND)
     _, created = Like.objects.get_or_create(from_user=me, to_user=target)
+    Pass.objects.filter(from_user=me, to_user=target).delete()
     match = Like.objects.filter(from_user=target, to_user=me).exists()
+    sent = False
+    msg = str(request.data.get("message") or "").strip()[:140]
+    if msg:  # a short message together with the like (swipe deck)
+        from apps.security.words import find_forbidden
+
+        if find_forbidden(msg):
+            return bad("Je bericht bevat niet toegestane woorden.")
+        if tp.accept_messages and service.module_on("messages"):
+            DirectMessage.objects.create(sender=me, recipient=target, body=msg)
+            sent = True
+    if created:  # tell the other member (a match is told to both)
+        who = service.display_name(me)
+        if match:
+            Notification.objects.create(user=target, kind="match", from_user=me)
+            Notification.objects.create(user=me, kind="match", from_user=target, seen=True)
+            Notification.objects.filter(user=me, kind="like", from_user=target).update(seen=True)
+        else:
+            Notification.objects.create(user=target, kind="like", from_user=me)
+        if sent:
+            Notification.objects.create(user=target, kind="message", from_user=me, text=msg[:200])
+        if not match and cfg.get("like_email"):
+            try:
+                from apps.communication import sending
+
+                sending.send_email(target.email, "Iemand vindt je leuk", f"{who if cfg['show_likes_received'] else 'Iemand'} heeft je profiel leuk gevonden. Open je dashboard om te kijken.", purpose="notifications")
+            except Exception as e:
+                logger.warning("Like mail failed: %s", e)
     if created and match and cfg["match_email"]:  # a new match: tell both
         for a, b in ((me, target), (target, me)):
             try:
@@ -267,7 +296,7 @@ def like(request, uid=None):
                 sending.send_email(a.email, "Het is een match!", f"Jij en {service.display_name(b)} vinden elkaar leuk. Stuur een bericht of start een chat.", purpose="notifications")
             except Exception as e:
                 logger.warning("Match mail failed: %s", e)
-    return Response({"liked": True, "match": match})
+    return Response({"liked": True, "match": match, "message_sent": sent})
 
 
 @api_view(["POST", "DELETE"])
@@ -326,3 +355,79 @@ def counts(me):
     cfg = service.get()["discover"]
     return {"matches": len(matches - hidden), "likes_new": Like.objects.filter(to_user=me, seen=False).exclude(from_user_id__in=hidden).count() if cfg["show_likes_received"] else 0,
             "favorites": len(favs - hidden)}
+
+
+# ── swipe deck (like Tinder): one profile at a time, like / pass / like with a short message ─────────
+def _compatible(mine, p):
+    """Gender and age wishes of both members (only when the member filled them in)."""
+    if not mine:
+        return True
+    a, my_age = age_of(p), age_of(mine)
+    if mine.looking_for_genders and p.gender not in mine.looking_for_genders:
+        return False
+    if p.looking_for_genders and mine.gender not in p.looking_for_genders:
+        return False
+    if a is not None and not mine.age_min <= a <= mine.age_max:
+        return False
+    return not (my_age is not None and not p.age_min <= my_age <= p.age_max)
+
+
+@api_view(["GET"])
+@permission_classes(DISCOVER)
+def deck(request):
+    """The next profiles to swipe: not yet liked, not swiped away recently; people who already liked you come first."""
+    me, cfg = request.user, service.get()["discover"]
+    mine = Profile.objects.filter(user=me).first()
+    if cfg["require_to_search"] and not _my_profile(me):
+        return Response({"cards": [], "locked": True})
+    likes, liked_me, favs, matches = _sets(me)
+    since = timezone.now() - timedelta(days=cfg["pass_days"])
+    passed = set(Pass.objects.filter(from_user=me, created_at__gt=since).values_list("to_user_id", flat=True))
+    lang = request.query_params.get("lang")
+    qs = _base(me).exclude(user_id__in=likes | passed)
+    people = [p for p in qs.order_by("-user__last_seen")[:200] if service.can_view(me, p, lang) and _compatible(mine, p)]
+    people.sort(key=lambda p: (p.user_id not in liked_me, 0))  # stable: keeps the "recently active" order inside each group
+    cards = []
+    for p in people[:12]:
+        photos = [u for ph in p.photos.all() for u, _bl in [service.photo_for(ph, me, p.user_id)] if u][:5]
+        cards.append({**_card(p, me, likes, favs, matches, mine), "photos": photos, "likes_me": p.user_id in liked_me, "bio": (p.bio or "")[:220]})
+    return Response({"cards": cards, "locked": False})
+
+
+@api_view(["POST"])
+@permission_classes(DISCOVER)
+def pass_(request, uid):
+    me = request.user
+    target = User.objects.filter(pk=uid, is_active=True).first()
+    if not target or target.id == me.id:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    Pass.objects.update_or_create(from_user=me, to_user=target, defaults={"created_at": timezone.now()})
+    return Response({"passed": True})
+
+
+# ── notifications: someone liked you, a match, a short message ───────────────────────────────────────
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, module_required("profiles")])
+def notifications(request):
+    me, hidden = request.user, service.hidden_ids(request.user)
+    show_who = service.get()["discover"]["show_likes_received"]
+    rows = list(Notification.objects.filter(user=me).exclude(from_user_id__in=hidden).select_related("from_user")[:30])
+    profs = {p.user_id: p for p in Profile.objects.filter(user_id__in=[n.from_user_id for n in rows if n.from_user_id])}
+    items = []
+    for n in rows:
+        anon = n.kind == "like" and not show_who
+        p = profs.get(n.from_user_id)
+        items.append({"id": n.id, "kind": n.kind, "seen": n.seen, "at": n.created_at, "text": n.text,
+                      "from": None if anon or not n.from_user else {"id": n.from_user_id, "name": service.display_name(n.from_user), "slug": p.slug if p else None, "photo": service.photo_url(n.from_user, me)}})
+    return Response({"unseen": Notification.objects.filter(user=me, seen=False).exclude(from_user_id__in=hidden).count(), "items": items})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, module_required("profiles")])
+def notifications_seen(request):
+    qs = Notification.objects.filter(user=request.user, seen=False)
+    ids = request.data.get("ids")
+    if isinstance(ids, list):
+        qs = qs.filter(pk__in=[i for i in ids if isinstance(i, int)])
+    qs.update(seen=True)
+    return Response({"ok": True})

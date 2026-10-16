@@ -64,6 +64,8 @@ export default function Media() {
   const rename = async (i) => { const name = (await promptDialog(tx("Nieuwe naam"), i.name)); if (name && name !== i.name) run("rename", () => api(`/media/${i.id}/`, { method: "PATCH", body: { name } })); };
   const copy = (url) => navigator.clipboard?.writeText(url.startsWith("http") ? url : mediaUrl(url));
 
+  // S3 only exists for the system when it is linked and on (Admin -> API keys); otherwise nothing about S3 is shown
+  const s3On = data.s3_available || data.items.some((i) => i.storage === "s3");
   const s3Hint = data.s3_available ? "" : tx("Koppel eerst S3 bij Admin → API keys.");
   const sel = selected.length;
 
@@ -72,7 +74,7 @@ export default function Media() {
       <div className="page-head">
         <div>
           <h1>{tx("Media")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{tx("Alle afbeeldingen en video's. Elk bestand staat op één plek: lokaal of op S3.")} {s3Hint}</p>
+          <p className="muted" style={{ margin: 0 }}>{s3On ? tx("Alle afbeeldingen en video's. Elk bestand staat op één plek: lokaal of op S3.") : tx("Alle afbeeldingen en video's van de website.")}</p>
         </div>
         <div className="row">
           <input ref={input} type="file" accept="image/*,video/*" multiple hidden onChange={upload} />
@@ -87,14 +89,16 @@ export default function Media() {
         <select style={{ width: "auto" }} value={filter.kind} onChange={(e) => setFilter({ ...filter, kind: e.target.value })}>
           <option value="">{tx("Alles")}</option><option value="image">{tx("Afbeeldingen")}</option><option value="video">{tx("Video's")}</option>
         </select>
-        <select style={{ width: "auto" }} value={filter.storage} onChange={(e) => setFilter({ ...filter, storage: e.target.value })}>
-          <option value="">{tx("Overal")}</option><option value="local">{tx("Lokaal")}</option><option value="s3">S3</option>
-        </select>
+        {s3On && (
+          <select style={{ width: "auto" }} value={filter.storage} onChange={(e) => setFilter({ ...filter, storage: e.target.value })}>
+            <option value="">{tx("Overal")}</option><option value="local">{tx("Lokaal")}</option><option value="s3">S3</option>
+          </select>
+        )}
         <label className="check"><input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? [] : items.map((i) => i.id))} /> {tx("Alles selecteren")}</label>
         <span className="media-actions">
           <span className="muted">{tx("{0} geselecteerd", sel)}</span>
-          <button className="btn sm" disabled={L < 2 || !sel || !data.s3_available || !!busy} title={s3Hint} onClick={() => move(selected, "s3")}>{tx("Naar S3")}</button>
-          <button className="btn sm" disabled={L < 2 || !sel || !!busy} onClick={() => move(selected, "local")}>{tx("Naar lokaal")}</button>
+          {s3On && <button className="btn sm" disabled={L < 2 || !sel || !data.s3_available || !!busy} title={s3Hint} onClick={() => move(selected, "s3")}>{tx("Naar S3")}</button>}
+          {s3On && <button className="btn sm" disabled={L < 2 || !sel || !!busy} onClick={() => move(selected, "local")}>{tx("Naar lokaal")}</button>}
           <button className="btn sm danger" disabled={L < 3 || !sel || !!busy} onClick={() => remove(selected)}>{tx("Verwijderen")}</button>
         </span>
       </div>
@@ -109,15 +113,15 @@ export default function Media() {
             </div>
             <strong title={i.name}>{i.name}</strong>
             <span className="media-meta">
-              <span className={`badge ${i.storage === "s3" ? "ok" : "off"}`} style={i.storage === "s3" ? {} : { background: "var(--bg)", color: "var(--muted)" }}>{i.storage === "s3" ? "S3" : tx("Lokaal")}</span>
+              {s3On && <span className={`badge ${i.storage === "s3" ? "ok" : "off"}`} style={i.storage === "s3" ? {} : { background: "var(--bg)", color: "var(--muted)" }}>{i.storage === "s3" ? "S3" : tx("Lokaal")}</span>}
               <span className="muted">{i.kind === "video" ? tx("Video") : tx("Afbeelding")} · {fmt(i.size)}</span>
             </span>
             {i.used_in.length > 0 && <small className="muted" title={i.used_in.join(", ")}>{tx("In gebruik:")} {i.used_in[0]}{i.used_in.length > 1 ? ` +${i.used_in.length - 1}` : ""}</small>}
             <span className="media-card-actions">
               <button className="btn sm" onClick={() => copy(i.url)}>{tx("Kopieer URL")}</button>
               {L >= 2 && <button className="btn sm" onClick={() => rename(i)}>{tx("Hernoem")}</button>}
-              <button className="btn sm" disabled={L < 2 || !!busy || (i.storage === "local" && !data.s3_available)} title={i.storage === "local" ? s3Hint : ""}
-                onClick={() => move([i.id], i.storage === "local" ? "s3" : "local")}>{i.storage === "local" ? tx("Naar S3") : tx("Naar lokaal")}</button>
+              {s3On && <button className="btn sm" disabled={L < 2 || !!busy || (i.storage === "local" && !data.s3_available)} title={i.storage === "local" ? s3Hint : ""}
+                onClick={() => move([i.id], i.storage === "local" ? "s3" : "local")}>{i.storage === "local" ? tx("Naar S3") : tx("Naar lokaal")}</button>}
               {L >= 3 && <button className="btn sm danger" onClick={() => remove([i.id])}>{tx("Verwijder")}</button>}
             </span>
           </div>

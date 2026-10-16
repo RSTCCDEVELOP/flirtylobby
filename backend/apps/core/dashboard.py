@@ -26,6 +26,15 @@ def _theme():
         return "normal"
 
 
+def _swipe():
+    try:
+        from apps.social.views import swipe_on
+
+        return bool(swipe_on())
+    except Exception:
+        return False
+
+
 def _cols(value, fallback=2):
     try:
         return min(4, max(1, int(value)))
@@ -59,7 +68,7 @@ def layout(request):
         own = None
     default = DashboardLayout.objects.filter(user=None).first()
     chosen = own or default
-    return Response({"widgets": chosen.widgets if chosen else None, "columns": chosen.columns if chosen else 2, "own": own is not None, "has_default": default is not None, "can_set_default": request.user.is_staff, "theme": _theme()})
+    return Response({"widgets": chosen.widgets if chosen else None, "columns": chosen.columns if chosen else 2, "own": own is not None, "has_default": default is not None, "can_set_default": request.user.is_staff, "theme": _theme(), "swipe": _swipe()})
 
 
 @api_view(["PUT", "DELETE"])
@@ -128,8 +137,18 @@ def stats(request):
             return deny
         from apps.medialib.models import MediaItem
 
-        parts = [{"label": f"{'Afbeeldingen' if k == 'image' else 'Video\'s'} · {'S3' if s == 's3' else 'lokaal'}", "value": n, "bytes": b or 0}
-                 for k, s, n, b in ((r["kind"], r["storage"], r["n"], r["b"]) for r in MediaItem.objects.values("kind", "storage").annotate(n=Count("id"), b=Sum("size")))]
+        from apps.medialib import s3
+
+        rows = list(MediaItem.objects.values("kind", "storage").annotate(n=Count("id"), b=Sum("size")))
+        with_s3 = s3.available() or any(r["storage"] == "s3" for r in rows)  # no S3 linked: no mention of local/S3
+        parts = [{"label": f"{'Afbeeldingen' if r['kind'] == 'image' else 'Video\'s'}" + (f" · {'S3' if r['storage'] == 's3' else 'lokaal'}" if with_s3 else ""), "value": r["n"], "bytes": r["b"] or 0}
+                 for r in rows]
+        if not with_s3:  # merge image/video rows of the same kind
+            merged = {}
+            for p in parts:
+                m = merged.setdefault(p["label"], {"label": p["label"], "value": 0, "bytes": 0})
+                m["value"] += p["value"]; m["bytes"] += p["bytes"]
+            parts = list(merged.values())
         return Response({"parts": parts, "total": sum(p["value"] for p in parts), "bytes": sum(p["bytes"] for p in parts)})
 
     if kind == "orders_recent":
