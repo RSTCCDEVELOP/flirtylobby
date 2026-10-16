@@ -7,13 +7,14 @@ WORKDIR /app/backend
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY . .
 
-RUN chmod +x /app/backend/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8000
 
-ENTRYPOINT ["/app/backend/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Default development command; production Compose can override CMD
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
