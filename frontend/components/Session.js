@@ -16,11 +16,17 @@ export function SessionProvider({ children }) {
 
   useEffect(() => {
     try { setEditModeState(localStorage.getItem("editMode") === "1"); } catch {}
-    if (!getToken()) return setReady(true);
-    api("/auth/me/")
-      .then(setUser)
-      .catch(() => clearToken())
-      .finally(() => setReady(true));
+    let alive = true;
+    const load = () => {
+      if (!getToken()) { setUser(null); return setReady(true); }
+      api("/auth/me/")
+        .then((u) => alive && setUser(u))
+        .catch(() => { clearToken(); })
+        .finally(() => alive && setReady(true));
+    };
+    load();
+    window.addEventListener("token-changed", load); // after logging in or out (no page reload needed)
+    return () => { alive = false; window.removeEventListener("token-changed", load); };
   }, []);
 
   const editModule = useModule("edit_mode");

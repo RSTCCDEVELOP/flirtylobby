@@ -1,7 +1,7 @@
 "use client";
 
 import { tx } from "../../../../lib/t";
-import { IconCheck } from "../../../../components/Icons";
+import { IconCheck, IconRefresh } from "../../../../components/Icons";
 import { confirmDialog, promptDialog } from "../../../../lib/dialog";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import { useChat } from "../../../../components/Chat";
 import DirectConnection from "../../../../components/DirectConnection";
 import { api, errorText } from "../../../../lib/api";
 
-function Invite({ room, open, onOpen, onClose, onDisconnect }) {
+function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew }) {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/direct/${room.token}`;
@@ -31,8 +31,10 @@ function Invite({ room, open, onOpen, onClose, onDisconnect }) {
           <div className="row" style={{ justifyContent: "flex-start", flexWrap: "wrap" }}>
             <button className="btn" onClick={copy}>{copied ? <>{tx("Gekopieerd")} <IconCheck /></> : tx("Link kopiëren")}</button>
             {typeof navigator !== "undefined" && navigator.share && <button className="btn" onClick={share}>{tx("Delen…")}</button>}
-            <button className={`btn ${open ? "" : "primary"}`} onClick={onOpen}>{open ? tx("Sluiten") : tx("Openen")}</button>
-            {room.guest_name && <button className="btn" onClick={onDisconnect}>{tx("Verbreek verbinding")}</button>}
+            {room.guest_name && <button className="btn danger" onClick={onDisconnect}>{tx("Verbreek verbinding")}</button>}
+            {online && !open && <button className="btn primary" onClick={onChat}>{tx("Start chat")}</button>}
+            <button className={`btn ${open || online ? "" : "primary"}`} onClick={onOpen}>{open ? tx("Sluiten") : tx("Openen")}</button>
+            <button className="btn" onClick={onRenew} title={tx("Maakt een nieuwe link en QR-code; de oude werkt dan niet meer")}>{tx("Nieuwe code")}</button>
             <button className="btn danger" onClick={onClose}>{tx("Uitnodiging intrekken")}</button>
           </div>
         </div>
@@ -46,6 +48,10 @@ export default function Direct() {
   const [rooms, setRooms] = useState(null);
   const [open, setOpen] = useState(null); // {token, info}
   const [error, setError] = useState("");
+  const [view, setView] = useState("popup"); // where "Start chat" opens the connection: popup (bottom right) or on this page
+  const [mini, setMini] = useState(false); // popup folded to a bar (the connection stays)
+  useEffect(() => { try { setView(localStorage.getItem("directView") === "page" ? "page" : "popup"); } catch {} }, []);
+  const pickView = (v) => { setView(v); try { localStorage.setItem("directView", v); } catch {} };
   const load = useCallback(() => api("/direct/rooms/").then(setRooms).catch((e) => setError(errorText(e))), []);
   useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t); }, [load]);
 
@@ -63,15 +69,24 @@ export default function Direct() {
     const t = new URLSearchParams(window.location.search).get("room");
     if (t) api(`/direct/${t}/`).then((info) => setOpen({ token: t, info })).catch(() => {});
   }, []);
-  const disconnect = async (r) => {
-    if (!(await confirmDialog(tx("De verbinding met {0} verbreken? De link blijft werken voor iemand anders.", r.guest_name), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken"), danger: true }))) return;
-    await api(`/direct/rooms/${r.token}/disconnect/`, { method: "POST" }).catch(() => {});
-    if (open?.token === r.token) setOpen(null);
-    load();
+  // new code: the old link and QR stop working, a fresh invitation takes its place
+  const renew = async (r) => {
+    setError("");
+    try {
+      await api(`/direct/rooms/${r.token}/`, { method: "DELETE" });
+      if (open?.token === r.token) setOpen(null);
+      setRooms(await api("/direct/rooms/", { method: "POST" }));
+    } catch (e) { setError(errorText(e)); load(); }
   };
-  const toggle = async (r) => {
+  // first end the connection, then a new code is made so a new connection can be set up
+  const disconnect = async (r) => {
+    if (!(await confirmDialog(tx("De verbinding met {0} verbreken? Daarna maken we een nieuwe code aan, zodat je opnieuw verbinding kunt maken.", r.guest_name), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken en nieuwe code"), danger: true }))) return;
+    await api(`/direct/rooms/${r.token}/disconnect/`, { method: "POST" }).catch(() => {});
+    await renew(r);
+  };
+  const toggle = async (r, mode = "page") => {
     if (open?.token === r.token) return setOpen(null);
-    try { setOpen({ token: r.token, info: await api(`/direct/${r.token}/`) }); } catch (e) { setError(errorText(e)); }
+    try { setOpen({ token: r.token, mode, info: await api(`/direct/${r.token}/`) }); setMini(false); } catch (e) { setError(errorText(e)); }
   };
 
   if (chat?.cfg && chat.cfg.method !== "webrtc") return <p className="muted">{tx("Directe verbinding staat uit. Een superadmin kan dit aanzetten bij Admin → Community → Chat.")}</p>;
@@ -79,13 +94,33 @@ export default function Direct() {
     <>
       <div className="page-head">
         <h1>{tx("Directe verbinding")}</h1>
-        <button className="btn primary" onClick={create}>{tx("+ Nieuwe uitnodiging")}</button>
+        <div className="row">
+          <label className="row" style={{ gap: ".5rem", flexWrap: "nowrap", fontWeight: 600 }}>{tx("Chat openen als")}
+            <select style={{ width: "auto" }} value={view} onChange={(e) => pickView(e.target.value)}><option value="popup">{tx("Popup")}</option><option value="page">{tx("Op de pagina")}</option></select>
+          </label>
+          <button className="btn" onClick={load} title={tx("Verversen")}><IconRefresh /> {tx("Verversen")}</button>
+          <button className="btn primary" onClick={create}>{tx("+ Nieuwe uitnodiging")}</button>
+        </div>
       </div>
       <p className="muted" style={{ marginTop: 0 }}>{tx("Maak een link of QR-code en stuur die naar iemand. Zodra de ander de link opent, zie je hier dat jullie verbonden zijn en kun je rechtstreeks chatten, foto's delen en videobellen. De ander heeft geen account nodig.")}</p>
       {error && <div className="alert">{error}</div>}
       {rooms && !rooms.length && <div className="card"><p className="muted" style={{ margin: 0 }}>{tx("Je hebt nog geen open uitnodigingen.")}</p></div>}
-      {(rooms || []).map((r) => <Invite key={r.token} room={r} open={open?.token === r.token} onOpen={() => toggle(r)} onClose={() => close(r)} onDisconnect={() => disconnect(r)} />)}
-      {open && (
+      {(rooms || []).map((r) => <Invite key={r.token} room={r} open={open?.token === r.token} onOpen={() => toggle(r, "page")} onChat={() => toggle(r, view)} onClose={() => close(r)} onDisconnect={() => disconnect(r)} onRenew={() => renew(r)} />)}
+      {open && open.mode === "popup" && (
+        <div className={`direct-pop card ${mini ? "mini" : ""}`}>
+          <div className="chat-pop-head">
+            <strong>{tx("Chat met {0}", open.info?.guest_name || rooms?.find((x) => x.token === open.token)?.guest_name || tx("de ander"))}</strong>
+            <span className="row" style={{ gap: ".3rem", flexWrap: "nowrap" }}>
+              <button className="btn sm" onClick={() => setMini(!mini)} aria-label={mini ? tx("Uitklappen") : tx("Inklappen")}>{mini ? "▴" : "▾"}</button>
+              <button className="btn sm" onClick={() => setOpen(null)} aria-label={tx("Sluiten")}>✕</button>
+            </span>
+          </div>
+          <div className="direct-pop-body" hidden={mini}>
+            <DirectConnection key={open.token} token={open.token} role="owner" info={open.info} onClosed={() => { setOpen(null); load(); }} />
+          </div>
+        </div>
+      )}
+      {open && open.mode !== "popup" && (
         <Collapsible id="direct-live" title={tx("Verbinding")} defaultOpen>
           <DirectConnection key={open.token} token={open.token} role="owner" info={open.info} onClosed={() => { setOpen(null); load(); }} />
         </Collapsible>

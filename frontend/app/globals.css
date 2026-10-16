@@ -1099,3 +1099,8 @@ html[data-popup="header"] .modal > h2:first-child { margin-bottom: 1rem !importa
 .bk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .5rem .75rem; }
 .bk-item { align-items: flex-start !important; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
 .bk-item input { margin-top: .25rem; }
+
+/* ── direct connection as a popup ── */
+.direct-pop { position: fixed; right: 1rem; bottom: 1rem; z-index: 1150; width: min(420px, calc(100vw - 2rem)); max-height: 82vh; padding: 0; display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow); }
+.direct-pop-body { padding: .75rem; overflow-y: auto; }
+.direct-pop.mini { width: min(300px, calc(100vw - 2rem)); }

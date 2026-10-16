@@ -2065,5 +2065,16 @@
   "Logo's en huisstijlafbeeldingen": "标志和品牌图片",
   "Logo, donkere logo, favicon, app-icoon, deelafbeelding en homepagefoto's (de bestanden zelf).": "标志、深色标志、网站图标、应用图标、分享图片和首页照片（文件本身）。",
   "Afbeeldingen van pagina's en SEO": "页面和 SEO 的图片",
-  "Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.": "页面和 SEO 使用的媒体库背景与分享图片。"
+  "Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.": "页面和 SEO 使用的媒体库背景与分享图片。",
+  "Start chat": "开始聊天",
+  "Chat openen als": "聊天打开方式",
+  "Popup": "弹窗",
+  "Op de pagina": "在页面上",
+  "Chat met {0}": "与 {0} 聊天",
+  "Uitklappen": "展开",
+  "Inklappen": "折叠",
+  "Nieuwe code": "新代码",
+  "Maakt een nieuwe link en QR-code; de oude werkt dan niet meer": "生成新链接和二维码；旧的将失效",
+  "De verbinding met {0} verbreken? Daarna maken we een nieuwe code aan, zodat je opnieuw verbinding kunt maken.": "断开与 {0} 的连接？之后会生成新代码，你可以重新连接。",
+  "Verbreken en nieuwe code": "断开并生成新代码"
 }

@@ -2065,5 +2065,16 @@
   "Logo's en huisstijlafbeeldingen": "الشعارات وصور الهوية",
   "Logo, donkere logo, favicon, app-icoon, deelafbeelding en homepagefoto's (de bestanden zelf).": "الشعار والشعار الداكن وأيقونة الموقع وأيقونة التطبيق وصورة المشاركة وصور الصفحة الرئيسية (الملفات نفسها).",
   "Afbeeldingen van pagina's en SEO": "صور الصفحات وSEO",
-  "Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.": "الخلفيات وصور المشاركة من مكتبة الوسائط التي تستخدمها الصفحات وSEO."
+  "Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.": "الخلفيات وصور المشاركة من مكتبة الوسائط التي تستخدمها الصفحات وSEO.",
+  "Start chat": "بدء الدردشة",
+  "Chat openen als": "فتح الدردشة كـ",
+  "Popup": "نافذة منبثقة",
+  "Op de pagina": "على الصفحة",
+  "Chat met {0}": "دردشة مع {0}",
+  "Uitklappen": "توسيع",
+  "Inklappen": "طيّ",
+  "Nieuwe code": "رمز جديد",
+  "Maakt een nieuwe link en QR-code; de oude werkt dan niet meer": "ينشئ رابطًا ورمز QR جديدين؛ ويتوقف القديم عن العمل",
+  "De verbinding met {0} verbreken? Daarna maken we een nieuwe code aan, zodat je opnieuw verbinding kunt maken.": "قطع الاتصال بـ {0}؟ بعدها ننشئ رمزًا جديدًا لتتمكن من الاتصال مجددًا.",
+  "Verbreken en nieuwe code": "قطع الاتصال ورمز جديد"
 }

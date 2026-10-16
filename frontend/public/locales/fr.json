@@ -2065,5 +2065,16 @@
   "Logo's en huisstijlafbeeldingen": "Logos et images de marque",
   "Logo, donkere logo, favicon, app-icoon, deelafbeelding en homepagefoto's (de bestanden zelf).": "Logo, logo sombre, favicon, icône d’app, image de partage et photos d’accueil (les fichiers eux-mêmes).",
   "Afbeeldingen van pagina's en SEO": "Images des pages et du SEO",
-  "Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.": "Arrière-plans et images de partage de la médiathèque utilisés par les pages et le SEO."
+  "Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.": "Arrière-plans et images de partage de la médiathèque utilisés par les pages et le SEO.",
+  "Start chat": "Démarrer le chat",
+  "Chat openen als": "Ouvrir le chat en",
+  "Popup": "Pop-up",
+  "Op de pagina": "Sur la page",
+  "Chat met {0}": "Chat avec {0}",
+  "Uitklappen": "Déplier",
+  "Inklappen": "Replier",
+  "Nieuwe code": "Nouveau code",
+  "Maakt een nieuwe link en QR-code; de oude werkt dan niet meer": "Crée un nouveau lien et QR code ; l’ancien ne fonctionne plus",
+  "De verbinding met {0} verbreken? Daarna maken we een nieuwe code aan, zodat je opnieuw verbinding kunt maken.": "Couper la connexion avec {0} ? Nous créons ensuite un nouveau code pour vous reconnecter.",
+  "Verbreken en nieuwe code": "Couper et nouveau code"
 }

@@ -18,8 +18,10 @@ const getBase = () => (BASE_CACHE.v ??= base());
 export const mediaUrl = (path) => (path?.startsWith("http") ? path : `${getBase()}${path}`);
 
 export const getToken = () => (typeof window === "undefined" ? null : localStorage.getItem("token"));
-export const setToken = (t) => localStorage.setItem("token", t);
-export const clearToken = () => localStorage.removeItem("token");
+// Logging in or out tells the rest of the app ("token-changed"), so chat, notifications and edit mode follow without a page reload
+const announce = () => { try { window.dispatchEvent(new Event("token-changed")); } catch {} };
+export const setToken = (t) => { localStorage.setItem("token", t); announce(); };
+export const clearToken = () => { localStorage.removeItem("token"); announce(); };
 
 export class ApiError extends Error {
   constructor(status, data) {
