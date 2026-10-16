@@ -2279,5 +2279,6 @@
   "API-koppelingen importeren": "导入 API 连接",
   "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "所有连接及其密钥将保存在一个文件中，并用您现在设置的密码保护。没有该密码，文件无法读取。",
   "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "选择导出文件并输入密码。将创建新的连接，同名密钥的现有连接将被更新。",
-  "Exportbestand": "导出文件"
+  "Exportbestand": "导出文件",
+  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "此连接已不存在；列表已刷新。请重试。"
 }

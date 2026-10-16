@@ -37,7 +37,11 @@ export default function Integrations() {
   async function act(id, fn) {
     setBusy(id);
     setError("");
-    try { await fn(); await load(); } catch (e) { setError(errorText(e)); }
+    try { await fn(); await load(); }
+    catch (e) {
+      // the link was changed or removed elsewhere (another tab, an import): show the current list instead of a dead button
+      if (e.status === 404) { await load(); setError(tx("Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.")); } else setError(errorText(e));
+    }
     setBusy(null);
   }
 
@@ -97,6 +101,7 @@ export default function Integrations() {
       setModal(null);
       load();
     } catch (err) {
+      if (err.status === 404) { setModal(null); await load(); setError(tx("Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.")); return; }
       setModal({ ...modal, error: errorText(err) });
     }
   }

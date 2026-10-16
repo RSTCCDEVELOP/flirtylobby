@@ -2279,5 +2279,6 @@
   "API-koppelingen importeren": "API-Verbindungen importieren",
   "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "Alle Verbindungen samt Schlüsseln kommen in eine Datei, geschützt mit einem Passwort, das Sie jetzt wählen. Ohne dieses Passwort ist die Datei unlesbar.",
   "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "Wählen Sie die Exportdatei und geben Sie das Passwort ein. Neue Verbindungen werden angelegt, bestehende mit gleichem Schlüsselnamen aktualisiert.",
-  "Exportbestand": "Exportdatei"
+  "Exportbestand": "Exportdatei",
+  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "Diese Verbindung existiert nicht mehr; die Liste wurde aktualisiert. Versuchen Sie es erneut."
 }

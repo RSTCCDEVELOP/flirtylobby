@@ -2279,5 +2279,6 @@
   "API-koppelingen importeren": "استيراد روابط API",
   "Alle koppelingen inclusief hun sleutels gaan in één bestand, beveiligd met een wachtwoord dat je nu kiest. Zonder dat wachtwoord is het bestand onleesbaar.": "تُحفظ كل الروابط مع مفاتيحها في ملف واحد محمي بكلمة مرور تختارها الآن. بدونها لا يمكن قراءة الملف.",
   "Kies het exportbestand en vul het wachtwoord in. Nieuwe koppelingen worden aangemaakt, bestaande met dezelfde sleutelnaam worden bijgewerkt.": "اختر ملف التصدير وأدخل كلمة المرور. تُنشأ الروابط الجديدة وتُحدَّث الموجودة بالاسم نفسه.",
-  "Exportbestand": "ملف التصدير"
+  "Exportbestand": "ملف التصدير",
+  "Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.": "هذا الرابط لم يعد موجودًا؛ تم تحديث القائمة. حاول مرة أخرى."
 }
