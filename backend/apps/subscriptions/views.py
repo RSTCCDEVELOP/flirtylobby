@@ -8,7 +8,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from apps.accounts.permissions import has_level, has_level_for
+from apps.accounts.permissions import has_level, has_level_any, has_level_for
 from apps.core.modules import module_required
 from apps.shop.service import unique_slug
 
@@ -197,8 +197,23 @@ def settings_admin(request):
     return Response(service.settings())
 
 
+def _either_module():
+    """The donation screens use the same option lists, so one of the two modules being on is enough."""
+    from rest_framework.permissions import BasePermission
+
+    class _Either(BasePermission):
+        message = "Deze module is uitgeschakeld."
+
+        def has_permission(self, request, view):
+            from apps.core import modules
+
+            return modules.enabled("subscriptions") or modules.enabled("donations")
+
+    return _Either
+
+
 @api_view(["GET"])
-@permission_classes([has_level("subscriptions", "use"), module_required("subscriptions")])
+@permission_classes([has_level_any(("subscriptions", "use"), ("donations", "use")), _either_module()])
 def options(request):
     from apps.pages.models import Page
     from apps.shop.models import Product

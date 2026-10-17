@@ -25,7 +25,7 @@ export default function DonationsAdmin() {
 
   const loadCamps = useCallback(() => api("/subscriptions/admin/campaigns/").then(setCamps).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   const loadRec = useCallback(() => api(`/subscriptions/admin/donations/?campaign=${filter.campaign}&status=${filter.status}`).then(setRec).catch((e) => setMsg({ ok: false, text: errorText(e) })), [filter]);
-  useEffect(() => { loadCamps(); api("/subscriptions/admin/options/").then(setOpts).catch(() => {}); }, [loadCamps]);
+  useEffect(() => { loadCamps(); api("/subscriptions/admin/options/").then(setOpts).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, [loadCamps]);
   useEffect(() => { loadRec(); }, [loadRec]);
 
   async function save(e) {
@@ -41,7 +41,7 @@ export default function DonationsAdmin() {
   const remove = async (c) => { if (await confirmDialog(tx("Actie \"{0}\" verwijderen?", c.name), { danger: true })) { try { await api(`/subscriptions/admin/campaigns/${c.id}/`, { method: "DELETE" }); loadCamps(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } } };
   const toggle = async (c) => { await api(`/subscriptions/admin/campaigns/${c.id}/`, { method: "PATCH", body: { active: !c.active } }); loadCamps(); };
 
-  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;  // an error is shown instead of waiting forever
   const cur = opts.currency || "EUR";
   const set = (k) => (e) => setModal({ ...modal, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
