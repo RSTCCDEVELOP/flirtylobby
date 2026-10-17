@@ -283,7 +283,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
           <div className="direct-chat card" hidden={tab !== "chat"}>
             <div className="chat-msgs" ref={box} style={{ minHeight: 220, maxHeight: 420, overflow: "auto", display: "flex", flexDirection: "column", gap: ".4rem" }}>
               {!texts.length && <p className="muted" style={{ margin: "auto" }}>{canWrite ? tx("Zeg hallo") : tx("Je kunt schrijven zodra de ander online is.")}</p>}
-              {texts.map((m) => <div key={m.id} className={`bubble ${m.me ? "me" : ""}`}><span>{m.body}</span></div>)}
+              {texts.map((m) => <div key={m.id} className={`bubble gbubble ${m.me ? "me" : ""}`} data-g={(m.me ? meG : otherG) || undefined} data-dark={!m.me && meG && meG === otherG ? "1" : undefined}><span>{m.body}</span></div>)}
             </div>
             <div className="chat-quick">
               {QUICK.map((q) => <button key={q} type="button" className="chip" disabled={!canWrite} onClick={() => sendQuick(tx(q))}>{tx(q)}</button>)}

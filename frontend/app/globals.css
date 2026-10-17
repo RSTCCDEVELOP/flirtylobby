@@ -1482,3 +1482,8 @@ html[data-chat-pos="center"] .direct-pop { left: 50%; top: 50%; right: auto; bot
 .direct-status strong { font-weight: 600; }
 .direct-status small { font-size: .75rem; }
 .direct-status .btn { padding: .2rem .6rem; font-size: .8rem; min-height: 0; }
+
+/* chat lines in the colour of the gender; you are always the normal colour, the other is darker when you are the same gender */
+.bubble.gbubble[data-g] { background: color-mix(in srgb, var(--gc) 85%, #000 0%); color: #fff; }
+.bubble.gbubble[data-g="x"] { color: #1f2937; }
+.bubble.gbubble[data-g][data-dark] { background: color-mix(in srgb, var(--gc) 55%, #000); color: #fff; }
