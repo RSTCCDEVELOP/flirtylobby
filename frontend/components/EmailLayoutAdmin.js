@@ -141,8 +141,8 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
         <label>{tx("Voettekst onder elk bericht")}<textarea rows={2} value={cfg.footer} maxLength={500} disabled={!canEdit} placeholder={tx("Bijvoorbeeld je bedrijfsnaam en adres")} onChange={(e) => set({ footer: e.target.value })} /></label>
       </div>
 
-      <h3>{tx("Voorbeeld")}</h3>
-      <div className="row" style={{ justifyContent: "flex-start" }}>
+      <h3 style={{ margin: "2rem 0 1rem" }}>{tx("Voorbeeld")}</h3>
+      <div className="row" style={{ justifyContent: "flex-start", marginBottom: "1.25rem" }}>
         {[["mail", "Gewone e-mail"], ["code", "Verificatiecode"]].map(([k, l]) => <button key={k} type="button" className={`btn sm ${kind === k ? "primary" : ""}`} onClick={() => setKind(k)}>{tx(l)}</button>)}
       </div>
       <div className="mail-preview">
@@ -151,11 +151,11 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
           : <pre>{preview?.text}</pre>}
       </div>
 
-      <div className="row" style={{ justifyContent: "flex-start" }}>
+      <div className="row" style={{ justifyContent: "flex-start", marginTop: "1rem" }}>
         {canEdit && <SaveStatus auto={auto} />}
       </div>
 
-      <h3>{tx("Testmail versturen")}</h3>
+      <h3 style={{ margin: "2rem 0 1rem" }}>{tx("Testmail versturen")}</h3>
       <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
         <label style={{ flex: 1, maxWidth: 420 }}>{tx("E-mailadres voor de testmail")}
           <input type="email" value={to} onChange={(e) => setTo(e.target.value)} placeholder="naam@voorbeeld.nl" />
