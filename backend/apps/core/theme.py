@@ -88,6 +88,44 @@ SYSTEM_POPUPS = [
     {"value": "bold", "label": "Gedurfd (dikke rand en schaduw)", "css": ""},
 ]
 
+# ── Page layout templates: the most common variants of header, menu, footer and blocks (read by the frontend as data attributes) ──
+HEADER_LAYOUTS = [
+    {"value": "classic", "label": "Klassiek: logo links, menu en knoppen rechts", "css": ""},
+    {"value": "centered", "label": "Gecentreerd: logo in het midden, menu eronder", "css": ""},
+    {"value": "split", "label": "Verdeeld: menu links, logo midden, knoppen rechts", "css": ""},
+    {"value": "minimal", "label": "Minimaal: logo en een menuknop", "css": ""},
+]
+HEADER_STYLES = [
+    {"value": "solid", "label": "Vlak met lijn eronder", "css": ""},
+    {"value": "shadow", "label": "Met schaduw", "css": ""},
+    {"value": "glass", "label": "Glas (doorzichtig)", "css": ""},
+    {"value": "plain", "label": "Zonder achtergrond", "css": ""},
+]
+MENU_STYLES = [
+    {"value": "text", "label": "Tekst", "css": ""},
+    {"value": "underline", "label": "Onderstreept", "css": ""},
+    {"value": "pills", "label": "Knoppen (afgerond)", "css": ""},
+    {"value": "boxed", "label": "Omkaderd", "css": ""},
+]
+FOOTER_LAYOUTS = [
+    {"value": "simple", "label": "Eenvoudig: alles gecentreerd onder elkaar", "css": ""},
+    {"value": "columns", "label": "Kolommen: links, sociaal en gegevens", "css": ""},
+    {"value": "split", "label": "Verdeeld: gegevens links, links rechts", "css": ""},
+    {"value": "minimal", "label": "Minimaal: één regel", "css": ""},
+]
+FOOTER_TONES = [
+    {"value": "page", "label": "Zelfde als de pagina", "css": ""},
+    {"value": "card", "label": "Vlak met lijn erboven", "css": ""},
+    {"value": "dark", "label": "Donker", "css": ""},
+    {"value": "brand", "label": "In de huisstijlkleur", "css": ""},
+]
+BLOCK_STYLES = [
+    {"value": "card", "label": "Kaart (rand en schaduw)", "css": ""},
+    {"value": "flat", "label": "Vlak (zonder rand)", "css": ""},
+    {"value": "outline", "label": "Alleen rand", "css": ""},
+    {"value": "elevated", "label": "Verhoogd (sterke schaduw)", "css": ""},
+]
+
 CHAT_SIDES = [{"value": "right", "label": "Rechtsonder", "css": "flex-end"}, {"value": "left", "label": "Linksonder", "css": "flex-start"}]
 CHAT_LABELS = [{"value": "icon", "label": "Alleen een icoon 💬", "css": ""}, {"value": "text", "label": "Icoon met tekst 'Chat'", "css": ""}]
 
@@ -130,9 +168,22 @@ SCHEMA = [
     {"key": "defaults", "label": "Standaardinstellingen", "fields": [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
+        choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
+    ]},
+    {"key": "interface_look", "label": "Tabbladen en vensters", "fields": [  # part of a theme: edited in Thema -> Layout
         choice("system_popup", "Uiterlijk van systeem-popups, vensters en bijbehorende tabbladen", "clean", None, SYSTEM_POPUPS),
         choice("tab_style", "Uiterlijk van tabbladen (standaard voor de hele website)", "pills", None, TAB_STYLES),
-        choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
+    ]},
+    {"key": "page_layout", "label": "Pagina-indeling", "fields": [  # part of a theme: edited in Thema -> Layout
+        choice("header_layout", "Header: indeling", "classic", None, HEADER_LAYOUTS),
+        choice("header_style", "Header: uiterlijk", "solid", None, HEADER_STYLES),
+        choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, YESNO),
+        choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
+        choice("footer_layout", "Footer: indeling", "simple", None, FOOTER_LAYOUTS),
+        choice("footer_tone", "Footer: kleur", "page", None, FOOTER_TONES),
+        choice("block_style", "Blokken en kaarten op de website", "card", None, BLOCK_STYLES),
+        number("block_gap", "Ruimte tussen blokken", 1.25, "--block-gap", "rem", 0.5, 3, 0.25),
+        number("content_w", "Breedte van de inhoud van pagina's", 1100, "--content-w", "px", 720, 1600, 20),
     ]},
     {"key": "brand", "label": "Merkkleuren", "fields": [
         color("primary", "Primaire kleur (knoppen, links, actief menu)", "#1b97d3", "--blue"),
@@ -266,6 +317,28 @@ def build(values):
     return css, fonts_url
 
 
+# ── Helpers for making themes (also used by Site importeren and the theme import) ──
+import colorsys  # noqa: E402
+
+
+def _hex(h, s, l):
+    r, g, b = colorsys.hls_to_rgb(h / 360, l, s)
+    return "#{:02x}{:02x}{:02x}".format(round(r * 255), round(g * 255), round(b * 255))
+
+
+def _neutrals(hue, tint):
+    """Light + dark neutral colors tinted with `hue`; `tint` (0-1) is how colorful the greys are."""
+    c = lambda mode, name, s, l: (f"{mode}_{name}", _hex(hue, s, l))  # noqa: E731
+    return dict([
+        ("light_page", _hex(hue, tint * 0.8, 0.995 - tint * 0.04)),
+        c("light", "bg", tint, 0.965), c("light", "card", tint * 0.3, 1.0), c("light", "hover", tint, 0.985),
+        c("light", "line", tint * 0.8, 0.91), c("light", "text", tint * 0.9, 0.15), c("light", "muted", tint * 0.3, 0.42),
+        c("dark", "page", tint, 0.09), c("dark", "bg", tint, 0.06), c("dark", "card", tint, 0.13),
+        c("dark", "hover", tint, 0.17), c("dark", "line", tint, 0.23), c("dark", "text", tint * 0.5, 0.93),
+        c("dark", "muted", tint * 0.5, 0.66),
+    ])
+
+
 # ── Built-in themes ─────────────────────────────────────────────────────────
 # Only the two house styles live in the system. All other themes are theme packages (<root>/themes/<key>/theme.json)
 # that are switched on or off in Admin -> Themapakketten (see themepacks.py).
@@ -288,7 +361,7 @@ PRESET_DEFS.append(_explicit(
     ("#ffffff", "#f6f6f6", "#ffffff", "#fafafa", "#e6e6e6", "#373736", "#7c7d80"),
     ("#1c1c1d", "#141414", "#242425", "#2d2d2e", "#3a3a3b", "#f1f1f1", "#a0a1a4"),
     "#dc2626", "#16a34a", font_body="Montserrat", font_heading="Montserrat", radius=6, btn_radius=6,
-    shadow="soft", heading_weight="600", brand_logo="studio2"))
+    shadow="soft", heading_weight="600", brand_logo="studio2", header_layout="classic", header_style="solid", menu_style="underline", footer_layout="columns", footer_tone="card", block_style="card"))
 
 
 def presets():
@@ -296,7 +369,8 @@ def presets():
     from . import themepacks
 
     out = []
-    for p in [*PRESET_DEFS, *themepacks.enabled_defs()]:
+    builtin = [{"key": m["key"], "name": m["name"], "description": m["description"], "mode": m.get("mode"), "overrides": m["values"], "assets": len(m.get("assets", {})) + len(m.get("home", []))} for m in themepacks.builtin_manifests()]
+    for p in [*builtin, *themepacks.enabled_defs()]:
         values = merged(p["overrides"])
         _, errors = validate(values)
         if errors:

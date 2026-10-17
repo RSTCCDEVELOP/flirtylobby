@@ -144,7 +144,7 @@ export default function Seo() {
         </label>
         <div className="photo-row">
           {data.site.default_og_media ? <span className="muted">{tx("Deelafbeelding gekozen")}</span> : <span className="muted">{tx("Geen deelafbeelding (1200×630 aanbevolen)")}</span>}
-          <button type="button" className="btn sm" onClick={() => setPicker("site")} disabled={L < 2}>{tx("Deelafbeelding kiezen")}</button>
+          <button type="button" className="btn sm" onClick={() => setPicker("site")} disabled={L < 2}>{tx("Media")}</button>
           {data.site.default_og_media && <button type="button" className="btn sm danger" onClick={() => site("default_og_media", null)}>{tx("Verwijderen")}</button>}
         </div>
         <h3>{tx("Verificatie (Search Console)")}</h3>
@@ -183,7 +183,7 @@ export default function Seo() {
           <label>{tx("Canonical URL (optioneel)")}<input value={current.canonical} placeholder={`${base}${path}`} onChange={(e) => setPage({ canonical: e.target.value })} /></label>
           <div className="photo-row">
             {current.og_image && <img src={mediaUrl(current.og_image)} alt="" className="photo-preview" style={{ borderRadius: 8 }} />}
-            <button type="button" className="btn sm" onClick={() => setPicker("page")} disabled={L < 2}>{tx("Deelafbeelding")}</button>
+            <button type="button" className="btn sm" onClick={() => setPicker("page")} disabled={L < 2}>{tx("Media")}</button>
             {current.og_media && <button type="button" className="btn sm danger" onClick={() => setPage({ og_media: null, og_image: null })}>{tx("Verwijderen")}</button>}
           </div>
         </div>

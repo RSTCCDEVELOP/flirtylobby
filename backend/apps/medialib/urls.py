@@ -10,6 +10,7 @@ urlpatterns = [
     path("media/scan/", views.scan),
     path("media/tags/", views.tag_many),
     path("media/replace/", views.replace),
+    path("media/<int:pk>/file/", views.file),
     path("media/<int:pk>/", views.rename),
     path("storage/", storage_views.settings_view),
     path("storage/apply/", storage_views.apply_view),

@@ -21,6 +21,7 @@ DEFAULTS = {
     "maintenance": False, "maintenance_message": "",
     "max_image_mb": "20", "max_video_mb": "300", "max_photo_mb": "5",
     "footer_text": "",
+    "show_credit": True,  # "© Easy2edit <year>" with a link at the bottom of every page
     "social_facebook": "", "social_instagram": "", "social_x": "", "social_linkedin": "", "social_youtube": "", "social_tiktok": "",
 }
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
@@ -72,7 +73,7 @@ def clean(incoming):
             if bad:
                 errors[k] = f"Ongeldige domeinnaam: {bad[0]} (bv. voorbeeld.nl, zonder https://)."
             out[k] = list(dict.fromkeys(items))[:20]
-        elif k in ("redirect_aliases", "maintenance"):
+        elif k in ("redirect_aliases", "maintenance", "show_credit"):
             out[k] = bool(v)
         elif k == "timezone":
             try:
@@ -219,6 +220,6 @@ def public():
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
-            "maintenance": s["maintenance"], "maintenance_message": s["maintenance_message"], "footer_text": s["footer_text"],
+            "maintenance": s["maintenance"], "maintenance_message": s["maintenance_message"], "footer_text": s["footer_text"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"],
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}}

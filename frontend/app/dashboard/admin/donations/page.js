@@ -293,7 +293,7 @@ export default function DonationsAdmin() {
                   <strong style={{ fontSize: ".9rem" }}>{tx("Afbeelding")}</strong>
                   {modal[sec].image_url && <img src={mediaUrl(modal[sec].image_url)} alt="" />}
                   <div className="sub-actions">
-                    <button type="button" className="btn sm" onClick={() => setPicker(sec)}>{modal[sec].media ? tx("Andere afbeelding") : tx("Kies uit de mediabibliotheek")}</button>
+                    <button type="button" className="btn sm" onClick={() => setPicker(sec)}>{tx("Media")}</button>
                     {modal[sec].media && <button type="button" className="btn sm danger" onClick={() => setModal((m) => ({ ...m, [sec]: { ...m[sec], media: null, image_url: null } }))}>{tx("Verwijderen")}</button>}
                   </div>
                 </div>

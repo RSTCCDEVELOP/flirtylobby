@@ -30,6 +30,10 @@ urlpatterns = [
     path("theme/packs/", views.theme_packs),
     path("theme/packs/upload/", views.theme_pack_upload),
     path("theme/packs/create/", views.theme_pack_create),
+    path("theme/import/", views.theme_import_start),
+    path("theme/import/<uuid:pk>/", views.theme_import),
+    path("theme/import/<uuid:pk>/save/", views.theme_import_save),
+    path("theme/import/<uuid:pk>/refine/", views.theme_import_refine),
     path("theme/packs/<slug:key>/", views.theme_pack),
     path("theme/packs/<slug:key>/assets/", views.theme_pack_assets),
     path("theme/packs/<slug:key>/slot/<str:slot>/", views.theme_pack_slot),
@@ -38,5 +42,7 @@ urlpatterns = [
     path("theme/packs/<slug:key>/capture/", views.theme_pack_capture),
     path("theme/packs/<slug:key>/apply/", views.theme_pack_apply),
     path("theme/packs/<slug:key>/use/", views.theme_pack_use),
+    path("theme/packs/<slug:key>/reset/", views.theme_pack_reset),
+    path("theme/packs/<slug:key>/refine/", views.theme_pack_refine),
     path("theme/packs/<slug:key>/download/", views.theme_pack_download),
 ]

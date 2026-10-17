@@ -123,7 +123,9 @@ def _packs_export(opts):
     themepacks.scan()
     from .models import ThemePack
 
-    return {"themes": [{"manifest": r.manifest, "enabled": r.enabled, **({"files": themepacks.files_b64(r.key)} if opts.get("include_files", True) else {})}
+    builtin = [{"manifest": {k: m[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, "enabled": True, **({"files": themepacks.files_b64(m["key"])} if opts.get("include_files", True) else {})}
+               for m in themepacks.builtin_manifests() if m.get("customized") and (keys is None or m["key"] in keys)]
+    return {"themes": builtin + [{"manifest": r.manifest, "enabled": r.enabled, **({"files": themepacks.files_b64(r.key)} if opts.get("include_files", True) else {})}
                        for r in ThemePack.objects.all() if keys is None or r.key in keys]}
 
 
@@ -136,7 +138,7 @@ def _packs_apply(data, ctx):
     done, notes = 0, []
     for it in (data or {}).get("themes", []):
         try:
-            man = themepacks.parse(json.dumps(it.get("manifest")))
+            man = themepacks.parse(json.dumps(it.get("manifest")), builtin_ok=True)
             d = themepacks.root() / man["key"]
             d.mkdir(exist_ok=True)
             (d / "theme.json").write_text(json.dumps({k: man[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, indent=2, ensure_ascii=False) + "\n")

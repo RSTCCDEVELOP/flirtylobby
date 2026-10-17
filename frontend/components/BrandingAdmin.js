@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import Collapsible, { CollapseAll } from "./Collapsible";
+import MediaField from "./MediaField";
 import { lvl } from "../lib/perms";
 import { api, errorText, mediaUrl } from "../lib/api";
 
@@ -13,13 +14,10 @@ function AssetCard({ slot, info, url, onChange, onError, L }) {
   const input = useRef(null);
   const [busy, setBusy] = useState(false);
 
-  async function upload(e) {
-    const file = e.target.files[0];
-    e.target.value = "";
-    if (!file) return;
+  async function upload(files) {
     setBusy(true);
     const fd = new FormData();
-    fd.append("image", file);
+    fd.append("image", files[0]);
     try { await api(`/branding/assets/${slot}/`, { method: "PUT", body: fd }); await onChange(); } catch (err) { onError(errorText(err)); }
     setBusy(false);
   }
@@ -37,11 +35,8 @@ function AssetCard({ slot, info, url, onChange, onError, L }) {
       </div>
       <strong>{info.label}</strong>
       <small className="muted">{info.hint}</small>
-      <div className="row" style={{ justifyContent: "flex-start" }}>
-        <input ref={input} type="file" accept="image/*" hidden onChange={upload} />
-        {L >= 2 && <button className="btn sm" onClick={() => input.current.click()} disabled={busy}>{busy ? tx("Uploaden…") : url ? tx("Vervangen") : tx("Uploaden")}</button>}
-        {url && L >= 3 && <button className="btn sm danger" onClick={remove}>{tx("Verwijder")}</button>}
-      </div>
+      {L >= 2 && <MediaField onFiles={upload} busy={busy} />}
+      {url && L >= 3 && <div className="row" style={{ justifyContent: "flex-start" }}><button className="btn sm danger" onClick={remove}>{tx("Verwijder")}</button></div>}
     </div>
   );
 }
@@ -66,9 +61,7 @@ export default function BrandingAdmin() {
   }, [router]);
   useEffect(() => { load(); }, [load]);
 
-  async function addPhotos(e) {
-    const files = [...e.target.files];
-    e.target.value = "";
+  async function addPhotos(files) {
     setUploading(true);
     setError("");
     for (const file of files) {
@@ -128,10 +121,7 @@ export default function BrandingAdmin() {
             </div>
           ))}
         </div>
-        <input ref={photoInput} type="file" accept="image/*" multiple hidden onChange={addPhotos} />
-        {L >= 3 && <button className="btn primary" style={{ marginTop: "1rem" }} onClick={() => photoInput.current.click()} disabled={uploading}>
-          {uploading ? tx("Uploaden…") : tx("+ Foto's toevoegen")}
-        </button>}
+        {L >= 3 && <div style={{ marginTop: "1rem" }}><MediaField onFiles={addPhotos} busy={uploading} /></div>}
       </Collapsible>
     </>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import MediaField from "../../../../components/MediaField";
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
@@ -205,10 +206,7 @@ export default function Users() {
             <div className="photo-row" hidden={tab !== "profile"}>
               {modal.preview || modal.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={modal.preview || mediaUrl(modal.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{initials(modal)}</span>}
               <span className="row" style={{ justifyContent: "flex-start" }}>
-                <label className="btn sm" style={{ cursor: "pointer" }}>
-                  {modal.preview || modal.image ? tx("Foto vervangen") : tx("Foto uploaden")}
-                  <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files[0]; e.target.value = ""; if (f) photo(f); }} />
-                </label>
+                <MediaField onFiles={(fs) => photo(fs[0])} />
                 {(modal.image || modal.preview) && <button type="button" className="btn sm danger" onClick={() => photo(null)}>{tx("Foto verwijderen")}</button>}
               </span>
             </div>

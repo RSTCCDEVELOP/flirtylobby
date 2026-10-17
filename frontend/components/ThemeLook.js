@@ -1,9 +1,8 @@
 "use client";
 
 import { tx } from "../lib/t";
-import { alertDialog, confirmDialog, promptDialog } from "../lib/dialog";
+import { confirmDialog } from "../lib/dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
-import PopupStyleGallery from "./PopupStyleGallery";
 import Collapsible, { CollapseAll } from "./Collapsible";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
@@ -46,9 +45,8 @@ const DEVICES = [
   ["device_desktop", "Website", "Computer", { w: 1180, h: 560, kind: "desktop" }],
   ["device_app", "App op mobiel", "Geïnstalleerd op het beginscherm, zonder browserbalk", { w: 375, h: 680, kind: "app" }],
 ];
-const POPUP_TESTS = [["example", "Voorbeeld met afbeelding"], ["age", "Leeftijdscontrole"], ["gambling", "Gokken-popup"], ["cookies", "Cookiebanner"], ["policy", "Cookiebeleid"], ["window:chat", "Venster: Chat"], ["window:video", "Venster: Videochat"], ["window:files", "Venster: Bestanden"]];
 
-function Field({ f, value, onChange }) {
+export function Field({ f, value, onChange }) {
   if (f.type === "color")
     return (
       <label className="theme-field">
@@ -229,11 +227,6 @@ export default function ThemeLook() {
         </Collapsible>
       ))}
 
-      <Collapsible id="theme-syspopup" title={tx("Systeem-popups en vensters")} className="theme-group">
-        <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Kies hoe alle popups, vensters en tabbladen van het systeem eruitzien. Dit uiterlijk wordt overal gebruikt (beheer, bewerken, meldingen). De keuze is direct zichtbaar; sla daarna op.")}</p>
-        <PopupStyleGallery value={values.system_popup || "clean"} onChange={(v) => change("system_popup", v)} />
-      </Collapsible>
-
       <Collapsible id="theme-popups" title={tx("Popup-versies en test")} className="theme-group">
         <p className="muted" style={{ margin: ".25rem 0 1rem" }}>{tx("Kies een versie voor de standaardpopups (leeftijd, gokken, cookies). Daarna kun je alles fijn afstellen onder \"Popups\". Met de testknoppen zie je meteen het resultaat, ook voordat je opslaat.")}</p>
         <div className="popup-presets">
@@ -246,16 +239,6 @@ export default function ThemeLook() {
               </button>
             );
           })}
-        </div>
-        <div className="popup-test" style={{ marginTop: "1rem" }}>
-          <strong>{tx("Test:")}</strong>
-          {POPUP_TESTS.map(([t, label]) => (
-            <button key={t} type="button" className="btn" onClick={() => window.dispatchEvent(new CustomEvent("test-popup", { detail: t }))}>{label}</button>
-          ))}
-          <button type="button" className="btn" onClick={() => confirmDialog(tx("Weet je zeker dat je dit wilt doen?"), { title: tx("Systeempopup: bevestigen") })}>{tx("Systeempopup: bevestigen")}</button>
-          <button type="button" className="btn" onClick={() => confirmDialog(tx("Dit item definitief verwijderen?"), { title: tx("Systeempopup: verwijderen"), danger: true })}>{tx("Systeempopup: verwijderen")}</button>
-          <button type="button" className="btn" onClick={() => alertDialog(tx("Je wijzigingen zijn opgeslagen."), { title: tx("Systeempopup: melding") })}>{tx("Systeempopup: melding")}</button>
-          <button type="button" className="btn" onClick={() => promptDialog(tx("Geef een nieuwe naam"), tx("Voorbeeld"), { title: tx("Systeempopup: invullen") })}>{tx("Systeempopup: invullen")}</button>
         </div>
       </Collapsible>
 
@@ -270,7 +253,7 @@ export default function ThemeLook() {
         </div>
       </Collapsible>
 
-      {schema.filter((g) => g.key !== "defaults" && g.key !== "devices").map((g) => (
+      {schema.filter((g) => g.key !== "defaults" && g.key !== "devices" && g.key !== "interface_look" && g.key !== "page_layout").map((g) => (
         <Collapsible key={g.key} id={`theme-${g.key}`} title={g.label} className="theme-group">
           <div className="theme-grid">
             {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}

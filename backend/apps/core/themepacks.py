@@ -38,8 +38,8 @@ def root():
     return d
 
 
-def parse(raw):
-    """Validate a theme.json (bytes/str). Returns the clean dict."""
+def parse(raw, builtin_ok=False):
+    """Validate a theme.json (bytes/str). Returns the clean dict. builtin_ok: the file may belong to a built-in theme (its changed version)."""
     try:
         d = json.loads(raw)
     except (TypeError, ValueError):
@@ -49,7 +49,7 @@ def parse(raw):
     key = str(d.get("key") or "").strip()
     if not KEY_RE.match(key):
         raise ThemeError("De sleutel (key) in theme.json is ongeldig (3-40 tekens: a-z, 0-9 en -).")
-    if key in {p["key"] for p in theme.PRESET_DEFS}:
+    if not builtin_ok and key in {p["key"] for p in theme.PRESET_DEFS}:
         raise ThemeError(f"De sleutel {key} is van een ingebouwd thema.")
     values = d.get("values")
     if not isinstance(values, dict) or not values:
@@ -70,7 +70,7 @@ def scan():
         if not d.is_dir() or d.name.startswith("."):
             continue
         try:
-            man = parse((d / "theme.json").read_bytes())
+            man = parse((d / "theme.json").read_bytes(), builtin_ok=True)
             if man["key"] != d.name:
                 raise ThemeError(f"De sleutel in theme.json ({man['key']}) moet gelijk zijn aan de mapnaam ({d.name}).")
         except (OSError, ThemeError) as e:
@@ -78,6 +78,8 @@ def scan():
             continue
         man["assets"] = {slot: f.name for slot in SLOTS for f in d.glob(f"{slot}.*") if f.suffix[1:].lower() in IMG_EXT}
         man["home"] = [h for h in man["home"] if (d / h["file"]).is_file()]
+        if man["key"] in BUILTIN_KEYS():  # a changed built-in theme: no package row, it replaces the built-in values
+            continue
         row, created = ThemePack.objects.get_or_create(key=man["key"], defaults={"manifest": man})
         if not created and row.manifest != man:
             row.manifest = man
@@ -98,20 +100,52 @@ def enabled_defs():
     return [{"key": r.key, "name": r.manifest["name"], "description": r.manifest["description"], "mode": r.manifest.get("mode"), "overrides": r.manifest["values"], "assets": len(r.manifest.get("assets", {})) + len(r.manifest.get("home", []))} for r in rows]
 
 
+COMPLETE_KEYS = ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w", "tab_style", "system_popup")  # a theme always holds these
+
+
+def BUILTIN_KEYS():
+    return {p["key"] for p in theme.PRESET_DEFS}
+
+
+def _builtin_file(key):
+    return root() / key / "theme.json"
+
+
 def builtin_manifests():
-    return [{"key": p["key"], "name": p["name"], "description": p["description"], "version": settings.SYSTEM_VERSION, "system_version": settings.SYSTEM_VERSION, "mode": p.get("mode"), "values": p["overrides"]}
-            for p in theme.PRESET_DEFS]
+    """RSTCC and Studio2: the values in the code, unless the superadmin changed them (then <themes>/<key>/theme.json holds the changed version)."""
+    out = []
+    for p in theme.PRESET_DEFS:
+        man = {"key": p["key"], "name": p["name"], "description": p["description"], "version": settings.SYSTEM_VERSION, "system_version": settings.SYSTEM_VERSION, "mode": p.get("mode"), "values": {**{k: theme.DEFAULTS[k] for k in COMPLETE_KEYS}, **p["overrides"]}, "home": [], "customized": False}
+        f = _builtin_file(p["key"])
+        if f.is_file():
+            try:
+                c = parse(f.read_bytes(), builtin_ok=True)
+                if c["key"] == p["key"]:
+                    d = f.parent
+                    man.update({k: c[k] for k in ("name", "description", "version", "system_version", "mode", "values", "home")}, customized=True,
+                               assets={slot: x.name for slot in SLOTS for x in d.glob(f"{slot}.*") if x.suffix[1:].lower() in IMG_EXT})
+            except (OSError, ThemeError):
+                pass
+        out.append(man)
+    return out
+
+
+def reset_builtin(key):
+    """Back to the values that come with the system."""
+    if key not in BUILTIN_KEYS():
+        raise ThemeError("Alleen een ingebouwd thema kan worden hersteld.")
+    shutil.rmtree(root() / key, ignore_errors=True)
 
 
 def out(man, enabled, builtin):
     v = theme.merged(man["values"])
     return {"key": man["key"], "name": man["name"], "description": man["description"], "version": man["version"], "built_for": man["system_version"], "system_version": settings.SYSTEM_VERSION,
-            "compat": mf.compatibility(man["system_version"], settings.SYSTEM_VERSION), "mode": man.get("mode"), "builtin": builtin, "enabled": enabled,
+            "compat": mf.compatibility(man["system_version"], settings.SYSTEM_VERSION), "mode": man.get("mode"), "builtin": builtin, "customized": bool(man.get("customized")), "enabled": enabled,
             "colors": {k: v[k] for k in ("primary", "secondary", "light_bg", "light_card", "light_text", "dark_bg", "dark_card", "dark_text")}, "fonts": [v["font_heading"], v["font_body"]],
             "assets": sorted(man.get("assets", {})), "home_count": len(man.get("home", []))}
 
 
-KEEP = ("remember_collapse", "sidebar_auto", "version_notice", "tab_style", "system_popup", "device_mobile", "device_tablet", "device_desktop", "device_app")  # interface behaviour: a theme changes the look only
+KEEP = ("remember_collapse", "sidebar_auto", "version_notice", "device_mobile", "device_tablet", "device_desktop", "device_app")  # interface behaviour: a theme changes the look only
 
 
 def manifest_of(key):
@@ -151,7 +185,7 @@ def use(key, with_files=False):
     new.update({k: old[k] for k in KEEP if k in old} | {k: old[k] for k in old if k.startswith("chat_")})
     cur.theme = {k: v for k, v in new.items() if v != theme.DEFAULTS[k]}
     cur.save()
-    files = apply_files(key) if with_files and not any(m["key"] == key for m in builtin_manifests()) else (0, 0)
+    files = apply_files(key) if with_files and (key not in BUILTIN_KEYS() or man.get("customized")) else (0, 0)
     return files
 
 
@@ -190,7 +224,7 @@ def as_zip(key):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(f"{key}/theme.json", raw)
-        if not man:
+        if not man or man.get("customized"):
             for name, b64 in files_b64(key).items():
                 z.writestr(f"{key}/{name}", base64.b64decode(b64))
     return buf.getvalue()
@@ -204,6 +238,10 @@ def remove(key):
 
 # ── the files of a package: logos, favicon, … and the home photos ───────────────
 def _dir(key):
+    if key in BUILTIN_KEYS() and not _builtin_file(key).is_file():  # the first change of a built-in theme: its values go into a file that can be edited
+        man = next(m for m in builtin_manifests() if m["key"] == key)
+        (root() / key).mkdir(exist_ok=True)
+        _builtin_file(key).write_text(json.dumps({k: man[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, indent=2, ensure_ascii=False) + "\n")
     if not KEY_RE.match(key) or not (root() / key / "theme.json").is_file():
         raise ThemeError("Dit themapakket bestaat niet.")
     return root() / key
@@ -286,6 +324,12 @@ def update_meta(key, data):
         doc["version"] = parse(json.dumps({**doc, "version": data["version"]}))["version"]
     if "mode" in data:
         doc["mode"] = data["mode"] if data["mode"] in ("light", "dark") else None
+    if isinstance(data.get("values"), dict):  # the settings of the theme itself (colours, fonts, shapes, page templates …)
+        merged = {**doc["values"], **{k: v for k, v in data["values"].items() if k in theme.FIELDS}}
+        clean, errors = theme.validate(merged)
+        if errors:
+            raise ThemeError("Ongeldige instellingen: " + ", ".join(sorted(errors)))
+        doc["values"] = {k: v for k, v in clean.items() if k in merged}
     if isinstance(data.get("home"), list):  # captions of the home photos, same order
         for h, c in zip(doc.get("home", []), data["home"]):
             h["caption"] = str((c or {}).get("caption") or "")[:255]
@@ -302,7 +346,7 @@ def data_urls(key):
 
     slots = {slot: {"file": f.name, "url": url(f)} for slot in SLOTS for f in d.glob(f"{slot}.*") if f.suffix[1:].lower() in IMG_EXT}
     home = [{"file": h["file"], "caption": h["caption"], "url": url(d / h["file"])} for h in doc.get("home", []) if (d / h["file"]).is_file()]
-    return {"slots": slots, "home": home}
+    return {"slots": slots, "home": home, "values": theme.merged(doc["values"])}
 
 
 def create(name, from_current=False):
@@ -330,7 +374,10 @@ def capture(key):
     from .models import SiteSettings
 
     d, doc = _dir(key), _doc(key)
+    cur = theme.merged(SiteSettings.load().theme)
     values = dict(SiteSettings.load().theme) or {"primary": theme.DEFAULTS["primary"]}
+    for k in ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w", "tab_style", "system_popup"):
+        values[k] = cur[k]  # a package always holds the complete page templates
     for slot in SLOTS:
         clear_slot(key, slot)
     for a in SiteAsset.objects.filter(slot__in=SLOTS):

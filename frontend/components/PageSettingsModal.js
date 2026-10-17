@@ -113,7 +113,7 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
                   <strong style={{ fontSize: ".85rem" }}>{tx("Afbeelding bij delen (social media)")}</strong>
                   <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", marginTop: ".4rem" }}>
                     {cur.og_image && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(cur.og_image)} alt="" style={{ height: 64, borderRadius: 8 }} />}
-                    <button type="button" className="btn" onClick={() => setPicker("og")}>{cur.og_media ? tx("Andere afbeelding") : tx("Kies uit mediabibliotheek")}</button>
+                    <button type="button" className="btn" onClick={() => setPicker("og")}>{tx("Media")}</button>
                     {cur.og_media && <button type="button" className="btn danger" onClick={() => setCur({ og_media: null, og_image: null })}>{tx("Verwijderen")}</button>}
                   </div>
                 </div>
@@ -143,7 +143,7 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
                     <div className="page-bg-shade" style={{ opacity: bg.overlay }} />
                   </div>
                   <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap" }}>
-                    <button type="button" className="btn primary" onClick={() => setPicker("bg")}>{bg.url ? tx("Andere kiezen") : tx("Kies uit mediabibliotheek")}</button>
+                    <button type="button" className="btn primary" onClick={() => setPicker("bg")}>{tx("Media")}</button>
                     {bg.url && <button type="button" className="btn danger" onClick={() => setBg({ type: "none", overlay: bg.overlay })}>{tx("Verwijderen")}</button>}
                   </div>
                   <label>{tx("Donkerte over de achtergrond")} <small className="muted">{Math.round((bg.overlay ?? 0.35) * 100)}%</small>

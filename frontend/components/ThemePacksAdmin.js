@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import Collapsible from "./Collapsible";
+import ThemeImport from "./ThemeImport";
 import ThemePackEdit from "./ThemePackEdit";
 import { api, apiBase, errorText, getToken } from "../lib/api";
-import { confirmDialog, promptDialog } from "../lib/dialog";
+import { confirmDialog } from "../lib/dialog";
 import { lvl } from "../lib/perms";
 import { tx } from "../lib/t";
 
@@ -21,6 +22,9 @@ export default function ThemePacksAdmin() {
   const [over, setOver] = useState(false);
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState(null);
+  const [chooser, setChooser] = useState(false); // "new theme package": empty, from this website, or from a website address
+  const [importing, setImporting] = useState(false);
+  const [name, setName] = useState("");
   const input = useRef(null);
   const load = useCallback(() => api("/theme/packs/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
@@ -55,11 +59,9 @@ export default function ThemePacksAdmin() {
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   }
-  async function create() {
-    const name = await promptDialog(tx("Naam van het nieuwe thema"), "", { title: tx("Nieuw themapakket"), okLabel: tx("Maken") });
-    if (!name) return;
-    const cur = await confirmDialog(tx("De vormgeving, logo's, favicon en homepagefoto's van de website zoals ze nu zijn in het nieuwe pakket zetten? Kies Annuleren voor een leeg pakket."), { title: tx("Beginnen met de huidige website"), okLabel: tx("Ja, huidige website") });
-    try { const r = await api("/theme/packs/create/", { method: "POST", body: { name, from_current: cur } }); set(r); setEdit(r.key); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+  async function create(from_current) {
+    if (!name.trim()) return setMsg({ ok: false, text: tx("Geef het thema een naam.") });
+    try { const r = await api("/theme/packs/create/", { method: "POST", body: { name, from_current } }); set(r); setChooser(false); setName(""); setEdit(r.key); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   }
   async function scan() { setBusy(true); await load(); setBusy(false); setMsg({ ok: true, text: tx("Map gescand.") }); }
 
@@ -75,7 +77,7 @@ export default function ThemePacksAdmin() {
         <div>
           <div className="row" style={{ justifyContent: "space-between", marginBottom: "1rem" }}>
             <input style={{ maxWidth: 300 }} placeholder={tx("Zoek een thema…")} value={q} onChange={(e) => setQ(e.target.value)} />
-            {L >= 2 && <button className="btn primary" onClick={create}>{tx("+ Nieuw themapakket")}</button>}
+            {L >= 2 && <button className="btn primary" onClick={() => setChooser(true)}>{tx("+ Nieuw themapakket")}</button>}
           </div>
           <div className="preset-grid pack-grid">
             {packs.map((p) => (
@@ -85,18 +87,32 @@ export default function ThemePacksAdmin() {
                   <i style={{ background: p.colors.primary }} /><i style={{ background: p.colors.secondary }} />
                   <i style={{ background: p.colors.dark_card }} /><i style={{ background: p.colors.dark_bg }} />
                 </span>
-                <strong>{p.name} {p.builtin && <span className="badge ok" style={{ marginLeft: ".3rem" }}>{tx("Ingebouwd")}</span>}{p.active && <span className="badge ok" style={{ marginLeft: ".3rem" }}>{tx("In gebruik")}</span>}</strong>
-                <small>{p.description}</small>
-                {!p.builtin && <small className="muted">{p.assets.length || p.home_count ? tx("Met logo's en afbeeldingen: {0}", [...p.assets.map((a) => a.replace("_", " ")), p.home_count ? tx("{0} homepagefoto's", p.home_count) : null].filter(Boolean).join(", ")) : tx("Zonder logo's en afbeeldingen")}</small>}
-                <small className="muted">{p.fonts[0]}{p.fonts[1] !== p.fonts[0] ? ` / ${p.fonts[1]}` : ""} · v{p.version}{["outdated", "incompatible", "newer"].includes(p.compat) ? ` · ⚠ ${tx("voor systeem")} ${p.built_for}` : ""}</small>
-                <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
-                  <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.enabled} disabled={p.builtin || L < 2} onChange={(e) => toggle(p, e.target.checked)} /><span /></span><span>{p.enabled ? tx("Aan") : tx("Uit")}</span></label>
-                  <span className="row" style={{ gap: ".3rem", flexWrap: "nowrap" }}>
-                    {L >= 2 && !p.active && <button className="btn sm primary" onClick={() => use(p)}>{tx("Gebruiken")}</button>}
-                    {!p.builtin && L >= 2 && <button className="btn sm" onClick={() => setEdit(p.key)}>{tx("Bewerken")}</button>}
+                <div className="pack-head">
+                  <strong title={p.name}>{p.name}</strong>
+                  {!p.builtin && (
+                    <label className="pack-switch" title={p.enabled ? tx("Aan: te gebruiken") : tx("Uit")}>
+                      <span className="switch"><input type="checkbox" checked={p.enabled} disabled={L < 2} onChange={(e) => toggle(p, e.target.checked)} /><span /></span>
+                      <small>{p.enabled ? tx("Aan") : tx("Uit")}</small>
+                    </label>
+                  )}
+                </div>
+                <div className="pack-badges">
+                  {p.builtin && <span className="badge ok">{tx("Ingebouwd")}</span>}
+                  {p.customized && <span className="badge">{tx("Aangepast")}</span>}
+                  {p.active && <span className="badge ok">{tx("In gebruik")}</span>}
+                </div>
+                <small className="pack-desc">{p.description || "—"}</small>
+                <small className="muted pack-meta">
+                  {p.fonts[0]}{p.fonts[1] !== p.fonts[0] ? ` / ${p.fonts[1]}` : ""} · v{p.version}{["outdated", "incompatible", "newer"].includes(p.compat) ? ` · ⚠ ${tx("voor systeem")} ${p.built_for}` : ""}
+                  <br />{p.assets.length || p.home_count ? tx("Met logo's en afbeeldingen: {0}", [...p.assets.map((a) => a.replace("_", " ")), p.home_count ? tx("{0} homepagefoto's", p.home_count) : null].filter(Boolean).join(", ")) : tx("Zonder logo's en afbeeldingen")}
+                </small>
+                <div className="pack-foot">
+                  <div className="pack-btns">
+                    <button className={`btn sm ${p.active ? "" : "primary"}`} disabled={p.active || L < 2} onClick={() => use(p)}>{p.active ? tx("In gebruik") : tx("Gebruiken")}</button>
+                    <button className="btn sm" disabled={L < 2} onClick={() => setEdit(p.key)}>{tx("Bewerken")}</button>
                     <button className="btn sm" onClick={() => download(p)}>{tx("Download")}</button>
-                    {!p.builtin && L >= 3 && <button className="btn sm danger" onClick={() => remove(p)}>{tx("Verwijder")}</button>}
-                  </span>
+                    {!p.builtin && L >= 3 ? <button className="btn sm danger" onClick={() => remove(p)}>{tx("Verwijder")}</button> : <span />}
+                  </div>
                 </div>
               </div>
             ))}
@@ -125,6 +141,24 @@ export default function ThemePacksAdmin() {
           <div><button className="btn" disabled={busy} onClick={scan}>{tx("Map scannen")}</button></div>
         </div>
       </Collapsible>
+      {chooser && (
+        <div className="overlay" onClick={() => setChooser(false)}>
+          <div className="card modal form" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
+            <h2>{tx("Nieuw themapakket")}</h2>
+            <label>{tx("Naam van het thema")}<input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} autoFocus /></label>
+            <div className="stack-sm">
+              <button type="button" className="btn" onClick={() => create(false)}>{tx("Leeg pakket")}</button>
+              <small className="muted" style={{ marginTop: "-.5rem" }}>{tx("Begin met een leeg pakket en vul het zelf met logo's en afbeeldingen.")}</small>
+              <button type="button" className="btn" onClick={() => create(true)}>{tx("Van deze website")}</button>
+              <small className="muted" style={{ marginTop: "-.5rem" }}>{tx("Neem de vormgeving, logo's, favicon en homepagefoto's van deze website over.")}</small>
+              <button type="button" className="btn primary" onClick={() => { setChooser(false); setImporting(true); }}>{tx("Importeren van een website…")}</button>
+              <small className="muted" style={{ marginTop: "-.5rem" }}>{d.ai ? tx("Claude maakt een compleet thema van het webadres. Je controleert het eerst.") : tx("Een thema afleiden uit het webadres. Je controleert het eerst.")}</small>
+            </div>
+            <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setChooser(false)}>{tx("Annuleren")}</button></div>
+          </div>
+        </div>
+      )}
+      {importing && <ThemeImport ai={d.ai} onClose={() => setImporting(false)} onSaved={(packs, key, photos) => { setD((x) => ({ ...x, packs })); setImporting(false); setMsg({ ok: true, text: tx("Het thema is opgeslagen als themapakket. Zet het aan en kies Gebruiken om het toe te passen.") + (photos ? ` ${tx("{0} foto's staan in de mediabibliotheek.", photos)}` : "") }); setEdit(null); }} />}
       {edit && d.packs.find((p) => p.key === edit) && <ThemePackEdit pack={d.packs.find((p) => p.key === edit)} onClose={() => setEdit(null)} onChanged={(packs) => setD((x) => ({ ...x, packs }))} />}
     </>
   );

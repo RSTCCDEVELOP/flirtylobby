@@ -299,7 +299,9 @@ _bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, s
 @permission_classes(PACKS)
 def theme_packs(request):
     themepacks.scan()
-    return Response({"packs": themepacks.listing(), "folder": str(themepacks.root()), "system_version": __import__("django.conf", fromlist=["settings"]).settings.SYSTEM_VERSION})
+    from apps.integrations import ai
+
+    return Response({"packs": themepacks.listing(), "ai": ai.available(), "folder": str(themepacks.root()), "system_version": __import__("django.conf", fromlist=["settings"]).settings.SYSTEM_VERSION})
 
 
 @api_view(["POST"])
@@ -320,16 +322,19 @@ def theme_pack_upload(request):
 @permission_classes(PACKS)
 def theme_pack(request, key):
     themepacks.scan()
-    row = ThemePack.objects.filter(key=key).first()
-    if not row:
-        return _bad("Dit themapakket bestaat niet (de ingebouwde thema's staan altijd aan).", status.HTTP_404_NOT_FOUND)
+    builtin = key in themepacks.BUILTIN_KEYS()
+    row = None if builtin else ThemePack.objects.filter(key=key).first()
+    if not row and not builtin:
+        return _bad("Dit themapakket bestaat niet.", status.HTTP_404_NOT_FOUND)
+    if builtin and request.method == "DELETE":
+        return _bad("Een ingebouwd thema kan niet worden verwijderd. Je kunt het wel herstellen.")
     if request.method == "DELETE":
         themepacks.remove(key)
     else:
-        if "enabled" in request.data:
+        if "enabled" in request.data and row:
             row.enabled = bool(request.data.get("enabled"))
             row.save(update_fields=["enabled", "updated_at"])
-        if any(k in request.data for k in ("name", "description", "version", "mode", "home")):
+        if any(k in request.data for k in ("name", "description", "version", "mode", "home", "values")):
             try:
                 themepacks.update_meta(key, request.data)
             except themepacks.ThemeError as e:
@@ -433,3 +438,102 @@ def theme_pack_download(request, key):
     r = HttpResponse(data, content_type="application/zip")
     r["Content-Disposition"] = f'attachment; filename="theme-{key}.zip"'
     return r
+
+
+# ── A theme from a website address (draft first, then saved as a package) ───
+from . import themeimport  # noqa: E402
+from .models import ThemeImportJob  # noqa: E402
+
+
+def _job(request, pk):
+    try:
+        return ThemeImportJob.objects.filter(pk=pk, user=request.user).first()
+    except (ValueError, TypeError):
+        return None
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_import_start(request):
+    from apps.siteimport.importer import ImportError_
+
+    try:
+        job = themeimport.start(request.user, str(request.data.get("url") or ""))
+    except (ImportError_, themepacks.ThemeError) as e:
+        return _bad(str(e))
+    return Response(themeimport.public(job), status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "DELETE"])
+@permission_classes(PACKS)
+def theme_import(request, pk):
+    job = _job(request, pk)
+    if not job:
+        return _bad("Dit import bestaat niet (meer).", status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        themeimport.cleanup(job)
+        job.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(themeimport.public(job))
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_import_save(request, pk):
+    job = _job(request, pk)
+    if not job:
+        return _bad("Dit import bestaat niet (meer).", status.HTTP_404_NOT_FOUND)
+    b = request.data
+    photos = [int(i) for i in b.get("photos", [])]
+    if photos and not (modules.enabled("media") and access_level(request.user, "media") >= 2):
+        return _bad("Je hebt geen rechten om foto's aan de mediabibliotheek toe te voegen.", status.HTTP_403_FORBIDDEN)
+    try:
+        key, imported = themeimport.save(job, str(b.get("name") or "").strip()[:60], b.get("description"), [str(x) for x in b.get("assets", [])], [int(i) for i in b.get("home", [])],
+                                         b.get("values") if isinstance(b.get("values"), dict) else None, photos, request.user)
+    except (themepacks.ThemeError, ValueError) as e:
+        return _bad(str(e))
+    return Response({"key": key, "photos": imported, "packs": themepacks.listing()}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_import_refine(request, pk):
+    """Claude improves the draft after what the user writes; ?undo=1 puts the previous version back."""
+    job = _job(request, pk)
+    if not job:
+        return _bad("Dit import bestaat niet (meer).", status.HTTP_404_NOT_FOUND)
+    try:
+        if request.data.get("undo"):
+            themeimport.undo(job)
+            summary = ""
+        else:
+            summary = themeimport.refine(job, str(request.data.get("prompt") or ""))
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    job.refresh_from_db()
+    return Response({**themeimport.public(job), "summary": summary})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_reset(request, key):
+    """RSTCC / Studio2 back to the values of the system."""
+    try:
+        themepacks.reset_builtin(key)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_refine(request, key):
+    """Claude improves the settings of a package after what the user writes. The answer holds the previous values, so the screen can undo it."""
+    try:
+        doc = themepacks._doc(key)
+        cur = theme.merged(doc["values"])
+        changes, summary, _name, _desc = themeimport.refine_values(cur, str(request.data.get("prompt") or ""), doc.get("name", ""))
+        themepacks.update_meta(key, {"values": changes})
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"summary": summary, "changed": sorted(changes), "values": theme.merged(themepacks._doc(key)["values"]), "packs": themepacks.listing()})

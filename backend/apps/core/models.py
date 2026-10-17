@@ -90,3 +90,17 @@ class ThemePack(models.Model):
 
     class Meta:
         ordering = ["key"]
+
+
+class ThemeImportJob(models.Model):
+    """A theme made from a website address: runs in the background (progress), ends as a draft that the user checks before it is saved as a package."""
+
+    id = models.UUIDField(primary_key=True, default=__import__("uuid").uuid4, editable=False)
+    user = models.ForeignKey("accounts.User", null=True, on_delete=models.SET_NULL, related_name="+")
+    url = models.CharField(max_length=500)
+    status = models.CharField(max_length=10, default="running")  # running | done | error
+    progress = models.PositiveSmallIntegerField(default=0)
+    step = models.CharField(max_length=120, blank=True)
+    error = models.TextField(blank=True)
+    draft = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)

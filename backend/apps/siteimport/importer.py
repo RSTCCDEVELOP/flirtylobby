@@ -575,18 +575,9 @@ def approve(imp, choice):
     pr = imp.proposal
     th = pr["theme"]
     name = str(choice.get("name") or th["name"]).strip()[:120] or imp.name
-    values = dict(th["values"])
-    for k in ("primary", "secondary"):  # colours may have been adjusted
-        v = (choice.get("colors") or {}).get(k)
-        if isinstance(v, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", v):
-            values[k] = v.lower()
-    if values.get("chat_color") == th["values"].get("primary"):
-        values["chat_color"] = values["primary"]  # keeps following the primary colour when it was adjusted
+    values = {}  # the look (colours, fonts, popups …) is made in Thema -> Nieuw themapakket -> Importeren van een website; this import brings the pages, pictures and profile type
     prof_key = choice.get("profile") if choice.get("profile") in PROFILE_WORDS or choice.get("profile") == "normal" else None
-    popup_key = choice.get("popup") if choice.get("popup") in ("clean", "header", "glass", "minimal", "bold") else None
-    if popup_key:
-        values["system_popup"] = popup_key
-    values, _errs = T.validate(values)
+    popup_key = None
 
     # pictures: keep the ticked ones, remove the other files from the theme folder
     keep = {a["file"]: a for a in (choice.get("assets") or []) if a.get("include")}
@@ -629,7 +620,7 @@ def approve(imp, choice):
         made += 1
     home = pr["home"]
     imp.home = {"title": home["title"], "html": final(home["html"])} if (choice.get("home") or {}).get("include", True) else {}
-    imp.theme = {"values": values, "palette": th["palette"], "fonts": th["fonts"], "dark": th["dark"],
+    imp.theme = {"values": values, "palette": [], "fonts": [], "dark": False,
                  "popup": popup_key, "profile": prof_key, "profile_reason": pr["profile"]["reason"], "popup_reason": pr["popup"]["reason"]}
     imp.name, imp.assets, imp.proposal, imp.status = name, assets, {}, "imported"
     imp.save()

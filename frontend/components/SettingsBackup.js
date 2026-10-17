@@ -19,10 +19,12 @@ const PRESETS = [
 
 // The parts of the back-up in tabs, so the long list stays easy to survey (parts that are not listed end up under "Overig")
 const GROUPS = [
-  ["look", "Vormgeving", <IconPalette key="a" />, ["branding", "media_files", "theme", "themepacks", "dashboard"]],
+  ["look", "Vormgeving", <IconPalette key="a" />, ["branding", "media_files", "theme", "dashboard"]],
+  ["themes", "Thema's", <IconGrid key="t" />, ["themepacks"]],
+  ["plugins", "Plugins", <IconGrid key="pl" />, ["plugins"]],
   ["site", "Website", <IconGrid key="b" />, ["system", "pages", "content", "seo", "languages"]],
   ["community", "Community", <IconUsers key="c" />, ["community", "subscriptions"]],
-  ["system", "Systeem", <IconLock key="d" />, ["security", "modules", "communication", "integrations", "sandbox", "plugins"]],
+  ["system", "Systeem", <IconLock key="d" />, ["security", "modules", "communication", "integrations", "sandbox"]],
 ];
 
 export default function SettingsBackup() {
@@ -109,42 +111,49 @@ export default function SettingsBackup() {
           {(() => {
             const known = new Set(GROUPS.flatMap((g) => g[3]));
             const tabs = [...GROUPS.map(([k, l, i, keys]) => [k, l, i, keys]), ["other", "Overig", <IconSliders key="o" />, sections.map((x) => x.key).filter((k) => !known.has(k))]]
-              .map(([k, l, i, keys]) => ({ k, l, i, items: sections.filter((x) => keys.includes(x.key)) })).filter((g) => g.items.length);
+              .map(([k, l, i, keys]) => ({ k, l, i, items: sections.filter((x) => keys.includes(x.key)) })).filter((g) => g.items.length || g.k === "other");
             const cur = tabs.find((g) => g.k === grp) || tabs[0];
             if (!cur) return null;
             return (
               <>
                 <Tabs value={cur.k} onChange={setGrp} tabs={tabs.map((g) => [g.k, g.l, g.i, `${g.items.filter((x) => pick.includes(x.key)).length}/${g.items.length}`])} />
                 <div className="bk-grid">{cur.items.map((x) => <Check key={x.key} s={x} list={pick} setList={setPick} />)}</div>
+                {cur.k === "other" && (
+                  <div className="stack-sm">
+                  <label className="check sec-toggle">
+                    <span className="switch"><input type="checkbox" checked={files} onChange={(e) => setFiles(e.target.checked)} /><span /></span>
+                    <span>{tx("Logo's, afbeeldingen en plugins meenemen")} <small className="muted">{tx("De bestanden zelf gaan in de back-up, zodat een nieuwe site er meteen hetzelfde uitziet. Het bestand wordt dan groter.")}</small></span>
+                  </label>
+                  <label className="check sec-toggle">
+                    <span className="switch"><input type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.target.checked)} /><span /></span>
+                    <span>{tx("API-sleutels meenemen")} <small className="muted">{tx("Alleen aanzetten voor een eigen, veilig bewaarde back-up: iedereen met het bestand kan de sleutels lezen.")}</small></span>
+                  </label>
+                  </div>
+                )}
                 {cur.items.some((x) => x.key === "themepacks") && pick.includes("themepacks") && (
                   <div className="card" style={{ display: "grid", gap: ".4rem" }}>
-                    <strong>{tx("Welke themapakketten")}</strong>
-                    {themes.length ? themes.map((x) => (
+                    <div className="row" style={{ justifyContent: "space-between" }}>
+                      <strong>{tx("Welke themapakketten")} ({themePick.length}/{themes.length})</strong>
+                      <button type="button" className="btn sm" onClick={() => setThemePick(themePick.length === themes.length ? [] : themes.map((x) => x.key))}>{themePick.length === themes.length ? tx("Niets selecteren") : tx("Alles selecteren")}</button>
+                    </div>
+                    <div className="bk-cols">{themes.length ? themes.map((x) => (
                       <label key={x.key} className="check"><input type="checkbox" checked={themePick.includes(x.key)} onChange={() => toggle(themePick, setThemePick, x.key)} /><span>{x.name} <small className="muted">v{x.version}{x.enabled ? ` · ${tx("aan")}` : ` · ${tx("uit")}`}</small></span></label>
-                    )) : <small className="muted">{tx("Er zijn geen themapakketten.")}</small>}
+                    )) : <small className="muted">{tx("Er zijn geen themapakketten.")}</small>}</div>
                     <small className="muted">{tx("RSTCC en Studio2 zitten altijd in het systeem en gaan niet mee. Ook of een pakket aan of uit staat gaat mee.")}</small>
                   </div>
                 )}
                 {cur.items.some((x) => x.key === "plugins") && pick.includes("plugins") && (
                   <div className="card" style={{ display: "grid", gap: ".4rem" }}>
                     <strong>{tx("Welke plugins")}</strong>
-                    {plugins.length ? plugins.map((x) => (
+                    <div className="bk-cols">{plugins.length ? plugins.map((x) => (
                       <label key={x.name} className="check"><input type="checkbox" checked={plugPick.includes(x.name)} onChange={() => toggle(plugPick, setPlugPick, x.name)} /><span>{x.title} <small className="muted">{x.version}{x.enabled ? "" : ` · ${tx("uit")}`}</small></span></label>
-                    )) : <small className="muted">{tx("Er zijn geen plugins geïnstalleerd.")}</small>}
-                    <small className="muted">{tx("De plugin zelf (ondertekend) gaat mee als het vinkje bij logo's, afbeeldingen en plugins aan staat. De gegevens die een plugin heeft opgeslagen, zoals advertenties, gaan niet mee.")}</small>
+                    )) : <small className="muted">{tx("Er zijn geen plugins geïnstalleerd.")}</small>}</div>
+                    <small className="muted">{tx("De plugin zelf (ondertekend) gaat mee als bij Overig de schakelaar Logo's, afbeeldingen en plugins meenemen aan staat. De gegevens die een plugin heeft opgeslagen, zoals advertenties, gaan niet mee.")}</small>
                   </div>
                 )}
               </>
             );
           })()}
-          <label className="check sec-toggle">
-            <span className="switch"><input type="checkbox" checked={files} onChange={(e) => setFiles(e.target.checked)} /><span /></span>
-            <span>{tx("Logo's, afbeeldingen en plugins meenemen")} <small className="muted">{tx("De bestanden zelf gaan in de back-up, zodat een nieuwe site er meteen hetzelfde uitziet. Het bestand wordt dan groter.")}</small></span>
-          </label>
-          <label className="check sec-toggle">
-            <span className="switch"><input type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.target.checked)} /><span /></span>
-            <span>{tx("API-sleutels meenemen")} <small className="muted">{tx("Alleen aanzetten voor een eigen, veilig bewaarde back-up: iedereen met het bestand kan de sleutels lezen.")}</small></span>
-          </label>
           <div className="row" style={{ justifyContent: "flex-start" }}>
             <button className="btn primary" disabled={busy || !pick.length} onClick={exportNow}>{busy ? tx("Bezig…") : tx("Back-up downloaden")}</button>
             <button className="btn" onClick={() => setPick(pick.length === sections.length ? [] : sections.map((s) => s.key))}>{pick.length === sections.length ? tx("Niets selecteren") : tx("Alles selecteren")}</button>

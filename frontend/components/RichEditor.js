@@ -104,7 +104,7 @@ export default function RichEditor({ initialHtml, title = tx("Tekst bewerken"), 
           <B c="justifyLeft" label={tx("Links")} /><B c="justifyCenter" label={tx("Midden")} /><B c="justifyRight" label={tx("Rechts")} />
           <span className="rt-sep" />
           <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => { saveSel(); setLink(""); }}>{tx("Link")}</button>
-          {mediaOn && <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => { saveSel(); setPicker(true); }}>{tx("Afbeelding")}</button>}
+          {mediaOn && <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => { saveSel(); setPicker(true); }}>{tx("Media")}</button>}
           {objOn && <button type="button" className="rt-btn" onMouseDown={keep} onClick={openObjects}>{tx("Systeemobject")}</button>}
           <B c="insertHorizontalRule" label={tx("Lijn")} />
           <span className="rt-sep" />

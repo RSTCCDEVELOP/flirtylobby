@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Tabs from "./Tabs";
+import { useRouter } from "next/navigation";
+import { useAuth } from "./AuthContext";
+import PopupStyleGallery from "./PopupStyleGallery";
+import { useUi } from "./Ui";
+import { api, errorText } from "../lib/api";
+import { lvl } from "../lib/perms";
 import MediaPicker from "./MediaPicker";
 import RichEditor from "./RichEditor";
 import { alertDialog, confirmDialog, promptDialog } from "../lib/dialog";
@@ -55,54 +62,132 @@ function PopupMock({ p }) {
   return <div className={`lay-screen ${p.kind}`}><span className="lay-bar" /><span className="lay-lines" />{body}</div>;
 }
 
-function PageMock({ type }) {
+function PageMock({ type, logo, v = {} }) {
+  const Logo = () => (logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="lay-logo-img" /> : <i className="lay-logo" />);
+  const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mfl": v.footer_layout || "simple", "data-mft": v.footer_tone || "page", "data-mblocks": v.block_style || "card" };
   if (type === "site") {
     return (
-      <div className="lay-page site">
-        <div className="lay-top"><i className="lay-logo" /><span className="lay-menu"><b /><b /><b /></span></div>
+      <div className="lay-page site" {...attrs}>
+        <div className="lay-top"><Logo /><span className="lay-menu"><b /><b /><b /></span><span className="lay-burger"><b /><b /><b /></span><span className="lay-actions"><i /><i /></span></div>
         <div className="lay-hero"><strong>{tx("Welkom")}</strong><span className="lay-btn primary">{tx("Meedoen")}</span></div>
         <div className="lay-cards"><i /><i /><i /></div>
+        <div className="lay-foot"><span><b /><b /></span><span><b /><b /></span><span><b /><b /><b /></span></div>
       </div>
     );
   }
   if (type === "dash") {
     return (
-      <div className="lay-page dash">
-        <div className="lay-top"><i className="lay-logo" /><span className="lay-menu"><b /></span></div>
+      <div className="lay-page dash" {...attrs}>
+        <div className="lay-top"><Logo /><span className="lay-menu"><b /></span></div>
         <div className="lay-body"><div className="lay-side"><b /><b /><b /><b /></div><div className="lay-main"><div className="lay-cards"><i /><i /></div><div className="lay-card wide" /></div></div>
       </div>
     );
   }
   return (
-    <div className="lay-page form">
-      <div className="lay-top"><i className="lay-logo" /></div>
+    <div className="lay-page form" {...attrs}>
+      <div className="lay-top"><Logo /></div>
       <div className="lay-form"><strong>{tx("Inloggen")}</strong><span className="lay-input" /><span className="lay-input" /><span className="lay-btn primary">{tx("Inloggen")}</span></div>
     </div>
   );
 }
 
-export default function ThemeLayout() {
+export default function ThemeLayout({ draft = null }) { // draft: {logo}: only the examples, with the colours of a theme that is not saved yet
   const [dev, setDev] = useState("mobile");
+  const [section, setSection] = useState("templates");
+  const sec = draft ? (draft.show || "pages") : section; // templates | style | pages | popups
+  const { user } = useAuth();
+  const router = useRouter();
+  const { previewUi } = useUi();
+  const L = lvl(user, "theme");
+  const [look, setLook] = useState(null); // {values, tabs: [{value,label}], fields}
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    if (draft) return undefined;
+    api("/theme/").then((d) => setLook({ values: d.values, tabs: d.schema.flatMap((g) => g.fields).find((f) => f.key === "tab_style")?.choices || [], fields: d.schema.find((g) => g.key === "page_layout")?.fields || [] })).catch((e) => setErr(errorText(e)));
+    return () => previewUi(null);
+  }, [previewUi, draft]);
+  // the tab style and the look of pop-ups and windows are part of the theme: they change at once and are saved
+  async function pick(key, v) {
+    const values = { ...look.values, [key]: v };
+    setLook({ ...look, values }); setErr("");
+    previewUi({ remember_collapse: values.remember_collapse, sidebar_auto: values.sidebar_auto, chat_label: values.chat_label, version_notice: values.version_notice, tab_style: values.tab_style, system_popup: values.system_popup });
+    try { await api("/theme/", { method: "PUT", body: { values } }); router.refresh(); } catch (e) { setErr(errorText(e)); }
+  }
   const [open, setOpen] = useState(null); // the large demo windows that are built here
   const POPUPS = popups(setOpen);
+  const vals = draft?.values || look?.values || {};
   const close = () => setOpen(null);
   return (
     <div className="stack-sm">
       <p className="muted" style={{ margin: 0 }}>{tx("Zo zien pagina's en popups eruit met het thema dat nu in gebruik is, op een telefoon, een iPad en een computer. De afronding, kleuren, breedte en schaduw van popups pas je aan bij Vormgeving.")}</p>
-      <div className="row" style={{ justifyContent: "flex-start" }}>
+      {!draft && <Tabs value={section} onChange={setSection} tabs={[["templates", "Pagina-indeling"], ["style", "Tabbladen en vensters"], ["pages", "Voorbeeld: pagina's"], ["popups", "Voorbeeld: popups"]]} />}
+      {(sec === "pages" || sec === "popups") && <div className="row" style={{ justifyContent: "flex-start" }}>
         {DEV.map(([k, l, h]) => <button key={k} type="button" className={`btn ${dev === k ? "primary" : ""}`} title={tx(h)} onClick={() => setDev(k)}>{tx(l)}</button>)}
-      </div>
+      </div>}
 
-      <h2 style={{ margin: ".5rem 0 0" }}>{tx("Pagina-indelingen")}</h2>
+      {err && <div className="alert">{err}</div>}
+      {!draft && look && sec === "style" && (
+        <>
+          <h2 style={{ margin: ".5rem 0 0" }}>{tx("Tabbladen")}</h2>
+          <p className="muted" style={{ margin: 0 }}>{tx("De vorm van alle tabbladen van de website. Het werkt direct: kijk naar de tabbladen bovenaan deze pagina.")}</p>
+          <div className="preset-grid">
+            {look.tabs.map((c) => (
+              <button key={c.value} type="button" disabled={L < 2} className={`preset ${look.values.tab_style === c.value ? "active" : ""}`} onClick={() => pick("tab_style", c.value)}><strong>{tx(c.label)}</strong></button>
+            ))}
+          </div>
+          <h2 style={{ margin: "1rem 0 0" }}>{tx("Vensters en popups: indeling")}</h2>
+          <p className="muted" style={{ margin: 0 }}>{tx("Het uiterlijk van alle popups, vensters en de tabbladen daarin. Dit uiterlijk wordt overal gebruikt (beheer, bewerken, meldingen).")}</p>
+          <PopupStyleGallery value={look.values.system_popup || "clean"} onChange={(v) => L >= 2 && pick("system_popup", v)} />
+        </>
+      )}
+
+      {!draft && look && sec === "templates" && (
+        <>
+          <h2 style={{ margin: "1rem 0 0" }}>{tx("Pagina-indeling van de website")}</h2>
+          <p className="muted" style={{ margin: 0 }}>{tx("Kies de indeling van header, menu, footer en blokken. De voorbeelden hieronder passen direct mee en de website volgt na het kiezen.")}</p>
+          {[["Header", ["header_layout", "header_style", "header_sticky"]], ["Menu", ["menu_style"]], ["Footer", ["footer_layout", "footer_tone"]], ["Blokken en kaarten", ["block_style"]]].map(([title, keys]) => (
+            <div key={title} className="stack-sm">
+              <strong>{tx(title)}</strong>
+              {look.fields.filter((f) => keys.includes(f.key)).map((f) => (
+                <div key={f.key} className="stack-sm" style={{ gap: ".4rem" }}>
+                  <small className="muted">{tx(f.label)}</small>
+                  <div className="preset-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
+                    {f.choices.map((c) => (
+                      <button key={c.value} type="button" disabled={L < 2} className={`preset opt ${look.values[f.key] === c.value ? "active" : ""}`} onClick={() => pick(f.key, c.value)}>
+                        {f.key !== "header_sticky" && <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" v={{ ...look.values, [f.key]: c.value }} /></span>}
+                        <strong style={{ fontSize: ".85rem" }}>{tx(c.label)}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="grid2">
+            {look.fields.filter((f) => f.type === "number").map((f) => (
+              <label key={f.key}>{tx(f.label)}: {look.values[f.key]}{f.unit}
+                <input type="range" min={f.min} max={f.max} step={f.step} value={look.values[f.key]} disabled={L < 2} onChange={(e) => setLook({ ...look, values: { ...look.values, [f.key]: Number(e.target.value) } })} onMouseUp={(e) => pick(f.key, Number(e.target.value))} onTouchEnd={(e) => pick(f.key, Number(e.target.value))} onKeyUp={(e) => pick(f.key, Number(e.target.value))} />
+              </label>
+            ))}
+          </div>
+
+        </>
+      )}
+
+      {sec === "pages" && <>
+      <h2 style={{ margin: "1rem 0 0" }}>{tx("Pagina-indelingen")}</h2>
       <div className="lay-grid">
         {[["site", "Website-pagina"], ["dash", "Dashboard"], ["form", "Formulier (inloggen)"]].map(([t, l]) => (
           <div key={t} className="lay-item">
-            <div className={`lay-frame ${dev}`}><PageMock type={t} /></div>
+            <div className={`lay-frame ${dev}`}><PageMock type={t} logo={draft?.logo} v={vals} /></div>
             <strong>{tx(l)}</strong>
           </div>
         ))}
       </div>
 
+      </>}
+
+      {sec === "popups" && <>
       <h2 style={{ margin: "1rem 0 0" }}>{tx("Popups en vensters")}</h2>
       {SIZES.map(([sz, label, hint]) => (
         <div key={sz} className="stack-sm">
@@ -112,14 +197,15 @@ export default function ThemeLayout() {
               <div key={p.key} className="lay-item">
                 <div className={`lay-frame ${dev}`}><PopupMock p={p} /></div>
                 <strong>{tx(p.name)}</strong>
-                <div><button type="button" className="btn" onClick={p.show}>{tx("Toon popup")}</button></div>
+                {!draft && <div><button type="button" className="btn" onClick={p.show}>{tx("Toon popup")}</button></div>}
               </div>
             ))}
           </div>
         </div>
       ))}
+      </>}
 
-      {open === "form" && (
+      {!draft && open === "form" && (
         <div className="overlay" onClick={close}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); close(); }}>
             <h2>{tx("Product wijzigen")}</h2>
