@@ -1178,6 +1178,8 @@ html[data-popup="header"] .modal > h2:first-child { margin-bottom: 1rem !importa
 
 /* connect with a code / scanner */
 .code-input { font-size: 1.6rem; letter-spacing: .3em; text-align: center; font-weight: 700; text-transform: uppercase; }
+/* the example code is clearly a hint, not something already typed */
+.code-input::placeholder { color: color-mix(in srgb, var(--text, #fff) 22%, transparent); font-weight: 400; opacity: 1; }
 .invite-code { display: inline-flex; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
 .invite-code strong { font-size: 1.15rem; letter-spacing: .18em; font-variant-numeric: tabular-nums; }
 .scanner { position: relative; width: 100%; }
