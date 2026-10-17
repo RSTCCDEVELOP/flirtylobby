@@ -20,6 +20,7 @@ urlpatterns = [
     path("api/", include("apps.pages.urls")),
     path("api/", include("apps.siteimport.urls")),
     path("api/", include("apps.subscriptions.urls")),
+    path("api/", include("apps.sysobjects.urls")),
 ]
 
 if settings.DEBUG:

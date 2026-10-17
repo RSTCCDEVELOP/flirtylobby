@@ -9,6 +9,7 @@ import { api, errorText, mediaUrl } from "../lib/api";
 import MediaPicker from "./MediaPicker";
 import { useModule } from "./Modules";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
+import RichHtml from "./SysObjects";
 import { useSession } from "./Session";
 
 const ContentContext = createContext({ blocks: {}, setBlock: () => {}, defaultLang: "nl", languages: [] });
@@ -77,7 +78,7 @@ export function EditableText({ id, as: Tag = "p", fallback = "", fallbacks, clas
   }
 
   const display = isHtml ? (
-    <div className={`rich-text ${className || ""}`} dangerouslySetInnerHTML={{ __html: toDisplay(text.slice(5)) }} />
+    <RichHtml className={`rich-text ${className || ""}`} html={toDisplay(text.slice(5))} />
   ) : (
     <Tag className={className}>{text}</Tag>
   );

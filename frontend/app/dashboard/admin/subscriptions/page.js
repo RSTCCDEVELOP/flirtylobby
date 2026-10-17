@@ -4,8 +4,11 @@ import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import GrantsEditor from "../../../../components/GrantsEditor";
+import { useModule } from "../../../../components/Modules";
 import Tabs from "../../../../components/Tabs";
+import ViewBar from "../../../../components/ViewBar";
 import { api, errorText } from "../../../../lib/api";
+import { useView } from "../../../../lib/useView";
 import { confirmDialog, promptDialog } from "../../../../lib/dialog";
 import { money } from "../../../../lib/format";
 import { lvl } from "../../../../lib/perms";
@@ -18,7 +21,7 @@ const GATES = [
   ["video_chat", "Videochat", "Videobellen via de chat en de directe verbinding vraagt een abonnement."],
   ["likes", "Likes per dag", "Zonder abonnement geldt het aantal likes hieronder; een abonnement met 'Likes per dag' geeft meer of onbeperkt."],
 ];
-const blank = { name: "", description: "", price: "0", vat_rate: "21", interval: "month", duration_days: 0, trial_days: 0, grants: [], highlight: false, active: true, order: 0 };
+const blank = { system_object: false, button: {}, name: "", description: "", price: "0", vat_rate: "21", interval: "month", duration_days: 0, trial_days: 0, grants: [], highlight: false, active: true, order: 0 };
 
 export default function SubscriptionsAdmin() {
   const { user } = useAuth();
@@ -32,6 +35,8 @@ export default function SubscriptionsAdmin() {
   const [modal, setModal] = useState(null);
   const [filter, setFilter] = useState({ status: "", q: "" });
   const [msg, setMsg] = useState(null);
+  const sysOn = useModule("sysobjects");
+  const view = useView("subscription-plans");
 
   const loadPlans = useCallback(() => api("/subscriptions/admin/plans/").then(setPlans).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   const loadMembers = useCallback(() => api(`/subscriptions/admin/members/?status=${filter.status}&q=${encodeURIComponent(filter.q)}`).then(setMembers).catch((e) => setMsg({ ok: false, text: errorText(e) })), [filter]);
@@ -105,8 +110,10 @@ export default function SubscriptionsAdmin() {
       <Tabs value={tab} onChange={setTab} tabs={[["plans", "Abonnementen", null, plans.length], ["members", "Abonnees"], ["settings", "Instellingen"]]} />
 
       {tab === "plans" && (
-        <div className="sub-plans">
-          {plans.map((p) => (
+        <>
+        <ViewBar view={view} count={`${plans.length}`} placeholder={tx("Zoek een abonnement…")} />
+        <div className={`sub-plans${view.cls}`}>
+          {plans.filter((p) => view.match(p.name, p.description, p.grants_text.map((g) => g.label).join(" "))).map((p) => (
             <div className={`card sub-plan${p.active ? "" : " off"}`} key={p.id}>
               <div className="sub-plan-top"><strong>{p.name}</strong>{p.highlight && <span className="badge ok">{tx("Populair")}</span>}{!p.active && <span className="badge off">{tx("Niet te koop")}</span>}</div>
               <div className="sub-price">{money(p.price, cur)} <small>{p.recurring ? `/ ${iv(p.interval).replace("Per ", "").toLowerCase()}` : tx("eenmalig")}</small></div>
@@ -127,6 +134,7 @@ export default function SubscriptionsAdmin() {
           ))}
           {!plans.length && <p className="muted">{tx("Nog geen abonnementen. Maak je eerste abonnement.")}</p>}
         </div>
+        </>
       )}
 
       {tab === "members" && (
@@ -205,6 +213,7 @@ export default function SubscriptionsAdmin() {
             <div className="row-checks">
               <label className="check"><input type="checkbox" checked={modal.active} onChange={(e) => setModal({ ...modal, active: e.target.checked })} /> {tx("Te koop")}</label>
               <label className="check"><input type="checkbox" checked={modal.highlight} onChange={(e) => setModal({ ...modal, highlight: e.target.checked })} /> {tx("Markeren als populair")}</label>
+              {sysOn && <label className="check"><input type="checkbox" checked={!!modal.system_object} onChange={(e) => setModal({ ...modal, system_object: e.target.checked })} /> {tx("Systeemobject (op een pagina te zetten)")}</label>}
             </div>
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">

@@ -63,6 +63,17 @@ def test_stripe(c):
     return False, denied or "Toegang geweigerd: controleer de sleutel."
 
 
+def test_elevenlabs(c):
+    key = (c.get("api_key") or "").strip()
+    if not key:
+        return False, "API-sleutel ontbreekt."
+    ok, msg = _http_get("https://api.elevenlabs.io/v1/models", {"xi-api-key": key})
+    if ok or "HTTP 401" in msg or "HTTP 403" not in msg:
+        return ok, msg
+    # a key limited to some rights may not read the models list: the user endpoint tells whether the key itself is valid
+    return _http_get("https://api.elevenlabs.io/v1/user/subscription", {"xi-api-key": key})
+
+
 def test_gemini(c):
     if not c.get("api_key"):
         return False, "API-sleutel ontbreekt."
@@ -174,10 +185,21 @@ def f(key, label, kind="text", secret=False, default="", options=None, required=
             "options": options, "required": required}
 
 
+def model_field(default, options):
+    """A model choice: pick from the list (or fetch the live list from the provider), or type any model ID."""
+    return f("model", "Model", kind="model", default=default, required=False, options=[{"value": v, "label": l} for v, l in options])
+
+
 PROVIDERS = {
-    "anthropic": {"label": "Claude (Anthropic)", "test": test_anthropic, "fields": [f("api_key", "API-sleutel", secret=True)]},
-    "gemini": {"label": "Gemini (Google)", "test": test_gemini, "fields": [f("api_key", "API-sleutel", secret=True)]},
-    "openai": {"label": "OpenAI", "test": test_openai, "fields": [f("api_key", "API-sleutel", secret=True)]},
+    "anthropic": {"label": "Claude (Anthropic)", "test": test_anthropic, "fields": [f("api_key", "API-sleutel", secret=True), model_field("claude-sonnet-5-5", [
+        ("claude-fable-5-1", "Claude Fable 5.1"), ("claude-opus-5-5", "Claude Opus 5.5"), ("claude-sonnet-5-5", "Claude Sonnet 5.5"), ("claude-haiku-5-5", "Claude Haiku 5.5")])]},
+    "gemini": {"label": "Gemini (Google)", "test": test_gemini, "fields": [f("api_key", "API-sleutel", secret=True), model_field("gemini-2.5-flash", [
+        ("gemini-2.5-pro", "Gemini 2.5 Pro"), ("gemini-2.5-flash", "Gemini 2.5 Flash"), ("gemini-2.5-flash-lite", "Gemini 2.5 Flash-Lite")])]},
+    "openai": {"label": "OpenAI", "test": test_openai, "fields": [f("api_key", "API-sleutel", secret=True), model_field("gpt-4o", [
+        ("gpt-4o", "GPT-4o"), ("gpt-4o-mini", "GPT-4o mini"), ("o3", "o3"), ("o4-mini", "o4-mini")])]},
+    "elevenlabs": {"label": "ElevenLabs (stem en audio)", "test": test_elevenlabs, "fields": [f("api_key", "API-sleutel", secret=True), model_field("eleven_multilingual_v2", [
+        ("eleven_multilingual_v2", "Multilingual v2"), ("eleven_flash_v2_5", "Flash v2.5 (snel)"), ("eleven_turbo_v2_5", "Turbo v2.5"), ("eleven_v3", "Eleven v3")]),
+        f("voice_id", "Standaardstem (voice-ID, optioneel)", required=False)]},
     "s3": {"label": "S3-opslag", "test": test_s3, "fields": [
         f("bucket", "Bucket"), f("region", "Regio", default="eu-west-1"),
         f("endpoint", "Endpoint (alleen voor S3-compatibel, bv. Hetzner/Scaleway)", required=False),
@@ -203,3 +225,39 @@ PROVIDERS = {
 
 def catalog():
     return [{"provider": k, "label": v["label"], "fields": v["fields"]} for k, v in PROVIDERS.items()]
+
+
+# ── live model lists (the "Modellen ophalen" button) ─────────────────────────
+def _get_json(url, headers):
+    import json
+
+    req = urllib.request.Request(url, headers={"User-Agent": "portal-connection-test", **headers})
+    with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
+        return json.loads(res.read())
+
+
+def list_models(provider, c):
+    """[{value, label}] of the models this key may use. Raises ValueError with a readable message."""
+    key = (c.get("api_key") or "").strip()
+    if not key:
+        raise ValueError("Vul eerst de API-sleutel in (of sla de koppeling op).")
+    try:
+        if provider == "anthropic":
+            d = _get_json("https://api.anthropic.com/v1/models?limit=100", {"x-api-key": key, "anthropic-version": "2023-06-01"})
+            return [{"value": m["id"], "label": m.get("display_name") or m["id"]} for m in d.get("data", [])]
+        if provider == "openai":
+            d = _get_json("https://api.openai.com/v1/models", {"Authorization": f"Bearer {key}"})
+            skip = ("embedding", "whisper", "tts", "dall-e", "moderation", "image", "audio", "realtime", "transcribe", "davinci", "babbage")
+            return [{"value": m["id"], "label": m["id"]} for m in sorted(d.get("data", []), key=lambda x: x["id"]) if not any(s in m["id"] for s in skip)]
+        if provider == "gemini":
+            d = _get_json(f"https://generativelanguage.googleapis.com/v1beta/models?pageSize=100&key={urllib.parse.quote(key)}", {})
+            return [{"value": m["name"].split("/", 1)[-1], "label": m.get("displayName") or m["name"]} for m in d.get("models", [])
+                    if "generateContent" in m.get("supportedGenerationMethods", [])]
+        if provider == "elevenlabs":
+            d = _get_json("https://api.elevenlabs.io/v1/models", {"xi-api-key": key})
+            return [{"value": m["model_id"], "label": m.get("name") or m["model_id"]} for m in d]
+    except urllib.error.HTTPError as e:
+        raise ValueError("Toegang geweigerd: controleer de API-sleutel." if e.code in (401, 403) else f"Het ophalen mislukte (HTTP {e.code}).")
+    except Exception as e:  # noqa: BLE001
+        raise ValueError(f"Geen verbinding: {e}")
+    raise ValueError("Deze koppeling heeft geen lijst met modellen.")

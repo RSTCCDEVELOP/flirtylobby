@@ -14,6 +14,7 @@ urlpatterns = [
     path("subscriptions/admin/stats/", views.stats),
     path("subscriptions/admin/give/", views.give),
     path("subscriptions/admin/donations/", views.donations_admin),
+    path("subscriptions/admin/campaigns/ai/", views.campaign_ai),
     path("subscriptions/plans/", views.plans_public),
     path("subscriptions/subscribe/", views.subscribe),
     path("subscriptions/me/", views.me),

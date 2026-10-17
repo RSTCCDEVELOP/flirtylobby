@@ -6,9 +6,13 @@ import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
 import Flag from "../../../../components/Flag";
+import ViewBar from "../../../../components/ViewBar";
+import TableView from "../../../../components/TableView";
+import { useView } from "../../../../lib/useView";
 import { api, errorText } from "../../../../lib/api";
 
 export default function Languages() {
+  const tv = useView("languages", "list");
   const { user } = useAuth();
   const L = lvl(user, "languages");
   const [langs, setLangs] = useState([]);
@@ -35,7 +39,8 @@ export default function Languages() {
       {error && <div className="alert">{error}</div>}
 
       <Collapsible id="languages-list" title={tx("Talen")}>
-      <div className="table-wrap">
+      <ViewBar view={tv} />
+      <TableView view={tv}>
         <table>
           <thead>
             <tr><th>{tx("Taal")}</th><th>{tx("Code")}</th><th>{tx("Actief")}</th><th>{tx("Standaard")}</th></tr>
@@ -64,7 +69,7 @@ export default function Languages() {
             ))}
           </tbody>
         </table>
-      </div>
+      </TableView>
       </Collapsible>
 
       <Collapsible id="languages-switcher" title={tx("Taalkeuze in de header")}>

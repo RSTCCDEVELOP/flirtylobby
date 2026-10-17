@@ -21,6 +21,44 @@ ADMIN_SUBS = [has_level_for("subscriptions", {"list": "use", "retrieve": "use", 
 ADMIN_DON = [has_level_for("donations", {"list": "use", "retrieve": "use", "destroy": "manage"}, default="edit"), module_required("donations")]
 
 
+# ── per-language texts, button look ──────────────────────────────────────────
+ICONS = ["none", "heart", "gift", "coffee", "star", "rocket", "smile", "card"]
+VARIANTS = ["primary", "outline", "soft", "gradient"]
+
+
+def lang_codes():
+    from apps.core.models import Language
+
+    return set(Language.objects.values_list("code", flat=True))
+
+
+def clean_texts(raw, max_len):
+    """{lang: text} for known languages only."""
+    codes = lang_codes()
+    if not isinstance(raw, dict):
+        return {}
+    return {k: str(v).strip()[:max_len] for k, v in raw.items() if k in codes and str(v).strip()}
+
+
+def clean_button(raw):
+    import re
+
+    b = raw if isinstance(raw, dict) else {}
+    color = str(b.get("color") or "")
+    return {"as_button": bool(b.get("as_button")), "labels": clean_texts(b.get("labels"), 40),
+            "icon": b.get("icon") if b.get("icon") in ICONS else "heart", "variant": b.get("variant") if b.get("variant") in VARIANTS else "primary",
+            "size": b.get("size") if b.get("size") in ("sm", "md", "lg") else "md", "radius": b.get("radius") if b.get("radius") in ("default", "pill", "square") else "default",
+            "color": color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else ""}
+
+
+def _text(d, default):
+    """Text for the default language, else any, else the fallback."""
+    from apps.core.models import Language
+
+    dl = Language.objects.filter(is_default=True).values_list("code", flat=True).first()
+    return d.get(dl) or next(iter(d.values()), "") or default
+
+
 # ── serializers ──────────────────────────────────────────────────────────────
 class PlanSerializer(serializers.ModelSerializer):
     subscribers = serializers.SerializerMethodField()
@@ -29,7 +67,7 @@ class PlanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plan
-        fields = ["id", "slug", "name", "description", "price", "vat_rate", "interval", "duration_days", "trial_days", "grants", "grants_text", "highlight", "active", "order", "recurring", "subscribers"]
+        fields = ["id", "slug", "name", "description", "price", "vat_rate", "interval", "duration_days", "trial_days", "grants", "grants_text", "highlight", "active", "order", "recurring", "subscribers", "system_object", "button"]
         read_only_fields = ["slug"]
 
     def get_subscribers(self, p):
@@ -44,6 +82,9 @@ class PlanSerializer(serializers.ModelSerializer):
         except ValueError as e:
             raise serializers.ValidationError(str(e))
 
+    def validate_button(self, v):
+        return clean_button(v)
+
     def validate(self, d):
         if d.get("price") is not None and d["price"] < 0:
             raise serializers.ValidationError({"price": "Een prijs kan niet negatief zijn."})
@@ -51,7 +92,14 @@ class PlanSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         data["slug"] = unique_slug(Plan, data["name"])
-        return super().create(data)
+        obj = super().create(data)
+        __import__("apps.sysobjects.service", fromlist=["sync"]).sync()
+        return obj
+
+    def update(self, inst, data):
+        obj = super().update(inst, data)
+        __import__("apps.sysobjects.service", fromlist=["sync"]).sync()
+        return obj
 
 
 class CampaignSerializer(serializers.ModelSerializer):
@@ -62,8 +110,9 @@ class CampaignSerializer(serializers.ModelSerializer):
     class Meta:
         model = DonationCampaign
         fields = ["id", "slug", "name", "description", "recipient", "recipient_user", "min_amount", "max_amount", "step", "default_amount", "goal", "allow_message",
-                  "allow_anonymous", "grants", "grants_text", "grant_days", "min_for_grants", "active", "order", "raised", "count"]
+                  "allow_anonymous", "grants", "grants_text", "grant_days", "min_for_grants", "active", "order", "raised", "count", "names", "descriptions", "recipients", "button", "system_object"]
         read_only_fields = ["slug"]
+        extra_kwargs = {"name": {"required": False, "allow_blank": True}}
 
     def get_raised(self, c):
         return str(service.raised(c)["total"])
@@ -80,7 +129,28 @@ class CampaignSerializer(serializers.ModelSerializer):
         except ValueError as e:
             raise serializers.ValidationError(str(e))
 
+    def validate_names(self, v):
+        return clean_texts(v, 120)
+
+    def validate_descriptions(self, v):
+        return clean_texts(v, 1000)
+
+    def validate_recipients(self, v):
+        return clean_texts(v, 120)
+
+    def validate_button(self, v):
+        return clean_button(v)
+
     def validate(self, d):
+        names = d.get("names", getattr(self.instance, "names", {}))
+        if not (d.get("name") or "").strip():
+            d["name"] = _text(names, getattr(self.instance, "name", "")) or ""
+        if not d["name"]:
+            raise serializers.ValidationError({"name": "Geef de actie een naam (in minstens één taal)."})
+        if "descriptions" in d and not d.get("description"):
+            d["description"] = _text(d["descriptions"], "")
+        if "recipients" in d and not d.get("recipient"):
+            d["recipient"] = _text(d["recipients"], "")
         g = lambda k: d.get(k, getattr(self.instance, k, None))  # noqa: E731
         if g("min_amount") <= 0 or g("max_amount") < g("min_amount"):
             raise serializers.ValidationError({"max_amount": "Het maximum moet gelijk of hoger zijn dan het minimum (en het minimum meer dan 0)."})
@@ -92,7 +162,14 @@ class CampaignSerializer(serializers.ModelSerializer):
 
     def create(self, data):
         data["slug"] = unique_slug(DonationCampaign, data["name"])
-        return super().create(data)
+        obj = super().create(data)
+        __import__("apps.sysobjects.service", fromlist=["sync"]).sync()
+        return obj
+
+    def update(self, inst, data):
+        obj = super().update(inst, data)
+        __import__("apps.sysobjects.service", fromlist=["sync"]).sync()
+        return obj
 
 
 def _sub_row(s, with_user=False):
@@ -248,7 +325,84 @@ class CampaignViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if self.get_object().donations.exists():
             return bad("Er zijn donaties voor deze actie. Zet de actie uit in plaats van hem te verwijderen.")
-        return super().destroy(request, *args, **kwargs)
+        r = super().destroy(request, *args, **kwargs)
+        __import__("apps.sysobjects.service", fromlist=["sync"]).sync()
+        return r
+
+
+def _claude(system, prompt, max_tokens=2500):
+    """One call to Claude through the Anthropic link (Admin -> API keys). Returns the text, or raises ValueError with a readable message."""
+    import json
+    import urllib.error
+    import urllib.request
+
+    from apps.integrations.models import Integration
+
+    obj = Integration.objects.filter(provider="anthropic", enabled=True).first()
+    if not obj or not obj.config.get("api_key"):
+        raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
+    body = json.dumps({"model": obj.config.get("model") or "claude-sonnet-5-5", "max_tokens": max_tokens, "system": system, "messages": [{"role": "user", "content": prompt}]}).encode()
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={"x-api-key": obj.config["api_key"], "anthropic-version": "2023-06-01", "content-type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as res:
+            data = json.loads(res.read())
+    except urllib.error.HTTPError as e:
+        raise ValueError(f"Claude gaf een fout (HTTP {e.code}). Controleer de koppeling en het tegoed.")
+    except Exception as e:  # noqa: BLE001
+        raise ValueError(f"Geen verbinding met Claude: {e}")
+    return "".join(b.get("text", "") for b in data.get("content", []))
+
+
+@api_view(["POST"])
+@permission_classes([has_level("donations", "edit"), module_required("donations")])
+def campaign_ai(request):
+    """'Genereer met AI': the prompt (the description field) becomes a complete donation action: texts in every language, amounts, button."""
+    import json
+    import re
+
+    from apps.core.models import Language
+    from apps.sandbox import service as sandbox
+
+    prompt = str(request.data.get("prompt") or "").strip()[:2000]
+    if len(prompt) < 5:
+        return bad("Beschrijf eerst in het veld Omschrijving waar de donatie-actie over gaat.")
+    langs = [l for l in Language.objects.filter(enabled=True).values("code", "name")] or [{"code": "nl", "name": "Nederlands"}]
+    codes = [l["code"] for l in langs]
+    if sandbox.active("integrations"):  # simulated: no call to Claude, but the form can be tried out
+        words = prompt.split()
+        title = " ".join(words[:4]).capitalize()
+        out = {"names": {c: title for c in codes}, "descriptions": {c: prompt[:300] for c in codes}, "recipients": {c: "" for c in codes}, "min_amount": 2, "max_amount": 100,
+               "step": 1, "default_amount": 10, "goal": 500, "allow_message": True, "allow_anonymous": True, "button_labels": {c: "Doneer" for c in codes}, "button_icon": "heart", "simulated": True}
+    else:
+        system = ("Je helpt bij het maken van een donatie-actie voor een website. Antwoord ALLEEN met één JSON-object, zonder uitleg of markdown. "
+                  f"Talen (code: naam): {', '.join(f'{l['code']}: {l['name']}' for l in langs)}. Vertaal natuurlijk en kort, in de toon van de omschrijving. Velden: "
+                  "names {taalcode: titel, max 60 tekens}, descriptions {taalcode: omschrijving, max 300 tekens}, recipients {taalcode: voor wie, bv. 'de makers'}, "
+                  "button_labels {taalcode: knoptekst, max 20 tekens, bv. 'Doneer'}, button_icon (een van: heart, gift, coffee, star, rocket, smile, card), "
+                  "min_amount, max_amount, step, default_amount, goal (getallen in euro, redelijk gekozen bij het doel; goal mag null zijn), allow_message en allow_anonymous (true/false).")
+        cur = request.data.get("current")
+        try:
+            raw = _claude(system, f"Omschrijving van de actie:\n{prompt}" + (f"\n\nHuidige gegevens (verbeter of vul aan):\n{json.dumps(cur, ensure_ascii=False)[:1500]}" if cur else ""))
+            m = re.search(r"\{.*\}", raw, re.S)
+            out = json.loads(m.group(0)) if m else None
+        except (ValueError, json.JSONDecodeError) as e:
+            return bad(str(e) if isinstance(e, ValueError) and not isinstance(e, json.JSONDecodeError) else "Claude gaf een antwoord dat niet te lezen was. Probeer het nog eens.", 502)
+        if not isinstance(out, dict):
+            return bad("Claude gaf een antwoord dat niet te lezen was. Probeer het nog eens.", 502)
+
+    def num(k, lo, hi, default):
+        try:
+            return max(lo, min(hi, round(float(out.get(k)), 2)))
+        except (TypeError, ValueError):
+            return default
+
+    mn = num("min_amount", 0.5, 100000, 2)
+    mx = max(mn, num("max_amount", 0.5, 100000, 100))
+    step = num("step", 0.01, 10000, 1)
+    res = {"names": clean_texts(out.get("names"), 120), "descriptions": clean_texts(out.get("descriptions"), 1000), "recipients": clean_texts(out.get("recipients"), 120),
+           "min_amount": mn, "max_amount": mx, "step": step, "default_amount": min(max(num("default_amount", mn, mx, mn), mn), mx), "goal": (num("goal", 1, 10000000, 0) or None),
+           "allow_message": bool(out.get("allow_message", True)), "allow_anonymous": bool(out.get("allow_anonymous", True)),
+           "button": {"labels": clean_texts(out.get("button_labels"), 40), "icon": out.get("button_icon") if out.get("button_icon") in ICONS else "heart"}, "simulated": bool(out.get("simulated"))}
+    return Response(res)
 
 
 @api_view(["GET"])
@@ -272,7 +426,7 @@ def donations_admin(request):
 def _plan_public(p, mine):
     return {"id": p.id, "slug": p.slug, "name": p.name, "description": p.description, "price": str(p.price), "interval": p.interval, "interval_label": service.interval_label(p),
             "recurring": p.recurring, "duration_days": p.duration_days, "trial_days": p.trial_days, "highlight": p.highlight, "grants": service.describe(p.grants),
-            "mine": mine.get(p.id)}
+            "mine": mine.get(p.id), "button": p.button or {}}
 
 
 @api_view(["GET"])
@@ -365,7 +519,7 @@ def _campaign_public(c, detail=False):
     out = {"id": c.id, "slug": c.slug, "name": c.name, "description": c.description, "recipient": c.recipient or "de makers", "min": str(c.min_amount), "max": str(c.max_amount),
            "step": str(c.step), "default": str(c.default_amount), "goal": str(c.goal) if c.goal else None, "raised": str(r["total"]), "count": r["count"],
            "allow_message": c.allow_message, "allow_anonymous": c.allow_anonymous, "grants": service.describe(c.grants), "grant_days": c.grant_days,
-           "min_for_grants": str(c.min_for_grants)}
+           "min_for_grants": str(c.min_for_grants), "names": c.names, "descriptions": c.descriptions, "recipients": c.recipients, "button": c.button or {}}
     if detail:
         out["recent"] = [{"name": "Anoniem" if d.anonymous else (d.name or "Iemand"), "amount": str(d.amount), "message": d.message, "at": d.paid_at}
                          for d in c.donations.filter(status="paid").order_by("-paid_at")[:8]]

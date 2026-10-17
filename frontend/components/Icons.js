@@ -51,3 +51,8 @@ export const IconSliders = I(<path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14
 export const IconSettings = I(<><circle cx="12" cy="12" r="3" /><path d="M19.4 14a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9v.1a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></>);
 export const IconBell = I(<path d="M6 17V11a6 6 0 1112 0v6l1.5 2h-15zM10 21a2 2 0 004 0" />);
 export const IconRefresh = I(<path d="M20 11a8 8 0 00-14.5-4.5M4 4v4h4M4 13a8 8 0 0014.5 4.5M20 20v-4h-4" />);
+
+export const IconGift = (props) => <svg {...p} {...props}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M5 12v8a1 1 0 001 1h12a1 1 0 001-1v-8M12 8c-2.5 0-4.5-1-4.5-2.8S9.2 3 12 8zM12 8c2.5 0 4.5-1 4.5-2.8S14.8 3 12 8z" /></svg>;
+export const IconCoffee = (props) => <svg {...p} {...props}><path d="M4 8h12v6a5 5 0 01-5 5H9a5 5 0 01-5-5V8zM16 10h2a2.5 2.5 0 010 5h-2M7 3v2M10 3v2M13 3v2" /></svg>;
+export const IconRocket = (props) => <svg {...p} {...props}><path d="M12 3c3.5 2 5.5 5.5 5 10l-2 2h-6l-2-2c-.5-4.500 1.500-8 5-10zM9 15l-3 3 .5 3 3-1M15 15l3 3-.5 3-3-1" /><circle cx="12" cy="10" r="1.500" /></svg>;
+export const IconCard = (props) => <svg {...p} {...props}><rect x="3" y="5.500" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h3" /></svg>;

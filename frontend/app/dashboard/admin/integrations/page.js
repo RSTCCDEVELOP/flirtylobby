@@ -8,6 +8,8 @@ import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
 import { alertDialog } from "../../../../lib/dialog";
+import ViewBar from "../../../../components/ViewBar";
+import { useView } from "../../../../lib/useView";
 import S3Browser from "../../../../components/S3Browser";
 import { resetIntegrationsCache } from "../../../../lib/integrations";
 
@@ -22,6 +24,7 @@ export default function Integrations() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(null);
   const [modal, setModal] = useState(null);
+  const view = useView("integrations");
   const [browse, setBrowse] = useState(null); // S3 link whose files are being browsed
 
   const load = useCallback(() => {
@@ -74,6 +77,15 @@ export default function Integrations() {
     catch { setXfer((x) => ({ ...x, bundle: null, name: "", error: tx("Dit bestand kan niet gelezen worden.") })); }
   }
 
+  // the models this key may use, straight from the provider (the list under the field; any model ID can still be typed)
+  async function fetchModels() {
+    setModal((m) => ({ ...m, loadingModels: true, error: "" }));
+    try {
+      const r = await api("/admin/integrations/models/", { method: "POST", body: { provider: modal.provider, id: modal.id, api_key: modal.config.api_key || "" } });
+      setModal((m) => ({ ...m, models: r.models, loadingModels: false, notice: `${r.models.length} ${tx("modellen gevonden. Kies er een in het veld Model.")}` }));
+    } catch (e) { setModal((m) => ({ ...m, loadingModels: false, error: errorText(e) })); }
+  }
+
   // random 32-byte key (base64) for the file encryption: copied to the clipboard so it can be stored safely right away
   const genKey = async (k) => {
     const b = crypto.getRandomValues(new Uint8Array(32));
@@ -116,7 +128,7 @@ export default function Integrations() {
 
   async function save(e) {
     e.preventDefault();
-    const { id, error: _e, ...body } = modal;
+    const { id, error: _e, models: _m, notice: _n, loadingModels: _l, ...body } = modal;
     try {
       await (id ? api(`/admin/integrations/${id}/`, { method: "PATCH", body }) : api("/admin/integrations/", { method: "POST", body }));
       setModal(null);
@@ -145,8 +157,9 @@ export default function Integrations() {
       {error && <div className="alert">{error}</div>}
 
       <Collapsible id="integrations-list" title={tx("Koppelingen")}>
-      <div className="api-grid">
-        {items.map((i) => {
+      <ViewBar view={view} count={`${items.length}`} placeholder={tx("Zoek een koppeling…")} />
+      <div className={`api-grid${view.cls}`}>
+        {items.filter((i) => view.match(i.name, i.slug, i.provider_label, i.last_test_message)).map((i) => {
           const st = statusOf(i);
           return (
             <div className="card api-card" key={i.id}>
@@ -220,6 +233,15 @@ export default function Integrations() {
                     <select value={modal.config[f.key] ?? ""} onChange={(e) => setModal({ ...modal, config: { ...modal.config, [f.key]: e.target.value } })}>
                       {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
+                  ) : f.type === "model" ? (
+                    <div className="key-row">
+                      <input list={`models-${modal.provider}`} value={modal.config[f.key] ?? ""} placeholder={f.default} autoComplete="off"
+                        onChange={(e) => setModal({ ...modal, config: { ...modal.config, [f.key]: e.target.value } })} />
+                      <datalist id={`models-${modal.provider}`}>
+                        {[...(modal.models || []), ...f.options.filter((o) => !(modal.models || []).some((m) => m.value === o.value))].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </datalist>
+                      <button type="button" className="btn sm" disabled={modal.loadingModels} onClick={fetchModels}>{modal.loadingModels ? tx("Ophalen…") : tx("Modellen ophalen")}</button>
+                    </div>
                   ) : (
                     <div className={f.key === "encryption_key" ? "key-row" : "fld"}>
                     <input
@@ -243,6 +265,7 @@ export default function Integrations() {
               ))}
             </div>
             <p className="muted" style={{ margin: 0, fontSize: ".8rem" }}>{tx("Sleutels worden versleuteld opgeslagen en nooit meer getoond. Na het opslaan druk je op Test.")}</p>
+            {modal.notice && <div className="alert ok">{modal.notice}</div>}
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>

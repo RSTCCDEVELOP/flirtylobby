@@ -7,6 +7,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { IconUser } from "../../../../components/Icons";
+import ViewBar from "../../../../components/ViewBar";
+import { useView } from "../../../../lib/useView";
 import { api, errorText } from "../../../../lib/api";
 
 const GROUPS = ["Content", "Community", "Webshop", "Subscription", "Beveiliging", "Systeem", "Kern"];
@@ -102,6 +104,7 @@ export default function ModulesPage() {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
   const [access, setAccess] = useState(null);
+  const view = useView("modules");
 
   const load = useCallback(() => api("/modules/all/").then(setMods).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
@@ -141,13 +144,16 @@ export default function ModulesPage() {
         <CollapseAll />
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
+      <ViewBar view={view} count={`${on}/${mods.length}`} placeholder={tx("Zoek een module…")} />
 
       {GROUPS.map((g) => {
         const list = mods.filter((m) => m.group === g);
+        const shownList = list.filter((m) => view.match(m.label, m.desc, m.key));
+        if (view.q.trim() && !shownList.length) return null;
         return (
           <Collapsible key={g} id={`modules-${g}`} title={`${tx(g)} (${list.filter((m) => m.enabled).length}/${list.length})`}>
-            <div className="module-grid">
-              {list.map((m) => (
+            <div className={`module-grid${view.cls}`}>
+              {shownList.map((m) => (
                 <div key={m.key} className={`card module-tile ${m.enabled ? "" : "off"}`}>
                   <div className="module-top">
                     <strong>{m.label}</strong>

@@ -5,7 +5,7 @@ import nh3
 
 TAGS = {"p", "br", "strong", "b", "em", "i", "u", "s", "strike", "h2", "h3", "h4", "ul", "ol", "li", "blockquote",
         "a", "img", "hr", "div", "span"}
-ATTRS = {"a": {"href", "target"}, "img": {"src", "alt", "data-media"}, "*": {"style"}}
+ATTRS = {"a": {"href", "target"}, "img": {"src", "alt", "data-media"}, "div": {"data-sysobject"}, "*": {"style"}}  # data-sysobject: a system object placed on the page
 PREFIX = "html:"
 MAX = 20000
 

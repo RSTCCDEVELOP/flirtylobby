@@ -54,6 +54,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/languages", label: "Talen", icon: <IconGlobe />, perm: "languages.manage" },
   { href: "/dashboard/admin/pages", label: "Pagina's", icon: <IconFolder /> },
   { href: "/dashboard/admin/siteimport", label: "Site importeren", icon: <IconGlobe /> },
+  { href: "/dashboard/admin/sysobjects", label: "Systeemobjecten", icon: <IconGrid /> },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
   { href: "/dashboard/admin/products", label: "Producten", icon: <IconBag /> },
@@ -83,7 +84,7 @@ const ADMIN_GROUPS = [
 ];
 const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
-  "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
+  "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/products": "a-shop", "/dashboard/admin/orders": "a-shop",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs",

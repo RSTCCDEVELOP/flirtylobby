@@ -11,6 +11,9 @@ import PageSettingsModal from "../../../../components/PageSettingsModal";
 import { menuLabel } from "../../../../components/SiteMenu";
 import { IconUser } from "../../../../components/Icons";
 import { VISIBILITY_ICON } from "../../../../components/VisibilityPicker";
+import ViewBar from "../../../../components/ViewBar";
+import TableView from "../../../../components/TableView";
+import { useView } from "../../../../lib/useView";
 import { api, errorText } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { lvl } from "../../../../lib/perms";
@@ -27,6 +30,7 @@ const Sw = ({ checked, onChange, disabled, label }) => (
 );
 
 export default function PagesAdmin() {
+  const tv = useView("pages", "list");
   const { user } = useAuth();
   const mods = useModules();
   const router = useRouter();
@@ -101,7 +105,8 @@ export default function PagesAdmin() {
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       <Collapsible id="pages-overview" title={tx("Overzicht van de pagina's")}>
-        <div className="table-wrap">
+        <ViewBar view={tv} />
+        <TableView view={tv}>
           <table>
             <thead><tr><th>{tx("Pagina")}</th><th>{tx("Adres")}</th><th>{tx("Status")}</th><th>{tx("Actief")}</th><th>{tx("In menu")}</th><th /></tr></thead>
             <tbody>
@@ -125,7 +130,7 @@ export default function PagesAdmin() {
               })}
             </tbody>
           </table>
-        </div>
+        </TableView>
         <small className="muted">{tx("Een pagina waarvan de module uit staat (bijvoorbeeld Producten) verdwijnt vanzelf uit de website en het menu. De tekst van een eigen pagina bewerk je op de pagina zelf in de bewerkmodus.")}</small>
       </Collapsible>
 

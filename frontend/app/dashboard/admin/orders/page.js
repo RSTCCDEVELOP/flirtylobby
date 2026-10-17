@@ -5,11 +5,15 @@ import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
+import ViewBar from "../../../../components/ViewBar";
+import TableView from "../../../../components/TableView";
+import { useView } from "../../../../lib/useView";
 import { api, errorText } from "../../../../lib/api";
 import { money, ORDER_STATUS } from "../../../../lib/format";
 import { lvl } from "../../../../lib/perms";
 
 export default function Orders() {
+  const tv = useView("orders", "list");
   const { user } = useAuth();
   const L = lvl(user, "orders");
   const [orders, setOrders] = useState([]);
@@ -92,7 +96,8 @@ export default function Orders() {
             <option value="subscription">{tx("Abonnementen")}</option>
           </select>
         </div>
-        <div className="table-wrap" style={{ border: "1px solid var(--line)", borderRadius: "var(--btn-radius)" }}>
+        <ViewBar view={tv} />
+        <TableView view={tv} style={{ border: "1px solid var(--line)", borderRadius: "var(--btn-radius)" }}>
           <table>
             <thead><tr><th>{tx("Order")}</th><th>{tx("Datum")}</th><th>{tx("Klant")}</th><th>{tx("Totaal")}</th><th>{tx("Status")}</th><th></th></tr></thead>
             <tbody>
@@ -109,7 +114,7 @@ export default function Orders() {
               {!orders.length && <tr><td colSpan={6} className="muted">{tx("Geen bestellingen.")}</td></tr>}
             </tbody>
           </table>
-        </div>
+        </TableView>
       </Collapsible>
 
       <Collapsible id="shop-vat" title={tx("Btw en betalen")}>

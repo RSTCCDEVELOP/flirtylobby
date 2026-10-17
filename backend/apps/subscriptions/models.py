@@ -19,6 +19,8 @@ class Plan(models.Model):
     trial_days = models.PositiveIntegerField(default=0)
     grants = models.JSONField(default=list, blank=True)
     highlight = models.BooleanField(default=False)  # "popular" ribbon
+    system_object = models.BooleanField(default=False)  # can be put on a page in edit mode (module Systeemobjecten)
+    button = models.JSONField(default=dict, blank=True)
     active = models.BooleanField(default=True)  # off = cannot be bought, existing subscribers keep access
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -65,6 +67,11 @@ class DonationCampaign(models.Model):
     goal = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)  # optional target
     allow_message = models.BooleanField(default=True)
     allow_anonymous = models.BooleanField(default=True)
+    names = models.JSONField(default=dict, blank=True)  # {"nl": "...", "en": "..."}; `name` stays the default-language fallback
+    descriptions = models.JSONField(default=dict, blank=True)
+    recipients = models.JSONField(default=dict, blank=True)
+    button = models.JSONField(default=dict, blank=True)  # {"as_button", "labels": {lang: text}, "icon", "variant", "size", "radius", "color"}
+    system_object = models.BooleanField(default=False)  # can be put on a page in edit mode (module Systeemobjecten)
     grants = models.JSONField(default=list, blank=True)  # a thank-you: access for `grant_days` after donating
     grant_days = models.PositiveIntegerField(default=30)
     min_for_grants = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # donate at least this much to get the access

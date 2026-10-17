@@ -63,6 +63,24 @@ class IntegrationViewSet(viewsets.ModelViewSet):
 
 
 @api_view(["POST"])
+@permission_classes([has_level("integrations", "edit"), module_required("integrations")])
+def model_list(request):
+    """The models of a provider: with the key typed in the form, or with the key of a saved link (id)."""
+    provider = str(request.data.get("provider") or "")
+    cfg = {}
+    if request.data.get("id"):
+        obj = Integration.objects.filter(pk=request.data["id"], provider=provider).first()
+        cfg = dict(obj.config) if obj else {}
+    typed = str(request.data.get("api_key") or "")
+    if typed and not typed.startswith("•"):
+        cfg["api_key"] = typed
+    try:
+        return Response({"models": providers.list_models(provider, cfg)})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=400)
+
+
+@api_view(["POST"])
 @permission_classes([has_level("integrations", "manage"), module_required("integrations")])
 def export_all(request):
     """All links including their keys, locked with a password."""

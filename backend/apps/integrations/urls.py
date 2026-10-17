@@ -8,6 +8,7 @@ router.register("admin/integrations", views.IntegrationViewSet, basename="integr
 
 urlpatterns = [
     path("integrations/", views.active_integrations),
+    path("admin/integrations/models/", views.model_list),
     path("admin/integrations/export/", views.export_all),
     path("admin/integrations/import/", views.import_all),
     path("admin/integrations/<int:pk>/s3/list/", s3browser.listing),

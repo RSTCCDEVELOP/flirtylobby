@@ -7,6 +7,9 @@ import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import MediaPicker from "../../../../components/MediaPicker";
 import RichEditor from "../../../../components/RichEditor";
+import ViewBar from "../../../../components/ViewBar";
+import TableView from "../../../../components/TableView";
+import { useView } from "../../../../lib/useView";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { money } from "../../../../lib/format";
 import { lvl } from "../../../../lib/perms";
@@ -15,6 +18,7 @@ const NEW_GROUP = { name: "", description: "", parent: "", order: 0, active: tru
 const NEW_PRODUCT = { name: "", sku: "", summary: "", description: "", price: "", stock: "", vat_rate: "", group: "", active: true, images: [] };
 
 export default function Products() {
+  const tv = useView("products", "list");
   const { user } = useAuth();
   const L = lvl(user, "products");
   const [groups, setGroups] = useState([]);
@@ -93,7 +97,8 @@ export default function Products() {
           <input style={{ maxWidth: 300 }} placeholder={tx("Zoek op naam of artikelnummer…")} value={q} onChange={(e) => setQ(e.target.value)} />
           {L >= 3 && <button className="btn primary" onClick={() => setPm({ ...NEW_PRODUCT })}>{tx("+ Nieuw product")}</button>}
         </div>
-        <div className="table-wrap" style={{ border: "1px solid var(--line)", borderRadius: "var(--btn-radius)" }}>
+        <ViewBar view={tv} />
+        <TableView view={tv} style={{ border: "1px solid var(--line)", borderRadius: "var(--btn-radius)" }}>
           <table>
             <thead><tr><th>{tx("Product")}</th><th>{tx("Groep")}</th><th>{tx("Prijs")}</th><th>{tx("Voorraad")}</th><th>{tx("Status")}</th><th></th></tr></thead>
             <tbody>
@@ -114,7 +119,7 @@ export default function Products() {
               {!products.length && <tr><td colSpan={6} className="muted">{tx("Geen producten.")}</td></tr>}
             </tbody>
           </table>
-        </div>
+        </TableView>
       </Collapsible>
 
       {gm && (

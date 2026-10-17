@@ -6,7 +6,7 @@ import { api, errorText } from "../lib/api";
 import { money } from "../lib/format";
 import { useSession } from "./Session";
 
-function Campaign({ c, currency, user }) {
+export function Campaign({ c, currency, user, onClose }) {
   const [amount, setAmount] = useState(Number(c.default));
   const [f, setF] = useState({ name: "", email: "", message: "", anonymous: false });
   const [busy, setBusy] = useState(false);
@@ -27,7 +27,7 @@ function Campaign({ c, currency, user }) {
 
   return (
     <form className="card don-card" onSubmit={give}>
-      <h2>{c.name}</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: ".6rem" }}><h2>{c.name}</h2>{onClose && <button type="button" className="btn sm" onClick={onClose}>{tx("Sluiten")}</button>}</div>
       <p className="muted" style={{ margin: 0 }}>{tx("Voor")} {c.recipient}{c.description ? ` · ${c.description}` : ""}</p>
       {c.goal && <><div className="don-bar"><i style={{ width: `${pct}%` }} /></div><small className="muted">{money(c.raised, currency)} {tx("van")} {money(c.goal, currency)} · {c.count} {tx("donaties")}</small></>}
       <div className="don-amount">{money(amount, currency)}</div>
@@ -54,6 +54,13 @@ function Campaign({ c, currency, user }) {
   );
 }
 
+// the texts of an action in the visitor's language (falls back to the default text)
+function localised(c) {
+  let lang = "nl";
+  try { lang = localStorage.getItem("lang") || "nl"; } catch {}
+  return { ...c, name: c.names?.[lang] || c.name, description: c.descriptions?.[lang] ?? c.description, recipient: c.recipients?.[lang] || c.recipient };
+}
+
 // Public donation page: pick an amount on the slider (between the minimum and maximum the admin set).
 export default function Donate() {
   const { user, ready } = useSession();
@@ -65,7 +72,7 @@ export default function Donate() {
   return (
     <div className="don-grid">
       {thanks && <div className="alert ok" style={{ gridColumn: "1 / -1" }}>{tx("Bedankt voor je donatie!")}</div>}
-      {data.campaigns.map((c) => <Campaign key={c.id} c={c} currency={data.currency} user={user} />)}
+      {data.campaigns.map((c) => <Campaign key={c.id} c={localised(c)} currency={data.currency} user={user} />)}
       {!data.campaigns.length && <p className="muted">{tx("Er zijn nu geen donatie-acties.")}</p>}
     </div>
   );

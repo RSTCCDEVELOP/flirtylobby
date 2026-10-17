@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../components/AuthContext";
 import VerifyBadge, { VERIFY } from "../../../../components/VerifyBadge";
 import Collapsible from "../../../../components/Collapsible";
+import ViewBar from "../../../../components/ViewBar";
+import TableView from "../../../../components/TableView";
+import { useView } from "../../../../lib/useView";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
 
@@ -14,6 +17,7 @@ const EMPTY = { user_groups: [], email: "", password: "", first_name: "", last_n
 const initials = (u) => (u.first_name?.[0] || u.email[0]).toUpperCase();
 
 export default function Users() {
+  const tv = useView("users", "list");
   const { user: me } = useAuth();
   const router = useRouter();
   const L = lvl(me, "users"); // 1 gebruik, 2 bewerken, 3 beheer
@@ -80,7 +84,8 @@ export default function Users() {
       {error && <div className="alert">{error}</div>}
 
       <Collapsible id="users-list" title={tx("Gebruikers")}>
-      <div className="table-wrap">
+      <ViewBar view={tv} />
+      <TableView view={tv}>
         <table>
           <thead>
             <tr><th>{tx("Naam")}</th><th>{tx("E-mail")}</th><th>{tx("Functie")}</th><th>{tx("Rol")}</th><th>{tx("Verificatie")}</th><th>{tx("Status")}</th><th></th></tr>
@@ -118,7 +123,7 @@ export default function Users() {
             ))}
           </tbody>
         </table>
-      </div>
+      </TableView>
       </Collapsible>
 
       {modal && (
