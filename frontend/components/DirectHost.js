@@ -16,6 +16,9 @@ export function DirectHostProvider({ children }) {
   const [pos, setPosState] = useState(""); // the member's own place for the popup; empty = the site's setting
   useEffect(() => { try { setPosState(localStorage.getItem("directPos") || ""); } catch {} }, []);
   const setPos = (v) => { setPosState(v); try { localStorage.setItem("directPos", v); } catch {} };
+  const [size, setSizeState] = useState("m"); // popup size: s | m | l
+  useEffect(() => { try { const v = localStorage.getItem("directSize"); if (["s", "m", "l"].includes(v)) setSizeState(v); } catch {} }, []);
+  const setSize = (v) => { setSizeState(v); try { localStorage.setItem("directSize", v); } catch {} };
   const [mini, setMini] = useState(false); // popup folded to a bar (the connection stays)
   const holder = useRef(null); // hidden parking place for the connection's screen while no page shows it
 
@@ -35,7 +38,7 @@ export function DirectHostProvider({ children }) {
       {children}
       <div ref={holder} hidden />
       {session?.mode === "popup" && (
-        <div className={`direct-pop card ${mini ? "mini" : ""}`} data-pos={pos || undefined}>
+        <div className={`direct-pop card ${mini ? "mini" : ""}`} data-pos={pos || undefined} data-size={size}>
           <div className="chat-pop-head">
             <strong>{tx("Chat met {0}", session.info?.guest_name || tx("de ander"))}</strong>
             <span className="row" style={{ gap: ".3rem", flexWrap: "nowrap" }}>
@@ -46,6 +49,11 @@ export function DirectHostProvider({ children }) {
                 <option value="bottom-left">↙ {tx("Links onder")}</option>
                 <option value="bottom-right">↘ {tx("Rechts onder")}</option>
                 <option value="center">◎ {tx("Midden")}</option>
+              </select>
+              <select className="pos-pick" value={size} onChange={(e) => setSize(e.target.value)} aria-label={tx("Grootte van de chat")} title={tx("Grootte van de chat")}>
+                <option value="s">{tx("Klein")}</option>
+                <option value="m">{tx("Medium")}</option>
+                <option value="l">{tx("Groot")}</option>
               </select>
               <button className="btn sm" onClick={() => setMini(!mini)} aria-label={mini ? tx("Uitklappen") : tx("Inklappen")}>{mini ? "▴" : "▾"}</button>
               <button className="btn sm" onClick={close} aria-label={tx("Sluiten")}>✕</button>
