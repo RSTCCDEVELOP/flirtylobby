@@ -175,7 +175,8 @@ def start(request):
         else:
             if msg := security.underage_message(bd):
                 errors["birth_date"] = [msg.replace("Met deze geboortedatum kun je geen gegevens opslaan.", "Je kunt je helaas niet aanmelden.")]
-    methods = _twofa_method_needed()
+    skip = sandbox.skips_verification(email)  # sandbox override: no codes for this address
+    methods = [] if skip else _twofa_method_needed()
     if methods is None:
         return _fail("detail", "Aanmelden is tijdelijk niet mogelijk (twee-staps verificatie is verplicht maar niet beschikbaar).", status.HTTP_503_SERVICE_UNAVAILABLE)
     tf_method = ""
@@ -191,9 +192,9 @@ def start(request):
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
     steps = []
-    if cfg["verify_email"] or tf_method == "email":
+    if not skip and (cfg["verify_email"] or tf_method == "email"):
         steps.append("email")
-    if tf_method == "sms":
+    if not skip and tf_method == "sms":
         steps.append("sms")
     p = PendingRegistration.objects.create(
         token=secrets.token_urlsafe(32), email=email, steps=steps, twofa_method=tf_method,
@@ -223,7 +224,7 @@ def _finish(request, p):
     user = User(username=p.email, email=p.email, first_name=d["first_name"], last_name=d["last_name"], display_name=d["display_name"],
                 gender=d["gender"], birth_date=date.fromisoformat(d["birth_date"]) if d["birth_date"] else None,
                 phone=d["phone"], password=d["password"], is_active=True)
-    user.email_verified = bool(p.twofa_method == "email" or security.get()["registration"]["verify_email"])
+    user.email_verified = bool(p.twofa_method == "email" or security.get()["registration"]["verify_email"] or sandbox.skips_verification(p.email))
     if p.twofa_method:
         user.otp_active, user.twofa_method = True, p.twofa_method
     user.save()

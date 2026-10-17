@@ -29,6 +29,7 @@ export default function Sandbox() {
   const [msg, setMsg] = useState(null);
   const [form, setForm] = useState({ provider: "mollie", amount: "24.95", currency: "EUR", description: tx("Testbestelling"), outcome: "" });
   const [open, setOpen] = useState(null);
+  const [mails, setMails] = useState(""); // override: one e-mail address per line
   const [pay, setPay] = useState({ provider: "stripe", targets: [] }); // which payment link and functions the simulation stands in for
   const names = useMemo(() => { const dn = new Intl.DisplayNames(["nl"], { type: "region" }); return Object.fromEntries(codes.map((c) => [c, dn.of(c) || c])); }, [codes]);
 
@@ -37,7 +38,7 @@ export default function Sandbox() {
     api("/sandbox/messages/").then(setMessages).catch(() => {});
   }, []);
   useEffect(() => {
-    api("/sandbox/settings/").then((d) => { setS(d.settings); setCodes(d.country_codes); setPay({ provider: d.payment_provider, targets: d.payment_targets }); setForm((f) => ({ ...f, provider: d.payment_provider })); }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
+    api("/sandbox/settings/").then((d) => { setS(d.settings); setMails((d.settings.override_emails || []).join("\n")); setCodes(d.country_codes); setPay({ provider: d.payment_provider, targets: d.payment_targets }); setForm((f) => ({ ...f, provider: d.payment_provider })); }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
     loadData();
   }, [loadData]);
 
@@ -47,6 +48,7 @@ export default function Sandbox() {
     try {
       const d = await api("/sandbox/settings/", { method: "PUT", body: next });
       setS(d.settings);
+      setMails((d.settings.override_emails || []).join("\n"));
       setMsg({ ok: true, text: tx("Sandbox-instellingen opgeslagen.") });
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   }
@@ -107,6 +109,19 @@ export default function Sandbox() {
           </label>
         </div>
         <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Niet gesimuleerd: het verplaatsen van bestanden naar S3 en het ophalen van Google Fonts. Die gebruiken nog de echte diensten.")}</p>
+      </Collapsible>
+
+      <Collapsible id="sandbox-override" title={tx("Override (uitzonderingen op de regels)")}>
+        <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Uitzonderingen op de beveiligingsregels, handig om te testen of voor vaste testaccounts.")}</p>
+        <label>{tx("E-mailadressen zonder verificatie")}
+          <textarea rows={4} value={mails} disabled={!edit} placeholder={"test@voorbeeld.nl\ndemo@voorbeeld.nl"} onChange={(e) => setMails(e.target.value)} onBlur={() => save({ override_emails: mails })} />
+        </label>
+        <p className="muted" style={{ margin: 0, fontSize: ".82rem" }}>{tx("Deze adressen hoeven geen verificatie te doen, ook al wordt die gevraagd: niet bij aanmelden (geen e-mail- of sms-code), niet bij inloggen (geen 2-staps code, geen bevestiging van het e-mailadres) en de verplichte 2-staps-instelling wordt overgeslagen. Eén adres per regel.")}</p>
+        <label className="check sec-toggle">
+          <span className="switch"><input type="checkbox" checked={!!s.override_always} disabled={!edit} onChange={(e) => save({ override_always: e.target.checked })} /><span /></span>
+          <span><strong>{tx("Ook actief als de sandbox uit staat")}</strong><br /><small className="muted">{tx("Uit = de override werkt alleen zolang de sandbox aan staat. Aan = ook op de echte website; gebruik dit alleen voor adressen van jezelf.")}</small></span>
+        </label>
+        {s.override_always && mails.trim() && !s.enabled && <div className="alert">{tx("Let op: de override is nu actief op de echte website. Deze adressen kunnen zonder verificatie inloggen en zich aanmelden.")}</div>}
       </Collapsible>
 
       {payments.length > 0 && <Collapsible id="sandbox-payments" title={tx("Gesimuleerde betalingen ({0})", payments.length)}>

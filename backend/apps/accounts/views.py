@@ -65,7 +65,7 @@ def login(request):
     throttle.delete()
     if twofa.email_verify_required(user):
         return _challenge_response(user, email_verify=True)
-    if user.otp_active and security_service.get()["twofa"]["enabled"]:
+    if user.otp_active and security_service.get()["twofa"]["enabled"] and not twofa.exempt(user):
         return _challenge_response(user)
     return _finish_login(request, user)
 

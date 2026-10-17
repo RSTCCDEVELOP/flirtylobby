@@ -2590,5 +2590,12 @@
   "Aan: betaalt via de simulatie": "Ligado: paga através da simulação",
   "Gesimuleerd als": "Simulado como",
   "Webshop (online betalen)": "Loja (pagamento online)",
-  "Gesimuleerde betalingen ({0})": "Pagamentos simulados ({0})"
+  "Gesimuleerde betalingen ({0})": "Pagamentos simulados ({0})",
+  "Override (uitzonderingen op de regels)": "Override (exceções às regras)",
+  "Uitzonderingen op de beveiligingsregels, handig om te testen of voor vaste testaccounts.": "Exceções às regras de segurança, útil para testar ou para contas de teste fixas.",
+  "E-mailadressen zonder verificatie": "Endereços de e-mail sem verificação",
+  "Deze adressen hoeven geen verificatie te doen, ook al wordt die gevraagd: niet bij aanmelden (geen e-mail- of sms-code), niet bij inloggen (geen 2-staps code, geen bevestiging van het e-mailadres) en de verplichte 2-staps-instelling wordt overgeslagen. Eén adres per regel.": "Estes endereços não precisam de verificação mesmo quando é pedida: nem ao registar (sem código por e-mail ou SMS), nem ao iniciar sessão (sem código em 2 passos, sem confirmação do e-mail) e a configuração obrigatória em 2 passos é ignorada. Um endereço por linha.",
+  "Ook actief als de sandbox uit staat": "Também ativo quando a sandbox está desligada",
+  "Uit = de override werkt alleen zolang de sandbox aan staat. Aan = ook op de echte website; gebruik dit alleen voor adressen van jezelf.": "Desligado = a exceção só funciona enquanto a sandbox estiver ligada. Ligado = também no site real; use apenas para os seus próprios endereços.",
+  "Let op: de override is nu actief op de echte website. Deze adressen kunnen zonder verificatie inloggen en zich aanmelden.": "Atenção: a exceção está agora ativa no site real. Estes endereços podem iniciar sessão e registar-se sem verificação."
 }

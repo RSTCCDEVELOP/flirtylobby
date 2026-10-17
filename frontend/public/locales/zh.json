@@ -2590,5 +2590,12 @@
   "Aan: betaalt via de simulatie": "开启：通过模拟付款",
   "Gesimuleerd als": "模拟为",
   "Webshop (online betalen)": "商店（在线支付）",
-  "Gesimuleerde betalingen ({0})": "模拟付款 ({0})"
+  "Gesimuleerde betalingen ({0})": "模拟付款 ({0})",
+  "Override (uitzonderingen op de regels)": "覆盖（规则例外）",
+  "Uitzonderingen op de beveiligingsregels, handig om te testen of voor vaste testaccounts.": "安全规则的例外，便于测试或用于固定的测试账户。",
+  "E-mailadressen zonder verificatie": "无需验证的电子邮箱地址",
+  "Deze adressen hoeven geen verificatie te doen, ook al wordt die gevraagd: niet bij aanmelden (geen e-mail- of sms-code), niet bij inloggen (geen 2-staps code, geen bevestiging van het e-mailadres) en de verplichte 2-staps-instelling wordt overgeslagen. Eén adres per regel.": "这些地址即使被要求也无需验证：注册时不需要（无邮件或短信验证码），登录时不需要（无两步验证码，无需确认邮箱），并跳过强制的两步验证设置。每行一个地址。",
+  "Ook actief als de sandbox uit staat": "沙盒关闭时也生效",
+  "Uit = de override werkt alleen zolang de sandbox aan staat. Aan = ook op de echte website; gebruik dit alleen voor adressen van jezelf.": "关闭 = 覆盖仅在沙盒开启时有效。开启 = 在真实网站上也有效；仅用于你自己的地址。",
+  "Let op: de override is nu actief op de echte website. Deze adressen kunnen zonder verificatie inloggen en zich aanmelden.": "注意：覆盖现在在真实网站上生效。这些地址可无需验证登录和注册。"
 }

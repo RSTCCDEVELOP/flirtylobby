@@ -16,7 +16,7 @@ from .models import SandboxMessage, SandboxPayment, SandboxSettings
 logger = logging.getLogger(__name__)
 
 DEFAULTS = {
-    "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL", "auto_pay": False,
+    "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL", "auto_pay": False, "override_emails": [], "override_always": False,
     "simulate": {"email": True, "sms": True, "payments": True, "integrations": True, "geo": False, "geocoding": True},
 }
 OUTCOMES = {"paid", "failed", "canceled", "expired"}
@@ -43,8 +43,17 @@ def save(incoming):
     for k, v in (incoming or {}).items():
         if k == "simulate" and isinstance(v, dict):
             cur["simulate"].update({a: bool(b) for a, b in v.items() if a in cur["simulate"]})
-        elif k in ("enabled", "banner", "auto_pay"):
+        elif k in ("enabled", "banner", "auto_pay", "override_always"):
             cur[k] = bool(v)
+        elif k == "override_emails":
+            import re
+
+            raw = v if isinstance(v, list) else re.split(r"[\s,;]+", str(v or ""))
+            mails = [str(x).strip().lower() for x in raw if str(x).strip()]
+            bad = [x for x in mails if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", x)]
+            if bad:
+                raise ValueError(f"Geen geldig e-mailadres: {bad[0]}")
+            cur[k] = list(dict.fromkeys(mails))[:100]
         elif k == "fixed_code":
             v = str(v or "").strip()
             if v and not v.isdigit():
@@ -78,6 +87,17 @@ def capture(kind, to, subject, body, sender=""):
 # ── simulated payments ──────────────────────────────────────────────────────
 def _event(p, text):
     p.events = [*p.events, {"at": timezone.now().isoformat(timespec="seconds"), "text": text}]
+
+
+def skips_verification(email):
+    """Override: these e-mail addresses need no verification (sign-up, e-mail confirmation, 2-step codes), even when asked.
+    Works while the sandbox is on, or also when it is off if 'ook als de sandbox uit staat' is switched on. Needs the sandbox module."""
+    if not email or not modules.enabled("sandbox"):
+        return False
+    s = get()
+    if str(email).strip().lower() not in s["override_emails"]:
+        return False
+    return bool(s["enabled"] or s["override_always"])
 
 
 def payment_provider():

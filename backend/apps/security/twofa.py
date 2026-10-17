@@ -67,8 +67,17 @@ def is_admin(user):
     return user.is_staff or user.roles.filter(all_permissions=True).exists()
 
 
+def exempt(user):
+    """Sandbox override: this address is excused from every verification."""
+    from apps.sandbox import service as sandbox
+
+    return sandbox.skips_verification(getattr(user, "email", ""))
+
+
 def needs_setup(user):
     """Policy says this user must have 2FA but has not set it up yet."""
+    if exempt(user):
+        return False
     cfg = service.get()["twofa"]
     if not cfg["enabled"] or user.otp_active or not allowed_methods():
         return False
@@ -77,10 +86,12 @@ def needs_setup(user):
 
 def email_verify_required(user):
     """Policy asks every user to confirm the e-mail address, this one has not yet, and a mail can be sent."""
-    return bool(service.get()["email_verify"]["enabled"] and not user.email_verified and availability()["email"])
+    return bool(not exempt(user) and service.get()["email_verify"]["enabled"] and not user.email_verified and availability()["email"])
 
 
 def required_for(user):
+    if exempt(user):
+        return False
     cfg = service.get()["twofa"]
     return cfg["enabled"] and (cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user)))
 
