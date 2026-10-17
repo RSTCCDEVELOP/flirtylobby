@@ -4,6 +4,8 @@ import { tx } from "../../lib/t";
 import { confirmDialog } from "../../lib/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useDirectHost } from "../../components/DirectHost";
 import { IconChat, IconX } from "../../components/Icons";
 import { useAuth } from "../../components/AuthContext";
 import { useChat } from "../../components/Chat";
@@ -17,6 +19,8 @@ export default function DashboardHome() {
   const { user } = useAuth();
   const mods = useModules();
   const chat = useChat();
+  const router = useRouter();
+  const host = useDirectHost();
   const [meta, setMeta] = useState({ theme: "normal", swipe: false });
   const ctx = useMemo(() => ({ user, mods, chat: chat?.cfg, theme: meta.theme, swipe: meta.swipe }), [user, mods, chat?.cfg, meta]);
   const [state, setState] = useState(null); // {widgets, own, has_default, can_set_default}
@@ -70,12 +74,18 @@ export default function DashboardHome() {
   const showTile = chat?.directActive?.length > 0 && !layout.some((l) => l.id === "direct");
   const tileCol = columns > 1 ? 1 : 0;
   const live = chat?.directActive?.[0];
+  // "Chat" on the tile: the popup opens right here (or the direct page when that is the chosen view)
+  const openLive = async () => {
+    let page = false; try { page = localStorage.getItem("directView") === "page"; } catch {}
+    if (page) return router.push(`/dashboard/community/direct?room=${live.token}`);
+    try { host.open({ token: live.token, mode: "popup", info: await api(`/direct/${live.token}/`) }); host.setMini(false); } catch {}
+  };
   const directTile = showTile && live && (
     <div className="dash-live-tile">
       <span className="dlt-av"><span>{(live.name || "?")[0].toUpperCase()}</span><i className="dlt-dot" aria-hidden="true" /></span>
       <span className="dlt-txt"><strong>{live.name}</strong><small>{tx("Rechtstreeks verbonden")}</small></span>
       <span className="dlt-actions">
-        <Link className="btn sm primary" href={`/dashboard/community/direct?room=${live.token}`}><IconChat /> {tx("Chat")}</Link>
+        <button type="button" className="btn sm primary" onClick={openLive}><IconChat /> {tx("Chat")}</button>
         <button type="button" className="btn sm" title={tx("Verbreek verbinding")} aria-label={tx("Verbreek verbinding")}
           onClick={async () => { if (await confirmDialog(tx("De verbinding met {0} verbreken?", live.name), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken"), danger: true })) await api(`/direct/rooms/${live.token}/disconnect/`, { method: "POST" }).catch(() => {}); }}><IconX /></button>
       </span>

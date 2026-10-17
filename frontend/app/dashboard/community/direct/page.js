@@ -75,7 +75,6 @@ export default function Direct() {
   const setOpen = (s) => (s ? host.open(s) : host.close());
   const [error, setError] = useState("");
   const [view, setView] = useState("popup"); // where "Start chat" opens the connection: popup (bottom right) or on this page
-  const [mini, setMini] = useState(false); // popup folded to a bar (the connection stays)
   useEffect(() => { try { setView(localStorage.getItem("directView") === "page" ? "page" : "popup"); } catch {} }, []);
   const pickView = (v) => { setView(v); try { localStorage.setItem("directView", v); } catch {} };
   const load = useCallback(() => api("/direct/rooms/").then(setRooms).catch((e) => setError(errorText(e))), []);
@@ -117,7 +116,7 @@ export default function Direct() {
   };
   const toggle = async (r, mode = "page") => {
     if (open?.token === r.token) return setOpen(null);
-    try { setOpen({ token: r.token, mode, info: await api(`/direct/${r.token}/`) }); setMini(false); } catch (e) { setError(errorText(e)); }
+    try { setOpen({ token: r.token, mode, info: await api(`/direct/${r.token}/`) }); host.setMini(false); } catch (e) { setError(errorText(e)); }
   };
 
   if (chat?.cfg && chat.cfg.method !== "webrtc") return <p className="muted">{tx("Directe verbinding staat uit. Een superadmin kan dit aanzetten bij Admin → Community → Chat.")}</p>;
@@ -137,20 +136,6 @@ export default function Direct() {
       {error && <div className="alert">{error}</div>}
       {rooms && !rooms.length && <div className="card"><p className="muted" style={{ margin: 0 }}>{tx("Je hebt nog geen open uitnodigingen.")}</p></div>}
       {(rooms || []).map((r) => <Invite key={r.token} room={r} open={open?.token === r.token} onOpen={() => toggle(r, "page")} onChat={() => toggle(r, view)} onClose={() => close(r)} onAnswer={(yes) => answer(r, yes)} onDisconnect={() => disconnect(r)} onRenew={() => renew(r)} />)}
-      {open && open.mode === "popup" && (
-        <div className={`direct-pop card ${mini ? "mini" : ""}`}>
-          <div className="chat-pop-head">
-            <strong>{tx("Chat met {0}", open.info?.guest_name || rooms?.find((x) => x.token === open.token)?.guest_name || tx("de ander"))}</strong>
-            <span className="row" style={{ gap: ".3rem", flexWrap: "nowrap" }}>
-              <button className="btn sm" onClick={() => setMini(!mini)} aria-label={mini ? tx("Uitklappen") : tx("Inklappen")}>{mini ? "▴" : "▾"}</button>
-              <button className="btn sm" onClick={() => setOpen(null)} aria-label={tx("Sluiten")}>✕</button>
-            </span>
-          </div>
-          <div className="direct-pop-body" hidden={mini}>
-            <DirectSlot />
-          </div>
-        </div>
-      )}
       {open && open.mode !== "popup" && (
         <Collapsible id="direct-live" title={tx("Verbinding")} defaultOpen>
           <DirectSlot />
