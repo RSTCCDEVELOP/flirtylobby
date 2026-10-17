@@ -1509,3 +1509,11 @@ html .direct-pop[data-size="m"] .chat-msgs { min-height: 300px !important; max-h
 html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-height: 64vh !important; }
 /* direct connection pages: no logo on a phone, the room goes to the content */
 @media (max-width: 720px) { .direct-logo { display: none !important; } }
+
+/* tiles in a row: the switches and buttons sit on one line at the bottom, whatever the text above is */
+.sub-plans { align-items: stretch; }
+.sub-plan { display: flex; flex-direction: column; gap: .5rem; }
+.sub-plan .sub-actions { margin-top: auto; padding-top: .5rem; align-items: center; justify-content: space-between; }
+.module-top { min-height: 2rem; }
+.module-controls { display: inline-flex; align-items: center; gap: .6rem; flex: none; }
+.module-tile .badge { margin-top: auto; }
