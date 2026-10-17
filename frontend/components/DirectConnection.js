@@ -25,11 +25,15 @@ const QUICK = ["Hoi!", "Hoe gaat het?", "Bedankt!", "Leuk je te zien", "Een mome
 export default function DirectConnection({ token, role, secret, info, onClosed }) {
   const [peer, setPeer] = useState({ owner_online: false, guest_online: false, owner_name: "", guest_name: "", owner_gender: "", guest_gender: "" });
   const [link, setLink] = useState("connecting"); // connecting | open | closed
-  const [msgs, setMsgs] = useState([]);
+  // text messages survive a page reload (e.g. switching language): kept per room in this tab
+  const store = `dc:${token}`;
+  const saved = useRef(null);
+  if (saved.current === null) { try { saved.current = JSON.parse(sessionStorage.getItem(store)) || {}; } catch { saved.current = {}; } }
+  const [msgs, setMsgs] = useState(saved.current.msgs || []);
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [call, setCall] = useState(null); // {status: calling|incoming|active, local, remote}
-  const [chatOn, setChatOn] = useState(role === "owner"); // the guest waits in a waiting room until the owner starts the chat
+  const [chatOn, setChatOn] = useState(role === "owner" || !!saved.current.msgs?.length); // the guest waits in a waiting room until the owner starts the chat
   const fails = useRef(0);
   const [tab, setTab] = useState("chat"); // chat | media | video
   const tabRef = useRef("chat");
@@ -38,8 +42,9 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [emojiGroup, setEmojiGroup] = useState("Smileys");
   const area = useRef(null);
+  useEffect(() => { try { sessionStorage.setItem(store, JSON.stringify({ msgs: msgs.filter((m) => !m.kind).slice(-200), last: st.current.last })); } catch {} }, [msgs, store]);
   const pickTab = (k) => { tabRef.current = k; setTab(k); setUnseen((u) => (k === "video" ? u : { ...u, [k]: 0 })); };
-  const st = useRef({ pc: null, dc: null, making: false, ignore: false, file: null, last: 0, call: null });
+  const st = useRef({ pc: null, dc: null, making: false, ignore: false, file: null, last: saved.current.last || 0, call: null });
   const fileInput = useRef(null), lv = useRef(null), rv = useRef(null), box = useRef(null);
   const polite = role === "owner";
   st.current.call = call;
