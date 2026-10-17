@@ -152,7 +152,7 @@ def room_info(request, token):
     if not room or not _enabled():
         return bad("Deze uitnodiging is verlopen of ingetrokken.", status.HTTP_404_NOT_FOUND)
     role = _role(request, room)
-    return Response({**_state(room), "role": role, "taken": bool(room.guest_key) and role != "guest", "ice_servers": _ice(),
+    return Response({**_state(room), "role": role, "taken": bool(room.guest_key) and role != "guest", "code": room.code, "ice_servers": _ice(),
                      "chat": {k: service.get()["chat"][k] for k in ("photos", "videos", "video_chat", "max_image_mb", "max_video_mb")}})
 
 
