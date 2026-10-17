@@ -10,7 +10,21 @@ import { useChat } from "../../../../components/Chat";
 import { DirectSlot, useDirectHost } from "../../../../components/DirectHost";
 import { api, errorText } from "../../../../lib/api";
 
-function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew }) {
+// The guest asks to chat: accept (the chat opens) or decline
+function ChatRequest({ room, onAnswer }) {
+  if (room.chat_request !== "asked" || !room.guest_name) return null;
+  return (
+    <div className="alert chat-request" style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "center" }}>
+      <strong className="gname" data-g={room.guest_gender || undefined}>{room.guest_name}</strong> {tx("wil chatten.")}
+      <span style={{ marginLeft: "auto", display: "inline-flex", gap: ".4rem" }}>
+        <button type="button" className="btn sm primary" onClick={() => onAnswer(true)}>{tx("Accepteren")}</button>
+        <button type="button" className="btn sm danger" onClick={() => onAnswer(false)}>{tx("Weigeren")}</button>
+      </span>
+    </div>
+  );
+}
+
+function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew, onAnswer }) {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/direct/${room.token}`;
@@ -20,6 +34,7 @@ function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew }) 
   const online = room.guest_online;
   return (
     <div className="card" style={{ marginBottom: "1rem", borderColor: open ? "var(--blue)" : undefined }}>
+      <ChatRequest room={room} onAnswer={onAnswer} />
       <div className="invite-box">
         {qr && /* eslint-disable-next-line @next/next/no-img-element */ <img className="qr" src={qr} alt={tx("QR-code van de uitnodiging")} />}
         <div style={{ display: "flex", flexDirection: "column", gap: ".6rem", minWidth: 0 }}>
@@ -57,6 +72,11 @@ export default function Direct() {
   const pickView = (v) => { setView(v); try { localStorage.setItem("directView", v); } catch {} };
   const load = useCallback(() => api("/direct/rooms/").then(setRooms).catch((e) => setError(errorText(e))), []);
   useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t); }, [load]);
+
+  const answer = async (r, yes) => {
+    try { await api(`/direct/rooms/${r.token}/chat-request/`, { method: "POST", body: { accept: yes } }); if (yes) toggle(r, view); load(); }
+    catch (e) { setError(errorText(e)); }
+  };
 
   const create = async () => {
     setError("");
@@ -108,7 +128,7 @@ export default function Direct() {
       <p className="muted" style={{ marginTop: 0 }}>{tx("Maak een link of QR-code en stuur die naar iemand. Zodra de ander de link opent, zie je hier dat jullie verbonden zijn en kun je rechtstreeks chatten, foto's delen en videobellen. De ander heeft geen account nodig.")}</p>
       {error && <div className="alert">{error}</div>}
       {rooms && !rooms.length && <div className="card"><p className="muted" style={{ margin: 0 }}>{tx("Je hebt nog geen open uitnodigingen.")}</p></div>}
-      {(rooms || []).map((r) => <Invite key={r.token} room={r} open={open?.token === r.token} onOpen={() => toggle(r, "page")} onChat={() => toggle(r, view)} onClose={() => close(r)} onDisconnect={() => disconnect(r)} onRenew={() => renew(r)} />)}
+      {(rooms || []).map((r) => <Invite key={r.token} room={r} open={open?.token === r.token} onOpen={() => toggle(r, "page")} onChat={() => toggle(r, view)} onClose={() => close(r)} onAnswer={(yes) => answer(r, yes)} onDisconnect={() => disconnect(r)} onRenew={() => renew(r)} />)}
       {open && open.mode === "popup" && (
         <div className={`direct-pop card ${mini ? "mini" : ""}`}>
           <div className="chat-pop-head">

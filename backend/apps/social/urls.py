@@ -42,6 +42,8 @@ urlpatterns = [
     path("chat/signals/", v.chat_signals),
     path("chat/presence/", v.chat_presence),
     path("direct/code/", dr.room_by_code),
+    path("direct/rooms/<str:token>/chat-request/", dr.owner_chat_request),
+    path("direct/<str:token>/chat-request/", dr.guest_chat_request),
     path("direct/rooms/", dr.rooms),
     path("direct/rooms/<str:token>/", dr.room_close),
     path("direct/rooms/<str:token>/disconnect/", dr.room_disconnect),

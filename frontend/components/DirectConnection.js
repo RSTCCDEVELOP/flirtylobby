@@ -108,6 +108,11 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
     try { const local = await media(); setCall({ status: "calling", local, remote: null }); send("call"); }
     catch (e) { setError(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e)); }
   };
+  // guest: ask the owner to chat (he gets a notice and accepts or declines)
+  const askChat = async () => {
+    try { const r = await api(`/direct/${token}/chat-request/`, { method: "POST", body: { key: secret } }); setPeer((p) => ({ ...p, chat_request: r.chat_request })); }
+    catch (e) { setError(errorText(e)); }
+  };
   const accept = async () => {
     try { const local = await media(); setCall({ status: "active", local, remote: null }); send("accept"); }
     catch (e) { setError(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e)); send("decline"); setCall(null); }
@@ -249,6 +254,12 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
           <span className={`live-dot ${connected ? "" : "off"}`} aria-hidden="true" />
           <h2 style={{ margin: 0 }}>{connected ? tx("Verbonden met {0}", other || tx("de ander")) : tx("Verbinding maken met {0}…", other || tx("de ander"))}</h2>
           <p className="muted" style={{ margin: 0 }}>{connected ? tx("Even wachten: {0} start zo de chat. Je hoeft niets te doen.", other || tx("de ander")) : tx("Een moment geduld…")}</p>
+          {peer.chat_request === "asked"
+            ? <p style={{ margin: 0 }}><strong>{tx("Wachten tot {0} je verzoek accepteert…", other || tx("de ander"))}</strong></p>
+            : <>
+                {peer.chat_request === "declined" && <div className="alert">{tx("{0} wil nu niet chatten. Je kunt het later nog eens proberen.", other || tx("De ander"))}</div>}
+                <button type="button" className="btn primary" onClick={askChat}>{peer.chat_request === "declined" ? tx("Opnieuw vragen om te chatten") : tx("Chat starten")}</button>
+              </>}
           <button type="button" className="btn danger" onClick={disconnect}>{tx("Verbreek verbinding")}</button>
         </div>
       )}

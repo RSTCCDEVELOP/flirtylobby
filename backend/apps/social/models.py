@@ -213,6 +213,7 @@ class DirectRoom(models.Model):
     closed = models.BooleanField(default=False)
     guest_name = models.CharField(max_length=60, blank=True)
     guest_gender = models.CharField(max_length=1, blank=True)  # m | f | x, asked before connecting
+    chat_request = models.CharField(max_length=8, blank=True)  # the guest asks to chat: "" | asked | declined | accepted
     guest_key = models.CharField(max_length=64, blank=True)  # secret of the one guest who joined
     guest_seen = models.DateTimeField(null=True, blank=True)
     owner_seen = models.DateTimeField(null=True, blank=True)
@@ -240,7 +241,7 @@ class Pass(models.Model):
 class Notification(models.Model):
     """In-app notice for a member: someone liked them, a match, a short message with a like."""
 
-    KINDS = [("like", "Like"), ("match", "Match"), ("message", "Bericht")]
+    KINDS = [("like", "Like"), ("match", "Match"), ("message", "Bericht"), ("dchat", "Chatverzoek")]
     user = models.ForeignKey(U, on_delete=models.CASCADE, related_name="notifications")
     kind = models.CharField(max_length=10, choices=KINDS)
     from_user = models.ForeignKey(U, null=True, blank=True, on_delete=models.CASCADE, related_name="+")

@@ -51,7 +51,7 @@ def _new_code():
 
 
 def _state(room):
-    return {"owner_online": _recent(room.owner_seen), "guest_online": _recent(room.guest_seen), "guest_name": room.guest_name, "guest_gender": room.guest_gender, "owner_gender": getattr(room.owner, "gender", "") or "",
+    return {"owner_online": _recent(room.owner_seen), "guest_online": _recent(room.guest_seen), "guest_name": room.guest_name, "guest_gender": room.guest_gender, "owner_gender": getattr(room.owner, "gender", "") or "", "chat_request": room.chat_request,
             "owner_name": service.display_name(room.owner), "expires_at": room.expires_at}
 
 
@@ -100,8 +100,8 @@ def room_close(request, token):
 
 def _reset_guest(room):
     """End the current connection: the guest is out; the invitation stays open for a new guest."""
-    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen = "", "", "", None
-    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen"])
+    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen, room.chat_request = "", "", "", None, ""
+    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen", "chat_request"])
     room.signals.all().delete()
 
 
@@ -187,6 +187,38 @@ def room_join(request, token):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+def guest_chat_request(request, token):
+    """Guest: 'I would like to chat'. The owner gets a notice and accepts or declines."""
+    room = _room(token)
+    if not room or not _enabled() or _role(request, room) != "guest":
+        return bad("Niet toegestaan.", status.HTTP_403_FORBIDDEN)
+    if room.chat_request != "asked":
+        room.chat_request = "asked"
+        room.save(update_fields=["chat_request"])
+        from .models import Notification
+
+        Notification.objects.filter(user=room.owner, kind="dchat", seen=False).delete()
+        Notification.objects.create(user=room.owner, kind="dchat", text=room.guest_name[:60])
+    return Response({"chat_request": room.chat_request})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def owner_chat_request(request, token):
+    """Owner: accept or decline the guest's request to chat."""
+    room = DirectRoom.objects.filter(token=token, owner=request.user).first()
+    if not room:
+        return bad("Niet gevonden.", status.HTTP_404_NOT_FOUND)
+    room.chat_request = "accepted" if request.data.get("accept") else "declined"
+    room.save(update_fields=["chat_request"])
+    from .models import Notification
+
+    Notification.objects.filter(user=room.owner, kind="dchat").update(seen=True)
+    return Response({"chat_request": room.chat_request})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
 def room_signal(request, token):
     room = _room(token)
     role = _role(request, room) if room else None
@@ -199,6 +231,9 @@ def room_signal(request, token):
         if not subs.can(room.owner, "video_chat"):
             return bad(subs.GATE_MESSAGE["video_chat"], status.HTTP_402_PAYMENT_REQUIRED)
         subs.charge(room.owner, "video_chat")
+    if kind == "chat" and role == "owner" and room.chat_request == "asked":  # the owner started the chat himself: that answers the request
+        room.chat_request = "accepted"
+        room.save(update_fields=["chat_request"])
     DirectSignal.objects.create(room=room, to_role="guest" if role == "owner" else "owner", kind=kind, payload=payload)
     return Response(status=status.HTTP_204_NO_CONTENT)
 

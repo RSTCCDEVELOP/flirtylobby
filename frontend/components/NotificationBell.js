@@ -8,7 +8,7 @@ import { IconBell, IconHeart, IconMail } from "./Icons";
 import { useModule } from "./Modules";
 import { useSession } from "./Session";
 
-const LINK = { like: "/dashboard/community/discover?tab=likedme", match: "/dashboard/community/discover?tab=matches", message: "/dashboard/community/messages" };
+const LINK = { like: "/dashboard/community/discover?tab=likedme", match: "/dashboard/community/discover?tab=matches", message: "/dashboard/community/messages", dchat: "/dashboard/community/direct" };
 
 // Bell in the header: who liked you, new matches and short messages. A new one also pops up as a notice for a moment.
 export default function NotificationBell() {
@@ -45,6 +45,7 @@ export default function NotificationBell() {
   const text = (n) => {
     const who = n.from?.name;
     if (n.kind === "match") return who ? tx("Het is een match met {0}!", who) : tx("Het is een match!");
+    if (n.kind === "dchat") return tx("{0} wil chatten via de directe verbinding. Accepteren of weigeren?", n.text || tx("Iemand"));
     if (n.kind === "message") return who ? tx("{0} stuurde je een bericht: {1}", who, n.text) : n.text;
     return who ? tx("{0} vindt je leuk", who) : tx("Iemand vindt je leuk");
   };
