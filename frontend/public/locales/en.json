@@ -2467,5 +2467,9 @@
   "Per kwartaal": "Quarterly",
   "Per jaar": "Yearly",
   "Hiervoor heb je een abonnement nodig.": "You need a subscription for this.",
-  "Je hebt dit abonnement al.": "You already have this subscription."
+  "Je hebt dit abonnement al.": "You already have this subscription.",
+  "Verbinding gelukt (beperkte sleutel: betalingen mogen gelezen worden).": "Connection succeeded (restricted key: payments can be read).",
+  "Verbinding gelukt (beperkte sleutel: Checkout mag gelezen worden).": "Connection succeeded (restricted key: Checkout can be read).",
+  "Dit is een publiceerbare sleutel (pk_…). Gebruik de geheime sleutel (sk_…) of een beperkte sleutel (rk_…).": "This is a publishable key (pk_…). Use the secret key (sk_…) or a restricted key (rk_…).",
+  "Deze sleutel mag niets lezen van saldo, betalingen of Checkout. Zet in Stripe (Ontwikkelaars → API-sleutels → beperkte sleutel) minstens 'PaymentIntents' of 'Checkout Sessions' op lezen/schrijven.": "This key cannot read balance, payments or Checkout. In Stripe (Developers → API keys → restricted key) set at least 'PaymentIntents' or 'Checkout Sessions' to read/write."
 }

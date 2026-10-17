@@ -2467,5 +2467,9 @@
   "Per kwartaal": "每季度",
   "Per jaar": "每年",
   "Hiervoor heb je een abonnement nodig.": "这需要订阅。",
-  "Je hebt dit abonnement al.": "你已拥有此订阅。"
+  "Je hebt dit abonnement al.": "你已拥有此订阅。",
+  "Verbinding gelukt (beperkte sleutel: betalingen mogen gelezen worden).": "连接成功（受限密钥：可读取支付）。",
+  "Verbinding gelukt (beperkte sleutel: Checkout mag gelezen worden).": "连接成功（受限密钥：可读取 Checkout）。",
+  "Dit is een publiceerbare sleutel (pk_…). Gebruik de geheime sleutel (sk_…) of een beperkte sleutel (rk_…).": "这是可公开的密钥 (pk_…)。请使用密钥 (sk_…) 或受限密钥 (rk_…)。",
+  "Deze sleutel mag niets lezen van saldo, betalingen of Checkout. Zet in Stripe (Ontwikkelaars → API-sleutels → beperkte sleutel) minstens 'PaymentIntents' of 'Checkout Sessions' op lezen/schrijven.": "此密钥无法读取余额、支付或 Checkout。请在 Stripe（开发者 → API 密钥 → 受限密钥）中至少将“PaymentIntents”或“Checkout Sessions”设为读取/写入。"
 }

@@ -2467,5 +2467,9 @@
   "Per kwartaal": "ربع سنويًا",
   "Per jaar": "سنويًا",
   "Hiervoor heb je een abonnement nodig.": "تحتاج إلى اشتراك لهذا.",
-  "Je hebt dit abonnement al.": "لديك هذا الاشتراك بالفعل."
+  "Je hebt dit abonnement al.": "لديك هذا الاشتراك بالفعل.",
+  "Verbinding gelukt (beperkte sleutel: betalingen mogen gelezen worden).": "نجح الاتصال (مفتاح مقيّد: يمكن قراءة المدفوعات).",
+  "Verbinding gelukt (beperkte sleutel: Checkout mag gelezen worden).": "نجح الاتصال (مفتاح مقيّد: يمكن قراءة Checkout).",
+  "Dit is een publiceerbare sleutel (pk_…). Gebruik de geheime sleutel (sk_…) of een beperkte sleutel (rk_…).": "هذا مفتاح قابل للنشر (pk_…). استخدم المفتاح السري (sk_…) أو مفتاحًا مقيّدًا (rk_…).",
+  "Deze sleutel mag niets lezen van saldo, betalingen of Checkout. Zet in Stripe (Ontwikkelaars → API-sleutels → beperkte sleutel) minstens 'PaymentIntents' of 'Checkout Sessions' op lezen/schrijven.": "لا يستطيع هذا المفتاح قراءة الرصيد أو المدفوعات أو Checkout. في Stripe (المطورون ← مفاتيح API ← مفتاح مقيّد) اضبط على الأقل 'PaymentIntents' أو 'Checkout Sessions' على قراءة/كتابة."
 }

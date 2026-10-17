@@ -2467,5 +2467,9 @@
   "Per kwartaal": "Por trimestre",
   "Per jaar": "Por año",
   "Hiervoor heb je een abonnement nodig.": "Necesitas una suscripción para esto.",
-  "Je hebt dit abonnement al.": "Ya tienes esta suscripción."
+  "Je hebt dit abonnement al.": "Ya tienes esta suscripción.",
+  "Verbinding gelukt (beperkte sleutel: betalingen mogen gelezen worden).": "Conexión correcta (clave restringida: se pueden leer los pagos).",
+  "Verbinding gelukt (beperkte sleutel: Checkout mag gelezen worden).": "Conexión correcta (clave restringida: se puede leer Checkout).",
+  "Dit is een publiceerbare sleutel (pk_…). Gebruik de geheime sleutel (sk_…) of een beperkte sleutel (rk_…).": "Esta es una clave publicable (pk_…). Usa la clave secreta (sk_…) o una clave restringida (rk_…).",
+  "Deze sleutel mag niets lezen van saldo, betalingen of Checkout. Zet in Stripe (Ontwikkelaars → API-sleutels → beperkte sleutel) minstens 'PaymentIntents' of 'Checkout Sessions' op lezen/schrijven.": "Esta clave no puede leer saldo, pagos ni Checkout. En Stripe (Desarrolladores → Claves API → clave restringida) pon al menos «PaymentIntents» o «Checkout Sessions» en lectura/escritura."
 }

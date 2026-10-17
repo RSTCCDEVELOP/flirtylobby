@@ -43,9 +43,24 @@ def test_openai(c):
 
 
 def test_stripe(c):
-    if not c.get("secret_key"):
+    """A full key can read the balance. A restricted key (rk_…) only has the rights its owner ticked, so we try the endpoints a shop or
+    donations need (payments, checkout) and say which right is missing when none works."""
+    key = (c.get("secret_key") or "").strip()
+    if not key:
         return False, "Secret key ontbreekt."
-    return _http_get("https://api.stripe.com/v1/balance", {"Authorization": f"Bearer {c['secret_key']}"})
+    if key.startswith("pk_"):
+        return False, "Dit is een publiceerbare sleutel (pk_…). Gebruik de geheime sleutel (sk_…) of een beperkte sleutel (rk_…)."
+    head = {"Authorization": f"Bearer {key}"}
+    denied = ""
+    for path, what in (("balance", ""), ("payment_intents?limit=1", "beperkte sleutel: betalingen mogen gelezen worden"), ("checkout/sessions?limit=1", "beperkte sleutel: Checkout mag gelezen worden")):
+        ok, msg = _http_get(f"https://api.stripe.com/v1/{path}", head)
+        if ok:
+            return True, f"Verbinding gelukt{f' ({what})' if what else ''}."
+        if "HTTP 403" in msg:
+            denied = "Deze sleutel mag niets lezen van saldo, betalingen of Checkout. Zet in Stripe (Ontwikkelaars → API-sleutels → beperkte sleutel) minstens 'PaymentIntents' of 'Checkout Sessions' op lezen/schrijven."
+            continue
+        return False, msg
+    return False, denied or "Toegang geweigerd: controleer de sleutel."
 
 
 def test_gemini(c):
