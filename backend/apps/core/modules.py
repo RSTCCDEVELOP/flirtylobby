@@ -54,6 +54,8 @@ MODULES = [
      "desc": "Berichtensysteem tussen users (postvak)."},
     {"key": "chat", "group": "Community", "label": "Chat",
      "desc": "Chat in een popup of scherm, via de portal of rechtstreeks (WebRTC), met foto's, video's en videochat."},
+    {"key": "directconnect", "group": "Community", "label": "Directe verbinding",
+     "desc": "Een rechtstreekse verbinding tussen twee mensen (WebRTC) via een code, link of QR-code, ook zonder account: chat, foto's, video's en videochat. Pagina's /directconnect en /direct."},
     # ── Beveiliging ──
     {"key": "geo", "group": "Beveiliging", "label": "Landcontrole",
      "desc": "Website blokkeren of toestaan per land via IP-controle."},

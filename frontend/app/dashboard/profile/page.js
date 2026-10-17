@@ -13,9 +13,11 @@ import { IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../
 import { countryOptions } from "../../../lib/countries";
 import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
+import { GENDER_LABELS, useGenders } from "../../../lib/genders";
 import { confirmDialog, promptDialog } from "../../../lib/dialog";
 
 export default function Profile() {
+  const genders = useGenders();
   const { user, setUser } = useAuth();
   const [form, setForm] = useState({
     first_name: user.first_name, last_name: user.last_name, display_name: user.display_name || "", birth_date: user.birth_date || "", gender: user.gender || "", phone: user.phone || "", address: user.address || "", postal_code: user.postal_code || "", city: user.city || "", country: user.country || "", function: user.function,
@@ -93,7 +95,7 @@ export default function Profile() {
           <label>{tx("Geboortedatum")}<input type="date" value={form.birth_date} max={new Date().toISOString().slice(0, 10)} onChange={set("birth_date")} /></label>
           <label>{tx("Geslacht")}
             <select value={form.gender} onChange={set("gender")}>
-              <option value="">{tx("Niet opgegeven")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Anders")}</option>
+              <option value="">{tx("Niet opgegeven")}</option>{genders.map((g) => <option key={g} value={g}>{tx(GENDER_LABELS[g])}</option>)}
             </select>
           </label>
         </div>

@@ -23,17 +23,21 @@ DEFAULTS = {
         "distance_enabled": True, "radii": [5, 10, 25, 50, 100, 250], "max_distance_km": 500, "geocoder_contact": "",
     },
     "chat": {"method": "portal", "display": "both", "style": "floating", "popup_position": "", "show_on": ["home", "website", "dashboard", "backend"], "photos": True, "videos": True, "video_chat": True,
-             "max_image_mb": 10, "max_video_mb": 50, "direct_hours": 2, "stun": ["stun:stun.l.google.com:19302"],
+             "max_image_mb": 10, "max_video_mb": 50, "stun": ["stun:stun.l.google.com:19302"],
              "turn_url": "", "turn_user": "", "turn_credential": ""},
+    "general": {f"aim_{o['key']}": o["default"] for o in themes.AIM_OPTIONS},
+    "direct": {"hours": 2, "ask_languages": False, "ask_birth": False, "chat": True, "photos": True, "videos": True, "video_chat": True, "max_image_mb": 10, "max_video_mb": 50},
 }
 CHOICES = {("discover", "default_sort"): ["active", "newest", "distance"], ("discover", "swipe"): ["auto", "on", "off"], ("profiles", "default_visibility"): ["public", "members", "friends", "selected"], ("chat", "method"): ["portal", "webrtc"],
            ("chat", "display"): ["popup", "page", "both"], ("chat", "style"): ["floating", "button"],
            ("chat", "popup_position"): ["", "top-left", "top-right", "bottom-left", "bottom-right", "center"]}
 INTS = {("discover", "min_age"): (13, 99), ("discover", "max_age"): (18, 120), ("discover", "max_results"): (10, 200), ("discover", "require_photo"): (0, 5),
         ("discover", "visitors_days"): (1, 365), ("discover", "pass_days"): (1, 365), ("discover", "max_distance_km"): (5, 2000), ("profiles", "max_photos"): (1, 30), ("profiles", "decline_days"): (0, 365), ("profiles", "max_private_photos"): (0, 30), ("messages", "max_length"): (100, 20000), ("messages", "rate_per_minute"): (1, 120),
-        ("chat", "max_image_mb"): (1, 50), ("chat", "direct_hours"): (1, 72), ("chat", "max_video_mb"): (1, 500)}
+        ("chat", "max_image_mb"): (1, 50), ("chat", "max_video_mb"): (1, 500),
+        ("direct", "hours"): (1, 72), ("direct", "max_image_mb"): (1, 50), ("direct", "max_video_mb"): (1, 500)}
 BOOLS = {("discover", "like_email"), ("profiles", "private_photos"), ("profiles", "requests_enabled"), ("discover", "show_visitors"), ("discover", "suggestions"), ("discover", "require_to_search"), ("discover", "require_to_like"),
-         ("discover", "show_non_participants"), ("discover", "show_likes_received"), ("discover", "match_email"), ("discover", "distance_enabled"), ("chat", "photos"), ("chat", "videos"), ("chat", "video_chat")}
+         ("discover", "show_non_participants"), ("discover", "show_likes_received"), ("discover", "match_email"), ("discover", "distance_enabled"), ("chat", "photos"), ("chat", "videos"), ("chat", "video_chat"),
+         ("direct", "photos"), ("direct", "videos"), ("direct", "video_chat"), ("direct", "chat"), ("direct", "ask_languages"), ("direct", "ask_birth")} | {("general", f"aim_{o['key']}") for o in themes.AIM_OPTIONS}
 STRS = {("discover", "geocoder_contact"), ("chat", "turn_url"), ("chat", "turn_user"), ("chat", "turn_credential")}
 
 
@@ -65,7 +69,8 @@ def clean_fields(raw):
         seen.add(key)
         out.append({"key": key, "label": label, "type": typ, "options": list(dict.fromkeys(options)) if typ in ("select", "multiselect") else [],
                     "unit": str(x.get("unit", ""))[:12], "required": bool(x.get("required")), "visibility": vis, "card": bool(x.get("card")),
-                    "filter": bool(x.get("filter")) and typ != "textarea", "group": str(x.get("group", "")).strip()[:40]})
+                    "filter": bool(x.get("filter")) and typ != "textarea", "group": str(x.get("group", "")).strip()[:40],
+                    **({"option": x["option"]} if x.get("option") in themes.AIM_KEYS else {})})
     return out
 
 
@@ -177,6 +182,7 @@ class Invalid(Exception):
 def save(incoming, sections):
     """Validate + store only the sections the caller may edit."""
     cur = get()
+    before = dict(cur["general"])
     for sec, vals in (incoming or {}).items():
         if sec not in cur or sec not in sections or not isinstance(vals, dict):
             continue
@@ -212,6 +218,7 @@ def save(incoming, sections):
                 if any(not re.match(r"^stuns?:[\w.\-:]+$", s) for s in v):
                     raise Invalid("STUN-adressen beginnen met stun: (bv. stun:stun.example.com:3478).")
             cur[sec][k] = v
+    sync_aim_fields(cur, before)
     obj, _ = SocialSettings.objects.get_or_create(pk=1)
     obj.data = cur
     obj.save()
@@ -367,6 +374,76 @@ def touch(user):
 
 def online(u):
     return bool(u.last_seen and timezone.now() - u.last_seen < timedelta(seconds=45))
+
+
+def aims():
+    """[(key, label)] of what members may look for (Community -> Algemeen)."""
+    g = get()["general"]
+    return [(o["key"], o["label"]) for o in themes.AIM_OPTIONS if g.get(f"aim_{o['key']}")]
+
+
+def sync_aim_fields(cur, before):
+    """Keep the profile fields in step with the switched-on options: a newly switched-on option adds its fields (not twice), a switched-off option removes them."""
+    fields = list(cur["profiles"]["fields"])
+    on = {o["key"] for o in themes.AIM_OPTIONS if cur["general"].get(f"aim_{o['key']}")}
+    fields = [x for x in fields if not x.get("option") or x["option"] in on]
+    have = {x["key"] for x in fields}
+    for o in themes.AIM_OPTIONS:
+        if o["key"] in on and not before.get(f"aim_{o['key']}"):
+            for fld in o["fields"]:
+                if fld["key"] not in have:
+                    fields.append(dict(fld, options=list(fld["options"]), option=o["key"]))
+                    have.add(fld["key"])
+    cur["profiles"]["fields"] = fields
+
+
+# Contact options on a profile page. Everything is off until the member switches it on (Wijzig profiel -> Contact opnemen).
+CONTACT_KINDS = {"whatsapp": "WhatsApp", "phone": "Telefoon", "email": "E-mail", "telegram": "Telegram"}
+
+
+def clean_contact(raw, old=None):
+    """Validate the contact settings of a profile. Returns (data, error)."""
+    old, raw = old or {}, raw if isinstance(raw, dict) else {}
+    out = {"video": bool(raw.get("video", old.get("video", False)))}
+    for kind in CONTACT_KINDS:
+        cur, new = old.get(kind) or {}, raw.get(kind) if isinstance(raw.get(kind), dict) else {}
+        item = {"on": bool(new.get("on", cur.get("on", False))), "value": str(new.get("value", cur.get("value", "")) or "").strip()[:100], "friends": bool(new.get("friends", cur.get("friends", False)))}
+        v = item["value"]
+        if item["on"] and not v:
+            return None, f"Vul bij {CONTACT_KINDS[kind]} een waarde in of zet het uit."
+        if v:
+            ok = {"whatsapp": re.fullmatch(r"\+?[0-9 ()-]{6,20}", v), "phone": re.fullmatch(r"\+?[0-9 ()-]{6,20}", v),
+                  "email": re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", v), "telegram": re.fullmatch(r"@?[A-Za-z0-9_]{4,32}", v)}[kind]
+            if not ok:
+                return None, f"{CONTACT_KINDS[kind]}: dit ziet er niet goed uit."
+        out[kind] = item
+    return out, None
+
+
+def visible_contacts(p, viewer):
+    """Contact buttons the viewer may see: [{kind, label, href}]. Only what the member switched on; 'friends only' items need a friendship."""
+    c = p.contact or {}
+    authed = bool(viewer and getattr(viewer, "is_authenticated", False))
+    if not authed:
+        return []
+    me = viewer.id == p.user_id
+    out = []
+    for kind, label in CONTACT_KINDS.items():
+        it = c.get(kind) or {}
+        if not it.get("value") or not (it.get("on") or me):
+            continue
+        if it.get("on") and it.get("friends") and not me and not viewer.is_staff and not are_friends(viewer.id, p.user_id):
+            continue
+        v = it["value"]
+        digits = re.sub(r"[^0-9+]", "", v)
+        href = {"whatsapp": f"https://wa.me/{digits.lstrip('+')}", "phone": f"tel:{digits}", "email": f"mailto:{v}", "telegram": f"https://t.me/{v.lstrip('@')}"}[kind]
+        out.append({"kind": kind, "label": label, "href": href})
+    return out
+
+
+def genders():
+    """Allowed genders: man, woman, other; plus couple (k, purple) when the community theme is Dating."""
+    return ("m", "f", "x", "k") if get()["profiles"]["theme"] == "dating" else ("m", "f", "x")
 
 
 def module_on(key):

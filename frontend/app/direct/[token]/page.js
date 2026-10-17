@@ -6,7 +6,10 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Logo } from "../../../components/BrandingContext";
+import DirectDataForm from "../../../components/DirectDataForm";
 import DirectConnection from "../../../components/DirectConnection";
+import { IconHome } from "../../../components/Icons";
+import LanguageSwitcher from "../../../components/LanguageSwitcher";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { api, errorText } from "../../../lib/api";
 
@@ -53,18 +56,6 @@ export default function DirectGuest() {
   const { token } = useParams();
   const [info, setInfo] = useState(null);
   const [error, setError] = useState("");
-  const [name, setNameState] = useState("");
-  const [gender, setGenderState] = useState("m"); // m | f | x, asked before connecting; man unless chosen before
-  // remember the last name and gender on this device
-  const setName = (v) => { setNameState(v); try { localStorage.setItem("direct_name", v); } catch {} };
-  const setGender = (v) => { setGenderState(v); try { localStorage.setItem("direct_gender", v); } catch {} };
-  useEffect(() => {
-    try {
-      const n = localStorage.getItem("direct_name"), g = localStorage.getItem("direct_gender");
-      if (n) setNameState(n);
-      if (["m", "f", "x"].includes(g)) setGenderState(g);
-    } catch {}
-  }, []);
   const [secret, setSecret] = useState(null);
   const [busy, setBusy] = useState(false);
   const [chatting, setChatting] = useState(false); // chat started: the logo and title make room for the chat
@@ -77,19 +68,19 @@ export default function DirectGuest() {
       .catch((e) => setError(errorText(e)));
   }, [token]);
 
-  async function join(e) {
-    e.preventDefault();
+  async function join(data) {
     setBusy(true); setError("");
     try {
-      const r = await api(`/direct/${token}/join/`, { method: "POST", body: { name, gender } });
+      const r = await api(`/direct/${token}/join/`, { method: "POST", body: data });
       try { localStorage.setItem(`direct:${token}`, JSON.stringify({ key: r.key })); localStorage.setItem("direct:last", token); } catch {}
       setSecret(r.key);
-    } catch (err) { setError(errorText(err)); setBusy(false); }
+    } catch (err) { setError(errorText(err)); }
+    setBusy(false);
   }
 
   return (
-    <main className="login-page" style={{ alignItems: "flex-start", paddingTop: "2rem" }}>
-      <div className="login-theme"><ThemeToggle /></div>
+    <main className="login-page" style={{ alignItems: "center", padding: "2rem 1rem" }}>
+      <div className="login-theme"><LanguageSwitcher flags /><Link href="/" className="icon-btn" aria-label={tx("Naar de homepage")} title={tx("Naar de homepage")}><IconHome /></Link><ThemeToggle /></div>
       <div className="card login-card" style={{ maxWidth: 640, width: "100%" }}>
         {!chatting && (info?.taken && !secret ? <TakenQr /> : <Logo className="direct-logo" />)}
         {!chatting && <h1>{tx("Directe verbinding")}</h1>}
@@ -97,17 +88,8 @@ export default function DirectGuest() {
         {error && <div className="alert">{error}</div>}
         {error && !secret && <Link href="/direct" className="btn primary">{tx("Verbind opnieuw")}</Link>}
         {info && !info.role && !info.taken && !error && !secret && (
-          <form className="form" onSubmit={join}>
-            <p><strong>{info.owner_name}</strong> {tx("nodigt je uit voor een rechtstreekse verbinding: chat, foto's en video.")}</p>
-            <label>{tx("Jouw naam")}<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoFocus autoComplete="name" /></label>
-            <div>
-              <span style={{ fontWeight: 600, fontSize: ".9rem" }}>{tx("Geslacht")}</span>
-              <div className="gender-pick" role="radiogroup" aria-label={tx("Geslacht")} style={{ marginTop: ".35rem" }}>
-                {[["m", "Man"], ["f", "Vrouw"], ["x", "Overig"]].map(([k, l]) => <button type="button" key={k} data-g={k} role="radio" aria-checked={gender === k} className={gender === k ? "on" : ""} onClick={() => setGender(k)}>{tx(l)}</button>)}
-              </div>
-            </div>
-            <button className="btn primary" disabled={busy || !gender}>{busy ? tx("Bezig…") : tx("Verbinden")}</button>
-          </form>
+          <DirectDataForm busy={busy} submitLabel={tx("Verbinden")} onSubmit={join}
+            intro={<p><strong>{info.owner_name}</strong> {tx("nodigt je uit voor een rechtstreekse verbinding: chat, foto's en video.")}</p>} />
         )}
         {info?.taken && !secret && <><div className="alert">{tx("Er is al iemand verbonden met deze uitnodiging.")}</div><InviteSomeone code={info.code} /></>}
         {secret && info && <DirectConnection token={token} role="guest" secret={secret} info={info} onChat={setChatting} onClosed={(why) => { setSecret(null); try { localStorage.removeItem(`direct:${token}`); localStorage.removeItem("direct:last"); } catch {} setError(why === "left" ? tx("Je hebt de verbinding verbroken.") : tx("De verbinding is verbroken of de uitnodiging is gesloten.")); }} />}

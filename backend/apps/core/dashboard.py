@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from apps.accounts.access import level
 
 from . import modules
-from .models import DashboardLayout
+from .models import DashboardLayout, UserShortcuts
 
 
 def _theme():
@@ -83,6 +83,27 @@ def default_layout(request):
         columns = _cols(request.data.get("columns"))
         DashboardLayout.objects.update_or_create(user=None, defaults={"widgets": _clean(request.data.get("widgets"), columns), "columns": columns})
     return Response({"ok": True})
+
+
+def _clean_shortcuts(items):
+    out, seen = [], set()
+    for x in items if isinstance(items, list) else []:
+        href, title = (str(x.get("href", "")), str(x.get("title", "")).strip()[:80]) if isinstance(x, dict) else ("", "")
+        # only pages of this site (no other host, no scheme)
+        if re.fullmatch(r"/[A-Za-z0-9/_\-]{1,160}", href) and not href.startswith("//") and title and href not in seen:
+            seen.add(href)
+            out.append({"href": href, "title": title})
+    return out[:24]
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def shortcuts(request):
+    """Shortcut tiles on the user's own dashboard."""
+    row = UserShortcuts.objects.filter(user=request.user).first()
+    if request.method == "PUT":
+        row, _ = UserShortcuts.objects.update_or_create(user=request.user, defaults={"items": _clean_shortcuts(request.data.get("items"))})
+    return Response({"items": row.items if row else []})
 
 
 def _days(n):

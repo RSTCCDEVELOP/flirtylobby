@@ -9,7 +9,7 @@ SECURITY = ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_fi
 # permission key (roles page) -> {module: level}
 PERM_LEVELS = {
     "users.manage": {"users": 3}, "roles.manage": {"roles": 3}, "languages.manage": {"languages": 3},
-    "integrations.manage": {"integrations": 3}, "communication.manage": {"communication": 3}, "seo.manage": {"seo": 3}, "community.manage": {"profiles": 3, "messages": 3, "chat": 3, "discover": 3}, "products.manage": {"products": 3}, "orders.manage": {"orders": 3}, "sandbox.manage": {"sandbox": 3}, "branding.manage": {"branding": 3}, "media.manage": {"media": 3},
+    "integrations.manage": {"integrations": 3}, "communication.manage": {"communication": 3}, "seo.manage": {"seo": 3}, "community.manage": {"profiles": 3, "messages": 3, "chat": 3, "discover": 3, "directconnect": 3}, "products.manage": {"products": 3}, "orders.manage": {"orders": 3}, "sandbox.manage": {"sandbox": 3}, "branding.manage": {"branding": 3}, "media.manage": {"media": 3},
     "theme.manage": {"theme": 3}, "pages.manage": {"pages": 3}, "security.manage": {m: 3 for m in SECURITY},
     "content.edit": {"edit_mode": 2, "media": 1},
 }

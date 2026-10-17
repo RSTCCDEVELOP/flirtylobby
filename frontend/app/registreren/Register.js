@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "../../components/BrandingContext";
 import ThemeToggle from "../../components/ThemeToggle";
 import { api, setToken, errorText } from "../../lib/api";
+import { GENDER_LABELS, useGenders } from "../../lib/genders";
 
 const EMPTY = { first_name: "", last_name: "", display_name: "", email: "", password: "", password2: "", birth_date: "", gender: "", phone: "", method: "", accept: false };
 
@@ -20,6 +21,7 @@ const Shell = ({ children, onSubmit }) => (
 
 // Self sign-up. The account is only created after the verifications the security settings ask for.
 export default function Register() {
+  const genders = useGenders();
   const router = useRouter();
   const [cfg, setCfg] = useState(null);
   const [f, setF] = useState(EMPTY);
@@ -108,7 +110,7 @@ export default function Register() {
         {cfg.birth_date && <label>{tx("Geboortedatum")}{cfg.min_age ? <em className="muted"> ({cfg.min_age}+)</em> : null}
           <input type="date" value={f.birth_date} max={new Date().toISOString().slice(0, 10)} onChange={set("birth_date")} required />{err("birth_date")}</label>}
         <label>{tx("Geslacht")}
-          <select value={f.gender} onChange={set("gender")}><option value="">{tx("Niet opgegeven")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Anders")}</option></select>
+          <select value={f.gender} onChange={set("gender")}><option value="">{tx("Niet opgegeven")}</option>{genders.map((g) => <option key={g} value={g}>{tx(GENDER_LABELS[g])}</option>)}</select>
           {err("gender")}
         </label>
         <label>{tx("Wachtwoord")}<input type="password" value={f.password} onChange={set("password")} required autoComplete="new-password" minLength={cfg.password_min_length} />{err("password")}</label>

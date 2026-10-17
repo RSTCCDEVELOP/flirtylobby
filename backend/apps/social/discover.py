@@ -20,7 +20,7 @@ from .models import DirectMessage, Favorite, Like, Notification, Pass, Profile, 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 DISCOVER = [IsAuthenticated, module_required("profiles", "discover")]
-GENDERS, AIMS = ("m", "f", "x"), ("dating", "relationship", "friends", "chat")
+GENDERS, AIMS = ("m", "f", "x", "k"), ("dating", "relationship", "friends", "chat")  # k = couple, only valid with the Dating theme (service.genders())
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 
 
@@ -34,7 +34,7 @@ def age_of(p):
 def validate_dating_fields(p, b):
     """Apply gender, birth date, city, interests, preferences from a profile PUT. Returns an error message or None."""
     if "gender" in b:
-        if b["gender"] not in ("", *GENDERS):
+        if b["gender"] not in ("", *service.genders()) and b["gender"] != p.gender:
             return "Ongeldig geslacht."
         p.gender = b["gender"]
     if "birth_date" in b:
@@ -72,9 +72,9 @@ def validate_dating_fields(p, b):
             return f"Bevat niet toegestane woorden: {', '.join(words)}."
         p.interests = tags[:12]
     if "looking_for_genders" in b:
-        p.looking_for_genders = [g for g in (b["looking_for_genders"] or []) if g in GENDERS]
+        p.looking_for_genders = [g for g in (b["looking_for_genders"] or []) if g in service.genders()]
     if "aim" in b:
-        if b["aim"] not in ("", *AIMS):
+        if b["aim"] not in ("", *(k for k, _ in service.aims())) and b["aim"] != p.aim:
             return "Ongeldig doel."
         p.aim = b["aim"]
     for k in ("age_min", "age_max"):
@@ -166,7 +166,7 @@ def search(request):
     qs = _base(me)
     if g("gender") in GENDERS:
         qs = qs.filter(gender=g("gender"))
-    if g("aim") in AIMS:
+    if g("aim") in dict(service.aims()):
         qs = qs.filter(aim=g("aim"))
     if g("country"):
         qs = qs.filter(country=g("country").upper())

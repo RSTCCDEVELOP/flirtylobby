@@ -59,6 +59,13 @@ class DashboardLayout(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class UserShortcuts(models.Model):
+    """The shortcut tiles on a user's dashboard: [{"href": "/dashboard/...", "title": "Dutch page name"}]."""
+
+    user = models.OneToOneField("accounts.User", on_delete=models.CASCADE, related_name="shortcuts")
+    items = models.JSONField(default=list)
+
+
 class ModuleState(models.Model):
     """Switch for a module (see apps/core/modules.py). No row = default (on)."""
 

@@ -11,13 +11,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useChat } from "../../../../components/Chat";
 import { useModules } from "../../../../components/Modules";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
+import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 
 const TABS = [
   ["swipe", "Swipen"], ["suggested", "Voor jou"], ["search", "Zoeken"], ["matches", "Matches"], ["liked", "Ik vond leuk"],
   ["likedme", "Vonden mij leuk"], ["favorites", "Favorieten"], ["visitors", "Bezoekers"],
 ];
-const AIMS = { dating: "Daten", relationship: "Relatie", friends: "Vriendschap", chat: "Chatten" };
-const GENDER = { m: "Man", f: "Vrouw", x: "Anders" };
+const AIMS = { dating: "Daten", relationship: "Relatie", friends: "Vriendschap", chat: "Chatten", appointments: "Afspraakjes", erotic: "Erotiek", activities: "Samen op pad", travel: "Reisgenoot" }; // labels of every kind; the filter only offers the switched-on ones
+const GENDER = GENDER_LABELS;
 const EMPTY = { gender: "", age_min: "", age_max: "", city: "", country: "", interest: "", aim: "", online: false, photo: false, q: "", distance_km: "", sort: "" };
 
 function Card({ m, onChange }) {
@@ -49,6 +50,7 @@ function Card({ m, onChange }) {
 }
 
 export default function Discover() {
+  const genders = useGenders();
   const mods = useModules();
   const [tab, setTab] = useState("suggested");
   const [pageTitle, setPageTitle] = useState("");
@@ -103,7 +105,7 @@ export default function Discover() {
         <div className="card" style={{ margin: "1rem 0" }}>
           <div className="theme-grid">
             <label>{tx("Naam of tekst")}<input value={f.q} onChange={set("q")} /></label>
-            {on("gender") && show("gender") && <label>{tx("Geslacht")}<select value={f.gender} onChange={set("gender")}><option value="">{tx("Maakt niet uit")}</option>{Object.entries(GENDER).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>}
+            {on("gender") && show("gender") && <label>{tx("Geslacht")}<select value={f.gender} onChange={set("gender")}><option value="">{tx("Maakt niet uit")}</option>{Object.entries(GENDER).filter(([k]) => genders.includes(k)).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select></label>}
             {on("birth_date") && show("age") && <label>{tx("Leeftijd van")}<input type="number" min={18} max={99} value={f.age_min} onChange={set("age_min")} /></label>}
             {on("birth_date") && show("age") && <label>{tx("Leeftijd tot")}<input type="number" min={18} max={99} value={f.age_max} onChange={set("age_max")} /></label>}
             {on("city") && show("city") && <label>{tx("Plaats")}<input value={f.city} onChange={set("city")} /></label>}
@@ -111,7 +113,7 @@ export default function Discover() {
             {on("interests") && show("interest") && <label>{tx("Interesse")}<input value={f.interest} onChange={set("interest")} placeholder={tx("bv. wandelen")} /></label>}
             {cfg?.distance_enabled && show("distance") && <label>{tx("Binnen")}<select value={f.distance_km} onChange={set("distance_km")}><option value="">{tx("Overal")}</option>{cfg.radii.map((r) => <option key={r} value={r}>{r} {tx("km")}</option>)}</select></label>}
             {show("sort") && <label>{tx("Sorteren")}<select value={f.sort} onChange={set("sort")}><option value="">{tx("Standaard")}</option><option value="active">{tx("Laatst actief")}</option><option value="newest">{tx("Nieuwste")}</option>{cfg?.distance_enabled && <option value="distance">{tx("Dichtstbij")}</option>}</select></label>}
-            {on("aim") && show("aim") && <label>{tx("Zoekt")}<select value={f.aim} onChange={set("aim")}><option value="">{tx("Alles")}</option>{Object.entries(AIMS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>}
+            {on("aim") && show("aim") && <label>{tx("Zoekt")}<select value={f.aim} onChange={set("aim")}><option value="">{tx("Alles")}</option>{(pcfg?.aims || Object.entries(AIMS)).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select></label>}
             {(pcfg?.fields || []).filter((x) => x.filter).map((x) => (
               x.type === "checkbox" ? <label key={x.key} className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={f[`f_${x.key}`] === "1"} onChange={(e) => setF({ ...f, [`f_${x.key}`]: e.target.checked ? "1" : "" })} /> {x.label}</label>
               : x.type === "number" ? <label key={x.key}>{x.label}{x.unit && <small className="muted"> ({x.unit})</small>}<span className="row" style={{ flexWrap: "nowrap" }}><input type="number" placeholder="van" value={f[`f_${x.key}_min`] || ""} onChange={(e) => setF({ ...f, [`f_${x.key}_min`]: e.target.value })} /><input type="number" placeholder="tot" value={f[`f_${x.key}_max`] || ""} onChange={(e) => setF({ ...f, [`f_${x.key}_max`]: e.target.value })} /></span></label>

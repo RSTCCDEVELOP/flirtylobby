@@ -8,6 +8,8 @@ import { Logo } from "../../components/BrandingContext";
 import { IconImage, IconSliders } from "../../components/Icons";
 import QrScanner from "../../components/QrScanner";
 import Tabs from "../../components/Tabs";
+import { IconHome } from "../../components/Icons";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import { api, errorText } from "../../lib/api";
 
@@ -48,8 +50,8 @@ export default function DirectHub() {
   }
 
   return (
-    <main className="login-page" style={{ alignItems: "flex-start", paddingTop: "2rem" }}>
-      <div className="login-theme"><ThemeToggle /></div>
+    <main className="login-page" style={{ alignItems: "center", padding: "2rem 1rem" }}>
+      <div className="login-theme"><LanguageSwitcher flags /><Link href="/" className="icon-btn" aria-label={tx("Naar de homepage")} title={tx("Naar de homepage")}><IconHome /></Link><ThemeToggle /></div>
       <div className="card login-card" style={{ maxWidth: 520, width: "100%" }}>
         <Logo className="direct-logo" />
         <h1>{tx("Verbind opnieuw")}</h1>

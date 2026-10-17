@@ -2,10 +2,14 @@
 
 import { tx } from "../../lib/t";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useState } from "react";
 import { Logo } from "../../components/BrandingContext";
 import DirectConnection from "../../components/DirectConnection";
+import DirectDataForm from "../../components/DirectDataForm";
+import { IconHome } from "../../components/Icons";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 import ThemeToggle from "../../components/ThemeToggle";
 import { api, errorText } from "../../lib/api";
 
@@ -18,8 +22,9 @@ async function copyText(t) {
 
 // Start a chat without an account: name and gender, then a code, link and QR code to hand out; the chat itself opens below.
 export default function DirectChatStart() {
-  const [name, setName] = useState("");
-  const [gender, setGender] = useState("m");
+  const router = useRouter();
+  const [step, setStep] = useState("profile"); // profile (name + gender) -> choose (host or connect)
+  const [me, setMe] = useState({ name: "", gender: "m", languages: [] }); // from the Gegevens screen
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [own, setOwn] = useState(null); // {token, key, code}
@@ -34,9 +39,6 @@ export default function DirectChatStart() {
 
   useEffect(() => {
     try {
-      const n = localStorage.getItem("direct_name"), g = localStorage.getItem("direct_gender");
-      if (n) setName(n);
-      if (["m", "f", "x"].includes(g)) setGender(g);
       const saved = JSON.parse(localStorage.getItem(KEY));
       if (saved?.token) setOwn(saved);
     } catch {}
@@ -51,12 +53,11 @@ export default function DirectChatStart() {
   }, [own, forget]);
   useEffect(() => { if (link) QRCode.toDataURL(link, { margin: 1, width: 360 }).then(setQr).catch(() => {}); }, [link]);
 
-  async function start(e) {
-    e.preventDefault();
+  const next = (d) => { setMe(d); setStep("choose"); };
+  async function host() {
     setBusy(true); setError("");
     try {
-      localStorage.setItem("direct_name", name); localStorage.setItem("direct_gender", gender);
-      const r = await api("/direct/anon/", { method: "POST", body: { name, gender } });
+      const r = await api("/direct/anon/", { method: "POST", body: me });
       const o = { token: r.token, key: r.key, code: r.code };
       localStorage.setItem(KEY, JSON.stringify(o));
       setOwn(o);
@@ -68,25 +69,26 @@ export default function DirectChatStart() {
   const closeRoom = async () => { try { await api(`/direct/${own.token}/owner-leave/`, { method: "POST", body: { key: own.key, act: "close" } }); } catch {} forget(); };
 
   return (
-    <main className="login-page" style={{ alignItems: "flex-start", paddingTop: "2rem" }}>
-      <div className="login-theme"><ThemeToggle /></div>
+    <main className="login-page" style={{ alignItems: "center", padding: "2rem 1rem" }}>
+      <div className="login-theme"><LanguageSwitcher flags /><Link href="/" className="icon-btn" aria-label={tx("Naar de homepage")} title={tx("Naar de homepage")}><IconHome /></Link><ThemeToggle /></div>
       <div className="card login-card" style={{ maxWidth: 640, width: "100%" }}>
         {!chatting && <Logo className="direct-logo" />}
-        {!chatting && <h1>{tx("Chat starten")}</h1>}
+        {!chatting && <h1>{tx(own || step === "choose" ? "Directe verbinding" : "Chat starten")}</h1>}
         {error && <div className="alert">{error}</div>}
 
-        {ready && !own && (
-          <form className="form" onSubmit={start}>
-            <p className="muted" style={{ margin: 0 }}>{tx("Vul je naam in en kies je geslacht. Daarna krijg je een code, een link en een QR-code om aan iemand te geven.")}</p>
-            <label>{tx("Jouw naam")}<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoFocus autoComplete="name" /></label>
-            <div>
-              <span style={{ fontWeight: 600, fontSize: ".9rem" }}>{tx("Geslacht")}</span>
-              <div className="gender-pick" role="radiogroup" aria-label={tx("Geslacht")} style={{ marginTop: ".35rem" }}>
-                {[["m", "Man"], ["f", "Vrouw"], ["x", "Overig"]].map(([k, l]) => <button type="button" key={k} data-g={k} role="radio" aria-checked={gender === k} className={gender === k ? "on" : ""} onClick={() => setGender(k)}>{tx(l)}</button>)}
-              </div>
-            </div>
-            <button className="btn primary" disabled={busy || !name.trim()}>{busy ? tx("Bezig…") : tx("Chat starten")}</button>
-          </form>
+        {ready && !own && step === "profile" && (
+          <DirectDataForm intro={<p className="muted" style={{ margin: 0 }}>{tx("Vul je gegevens in. Daarna kies je of je zelf iemand uitnodigt of verbindt met een ander.")}</p>} submitLabel={tx("Verder")} onSubmit={next} />
+        )}
+
+        {ready && !own && step === "choose" && (
+          <div className="form">
+            <p className="muted" style={{ margin: 0 }}>{tx("Hoi {0}, wat wil je doen?", me.name)}</p>
+            <button type="button" className="btn primary" disabled={busy} onClick={host}>{busy ? tx("Bezig…") : tx("Iemand uitnodigen (ik ben de host)")}</button>
+            <small className="muted" style={{ marginTop: "-.4rem" }}>{tx("Je krijgt een code, link en QR-code om te delen.")}</small>
+            <button type="button" className="btn" disabled={busy} onClick={() => router.push("/direct")}>{tx("Verbinden met een ander (code of link)")}</button>
+            <small className="muted" style={{ marginTop: "-.4rem" }}>{tx("Je vult de code in of scant de QR-code die je hebt gekregen.")}</small>
+            <button type="button" className="btn" onClick={() => setStep("profile")}>{tx("← Gegevens wijzigen")}</button>
+          </div>
         )}
 
         {own && info && (
@@ -109,7 +111,8 @@ export default function DirectChatStart() {
             {!chatting && <button type="button" className="btn danger" onClick={closeRoom}>{tx("Uitnodiging intrekken")}</button>}
           </>
         )}
-        {!chatting && <Link href="/direct" className="muted center">{tx("Heb je een code? Verbind zonder link")}</Link>}
+        {!chatting && !own && step === "profile" && <Link href="/direct" className="muted center">{tx("Heb je een code? Verbind zonder link")}</Link>}
+        {!chatting && <Link href="/" className="muted center">{tx("← Naar de website")}</Link>}
       </div>
     </main>
   );

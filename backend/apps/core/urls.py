@@ -12,6 +12,7 @@ urlpatterns = [
     path("languages/<str:code>/", views.language_update),
     path("languages/<str:code>/default/", views.language_set_default),
     path("dashboard/layout/", dashboard.layout),
+    path("dashboard/shortcuts/", dashboard.shortcuts),
     path("dashboard/layout/default/", dashboard.default_layout),
     path("dashboard/stats/", dashboard.stats),
     path("modules/", views.modules_public),

@@ -24,8 +24,10 @@ class Profile(models.Model):
     languages = models.JSONField(default=list, blank=True)  # visible in these (active) languages; empty = all
     searchable_local = models.BooleanField(default=True)  # findable in the member search of this system
     searchable_public = models.BooleanField(default=False)  # findable by search engines (sitemap + index)
-    accept_messages = models.BooleanField(default=True)
-    accept_chat = models.BooleanField(default=True)
+    accept_messages = models.BooleanField(default=False)
+    accept_chat = models.BooleanField(default=False)
+    contact = models.JSONField(default=dict, blank=True)  # how others may contact this member: {"video": bool, "whatsapp": {"on", "value", "friends"}, ...}; everything off by default
+    design = models.CharField(max_length=20, blank=True)  # colour theme of the profile page (themes.PROFILE_DESIGNS); empty = the site style
     # "Zoeken & matchen" (dating-style discovery)
     discover = models.BooleanField(default=False)  # takes part: can search others and be found
     gender = models.CharField(max_length=1, blank=True)  # m | f | x
@@ -218,6 +220,8 @@ class DirectRoom(models.Model):
     guest_gender = models.CharField(max_length=1, blank=True)  # m | f | x, asked before connecting
     chat_request = models.CharField(max_length=8, blank=True)  # the guest asks to chat: "" | asked | declined | accepted
     guest_key = models.CharField(max_length=64, blank=True)  # secret of the one guest who joined
+    owner_langs = models.CharField(max_length=60, blank=True)  # languages (codes, comma separated) the visitor wants to connect in
+    guest_langs = models.CharField(max_length=60, blank=True)
     guest_seen = models.DateTimeField(null=True, blank=True)
     owner_seen = models.DateTimeField(null=True, blank=True)
 

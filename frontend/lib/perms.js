@@ -16,7 +16,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/orders", module: "orders" },
   { href: "/dashboard/admin/media", module: "media" },
   { href: "/dashboard/admin/security", modules: ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_filter", "twofa"] },
-  { href: "/dashboard/admin/community", modules: ["profiles", "discover", "messages", "chat"] },
+  { href: "/dashboard/admin/community", modules: ["profiles", "discover", "messages", "chat", "directconnect"] },
   { href: "/dashboard/admin/seo", module: "seo" },
   { href: "/dashboard/admin/sandbox", module: "sandbox" },
   { href: "/dashboard/admin/pages", module: "pages" },

@@ -10,6 +10,7 @@ router.register("user-groups", views.UserGroupViewSet, basename="user-groups")
 
 urlpatterns = [
     path("users/fake/", fakeusers.fake_users),
+    path("profile/me/fill-test/", fakeusers.fill_own_profile),
     path("auth/login/", views.login),
     path("auth/login/verify/", views.login_verify),
     path("auth/login/resend/", views.login_resend),

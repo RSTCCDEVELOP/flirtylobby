@@ -41,6 +41,8 @@ urlpatterns = [
     path("chat/signal/", v.chat_signal),
     path("chat/signals/", v.chat_signals),
     path("chat/presence/", v.chat_presence),
+    path("genders/", v.genders_public),
+    path("direct/config/", dr.config),
     path("direct/code/", dr.room_by_code),
     path("direct/anon/", dr.room_anon),
     path("direct/<str:token>/owner-leave/", dr.room_owner_leave),

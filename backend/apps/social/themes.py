@@ -19,6 +19,8 @@ def f(key, label, type="text", options=None, **kw):
             "visibility": kw.get("visibility", "members"), "card": kw.get("card", False), "filter": kw.get("filter", False), "group": kw.get("group", "")}
 
 
+ORIENTATION_OPTIONS = ["Heteroseksueel", "Homoseksueel", "Biseksueel", "Panseksueel", "Anders", "Liever niet zeggen"]
+
 THEMES = {
     "normal": {
         "label": "Normaal", "desc": "Een eenvoudig ledenprofiel: kopregel, over mij, plaats en interesses.",
@@ -57,6 +59,7 @@ THEMES = {
             f("job", "Beroep", "text", visibility="members", group="Over mij"),
             f("languages", "Talen", "multiselect", ["Nederlands", "Engels", "Duits", "Frans", "Spaans", "Anders"], visibility="members", filter=True, group="Over mij"),
             f("pets", "Huisdieren", "select", ["Geen", "Hond", "Kat", "Anders"], visibility="members", group="Leefstijl"),
+            f("orientation", "Seksuele geaardheid", "select", ORIENTATION_OPTIONS, visibility="members", filter=True, group="Over mij"),
             f("religion", "Geloof", "select", ["Geen", "Christelijk", "Islamitisch", "Joods", "Boeddhistisch", "Anders"], visibility="friends", group="Over mij"),
         ],
     },
@@ -97,6 +100,32 @@ THEMES = {
         ],
     },
 }
+
+
+# Colour themes a member can give his profile page (Wijzig profiel -> Design). The colours live in the frontend (lib/profile-designs.js).
+PROFILE_DESIGNS = ["ocean", "forest", "sunset", "midnight", "lavender", "mono", "rose", "rainbow", "trans", "bi", "lesbian", "nonbinary"]
+
+
+# What members can look for ("Ik zoek"). The admin switches them on and off (Community -> Algemeen). Switching one on adds its profile fields
+# (also as search filters); switching it off removes those fields again. "default" is the state of a new site.
+AIM_OPTIONS = [
+    {"key": "dating", "label": "Daten", "desc": "Kennismaken met het oog op een date.", "default": True, "fields": []},
+    {"key": "relationship", "label": "Een relatie", "desc": "Op zoek naar een vaste partner.", "default": True, "fields": []},
+    {"key": "friends", "label": "Vriendschap", "desc": "Nieuwe vrienden maken.", "default": True, "fields": []},
+    {"key": "chat", "label": "Gewoon chatten", "desc": "Alleen een praatje, zonder verplichtingen.", "default": True, "fields": []},
+    {"key": "appointments", "label": "Afspraakjes", "desc": "Vrijblijvend afspreken, zonder vaste relatie.", "default": False, "fields": [
+        f("availability", "Wanneer kan ik afspreken", "multiselect", ["Overdag", "Avond", "Weekend", "Flexibel"], visibility="members", filter=True, group="Afspraken"),
+        f("meet_place", "Waar spreek ik af", "multiselect", ["Bij mij thuis", "Bij jou thuis", "Neutrale plek", "Hotel"], visibility="members", group="Afspraken")]},
+    {"key": "erotic", "label": "Erotiek", "desc": "Erotische contacten voor volwassenen (alleen 18+). Gevoelige gegevens: vermeld dit in je privacybeleid.", "default": False, "fields": [
+        f("erotic_wish", "Wat zoek ik", "multiselect", ["Vrijblijvend", "Vaste afspraak", "Open relatie", "Swingen", "Fetisj / BDSM", "Anders"], visibility="members", filter=True, group="Erotiek"),
+        f("erotic_limits", "Grenzen", "textarea", visibility="friends", group="Erotiek")]},
+    {"key": "activities", "label": "Samen op pad", "desc": "Samen iets ondernemen: uit eten, wandelen, concerten.", "default": False, "fields": [
+        f("activities", "Activiteiten", "multiselect", ["Uit eten", "Wandelen", "Concert", "Theater", "Sporten", "Uitgaan", "Cultuur"], visibility="members", filter=True, group="Samen op pad")]},
+    {"key": "travel", "label": "Reisgenoot", "desc": "Samen op reis.", "default": False, "fields": [
+        f("travel_style", "Reisstijl", "select", ["Stedentrip", "Strand", "Actief", "Rondreis", "Camping"], visibility="members", filter=True, group="Reizen"),
+        f("travel_when", "Wanneer", "text", visibility="members", group="Reizen")]},
+]
+AIM_KEYS = [o["key"] for o in AIM_OPTIONS]
 
 
 # How the search page looks per theme: which built-in filters show, and whether the swipe deck (like Tinder) is on by default.

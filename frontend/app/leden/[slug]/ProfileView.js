@@ -10,7 +10,7 @@ import SiteHeader from "../../../components/SiteHeader";
 import { useSession } from "../../../components/Session";
 import { api, mediaUrl } from "../../../lib/api";
 
-export default function ProfileView({ slug, initial }) {
+export default function ProfileView({ slug, initial, embedded = false }) {
   const { user, ready } = useSession();
   const chat = useChat();
   const [p, setP] = useState(initial);
@@ -54,16 +54,23 @@ export default function ProfileView({ slug, initial }) {
     window.location.href = "/leden";
   };
 
-  return (
-    <div className="site">
-      <SiteHeader />
+  // embedded: inside the dashboard (menu, header and footer of the dashboard stay); otherwise a public site page
+  const body = (
+    <>
       {preview && (
         <div className="preview-bar">
           <span>{tx("Voorbeeld: zo ziet een bezoeker die niet is ingelogd jouw openbare profiel.")}</span>
           <Link className="btn" href="/dashboard/community/profile">{tx("Terug naar bewerken")}</Link>
         </div>
       )}
-      <main className="shop">
+      {p && user && p.id === user.id && !preview && (
+        <div className="preview-bar" style={embedded ? { position: "static", borderRadius: 12, marginBottom: "1rem" } : undefined}>
+          {!embedded && <Link className="btn" href="/dashboard">{tx("← Terug naar dashboard")}</Link>}
+          <span>{tx("Dit is je profielpagina, zoals anderen hem zien.")}</span>
+          <Link className="btn primary" href="/dashboard/community/profile">{tx("Wijzig profiel")}</Link>
+        </div>
+      )}
+      <main className={embedded ? "" : "shop"}>
         {hidden && (
           <div className="card" style={{ padding: "1.25rem", maxWidth: 560 }}>
             <h2 style={{ marginTop: 0 }}>{tx("Bezoekers zien deze pagina niet")}</h2>
@@ -75,6 +82,7 @@ export default function ProfileView({ slug, initial }) {
         {missing && !p && <p className="muted">{tx("Deze pagina bestaat niet of is niet voor jou zichtbaar.")} {!user && <Link href="/login" style={{ color: "var(--blue)" }}>{tx("Log in")}</Link>}</p>}
         {p && <ProfileLayout c={{ p, setP, user, ready, rel, chat, label, ask, answer, block, i, setI }} />}
       </main>
-    </div>
+    </>
   );
+  return embedded ? body : <div className="site"><SiteHeader />{body}</div>;
 }

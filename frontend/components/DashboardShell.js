@@ -15,11 +15,14 @@ import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
-import { IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart } from "./Icons";
+import { useShortcuts } from "../lib/shortcuts";
+import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
   { href: "/dashboard/profile", label: "Mijn profiel", icon: <IconUser /> },
+  { href: "/dashboard/community/mypage", label: "Mijn profielpagina", icon: <IconEye />, module: "profiles", community: true }, // the page as others see it, inside the dashboard
+  { href: "/dashboard/community/profile", label: "Wijzig profiel", icon: <IconEdit />, module: "profiles", community: true }, // editing goes here
   { href: "/dashboard/subscriptions", label: "Mijn abonnementen", icon: <IconStar />, module: "subscriptions" },
 ];
 
@@ -32,11 +35,10 @@ const ADMIN_LINKS = [
 // Everybody's own community area (module-dependent)
 const COMMUNITY = [
   { href: "/dashboard/community", label: "Community", icon: <IconChat />, module: "any" },
-  { href: "/dashboard/community/profile", label: "Mijn profielpagina", icon: <IconUser />, module: "profiles" },
   { href: "/dashboard/community/discover", label: "Zoeken & matchen", icon: <IconSearch />, module: "discover", badge: "discover_new" },
   { href: "/dashboard/community/messages", label: "Berichten", icon: <IconMail />, module: "messages", badge: "unread_messages" },
   { href: "/dashboard/community/chat", label: "Chat", icon: <IconChat />, module: "chat", badge: "unread_chat" },
-  { href: "/dashboard/community/direct", label: "Directe verbinding", icon: <IconChat />, module: "chat", needs: "webrtc", badge: "direct_active" },
+  { href: "/dashboard/community/direct", label: "Directe verbinding", icon: <IconChat />, module: "directconnect", badge: "direct_active" },
   { href: "/dashboard/community/requests", label: "Vrienden & verzoeken", icon: <IconUsers />, module: "profiles", badge: "requests" },
   { href: "/dashboard/community/blocked", label: "Geblokkeerd", icon: <IconLock />, module: "profiles" },
 ];
@@ -76,7 +78,7 @@ const ADMIN_NAV = [
 // Menu groups (collapsible). Items are assigned by href; items without a group stay at the top.
 const COMMUNITY_GROUPS = [{ id: "c-mine", title: "Mijn community" }, { id: "c-contact", title: "Contact" }];
 const COMMUNITY_GROUP_OF = {
-  "/dashboard/community": "c-mine", "/dashboard/community/profile": "c-mine", "/dashboard/community/requests": "c-mine", "/dashboard/community/blocked": "c-mine",
+  "/dashboard/community": "c-mine", "/dashboard/community/requests": "c-mine", "/dashboard/community/blocked": "c-mine",
   "/dashboard/community/discover": "c-contact", "/dashboard/community/messages": "c-contact", "/dashboard/community/chat": "c-contact", "/dashboard/community/direct": "c-contact",
 };
 const ADMIN_GROUPS = [
@@ -108,6 +110,23 @@ function NavGroup({ id, title, active, badge, children }) {
       </button>
       <div className="nav-group-body">{children}</div>
     </div>
+  );
+}
+
+// Name of the page the user is on (from the menus), for a shortcut tile
+const pageTitle = (path) => [...NAV, ...COMMUNITY, ...ADMIN_NAV, ...SUPER_NAV].filter((n) => path === n.href).map((n) => n.label)[0]
+  || [...NAV, ...COMMUNITY, ...ADMIN_NAV, ...SUPER_NAV].filter((n) => n.href !== "/dashboard" && path.startsWith(n.href + "/")).sort((a, b) => b.href.length - a.href.length).map((n) => n.label)[0] || "";
+
+// Star in the header: make this page a shortcut tile on the dashboard (or take it away again)
+function ShortcutStar({ title, pathname }) {
+  const sc = useShortcuts();
+  if (!title || pathname === "/dashboard") return null;
+  const on = sc.has(pathname);
+  const label = on ? tx("Snelkoppeling op het dashboard verwijderen") : tx("Snelkoppeling op het dashboard maken");
+  return (
+    <button type="button" className={`icon-btn shortcut-star ${on ? "on" : ""}`} onClick={() => sc.toggle(pathname, title)} aria-pressed={on} aria-label={label} title={label}>
+      <IconStar />
+    </button>
   );
 }
 
@@ -144,7 +163,7 @@ export default function DashboardShell({ children }) {
     const t = setInterval(load, 20000);
     return () => clearInterval(t);
   }, [communityOn, pathname]);
-  const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false) && (!n.needs || chat?.cfg?.method === n.needs));
+  const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false));
   const inSuper = pathname.startsWith("/dashboard/superadmin");
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const allowedAdminNav = ADMIN_NAV.filter((n) => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
@@ -185,6 +204,7 @@ export default function DashboardShell({ children }) {
           <Link href="/">{tx("Homepage")}</Link>
         </nav>
         <div className="topbar-user">
+          <ShortcutStar title={pageTitle(pathname)} pathname={pathname} />
           <DirectIndicator />
           <NotificationBell />
           <ChatButton />
@@ -215,7 +235,7 @@ export default function DashboardShell({ children }) {
           </>
         ) : (
           <>
-            {NAV.filter((n) => !n.module || mods[n.module] !== false).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
+            {NAV.filter((n) => (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
             {renderGroups(communityLinks.map(withBadge), COMMUNITY_GROUPS, COMMUNITY_GROUP_OF)}
           </>
         )}

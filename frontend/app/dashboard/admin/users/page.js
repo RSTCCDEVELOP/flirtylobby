@@ -12,12 +12,14 @@ import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
+import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { lvl } from "../../../../lib/perms";
 
 const EMPTY = { user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
 const initials = (u) => (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
 
 export default function Users() {
+  const genders = useGenders();
   const tv = useView("users", "list");
   const { user: me } = useAuth();
   const router = useRouter();
@@ -158,7 +160,7 @@ export default function Users() {
             <p className="muted" style={{ margin: 0, fontSize: ".88rem" }}>{tx("Claude verzint personen met voor- en achternaam en vult het profiel in volgens de profielvelden van de community-instellingen")}{fake?.fields?.length ? ` (${fake.fields.slice(0, 6).join(", ")}${fake.fields.length > 6 ? ", …" : ""})` : ""}. {tx("Als foto's krijgen ze getekende avatars in de kleur van hun geslacht. Een echt portret kan AI hier niet maken.")}</p>
             <div className="form-grid">
               <label>{tx("Aantal (1–10)")}<input type="number" min={1} max={10} value={fk.count} onChange={(e) => setFk({ ...fk, count: e.target.value })} /></label>
-              <label>{tx("Geslacht")}<select value={fk.gender} onChange={(e) => setFk({ ...fk, gender: e.target.value })}><option value="">{tx("Gemengd")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Overig")}</option></select></label>
+              <label>{tx("Geslacht")}<select value={fk.gender} onChange={(e) => setFk({ ...fk, gender: e.target.value })}><option value="">{tx("Gemengd")}</option>{genders.map((g) => <option key={g} value={g}>{tx(GENDER_LABELS[g])}</option>)}</select></label>
               <label>{tx("Foto's per gebruiker (0–4)")}<input type="number" min={0} max={4} value={fk.photos} onChange={(e) => setFk({ ...fk, photos: e.target.value })} /></label>
             </div>
             <label>{tx("Sfeer of wens (optioneel)")}<input value={fk.mood} maxLength={300} placeholder={tx("bv. sportieve mensen tussen 30 en 45 uit Brabant")} onChange={(e) => setFk({ ...fk, mood: e.target.value })} /></label>

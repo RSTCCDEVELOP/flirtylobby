@@ -22,7 +22,7 @@ from apps.medialib import service as media_service
 from apps.security.words import find_forbidden
 
 from . import discover as dsc
-from . import service
+from . import service, themes
 from .models import Block, ChatMessage, Connection, ChatSignal, DirectMessage, Profile, ProfileAllow, ProfilePhoto
 
 User = get_user_model()
@@ -47,12 +47,12 @@ def _own(p):
             "searchable_local": p.searchable_local, "searchable_public": p.searchable_public, "accept_messages": p.accept_messages,
             "accept_chat": p.accept_chat, "discover": p.discover, "gender": p.gender, "birth_date": p.birth_date.isoformat() if p.birth_date else "",
             "city": p.city, "country": p.country, "interests": p.interests, "looking_for_genders": p.looking_for_genders, "aim": p.aim,
-            "age_min": p.age_min, "age_max": p.age_max, "show_age": p.show_age, "show_city": p.show_city, "show_distance": p.show_distance,
+            "design": p.design, "contact": {**{"video": False}, **{k: {"on": False, "value": "", "friends": False} for k in service.CONTACT_KINDS}, **(p.contact or {})}, "age_min": p.age_min, "age_max": p.age_max, "show_age": p.show_age, "show_city": p.show_city, "show_distance": p.show_distance,
             "location_found": p.lat is not None, "distance_enabled": cfg["discover"]["distance_enabled"], "min_age": cfg["discover"]["min_age"], "max_age": cfg["discover"]["max_age"],
             "require_photo": cfg["discover"]["require_photo"],
             "max_photos": cfg["profiles"]["max_photos"], "available_languages": service.active_languages(),
             "photos": [{"id": ph.id, "url": default_storage.url(ph.image.name), "caption": ph.caption, "visibility": ph.visibility, "private": ph.private} for ph in p.photos.all()],
-            "profile_cfg": {"theme": cfg["profiles"]["theme"], "builtin": cfg["profiles"]["builtin"], "fields": cfg["profiles"]["fields"]}, "data": p.data or {},
+            "profile_cfg": {"theme": cfg["profiles"]["theme"], "builtin": cfg["profiles"]["builtin"], "fields": cfg["profiles"]["fields"], "aims": service.aims()}, "data": p.data or {},
             "private_photos": cfg["profiles"]["private_photos"], "max_private_photos": cfg["profiles"]["max_private_photos"],
             "allowed": [person(a.user, p.user) for a in p.allowed.select_related("user")]}
 
@@ -80,6 +80,15 @@ def profile_me(request):
             if f in b:
                 setattr(p, f, bool(b[f]))
         p.headline, p.bio, p.visibility, p.languages = text["headline"], text["bio"], vis, langs
+        if "contact" in b:
+            contact, err = service.clean_contact(b["contact"], p.contact)
+            if err:
+                return bad(err)
+            p.contact = contact
+        if "design" in b:
+            if b["design"] not in ("", *themes.PROFILE_DESIGNS):
+                return bad("Onbekend design.")
+            p.design = b["design"]
         if err := dsc.validate_dating_fields(p, b):
             return bad(err)
         fields = service.get()["profiles"]["fields"]
@@ -230,7 +239,7 @@ def profile_allowed(request):
 
 # ═══ directory / public profile ═════════════════════════════════════════════
 def _card(p, viewer=None):
-    return {"slug": p.slug, "id": p.user_id, "name": service.display_name(p.user), "headline": p.headline, "card_fields": service.visible_fields(p, viewer, only_card=True), "photo": service.photo_url(p.user, viewer), "verification": p.user.verification, "gender": p.gender or p.user.gender}
+    return {"design": p.design, "slug": p.slug, "id": p.user_id, "name": service.display_name(p.user), "headline": p.headline, "card_fields": service.visible_fields(p, viewer, only_card=True), "photo": service.photo_url(p.user, viewer), "verification": p.user.verification, "gender": p.gender or p.user.gender}
 
 
 @api_view(["GET"])
@@ -280,6 +289,8 @@ def profile_detail(request, slug):
         "is_self": authed and me.id == p.user_id, "languages": p.languages,
         "can_message": authed and me.id != p.user_id and p.accept_messages and service.module_on("messages"),
         "can_chat": authed and me.id != p.user_id and p.accept_chat and service.module_on("chat"),
+        "can_video": authed and me.id != p.user_id and bool((p.contact or {}).get("video")) and service.module_on("chat") and service.get()["chat"]["video_chat"],
+        "contacts": service.visible_contacts(p, me),
         "blocked_by_me": authed and Block.objects.filter(blocker=me, blocked=p.user).exists(),
         "indexable": p.visibility == "public" and p.searchable_public and p.enabled, "enabled": p.enabled,
     }))
@@ -664,9 +675,9 @@ def config(request):
     return Response({"search": themes.search_config(service.get()["profiles"]["theme"]), "discover": {"distance_enabled": d["distance_enabled"], "radii": d["radii"], "max_distance_km": d["max_distance_km"], "suggestions": d["suggestions"],
                                   "show_visitors": d["show_visitors"], "show_likes_received": d["show_likes_received"], "default_sort": d["default_sort"],
                                   "require_to_search": d["require_to_search"], "require_photo": d["require_photo"], "swipe": swipe_on()},
-                     "chat": {**{k: c[k] for k in ("method", "display", "style", "popup_position", "show_on", "photos", "videos", "video_chat", "max_image_mb", "max_video_mb", "direct_hours")}, "ice_servers": ice} if on else None,
-                     "profile": {k: service.get()["profiles"][k] for k in ("theme", "builtin", "fields")},
-                     "modules": {k: service.module_on(k) for k in ("profiles", "discover", "messages", "chat")}})
+                     "chat": {**{k: c[k] for k in ("method", "display", "style", "popup_position", "show_on", "photos", "videos", "video_chat", "max_image_mb", "max_video_mb")}, "ice_servers": ice} if on else None,
+                     "profile": {**{k: service.get()["profiles"][k] for k in ("theme", "builtin", "fields")}, "aims": service.aims()},
+                     "modules": {k: service.module_on(k) for k in ("profiles", "discover", "messages", "chat", "directconnect")}})
 
 
 @api_view(["POST"])
@@ -684,7 +695,7 @@ def apply_theme(request):
     return Response({"settings": cfg, "themes": themes.public_list()})
 
 
-SECTION_MODULE = {"profiles": "profiles", "discover": "discover", "messages": "messages", "chat": "chat"}
+SECTION_MODULE = {"general": "profiles", "profiles": "profiles", "discover": "discover", "messages": "messages", "chat": "chat", "direct": "directconnect"}
 
 
 @api_view(["GET", "PUT"])
@@ -706,6 +717,13 @@ def settings_admin(request):
         logger.info("Community settings changed by %s", me.email)
     from . import themes
 
-    return Response({"settings": service.get(), "themes": themes.public_list(), "builtin_labels": themes.BUILTIN_LABELS, "sections": {s: level(me, m) for s, m in SECTION_MODULE.items()}, "counts": {
+    return Response({"settings": service.get(), "themes": themes.public_list(), "builtin_labels": themes.BUILTIN_LABELS, "aim_options": [{"key": o["key"], "label": o["label"], "desc": o["desc"], "fields": [x["label"] for x in o["fields"]]} for o in themes.AIM_OPTIONS], "sections": {s: level(me, m) for s, m in SECTION_MODULE.items()}, "counts": {
         "profiles": Profile.objects.filter(enabled=True).count(), "messages": DirectMessage.objects.count(), "chat_messages": ChatMessage.objects.count(),
         "blocks": Block.objects.count(), "online": User.objects.filter(last_seen__gt=timezone.now() - timedelta(seconds=45)).count()}})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def genders_public(request):
+    """Public: which genders the forms offer (couple only with the Dating theme)."""
+    return Response({"genders": list(service.genders())})

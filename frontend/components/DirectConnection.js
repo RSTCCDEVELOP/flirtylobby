@@ -2,6 +2,7 @@
 
 import { tx } from "../lib/t";
 import { IconChat, IconImage, IconPhone, IconSend, IconSmile, IconVideo } from "./Icons";
+import Flag from "./Flag";
 import Tabs from "./Tabs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
@@ -35,9 +36,9 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [call, setCall] = useState(null); // {status: calling|incoming|active, local, remote}
-  const [chatOn, setChatOn] = useState(role === "owner" || !!saved.current.msgs?.length); // the guest waits in a waiting room until the owner starts the chat
+  const [chatOn, setChatOn] = useState(!!saved.current.msgs?.length); // the connection comes first; chat, media or video only open once one of the two picks it
   const fails = useRef(0);
-  useEffect(() => { onChat?.(role === "guest" ? chatOn : chatOn && peer.guest_online); }, [chatOn, role, peer.guest_online, onChat]);
+  useEffect(() => { onChat?.(role === "owner" ? peer.guest_online : peer.owner_online); }, [role, peer.guest_online, peer.owner_online, onChat]);
   const [tab, setTab] = useState("chat"); // chat | media | video
   const tabRef = useRef("chat");
   const [unseen, setUnseen] = useState({ chat: 0, media: 0 });
@@ -47,6 +48,12 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
   const area = useRef(null);
   useEffect(() => { try { sessionStorage.setItem(store, JSON.stringify({ msgs: msgs.filter((m) => !m.kind).slice(-200), last: st.current.last })); } catch {} }, [msgs, store]);
   const pickTab = (k) => { tabRef.current = k; setTab(k); setUnseen((u) => (k === "video" ? u : { ...u, [k]: 0 })); };
+  // a screen the admin switched off (Community -> Directe verbinding -> Acties) is never the open one
+  useEffect(() => {
+    const chatOk = info.chat.chat !== false;
+    const ok = { chat: chatOk, media: chatOk && !!(info.chat.photos || info.chat.videos), video: chatOk && !!info.chat.video_chat };
+    if (!ok[tab]) { const f = ["chat", "media", "video"].find((k) => ok[k]); if (f) pickTab(f); }
+  }, [tab, info.chat.chat, info.chat.photos, info.chat.videos, info.chat.video_chat]); // eslint-disable-line react-hooks/exhaustive-deps
   const st = useRef({ pc: null, dc: null, making: false, ignore: false, file: null, last: saved.current.last || 0, call: null });
   const fileInput = useRef(null), lv = useRef(null), rv = useRef(null), box = useRef(null);
   const polite = role === "owner";
@@ -119,10 +126,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
     catch (e) { setError(navigator.mediaDevices?.getUserMedia ? tx("Camera of microfoon niet beschikbaar: ") + (e.message || e) : e.message); }
   };
   // guest: ask the owner to chat (he gets a notice and accepts or declines)
-  const askChat = async () => {
-    try { const r = await api(`/direct/${token}/chat-request/`, { method: "POST", body: { key: secret } }); setPeer((p) => ({ ...p, chat_request: r.chat_request })); }
-    catch (e) { setError(errorText(e)); }
-  };
+
   const accept = async () => {
     try { const local = await media(); setCall({ status: "active", local, remote: null }); send("accept"); }
     catch (e) { setError(navigator.mediaDevices?.getUserMedia ? tx("Camera of microfoon niet beschikbaar: ") + (e.message || e) : e.message); send("decline"); setCall(null); }
@@ -186,11 +190,11 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
     st.current.dc?.close(); st.current.pc?.close(); st.current.pc = null;
     onClosed?.("left");
   };
-  // owner: tell the guest the chat has started, until the guest confirms. Goes through the server (works before the direct line is up)
-  // and through the direct line when that is open; the guest answers with an "ack".
-  const guestHere = role === "owner" && peer.guest_online;
+  // whoever picks an activity tells the other side, until it confirms with an "ack". Goes through the server (works before the direct line is up)
+  // and through the direct line when that is open.
+  const bothHere = role === "owner" ? peer.guest_online : peer.owner_online;
   useEffect(() => {
-    if (!guestHere) return;
+    if (!chatOn || !bothHere) return;
     st.current.acked = false;
     const tell = () => {
       if (st.current.acked) return;
@@ -200,7 +204,8 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
     tell();
     const t = setInterval(tell, 2500);
     return () => clearInterval(t);
-  }, [guestHere, peer.guest_name, send]);
+  }, [chatOn, bothHere, peer.guest_name, send]);
+  const choose = (k) => { setChatOn(true); pickTab(k); };
   const other = role === "owner" ? peer.guest_name : peer.owner_name;
   const otherG = role === "owner" ? peer.guest_gender : peer.owner_gender;
   const meG = role === "owner" ? peer.owner_gender : peer.guest_gender;
@@ -258,9 +263,9 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
 
   return (
     <div className="direct-room">
-      <div className={`direct-status ${connected ? "on" : ""}`} hidden={role === "guest" && !chatOn && !call}>
+      <div className={`direct-status ${connected ? "on" : ""}`}>
         <span className={`dot ${connected ? "ok" : ""}`} style={{ width: 10, height: 10, display: "inline-block", boxShadow: "none" }} />
-        {connected ? <strong>{tx("Verbonden met")} <span className="gname" data-g={otherG || undefined}>{other || tx("de ander")}</span></strong>
+        {connected ? <strong>{tx("Verbonden met")} <span className="gname" data-g={otherG || undefined}>{other || tx("de ander")}</span>{(role === "owner" ? peer.guest_langs : peer.owner_langs)?.map((c) => <span key={c} style={{ marginLeft: ".35rem", verticalAlign: "middle" }}><Flag code={c} width={18} /></span>)}</strong>
           : otherOnline ? <span>{other || tx("De ander")} {tx("is online, verbinding maken…")}</span>
           : <span>{role === "owner" ? tx("Wachten tot iemand de uitnodiging opent…") : tx("Wachten op {0}…", peer.owner_name || tx("de uitnodiger"))}</span>}
         {link === "closed" && !connected && <small className="muted"> {tx("De verbinding is verbroken.")}</small>}
@@ -268,28 +273,31 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
       </div>
       {error && <div className="alert">{error}</div>}
 
-      {role === "guest" && !chatOn && !call && (
+      {!chatOn && !call && connected && (
         <div className="card direct-wait">
-          <span className={`live-dot ${connected ? "" : "off"}`} aria-hidden="true" />
-          <h2 style={{ margin: 0 }}>{connected ? tx("Verbonden met {0}", other || tx("de ander")) : tx("Verbinding maken met {0}…", other || tx("de ander"))}</h2>
-          <p className="muted" style={{ margin: 0 }}>{connected ? tx("Even wachten: {0} start zo de chat. Je hoeft niets te doen.", other || tx("de ander")) : tx("Een moment geduld…")}</p>
-          {peer.chat_request === "asked"
-            ? <p style={{ margin: 0 }}><strong>{tx("Wachten tot {0} je verzoek accepteert…", other || tx("de ander"))}</strong></p>
-            : <>
-                {peer.chat_request === "declined" && <div className="alert">{tx("{0} wil nu niet chatten. Je kunt het later nog eens proberen.", other || tx("De ander"))}</div>}
-                <button type="button" className="btn primary" onClick={askChat}>{peer.chat_request === "declined" ? tx("Opnieuw vragen om te chatten") : tx("Chat starten")}</button>
-              </>}
+          <span className="live-dot" aria-hidden="true" />
+          <h2 style={{ margin: 0 }}>{tx("Verbonden met {0}", other || tx("de ander"))}</h2>
+          <p className="muted" style={{ margin: 0 }}>{tx("Wat wil je samen doen?")}</p>
+          {info.chat.chat !== false && <button type="button" className="btn primary" onClick={() => choose("chat")}>{tx("Chatten")}</button>}
+          {info.chat.chat === false && <small className="muted">{tx("Er is niets aangezet.")}</small>}
+        </div>
+      )}
+      {!chatOn && !call && !connected && role === "guest" && (
+        <div className="card direct-wait">
+          <span className="live-dot off" aria-hidden="true" />
+          <h2 style={{ margin: 0 }}>{tx("Verbinding maken met {0}…", other || tx("de ander"))}</h2>
+          <p className="muted" style={{ margin: 0 }}>{tx("Een moment geduld…")}</p>
           <button type="button" className="btn danger" onClick={disconnect}>{tx("Verbreek verbinding")}</button>
         </div>
       )}
 
-      {(role === "owner" || chatOn || call) && (
+      {(chatOn || call) && (
         <>
           <Tabs value={tab} onChange={pickTab} tabs={[
-            ["chat", "Chat", <IconChat key="c" />, unseen.chat || undefined],
-            ["media", "Media", <IconImage key="m" />, unseen.media || undefined],
-            ["video", "Videochat", <IconVideo key="v" />, call ? "●" : undefined],
-          ]} />
+            info.chat.chat !== false && ["chat", "Chat", <IconChat key="c" />, unseen.chat || undefined],
+            info.chat.chat !== false && (info.chat.photos || info.chat.videos) && ["media", "Media", <IconImage key="m" />, unseen.media || undefined],
+            (info.chat.chat !== false && info.chat.video_chat || call) && ["video", "Videochat", <IconVideo key="v" />, call ? "●" : undefined],
+          ].filter(Boolean)} />
 
           {/* 1. chat: text messages */}
           <div className="direct-chat card" hidden={tab !== "chat"}>

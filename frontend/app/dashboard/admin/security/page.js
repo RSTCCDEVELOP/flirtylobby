@@ -221,7 +221,7 @@ export default function Security() {
         <GateFields s={age} set={set("age")} />
         <div className="grid2">
           <Num label={tx("Minimumleeftijd")} min={1} max={99} value={age.min_age} onChange={(v) => set("age")("min_age", v)} />
-          <label>{tx("Bij 'Nee' doorsturen naar (optioneel)")}
+          <label>{tx("Doorsturen naar bij 'Nee', 'Stoppen' of te jong (optioneel)")}
             <input value={age.deny_url} placeholder="https://…" onChange={(e) => set("age")("deny_url", e.target.value)} />
           </label>
         </div>
@@ -241,7 +241,7 @@ export default function Security() {
         <GateFields s={gambling} set={set("gambling")} />
         <div className="grid2">
           <Num label={tx("Minimumleeftijd")} min={1} max={99} value={gambling.min_age} onChange={(v) => set("gambling")("min_age", v)} />
-          <label>{tx("Bij weigeren doorsturen naar (optioneel)")}
+          <label>{tx("Doorsturen naar bij weigeren, 'Stoppen' of te jong (optioneel)")}
             <input value={gambling.deny_url} placeholder="https://…" onChange={(e) => set("gambling")("deny_url", e.target.value)} />
           </label>
         </div>

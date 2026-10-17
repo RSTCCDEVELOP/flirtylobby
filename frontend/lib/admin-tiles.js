@@ -12,7 +12,7 @@ export const TILES = [
   { href: "/dashboard/admin/orders", title: "Orders", big: "Bestellingen en webshop", small: "Status, klantgegevens en instellingen", modules: ["orders"] },
   { href: "/dashboard/admin/media", title: "Media", big: "Afbeeldingen & video's", small: "Lokaal of S3, per bestand", modules: ["media"] },
   { href: "/dashboard/admin/branding", title: "Logo's & beeld", big: "Logo, favicon, foto's", small: "Voor de website en onderhoudspagina", modules: ["branding"] },
-  { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat"] },
+  { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat", "directconnect"] },
   { href: "/dashboard/admin/seo", title: "SEO", big: "Zoekmachines, bots en AI-agents", small: "robots.txt, sitemap, llms.txt, titels", modules: ["seo"] },
   { href: "/dashboard/admin/security", title: "Beveiliging", big: "Landen, 18+, cookies", small: "Toegang, popups en verboden woorden", modules: SEC },
   { href: "/dashboard/admin/subscriptions", title: "Abonnementen", big: "Toegang verkopen", small: "Abonnementen met een order per periode en toegang tot site, chat, video en meer", modules: ["subscriptions"] },

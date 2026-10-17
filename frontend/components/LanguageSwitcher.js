@@ -7,7 +7,7 @@ import Flag from "./Flag";
 
 // Shows enabled languages (only when there is a choice), as a text pulldown or as little flags (Admin -> Talen).
 // Sets <html lang/dir>; LangRoot translates the UI when the "langchange" event fires.
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ flags = false }) {
   const [data, setData] = useState(null);
   const [current, setCurrent] = useState("");
 
@@ -41,7 +41,7 @@ export default function LanguageSwitcher() {
     try { localStorage.setItem("lang", lang.code); } catch {}
   }
 
-  if (data.switcher === "flags") {
+  if (flags || data.switcher === "flags") {
     return (
       <span className="lang-flags" role="group" aria-label={tx("Taal")}>
         {data.languages.map((l) => (
