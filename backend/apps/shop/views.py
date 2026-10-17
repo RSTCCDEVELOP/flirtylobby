@@ -208,9 +208,13 @@ def create_order(request):
     payment = None
     if online:
         return_url = f"{str(b.get('return_base', '')).rstrip('/')}/bestelling/{order.number}?t={order.token}" if b.get("return_base") else ""
-        payment = sandbox.create_payment(order.total, order.currency, f"Bestelling {order.number}", "mollie", return_url)
+        payment = sandbox.create_payment(order.total, order.currency, f"Bestelling {order.number}", sandbox.payment_provider(), return_url)
         order.status, order.payment_ref = "pending_payment", payment.ref
         order.save(update_fields=["status", "payment_ref"])
+        done = sandbox.settle(payment, return_url or f"/bestelling/{order.number}?t={order.token}")  # automatic mode: paid at once
+        if done:
+            order.refresh_from_db()
+            return Response({"number": order.number, "token": order.token, "status": order.status, "checkout_path": done}, status=status.HTTP_201_CREATED)
     else:
         service.confirmation_mail(order)  # pay by invoice: confirmed right away
     return Response({"number": order.number, "token": order.token, "status": order.status,

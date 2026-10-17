@@ -16,7 +16,7 @@ from .models import SandboxMessage, SandboxPayment, SandboxSettings
 logger = logging.getLogger(__name__)
 
 DEFAULTS = {
-    "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL",
+    "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL", "auto_pay": False,
     "simulate": {"email": True, "sms": True, "payments": True, "integrations": True, "geo": False, "geocoding": True},
 }
 OUTCOMES = {"paid", "failed", "canceled", "expired"}
@@ -43,7 +43,7 @@ def save(incoming):
     for k, v in (incoming or {}).items():
         if k == "simulate" and isinstance(v, dict):
             cur["simulate"].update({a: bool(b) for a, b in v.items() if a in cur["simulate"]})
-        elif k in ("enabled", "banner"):
+        elif k in ("enabled", "banner", "auto_pay"):
             cur[k] = bool(v)
         elif k == "fixed_code":
             v = str(v or "").strip()
@@ -78,6 +78,38 @@ def capture(kind, to, subject, body, sender=""):
 # ── simulated payments ──────────────────────────────────────────────────────
 def _event(p, text):
     p.events = [*p.events, {"at": timezone.now().isoformat(timespec="seconds"), "text": text}]
+
+
+def payment_provider():
+    """The payment link that is switched on (Stripe, else Mollie); the simulation pretends to be that one."""
+    from apps.integrations.models import Integration
+
+    on = list(Integration.objects.filter(provider__in=("stripe", "mollie"), enabled=True).values_list("provider", flat=True))
+    return "stripe" if "stripe" in on or not on else on[0]
+
+
+def payment_targets():
+    """Which functions of the system pay through this simulation: only what is switched on."""
+    from apps.integrations.models import Integration
+    from apps.shop.service import settings as shop_settings
+
+    shop_on = modules.enabled("orders") and shop_settings()["pay_online"]
+    links = set(Integration.objects.filter(provider__in=("stripe", "mollie"), enabled=True).values_list("provider", flat=True))
+    return [
+        {"key": "stripe", "label": "Stripe", "on": "stripe" in links}, {"key": "mollie", "label": "Mollie", "on": "mollie" in links},
+        {"key": "shop", "label": "Webshop (online betalen)", "on": shop_on},
+        {"key": "subscriptions", "label": "Abonnementen", "on": modules.enabled("subscriptions")},
+        {"key": "donations", "label": "Donaties", "on": modules.enabled("donations")},
+    ]
+
+
+def settle(p, return_url=""):
+    """With 'betalingen meteen als betaald afronden' the payment is finished at once (as if the customer paid): call it after the payment
+    is linked to its order / donation. Returns the address to send the customer to, or '' when the payment page must be shown."""
+    if not get()["auto_pay"]:
+        return ""
+    apply_outcome(p, "paid")
+    return return_url or "/"
 
 
 def create_payment(amount, currency="EUR", description="", provider="mollie", return_url=""):

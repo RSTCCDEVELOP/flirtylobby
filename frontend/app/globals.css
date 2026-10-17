@@ -1358,3 +1358,4 @@ tr[hidden] { display: none !important; }
 .don-thanks { display: grid; gap: .8rem; max-width: 460px; text-align: center; }
 .don-thanks .row { justify-content: center; }
 .action-row { display: grid; gap: .7rem; padding: .9rem 1rem; }
+.pay-targets { display: flex; flex-wrap: wrap; gap: .4rem .6rem; align-items: center; margin-bottom: .8rem; font-size: .88rem; }

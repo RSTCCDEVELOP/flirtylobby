@@ -2583,5 +2583,11 @@
   "alleen deze sessie": "هذه الجلسة فقط",
   "Acties": "الإجراءات",
   "Donatie-acties": "حملات التبرع",
-  "Toegang": "الصلاحيات"
+  "Toegang": "الصلاحيات",
+  "Betalingen meteen als betaald afronden": "إتمام المدفوعات كمدفوعة فورًا",
+  "Geen betaalpagina: elke betaling van de webshop, abonnementen of donaties lijkt direct gelukt, alsof de klant heeft betaald. Uit = je kiest zelf op de betaalpagina hoe de betaling afloopt.": "بدون صفحة دفع: كل دفعة من المتجر أو الاشتراكات أو التبرعات تنجح فورًا كأن العميل دفع. إيقاف = تختار في صفحة الدفع كيف تنتهي الدفعة.",
+  "Geldt voor wat aan staat": "ينطبق على ما هو مفعّل",
+  "Aan: betaalt via de simulatie": "مفعّل: يدفع عبر المحاكاة",
+  "Gesimuleerd als": "محاكاة كـ",
+  "Webshop (online betalen)": "المتجر (الدفع عبر الإنترنت)"
 }

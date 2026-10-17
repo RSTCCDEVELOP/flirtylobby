@@ -2583,5 +2583,11 @@
   "alleen deze sessie": "só esta sessão",
   "Acties": "Ações",
   "Donatie-acties": "Ações de donativo",
-  "Toegang": "Acesso"
+  "Toegang": "Acesso",
+  "Betalingen meteen als betaald afronden": "Concluir os pagamentos como pagos de imediato",
+  "Geen betaalpagina: elke betaling van de webshop, abonnementen of donaties lijkt direct gelukt, alsof de klant heeft betaald. Uit = je kiest zelf op de betaalpagina hoe de betaling afloopt.": "Sem página de pagamento: cada pagamento da loja, subscrições ou donativos parece ter sucesso de imediato, como se o cliente tivesse pago. Desligado = escolhe na página de pagamento como o pagamento termina.",
+  "Geldt voor wat aan staat": "Vale para o que está ligado",
+  "Aan: betaalt via de simulatie": "Ligado: paga através da simulação",
+  "Gesimuleerd als": "Simulado como",
+  "Webshop (online betalen)": "Loja (pagamento online)"
 }

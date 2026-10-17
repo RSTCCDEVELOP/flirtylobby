@@ -301,10 +301,11 @@ def start_payment(order, return_base=""):
         if not sandbox.active("payments"):
             raise SubError("Online betalen is nog niet beschikbaar.")
         back = f"{return_base.rstrip('/')}/bestelling/{order.number}?t={order.token}" if return_base else ""
-        payment = sandbox.create_payment(order.total, order.currency, f"Bestelling {order.number}", "mollie", back)
+        payment = sandbox.create_payment(order.total, order.currency, f"Bestelling {order.number}", sandbox.payment_provider(), back)
         order.status, order.payment_ref = "pending_payment", payment.ref
         order.save(update_fields=["status", "payment_ref"])
-        return f"/sandbox/checkout/{payment.ref}"
+        done = sandbox.settle(payment, back or "/dashboard/subscriptions")  # automatic mode: paid at once
+        return done or f"/sandbox/checkout/{payment.ref}"
     if settings()["invoice_activate"] or order.kind == "donation":
         mark_paid(order, note="op factuur")
     return None
@@ -591,10 +592,11 @@ def donate(campaign, amount, user=None, name="", email="", message="", anonymous
                                 message=(message if campaign.allow_message else "")[:300], anonymous=bool(anonymous and campaign.allow_anonymous))
     path = return_path if return_path.startswith("/") and not return_path.startswith("//") else "/doneren"
     back = f"{return_base.rstrip('/')}{path}{'&' if '?' in path else '?'}bedankt={campaign.id}" if return_base else ""
-    payment = sandbox.create_payment(amount, "EUR", f"Donatie {campaign.name}", "mollie", back)
+    payment = sandbox.create_payment(amount, "EUR", f"Donatie {campaign.name}", sandbox.payment_provider(), back)
     d.payment_ref = payment.ref
     d.save(update_fields=["payment_ref"])
-    return d, f"/sandbox/checkout/{payment.ref}"
+    done = sandbox.settle(payment, back or f"/doneren?bedankt={campaign.id}")  # automatic mode: paid at once
+    return d, done or f"/sandbox/checkout/{payment.ref}"
 
 
 def raised(campaign):

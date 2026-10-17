@@ -39,7 +39,7 @@ def settings(request):
         logger.info("Sandbox settings changed by %s: %s", request.user.email, service.get())
     from apps.security.countries import COUNTRY_CODES
 
-    return Response({"settings": service.get(), "country_codes": sorted(COUNTRY_CODES)})
+    return Response({"settings": service.get(), "country_codes": sorted(COUNTRY_CODES), "payment_provider": service.payment_provider(), "payment_targets": service.payment_targets()})
 
 
 @api_view(["GET"])

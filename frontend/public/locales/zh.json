@@ -2583,5 +2583,11 @@
   "alleen deze sessie": "仅本次会话",
   "Acties": "行动",
   "Donatie-acties": "捐款活动",
-  "Toegang": "权限"
+  "Toegang": "权限",
+  "Betalingen meteen als betaald afronden": "立即将付款视为已付款",
+  "Geen betaalpagina: elke betaling van de webshop, abonnementen of donaties lijkt direct gelukt, alsof de klant heeft betaald. Uit = je kiest zelf op de betaalpagina hoe de betaling afloopt.": "没有付款页面：商店、订阅或捐款的每笔付款都会立即成功，就像客户已付款一样。关闭 = 你在付款页面选择付款的结果。",
+  "Geldt voor wat aan staat": "适用于已开启的功能",
+  "Aan: betaalt via de simulatie": "开启：通过模拟付款",
+  "Gesimuleerd als": "模拟为",
+  "Webshop (online betalen)": "商店（在线支付）"
 }

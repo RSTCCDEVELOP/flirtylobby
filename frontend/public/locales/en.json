@@ -2583,5 +2583,11 @@
   "alleen deze sessie": "only this session",
   "Acties": "Actions",
   "Donatie-acties": "Donation actions",
-  "Toegang": "Access"
+  "Toegang": "Access",
+  "Betalingen meteen als betaald afronden": "Complete payments as paid right away",
+  "Geen betaalpagina: elke betaling van de webshop, abonnementen of donaties lijkt direct gelukt, alsof de klant heeft betaald. Uit = je kiest zelf op de betaalpagina hoe de betaling afloopt.": "No payment page: every payment of the webshop, subscriptions or donations seems to succeed at once, as if the customer paid. Off = you choose on the payment page how the payment ends.",
+  "Geldt voor wat aan staat": "Applies to what is switched on",
+  "Aan: betaalt via de simulatie": "On: pays through the simulation",
+  "Gesimuleerd als": "Simulated as",
+  "Webshop (online betalen)": "Webshop (online payment)"
 }

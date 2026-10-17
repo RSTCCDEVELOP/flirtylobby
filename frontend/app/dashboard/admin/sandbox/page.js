@@ -29,6 +29,7 @@ export default function Sandbox() {
   const [msg, setMsg] = useState(null);
   const [form, setForm] = useState({ provider: "mollie", amount: "24.95", currency: "EUR", description: tx("Testbestelling"), outcome: "" });
   const [open, setOpen] = useState(null);
+  const [pay, setPay] = useState({ provider: "stripe", targets: [] }); // which payment link and functions the simulation stands in for
   const names = useMemo(() => { const dn = new Intl.DisplayNames(["nl"], { type: "region" }); return Object.fromEntries(codes.map((c) => [c, dn.of(c) || c])); }, [codes]);
 
   const loadData = useCallback(() => {
@@ -36,7 +37,7 @@ export default function Sandbox() {
     api("/sandbox/messages/").then(setMessages).catch(() => {});
   }, []);
   useEffect(() => {
-    api("/sandbox/settings/").then((d) => { setS(d.settings); setCodes(d.country_codes); }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
+    api("/sandbox/settings/").then((d) => { setS(d.settings); setCodes(d.country_codes); setPay({ provider: d.payment_provider, targets: d.payment_targets }); setForm((f) => ({ ...f, provider: d.payment_provider })); }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
     loadData();
   }, [loadData]);
 
@@ -84,6 +85,12 @@ export default function Sandbox() {
             </label>
           ))}
         </div>
+        {s.simulate.payments && (
+          <label className="check sec-toggle">
+            <span className="switch"><input type="checkbox" checked={!!s.auto_pay} disabled={!edit} onChange={(e) => save({ auto_pay: e.target.checked })} /><span /></span>
+            <span><strong>{tx("Betalingen meteen als betaald afronden")}</strong><br /><small className="muted">{tx("Geen betaalpagina: elke betaling van de webshop, abonnementen of donaties lijkt direct gelukt, alsof de klant heeft betaald. Uit = je kiest zelf op de betaalpagina hoe de betaling afloopt.")}</small></span>
+          </label>
+        )}
         <div className="theme-grid">
           <label>{tx("Vaste verificatiecode")} <small className="muted">{tx("leeg = willekeurig (zie postvak)")}</small>
             <input value={s.fixed_code} inputMode="numeric" maxLength={8} placeholder={tx("bv. 123456")} disabled={!edit} onChange={(e) => setS({ ...s, fixed_code: e.target.value })} onBlur={(e) => save({ fixed_code: e.target.value })} />
@@ -98,6 +105,11 @@ export default function Sandbox() {
       </Collapsible>
 
       <Collapsible id="sandbox-payments" title={tx("Betalingen simuleren ({0})", payments.length)}>
+        <div className="pay-targets">
+          <span className="muted">{tx("Geldt voor wat aan staat")}:</span>
+          {pay.targets.map((t) => <span key={t.key} className={`badge ${t.on ? "ok" : "off"}`} title={t.on ? tx("Aan: betaalt via de simulatie") : tx("Uit")}>{tx(t.label)}</span>)}
+          <span className="muted">· {tx("Gesimuleerd als")} <strong>{pay.provider === "stripe" ? "Stripe" : "Mollie"}</strong></span>
+        </div>
         <div className="theme-grid">
           <label>{tx("Aanbieder")}<select value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })}><option value="mollie">{tx("Mollie")}</option><option value="stripe">{tx("Stripe")}</option></select></label>
           <label>{tx("Bedrag")}<input value={form.amount} inputMode="decimal" onChange={(e) => setForm({ ...form, amount: e.target.value })} /></label>
