@@ -122,6 +122,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
     const { kind, payload } = sig;
     if (kind === "chat") { setChatOn(true); send("ack"); return; } // the owner started the chat: open it here too
     if (kind === "ack") { st.current.acked = true; return; }
+    if (kind === "text") { setChatOn(true); add({ me: false, body: payload?.body || "" }); return; }
     if (kind === "call") { setChatOn(true); return setCall((c) => c || { status: "incoming", local: null, remote: null }); }
     if (kind === "accept") return setCall((c) => (c ? { ...c, status: "active" } : c));
     if (kind === "decline" || kind === "end") return hangup(false);
@@ -195,6 +196,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
   const meG = role === "owner" ? peer.owner_gender : peer.guest_gender;
   const otherOnline = role === "owner" ? peer.guest_online : peer.owner_online;
   const connected = link === "open";
+  const canWrite = connected || otherOnline; // text also works through the server
   const texts = msgs.filter((m) => !m.kind), gallery = msgs.filter((m) => m.kind === "image" || m.kind === "video");
   useEffect(() => { if (call) pickTab("video"); }, [!!call]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -205,18 +207,18 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
     setText((t) => t.slice(0, a) + s + t.slice(b));
     setTimeout(() => { if (el) { el.focus(); el.selectionStart = el.selectionEnd = a + s.length; } }, 0);
   };
-  const sendQuick = (s) => {
+  // text goes over the direct line when it is open, otherwise through the server, so chatting never waits for the direct line
+  const deliver = (body) => {
     const dc = st.current.dc;
-    if (!dc || dc.readyState !== "open") return;
-    dc.send(JSON.stringify({ t: "text", body: s }));
-    add({ me: true, body: s });
+    if (dc && dc.readyState === "open") dc.send(JSON.stringify({ t: "text", body }));
+    else send("text", { body });
+    add({ me: true, body });
   };
+  const sendQuick = (s) => deliver(s);
   const sendText = (e) => {
     e?.preventDefault();
-    const dc = st.current.dc;
-    if (!text.trim() || !dc || dc.readyState !== "open") return;
-    dc.send(JSON.stringify({ t: "text", body: text.trim() }));
-    add({ me: true, body: text.trim() });
+    if (!text.trim()) return;
+    deliver(text.trim());
     setText("");
     setEmojiOpen(false);
   };
@@ -275,14 +277,14 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
           {/* 1. chat: text messages */}
           <div className="direct-chat card" hidden={tab !== "chat"}>
             <div className="chat-msgs" ref={box} style={{ minHeight: 220, maxHeight: 420, overflow: "auto", display: "flex", flexDirection: "column", gap: ".4rem" }}>
-              {!texts.length && <p className="muted" style={{ margin: "auto" }}>{connected ? tx("Zeg hallo") : tx("Je kunt schrijven zodra jullie verbonden zijn.")}</p>}
+              {!texts.length && <p className="muted" style={{ margin: "auto" }}>{canWrite ? tx("Zeg hallo") : tx("Je kunt schrijven zodra de ander online is.")}</p>}
               {texts.map((m) => <div key={m.id} className={`bubble ${m.me ? "me" : ""}`}><span>{m.body}</span></div>)}
             </div>
             <div className="chat-quick">
-              {QUICK.map((q) => <button key={q} type="button" className="chip" disabled={!connected} onClick={() => sendQuick(tx(q))}>{tx(q)}</button>)}
+              {QUICK.map((q) => <button key={q} type="button" className="chip" disabled={!canWrite} onClick={() => sendQuick(tx(q))}>{tx(q)}</button>)}
             </div>
             <form className="chat-compose" onSubmit={sendText}>
-              <textarea ref={area} rows={3} value={text} onChange={(e) => setText(e.target.value)} disabled={!connected} placeholder={tx("Typ een bericht…")}
+              <textarea ref={area} rows={3} value={text} onChange={(e) => setText(e.target.value)} disabled={!canWrite} placeholder={tx("Typ een bericht…")}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendText(); } }} />
               {emojiOpen && (
                 <div className="emoji-panel">
@@ -293,7 +295,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
               <div className="chat-tools">
                 <button type="button" className={`btn ${emojiOpen ? "primary" : ""}`} disabled={!connected} onClick={() => setEmojiOpen(!emojiOpen)} title={tx("Emoticons")} aria-label={tx("Emoticons")}><IconSmile /></button>
                 <small className="muted grow">{tx("Enter verstuurt, Shift+Enter is een nieuwe regel.")}</small>
-                <button className="btn primary" disabled={!connected || !text.trim()}><IconSend /> {tx("Verstuur")}</button>
+                <button className="btn primary" disabled={!canWrite || !text.trim()}><IconSend /> {tx("Verstuur")}</button>
               </div>
             </form>
           </div>

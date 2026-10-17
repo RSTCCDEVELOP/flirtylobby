@@ -15,7 +15,7 @@ from .models import DirectRoom, DirectSignal
 
 ONLINE = timedelta(seconds=12)
 MAX_ACTIVE = 5
-KINDS = ("sdp", "ice", "call", "accept", "decline", "end", "chat", "ack")
+KINDS = ("sdp", "ice", "call", "accept", "decline", "end", "chat", "ack", "text")
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 
 
@@ -237,6 +237,8 @@ def room_signal(request, token):
     if kind == "chat" and role == "owner" and room.chat_request == "asked":  # the owner started the chat himself: that answers the request
         room.chat_request = "accepted"
         room.save(update_fields=["chat_request"])
+    if kind == "text":  # chat text relayed through the server while the direct line is not (yet) open
+        payload = {"body": str(payload.get("body", ""))[:2000]}
     DirectSignal.objects.create(room=room, to_role="guest" if role == "owner" else "owner", kind=kind, payload=payload)
     return Response(status=status.HTTP_204_NO_CONTENT)
 
