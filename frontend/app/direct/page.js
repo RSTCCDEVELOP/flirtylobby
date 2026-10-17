@@ -3,7 +3,7 @@
 import { tx } from "../../lib/t";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Logo } from "../../components/BrandingContext";
 import { IconImage, IconSliders } from "../../components/Icons";
 import QrScanner from "../../components/QrScanner";
@@ -28,6 +28,14 @@ export default function DirectHub() {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // connected here before and the invitation is still open: straight back in, no code needed
+  useEffect(() => {
+    let last = null, key = null;
+    try { last = localStorage.getItem("direct:last"); key = last && JSON.parse(localStorage.getItem(`direct:${last}`))?.key; } catch {}
+    if (!last || !key) return;
+    api(`/direct/${last}/?key=${encodeURIComponent(key)}`).then((d) => { if (d.role === "guest") router.replace(`/direct/${last}`); }).catch(() => {});
+  }, [router]);
 
   async function go(found) {
     setError(""); setBusy(true);

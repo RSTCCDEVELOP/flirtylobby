@@ -31,7 +31,7 @@ export default function DirectGuest() {
 
   useEffect(() => {
     let saved = null;
-    try { saved = JSON.parse(sessionStorage.getItem(`direct:${token}`)); } catch {}
+    try { saved = JSON.parse(localStorage.getItem(`direct:${token}`)); } catch {}  // kept on this device, so coming back needs no code
     const q = saved?.key ? `?key=${encodeURIComponent(saved.key)}` : "";
     api(`/direct/${token}/${q}`).then((d) => { setInfo(d); if (saved?.key && d.role === "guest") setSecret(saved.key); if (d.role === "owner") setError(tx("Dit is je eigen uitnodiging. Open hem op een ander apparaat of stuur de link door.")); })
       .catch((e) => setError(errorText(e)));
@@ -42,7 +42,7 @@ export default function DirectGuest() {
     setBusy(true); setError("");
     try {
       const r = await api(`/direct/${token}/join/`, { method: "POST", body: { name, gender } });
-      try { sessionStorage.setItem(`direct:${token}`, JSON.stringify({ key: r.key })); } catch {}
+      try { localStorage.setItem(`direct:${token}`, JSON.stringify({ key: r.key })); localStorage.setItem("direct:last", token); } catch {}
       setSecret(r.key);
     } catch (err) { setError(errorText(err)); setBusy(false); }
   }
@@ -70,7 +70,7 @@ export default function DirectGuest() {
           </form>
         )}
         {info?.taken && !secret && <div className="alert">{tx("Er is al iemand verbonden met deze uitnodiging.")}</div>}
-        {secret && info && <DirectConnection token={token} role="guest" secret={secret} info={info} onClosed={(why) => { setSecret(null); try { sessionStorage.removeItem(`direct:${token}`); } catch {} setError(why === "left" ? tx("Je hebt de verbinding verbroken.") : tx("De verbinding is verbroken of de uitnodiging is gesloten.")); }} />}
+        {secret && info && <DirectConnection token={token} role="guest" secret={secret} info={info} onClosed={(why) => { setSecret(null); try { localStorage.removeItem(`direct:${token}`); localStorage.removeItem("direct:last"); } catch {} setError(why === "left" ? tx("Je hebt de verbinding verbroken.") : tx("De verbinding is verbroken of de uitnodiging is gesloten.")); }} />}
         {!secret && <Link href="/direct" className="muted center">{tx("Heb je een code? Verbind zonder link")}</Link>}
         <Link href="/" className="muted center">{tx("← Naar de website")}</Link>
       </div>
