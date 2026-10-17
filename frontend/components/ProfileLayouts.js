@@ -45,8 +45,8 @@ export function Gallery({ p, i, setI, ratio = "4 / 3", rounded = true }) {
 function Avatar({ p, size = 96 }) {
   const ph = p.photos.find((x) => !x.blurred) || p.photos[0];
   return ph
-    ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="pf-avatar" src={mediaUrl(ph.url)} alt={p.name} style={{ width: size, height: size }} />
-    : <span className="pf-avatar avatar" style={{ width: size, height: size, fontSize: size / 2.6 }}>{initial(p)}</span>;
+    ? /* eslint-disable-next-line @next/next/no-img-element */ <img className="pf-avatar" data-g={p.gender || undefined} src={mediaUrl(ph.url)} alt={p.name} style={{ width: size, height: size }} />
+    : <span className="pf-avatar avatar" data-g={p.gender || undefined} style={{ width: size, height: size, fontSize: size / 2.6 }}>{initial(p)}</span>;
 }
 
 // ── actions (friend requests, like, message, chat, block) ──────────────────

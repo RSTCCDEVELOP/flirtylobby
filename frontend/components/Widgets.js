@@ -205,8 +205,8 @@ function DirectBlock() {
         <div className="direct-people">
           {connected.map((r) => (
             <div key={r.token} className="request-row">
-              <span className="avatar">{(r.guest_name || "?")[0].toUpperCase()}</span>
-              <span className="grow"><strong>{r.guest_name}</strong><span className="muted" style={{ fontSize: ".8rem" }}><span className="dot ok" style={{ display: "inline-block", width: 8, height: 8, marginRight: 6, boxShadow: "none" }} />{tx("Verbonden")}</span></span>
+              <span className="avatar" data-g={r.guest_gender || undefined}>{(r.guest_name || "?")[0].toUpperCase()}</span>
+              <span className="grow"><strong className="gname" data-g={r.guest_gender || undefined}>{r.guest_name}</strong><span className="muted" style={{ fontSize: ".8rem" }}><span className="dot ok" style={{ display: "inline-block", width: 8, height: 8, marginRight: 6, boxShadow: "none" }} />{tx("Verbonden")}</span></span>
               <span className="request-actions">
                 <Link className="btn sm primary" href={`/dashboard/community/direct?room=${r.token}`}>{tx("Openen")}</Link>
                 <button type="button" className="btn sm danger" onClick={async () => { if (await confirmDialog(tx("De verbinding met {0} verbreken?", r.guest_name), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken"), danger: true })) { await api(`/direct/rooms/${r.token}/disconnect/`, { method: "POST" }).catch(() => {}); setRooms((l) => l.map((x) => (x.token === r.token ? { ...x, guest_online: false, guest_name: "" } : x))); } }}>{tx("Verbreek")}</button>

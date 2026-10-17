@@ -4,7 +4,7 @@ import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../../../../lib/api";
 
-const Av = ({ u }) => (u.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={u.photo.startsWith("http") ? u.photo : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${u.photo}`} alt="" className="avatar-img" /> : <span className="avatar">{u.name[0]}</span>);
+const Av = ({ u }) => (u.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={u.photo.startsWith("http") ? u.photo : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${u.photo}`} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{u.name[0]}</span>);
 
 export default function Messages() {
   const [convs, setConvs] = useState([]);

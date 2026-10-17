@@ -3,6 +3,7 @@ import SiteHeader from "../components/SiteHeader";
 import { EditableImage, EditableText } from "../components/EditMode";
 import { Logo, HomePhotos } from "../components/BrandingContext";
 
+import PageBlocks from "../components/PageBlocks";
 import { pageMetadata } from "../lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default function Home() {
         <EditableText id="home.title" as="h1" fallback="Onze website is in aanbouw" />
         <EditableText id="home.text" as="p" rich fallback="We werken hard aan een nieuwe website. Binnenkort vind je hier meer informatie." />
         <HomePhotos />
+        <PageBlocks pageKey="home" />
       </main>
       <SiteFooter />
     </div>

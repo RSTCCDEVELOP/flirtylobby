@@ -23,7 +23,7 @@ const QUICK = ["Hoi!", "Hoe gaat het?", "Bedankt!", "Leuk je te zien", "Een mome
  * props: token, role ("owner" | "guest"), secret (guest key), info (from /direct/<token>/)
  */
 export default function DirectConnection({ token, role, secret, info, onClosed }) {
-  const [peer, setPeer] = useState({ owner_online: false, guest_online: false, owner_name: "", guest_name: "" });
+  const [peer, setPeer] = useState({ owner_online: false, guest_online: false, owner_name: "", guest_name: "", owner_gender: "", guest_gender: "" });
   const [link, setLink] = useState("connecting"); // connecting | open | closed
   const [msgs, setMsgs] = useState([]);
   const [text, setText] = useState("");
@@ -186,6 +186,8 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
     return () => clearInterval(t);
   }, [guestHere, peer.guest_name, send]);
   const other = role === "owner" ? peer.guest_name : peer.owner_name;
+  const otherG = role === "owner" ? peer.guest_gender : peer.owner_gender;
+  const meG = role === "owner" ? peer.owner_gender : peer.guest_gender;
   const otherOnline = role === "owner" ? peer.guest_online : peer.owner_online;
   const connected = link === "open";
   const texts = msgs.filter((m) => !m.kind), gallery = msgs.filter((m) => m.kind === "image" || m.kind === "video");
@@ -234,7 +236,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
     <div className="direct-room">
       <div className={`direct-status ${connected ? "on" : ""}`} hidden={role === "guest" && !chatOn && !call}>
         <span className={`dot ${connected ? "ok" : ""}`} style={{ width: 10, height: 10, display: "inline-block", boxShadow: "none" }} />
-        {connected ? <strong>{tx("Verbonden met")} {other || tx("de ander")}</strong>
+        {connected ? <strong>{tx("Verbonden met")} <span className="gname" data-g={otherG || undefined}>{other || tx("de ander")}</span></strong>
           : otherOnline ? <span>{other || tx("De ander")} {tx("is online, verbinding maken…")}</span>
           : <span>{role === "owner" ? tx("Wachten tot iemand de uitnodiging opent…") : tx("Wachten op {0}…", peer.owner_name || tx("de uitnodiger"))}</span>}
         {link === "closed" && !connected && <small className="muted"> {tx("De verbinding is verbroken.")}</small>}
@@ -299,7 +301,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
               {gallery.map((m) => (
                 <figure key={m.id} className={m.me ? "me" : ""}>
                   {m.kind === "image" ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={m.url} alt={m.name} /> : <video src={m.url} controls preload="metadata" />}
-                  <figcaption>{m.me ? tx("Jij") : other || tx("De ander")} · {m.name}</figcaption>
+                  <figcaption><span className="gname" data-g={(m.me ? meG : otherG) || undefined}>{m.me ? tx("Jij") : other || tx("De ander")}</span> · {m.name}</figcaption>
                 </figure>
               ))}
               {!gallery.length && <p className="muted" style={{ margin: 0 }}>{tx("Nog geen foto's of video's gedeeld.")}</p>}

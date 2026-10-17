@@ -15,6 +15,7 @@ export default function DirectGuest() {
   const [info, setInfo] = useState(null);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
+  const [gender, setGender] = useState(""); // m | f | x, asked before connecting
   const [secret, setSecret] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -30,7 +31,7 @@ export default function DirectGuest() {
     e.preventDefault();
     setBusy(true); setError("");
     try {
-      const r = await api(`/direct/${token}/join/`, { method: "POST", body: { name } });
+      const r = await api(`/direct/${token}/join/`, { method: "POST", body: { name, gender } });
       try { sessionStorage.setItem(`direct:${token}`, JSON.stringify({ key: r.key })); } catch {}
       setSecret(r.key);
     } catch (err) { setError(errorText(err)); setBusy(false); }
@@ -48,8 +49,14 @@ export default function DirectGuest() {
         {info && !info.role && !info.taken && !error && !secret && (
           <form className="form" onSubmit={join}>
             <p><strong>{info.owner_name}</strong> {tx("nodigt je uit voor een rechtstreekse verbinding: chat, foto's en video.")}</p>
-            <label>{tx("Jouw naam")}<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoFocus /></label>
-            <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Verbinden")}</button>
+            <label>{tx("Jouw naam")}<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} autoFocus autoComplete="name" /></label>
+            <div>
+              <span style={{ fontWeight: 600, fontSize: ".9rem" }}>{tx("Geslacht")}</span>
+              <div className="gender-pick" role="radiogroup" aria-label={tx("Geslacht")} style={{ marginTop: ".35rem" }}>
+                {[["m", "Man"], ["f", "Vrouw"], ["x", "Overig"]].map(([k, l]) => <button type="button" key={k} data-g={k} role="radio" aria-checked={gender === k} className={gender === k ? "on" : ""} onClick={() => setGender(k)}>{tx(l)}</button>)}
+              </div>
+            </div>
+            <button className="btn primary" disabled={busy || !gender}>{busy ? tx("Bezig…") : tx("Verbinden")}</button>
           </form>
         )}
         {info?.taken && !secret && <div className="alert">{tx("Er is al iemand verbonden met deze uitnodiging.")}</div>}

@@ -25,7 +25,7 @@ function Card({ m, onChange }) {
   const [busy, setBusy] = useState(false);
   const act = async (fn) => { setBusy(true); try { await fn(); await onChange(); } catch (e) { (await alertDialog(errorText(e))); } setBusy(false); };
   return (
-    <div className="card member-card">
+    <div className="card member-card" data-g={m.gender || undefined}>
       <Link href={`/leden/${m.slug}`} className="pimg" style={{ display: "block", position: "relative" }}>
         {m.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(m.photo)} alt={m.name} /> : <span className="muted" style={{ display: "grid", placeItems: "center", height: "100%" }}>{tx("Geen foto")}</span>}
         {m.online && <span className="badge ok" style={{ position: "absolute", top: 8, left: 8 }}>{tx("Online")}</span>}

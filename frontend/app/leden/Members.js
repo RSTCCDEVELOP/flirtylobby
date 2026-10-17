@@ -28,7 +28,7 @@ export default function Members() {
         <input placeholder={tx("Zoek op naam of omschrijving…")} value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 420, margin: "1rem 0 1.5rem" }} />
         <div className="product-grid">
           {(list || []).map((m) => (
-            <Link key={m.slug} href={`/leden/${m.slug}`} className="card member-card">
+            <Link key={m.slug} href={`/leden/${m.slug}`} className="card member-card" data-g={m.gender || undefined}>
               <div className="pimg">{m.photo && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(m.photo)} alt={m.name} />}</div>
               <div className="pbody"><strong>{m.name} <VerifyBadge status={m.verification} size={16} /></strong><span className="muted" style={{ fontSize: ".875rem" }}>{m.headline}</span>{m.card_fields?.length > 0 && <span style={{ fontSize: ".8rem" }}>{cardFieldsText(m.card_fields)}</span>}</div>
             </Link>

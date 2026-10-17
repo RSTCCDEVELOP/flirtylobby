@@ -95,7 +95,7 @@ export default function Users() {
               <tr key={u.id}>
                 <td>
                   <span className="user-cell">
-                    {u.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.image)} alt="" className="avatar-img" /> : <span className="avatar">{initials(u)}</span>}
+                    {u.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.image)} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{initials(u)}</span>}
                     {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
                     {u.show_public && <span className="badge ok" title={tx("Wordt getoond op de website")}>{tx("Op website")}</span>}
                   </span>

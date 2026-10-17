@@ -51,6 +51,15 @@ function Widget({ obj }) {
   );
 }
 
+// One system object by its slug (used by the page blocks)
+export function SysObjectBySlug({ slug }) {
+  const on = useModule("sysobjects");
+  const [objs, setObjs] = useState([]);
+  useEffect(() => { if (on) load().then(setObjs); }, [on]);
+  const o = objs.find((x) => x.slug === slug);
+  return on && o ? <Widget obj={o} /> : null;
+}
+
 // Rich text from a page, with the system objects placed in it (<div data-sysobject="slug">) shown as real widgets.
 export default function RichHtml({ html, className }) {
   const ref = useRef(null);

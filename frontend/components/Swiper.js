@@ -112,7 +112,7 @@ export default function Swiper() {
         <>
           <div className="swipe-stack">
             {cards[1] && <div className="swipe-card back" aria-hidden="true">{cards[1].photos[0] && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(cards[1].photos[0])} alt="" />}</div>}
-            <div className="swipe-card" style={style} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => { start.current = null; setDrag(null); }}>
+            <div className="swipe-card" data-g={top.gender || undefined} style={style} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => { start.current = null; setDrag(null); }}>
               {top.photos.length ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(top.photos[photo] || top.photos[0])} alt={top.name} draggable={false} /> : <span className="swipe-nophoto muted">{tx("Geen foto")}</span>}
               {top.photos.length > 1 && <span className="swipe-dots">{top.photos.map((_, i) => <i key={i} className={i === photo ? "on" : ""} />)}</span>}
               <span className="swipe-stamp like" style={{ opacity: likeOp }}>{tx("LEUK")}</span>

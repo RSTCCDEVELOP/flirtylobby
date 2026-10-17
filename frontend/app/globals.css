@@ -1371,3 +1371,46 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .nav-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 9999; overflow: hidden; background: color-mix(in srgb, var(--blue) 20%, transparent); }
 .nav-progress i { display: block; height: 100%; width: 40%; background: var(--blue); border-radius: 3px; animation: navbar 1s ease-in-out infinite; }
 @keyframes navbar { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+
+/* ── gender colours: men blue, women rose, other yellow (changeable in Vormgeving) ── */
+:root { --g-m: #3b82f6; --g-f: #ec4899; --g-x: #eab308; }
+[data-g="m"] { --gc: var(--g-m); } [data-g="f"] { --gc: var(--g-f); } [data-g="x"] { --gc: var(--g-x); }
+.avatar[data-g], .avatar-img[data-g], .pf-avatar[data-g], .photo-big[data-g] { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--gc); }
+.avatar[data-g]:not(img) { background: var(--gc); color: #fff; }
+.avatar[data-g="x"]:not(img) { color: #1f1300; }
+.member-card[data-g] { border-top: 3px solid var(--gc); }
+.swipe-card[data-g] { box-shadow: 0 0 0 3px var(--gc), var(--shadow); }
+.gname[data-g] { color: var(--gc); font-weight: 700; }
+.gender-pick { display: flex; gap: .5rem; flex-wrap: wrap; }
+.gender-pick button { flex: 1 1 90px; padding: .65rem .8rem; border-radius: var(--btn-radius, 10px); border: 2px solid var(--gc); background: transparent; color: var(--text); font-weight: 600; cursor: pointer; }
+.gender-pick button.on { background: var(--gc); color: #fff; }
+.gender-pick button.on[data-g="x"] { color: #1f1300; }
+
+/* ── page blocks / grid ── */
+.pb { width: 100%; max-width: 1100px; margin: 1.5rem auto 0; display: grid; gap: 1.2rem; padding: 0 1rem; }
+.pb-row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); align-items: stretch; }
+.pb-row.gap-sm { gap: .5rem; } .pb-row.gap-md { gap: 1.2rem; } .pb-row.gap-lg { gap: 2.4rem; }
+@media (max-width: 700px) { .pb-row { grid-template-columns: 1fr; } }
+.pb-cell { display: flex; flex-direction: column; justify-content: var(--jv, flex-start); align-items: var(--ha, flex-start); gap: .8rem; min-width: 0; }
+.pb-cell > .pb-item { max-width: 100%; }
+.pb-img { max-width: 100%; height: auto; border-radius: var(--radius, 12px); }
+.pb-cell.edit { border: 1px dashed var(--blue); border-radius: var(--radius, 12px); padding: .5rem; min-height: 140px; }
+.pb-cellbar { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; align-self: stretch; padding-bottom: .4rem; border-bottom: 1px dashed var(--line); margin-bottom: .2rem; }
+.pb-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.pb-seg button { background: var(--card); border: 0; padding: .25rem .5rem; cursor: pointer; color: var(--muted); font-size: .9rem; }
+.pb-seg button.on { background: color-mix(in srgb, var(--blue) 18%, var(--card)); color: var(--blue); }
+.pb-add { position: relative; margin-left: auto; }
+.pb-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 60; min-width: 220px; max-height: 280px; overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: .3rem; display: grid; }
+.pb-menu button { text-align: left; background: none; border: 0; padding: .45rem .6rem; border-radius: 6px; cursor: pointer; color: var(--text); }
+.pb-menu button:hover { background: var(--hover); }
+.pb-menu-h { padding: .4rem .6rem .1rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.pb-item.edit { position: relative; padding: .5rem .5rem .5rem 1.4rem; border: 1px dashed var(--line); border-radius: 8px; cursor: grab; width: 100%; }
+.pb-item.edit:hover { border-color: var(--blue); }
+.pb-grip { position: absolute; left: .3rem; top: .5rem; color: var(--muted); user-select: none; font-size: .8rem; }
+.pb-x { position: absolute; right: .3rem; top: .2rem; background: none; border: 0; cursor: pointer; color: var(--danger); font-size: 1.2rem; line-height: 1; }
+.pb-ph, .pb-empty { padding: 1.2rem; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 8px; font-size: .88rem; }
+.pb-empty { margin: auto 0; }
+.pb-rowbar { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; padding: .4rem .7rem; background: var(--bg); border-radius: 10px; margin-bottom: .4rem; font-size: .85rem; }
+.pb-rowbar label { display: inline-flex; gap: .3rem; align-items: center; margin: 0; } .pb-rowbar select { width: auto; padding: .25rem .4rem; }
+.pb-spacer { flex: 1; }
+.pb-addrow { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding: .8rem; border: 2px dashed var(--line); border-radius: 12px; }

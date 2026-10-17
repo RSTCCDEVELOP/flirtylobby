@@ -29,3 +29,12 @@ class Page(models.Model):
     @property
     def path(self):
         return f"/p/{self.key}" if self.kind == "content" else self.url
+
+
+class PageLayout(models.Model):
+    """The blocks of one page, built in edit mode: rows of columns (a grid) with items (text, picture, system object) in the cells.
+    {"rows": [{"id", "cols": 1-4, "gap": "sm|md|lg", "cells": [{"id", "halign": left|center|right, "valign": top|center|bottom, "items": [{"id", "type": text|image|object, "ref"}]}]}]}"""
+
+    key = models.CharField(max_length=80, unique=True)  # page key ("home", an own page key, …)
+    data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)

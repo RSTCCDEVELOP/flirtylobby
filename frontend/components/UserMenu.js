@@ -15,7 +15,7 @@ export default function UserMenu({ user, onLogout, showDashboard = true }) {
   const mods = useModules();
   const ref = useRef(null);
   const name = [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
-  const initials = (user.first_name?.[0] || user.email[0]).toUpperCase();
+  const initials = (user.first_name?.[0] || user.email?.[0] || "?").toUpperCase();
 
   useEffect(() => {
     const close = (e) => (e.type === "keydown" ? e.key === "Escape" && setOpen(false) : !ref.current?.contains(e.target) && setOpen(false));
@@ -34,7 +34,7 @@ export default function UserMenu({ user, onLogout, showDashboard = true }) {
         try { setLast(localStorage.getItem("lastBackendUrl")); } catch {}
         setOpen(!open);
       }} aria-haspopup="menu" aria-expanded={open}>
-        <span className="avatar">{initials}</span>
+        <span className="avatar" data-g={user.gender || undefined}>{initials}</span>
         <span className="who">{name}</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </button>

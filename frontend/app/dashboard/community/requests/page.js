@@ -14,7 +14,7 @@ const STATUS = { pending: "In afwachting", declined: "Geweigerd", accepted: "Toe
 function Who({ u, children }) {
   return (
     <div className="request-row">
-      {u.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.photo)} alt="" className="avatar-img" /> : <span className="avatar">{u.name[0]?.toUpperCase()}</span>}
+      {u.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.photo)} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{u.name[0]?.toUpperCase()}</span>}
       <span className="grow">
         {u.slug ? <Link href={`/leden/${u.slug}`} style={{ color: "var(--blue)", fontWeight: 600 }}>{u.name}</Link> : <strong>{u.name}</strong>}
         {children[0]}
