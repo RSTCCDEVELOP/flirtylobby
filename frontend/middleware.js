@@ -66,7 +66,7 @@ export async function middleware(req) {
 
   if (cfg?.basic?.security_headers !== false) {
     res.headers.set("X-Content-Type-Options", "nosniff");
-    res.headers.set("X-Frame-Options", "DENY");
+    res.headers.set("X-Frame-Options", "SAMEORIGIN"); // our own device preview (edit mode) shows pages in a frame
     res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
     res.headers.set("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()");
     if (cfg?.basic?.hsts && req.headers.get("x-forwarded-proto") === "https") {

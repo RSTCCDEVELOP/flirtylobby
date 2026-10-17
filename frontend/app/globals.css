@@ -1460,3 +1460,7 @@ html, body { overflow-x: clip; }
   .site-actions .lang-select { max-width: 5.2rem; padding-left: .5rem; padding-right: .5rem; }
   .site-actions .btn, .site-actions .icon-btn { flex-shrink: 0; }
 }
+.device-mode { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.device-mode button { background: var(--card); border: 0; padding: .2rem .7rem; cursor: pointer; color: var(--muted); font-size: .8rem; }
+.device-mode button.on { background: var(--blue); color: #fff; }
+.device-top > span:first-child { white-space: nowrap; }

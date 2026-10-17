@@ -22,29 +22,42 @@ export default function DevicePreview() {
   const { editing } = useSession();
   const [dev, setDev] = useState("computer");
   const [src, setSrc] = useState("");
+  const [visitor, setVisitor] = useState(false); // false = the framed page can be edited, true = as a visitor sees it
+  const [used, setUsed] = useState(false);
   useEffect(() => {
     if (dev === "computer") return setSrc("");
     const u = new URL(window.location.href);
-    u.searchParams.set("preview", "1");
+    u.searchParams.delete("preview"); u.searchParams.delete("frame");
+    u.searchParams.set(visitor ? "preview" : "frame", "1");
     setSrc(u.toString());
-  }, [dev]);
+    setUsed(true);
+  }, [dev, visitor]);
+  // back to the full page: show what was changed in the frame
+  const close = () => { if (used) { setUsed(false); window.location.reload(); } setDev("computer"); };
   useEffect(() => {
-    const esc = (e) => e.key === "Escape" && setDev("computer");
+    const esc = (e) => e.key === "Escape" && close();
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, []);
-  if (!editing || (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview"))) return null;
+  if (!editing || (typeof window !== "undefined" && (new URLSearchParams(window.location.search).get("preview") || new URLSearchParams(window.location.search).get("frame")))) return null;
   const d = DEVICES[dev];
   return (
     <>
       <div className="device-bar" role="group" aria-label={tx("Weergave testen")}>
         <span>{tx("Weergave")}</span>
-        {Object.entries(DEVICES).map(([k, v]) => <button type="button" key={k} className={dev === k ? "on" : ""} title={tx(v.label)} aria-pressed={dev === k} onClick={() => setDev(k)}><Ico k={k} /></button>)}
+        {Object.entries(DEVICES).map(([k, v]) => <button type="button" key={k} className={dev === k ? "on" : ""} title={tx(v.label)} aria-pressed={dev === k} onClick={() => (k === "computer" ? close() : setDev(k))}><Ico k={k} /></button>)}
       </div>
       {dev !== "computer" && src && (
-        <div className="device-overlay" onClick={() => setDev("computer")}>
+        <div className="device-overlay" onClick={close}>
           <div className={`device-frame ${dev}`} style={{ width: d.w }} onClick={(e) => e.stopPropagation()}>
-            <div className="device-top"><span>{tx(d.label)} · {d.w}px</span><button type="button" className="btn sm" onClick={() => setDev("computer")}>{tx("Sluiten")}</button></div>
+            <div className="device-top">
+              <span>{tx(d.label)} · {d.w}px</span>
+              <span className="device-mode">
+                <button type="button" className={!visitor ? "on" : ""} onClick={() => setVisitor(false)}>{tx("Bewerken")}</button>
+                <button type="button" className={visitor ? "on" : ""} onClick={() => setVisitor(true)}>{tx("Bezoeker")}</button>
+              </span>
+              <button type="button" className="btn sm" onClick={close}>{tx("Sluiten")}</button>
+            </div>
             <iframe title={tx(d.label)} src={src} style={{ height: `min(${d.h}px, calc(100vh - 6rem))` }} />
           </div>
         </div>
