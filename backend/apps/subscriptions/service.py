@@ -360,20 +360,26 @@ def on_order_status(order, old):
         elif order.status in ("canceled", "refunded") and old in ("new", "pending_payment") and sub.status == "pending":
             sub.status = "expired"
             sub.save(update_fields=["status"])
-    elif order.kind == "donation":
-        d = Donation.objects.filter(pk=order.ref_id).select_related("campaign").first()
-        if not d:
-            return
-        if paid and d.status != "paid":
-            now = timezone.now()
-            d.status, d.paid_at = "paid", now
-            if d.campaign.grants and d.amount >= d.campaign.min_for_grants:
-                d.access_until = now + timedelta(days=d.campaign.grant_days)
-            d.save()
-            _mail_donation(d)
-        elif order.status in ("canceled", "refunded") and d.status == "pending":
-            d.status = "failed"
-            d.save(update_fields=["status"])
+
+
+def on_payment(payment):
+    """Donations are paid without an order (no webshop needed): the payment itself tells the outcome. Registered with the sandbox in apps.py."""
+    d = Donation.objects.filter(payment_ref=payment.ref).select_related("campaign").first()
+    if not d or not modules.enabled("donations"):
+        return
+    if payment.status == "paid" and d.status != "paid":
+        now = timezone.now()
+        d.status, d.paid_at = "paid", now
+        if d.campaign.grants and d.amount >= d.campaign.min_for_grants:
+            d.access_until = now + timedelta(days=d.campaign.grant_days)
+        d.save()
+        _mail_donation(d)
+    elif payment.status in ("failed", "canceled", "expired") and d.status == "pending":
+        d.status = "failed"
+        d.save(update_fields=["status"])
+    elif payment.status == "refunded":
+        d.status, d.access_until = "failed", None
+        d.save(update_fields=["status", "access_until"])
 
 
 def _activate(sub, order):
@@ -475,7 +481,10 @@ def donate(campaign, amount, user=None, name="", email="", message="", anonymous
     if campaign.step > 0 and ((amount - campaign.min_amount) / campaign.step) % 1 != 0 and amount != campaign.max_amount:
         amount = campaign.min_amount + ((amount - campaign.min_amount) / campaign.step).to_integral_value(rounding=ROUND_HALF_UP) * campaign.step
         amount = min(max(amount, campaign.min_amount), campaign.max_amount)
-    ensure_can_pay()
+    from apps.sandbox import service as sandbox
+
+    if not sandbox.active("payments"):
+        raise SubError("Online betalen is nog niet beschikbaar.")  # a gift needs a real (or simulated) payment: no paying by invoice
     if not user and not email:
         raise SubError("Vul je e-mailadres in, dan sturen we een bevestiging.")
     from apps.security.words import find_forbidden
@@ -485,8 +494,11 @@ def donate(campaign, amount, user=None, name="", email="", message="", anonymous
     who = name or ((user.get_full_name() or user.username) if user else "")
     d = Donation.objects.create(campaign=campaign, user=user, name=who[:120], email=(email or (user.email if user else ""))[:254], amount=amount,
                                 message=(message if campaign.allow_message else "")[:300], anonymous=bool(anonymous and campaign.allow_anonymous))
-    order = _order(user, "donation", d.pk, f"Donatie: {campaign.name}", amount, 0, 1, {"name": who or "Anoniem", "email": d.email})
-    return d, start_payment(order, return_base)
+    back = f"{return_base.rstrip('/')}/doneren?bedankt=1" if return_base else ""
+    payment = sandbox.create_payment(amount, "EUR", f"Donatie {campaign.name}", "mollie", back)
+    d.payment_ref = payment.ref
+    d.save(update_fields=["payment_ref"])
+    return d, f"/sandbox/checkout/{payment.ref}"
 
 
 def raised(campaign):

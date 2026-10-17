@@ -61,8 +61,10 @@ export default function Donate() {
   const [err, setErr] = useState("");
   useEffect(() => { if (ready) api("/donations/campaigns/").then(setData).catch((e) => setErr(errorText(e))); }, [ready]);
   if (!data) return <p className="muted">{err || tx("Laden…")}</p>;
+  const thanks = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bedankt");
   return (
     <div className="don-grid">
+      {thanks && <div className="alert ok" style={{ gridColumn: "1 / -1" }}>{tx("Bedankt voor je donatie!")}</div>}
       {data.campaigns.map((c) => <Campaign key={c.id} c={c} currency={data.currency} user={user} />)}
       {!data.campaigns.length && <p className="muted">{tx("Er zijn nu geen donatie-acties.")}</p>}
     </div>

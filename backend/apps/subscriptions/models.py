@@ -86,6 +86,7 @@ class Donation(models.Model):
     message = models.CharField(max_length=300, blank=True)
     anonymous = models.BooleanField(default=False)
     status = models.CharField(max_length=8, choices=STATUSES, default="pending", db_index=True)
+    payment_ref = models.CharField(max_length=30, blank=True, db_index=True)  # online payment (sandbox / provider); donations have no order
     paid_at = models.DateTimeField(null=True, blank=True)
     access_until = models.DateTimeField(null=True, blank=True)  # thank-you access
     created_at = models.DateTimeField(auto_now_add=True)

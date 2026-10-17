@@ -90,7 +90,6 @@ export default function Orders() {
             <option value="">{tx("Alle soorten")}</option>
             <option value="shop">{tx("Webshop")}</option>
             <option value="subscription">{tx("Abonnementen")}</option>
-            <option value="donation">{tx("Donaties")}</option>
           </select>
         </div>
         <div className="table-wrap" style={{ border: "1px solid var(--line)", borderRadius: "var(--btn-radius)" }}>

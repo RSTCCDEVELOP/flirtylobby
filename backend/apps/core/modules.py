@@ -38,8 +38,8 @@ MODULES = [
      "desc": "Abonnementen die toegang geven (site, pagina's, content, chat, video, likes, diensten), eenmalig of herhaald, met een order per periode.",
      "default": False, "requires": ["orders"]},
     {"key": "donations", "group": "Subscription", "label": "Donaties",
-     "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest.",
-     "default": False, "requires": ["orders"]},
+     "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest. Werkt zonder de webshop.",
+     "default": False},
     {"key": "orders", "group": "Webshop", "label": "Orders & webshop",
      "desc": "Orderbeheer en de webshop op de website: winkelwagen, afrekenen en bestelstatus."},
     # ── Community ──
