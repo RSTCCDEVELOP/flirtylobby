@@ -183,6 +183,11 @@ def room_signal(request, token):
     kind, payload = request.data.get("kind"), request.data.get("payload") or {}
     if not role or kind not in KINDS or len(str(payload)) > 30000:
         return bad("Ongeldig signaal.")
+    if kind == "call" and getattr(room, "owner", None):  # the member who owns the room needs the video chat right
+        from apps.subscriptions import service as subs
+
+        if not subs.can(room.owner, "video_chat"):
+            return bad(subs.GATE_MESSAGE["video_chat"], status.HTTP_402_PAYMENT_REQUIRED)
     DirectSignal.objects.create(room=room, to_role="guest" if role == "owner" else "owner", kind=kind, payload=payload)
     return Response(status=status.HTTP_204_NO_CONTENT)
 

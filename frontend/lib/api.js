@@ -42,6 +42,7 @@ export async function api(path, { method = "GET", body } = {}) {
     body: !body ? undefined : body instanceof FormData ? body : JSON.stringify(body),
   });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
+  if (res.status === 402 && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("payment-required", { detail: data?.detail }));  // a subscription is needed: see PaymentRequired
   if (!res.ok) throw new ApiError(res.status, data);
   return translateTree(data);
 }

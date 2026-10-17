@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { EditableText } from "../../../components/EditMode";
+import Paywall from "../../../components/Paywall";
 import SiteFooter from "../../../components/SiteFooter";
 import SiteHeader from "../../../components/SiteHeader";
 import { getOwnPage } from "../../../lib/pages-server";
@@ -24,7 +25,7 @@ export default async function OwnPage({ params }) {
       <SiteHeader />
       <main className="doc">
         <EditableText id={`page.${slug}.title`} as="h1" fallbacks={p.title} fallback={p.title.nl || Object.values(p.title)[0]} />
-        <EditableText id={`page.${slug}.body`} as="div" rich fallback="" className="doc-rich" />
+        <Paywall page={slug}><EditableText id={`page.${slug}.body`} as="div" rich fallback="" className="doc-rich" /></Paywall>
       </main>
       <SiteFooter />
     </div>

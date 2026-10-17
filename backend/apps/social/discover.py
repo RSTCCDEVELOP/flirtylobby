@@ -258,6 +258,12 @@ def like(request, uid=None):
     tp = Profile.objects.filter(user=target, enabled=True, **({} if cfg["show_non_participants"] else {"discover": True})).first()
     if not tp or not service.can_view(me, tp):
         return Response(status=status.HTTP_404_NOT_FOUND)
+    if not Like.objects.filter(from_user=me, to_user=target).exists():
+        from apps.subscriptions import service as subs
+
+        left = subs.likes_left(me)
+        if left is not None and left <= 0:
+            return Response({"detail": subs.GATE_MESSAGE["likes"], "subscribe": True}, status=status.HTTP_402_PAYMENT_REQUIRED)
     _, created = Like.objects.get_or_create(from_user=me, to_user=target)
     Pass.objects.filter(from_user=me, to_user=target).delete()
     match = Like.objects.filter(from_user=target, to_user=me).exists()

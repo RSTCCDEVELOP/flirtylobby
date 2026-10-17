@@ -13,7 +13,7 @@ export default function Orders() {
   const { user } = useAuth();
   const L = lvl(user, "orders");
   const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState({ status: "", q: "" });
+  const [filter, setFilter] = useState({ status: "", q: "", kind: "" });
   const [cfg, setCfg] = useState(null);
   const [msg, setMsg] = useState(null);
   const [o, setO] = useState(null);
@@ -86,6 +86,12 @@ export default function Orders() {
             <option value="">{tx("Alle statussen")}</option>
             {Object.entries(ORDER_STATUS).map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}
           </select>
+          <select style={{ width: "auto" }} value={filter.kind} onChange={(e) => setFilter({ ...filter, kind: e.target.value })}>
+            <option value="">{tx("Alle soorten")}</option>
+            <option value="shop">{tx("Webshop")}</option>
+            <option value="subscription">{tx("Abonnementen")}</option>
+            <option value="donation">{tx("Donaties")}</option>
+          </select>
         </div>
         <div className="table-wrap" style={{ border: "1px solid var(--line)", borderRadius: "var(--btn-radius)" }}>
           <table>
@@ -93,7 +99,7 @@ export default function Orders() {
             <tbody>
               {orders.map((x) => (
                 <tr key={x.id}>
-                  <td><strong>{x.number}</strong></td>
+                  <td><strong>{x.number}</strong>{x.kind && x.kind !== "shop" && <><br /><small className="muted">{x.kind === "subscription" ? `${tx("Abonnement")} · ${tx("periode")} ${x.period_no}` : tx("Donatie")}</small></>}</td>
                   <td>{new Date(x.created_at).toLocaleDateString("nl-NL")}</td>
                   <td>{x.name} <small className="muted">{x.email}</small></td>
                   <td>{money(x.total, x.currency)}</td>

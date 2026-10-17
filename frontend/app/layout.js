@@ -19,6 +19,8 @@ import VersionNotice from "../components/VersionNotice";
 import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
+import SiteGate from "../components/SiteGate";
+import PaymentRequired from "../components/PaymentRequired";
 import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
 import { LOGO_SETS } from "../lib/logos";
@@ -142,6 +144,8 @@ export default async function RootLayout({ children }) {
               </DirectHostProvider>
             </ContentProvider>
             <Gates cfg={security} />
+            <SiteGate />
+            <PaymentRequired />
         <SandboxBadge status={sandbox} />
         {jsonld.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld).replace(/</g, "\\u003c") }} />}
           </BrandingProvider>

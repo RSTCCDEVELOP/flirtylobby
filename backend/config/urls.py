@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/", include("apps.social.urls")),
     path("api/", include("apps.pages.urls")),
     path("api/", include("apps.siteimport.urls")),
+    path("api/", include("apps.subscriptions.urls")),
 ]
 
 if settings.DEBUG:

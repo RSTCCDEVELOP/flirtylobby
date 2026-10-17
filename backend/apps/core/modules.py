@@ -34,6 +34,12 @@ MODULES = [
     # ── Webshop ──
     {"key": "products", "group": "Webshop", "label": "Producten",
      "desc": "Producten en productgroepen met beheerpagina's en de productpagina's op de website."},
+    {"key": "subscriptions", "group": "Subscription", "label": "Abonnementen",
+     "desc": "Abonnementen die toegang geven (site, pagina's, content, chat, video, likes, diensten), eenmalig of herhaald, met een order per periode.",
+     "default": False, "requires": ["orders"]},
+    {"key": "donations", "group": "Subscription", "label": "Donaties",
+     "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest.",
+     "default": False, "requires": ["orders"]},
     {"key": "orders", "group": "Webshop", "label": "Orders & webshop",
      "desc": "Orderbeheer en de webshop op de website: winkelwagen, afrekenen en bestelstatus."},
     # ── Community ──
@@ -92,7 +98,7 @@ def states():
         from .models import ModuleState
 
         stored = dict(ModuleState.objects.values_list("key", "enabled"))
-        _cache.update(t=now, v={m["key"]: True if m.get("core") else stored.get(m["key"], True) for m in MODULES})
+        _cache.update(t=now, v={m["key"]: True if m.get("core") else stored.get(m["key"], m.get("default", True)) for m in MODULES})
     return _cache["v"]
 
 

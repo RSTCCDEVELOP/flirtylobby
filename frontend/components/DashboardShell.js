@@ -15,11 +15,12 @@ import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
-import { IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings } from "./Icons";
+import { IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
   { href: "/dashboard/profile", label: "Mijn profiel", icon: <IconUser /> },
+  { href: "/dashboard/subscriptions", label: "Mijn abonnementen", icon: <IconStar />, module: "subscriptions" },
 ];
 
 // Bottom group of the main menu
@@ -57,6 +58,8 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
   { href: "/dashboard/admin/products", label: "Producten", icon: <IconBag /> },
   { href: "/dashboard/admin/orders", label: "Orders", icon: <IconReceipt /> },
+  { href: "/dashboard/admin/subscriptions", label: "Abonnementen", icon: <IconStar /> },
+  { href: "/dashboard/admin/donations", label: "Donaties", icon: <IconHeart /> },
   { href: "/dashboard/admin/media", label: "Media", icon: <IconFolder />, perm: "media.manage" },
   { href: "/dashboard/admin/branding", label: "Logo's & beeld", icon: <IconImage />, perm: "branding.manage" },
   { href: "/dashboard/admin/security", label: "Beveiliging", icon: <IconLock />, perm: "security.manage" },
@@ -76,13 +79,14 @@ const COMMUNITY_GROUP_OF = {
 };
 const ADMIN_GROUPS = [
   { id: "a-people", title: "Gebruikers" }, { id: "a-site", title: "Website" }, { id: "a-community", title: "Community" },
-  { id: "a-shop", title: "Webshop" }, { id: "a-system", title: "Systeem" },
+  { id: "a-shop", title: "Webshop" }, { id: "a-subs", title: "Subscription" }, { id: "a-system", title: "Systeem" },
 ];
 const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/products": "a-shop", "/dashboard/admin/orders": "a-shop",
+  "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs",
   "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
 };
 
@@ -209,7 +213,7 @@ export default function DashboardShell({ children }) {
           </>
         ) : (
           <>
-            {NAV.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
+            {NAV.filter((n) => !n.module || mods[n.module] !== false).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
             {renderGroups(communityLinks.map(withBadge), COMMUNITY_GROUPS, COMMUNITY_GROUP_OF)}
           </>
         )}

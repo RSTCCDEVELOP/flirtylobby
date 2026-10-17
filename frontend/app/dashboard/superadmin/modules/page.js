@@ -9,7 +9,7 @@ import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { IconUser } from "../../../../components/Icons";
 import { api, errorText } from "../../../../lib/api";
 
-const GROUPS = ["Content", "Community", "Webshop", "Beveiliging", "Systeem", "Kern"];
+const GROUPS = ["Content", "Community", "Webshop", "Subscription", "Beveiliging", "Systeem", "Kern"];
 const LEVELS = [
   [1, "Gebruik", "Openen en bekijken"],
   [2, "Bewerken", "Ook wijzigen en instellingen aanpassen"],
@@ -113,8 +113,14 @@ export default function ModulesPage() {
     setBusy(m.key);
     setMsg(null);
     try {
-      setMods(await api(`/modules/${m.key}/`, { method: "PATCH", body: { enabled: next } }));
-      setMsg({ ok: true, text: tx("{0} staat nu {1}.", m.label, next ? "aan" : "uit") });
+      const fresh = await api(`/modules/${m.key}/`, { method: "PATCH", body: { enabled: next } });
+      setMods(fresh);
+      const missing = next ? (fresh.find((x) => x.key === m.key)?.requires || []).filter((r) => !r.enabled) : [];
+      const dependants = !next ? fresh.filter((x) => x.enabled && (x.requires || []).some((r) => r.key === m.key)) : [];
+      const warn = missing.length
+        ? tx("Let op: {0} heeft ook de module {1} nodig en die staat uit. Zet die ook aan, anders werken bestellingen en betalingen niet.", m.label, missing.map((r) => r.label).join(", "))
+        : dependants.length ? tx("Let op: {0} heeft deze module nodig en staat nog aan: {1}.", dependants.map((x) => x.label).join(", "), m.label) : "";
+      setMsg({ ok: !warn, text: `${tx("{0} staat nu {1}.", m.label, next ? "aan" : "uit")}${warn ? ` ${warn}` : ""}` });
       router.refresh(); // menus and the website read the module state from the server layout
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
@@ -159,6 +165,9 @@ export default function ModulesPage() {
                     </span>
                   </div>
                   <p className="muted">{m.desc}</p>
+                  {m.enabled && (m.requires || []).filter((r) => !r.enabled).map((r) => (
+                    <div className="alert" key={r.key} style={{ margin: ".4rem 0", fontSize: ".8rem" }}>{tx("Heeft ook de module {0} nodig; die staat uit.", r.label)}</div>
+                  ))}
                   <span className={`badge ${m.enabled ? "ok" : "off"}`}>{m.core ? tx("Kern") : m.enabled ? tx("Aan") : tx("Uit")}</span>
                 </div>
               ))}

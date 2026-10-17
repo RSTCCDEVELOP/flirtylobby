@@ -74,7 +74,9 @@ def public_page(request, key):
     p = Page.objects.filter(key=key, kind="content").first()
     if not p or not modules.enabled("pages") or not service.available(p):
         return Response(status=status.HTTP_404_NOT_FOUND)
-    return Response({"key": p.key, "title": p.title, "audience": p.audience})
+    from apps.subscriptions import service as subs
+
+    return Response({"key": p.key, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key)})
 
 
 @api_view(["GET", "POST"])

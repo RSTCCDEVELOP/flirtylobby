@@ -65,6 +65,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         p = self.request.query_params
         if p.get("status"):
             qs = qs.filter(status=p["status"])
+        if p.get("kind"):
+            qs = qs.filter(kind=p["kind"])
         if q := p.get("q"):
             qs = qs.filter(Q(number__icontains=q) | Q(name__icontains=q) | Q(email__icontains=q))
         return qs
@@ -72,8 +74,12 @@ class OrderViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         old = serializer.instance.status
         order = serializer.save()
-        if order.status == "canceled" and old not in ("canceled", "refunded"):
+        if order.status == "canceled" and old not in ("canceled", "refunded") and order.kind == "shop":
             service.restock(order)  # the reserved stock goes back
+        if order.status != old:
+            from apps.subscriptions import service as subs
+
+            subs.on_order_status(order, old)
         logger.info("Order %s: %s -> %s by %s", order.number, old, order.status, self.request.user.email)
 
 
@@ -94,6 +100,9 @@ def _public_product(p, full=False):
     out = {"id": p.id, "name": p.name, "slug": p.slug, "price": str(p.price), "summary": p.summary, "image": imgs[0] if imgs else None,
            "stock": "out" if p.stock == 0 else ("low" if p.stock is not None and p.stock <= 5 else "in"),
            "group": {"name": p.group.name, "slug": p.group.slug} if p.group_id and p.group.active else None}
+    from apps.subscriptions import service as subs
+
+    out["members_only"] = str(p.id) in subs.locked_products()
     if full:
         out.update(description=p.description, sku=p.sku, images=imgs, max_quantity=p.stock)
     return out

@@ -537,6 +537,12 @@ def chat_thread(request, uid):
             return bad("Leeg bericht.")
         if words := find_forbidden(body):
             return bad(f"Bevat niet toegestane woorden: {', '.join(words)}.")
+        from apps.subscriptions import service as subs
+
+        if not subs.can(me, "chat"):
+            return bad(subs.GATE_MESSAGE["chat"], status.HTTP_402_PAYMENT_REQUIRED)
+        if f and not subs.can(me, "chat_media"):
+            return bad(subs.GATE_MESSAGE["chat_media"], status.HTTP_402_PAYMENT_REQUIRED)
         m = ChatMessage(sender=me, recipient=other, body=body)
         if f:
             ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
@@ -565,6 +571,11 @@ def chat_signal(request):
     kind, payload = request.data.get("kind"), request.data.get("payload") or {}
     if not other or kind not in ("sdp", "ice", "call", "accept", "decline", "end") or len(str(payload)) > 30000:
         return bad("Ongeldig signaal.")
+    if kind == "call":
+        from apps.subscriptions import service as subs
+
+        if not subs.can(request.user, "video_chat"):
+            return bad(subs.GATE_MESSAGE["video_chat"], status.HTTP_402_PAYMENT_REQUIRED)
     ChatSignal.objects.create(sender=request.user, recipient=other, kind=kind, payload=payload)
     return Response(status=status.HTTP_204_NO_CONTENT)
 

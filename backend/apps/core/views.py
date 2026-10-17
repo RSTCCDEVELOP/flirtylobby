@@ -168,8 +168,13 @@ def content_public(request):
 
     from apps.medialib.models import MediaItem
 
+    from apps.subscriptions import service as subs
+
     items = {i.id: i for i in MediaItem.objects.all()}
+    hidden = {k for k in subs.locked_pages() if not subs.page_ok(request.user, k)}
     for b in ContentBlock.objects.all():
+        if hidden and b.key.startswith("page.") and b.key.split(".")[1] in hidden and not b.key.endswith(".title"):
+            continue  # the text of a subscribers-only page stays on the server
         text = b.text
         if text.startswith(richtext.PREFIX):
             def url_for(i):
@@ -222,7 +227,10 @@ def _module_payload():
     from apps.accounts.models import ModuleGrant
 
     counts = dict(ModuleGrant.objects.values_list("module").annotate(n=Count("id")))
-    return [{**m, "enabled": st[m["key"]], "core": bool(m.get("core")), "acl": m.get("acl", True), "grants": counts.get(m["key"], 0)}
+    label = {m["key"]: m["label"] for m in modules.MODULES}
+    # a module that needs other modules (e.g. subscriptions need orders): which of those are off
+    return [{**m, "enabled": st[m["key"]], "core": bool(m.get("core")), "acl": m.get("acl", True), "grants": counts.get(m["key"], 0),
+             "requires": [{"key": r, "label": label.get(r, r), "enabled": st.get(r, True)} for r in m.get("requires", [])]}
             for m in modules.MODULES]
 
 

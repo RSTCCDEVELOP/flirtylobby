@@ -10,6 +10,8 @@ SYSTEM = [
     ("home", "/", "", True, "all", {"nl": "Home", "en": "Home", "de": "Startseite", "fr": "Accueil", "es": "Inicio", "pt": "Início", "zh": "首页", "ar": "الرئيسية"}),
     ("products", "/producten", "products", True, "all", {"nl": "Producten", "en": "Products", "de": "Produkte", "fr": "Produits", "es": "Productos", "pt": "Produtos", "zh": "产品", "ar": "المنتجات"}),
     ("members", "/leden", "profiles", True, "all", {"nl": "Leden", "en": "Members", "de": "Mitglieder", "fr": "Membres", "es": "Miembros", "pt": "Membros", "zh": "会员", "ar": "الأعضاء"}),
+    ("subscriptions", "/abonnementen", "subscriptions", False, "all", {"nl": "Abonnementen", "en": "Subscriptions", "de": "Abonnements", "fr": "Abonnements", "es": "Suscripciones", "pt": "Subscrições", "zh": "订阅", "ar": "الاشتراكات"}),
+    ("donations", "/doneren", "donations", False, "all", {"nl": "Doneren", "en": "Donate", "de": "Spenden", "fr": "Faire un don", "es": "Donar", "pt": "Doar", "zh": "捐赠", "ar": "تبرع"}),
     ("register", "/registreren", "registration", False, "guests", {"nl": "Aanmelden", "en": "Sign up", "de": "Registrieren", "fr": "S’inscrire", "es": "Registrarse", "pt": "Registar", "zh": "注册", "ar": "إنشاء حساب"}),
     ("login", "/login", "", False, "guests", {"nl": "Inloggen", "en": "Log in", "de": "Anmelden", "fr": "Connexion", "es": "Iniciar sesión", "pt": "Entrar", "zh": "登录", "ar": "تسجيل الدخول"}),
     ("notfound", "/404", "", False, "all", {"nl": "Pagina niet gevonden (404)", "en": "Page not found (404)", "de": "Seite nicht gefunden (404)", "fr": "Page introuvable (404)", "es": "Página no encontrada (404)", "pt": "Página não encontrada (404)", "zh": "页面未找到 (404)", "ar": "الصفحة غير موجودة (404)"}),

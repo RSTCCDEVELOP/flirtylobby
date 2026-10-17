@@ -15,6 +15,8 @@ export const TILES = [
   { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat"] },
   { href: "/dashboard/admin/seo", title: "SEO", big: "Zoekmachines, bots en AI-agents", small: "robots.txt, sitemap, llms.txt, titels", modules: ["seo"] },
   { href: "/dashboard/admin/security", title: "Beveiliging", big: "Landen, 18+, cookies", small: "Toegang, popups en verboden woorden", modules: SEC },
+  { href: "/dashboard/admin/subscriptions", title: "Abonnementen", big: "Toegang verkopen", small: "Abonnementen met een order per periode en toegang tot site, chat, video en meer", modules: ["subscriptions"] },
+  { href: "/dashboard/admin/donations", title: "Donaties", big: "Giften aan de makers", small: "Acties met een schuifbalk van minimum tot maximum", modules: ["donations"] },
   { href: "/dashboard/admin/system", title: "Basisgegevens", big: "Naam, adressen en deployment", small: "Website- en API-adres, contact en controlelijst", modules: ["system"] },
   { href: "/dashboard/admin/storage", title: "Mappenstructuur", big: "Waar bestanden staan", small: "Mappen, lokaal of S3 en versleuteling per gebruiker", modules: ["storage"] },
   { href: "/dashboard/admin/sandbox", title: "Sandbox", big: "Testomgeving", small: "Betalingen, e-mail en sms simuleren", modules: ["sandbox"] },

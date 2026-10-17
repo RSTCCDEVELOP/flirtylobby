@@ -21,6 +21,8 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/sandbox", module: "sandbox" },
   { href: "/dashboard/admin/pages", module: "pages" },
   { href: "/dashboard/admin/siteimport", module: "siteimport" },
+  { href: "/dashboard/admin/subscriptions", module: "subscriptions" },
+  { href: "/dashboard/admin/donations", module: "donations" },
   { href: "/dashboard/admin/system", module: "system" },
   { href: "/dashboard/admin/storage", module: "storage" },
   { href: "/dashboard/admin/theme", module: "theme" },

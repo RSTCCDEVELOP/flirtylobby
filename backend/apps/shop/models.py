@@ -111,6 +111,10 @@ class Order(models.Model):
     currency = models.CharField(max_length=3, default="EUR")
     payment_ref = models.CharField(max_length=30, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    KINDS = [("shop", "Webshop"), ("subscription", "Abonnement"), ("donation", "Donatie")]
+    kind = models.CharField(max_length=12, choices=KINDS, default="shop", db_index=True)
+    ref_id = models.PositiveIntegerField(null=True, blank=True)  # subscription / donation this order belongs to
+    period_no = models.PositiveIntegerField(default=1)  # 1 = first order of a subscription, 2+ = repeats
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

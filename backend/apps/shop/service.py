@@ -89,7 +89,7 @@ def check_discount(code, subtotal, lock=False):
 
 
 # ── totals ──────────────────────────────────────────────────────────────────
-def quote(items, code="", method_id=None, country="NL", lock=False):
+def quote(items, code="", method_id=None, country="NL", lock=False, user=None):
     """
     The one place where prices are calculated (cart, checkout and order use it). Everything comes from the database.
     Line totals are always gross (incl. VAT). With prices_include_vat=False the entered price is net and VAT is added.
@@ -99,6 +99,13 @@ def quote(items, code="", method_id=None, country="NL", lock=False):
         raise OrderError("Je winkelwagen is leeg.")
     qs = Product.objects.select_for_update() if lock else Product.objects
     products = {p.id: p for p in qs.filter(id__in=[i.get("product") for i in items], active=True)}
+    if user is not None or lock:
+        from apps.subscriptions import service as subs
+
+        try:
+            subs.check_products(user, products.values())
+        except subs.SubError as e:
+            raise OrderError(str(e))
     lines, gross_sum = [], Decimal("0.00")
     for it in items:
         p, qty = products.get(it.get("product")), it.get("quantity")
@@ -143,7 +150,7 @@ def quote_json(qt):
 
 @transaction.atomic
 def create_order(data, items, method_id, code="", user=None):
-    qt = quote(items, code, method_id, data["country"], lock=True)
+    qt = quote(items, code, method_id, data["country"], lock=True, user=user)
     if qt["method"] is None:
         raise OrderError("Kies een verzendmethode.")
     order = Order.objects.create(token=secrets.token_urlsafe(18), subtotal=qt["subtotal"], discount=qt["discount"], discount_code=qt["discount_obj"].code if qt["discount_obj"] else "",
@@ -195,12 +202,18 @@ def on_payment(payment):
     if payment.status == "paid" and before in ("new", "pending_payment"):
         order.status = "paid"
         order.save(update_fields=["status"])
-        confirmation_mail(order)
+        if order.kind == "shop":
+            confirmation_mail(order)
     elif payment.status in ("failed", "canceled", "expired") and before == "pending_payment":
         order.status = "canceled"
         order.save(update_fields=["status"])
-        restock(order)
+        if order.kind == "shop":
+            restock(order)
     elif payment.status == "refunded":
         order.status = "refunded"
         order.save(update_fields=["status"])
     logger.info("Order %s: %s -> %s (payment %s)", order.number, before, order.status, payment.status)
+    if order.status != before:
+        from apps.subscriptions import service as subs
+
+        subs.on_order_status(order, before)
