@@ -51,7 +51,7 @@ export default function DirectHub() {
     <main className="login-page" style={{ alignItems: "flex-start", paddingTop: "2rem" }}>
       <div className="login-theme"><ThemeToggle /></div>
       <div className="card login-card" style={{ maxWidth: 520, width: "100%" }}>
-        <Logo />
+        <Logo className="direct-logo" />
         <h1>{tx("Verbind opnieuw")}</h1>
         <p className="muted" style={{ margin: 0, textAlign: "center" }}>{tx("Voer de code in die je van de ander krijgt, of scan de QR-code. Een link is niet nodig.")}</p>
         <Tabs value={tab} onChange={(k) => { setTab(k); setError(""); }} tabs={[["code", "Code invoeren", <IconSliders key="c" />], ["scan", "QR scannen", <IconImage key="s" />]]} />

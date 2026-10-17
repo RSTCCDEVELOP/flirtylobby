@@ -81,7 +81,7 @@ export default function DirectGuest() {
     <main className="login-page" style={{ alignItems: "flex-start", paddingTop: "2rem" }}>
       <div className="login-theme"><ThemeToggle /></div>
       <div className="card login-card" style={{ maxWidth: 640, width: "100%" }}>
-        {!chatting && <Logo />}
+        {!chatting && <Logo className="direct-logo" />}
         {!chatting && <h1>{tx("Directe verbinding")}</h1>}
         {!info && !error && <p className="muted">{tx("Laden…")}</p>}
         {error && <div className="alert">{error}</div>}

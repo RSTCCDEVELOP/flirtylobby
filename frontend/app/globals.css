@@ -1507,3 +1507,5 @@ html .direct-pop[data-size="m"]:not(.mini) { width: min(520px, calc(100vw - 2rem
 html .direct-pop[data-size="l"]:not(.mini) { width: min(860px, calc(100vw - 2rem)); max-height: 92vh; }
 html .direct-pop[data-size="m"] .chat-msgs { min-height: 300px !important; max-height: 48vh !important; }
 html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-height: 64vh !important; }
+/* direct connection pages: no logo on a phone, the room goes to the content */
+@media (max-width: 720px) { .direct-logo { display: none !important; } }
