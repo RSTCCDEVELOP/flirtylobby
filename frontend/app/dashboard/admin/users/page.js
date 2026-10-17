@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../components/AuthContext";
 import VerifyBadge, { VERIFY } from "../../../../components/VerifyBadge";
 import Collapsible from "../../../../components/Collapsible";
+import Tabs from "../../../../components/Tabs";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
@@ -73,13 +74,36 @@ export default function Users() {
     } catch (err) { setModal({ ...modal, error: errorText(err) }); }
   }
 
+  const [tab, setTab] = useState("account");
+  const [fake, setFake] = useState(null); // {available, simulated, count, fields} for the fake-users tool
+  const [fk, setFk] = useState(null); // the fake-users popup
+  useEffect(() => { if (L >= 3) api("/users/fake/").then(setFake).catch(() => {}); }, [L]);
+  async function makeFakes(e) {
+    e.preventDefault();
+    setFk((f) => ({ ...f, busy: true, error: "", done: "" }));
+    try {
+      const r = await api("/users/fake/", { method: "POST", body: { count: fk.count, gender: fk.gender, photos: fk.photos, mood: fk.mood } });
+      setFake((x) => ({ ...x, count: r.count }));
+      setFk((f) => ({ ...f, busy: false, done: `${r.created.length} ${tx("nep-gebruikers gemaakt")}: ${r.created.map((c) => c.name).join(", ")}${r.simulated ? ` (${tx("gesimuleerd door de sandbox")})` : ""}` }));
+      load();
+    } catch (er) { setFk((f) => ({ ...f, busy: false, error: errorText(er) })); }
+  }
+  async function dropFakes() {
+    if (!(await confirmDialog(tx("Alle nep-gebruikers met hun foto's en gegevens verwijderen?"), { danger: true }))) return;
+    try { const r = await api("/users/fake/", { method: "DELETE" }); setFake((x) => ({ ...x, count: 0 })); setFk((f) => ({ ...f, done: `${r.deleted} ${tx("nep-gebruikers verwijderd")}` })); load(); }
+    catch (er) { setFk((f) => ({ ...f, error: errorText(er) })); }
+  }
+
   const set = (k) => (e) => setModal({ ...modal, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   return (
     <>
       <div className="page-head">
         <h1>{tx("Users")}</h1>
-        {L >= 3 && <button className="btn primary" onClick={() => setModal({ ...EMPTY })}>{tx("+ Nieuwe gebruiker")}</button>}
+        <div className="head-actions">
+          {L >= 3 && fake?.available && <button className="btn" onClick={() => setFk({ count: 3, gender: "", photos: 2, mood: "", busy: false, error: "", done: "" })}>✨ {tx("Nep-gebruikers (AI)")}</button>}
+          {L >= 3 && <button className="btn primary" onClick={() => { setTab("account"); setModal({ ...EMPTY }); }}>{tx("+ Nieuwe gebruiker")}</button>}
+        </div>
       </div>
       {error && <div className="alert">{error}</div>}
 
@@ -97,6 +121,7 @@ export default function Users() {
                   <span className="user-cell">
                     {u.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.image)} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{initials(u)}</span>}
                     {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
+                    {u.is_fake && <span className="badge off" title={tx("Nep-gebruiker voor testen")}>{tx("Nep")}</span>}
                     {u.show_public && <span className="badge ok" title={tx("Wordt getoond op de website")}>{tx("Op website")}</span>}
                   </span>
                 </td>
@@ -111,7 +136,7 @@ export default function Users() {
                 <td><VerifyBadge status={u.verification} label /></td>
                 <td><span className={`badge ${u.is_active ? "ok" : "off"}`}>{u.is_active ? tx("Actief") : tx("Geblokkeerd")}</span></td>
                 <td className="actions">
-                  {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...EMPTY, ...u, password: "" })}>{tx("Wijzig")}</button>}
+                  {L >= 2 && <button className="btn sm" onClick={() => { setTab("account"); setModal({ ...EMPTY, ...u, password: "" }); }}>{tx("Wijzig")}</button>}
                   {u.id !== me.id && (
                     <>
                       {L >= 2 && <button className="btn sm" onClick={() => toggleBlock(u)}>{u.is_active ? tx("Blokkeer") : tx("Deblokkeer")}</button>}
@@ -126,11 +151,34 @@ export default function Users() {
       </TableView>
       </Collapsible>
 
+      {fk && (
+        <div className="overlay" onClick={() => !fk.busy && setFk(null)}>
+          <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={makeFakes}>
+            <h2>✨ {tx("Nep-gebruikers maken met AI")}</h2>
+            <p className="muted" style={{ margin: 0, fontSize: ".88rem" }}>{tx("Claude verzint personen met voor- en achternaam en vult het profiel in volgens de profielvelden van de community-instellingen")}{fake?.fields?.length ? ` (${fake.fields.slice(0, 6).join(", ")}${fake.fields.length > 6 ? ", …" : ""})` : ""}. {tx("Als foto's krijgen ze getekende avatars in de kleur van hun geslacht. Een echt portret kan AI hier niet maken.")}</p>
+            <div className="form-grid">
+              <label>{tx("Aantal (1–10)")}<input type="number" min={1} max={10} value={fk.count} onChange={(e) => setFk({ ...fk, count: e.target.value })} /></label>
+              <label>{tx("Geslacht")}<select value={fk.gender} onChange={(e) => setFk({ ...fk, gender: e.target.value })}><option value="">{tx("Gemengd")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Overig")}</option></select></label>
+              <label>{tx("Foto's per gebruiker (0–4)")}<input type="number" min={0} max={4} value={fk.photos} onChange={(e) => setFk({ ...fk, photos: e.target.value })} /></label>
+            </div>
+            <label>{tx("Sfeer of wens (optioneel)")}<input value={fk.mood} maxLength={300} placeholder={tx("bv. sportieve mensen tussen 30 en 45 uit Brabant")} onChange={(e) => setFk({ ...fk, mood: e.target.value })} /></label>
+            {fk.error && <div className="alert">{fk.error}</div>}
+            {fk.done && <div className="alert ok">{fk.done}</div>}
+            <div className="row">
+              {fake?.count > 0 && <button type="button" className="btn danger" disabled={fk.busy} onClick={dropFakes}>{tx("Alle nep-gebruikers verwijderen")} ({fake.count})</button>}
+              <button type="button" className="btn" disabled={fk.busy} onClick={() => setFk(null)}>{tx("Sluiten")}</button>
+              <button className="btn primary" disabled={fk.busy}>{fk.busy ? tx("Bezig met maken…") : tx("Maken")}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {modal && (
         <div className="overlay" onClick={() => setModal(null)}>
-          <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
+          <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save} onInvalidCapture={() => setTab("account")}>
             <h2>{modal.id ? tx("Gebruiker wijzigen") : tx("Nieuwe gebruiker")}</h2>
-            <div className="grid2">
+            <Tabs value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["rights", "Rechten"]]} />
+            <div className="grid2" hidden={tab !== "account"}>
               <label>{tx("Voornaam")}<input value={modal.first_name} onChange={set("first_name")} /></label>
               <label>{tx("Achternaam")}<input value={modal.last_name} onChange={set("last_name")} /></label>
               <label>{tx("E-mailadres")}<input type="email" value={modal.email} onChange={set("email")} required /></label>
@@ -142,15 +190,17 @@ export default function Users() {
                   {Object.entries(VERIFY).map(([k, v]) => <option key={k} value={k}>{tx(v.label)}: {tx(v.hint)}</option>)}
                 </select>
               </label>
+            </div>
+            <div className="grid2" hidden={tab !== "profile"}>
               <label>{tx("Functie")}<input value={modal.function} onChange={set("function")} /></label>
               <label>{tx("Korte tekst")}<input value={modal.short} onChange={set("short")} maxLength={255} /></label>
             </div>
-            <label>{tx("Omschrijving / biografie")}<textarea rows={4} value={modal.description} onChange={set("description")} /></label>
-            <div className="grid2">
+            <label hidden={tab !== "profile"}>{tx("Omschrijving / biografie")}<textarea rows={4} value={modal.description} onChange={set("description")} /></label>
+            <div className="grid2" hidden={tab !== "profile"}>
               <label>{tx("Link")}<input value={modal.link} onChange={set("link")} maxLength={255} placeholder="https://…" /></label>
               <label className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={modal.link_external} onChange={set("link_external")} /> {tx("Link opent extern")}</label>
             </div>
-            <div className="photo-row">
+            <div className="photo-row" hidden={tab !== "profile"}>
               {modal.preview || modal.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={modal.preview || mediaUrl(modal.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{initials(modal)}</span>}
               <span className="row" style={{ justifyContent: "flex-start" }}>
                 <label className="btn sm" style={{ cursor: "pointer" }}>
@@ -160,8 +210,8 @@ export default function Users() {
                 {(modal.image || modal.preview) && <button type="button" className="btn sm danger" onClick={() => photo(null)}>{tx("Foto verwijderen")}</button>}
               </span>
             </div>
-            <label className="check"><input type="checkbox" checked={modal.show_public} onChange={set("show_public")} /> {tx("Tonen op de website als member (foto, functie en omschrijving)")}</label>
-            <div>
+            <label className="check" hidden={tab !== "profile"}><input type="checkbox" checked={modal.show_public} onChange={set("show_public")} /> {tx("Tonen op de website als member (foto, functie en omschrijving)")}</label>
+            <div hidden={tab !== "rights"}>
               <strong style={{ fontSize: ".85rem" }}>{tx("Rollen")}</strong>
               <div className="perm-list">
                 {roles.map((r) => (
@@ -174,7 +224,7 @@ export default function Users() {
                 {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
               </div>
             </div>
-            <div>
+            <div hidden={tab !== "rights"}>
               <strong style={{ fontSize: ".85rem" }}>{tx("User groups")}</strong>
               <div className="perm-list">
                 {groups.map((g) => (
@@ -187,7 +237,7 @@ export default function Users() {
                 {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
               </div>
             </div>
-            {me.is_staff && <label className="check">
+            {me.is_staff && <label className="check" hidden={tab !== "rights"}>
               <input type="checkbox" checked={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} /> {tx("Superadmin (alle rechten, beheert ook admins en superadmins)")}
             </label>}
             {modal.error && <div className="alert">{modal.error}</div>}

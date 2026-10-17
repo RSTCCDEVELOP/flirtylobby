@@ -17,11 +17,15 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
     roles = serializers.PrimaryKeyRelatedField(many=True, queryset=Role.objects.all(), required=False)
     user_groups = serializers.PrimaryKeyRelatedField(many=True, queryset=UserGroup.objects.all(), required=False)
+    is_fake = serializers.SerializerMethodField()
+
+    def get_is_fake(self, u):
+        return u.username.startswith("fake_")
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "roles", "user_groups", "is_active", "is_staff", "last_login", "date_joined", "password", "otp_active", "twofa_method", "image", "show_public", "verification"] + PROFILE_FIELDS
-        read_only_fields = ["last_login", "date_joined", "otp_active", "twofa_method", "image"]
+        fields = ["id", "is_fake", "email", "role", "roles", "user_groups", "is_active", "is_staff", "last_login", "date_joined", "password", "otp_active", "twofa_method", "image", "show_public", "verification"] + PROFILE_FIELDS
+        read_only_fields = ["is_fake", "last_login", "date_joined", "otp_active", "twofa_method", "image"]
         extra_kwargs = {"email": {"required": True}, **WORD_KWARGS}
 
     def validate_email(self, value):
