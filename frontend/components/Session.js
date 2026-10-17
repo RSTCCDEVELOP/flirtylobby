@@ -13,9 +13,11 @@ export function SessionProvider({ children }) {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [editMode, setEditModeState] = useState(false);
+  const [preview, setPreview] = useState(false); // ?preview=1: the page in a device frame, without editing tools
 
   useEffect(() => {
     try { setEditModeState(localStorage.getItem("editMode") === "1"); } catch {}
+    try { setPreview(!!new URLSearchParams(window.location.search).get("preview")); } catch {}
     let alive = true;
     const load = () => {
       if (!getToken()) { setUser(null); return setReady(true); }
@@ -30,7 +32,7 @@ export function SessionProvider({ children }) {
   }, []);
 
   const editModule = useModule("edit_mode");
-  const canEdit = editModule && lvl(user, "edit_mode") >= 2;
+  const canEdit = editModule && !preview && lvl(user, "edit_mode") >= 2;
   const setEditMode = useCallback((on) => {
     setEditModeState(on);
     try { localStorage.setItem("editMode", on ? "1" : "0"); } catch {}

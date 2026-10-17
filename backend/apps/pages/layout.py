@@ -18,6 +18,15 @@ HALIGN, VALIGN, GAPS, TYPES = ("left", "center", "right"), ("top", "center", "bo
 MAX_ROWS, MAX_ITEMS = 40, 300
 
 
+def _pct(v, lo, hi, default):
+    """A width: the default word, or a whole percentage between lo and hi."""
+    try:
+        n = int(v)
+    except (TypeError, ValueError):
+        return default
+    return str(max(lo, min(hi, n)))
+
+
 def clean(data):
     """Returns the cleaned layout or raises ValueError with a readable message."""
     rows, out, n_items, seen = (data or {}).get("rows") or [], [], 0, set()
@@ -51,10 +60,10 @@ def clean(data):
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
                 items.append({"id": uid(it.get("id")), "type": t, "ref": str(it.get("ref") or "")[:80]})
-            cells.append({"id": uid(c.get("id")), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
+            cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
         while len(cells) < cols:
-            cells.append({"id": new_id(), "halign": "left", "valign": "top", "items": []})
-        out.append({"id": uid(r.get("id")), "cols": cols, "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells})
+            cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})
+        out.append({"id": uid(r.get("id")), "cols": cols, "width": _pct(r.get("width"), 30, 100, "default"), "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells})
     if n_items > MAX_ITEMS:
         raise ValueError("Te veel onderdelen op één pagina.")
     return {"rows": out}

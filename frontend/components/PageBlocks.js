@@ -10,7 +10,17 @@ import { useSession } from "./Session";
 import { SysObjectBySlug } from "./SysObjects";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
-const newCell = () => ({ id: uid(), halign: "left", valign: "top", items: [] });
+const newCell = () => ({ id: uid(), width: "auto", halign: "left", valign: "top", items: [] });
+const ROW_WIDTHS = ["default", "100", "90", "80", "70", "60", "50"];
+const CELL_WIDTHS = ["auto", "20", "25", "30", "33", "40", "50", "60", "66", "70", "75", "80", "100"];
+
+// grid columns from the cell widths: a percentage is that share of the row, "auto" cells share what is left
+function columns(r) {
+  const fixed = r.cells.reduce((s, c) => s + (c.width && c.width !== "auto" ? Number(c.width) : 0), 0);
+  const autos = r.cells.filter((c) => !c.width || c.width === "auto").length;
+  const share = autos ? Math.max(100 - fixed, 10 * autos) / autos : 0;
+  return r.cells.map((c) => `minmax(0, ${c.width && c.width !== "auto" ? Number(c.width) : share}fr)`).join(" ");
+}
 const AL_H = { left: "flex-start", center: "center", right: "flex-end" };
 const AL_V = { top: "flex-start", center: "center", bottom: "flex-end" };
 
@@ -93,11 +103,12 @@ export default function PageBlocks({ pageKey }) {
   return (
     <section className={`pb${editing ? " editing" : ""}`}>
       {layout.rows.map((r, ri) => (
-        <div className="pb-rowwrap" key={r.id}>
+        <div className="pb-rowwrap" key={r.id} style={r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : undefined}>
           {editing && (
             <div className="pb-rowbar">
               <strong>{tx("Raster")}</strong>
               <label>{tx("Kolommen")}<select value={r.cols} onChange={(e) => setRow(r.id, { cols: Number(e.target.value) })}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+              <label>{tx("Breedte")}<select value={r.width || "default"} onChange={(e) => setRow(r.id, { width: e.target.value })}>{ROW_WIDTHS.map((w) => <option key={w} value={w}>{w === "default" ? tx("Standaard") : w === "100" ? tx("100% (paginabreed)") : `${w}%`}</option>)}</select></label>
               <label>{tx("Ruimte")}<select value={r.gap} onChange={(e) => setRow(r.id, { gap: e.target.value })}><option value="sm">{tx("Klein")}</option><option value="md">{tx("Normaal")}</option><option value="lg">{tx("Groot")}</option></select></label>
               <span className="pb-spacer" />
               <button type="button" className="btn sm" disabled={ri === 0} onClick={() => moveRow(r.id, -1)} title={tx("Omhoog")}>↑</button>
@@ -105,7 +116,7 @@ export default function PageBlocks({ pageKey }) {
               <button type="button" className="btn sm danger" onClick={() => delRow(r.id)}>{tx("Rij verwijderen")}</button>
             </div>
           )}
-          <div className={`pb-row gap-${r.gap}`} style={{ "--cols": r.cols }}>
+          <div className={`pb-row gap-${r.gap}`} style={{ "--cols": r.cols, "--tpl": columns(r) }}>
             {r.cells.map((c) => (
               <div className={`pb-cell${editing ? " edit" : ""}`} key={c.id} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], textAlign: c.halign }}
                 onDragOver={(e) => { if (drag.current) e.preventDefault(); }}
@@ -114,6 +125,7 @@ export default function PageBlocks({ pageKey }) {
                   <div className="pb-cellbar" onClick={(e) => e.stopPropagation()}>
                     <span className="pb-seg" title={tx("Horizontaal uitlijnen")}>{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={c.halign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(c.id, { halign: k })}>{g}</button>)}</span>
                     <span className="pb-seg" title={tx("Verticaal uitlijnen")}>{[["top", "⤒", "Boven"], ["center", "↕", "Midden"], ["bottom", "⤓", "Onder"]].map(([k, g, l]) => <button type="button" key={k} className={c.valign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(c.id, { valign: k })}>{g}</button>)}</span>
+                    <label className="pb-w" title={tx("Breedte van deze kolom")}>{tx("Kolom")}<select value={c.width || "auto"} onChange={(e) => setCell(c.id, { width: e.target.value })}>{CELL_WIDTHS.map((w) => <option key={w} value={w}>{w === "auto" ? tx("Gelijk") : `${w}%`}</option>)}</select></label>
                     <span className="pb-add">
                       <button type="button" className="btn sm primary" onClick={() => setMenu(menu === c.id ? null : c.id)}>+ {tx("Toevoegen")}</button>
                       {menu === c.id && (
