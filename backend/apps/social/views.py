@@ -123,6 +123,11 @@ def profile_photo_add(request):
     vis = str(request.data.get("visibility") or ("private" if str(request.data.get("private", "")).lower() in ("1", "true", "yes", "on") else "public"))
     if vis not in service.PHOTO_VISIBILITY:
         return bad("Ongeldige zichtbaarheid.")
+    if vis == "private" and cfg["private_photos"]:
+        from apps.subscriptions import service as subs
+
+        if not subs.can(request.user, "private_photos"):
+            return bad(subs.GATE_MESSAGE["private_photos"], status.HTTP_402_PAYMENT_REQUIRED)
     if vis == "private" and not cfg["private_photos"]:
         vis = "members"
     if vis == "private" and p.photos.filter(visibility="private").count() >= cfg["max_private_photos"]:
@@ -336,6 +341,11 @@ def connections(request):
         if not cfg["requests_enabled"]:
             return bad("Verzoeken zijn uitgezet.", status.HTTP_403_FORBIDDEN)
         kind = request.data.get("kind")
+        if kind == "friend":
+            from apps.subscriptions import service as subs
+
+            if not subs.can(me, "friend_requests"):
+                return bad(subs.GATE_MESSAGE["friend_requests"], status.HTTP_402_PAYMENT_REQUIRED)
         target = User.objects.filter(pk=request.data.get("user"), is_active=True).first()
         if kind not in ("friend", "photos", "profile") or not target or target.id == me.id or service.is_blocked_between(me, target):
             return bad("Dit verzoek kan niet.")
@@ -458,6 +468,10 @@ def msg_thread(request, uid):
     if not other:
         return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == "POST":
+        from apps.subscriptions import service as subs
+
+        if not subs.can(me, "messages"):
+            return bad(subs.GATE_MESSAGE["messages"], status.HTTP_402_PAYMENT_REQUIRED)
         body, subject = str(request.data.get("body", "")).strip(), str(request.data.get("subject", "")).strip()[:150]
         cfg = service.get()["messages"]
         prof = Profile.objects.filter(user=other).first()
@@ -470,6 +484,7 @@ def msg_thread(request, uid):
         if DirectMessage.objects.filter(sender=me, created_at__gt=timezone.now() - timedelta(minutes=1)).count() >= cfg["rate_per_minute"]:
             return bad("Je verstuurt te snel. Probeer het zo opnieuw.", status.HTTP_429_TOO_MANY_REQUESTS)
         DirectMessage.objects.create(sender=me, recipient=other, subject=subject, body=body)
+        subs.charge(me, "messages")
         try:
             from apps.communication import sending
 

@@ -77,6 +77,11 @@ def rooms(request):
     if request.method == "POST":
         if not _enabled():
             return bad("Directe verbinding staat uit.", status.HTTP_403_FORBIDDEN)
+        from apps.subscriptions import service as subs
+
+        if not subs.can(request.user, "direct_connection"):
+            return bad(subs.GATE_MESSAGE["direct_connection"], status.HTTP_402_PAYMENT_REQUIRED)
+        subs.charge(request.user, "direct_connection")
         DirectRoom.objects.filter(owner=request.user, expires_at__lt=timezone.now()).delete()
         # one direct connection at a time: a new invitation replaces (closes) the open one
         DirectRoom.objects.filter(owner=request.user, closed=False).update(closed=True)

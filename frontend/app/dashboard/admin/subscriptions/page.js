@@ -170,7 +170,7 @@ export default function SubscriptionsAdmin() {
       {tab === "settings" && (
         <div className="card form">
           <h3 style={{ margin: 0 }}>{tx("Wat vraagt een abonnement?")}</h3>
-          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Standaard is alles gratis. Zet een onderdeel hier aan om het alleen open te stellen voor leden met een abonnement dat die toegang geeft. Pagina's, content en diensten koppel je bij het abonnement zelf.")}</p>
+          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Standaard is alles gratis. Zet een onderdeel hier aan om het alleen open te stellen voor leden met een abonnement dat die toegang geeft. Pagina's, content en diensten koppel je bij het abonnement zelf.")} <a href="/dashboard/admin/actions">{tx("Alle onderdelen en voorwaarden beheer je bij Actions.")}</a></p>
           {GATES.map(([k, label, help]) => (
             <label className="check sec-toggle" key={k}>
               <input type="checkbox" checked={!!cfg.gates[k]} disabled={L < 3} onChange={(e) => saveCfg({ gates: { [k]: e.target.checked } })} />

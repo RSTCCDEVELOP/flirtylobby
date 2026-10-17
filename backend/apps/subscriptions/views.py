@@ -13,7 +13,7 @@ from apps.core.modules import module_required
 from apps.shop.service import unique_slug
 
 from . import service
-from .models import INTERVALS, Donation, DonationCampaign, Plan, Subscription
+from .models import INTERVALS, ActionItem, Donation, DonationCampaign, Plan, Subscription
 
 logger = logging.getLogger(__name__)
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
@@ -658,7 +658,9 @@ def access(request):
         return Response({"ok": ok, "locked": page in locked})
     if content:
         listed = any(g.get("type") == "content" and g.get("ref") == content for grants in list(Plan.objects.values_list("grants", flat=True)) + list(DonationCampaign.objects.values_list("actions", flat=True)) for g in grants or [])
-        ok = not listed or ent["full"] or content in ent["content"]
+        row = ActionItem.objects.filter(kind="content", ref=content, gated=True).first()
+        listed = listed or bool(row)
+        ok = not listed or ent["full"] or content in ent["content"] or bool(row and service.evaluate(request.user, row, ent)[0])
         if ok and listed:
             service.charge(request.user, "content", content)
         return Response({"ok": ok, "locked": listed})
@@ -705,3 +707,114 @@ def donate(request):
         return bad(str(e), 503)
     d.refresh_from_db()
     return Response({"status": d.status, "amount": str(d.amount), "checkout_path": path}, status=status.HTTP_201_CREATED)
+
+
+# ── admin: Actions (everything that can be paid for or earned with a donation) ──
+def _clean_conditions(raw):
+    from decimal import Decimal, InvalidOperation
+
+    out = []
+    for c in raw or []:
+        t = c.get("type")
+        if t not in service.CONDITION_TYPES:
+            raise ValueError("Onbekende voorwaarde.")
+        row = {"type": t}
+        try:
+            if t in ("plan", "donation_campaign", "role"):
+                row["ref"] = int(c.get("ref") or 0)
+                if not row["ref"]:
+                    raise ValueError("Kies bij elke voorwaarde ook een keuze (abonnement, actie of rol).")
+            if t in ("donation_total", "donation_campaign"):
+                row["amount"] = str(max(Decimal("0"), Decimal(str(c.get("amount") or 0))))
+                row["days"] = max(0, min(3650, int(c.get("days") or 0)))
+            if t in ("member_days", "profile_complete"):
+                row["value"] = max(0, min(100000, int(c.get("value") or 0)))
+        except (InvalidOperation, TypeError):
+            raise ValueError("Bedrag, dagen en aantallen moeten getallen zijn.")
+        out.append(row)
+    return out[:10]
+
+
+def _item_row(i):
+    spec = service.CATALOG_BY_KEY.get(i.key)
+    name = spec[1] if spec else (i.name or i.key)
+    return {"key": i.key, "kind": i.kind, "ref": i.ref, "name": name, "description": spec[3] if spec else i.description, "group": spec[2] if spec else "Eigen onderdelen",
+            "builtin": bool(spec), "gated": i.gated, "mode": i.mode, "conditions": i.conditions or [], "order": i.order}
+
+
+@api_view(["GET", "POST"])
+@permission_classes([_settings_perm()])
+def actions_admin(request):
+    """The list of everything that can be paid for or earned, with its conditions. POST adds an own item (page, piece of content or service)."""
+    from apps.pages.models import Page
+    from apps.shop.models import Product
+
+    if request.method == "POST":
+        kind, ref = request.data.get("kind"), str(request.data.get("ref") or "").strip()[:80]
+        if kind == "page" and not Page.objects.filter(key=ref, kind="content").exists():
+            return bad("Kies een bestaande eigen pagina.")
+        if kind == "service" and not Product.objects.filter(pk=ref or 0).exists():
+            return bad("Kies een bestaand product.")
+        if kind == "content" and not ref:
+            return bad("Geef de sleutel van de content op.")
+        if kind not in ("page", "content", "service"):
+            return bad("Kies pagina, content of dienst.")
+        key = f"{kind}:{ref}"
+        if ActionItem.objects.filter(key=key).exists():
+            return bad("Dit onderdeel staat al in de lijst.")
+        ActionItem.objects.create(key=key, kind=kind, ref=ref, name=str(request.data.get("name") or "")[:120], description=str(request.data.get("description") or "")[:300], gated=True, order=100 + ActionItem.objects.count())
+    service.ensure_items()
+    from apps.accounts.models import Role
+
+    return Response({
+        "items": [_item_row(i) for i in ActionItem.objects.all()],
+        "options": {"plans": [{"id": p.id, "name": p.name} for p in Plan.objects.all()], "campaigns": [{"id": c.id, "name": c.name} for c in DonationCampaign.objects.all()],
+                    "roles": [{"id": r.id, "name": r.name} for r in Role.objects.all()], "condition_types": [{"type": k, "label": v} for k, v in service.CONDITION_TYPES.items()],
+                    "pages": [{"key": p.key, "title": p.title.get("nl") or next(iter(p.title.values()), p.key)} for p in Page.objects.filter(kind="content")],
+                    "products": [{"id": p.id, "name": p.name} for p in Product.objects.filter(active=True)]}})
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([_settings_perm()])
+def action_one(request, key):
+    item = ActionItem.objects.filter(key=key).first()
+    if not item:
+        return bad("Niet gevonden.", 404)
+    if request.method == "DELETE":
+        if item.kind == "builtin":
+            return bad("Een ingebouwd onderdeel kun je niet verwijderen; zet het open voor iedereen.")
+        item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    d = request.data
+    if "gated" in d:
+        item.gated = bool(d["gated"])
+    if d.get("mode") in ("any", "all"):
+        item.mode = d["mode"]
+    if "conditions" in d:
+        try:
+            item.conditions = _clean_conditions(d["conditions"])
+        except ValueError as e:
+            return bad(str(e))
+    if item.kind != "builtin":
+        item.name = str(d.get("name", item.name))[:120]
+        item.description = str(d.get("description", item.description))[:300]
+    item.save()
+    return Response(_item_row(item))
+
+
+@api_view(["GET"])
+@permission_classes([_settings_perm()])
+def actions_check(request):
+    """For one member: which items can he use now, and which conditions passed or failed. For support questions."""
+    from django.contrib.auth import get_user_model
+
+    user = get_user_model().objects.filter(email__iexact=str(request.query_params.get("email") or "").strip()).first()
+    if not user:
+        return bad("Geen lid gevonden met dit e-mailadres.", 404)
+    service.ensure_items()
+    ent = service.entitlements(user)
+    out = []
+    for i in ActionItem.objects.all():
+        ok, res = service.evaluate(user, i, ent) if i.gated else (True, [])
+        out.append({"key": i.key, "gated": i.gated, "ok": ok, "conditions": [{"type": t, "ok": p, "reason": r} for t, p, r in res]})
+    return Response({"user": {"name": user.get_full_name() or user.username, "email": user.email}, "items": out})

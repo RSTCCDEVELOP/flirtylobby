@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from apps.core import modules
 
-from .models import Donation, DonationCampaign, DonorAction, Plan, Subscription, SubscriptionSettings
+from .models import ActionItem, Donation, DonationCampaign, DonorAction, Plan, Subscription, SubscriptionSettings
 
 logger = logging.getLogger(__name__)
 CENT = Decimal("0.01")
@@ -34,7 +34,15 @@ GRANT_TYPES = {
     "chat_media": {"label": "Foto's en video's in de chat", "ref": None, "help": "Foto's en video's delen in de chat."},
     "video_chat": {"label": "Videochat", "ref": None, "help": "Videobellen via de chat en de directe verbinding."},
     "likes": {"label": "Likes per dag", "ref": None, "value": True, "help": "Aantal likes per dag bij zoeken en swipen. 0 = onbeperkt."},
+    "discover": {"label": "Zoeken en matchen", "ref": None, "help": "Leden zoeken en swipen."},
+    "see_likes": {"label": "Zien wie mij leuk vond", "ref": None, "help": "Het overzicht van leden die jou een like gaven."},
+    "see_visitors": {"label": "Profielbezoekers zien", "ref": None, "help": "Wie je profiel heeft bekeken."},
+    "messages": {"label": "Berichten sturen (postvak)", "ref": None, "help": "Berichten sturen naar andere leden."},
+    "friend_requests": {"label": "Vriendschapsverzoeken sturen", "ref": None, "help": "Andere leden om vriendschap vragen."},
+    "private_photos": {"label": "Privé-foto's plaatsen", "ref": None, "help": "Foto's plaatsen die alleen voor vrienden of na toegang zichtbaar zijn."},
+    "direct_connection": {"label": "Directe verbinding", "ref": None, "help": "Een directe verbinding (chat, beeld en geluid) opzetten met een code of QR."},
 }
+FEATURE_KEYS = ["site", "chat", "chat_media", "video_chat", "discover", "see_likes", "see_visitors", "messages", "friend_requests", "private_photos", "direct_connection"]
 DEFAULTS = {
     "gates": {"site": False, "chat": False, "chat_media": False, "video_chat": False, "likes": False},
     "free_likes_per_day": 10,  # only used when the likes gate is on
@@ -69,6 +77,8 @@ def save_settings(incoming):
     for g, x in (incoming.get("gates") or {}).items():
         if g in cur["gates"]:
             cur["gates"][g] = bool(x)
+            ensure_items()
+            ActionItem.objects.filter(key=g).update(gated=bool(x))  # the Actions list is the source; the old switches keep it in step
     for k, lo, hi in (("free_likes_per_day", 0, 10000), ("grace_days", 0, 90)):
         if k in incoming:
             try:
@@ -143,7 +153,7 @@ def describe(grants):
 # ── what does this user have? ────────────────────────────────────────────────
 def _empty():
     return {"full": False, "site": False, "pages": set(), "content": set(), "services": set(), "chat": False, "chat_media": False, "video_chat": False,
-            "likes": False, "plans": []}  # likes: False = nothing extra, None = unlimited, n = per day
+            "likes": False, "plans": [], **{k: False for k in FEATURE_KEYS}}  # likes: False = nothing extra, None = unlimited, n = per day
 
 
 def _add(ent, grants):
@@ -158,7 +168,7 @@ def _add(ent, grants):
         elif t == "likes":
             n = int(g.get("value") or 0)
             ent["likes"] = None if (n == 0 or ent["likes"] is None) else max(n, ent["likes"] or 0)
-        elif t in ("site", "chat", "chat_media", "video_chat"):
+        elif t in FEATURE_KEYS:
             ent[t] = True
 
 
@@ -167,7 +177,7 @@ def entitlements(user, with_limited=True):
     if not user or not getattr(user, "is_authenticated", False):
         return ent
     if user.is_staff or user.is_superuser:
-        ent.update(full=True, site=True, chat=True, chat_media=True, video_chat=True, likes=None)
+        ent.update(full=True, likes=None, **{k: True for k in FEATURE_KEYS})
         return ent
     now = timezone.now()
     for s in Subscription.objects.filter(user=user, status__in=LIVE).select_related("plan"):
@@ -190,14 +200,123 @@ def either_on():
     return modules.enabled("subscriptions") or modules.enabled("donations")
 
 
+# the built-in things that can be paid for: key, name, group, description
+CATALOG = [
+    ("site", "De hele website", "Website", "Toegang tot de website. Zonder voorwaarden kom je alleen op inloggen, aanmelden en abonnementen."),
+    ("discover", "Zoeken en matchen", "Leden vinden", "Leden zoeken en swipen."),
+    ("likes", "Likes per dag", "Leden vinden", "Het aantal likes per dag. Afgeschermd = het gratis aantal uit de instellingen, meer met de voorwaarden."),
+    ("see_likes", "Zien wie mij leuk vond", "Leden vinden", "Het overzicht van leden die jou een like gaven."),
+    ("see_visitors", "Profielbezoekers zien", "Leden vinden", "Wie je profiel heeft bekeken."),
+    ("messages", "Berichten sturen (postvak)", "Contact", "Berichten sturen naar andere leden."),
+    ("friend_requests", "Vriendschapsverzoeken sturen", "Contact", "Andere leden om vriendschap vragen."),
+    ("chat", "Chat", "Contact", "Berichten sturen in de chat."),
+    ("chat_media", "Foto's en video's in de chat", "Contact", "Foto's en video's delen in de chat."),
+    ("video_chat", "Videochat", "Contact", "Videobellen via de chat en de directe verbinding."),
+    ("direct_connection", "Directe verbinding", "Contact", "Een directe verbinding opzetten met een code of QR."),
+    ("private_photos", "Privé-foto's plaatsen", "Profiel", "Foto's plaatsen die alleen na toegang zichtbaar zijn."),
+]
+CATALOG_BY_KEY = {c[0]: c for c in CATALOG}
+CONDITION_TYPES = {
+    "entitlement": "Abonnement of donatie-actie die dit onderdeel geeft",
+    "any_plan": "Een lopend abonnement (welk dan ook)",
+    "plan": "Een bepaald abonnement",
+    "donation_total": "Totaal gedoneerd vanaf een bedrag",
+    "donation_campaign": "Gedoneerd aan een bepaalde actie",
+    "member_days": "Lid sinds minstens … dagen",
+    "verified_email": "E-mailadres bevestigd",
+    "profile_complete": "Profiel actief met minstens … foto's",
+    "verified_profile": "Profiel gecontroleerd door de beheerder",
+    "role": "Heeft een bepaalde rol",
+}
+
+
+def ensure_items():
+    """Make sure every built-in thing has a row. A new row starts as the old 'gates' setting said (default: free)."""
+    have = set(ActionItem.objects.filter(kind="builtin").values_list("key", flat=True))
+    legacy = settings()["gates"]
+    for i, (key, *_r) in enumerate(CATALOG):
+        if key not in have:
+            ActionItem.objects.create(key=key, kind="builtin", gated=bool(legacy.get(key)), order=i)
+
+
+def item_of(key):
+    return ActionItem.objects.filter(key=key).first()
+
+
 def gate_on(key):
-    return either_on() and settings()["gates"].get(key, False)
+    if not either_on():
+        return False
+    row = item_of(key)
+    return row.gated if row else bool(settings()["gates"].get(key, False))
+
+
+def _ent_has(ent, item):
+    if item.kind == "page":
+        return item.ref in ent["pages"]
+    if item.kind == "content":
+        return item.ref in ent["content"]
+    if item.kind == "service":
+        return str(item.ref) in ent["services"]
+    return bool(ent.get(item.key))
+
+
+def check_condition(user, item, c, ent):
+    """(passes, reason) for one condition."""
+    t = c.get("type")
+    now = timezone.now()
+    if t == "entitlement":
+        return _ent_has(ent, item), "abonnement of donatie-actie"
+    if t == "any_plan":
+        return bool(ent["plans"]), "een lopend abonnement"
+    if t == "plan":
+        return int(c.get("ref") or 0) in ent["plans"], "dat abonnement"
+    if t in ("donation_total", "donation_campaign"):
+        qs = Donation.objects.filter(user=user, status="paid")
+        if t == "donation_campaign":
+            qs = qs.filter(campaign_id=int(c.get("ref") or 0))
+        if int(c.get("days") or 0):
+            qs = qs.filter(paid_at__gte=now - timedelta(days=int(c["days"])))
+        from django.db.models import Sum
+
+        total = qs.aggregate(s=Sum("amount"))["s"] or Decimal("0")
+        need = Decimal(str(c.get("amount") or 0))
+        return (total >= need if need > 0 else qs.exists()), "genoeg gedoneerd"
+    if t == "member_days":
+        return (now - user.date_joined).days >= int(c.get("value") or 0), "lang genoeg lid"
+    if t == "verified_email":
+        return bool(user.email_verified), "e-mailadres bevestigd"
+    if t == "profile_complete":
+        from apps.social.models import Profile
+
+        p = Profile.objects.filter(user=user, enabled=True).first()
+        return bool(p and p.photos.count() >= int(c.get("value") or 1)), "profiel compleet"
+    if t == "verified_profile":
+        return user.verification in ("checked", "verified"), "profiel gecontroleerd"
+    if t == "role":
+        return int(c.get("ref") or 0) in {r.id for r in user.all_roles()}, "de rol"
+    return False, "onbekende voorwaarde"
+
+
+def evaluate(user, item, ent=None):
+    """Does this user meet the conditions of the item? Returns (ok, [(type, passes, reason)])."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False, []
+    ent = ent or entitlements(user)
+    if ent["full"]:
+        return True, []
+    conds = item.conditions or [{"type": "entitlement"}]
+    res = [(c.get("type"), *check_condition(user, item, c, ent)) for c in conds]
+    ok = all(r[1] for r in res) if item.mode == "all" else any(r[1] for r in res)
+    return ok, res
 
 
 def can(user, key):
-    """May this user use the part `key` (site | chat | chat_media | video_chat)? Free as long as its gate is off."""
+    """May this user use the part `key`? Free as long as it is not gated; otherwise the conditions of the item decide."""
     if not gate_on(key):
         return True
+    row = item_of(key)
+    if row:
+        return evaluate(user, row)[0]
     return bool(entitlements(user).get(key))
 
 
@@ -205,6 +324,10 @@ GATE_MESSAGE = {
     "site": "Voor deze website heb je een abonnement nodig.", "chat": "Chatten is er voor leden met een abonnement.",
     "chat_media": "Foto's en video's delen in de chat kan met een abonnement.", "video_chat": "Videobellen kan met een abonnement.",
     "likes": "Je dagelijkse likes zijn op. Met een abonnement krijg je er meer.",
+    "discover": "Zoeken en matchen is er voor leden met een abonnement of donatie.", "see_likes": "Zien wie je leuk vond kan met een abonnement of donatie.",
+    "see_visitors": "Zien wie je profiel bekeek kan met een abonnement of donatie.", "messages": "Berichten sturen is er voor leden met een abonnement of donatie.",
+    "friend_requests": "Vriendschapsverzoeken sturen kan met een abonnement of donatie.", "private_photos": "Privé-foto's plaatsen kan met een abonnement of donatie.",
+    "direct_connection": "Een directe verbinding opzetten kan met een abonnement of donatie.",
 }
 
 
@@ -215,6 +338,9 @@ def likes_left(user):
     ent = entitlements(user)
     if ent["likes"] is None:
         return None
+    row = item_of("likes")
+    if row and any(c.get("type") != "entitlement" for c in row.conditions or []) and evaluate(user, row, ent)[0]:
+        return None  # the conditions (a donation, a subscription …) open unlimited likes
     from apps.social.models import Like
 
     limit = max(settings()["free_likes_per_day"], ent["likes"] or 0)
@@ -227,33 +353,43 @@ def locked_pages():
     """Pages that need a subscription: any page that a plan or a campaign lists."""
     if not either_on():
         return set()
-    keys = set()
+    keys = set(ActionItem.objects.filter(kind="page", gated=True).values_list("ref", flat=True))
     for grants in list(Plan.objects.values_list("grants", flat=True)) + list(DonationCampaign.objects.values_list("grants", flat=True)) + list(DonationCampaign.objects.values_list("actions", flat=True)):
         keys |= {g["ref"] for g in grants or [] if g.get("type") == "page"}
     return keys
 
 
 def page_ok(user, key):
-    return key not in locked_pages() or key in entitlements(user)["pages"] or entitlements(user)["full"]
+    if key not in locked_pages():
+        return True
+    ent = entitlements(user)
+    if ent["full"] or key in ent["pages"]:
+        return True
+    row = ActionItem.objects.filter(kind="page", ref=key, gated=True).first()
+    return bool(row and evaluate(user, row, ent)[0])
 
 
 def check_products(user, products):
-    """Products that are only for subscribers (a 'service' grant lists them)."""
-    if not modules.enabled("subscriptions"):
+    """Products that are only for subscribers or donors: a 'service' item (conditions) or a plan that lists them."""
+    if not either_on():
         return
     listed = set()
     for grants in Plan.objects.values_list("grants", flat=True):
         listed |= {str(g["ref"]) for g in grants or [] if g.get("type") == "service"}
     ent = entitlements(user)
     for p in products:
-        if str(p.id) in listed and not (ent["full"] or str(p.id) in ent["services"]):
+        row = ActionItem.objects.filter(kind="service", ref=str(p.id), gated=True).first()
+        if row:
+            if not evaluate(user, row, ent)[0]:
+                raise SubError(f"'{p.name}' is alleen te bestellen als je aan de voorwaarden voldoet.")
+        elif str(p.id) in listed and not (ent["full"] or str(p.id) in ent["services"]):
             raise SubError(f"'{p.name}' is alleen te bestellen met een abonnement.")
 
 
 def locked_products():
-    if not modules.enabled("subscriptions"):
+    if not either_on():
         return set()
-    out = set()
+    out = set(ActionItem.objects.filter(kind="service", gated=True).values_list("ref", flat=True))
     for grants in Plan.objects.values_list("grants", flat=True):
         out |= {str(g["ref"]) for g in grants or [] if g.get("type") == "service"}
     return out
@@ -441,7 +577,7 @@ def charge(user, type_, ref=""):
     if not user or not getattr(user, "is_authenticated", False) or user.is_staff or not modules.enabled("donations"):
         return
     base = entitlements(user, with_limited=False)
-    if type_ in ("chat", "chat_media", "video_chat", "site") and base[type_]:
+    if type_ in FEATURE_KEYS and base[type_]:
         return
     if type_ == "page" and (ref in base["pages"]):
         return

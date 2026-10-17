@@ -142,7 +142,7 @@ export default function DonationsAdmin() {
       {tab === "access" && gates && (
         <div className="card form">
           <h3 style={{ margin: 0 }}>{tx("Wat vraagt toegang?")}</h3>
-          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Standaard is alles gratis. Zet een onderdeel aan om het alleen open te stellen voor wie een abonnement of een actie van een donatie heeft. De acties die je bij een donatie-actie instelt (tabblad Acties) geven die toegang.")}</p>
+          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Standaard is alles gratis. Zet een onderdeel aan om het alleen open te stellen voor wie een abonnement of een actie van een donatie heeft. De acties die je bij een donatie-actie instelt (tabblad Acties) geven die toegang.")} <a href="/dashboard/admin/actions">{tx("Alle onderdelen en voorwaarden beheer je bij Actions.")}</a></p>
           {[["site", "De hele website"], ["chat", "Chat"], ["chat_media", "Foto's en video's in de chat"], ["video_chat", "Videochat"], ["likes", "Likes per dag"]].map(([k, l]) => (
             <label className="check sec-toggle" key={k}>
               <input type="checkbox" checked={!!gates.gates[k]} disabled={L < 3} onChange={async (e) => { try { setGates(await api("/subscriptions/admin/settings/", { method: "PUT", body: { gates: { [k]: e.target.checked } } })); } catch (er) { setMsg({ ok: false, text: errorText(er) }); } }} />

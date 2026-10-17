@@ -24,6 +24,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/sysobjects", module: "sysobjects" },
   { href: "/dashboard/admin/subscriptions", module: "subscriptions" },
   { href: "/dashboard/admin/donations", module: "donations" },
+  { href: "/dashboard/admin/actions", modules: ["subscriptions", "donations"] },
   { href: "/dashboard/admin/system", module: "system" },
   { href: "/dashboard/admin/storage", module: "storage" },
   { href: "/dashboard/admin/theme", module: "theme" },

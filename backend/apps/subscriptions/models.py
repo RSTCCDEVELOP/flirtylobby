@@ -130,3 +130,21 @@ class DonorAction(models.Model):
 
     class Meta:
         ordering = ["valid_until", "id"]
+
+
+class ActionItem(models.Model):
+    """One thing in the system that can be paid for or earned with a donation (chat, likes, a page, a piece of content, a service …).
+    Not gated = free for everybody. Gated = a visitor must meet the conditions (one of them or all of them)."""
+
+    key = models.CharField(max_length=100, unique=True)  # built-in: chat, likes, …  custom: page:<key>, content:<key>, service:<product id>
+    kind = models.CharField(max_length=10, default="builtin")  # builtin | page | content | service
+    ref = models.CharField(max_length=80, blank=True)
+    name = models.CharField(max_length=120, blank=True)  # custom items only; built-in names come from the catalog
+    description = models.CharField(max_length=300, blank=True)
+    gated = models.BooleanField(default=False)
+    mode = models.CharField(max_length=3, default="any")  # any = one condition is enough, all = every condition
+    conditions = models.JSONField(default=list, blank=True)  # [{"type": …, params}]; empty = the default: a subscription or donor action that gives this item
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]

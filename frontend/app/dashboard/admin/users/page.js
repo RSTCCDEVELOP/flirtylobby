@@ -14,7 +14,7 @@ import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
 
 const EMPTY = { user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
-const initials = (u) => (u.first_name?.[0] || u.email[0]).toUpperCase();
+const initials = (u) => (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
 
 export default function Users() {
   const tv = useView("users", "list");

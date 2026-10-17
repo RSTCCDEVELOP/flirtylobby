@@ -61,6 +61,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/orders", label: "Orders", icon: <IconReceipt /> },
   { href: "/dashboard/admin/subscriptions", label: "Abonnementen", icon: <IconStar /> },
   { href: "/dashboard/admin/donations", label: "Donaties", icon: <IconHeart /> },
+  { href: "/dashboard/admin/actions", label: "Actions", icon: <IconLock /> },
   { href: "/dashboard/admin/media", label: "Media", icon: <IconFolder />, perm: "media.manage" },
   { href: "/dashboard/admin/branding", label: "Logo's & beeld", icon: <IconImage />, perm: "branding.manage" },
   { href: "/dashboard/admin/security", label: "Beveiliging", icon: <IconLock />, perm: "security.manage" },
@@ -87,7 +88,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/products": "a-shop", "/dashboard/admin/orders": "a-shop",
-  "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs",
+  "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
   "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
 };
 

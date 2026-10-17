@@ -148,8 +148,18 @@ def _my_profile(me):
 
 @api_view(["GET"])
 @permission_classes(DISCOVER)
+def _need(me, key):
+    """402 with the reason when this part is behind a subscription / donation (Admin -> Subscription -> Actions)."""
+    from apps.subscriptions import service as subs
+
+    if not subs.can(me, key):
+        return Response({"detail": subs.GATE_MESSAGE.get(key, "Hiervoor heb je een abonnement of donatie nodig."), "subscribe": True}, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+
 def search(request):
     me, g, cfg = request.user, request.query_params.get, service.get()["discover"]
+    if (blocked := _need(me, "discover")):
+        return blocked
     mine = Profile.objects.filter(user=me).first()
     if cfg["require_to_search"] and not _my_profile(me):
         return Response({"results": [], "participating": False, "locked": True, "me": {"gender": "", "interests": []}})
@@ -327,6 +337,8 @@ def favorite(request, uid):
 def lists(request):
     """?kind= matches | liked | likedme | favorites | visitors"""
     me, kind = request.user, request.query_params.get("kind", "matches")
+    if kind in ("likedme", "visitors") and (blocked := _need(me, "see_likes" if kind == "likedme" else "see_visitors")):
+        return blocked
     likes, liked_me, favs, matches = _sets(me)
     hidden = service.hidden_ids(me)
     if kind == "visitors":
@@ -387,6 +399,8 @@ def _compatible(mine, p):
 def deck(request):
     """The next profiles to swipe: not yet liked, not swiped away recently; people who already liked you come first."""
     me, cfg = request.user, service.get()["discover"]
+    if (blocked := _need(me, "discover")):
+        return blocked
     mine = Profile.objects.filter(user=me).first()
     if cfg["require_to_search"] and not _my_profile(me):
         return Response({"cards": [], "locked": True})
