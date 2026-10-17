@@ -10,6 +10,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { api, errorText, getToken, mediaUrl } from "../lib/api";
 import { useSession } from "./Session";
 import { useUi } from "./Ui";
+import { DirectSlot, useDirectHost } from "./DirectHost";
 
 const ChatContext = createContext(null);
 export const useChat = () => useContext(ChatContext);
@@ -285,6 +286,15 @@ export function ChatPanel({ compact = false }) {
   const box = useRef(null);
   const files = useRef(null);
   const portal = cfg?.method === "portal";
+  // one-to-one direct connections (my invitations) are conversations too: open right here in the thread
+  const host = useDirectHost();
+  const [directSel, setDirectSel] = useState(null);
+  const direct = !compact ? c.directActive || [] : [];
+  const openDirect = async (d) => {
+    setActive(null); setDirectSel(d.token);
+    try { host.open({ token: d.token, mode: "slot", info: await api(`/direct/${d.token}/`) }); } catch {}
+  };
+  useEffect(() => { if (directSel && !direct.some((d) => d.token === directSel)) setDirectSel(null); }, [directSel, direct]);
 
   // portal: poll the thread
   useEffect(() => {
@@ -341,9 +351,14 @@ export function ChatPanel({ compact = false }) {
       {(!compact || !active) && (
         <div className="chat-list">
           <input placeholder={tx("Zoek een lid om te chatten…")} value={q} onChange={(e) => setQ(e.target.value)} />
-          {people.filter((p) => p.accept_chat).map((p) => <button key={p.id} className="chat-row" onClick={() => { openPartner(p); setQ(""); }}><Dot on={p.online} /> {p.name} <small className="muted">{tx("nieuw gesprek")}</small></button>)}
+          {people.filter((p) => p.accept_chat).map((p) => <button key={p.id} className="chat-row" onClick={() => { setDirectSel(null); openPartner(p); setQ(""); }}><Dot on={p.online} /> {p.name} <small className="muted">{tx("nieuw gesprek")}</small></button>)}
+          {direct.map((d) => (
+            <button key={d.token} className={`chat-row ${directSel === d.token ? "active" : ""}`} onClick={() => openDirect(d)}>
+              <Dot on /> <span><strong>{d.name}</strong><small className="muted">{tx("Rechtstreeks verbonden")}</small></span>
+            </button>
+          ))}
           {convs.map((cv) => (
-            <button key={cv.user.id} className={`chat-row ${active?.id === cv.user.id ? "active" : ""}`} onClick={() => openPartner(cv.user)}>
+            <button key={cv.user.id} className={`chat-row ${active?.id === cv.user.id ? "active" : ""}`} onClick={() => { setDirectSel(null); openPartner(cv.user); }}>
               <Dot on={cv.user.online} /> <span><strong>{cv.user.name}</strong><small className="muted">{cv.last}</small></span>{cv.unread > 0 && <span className="cart-count">{cv.unread}</span>}
             </button>
           ))}
@@ -351,7 +366,8 @@ export function ChatPanel({ compact = false }) {
           {portal && !convs.length && !people.length && <small className="muted" style={{ padding: ".5rem" }}>{tx("Nog geen gesprekken. Zoek hierboven een lid.")}</small>}
         </div>
       )}
-      {active && (
+      {directSel && !compact && <div className="chat-thread" style={{ overflow: "auto", padding: ".5rem" }}><DirectSlot /></div>}
+      {active && !directSel && (
         <div className="chat-thread">
           <div className="chat-head">
             {compact && <button className="btn sm" onClick={() => setActive(null)}>←</button>}
@@ -373,7 +389,7 @@ export function ChatPanel({ compact = false }) {
           </form>
         </div>
       )}
-      {!active && !compact && <div className="chat-thread" style={{ display: "grid", placeItems: "center" }}><p className="muted">{tx("Kies een gesprek of zoek een lid.")}</p></div>}
+      {!active && !directSel && !compact && <div className="chat-thread" style={{ display: "grid", placeItems: "center" }}><p className="muted">{tx("Kies een gesprek of zoek een lid.")}</p></div>}
       <CallView />
     </div>
   );
