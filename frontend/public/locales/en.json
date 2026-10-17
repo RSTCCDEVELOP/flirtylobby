@@ -2589,5 +2589,6 @@
   "Geldt voor wat aan staat": "Applies to what is switched on",
   "Aan: betaalt via de simulatie": "On: pays through the simulation",
   "Gesimuleerd als": "Simulated as",
-  "Webshop (online betalen)": "Webshop (online payment)"
+  "Webshop (online betalen)": "Webshop (online payment)",
+  "Gesimuleerde betalingen ({0})": "Simulated payments ({0})"
 }

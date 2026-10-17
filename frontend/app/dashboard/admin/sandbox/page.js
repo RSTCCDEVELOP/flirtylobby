@@ -91,6 +91,11 @@ export default function Sandbox() {
             <span><strong>{tx("Betalingen meteen als betaald afronden")}</strong><br /><small className="muted">{tx("Geen betaalpagina: elke betaling van de webshop, abonnementen of donaties lijkt direct gelukt, alsof de klant heeft betaald. Uit = je kiest zelf op de betaalpagina hoe de betaling afloopt.")}</small></span>
           </label>
         )}
+        {s.simulate.payments && <div className="pay-targets">
+          <span className="muted">{tx("Geldt voor wat aan staat")}:</span>
+          {pay.targets.map((t) => <span key={t.key} className={`badge ${t.on ? "ok" : "off"}`} title={t.on ? tx("Aan: betaalt via de simulatie") : tx("Uit")}>{tx(t.label)}</span>)}
+          <span className="muted">· {tx("Gesimuleerd als")} <strong>{pay.provider === "stripe" ? "Stripe" : "Mollie"}</strong></span>
+        </div>}
         <div className="theme-grid">
           <label>{tx("Vaste verificatiecode")} <small className="muted">{tx("leeg = willekeurig (zie postvak)")}</small>
             <input value={s.fixed_code} inputMode="numeric" maxLength={8} placeholder={tx("bv. 123456")} disabled={!edit} onChange={(e) => setS({ ...s, fixed_code: e.target.value })} onBlur={(e) => save({ fixed_code: e.target.value })} />
@@ -104,30 +109,7 @@ export default function Sandbox() {
         <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Niet gesimuleerd: het verplaatsen van bestanden naar S3 en het ophalen van Google Fonts. Die gebruiken nog de echte diensten.")}</p>
       </Collapsible>
 
-      <Collapsible id="sandbox-payments" title={tx("Betalingen simuleren ({0})", payments.length)}>
-        <div className="pay-targets">
-          <span className="muted">{tx("Geldt voor wat aan staat")}:</span>
-          {pay.targets.map((t) => <span key={t.key} className={`badge ${t.on ? "ok" : "off"}`} title={t.on ? tx("Aan: betaalt via de simulatie") : tx("Uit")}>{tx(t.label)}</span>)}
-          <span className="muted">· {tx("Gesimuleerd als")} <strong>{pay.provider === "stripe" ? "Stripe" : "Mollie"}</strong></span>
-        </div>
-        <div className="theme-grid">
-          <label>{tx("Aanbieder")}<select value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })}><option value="mollie">{tx("Mollie")}</option><option value="stripe">{tx("Stripe")}</option></select></label>
-          <label>{tx("Bedrag")}<input value={form.amount} inputMode="decimal" onChange={(e) => setForm({ ...form, amount: e.target.value })} /></label>
-          <label>{tx("Omschrijving")}<input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-          <label>{tx("Uitkomst")}
-            <select value={form.outcome} onChange={(e) => setForm({ ...form, outcome: e.target.value })}>
-              <option value="">{tx("Open laten (afronden op de betaalpagina)")}</option>
-              <option value="paid">{tx("Meteen betaald")}</option><option value="failed">{tx("Meteen mislukt")}</option>
-              <option value="canceled">{tx("Meteen geannuleerd")}</option><option value="expired">{tx("Meteen verlopen")}</option>
-            </select>
-          </label>
-        </div>
-        <div className="row" style={{ justifyContent: "flex-start", marginTop: ".75rem" }}>
-          <button className="btn primary" disabled={!s.enabled || !s.simulate.payments || !edit}
-            title={!s.enabled ? tx("Zet de sandbox aan") : ""}
-            onClick={() => run(() => api("/sandbox/payments/", { method: "POST", body: form }), tx("Betaling aangemaakt."))}>{tx("Betaling simuleren")}</button>
-          {!s.enabled && <span className="muted">{tx("Zet de sandbox aan om betalingen te simuleren.")}</span>}
-        </div>
+      {payments.length > 0 && <Collapsible id="sandbox-payments" title={tx("Gesimuleerde betalingen ({0})", payments.length)}>
         <div className="int-list" style={{ marginTop: "1rem" }}>
           {payments.map((p) => (
             <div className="card int-item" key={p.ref}>
@@ -149,7 +131,7 @@ export default function Sandbox() {
           {!payments.length && <p className="muted">{tx("Nog geen gesimuleerde betalingen.")}</p>}
         </div>
         {payments.length > 0 && L >= 3 && <button className="btn sm danger" style={{ marginTop: ".75rem" }} onClick={async () => (await confirmDialog(tx("Alle gesimuleerde betalingen wissen?"), { danger: true })) && run(() => api("/sandbox/clear/", { method: "POST", body: { what: "payments" } }))}>{tx("Alles wissen")}</button>}
-      </Collapsible>
+      </Collapsible>}
 
       <Collapsible id="sandbox-inbox" title={tx("Sandbox-postvak: e-mail en sms ({0})", messages.length)}>
         <p className="muted" style={{ marginTop: 0 }}>{tx("Berichten die het systeem zou versturen. Hier vind je bijvoorbeeld de verificatiecode.")} <button className="btn sm" onClick={loadData}>{tx("Verversen")}</button></p>
