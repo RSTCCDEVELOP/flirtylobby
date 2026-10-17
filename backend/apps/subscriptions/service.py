@@ -297,6 +297,23 @@ def check_condition(user, item, c, ent):
     return False, "onbekende voorwaarde"
 
 
+# things two people do together: the right of one of them can be made to count for the other as well (Actions -> "ook voor de ander")
+PAIR_KEYS = ("chat", "chat_media", "video_chat", "messages", "direct_connection")
+
+
+def access(user, key, partner=None):
+    """(allowed, payer): may `user` use `key`, also through the right of the `partner` when the item says it counts for the other party?
+    `payer` is the member whose right it was (so a limited number of uses is taken from him), None when it is free."""
+    if not gate_on(key):
+        return True, None
+    if can(user, key):
+        return True, user
+    row = item_of(key)
+    if row and row.share and partner is not None and getattr(partner, "is_authenticated", True) and can(partner, key):
+        return True, partner
+    return False, None
+
+
 def evaluate(user, item, ent=None):
     """Does this user meet the conditions of the item? Returns (ok, [(type, passes, reason)])."""
     if not user or not getattr(user, "is_authenticated", False):

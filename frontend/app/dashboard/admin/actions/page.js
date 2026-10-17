@@ -57,7 +57,7 @@ export default function Actions() {
   };
   const submitModal = async (e) => {
     e.preventDefault();
-    const r = await save(modal, { gated: modal.gated, mode: modal.mode, conditions: modal.conditions, ...(modal.builtin ? {} : { name: modal.name, description: modal.description }) });
+    const r = await save(modal, { gated: modal.gated, mode: modal.mode, conditions: modal.conditions, ...(modal.pair ? { share: !!modal.share } : {}), ...(modal.builtin ? {} : { name: modal.name, description: modal.description }) });
     if (r) setModal(null);
   };
   const create = async (e) => {
@@ -135,7 +135,7 @@ export default function Actions() {
                   {check && i.gated && <span className={`badge ${passed[i.key]?.ok ? "ok" : "off"}`}>{passed[i.key]?.ok ? tx("Lid heeft toegang") : tx("Lid heeft geen toegang")}</span>}
                 </div>
                 {i.description && <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx(i.description)}</p>}
-                <div className="act-sum">{summary(i, o)}</div>
+                <div className="act-sum">{summary(i, o)}{i.gated && i.share ? ` · ${tx("geldt ook voor de ander")}` : ""}</div>
                 {check && i.gated && passed[i.key]?.conditions.length > 0 && (
                   <ul className="act-why">{passed[i.key].conditions.map((c, k) => <li key={k} className={c.ok ? "yes" : "no"}>{c.ok ? "✓" : "✗"} {tx(c.reason)}</li>)}</ul>
                 )}
@@ -177,7 +177,13 @@ export default function Actions() {
                   {!modal.conditions.length && <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Geen voorwaarden gekozen: dan geldt een abonnement of donatie-actie die dit onderdeel geeft (bij Abonnementen en Donaties).")}</p>}
                   <div><button type="button" className="btn sm" onClick={() => setModal({ ...modal, conditions: [...modal.conditions, { type: "any_plan" }] })}>{tx("+ Voorwaarde")}</button></div>
                 </div>
-                <div className="act-sum">{summary(modal, o)}</div>
+                {modal.pair && (
+                  <label className="check sec-toggle">
+                    <input type="checkbox" checked={!!modal.share} onChange={(e) => setModal({ ...modal, share: e.target.checked })} />
+                    <span><strong>{tx("Ook voor de ander met wie hij verbonden is")}</strong><br /><small className="muted">{tx("Heeft het lid dit recht, dan mag ook de ander (de persoon met wie hij chat of verbonden is) het gebruiken in dat gesprek. Uit = alleen het lid zelf.")}</small></span>
+                  </label>
+                )}
+                <div className="act-sum">{summary(modal, o)}{modal.pair && modal.share ? ` · ${tx("geldt ook voor de ander")}` : ""}</div>
               </>
             )}
             <div className="row">

@@ -723,7 +723,7 @@ def _item_row(i):
     spec = service.CATALOG_BY_KEY.get(i.key)
     name = spec[1] if spec else (i.name or i.key)
     return {"key": i.key, "kind": i.kind, "ref": i.ref, "name": name, "description": spec[3] if spec else i.description, "group": spec[2] if spec else "Eigen onderdelen",
-            "builtin": bool(spec), "gated": i.gated, "mode": i.mode, "conditions": i.conditions or [], "order": i.order}
+            "builtin": bool(spec), "gated": i.gated, "mode": i.mode, "share": i.share, "pair": i.key in service.PAIR_KEYS, "conditions": i.conditions or [], "order": i.order}
 
 
 @api_view(["GET", "POST"])
@@ -774,6 +774,8 @@ def action_one(request, key):
         item.gated = bool(d["gated"])
     if d.get("mode") in ("any", "all"):
         item.mode = d["mode"]
+    if "share" in d and item.key in service.PAIR_KEYS:
+        item.share = bool(d["share"])
     if "conditions" in d:
         try:
             item.conditions = _clean_conditions(d["conditions"])

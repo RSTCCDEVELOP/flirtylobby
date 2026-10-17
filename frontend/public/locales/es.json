@@ -2744,5 +2744,9 @@
   "Bezig met maken…": "Creando…",
   "Maken": "Crear",
   "Account": "Cuenta",
-  "Rechten": "Permisos"
+  "Rechten": "Permisos",
+  "Ook voor de ander met wie hij verbonden is": "También para la otra parte con la que está conectado",
+  "Heeft het lid dit recht, dan mag ook de ander (de persoon met wie hij chat of verbonden is) het gebruiken in dat gesprek. Uit = alleen het lid zelf.": "Si el miembro tiene este derecho, la otra parte (la persona con la que chatea o está conectado) también puede usarlo en esa conversación. Desactivado = solo el propio miembro.",
+  "geldt ook voor de ander": "también vale para la otra parte",
+  "Videobellen kan alleen de uitnodiger starten.": "Solo el anfitrión puede iniciar una videollamada."
 }

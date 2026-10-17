@@ -143,6 +143,7 @@ class ActionItem(models.Model):
     description = models.CharField(max_length=300, blank=True)
     gated = models.BooleanField(default=False)
     mode = models.CharField(max_length=3, default="any")  # any = one condition is enough, all = every condition
+    share = models.BooleanField(default=False)  # also valid for the other party the member is chatting / connected with (not only for the member himself)
     conditions = models.JSONField(default=list, blank=True)  # [{"type": …, params}]; empty = the default: a subscription or donor action that gives this item
     order = models.PositiveIntegerField(default=0)
 

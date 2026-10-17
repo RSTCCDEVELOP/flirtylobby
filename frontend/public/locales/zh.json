@@ -2744,5 +2744,9 @@
   "Bezig met maken…": "正在创建…",
   "Maken": "创建",
   "Account": "账户",
-  "Rechten": "权限"
+  "Rechten": "权限",
+  "Ook voor de ander met wie hij verbonden is": "也适用于与其连接的另一方",
+  "Heeft het lid dit recht, dan mag ook de ander (de persoon met wie hij chat of verbonden is) het gebruiken in dat gesprek. Uit = alleen het lid zelf.": "如果会员拥有此权限，与其聊天或连接的另一方也可在该对话中使用。关闭 = 仅会员本人。",
+  "geldt ook voor de ander": "也适用于另一方",
+  "Videobellen kan alleen de uitnodiger starten.": "只有主持人可以发起视频通话。"
 }

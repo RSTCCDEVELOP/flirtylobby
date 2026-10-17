@@ -470,7 +470,7 @@ def msg_thread(request, uid):
     if request.method == "POST":
         from apps.subscriptions import service as subs
 
-        if not subs.can(me, "messages"):
+        if not subs.access(me, "messages", other)[0]:
             return bad(subs.GATE_MESSAGE["messages"], status.HTTP_402_PAYMENT_REQUIRED)
         body, subject = str(request.data.get("body", "")).strip(), str(request.data.get("subject", "")).strip()[:150]
         cfg = service.get()["messages"]
@@ -484,7 +484,7 @@ def msg_thread(request, uid):
         if DirectMessage.objects.filter(sender=me, created_at__gt=timezone.now() - timedelta(minutes=1)).count() >= cfg["rate_per_minute"]:
             return bad("Je verstuurt te snel. Probeer het zo opnieuw.", status.HTTP_429_TOO_MANY_REQUESTS)
         DirectMessage.objects.create(sender=me, recipient=other, subject=subject, body=body)
-        subs.charge(me, "messages")
+        subs.charge(subs.access(me, "messages", other)[1] or me, "messages")
         try:
             from apps.communication import sending
 
@@ -556,9 +556,11 @@ def chat_thread(request, uid):
             return bad(f"Bevat niet toegestane woorden: {', '.join(words)}.")
         from apps.subscriptions import service as subs
 
-        if not subs.can(me, "chat"):
+        ok, payer = subs.access(me, "chat", other)  # with "ook voor de ander" the other member's right counts too
+        if not ok:
             return bad(subs.GATE_MESSAGE["chat"], status.HTTP_402_PAYMENT_REQUIRED)
-        if f and not subs.can(me, "chat_media"):
+        ok_media, payer_media = subs.access(me, "chat_media", other) if f else (True, None)
+        if not ok_media:
             return bad(subs.GATE_MESSAGE["chat_media"], status.HTTP_402_PAYMENT_REQUIRED)
         m = ChatMessage(sender=me, recipient=other, body=body)
         if f:
@@ -571,9 +573,9 @@ def chat_thread(request, uid):
             m.attachment_kind, m.attachment_name = kind, f.name[:200]
             m.attachment.save(f"{uuid.uuid4().hex}.{ext}", f, save=False)
         m.save()
-        subs.charge(me, "chat")
+        subs.charge(payer or me, "chat")
         if f:
-            subs.charge(me, "chat_media")
+            subs.charge(payer_media or me, "chat_media")
     after = int(request.query_params.get("after") or 0)
     qs = ChatMessage.objects.filter(Q(sender=me, recipient=other) | Q(sender=other, recipient=me), id__gt=after)
     ChatMessage.objects.filter(sender=other, recipient=me, read_at__isnull=True).update(read_at=timezone.now())
@@ -594,9 +596,10 @@ def chat_signal(request):
     if kind == "call":
         from apps.subscriptions import service as subs
 
-        if not subs.can(request.user, "video_chat"):
+        ok, payer = subs.access(request.user, "video_chat", other)
+        if not ok:
             return bad(subs.GATE_MESSAGE["video_chat"], status.HTTP_402_PAYMENT_REQUIRED)
-        subs.charge(request.user, "video_chat")
+        subs.charge(payer or request.user, "video_chat")
     ChatSignal.objects.create(sender=request.user, recipient=other, kind=kind, payload=payload)
     return Response(status=status.HTTP_204_NO_CONTENT)
 

@@ -228,6 +228,9 @@ def room_signal(request, token):
     if kind == "call" and getattr(room, "owner", None):  # the member who owns the room needs the video chat right
         from apps.subscriptions import service as subs
 
+        row = subs.item_of("video_chat")
+        if role == "guest" and not (row and row.share):  # the client may only call when the right also counts for the other party
+            return bad("Videobellen kan alleen de uitnodiger starten.", status.HTTP_403_FORBIDDEN)
         if not subs.can(room.owner, "video_chat"):
             return bad(subs.GATE_MESSAGE["video_chat"], status.HTTP_402_PAYMENT_REQUIRED)
         subs.charge(room.owner, "video_chat")
