@@ -2557,5 +2557,13 @@
   "Uploadlimieten": "حدود الرفع",
   "Afbeelding in de bibliotheek (MB)": "صورة في المكتبة (ميغابايت)",
   "Video in de bibliotheek (MB)": "فيديو في المكتبة (ميغابايت)",
-  "Profielfoto (MB)": "صورة الملف الشخصي (ميغابايت)"
+  "Profielfoto (MB)": "صورة الملف الشخصي (ميغابايت)",
+  "Dit venster verschijnt als iemand op de knop klikt, boven de schuifbalk: leg uit waarvoor de donatie is.": "تظهر هذه النافذة عندما ينقر شخص على الزر، فوق شريط التمرير: اشرح الغرض من التبرع.",
+  "Dit venster verschijnt nadat iemand heeft gedoneerd.": "تظهر هذه النافذة بعد أن يتبرع شخص ما.",
+  "Claude schrijft titel en tekst in alle talen, op basis van de naam en omschrijving van de actie. Typ een wens in het tekstveld om bij te sturen.": "يكتب Claude العنوان والنص بجميع اللغات بناءً على اسم الحملة ووصفها. اكتب رغبتك في حقل النص لتوجيهه.",
+  "Kies uit de mediabibliotheek": "اختر من مكتبة الوسائط",
+  "Titel van het venster": "عنوان النافذة",
+  "De tekst komt hier.": "النص يوضع هنا.",
+  "Popup info": "نافذة المعلومات",
+  "Bedankt popup": "نافذة الشكر"
 }

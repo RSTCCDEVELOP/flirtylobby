@@ -2557,5 +2557,13 @@
   "Uploadlimieten": "Upload-Limits",
   "Afbeelding in de bibliotheek (MB)": "Bild in der Bibliothek (MB)",
   "Video in de bibliotheek (MB)": "Video in der Bibliothek (MB)",
-  "Profielfoto (MB)": "Profilfoto (MB)"
+  "Profielfoto (MB)": "Profilfoto (MB)",
+  "Dit venster verschijnt als iemand op de knop klikt, boven de schuifbalk: leg uit waarvoor de donatie is.": "Dieses Fenster erscheint, wenn jemand auf den Button klickt, über dem Schieberegler: erkläre, wofür die Spende ist.",
+  "Dit venster verschijnt nadat iemand heeft gedoneerd.": "Dieses Fenster erscheint, nachdem jemand gespendet hat.",
+  "Claude schrijft titel en tekst in alle talen, op basis van de naam en omschrijving van de actie. Typ een wens in het tekstveld om bij te sturen.": "Claude schreibt Titel und Text in allen Sprachen, basierend auf Name und Beschreibung der Aktion. Gib einen Wunsch im Textfeld ein, um es zu lenken.",
+  "Kies uit de mediabibliotheek": "Aus der Mediathek wählen",
+  "Titel van het venster": "Titel des Fensters",
+  "De tekst komt hier.": "Der Text steht hier.",
+  "Popup info": "Info-Popup",
+  "Bedankt popup": "Danke-Popup"
 }

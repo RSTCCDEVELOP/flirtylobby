@@ -469,7 +469,7 @@ def pay_open(sub, return_base=""):
 
 
 # ── donations ────────────────────────────────────────────────────────────────
-def donate(campaign, amount, user=None, name="", email="", message="", anonymous=False, return_base=""):
+def donate(campaign, amount, user=None, name="", email="", message="", anonymous=False, return_base="", return_path=""):
     if not campaign.active:
         raise SubError("Deze actie is gesloten.")
     try:
@@ -494,7 +494,8 @@ def donate(campaign, amount, user=None, name="", email="", message="", anonymous
     who = name or ((user.get_full_name() or user.username) if user else "")
     d = Donation.objects.create(campaign=campaign, user=user, name=who[:120], email=(email or (user.email if user else ""))[:254], amount=amount,
                                 message=(message if campaign.allow_message else "")[:300], anonymous=bool(anonymous and campaign.allow_anonymous))
-    back = f"{return_base.rstrip('/')}/doneren?bedankt=1" if return_base else ""
+    path = return_path if return_path.startswith("/") and not return_path.startswith("//") else "/doneren"
+    back = f"{return_base.rstrip('/')}{path}{'&' if '?' in path else '?'}bedankt={campaign.id}" if return_base else ""
     payment = sandbox.create_payment(amount, "EUR", f"Donatie {campaign.name}", "mollie", back)
     d.payment_ref = payment.ref
     d.save(update_fields=["payment_ref"])

@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { money } from "../lib/format";
 import { pick } from "../lib/i18n";
-import { Campaign } from "./Donate";
+import { Campaign, localised } from "./Donate";
 import { useModule } from "./Modules";
 import { useSession } from "./Session";
 import SysButton from "./SysButton";
@@ -26,8 +26,7 @@ function Widget({ obj }) {
   const d = obj.data;
   if (obj.kind === "donation") {
     const label = obj.button?.labels?.[lang] || obj.button?.labels?.nl || Object.values(obj.button?.labels || {})[0] || tx("Doneer");
-    const camp = { ...d, name: pick({ [lang]: { n: d.names?.[lang] } }, lang, "nl", "n") || d.names?.[lang] || d.names?.nl || d.name, description: d.descriptions?.[lang] ?? d.descriptions?.nl ?? d.description,
-                   recipient: d.recipients?.[lang] || d.recipients?.nl || d.recipient, recent: [] };
+    const camp = { ...localised(d), recent: [] };
     if (!obj.button?.as_button) return <Campaign c={camp} currency="EUR" user={user} />;
     return (
       <>

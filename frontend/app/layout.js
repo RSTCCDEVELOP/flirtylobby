@@ -17,6 +17,7 @@ import { DirectHostProvider } from "../components/DirectHost";
 import LangRoot from "../components/LangRoot";
 import VersionNotice from "../components/VersionNotice";
 import { getSite } from "../lib/site-server";
+import DonateThanks from "../components/DonateThanks";
 import MaintenanceGate from "../components/MaintenanceGate";
 import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
@@ -148,6 +149,7 @@ export default async function RootLayout({ children }) {
             <Gates cfg={security} />
             <SiteGate />
             <MaintenanceGate site={site} />
+            <DonateThanks />
             <PaymentRequired />
         <SandboxBadge status={sandbox} />
         {jsonld.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld).replace(/</g, "\\u003c") }} />}

@@ -2,7 +2,7 @@
 
 import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
-import { api, errorText } from "../lib/api";
+import { api, errorText, mediaUrl } from "../lib/api";
 import { money } from "../lib/format";
 import { useSession } from "./Session";
 
@@ -18,7 +18,7 @@ export function Campaign({ c, currency, user, onClose }) {
     e.preventDefault();
     setBusy(true); setMsg(null);
     try {
-      const r = await api("/donations/donate/", { method: "POST", body: { campaign: c.id, amount, ...f, return_base: window.location.origin } });
+      const r = await api("/donations/donate/", { method: "POST", body: { campaign: c.id, amount, ...f, return_base: window.location.origin, return_path: window.location.pathname } });
       if (r.checkout_path) { window.location.href = r.checkout_path; return; }
       setMsg({ ok: true, text: tx("Bedankt voor je donatie!") });
     } catch (err) { setMsg({ ok: false, text: errorText(err) }); }
@@ -28,6 +28,13 @@ export function Campaign({ c, currency, user, onClose }) {
   return (
     <form className="card don-card" onSubmit={give}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: ".6rem" }}><h2>{c.name}</h2>{onClose && <button type="button" className="btn sm" onClick={onClose}>{tx("Sluiten")}</button>}</div>
+      {c.infoView && (c.infoView.image || c.infoView.title || c.infoView.text) && (
+        <div className="don-info">
+          {c.infoView.image && <img src={mediaUrl(c.infoView.image)} alt="" />}
+          {c.infoView.title && <strong>{c.infoView.title}</strong>}
+          {c.infoView.text && <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{c.infoView.text}</p>}
+        </div>
+      )}
       <p className="muted" style={{ margin: 0 }}>{tx("Voor")} {c.recipient}{c.description ? ` · ${c.description}` : ""}</p>
       {c.goal && <><div className="don-bar"><i style={{ width: `${pct}%` }} /></div><small className="muted">{money(c.raised, currency)} {tx("van")} {money(c.goal, currency)} · {c.count} {tx("donaties")}</small></>}
       <div className="don-amount">{money(amount, currency)}</div>
@@ -54,11 +61,13 @@ export function Campaign({ c, currency, user, onClose }) {
   );
 }
 
-// the texts of an action in the visitor's language (falls back to the default text)
-function localised(c) {
+// the texts of an action in the visitor's language (falls back to the default text): name, description, "for whom", info popup and thank-you popup
+export function localised(c) {
   let lang = "nl";
   try { lang = localStorage.getItem("lang") || "nl"; } catch {}
-  return { ...c, name: c.names?.[lang] || c.name, description: c.descriptions?.[lang] ?? c.description, recipient: c.recipients?.[lang] || c.recipient };
+  const view = (p) => ({ title: p?.titles?.[lang] || p?.titles?.nl || Object.values(p?.titles || {})[0] || "", text: p?.texts?.[lang] || p?.texts?.nl || Object.values(p?.texts || {})[0] || "", image: p?.image || null });
+  return { ...c, name: c.names?.[lang] || c.names?.nl || c.name, description: c.descriptions?.[lang] ?? c.descriptions?.nl ?? c.description, recipient: c.recipients?.[lang] || c.recipients?.nl || c.recipient,
+           infoView: view(c.info), thanksView: view(c.thanks) };
 }
 
 // Public donation page: pick an amount on the slider (between the minimum and maximum the admin set).

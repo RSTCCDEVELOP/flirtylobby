@@ -72,6 +72,8 @@ class DonationCampaign(models.Model):
     recipients = models.JSONField(default=dict, blank=True)
     button = models.JSONField(default=dict, blank=True)  # {"as_button", "labels": {lang: text}, "icon", "variant", "size", "radius", "color"}
     system_object = models.BooleanField(default=False)  # can be put on a page in edit mode (module Systeemobjecten)
+    info = models.JSONField(default=dict, blank=True)  # popup before donating: {"titles": {lang}, "texts": {lang}, "media": MediaItem id}
+    thanks = models.JSONField(default=dict, blank=True)  # popup after donating, same shape
     grants = models.JSONField(default=list, blank=True)  # a thank-you: access for `grant_days` after donating
     grant_days = models.PositiveIntegerField(default=30)
     min_for_grants = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # donate at least this much to get the access

@@ -2557,5 +2557,13 @@
   "Uploadlimieten": "上传限制",
   "Afbeelding in de bibliotheek (MB)": "媒体库中的图片（MB）",
   "Video in de bibliotheek (MB)": "媒体库中的视频（MB）",
-  "Profielfoto (MB)": "头像（MB）"
+  "Profielfoto (MB)": "头像（MB）",
+  "Dit venster verschijnt als iemand op de knop klikt, boven de schuifbalk: leg uit waarvoor de donatie is.": "有人点击按钮时会出现此窗口，位于滑块上方：说明捐款的用途。",
+  "Dit venster verschijnt nadat iemand heeft gedoneerd.": "有人捐款后会出现此窗口。",
+  "Claude schrijft titel en tekst in alle talen, op basis van de naam en omschrijving van de actie. Typ een wens in het tekstveld om bij te sturen.": "Claude 会根据活动的名称和描述，用所有语言撰写标题和文字。在文本框中输入你的要求即可引导。",
+  "Kies uit de mediabibliotheek": "从媒体库中选择",
+  "Titel van het venster": "窗口标题",
+  "De tekst komt hier.": "文字写在这里。",
+  "Popup info": "信息弹窗",
+  "Bedankt popup": "感谢弹窗"
 }

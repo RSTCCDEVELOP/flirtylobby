@@ -51,6 +51,27 @@ def clean_button(raw):
             "color": color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else ""}
 
 
+def clean_popup(raw):
+    """{titles, texts, media}: texts per known language, the picture must be an image of the media library."""
+    from apps.medialib.models import MediaItem
+
+    p = raw if isinstance(raw, dict) else {}
+    media = p.get("media")
+    if not (isinstance(media, int) and MediaItem.objects.filter(pk=media, kind="image").exists()):
+        media = None
+    return {"titles": clean_texts(p.get("titles"), 120), "texts": clean_texts(p.get("texts"), 1500), "media": media}
+
+
+def popup_public(p):
+    from django.core.files.storage import default_storage
+
+    from apps.medialib.models import MediaItem
+
+    p = p or {}
+    item = MediaItem.objects.filter(pk=p.get("media")).first() if p.get("media") else None
+    return {"titles": p.get("titles") or {}, "texts": p.get("texts") or {}, "image": default_storage.url(item.key) if item else None, "media": p.get("media")}
+
+
 def _text(d, default):
     """Text for the default language, else any, else the fallback."""
     from apps.core.models import Language
@@ -110,9 +131,15 @@ class CampaignSerializer(serializers.ModelSerializer):
     class Meta:
         model = DonationCampaign
         fields = ["id", "slug", "name", "description", "recipient", "recipient_user", "min_amount", "max_amount", "step", "default_amount", "goal", "allow_message",
-                  "allow_anonymous", "grants", "grants_text", "grant_days", "min_for_grants", "active", "order", "raised", "count", "names", "descriptions", "recipients", "button", "system_object"]
+                  "allow_anonymous", "grants", "grants_text", "grant_days", "min_for_grants", "active", "order", "raised", "count", "names", "descriptions", "recipients", "button", "system_object", "info", "thanks"]
         read_only_fields = ["slug"]
         extra_kwargs = {"name": {"required": False, "allow_blank": True}}
+
+    def to_representation(self, c):
+        data = super().to_representation(c)
+        for k in ("info", "thanks"):  # the picture's address, to show it in the form
+            data[k] = {**(data.get(k) or {}), "image_url": popup_public(getattr(c, k)).get("image")}
+        return data
 
     def get_raised(self, c):
         return str(service.raised(c)["total"])
@@ -140,6 +167,12 @@ class CampaignSerializer(serializers.ModelSerializer):
 
     def validate_button(self, v):
         return clean_button(v)
+
+    def validate_info(self, v):
+        return clean_popup(v)
+
+    def validate_thanks(self, v):
+        return clean_popup(v)
 
     def validate(self, d):
         names = d.get("names", getattr(self.instance, "names", {}))
@@ -405,6 +438,44 @@ def campaign_ai(request):
     return Response(res)
 
 
+@api_view(["POST"])
+@permission_classes([has_level("donations", "edit"), module_required("donations")])
+def campaign_ai_text(request):
+    """'Genereer met AI' for the info popup and the thank-you popup: a title and a text per language."""
+    import json
+    import re
+
+    from apps.core.models import Language
+    from apps.sandbox import service as sandbox
+
+    section = request.data.get("section")
+    if section not in ("info", "thanks"):
+        return bad("Onbekend onderdeel.")
+    ctx = request.data.get("context") or {}
+    extra = str(request.data.get("prompt") or "").strip()[:1000]
+    langs = [l for l in Language.objects.filter(enabled=True).values("code", "name")] or [{"code": "nl", "name": "Nederlands"}]
+    codes = [l["code"] for l in langs]
+    about = "; ".join(f"{k}: {v}" for k, v in (ctx.get("names") or {}).items() if v)[:600]
+    desc = "; ".join(f"{k}: {v}" for k, v in (ctx.get("descriptions") or {}).items() if v)[:900]
+    if sandbox.active("integrations"):
+        out = {"titles": {c: ("Steun ons" if section == "info" else "Bedankt!") for c in codes}, "texts": {c: (extra or desc or about)[:300] for c in codes}, "simulated": True}
+    else:
+        goal = ("een informatie-popup die getoond wordt voordat iemand een bedrag kiest: leg warm en duidelijk uit waarvoor de donatie is en wat het oplevert"
+                if section == "info" else "een bedankt-popup die getoond wordt nadat iemand heeft gedoneerd: oprecht, persoonlijk en kort")
+        system = (f"Je schrijft teksten voor {goal}. Antwoord ALLEEN met één JSON-object zonder uitleg of markdown: "
+                  f"{{\"titles\": {{taalcode: titel, max 60 tekens}}, \"texts\": {{taalcode: tekst, max 400 tekens}}}}. "
+                  f"Talen (code: naam): {', '.join(f'{l['code']}: {l['name']}' for l in langs)}. Schrijf natuurlijk in elke taal, geen letterlijke vertaling nodig.")
+        try:
+            raw = _claude(system, f"Donatie-actie: {about}\nOmschrijving: {desc}" + (f"\nExtra wens: {extra}" if extra else ""), 2000)
+            m = re.search(r"\{.*\}", raw, re.S)
+            out = json.loads(m.group(0)) if m else None
+        except ValueError as e:
+            return bad(str(e) if not isinstance(e, json.JSONDecodeError) else "Claude gaf een antwoord dat niet te lezen was. Probeer het nog eens.", 502)
+        if not isinstance(out, dict):
+            return bad("Claude gaf een antwoord dat niet te lezen was. Probeer het nog eens.", 502)
+    return Response({"titles": clean_texts(out.get("titles"), 120), "texts": clean_texts(out.get("texts"), 1500), "simulated": bool(out.get("simulated"))})
+
+
 @api_view(["GET"])
 @permission_classes([has_level("donations", "use"), module_required("donations")])
 def donations_admin(request):
@@ -519,7 +590,8 @@ def _campaign_public(c, detail=False):
     out = {"id": c.id, "slug": c.slug, "name": c.name, "description": c.description, "recipient": c.recipient or "de makers", "min": str(c.min_amount), "max": str(c.max_amount),
            "step": str(c.step), "default": str(c.default_amount), "goal": str(c.goal) if c.goal else None, "raised": str(r["total"]), "count": r["count"],
            "allow_message": c.allow_message, "allow_anonymous": c.allow_anonymous, "grants": service.describe(c.grants), "grant_days": c.grant_days,
-           "min_for_grants": str(c.min_for_grants), "names": c.names, "descriptions": c.descriptions, "recipients": c.recipients, "button": c.button or {}}
+           "min_for_grants": str(c.min_for_grants), "names": c.names, "descriptions": c.descriptions, "recipients": c.recipients, "button": c.button or {},
+           "info": popup_public(c.info), "thanks": popup_public(c.thanks)}
     if detail:
         out["recent"] = [{"name": "Anoniem" if d.anonymous else (d.name or "Iemand"), "amount": str(d.amount), "message": d.message, "at": d.paid_at}
                          for d in c.donations.filter(status="paid").order_by("-paid_at")[:8]]
@@ -546,7 +618,7 @@ def donate(request):
         return bad("Ongeldig bedrag.")
     try:
         d, path = service.donate(c, amount, request.user if request.user.is_authenticated else None, str(b.get("name") or "")[:120], str(b.get("email") or "")[:254].strip(),
-                                 str(b.get("message") or "")[:300], bool(b.get("anonymous")), str(b.get("return_base") or ""))
+                                 str(b.get("message") or "")[:300], bool(b.get("anonymous")), str(b.get("return_base") or ""), str(b.get("return_path") or ""))
     except service.SubError as e:
         return bad(str(e))
     except Exception as e:  # noqa: BLE001

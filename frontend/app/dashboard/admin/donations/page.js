@@ -4,18 +4,19 @@ import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import GrantsEditor from "../../../../components/GrantsEditor";
+import MediaPicker from "../../../../components/MediaPicker";
 import { useModule } from "../../../../components/Modules";
 import SysButton, { BUTTON_ICONS } from "../../../../components/SysButton";
 import Tabs from "../../../../components/Tabs";
 import ViewBar from "../../../../components/ViewBar";
-import { api, errorText } from "../../../../lib/api";
+import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { useView } from "../../../../lib/useView";
 import { alertDialog, confirmDialog } from "../../../../lib/dialog";
 import { money } from "../../../../lib/format";
 import { lvl } from "../../../../lib/perms";
 
 const BTN = { as_button: false, labels: {}, icon: "heart", variant: "primary", size: "md", radius: "default", color: "" };
-const blank = { names: {}, descriptions: {}, recipients: {}, button: BTN, system_object: false, min_amount: "2", max_amount: "100", step: "1", default_amount: "10", goal: "", allow_message: true, allow_anonymous: true, grants: [], grant_days: 30, min_for_grants: "0", active: true, order: 0 };
+const blank = { names: {}, descriptions: {}, recipients: {}, button: BTN, system_object: false, info: { titles: {}, texts: {}, media: null }, thanks: { titles: {}, texts: {}, media: null }, min_amount: "2", max_amount: "100", step: "1", default_amount: "10", goal: "", allow_message: true, allow_anonymous: true, grants: [], grant_days: 30, min_for_grants: "0", active: true, order: 0 };
 
 export default function DonationsAdmin() {
   const { user } = useAuth();
@@ -30,6 +31,9 @@ export default function DonationsAdmin() {
   const [langs, setLangs] = useState({ default: "nl", languages: [{ code: "nl", native_name: "Nederlands" }] });
   const [lang, setLang] = useState("nl");
   const [ai, setAi] = useState(false);
+  const [sec, setSec] = useState("settings"); // tab of the form: settings | info | thanks
+  const [picker, setPicker] = useState(null); // "info" | "thanks" while the media picker is open
+  const [aiText, setAiText] = useState("");
   const sysOn = useModule("sysobjects");
   const view = useView("donation-campaigns");
   useEffect(() => { api("/languages/").then((d) => { setLangs(d); setLang(d.default || d.languages[0]?.code || "nl"); }).catch(() => {}); }, []);
@@ -39,10 +43,22 @@ export default function DonationsAdmin() {
     const d = langs.default || "nl";
     setLang(d);
     setModal(c ? { ...c, goal: c.goal ?? "", names: c.names?.[d] || Object.keys(c.names || {}).length ? c.names : { [d]: c.name }, descriptions: Object.keys(c.descriptions || {}).length ? c.descriptions : { [d]: c.description || "" },
-                   recipients: Object.keys(c.recipients || {}).length ? c.recipients : { [d]: c.recipient || "" }, button: { ...BTN, ...(c.button || {}) } } : { ...blank, button: { ...BTN } });
+                   recipients: Object.keys(c.recipients || {}).length ? c.recipients : { [d]: c.recipient || "" }, button: { ...BTN, ...(c.button || {}) }, info: { titles: {}, texts: {}, media: null, ...(c.info || {}) }, thanks: { titles: {}, texts: {}, media: null, ...(c.thanks || {}) } } : { ...blank, button: { ...BTN } });
+    setSec("settings");
   };
   const setText = (field, value) => setModal((m) => ({ ...m, [field]: { ...m[field], [lang]: value } }));
   const setBtn = (patch) => setModal((m) => ({ ...m, button: { ...m.button, ...patch } }));
+
+  const setPop = (k, field, value) => setModal((m) => ({ ...m, [k]: { ...m[k], [field]: typeof value === "object" && value !== null ? { ...m[k][field], ...value } : value } }));
+  async function generateText(k) {
+    setAiText(k);
+    try {
+      const r = await api("/subscriptions/admin/campaigns/ai-text/", { method: "POST", body: { section: k, context: { names: modal.names, descriptions: modal.descriptions }, prompt: (modal[k].texts?.[lang] || "").slice(0, 600) } });
+      setModal((m) => ({ ...m, [k]: { ...m[k], titles: { ...m[k].titles, ...r.titles }, texts: { ...m[k].texts, ...r.texts } }, error: "" }));
+      if (r.simulated) setMsg({ ok: true, text: tx("Sandbox: dit is een gesimuleerd AI-antwoord. Zonder sandbox gebruikt het Claude.") });
+    } catch (e) { setModal((m) => ({ ...m, error: errorText(e) })); }
+    setAiText("");
+  }
 
   // "Genereer met AI": the description is the prompt; Claude fills every field in every language
   async function generate() {
@@ -67,6 +83,7 @@ export default function DonationsAdmin() {
   async function save(e) {
     e.preventDefault();
     const { id, error: _e, grants_text, raised, count, slug, name, description, recipient, ...body } = modal;
+    for (const k of ["info", "thanks"]) { const { image_url: _i, ...rest } = body[k]; body[k] = rest; }
     body.goal = body.goal === "" || body.goal === null ? null : body.goal;
     body.recipient_user = body.recipient_user || null;
     try {
@@ -152,7 +169,10 @@ export default function DonationsAdmin() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save}>
             <h2>{modal.id ? tx("Actie wijzigen") : tx("Nieuwe donatie-actie")}</h2>
+            <Tabs value={sec} onChange={setSec} tabs={[["settings", "Instellingen"], ["info", "Popup info"], ["thanks", "Bedankt popup"]]} />
             <Tabs className="lang-tabs" value={lang} onChange={setLang} tabs={langs.languages.map((l) => [l.code, l.native_name || l.code, null, modal.names[l.code] ? "✓" : null])} />
+            {sec === "settings" && (
+              <>
             <div className="form-grid">
               <label>{tx("Naam")}<input value={modal.names[lang] || ""} onChange={(e) => setText("names", e.target.value)} maxLength={120} /></label>
               <label>{tx("Voor wie (bv. de makers)")}<input value={modal.recipients[lang] || ""} onChange={(e) => setText("recipients", e.target.value)} maxLength={120} placeholder={tx("de makers")} /></label>
@@ -220,11 +240,42 @@ export default function DonationsAdmin() {
                 <label>{tx("Vanaf dit bedrag")}<input type="number" min="0" step="0.01" value={modal.min_for_grants} onChange={set("min_for_grants")} /></label>
               </div>
             )}
+              </>
+            )}
+            {["info", "thanks"].includes(sec) && (
+              <div className="pop-edit">
+                <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{sec === "info" ? tx("Dit venster verschijnt als iemand op de knop klikt, boven de schuifbalk: leg uit waarvoor de donatie is.") : tx("Dit venster verschijnt nadat iemand heeft gedoneerd.")}</p>
+                <label>{tx("Titel")}<input value={modal[sec].titles?.[lang] || ""} onChange={(e) => setPop(sec, "titles", { [lang]: e.target.value })} maxLength={120} /></label>
+                <label>{tx("Tekst")}<textarea rows={5} value={modal[sec].texts?.[lang] || ""} onChange={(e) => setPop(sec, "texts", { [lang]: e.target.value })} maxLength={1500} /></label>
+                <div className="ai-row">
+                  <button type="button" className="btn primary" onClick={() => generateText(sec)} disabled={!!aiText}>{aiText === sec ? tx("Bezig met genereren…") : `✨ ${tx("Genereer met AI")}`}</button>
+                  <span className="muted" style={{ fontSize: ".82rem" }}>{tx("Claude schrijft titel en tekst in alle talen, op basis van de naam en omschrijving van de actie. Typ een wens in het tekstveld om bij te sturen.")}</span>
+                </div>
+                <div className="pop-image">
+                  <strong style={{ fontSize: ".9rem" }}>{tx("Afbeelding")}</strong>
+                  {modal[sec].image_url && <img src={mediaUrl(modal[sec].image_url)} alt="" />}
+                  <div className="sub-actions">
+                    <button type="button" className="btn sm" onClick={() => setPicker(sec)}>{modal[sec].media ? tx("Andere afbeelding") : tx("Kies uit de mediabibliotheek")}</button>
+                    {modal[sec].media && <button type="button" className="btn sm danger" onClick={() => setModal((m) => ({ ...m, [sec]: { ...m[sec], media: null, image_url: null } }))}>{tx("Verwijderen")}</button>}
+                  </div>
+                </div>
+                <div className="sys-demo pop-preview">
+                  <small className="muted">{tx("Voorbeeld")} · {langs.languages.find((l) => l.code === lang)?.native_name || lang}</small>
+                  <div className="card pop-card">
+                    {modal[sec].image_url && <img src={mediaUrl(modal[sec].image_url)} alt="" />}
+                    <h3 style={{ margin: 0 }}>{modal[sec].titles?.[lang] || (sec === "info" ? tx("Titel van het venster") : tx("Bedankt!"))}</h3>
+                    <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{modal[sec].texts?.[lang] || tx("De tekst komt hier.")}</p>
+                    {sec === "info" && <div className="don-amount" style={{ fontSize: "1.4rem" }}>€ {Number(modal.default_amount || 0).toFixed(2)}</div>}
+                  </div>
+                </div>
+              </div>
+            )}
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
               <button className="btn primary">{tx("Opslaan")}</button>
             </div>
+            {picker && <MediaPicker onPick={(it) => { setModal((m) => ({ ...m, [picker]: { ...m[picker], media: it.id, image_url: it.url } })); setPicker(null); }} onClose={() => setPicker(null)} />}
           </form>
         </div>
       )}
