@@ -107,6 +107,8 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
   }, [send]);
 
   const media = async () => {
+    // browsers only give camera and microphone on a secure (https) page: over a plain http address mediaDevices does not exist at all
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error(tx("Camera en microfoon werken alleen op een beveiligde (https) verbinding. Open de site via https; op het lokale netwerk (http) kan de browser dit niet toestaan."));
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     const s = ensurePeer();
     stream.getTracks().forEach((t) => s.pc.addTrack(t, stream));
@@ -114,7 +116,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
   };
   const startCall = async () => {
     try { const local = await media(); setCall({ status: "calling", local, remote: null }); send("call"); }
-    catch (e) { setError(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e)); }
+    catch (e) { setError(navigator.mediaDevices?.getUserMedia ? tx("Camera of microfoon niet beschikbaar: ") + (e.message || e) : e.message); }
   };
   // guest: ask the owner to chat (he gets a notice and accepts or declines)
   const askChat = async () => {
@@ -123,7 +125,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
   };
   const accept = async () => {
     try { const local = await media(); setCall({ status: "active", local, remote: null }); send("accept"); }
-    catch (e) { setError(tx("Camera of microfoon niet beschikbaar: ") + (e.message || e)); send("decline"); setCall(null); }
+    catch (e) { setError(navigator.mediaDevices?.getUserMedia ? tx("Camera of microfoon niet beschikbaar: ") + (e.message || e) : e.message); send("decline"); setCall(null); }
   };
 
   const handle = useCallback(async (sig) => {

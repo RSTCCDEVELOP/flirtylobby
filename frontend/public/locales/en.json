@@ -2775,5 +2775,6 @@
   "Code kopiëren": "Copy code",
   "Chat met mij:": "Chat with me:",
   "Vul je naam in en kies je geslacht. Daarna krijg je een code, een link en een QR-code om aan iemand te geven.": "Enter your name and choose your gender. Then you get a code, a link and a QR code to give to someone.",
-  "De chat start zodra de ander de link opent of de code invult.": "The chat starts as soon as the other opens the link or enters the code."
+  "De chat start zodra de ander de link opent of de code invult.": "The chat starts as soon as the other opens the link or enters the code.",
+  "Camera en microfoon werken alleen op een beveiligde (https) verbinding. Open de site via https; op het lokale netwerk (http) kan de browser dit niet toestaan.": "Camera and microphone only work on a secure (https) connection. Open the site over https; on the local network (http) the browser cannot allow this."
 }
