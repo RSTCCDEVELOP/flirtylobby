@@ -177,7 +177,7 @@ def fake_users(request):
     from apps.sandbox import service as sandbox
 
     fakes = User.objects.filter(username__startswith="fake_")
-    ok = ai.available() or sandbox.active("integrations")
+    ok = sandbox.active() and (ai.available() or sandbox.active("integrations"))  # fake members are a test tool: only while the sandbox is on
     if request.method == "GET":
         return Response({"available": ok, "simulated": sandbox.active("integrations"), "count": fakes.count(), "fields": [f["label"] for f in _fields()]})
     if request.method == "DELETE":
@@ -189,7 +189,7 @@ def fake_users(request):
             n += 1
         return Response({"deleted": n})
     if not ok:
-        return bad("Zet de Claude-koppeling aan bij API keys om nep-gebruikers met AI te maken.")
+        return bad("Nep-gebruikers kunnen alleen met de sandbox aan en de Claude-koppeling (of gesimuleerde koppelingen).")
     try:
         n = max(1, min(10, int(request.data.get("count") or 1)))
         photos = max(0, min(4, int(request.data.get("photos") if request.data.get("photos") not in (None, "") else 2)))
