@@ -14,8 +14,18 @@ export default function DirectGuest() {
   const { token } = useParams();
   const [info, setInfo] = useState(null);
   const [error, setError] = useState("");
-  const [name, setName] = useState("");
-  const [gender, setGender] = useState(""); // m | f | x, asked before connecting
+  const [name, setNameState] = useState("");
+  const [gender, setGenderState] = useState("m"); // m | f | x, asked before connecting; man unless chosen before
+  // remember the last name and gender on this device
+  const setName = (v) => { setNameState(v); try { localStorage.setItem("direct_name", v); } catch {} };
+  const setGender = (v) => { setGenderState(v); try { localStorage.setItem("direct_gender", v); } catch {} };
+  useEffect(() => {
+    try {
+      const n = localStorage.getItem("direct_name"), g = localStorage.getItem("direct_gender");
+      if (n) setNameState(n);
+      if (["m", "f", "x"].includes(g)) setGenderState(g);
+    } catch {}
+  }, []);
   const [secret, setSecret] = useState(null);
   const [busy, setBusy] = useState(false);
 
