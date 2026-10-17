@@ -24,7 +24,7 @@ const QUICK = ["Hoi!", "Hoe gaat het?", "Bedankt!", "Leuk je te zien", "Een mome
  * text, files and video go straight between the two devices. The owner is the "polite" side (perfect negotiation).
  * props: token, role ("owner" | "guest"), secret (guest key), info (from /direct/<token>/)
  */
-export default function DirectConnection({ token, role, secret, info, onClosed }) {
+export default function DirectConnection({ token, role, secret, info, onClosed, onChat }) {
   const [peer, setPeer] = useState({ owner_online: false, guest_online: false, owner_name: "", guest_name: "", owner_gender: "", guest_gender: "" });
   const [link, setLink] = useState("connecting"); // connecting | open | closed
   // text messages survive a page reload (e.g. switching language): kept per room in this tab
@@ -37,6 +37,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
   const [call, setCall] = useState(null); // {status: calling|incoming|active, local, remote}
   const [chatOn, setChatOn] = useState(role === "owner" || !!saved.current.msgs?.length); // the guest waits in a waiting room until the owner starts the chat
   const fails = useRef(0);
+  useEffect(() => { onChat?.(chatOn); }, [chatOn, onChat]);
   const [tab, setTab] = useState("chat"); // chat | media | video
   const tabRef = useRef("chat");
   const [unseen, setUnseen] = useState({ chat: 0, media: 0 });

@@ -28,6 +28,7 @@ export default function DirectGuest() {
   }, []);
   const [secret, setSecret] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [chatting, setChatting] = useState(false); // chat started: the logo and title make room for the chat
 
   useEffect(() => {
     let saved = null;
@@ -51,8 +52,8 @@ export default function DirectGuest() {
     <main className="login-page" style={{ alignItems: "flex-start", paddingTop: "2rem" }}>
       <div className="login-theme"><ThemeToggle /></div>
       <div className="card login-card" style={{ maxWidth: 640, width: "100%" }}>
-        <Logo />
-        <h1>{tx("Directe verbinding")}</h1>
+        {!chatting && <Logo />}
+        {!chatting && <h1>{tx("Directe verbinding")}</h1>}
         {!info && !error && <p className="muted">{tx("Laden…")}</p>}
         {error && <div className="alert">{error}</div>}
         {error && !secret && <Link href="/direct" className="btn primary">{tx("Verbind opnieuw")}</Link>}
@@ -70,9 +71,9 @@ export default function DirectGuest() {
           </form>
         )}
         {info?.taken && !secret && <div className="alert">{tx("Er is al iemand verbonden met deze uitnodiging.")}</div>}
-        {secret && info && <DirectConnection token={token} role="guest" secret={secret} info={info} onClosed={(why) => { setSecret(null); try { localStorage.removeItem(`direct:${token}`); localStorage.removeItem("direct:last"); } catch {} setError(why === "left" ? tx("Je hebt de verbinding verbroken.") : tx("De verbinding is verbroken of de uitnodiging is gesloten.")); }} />}
+        {secret && info && <DirectConnection token={token} role="guest" secret={secret} info={info} onChat={setChatting} onClosed={(why) => { setSecret(null); try { localStorage.removeItem(`direct:${token}`); localStorage.removeItem("direct:last"); } catch {} setError(why === "left" ? tx("Je hebt de verbinding verbroken.") : tx("De verbinding is verbroken of de uitnodiging is gesloten.")); }} />}
         {!secret && <Link href="/direct" className="muted center">{tx("Heb je een code? Verbind zonder link")}</Link>}
-        <Link href="/" className="muted center">{tx("← Naar de website")}</Link>
+        {!chatting && <Link href="/" className="muted center">{tx("← Naar de website")}</Link>}
       </div>
     </main>
   );
