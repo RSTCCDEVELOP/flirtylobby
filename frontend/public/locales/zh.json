@@ -2293,5 +2293,13 @@
   "Deze map is leeg. Sleep bestanden hierheen om te uploaden.": "此文件夹为空。将文件拖到此处上传。",
   "Je ziet de map van de koppeling. Bestanden die de mediabibliotheek gebruikt zijn beveiligd tegen verwijderen.": "您看到的是该连接的文件夹。媒体库使用的文件受删除保护。",
   "Bladeren": "浏览",
-  "Zet de koppeling eerst aan": "请先启用该连接"
+  "Zet de koppeling eerst aan": "请先启用该连接",
+  "Hoofdsleutel voor bestandsversleuteling (FILE_ENCRYPTION_KEY, optioneel)": "文件加密主密钥（FILE_ENCRYPTION_KEY，可选）",
+  "Genereer een sleutel": "生成密钥",
+  "Een nieuwe sleutel is ingevuld. Bewaar hem veilig (bv. in je wachtwoordmanager) en druk op Opslaan. Bestaande versleutelde bestanden blijven leesbaar.": "已填入新密钥。请妥善保管（例如放入密码管理器）并点击保存。现有的加密文件仍可读取。",
+  "Nu: hoofdsleutel uit API keys (S3).": "当前：来自 API 密钥 (S3) 的主密钥。",
+  "ingesteld in de omgeving": "已在环境中设置",
+  "ingesteld bij API keys (S3)": "已在 API 密钥 (S3) 中设置",
+  "afgeleid van de geheime sleutel": "由密钥派生",
+  "Zet een eigen sleutel (omgeving of API keys → S3) zodat je de geheime sleutel kunt vernieuwen zonder bestanden kwijt te raken.": "请设置您自己的密钥（环境或 API 密钥 → S3），这样更新密钥时不会丢失文件。"
 }

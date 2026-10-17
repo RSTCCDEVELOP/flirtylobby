@@ -74,6 +74,14 @@ export default function Integrations() {
     catch { setXfer((x) => ({ ...x, bundle: null, name: "", error: tx("Dit bestand kan niet gelezen worden.") })); }
   }
 
+  // random 32-byte key (base64) for the file encryption
+  const genKey = (k) => {
+    const b = crypto.getRandomValues(new Uint8Array(32));
+    const key = btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_");
+    setModal((m) => ({ ...m, config: { ...m.config, [k]: key } }));
+    alertDialog(tx("Een nieuwe sleutel is ingevuld. Bewaar hem veilig (bv. in je wachtwoordmanager) en druk op Opslaan. Bestaande versleutelde bestanden blijven leesbaar."));
+  };
+
   const toggle = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "PATCH", body: { enabled: !i.enabled } }));
   const test = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/test/`, { method: "POST" }));
   const remove = async (i) => (await confirmDialog(tx("Koppeling \"{0}\" verwijderen? Functies die ervan afhangen stoppen.", i.name), { danger: true })) && act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "DELETE" }));
@@ -202,6 +210,7 @@ export default function Integrations() {
                       {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   ) : (
+                    <>
                     <input
                       type={f.secret ? "password" : "text"}
                       autoComplete="off"
@@ -210,6 +219,8 @@ export default function Integrations() {
                       placeholder={f.secret && modal.id ? tx("Leeg laten = ongewijzigd") : ""}
                       onChange={(e) => setModal({ ...modal, config: { ...modal.config, [f.key]: e.target.value } })}
                     />
+                    {f.key === "encryption_key" && <button type="button" className="btn sm" onClick={() => genKey(f.key)}>{tx("Genereer een sleutel")}</button>}
+                    </>
                   )}
                 </label>
               ))}

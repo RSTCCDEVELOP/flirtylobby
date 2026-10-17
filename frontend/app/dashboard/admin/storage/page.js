@@ -72,7 +72,7 @@ export default function StoragePage() {
         <h3 style={{ margin: 0, display: "flex", gap: ".5rem", alignItems: "center" }}><IconLock /> {tx("Hoe de versleuteling werkt")}</h3>
         <ul className="muted" style={{ fontSize: ".88rem", paddingLeft: "1.1rem" }}>
           <li>{tx("Elk lid krijgt een eigen willekeurige sleutel (AES-256-GCM). Bestanden van verschillende leden zijn dus met verschillende sleutels versleuteld.")}</li>
-          <li>{tx("Die sleutels staan zelf versleuteld in de database, met een hoofdsleutel uit de omgeving (FILE_ENCRYPTION_KEY).")} <strong>{s.master === "environment" ? tx("Nu: hoofdsleutel uit de omgeving.") : tx("Nu: afgeleid van SECRET_KEY. Zet FILE_ENCRYPTION_KEY voor productie.")}</strong></li>
+          <li>{tx("Die sleutels staan zelf versleuteld in de database, met een hoofdsleutel uit de omgeving (FILE_ENCRYPTION_KEY).")} <strong>{s.master === "environment" ? tx("Nu: hoofdsleutel uit de omgeving.") : s.master === "database" ? tx("Nu: hoofdsleutel uit API keys (S3).") : tx("Nu: afgeleid van SECRET_KEY. Zet FILE_ENCRYPTION_KEY voor productie.")}</strong></li>
           <li>{tx("Website- en overige bestanden delen één sleutel per onderdeel.")}</li>
           <li>{tx("Bestanden worden bij het tonen ontsleuteld via een tijdelijke, ondertekende link.")}</li>
           <li>{tx("Verwijdert een lid zijn account, dan gaan bestanden, gegevens, groepen en rechten weg én de sleutel: ook een eventuele back-up is dan onleesbaar.")}</li>

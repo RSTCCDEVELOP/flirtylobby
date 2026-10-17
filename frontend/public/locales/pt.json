@@ -2293,5 +2293,13 @@
   "Deze map is leeg. Sleep bestanden hierheen om te uploaden.": "Esta pasta está vazia. Largue ficheiros aqui para os carregar.",
   "Je ziet de map van de koppeling. Bestanden die de mediabibliotheek gebruikt zijn beveiligd tegen verwijderen.": "Vê a pasta da ligação. Os ficheiros usados pela biblioteca de multimédia estão protegidos contra eliminação.",
   "Bladeren": "Explorar",
-  "Zet de koppeling eerst aan": "Ative primeiro a ligação"
+  "Zet de koppeling eerst aan": "Ative primeiro a ligação",
+  "Hoofdsleutel voor bestandsversleuteling (FILE_ENCRYPTION_KEY, optioneel)": "Chave mestra da cifragem de ficheiros (FILE_ENCRYPTION_KEY, opcional)",
+  "Genereer een sleutel": "Gerar uma chave",
+  "Een nieuwe sleutel is ingevuld. Bewaar hem veilig (bv. in je wachtwoordmanager) en druk op Opslaan. Bestaande versleutelde bestanden blijven leesbaar.": "Foi preenchida uma nova chave. Guarde-a em segurança (p. ex. no gestor de palavras-passe) e prima Guardar. Os ficheiros cifrados existentes continuam legíveis.",
+  "Nu: hoofdsleutel uit API keys (S3).": "Agora: chave mestra das chaves API (S3).",
+  "ingesteld in de omgeving": "definida no ambiente",
+  "ingesteld bij API keys (S3)": "definida nas chaves API (S3)",
+  "afgeleid van de geheime sleutel": "derivada da chave secreta",
+  "Zet een eigen sleutel (omgeving of API keys → S3) zodat je de geheime sleutel kunt vernieuwen zonder bestanden kwijt te raken.": "Defina uma chave própria (ambiente ou chaves API → S3) para poder renovar a chave secreta sem perder ficheiros."
 }

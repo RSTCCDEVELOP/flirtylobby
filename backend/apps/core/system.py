@@ -126,9 +126,12 @@ def checks(request=None):
         os.makedirs(path, exist_ok=True) if key == "MEDIA_ROOT" else None
         w = os.path.isdir(path) and os.access(path, os.W_OK)
         rows.append(_row(key, label, str(path), "ok" if w else "bad", "" if w else "De map bestaat niet of is niet beschrijfbaar."))
-    enc = bool(os.environ.get("FILE_ENCRYPTION_KEY"))
-    rows.append(_row("FILE_ENCRYPTION_KEY", "Hoofdsleutel voor bestandsversleuteling", "ingesteld" if enc else "afgeleid van de geheime sleutel", "ok" if enc else "warn" if prod else "ok",
-                     "" if enc else "Zet een eigen sleutel (32 bytes, base64) zodat je de geheime sleutel kunt vernieuwen zonder bestanden kwijt te raken."))
+    from apps.medialib import filecrypt
+
+    src = filecrypt.master_source()
+    shown = {"environment": "ingesteld in de omgeving", "database": "ingesteld bij API keys (S3)", "derived": "afgeleid van de geheime sleutel"}[src]
+    rows.append(_row("FILE_ENCRYPTION_KEY", "Hoofdsleutel voor bestandsversleuteling", shown, "ok" if src != "derived" else "warn" if prod else "ok",
+                     "" if src != "derived" else "Zet een eigen sleutel (omgeving of API keys → S3) zodat je de geheime sleutel kunt vernieuwen zonder bestanden kwijt te raken."))
     rows.append(_row("ADMIN_EMAIL", "Eerste beheerder (bij opstarten)", os.getenv("ADMIN_EMAIL") or "niet ingesteld", "ok", "Alleen nodig om de eerste keer in te loggen."))
     for key, label, url in (("frontend_url", "Website-adres", s["frontend_url"]), ("backend_url", "API-adres", s["backend_url"])):
         if not url:

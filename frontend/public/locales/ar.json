@@ -2293,5 +2293,13 @@
   "Deze map is leeg. Sleep bestanden hierheen om te uploaden.": "هذا المجلد فارغ. اسحب الملفات إلى هنا لرفعها.",
   "Je ziet de map van de koppeling. Bestanden die de mediabibliotheek gebruikt zijn beveiligd tegen verwijderen.": "ترى مجلد الرابط. الملفات التي تستخدمها مكتبة الوسائط محمية من الحذف.",
   "Bladeren": "استعراض",
-  "Zet de koppeling eerst aan": "فعّل الرابط أولاً"
+  "Zet de koppeling eerst aan": "فعّل الرابط أولاً",
+  "Hoofdsleutel voor bestandsversleuteling (FILE_ENCRYPTION_KEY, optioneel)": "المفتاح الرئيسي لتشفير الملفات (FILE_ENCRYPTION_KEY، اختياري)",
+  "Genereer een sleutel": "توليد مفتاح",
+  "Een nieuwe sleutel is ingevuld. Bewaar hem veilig (bv. in je wachtwoordmanager) en druk op Opslaan. Bestaande versleutelde bestanden blijven leesbaar.": "تم إدخال مفتاح جديد. احفظه بأمان (مثلاً في مدير كلمات المرور) واضغط حفظ. تبقى الملفات المشفرة الحالية قابلة للقراءة.",
+  "Nu: hoofdsleutel uit API keys (S3).": "الآن: المفتاح الرئيسي من مفاتيح API (S3).",
+  "ingesteld in de omgeving": "مضبوط في البيئة",
+  "ingesteld bij API keys (S3)": "مضبوط في مفاتيح API (S3)",
+  "afgeleid van de geheime sleutel": "مشتق من المفتاح السري",
+  "Zet een eigen sleutel (omgeving of API keys → S3) zodat je de geheime sleutel kunt vernieuwen zonder bestanden kwijt te raken.": "اضبط مفتاحك الخاص (البيئة أو مفاتيح API → S3) لتتمكن من تجديد المفتاح السري دون فقدان الملفات."
 }
