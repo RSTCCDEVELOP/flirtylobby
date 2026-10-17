@@ -4,6 +4,7 @@ import { tx } from "../../../lib/t";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { Logo } from "../../../components/BrandingContext";
 import DirectConnection from "../../../components/DirectConnection";
 import ThemeToggle from "../../../components/ThemeToggle";
@@ -11,7 +12,16 @@ import { api, errorText } from "../../../lib/api";
 
 // Page behind an invitation link / QR code: no account needed.
 // Shown when the invitation is already taken: the visitor can pass the site on to somebody else (WhatsApp, share sheet or copy the link)
+// the QR code of this invitation, in the place of the logo
+function TakenQr() {
+  const [qr, setQr] = useState("");
+  useEffect(() => { QRCode.toDataURL(window.location.href, { margin: 1, width: 360 }).then(setQr).catch(() => {}); }, []);
+  /* eslint-disable-next-line @next/next/no-img-element */
+  return qr ? <img src={qr} alt={tx("QR-code van de uitnodiging")} style={{ width: 180, height: 180, background: "#fff", padding: 8, borderRadius: 12, alignSelf: "center" }} /> : null;
+}
+
 function InviteSomeone({ code }) {
+
   const [copied, setCopied] = useState(false);
   const url = typeof window !== "undefined" ? window.location.origin : "";
   const nice = code ? `${code.slice(0, 3)} ${code.slice(3)}` : "";
@@ -81,7 +91,7 @@ export default function DirectGuest() {
     <main className="login-page" style={{ alignItems: "flex-start", paddingTop: "2rem" }}>
       <div className="login-theme"><ThemeToggle /></div>
       <div className="card login-card" style={{ maxWidth: 640, width: "100%" }}>
-        {!chatting && <Logo className="direct-logo" />}
+        {!chatting && (info?.taken && !secret ? <TakenQr /> : <Logo className="direct-logo" />)}
         {!chatting && <h1>{tx("Directe verbinding")}</h1>}
         {!info && !error && <p className="muted">{tx("Laden…")}</p>}
         {error && <div className="alert">{error}</div>}
