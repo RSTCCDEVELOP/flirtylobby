@@ -7,7 +7,7 @@ import { useModule } from "./Modules";
 import { useSession } from "./Session";
 
 // Paths that stay open while the website needs a subscription (so people can log in, subscribe and read the rules).
-const OPEN = ["/login", "/registreren", "/abonnementen", "/dashboard/subscriptions", "/privacy", "/cookies", "/bestelling", "/sandbox", "/geo-blocked", "/404", "/doneren", "/direct", "/directchat"];
+const OPEN = ["/login", "/registreren", "/abonnementen", "/dashboard/subscriptions", "/privacy", "/cookies", "/bestelling", "/sandbox", "/geo-blocked", "/404", "/doneren", "/direct", "/directconnect"];
 
 // "Toegang tot de website" (Admin -> Abonnementen -> Instellingen): without a subscription people only reach the open paths above.
 export default function SiteGate() {

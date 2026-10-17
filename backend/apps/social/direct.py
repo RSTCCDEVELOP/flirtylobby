@@ -96,7 +96,7 @@ def rooms(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def room_anon(request):
-    """A visitor without an account starts a chat (/directchat): name and gender, then a code, link and QR code to hand out."""
+    """A visitor without an account starts a chat (/directconnect): name and gender, then a code, link and QR code to hand out."""
     from django.core.cache import cache
 
     if not _enabled():

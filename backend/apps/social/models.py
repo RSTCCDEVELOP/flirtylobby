@@ -207,7 +207,7 @@ class DirectRoom(models.Model):
 
     token = models.CharField(max_length=64, unique=True)
     code = models.CharField(max_length=8, blank=True, db_index=True)  # short code to connect without the link
-    owner = models.ForeignKey(U, on_delete=models.CASCADE, related_name="direct_rooms", null=True, blank=True)  # empty: started by a visitor without an account (/directchat)
+    owner = models.ForeignKey(U, on_delete=models.CASCADE, related_name="direct_rooms", null=True, blank=True)  # empty: started by a visitor without an account (/directconnect)
     owner_name = models.CharField(max_length=60, blank=True)  # only for visitor-started rooms
     owner_gender = models.CharField(max_length=1, blank=True)
     owner_key = models.CharField(max_length=64, blank=True)  # secret of the visitor who started the room
