@@ -634,6 +634,10 @@ def access(request):
         return Response({"ok": True})
     ent = service.entitlements(request.user)
     page, content = request.query_params.get("page"), request.query_params.get("content")
+    key = request.query_params.get("key")
+    if key:  # a part of the site (video_chat, chat…): may this member use it? (no use is taken here)
+        ok = service.can(request.user, key)
+        return Response({"ok": ok, "message": "" if ok else service.GATE_MESSAGE.get(key, "Hiervoor heb je een abonnement of donatie nodig.")})
     locked = service.locked_pages()
     if page:
         ok = page not in locked or ent["full"] or page in ent["pages"]

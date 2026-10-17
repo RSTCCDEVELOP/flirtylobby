@@ -6,6 +6,8 @@ import Tabs from "./Tabs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
+import Link from "next/link";
+import { useModule } from "./Modules";
 
 const CHUNK = 16 * 1024;
 // Standard chat helpers: emoticons per group and ready-made quick replies
@@ -199,6 +201,13 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
   const other = role === "owner" ? peer.guest_name : peer.owner_name;
   const otherG = role === "owner" ? peer.guest_gender : peer.owner_gender;
   const meG = role === "owner" ? peer.owner_gender : peer.guest_gender;
+  // the video chat may be locked behind a subscription or donation: say so and offer the way to get it
+  const donOn = useModule("donations"), subsOn = useModule("subscriptions");
+  const [videoLock, setVideoLock] = useState("");
+  useEffect(() => {
+    if (role !== "owner" || tab !== "video") return;
+    api("/subscriptions/access/?key=video_chat").then((r) => setVideoLock(r.ok ? "" : r.message || "Videobellen kan met een abonnement.")).catch(() => {});
+  }, [role, tab]);
   const otherOnline = role === "owner" ? peer.guest_online : peer.owner_online;
   const connected = link === "open";
   const canWrite = connected || otherOnline; // text also works through the server
@@ -346,7 +355,16 @@ export default function DirectConnection({ token, role, secret, info, onClosed }
                 <IconVideo width={36} height={36} />
                 <h2 style={{ margin: 0 }}>{tx("Videochat")}</h2>
                 <p className="muted" style={{ margin: 0 }}>{info.chat.video_chat ? tx("Bel {0} met beeld en geluid, rechtstreeks tussen jullie apparaten.", other || tx("de ander")) : tx("Videochat staat uit.")}</p>
-                {info.chat.video_chat && <button className="btn primary" disabled={!connected} onClick={startCall}>{tx("Start videochat")}</button>}
+                {info.chat.video_chat && videoLock && (
+                  <>
+                    <div className="alert" style={{ margin: 0 }}>{tx(videoLock)}</div>
+                    <div className="row" style={{ justifyContent: "center" }}>
+                      {donOn && <Link className="btn primary" href="/doneren">{tx("Doneren")}</Link>}
+                      {subsOn && <Link className="btn" href="/abonnementen">{tx("Abonnementen bekijken")}</Link>}
+                    </div>
+                  </>
+                )}
+                {info.chat.video_chat && !videoLock && <button className="btn primary" disabled={!connected} onClick={startCall}>{tx("Start videochat")}</button>}
               </div>
             )}
           </div>
