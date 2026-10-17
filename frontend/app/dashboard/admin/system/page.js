@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
 
+const TIMEZONES = ["Europe/Amsterdam", "Europe/Brussels", "Europe/Berlin", "Europe/Paris", "Europe/London", "Europe/Madrid", "Europe/Lisbon", "Europe/Rome", "Europe/Vienna", "Europe/Zurich", "Europe/Athens", "Europe/Istanbul", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "UTC"];
 const ENV_NAME = { production: "Live (productie)", staging: "Test (staging)", development: "Ontwikkeling" };
 const DOT = { ok: "#16a34a", warn: "#d97706", bad: "#dc2626" };
 
@@ -29,13 +30,13 @@ export default function SystemPage() {
   const [d, setD] = useState(null);
   const [form, setForm] = useState({});
   const [msg, setMsg] = useState(null);
-  const load = (r) => { setD(r); setForm({ ...r.settings, extra_origins: (r.settings.extra_origins || []).join(", ") }); };
+  const load = (r) => { setD(r); setForm({ ...r.settings, extra_origins: (r.settings.extra_origins || []).join(", "), aliases: (r.settings.aliases || []).join(", ") }); };
   useEffect(() => { api("/system/").then(load).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   async function save(e) {
     e.preventDefault();
-    try { load(await api("/system/", { method: "PUT", body: { ...form, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg({ ok: true, text: tx("Opgeslagen.") }); }
+    try { load(await api("/system/", { method: "PUT", body: { ...form, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean), aliases: String(form.aliases || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg({ ok: true, text: tx("Opgeslagen.") }); }
     catch (err) { setMsg({ ok: false, text: errorText(err) }); }
   }
 
@@ -61,7 +62,17 @@ export default function SystemPage() {
             <label>{tx("Omgeving")}
               <select value={form.environment} onChange={set("environment")}>{d.environments.map((e) => <option key={e} value={e}>{tx(ENV_NAME[e])}</option>)}</select>
             </label>
+            <label>{tx("Tijdzone")}
+              <input list="tz-list" value={form.timezone} onChange={set("timezone")} placeholder="Europe/Amsterdam" />
+              <datalist id="tz-list">{TIMEZONES.map((z) => <option key={z} value={z} />)}</datalist>
+            </label>
           </div>
+          <p className="muted" style={{ margin: ".4rem 0", fontSize: ".82rem" }}>{tx("De naam van de website staat in de header, de titel van het browsertabblad, e-mails, de app-naam en de 2-staps-app.")}</p>
+          <label className="check sec-toggle">
+            <input type="checkbox" checked={!!form.maintenance} onChange={set("maintenance")} />
+            <span><strong>{tx("Onderhoudsmodus")}</strong><br /><small className="muted">{tx("Bezoekers zien een melding; superadmins en de inlogpagina blijven bereikbaar.")}</small></span>
+          </label>
+          {form.maintenance && <label>{tx("Melding tijdens onderhoud")}<input value={form.maintenance_message} onChange={set("maintenance_message")} maxLength={500} placeholder={tx("We zijn bezig met onderhoud. Probeer het straks opnieuw.")} /></label>}
         </Collapsible>
         <Collapsible id="sys-urls" title={tx("Adressen")} defaultOpen>
           <p className="muted" style={{ marginTop: 0, fontSize: ".85rem" }}>{tx("Zonder pad en zonder slash erachter. Het website-adres mag de API gebruiken zonder dat je de server-instellingen aanpast.")}</p>
@@ -69,6 +80,11 @@ export default function SystemPage() {
             <label>{tx("Website-adres (frontend)")}<input value={form.frontend_url} onChange={set("frontend_url")} placeholder="https://www.voorbeeld.nl" /></label>
             <label>{tx("API-adres (backend)")}<input value={form.backend_url} onChange={set("backend_url")} placeholder="https://api.voorbeeld.nl" /></label>
           </div>
+          <label>{tx("Andere domeinnamen van de website (komma's)")}<input value={form.aliases} onChange={set("aliases")} placeholder="voorbeeld.nl, www.voorbeeld.com" /></label>
+          <label className="check sec-toggle">
+            <input type="checkbox" checked={!!form.redirect_aliases} onChange={set("redirect_aliases")} />
+            <span><strong>{tx("Andere domeinen doorsturen naar het hoofdadres")}</strong><br /><small className="muted">{tx("Bezoekers van een ander domein komen automatisch op het website-adres hierboven (met dezelfde pagina). Zorg dat die domeinen naar dezelfde server wijzen.")}</small></span>
+          </label>
           <label>{tx("Extra adressen die de API mogen gebruiken (komma's)")}<input value={form.extra_origins} onChange={set("extra_origins")} placeholder="https://voorbeeld.nl, https://app.voorbeeld.nl" /></label>
           <p className="muted" style={{ margin: ".4rem 0 0", fontSize: ".8rem" }}>{tx("Je bekijkt dit nu via")} <strong>{d.request_origin}</strong></p>
         </Collapsible>
@@ -77,9 +93,26 @@ export default function SystemPage() {
             <label>{tx("Bedrijfsnaam")}<input value={form.company_name} onChange={set("company_name")} /></label>
             <label>{tx("Contact e-mail")}<input type="email" value={form.contact_email} onChange={set("contact_email")} /></label>
             <label>{tx("Support e-mail")}<input type="email" value={form.support_email} onChange={set("support_email")} /></label>
+            <label>{tx("Beheer e-mail (meldingen van het systeem)")}<input type="email" value={form.admin_email} onChange={set("admin_email")} /></label>
             <label>{tx("Telefoon")}<input value={form.phone} onChange={set("phone")} /></label>
+            <label>{tx("Adres")}<input value={form.address} onChange={set("address")} /></label>
             <label>{tx("KvK-nummer")}<input value={form.kvk} onChange={set("kvk")} /></label>
             <label>{tx("BTW-nummer")}<input value={form.vat_id} onChange={set("vat_id")} /></label>
+          </div>
+        </Collapsible>
+        <Collapsible id="sys-footer" title={tx("Voettekst en sociale media")}>
+          <label>{tx("Tekst in de voettekst")}<input value={form.footer_text} onChange={set("footer_text")} maxLength={500} /></label>
+          <div className="grid2">
+            {[["facebook", "Facebook"], ["instagram", "Instagram"], ["x", "X"], ["linkedin", "LinkedIn"], ["youtube", "YouTube"], ["tiktok", "TikTok"]].map(([k, l]) => (
+              <label key={k}>{l}<input value={form[`social_${k}`] || ""} onChange={set(`social_${k}`)} placeholder="https://" /></label>
+            ))}
+          </div>
+        </Collapsible>
+        <Collapsible id="sys-limits" title={tx("Uploadlimieten")}>
+          <div className="grid2">
+            <label>{tx("Afbeelding in de bibliotheek (MB)")}<input type="number" min="1" max="200" value={form.max_image_mb} onChange={set("max_image_mb")} /></label>
+            <label>{tx("Video in de bibliotheek (MB)")}<input type="number" min="1" max="2000" value={form.max_video_mb} onChange={set("max_video_mb")} /></label>
+            <label>{tx("Profielfoto (MB)")}<input type="number" min="1" max="50" value={form.max_photo_mb} onChange={set("max_photo_mb")} /></label>
           </div>
         </Collapsible>
         <div className="profile-save"><button className="btn primary">{tx("Opslaan")}</button></div>

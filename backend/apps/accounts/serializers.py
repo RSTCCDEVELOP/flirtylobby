@@ -207,8 +207,10 @@ class PhotoSerializer(serializers.Serializer):
     image = serializers.ImageField()
 
     def validate_image(self, f):
-        if f.size > 5 * 1024 * 1024:
-            raise serializers.ValidationError("Foto is te groot (maximaal 5 MB).")
+        from apps.core.system import limit_mb
+
+        if f.size > limit_mb("max_photo_mb") * 1024 * 1024:
+            raise serializers.ValidationError(f"Foto is te groot (maximaal {limit_mb('max_photo_mb')} MB).")
         return f
 
 

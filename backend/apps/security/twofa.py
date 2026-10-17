@@ -146,7 +146,7 @@ def app_start(user):
     secret = totp.new_secret()
     user.totp_secret = totp.seal(secret)
     user.save(update_fields=["totp_secret"])
-    issuer = service.get()["twofa"].get("app_issuer") or getattr(dj_settings, "SITE_NAME", "") or "Studio2"
+    issuer = service.get()["twofa"].get("app_issuer") or __import__("apps.core.system", fromlist=["site_name"]).site_name()
     return secret, totp.uri(secret, user.email, issuer)
 
 

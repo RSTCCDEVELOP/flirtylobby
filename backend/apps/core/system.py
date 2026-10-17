@@ -14,8 +14,18 @@ from .models import SystemSettings
 DEFAULTS = {
     "site_name": "", "tagline": "", "company_name": "", "environment": "production",
     "frontend_url": "", "backend_url": "", "extra_origins": [],
-    "contact_email": "", "support_email": "", "phone": "", "kvk": "", "vat_id": "",
+    "contact_email": "", "support_email": "", "admin_email": "", "phone": "", "kvk": "", "vat_id": "", "address": "",
+    "aliases": [],  # extra domain names of the website (www.x.nl, x.nl): visitors can be sent on to the main address
+    "redirect_aliases": False,
+    "timezone": "Europe/Amsterdam",
+    "maintenance": False, "maintenance_message": "",
+    "max_image_mb": "20", "max_video_mb": "300", "max_photo_mb": "5",
+    "footer_text": "",
+    "social_facebook": "", "social_instagram": "", "social_x": "", "social_linkedin": "", "social_youtube": "", "social_tiktok": "",
 }
+SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
+HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
+INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50)}
 ENVIRONMENTS = ["production", "staging", "development"]
 URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -49,13 +59,42 @@ def clean(incoming):
             if v and not URL_RE.match(v):
                 errors[k] = "Gebruik een adres als https://www.voorbeeld.nl (zonder pad of slash erachter)."
             out[k] = v
-        elif k in ("contact_email", "support_email"):
+        elif k in ("contact_email", "support_email", "admin_email"):
             v = str(v or "").strip()
             if v and not EMAIL_RE.match(v):
                 errors[k] = "Dit is geen geldig e-mailadres."
             out[k] = v
         elif k == "environment":
             out[k] = v if v in ENVIRONMENTS else "production"
+        elif k == "aliases":
+            items = [str(x).strip().lower().replace("https://", "").replace("http://", "").strip("/") for x in (v if isinstance(v, list) else str(v).split(",")) if str(x).strip()]
+            bad = [x for x in items if not HOST_RE.match(x)]
+            if bad:
+                errors[k] = f"Ongeldige domeinnaam: {bad[0]} (bv. voorbeeld.nl, zonder https://)."
+            out[k] = list(dict.fromkeys(items))[:20]
+        elif k in ("redirect_aliases", "maintenance"):
+            out[k] = bool(v)
+        elif k == "timezone":
+            try:
+                from zoneinfo import ZoneInfo
+
+                ZoneInfo(str(v))
+                out[k] = str(v)
+            except Exception:  # noqa: BLE001
+                errors[k] = "Onbekende tijdzone (bv. Europe/Amsterdam)."
+        elif k in INT_LIMITS:
+            lo, hi = INT_LIMITS[k]
+            try:
+                out[k] = str(max(lo, min(hi, int(v))))
+            except (TypeError, ValueError):
+                errors[k] = "Geef een geheel getal op."
+        elif k.startswith("social_"):
+            v = str(v or "").strip()
+            if v and not re.match(r"^https?://[^\s]{3,200}$", v):
+                errors[k] = "Gebruik een volledig adres, bv. https://www.instagram.com/jouwnaam."
+            out[k] = v
+        elif k in ("maintenance_message", "footer_text"):
+            out[k] = str(v or "").strip()[:500]
         else:
             out[k] = str(v or "").strip()[:200]
     return out, errors
@@ -71,21 +110,12 @@ def save(cleaned):
 
 
 def _sync_seo(old, new):
-    """The site name and address are also what SEO, sitemap and e-mails use: keep those in step (only what was still the old value)."""
+    """The website address is also what the sitemap and canonical links use. (The name is applied by apps.seo.service on the fly.)"""
     from apps.seo import service as seo
 
     cur = seo.raw()["site"]
-    upd = {}
-    if new["site_name"]:
-        for k in ("name", "default_title"):
-            if cur[k] in ("Studio2", old["site_name"], ""):
-                upd[k] = new["site_name"]
-        if cur["title_template"] in ("%s | Studio2", f"%s | {old['site_name']}", ""):
-            upd["title_template"] = f"%s | {new['site_name']}"
     if new["frontend_url"] and cur["site_url"] in ("", old["frontend_url"]):
-        upd["site_url"] = new["frontend_url"]
-    if upd:
-        seo.save({"site": upd})
+        seo.save({"site": {"site_url": new["frontend_url"]}})
 
 
 def allowed_origins():
@@ -166,3 +196,29 @@ POSTGRES_HOST=db"""
     frontend = f"""NEXT_PUBLIC_API_URL={bo}
 API_URL_INTERNAL=http://backend:8000"""
     return {"backend": backend, "frontend": frontend}
+
+
+def site_name():
+    """The name of the website: what the header, browser tab, e-mails, the app icon and the 2-step app show."""
+    return get()["site_name"] or "Studio2"
+
+
+def limit_mb(key):
+    try:
+        return int(get()[key])
+    except (TypeError, ValueError):
+        return int(DEFAULTS[key])
+
+
+def primary_host():
+    return urlparse(get()["frontend_url"]).netloc
+
+
+def public():
+    """What the website itself needs (no secrets): name, domains, contact, footer, maintenance."""
+    s = get()
+    return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
+            "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
+            "maintenance": s["maintenance"], "maintenance_message": s["maintenance_message"], "footer_text": s["footer_text"],
+            "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"],
+            "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}}

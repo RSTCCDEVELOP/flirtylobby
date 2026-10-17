@@ -101,8 +101,10 @@ class PhotoUpload(serializers.Serializer):
     caption = serializers.CharField(required=False, allow_blank=True, max_length=200)
 
     def validate_image(self, f):
-        if f.size > 8 * 1024 * 1024:
-            raise serializers.ValidationError("Foto is te groot (maximaal 8 MB).")
+        from apps.core.system import limit_mb
+
+        if f.size > limit_mb("max_photo_mb") * 1024 * 1024:
+            raise serializers.ValidationError(f"Foto is te groot (maximaal {limit_mb('max_photo_mb')} MB).")
         return f
 
 

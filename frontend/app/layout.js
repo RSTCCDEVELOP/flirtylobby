@@ -16,6 +16,8 @@ import PageSettingsButton from "../components/PageSettingsButton";
 import { DirectHostProvider } from "../components/DirectHost";
 import LangRoot from "../components/LangRoot";
 import VersionNotice from "../components/VersionNotice";
+import { getSite } from "../lib/site-server";
+import MaintenanceGate from "../components/MaintenanceGate";
 import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
@@ -116,7 +118,7 @@ async function getLanguages() {
 }
 
 export default async function RootLayout({ children }) {
-  const [theme, langs, branding, security, content, modules, seo, sandbox, menu, backgrounds] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox(), getMenu(), getBackgrounds()]);
+  const [theme, langs, branding, security, content, modules, seo, sandbox, menu, backgrounds, site] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox(), getMenu(), getBackgrounds(), getSite()]);
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
@@ -134,7 +136,7 @@ export default async function RootLayout({ children }) {
         <ChatProvider>
         <MenuProvider value={menu}>
         <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>
-          <BrandingProvider value={branding} logoSet={theme?.values?.brand_logo}>
+          <BrandingProvider value={branding} logoSet={theme?.values?.brand_logo} siteName={site?.site_name}>
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
               <DirectHostProvider>
               <PageBackdrop map={backgrounds} />
@@ -145,6 +147,7 @@ export default async function RootLayout({ children }) {
             </ContentProvider>
             <Gates cfg={security} />
             <SiteGate />
+            <MaintenanceGate site={site} />
             <PaymentRequired />
         <SandboxBadge status={sandbox} />
         {jsonld.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld).replace(/</g, "\\u003c") }} />}

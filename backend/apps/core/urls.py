@@ -5,6 +5,7 @@ from . import backup_views, dashboard, views
 urlpatterns = [
     path("health/", views.health, name="health"),
     path("system/", views.system_settings),
+    path("site/", views.site_public),
     path("languages/", views.languages_public),
     path("languages/all/", views.languages_all),
     path("languages/config/", views.languages_config),

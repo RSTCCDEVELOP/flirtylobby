@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from apps.accounts.permissions import has_level
 from apps.core.modules import module_required
 
+from apps.core.system import limit_mb
+
 from . import areas, s3, service
 import re
 
@@ -20,7 +22,7 @@ from django.db.models import Q
 from .models import IMAGE_EXT, USER_PREFIXES, VIDEO_EXT, MediaItem, is_user_content, kind_of
 
 logger = logging.getLogger(__name__)
-MAX_IMAGE, MAX_VIDEO = 20 * 1024 * 1024, 300 * 1024 * 1024
+
 mod_media = module_required("media")
 use_media = has_level("media", "use")
 edit_media = has_level("media", "edit")
@@ -92,8 +94,9 @@ def upload(request):
         if not kind:
             errors.append(f"{f.name}: bestandstype niet toegestaan.")
             continue
-        if f.size > (MAX_IMAGE if kind == "image" else MAX_VIDEO):
-            errors.append(f"{f.name}: te groot (max {MAX_IMAGE // 2**20 if kind == 'image' else MAX_VIDEO // 2**20} MB).")
+        max_image, max_video = limit_mb("max_image_mb") * 2**20, limit_mb("max_video_mb") * 2**20
+        if f.size > (max_image if kind == "image" else max_video):
+            errors.append(f"{f.name}: te groot (max {max_image // 2**20 if kind == 'image' else max_video // 2**20} MB).")
             continue
         if kind == "image" and ext != "ico":
             try:

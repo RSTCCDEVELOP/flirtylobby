@@ -15,6 +15,18 @@ async function getConfig() {
   return cfgCache.v;
 }
 
+let siteCache = { t: 0, v: null };
+async function getSite() {
+  if (Date.now() - siteCache.t < 30000) return siteCache.v;
+  try {
+    const res = await fetch(`${API}/api/site/`, { cache: "no-store" });
+    siteCache = { t: Date.now(), v: res.ok ? await res.json() : null };
+  } catch {
+    siteCache = { t: Date.now(), v: null };
+  }
+  return siteCache.v;
+}
+
 async function isAllowed(ip, country) {
   const hit = geoCache.get(ip);
   if (hit && Date.now() - hit.t < 60000) return hit.allowed;
@@ -31,6 +43,13 @@ async function isAllowed(ip, country) {
 
 export async function middleware(req) {
   const { pathname } = req.nextUrl;
+  // other domain names of the website are sent on to the main address (Systeem -> Basisgegevens)
+  const site = await getSite();
+  const host = (req.headers.get("x-forwarded-host") || req.headers.get("host") || "").toLowerCase().split(":")[0];
+  if (site?.redirect_aliases && site.primary_host && host && site.aliases?.includes(host)) {
+    const to = new URL(`${site.frontend_url}${pathname}${req.nextUrl.search}`);
+    return NextResponse.redirect(to, 308);
+  }
   const cfg = await getConfig();
   let res;
 

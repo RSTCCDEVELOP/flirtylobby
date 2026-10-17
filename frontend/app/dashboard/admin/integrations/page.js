@@ -173,6 +173,13 @@ export default function Integrations() {
               </div>
               <div className="api-body">
                 <span className="muted">{i.provider_label} · <code>{i.slug}</code></span>
+                {(() => {
+                  const mf = spec(i.provider)?.fields.find((x) => x.type === "model");
+                  if (!mf) return null;
+                  const m = i.config?.model || mf.default;  // empty = the default of this link
+                  const label = mf.options?.find((o) => o.value === m)?.label;
+                  return <span className="api-model" title={tx("Actief model")}>{tx("Model")}: <strong>{label || m}</strong>{label && label !== m && <code> {m}</code>}{!i.config?.model && <small className="muted"> ({tx("standaard")})</small>}</span>;
+                })()}
                 <span className={`int-msg ${st}`}>{i.last_test_message || STATUS_TEXT[st]}</span>
               </div>
               <div className="api-actions">

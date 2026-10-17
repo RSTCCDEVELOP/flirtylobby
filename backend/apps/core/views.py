@@ -262,6 +262,13 @@ def module_update(request, key):
 from . import system  # noqa: E402
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def site_public(request):
+    """The website's own name, domains and footer data (the frontend reads this on every page)."""
+    return Response(system.public())
+
+
 @api_view(["GET", "PUT"])
 @permission_classes([has_level("system", "manage"), module_required("system")])
 def system_settings(request):

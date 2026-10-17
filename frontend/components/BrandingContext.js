@@ -10,14 +10,14 @@ const assetUrl = (p) => (p.startsWith("/logos/") ? p : mediaUrl(p)); // built-in
 
 // Branding comes from the server layout, so logos render without flashing the default.
 // `logoSet` = the logo the active theme asks for (rstcc | studio2 | custom). The Vormgeving page can preview one.
-export function BrandingProvider({ value, logoSet, children }) {
+export function BrandingProvider({ value, logoSet, siteName, children }) {
   const [preview, setPreview] = useState(undefined);
   const active = preview !== undefined ? preview : logoSet;
   const ctx = useMemo(() => {
     const base = value || { assets: {}, photos: [] };
     const set = LOGO_SETS[active];
-    return { ...base, assets: set ? { ...base.assets, ...set.assets } : base.assets, alt: set?.alt, previewLogoSet: (v) => setPreview(v === null ? undefined : v) };
-  }, [value, active]);
+    return { ...base, assets: set ? { ...base.assets, ...set.assets } : base.assets, alt: siteName || set?.alt, previewLogoSet: (v) => setPreview(v === null ? undefined : v) };
+  }, [value, active, siteName]);
   return <BrandingContext.Provider value={ctx}>{children}</BrandingContext.Provider>;
 }
 export const useBranding = () => useContext(BrandingContext);

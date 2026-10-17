@@ -1342,3 +1342,9 @@ tr[hidden] { display: none !important; }
 .table-wrap.as-tiles td:empty { display: none; }
 .table-wrap.as-tiles td::before { content: attr(data-label); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); flex: none; }
 .table-wrap.as-tiles td[data-label=""]::before { display: none; }
+.api-model { font-size: .85rem; display: block; }
+.api-model code { font-size: .72rem; color: var(--muted); }
+.maintenance { position: fixed; inset: 0; z-index: 9000; display: grid; place-content: center; justify-items: center; gap: .8rem; text-align: center; padding: 2rem; background: var(--page, var(--bg)); }
+.maintenance-logo { max-height: 120px; width: auto; }
+.site-footer .foot-meta { display: flex; flex-wrap: wrap; gap: .3rem 1rem; justify-content: center; width: 100%; font-size: .85rem; color: var(--muted); }
+.site-footer .foot-social { display: flex; flex-wrap: wrap; gap: .3rem 1rem; justify-content: center; width: 100%; }

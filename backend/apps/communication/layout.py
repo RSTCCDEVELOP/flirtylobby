@@ -173,7 +173,9 @@ def to_html(subject, body, base_url=None, api_base=None, s=None):
     s = s or get()
     p = palette(base_url, api_base, s)
     p["font"] = html.escape(p["font"], quote=True)  # the stack contains quotes and goes into style="…"
-    brand = s["brand_name"] or "Studio2"
+    from apps.core import system
+
+    brand = s["brand_name"] or system.site_name()
     site = _site_url(base_url)
     blocks = []
     for para in re.split(r"\n{2,}", (body or "").strip()):

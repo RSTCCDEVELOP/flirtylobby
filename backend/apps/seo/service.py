@@ -23,15 +23,35 @@ def _merge(base, over):
     return out
 
 
+def _with_site_name(cfg):
+    """The website name from Systeem -> Basisgegevens wins; titles stay as the admin typed them unless they still are the default."""
+    try:
+        from apps.core import system
+
+        name = system.get()["site_name"]
+    except Exception:  # noqa: BLE001
+        return cfg
+    if name:
+        site = cfg["site"]
+        site["name"] = name
+        if site.get("default_title") in ("", "Studio2"):
+            site["default_title"] = name
+        if site.get("title_template") in ("", "%s | Studio2"):
+            site["title_template"] = f"%s | {name}"
+        if not site.get("default_description"):
+            site["default_description"] = system.get()["tagline"]
+    return cfg
+
+
 def get():
     """Effective settings. With the SEO module off, the defaults apply (no custom bot rules, no overrides)."""
     stored = SeoSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
-    return _merge(d.DEFAULTS, stored if modules.enabled("seo") else {})
+    return _with_site_name(_merge(d.DEFAULTS, stored if modules.enabled("seo") else {}))
 
 
 def raw():
     stored = SeoSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
-    return _merge(d.DEFAULTS, stored)
+    return _with_site_name(_merge(d.DEFAULTS, stored))
 
 
 URL_RE = re.compile(r"^https?://[^\s]{3,300}$")
