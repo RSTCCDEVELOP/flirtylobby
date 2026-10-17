@@ -184,7 +184,7 @@ PROVIDERS = {
         f("access_key", "Access key"), f("secret_key", "Secret key", secret=True),
         f("public_url", "Publieke URL (bucket-URL of CDN, optioneel)", required=False),
         f("prefix", "Map in de bucket (optioneel, bv. site)", required=False),
-        f("encryption_key", "Hoofdsleutel voor bestandsversleuteling", secret=True, required=False)]},
+        f("encryption_key", "Hoofdsleutel", secret=True, required=False)]},
     "stripe": {"label": "Stripe", "test": test_stripe, "fields": [f("secret_key", "Secret key", secret=True)]},
     "mollie": {"label": "Mollie", "test": test_mollie, "fields": [f("api_key", "API-sleutel (live_ of test_)", secret=True)]},
     "postmark": {"label": "Postmark", "test": test_postmark, "fields": [f("server_token", "Server-token", secret=True), f("from_email", "Afzender (e-mailadres, gevalideerd bij Postmark)", required=False)]},
