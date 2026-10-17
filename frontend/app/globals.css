@@ -1476,3 +1476,9 @@ html[data-chat-pos="top-left"] .direct-pop { left: 1rem; right: auto; top: 1rem;
 html[data-chat-pos="top-right"] .direct-pop { right: 1rem; top: 1rem; bottom: auto; }
 html[data-chat-pos="bottom-left"] .direct-pop { left: 1rem; right: auto; }
 html[data-chat-pos="center"] .direct-pop { left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); }
+
+/* direct connection status bar: one compact line */
+.direct-status { font-size: .85rem; padding: .35rem .65rem; gap: .4rem .6rem; line-height: 1.3; }
+.direct-status strong { font-weight: 600; }
+.direct-status small { font-size: .75rem; }
+.direct-status .btn { padding: .2rem .6rem; font-size: .8rem; min-height: 0; }
