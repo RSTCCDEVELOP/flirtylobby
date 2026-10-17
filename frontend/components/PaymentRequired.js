@@ -8,7 +8,9 @@ import { useModule } from "./Modules";
 
 // When the server says a subscription is needed (chat, video, likes…): offer to look at the subscriptions.
 export default function PaymentRequired() {
-  const on = useModule("subscriptions");
+  const subsOn = useModule("subscriptions");
+  const donOn = useModule("donations");
+  const on = subsOn || donOn;
   const router = useRouter();
   useEffect(() => {
     if (!on) return;

@@ -16,7 +16,7 @@ import { money } from "../../../../lib/format";
 import { lvl } from "../../../../lib/perms";
 
 const BTN = { as_button: false, labels: {}, icon: "heart", variant: "primary", size: "md", radius: "default", color: "" };
-const blank = { names: {}, descriptions: {}, recipients: {}, button: BTN, system_object: false, info: { titles: {}, texts: {}, media: null }, thanks: { titles: {}, texts: {}, media: null }, min_amount: "2", max_amount: "100", step: "1", default_amount: "10", goal: "", allow_message: true, allow_anonymous: true, grants: [], grant_days: 30, min_for_grants: "0", active: true, order: 0 };
+const blank = { names: {}, descriptions: {}, recipients: {}, button: BTN, system_object: false, actions: [], info: { titles: {}, texts: {}, media: null }, thanks: { titles: {}, texts: {}, media: null }, min_amount: "2", max_amount: "100", step: "1", default_amount: "10", goal: "", allow_message: true, allow_anonymous: true, grants: [], grant_days: 30, min_for_grants: "0", active: true, order: 0 };
 
 export default function DonationsAdmin() {
   const { user } = useAuth();
@@ -34,6 +34,8 @@ export default function DonationsAdmin() {
   const [sec, setSec] = useState("settings"); // tab of the form: settings | info | thanks
   const [picker, setPicker] = useState(null); // "info" | "thanks" while the media picker is open
   const [aiText, setAiText] = useState("");
+  const [gates, setGates] = useState(null);
+  useEffect(() => { api("/subscriptions/admin/settings/").then(setGates).catch(() => {}); }, []);
   const sysOn = useModule("sysobjects");
   const view = useView("donation-campaigns");
   useEffect(() => { api("/languages/").then((d) => { setLangs(d); setLang(d.default || d.languages[0]?.code || "nl"); }).catch(() => {}); }, []);
@@ -43,7 +45,7 @@ export default function DonationsAdmin() {
     const d = langs.default || "nl";
     setLang(d);
     setModal(c ? { ...c, goal: c.goal ?? "", names: c.names?.[d] || Object.keys(c.names || {}).length ? c.names : { [d]: c.name }, descriptions: Object.keys(c.descriptions || {}).length ? c.descriptions : { [d]: c.description || "" },
-                   recipients: Object.keys(c.recipients || {}).length ? c.recipients : { [d]: c.recipient || "" }, button: { ...BTN, ...(c.button || {}) }, info: { titles: {}, texts: {}, media: null, ...(c.info || {}) }, thanks: { titles: {}, texts: {}, media: null, ...(c.thanks || {}) } } : { ...blank, button: { ...BTN } });
+                   recipients: Object.keys(c.recipients || {}).length ? c.recipients : { [d]: c.recipient || "" }, button: { ...BTN, ...(c.button || {}) }, actions: c.actions || [], info: { titles: {}, texts: {}, media: null, ...(c.info || {}) }, thanks: { titles: {}, texts: {}, media: null, ...(c.thanks || {}) } } : { ...blank, button: { ...BTN } });
     setSec("settings");
   };
   const setText = (field, value) => setModal((m) => ({ ...m, [field]: { ...m[field], [lang]: value } }));
@@ -109,7 +111,7 @@ export default function DonationsAdmin() {
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
       {rec && <div className="sub-stats"><div className="card"><span className="muted">{tx("Totaal ontvangen")}</span><strong>{money(rec.total, cur)}</strong></div><div className="card"><span className="muted">{tx("Aantal donaties")}</span><strong>{rec.count}</strong></div></div>}
-      <Tabs value={tab} onChange={setTab} tabs={[["campaigns", "Acties", null, camps.length], ["received", "Ontvangen"]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["campaigns", "Donatie-acties", null, camps.length], ["received", "Ontvangen"], ["access", "Toegang"]]} />
 
       {tab === "campaigns" && (
         <>
@@ -135,6 +137,19 @@ export default function DonationsAdmin() {
           {!camps.length && <p className="muted">{tx("Nog geen acties. Maak je eerste donatie-actie.")}</p>}
         </div>
         </>
+      )}
+
+      {tab === "access" && gates && (
+        <div className="card form">
+          <h3 style={{ margin: 0 }}>{tx("Wat vraagt toegang?")}</h3>
+          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Standaard is alles gratis. Zet een onderdeel aan om het alleen open te stellen voor wie een abonnement of een actie van een donatie heeft. De acties die je bij een donatie-actie instelt (tabblad Acties) geven die toegang.")}</p>
+          {[["site", "De hele website"], ["chat", "Chat"], ["chat_media", "Foto's en video's in de chat"], ["video_chat", "Videochat"], ["likes", "Likes per dag"]].map(([k, l]) => (
+            <label className="check sec-toggle" key={k}>
+              <input type="checkbox" checked={!!gates.gates[k]} disabled={L < 3} onChange={async (e) => { try { setGates(await api("/subscriptions/admin/settings/", { method: "PUT", body: { gates: { [k]: e.target.checked } } })); } catch (er) { setMsg({ ok: false, text: errorText(er) }); } }} />
+              <span><strong>{tx(l)}</strong></span>
+            </label>
+          ))}
+        </div>
       )}
 
       {tab === "received" && rec && (
@@ -169,8 +184,8 @@ export default function DonationsAdmin() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save}>
             <h2>{modal.id ? tx("Actie wijzigen") : tx("Nieuwe donatie-actie")}</h2>
-            <Tabs value={sec} onChange={setSec} tabs={[["settings", "Instellingen"], ["info", "Popup info"], ["thanks", "Bedankt popup"]]} />
-            <Tabs className="lang-tabs" value={lang} onChange={setLang} tabs={langs.languages.map((l) => [l.code, l.native_name || l.code, null, modal.names[l.code] ? "✓" : null])} />
+            <Tabs value={sec} onChange={setSec} tabs={[["settings", "Instellingen"], ["info", "Popup info"], ["thanks", "Bedankt popup"], ["actions", "Acties", null, modal.actions?.length || null]]} />
+            {sec !== "actions" && <Tabs className="lang-tabs" value={lang} onChange={setLang} tabs={langs.languages.map((l) => [l.code, l.native_name || l.code, null, modal.names[l.code] ? "✓" : null])} />}
             {sec === "settings" && (
               <>
             <div className="form-grid">
@@ -232,15 +247,38 @@ export default function DonationsAdmin() {
               <label className="check"><input type="checkbox" checked={modal.allow_anonymous} onChange={set("allow_anonymous")} /> {tx("Anoniem tonen toestaan")}</label>
               <label className="check"><input type="checkbox" checked={modal.active} onChange={set("active")} /> {tx("Open voor donaties")}</label>
             </div>
-            <strong style={{ fontSize: ".9rem" }}>{tx("Bedankje: toegang voor donateurs (optioneel)")}</strong>
-            <GrantsEditor value={modal.grants} options={opts} onChange={(g) => setModal({ ...modal, grants: g })} />
-            {modal.grants.length > 0 && (
-              <div className="form-grid">
-                <label>{tx("Dagen toegang na de donatie")}<input type="number" min="1" value={modal.grant_days} onChange={set("grant_days")} /></label>
-                <label>{tx("Vanaf dit bedrag")}<input type="number" min="0" step="0.01" value={modal.min_for_grants} onChange={set("min_for_grants")} /></label>
-              </div>
-            )}
               </>
+            )}
+            {sec === "actions" && (
+              <div className="pop-edit">
+                <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Wat de donateur nu mag gebruiken omdat hij gedoneerd heeft. Kies per actie vanaf welk bedrag, wanneer het geldt en hoe vaak. Alleen voor donateurs met een account. Deze instellingen gelden voor alle talen.")}</p>
+                {modal.actions.map((a, i) => {
+                  const sp = opts.grant_types.find((x) => x.type === a.type);
+                  const upd = (patch) => setModal((m) => ({ ...m, actions: m.actions.map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
+                  return (
+                    <div className="card action-row" key={i}>
+                      <div className="grant-row">
+                        <select value={a.type} onChange={(e) => upd({ type: e.target.value, ref: "", value: 0 })}>{opts.grant_types.map((g) => <option key={g.type} value={g.type}>{tx(g.label)}</option>)}</select>
+                        {sp?.ref === "page" && <select value={a.ref || ""} onChange={(e) => upd({ ref: e.target.value })}><option value="">{tx("Kies een pagina…")}</option>{opts.pages.map((p) => <option key={p.key} value={p.key}>{p.title}</option>)}</select>}
+                        {sp?.ref === "product" && <select value={a.ref || ""} onChange={(e) => upd({ ref: e.target.value })}><option value="">{tx("Kies een product…")}</option>{opts.products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>}
+                        {sp?.ref === "text" && <input value={a.ref || ""} maxLength={80} placeholder={tx("bv. cursus-1")} onChange={(e) => upd({ ref: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })} />}
+                        {sp?.value && <input type="number" min={0} value={a.value ?? 0} placeholder={tx("0 = onbeperkt")} title={tx("0 = onbeperkt")} onChange={(e) => upd({ value: e.target.value })} />}
+                        {!sp?.ref && !sp?.value && <span className="muted grant-help">{tx(sp?.help || "")}</span>}
+                        <button type="button" className="btn sm danger" onClick={() => setModal((m) => ({ ...m, actions: m.actions.filter((_, j) => j !== i) }))}>{tx("Weg")}</button>
+                      </div>
+                      <div className="form-grid">
+                        <label>{tx("Geldt vanaf (datum en tijd)")}<input type="datetime-local" value={a.from || ""} onChange={(e) => upd({ from: e.target.value })} /></label>
+                        <label>{tx("Deadline (datum en tijd)")}<input type="datetime-local" value={a.until || ""} onChange={(e) => upd({ until: e.target.value })} /></label>
+                        <label>{tx("Hoe vaak te gebruiken (0 = zo lang de actie geldt)")}<input type="number" min={0} value={a.uses ?? 0} onChange={(e) => upd({ uses: e.target.value })} /></label>
+                        <label>{tx("Vanaf bedrag")}<input type="number" min={0} step="0.01" value={a.min_amount ?? 0} onChange={(e) => upd({ min_amount: e.target.value })} /></label>
+                      </div>
+                      <label className="check sec-toggle"><input type="checkbox" checked={!!a.session_only} onChange={(e) => upd({ session_only: e.target.checked })} /><span><strong>{tx("Alleen deze sessie")}</strong><br /><small className="muted">{tx("Geldt alleen zolang de donateur ingelogd blijft; na uitloggen is de actie voorbij.")}</small></span></label>
+                    </div>
+                  );
+                })}
+                {!modal.actions.length && <p className="muted" style={{ margin: 0 }}>{tx("Nog geen acties voor donateurs.")}</p>}
+                <div><button type="button" className="btn sm" onClick={() => setModal((m) => ({ ...m, actions: [...m.actions, { type: "chat", ref: "", value: 0, from: "", until: "", uses: 0, session_only: false, min_amount: "0" }] }))}>{tx("+ Actie toevoegen")}</button></div>
+              </div>
             )}
             {["info", "thanks"].includes(sec) && (
               <div className="pop-edit">

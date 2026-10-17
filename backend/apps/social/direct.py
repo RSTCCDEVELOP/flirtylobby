@@ -188,6 +188,7 @@ def room_signal(request, token):
 
         if not subs.can(room.owner, "video_chat"):
             return bad(subs.GATE_MESSAGE["video_chat"], status.HTTP_402_PAYMENT_REQUIRED)
+        subs.charge(room.owner, "video_chat")
     DirectSignal.objects.create(room=room, to_role="guest" if role == "owner" else "owner", kind=kind, payload=payload)
     return Response(status=status.HTTP_204_NO_CONTENT)
 

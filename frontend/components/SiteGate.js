@@ -11,7 +11,9 @@ const OPEN = ["/login", "/registreren", "/abonnementen", "/dashboard/subscriptio
 
 // "Toegang tot de website" (Admin -> Abonnementen -> Instellingen): without a subscription people only reach the open paths above.
 export default function SiteGate() {
-  const on = useModule("subscriptions");
+  const subsOn = useModule("subscriptions");
+  const donOn = useModule("donations");
+  const on = subsOn || donOn;
   const { user, ready } = useSession();
   const path = usePathname() || "/";
   const router = useRouter();

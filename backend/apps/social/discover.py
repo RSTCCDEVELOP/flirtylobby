@@ -265,6 +265,10 @@ def like(request, uid=None):
         if left is not None and left <= 0:
             return Response({"detail": subs.GATE_MESSAGE["likes"], "subscribe": True}, status=status.HTTP_402_PAYMENT_REQUIRED)
     _, created = Like.objects.get_or_create(from_user=me, to_user=target)
+    if created:
+        from apps.subscriptions import service as subs
+
+        subs.charge_like(me)
     Pass.objects.filter(from_user=me, to_user=target).delete()
     match = Like.objects.filter(from_user=target, to_user=me).exists()
     sent = False

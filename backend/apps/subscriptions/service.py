@@ -18,7 +18,7 @@ from django.utils import timezone
 
 from apps.core import modules
 
-from .models import Donation, DonationCampaign, Plan, Subscription, SubscriptionSettings
+from .models import Donation, DonationCampaign, DonorAction, Plan, Subscription, SubscriptionSettings
 
 logger = logging.getLogger(__name__)
 CENT = Decimal("0.01")
@@ -162,7 +162,7 @@ def _add(ent, grants):
             ent[t] = True
 
 
-def entitlements(user):
+def entitlements(user, with_limited=True):
     ent = _empty()
     if not user or not getattr(user, "is_authenticated", False):
         return ent
@@ -177,11 +177,21 @@ def entitlements(user):
         _add(ent, s.plan.grants)
     for d in Donation.objects.filter(user=user, status="paid", access_until__gt=now).select_related("campaign"):
         _add(ent, d.campaign.grants)
+    if modules.enabled("donations"):
+        for r in _live_rewards(user, now, limited=None if with_limited else False):
+            if r.type == "likes" and r.uses_total:
+                continue  # a limited number of extra likes is counted in likes_left
+            _add(ent, [{"type": r.type, "ref": r.ref, "value": r.value}])
     return ent
 
 
+def either_on():
+    """Subscriptions and donations share the access rules (what needs a subscription or a donor action)."""
+    return modules.enabled("subscriptions") or modules.enabled("donations")
+
+
 def gate_on(key):
-    return modules.enabled("subscriptions") and settings()["gates"].get(key, False)
+    return either_on() and settings()["gates"].get(key, False)
 
 
 def can(user, key):
@@ -209,15 +219,16 @@ def likes_left(user):
 
     limit = max(settings()["free_likes_per_day"], ent["likes"] or 0)
     today = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
-    return max(0, limit - Like.objects.filter(from_user=user, created_at__gte=today).count())
+    extra = sum(r.uses_total - r.uses_used for r in _live_rewards(user, limited=True) if r.type == "likes")  # extra likes from a donation
+    return max(0, limit - Like.objects.filter(from_user=user, created_at__gte=today).count()) + extra
 
 
 def locked_pages():
     """Pages that need a subscription: any page that a plan or a campaign lists."""
-    if not modules.enabled("subscriptions"):
+    if not either_on():
         return set()
     keys = set()
-    for grants in list(Plan.objects.values_list("grants", flat=True)) + list(DonationCampaign.objects.values_list("grants", flat=True)):
+    for grants in list(Plan.objects.values_list("grants", flat=True)) + list(DonationCampaign.objects.values_list("grants", flat=True)) + list(DonationCampaign.objects.values_list("actions", flat=True)):
         keys |= {g["ref"] for g in grants or [] if g.get("type") == "page"}
     return keys
 
@@ -373,6 +384,7 @@ def on_payment(payment):
         if d.campaign.grants and d.amount >= d.campaign.min_for_grants:
             d.access_until = now + timedelta(days=d.campaign.grant_days)
         d.save()
+        give_rewards(d)
         _mail_donation(d)
     elif payment.status in ("failed", "canceled", "expired") and d.status == "pending":
         d.status = "failed"
@@ -380,6 +392,89 @@ def on_payment(payment):
     elif payment.status == "refunded":
         d.status, d.access_until = "failed", None
         d.save(update_fields=["status", "access_until"])
+        d.rewards.all().delete()  # a refunded gift takes the actions away
+
+
+def give_rewards(d):
+    """The actions of the campaign that fit the amount become this donor's own (with their own use counter). Needs an account."""
+    from datetime import datetime
+    from decimal import Decimal
+
+    if not d.user_id or d.rewards.exists():
+        return
+    for a in d.campaign.actions or []:
+        if d.amount < Decimal(str(a.get("min_amount") or 0)):
+            continue
+        DonorAction.objects.create(
+            donation=d, user_id=d.user_id, type=a["type"], ref=a.get("ref") or "", value=int(a.get("value") or 0),
+            valid_from=datetime.fromisoformat(a["from"]) if a.get("from") else None, valid_until=datetime.fromisoformat(a["until"]) if a.get("until") else None,
+            uses_total=int(a.get("uses") or 0), session_only=bool(a.get("session_only")))
+
+
+def _live_rewards(user, now=None, limited=None):
+    """Donor actions that can be used right now: in their dates, uses left, and (session only) tied to the current login."""
+    from rest_framework.authtoken.models import Token
+
+    now = now or timezone.now()
+    token = Token.objects.filter(user=user).values_list("key", flat=True).first()
+    out = []
+    for r in DonorAction.objects.filter(user=user):
+        if (r.valid_from and r.valid_from > now) or (r.valid_until and r.valid_until <= now):
+            continue
+        if r.uses_total and r.uses_used >= r.uses_total:
+            continue
+        if limited is True and not r.uses_total or limited is False and r.uses_total:
+            continue
+        if r.session_only:
+            if not token or (r.bound_token and r.bound_token != token):
+                continue  # logged out since: the session is over
+            if not r.bound_token:
+                r.bound_token = token  # the first login that sees it is the session it belongs to
+                r.save(update_fields=["bound_token"])
+        out.append(r)
+    return out
+
+
+def charge(user, type_, ref=""):
+    """One use of a feature happened. Free access (subscription, unlimited action, staff) costs nothing; otherwise a limited donor action pays one use."""
+    if not user or not getattr(user, "is_authenticated", False) or user.is_staff or not modules.enabled("donations"):
+        return
+    base = entitlements(user, with_limited=False)
+    if type_ in ("chat", "chat_media", "video_chat", "site") and base[type_]:
+        return
+    if type_ == "page" and (ref in base["pages"]):
+        return
+    if type_ == "content" and (ref in base["content"]):
+        return
+    for r in _live_rewards(user, limited=True):
+        if r.type == type_ and (not r.ref or r.ref == ref):
+            r.uses_used += 1
+            r.save(update_fields=["uses_used"])
+            return
+
+
+def charge_like(user):
+    """A like was given: once the daily allowance is used up, extra likes from a donation pay for it."""
+    if not gate_on("likes") or user.is_staff:
+        return
+    from apps.social.models import Like
+
+    ent = entitlements(user, with_limited=False)
+    if ent["likes"] is None:
+        return
+    limit = max(settings()["free_likes_per_day"], ent["likes"] or 0)
+    today = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+    if Like.objects.filter(from_user=user, created_at__gte=today).count() > limit:
+        for r in _live_rewards(user, limited=True):
+            if r.type == "likes":
+                r.uses_used += 1
+                r.save(update_fields=["uses_used"])
+                return
+
+
+def my_rewards(user):
+    return [{"id": r.id, "type": r.type, "label": describe([{"type": r.type, "ref": r.ref, "value": r.value}])[0]["label"], "until": r.valid_until, "uses_left": (r.uses_total - r.uses_used) if r.uses_total else None,
+             "session_only": r.session_only} for r in _live_rewards(user)]
 
 
 def _activate(sub, order):

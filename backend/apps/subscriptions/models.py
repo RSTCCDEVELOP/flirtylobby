@@ -72,6 +72,7 @@ class DonationCampaign(models.Model):
     recipients = models.JSONField(default=dict, blank=True)
     button = models.JSONField(default=dict, blank=True)  # {"as_button", "labels": {lang: text}, "icon", "variant", "size", "radius", "color"}
     system_object = models.BooleanField(default=False)  # can be put on a page in edit mode (module Systeemobjecten)
+    actions = models.JSONField(default=list, blank=True)  # what a donor may use now: [{type, ref, value, from, until, uses, session_only, min_amount}]
     info = models.JSONField(default=dict, blank=True)  # popup before donating: {"titles": {lang}, "texts": {lang}, "media": MediaItem id}
     thanks = models.JSONField(default=dict, blank=True)  # popup after donating, same shape
     grants = models.JSONField(default=list, blank=True)  # a thank-you: access for `grant_days` after donating
@@ -108,3 +109,24 @@ class SubscriptionSettings(models.Model):
     """Singleton (pk=1): which parts of the site need a subscription, and how repeats and grace work."""
 
     data = models.JSONField(default=dict, blank=True)
+
+
+class DonorAction(models.Model):
+    """One thing a donor may use because of a donation: valid between two moments, a number of times (0 = as often as he likes),
+    and optionally only in the session (login) he is in; logging out ends it."""
+
+    donation = models.ForeignKey(Donation, on_delete=models.CASCADE, related_name="rewards")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="donor_actions")
+    type = models.CharField(max_length=20)
+    ref = models.CharField(max_length=80, blank=True)
+    value = models.PositiveIntegerField(default=0)
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)  # the deadline; empty = no deadline
+    uses_total = models.PositiveIntegerField(default=0)  # 0 = unlimited (within the dates)
+    uses_used = models.PositiveIntegerField(default=0)
+    session_only = models.BooleanField(default=False)
+    bound_token = models.CharField(max_length=60, blank=True)  # the login (token) it is tied to; gone after logout
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["valid_until", "id"]

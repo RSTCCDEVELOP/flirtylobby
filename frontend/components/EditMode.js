@@ -22,6 +22,9 @@ export function ContentProvider({ initial, defaultLang, languages, children }) {
   return <ContentContext.Provider value={{ blocks, setBlock, defaultLang, languages }}>{children}</ContentContext.Provider>;
 }
 
+// lets a component add texts it fetched itself (with the visitor's login) to the page's content
+export const useSetBlock = () => useContext(ContentContext).setBlock;
+
 function useLang() {
   const { defaultLang, languages } = useContext(ContentContext);
   const [lang, setLang] = useState(defaultLang);

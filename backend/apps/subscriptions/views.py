@@ -51,6 +51,59 @@ def clean_button(raw):
             "color": color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else ""}
 
 
+def _dt(value):
+    """'2026-12-31T23:59' (site time) or ISO with offset -> aware datetime string, or None."""
+    from datetime import datetime
+
+    from django.utils import timezone
+
+    if not value:
+        return None
+    try:
+        d = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if timezone.is_naive(d):
+        d = timezone.make_aware(d)
+    return d.isoformat()
+
+
+def clean_actions(raw):
+    """What a donor may use: type + choice (like a plan's grants), from/until moments, how many times (0 = unlimited), this login only, minimum amount."""
+    from decimal import Decimal, InvalidOperation
+
+    out = []
+    for a in raw or []:
+        try:
+            g = service.clean_grants([{"type": a.get("type"), "ref": a.get("ref"), "value": a.get("value")}])
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
+        if not g:
+            continue
+        frm, until = _dt(a.get("from")), _dt(a.get("until"))
+        if frm and until and until <= frm:
+            raise serializers.ValidationError("De einddatum moet na de begindatum liggen.")
+        try:
+            uses = max(0, min(100000, int(a.get("uses") or 0)))
+            minimum = max(Decimal("0"), Decimal(str(a.get("min_amount") or 0)))
+        except (ValueError, InvalidOperation):
+            raise serializers.ValidationError("Aantal keer en minimumbedrag moeten getallen zijn.")
+        out.append({**g[0], "from": frm, "until": until, "uses": uses, "session_only": bool(a.get("session_only")), "min_amount": str(minimum)})
+    return out[:30]
+
+
+def actions_local(actions):
+    """The moments back as local time ('YYYY-MM-DDTHH:MM') for the form."""
+    from datetime import datetime
+
+    from django.utils import timezone
+
+    def loc(s):
+        return timezone.localtime(datetime.fromisoformat(s)).strftime("%Y-%m-%dT%H:%M") if s else ""
+
+    return [{**a, "from": loc(a.get("from")), "until": loc(a.get("until"))} for a in actions or []]
+
+
 def clean_popup(raw):
     """{titles, texts, media}: texts per known language, the picture must be an image of the media library."""
     from apps.medialib.models import MediaItem
@@ -131,12 +184,13 @@ class CampaignSerializer(serializers.ModelSerializer):
     class Meta:
         model = DonationCampaign
         fields = ["id", "slug", "name", "description", "recipient", "recipient_user", "min_amount", "max_amount", "step", "default_amount", "goal", "allow_message",
-                  "allow_anonymous", "grants", "grants_text", "grant_days", "min_for_grants", "active", "order", "raised", "count", "names", "descriptions", "recipients", "button", "system_object", "info", "thanks"]
+                  "allow_anonymous", "grants", "grants_text", "grant_days", "min_for_grants", "active", "order", "raised", "count", "names", "descriptions", "recipients", "button", "system_object", "info", "thanks", "actions"]
         read_only_fields = ["slug"]
         extra_kwargs = {"name": {"required": False, "allow_blank": True}}
 
     def to_representation(self, c):
         data = super().to_representation(c)
+        data["actions"] = actions_local(data.get("actions"))
         for k in ("info", "thanks"):  # the picture's address, to show it in the form
             data[k] = {**(data.get(k) or {}), "image_url": popup_public(getattr(c, k)).get("image")}
         return data
@@ -167,6 +221,9 @@ class CampaignSerializer(serializers.ModelSerializer):
 
     def validate_button(self, v):
         return clean_button(v)
+
+    def validate_actions(self, v):
+        return clean_actions(v)
 
     def validate_info(self, v):
         return clean_popup(v)
@@ -296,8 +353,24 @@ def give(request):
     return Response(_sub_row(s, True), status=status.HTTP_201_CREATED)
 
 
+def _settings_perm():
+    from rest_framework.permissions import BasePermission
+
+    class _P(BasePermission):
+        message = "Je hebt hier geen rechten voor."
+
+        def has_permission(self, request, view):
+            from apps.accounts.access import level
+            from apps.core import modules
+
+            need = 1 if request.method == "GET" else 3
+            return (modules.enabled("subscriptions") and level(request.user, "subscriptions") >= need) or (modules.enabled("donations") and level(request.user, "donations") >= need)
+
+    return _P
+
+
 @api_view(["GET", "PUT"])
-@permission_classes([has_level_for("subscriptions", {"GET": "use"}, default="manage"), module_required("subscriptions")])
+@permission_classes([_settings_perm()])
 def settings_admin(request):
     if request.method == "PUT":
         try:
@@ -531,18 +604,19 @@ def subscribe(request):
 @permission_classes([IsAuthenticated])
 def me(request):
     """The member's subscriptions and what they give. Also settles repeats that are due."""
-    on = service.modules.enabled("subscriptions")
-    if on:
+    on = service.either_on()
+    if service.modules.enabled("subscriptions"):
         service.process_due(request.user)
     ent = service.entitlements(request.user)
     gates = service.settings()["gates"] if on else {}
     return Response({
         "enabled": on,
-        "subscriptions": [_sub_row(s) for s in Subscription.objects.filter(user=request.user).select_related("plan").exclude(status__in=("expired",) if False else ())][:50] if on else [],
+        "subscriptions": [_sub_row(s) for s in Subscription.objects.filter(user=request.user).select_related("plan")][:50] if service.modules.enabled("subscriptions") else [],
         "entitlements": {k: (sorted(v) if isinstance(v, set) else v) for k, v in ent.items()},
         "gates": gates, "site_locked": bool(on and gates.get("site") and not ent["site"]), "locked_pages": sorted(service.locked_pages()) if on else [],
         "likes_left": service.likes_left(request.user) if on else None,
-        "donations": request.user.donations.filter(status="paid").count() if service.modules.enabled("donations") else 0})
+        "donations": request.user.donations.filter(status="paid").count() if service.modules.enabled("donations") else 0,
+        "rewards": service.my_rewards(request.user) if service.modules.enabled("donations") else []})
 
 
 @api_view(["POST"])
@@ -572,16 +646,22 @@ def me_action(request, pk, act):
 @permission_classes([AllowAny])
 def access(request):
     """Does the visitor have access to a page or a piece of content? (used by the Paywall component)"""
-    if not service.modules.enabled("subscriptions"):
+    if not service.either_on():
         return Response({"ok": True})
     ent = service.entitlements(request.user)
     page, content = request.query_params.get("page"), request.query_params.get("content")
     locked = service.locked_pages()
     if page:
-        return Response({"ok": page not in locked or ent["full"] or page in ent["pages"], "locked": page in locked})
+        ok = page not in locked or ent["full"] or page in ent["pages"]
+        if ok and page in locked:
+            service.charge(request.user, "page", page)  # a donor action with a limited number of uses pays one per visit
+        return Response({"ok": ok, "locked": page in locked})
     if content:
-        listed = any(g.get("type") == "content" and g.get("ref") == content for grants in Plan.objects.values_list("grants", flat=True) for g in grants or [])
-        return Response({"ok": not listed or ent["full"] or content in ent["content"], "locked": listed})
+        listed = any(g.get("type") == "content" and g.get("ref") == content for grants in list(Plan.objects.values_list("grants", flat=True)) + list(DonationCampaign.objects.values_list("actions", flat=True)) for g in grants or [])
+        ok = not listed or ent["full"] or content in ent["content"]
+        if ok and listed:
+            service.charge(request.user, "content", content)
+        return Response({"ok": ok, "locked": listed})
     return bad("Geef een pagina of content op.")
 
 

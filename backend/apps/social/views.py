@@ -556,6 +556,9 @@ def chat_thread(request, uid):
             m.attachment_kind, m.attachment_name = kind, f.name[:200]
             m.attachment.save(f"{uuid.uuid4().hex}.{ext}", f, save=False)
         m.save()
+        subs.charge(me, "chat")
+        if f:
+            subs.charge(me, "chat_media")
     after = int(request.query_params.get("after") or 0)
     qs = ChatMessage.objects.filter(Q(sender=me, recipient=other) | Q(sender=other, recipient=me), id__gt=after)
     ChatMessage.objects.filter(sender=other, recipient=me, read_at__isnull=True).update(read_at=timezone.now())
@@ -578,6 +581,7 @@ def chat_signal(request):
 
         if not subs.can(request.user, "video_chat"):
             return bad(subs.GATE_MESSAGE["video_chat"], status.HTTP_402_PAYMENT_REQUIRED)
+        subs.charge(request.user, "video_chat")
     ChatSignal.objects.create(sender=request.user, recipient=other, kind=kind, payload=payload)
     return Response(status=status.HTTP_204_NO_CONTENT)
 

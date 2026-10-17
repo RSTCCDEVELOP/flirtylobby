@@ -31,6 +31,16 @@ export default function MySubscriptions() {
       <div className="page-head"><h1>{tx("Mijn abonnementen")}</h1><Link className="btn" href="/abonnementen">{tx("Alle abonnementen")}</Link></div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
       {d.likes_left !== null && d.gates?.likes && <div className="alert ok" style={{ marginBottom: "1rem" }}>{tx("Likes over vandaag")}: <strong>{d.likes_left}</strong></div>}
+      {d.rewards?.length > 0 && (
+        <div className="card" style={{ marginBottom: "1rem" }}>
+          <strong>{tx("Mijn acties (dankzij een donatie)")}</strong>
+          <ul className="sub-grants" style={{ marginTop: ".5rem" }}>
+            {d.rewards.map((r) => (
+              <li key={r.id}>{tx(r.label)}{r.until ? ` · ${tx("tot")} ${new Date(r.until).toLocaleString()}` : ""}{r.uses_left !== null ? ` · ${r.uses_left} ${tx("keer over")}` : ""}{r.session_only ? ` · ${tx("alleen deze sessie")}` : ""}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="sub-plans">
         {list.map((s) => (
           <div className="card sub-plan" key={s.id}>
