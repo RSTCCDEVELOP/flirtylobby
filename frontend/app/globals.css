@@ -1502,3 +1502,8 @@ html .direct-pop[data-pos="center"] { left: 50%; top: 50%; transform: translate(
 .direct-pop[data-size="l"]:not(.mini) { width: min(680px, calc(100vw - 2rem)); max-height: 92vh; }
 .direct-pop[data-size="l"] .chat-msgs { min-height: 380px !important; max-height: 60vh !important; }
 .direct-pop[data-size="s"] .chat-msgs { min-height: 140px !important; max-height: 260px !important; }
+/* sizes made clearly different: small stays compact, medium and large are roomier */
+html .direct-pop[data-size="m"]:not(.mini) { width: min(520px, calc(100vw - 2rem)); }
+html .direct-pop[data-size="l"]:not(.mini) { width: min(860px, calc(100vw - 2rem)); max-height: 92vh; }
+html .direct-pop[data-size="m"] .chat-msgs { min-height: 300px !important; max-height: 48vh !important; }
+html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-height: 64vh !important; }
