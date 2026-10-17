@@ -2759,5 +2759,10 @@
   "De live camera werkt alleen op een beveiligde (https) verbinding. Maak een foto van de QR-code of gebruik de code.": "实时相机仅在安全(https)连接下可用。请拍摄二维码照片或使用代码。",
   "Jouw code": "你的代码",
   "Jouw code kopiëren": "复制你的代码",
-  "Je kunt schrijven zodra de ander online is.": "对方上线后即可发送消息。"
+  "Je kunt schrijven zodra de ander online is.": "对方上线后即可发送消息。",
+  "Plaats van de chat": "聊天位置",
+  "Links boven": "左上",
+  "Rechts boven": "右上",
+  "Links onder": "左下",
+  "Rechts onder": "右下"
 }

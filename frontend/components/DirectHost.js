@@ -13,6 +13,9 @@ export const useDirectHost = () => useContext(Ctx);
 export function DirectHostProvider({ children }) {
   const [session, setSession] = useState(null); // {token, info, mode}
   const [node, setNode] = useState(null);
+  const [pos, setPosState] = useState(""); // the member's own place for the popup; empty = the site's setting
+  useEffect(() => { try { setPosState(localStorage.getItem("directPos") || ""); } catch {} }, []);
+  const setPos = (v) => { setPosState(v); try { localStorage.setItem("directPos", v); } catch {} };
   const [mini, setMini] = useState(false); // popup folded to a bar (the connection stays)
   const holder = useRef(null); // hidden parking place for the connection's screen while no page shows it
 
@@ -32,10 +35,18 @@ export function DirectHostProvider({ children }) {
       {children}
       <div ref={holder} hidden />
       {session?.mode === "popup" && (
-        <div className={`direct-pop card ${mini ? "mini" : ""}`}>
+        <div className={`direct-pop card ${mini ? "mini" : ""}`} data-pos={pos || undefined}>
           <div className="chat-pop-head">
             <strong>{tx("Chat met {0}", session.info?.guest_name || tx("de ander"))}</strong>
             <span className="row" style={{ gap: ".3rem", flexWrap: "nowrap" }}>
+              <select className="pos-pick" value={pos} onChange={(e) => setPos(e.target.value)} aria-label={tx("Plaats van de chat")} title={tx("Plaats van de chat")}>
+                <option value="">{tx("Standaard")}</option>
+                <option value="top-left">↖ {tx("Links boven")}</option>
+                <option value="top-right">↗ {tx("Rechts boven")}</option>
+                <option value="bottom-left">↙ {tx("Links onder")}</option>
+                <option value="bottom-right">↘ {tx("Rechts onder")}</option>
+                <option value="center">◎ {tx("Midden")}</option>
+              </select>
               <button className="btn sm" onClick={() => setMini(!mini)} aria-label={mini ? tx("Uitklappen") : tx("Inklappen")}>{mini ? "▴" : "▾"}</button>
               <button className="btn sm" onClick={close} aria-label={tx("Sluiten")}>✕</button>
             </span>

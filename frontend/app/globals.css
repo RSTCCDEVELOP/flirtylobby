@@ -1487,3 +1487,12 @@ html[data-chat-pos="center"] .direct-pop { left: 50%; top: 50%; right: auto; bot
 .bubble.gbubble[data-g] { background: color-mix(in srgb, var(--gc) 85%, #000 0%); color: #fff; }
 .bubble.gbubble[data-g="x"] { color: #1f2937; }
 .bubble.gbubble[data-g][data-dark] { background: color-mix(in srgb, var(--gc) 55%, #000); color: #fff; }
+
+/* the member picks where the direct chat popup sits (overrides the site's setting) */
+.pos-pick { width: auto; padding: .15rem .3rem; font-size: .8rem; min-height: 0; }
+html .direct-pop[data-pos] { left: auto; right: auto; top: auto; bottom: auto; transform: none; }
+html .direct-pop[data-pos="top-left"] { left: 1rem; top: 1rem; }
+html .direct-pop[data-pos="top-right"] { right: 1rem; top: 1rem; }
+html .direct-pop[data-pos="bottom-left"] { left: 1rem; bottom: 1rem; }
+html .direct-pop[data-pos="bottom-right"] { right: 1rem; bottom: 1rem; }
+html .direct-pop[data-pos="center"] { left: 50%; top: 50%; transform: translate(-50%, -50%); }
