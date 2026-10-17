@@ -1,0 +1,83 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { tx } from "../lib/t";
+import DirectConnection from "./DirectConnection";
+
+// Keeps the owner's direct connection (WebRTC) alive while he moves around the site.
+// The connection lives here, high in the tree; pages and the popup only show it through <DirectSlot />.
+const Ctx = createContext(null);
+export const useDirectHost = () => useContext(Ctx);
+
+export function DirectHostProvider({ children }) {
+  const [session, setSession] = useState(null); // {token, info, mode}
+  const [node, setNode] = useState(null);
+  const [pos, setPosState] = useState(""); // the member's own place for the popup; empty = the site's setting
+  useEffect(() => { try { setPosState(localStorage.getItem("directPos") || ""); } catch {} }, []);
+  const setPos = (v) => { setPosState(v); try { localStorage.setItem("directPos", v); } catch {} };
+  const [size, setSizeState] = useState("m"); // popup size: s | m | l
+  useEffect(() => { try { const v = localStorage.getItem("directSize"); if (["s", "m", "l"].includes(v)) setSizeState(v); } catch {} }, []);
+  const setSize = (v) => { setSizeState(v); try { localStorage.setItem("directSize", v); } catch {} };
+  const [mini, setMini] = useState(false); // popup folded to a bar (the connection stays)
+  const holder = useRef(null); // hidden parking place for the connection's screen while no page shows it
+
+  useEffect(() => {
+    const n = document.createElement("div");
+    n.className = "direct-host-node";
+    holder.current?.appendChild(n);
+    setNode(n);
+    return () => n.remove();
+  }, []);
+
+  const open = useCallback((s) => setSession((cur) => (cur && cur.token === s.token ? { ...cur, ...s } : s)), []);
+  const close = useCallback(() => setSession(null), []);
+
+  return (
+    <Ctx.Provider value={{ session, open, close, node, holder, mini, setMini }}>
+      {children}
+      <div ref={holder} hidden />
+      {session?.mode === "popup" && (
+        <div className={`direct-pop card ${mini ? "mini" : ""}`} data-pos={pos || undefined} data-size={size}>
+          <div className="chat-pop-head">
+            <strong>{tx("Chat met {0}", session.info?.guest_name || tx("de ander"))}</strong>
+            <span className="row" style={{ gap: ".3rem", flexWrap: "nowrap" }}>
+              <select className="pos-pick" value={pos} onChange={(e) => setPos(e.target.value)} aria-label={tx("Plaats van de chat")} title={tx("Plaats van de chat")}>
+                <option value="">{tx("Standaard")}</option>
+                <option value="top-left">↖ {tx("Links boven")}</option>
+                <option value="top-right">↗ {tx("Rechts boven")}</option>
+                <option value="bottom-left">↙ {tx("Links onder")}</option>
+                <option value="bottom-right">↘ {tx("Rechts onder")}</option>
+                <option value="center">◎ {tx("Midden")}</option>
+              </select>
+              <select className="pos-pick" value={size} onChange={(e) => setSize(e.target.value)} aria-label={tx("Grootte van de chat")} title={tx("Grootte van de chat")}>
+                <option value="s">{tx("Klein")}</option>
+                <option value="m">{tx("Medium")}</option>
+                <option value="l">{tx("Groot")}</option>
+              </select>
+              <button className="btn sm" onClick={() => setMini(!mini)} aria-label={mini ? tx("Uitklappen") : tx("Inklappen")}>{mini ? "▴" : "▾"}</button>
+              <button className="btn sm" onClick={close} aria-label={tx("Sluiten")}>✕</button>
+            </span>
+          </div>
+          <div className="direct-pop-body" hidden={mini}>
+            <DirectSlot />
+          </div>
+        </div>
+      )}
+      {node && session && createPortal(<DirectConnection key={session.token} token={session.token} role="owner" info={session.info} onClosed={close} />, node)}
+    </Ctx.Provider>
+  );
+}
+
+// Shows the running connection in this place; when the page goes away the connection moves back to the hidden holder and keeps running.
+export function DirectSlot() {
+  const h = useDirectHost();
+  const ref = useRef(null);
+  useEffect(() => {
+    const node = h?.node, holder = h?.holder;
+    if (!node || !ref.current) return;
+    ref.current.appendChild(node);
+    return () => { holder?.current?.appendChild(node); };
+  }, [h?.node, h?.holder]);
+  return <div ref={ref} />;
+}

@@ -1,0 +1,53 @@
+{
+ "geo": {
+  "title": "Indisponível no teu país",
+  "message": "Infelizmente, este site não está disponível na tua região."
+ },
+ "age": {
+  "title": "Tens {age} anos ou mais?",
+  "message": "Este site destina-se apenas a visitantes com {age} anos ou mais.",
+  "yes": "Sim, tenho {age}+",
+  "no": "Não",
+  "deny_message": "Infelizmente, não tens acesso a este site."
+ },
+ "gambling": {
+  "title": "Joga com consciência",
+  "message": "Tens de ter pelo menos {age} anos para jogar. O jogo pode criar dependência.",
+  "warnings": [
+   "Nunca jogues com dinheiro de que precisas.",
+   "O jogo pode levar à dependência.",
+   "Procura ajuda se o jogo se tornar um problema."
+  ],
+  "confirm": "Tenho {age}+ e compreendo os riscos",
+  "deny": "Sair"
+ },
+ "cookies": {
+  "title": "Cookies",
+  "message": "Utilizamos cookies para fazer o site funcionar e para o melhorar.",
+  "accept_all": "Aceitar tudo",
+  "reject": "Apenas necessários",
+  "settings": "Definições",
+  "save": "Guardar escolha",
+  "policy_link": "Política de cookies",
+  "cat_necessary": "Necessários",
+  "cat_necessary_desc": "Necessários para o site funcionar. Sempre ativos.",
+  "cat_analytics": "Estatísticas",
+  "cat_analytics_desc": "Informação anónima sobre a utilização do site.",
+  "cat_marketing": "Marketing",
+  "cat_marketing_desc": "Para tornar os anúncios mais relevantes.",
+  "cat_preferences": "Preferências",
+  "cat_preferences_desc": "Lembra as tuas definições, como o idioma.",
+  "policy_title": "Política de cookies",
+  "policy_body": "Aqui descreves que cookies utilizas e porquê."
+ },
+ "twofa": {
+  "email_subject": "O teu código de verificação",
+  "email_body": "O teu código de verificação é {code}. É válido durante {minutes} minutos. Não pediste este código? Ignora esta mensagem.",
+  "sms_body": "O teu código de verificação é {code}. Válido {minutes} min."
+ },
+ "registration": {
+  "email_subject": "Confirma o teu endereço de e-mail",
+  "email_body": "O teu código de confirmação é {code}. É válido durante {minutes} minutos. Não criaste nenhuma conta? Ignora esta mensagem.",
+  "sms_body": "O teu código de confirmação é {code}. Válido {minutes} min."
+ }
+}

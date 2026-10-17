@@ -1,0 +1,53 @@
+{
+ "geo": {
+  "title": "在你的国家不可用",
+  "message": "很抱歉，本网站在你所在的地区不可用。"
+ },
+ "age": {
+  "title": "你是否年满 {age} 岁？",
+  "message": "本网站仅供年满 {age} 岁的访客使用。",
+  "yes": "是，我已年满 {age} 岁",
+  "no": "否",
+  "deny_message": "很抱歉，你无法访问本网站。"
+ },
+ "gambling": {
+  "title": "理性游戏",
+  "message": "你必须年满 {age} 岁才能参与赌博。赌博可能令人上瘾。",
+  "warnings": [
+   "切勿使用你生活所需的钱来赌博。",
+   "赌博可能导致成瘾。",
+   "如果赌博成为问题，请寻求帮助。"
+  ],
+  "confirm": "我已年满 {age} 岁并了解风险",
+  "deny": "离开"
+ },
+ "cookies": {
+  "title": "Cookie",
+  "message": "我们使用 Cookie 来保证网站正常运行并不断改进。",
+  "accept_all": "全部接受",
+  "reject": "仅必要的",
+  "settings": "设置",
+  "save": "保存选择",
+  "policy_link": "Cookie 政策",
+  "cat_necessary": "必要",
+  "cat_necessary_desc": "网站正常运行所必需。始终开启。",
+  "cat_analytics": "统计",
+  "cat_analytics_desc": "以匿名方式了解网站的使用情况。",
+  "cat_marketing": "营销",
+  "cat_marketing_desc": "使广告更相关。",
+  "cat_preferences": "偏好",
+  "cat_preferences_desc": "记住你的设置，例如语言。",
+  "policy_title": "Cookie 政策",
+  "policy_body": "请在此说明你使用哪些 Cookie 以及原因。"
+ },
+ "twofa": {
+  "email_subject": "你的验证码",
+  "email_body": "你的验证码是 {code}，{minutes} 分钟内有效。如果不是你本人请求的，请忽略此消息。",
+  "sms_body": "你的验证码是 {code}。{minutes} 分钟内有效。"
+ },
+ "registration": {
+  "email_subject": "验证你的邮箱地址",
+  "email_body": "你的验证码是 {code}，{minutes} 分钟内有效。如果你没有创建账户，请忽略此消息。",
+  "sms_body": "你的验证码是 {code}。{minutes} 分钟内有效。"
+ }
+}

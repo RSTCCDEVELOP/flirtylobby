@@ -1,0 +1,67 @@
+# ── Python / Django ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.manifest
+*.spec
+*.mo
+*.pot
+*.log
+local_settings.py
+backend/.env
+backend/venv/
+backend/staticfiles/
+
+# ── Node / React ───────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/.env
+frontend/dist/
+frontend/build/
+
+# ── backend media ───────────────────────────────────────────────────────────────
+backend/media/images/
+backend/media/videos/
+backend/media/podcast/
+backend/media/
+
+# ── module models ───────────────────────────────────────────────────────────────
+MD/
+
+# ── Database ───────────────────────────────────────────────────────────────
+# The database file itself is gitignored; only the directory is tracked via .gitkeep
+Database/db.sqlite3
+
+# ── Docker ────────────────────────────────────────────────────────────────
+.dockerignore
+
+# ── content for design ────────────────────────────────────────────────────────────────
+CONTENT/
+
+# ── Local scripts ─────────────────────────────────────────────────────────
+start-frontend.sh
+start-backend.sh
+start-claude.sh
+
+# ── macOS ─────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── IDEs ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Next.js ───────────────────────────────────────────────────────────────
+frontend/.next/
+frontend/next-env.d.ts
+frontend/.next-build/
+backend/imports/
