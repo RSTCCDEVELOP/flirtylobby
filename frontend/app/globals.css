@@ -1517,3 +1517,11 @@ html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-h
 .module-top { min-height: 2rem; }
 .module-controls { display: inline-flex; align-items: center; gap: .6rem; flex: none; }
 .module-tile .badge { margin-top: auto; }
+
+/* API keys, list view: name, switch, details and buttons each in their own column, so every row lines up */
+.view-list > .api-card { display: grid !important; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) auto; align-items: center !important; gap: .4rem 1.5rem !important; }
+.view-list > .api-card .api-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .6rem; }
+.view-list > .api-card .api-head strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.view-list > .api-card .api-body { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.view-list > .api-card .api-actions { justify-content: flex-end; flex-wrap: nowrap; margin-left: 0 !important; }
+@media (max-width: 900px) { .view-list > .api-card { grid-template-columns: 1fr; } .view-list > .api-card .api-actions { justify-content: flex-start; flex-wrap: wrap; } }
