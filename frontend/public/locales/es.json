@@ -2752,5 +2752,11 @@
   "Waar staat de chat-popup": "Dónde está la ventana del chat",
   "Volgens Vormgeving (standaard)": "Según Vormgeving (predeterminado)",
   "Linksboven": "Arriba a la izquierda",
-  "Rechtsboven": "Arriba a la derecha"
+  "Rechtsboven": "Arriba a la derecha",
+  "Geen QR-code gevonden in de foto. Probeer het opnieuw: dichterbij, scherp en goed verlicht.": "No se encontró ningún código QR en la foto. Inténtalo de nuevo: más cerca, nítida y bien iluminada.",
+  "Deze foto kon niet gelezen worden.": "No se pudo leer esta foto.",
+  "Maak een foto van de QR-code": "Haz una foto del código QR",
+  "De live camera werkt alleen op een beveiligde (https) verbinding. Maak een foto van de QR-code of gebruik de code.": "La cámara en vivo solo funciona con una conexión segura (https). Haz una foto del código QR o usa el código.",
+  "Jouw code": "Tu código",
+  "Jouw code kopiëren": "Copiar tu código"
 }

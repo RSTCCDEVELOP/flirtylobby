@@ -2752,5 +2752,11 @@
   "Waar staat de chat-popup": "مكان نافذة الدردشة",
   "Volgens Vormgeving (standaard)": "حسب المظهر (افتراضي)",
   "Linksboven": "أعلى اليسار",
-  "Rechtsboven": "أعلى اليمين"
+  "Rechtsboven": "أعلى اليمين",
+  "Geen QR-code gevonden in de foto. Probeer het opnieuw: dichterbij, scherp en goed verlicht.": "لم يتم العثور على رمز QR في الصورة. حاول مرة أخرى: أقرب وبوضوح وإضاءة جيدة.",
+  "Deze foto kon niet gelezen worden.": "تعذرت قراءة هذه الصورة.",
+  "Maak een foto van de QR-code": "التقط صورة لرمز QR",
+  "De live camera werkt alleen op een beveiligde (https) verbinding. Maak een foto van de QR-code of gebruik de code.": "الكاميرا المباشرة تعمل فقط عبر اتصال آمن (https). التقط صورة لرمز QR أو استخدم الرمز.",
+  "Jouw code": "رمزك",
+  "Jouw code kopiëren": "انسخ رمزك"
 }

@@ -2752,5 +2752,11 @@
   "Waar staat de chat-popup": "Where the chat popup sits",
   "Volgens Vormgeving (standaard)": "Follow Vormgeving (default)",
   "Linksboven": "Top left",
-  "Rechtsboven": "Top right"
+  "Rechtsboven": "Top right",
+  "Geen QR-code gevonden in de foto. Probeer het opnieuw: dichterbij, scherp en goed verlicht.": "No QR code found in the photo. Try again: closer, sharp and well lit.",
+  "Deze foto kon niet gelezen worden.": "This photo could not be read.",
+  "Maak een foto van de QR-code": "Take a photo of the QR code",
+  "De live camera werkt alleen op een beveiligde (https) verbinding. Maak een foto van de QR-code of gebruik de code.": "The live camera only works on a secure (https) connection. Take a photo of the QR code or use the code.",
+  "Jouw code": "Your code",
+  "Jouw code kopiëren": "Copy your code"
 }

@@ -2752,5 +2752,11 @@
   "Waar staat de chat-popup": "聊天弹窗的位置",
   "Volgens Vormgeving (standaard)": "遵循外观设置（默认）",
   "Linksboven": "左上",
-  "Rechtsboven": "右上"
+  "Rechtsboven": "右上",
+  "Geen QR-code gevonden in de foto. Probeer het opnieuw: dichterbij, scherp en goed verlicht.": "照片中未找到二维码。请再试一次:靠近一些、对焦清晰、光线充足。",
+  "Deze foto kon niet gelezen worden.": "无法读取这张照片。",
+  "Maak een foto van de QR-code": "拍摄二维码照片",
+  "De live camera werkt alleen op een beveiligde (https) verbinding. Maak een foto van de QR-code of gebruik de code.": "实时相机仅在安全(https)连接下可用。请拍摄二维码照片或使用代码。",
+  "Jouw code": "你的代码",
+  "Jouw code kopiëren": "复制你的代码"
 }

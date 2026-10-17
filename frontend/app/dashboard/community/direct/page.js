@@ -27,9 +27,16 @@ function ChatRequest({ room, onAnswer }) {
 function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew, onAnswer }) {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/direct/${room.token}`;
   useEffect(() => { QRCode.toDataURL(url, { margin: 1, width: 360 }).then(setQr).catch(() => {}); }, [url]);
   const copy = async () => { try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { (await promptDialog(tx("Kopieer de link:"), url)); } };
+  // the code (without link) to the clipboard, to pass on by phone or message
+  const copyCode = async () => {
+    try { await navigator.clipboard.writeText(room.code); }
+    catch { const t = document.createElement("textarea"); t.value = room.code; t.style.position = "fixed"; t.style.opacity = "0"; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch {} t.remove(); }
+    setCodeCopied(true); setTimeout(() => setCodeCopied(false), 1500);
+  };
   const share = () => navigator.share?.({ title: tx("Uitnodiging"), text: tx("Maak rechtstreeks verbinding met mij"), url }).catch(() => {});
   const online = room.guest_online;
   return (
@@ -43,9 +50,10 @@ function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew, on
             {" "}<small className="muted">{tx("geldig tot")} {new Date(room.expires_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" })}</small>
           </span>
           <input readOnly value={url} onFocus={(e) => e.target.select()} />
-          {room.code && <span className="invite-code" title={tx("Verbinden zonder link: voer deze code in op de pagina Verbind opnieuw")}><small className="muted">{tx("Code")}</small> <strong>{room.code.slice(0, 3)} {room.code.slice(3)}</strong> <small className="muted">· {tx("verbinden zonder link")}</small></span>}
+          {room.code && <span className="invite-code" title={tx("Verbinden zonder link: voer deze code in op de pagina Verbind opnieuw")}><small className="muted">{tx("Jouw code")}</small> <strong>{room.code.slice(0, 3)} {room.code.slice(3)}</strong> <small className="muted">· {tx("verbinden zonder link")}</small></span>}
           <div className="row" style={{ justifyContent: "flex-start", flexWrap: "wrap" }}>
             <button className="btn" onClick={copy}>{copied ? <>{tx("Gekopieerd")} <IconCheck /></> : tx("Link kopiëren")}</button>
+            {room.code && <button className="btn" onClick={copyCode}>{codeCopied ? <>{tx("Gekopieerd")} <IconCheck /></> : tx("Jouw code kopiëren")}</button>}
             {typeof navigator !== "undefined" && navigator.share && <button className="btn" onClick={share}>{tx("Delen…")}</button>}
             {room.guest_name && <button className="btn danger" onClick={onDisconnect}>{tx("Verbreek verbinding")}</button>}
             {online && !open && <button className="btn primary" onClick={onChat}>{tx("Start chat")}</button>}
