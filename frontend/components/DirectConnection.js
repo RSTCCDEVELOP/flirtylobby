@@ -37,7 +37,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
   const [call, setCall] = useState(null); // {status: calling|incoming|active, local, remote}
   const [chatOn, setChatOn] = useState(role === "owner" || !!saved.current.msgs?.length); // the guest waits in a waiting room until the owner starts the chat
   const fails = useRef(0);
-  useEffect(() => { onChat?.(chatOn); }, [chatOn, onChat]);
+  useEffect(() => { onChat?.(role === "guest" ? chatOn : chatOn && peer.guest_online); }, [chatOn, role, peer.guest_online, onChat]);
   const [tab, setTab] = useState("chat"); // chat | media | video
   const tabRef = useRef("chat");
   const [unseen, setUnseen] = useState({ chat: 0, media: 0 });
@@ -180,7 +180,7 @@ export default function DirectConnection({ token, role, secret, info, onClosed, 
     if (!(await confirmDialog(role === "owner" ? tx("De verbinding met {0} verbreken? De link blijft werken voor iemand anders.", peer.guest_name || tx("de ander")) : tx("De verbinding verbreken?"), { title: tx("Verbinding verbreken"), okLabel: tx("Verbreken"), danger: true }))) return;
     hangup(false);
     const body = { key: secret };
-    try { await api(role === "owner" ? `/direct/rooms/${token}/disconnect/` : `/direct/${token}/leave/`, { method: "POST", body }); } catch {}
+    try { await api(role === "owner" ? (secret ? `/direct/${token}/owner-leave/` : `/direct/rooms/${token}/disconnect/`) : `/direct/${token}/leave/`, { method: "POST", body }); } catch {}
     st.current.dc?.close(); st.current.pc?.close(); st.current.pc = null;
     onClosed?.("left");
   };

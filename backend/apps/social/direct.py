@@ -51,15 +51,17 @@ def _new_code():
 
 
 def _state(room):
-    return {"owner_online": _recent(room.owner_seen), "guest_online": _recent(room.guest_seen), "guest_name": room.guest_name, "guest_gender": room.guest_gender, "owner_gender": getattr(room.owner, "gender", "") or "", "chat_request": room.chat_request,
-            "owner_name": service.display_name(room.owner), "expires_at": room.expires_at}
+    return {"owner_online": _recent(room.owner_seen), "guest_online": _recent(room.guest_seen), "guest_name": room.guest_name, "guest_gender": room.guest_gender, "owner_gender": (getattr(room.owner, "gender", "") if room.owner else room.owner_gender) or "", "chat_request": room.chat_request,
+            "owner_name": service.display_name(room.owner) if room.owner else room.owner_name, "expires_at": room.expires_at}
 
 
 def _role(request, room):
     """owner (logged in as the owner) | guest (knows the secret key given at join) | None."""
-    if request.user.is_authenticated and request.user.id == room.owner_id:
+    if request.user.is_authenticated and room.owner_id and request.user.id == room.owner_id:
         return "owner"
     key = request.data.get("key") if request.method == "POST" else request.query_params.get("key")
+    if key and room.owner_key and secrets.compare_digest(str(key), room.owner_key):
+        return "owner"
     if key and room.guest_key and secrets.compare_digest(str(key), room.guest_key):
         return "guest"
     return None
@@ -67,7 +69,7 @@ def _role(request, room):
 
 def _room(token):
     room = DirectRoom.objects.filter(token=token).select_related("owner").first()
-    return room if _alive(room) and room.owner.is_active else None
+    return room if _alive(room) and (room.owner is None or room.owner.is_active) else None
 
 
 @api_view(["GET", "POST"])
@@ -89,6 +91,51 @@ def rooms(request):
         room = DirectRoom.objects.create(token=secrets.token_urlsafe(24), code=_new_code(), owner=request.user, expires_at=timezone.now() + timedelta(hours=hours))
     out = [{"token": r.token, "code": r.code, **_state(r)} for r in DirectRoom.objects.filter(owner=request.user, closed=False, expires_at__gt=timezone.now()).order_by("-id")]
     return Response(out, status=status.HTTP_201_CREATED if request.method == "POST" else 200)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def room_anon(request):
+    """A visitor without an account starts a chat (/directchat): name and gender, then a code, link and QR code to hand out."""
+    from django.core.cache import cache
+
+    if not _enabled():
+        return bad("Directe verbinding staat uit.", status.HTTP_403_FORBIDDEN)
+    ip = request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
+    key = f"direct-anon:{ip}"
+    n = cache.get(key, 0)
+    if n >= 10:
+        return bad("Even rustig aan: probeer het over een uur opnieuw.", status.HTTP_429_TOO_MANY_REQUESTS)
+    cache.set(key, n + 1, 3600)
+    name = str(request.data.get("name") or "").strip()[:60]
+    if not name:
+        return bad("Vul je naam in.")
+    from apps.security.words import find_forbidden
+
+    if find_forbidden(name):
+        return bad("Deze naam is niet toegestaan.")
+    gender = str(request.data.get("gender") or "")
+    if gender not in ("m", "f", "x"):
+        return bad("Kies je geslacht.")
+    hours = service.get()["chat"]["direct_hours"]
+    DirectRoom.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
+    room = DirectRoom.objects.create(token=secrets.token_urlsafe(24), code=_new_code(), owner=None, owner_name=name, owner_gender=gender,
+                                     owner_key=secrets.token_urlsafe(24), expires_at=timezone.now() + timedelta(hours=hours))
+    return Response({"token": room.token, "code": room.code, "key": room.owner_key}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def room_owner_leave(request, token):
+    """The visitor who started the room: disconnect the guest (act="disconnect") or close the room (act="close")."""
+    room = _room(token)
+    if room and _role(request, room) == "owner" and room.owner_id is None:
+        if request.data.get("act") == "close":
+            room.closed = True
+            room.save(update_fields=["closed"])
+        else:
+            _reset_guest(room)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["DELETE"])
@@ -162,7 +209,7 @@ def room_join(request, token):
     room = _room(token)
     if not room or not _enabled():
         return bad("Deze uitnodiging is verlopen of ingetrokken.", status.HTTP_404_NOT_FOUND)
-    if request.user.is_authenticated and request.user.id == room.owner_id:
+    if _role(request, room) == "owner":
         return bad("Dit is je eigen uitnodiging. Stuur de link naar iemand anders.")
     if room.guest_key:
         return bad("Er is al iemand verbonden met deze uitnodiging.", status.HTTP_409_CONFLICT)
@@ -195,10 +242,11 @@ def guest_chat_request(request, token):
     if room.chat_request != "asked":
         room.chat_request = "asked"
         room.save(update_fields=["chat_request"])
-        from .models import Notification
+        if room.owner:
+            from .models import Notification
 
-        Notification.objects.filter(user=room.owner, kind="dchat", seen=False).delete()
-        Notification.objects.create(user=room.owner, kind="dchat", text=room.guest_name[:60])
+            Notification.objects.filter(user=room.owner, kind="dchat", seen=False).delete()
+            Notification.objects.create(user=room.owner, kind="dchat", text=room.guest_name[:60])
     return Response({"chat_request": room.chat_request})
 
 

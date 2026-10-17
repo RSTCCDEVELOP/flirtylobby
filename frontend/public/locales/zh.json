@@ -2772,5 +2772,8 @@
   "Iemand anders uitnodigen": "邀请其他人",
   "Stuur de link door naar iemand anders.": "把链接发给其他人。",
   "Sturen via WhatsApp": "通过 WhatsApp 发送",
-  "Code kopiëren": "复制代码"
+  "Code kopiëren": "复制代码",
+  "Chat met mij:": "和我聊天:",
+  "Vul je naam in en kies je geslacht. Daarna krijg je een code, een link en een QR-code om aan iemand te geven.": "输入姓名并选择性别。然后你会得到代码、链接和二维码,可以发给别人。",
+  "De chat start zodra de ander de link opent of de code invult.": "对方打开链接或输入代码后聊天即开始。"
 }

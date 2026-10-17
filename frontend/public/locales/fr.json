@@ -2772,5 +2772,8 @@
   "Iemand anders uitnodigen": "Inviter quelqu'un d'autre",
   "Stuur de link door naar iemand anders.": "Envoyez le lien à quelqu'un d'autre.",
   "Sturen via WhatsApp": "Envoyer via WhatsApp",
-  "Code kopiëren": "Copier le code"
+  "Code kopiëren": "Copier le code",
+  "Chat met mij:": "Discute avec moi :",
+  "Vul je naam in en kies je geslacht. Daarna krijg je een code, een link en een QR-code om aan iemand te geven.": "Saisissez votre nom et choisissez votre genre. Vous recevrez ensuite un code, un lien et un code QR à donner à quelqu'un.",
+  "De chat start zodra de ander de link opent of de code invult.": "Le chat démarre dès que l'autre ouvre le lien ou saisit le code."
 }
