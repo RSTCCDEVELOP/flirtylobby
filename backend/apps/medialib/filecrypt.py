@@ -61,6 +61,26 @@ def masters():
     return out
 
 
+def rewrap_all(db_value):
+    """The master key typed at API keys -> S3 changes (or is removed): wrap every data key again with the master that will be first afterwards,
+    so nothing becomes unreadable. Call BEFORE the new value is saved (the old one is still needed to read the data keys)."""
+    from .models import FileKey
+
+    after = []
+    if os.environ.get("FILE_ENCRYPTION_KEY"):
+        after.append(_normalise(os.environ["FILE_ENCRYPTION_KEY"]))
+    if db_value:
+        after.append(_normalise(db_value.strip()))
+    after.append(_derived())
+    n = 0
+    for row in FileKey.objects.all():
+        raw = key_for(row.scope, create=False)
+        row.wrapped = _wrap(after[0]).encrypt(raw).decode()
+        row.save(update_fields=["wrapped"])
+        n += 1
+    return n
+
+
 def master_source():
     return masters()[0][0]
 

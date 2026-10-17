@@ -6,6 +6,7 @@ from . import providers
 from .models import Integration
 
 MASK = "••••"
+REMOVE = "__remove__"  # sent by the form to clear a stored secret (an empty field means "unchanged")
 
 
 def mask(value):
@@ -51,7 +52,9 @@ class IntegrationSerializer(serializers.ModelSerializer):
         new = {}
         for fl in spec["fields"]:
             v = incoming.get(fl["key"], old.get(fl["key"], ""))
-            if fl["secret"] and (not v or v.startswith(MASK)):
+            if fl["secret"] and v == REMOVE:
+                v = ""  # the admin pressed "Verwijderen" on this key
+            elif fl["secret"] and (not v or v.startswith(MASK)):
                 v = old.get(fl["key"], "")  # untouched secret: keep stored value
             new[fl["key"]] = v
         return new
@@ -68,7 +71,12 @@ class IntegrationSerializer(serializers.ModelSerializer):
         for k, v in validated.items():
             setattr(instance, k, v)
         if config is not None:
-            instance.config = self._merge(instance.provider, instance.config, config)
+            merged = self._merge(instance.provider, instance.config, config)
+            if instance.provider == "s3" and (merged.get("encryption_key") or "") != (instance.config.get("encryption_key") or ""):
+                from apps.medialib import filecrypt
+
+                filecrypt.rewrap_all(merged.get("encryption_key") or "")  # encrypted files stay readable after the change
+            instance.config = merged
             instance.last_test_ok = None  # settings changed: needs a new test
             instance.last_test_message = ""
         instance.save()

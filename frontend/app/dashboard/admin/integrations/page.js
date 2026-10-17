@@ -87,6 +87,12 @@ export default function Integrations() {
     await alertDialog(`${copied ? tx("De nieuwe sleutel is naar je klembord gekopieerd.") : tx("Kopiëren naar het klembord lukte niet: kopieer de sleutel hieronder zelf.")}\n\n${key}\n\n${tx("Plak hem nu in je wachtwoordmanager of een veilig bestand: zonder deze sleutel zijn versleutelde bestanden niet meer te openen na een nieuwe installatie. Druk daarna op Opslaan. Bestaande versleutelde bestanden blijven leesbaar.")}`);
   };
 
+  // remove the stored master key (the files are wrapped again with the key from the environment, or the default, so they stay readable)
+  const dropKey = async (k) => {
+    if (!(await confirmDialog(tx("De hoofdsleutel verwijderen? Versleutelde bestanden blijven leesbaar: ze worden opnieuw ingepakt met de sleutel uit de omgeving, of met de standaardsleutel. Het verwijderen gebeurt bij Opslaan."), { danger: true }))) return;
+    setModal((m) => ({ ...m, config: { ...m.config, [k]: "__remove__" } }));
+  };
+
   const toggle = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "PATCH", body: { enabled: !i.enabled } }));
   const test = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/test/`, { method: "POST" }));
   const remove = async (i) => (await confirmDialog(tx("Koppeling \"{0}\" verwijderen? Functies die ervan afhangen stoppen.", i.name), { danger: true })) && act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "DELETE" }));
@@ -215,17 +221,23 @@ export default function Integrations() {
                       {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   ) : (
-                    <>
+                    <div className={f.key === "encryption_key" ? "key-row" : "fld"}>
                     <input
                       type={f.secret ? "password" : "text"}
+                      disabled={modal.config[f.key] === "__remove__"}
                       autoComplete="off"
-                      value={modal.config[f.key] ?? ""}
+                      value={modal.config[f.key] === "__remove__" ? "" : (modal.config[f.key] ?? "")}
                       required={f.required && !(f.secret && modal.id)}
-                      placeholder={f.secret && modal.id ? tx("Leeg laten = ongewijzigd") : ""}
+                      placeholder={modal.config[f.key] === "__remove__" ? tx("Wordt verwijderd bij Opslaan") : f.secret && modal.id ? tx("Leeg laten = ongewijzigd") : ""}
                       onChange={(e) => setModal({ ...modal, config: { ...modal.config, [f.key]: e.target.value } })}
                     />
-                    {f.key === "encryption_key" && <button type="button" className="btn sm" onClick={() => genKey(f.key)}>{tx("Genereer een sleutel")}</button>}
-                    </>
+                    {f.key === "encryption_key" && (
+                      <>
+                        <button type="button" className="btn sm" onClick={() => genKey(f.key)}>{tx("Genereer een sleutel")}</button>
+                        {modal.id && (modal.config[f.key] || "").startsWith("•") && <button type="button" className="btn sm danger" onClick={() => dropKey(f.key)}>{tx("Verwijderen")}</button>}
+                      </>
+                    )}
+                    </div>
                   )}
                 </label>
               ))}
