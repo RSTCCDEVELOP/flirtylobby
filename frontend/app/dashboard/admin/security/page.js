@@ -7,6 +7,8 @@ import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import { useModules } from "../../../../components/Modules";
 import { api, errorText } from "../../../../lib/api";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const FREQ = [
   ["always", "Bij elke paginalading"],
@@ -114,6 +116,7 @@ export default function Security() {
     }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
   }, []);
 
+  const auto = useAutoSave(data, save, { ready: !!data && canSave }); // saves by itself, no Save button
   if (!data) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
 
   const set = (section) => (key, value) => setData((d) => ({ ...d, [section]: { ...d[section], [key]: value } }));
@@ -133,11 +136,13 @@ export default function Security() {
     try {
       const r = await api("/security/settings/", { method: "PUT", body: data });
       setData(r.settings);
-      setMsg({ ok: true, text: tx("Beveiliging opgeslagen.") });
+      setMsg(null);
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
+      return false;
     }
   }
+
 
   async function checkWords() {
     const r = await api("/security/words/check/", { method: "POST", body: { text: test.text } });
@@ -156,7 +161,7 @@ export default function Security() {
         </div>
         <div className="row">
           <CollapseAll />
-          <button className="btn primary" onClick={save} disabled={!canSave}>{tx("Opslaan")}</button>
+          <SaveStatus auto={auto} />
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}

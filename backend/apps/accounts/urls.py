@@ -15,6 +15,8 @@ urlpatterns = [
     path("auth/login/verify/", views.login_verify),
     path("auth/login/resend/", views.login_resend),
     path("auth/register/config/", registration.config),
+    path("auth/register/name/", registration.free_name),
+    path("auth/register/email/", registration.check_email),
     path("auth/register/", registration.start),
     path("auth/register/verify/", registration.verify),
     path("auth/register/resend/", registration.resend),

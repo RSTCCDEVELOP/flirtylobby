@@ -16,7 +16,7 @@ from .models import SandboxMessage, SandboxPayment, SandboxSettings
 logger = logging.getLogger(__name__)
 
 DEFAULTS = {
-    "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL", "auto_pay": False, "override_emails": [], "override_always": False,
+    "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL", "auto_pay": False, "override_emails": [], "override_always": False, "override_on": True, "code_on_screen": False,
     "simulate": {"email": True, "sms": True, "payments": True, "integrations": True, "geo": False, "geocoding": True},
 }
 OUTCOMES = {"paid", "failed", "canceled", "expired"}
@@ -43,7 +43,7 @@ def save(incoming):
     for k, v in (incoming or {}).items():
         if k == "simulate" and isinstance(v, dict):
             cur["simulate"].update({a: bool(b) for a, b in v.items() if a in cur["simulate"]})
-        elif k in ("enabled", "banner", "auto_pay", "override_always"):
+        elif k in ("enabled", "banner", "auto_pay", "override_always", "override_on", "code_on_screen"):
             cur[k] = bool(v)
         elif k == "override_emails":
             import re
@@ -58,7 +58,7 @@ def save(incoming):
             v = str(v or "").strip()
             if v and not v.isdigit():
                 raise ValueError("De vaste code bestaat uit cijfers.")
-            cur[k] = v[:8]
+            cur[k] = v[:6]  # codes are 6 digits
         elif k == "geo_country":
             from apps.security.countries import COUNTRY_CODES
 
@@ -95,9 +95,16 @@ def skips_verification(email):
     if not email or not modules.enabled("sandbox"):
         return False
     s = get()
+    if not s["override_on"]:  # the list is switched off: everybody goes through the verification
+        return False
     if str(email).strip().lower() not in s["override_emails"]:
         return False
     return bool(s["enabled"] or s["override_always"])
+
+
+def code_on_screen():
+    """Sandbox on and 'toon de code in het scherm' switched on: codes are not sent, the form shows them (to test the verification flow)."""
+    return bool(active() and get()["code_on_screen"])
 
 
 def payment_provider():

@@ -13,6 +13,7 @@ services:
     volumes:
       - ./backend:/app/backend
       - ./Database:/app/Database
+      - ./themes:/app/themes
 
   frontend:
     build:

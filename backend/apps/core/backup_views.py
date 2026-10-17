@@ -31,7 +31,8 @@ def sections(request):
 def export(request):
     keys = request.data.get("sections")
     secrets = bool(request.data.get("include_secrets"))
-    bundle = backup.export(keys if isinstance(keys, list) else None, secrets, request.data.get("include_files", True) is not False)
+    bundle = backup.export(keys if isinstance(keys, list) else None, secrets, request.data.get("include_files", True) is not False,
+                           {k: request.data[k] for k in ("plugins", "themes") if isinstance(request.data.get(k), list)} or None)
     logger.info("Settings exported by %s (%s parts, secrets=%s)", request.user.email, len(bundle["sections"]), secrets)
     return Response(bundle)
 

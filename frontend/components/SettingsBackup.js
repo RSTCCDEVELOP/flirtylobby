@@ -4,7 +4,7 @@ import { tx } from "../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
-import { IconFolder, IconSliders } from "./Icons";
+import { IconFolder, IconGrid, IconLock, IconPalette, IconSliders, IconUsers } from "./Icons";
 import Tabs from "./Tabs";
 
 // Super admin: export all settings to one file (complete backup) and load such a file again.
@@ -12,9 +12,17 @@ import Tabs from "./Tabs";
 // Ready-made selections: a theme package (look), theme + screens, or the settings without the look. Parts that do not exist are ignored.
 const PRESETS = [
   ["all", "Alles", null, "Complete back-up van het hele systeem."],
-  ["theme", "Thema & huisstijl", ["branding", "theme"], "Kleuren, lettertypen, popups, tabbladen en logo's."],
-  ["screens", "Thema + schermen", ["branding", "media_files", "theme", "community", "pages", "content", "seo", "dashboard"], "Het thema plus pagina's, menu, teksten, SEO, profielthema en dashboard: om een nieuwe site in dezelfde stijl te starten."],
+  ["theme", "Thema & huisstijl", ["branding", "theme", "themepacks"], "Kleuren, lettertypen, popups, tabbladen en logo's."],
+  ["screens", "Thema + schermen", ["branding", "media_files", "theme", "themepacks", "community", "pages", "content", "seo", "dashboard"], "Het thema plus pagina's, menu, teksten, SEO, profielthema en dashboard: om een nieuwe site in dezelfde stijl te starten."],
   ["settings", "Instellingen zonder thema", ["security", "modules", "languages", "communication", "integrations", "sandbox"], "Beveiliging, modules, talen, communicatie, koppelingen en sandbox."],
+];
+
+// The parts of the back-up in tabs, so the long list stays easy to survey (parts that are not listed end up under "Overig")
+const GROUPS = [
+  ["look", "Vormgeving", <IconPalette key="a" />, ["branding", "media_files", "theme", "themepacks", "dashboard"]],
+  ["site", "Website", <IconGrid key="b" />, ["system", "pages", "content", "seo", "languages"]],
+  ["community", "Community", <IconUsers key="c" />, ["community", "subscriptions"]],
+  ["system", "Systeem", <IconLock key="d" />, ["security", "modules", "communication", "integrations", "sandbox", "plugins"]],
 ];
 
 export default function SettingsBackup() {
@@ -22,6 +30,11 @@ export default function SettingsBackup() {
   const [sections, setSections] = useState([]);
   const [pick, setPick] = useState([]);
   const [secrets, setSecrets] = useState(false);
+  const [grp, setGrp] = useState("look");
+  const [themes, setThemes] = useState([]); // theme packages, to choose from
+  const [themePick, setThemePick] = useState([]);
+  const [plugins, setPlugins] = useState([]); // installed plugins, to choose from
+  const [plugPick, setPlugPick] = useState([]);
   const [files, setFiles] = useState(true); // logos and pictures inside the file
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -34,10 +47,14 @@ export default function SettingsBackup() {
 
   useEffect(() => { api("/settings-backup/sections/").then((d) => { setSections(d.sections); setPick(d.sections.map((s) => s.key)); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
 
+  useEffect(() => { api("/plugins/").then((d) => { setPlugins(d.plugins); setPlugPick(d.plugins.map((x) => x.name)); }).catch(() => {}); }, []);
+
+  useEffect(() => { api("/theme/packs/").then((d) => { const t = d.packs.filter((x) => !x.builtin); setThemes(t); setThemePick(t.map((x) => x.key)); }).catch(() => {}); }, []);
+
   const exportNow = async () => {
     setBusy(true); setMsg(null);
     try {
-      const b = await api("/settings-backup/export/", { method: "POST", body: { sections: pick, include_secrets: secrets, include_files: files } });
+      const b = await api("/settings-backup/export/", { method: "POST", body: { sections: pick, include_secrets: secrets, include_files: files, plugins: plugPick, themes: themePick } });
       const blob = new Blob([JSON.stringify(b, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       const d = new Date(), p = (n) => String(n).padStart(2, "0");
@@ -89,10 +106,40 @@ export default function SettingsBackup() {
           <div className="chips" style={{ margin: 0 }}>
             {PRESETS.map(([k, label, keys, hint]) => <button key={k} type="button" className="chip" title={tx(hint)} onClick={() => setPick(keys ? sections.map((s) => s.key).filter((x) => keys.includes(x)) : sections.map((s) => s.key))}>{tx(label)}</button>)}
           </div>
-          <div className="bk-grid">{sections.map((s) => <Check key={s.key} s={s} list={pick} setList={setPick} />)}</div>
+          {(() => {
+            const known = new Set(GROUPS.flatMap((g) => g[3]));
+            const tabs = [...GROUPS.map(([k, l, i, keys]) => [k, l, i, keys]), ["other", "Overig", <IconSliders key="o" />, sections.map((x) => x.key).filter((k) => !known.has(k))]]
+              .map(([k, l, i, keys]) => ({ k, l, i, items: sections.filter((x) => keys.includes(x.key)) })).filter((g) => g.items.length);
+            const cur = tabs.find((g) => g.k === grp) || tabs[0];
+            if (!cur) return null;
+            return (
+              <>
+                <Tabs value={cur.k} onChange={setGrp} tabs={tabs.map((g) => [g.k, g.l, g.i, `${g.items.filter((x) => pick.includes(x.key)).length}/${g.items.length}`])} />
+                <div className="bk-grid">{cur.items.map((x) => <Check key={x.key} s={x} list={pick} setList={setPick} />)}</div>
+                {cur.items.some((x) => x.key === "themepacks") && pick.includes("themepacks") && (
+                  <div className="card" style={{ display: "grid", gap: ".4rem" }}>
+                    <strong>{tx("Welke themapakketten")}</strong>
+                    {themes.length ? themes.map((x) => (
+                      <label key={x.key} className="check"><input type="checkbox" checked={themePick.includes(x.key)} onChange={() => toggle(themePick, setThemePick, x.key)} /><span>{x.name} <small className="muted">v{x.version}{x.enabled ? ` · ${tx("aan")}` : ` · ${tx("uit")}`}</small></span></label>
+                    )) : <small className="muted">{tx("Er zijn geen themapakketten.")}</small>}
+                    <small className="muted">{tx("RSTCC en Studio2 zitten altijd in het systeem en gaan niet mee. Ook of een pakket aan of uit staat gaat mee.")}</small>
+                  </div>
+                )}
+                {cur.items.some((x) => x.key === "plugins") && pick.includes("plugins") && (
+                  <div className="card" style={{ display: "grid", gap: ".4rem" }}>
+                    <strong>{tx("Welke plugins")}</strong>
+                    {plugins.length ? plugins.map((x) => (
+                      <label key={x.name} className="check"><input type="checkbox" checked={plugPick.includes(x.name)} onChange={() => toggle(plugPick, setPlugPick, x.name)} /><span>{x.title} <small className="muted">{x.version}{x.enabled ? "" : ` · ${tx("uit")}`}</small></span></label>
+                    )) : <small className="muted">{tx("Er zijn geen plugins geïnstalleerd.")}</small>}
+                    <small className="muted">{tx("De plugin zelf (ondertekend) gaat mee als het vinkje bij logo's, afbeeldingen en plugins aan staat. De gegevens die een plugin heeft opgeslagen, zoals advertenties, gaan niet mee.")}</small>
+                  </div>
+                )}
+              </>
+            );
+          })()}
           <label className="check sec-toggle">
             <span className="switch"><input type="checkbox" checked={files} onChange={(e) => setFiles(e.target.checked)} /><span /></span>
-            <span>{tx("Logo's en afbeeldingen meenemen")} <small className="muted">{tx("De bestanden zelf gaan in de back-up, zodat een nieuwe site er meteen hetzelfde uitziet. Het bestand wordt dan groter.")}</small></span>
+            <span>{tx("Logo's, afbeeldingen en plugins meenemen")} <small className="muted">{tx("De bestanden zelf gaan in de back-up, zodat een nieuwe site er meteen hetzelfde uitziet. Het bestand wordt dan groter.")}</small></span>
           </label>
           <label className="check sec-toggle">
             <span className="switch"><input type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.target.checked)} /><span /></span>

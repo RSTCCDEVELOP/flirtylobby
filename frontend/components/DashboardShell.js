@@ -15,6 +15,7 @@ import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
+import { PinButton, useAccordion } from "./Collapsible";
 import { useShortcuts } from "../lib/shortcuts";
 import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart } from "./Icons";
 
@@ -59,20 +60,19 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/sysobjects", label: "Systeemobjecten", icon: <IconGrid /> },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
-  { href: "/dashboard/admin/products", label: "Producten", icon: <IconBag /> },
   { href: "/dashboard/admin/orders", label: "Orders", icon: <IconReceipt /> },
   { href: "/dashboard/admin/subscriptions", label: "Abonnementen", icon: <IconStar /> },
   { href: "/dashboard/admin/donations", label: "Donaties", icon: <IconHeart /> },
   { href: "/dashboard/admin/actions", label: "Actions", icon: <IconLock /> },
   { href: "/dashboard/admin/media", label: "Media", icon: <IconFolder />, perm: "media.manage" },
-  { href: "/dashboard/admin/branding", label: "Logo's & beeld", icon: <IconImage />, perm: "branding.manage" },
   { href: "/dashboard/admin/security", label: "Beveiliging", icon: <IconLock />, perm: "security.manage" },
   { href: "/dashboard/admin/community", label: "Community", icon: <IconChat /> },
   { href: "/dashboard/admin/seo", label: "SEO", icon: <IconSearch /> },
   { href: "/dashboard/admin/system", label: "Basisgegevens", icon: <IconSettings />, perm: "system.manage" },
   { href: "/dashboard/admin/storage", label: "Mappenstructuur", icon: <IconFolder />, perm: "storage.manage" },
   { href: "/dashboard/admin/sandbox", label: "Sandbox", icon: <IconFlask /> },
-  { href: "/dashboard/admin/theme", label: "Vormgeving", icon: <IconPalette />, perm: "theme.manage" },
+  { href: "/dashboard/admin/plugins", label: "Plugins", icon: <IconGrid /> },
+  { href: "/dashboard/admin/theme", label: "Thema", icon: <IconPalette />, perm: "theme.manage" },
 ];
 
 // Menu groups (collapsible). Items are assigned by href; items without a group stay at the top.
@@ -81,33 +81,36 @@ const COMMUNITY_GROUP_OF = {
   "/dashboard/community": "c-mine", "/dashboard/community/requests": "c-mine", "/dashboard/community/blocked": "c-mine",
   "/dashboard/community/discover": "c-contact", "/dashboard/community/messages": "c-contact", "/dashboard/community/chat": "c-contact", "/dashboard/community/direct": "c-contact",
 };
+const ADMIN_SECTION_GROUP = { users: "a-people", website: "a-site", community: "a-community", shop: "a-shop", subscription: "a-subs", system: "a-system" };
 const ADMIN_GROUPS = [
   { id: "a-people", title: "Gebruikers" }, { id: "a-site", title: "Website" }, { id: "a-community", title: "Community" },
   { id: "a-shop", title: "Webshop" }, { id: "a-subs", title: "Subscription" }, { id: "a-system", title: "Systeem" },
 ];
 const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
-  "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
+  "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/themes": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
-  "/dashboard/admin/products": "a-shop", "/dashboard/admin/orders": "a-shop",
+  "/dashboard/admin/orders": "a-shop",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
 };
 
 // A collapsible group of menu items. Open state is remembered; the group with the current page opens by itself.
 // In the icon-only (collapsed) sidebar all items stay visible as icons.
-function NavGroup({ id, title, active, badge, children }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => { try { setOpen(localStorage.getItem(`navg:${id}`) === "1"); } catch {} }, [id]);
-  useEffect(() => { if (active) setOpen(true); }, [active]);
-  const toggle = () => { const next = !open; setOpen(next); try { localStorage.setItem(`navg:${id}`, next ? "1" : "0"); } catch {} };
+function NavGroup({ id, title, active, badge, children, defaultOpen = false }) {
+  // like the blocks on a page: opening a group closes the others, unless they are pinned (pin: green = stays open, red = closes)
+  const { open, toggle, pinned, togglePin, openNow } = useAccordion(id, defaultOpen, "nav");
+  useEffect(() => { if (active) openNow(); }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={`nav-group ${open ? "open" : ""} ${active ? "has-active" : ""}`}>
-      <button type="button" className="nav-group-head" aria-expanded={open} onClick={toggle}>
-        <span className="label">{tx(title)}</span>
-        {!open && badge > 0 && <span className="cart-count">{badge}</span>}
-        <svg className="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
-      </button>
+      <div className="nav-group-row">
+        <button type="button" className="nav-group-head" aria-expanded={open} onClick={toggle}>
+          <span className="label">{tx(title)}</span>
+          {!open && badge > 0 && <span className="cart-count">{badge}</span>}
+          <svg className="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+        <PinButton pinned={pinned} onClick={togglePin} />
+      </div>
       <div className="nav-group-body">{children}</div>
     </div>
   );
@@ -163,13 +166,36 @@ export default function DashboardShell({ children }) {
     const t = setInterval(load, 20000);
     return () => clearInterval(t);
   }, [communityOn, pathname]);
+  // plugins with a page of their own (switched on, and for this user)
+  const [pluginMenu, setPluginMenu] = useState([]);
+  useEffect(() => {
+    if (mods.plugins === false || !user) return setPluginMenu([]);
+    const load = () => api("/plugins/menu/").then(setPluginMenu).catch(() => setPluginMenu([]));
+    load();
+    window.addEventListener("plugins-changed", load);
+    return () => window.removeEventListener("plugins-changed", load);
+  }, [mods.plugins, user]);
+  // admin menu: every plugin that is on gets an admin page of its own (superadmins)
+  const [pluginAdmin, setPluginAdmin] = useState([]);
+  useEffect(() => {
+    if (mods.plugins === false || !user?.is_staff) return setPluginAdmin([]);
+    const load = () => api("/plugins/menu/?scope=admin").then(setPluginAdmin).catch(() => setPluginAdmin([]));
+    load();
+    window.addEventListener("plugins-changed", load);
+    return () => window.removeEventListener("plugins-changed", load);
+  }, [mods.plugins, user]);
+  // a plugin belongs to a section (plugin.json): its page sits in that part of the menu, its admin page in that part of the admin menu
+  const pluginUser = pluginMenu.map((x) => ({ href: `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section, group: x.group }));
+  const pluginUserGroup = Object.fromEntries(pluginUser.filter((n) => n.group === "mine" || n.group === "contact").map((n) => [n.href, n.group === "mine" ? "c-mine" : "c-contact"]));
+  const pluginAdminItems = pluginAdmin.map((x) => ({ href: `/dashboard/admin/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section }));
+  const pluginAdminGroup = Object.fromEntries(pluginAdminItems.map((n) => [n.href, ADMIN_SECTION_GROUP[n.section] || "a-system"]));
   const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false));
   const inSuper = pathname.startsWith("/dashboard/superadmin");
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const allowedAdminNav = ADMIN_NAV.filter((n) => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
-    <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname.startsWith(n.href)) ? "active" : ""} onClick={closeMenu}>
+    <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={closeMenu}>
       {n.icon}
       <span className="label">{n.badge === "direct_active" && n.badgeCount > 0 ? (chat?.directActive || []).map((x) => x.name).join(", ") : tx(n.label)}</span>
       {n.badgeCount > 0 && (n.badge === "direct_active" ? <span className="nav-live" title={tx("Directe verbinding actief")}><span className="live-dot" />{n.badgeCount}</span> : <span className="cart-count" style={{ marginLeft: "auto" }}>{n.badgeCount}</span>)}
@@ -177,7 +203,7 @@ export default function DashboardShell({ children }) {
   );
 
   const withBadge = (n) => ({ ...n, badgeCount: n.badge === "direct_active" ? (chat?.directActive?.length || 0) : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) || 0 : 0 });
-  const isActive = (n) => (n.href === "/dashboard/community" || n.href === "/dashboard/admin" ? pathname === n.href : pathname.startsWith(n.href));
+  const isActive = (n) => (n.href === "/dashboard/community" || n.href === "/dashboard/admin" ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/"));
   const renderGroups = (items, groups, groupOf) => groups.map((g) => {
     const list = items.filter((n) => groupOf[n.href] === g.id);
     if (!list.length) return null;
@@ -231,12 +257,13 @@ export default function DashboardShell({ children }) {
             <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>
             <div className="side-title">{tx("Admin")}</div>
             <NavLink n={allowedAdminNav[0]} exact />
-            {renderGroups(allowedAdminNav.slice(1), ADMIN_GROUPS, ADMIN_GROUP_OF)}
+            {renderGroups([...allowedAdminNav.slice(1), ...pluginAdminItems], ADMIN_GROUPS, { ...ADMIN_GROUP_OF, ...pluginAdminGroup })}
           </>
         ) : (
           <>
             {NAV.filter((n) => (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
-            {renderGroups(communityLinks.map(withBadge), COMMUNITY_GROUPS, COMMUNITY_GROUP_OF)}
+            {renderGroups([...communityLinks.map(withBadge), ...pluginUser], COMMUNITY_GROUPS, { ...COMMUNITY_GROUP_OF, ...pluginUserGroup })}
+            {pluginUser.filter((n) => !pluginUserGroup[n.href]).map((n) => <NavLink key={n.href} n={n} />)}
           </>
         )}
         {(canAdmin(user, mods) || user.is_staff) && (

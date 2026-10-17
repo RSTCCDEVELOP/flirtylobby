@@ -15,6 +15,8 @@ import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const CONTACTS = [["whatsapp", "WhatsApp", "+31 6 12345678"], ["phone", "Telefoon", "+31 6 12345678"], ["email", "E-mail", "naam@voorbeeld.nl"], ["telegram", "Telegram", "@gebruikersnaam"]];
 
@@ -39,6 +41,9 @@ export default function MyProfile() {
   useEffect(() => { api("/profile/me/fill-test/").then(setTestFill).catch(() => setTestFill(null)); }, []);
   useEffect(() => { if (q.trim()) api(`/people/?q=${encodeURIComponent(q)}`).then(setFound).catch(() => {}); else setFound([]); }, [q]);
 
+  // what the member edits (photos and the allowed list have their own calls and are not part of it)
+  const editable = p ? (({ photos, allowed, ...rest }) => rest)(p) : null;
+  const auto = useAutoSave(editable, save, { ready: !!p, delay: 1200 }); // saves by itself, no Save button
   if (!p) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
   const set = (k, v) => setP({ ...p, [k]: v });
   const bi = (k) => p.profile_cfg?.builtin?.[k] !== false; // built-in field switched on by the admin (Community -> Profielvelden)
@@ -51,10 +56,11 @@ export default function MyProfile() {
     try {
       const d = await api("/profile/me/", { method: "PUT", body: p });
       setP(d);
-      setMsg({ ok: true, text: tx("Profiel opgeslagen.") });
+      setMsg(null);
     } catch (e) {
       const t = errorText(e);
       if (/jaar|geboortedatum/i.test(t)) setPopup({ title: tx("Leeftijdscontrole"), text: t }); else setMsg({ ok: false, text: t });
+      return false;
     }
   }
   async function upload(files) {
@@ -126,7 +132,7 @@ export default function MyProfile() {
         <div className="row">
           {testFill?.available && <button type="button" className="btn" disabled={filling} onClick={fillTest} title={testFill.simulated ? tx("Gesimuleerd (sandbox)") : tx("Met Claude (sandbox)")}>{filling ? tx("Bezig…") : tx("Vul alles in met AI (test)")}</button>}
           <a className="btn" href="/dashboard/community/mypage">{tx("Bekijk mijn profielpagina")}</a>
-          <button className="btn primary" onClick={save}>{tx("Opslaan")}</button>
+          <SaveStatus auto={auto} />
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}

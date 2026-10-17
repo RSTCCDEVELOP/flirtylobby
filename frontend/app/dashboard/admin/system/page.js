@@ -4,6 +4,8 @@ import { tx } from "../../../../lib/t";
 import { useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const TIMEZONES = ["Europe/Amsterdam", "Europe/Brussels", "Europe/Berlin", "Europe/Paris", "Europe/London", "Europe/Madrid", "Europe/Lisbon", "Europe/Rome", "Europe/Vienna", "Europe/Zurich", "Europe/Athens", "Europe/Istanbul", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "UTC"];
 const ENV_NAME = { production: "Live (productie)", staging: "Test (staging)", development: "Ontwikkeling" };
@@ -35,11 +37,12 @@ export default function SystemPage() {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   async function save(e) {
-    e.preventDefault();
-    try { load(await api("/system/", { method: "PUT", body: { ...form, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean), aliases: String(form.aliases || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg({ ok: true, text: tx("Opgeslagen.") }); }
-    catch (err) { setMsg({ ok: false, text: errorText(err) }); }
+    e?.preventDefault?.();
+    try { load(await api("/system/", { method: "PUT", body: { ...form, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean), aliases: String(form.aliases || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg(null); }
+    catch (err) { setMsg({ ok: false, text: errorText(err) }); return false; }
   }
 
+  const auto = useAutoSave(form, save, { ready: !!d, delay: 1200 }); // saves by itself, no Save button
   if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
   const clientApi = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
   const checks = [...d.checks];
@@ -116,7 +119,7 @@ export default function SystemPage() {
             <label>{tx("Profielfoto (MB)")}<input type="number" min="1" max="50" value={form.max_photo_mb} onChange={set("max_photo_mb")} /></label>
           </div>
         </Collapsible>
-        <div className="profile-save"><button className="btn primary">{tx("Opslaan")}</button></div>
+        <div className="profile-save"><SaveStatus auto={auto} /></div>
       </form>
 
       <Collapsible id="sys-checks" title={`${tx("Controle van de installatie")}${bad ? ` · ${bad} ${tx("fout")}` : ""}${warn ? ` · ${warn} ${tx("let op")}` : ""}`} defaultOpen>

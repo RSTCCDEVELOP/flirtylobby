@@ -15,6 +15,8 @@ import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../lib/genders";
 import { confirmDialog, promptDialog } from "../../../lib/dialog";
+import { useAutoSave } from "../../../lib/autosave";
+import SaveStatus from "../../../components/SaveStatus";
 
 export default function Profile() {
   const genders = useGenders();
@@ -31,16 +33,18 @@ export default function Profile() {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   async function save(e) {
-    e.preventDefault();
+    e?.preventDefault?.();
     try {
       setUser(await api("/auth/me/", { method: "PATCH", body: { ...form, birth_date: form.birth_date || null } }));
-      setMsg({ ok: true, text: tx("Profiel opgeslagen.") });
+      setMsg(null);
     } catch (err) {
       const age = err.data?.birth_date && [].concat(err.data.birth_date).join(" ");
       if (age) setPopup({ title: tx("Leeftijdscontrole"), text: age });
       else setMsg({ ok: false, text: errorText(err) });
+      return false;
     }
   }
+  const auto = useAutoSave(form, save, { delay: 1200 }); // saves by itself, no Save button
 
   async function changePassword(e) {
     e.preventDefault();
@@ -126,7 +130,7 @@ export default function Profile() {
         <label>{tx("Omschrijving")}<textarea rows={5} value={form.description} onChange={set("description")} /></label>
       </ProfileBlock>
       <div className="profile-save">
-        <button className="btn primary">{tx("Opslaan")}</button>
+        <SaveStatus auto={auto} />
         {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       </div>
       </form>

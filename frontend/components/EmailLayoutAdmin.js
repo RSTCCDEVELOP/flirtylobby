@@ -3,7 +3,9 @@
 import { tx } from "../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
+import { useAutoSave } from "../lib/autosave";
 import { useAuth } from "./AuthContext";
+import SaveStatus from "./SaveStatus";
 
 const FORMATS = [["html", "HTML", "Mooie opmaak met logo, kleuren en knoppen"], ["text", "Platte tekst", "Alleen tekst, zonder opmaak"]];
 const DESIGNS = [["theme", "Volgens het thema", "Kleuren, lettertype en logo uit Vormgeving"], ["custom", "Eigen instellingen", "Zelf kleuren, lettertype en afronding kiezen"]];
@@ -13,6 +15,13 @@ const VARIANTS = [
   ["centered", "Gecentreerd", "Logo en tekst in het midden"],
   ["banner", "Banner", "Gekleurde balk met het logo, het vak eronder"],
   ["minimal", "Minimaal", "Zonder vak, logo rechtsboven"],
+];
+// How the verification code looks in the verification mails (login code, sign-up code)
+const CODE_STYLES = [
+  ["card", "Vak", "De code groot in één gekleurd vak"],
+  ["boxes", "Vakjes", "Een vakje per cijfer, zoals het codescherm van de website"],
+  ["plain", "Groot getal", "Alleen de code, groot en in de accentkleur"],
+  ["band", "Gekleurde balk", "De code in witte letters op een balk in de accentkleur"],
 ];
 const Mini = ({ v }) => {
   const c = "var(--blue)", l = "var(--line)", t = "var(--muted)";
@@ -49,6 +58,7 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
   const [fonts, setFonts] = useState([]);
   const [saved, setSaved] = useState(null);
   const [preview, setPreview] = useState(null); // {format, html, text}
+  const [kind, setKind] = useState("mail"); // which sample the preview shows: mail | code
   const [to, setTo] = useState("");
   const [busy, setBusy] = useState("");
   const timer = useRef(null);
@@ -61,20 +71,18 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
   useEffect(() => {
     if (!cfg) return;
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => api("/communication/email-layout/preview/", { method: "POST", body: { settings: cfg } }).then(setPreview).catch(() => {}), 350);
+    timer.current = setTimeout(() => api("/communication/email-layout/preview/", { method: "POST", body: { settings: cfg, kind } }).then(setPreview).catch(() => {}), 350);
     return () => clearTimeout(timer.current);
-  }, [cfg]);
+  }, [cfg, kind]);
 
+  const auto = useAutoSave(cfg, save, { ready: !!cfg && canEdit, delay: 1000 }); // saves by itself, no Save button
   if (!cfg) return <p className="muted">{tx("Laden…")}</p>;
   const set = (patch) => setCfg({ ...cfg, ...patch });
   const setCustom = (patch) => setCfg({ ...cfg, custom: { ...cfg.custom, ...patch } });
-  const dirty = JSON.stringify(cfg) !== saved;
 
   async function save() {
-    setBusy("save");
-    try { const d = await api("/communication/email-layout/", { method: "PUT", body: cfg }); setCfg(d.settings); setSaved(JSON.stringify(d.settings)); onMessage({ ok: true, text: tx("E-mailopmaak opgeslagen.") }); }
-    catch (e) { onMessage({ ok: false, text: errorText(e) }); }
-    setBusy("");
+    try { const d = await api("/communication/email-layout/", { method: "PUT", body: cfg }); setCfg(d.settings); setSaved(JSON.stringify(d.settings)); onMessage(null); }
+    catch (e) { onMessage({ ok: false, text: errorText(e) }); return false; }
   }
   async function sendTest() {
     setBusy("test");
@@ -102,6 +110,9 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
               </button>
             ))}
           </div>
+          <h3>{tx("Verificatiemails")}</h3>
+          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Zo staat de code in de mail bij aanmelden en inloggen. De mail is altijd licht, met het logo en de kleuren van de website.")}</p>
+          <Choice options={CODE_STYLES} value={cfg.code_style} disabled={!canEdit} onChange={(v) => { set({ code_style: v }); setKind("code"); }} />
           <h3>{tx("Vormgeving")}</h3>
           <Choice options={DESIGNS} value={cfg.design} disabled={!canEdit} onChange={(v) => set({ design: v })} />
           {cfg.design === "custom" && (
@@ -119,7 +130,7 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
               </label>
             </div>
           )}
-          <label className="check sec-toggle">
+          <label className="check sec-toggle" style={{ marginTop: "1.25rem" }}>
             <span className="switch"><input type="checkbox" checked={cfg.show_logo} disabled={!canEdit} onChange={(e) => set({ show_logo: e.target.checked })} /><span /></span>
             <span>{tx("Logo bovenaan tonen")} <small className="muted">{tx("Zonder logo staat de naam van de website bovenaan.")}</small></span>
           </label>
@@ -131,6 +142,9 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
       </div>
 
       <h3>{tx("Voorbeeld")}</h3>
+      <div className="row" style={{ justifyContent: "flex-start" }}>
+        {[["mail", "Gewone e-mail"], ["code", "Verificatiecode"]].map(([k, l]) => <button key={k} type="button" className={`btn sm ${kind === k ? "primary" : ""}`} onClick={() => setKind(k)}>{tx(l)}</button>)}
+      </div>
       <div className="mail-preview">
         {preview?.format === "html" && preview.html
           ? <iframe title={tx("Voorbeeld")} srcDoc={preview.html} sandbox="" />
@@ -138,8 +152,7 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
       </div>
 
       <div className="row" style={{ justifyContent: "flex-start" }}>
-        {canEdit && <button type="button" className="btn primary" disabled={!dirty || busy === "save"} onClick={save}>{busy === "save" ? tx("Bezig…") : tx("Opmaak opslaan")}</button>}
-        {dirty && <span className="muted">{tx("Er zijn niet-opgeslagen wijzigingen. De testmail gebruikt de opgeslagen opmaak.")}</span>}
+        {canEdit && <SaveStatus auto={auto} />}
       </div>
 
       <h3>{tx("Testmail versturen")}</h3>

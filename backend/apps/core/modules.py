@@ -35,16 +35,14 @@ MODULES = [
     {"key": "privacy_pages", "group": "Content", "label": "Privacy- en cookiepagina",
      "desc": "De publieke pagina's /privacy en /cookies met links in de footer."},
     # ── Webshop ──
-    {"key": "products", "group": "Webshop", "label": "Producten",
-     "desc": "Producten en productgroepen met beheerpagina's en de productpagina's op de website."},
     {"key": "subscriptions", "group": "Subscription", "label": "Abonnementen",
      "desc": "Abonnementen die toegang geven (site, pagina's, content, chat, video, likes, diensten), eenmalig of herhaald, met een order per periode.",
      "default": False, "requires": ["orders"]},
     {"key": "donations", "group": "Subscription", "label": "Donaties",
      "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest. Werkt zonder de webshop.",
      "default": False},
-    {"key": "orders", "group": "Webshop", "label": "Orders & webshop",
-     "desc": "Orderbeheer en de webshop op de website: winkelwagen, afrekenen en bestelstatus."},
+    {"key": "orders", "group": "Webshop", "label": "Orders & betalen",
+     "desc": "Orderbeheer, btw en betalen voor de webshop (plugin), abonnementen en donaties, en de bestelstatus."},
     # ── Community ──
     {"key": "profiles", "group": "Community", "label": "Profielen & blokkeren",
      "desc": "Eigen profielpagina met meerdere foto's, zichtbaarheid per taal en groep, ledenzoeker en het blokkeren van andere users."},
@@ -76,6 +74,9 @@ MODULES = [
      "desc": "Koppelingen met externe systemen (Claude, Stripe, S3, Postmark, …). Uit = alle koppelingen inactief."},
     {"key": "communication", "group": "Systeem", "label": "Communicatie",
      "desc": "E-mailadressen, antwoordadressen en mobiele nummers die het systeem mag gebruiken."},
+    {"key": "plugins", "group": "Systeem", "label": "Plugins",
+     "desc": "Losse programma's (plugins) uploaden die met het systeem samenwerken en alle functies kunnen gebruiken. Alleen voor superadmins; plugins draaien als vertrouwde code.",
+     "default": False},
     {"key": "sandbox", "group": "Systeem", "label": "Sandbox",
      "desc": "Testomgeving: e-mail, sms, betalingen en andere externe diensten simuleren zonder dat de echte API's worden aangeroepen."},
     {"key": "system", "group": "Systeem", "label": "Basisgegevens",
@@ -109,10 +110,28 @@ def states():
 
 def invalidate():
     _cache["v"] = None
+    _pl["t"] = 0
 
 
 def enabled(key):
+    if key.startswith("plugin:"):  # a page or part that belongs to a plugin is on when that plugin is switched on
+        return plugin_on(key[7:])
     return states().get(key, True)
+
+
+_pl = {"t": 0, "v": set()}
+
+
+def plugin_on(name):
+    now = time.time()
+    if now - _pl["t"] > TTL:
+        from apps.plugins.models import Plugin
+
+        try:
+            _pl.update(t=now, v=set(Plugin.objects.filter(enabled=True).values_list("name", flat=True)))
+        except Exception:  # noqa: BLE001 - database not ready
+            _pl.update(t=now, v=set())
+    return name in _pl["v"]
 
 
 def module_required(*keys):

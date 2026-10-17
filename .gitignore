@@ -41,6 +41,15 @@ Database/db.sqlite3
 # ── Docker ────────────────────────────────────────────────────────────────
 .dockerignore
 
+# ── plugins for design ────────────────────────────────────────────────────────────────
+/plugins
+
+# ── themes for design ────────────────────────────────────────────────────────────────
+/themes
+
+# ── site for design ────────────────────────────────────────────────────────────────
+/site
+
 # ── content for design ────────────────────────────────────────────────────────────────
 CONTENT/
 
@@ -65,3 +74,6 @@ frontend/.next/
 frontend/next-env.d.ts
 frontend/.next-build/
 backend/imports/
+
+# ── Plugins: developed in /plugins/<name> or uploaded in the system; never part of the repository ──
+/plugins/

@@ -6,12 +6,15 @@ import { useUi } from "./Ui";
 
 // Open/closed state of a foldable block, remembered per `id` (when "remember" is on). Accordion: opening a block closes the other open
 // blocks on the page, unless they are pinned. Shared by <Collapsible /> and <ProfileBlock />.
-export function useAccordion(id, defaultOpen = false) {
+export function useAccordion(id, defaultOpen = false, scope = "block") {
+  const nav = scope === "nav";  // the groups of the side menu: their own memory and their own accordion, apart from the blocks of a page
   const [open, setOpen] = useState(defaultOpen);
   const [pinned, setPinned] = useState(false);
-  const { remember_collapse: remember } = useUi();
-  const key = `collapse:${id}`;
-  const pinKey = `collapse-pin:${id}`;
+  const { remember_collapse: ui } = useUi();
+  const remember = nav ? true : ui;
+  const key = `${nav ? "navg" : "collapse"}:${id}`;
+  const pinKey = `${nav ? "navg-pin" : "collapse-pin"}:${id}`;
+  const OPENED = nav ? "nav-opened" : "collapse-opened";
   const pinRef = useRef(false);
   pinRef.current = pinned;
 
@@ -28,23 +31,28 @@ export function useAccordion(id, defaultOpen = false) {
       setOpen(false);
       if (id && remember) try { localStorage.setItem(key, "0"); } catch {}
     };
-    window.addEventListener("collapse-all", all);
-    window.addEventListener("collapse-opened", other);
-    return () => { window.removeEventListener("collapse-all", all); window.removeEventListener("collapse-opened", other); };
-  }, [key, pinKey, id, remember, defaultOpen]);
+    if (!nav) window.addEventListener("collapse-all", all);
+    window.addEventListener(OPENED, other);
+    return () => { window.removeEventListener("collapse-all", all); window.removeEventListener(OPENED, other); };
+  }, [key, pinKey, id, remember, defaultOpen, nav, OPENED]);
 
   const toggle = () => {
     const next = !open;
     setOpen(next);
     if (id && remember) try { localStorage.setItem(key, next ? "1" : "0"); } catch {}
-    if (next) window.dispatchEvent(new CustomEvent("collapse-opened", { detail: id }));
+    if (next) window.dispatchEvent(new CustomEvent(OPENED, { detail: id }));
+  };
+  const openNow = () => {  // opened by itself (the page of the group is shown): the other groups make room
+    setOpen(true);
+    if (id && remember) try { localStorage.setItem(key, "1"); } catch {}
+    window.dispatchEvent(new CustomEvent(OPENED, { detail: id }));
   };
   const togglePin = () => {
     const next = !pinned;
     setPinned(next);
     if (id && remember) try { localStorage.setItem(pinKey, next ? "1" : "0"); } catch {}
   };
-  return { open, toggle, pinned, togglePin };
+  return { open, toggle, pinned, togglePin, openNow };
 }
 
 // Green pin = this block stays open when another one is opened; red = it closes.

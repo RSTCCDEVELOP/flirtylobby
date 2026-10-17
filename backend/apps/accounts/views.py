@@ -74,11 +74,12 @@ def _challenge_response(user, email_verify=False):
     """Send a code and hand the browser a signed challenge. email_verify: confirm the address (always by e-mail) before anything else."""
     method = "email" if email_verify else user.twofa_method
     if method != "app":  # with an authenticator app there is nothing to send
+        shown = None
         try:
-            twofa.issue_code(user, force_email=email_verify)
+            shown = twofa.issue_code(user, force_email=email_verify)
         except twofa.DeliveryError as e:
             return Response({"detail": f"Code versturen mislukt: {e}"}, status=status.HTTP_502_BAD_GATEWAY)
-    return Response({"twofa_required": True, "method": method, "email_verify": email_verify,
+    return Response({**({"sandbox_code": shown} if method != "app" and shown else {}), "twofa_required": True, "method": method, "email_verify": email_verify,
                      "destination": twofa.mask_email(user.email) if method == "email" else twofa.destination_hint(user),
                      "challenge": signing.dumps({"uid": user.pk, "ev": email_verify}, salt=CHALLENGE_SALT)})
 
@@ -90,6 +91,7 @@ def _finish_login(request, user):
         token = Token.objects.create(user=user)
     user_logged_in.send(sender=User, request=request, user=user)
     logger.info("Login: %s", user.email)
+    __import__("apps.plugins.runtime", fromlist=["emit"]).emit("user_login", user=user)
     return Response({"token": token.key, "user": ProfileSerializer(user).data})
 
 
@@ -132,10 +134,10 @@ def login_resend(request):
     if user.twofa_method == "app" and not email_verify:
         return Response({"detail": "Open je authenticator-app voor de code."}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        twofa.issue_code(user, force_email=email_verify)
+        shown = twofa.issue_code(user, force_email=email_verify)
     except twofa.DeliveryError as e:
         return Response({"detail": str(e)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-    return Response({"ok": True})
+    return Response({"ok": True, **({"sandbox_code": shown} if shown else {})})
 
 
 @api_view(["POST"])

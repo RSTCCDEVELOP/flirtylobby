@@ -12,7 +12,11 @@ def sources():
     """kind -> queryset of the items that ticked 'System Object'."""
     from apps.subscriptions.models import DonationCampaign, Plan
 
-    return {"donation": DonationCampaign.objects.filter(system_object=True), "plan": Plan.objects.filter(system_object=True)}
+    from apps.plugins import installer
+    from apps.plugins.models import Plugin
+
+    return {"donation": DonationCampaign.objects.filter(system_object=True), "plan": Plan.objects.filter(system_object=True),
+            "plugin": [p for p in Plugin.objects.all() if installer.as_page_object(p)]}
 
 
 def sync():
@@ -20,7 +24,7 @@ def sync():
     keep = set()
     for kind, qs in sources().items():
         for src in qs:
-            obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=src.pk, defaults={"slug": f"{kind}-{src.slug}"[:80]})
+            obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=src.pk, defaults={"slug": f"{kind}-{getattr(src, 'slug', None) or src.name}"[:80]})
             keep.add(obj.pk)
     SystemObject.objects.exclude(pk__in=keep).delete()
 
@@ -28,6 +32,10 @@ def sync():
 def source_of(obj):
     from apps.subscriptions.models import DonationCampaign, Plan
 
+    if obj.kind == "plugin":
+        from apps.plugins.models import Plugin
+
+        return Plugin.objects.filter(pk=obj.ref_id).first()
     return (DonationCampaign if obj.kind == "donation" else Plan).objects.filter(pk=obj.ref_id).first()
 
 

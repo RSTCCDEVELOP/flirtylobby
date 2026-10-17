@@ -73,9 +73,15 @@ def _bases(request):
     return origin or None, request.build_absolute_uri("/").rstrip("/")
 
 
-def _sample(request, override=None):
+SAMPLE_CODE_SUBJECT = "Bevestig je e-mailadres"
+SAMPLE_CODE_BODY = "Je bevestigingscode is 482915. Deze is 15 minuten geldig. Heb je geen account aangemaakt? Negeer dit bericht dan."
+
+
+def _sample(request, override=None, kind="mail"):
     base, api = _bases(request)
     cfg = layout.merge_preview(override) if override else layout.get()
+    if kind == "code":  # a verification mail
+        return layout.build(SAMPLE_CODE_SUBJECT, SAMPLE_CODE_BODY, base, api, cfg, code="482915"), cfg
     return layout.build(SAMPLE_SUBJECT, SAMPLE_BODY, base, api, cfg), cfg
 
 
@@ -99,7 +105,7 @@ def email_layout(request):
 def email_layout_preview(request):
     """HTML (or text) of a sample message, optionally with settings that are not saved yet."""
     try:
-        (text, html_body), cfg = _sample(request, request.data.get("settings"))
+        (text, html_body), cfg = _sample(request, request.data.get("settings"), "code" if request.data.get("kind") == "code" else "mail")
     except (ValueError, layout.Invalid) as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"format": cfg["format"], "html": html_body, "text": text})

@@ -10,6 +10,8 @@ import { useModules } from "../../../../components/Modules";
 import ProfileFieldsAdmin from "../../../../components/ProfileFieldsAdmin";
 import Tabs from "../../../../components/Tabs";
 import { api, errorText } from "../../../../lib/api";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const Num = ({ label, hint, value, onChange, min, max, disabled }) => (
   <label>{label}{hint && <small className="muted"> {hint}</small>}
@@ -35,6 +37,7 @@ export default function CommunityAdmin() {
   useEffect(() => { api("/languages/").then((x) => setLangs(x.languages || [])).catch(() => {}); }, []);
   const load = useCallback(() => api("/community/settings/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
+  const auto = useAutoSave(d?.settings, save, { ready: !!d }); // saves by itself, no Save button
   if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
 
   const s = d.settings, lv = d.sections;
@@ -43,7 +46,7 @@ export default function CommunityAdmin() {
   const can = (sec) => lv[sec] >= 2;
   async function save() {
     const body = Object.fromEntries(Object.keys(lv).filter((k) => can(k)).map((k) => [k, s[k]]));
-    try { setD(await api("/community/settings/", { method: "PUT", body })); setMsg({ ok: true, text: tx("Community-instellingen opgeslagen.") }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    try { setD(await api("/community/settings/", { method: "PUT", body })); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); return false; }
   }
 
   return (
@@ -53,7 +56,7 @@ export default function CommunityAdmin() {
           <h1>{tx("Community")}</h1>
           <p className="muted" style={{ margin: 0 }}>{tx("Instellingen voor profielen, berichten en chat. Members gebruiken ze via hun eigen dashboard (Community).")}</p>
         </div>
-        <div className="row"><CollapseAll /><button className="btn primary" onClick={save}>{tx("Opslaan")}</button></div>
+        <div className="row"><CollapseAll /><SaveStatus auto={auto} /></div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 

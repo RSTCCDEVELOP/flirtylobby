@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { IconFolder, IconLock } from "../../../../components/Icons";
 import { api, errorText } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const HINT = {
   users: "Foto's, chatbestanden en alles wat leden uploaden. Per lid een eigen submap, zodat alles van één lid bij elkaar staat en bij verwijderen in één keer weg is.",
@@ -27,7 +29,8 @@ export default function StoragePage() {
     try { await fn(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy("");
   }
-  const save = () => run("save", async () => { load(await api("/storage/", { method: "PUT", body: { areas: form } })); setMsg({ ok: true, text: tx("Opgeslagen. Nieuwe bestanden volgen deze instellingen; bestaande bestanden pas je hieronder aan.") }); });
+  const save = async () => { try { load(await api("/storage/", { method: "PUT", body: { areas: form } })); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); return false; } };
+  const auto = useAutoSave(form, save, { ready: !!s, delay: 1500 }); // saves by itself, no Save button
   const apply = () => run("apply", async () => {
     if (!(await confirmDialog(tx("Alle bestaande bestanden aanpassen aan deze instellingen (versleutelen, ontsleutelen, verplaatsen)? Dit kan even duren."), {}))) return;
     const r = await api("/storage/apply/", { method: "POST" });
@@ -65,8 +68,9 @@ export default function StoragePage() {
         })}
       </div>
       <div className="row" style={{ marginTop: "1rem", display: "flex", gap: ".6rem", flexWrap: "wrap" }}>
-        <button className="btn primary" disabled={!!busy} onClick={save}>{tx("Opslaan")}</button>
+        <SaveStatus auto={auto} />
         <button className="btn" disabled={!!busy} onClick={apply}>{tx("Bestaande bestanden aanpassen")}</button>
+        <small className="muted" style={{ flexBasis: "100%" }}>{tx("Nieuwe bestanden volgen deze instellingen; bestaande bestanden pas je met de knop aan.")}</small>
       </div>
       <div className="card" style={{ marginTop: "1.25rem" }}>
         <h3 style={{ margin: 0, display: "flex", gap: ".5rem", alignItems: "center" }}><IconLock /> {tx("Hoe de versleuteling werkt")}</h3>

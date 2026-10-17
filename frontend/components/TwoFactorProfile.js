@@ -6,6 +6,8 @@ import { useState } from "react";
 import QRCode from "qrcode";
 import { api, errorText } from "../lib/api";
 import { useAuth } from "./AuthContext";
+import CodeInput from "../components/CodeInput";
+
 
 // Profile: switch for logging in with two-step verification (code by e-mail or sms).
 // Off -> on: pick a way, enter the code we send. On -> off: confirm with the password.
@@ -87,10 +89,8 @@ export default function TwoFactorProfile() {
             </div>
           </div>
           <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
-            <label style={{ flex: 1, maxWidth: 220 }}>{tx("Code uit de app")}
-              <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={8} />
-            </label>
-            <button className="btn primary" disabled={busy || !code}>{tx("Bevestigen")}</button>
+            <div className="code-field" style={{ flex: 1 }}><span>{tx("Code uit de app")}</span><CodeInput value={code} onChange={setCode} autoFocus /></div>
+            <button className="btn primary" disabled={busy || code.length < 6}>{tx("Bevestigen")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Annuleren")}</button>
           </div>
         </form>
@@ -99,10 +99,8 @@ export default function TwoFactorProfile() {
         <form className="form" onSubmit={confirm}>
           <p className="muted" style={{ margin: 0 }}>{tx("We hebben een code gestuurd naar")} {sentTo}.</p>
           <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
-            <label style={{ flex: 1, maxWidth: 220 }}>{tx("Code")}
-              <input value={code} onChange={(e) => setCode(e.target.value)} required autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={8} />
-            </label>
-            <button className="btn primary" disabled={busy || !code}>{tx("Bevestigen")}</button>
+            <div className="code-field" style={{ flex: 1 }}><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus /></div>
+            <button className="btn primary" disabled={busy || code.length < 6}>{tx("Bevestigen")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Annuleren")}</button>
           </div>
         </form>

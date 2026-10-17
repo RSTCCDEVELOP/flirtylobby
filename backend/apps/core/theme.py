@@ -266,120 +266,40 @@ def build(values):
     return css, fonts_url
 
 
-# ── Presets ("thema's") ─────────────────────────────────────────────────────
-import colorsys  # noqa: E402
-
-
-def _hex(h, s, l):
-    r, g, b = colorsys.hls_to_rgb(h / 360, l, s)
-    return "#{:02x}{:02x}{:02x}".format(round(r * 255), round(g * 255), round(b * 255))
-
-
-def _neutrals(hue, tint):
-    """Light + dark neutral colors tinted with `hue`; `tint` (0-1) is how colorful the greys are."""
-    c = lambda mode, name, s, l: (f"{mode}_{name}", _hex(hue, s, l))
-    return dict([
-        ("light_page", _hex(hue, tint * 0.8, 0.995 - tint * 0.04)),
-        c("light", "bg", tint, 0.965), c("light", "card", tint * 0.3, 1.0), c("light", "hover", tint, 0.985),
-        c("light", "line", tint * 0.8, 0.91), c("light", "text", tint * 0.9, 0.15), c("light", "muted", tint * 0.3, 0.42),
-        c("dark", "page", tint, 0.09), c("dark", "bg", tint, 0.06), c("dark", "card", tint, 0.13),
-        c("dark", "hover", tint, 0.17), c("dark", "line", tint, 0.23), c("dark", "text", tint * 0.5, 0.93),
-        c("dark", "muted", tint * 0.5, 0.66),
-    ])
-
-
-def _preset(name, desc, primary, secondary, hue, tint=0.25, body="System", heading=None, **layout):
-    overrides = {"primary": primary, "secondary": secondary, **_neutrals(hue, tint),
-                 "font_body": body, "font_heading": heading or body, **layout}
-    return {"key": name.lower().replace(" ", "-").replace("&", "en"), "name": name, "description": desc, "overrides": overrides}
-
-
+# ── Built-in themes ─────────────────────────────────────────────────────────
+# Only the two house styles live in the system. All other themes are theme packages (<root>/themes/<key>/theme.json)
+# that are switched on or off in Admin -> Themapakketten (see themepacks.py).
 PRESET_DEFS = [
-    {"key": "standaard", "name": "Standaard (RSTCC)", "description": "De oorspronkelijke stijl met het RSTCC-logo.", "overrides": {"brand_logo": "rstcc"}},
-    _preset("Oceaan", "Frisse blauwtinten", "#0ea5e9", "#14b8a6", 200, 0.3, "Inter", radius=14),
-    _preset("Bosgroen", "Rustig en natuurlijk", "#16a34a", "#ca8a04", 140, 0.2, "Nunito", radius=16),
-    _preset("Zonsondergang", "Warm oranje en rood", "#f97316", "#e11d48", 20, 0.3, "Poppins", radius=18),
-    _preset("Lavendel", "Zacht paars", "#8b5cf6", "#ec4899", 260, 0.3, "Poppins", radius=20, btn_radius=14),
-    _preset("Roze suiker", "Speels en rond", "#ec4899", "#f59e0b", 330, 0.35, "Nunito", radius=24, btn_radius=24),
-    _preset("Nacht indigo", "Diep indigo", "#6366f1", "#22d3ee", 235, 0.35, "Inter", radius=12),
-    _preset("Minimal zwart", "Strak, scherp, zonder schaduw", "#111827", "#6b7280", 220, 0.05, "Inter",
-            radius=4, btn_radius=4, shadow="none"),
-    _preset("Koffie", "Warme aardetinten met serif koppen", "#92400e", "#d97706", 30, 0.3, "Lato", "Merriweather", radius=10),
-    _preset("Roest", "Terracotta en teal", "#c2410c", "#0d9488", 15, 0.25, "Montserrat", radius=8),
-    _preset("Smaragd", "Helder groen met indigo", "#059669", "#6366f1", 160, 0.25, "Open Sans", radius=12),
-    _preset("Koraal", "Levendig koraalrood", "#f43f5e", "#fb923c", 350, 0.3, "Montserrat", radius=16),
-    _preset("Staal", "Zakelijk grijsblauw", "#475569", "#0ea5e9", 215, 0.15, "Roboto", radius=6, btn_radius=6),
-    _preset("Goud luxe", "Elegant met serif koppen", "#b45309", "#1f2937", 40, 0.2, "Lato", "Playfair Display",
-            radius=2, btn_radius=2, heading_weight="600", shadow="strong"),
-    _preset("Mint", "Fris mint en roze", "#14b8a6", "#f472b6", 175, 0.3, "Nunito", radius=20),
-    _preset("Cyber", "Scherp neon op donker-blauw", "#06b6d4", "#a3e635", 195, 0.4, "Roboto",
-            radius=0, btn_radius=0, heading_weight="800"),
-    _preset("Rood klassiek", "Krachtig rood", "#dc2626", "#1f2937", 0, 0.15, "Roboto", radius=6),
-    _preset("Marine", "Klassiek marineblauw met goud", "#1e40af", "#f59e0b", 225, 0.3, "Open Sans", radius=8),
-    _preset("Pastel perzik", "Zacht en vriendelijk", "#fb7185", "#fbbf24", 15, 0.4, "Nunito", radius=28, btn_radius=28),
-    _preset("Olijf", "Aards groen", "#65a30d", "#a16207", 85, 0.25, "Lato", radius=12),
-    _preset("Royal paars", "Koninklijk paars en goud", "#7e22ce", "#eab308", 280, 0.3, "Inter", "Playfair Display", radius=14),
-    _preset("Terra", "Klei en zand", "#b45f3c", "#4d7c6f", 20, 0.22, "Open Sans", "Merriweather", radius=10),
-    _preset("Arctic", "IJsblauw, ruim en groot", "#38bdf8", "#818cf8", 205, 0.3, "Inter", radius=16, font_size_base=17),
-    _preset("Compact zakelijk", "Dicht op elkaar, veel op één scherm", "#2563eb", "#64748b", 220, 0.2, "Inter",
-            radius=6, btn_radius=6, font_size_base=14, content_pad=1.25, header_h=56, sidebar_w=210,
-            site_header_h=60, logo_h=38, site_logo_h=42),
-    _preset("Groot en luchtig", "Grote tekst en veel ruimte", "#0d9488", "#f97316", 170, 0.25, "Poppins",
-            radius=22, font_size_base=18, content_pad=3, sidebar_w=280, line_height=1.7, header_h=72),
+    {"key": "standaard", "name": "RSTCC", "description": "De oorspronkelijke stijl met het RSTCC-logo.", "overrides": {"brand_logo": "rstcc"}, "builtin": True},
 ]
 
 
 def _explicit(name, desc, mode, primary, secondary, light, dark, danger, ok, **layout):
-    """Preset with hand-picked palettes. light/dark = (page, bg, card, hover, line, text, muted)."""
+    """Theme with hand-picked palettes. light/dark = (page, bg, card, hover, line, text, muted)."""
     names = ["page", "bg", "card", "hover", "line", "text", "muted"]
     overrides = {"primary": primary, "secondary": secondary, "danger": danger, "ok": ok, "default_mode": mode, **layout}
     overrides.update({f"light_{n}": v for n, v in zip(names, light)})
     overrides.update({f"dark_{n}": v for n, v in zip(names, dark)})
-    return {"key": name.lower().replace(" ", "-"), "name": name, "description": desc, "overrides": overrides, "mode": mode}
+    return {"key": name.lower().replace(" ", "-"), "name": name, "description": desc, "overrides": overrides, "mode": mode, "builtin": True}
 
 
-PRESET_DEFS += [
-    _explicit("Romantisch", "Zacht roze, goud en serif koppen", "light", "#d6336c", "#b8860b",
-              ("#fff8f8", "#fdf2f4", "#ffffff", "#fff1f3", "#f5d5db", "#4a1d2b", "#9a6b78"),
-              ("#1f1218", "#170d12", "#2a1820", "#34202a", "#4a2d3a", "#fbe8ee", "#c79aab"),
-              "#be123c", "#2f855a", font_body="Nunito", font_heading="Playfair Display", radius=20,
-              btn_radius=24, shadow="soft", heading_weight="600"),
-    _explicit("Zwart (OLED)", "Echt zwart met scherpe randen", "dark", "#3b82f6", "#a3a3a3",
-              ("#ffffff", "#f5f5f5", "#ffffff", "#fafafa", "#e5e5e5", "#0a0a0a", "#737373"),
-              ("#000000", "#000000", "#0a0a0a", "#141414", "#262626", "#fafafa", "#8a8a8a"),
-              "#ef4444", "#22c55e", font_body="Inter", font_heading="Inter", radius=10, btn_radius=8, shadow="none"),
-    _explicit("Apple licht", "macOS/iOS look, licht", "light", "#0071e3", "#ff9500",
-              ("#ffffff", "#f5f5f7", "#ffffff", "#f5f5f7", "#d2d2d7", "#1d1d1f", "#86868b"),
-              ("#000000", "#000000", "#1c1c1e", "#2c2c2e", "#38383a", "#f5f5f7", "#98989d"),
-              "#ff3b30", "#34c759", font_body="San Francisco", font_heading="San Francisco", radius=14,
-              btn_radius=12, shadow="soft", heading_weight="600"),
-    _explicit("Apple donker", "macOS/iOS look, donker", "dark", "#0a84ff", "#ff9f0a",
-              ("#ffffff", "#f2f2f7", "#ffffff", "#f2f2f7", "#d1d1d6", "#000000", "#8e8e93"),
-              ("#000000", "#000000", "#1c1c1e", "#2c2c2e", "#38383a", "#ffffff", "#98989d"),
-              "#ff453a", "#30d158", font_body="San Francisco", font_heading="San Francisco", radius=14,
-              btn_radius=12, shadow="none", heading_weight="600"),
-    _explicit("Windows", "Windows 11 (Fluent) look", "light", "#0067c0", "#6b69d6",
-              ("#ffffff", "#f3f3f3", "#ffffff", "#f9f9f9", "#e5e5e5", "#1b1b1b", "#5d5d5d"),
-              ("#1c1c1c", "#202020", "#2b2b2b", "#323232", "#3a3a3a", "#ffffff", "#9d9d9d"),
-              "#c42b1c", "#0f7b0f", font_body="Segoe UI", font_heading="Segoe UI", radius=8, btn_radius=4,
-              shadow="soft", heading_weight="600"),
-]
-
-
-def presets():
-    out = []
-    for p in PRESET_DEFS:
-        values = merged(p["overrides"])
-        _, errors = validate(values)
-        assert not errors, (p["key"], errors)
-        out.append({"key": p["key"], "name": p["name"], "description": p["description"],
-                    "mode": p.get("mode"), "values": values})
-    return out
-
-
-PRESET_DEFS.insert(1, _explicit(
+PRESET_DEFS.append(_explicit(
     "Studio2", "Oranje en grijs, passend bij het Studio2-logo", "light", "#f18745", "#939497",
     ("#ffffff", "#f6f6f6", "#ffffff", "#fafafa", "#e6e6e6", "#373736", "#7c7d80"),
     ("#1c1c1d", "#141414", "#242425", "#2d2d2e", "#3a3a3b", "#f1f1f1", "#a0a1a4"),
     "#dc2626", "#16a34a", font_body="Montserrat", font_heading="Montserrat", radius=6, btn_radius=6,
     shadow="soft", heading_weight="600", brand_logo="studio2"))
+
+
+def presets():
+    """The built-in themes plus the theme packages that are switched on."""
+    from . import themepacks
+
+    out = []
+    for p in [*PRESET_DEFS, *themepacks.enabled_defs()]:
+        values = merged(p["overrides"])
+        _, errors = validate(values)
+        if errors:
+            continue
+        out.append({"key": p["key"], "name": p["name"], "description": p["description"], "mode": p.get("mode"), "assets": p.get("assets", 0), "values": values})
+    return out

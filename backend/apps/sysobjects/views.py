@@ -18,7 +18,9 @@ def _row(o, public=False):
     src = service.source_of(o)
     if not src:
         return None
-    if o.kind == "donation":
+    if o.kind == "plugin":
+        data, names, button = {"name": src.name, "title": src.title, "enabled": src.enabled}, {"": src.title}, {}
+    elif o.kind == "donation":
         data = sv._campaign_public(src, detail=False)
         names, button = src.names or {"": src.name}, src.button or {}
     else:
@@ -27,7 +29,7 @@ def _row(o, public=False):
     row = {"id": o.id, "slug": o.slug, "kind": o.kind, "enabled": o.enabled, "names": names, "button": button, "data": data}
     if not public:
         row.update(kind_label=dict(SystemObject.KINDS)[o.kind], used_on=service.usage(o.slug), source_id=o.ref_id,
-                   edit_url="/dashboard/admin/donations" if o.kind == "donation" else "/dashboard/admin/subscriptions")
+                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions"}.get(o.kind, f"/dashboard/admin/plugins/{src.name}"))
     return row
 
 
@@ -57,9 +59,11 @@ def public_list(request):
 
     out = []
     for o in SystemObject.objects.filter(enabled=True):
-        if not modules.enabled("donations" if o.kind == "donation" else "subscriptions"):
+        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins"}[o.kind]):
             continue
         r = _row(o, public=True)
+        if r and o.kind == "plugin" and not r["data"]["enabled"]:
+            continue
         if r:
             out.append(r)
     return Response(out)

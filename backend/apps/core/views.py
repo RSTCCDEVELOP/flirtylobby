@@ -217,7 +217,9 @@ from .models import ModuleState  # noqa: E402
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def modules_public(request):
-    return Response(modules.states())
+    from apps.plugins.models import Plugin
+
+    return Response({**modules.states(), **{f"plugin:{n}": on for n, on in Plugin.objects.values_list("name", "enabled")}})  # plugins count as modules for the website
 
 
 def _module_payload():
@@ -279,3 +281,155 @@ def system_settings(request):
         system.save(cleaned)
     return Response({"settings": system.get(), "checks": system.checks(request), "env": system.env_files(), "environments": system.ENVIRONMENTS,
                      "request_origin": f"{request.scheme}://{request.get_host()}"})
+
+
+# ── Theme packages (Admin -> Themapakketten) ────────────────────────────────
+from django.http import HttpResponse  # noqa: E402
+from rest_framework.parsers import FormParser, MultiPartParser  # noqa: E402
+from rest_framework.decorators import parser_classes  # noqa: E402
+
+from . import themepacks  # noqa: E402
+from .models import ThemePack  # noqa: E402
+
+PACKS = [has_level_for("theme", {"GET": "use", "DELETE": "manage"}, default="edit"), module_required("theme")]
+_bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
+
+
+@api_view(["GET"])
+@permission_classes(PACKS)
+def theme_packs(request):
+    themepacks.scan()
+    return Response({"packs": themepacks.listing(), "folder": str(themepacks.root()), "system_version": __import__("django.conf", fromlist=["settings"]).settings.SYSTEM_VERSION})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+@parser_classes([MultiPartParser, FormParser])
+def theme_pack_upload(request):
+    f = request.FILES.get("file")
+    if not f or not f.name.lower().endswith(".zip"):
+        return _bad("Kies een zipbestand met een thema.")
+    try:
+        themepacks.install_zip(f.read())
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes(PACKS)
+def theme_pack(request, key):
+    themepacks.scan()
+    row = ThemePack.objects.filter(key=key).first()
+    if not row:
+        return _bad("Dit themapakket bestaat niet (de ingebouwde thema's staan altijd aan).", status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        themepacks.remove(key)
+    else:
+        if "enabled" in request.data:
+            row.enabled = bool(request.data.get("enabled"))
+            row.save(update_fields=["enabled", "updated_at"])
+        if any(k in request.data for k in ("name", "description", "version", "mode", "home")):
+            try:
+                themepacks.update_meta(key, request.data)
+            except themepacks.ThemeError as e:
+                return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+def _pack_call(fn, *a):
+    try:
+        fn(*a)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_create(request):
+    name = str(request.data.get("name") or "").strip()
+    if not name:
+        return _bad("Geef het thema een naam.")
+    try:
+        key = themepacks.create(name, bool(request.data.get("from_current")))
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"key": key, "packs": themepacks.listing()}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes(PACKS)
+def theme_pack_assets(request, key):
+    try:
+        return Response(themepacks.data_urls(key))
+    except themepacks.ThemeError as e:
+        return _bad(str(e), status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["PUT", "DELETE"])
+@permission_classes(PACKS)
+@parser_classes([MultiPartParser, FormParser])
+def theme_pack_slot(request, key, slot):
+    if request.method == "DELETE":
+        return _pack_call(themepacks.clear_slot, key, slot)
+    f = request.FILES.get("image")
+    return _pack_call(themepacks.set_slot, key, slot, f.read()) if f else _bad("Kies een afbeelding.")
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+@parser_classes([MultiPartParser, FormParser])
+def theme_pack_home_add(request, key):
+    f = request.FILES.get("image")
+    return _pack_call(themepacks.add_home, key, f.read(), request.data.get("caption", "")) if f else _bad("Kies een afbeelding.")
+
+
+@api_view(["DELETE"])
+@permission_classes(PACKS)
+def theme_pack_home_del(request, key, index):
+    return _pack_call(themepacks.remove_home, key, index)
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_capture(request, key):
+    return _pack_call(themepacks.capture, key)
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_use(request, key):
+    """Make a theme (colours, fonts, shapes; optionally its logos and home photos) the look of the website."""
+    with_files = bool(request.data.get("files"))
+    if with_files and not (modules.enabled("branding") and access_level(request.user, "branding") >= 2):
+        return _bad("Je hebt geen rechten om logo's te wijzigen.", status.HTTP_403_FORBIDDEN)
+    try:
+        slots, photos = themepacks.use(key, with_files)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    logger.info("Theme %s put in use by %s (files=%s)", key, request.user.email, with_files)
+    return Response({"slots": slots, "photos": photos, "packs": themepacks.listing()})
+
+
+@api_view(["POST"])
+@permission_classes([has_level("branding", "edit"), module_required("branding"), *PACKS])
+def theme_pack_apply(request, key):
+    """Use the logos and home photos of a package for the site."""
+    try:
+        slots, photos = themepacks.apply_files(key)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    logger.info("Theme package %s applied (%s logos, %s photos) by %s", key, slots, photos, request.user.email)
+    return Response({"slots": slots, "photos": photos})
+
+
+@api_view(["GET"])
+@permission_classes(PACKS)
+def theme_pack_download(request, key):
+    data = themepacks.as_zip(key)
+    if not data:
+        return _bad("Dit themapakket bestaat niet.", status.HTTP_404_NOT_FOUND)
+    r = HttpResponse(data, content_type="application/zip")
+    r["Content-Disposition"] = f'attachment; filename="theme-{key}.zip"'
+    return r

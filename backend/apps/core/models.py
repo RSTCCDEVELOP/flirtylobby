@@ -78,3 +78,15 @@ class SystemSettings(models.Model):
     """Singleton (pk=1): basic data of this installation (name, addresses, contact). Secrets and server settings stay in the environment."""
 
     data = models.JSONField(default=dict, blank=True)
+
+
+class ThemePack(models.Model):
+    """A theme package from the themes folder (<root>/themes/<key>/theme.json): switched on = offered in Admin -> Vormgeving."""
+
+    key = models.SlugField(max_length=40, unique=True)
+    enabled = models.BooleanField(default=False)
+    manifest = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["key"]

@@ -113,3 +113,40 @@ def _system_apply(data, ctx):
 
 
 register("system", "Basisgegevens", _system_export, _system_apply, description="Naam, bedrijf en contactgegevens van de website.", order=5)
+
+
+def _packs_export(opts):
+    """The theme packages (the files of the themes folder) with their on/off state. opts["themes"]: only these keys (None = all)."""
+    from . import themepacks
+
+    keys = opts.get("themes")
+    themepacks.scan()
+    from .models import ThemePack
+
+    return {"themes": [{"manifest": r.manifest, "enabled": r.enabled, **({"files": themepacks.files_b64(r.key)} if opts.get("include_files", True) else {})}
+                       for r in ThemePack.objects.all() if keys is None or r.key in keys]}
+
+
+def _packs_apply(data, ctx):
+    import json
+
+    from . import themepacks
+    from .models import ThemePack
+
+    done, notes = 0, []
+    for it in (data or {}).get("themes", []):
+        try:
+            man = themepacks.parse(json.dumps(it.get("manifest")))
+            d = themepacks.root() / man["key"]
+            d.mkdir(exist_ok=True)
+            (d / "theme.json").write_text(json.dumps({k: man[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, indent=2, ensure_ascii=False) + "\n")
+            themepacks.write_files_b64(man["key"], it.get("files"))
+            themepacks.scan()
+            ThemePack.objects.filter(key=man["key"]).update(enabled=bool(it.get("enabled")))
+            done += 1
+        except Exception as e:  # noqa: BLE001
+            notes.append(f"{(it.get('manifest') or {}).get('key', '?')}: {e}")
+    return f"{done} themapakket(ten) geladen." + (" " + "; ".join(notes) if notes else "")
+
+
+register("themepacks", "Themapakketten", _packs_export, _packs_apply, description="De thema's uit de themamap en welke aan staan.", order=11)

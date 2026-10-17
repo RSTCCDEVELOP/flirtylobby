@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hello</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 1.25rem; color: var(--text, #0f172a); }
+    button { font: inherit; padding: .55rem 1rem; border-radius: 10px; border: 0; background: var(--blue, #3b82f6); color: #fff; cursor: pointer; }
+    pre { background: rgba(127,127,127,.15); padding: .75rem; border-radius: 10px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Hello</h1>
+  <p id="intro"></p>
+  <button id="go"></button>
+  <pre id="out">—</pre>
+  <script>
+    // system.t(): the text in the language of the visitor; system.api(): a call to the system as the logged-in member
+    system.ready.then(function (info) {
+      document.getElementById("title").textContent = system.t("Hallo {0}", info.user.name || "");
+      document.getElementById("intro").textContent = system.t("Dit is de pagina van de voorbeeldplugin.");
+      document.getElementById("go").textContent = system.t("Roep de plugin aan");
+    });
+    document.getElementById("go").onclick = function () {
+      system.api("/plugins/run/hello/hello").then(function (d) { document.getElementById("out").textContent = JSON.stringify(d, null, 2); })
+        .catch(function (e) { document.getElementById("out").textContent = e.message; });
+    };
+  </script>
+</body>
+</html>

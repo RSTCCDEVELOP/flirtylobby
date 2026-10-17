@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "apps.sandbox",
     "apps.shop",
     "apps.social",
+    "apps.plugins",
     "apps.pages",
     "apps.siteimport",
     "apps.subscriptions",
@@ -117,6 +118,10 @@ STORAGES = {
 }
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or BASE_DIR / "media")
+_VERSION_FILE = next((f for f in (BASE_DIR / "VERSION", PROJECT_ROOT / "VERSION") if f.is_file()), None)  # backend/VERSION: it is inside the Docker image too
+SYSTEM_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE else "0.0.0"  # the version of this system; plugins are built for one
+PLUGINS_DIR = Path(os.getenv("PLUGINS_DIR") or PROJECT_ROOT / "plugins")  # plugins are developed or uploaded here (not in git)
+THEMES_DIR = Path(os.getenv("THEMES_DIR") or PROJECT_ROOT / "themes")  # theme packages: one folder per theme with a theme.json (in git)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

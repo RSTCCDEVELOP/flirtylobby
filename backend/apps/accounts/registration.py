@@ -11,6 +11,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -56,10 +57,11 @@ def _hash(p, code):
     return hashlib.sha256(f"reg:{p.pk}:{code}:{settings.SECRET_KEY}".encode()).hexdigest()
 
 
-def _text(key):
+def _text(key, wanted=None):
+    """The text in the language the visitor picked on the sign-up form (else the default language, else Dutch)."""
     cfg = _cfg()["texts"]
     default = Language.objects.filter(is_default=True).values_list("code", flat=True).first() or "nl"
-    for lang in (default, "nl", *cfg):
+    for lang in (wanted, default, "nl", *cfg):
         if cfg.get(lang, {}).get(key):
             return cfg[lang][key]
     return ""
@@ -72,13 +74,16 @@ def _send(p):
         raise twofa.DeliveryError(f"Wacht even voordat je een nieuwe code aanvraagt ({RESEND_SECONDS} seconden).")
     code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
     fmt = lambda t: t.replace("{code}", code).replace("{minutes}", str(cfg["code_minutes"]))  # noqa: E731
-    if p.steps[0] == "sms":
-        twofa.send_sms(p.data["phone"], fmt(_text("sms_body")))
+    lang = p.data.get("language")  # the language of the sign-up form: the mail arrives in it
+    if sandbox.code_on_screen():
+        p.sandbox_code = code  # nothing is sent: the form shows the code
+    elif p.steps[0] == "sms":
+        twofa.send_sms(p.data["phone"], fmt(_text("sms_body", lang)))
     else:
         from apps.communication import sending
 
         try:
-            sending.send_email(p.email, fmt(_text("email_subject")), fmt(_text("email_body")), purpose="security")
+            sending.send_email(p.email, fmt(_text("email_subject", lang)), fmt(_text("email_body", lang)), purpose="security", code=code)
         except sending.DeliveryError as e:
             raise twofa.DeliveryError(str(e))
     p.code_hash, p.code_expires, p.attempts, p.sent_at = _hash(p, code), timezone.now() + timedelta(minutes=cfg["code_minutes"]), 0, timezone.now()
@@ -97,7 +102,52 @@ def _hint(p):
 
 
 def _step_info(p):
-    return {"token": p.token, "step": p.steps[0], "destination": _hint(p), "steps_left": len(p.steps)}
+    return {"token": p.token, "step": p.steps[0], "destination": _hint(p), "steps_left": len(p.steps), **({"sandbox_code": p.sandbox_code} if getattr(p, "sandbox_code", None) else {})}
+
+
+def name_taken(n):
+    return User.objects.filter(Q(display_name__iexact=n) | Q(display_name="", first_name__iexact=n)).exists()  # also the name shown for members without a profile name
+
+
+def unique_display_name(base):
+    """The profile name as asked, or with a number behind it (Robert, Robert2, Robert3 …) when somebody already uses it."""
+    base = str(base or "").strip()[:55]
+    if not base:
+        return ""
+    name, i = base, 1
+    while name_taken(name):
+        i += 1
+        name = f"{base}{i}"
+    return name
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def free_name(request):
+    """Public: a free profile name for the sign-up form (the first name, with a number behind it when it is taken)."""
+    base = str(request.query_params.get("name") or "").strip()[:55]
+    return Response({"name": unique_display_name(base), "available": bool(base) and not name_taken(base)})
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def check_email(request):
+    """Public, for the sign-up form: is this a valid e-mail address? It never tells whether an account exists (that would let anybody probe for members)."""
+    th, _ = LoginThrottle.objects.get_or_create(key=f"regmail|{_ip(request)}"[:300])
+    if timezone.now() - th.updated_at > timedelta(hours=1):
+        th.failures, th.locked_until = 0, None
+    th.failures += 1
+    th.save()
+    if th.failures > 120:
+        return _fail("detail", "Te veel controles. Probeer het later opnieuw.", status.HTTP_429_TOO_MANY_REQUESTS)
+    email = str(request.query_params.get("email") or "").strip().lower()
+    try:
+        validate_email(email)
+    except DjangoValidationError:
+        return Response({"valid": False})
+    return Response({"valid": True})
 
 
 @api_view(["GET"])
@@ -113,7 +163,7 @@ def config(request):
     return Response({
         "enabled": True, "verify_email": _cfg()["verify_email"], "require_phone": _cfg()["require_phone"],
         "birth_date": _cfg()["require_birth_date"] or bool(age["enabled"]),
-        "min_age": age["min_age"] if age["enabled"] else None,
+        "min_age": age["min_age"] if age["enabled"] else None, "deny_url": age["deny_url"] if age["enabled"] else "",
         "twofa_methods": methods or [], "twofa_required": methods is None or bool(methods),
         "unavailable": methods is None,
         "password_min_length": s["basic"]["password_min_length"], "password_complexity": s["basic"]["password_complexity"],
@@ -146,9 +196,17 @@ def start(request):
     email = str(d.get("email") or "").strip().lower()
     first, last = str(d.get("first_name") or "").strip()[:150], str(d.get("last_name") or "").strip()[:150]
     display = str(d.get("display_name") or "").strip()[:60]
+    if display and name_taken(display):
+        errors_name = ["Deze profielnaam is al in gebruik. Kies een andere naam."]
+    else:
+        errors_name = None
+    display = display or first
     password, phone = str(d.get("password") or ""), re.sub(r"[ \-()]", "", str(d.get("phone") or ""))
     gender, method = str(d.get("gender") or ""), str(d.get("method") or "")
-    errors = {}
+    language = str(d.get("language") or "")
+    if language not in set(Language.objects.values_list("code", flat=True)):
+        language = ""
+    errors = {"display_name": errors_name} if errors_name else {}
     try:
         validate_email(email)
     except DjangoValidationError:
@@ -190,6 +248,7 @@ def start(request):
         errors["phone"] = ["Geef een telefoonnummer met landcode, bv. +31612345678."]
     if errors:
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+    display = unique_display_name(display)
 
     steps = []
     if not skip and (cfg["verify_email"] or tf_method == "email"):
@@ -200,7 +259,7 @@ def start(request):
         token=secrets.token_urlsafe(32), email=email, steps=steps, twofa_method=tf_method,
         decoy=User.objects.filter(email__iexact=email).exists(),
         data={"first_name": first, "last_name": last, "display_name": display, "password": make_password(password),
-              "birth_date": bd.isoformat() if bd else None, "gender": gender, "phone": phone})
+              "birth_date": bd.isoformat() if bd else None, "gender": gender, "phone": phone, "language": language})
     if not steps:  # nothing to verify: create right away
         return _finish(request, p)
     if not p.decoy:  # an existing address gets no code, but the answer looks the same
@@ -221,7 +280,7 @@ def _finish(request, p):
         p.delete()
         return _fail("detail", "Aanmelden is niet gelukt. Gebruik inloggen of 'wachtwoord vergeten' als je al een account hebt.")
     d = p.data
-    user = User(username=p.email, email=p.email, first_name=d["first_name"], last_name=d["last_name"], display_name=d["display_name"],
+    user = User(username=p.email, email=p.email, first_name=d["first_name"], last_name=d["last_name"], display_name=unique_display_name(d["display_name"]),
                 gender=d["gender"], birth_date=date.fromisoformat(d["birth_date"]) if d["birth_date"] else None,
                 phone=d["phone"], password=d["password"], is_active=True)
     user.email_verified = bool(p.twofa_method == "email" or security.get()["registration"]["verify_email"] or sandbox.skips_verification(p.email))
@@ -231,6 +290,7 @@ def _finish(request, p):
     p.delete()
     token = Token.objects.create(user=user)
     logger.info("Registered: %s", user.email)
+    __import__("apps.plugins.runtime", fromlist=["emit"]).emit("user_registered", user=user)
     return Response({"done": True, "token": token.key, "user": ProfileSerializer(user).data}, status=status.HTTP_201_CREATED)
 
 
@@ -276,4 +336,4 @@ def resend(request):
         _send(p)
     except twofa.DeliveryError as e:
         return _fail("detail", str(e), status.HTTP_429_TOO_MANY_REQUESTS)
-    return Response({"ok": True})
+    return Response({"ok": True, **({"sandbox_code": p.sandbox_code} if getattr(p, "sandbox_code", None) else {})})

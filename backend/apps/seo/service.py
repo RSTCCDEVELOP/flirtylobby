@@ -142,10 +142,10 @@ def pages():
 def sitemap_urls():
     """[(path, label)] for sitemap.xml and llms.txt: the pages above plus products and public member profiles."""
     out = list(pages())
-    if modules.enabled("products"):
-        from apps.shop.models import Product
+    if modules.enabled("plugin:webshop"):
+        from apps.shop import catalog
 
-        out += [(f"/producten/{slug}", name) for slug, name in Product.objects.filter(active=True).values_list("slug", "name")]
+        out += catalog.sitemap()
     if modules.enabled("profiles"):
         from apps.social.models import Profile
 

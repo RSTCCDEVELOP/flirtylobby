@@ -38,7 +38,7 @@ function Shortcuts({ ctx }) {
     on(mods, "chat") && ["/dashboard/community/chat", tx("Chat"), tx("Praat live"), <IconChat key="i" />, "blue"],
     on(mods, "directconnect") && ["/dashboard/community/direct", tx("Directe verbinding"), tx("Uitnodigen via link"), <IconKey key="i" />, "orange"],
     on(mods, "profiles") && ["/dashboard/community/requests", tx("Vrienden & verzoeken"), tx("Wie wil je kennen"), <IconGroup key="i" />, "blue"],
-    on(mods, "products") && ["/producten", tx("Webshop"), tx("Bekijk de producten"), <IconBag key="i" />, "orange"],
+    mods["plugin:webshop"] === true && ["/producten", tx("Webshop"), tx("Bekijk de producten"), <IconBag key="i" />, "orange"],
     canAdmin(user, mods) && ["/dashboard/admin", tx("Admin"), tx("Beheer de site"), <IconShield key="i" />, "blue"],
     user.is_staff && ["/dashboard/superadmin", tx("Super admin"), tx("Modules en rechten"), <IconGrid key="i" />, "orange"],
   ].filter(Boolean);
@@ -164,7 +164,7 @@ function OrdersRecent() {
 function LowStock() {
   const d = useData("/dashboard/stats/?kind=low_stock");
   if (!d) return <Loading d={d} />;
-  return <><ul className="widget-list">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "stock-out" : "stock-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">{tx("Alle producten hebben voldoende voorraad.")}</p>}<Link className="btn sm" href="/dashboard/admin/products">{tx("Producten")}</Link></>;
+  return <><ul className="widget-list">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "stock-out" : "stock-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">{tx("Alle producten hebben voldoende voorraad.")}</p>}<Link className="btn sm" href="/dashboard/admin/plugins/webshop">{tx("Producten")}</Link></>;
 }
 
 function MediaUsage() {
@@ -238,7 +238,7 @@ export const WIDGETS = [
   { id: "users_chart", group: "Beheer", title: "Nieuwe users per maand", desc: "Grafiek van de laatste 12 maanden", size: 2, ok: ({ user }) => lvl(user, "users") >= 1, C: UsersChart },
   { id: "orders_chart", group: "Beheer", title: "Omzet per dag", desc: "Grafiek van de laatste 30 dagen", size: 2, ok: ({ user, mods }) => on(mods, "orders") && lvl(user, "orders") >= 1, C: OrdersChart },
   { id: "orders_recent", group: "Beheer", title: "Laatste bestellingen", desc: "De nieuwste orders", size: 1, ok: ({ user, mods }) => on(mods, "orders") && lvl(user, "orders") >= 1, C: OrdersRecent },
-  { id: "low_stock", group: "Beheer", title: "Lage voorraad", desc: "Producten die bijna op zijn", size: 1, ok: ({ user, mods }) => on(mods, "products") && lvl(user, "products") >= 1, C: LowStock },
+  { id: "low_stock", group: "Beheer", title: "Lage voorraad", desc: "Producten die bijna op zijn", size: 1, ok: ({ user, mods }) => mods["plugin:webshop"] === true && lvl(user, "orders") >= 1, C: LowStock },
   { id: "media_usage", group: "Beheer", title: "Mediagebruik", desc: "Aantal en grootte van je bestanden", size: 1, ok: ({ user, mods }) => on(mods, "media") && lvl(user, "media") >= 1, C: MediaUsage },
   { id: "sandbox", group: "Beheer", title: "Sandbox", desc: "Staat de testomgeving aan?", size: 1, ok: ({ user, mods }) => on(mods, "sandbox") && lvl(user, "sandbox") >= 1, C: SandboxBlock },
   { id: "modules", group: "Beheer", title: "Modules", desc: "Welke modules aan staan", size: 1, ok: ({ user }) => user.is_staff, C: ModulesBlock },

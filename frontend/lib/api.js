@@ -15,6 +15,7 @@ function base() {
 const BASE_CACHE = { v: null };
 const getBase = () => (BASE_CACHE.v ??= base());
 
+export const apiBase = () => getBase();
 export const mediaUrl = (path) => (path?.startsWith("http") ? path : `${getBase()}${path}`);
 
 export const getToken = () => (typeof window === "undefined" ? null : localStorage.getItem("token"));

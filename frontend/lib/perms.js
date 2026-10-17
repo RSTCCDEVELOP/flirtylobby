@@ -12,7 +12,6 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/integrations", module: "integrations" },
   { href: "/dashboard/admin/communication", module: "communication" },
   { href: "/dashboard/admin/branding", module: "branding" },
-  { href: "/dashboard/admin/products", module: "products" },
   { href: "/dashboard/admin/orders", module: "orders" },
   { href: "/dashboard/admin/media", module: "media" },
   { href: "/dashboard/admin/security", modules: ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_filter", "twofa"] },
@@ -27,7 +26,9 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/actions", modules: ["subscriptions", "donations"] },
   { href: "/dashboard/admin/system", module: "system" },
   { href: "/dashboard/admin/storage", module: "storage" },
-  { href: "/dashboard/admin/theme", module: "theme" },
+  { href: "/dashboard/admin/theme", modules: ["theme", "branding"] },
+  { href: "/dashboard/admin/themes", modules: ["theme", "branding"] },
+  { href: "/dashboard/admin/plugins", module: "plugins" },
 ];
 
 export const pageAllowed = (user, page, mods = {}) => {

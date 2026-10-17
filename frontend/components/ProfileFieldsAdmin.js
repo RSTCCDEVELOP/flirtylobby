@@ -114,7 +114,7 @@ export default function ProfileFieldsAdmin({ prof, setProf, themes, builtinLabel
         </div>
       ))}
       {can && <div><button type="button" className="btn primary" onClick={add}>{tx("+ Veld toevoegen")}</button></div>}
-      <small className="muted">{tx("Vergeet niet bovenaan op")} <strong>{tx("Opslaan")}</strong> {tx("te klikken na het aanpassen van velden. Een thema toepassen wordt direct opgeslagen.")}</small>
+      <small className="muted">{tx("Wijzigingen aan de velden worden automatisch opgeslagen.")}</small>
       </>)}
     </>
   );

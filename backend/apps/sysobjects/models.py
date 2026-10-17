@@ -5,7 +5,7 @@ class SystemObject(models.Model):
     """An item of another module that can be put on a page in edit mode (a donation button, a subscription, …).
     The source (campaign, plan) says "System Object" with a checkbox; this registry is what the page editor offers."""
 
-    KINDS = [("donation", "Donatie"), ("plan", "Abonnement")]
+    KINDS = [("donation", "Donatie"), ("plan", "Abonnement"), ("plugin", "Plugin")]
     kind = models.CharField(max_length=12, choices=KINDS)
     ref_id = models.PositiveIntegerField()
     slug = models.SlugField(max_length=80, unique=True)  # what the page stores: <div data-sysobject="slug">

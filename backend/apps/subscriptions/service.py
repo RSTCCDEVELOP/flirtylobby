@@ -100,7 +100,7 @@ def save_settings(incoming):
 def clean_grants(raw):
     """Validate the grants an admin entered; raises ValueError with a readable text."""
     from apps.pages.models import Page
-    from apps.shop.models import Product
+    from apps.shop import catalog
 
     out, seen = [], set()
     for g in raw or []:
@@ -110,7 +110,7 @@ def clean_grants(raw):
         spec, ref, value = GRANT_TYPES[t], str(g.get("ref") or "").strip()[:80], 0
         if spec["ref"] == "page" and not Page.objects.filter(key=ref, kind="content").exists():
             raise ValueError("Kies een bestaande eigen pagina.")
-        if spec["ref"] == "product" and not Product.objects.filter(pk=ref or 0).exists():
+        if spec["ref"] == "product" and not catalog.exists(ref):
             raise ValueError("Kies een bestaand product.")
         if spec["ref"] == "text" and not ref:
             raise ValueError("Geef de sleutel van de content op.")
@@ -128,7 +128,7 @@ def clean_grants(raw):
 
 def describe(grants):
     from apps.pages.models import Page
-    from apps.shop.models import Product
+    from apps.shop import catalog
 
     out = []
     for g in grants or []:
@@ -140,8 +140,8 @@ def describe(grants):
             p = Page.objects.filter(key=g["ref"]).first()
             label += f": {(p.title.get('nl') or next(iter(p.title.values()), g['ref'])) if p else g['ref']}"
         elif g["type"] == "service":
-            p = Product.objects.filter(pk=g["ref"] or 0).first()
-            label += f": {p.name if p else g['ref']}"
+            p = catalog.get(g["ref"] or 0)
+            label += f": {p['name'] if p else g['ref']}"
         elif g["type"] == "content":
             label += f": {g['ref']}"
         elif g["type"] == "likes":

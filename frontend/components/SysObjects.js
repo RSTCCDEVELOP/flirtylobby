@@ -10,6 +10,7 @@ import { pick } from "../lib/i18n";
 import { Campaign, localised } from "./Donate";
 import { useModule } from "./Modules";
 import { useSession } from "./Session";
+import PluginFrame from "./PluginFrame";
 import SysButton from "./SysButton";
 
 let cache = null; // the list of objects is the same for every widget on the page
@@ -24,6 +25,7 @@ function Widget({ obj }) {
   const [open, setOpen] = useState(false);
   const lang = langNow();
   const d = obj.data;
+  if (obj.kind === "plugin") return <PluginFrame name={d.name} title={d.title} />;
   if (obj.kind === "donation") {
     const label = obj.button?.labels?.[lang] || obj.button?.labels?.nl || Object.values(obj.button?.labels || {})[0] || tx("Doneer");
     const camp = { ...localised(d), recent: [] };

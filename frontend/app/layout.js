@@ -5,7 +5,6 @@ import { ContentProvider, EditBanner } from "../components/EditMode";
 import { SessionProvider } from "../components/Session";
 import { ModulesProvider } from "../components/Modules";
 import { UiProvider } from "../components/Ui";
-import { CartProvider } from "../components/Cart";
 import { ChatProvider, ChatWidget } from "../components/Chat";
 import DialogHost from "../components/DialogHost";
 import DomTranslate from "../components/DomTranslate";
@@ -135,7 +134,6 @@ export default async function RootLayout({ children }) {
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>
         <SessionProvider>
-        <CartProvider>
         <ChatProvider>
         <MenuProvider value={menu}>
         <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>
@@ -167,7 +165,6 @@ export default async function RootLayout({ children }) {
         </LangRoot>
         </MenuProvider>
         </ChatProvider>
-        </CartProvider>
         </SessionProvider>
         </UiProvider>
         </ModulesProvider>

@@ -399,12 +399,12 @@ def _either_module():
 @permission_classes([has_level_any(("subscriptions", "use"), ("donations", "use")), _either_module()])
 def options(request):
     from apps.pages.models import Page
-    from apps.shop.models import Product
+    from apps.shop import catalog
 
     return Response({
         "grant_types": [{"type": k, "label": v["label"], "ref": v["ref"], "value": bool(v.get("value")), "help": v["help"]} for k, v in service.GRANT_TYPES.items()],
         "pages": [{"key": p.key, "title": p.title.get("nl") or next(iter(p.title.values()), p.key)} for p in Page.objects.filter(kind="content")],
-        "products": [{"id": p.id, "name": p.name} for p in Product.objects.filter(active=True)],
+        "products": catalog.active(),
         "intervals": [{"value": v, "label": l} for v, l in INTERVALS],
         "currency": __import__("apps.shop.service", fromlist=["settings"]).settings()["currency"],
     })
@@ -735,13 +735,13 @@ def _item_row(i):
 def actions_admin(request):
     """The list of everything that can be paid for or earned, with its conditions. POST adds an own item (page, piece of content or service)."""
     from apps.pages.models import Page
-    from apps.shop.models import Product
+    from apps.shop import catalog
 
     if request.method == "POST":
         kind, ref = request.data.get("kind"), str(request.data.get("ref") or "").strip()[:80]
         if kind == "page" and not Page.objects.filter(key=ref, kind="content").exists():
             return bad("Kies een bestaande eigen pagina.")
-        if kind == "service" and not Product.objects.filter(pk=ref or 0).exists():
+        if kind == "service" and not catalog.exists(ref):
             return bad("Kies een bestaand product.")
         if kind == "content" and not ref:
             return bad("Geef de sleutel van de content op.")
@@ -759,7 +759,7 @@ def actions_admin(request):
         "options": {"plans": [{"id": p.id, "name": p.name} for p in Plan.objects.all()], "campaigns": [{"id": c.id, "name": c.name} for c in DonationCampaign.objects.all()],
                     "roles": [{"id": r.id, "name": r.name} for r in Role.objects.all()], "condition_types": [{"type": k, "label": v} for k, v in service.CONDITION_TYPES.items()],
                     "pages": [{"key": p.key, "title": p.title.get("nl") or next(iter(p.title.values()), p.key)} for p in Page.objects.filter(kind="content")],
-                    "products": [{"id": p.id, "name": p.name} for p in Product.objects.filter(active=True)]}})
+                    "products": catalog.active()}})
 
 
 @api_view(["PATCH", "DELETE"])

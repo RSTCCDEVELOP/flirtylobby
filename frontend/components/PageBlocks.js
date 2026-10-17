@@ -133,7 +133,7 @@ export default function PageBlocks({ pageKey }) {
                           <button type="button" onClick={() => addItem(c.id, "text")}>{tx("Tekst")}</button>
                           <button type="button" onClick={() => addItem(c.id, "image")}>{tx("Afbeelding")}</button>
                           {objOn && <div className="pb-menu-h">{tx("Systeemobjecten")}</div>}
-                          {objOn && objects.map((o) => <button type="button" key={o.slug} onClick={() => addItem(c.id, "object", o.slug)}>{o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug} <small className="muted">{o.kind === "donation" ? tx("Donatie") : tx("Abonnement")}</small></button>)}
+                          {objOn && objects.map((o) => <button type="button" key={o.slug} onClick={() => addItem(c.id, "object", o.slug)}>{o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug} <small className="muted">{o.kind === "donation" ? tx("Donatie") : o.kind === "plugin" ? tx("Plugin") : tx("Abonnement")}</small></button>)}
                           {objOn && !objects.length && <small className="muted" style={{ padding: ".3rem .6rem" }}>{tx("Nog geen systeemobjecten (zie Admin → Systeemobjecten).")}</small>}
                         </div>
                       )}

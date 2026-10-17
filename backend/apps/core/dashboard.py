@@ -185,9 +185,9 @@ def stats(request):
         return Response([{"number": o.number, "name": o.name, "total": str(o.total), "status": o.status, "at": o.created_at} for o in Order.objects.all()[:6]])
 
     if kind == "low_stock":
-        if level(me, "products") < 1 or not modules.enabled("products"):
+        if level(me, "orders") < 1 or not modules.enabled("plugin:webshop"):
             return deny
-        from apps.shop.models import Product
+        from apps.shop import catalog
 
-        return Response([{"id": p.id, "name": p.name, "stock": p.stock} for p in Product.objects.filter(active=True, stock__isnull=False, stock__lte=5).order_by("stock")[:8]])
+        return Response(catalog.low_stock())
     return Response({"detail": "Onbekend."}, status=status.HTTP_400_BAD_REQUEST)

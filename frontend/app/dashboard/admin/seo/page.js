@@ -7,6 +7,8 @@ import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import MediaPicker from "../../../../components/MediaPicker";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const DOT = { ok: "ok", warn: "warn", fail: "fail", info: "none" };
 const origin = () => (typeof window === "undefined" ? "" : window.location.origin);
@@ -65,6 +67,7 @@ export default function Seo() {
   }, [loadAudit, loadPreviews]);
   useEffect(() => { load(); }, [load]);
 
+  const auto = useAutoSave(data, save, { ready: !!data && L >= 2 }); // saves by itself, no Save button
   if (!data) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
 
   const set = (sec) => (k, v) => setData((d) => ({ ...d, [sec]: { ...d[sec], [k]: v } }));
@@ -74,10 +77,10 @@ export default function Seo() {
     try {
       const r = await api("/seo/settings/", { method: "PUT", body: data });
       setData(r.settings);
-      setMsg({ ok: true, text: tx("SEO-instellingen opgeslagen.") });
+      setMsg(null);
       loadAudit();
       loadPreviews();
-    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); return false; }
   }
 
   // page editor
@@ -104,7 +107,7 @@ export default function Seo() {
         </div>
         <div className="row">
           <CollapseAll />
-          <button className="btn primary" onClick={save} disabled={L < 2}>{tx("Opslaan")}</button>
+          <SaveStatus auto={auto} />
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
