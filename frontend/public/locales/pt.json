@@ -2691,5 +2691,7 @@
   "Berichten sturen is er voor leden met een abonnement of donatie.": "Enviar mensagens é para membros com assinatura ou doação.",
   "Vriendschapsverzoeken sturen kan met een abonnement of donatie.": "Enviar pedidos de amizade é possível com uma assinatura ou doação.",
   "Privé-foto's plaatsen kan met een abonnement of donatie.": "Publicar fotos privadas é possível com uma assinatura ou doação.",
-  "Een directe verbinding opzetten kan met een abonnement of donatie.": "Estabelecer uma conexão direta é possível com uma assinatura ou doação."
+  "Een directe verbinding opzetten kan met een abonnement of donatie.": "Estabelecer uma conexão direta é possível com uma assinatura ou doação.",
+  "Titel van het browsertabblad (startpagina)": "Título do separador do navegador (página inicial)",
+  "De naam van de website staat in de header, de titel van het browsertabblad, e-mails, de app-naam en de 2-staps-app. Het tabblad toont op de startpagina de tabbladtitel (leeg = de naam van de website); andere pagina's tonen \"paginatitel | naam van de website\". De titel per pagina stel je in bij SEO of bij de pagina-instellingen.": "O nome do site aparece no cabeçalho, no título do separador, nos e-mails, no nome da app e na app de 2 passos. O separador mostra na página inicial o título do separador (vazio = o nome do site); as outras páginas mostram «título da página | nome do site». O título por página define-se em SEO ou nas definições da página."
 }

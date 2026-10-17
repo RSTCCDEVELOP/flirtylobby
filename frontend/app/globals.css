@@ -1367,3 +1367,7 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .act-why { margin: 0; padding-left: 1rem; list-style: none; font-size: .8rem; } .act-why .yes { color: var(--ok, #16a34a); } .act-why .no { color: var(--danger, #dc2626); }
 .check-user { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin: 1rem 0 .4rem; padding: .7rem 1rem; }
 .check-user input { flex: 1 1 240px; max-width: 360px; }
+
+.nav-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 9999; overflow: hidden; background: color-mix(in srgb, var(--blue) 20%, transparent); }
+.nav-progress i { display: block; height: 100%; width: 40%; background: var(--blue); border-radius: 3px; animation: navbar 1s ease-in-out infinite; }
+@keyframes navbar { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }

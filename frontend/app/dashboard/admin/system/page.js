@@ -59,6 +59,7 @@ export default function SystemPage() {
           <div className="grid2">
             <label>{tx("Naam van de website")}<input value={form.site_name} onChange={set("site_name")} maxLength={80} placeholder="Studio2" /></label>
             <label>{tx("Slogan")}<input value={form.tagline} onChange={set("tagline")} maxLength={120} /></label>
+            <label>{tx("Titel van het browsertabblad (startpagina)")}<input value={form.tab_title || ""} onChange={set("tab_title")} maxLength={120} placeholder={form.site_name || "Studio2"} /></label>
             <label>{tx("Omgeving")}
               <select value={form.environment} onChange={set("environment")}>{d.environments.map((e) => <option key={e} value={e}>{tx(ENV_NAME[e])}</option>)}</select>
             </label>
@@ -67,7 +68,7 @@ export default function SystemPage() {
               <datalist id="tz-list">{TIMEZONES.map((z) => <option key={z} value={z} />)}</datalist>
             </label>
           </div>
-          <p className="muted" style={{ margin: ".4rem 0", fontSize: ".82rem" }}>{tx("De naam van de website staat in de header, de titel van het browsertabblad, e-mails, de app-naam en de 2-staps-app.")}</p>
+          <p className="muted" style={{ margin: ".4rem 0", fontSize: ".82rem" }}>{tx("De naam van de website staat in de header, de titel van het browsertabblad, e-mails, de app-naam en de 2-staps-app. Het tabblad toont op de startpagina de tabbladtitel (leeg = de naam van de website); andere pagina's tonen \"paginatitel | naam van de website\". De titel per pagina stel je in bij SEO of bij de pagina-instellingen.")}</p>
           <label className="check sec-toggle">
             <input type="checkbox" checked={!!form.maintenance} onChange={set("maintenance")} />
             <span><strong>{tx("Onderhoudsmodus")}</strong><br /><small className="muted">{tx("Bezoekers zien een melding; superadmins en de inlogpagina blijven bereikbaar.")}</small></span>

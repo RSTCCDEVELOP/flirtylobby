@@ -36,6 +36,9 @@ def _with_site_name(cfg):
         site["name"] = name
         if site.get("default_title") in ("", "Studio2"):
             site["default_title"] = name
+        tab = system.get().get("tab_title")
+        if tab:  # set at Systeem -> Basisgegevens: what the browser tab shows on the home page
+            site["default_title"] = tab
         if site.get("title_template") in ("", "%s | Studio2"):
             site["title_template"] = f"%s | {name}"
         if not site.get("default_description"):

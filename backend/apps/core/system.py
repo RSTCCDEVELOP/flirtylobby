@@ -12,7 +12,7 @@ from django.conf import settings
 from .models import SystemSettings
 
 DEFAULTS = {
-    "site_name": "", "tagline": "", "company_name": "", "environment": "production",
+    "site_name": "", "tab_title": "", "tagline": "", "company_name": "", "environment": "production",
     "frontend_url": "", "backend_url": "", "extra_origins": [],
     "contact_email": "", "support_email": "", "admin_email": "", "phone": "", "kvk": "", "vat_id": "", "address": "",
     "aliases": [],  # extra domain names of the website (www.x.nl, x.nl): visitors can be sent on to the main address

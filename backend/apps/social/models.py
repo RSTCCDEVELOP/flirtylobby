@@ -212,6 +212,7 @@ class DirectRoom(models.Model):
     expires_at = models.DateTimeField()
     closed = models.BooleanField(default=False)
     guest_name = models.CharField(max_length=60, blank=True)
+    guest_gender = models.CharField(max_length=1, blank=True)  # m | f | x, asked before connecting
     guest_key = models.CharField(max_length=64, blank=True)  # secret of the one guest who joined
     guest_seen = models.DateTimeField(null=True, blank=True)
     owner_seen = models.DateTimeField(null=True, blank=True)

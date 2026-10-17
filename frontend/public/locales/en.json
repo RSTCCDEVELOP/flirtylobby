@@ -2691,5 +2691,7 @@
   "Berichten sturen is er voor leden met een abonnement of donatie.": "Sending messages is for members with a subscription or donation.",
   "Vriendschapsverzoeken sturen kan met een abonnement of donatie.": "Sending friend requests is possible with a subscription or donation.",
   "Privé-foto's plaatsen kan met een abonnement of donatie.": "Posting private photos is possible with a subscription or donation.",
-  "Een directe verbinding opzetten kan met een abonnement of donatie.": "Setting up a direct connection is possible with a subscription or donation."
+  "Een directe verbinding opzetten kan met een abonnement of donatie.": "Setting up a direct connection is possible with a subscription or donation.",
+  "Titel van het browsertabblad (startpagina)": "Browser tab title (home page)",
+  "De naam van de website staat in de header, de titel van het browsertabblad, e-mails, de app-naam en de 2-staps-app. Het tabblad toont op de startpagina de tabbladtitel (leeg = de naam van de website); andere pagina's tonen \"paginatitel | naam van de website\". De titel per pagina stel je in bij SEO of bij de pagina-instellingen.": "The website name is in the header, the browser tab title, e-mails, the app name and the 2-step app. The tab shows the tab title on the home page (empty = the website name); other pages show \"page title | website name\". Set the title per page at SEO or in the page settings."
 }

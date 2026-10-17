@@ -137,6 +137,9 @@ SCHEMA = [
     {"key": "brand", "label": "Merkkleuren", "fields": [
         color("primary", "Primaire kleur (knoppen, links, actief menu)", "#1b97d3", "--blue"),
         color("secondary", "Secundaire kleur (avatar, accenten)", "#f08a35", "--orange"),
+        color("gender_m", "Kleur voor mannen", "#3b82f6", "--g-m"),
+        color("gender_f", "Kleur voor vrouwen", "#ec4899", "--g-f"),
+        color("gender_x", "Kleur voor overig", "#eab308", "--g-x"),
         color("danger", "Gevaar (verwijderen, fouten)", "#dc2626", "--danger"),
         color("ok", "Succes", "#16a34a", "--ok"),
     ]},

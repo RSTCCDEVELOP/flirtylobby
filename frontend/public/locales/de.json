@@ -2691,5 +2691,7 @@
   "Berichten sturen is er voor leden met een abonnement of donatie.": "Nachrichten senden gibt es für Mitglieder mit einem Abo oder einer Spende.",
   "Vriendschapsverzoeken sturen kan met een abonnement of donatie.": "Freundschaftsanfragen senden geht mit einem Abo oder einer Spende.",
   "Privé-foto's plaatsen kan met een abonnement of donatie.": "Private Fotos posten geht mit einem Abo oder einer Spende.",
-  "Een directe verbinding opzetten kan met een abonnement of donatie.": "Eine direkte Verbindung aufbauen geht mit einem Abo oder einer Spende."
+  "Een directe verbinding opzetten kan met een abonnement of donatie.": "Eine direkte Verbindung aufbauen geht mit einem Abo oder einer Spende.",
+  "Titel van het browsertabblad (startpagina)": "Titel des Browser-Tabs (Startseite)",
+  "De naam van de website staat in de header, de titel van het browsertabblad, e-mails, de app-naam en de 2-staps-app. Het tabblad toont op de startpagina de tabbladtitel (leeg = de naam van de website); andere pagina's tonen \"paginatitel | naam van de website\". De titel per pagina stel je in bij SEO of bij de pagina-instellingen.": "Der Name der Website steht im Header, im Titel des Browser-Tabs, in E-Mails, im App-Namen und in der 2-Schritt-App. Der Tab zeigt auf der Startseite den Tab-Titel (leer = der Name der Website); andere Seiten zeigen \"Seitentitel | Name der Website\". Den Titel pro Seite stellst du bei SEO oder in den Seiteneinstellungen ein."
 }

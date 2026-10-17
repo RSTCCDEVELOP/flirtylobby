@@ -32,7 +32,7 @@ PROFILES = [IsAuthenticated, module_required("profiles")]
 MESSAGES = [IsAuthenticated, module_required("messages")]
 CHAT = [IsAuthenticated, module_required("chat")]
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
-person = lambda u, viewer=None: {"id": u.id, "name": service.display_name(u), "photo": service.photo_url(u, viewer), "online": service.online(u), "verification": u.verification}  # noqa: E731
+person = lambda u, viewer=None: {"id": u.id, "name": service.display_name(u), "photo": service.photo_url(u, viewer), "online": service.online(u), "verification": u.verification, "gender": u.gender}  # noqa: E731
 
 
 def _partner(request, uid):
@@ -230,7 +230,7 @@ def profile_allowed(request):
 
 # ═══ directory / public profile ═════════════════════════════════════════════
 def _card(p, viewer=None):
-    return {"slug": p.slug, "id": p.user_id, "name": service.display_name(p.user), "headline": p.headline, "card_fields": service.visible_fields(p, viewer, only_card=True), "photo": service.photo_url(p.user, viewer), "verification": p.user.verification}
+    return {"slug": p.slug, "id": p.user_id, "name": service.display_name(p.user), "headline": p.headline, "card_fields": service.visible_fields(p, viewer, only_card=True), "photo": service.photo_url(p.user, viewer), "verification": p.user.verification, "gender": p.gender or p.user.gender}
 
 
 @api_view(["GET"])

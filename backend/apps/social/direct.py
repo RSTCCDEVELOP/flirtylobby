@@ -51,7 +51,7 @@ def _new_code():
 
 
 def _state(room):
-    return {"owner_online": _recent(room.owner_seen), "guest_online": _recent(room.guest_seen), "guest_name": room.guest_name,
+    return {"owner_online": _recent(room.owner_seen), "guest_online": _recent(room.guest_seen), "guest_name": room.guest_name, "guest_gender": room.guest_gender, "owner_gender": getattr(room.owner, "gender", "") or "",
             "owner_name": service.display_name(room.owner), "expires_at": room.expires_at}
 
 
@@ -100,8 +100,8 @@ def room_close(request, token):
 
 def _reset_guest(room):
     """End the current connection: the guest is out; the invitation stays open for a new guest."""
-    room.guest_name, room.guest_key, room.guest_seen = "", "", None
-    room.save(update_fields=["guest_name", "guest_key", "guest_seen"])
+    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen = "", "", "", None
+    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen"])
     room.signals.all().delete()
 
 
@@ -175,8 +175,13 @@ def room_join(request, token):
 
     if find_forbidden(name):
         return bad("Deze naam is niet toegestaan.")
-    room.guest_name, room.guest_key, room.guest_seen = name, secrets.token_urlsafe(24), timezone.now()
-    room.save(update_fields=["guest_name", "guest_key", "guest_seen"])
+    gender = str(request.data.get("gender") or "")
+    if gender not in ("m", "f", "x"):
+        gender = getattr(request.user, "gender", "") if request.user.is_authenticated else ""
+    if gender not in ("m", "f", "x"):
+        return bad("Kies je geslacht.")
+    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen = name, gender, secrets.token_urlsafe(24), timezone.now()
+    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen"])
     return Response({"key": room.guest_key, "role": "guest"})
 
 
