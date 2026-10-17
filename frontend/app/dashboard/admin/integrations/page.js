@@ -74,12 +74,17 @@ export default function Integrations() {
     catch { setXfer((x) => ({ ...x, bundle: null, name: "", error: tx("Dit bestand kan niet gelezen worden.") })); }
   }
 
-  // random 32-byte key (base64) for the file encryption
-  const genKey = (k) => {
+  // random 32-byte key (base64) for the file encryption: copied to the clipboard so it can be stored safely right away
+  const genKey = async (k) => {
     const b = crypto.getRandomValues(new Uint8Array(32));
     const key = btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_");
     setModal((m) => ({ ...m, config: { ...m.config, [k]: key } }));
-    alertDialog(tx("Een nieuwe sleutel is ingevuld. Bewaar hem veilig (bv. in je wachtwoordmanager) en druk op Opslaan. Bestaande versleutelde bestanden blijven leesbaar."));
+    let copied = false;
+    try { await navigator.clipboard.writeText(key); copied = true; }
+    catch {
+      try { const t = document.createElement("textarea"); t.value = key; t.style.position = "fixed"; t.style.opacity = "0"; document.body.appendChild(t); t.select(); copied = document.execCommand("copy"); t.remove(); } catch {}
+    }
+    await alertDialog(`${copied ? tx("De nieuwe sleutel is naar je klembord gekopieerd.") : tx("Kopiëren naar het klembord lukte niet: kopieer de sleutel hieronder zelf.")}\n\n${key}\n\n${tx("Plak hem nu in je wachtwoordmanager of een veilig bestand: zonder deze sleutel zijn versleutelde bestanden niet meer te openen na een nieuwe installatie. Druk daarna op Opslaan. Bestaande versleutelde bestanden blijven leesbaar.")}`);
   };
 
   const toggle = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "PATCH", body: { enabled: !i.enabled } }));

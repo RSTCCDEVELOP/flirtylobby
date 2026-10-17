@@ -30,7 +30,7 @@ export default function DialogHost() {
       onKeyDown={(e) => { if (e.key === "Escape") cancel(); if (e.key === "Enter" && cur.kind !== "prompt") { e.preventDefault(); accept(); } }}>
       <form className="card modal form" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); accept(); }}>
         <h2>{cur.title || tx(TITLES[cur.kind])}</h2>
-        <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{cur.message}</p>
+        <p style={{ margin: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{cur.message}</p>
         {cur.kind === "prompt" && <input ref={input} type={cur.password ? "password" : "text"} autoComplete={cur.password ? "current-password" : "off"} value={text} onChange={(e) => setText(e.target.value)} />}
         <div className="row">
           {cur.kind !== "alert" && <button type="button" className="btn" onClick={cancel}>{cur.cancelLabel || tx("Annuleren")}</button>}
