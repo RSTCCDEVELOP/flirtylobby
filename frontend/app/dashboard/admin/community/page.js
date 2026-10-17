@@ -79,6 +79,16 @@ export default function CommunityAdmin() {
           </div>
           <h3>{tx("Waar en hoe de chat verschijnt")}</h3>
           <div className="theme-grid">
+            <label>{tx("Waar staat de chat-popup")}
+              <select value={s.chat.popup_position || ""} disabled={!can("chat")} onChange={(e) => set("chat", "popup_position", e.target.value)}>
+                <option value="">{tx("Volgens Vormgeving (standaard)")}</option>
+                <option value="top-left">{tx("Linksboven")}</option>
+                <option value="top-right">{tx("Rechtsboven")}</option>
+                <option value="bottom-left">{tx("Linksonder")}</option>
+                <option value="bottom-right">{tx("Rechtsonder")}</option>
+                <option value="center">{tx("Gecentreerd")}</option>
+              </select>
+            </label>
             <label>{tx("Hoe opent de chat")}
               <select value={s.chat.style} disabled={!can("chat")} onChange={(e) => set("chat", "style", e.target.value)}>
                 <option value="floating">{tx("Zwevende knop (rechts- of linksonder)")}</option>

@@ -1464,3 +1464,13 @@ html, body { overflow-x: clip; }
 .device-mode button { background: var(--card); border: 0; padding: .2rem .7rem; cursor: pointer; color: var(--muted); font-size: .8rem; }
 .device-mode button.on { background: var(--blue); color: #fff; }
 .device-top > span:first-child { white-space: nowrap; }
+
+/* ── where the chat popups sit (Admin -> Community -> Chat -> "Waar staat de chat-popup") ── */
+html[data-chat-pos="top-left"] .chat-widget, html[data-chat-pos="top-right"] .chat-widget { top: 1rem; bottom: auto; flex-direction: column-reverse; }
+html[data-chat-pos="top-left"] .chat-widget, html[data-chat-pos="bottom-left"] .chat-widget { align-items: flex-start; }
+html[data-chat-pos="top-right"] .chat-widget, html[data-chat-pos="bottom-right"] .chat-widget { align-items: flex-end; }
+html[data-chat-pos="center"] .chat-widget .chat-pop { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, .45); }
+html[data-chat-pos="top-left"] .direct-pop { left: 1rem; right: auto; top: 1rem; bottom: auto; }
+html[data-chat-pos="top-right"] .direct-pop { right: 1rem; top: 1rem; bottom: auto; }
+html[data-chat-pos="bottom-left"] .direct-pop { left: 1rem; right: auto; }
+html[data-chat-pos="center"] .direct-pop { left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); }

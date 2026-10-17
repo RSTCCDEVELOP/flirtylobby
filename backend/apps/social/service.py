@@ -22,12 +22,13 @@ DEFAULTS = {
         "show_visitors": True, "visitors_days": 30, "show_likes_received": True, "match_email": True, "like_email": False, "swipe": "auto", "pass_days": 30,
         "distance_enabled": True, "radii": [5, 10, 25, 50, 100, 250], "max_distance_km": 500, "geocoder_contact": "",
     },
-    "chat": {"method": "portal", "display": "both", "style": "floating", "show_on": ["home", "website", "dashboard", "backend"], "photos": True, "videos": True, "video_chat": True,
+    "chat": {"method": "portal", "display": "both", "style": "floating", "popup_position": "", "show_on": ["home", "website", "dashboard", "backend"], "photos": True, "videos": True, "video_chat": True,
              "max_image_mb": 10, "max_video_mb": 50, "direct_hours": 2, "stun": ["stun:stun.l.google.com:19302"],
              "turn_url": "", "turn_user": "", "turn_credential": ""},
 }
 CHOICES = {("discover", "default_sort"): ["active", "newest", "distance"], ("discover", "swipe"): ["auto", "on", "off"], ("profiles", "default_visibility"): ["public", "members", "friends", "selected"], ("chat", "method"): ["portal", "webrtc"],
-           ("chat", "display"): ["popup", "page", "both"], ("chat", "style"): ["floating", "button"]}
+           ("chat", "display"): ["popup", "page", "both"], ("chat", "style"): ["floating", "button"],
+           ("chat", "popup_position"): ["", "top-left", "top-right", "bottom-left", "bottom-right", "center"]}
 INTS = {("discover", "min_age"): (13, 99), ("discover", "max_age"): (18, 120), ("discover", "max_results"): (10, 200), ("discover", "require_photo"): (0, 5),
         ("discover", "visitors_days"): (1, 365), ("discover", "pass_days"): (1, 365), ("discover", "max_distance_km"): (5, 2000), ("profiles", "max_photos"): (1, 30), ("profiles", "decline_days"): (0, 365), ("profiles", "max_private_photos"): (0, 30), ("messages", "max_length"): (100, 20000), ("messages", "rate_per_minute"): (1, 120),
         ("chat", "max_image_mb"): (1, 50), ("chat", "direct_hours"): (1, 72), ("chat", "max_video_mb"): (1, 500)}

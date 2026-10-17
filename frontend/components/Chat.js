@@ -45,6 +45,8 @@ export function ChatProvider({ children }) {
   callRef.current = call;
   const cfgRef = useRef(null);
   cfgRef.current = cfg;
+  // where the chat popups sit (Admin -> Community -> Chat); empty = the side from Vormgeving
+  useEffect(() => { const el = document.documentElement; if (cfg?.popup_position) el.dataset.chatPos = cfg.popup_position; else delete el.dataset.chatPos; }, [cfg?.popup_position]);
 
   // config (only for logged-in users)
   useEffect(() => {

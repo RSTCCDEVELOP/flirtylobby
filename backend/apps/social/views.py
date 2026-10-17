@@ -664,7 +664,7 @@ def config(request):
     return Response({"search": themes.search_config(service.get()["profiles"]["theme"]), "discover": {"distance_enabled": d["distance_enabled"], "radii": d["radii"], "max_distance_km": d["max_distance_km"], "suggestions": d["suggestions"],
                                   "show_visitors": d["show_visitors"], "show_likes_received": d["show_likes_received"], "default_sort": d["default_sort"],
                                   "require_to_search": d["require_to_search"], "require_photo": d["require_photo"], "swipe": swipe_on()},
-                     "chat": {**{k: c[k] for k in ("method", "display", "style", "show_on", "photos", "videos", "video_chat", "max_image_mb", "max_video_mb", "direct_hours")}, "ice_servers": ice} if on else None,
+                     "chat": {**{k: c[k] for k in ("method", "display", "style", "popup_position", "show_on", "photos", "videos", "video_chat", "max_image_mb", "max_video_mb", "direct_hours")}, "ice_servers": ice} if on else None,
                      "profile": {k: service.get()["profiles"][k] for k in ("theme", "builtin", "fields")},
                      "modules": {k: service.module_on(k) for k in ("profiles", "discover", "messages", "chat")}})
 
