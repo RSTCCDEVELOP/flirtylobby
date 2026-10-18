@@ -32,7 +32,8 @@ def parse(raw):
         "python": _file(d.get("python"), ".py"), "web": _file(d.get("web"), ".html"), "admin_web": _file(d.get("admin_web"), ".html"),
         "permissions": [str(x)[:60] for x in (d.get("permissions") or []) if isinstance(x, str)][:30],
         "events": [str(x)[:40] for x in (d.get("events") or []) if isinstance(x, str)][:30],
-        "section": _section(d.get("section")), "menu": None, "public_pages": _public_pages(d.get("public_pages")), "site_link": _site_link(d.get("site_link")), "provides": [x for x in (d.get("provides") or []) if x in PROVIDES], "page_object": bool(d.get("page_object")) and bool(_file(d.get("web"), ".html")), "config": [],
+        "section": _section(d.get("section")), "menu": None, "public_pages": _public_pages(d.get("public_pages")), "site_link": _site_link(d.get("site_link")), "provides": [x for x in (d.get("provides") or []) if x in PROVIDES],
+        "content_dirs": [x for x in (d.get("content_dirs") or []) if isinstance(x, str) and re.fullmatch(r"[a-z][a-z0-9_-]{0,30}", x)][:5], "admin_label": str(d.get("admin_label") or "")[:30], "content_label": str(d.get("content_label") or "")[:30], "content_sdk": str(d.get("content_sdk") or "") if re.fullmatch(r"web/[A-Za-z0-9_.-]{1,60}\.js", str(d.get("content_sdk") or "")) else "", "content_item": str(d.get("content_item") or "")[:40] if re.fullmatch(r"[A-Za-z0-9_.-]{3,40}\.json", str(d.get("content_item") or "")) else "", "public_path": str(d.get("public_path") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,30}", str(d.get("public_path") or "")) and str(d.get("public_path")) not in RESERVED else "", "page_object": bool(d.get("page_object")) and bool(_file(d.get("web"), ".html")), "config": [],
     }
     m = d.get("menu")
     if isinstance(m, dict) and out["web"]:

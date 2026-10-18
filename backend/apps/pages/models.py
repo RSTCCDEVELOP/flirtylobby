@@ -17,6 +17,7 @@ class Page(models.Model):
     in_menu = models.BooleanField(default=False)  # shown in the header menu
     new_tab = models.BooleanField(default=False)
     audience = models.CharField(max_length=8, choices=AUDIENCE, default="all")
+    scope = models.CharField(max_length=8, default="public", db_index=True)  # "public": the website (/p/<key>, header menu); "private": behind the login (/dashboard/<key>, menu of the dashboard)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
     order = models.PositiveIntegerField(default=0)
     source = models.CharField(max_length=40, blank=True, db_index=True)  # "import:<id>" for pages that come from a site import
@@ -28,7 +29,9 @@ class Page(models.Model):
 
     @property
     def path(self):
-        return f"/p/{self.key}" if self.kind == "content" else self.url
+        if self.kind == "content":
+            return f"/dashboard/{self.key}" if self.scope == "private" else f"/p/{self.key}"
+        return self.url
 
 
 class PageLayout(models.Model):

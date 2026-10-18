@@ -33,13 +33,16 @@ class Loaded:
         """(fn, public, params) for a path like "listing/3", or None. Exact paths win over paths with <parts>."""
         parts, best = tuple(path.strip("/").split("/")), None
         for m, segs, fn, public in self.routes:
-            if m != method or len(segs) != len(parts):
+            rest = bool(segs) and segs[-1].startswith("<*")  # <*name> as the last part takes the whole rest of the path (e.g. a file in a folder)
+            if m != method or (len(segs) != len(parts) if not rest else len(parts) < len(segs)):
                 continue
             params, ok = {}, True
-            for seg, part in zip(segs, parts):
-                if seg.startswith("<") and seg.endswith(">"):
-                    params[seg[1:-1]] = part
-                elif seg != part:
+            for i, seg in enumerate(segs):
+                if rest and i == len(segs) - 1:
+                    params[seg[2:-1]] = "/".join(parts[i:])
+                elif seg.startswith("<") and seg.endswith(">"):
+                    params[seg[1:-1]] = parts[i]
+                elif seg != parts[i]:
                     ok = False
                     break
             if ok and not params:
@@ -84,6 +87,16 @@ class System:
             self._loaded.routes.append((method.upper(), tuple(str(path).strip("/").split("/")), f, bool(public)))
             return f
         return add(fn) if fn else add
+
+    def item(self, slug, players=False):
+        """The state of one item of the content folder, as the superadmin set it: {enabled, object, config}. (Read fresh: it can change while the plugin runs.)"""
+        row = Plugin.objects.filter(name=self.name).first()
+        st = installer.item_state(row).get(slug) if row else None
+        out = {"enabled": (st or {}).get("enabled", True), "object": bool((st or {}).get("object")), "public": bool((st or {}).get("public", True)), "min_age": installer._age((st or {}).get("min_age")), "config": (st or {}).get("config") or {}, "meta": installer.item_meta(st)}
+        if players:  # (reads the game's own json: only when it is needed)
+            cap = next((i["players_cap"] for i in installer.content_items(row) or [] if i["name"] == slug), {"min": 1, "max": 1}) if row else {"min": 1, "max": 1}
+            out["players"] = installer.effective_players(cap, (st or {}).get("players"))
+        return out
 
     def provide(self, what, obj):
         """Offer something to the system (see manifest.PROVIDES): the system asks for it through runtime.provider(what)."""

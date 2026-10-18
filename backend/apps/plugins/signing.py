@@ -19,12 +19,24 @@ def private_key_path():
     return Path(os.getenv("PLUGIN_SIGNING_KEY") or Path.home() / ".flirtylobby" / "plugin-signing.pem")
 
 
+def content_dirs(root):
+    """Folders of a plugin that hold content added later (the games of the games plugin): named in plugin.json, so they are signed as a promise but their files are not."""
+    import json
+
+    try:
+        d = json.loads((Path(root) / "plugin.json").read_text())
+        return {x for x in (d.get("content_dirs") or []) if isinstance(x, str) and "/" not in x and x not in ("", ".", "..")}
+    except (OSError, ValueError, AttributeError):
+        return set()
+
+
 def files(root):
     root = Path(root)
     out = []
+    skip = SKIP_DIRS | content_dirs(root)
     for f in sorted(root.rglob("*")):
         rel = f.relative_to(root)
-        if f.is_file() and f.name != SIG_FILE and not (set(rel.parts) & SKIP_DIRS) and not f.name.endswith((".pyc", ".DS_Store")):
+        if f.is_file() and f.name != SIG_FILE and not (set(rel.parts) & SKIP_DIRS) and rel.parts[0] not in skip and not f.name.endswith((".pyc", ".DS_Store")):
             out.append(rel.as_posix())
     return out
 

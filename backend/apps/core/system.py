@@ -18,7 +18,7 @@ DEFAULTS = {
     "aliases": [],  # extra domain names of the website (www.x.nl, x.nl): visitors can be sent on to the main address
     "redirect_aliases": False,
     "timezone": "Europe/Amsterdam",
-    "maintenance": False, "maintenance_message": "",
+    "maintenance": False, "maintenance_message": "", "maintenance_messages": {},  # the notice per language: {code: text}
     "max_image_mb": "20", "max_video_mb": "300", "max_photo_mb": "5",
     "footer_text": "",
     "show_credit": True,  # "© Easy2edit <year>" with a link at the bottom of every page
@@ -94,6 +94,8 @@ def clean(incoming):
             if v and not re.match(r"^https?://[^\s]{3,200}$", v):
                 errors[k] = "Gebruik een volledig adres, bv. https://www.instagram.com/jouwnaam."
             out[k] = v
+        elif k == "maintenance_messages":
+            out[k] = {str(c)[:10]: str(t or "").strip()[:500] for c, t in (v.items() if isinstance(v, dict) else []) if re.fullmatch(r"[a-zA-Z-]{2,10}", str(c)) and str(t or "").strip()}
         elif k in ("maintenance_message", "footer_text"):
             out[k] = str(v or "").strip()[:500]
         else:
@@ -220,6 +222,6 @@ def public():
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
-            "maintenance": s["maintenance"], "maintenance_message": s["maintenance_message"], "footer_text": s["footer_text"], "show_credit": s["show_credit"],
+            "maintenance": s["maintenance"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"],
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}}

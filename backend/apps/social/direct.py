@@ -15,7 +15,7 @@ from .models import DirectRoom, DirectSignal
 
 ONLINE = timedelta(seconds=12)
 MAX_ACTIVE = 5
-KINDS = ("sdp", "ice", "call", "accept", "decline", "end", "chat", "ack", "text")
+KINDS = ("sdp", "ice", "call", "accept", "decline", "end", "chat", "ack", "text", "game")
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 
 

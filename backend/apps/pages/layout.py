@@ -27,6 +27,37 @@ def _pct(v, lo, hi, default):
     return str(max(lo, min(hi, n)))
 
 
+def clean_bg(bg):
+    """The background of a row or hero: {type: image|video, media: id of the media library, overlay 0-0.9}; {} = none."""
+    from apps.medialib.models import MediaItem
+
+    if not isinstance(bg, dict) or bg.get("type") not in ("image", "video"):
+        return {}
+    item = MediaItem.objects.filter(pk=bg.get("media")).first()
+    if not item or item.kind != bg["type"]:
+        return {}
+    try:
+        overlay = min(max(float(bg.get("overlay", 0.35)), 0), 0.9)
+    except (TypeError, ValueError):
+        overlay = 0.35
+    return {"type": bg["type"], "media": item.id, "overlay": round(overlay, 2)}
+
+
+def with_urls(data):
+    """The layout for the page: every background gets its address (from the media library)."""
+    from django.core.files.storage import default_storage
+
+    from apps.medialib.models import MediaItem
+
+    def one(bg):
+        item = MediaItem.objects.filter(pk=(bg or {}).get("media")).first() if bg else None
+        return {**bg, "url": default_storage.url(item.key)} if item else {}
+
+    out = {**data, "rows": [{**r, "bg": one(r.get("bg"))} for r in data.get("rows", [])]}
+    out["bg"] = one(data.get("bg"))
+    return out
+
+
 def clean(data):
     """Returns the cleaned layout or raises ValueError with a readable message."""
     rows, out, n_items, seen = (data or {}).get("rows") or [], [], 0, set()
@@ -63,10 +94,10 @@ def clean(data):
             cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})
-        out.append({"id": uid(r.get("id")), "cols": cols, "width": _pct(r.get("width"), 30, 100, "default"), "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells})
+        out.append({"bg": clean_bg(r.get("bg")), "id": uid(r.get("id")), "cols": cols, "width": _pct(r.get("width"), 30, 100, "default"), "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells})
     if n_items > MAX_ITEMS:
         raise ValueError("Te veel onderdelen op één pagina.")
-    return {"rows": out}
+    return {"rows": out, "bg": clean_bg((data or {}).get("bg"))}
 
 
 @api_view(["GET", "PUT"])
@@ -85,6 +116,6 @@ def layout(request, key):
         except (ValueError, TypeError) as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         PageLayout.objects.update_or_create(key=key, defaults={"data": data})
-        return Response(data)
+        return Response(with_urls(data))
     obj = PageLayout.objects.filter(key=key).first()
-    return Response(obj.data if obj else {"rows": []})
+    return Response(with_urls(obj.data) if obj else {"rows": [], "bg": {}})

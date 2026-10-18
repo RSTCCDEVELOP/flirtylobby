@@ -63,6 +63,8 @@ def login(request):
         return Response({"detail": "Dit account is geblokkeerd."}, status=status.HTTP_403_FORBIDDEN)
 
     throttle.delete()
+    if (blocked := _maintenance_block(user)):
+        return blocked
     if twofa.email_verify_required(user):
         return _challenge_response(user, email_verify=True)
     if user.otp_active and security_service.get()["twofa"]["enabled"] and not twofa.exempt(user):
@@ -84,7 +86,20 @@ def _challenge_response(user, email_verify=False):
                      "challenge": signing.dumps({"uid": user.pk, "ev": email_verify}, salt=CHALLENGE_SALT)})
 
 
+def _maintenance_block(user):
+    """Maintenance mode: only administrators log in. Returns the refusal, or None."""
+    from apps.core import system
+
+    from .access import can_admin
+
+    if system.get()["maintenance"] and not can_admin(user):
+        return Response({"detail": "De website is in onderhoud. Alleen beheerders kunnen nu inloggen."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return None
+
+
 def _finish_login(request, user):
+    if (blocked := _maintenance_block(user)):
+        return blocked
     token, _ = Token.objects.get_or_create(user=user)
     if is_expired(token):
         token.delete()

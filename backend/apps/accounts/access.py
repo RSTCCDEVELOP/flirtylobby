@@ -41,5 +41,10 @@ def levels(user):
     return out
 
 
+def can_admin(user):
+    """May this person still log in during the maintenance mode: superadmins and everybody who has edit rights (level 2+) in some module."""
+    return bool(user and user.is_authenticated and (user.is_staff or any(v >= 2 for v in levels(user).values())))
+
+
 def level(user, module):
     return levels(user).get(module, 0) if user and user.is_authenticated else 0

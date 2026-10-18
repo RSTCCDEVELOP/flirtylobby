@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { useModules } from "../../../../components/Modules";
+import Tabs from "../../../../components/Tabs";
 import { useSession } from "../../../../components/Session";
 import PageSettingsModal from "../../../../components/PageSettingsModal";
 import { menuLabel } from "../../../../components/SiteMenu";
@@ -40,18 +41,20 @@ export default function PagesAdmin() {
   const editPage = (p) => { setEditMode(true); router.push(p.path); };
   const L = lvl(user, "pages");
   const [pages, setPages] = useState(null);
+  const [scope, setScope] = useState("public"); // public: the website · private: behind the login, in the dashboard
+  const priv = scope === "private";
   const [langs, setLangs] = useState({ languages: [], default: "nl" });
   const [msg, setMsg] = useState(null);
   const [modal, setModal] = useState(null);
 
-  const load = useCallback(() => api("/pages/").then((d) => setPages(d.pages)).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
+  const load = useCallback(() => api(`/pages/?scope=${scope}`).then((d) => setPages(d.pages)).catch((e) => setMsg({ ok: false, text: errorText(e) })), [scope]);
   useEffect(() => {
     if (mods.pages === false || L < 1) router.replace("/dashboard/admin");
     else { load(); api("/languages/").then(setLangs).catch(() => {}); }
   }, [mods.pages, L, load, router]);
 
   const label = (p) => menuLabel(p.title);
-  const act = async (fn) => { setMsg(null); try { await fn(); await load(); router.refresh(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
+  const act = async (fn) => { setMsg(null); try { await fn(); await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed")); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   const patch = (p, body) => act(() => api(`/pages/${p.id}/`, { method: "PATCH", body }));
 
   // ── menu structure: top level items with their sub items ──────────────────
@@ -80,8 +83,8 @@ export default function PagesAdmin() {
     const { id, ...body } = modal;
     try {
       if (id) await api(`/pages/${id}/`, { method: "PATCH", body: { title: body.title, audience: body.audience, new_tab: body.new_tab, ...(body.kind === "link" ? { url: body.url } : {}) } });
-      else await api("/pages/", { method: "POST", body });
-      setModal(null); await load(); router.refresh();
+      else await api("/pages/", { method: "POST", body: { ...body, scope } });
+      setModal(null); await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed"));
     } catch (err) { setModal({ ...modal, error: errorText(err) }); }
   }
   async function remove(p) {
@@ -98,13 +101,14 @@ export default function PagesAdmin() {
       <div className="page-head">
         <div>
           <h1>{tx("Pagina's")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{tx("Alle pagina's van de website en het menu in de header. Alleen wat aan staat wordt getoond.")}</p>
+          <p className="muted" style={{ margin: 0 }}>{priv ? tx("Privé pagina's: alleen voor ingelogde leden, op /dashboard/<pagina>, met een eigen menu in de header van het dashboard.") : tx("Alle pagina's van de website en het menu in de header. Alleen wat aan staat wordt getoond.")}</p>
         </div>
         <div className="row"><CollapseAll />{L >= 3 && <button className="btn primary" onClick={() => setModal({ ...EMPTY })}>{tx("+ Nieuwe pagina of link")}</button>}</div>
       </div>
+      <Tabs value={scope} onChange={(v) => { setPages(null); setScope(v); }} tabs={[["public", "Openbaar"], ["private", "Privé"]]} />
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
-      <Collapsible id="pages-overview" title={tx("Overzicht van de pagina's")}>
+      <Collapsible id={`pages-overview-${scope}`} title={priv ? tx("Overzicht van de privé pagina's") : tx("Overzicht van de pagina's")}>
         <ViewBar view={tv} />
         <TableView view={tv}>
           <table>
@@ -120,7 +124,7 @@ export default function PagesAdmin() {
                     <td><Sw checked={p.enabled} disabled={L < 2 || p.locked} onChange={(v) => patch(p, { enabled: v })} /></td>
                     <td><Sw checked={p.in_menu} disabled={L < 2} onChange={(v) => patch(p, { in_menu: v })} /></td>
                     <td className="actions">
-                      <a className="btn sm" href={p.path} target="_blank" rel="noreferrer">{tx("Openen")}</a>
+                      <a className="btn sm" href={p.path} {...(priv ? {} : { target: "_blank", rel: "noreferrer" })}>{tx("Openen")}</a>
                       {p.editable && canEdit && <button className="btn sm" onClick={() => editPage(p)}>{tx("Bewerk pagina")}</button>}
                       {L >= 2 && <button className="btn sm" onClick={() => setSettings(p)}>{tx("Instellingen")}</button>}
                       {L >= 3 && p.kind !== "system" && <button className="btn sm danger" onClick={() => remove(p)}>{tx("Verwijder")}</button>}
@@ -134,7 +138,7 @@ export default function PagesAdmin() {
         <small className="muted">{tx("Een pagina waarvan de module uit staat (bijvoorbeeld Producten) verdwijnt vanzelf uit de website en het menu. De tekst van een eigen pagina bewerk je op de pagina zelf in de bewerkmodus.")}</small>
       </Collapsible>
 
-      <Collapsible id="pages-menu" title={tx("Menu-editor (header)")}>
+      <Collapsible id={`pages-menu-${scope}`} title={priv ? tx("Privé menu (header van het dashboard)") : tx("Menu-editor (header)")}>
         <div>
           <strong style={{ fontSize: ".85rem" }}>{tx("Zo ziet het menu eruit")}</strong>
           <nav className="site-nav menu-preview">
@@ -196,7 +200,7 @@ export default function PagesAdmin() {
               ))}
             </div>
             {modal.kind === "link" && <label>{tx("Link")}<input value={modal.url} onChange={(e) => setModal({ ...modal, url: e.target.value })} placeholder="https://… of /pad" required /></label>}
-            {modal.kind !== "system" && (
+            {modal.kind !== "system" && !priv && (
               <div className="theme-grid">
                 <label>{tx("Voor wie")}
                   <select value={modal.audience} onChange={(e) => setModal({ ...modal, audience: e.target.value })}>{Object.entries(AUDIENCE).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>

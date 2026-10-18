@@ -421,7 +421,7 @@ def _repair(t):
     return t
 
 
-def _parse_json(raw):
+def _parse_json(raw, need=("values", "name")):
     raw = re.sub(r"```(?:json)?", "", raw)
     for cand in _objects(raw):
         for text in (cand, _repair(cand)):
@@ -429,7 +429,7 @@ def _parse_json(raw):
                 d = json.loads(text)
             except ValueError:
                 continue
-            if isinstance(d, dict) and ("values" in d or "name" in d):
+            if isinstance(d, dict) and any(k in d for k in need):
                 return d
     raise ValueError("geen bruikbaar antwoord")
 

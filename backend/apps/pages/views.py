@@ -3,7 +3,7 @@ import re
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.access import level
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 KEY_RE = re.compile(r"[a-z0-9][a-z0-9-]{1,58}")
 RESERVED = {"admin", "api", "login", "dashboard", "p", "static", "media"}
+PRIVATE_RESERVED = {"admin", "community", "plugins", "profile", "subscriptions", "superadmin"}  # the folders of the dashboard itself: a private page cannot take their address
 
 
 def _bg(p):
@@ -36,7 +37,7 @@ def _bg(p):
 
 def _out(p):
     return {"background": _bg(p), "id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
-            "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
+            "scope": p.scope, "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
             "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "editable": p.kind == "content" or p.key in service.EDITABLE}
 
 
@@ -45,6 +46,13 @@ def _out(p):
 def menu(request):
     """Public: the header menu (only what is switched on)."""
     return Response({"items": service.menu() if modules.enabled("pages") else service.default_menu()})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def private_menu(request):
+    """Members: the menu of the dashboard (private pages that are on)."""
+    return Response({"items": service.private_menu()})
 
 
 @api_view(["GET"])
@@ -72,11 +80,11 @@ def public_state(request):
 def public_page(request, key):
     """Public: one own page (title per language) if it is on."""
     p = Page.objects.filter(key=key, kind="content").first()
-    if not p or not modules.enabled("pages") or not service.available(p):
+    if not p or not modules.enabled("pages") or not service.available(p) or (p.scope == "private" and not request.user.is_authenticated):
         return Response(status=status.HTTP_404_NOT_FOUND)
     from apps.subscriptions import service as subs
 
-    return Response({"key": p.key, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key)})
+    return Response({"key": p.key, "scope": p.scope, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key)})
 
 
 @api_view(["GET", "POST"])
@@ -94,7 +102,8 @@ def pages(request):
         if (w := find_forbidden(" ".join(title.values()))):
             return bad(f"Bevat niet toegestane woorden: {', '.join(w)}.")
         key = str(d.get("key") or "").strip().lower() or re.sub(r"[^a-z0-9]+", "-", next(iter(title.values())).lower()).strip("-")[:58]
-        if not KEY_RE.fullmatch(key) or key in RESERVED:
+        scope = "private" if d.get("scope") == "private" else "public"
+        if not KEY_RE.fullmatch(key) or key in RESERVED or (scope == "private" and key in PRIVATE_RESERVED):
             return bad("Het adres mag alleen a-z, 0-9 en - bevatten (minimaal 2 tekens).")
         base, n = key, 2
         while Page.objects.filter(key=key).exists():
@@ -105,10 +114,11 @@ def pages(request):
             if not service.URL_RE.match(url):
                 return bad("Geef een geldige link (https://… of /pad).")
         last = Page.objects.order_by("-order").first()
-        p = Page.objects.create(key=key, kind=kind, title=title, url=url, in_menu=bool(d.get("in_menu", True)), order=(last.order + 1) if last else 0)
+        p = Page.objects.create(key=key, kind=kind, title=title, url=url, scope=scope, audience="members" if scope == "private" else "all", in_menu=bool(d.get("in_menu", True)), order=(last.order + 1) if last else 0)
         logger.info("Page '%s' created by %s", key, request.user.email)
         return Response(_out(p), status=status.HTTP_201_CREATED)
-    return Response({"pages": [_out(p) for p in Page.objects.all()], "can_manage": level(request.user, "pages") >= 3})
+    scope = "private" if request.query_params.get("scope") == "private" else "public"
+    return Response({"pages": [_out(p) for p in Page.objects.filter(scope=scope)], "can_manage": level(request.user, "pages") >= 3})
 
 
 def _titles(raw):

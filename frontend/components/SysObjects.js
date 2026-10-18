@@ -26,6 +26,8 @@ function Widget({ obj }) {
   const lang = langNow();
   const d = obj.data;
   if (obj.kind === "plugin") return <PluginFrame name={d.name} title={d.title} />;
+  if (obj.kind === "plugin_item" && d.public === false && !user) return <div className="card" style={{ display: "grid", gap: ".5rem" }}><strong>{d.title}</strong><small className="muted">{tx("Dit spel is alleen voor leden. Log in met je account om te spelen.")}</small><Link href="/login" className="btn sm primary" style={{ justifySelf: "start" }}>{tx("Inloggen")}</Link></div>;
+  if (obj.kind === "plugin_item") return <PluginFrame name={d.name} title={d.title} route={{ path: "/", params: {}, query: { item: d.item } }} />;  // one game of a plugin: the plugin page opens it at once
   if (obj.kind === "donation") {
     const label = obj.button?.labels?.[lang] || obj.button?.labels?.nl || Object.values(obj.button?.labels || {})[0] || tx("Doneer");
     const camp = { ...localised(d), recent: [] };

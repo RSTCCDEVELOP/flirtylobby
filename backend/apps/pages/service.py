@@ -61,7 +61,16 @@ def title_of(page, lang=None):
 def menu():
     """The header menu: only pages that are on (and whose module is on), two levels deep."""
     ensure_defaults()
-    pages = list(Page.objects.select_related("parent"))
+    return _tree(Page.objects.filter(scope="public"))
+
+
+def private_menu():
+    """The menu of the dashboard (the header of a logged-in member): the private pages that are on."""
+    return _tree(Page.objects.filter(scope="private"))
+
+
+def _tree(qs):
+    pages = list(qs.select_related("parent"))
     ok = {p.id: p for p in pages if available(p) and p.in_menu}
 
     def item(p):

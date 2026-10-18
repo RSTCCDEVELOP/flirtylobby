@@ -98,3 +98,14 @@ In de pagina (`window.system`) komen erbij:
 - `system.editHtml(html, {title})`: de tekstbewerker van het systeem; geeft de nieuwe html of `null`.
 
 Let op: de eigen tabellen van een plugin hebben geen omgekeerde namen in queries (`Count("products")`): gebruik een tweede query. Na elke wijziging van een bestand de plugin opnieuw bouwen (`plugin_build`), anders klopt de ondertekening niet meer.
+
+## Bestanden versturen en routes met een pad
+
+- `system.upload(pad, bestand, velden)`: stuurt een bestand (multipart) naar het systeem als het ingelogde lid, bijvoorbeeld naar een route van de plugin zelf: `system.upload("/plugins/run/<naam>/admin/upload", file)`.
+- Een route mag als laatste deel `<*naam>` hebben: dat krijgt de rest van het pad (ook met mappen), bijvoorbeeld `system.route("GET", "play/<slug>/<*rest>", fn, public=True)`.
+- Een plugin kan zelf een Django-antwoord teruggeven (HttpResponse) met eigen kopregels, bijvoorbeeld om bestanden uit zijn datamap te tonen.
+- Een pagina van een plugin mag in het kader van de website; downloaden (`allow-downloads`) en schermvullend (`allow="fullscreen"`) zijn toegestaan.
+
+## Spelletjes: de plugin `games`
+
+De plugin `games` is een spelletjeshal. Elk spel is een eigen pakket (zip met `game.json`) dat bij Admin → Plugins → Spelletjes → Spel uploaden wordt geladen. Zie daar de handleiding (game.json en `window.game`). Een spel draait afgeschermd (geen login, geen internet, geen opslag van de browser) en bewaart scores en voortgang via de SDK.

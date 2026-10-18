@@ -8,6 +8,7 @@ import { EditableImage, EditableText } from "./EditMode";
 import { useModule } from "./Modules";
 import { useSession } from "./Session";
 import { SysObjectBySlug } from "./SysObjects";
+import { BgControls, BgLayer } from "./SectionBg";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
 const newCell = () => ({ id: uid(), width: "auto", halign: "left", valign: "top", items: [] });
@@ -103,13 +104,15 @@ export default function PageBlocks({ pageKey }) {
   return (
     <section className={`pb${editing ? " editing" : ""}`}>
       {layout.rows.map((r, ri) => (
-        <div className="pb-rowwrap" key={r.id} style={r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : undefined}>
+        <div className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}`} key={r.id} style={r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : undefined}>
+          <BgLayer bg={r.bg} />
           {editing && (
             <div className="pb-rowbar">
               <strong>{tx("Raster")}</strong>
               <label>{tx("Kolommen")}<select value={r.cols} onChange={(e) => setRow(r.id, { cols: Number(e.target.value) })}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
               <label>{tx("Breedte")}<select value={r.width || "default"} onChange={(e) => setRow(r.id, { width: e.target.value })}>{ROW_WIDTHS.map((w) => <option key={w} value={w}>{w === "default" ? tx("Standaard") : w === "100" ? tx("100% (paginabreed)") : `${w}%`}</option>)}</select></label>
               <label>{tx("Ruimte")}<select value={r.gap} onChange={(e) => setRow(r.id, { gap: e.target.value })}><option value="sm">{tx("Klein")}</option><option value="md">{tx("Normaal")}</option><option value="lg">{tx("Groot")}</option></select></label>
+              <BgControls bg={r.bg} onChange={(bg) => setRow(r.id, { bg })} />
               <span className="pb-spacer" />
               <button type="button" className="btn sm" disabled={ri === 0} onClick={() => moveRow(r.id, -1)} title={tx("Omhoog")}>↑</button>
               <button type="button" className="btn sm" disabled={ri === layout.rows.length - 1} onClick={() => moveRow(r.id, 1)} title={tx("Omlaag")}>↓</button>
@@ -133,7 +136,7 @@ export default function PageBlocks({ pageKey }) {
                           <button type="button" onClick={() => addItem(c.id, "text")}>{tx("Tekst")}</button>
                           <button type="button" onClick={() => addItem(c.id, "image")}>{tx("Afbeelding")}</button>
                           {objOn && <div className="pb-menu-h">{tx("Systeemobjecten")}</div>}
-                          {objOn && objects.map((o) => <button type="button" key={o.slug} onClick={() => addItem(c.id, "object", o.slug)}>{o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug} <small className="muted">{o.kind === "donation" ? tx("Donatie") : o.kind === "plugin" ? tx("Plugin") : tx("Abonnement")}</small></button>)}
+                          {objOn && objects.map((o) => <button type="button" key={o.slug} onClick={() => addItem(c.id, "object", o.slug)}>{o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug} <small className="muted">{o.kind === "donation" ? tx("Donatie") : (o.kind === "plugin" || o.kind === "plugin_item") ? tx("Plugin") : tx("Abonnement")}</small></button>)}
                           {objOn && !objects.length && <small className="muted" style={{ padding: ".3rem .6rem" }}>{tx("Nog geen systeemobjecten (zie Admin → Systeemobjecten).")}</small>}
                         </div>
                       )}

@@ -17,7 +17,7 @@ async function getConfig() {
 
 let siteCache = { t: 0, v: null };
 async function getSite() {
-  if (Date.now() - siteCache.t < 30000) return siteCache.v;
+  if (Date.now() - siteCache.t < 10000) return siteCache.v;
   try {
     const res = await fetch(`${API}/api/site/`, { cache: "no-store" });
     siteCache = { t: Date.now(), v: res.ok ? await res.json() : null };
@@ -52,6 +52,10 @@ export async function middleware(req) {
   }
   const cfg = await getConfig();
   let res;
+
+  // maintenance mode: every page of the website becomes the maintenance page (503); only the login and the dashboard (administrators) stay reachable
+  const open = pathname === "/login" || pathname.startsWith("/dashboard") || pathname.startsWith("/onderhoud") || /^\/(robots\.txt|sw\.js|manifest\.webmanifest|build-id)$/.test(pathname);
+  if (site?.maintenance && !open && !req.cookies.get("maint_ok")) return NextResponse.rewrite(new URL("/onderhoud", req.url), { status: 503, headers: { "Retry-After": "3600" } });
 
   const adminArea = pathname.startsWith("/dashboard") || pathname === "/login";
   if (cfg?.geo?.enabled && !pathname.startsWith("/geo-blocked") && !(cfg.geo.admin_bypass && adminArea)) {

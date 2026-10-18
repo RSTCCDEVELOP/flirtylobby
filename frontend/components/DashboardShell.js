@@ -13,6 +13,7 @@ import { ChatButton, DirectIndicator, useChat } from "./Chat";
 import NotificationBell from "./NotificationBell";
 import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
+import { menuLabel } from "./SiteMenu";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
 import { PinButton, useAccordion } from "./Collapsible";
@@ -168,6 +169,13 @@ export default function DashboardShell({ children }) {
   }, [communityOn, pathname]);
   // plugins with a page of their own (switched on, and for this user)
   const [pluginMenu, setPluginMenu] = useState([]);
+  const [privMenu, setPrivMenu] = useState([]); // the private pages (Admin -> Pagina's, tab Privé): a menu in the header of the dashboard
+  useEffect(() => {
+    const load = () => api("/pages/private-menu/").then((d) => setPrivMenu(d.items || [])).catch(() => setPrivMenu([]));
+    if (user) load(); else setPrivMenu([]);
+    window.addEventListener("pages-changed", load);
+    return () => window.removeEventListener("pages-changed", load);
+  }, [user]);
   useEffect(() => {
     if (mods.plugins === false || !user) return setPluginMenu([]);
     const load = () => api("/plugins/menu/").then(setPluginMenu).catch(() => setPluginMenu([]));
@@ -185,7 +193,7 @@ export default function DashboardShell({ children }) {
     return () => window.removeEventListener("plugins-changed", load);
   }, [mods.plugins, user]);
   // a plugin belongs to a section (plugin.json): its page sits in that part of the menu, its admin page in that part of the admin menu
-  const pluginUser = pluginMenu.map((x) => ({ href: `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section, group: x.group }));
+  const pluginUser = pluginMenu.map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section, group: x.group }));
   const pluginUserGroup = Object.fromEntries(pluginUser.filter((n) => n.group === "mine" || n.group === "contact").map((n) => [n.href, n.group === "mine" ? "c-mine" : "c-contact"]));
   const pluginAdminItems = pluginAdmin.map((x) => ({ href: `/dashboard/admin/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section }));
   const pluginAdminGroup = Object.fromEntries(pluginAdminItems.map((n) => [n.href, ADMIN_SECTION_GROUP[n.section] || "a-system"]));
@@ -228,6 +236,12 @@ export default function DashboardShell({ children }) {
         </Link>
         <nav className="topnav">
           <Link href="/">{tx("Homepage")}</Link>
+          {privMenu.map((it) => {
+            const label = menuLabel(it.titles);
+            const link = /^https?:/.test(it.url) ? <a href={it.url} target={it.new_tab ? "_blank" : undefined} rel="noopener noreferrer" className={pathname === it.url ? "active" : ""}>{label}</a> : <Link href={it.url} className={pathname === it.url ? "active" : ""}>{label}</Link>;
+            if (!it.children?.length) return <span key={it.id}>{link}</span>;
+            return <span key={it.id} className="nav-drop">{link}<span className="nav-drop-menu">{it.children.map((c) => <Link key={c.id} href={c.url}>{menuLabel(c.titles)}</Link>)}</span></span>;
+          })}
         </nav>
         <div className="topbar-user">
           <ShortcutStar title={pageTitle(pathname)} pathname={pathname} />

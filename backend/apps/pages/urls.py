@@ -7,6 +7,7 @@ from . import layout as page_layout
 urlpatterns = [
     path("pages/layout/<str:key>/", page_layout.layout),
     path("pages/menu/", views.menu),
+    path("pages/private-menu/", views.private_menu),
     path("pages/state/", views.public_state),
     path("pages/backgrounds/", views.backgrounds),
     path("pages/public/<slug:key>/", views.public_page),

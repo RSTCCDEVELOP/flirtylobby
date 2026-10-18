@@ -135,7 +135,7 @@ export default function RichEditor({ initialHtml, title = tx("Tekst bewerken"), 
               <div className="obj-pick">
                 {objects.map((o) => (
                   <button type="button" key={o.slug} className="btn" onClick={() => insertObject(o)}>
-                    <strong>{o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}</strong> <small className="muted">{o.kind === "donation" ? tx("Donatie") : o.kind === "plugin" ? tx("Plugin") : tx("Abonnement")}</small>
+                    <strong>{o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}</strong> <small className="muted">{o.kind === "donation" ? tx("Donatie") : (o.kind === "plugin" || o.kind === "plugin_item") ? tx("Plugin") : tx("Abonnement")}</small>
                   </button>
                 ))}
                 {!objects.length && <p className="muted">{tx("Er zijn nog geen systeemobjecten. Zet bij een donatie-actie of abonnement het vinkje Systeemobject aan.")}</p>}

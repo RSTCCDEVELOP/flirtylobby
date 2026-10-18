@@ -41,7 +41,7 @@ export default function PluginAdminPage() {
         </div>
       </div>
       {msg && <div className="alert" style={{ marginBottom: "1rem" }}>{msg}</div>}
-      <PluginTabs p={p} onSaved={setP} first={p.admin_web && p.enabled ? "manage" : "overview"} extra={p.admin_web && p.enabled ? [["manage", "Beheer", <IconEye key="m" />]] : []}>
+      <PluginTabs p={p} onSaved={setP} first={p.admin_web && p.enabled ? "manage" : "overview"} extra={p.admin_web && p.enabled ? [["manage", p.admin_label || "Beheer", <IconEye key="m" />]] : []}>
         {(tab) => tab === "manage" && p.admin_web && p.enabled && <PluginFrame name={name} file={p.admin_web} title={`${p.title} – ${tx("beheer")}`} />}
       </PluginTabs>
       {p.enabled && p.has_web && p.menu && <p><Link className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</Link></p>}

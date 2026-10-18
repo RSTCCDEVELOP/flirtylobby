@@ -283,6 +283,44 @@ def system_settings(request):
                      "request_origin": f"{request.scheme}://{request.get_host()}"})
 
 
+@api_view(["POST"])
+@permission_classes([has_level("system", "manage"), module_required("system")])
+def maintenance_translate(request):
+    """The maintenance notice in every language of the system (also the ones that are off), translated by Claude. Fills the languages that are empty; overwrite=true replaces them all."""
+    import json
+
+    from apps.integrations import ai
+
+    from . import themeimport
+
+    cfg = system.get()
+    default = Language.objects.filter(is_default=True).values_list("code", flat=True).first() or "nl"
+    msgs = dict(cfg["maintenance_messages"])
+    source = msgs.get(default) or cfg["maintenance_message"] or "We zijn bezig met onderhoud. Probeer het straks opnieuw."
+    overwrite = bool(request.data.get("overwrite"))
+    todo = [(l.code, l.name) for l in Language.objects.all() if l.code != default and (overwrite or not msgs.get(l.code))]
+    if not todo:
+        return Response({"settings": system.get(), "translated": 0})
+    if not ai.available():
+        return Response({"detail": "Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan."}, status=status.HTTP_400_BAD_REQUEST)
+    prompt = json.dumps({"text": source, "source_language": default, "languages": [{"code": c, "name": n} for c, n in todo]}, ensure_ascii=False)
+    sysmsg = "You translate a short maintenance notice of a website. Keep the meaning and the friendly tone. Answer with ONE JSON object only, no text around it: {\"messages\": {code: translation}} with an entry for every requested language code."
+    try:
+        out = themeimport._parse_json(ai.claude(sysmsg, prompt, max_tokens=3000, timeout=90), need=("messages",))
+    except ValueError as e:
+        return Response({"detail": f"Vertalen mislukt: {e}"}, status=status.HTTP_502_BAD_GATEWAY)
+    got = out.get("messages") or {}
+    msgs[default] = source
+    n = 0
+    for c, _name in todo:
+        t = str(got.get(c) or "").strip()
+        if t:
+            msgs[c] = t[:500]
+            n += 1
+    system.save({"maintenance_messages": msgs})
+    return Response({"settings": system.get(), "translated": n})
+
+
 # ── Theme packages (Admin -> Themapakketten) ────────────────────────────────
 from django.http import HttpResponse  # noqa: E402
 from rest_framework.parsers import FormParser, MultiPartParser  # noqa: E402
