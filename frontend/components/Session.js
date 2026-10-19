@@ -8,6 +8,12 @@ import { useModule } from "./Modules";
 const SessionContext = createContext({ user: null, ready: false, editing: false });
 export const useSession = () => useContext(SessionContext);
 
+// A part of a screen that is edited (or only looked at) on its own, whatever the edit mode of the person says: the page shown in the admin.
+export function EditOverride({ value, children }) {
+  const s = useContext(SessionContext);
+  return <SessionContext.Provider value={{ ...s, editing: !!s.canEdit && !!value }}>{children}</SessionContext.Provider>;
+}
+
 // Who is logged in on the public site + the "bewerkmodus" (edit mode) switch for people with content.edit
 export function SessionProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -16,7 +22,10 @@ export function SessionProvider({ children }) {
   const [preview, setPreview] = useState(false); // ?preview=1: the page in a device frame, without editing tools
 
   useEffect(() => {
-    try { setEditModeState(localStorage.getItem("editMode") === "1"); } catch {}
+    try {
+      const q = new URLSearchParams(window.location.search).get("edit"); // ?edit=1 / ?edit=0: this page opens in (or out of) edit mode, without changing the setting of the person (used by the page preview in the admin)
+      setEditModeState(q === "1" ? true : q === "0" ? false : localStorage.getItem("editMode") === "1");
+    } catch {}
     try { setPreview(!!new URLSearchParams(window.location.search).get("preview")); } catch {}
     let alive = true;
     const load = () => {

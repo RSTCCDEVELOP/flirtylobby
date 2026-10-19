@@ -8,5 +8,6 @@ router.register("shop/admin/orders", views.OrderViewSet, basename="shop-orders")
 
 urlpatterns = [
     path("shop/admin/settings/", views.settings_admin),
+    path("shop/orders/mine/", views.my_orders),
     path("shop/orders/<str:number>/", views.public_order),
 ] + router.urls

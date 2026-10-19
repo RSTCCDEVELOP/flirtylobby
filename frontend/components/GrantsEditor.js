@@ -5,11 +5,13 @@ import { tx } from "../lib/t";
 // What a plan or donation gives: a list of rows (type + choice). Used by Admin -> Subscription.
 export default function GrantsEditor({ value, onChange, options, disabled }) {
   const rows = value || [];
+  // some actions only belong to one profile theme (Dating: date actions, Business: jobs); the ones in use always stay in the list
+  const types = (cur) => options.grant_types.filter((g) => !g.themes || g.themes.includes(options.theme) || g.type === cur);
   const spec = (t) => options.grant_types.find((x) => x.type === t);
   const set = (i, patch) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const add = () => {
     const used = new Set(rows.map((r) => r.type));
-    const next = options.grant_types.find((g) => !used.has(g.type) || g.ref) || options.grant_types[0];
+    const next = types().find((g) => !used.has(g.type) || g.ref) || types()[0];
     onChange([...rows, { type: next.type, ref: "", value: 0 }]);
   };
   return (
@@ -19,7 +21,7 @@ export default function GrantsEditor({ value, onChange, options, disabled }) {
         return (
           <div className="grant-row" key={i}>
             <select value={r.type} disabled={disabled} onChange={(e) => set(i, { type: e.target.value, ref: "", value: 0 })}>
-              {options.grant_types.map((g) => <option key={g.type} value={g.type}>{tx(g.label)}</option>)}
+              {types(r.type).map((g) => <option key={g.type} value={g.type}>{tx(g.label)}</option>)}
             </select>
             {sp?.ref === "page" && (
               <select value={r.ref} disabled={disabled} onChange={(e) => set(i, { ref: e.target.value })}>

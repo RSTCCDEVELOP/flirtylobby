@@ -45,6 +45,8 @@ class Profile(models.Model):
     show_distance = models.BooleanField(default=True)
     show_age = models.BooleanField(default=True)
     show_city = models.BooleanField(default=True)
+    visible_if_liked = models.BooleanField(default=False)  # others only see this profile when this member has liked them
+    available = models.JSONField(default=list, blank=True)  # "Beschikbaar voor": keys of AvailabilityOption (games, direct connection, chat, type of date, type of connection ...)
     updated_at = models.DateTimeField(auto_now=True)
 
 
@@ -258,3 +260,21 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
+
+class AvailabilityOption(models.Model):
+    """One thing a member can be "available for" (profile block "Beschikbaar voor"), also used to search on.
+    Own items (custom) are made in Admin -> Community; items that come from a module (a game, direct connection, chat, video chat) are added by the system
+    while that module is on, and can only be switched on or off."""
+
+    GROUPS = [("games", "Games"), ("direct", "Directe verbinding"), ("chat", "Chat en videochat"), ("date", "Soort date"), ("connection", "Soort connectie"), ("work", "Werk en netwerk"), ("training", "Samen sporten")]
+
+    key = models.CharField(max_length=60, unique=True)
+    group = models.CharField(max_length=12, default="date")
+    label = models.JSONField(default=dict)  # {"nl": "...", "en": "..."}
+    enabled = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    source = models.CharField(max_length=40, blank=True)  # "" = own item; "game:<name>" | "direct" | "chat" | "video" = from a module
+
+    class Meta:
+        ordering = ["order", "id"]

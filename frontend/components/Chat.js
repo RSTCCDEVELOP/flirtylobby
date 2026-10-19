@@ -352,7 +352,7 @@ export function ChatPanel({ compact = false }) {
     <div className={`chat ${compact ? "compact" : ""}`}>
       {(!compact || !active) && (
         <div className="chat-list">
-          <input placeholder={tx("Zoek een lid om te chatten…")} value={q} onChange={(e) => setQ(e.target.value)} />
+          <input type="search" placeholder={tx("Zoek een lid om te chatten…")} value={q} onChange={(e) => setQ(e.target.value)} />
           {people.filter((p) => p.accept_chat).map((p) => <button key={p.id} className="chat-row" onClick={() => { setDirectSel(null); openPartner(p); setQ(""); }}><Dot on={p.online} /> {p.name} <small className="muted">{tx("nieuw gesprek")}</small></button>)}
           {direct.map((d) => (
             <button key={d.token} className={`chat-row ${directSel === d.token ? "active" : ""}`} onClick={() => openDirect(d)}>

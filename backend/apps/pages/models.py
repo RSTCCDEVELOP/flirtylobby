@@ -17,6 +17,7 @@ class Page(models.Model):
     in_menu = models.BooleanField(default=False)  # shown in the header menu
     new_tab = models.BooleanField(default=False)
     audience = models.CharField(max_length=8, choices=AUDIENCE, default="all")
+    slugs = models.JSONField(default=dict, blank=True)  # the address in every language: {"nl": "abonnementen", "en": "subscriptions", ...}; they all lead to this one page
     scope = models.CharField(max_length=8, default="public", db_index=True)  # "public": the website (/p/<key>, header menu); "private": behind the login (/dashboard/<key>, menu of the dashboard)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
     order = models.PositiveIntegerField(default=0)
@@ -27,10 +28,30 @@ class Page(models.Model):
     class Meta:
         ordering = ["order", "id"]
 
+    def path_in(self, lang):
+        """The address of this page in a language (zh and ar use the English one; the canonical one when there is none)."""
+        sl = self.slugs or {}
+        s = sl.get(lang) or (sl.get("en") if lang in ("zh", "ar") else "")
+        if s and self.scope == "public" and self.kind in ("system", "content", "link"):
+            return "/" + s.strip("/")
+        return self.path
+
+    def all_paths(self):
+        """Every address that leads to this page (the canonical one first)."""
+        out = [self.path]
+        for s in (self.slugs or {}).values():
+            if s and self.scope == "public":
+                p = "/" + s.strip("/")
+                if p not in out:
+                    out.append(p)
+        return out
+
     @property
     def path(self):
         if self.kind == "content":
-            return f"/dashboard/{self.key}" if self.scope == "private" else f"/p/{self.key}"
+            if self.scope == "private":
+                return f"/dashboard/{self.key}"
+            return self.url or f"/p/{self.key}"  # a standard page has an address of its own (/community), an own page /p/<key>
         return self.url
 
 

@@ -8,6 +8,7 @@ import { EditableImage, EditableText } from "./EditMode";
 import { useModule } from "./Modules";
 import { useSession } from "./Session";
 import { SysObjectBySlug } from "./SysObjects";
+import LayoutPresets from "./LayoutPresets";
 import { BgControls, BgLayer } from "./SectionBg";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
@@ -27,17 +28,45 @@ const AL_V = { top: "flex-start", center: "center", bottom: "flex-end" };
 
 // Blocks of a page: rows (a grid of 1-4 columns) with text, pictures and system objects in the cells.
 // In edit mode: add rows, drag items between cells, set how items sit in a cell (left/centre/right, top/centre/bottom).
-export default function PageBlocks({ pageKey }) {
+export default function PageBlocks({ pageKey, title = "" }) {
   const { editing } = useSession();
   const objOn = useModule("sysobjects");
   const [layout, setLayout] = useState(null);
   const [menu, setMenu] = useState(null); // cell id with the add-menu open
   const [objects, setObjects] = useState([]);
   const [saving, setSaving] = useState("");
+  const root = useRef(null);
+  const [h1, setH1] = useState("");
+  const [dragging, setDragging] = useState(false); // while dragging, pictures and plugin frames must not catch the drop themselves
+  const [over, setOver] = useState(null); // where a dragged item would land: {id, pos: before | after}
+  const [dragOn, setDragOn] = useState(null); // the item whose handle is held: only then it can be dragged (text stays selectable)
   const drag = useRef(null);
   const timer = useRef(null);
 
   useEffect(() => { api(`/pages/layout/${encodeURIComponent(pageKey)}/`).then(setLayout).catch(() => setLayout({ rows: [] })); }, [pageKey]);
+  const pageWide = layout?.page_width === "full";
+  const pageSize = ["5", "10", "25", "100"].includes(String(layout?.page_size)) ? String(layout.page_size) : "all";
+  const listView = layout?.list?.view === "rows" ? "rows" : "grid", listCenter = !!layout?.list?.center;
+  useEffect(() => { // how the lists of the page (games, products, plans ...) are shown: the page and the plugin frames read it from these attributes
+    const par = root.current?.parentElement;
+    if (!par) return undefined;
+    par.dataset.list = listView; par.dataset.center = listCenter ? "1" : "0"; par.dataset.width = pageWide ? "full" : "column"; par.dataset.pagesize = pageSize; document.documentElement.dataset.pagesize = pageSize;
+    document.documentElement.dataset.list = listView; document.documentElement.dataset.center = listCenter ? "1" : "0";
+    return () => { delete par.dataset.list; delete par.dataset.center; delete par.dataset.width; delete par.dataset.pagesize; delete document.documentElement.dataset.pagesize; delete document.documentElement.dataset.list; delete document.documentElement.dataset.center; };
+  }, [layout, listView, listCenter, pageWide, pageSize]);
+  const NO_HERO = ["home", "hero-games"];
+  const heroOff = !!layout?.hero_off || NO_HERO.includes(pageKey);
+  const heroRow = layout?.rows?.find((r) => r.hero);
+  const heroTheme = heroOff ? "" : heroRow?.hero || (layout ? layout.theme || "normal" : ""); // every page has a hero unless it is switched off; a page without a hero row gets the title in a banner
+  useEffect(() => { // with a hero the title is in the banner: the title of the page itself above it is hidden and its text is used
+    const par = root.current?.parentElement;
+    if (!heroTheme || !par) return undefined;
+    const h = [...par.children].find((e) => e.tagName === "H1");
+    if (h) setH1(h.textContent || "");
+    par.dataset.hero = "1";
+    document.documentElement.dataset.hero = "1";
+    return () => { delete par.dataset.hero; delete document.documentElement.dataset.hero; };
+  }, [heroTheme, layout, title]);
   useEffect(() => { if (editing && objOn) api("/sysobjects/").then(setObjects).catch(() => {}); }, [editing, objOn]);
 
   // every change is saved a moment later
@@ -86,15 +115,33 @@ export default function PageBlocks({ pageKey }) {
     const body = it.type === "text" ? <EditableText id={key} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" />
       : it.type === "image" ? <EditableImage id={key} className="pb-img" fallback={editing ? <div className="pb-ph">{tx("Klik om een afbeelding te kiezen")}</div> : null} />
       : <SysObjectBySlug slug={it.ref} />;
-    if (!editing) return <div className="pb-item" key={it.id} style={{ textAlign: c.halign }}>{body}</div>;
+    if (!editing) return <div className={`pb-item${it.type === "object" ? " obj" : ""}`} key={it.id} style={{ textAlign: c.halign }}>{body}</div>;
+    const label = it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
+    const shown = over?.id === it.id ? ` drop-${over.pos}` : "";
+    const hover = (e) => { // above the middle of the item = before it, below = after it
+      if (!drag.current || drag.current === it.id) return;
+      e.preventDefault(); e.stopPropagation();
+      const r = e.currentTarget.getBoundingClientRect();
+      const pos = e.clientY < r.top + r.height / 2 ? "before" : "after";
+      if (over?.id !== it.id || over.pos !== pos) setOver({ id: it.id, pos });
+    };
+    const drop = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const from = drag.current, pos = over?.id === it.id ? over.pos : "before";
+      drag.current = null; setOver(null); setDragOn(null); setDragging(false);
+      if (!from || from === it.id) return;
+      const next = pos === "before" ? it.id : c.items[c.items.findIndex((x) => x.id === it.id) + 1]?.id;
+      move(from, c.id, next === from ? null : next || null);
+    };
     return (
-      <div className="pb-item edit" key={it.id} style={{ textAlign: c.halign }} draggable
-        onDragStart={(e) => { drag.current = it.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", it.id); }}
-        onDragEnd={() => { drag.current = null; }}
-        onDragOver={(e) => { if (drag.current) { e.preventDefault(); e.stopPropagation(); } }}
-        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (drag.current && drag.current !== it.id) move(drag.current, c.id, it.id); drag.current = null; }}>
-        <span className="pb-grip" title={tx("Sleep om te verplaatsen")}>⋮⋮</span>
-        <button type="button" className="pb-x" title={tx("Verwijderen")} onClick={() => delItem(it.id)}>×</button>
+      <div className={`pb-item edit${it.type === "object" ? " obj" : ""}${shown}${dragOn === it.id ? " dragging" : ""}`} key={it.id} style={{ textAlign: c.halign }}
+        onDragOver={hover} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver((o) => (o?.id === it.id ? null : o)); }} onDrop={drop}>
+        <div className="pb-itembar">
+          <span className="pb-grip" title={tx("Sleep om te verplaatsen")} draggable
+            onDragStart={(e) => { drag.current = it.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", it.id); const box = e.currentTarget.closest(".pb-item"); if (box) e.dataTransfer.setDragImage(box, 16, 16); setTimeout(() => { setDragOn(it.id); setDragging(true); }, 0); }}
+            onDragEnd={() => { drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>⋮⋮ <small>{label}</small></span>
+          <button type="button" className="btn sm danger pb-x" title={tx("Dit onderdeel van de pagina verwijderen")} onClick={() => delItem(it.id)}>{tx("Verwijder")}</button>
+        </div>
         {body}
         {it.type === "object" && !objects.some((o) => o.slug === it.ref) && <small className="muted">{tx("Dit systeemobject bestaat niet meer of staat uit.")}</small>}
       </div>
@@ -102,9 +149,20 @@ export default function PageBlocks({ pageKey }) {
   };
 
   return (
-    <section className={`pb${editing ? " editing" : ""}`}>
-      {layout.rows.map((r, ri) => (
-        <div className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}`} key={r.id} style={r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : undefined}>
+    <section ref={root} data-t={layout.auto || heroTheme || undefined} className={`pb${editing ? " editing" : ""}${dragging ? " is-dragging" : ""}`}>
+      {editing && (
+        <div className="pb-layout"><div className="pb-listopts"><span className="muted">{tx("Items per pagina")}:</span><select value={pageSize} aria-label={tx("Items per pagina")} onChange={(e) => change((x) => { if (e.target.value === "all") delete x.page_size; else x.page_size = e.target.value; return x; })}>{["5", "10", "25", "100", "all"].map((v) => <option key={v} value={v}>{v === "all" ? tx("Alles") : v}</option>)}</select>
+          <span className="muted">{tx("Breedte van de pagina")}:</span><span className="pb-seg">{[["column", "In de kolom"], ["full", "Paginabreed"]].map(([k, l]) => <button type="button" key={k} className={(pageWide ? "full" : "column") === k ? "on" : ""} onClick={() => change((x) => { if (k === "full") x.page_width = "full"; else delete x.page_width; return x; })}>{tx(l)}</button>)}</span>
+          <span className="muted">{tx("Items zoals spelletjes en producten")}:</span>
+          <span className="pb-seg">{[["grid", "Raster"], ["rows", "Rijen"]].map(([k, l]) => <button type="button" key={k} className={listView === k ? "on" : ""} onClick={() => change((x) => { x.list = { view: k, center: !!x.list?.center }; return x; })}>{tx(l)}</button>)}</span>
+          <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={listCenter} onChange={(e) => change((x) => { x.list = { view: x.list?.view || "grid", center: e.target.checked }; return x; })} /><span /></span><span>{tx("Centreren")}</span></label></div>
+          <label className="check sec-toggle" style={{ marginBottom: ".6rem" }}><span className="switch"><input type="checkbox" checked={!layout.hero_off} disabled={NO_HERO.includes(pageKey)} onChange={(e) => change((l) => { if (e.target.checked) delete l.hero_off; else l.hero_off = true; return l; })} /><span /></span><span>{tx("Hero tonen")} <small className="muted">{tx("De banner met de titel bovenaan de pagina.")}</small></span></label><LayoutPresets pageKey={pageKey} current={layout.preset || (layout.auto ? "auto" : "")} standard={!!layout.auto || ["community", "search", "payment", "members", "products", "product", "cart", "checkout", "subscriptions", "donations", "games"].includes(pageKey)} onApplied={(d) => setLayout(d)} /></div>
+      )}
+      {heroTheme && !heroRow && (title || h1) && (
+        <div className="pb-rowwrap hero" data-t={heroTheme}><h1 className="pb-hero-title">{title || h1}</h1></div>
+      )}
+      {layout.rows.filter((r) => !(heroOff && r.hero)).map((r, ri) => (
+        <div className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}`} data-t={r.hero || undefined} key={r.id} style={r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : undefined}>
           <BgLayer bg={r.bg} />
           {editing && (
             <div className="pb-rowbar">
@@ -119,11 +177,12 @@ export default function PageBlocks({ pageKey }) {
               <button type="button" className="btn sm danger" onClick={() => delRow(r.id)}>{tx("Rij verwijderen")}</button>
             </div>
           )}
+          {r.hero && (title || h1) && <h1 className="pb-hero-title">{title || h1}</h1>}
           <div className={`pb-row gap-${r.gap}`} style={{ "--cols": r.cols, "--tpl": columns(r) }}>
             {r.cells.map((c) => (
               <div className={`pb-cell${editing ? " edit" : ""}`} key={c.id} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], textAlign: c.halign }}
                 onDragOver={(e) => { if (drag.current) e.preventDefault(); }}
-                onDrop={(e) => { e.preventDefault(); if (drag.current) move(drag.current, c.id, null); drag.current = null; }}>
+                onDrop={(e) => { e.preventDefault(); if (drag.current) move(drag.current, c.id, null); drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>
                 {editing && (
                   <div className="pb-cellbar" onClick={(e) => e.stopPropagation()}>
                     <span className="pb-seg" title={tx("Horizontaal uitlijnen")}>{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={c.halign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(c.id, { halign: k })}>{g}</button>)}</span>

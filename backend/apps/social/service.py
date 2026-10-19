@@ -19,7 +19,7 @@ DEFAULTS = {
     "discover": {
         "min_age": 18, "max_age": 99, "max_results": 60, "require_photo": 0, "default_sort": "active", "suggestions": True,
         "require_to_search": True, "require_to_like": True, "show_non_participants": False,
-        "show_visitors": True, "visitors_days": 30, "show_likes_received": True, "match_email": True, "like_email": False, "swipe": "auto", "pass_days": 30,
+        "show_visitors": True, "visitors_days": 30, "show_likes_received": True, "match_email": True, "like_email": False, "swipe": "auto", "pass_days": 30, "pass_forever": False,
         "distance_enabled": True, "radii": [5, 10, 25, 50, 100, 250], "max_distance_km": 500, "geocoder_contact": "",
     },
     "chat": {"method": "portal", "display": "both", "style": "floating", "popup_position": "", "show_on": ["home", "website", "dashboard", "backend"], "photos": True, "videos": True, "video_chat": True,
@@ -36,7 +36,7 @@ INTS = {("discover", "min_age"): (13, 99), ("discover", "max_age"): (18, 120), (
         ("chat", "max_image_mb"): (1, 50), ("chat", "max_video_mb"): (1, 500),
         ("direct", "hours"): (1, 72), ("direct", "max_image_mb"): (1, 50), ("direct", "max_video_mb"): (1, 500)}
 BOOLS = {("discover", "like_email"), ("profiles", "private_photos"), ("profiles", "requests_enabled"), ("discover", "show_visitors"), ("discover", "suggestions"), ("discover", "require_to_search"), ("discover", "require_to_like"),
-         ("discover", "show_non_participants"), ("discover", "show_likes_received"), ("discover", "match_email"), ("discover", "distance_enabled"), ("chat", "photos"), ("chat", "videos"), ("chat", "video_chat"),
+         ("discover", "show_non_participants"), ("discover", "pass_forever"), ("discover", "show_likes_received"), ("discover", "match_email"), ("discover", "distance_enabled"), ("chat", "photos"), ("chat", "videos"), ("chat", "video_chat"),
          ("direct", "photos"), ("direct", "videos"), ("direct", "video_chat"), ("direct", "chat"), ("direct", "ask_languages"), ("direct", "ask_birth")} | {("general", f"aim_{o['key']}") for o in themes.AIM_OPTIONS}
 STRS = {("discover", "geocoder_contact"), ("chat", "turn_url"), ("chat", "turn_user"), ("chat", "turn_credential")}
 
@@ -346,6 +346,13 @@ def can_view(viewer, p, lang=None):
         return False
     if p.languages and lang and lang not in p.languages:
         return False
+    if p.visible_if_liked:  # this member shows himself only to people he has liked
+        if not authed:
+            return False
+        from .models import Like
+
+        if not Like.objects.filter(from_user_id=p.user_id, to_user=viewer).exists():
+            return False
     if p.visibility == "public":
         return True
     if not authed:

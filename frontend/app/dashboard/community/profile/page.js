@@ -17,6 +17,7 @@ import { confirmDialog } from "../../../../lib/dialog";
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { useAutoSave } from "../../../../lib/autosave";
 import SaveStatus from "../../../../components/SaveStatus";
+import { AvailPicker, useAvailability } from "../../../../components/Availability";
 
 const CONTACTS = [["whatsapp", "WhatsApp", "+31 6 12345678"], ["phone", "Telefoon", "+31 6 12345678"], ["email", "E-mail", "naam@voorbeeld.nl"], ["telegram", "Telegram", "@gebruikersnaam"]];
 
@@ -35,6 +36,7 @@ export default function MyProfile() {
   const [found, setFound] = useState([]);
   const [modeBusy, setModeBusy] = useState(false);
   const discoverOn = useModule("discover");
+  const availGroups = useAvailability();
 
   const load = useCallback(() => api("/profile/me/").then(setP).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
@@ -59,6 +61,7 @@ export default function MyProfile() {
       setMsg(null);
     } catch (e) {
       const t = errorText(e);
+      if (e?.status === 402) load(); // behind a subscription or donation: the setting goes back to how it was
       if (/jaar|geboortedatum/i.test(t)) setPopup({ title: tx("Leeftijdscontrole"), text: t }); else setMsg({ ok: false, text: t });
       return false;
     }
@@ -137,6 +140,7 @@ export default function MyProfile() {
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
+      {!p.enabled && <div className="alert" style={{ marginBottom: "1rem" }}>{tx("Je profielpagina staat uit: niemand ziet je, ook niet in het zoeken en swipen, tot je hieronder kiest wie je mag zien.")}</div>}
       <ProfileBlock id="c-visibility" icon={<IconEye />} title={tx("Zichtbaarheid")} hint={tx("Wie ziet je profielpagina? Een wijziging geldt direct.")}>
         <PageVisibility p={p} busy={modeBusy} onChange={setMode} onPreview={() => window.open(`/leden/${p.slug}?preview=1`, "_blank")} />
       </ProfileBlock>
@@ -174,6 +178,9 @@ export default function MyProfile() {
         </ProfileBlock>
       )}
 
+      <ProfileBlock id="c-available" icon={<IconFriends />} title={tx("Beschikbaar voor")} hint={tx("Games, directe verbinding, chat, soort date en soort connectie. Anderen zien dit en kunnen erop zoeken.")}>
+        <AvailPicker groups={availGroups} value={p.available || []} onChange={(v) => set("available", v)} />
+      </ProfileBlock>
       {discoverOn && (
       <ProfileBlock id="c-dating" icon={<IconHeart />} title={tx("Zoeken & matchen")} hint={tx("Wie je zoekt en hoe je gevonden wordt.")}>
         <Sw k="discover" label={tx("Doe mee aan zoeken & matchen")} hint={tx("Je kunt dan andere leden zoeken en gevonden worden. Van {0} tot {1} jaar{2}; geboortedatum is verplicht.", p.min_age, p.max_age, p.require_photo ? `, met minimaal ${p.require_photo} foto('s)` : "")} />
@@ -259,7 +266,7 @@ export default function MyProfile() {
               {p.allowed.map((u) => <button key={u.id} type="button" className="chip" onClick={() => setAllowed(p.allowed.filter((x) => x.id !== u.id))}>{u.name} <b>×</b></button>)}
               {!p.allowed.length && <span className="muted">{tx("Nog niemand: dan ziet alleen jijzelf je pagina.")}</span>}
             </div>
-            <input placeholder={tx("Zoek een lid om toe te voegen…")} value={q} onChange={(e) => setQ(e.target.value)} />
+            <input type="search" placeholder={tx("Zoek een lid om toe te voegen…")} value={q} onChange={(e) => setQ(e.target.value)} />
             <div className="suggest">
               {found.filter((u) => !p.allowed.some((a) => a.id === u.id)).map((u) => <button key={u.id} type="button" onClick={() => { setAllowed([...p.allowed, u]); setQ(""); }}>{u.name}</button>)}
             </div>
@@ -277,6 +284,7 @@ export default function MyProfile() {
       </ProfileBlock>
 
       <ProfileBlock id="c-find" icon={<IconSearch />} title={tx("Gevonden worden & contact")} hint={tx("Zoeken, berichten en chat.")}>
+        <Sw k="visible_if_liked" label={tx("Alleen zichtbaar voor mensen die ik leuk vind")} hint={tx("Anderen zien je pas (in het zoeken, bij swipen en op je profielpagina) nadat jij hen leuk hebt gevonden. Zo bepaal jij wie je ziet en wie jou ziet.")} />
         <Sw k="searchable_local" label={tx("Vindbaar in de ledenzoeker van dit systeem")} />
         <Sw k="searchable_public" label={tx("Vindbaar in openbare zoekmachines (Google, Bing, …)")} hint={tx("Werkt alleen als je pagina voor iedereen zichtbaar is.")} />
       </ProfileBlock>

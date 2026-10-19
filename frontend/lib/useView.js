@@ -15,5 +15,5 @@ export function useView(id, initial = "tiles") {
     try { localStorage.setItem(`view:${id}`, m); } catch {}
   }, [id]);
   const match = useCallback((...texts) => !q.trim() || texts.filter(Boolean).join(" ").toLowerCase().includes(q.trim().toLowerCase()), [q]);
-  return { mode, setMode, q, setQ, match, cls: mode === "list" ? " view-list" : "" };
+  return { id, mode, setMode, q, setQ, match, cls: mode === "list" ? " view-list" : "" };
 }

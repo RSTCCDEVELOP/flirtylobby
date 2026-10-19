@@ -6,6 +6,7 @@ import { TILES, LEVEL_LABEL } from "../lib/admin-tiles";
 import { lvl } from "../lib/perms";
 import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
+import Paged from "./Paged";
 import ViewBar from "./ViewBar";
 import { useView } from "../lib/useView";
 
@@ -25,6 +26,7 @@ export default function AdminTiles({ all = false }) {
   return (
     <>
     <ViewBar view={view} count={`${shown.length}/${tiles.length}`} />
+    <Paged id={all ? "admin-tiles-all" : "admin-tiles"} query={view.q}>
     <div className={`cards${view.cls}`} style={{ marginTop: 0 }}>
       {shown.map((t) => (
         <Link key={t.href} href={t.href} className="card stat link-card">
@@ -37,6 +39,7 @@ export default function AdminTiles({ all = false }) {
       {!tiles.length && <p className="muted">{tx("Je hebt nog geen toegang tot beheeronderdelen.")}</p>}
       {tiles.length > 0 && !shown.length && <p className="muted">{tx("Niets gevonden.")}</p>}
     </div>
+    </Paged>
     </>
   );
 }

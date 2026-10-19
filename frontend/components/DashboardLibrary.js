@@ -35,7 +35,7 @@ export default function DashboardLibrary({ theme, ctx, onDashIds, onAdd, onLayou
       </div>
       <p className="muted" style={{ margin: 0 }}>{tx("Sleep een blok naar je dashboard of klik op +. Een nieuw dashboard begint simpel; voeg alleen toe wat je nodig hebt.")}</p>
       <Tabs tabs={tabs.map(([k, l]) => [k, l])} value={tab} onChange={setTab} />
-      <input placeholder={tx("Zoek een blok…")} value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 320 }} />
+      <input type="search" placeholder={tx("Zoek een blok…")} value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 320 }} />
       <div className="lib-grid">
         {list.map((w) => {
           const on = onDashIds.includes(w.id);

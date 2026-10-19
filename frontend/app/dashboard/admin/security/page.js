@@ -49,7 +49,7 @@ function CountryPicker({ selected, codes, onChange }) {
         ))}
         {!selected.length && <span className="muted">{tx("Nog geen landen gekozen.")}</span>}
       </div>
-      <input placeholder={tx("Zoek een land om toe te voegen…")} value={q} onChange={(e) => setQ(e.target.value)} />
+      <input type="search" placeholder={tx("Zoek een land om toe te voegen…")} value={q} onChange={(e) => setQ(e.target.value)} />
       {matches.length > 0 && (
         <div className="suggest">
           {matches.map((c) => (

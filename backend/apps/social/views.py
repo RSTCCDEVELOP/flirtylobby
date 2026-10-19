@@ -46,7 +46,7 @@ def _own(p):
     return {"enabled": p.enabled, "slug": p.slug, "headline": p.headline, "bio": p.bio, "visibility": p.visibility, "languages": p.languages,
             "searchable_local": p.searchable_local, "searchable_public": p.searchable_public, "accept_messages": p.accept_messages,
             "accept_chat": p.accept_chat, "discover": p.discover, "gender": p.gender, "birth_date": p.birth_date.isoformat() if p.birth_date else "",
-            "city": p.city, "country": p.country, "interests": p.interests, "looking_for_genders": p.looking_for_genders, "aim": p.aim,
+            "city": p.city, "country": p.country, "interests": p.interests, "looking_for_genders": p.looking_for_genders, "aim": p.aim, "available": p.available or [], "visible_if_liked": p.visible_if_liked,
             "design": p.design, "contact": {**{"video": False}, **{k: {"on": False, "value": "", "friends": False} for k in service.CONTACT_KINDS}, **(p.contact or {})}, "age_min": p.age_min, "age_max": p.age_max, "show_age": p.show_age, "show_city": p.show_city, "show_distance": p.show_distance,
             "location_found": p.lat is not None, "distance_enabled": cfg["discover"]["distance_enabled"], "min_age": cfg["discover"]["min_age"], "max_age": cfg["discover"]["max_age"],
             "require_photo": cfg["discover"]["require_photo"],
@@ -57,12 +57,51 @@ def _own(p):
             "allowed": [person(a.user, p.user) for a in p.allowed.select_related("user")]}
 
 
+# profile fields that need an action (subscription / donation) to be filled in, per field key (Admin -> Actions)
+FIELD_GATES = {"hiring": "post_vacancy", "open_to_work": "job_seeker", "wanted_role": "job_seeker", "employment": "job_seeker", "work_mode": "job_seeker", "experience": "job_seeker"}
+FIELD_SEARCH_GATES = {"hiring": "search_jobs", "open_to_work": "search_jobs", "wanted_role": "search_jobs", "employment": "search_jobs", "work_mode": "search_jobs", "experience": "search_jobs"}
+
+
+def gate_response(user, key):
+    """402 with the reason when `key` is behind a subscription / donation the member does not have; else None."""
+    from apps.subscriptions import service as subs
+
+    if not subs.can(user, key):
+        return Response({"detail": subs.GATE_MESSAGE.get(key, "Hiervoor heb je een abonnement of donatie nodig."), "subscribe": True}, status=status.HTTP_402_PAYMENT_REQUIRED)
+    return None
+
+
+def _gated_change(user, p, b):
+    """The first profile setting this PUT changes that is behind an action the member does not have (autosave sends everything: only real changes count)."""
+    checks = []
+    if b.get("visible_if_liked") and not p.visible_if_liked:
+        checks.append("visible_if_liked")
+    if b.get("searchable_public") and not p.searchable_public:
+        checks.append("public_search")
+    if any(k in b and b[k] is False and getattr(p, k) for k in ("show_age", "show_city", "show_distance")):
+        checks.append("hide_details")
+    if b.get("design") and b["design"] != p.design:
+        checks.append("profile_design")
+    if "available" in b and isinstance(b["available"], list) and set(b["available"]) != set(p.available or []):
+        checks.append("available_for")
+    if isinstance(b.get("data"), dict):
+        for k, v in b["data"].items():
+            if k in FIELD_GATES and v not in (None, "", [], False) and v != (p.data or {}).get(k):
+                checks.append(FIELD_GATES[k])
+    for key in checks:
+        if (r := gate_response(user, key)):
+            return r
+    return None
+
+
 @api_view(["GET", "PUT"])
 @permission_classes(PROFILES)
 def profile_me(request):
     p = service.profile_of(request.user)
     if request.method == "PUT":
         b = request.data
+        if (blocked := _gated_change(request.user, p, b)):
+            return blocked
         text = {"headline": str(b.get("headline", p.headline))[:150], "bio": str(b.get("bio", p.bio))[:4000]}
         words = find_forbidden(text["headline"] + " " + text["bio"])
         if words:
@@ -76,7 +115,7 @@ def profile_me(request):
             if not re.fullmatch(r"[a-z0-9-]{3,60}", slug) or Profile.objects.filter(slug=slug).exclude(pk=p.pk).exists():
                 return bad("Dit adres is ongeldig of al in gebruik (3-60 tekens: a-z, 0-9 en -).")
             p.slug = slug
-        for f in ("enabled", "searchable_local", "searchable_public", "accept_messages", "accept_chat"):
+        for f in ("enabled", "searchable_local", "searchable_public", "accept_messages", "accept_chat", "visible_if_liked"):
             if f in b:
                 setattr(p, f, bool(b[f]))
         p.headline, p.bio, p.visibility, p.languages = text["headline"], text["bio"], vis, langs
@@ -91,6 +130,11 @@ def profile_me(request):
             p.design = b["design"]
         if err := dsc.validate_dating_fields(p, b):
             return bad(err)
+        if "available" in b:
+            from . import availability as av
+
+            ok = av.valid_keys()
+            p.available = [k for k in dict.fromkeys(b["available"] if isinstance(b["available"], list) else []) if k in ok]
         fields = service.get()["profiles"]["fields"]
         if "data" in b:
             data, err = service.clean_values(fields, b["data"], p.data)
@@ -290,7 +334,7 @@ def profile_detail(request, slug):
         "can_message": authed and me.id != p.user_id and p.accept_messages and service.module_on("messages"),
         "can_chat": authed and me.id != p.user_id and p.accept_chat and service.module_on("chat"),
         "can_video": authed and me.id != p.user_id and bool((p.contact or {}).get("video")) and service.module_on("chat") and service.get()["chat"]["video_chat"],
-        "contacts": service.visible_contacts(p, me),
+        "contacts": service.visible_contacts(p, me), "available": __import__("apps.social.availability", fromlist=["x"]).of_profile(p),
         "blocked_by_me": authed and Block.objects.filter(blocker=me, blocked=p.user).exists(),
         "indexable": p.visibility == "public" and p.searchable_public and p.enabled, "enabled": p.enabled,
     }))
@@ -692,6 +736,9 @@ def apply_theme(request):
     if key not in themes.THEMES:
         return bad("Onbekend thema.")
     cfg = service.save({"profiles": themes.theme_payload(key)}, ["profiles"])
+    from apps.pages import defaults as page_defaults
+
+    page_defaults.apply_theme(key)  # the standard pages (community, search, payment) get the layout of this theme (edited ones stay)
     return Response({"settings": cfg, "themes": themes.public_list()})
 
 

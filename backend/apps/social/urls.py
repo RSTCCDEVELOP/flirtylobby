@@ -1,11 +1,15 @@
 from django.urls import path
 
+from . import availability as av
 from . import direct as dr
 from . import discover as d
 from . import views as v
 
 urlpatterns = [
     path("community/summary/", v.summary),
+    path("community/availability/", av.options),
+    path("community/availability/admin/", av.admin_list),
+    path("community/availability/admin/<int:pk>/", av.admin_item),
     path("community/config/", v.config),
     path("community/settings/", v.settings_admin),
     path("community/theme/", v.apply_theme),

@@ -16,10 +16,12 @@ export const menuLabel = (titles = {}) => titles[getLanguage()] || titles.nl || 
 
 function Item({ it, pathname, onLink }) {
   const target = it.new_tab ? { target: "_blank", rel: "noopener noreferrer" } : {};
-  const external = /^(https?:|mailto:|tel:)/.test(it.url);
-  const active = it.url === "/" ? pathname === "/" : !external && pathname.startsWith(it.url);
+  const lang = getLanguage();
+  const url = it.urls?.[lang] || it.url; // the address in the language of the visitor
+  const external = /^(https?:|mailto:|tel:)/.test(url);
+  const active = url === "/" ? pathname === "/" : !external && (pathname.startsWith(url) || pathname.startsWith(it.url) || Object.values(it.urls || {}).some((u) => u !== "/" && pathname.startsWith(u)));
   const label = menuLabel(it.titles);
-  const link = external ? <a href={it.url} className={active ? "active" : ""} {...target}>{label}</a> : <Link href={it.url} className={active ? "active" : ""} {...target}>{label}</Link>;
+  const link = external ? <a href={url} className={active ? "active" : ""} {...target}>{label}</a> : <Link href={url} className={active ? "active" : ""} {...target}>{label}</Link>;
   if (!it.children?.length) return link;
   return (
     <span className="nav-drop">

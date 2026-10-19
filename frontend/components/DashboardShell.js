@@ -18,11 +18,14 @@ import { useUi } from "./Ui";
 import { api } from "../lib/api";
 import { PinButton, useAccordion } from "./Collapsible";
 import { useShortcuts } from "../lib/shortcuts";
+import { useNavMode } from "../lib/navmode";
+import BackButton from "./BackButton";
+import FindOnPage from "./FindOnPage";
 import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
-  { href: "/dashboard/profile", label: "Mijn profiel", icon: <IconUser /> },
+  { href: "/dashboard/profile", label: "Mijn profiel", icon: <IconUser />, hidden: true }, // not in the left menu (it is in the user menu); the name stays for the search and the shortcut star
   { href: "/dashboard/community/mypage", label: "Mijn profielpagina", icon: <IconEye />, module: "profiles", community: true }, // the page as others see it, inside the dashboard
   { href: "/dashboard/community/profile", label: "Wijzig profiel", icon: <IconEdit />, module: "profiles", community: true }, // editing goes here
   { href: "/dashboard/subscriptions", label: "Mijn abonnementen", icon: <IconStar />, module: "subscriptions" },
@@ -95,6 +98,21 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
   "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
 };
+
+export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };
+const GROUP_ICON = { "a-people": <IconUsers />, "a-site": <IconGlobe />, "a-community": <IconChat />, "a-shop": <IconBag />, "a-subs": <IconStar />, "a-system": <IconSettings />, "c-mine": <IconUser />, "c-contact": <IconMail /> };
+
+// Switch of the left menu: work with the menu (groups with their pages) or with tiles (one tile page per group)
+function NavModeSwitch({ mode, set }) {
+  const other = mode === "menu" ? "tiles" : "menu";
+  return (
+    <div className="navmode" role="group" aria-label={tx("Werken met")}>
+      <button type="button" className="navmode-one" title={mode === "menu" ? tx("Wissel naar tegels") : tx("Wissel naar menu")} onClick={() => set(other)}>{mode === "menu" ? <IconGrid /> : <IconMenu />}</button>
+      <button type="button" className={mode === "menu" ? "on" : ""} aria-pressed={mode === "menu"} title={tx("Menu")} onClick={() => set("menu")}><IconMenu /><span className="label">{tx("Menu")}</span></button>
+      <button type="button" className={mode === "tiles" ? "on" : ""} aria-pressed={mode === "tiles"} title={tx("Tegels")} onClick={() => set("tiles")}><IconGrid /><span className="label">{tx("Tegels")}</span></button>
+    </div>
+  );
+}
 
 // A collapsible group of menu items. Open state is remembered; the group with the current page opens by itself.
 // In the icon-only (collapsed) sidebar all items stay visible as icons.
@@ -212,9 +230,28 @@ export default function DashboardShell({ children }) {
 
   const withBadge = (n) => ({ ...n, badgeCount: n.badge === "direct_active" ? (chat?.directActive?.length || 0) : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) || 0 : 0 });
   const isActive = (n) => (n.href === "/dashboard/community" || n.href === "/dashboard/admin" ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/"));
+  const [navMode, setNavMode] = useNavMode();
+  // where "back" goes when there is no earlier page: the main menu of this area (tiles mode: the tile page of the group)
+  const backFallback = (() => {
+    if (pathname.startsWith("/dashboard/admin/groep/") || pathname === "/dashboard/admin") return "/dashboard";
+    if (pathname.startsWith("/dashboard/groep/")) return "/dashboard";
+    if (pathname.startsWith("/dashboard/superadmin/")) return "/dashboard/superadmin";
+    if (pathname === "/dashboard/superadmin") return "/dashboard";
+    if (pathname.startsWith("/dashboard/admin/")) {
+      const base = "/" + pathname.split("/").slice(0, 5).join("/").replace(/^\//, "");
+      const g = { ...ADMIN_GROUP_OF, ...pluginAdminGroup }[pathname.split("/").slice(0, 4).join("/")] || pluginAdminGroup[base];
+      return navMode === "tiles" && g ? `/dashboard/admin/groep/${g}` : "/dashboard/admin";
+    }
+    const cg = { ...COMMUNITY_GROUP_OF, ...pluginUserGroup }[pathname];
+    return navMode === "tiles" && cg ? `/dashboard/groep/${cg}` : "/dashboard";
+  })();
   const renderGroups = (items, groups, groupOf) => groups.map((g) => {
     const list = items.filter((n) => groupOf[n.href] === g.id);
     if (!list.length) return null;
+    if (navMode === "tiles") {  // one item per group: it opens the page with the tiles of that group
+      const href = g.id.startsWith("a-") ? `/dashboard/admin/groep/${g.id}` : `/dashboard/groep/${g.id}`;
+      return <NavLink key={g.id} n={{ href, label: g.title, icon: GROUP_ICON[g.id] || <IconGrid />, badgeCount: list.reduce((a, n) => a + (n.badgeCount || 0), 0), badge: "sum" }} />;
+    }
     return (
       <NavGroup key={g.id} id={g.id} title={g.title} active={list.some(isActive)} badge={list.reduce((a, n) => a + (n.badgeCount || 0), 0)}>
         {list.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/community" || n.href === "/dashboard/admin"} />)}
@@ -235,13 +272,21 @@ export default function DashboardShell({ children }) {
           <Logo />
         </Link>
         <nav className="topnav">
-          <Link href="/">{tx("Homepage")}</Link>
-          {privMenu.map((it) => {
-            const label = menuLabel(it.titles);
-            const link = /^https?:/.test(it.url) ? <a href={it.url} target={it.new_tab ? "_blank" : undefined} rel="noopener noreferrer" className={pathname === it.url ? "active" : ""}>{label}</a> : <Link href={it.url} className={pathname === it.url ? "active" : ""}>{label}</Link>;
-            if (!it.children?.length) return <span key={it.id}>{link}</span>;
-            return <span key={it.id} className="nav-drop">{link}<span className="nav-drop-menu">{it.children.map((c) => <Link key={c.id} href={c.url}>{menuLabel(c.titles)}</Link>)}</span></span>;
-          })}
+          {(() => {
+            // the private pages (Mijn community, Mijn abonnementen, Mijn bestellingen, Mijn donaties ...) hang under "Homepage" as a drop-down
+            const flat = privMenu.flatMap((it) => [it, ...(it.children || [])]);
+            const link = (it) => {
+              const label = menuLabel(it.titles);
+              return /^https?:/.test(it.url) ? <a key={it.id} href={it.url} target={it.new_tab ? "_blank" : undefined} rel="noopener noreferrer">{label}</a> : <Link key={it.id} href={it.url} className={pathname === it.url || pathname.startsWith(it.url + "/") ? "active" : ""}>{label}</Link>;
+            };
+            if (!flat.length) return <Link href="/">{tx("Homepage")}</Link>;
+            return (
+              <span className="nav-drop">
+                <Link href="/">{tx("Homepage")}</Link>
+                <span className="nav-drop-menu">{flat.map(link)}</span>
+              </span>
+            );
+          })()}
         </nav>
         <div className="topbar-user">
           <ShortcutStar title={pageTitle(pathname)} pathname={pathname} />
@@ -258,6 +303,7 @@ export default function DashboardShell({ children }) {
         className={`sidebar ${open ? "open" : ""}`}
         onMouseLeave={() => auto === "on_leave" && window.innerWidth > 860 && setCollapsed(true)}
       >
+        <NavModeSwitch mode={navMode} set={setNavMode} />
         {inSuper ? (
           <>
             <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>
@@ -275,7 +321,7 @@ export default function DashboardShell({ children }) {
           </>
         ) : (
           <>
-            {NAV.filter((n) => (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
+            {NAV.filter((n) => !n.hidden && (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
             {renderGroups([...communityLinks.map(withBadge), ...pluginUser], COMMUNITY_GROUPS, { ...COMMUNITY_GROUP_OF, ...pluginUserGroup })}
             {pluginUser.filter((n) => !pluginUserGroup[n.href]).map((n) => <NavLink key={n.href} n={n} />)}
           </>
@@ -290,7 +336,11 @@ export default function DashboardShell({ children }) {
         )}
       </aside>
 
-      <main className="content">{children}</main>
+      <main className="content">
+        <FindOnPage />
+        {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} /></div>}
+        {children}
+      </main>
     </div>
   );
 }

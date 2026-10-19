@@ -4,6 +4,7 @@ import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { IconImage, IconSearch, IconSliders } from "./Icons";
+import LayoutPresets from "./LayoutPresets";
 import MediaPicker from "./MediaPicker";
 import Tabs from "./Tabs";
 
@@ -15,7 +16,7 @@ const emptySeo = { title: "", description: "", og_media: null, og_image: null, n
 export default function PageSettingsModal({ page, languages, defaultLang, onClose, onSaved, canSeo }) {
   const langs = languages.length ? languages : [{ code: "nl", native_name: "Nederlands" }];
   const [tab, setTab] = useState("general");
-  const [form, setForm] = useState({ title: { ...page.title }, audience: page.audience, new_tab: !!page.new_tab, url: page.url || "" });
+  const [form, setForm] = useState({ slugs: { ...(page.slugs || {}) }, title: { ...page.title }, audience: page.audience, new_tab: !!page.new_tab, url: page.url || "" });
   const [bg, setBg] = useState(page.background?.type ? { ...page.background } : { type: "none", overlay: 0.35 });
   const [seoLang, setSeoLang] = useState(defaultLang || langs[0].code);
   const [seo, setSeo] = useState({}); // lang -> fields
@@ -47,6 +48,7 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
       const body = { title: form.title, background: bg.type === "none" || !bg.media ? {} : { type: bg.type, media: bg.media, overlay: bg.overlay } };
       if (page.kind !== "system") { body.audience = form.audience; body.new_tab = form.new_tab; }
       if (page.kind === "link") body.url = form.url;
+      if (page.has_slugs) body.slugs = Object.fromEntries(langs.map((l) => [l.code, form.slugs?.[l.code] || ""])); // only the languages that are on are shown; the others get an address by themselves
       await api(`/pages/${page.id}/`, { method: "PATCH", body });
       if (canSeo && hasPath && !seoNote) {
         const start = JSON.parse(seoStart);
@@ -61,7 +63,7 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
     } catch (err) { setError(errorText(err)); setBusy(false); }
   }
 
-  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />]];
+  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
   return (
     <div className="overlay" onClick={onClose}>
       <form className="card modal pgs form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
@@ -92,6 +94,23 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
                 </div>
               )}
               <small className="muted">{tx("Adres")}: <code>{page.path}</code></small>
+            </>
+          )}
+
+          {tab === "slugs" && (
+            <>
+              <p className="muted" style={{ margin: 0 }}>{tx("Het adres van deze pagina in elke taal. Een bezoeker komt met elk adres op dezelfde pagina. Talen die uit staan krijgen vanzelf ook een adres, zodat het klaarstaat als je ze aanzet.")}</p>
+              <div className="theme-grid">
+                {langs.map((l) => (
+                  <label key={l.code}>{l.native_name}
+                    <span className="row" style={{ flexWrap: "nowrap", gap: ".3rem", justifyContent: "flex-start" }}>
+                      <span className="muted">/</span>
+                      <input value={form.slugs?.[l.code] || ""} maxLength={60} placeholder={form.title?.[l.code] ? form.title[l.code].toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") : ""} onChange={(e) => setForm({ ...form, slugs: { ...form.slugs, [l.code]: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-") } })} />
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <small className="muted">{tx("Alleen a-z, 0-9 en -. Leeg laten = het adres wordt gemaakt uit de naam van de pagina.")}</small>
             </>
           )}
 
@@ -128,6 +147,12 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
             )
           )}
 
+          {tab === "layout" && page.kind === "content" && (
+            <div className="form">
+              <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Kies de indeling van de blokken op deze pagina. Teksten en afbeeldingen blijven staan; alleen het raster verandert. Je past losse blokken daarna aan in de bewerkmodus.")}</p>
+              <LayoutPresets pageKey={page.key} standard={["community", "search", "payment", "members", "products", "product", "cart", "checkout", "subscriptions", "donations", "games"].includes(page.key)} />
+            </div>
+          )}
           {tab === "background" && (
             <>
               <p className="muted" style={{ margin: 0 }}>{tx("Een afbeelding of video uit de mediabibliotheek als achtergrond van deze pagina. Uploaden kan in het kiesvenster.")}</p>

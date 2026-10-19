@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../../components/AuthContext";
-import { IconEye } from "../../../../../components/Icons";
+import { IconEye, IconSettings } from "../../../../../components/Icons";
 import PluginFrame from "../../../../../components/PluginFrame";
+import PluginPages from "../../../../../components/PluginPages";
+import { IconEdit } from "../../../../../components/Icons";
 import { PluginTabs } from "../../../../../components/PluginParts";
-import { api, errorText } from "../../../../../lib/api";
+import { api, downloadFile, errorText } from "../../../../../lib/api";
 import { tx } from "../../../../../lib/t";
 
 // The admin page of one plugin: its settings and, when the plugin brings one, its own admin page (e.g. moderation).
@@ -28,6 +30,13 @@ export default function PluginAdminPage() {
   if (p === null) return <p className="muted">{tx("Laden…")}</p>;
   if (p === false) return <p className="muted">{tx("Deze plugin bestaat niet.")} <Link href="/dashboard/admin/plugins" style={{ color: "var(--blue)" }}>{tx("Naar alle plugins")}</Link></p>;
 
+  const hasPages = (p.public_pages || []).some((x) => x.page) || !!p.blocks_page || !!p.admin_links?.length;
+  const tabs = [
+    ...(p.admin_web && p.enabled ? [["manage", p.admin_label || "Beheer", <IconEye key="m" />]] : []),
+    ...(hasPages ? [["pages", "Pagina's", <IconEdit key="pg" />]] : []),
+    ...(p.settings_web && p.enabled ? [["shopsettings", "Instellingen", <IconSettings key="ss" />]] : []),
+  ];
+
   return (
     <>
       <div className="page-head">
@@ -41,10 +50,19 @@ export default function PluginAdminPage() {
         </div>
       </div>
       {msg && <div className="alert" style={{ marginBottom: "1rem" }}>{msg}</div>}
-      <PluginTabs p={p} onSaved={setP} first={p.admin_web && p.enabled ? "manage" : "overview"} extra={p.admin_web && p.enabled ? [["manage", p.admin_label || "Beheer", <IconEye key="m" />]] : []}>
-        {(tab) => tab === "manage" && p.admin_web && p.enabled && <PluginFrame name={name} file={p.admin_web} title={`${p.title} – ${tx("beheer")}`} />}
+      <PluginTabs p={p} onSaved={setP} first={p.admin_web && p.enabled ? "manage" : "overview"} extra={tabs}>
+        {(tab) => (
+          <>
+            {tab === "manage" && p.admin_web && p.enabled && <PluginFrame name={name} file={p.admin_web} title={`${p.title} – ${tx("beheer")}`} />}
+            {tab === "pages" && <PluginPages p={p} />}
+            {tab === "shopsettings" && p.settings_web && p.enabled && <PluginFrame name={name} file={p.settings_web} title={`${p.title} – ${tx("instellingen")}`} bare />}
+          </>
+        )}
       </PluginTabs>
-      {p.enabled && p.has_web && p.menu && <p><Link className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</Link></p>}
+      <p className="row" style={{ justifyContent: "flex-start" }}>
+        {p.enabled && p.has_web && p.menu && <Link className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</Link>}
+        {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg(errorText(e)))}>{tx("Downloaden (zip)")}</button>}
+      </p>
     </>
   );
 }

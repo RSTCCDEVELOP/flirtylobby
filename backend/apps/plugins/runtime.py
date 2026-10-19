@@ -88,6 +88,17 @@ class System:
             return f
         return add(fn) if fn else add
 
+    def gate(self, user, key):
+        """None when `user` may use the part `key` (free, or he has the subscription / donation for it); else a 402 answer with the reason, to return from a route (Admin -> Actions)."""
+        from rest_framework import status
+        from rest_framework.response import Response
+
+        from apps.subscriptions import service as subs
+
+        if subs.can(user, key):
+            return None
+        return Response({"detail": subs.GATE_MESSAGE.get(key, "Hiervoor heb je een abonnement of donatie nodig."), "subscribe": True}, status=status.HTTP_402_PAYMENT_REQUIRED)
+
     def item(self, slug, players=False):
         """The state of one item of the content folder, as the superadmin set it: {enabled, object, config}. (Read fresh: it can change while the plugin runs.)"""
         row = Plugin.objects.filter(name=self.name).first()

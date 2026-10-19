@@ -63,7 +63,7 @@ export default function DashboardSearch() {
           {index && !results.length && <li className="muted">{tx("Niets gevonden.")}</li>}
           {results.map((e) => (
             <li key={`${e.h}|${e.t}`} className="dash-search-row">
-              <Link href={e.h}>
+              <Link href={e.h} onClick={() => { if (!e.page) { try { sessionStorage.setItem("findtext", tx(e.t)); } catch {} setTimeout(() => window.dispatchEvent(new Event("findonpage")), 0); } }}>
                 <strong>{tx(e.t)}</strong>
                 <small className="muted">{where(e.h)}</small>
               </Link>

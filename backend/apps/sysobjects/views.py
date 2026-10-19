@@ -25,6 +25,11 @@ def _row(o, public=False):
         if not it or not it["object"]:
             return None
         data, names, button = {"name": src.name, "item": it["name"], "title": it["title"], "enabled": src.enabled and it["enabled"], "public": it["public"]}, {"": it["title"], **it["meta"]["titles"]}, {}
+    elif o.kind == "plugin_part":
+        part = next((x for x in src.manifest.get("parts") or [] if x["key"] == o.ref_key), None)
+        if not part:
+            return None
+        data, names, button = {"name": src.name, "part": part["key"], "file": part["file"], "title": part["title"], "enabled": src.enabled}, {"": part["title"]}, {}
     elif o.kind == "plugin":
         data, names, button = {"name": src.name, "title": src.title, "enabled": src.enabled}, {"": src.title}, {}
     elif o.kind == "donation":
@@ -66,10 +71,10 @@ def public_list(request):
 
     out = []
     for o in SystemObject.objects.filter(enabled=True):
-        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins"}[o.kind]):
+        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins"}[o.kind]):
             continue
         r = _row(o, public=True)
-        if r and o.kind in ("plugin", "plugin_item") and not r["data"]["enabled"]:
+        if r and o.kind in ("plugin", "plugin_item", "plugin_part") and not r["data"]["enabled"]:
             continue
         if r:
             out.append(r)

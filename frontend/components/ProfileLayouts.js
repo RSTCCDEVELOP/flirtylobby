@@ -9,6 +9,7 @@ import {
 } from "./Icons";
 import { fieldText, FieldList } from "./ProfileFields";
 import VerifyBadge from "./VerifyBadge";
+import { AvailChips } from "./Availability";
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 const byKey = (fields = []) => Object.fromEntries(fields.map((f) => [f.key, f]));
@@ -290,5 +291,5 @@ const LAYOUTS = { normal: Normal, dating: Dating, sporters: Sporters, business: 
 export default function ProfileLayout({ c }) {
   const Layout = LAYOUTS[c.p.theme] || Normal;
   // the member's own colour theme (Wijzig profiel → Design) for his page
-  return <div className={`pf pf-theme-${LAYOUTS[c.p.theme] ? c.p.theme : "normal"} ${c.p.design ? "pt-wrap" : ""}`} data-pt={c.p.design || undefined}><Layout c={c} /></div>;
+  return <div className={`pf pf-theme-${LAYOUTS[c.p.theme] ? c.p.theme : "normal"} ${c.p.design ? "pt-wrap" : ""}`} data-pt={c.p.design || undefined}><Layout c={c} />{c.p.available?.length > 0 && !c.p.locked && <section className="card" style={{ marginTop: "1rem" }}><h2>{tx("Beschikbaar voor")}</h2><AvailChips items={c.p.available} max={50} /></section>}</div>;
 }

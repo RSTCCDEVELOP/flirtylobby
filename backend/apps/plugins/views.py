@@ -40,7 +40,7 @@ def _out(p):
     return {"signature": sig, "dev_mode": sig == "missing" and signing.dev_mode_allowed(), "system_version": settings.SYSTEM_VERSION, "built_for": built,
             "compat": mf.compatibility(built, settings.SYSTEM_VERSION), "languages": installer.lang_state(p.name), "blocked": runtime.start_problem(p),
             "name": p.name, "title": p.title, "version": p.version, "description": p.description, "author": p.author, "enabled": p.enabled, "error": p.error,
-            "permissions": p.manifest.get("permissions", []), "events": p.manifest.get("events", []), "has_python": bool(p.manifest.get("python")), "section": p.manifest.get("section", "system"), "admin_web": p.manifest.get("admin_web", ""), "has_web": bool(p.manifest.get("web")),
+            "permissions": p.manifest.get("permissions", []), "events": p.manifest.get("events", []), "has_python": bool(p.manifest.get("python")), "section": p.manifest.get("section", "system"), "admin_web": p.manifest.get("admin_web", ""), "settings_web": p.manifest.get("settings_web", ""), "blocks_page": p.manifest.get("blocks_page", ""), "admin_links": p.manifest.get("admin_links", []), "has_web": bool(p.manifest.get("web")),
             "menu": p.manifest.get("menu"), "public_pages": p.manifest.get("public_pages", []), "site_link": p.manifest.get("site_link"), "provides": p.manifest.get("provides", []), "admin_label": p.manifest.get("admin_label", ""), "content_label": p.manifest.get("content_label", ""), "active_languages": active_languages() if p.manifest.get("content_dirs") else [], "all_languages": active_languages(everything=True) if p.manifest.get("content_dirs") else [], "content_items": installer.content_items(p), "menu_group": installer.menu_group(p), "page_object_offered": bool(p.manifest.get("page_object")), "public_path": p.manifest.get("public_path", ""), "page_public": installer.page_public(p), "page_object": installer.as_page_object(p), "config_schema": p.manifest.get("config", []), "config": installer.public_config(p), "updated_at": p.updated_at}
 
 
@@ -130,15 +130,81 @@ def plugin(request, name):
     return Response(_out(p))
 
 
-@api_view(["PATCH"])
+def _zip_response(data, filename):
+    r = HttpResponse(data, content_type="application/zip")
+    r["Content-Disposition"] = f'attachment; filename="{filename}"'
+    r["Cache-Control"] = "no-store"
+    return r
+
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated, MOD])
-def item(request, name, item):
-    """One item of the content folder of a plugin (a game): on/off, may be a system object, its configuration. Superadmins only."""
+def plugin_download(request, name):
+    """The installed plugin as a zip (superadmins only): to install it on another site or to keep."""
     if not request.user.is_staff:
         return STAFF
     p = Plugin.objects.filter(name=name).first()
     if not p:
         return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
+    return _zip_response(installer.zip_plugin(p), f"{p.name}-{p.manifest.get('version', '1.0.0')}.zip")
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, MOD])
+def item_download(request, name, item):
+    """One item (a game) of a plugin as a zip (superadmins only)."""
+    if not request.user.is_staff:
+        return STAFF
+    p = Plugin.objects.filter(name=name).first()
+    if not p:
+        return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
+    try:
+        data = installer.zip_item(p, item)
+    except installer.InstallError as e:
+        return bad(str(e), status.HTTP_404_NOT_FOUND)
+    return _zip_response(data, f"{item}.zip")
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, MOD])
+@parser_classes([MultiPartParser, FormParser])
+def item_upload(request, name):
+    """Add an item (a game) to the content folder of a plugin from a zip, like uploading a plugin. Superadmins only."""
+    if not request.user.is_staff:
+        return STAFF
+    p = Plugin.objects.filter(name=name).first()
+    f = request.FILES.get("file")
+    if not p:
+        return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if not f or not f.name.lower().endswith(".zip"):
+        return bad("Kies een zipbestand.")
+    try:
+        added = installer.add_item_zip(p, f.read())
+    except installer.InstallError as e:
+        return bad(str(e))
+    p.refresh_from_db()
+    return Response({**_out(p), "added": added})
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAuthenticated, MOD])
+def item(request, name, item):
+    """One item of the content folder of a plugin (a game): on/off, may be a system object, its configuration; or remove it. Superadmins only."""
+    if not request.user.is_staff:
+        return STAFF
+    p = Plugin.objects.filter(name=name).first()
+    if not p:
+        return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        try:
+            installer.remove_item(p, item)
+        except installer.InstallError as e:
+            return bad(str(e), status.HTTP_404_NOT_FOUND)
+        p.refresh_from_db()
+        from apps.sysobjects import service as sysobj
+
+        sysobj.sync()
+        return Response(_out(p))
     try:
         installer.save_item(p, item, request.data if isinstance(request.data, dict) else {})
     except installer.InstallError as e:
@@ -349,7 +415,7 @@ def public(request):
         hit = mf.match_public(pages, path)
         if hit:
             pg, params = hit
-            return Response({"name": p.name, "file": pg["file"], "title": pg["title"] or p.title, "noindex": pg.get("noindex", False), "params": params})
+            return Response({"name": p.name, "file": pg["file"], "title": pg["title"] or p.title, "noindex": pg.get("noindex", False), "params": params, "page": pg.get("page", "")})
     return bad("Onbekende pagina.", status.HTTP_404_NOT_FOUND)
 
 

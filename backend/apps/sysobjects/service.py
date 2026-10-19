@@ -17,7 +17,8 @@ def sources():
 
     return {"donation": DonationCampaign.objects.filter(system_object=True), "plan": Plan.objects.filter(system_object=True),
             "plugin": [p for p in Plugin.objects.all() if installer.as_page_object(p)],
-            "plugin_item": [(p, i) for p in Plugin.objects.all() for i in (installer.content_items(p) or []) if i["object"] and not i["problem"] and p.manifest.get("web")]}
+            "plugin_item": [(p, i) for p in Plugin.objects.all() for i in (installer.content_items(p) or []) if i["object"] and not i["problem"] and p.manifest.get("web")],
+            "plugin_part": [(p, x) for p in Plugin.objects.all() for x in (p.manifest.get("parts") or [])]}  # parts of a plugin (product overview, cart ...) to move around on a page
 
 
 def sync():
@@ -25,7 +26,10 @@ def sync():
     keep = set()
     for kind, qs in sources().items():
         for src in qs:
-            if kind == "plugin_item":  # a part of a plugin: (plugin, item)
+            if kind == "plugin_part":  # a block of a plugin page: (plugin, part)
+                plug, part = src
+                obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=plug.pk, ref_key=part["key"], defaults={"slug": f"plugin-{plug.name}-{part['key']}"[:80]})
+            elif kind == "plugin_item":  # a part of a plugin: (plugin, item)
                 plug, item = src
                 obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=plug.pk, ref_key=item["name"], defaults={"slug": f"plugin-{plug.name}-{item['name']}"[:80]})
             else:
@@ -37,7 +41,7 @@ def sync():
 def source_of(obj):
     from apps.subscriptions.models import DonationCampaign, Plan
 
-    if obj.kind in ("plugin", "plugin_item"):
+    if obj.kind in ("plugin", "plugin_item", "plugin_part"):
         from apps.plugins.models import Plugin
 
         return Plugin.objects.filter(pk=obj.ref_id).first()

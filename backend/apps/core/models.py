@@ -66,6 +66,13 @@ class UserShortcuts(models.Model):
     items = models.JSONField(default=list)
 
 
+class UserPrefs(models.Model):
+    """The settings of a person that follow them to every computer: which blocks are open, tiles or list, menu or tiles, light or dark, language, ... {"collapse:admin-pages": "1", ...}."""
+
+    user = models.OneToOneField("accounts.User", on_delete=models.CASCADE, related_name="prefs")
+    data = models.JSONField(default=dict)
+
+
 class ModuleState(models.Model):
     """Switch for a module (see apps/core/modules.py). No row = default (on)."""
 

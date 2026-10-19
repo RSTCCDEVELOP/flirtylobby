@@ -15,6 +15,19 @@ async function getConfig() {
   return cfgCache.v;
 }
 
+// the addresses of the standard pages in every language lead to the one page: /subscriptions, /abos ... -> /abonnementen
+let aliasCache = { t: 0, v: {} };
+async function getAliases() {
+  if (Date.now() - aliasCache.t < 15000) return aliasCache.v;
+  try {
+    const res = await fetch(`${API}/api/pages/aliases/`, { cache: "no-store" });
+    aliasCache = { t: Date.now(), v: res.ok ? (await res.json()).aliases || {} : {} };
+  } catch {
+    aliasCache = { t: Date.now(), v: {} };
+  }
+  return aliasCache.v;
+}
+
 let siteCache = { t: 0, v: null };
 async function getSite() {
   if (Date.now() - siteCache.t < 10000) return siteCache.v;
@@ -56,6 +69,9 @@ export async function middleware(req) {
   // maintenance mode: every page of the website becomes the maintenance page (503); only the login and the dashboard (administrators) stay reachable
   const open = pathname === "/login" || pathname.startsWith("/dashboard") || pathname.startsWith("/onderhoud") || /^\/(robots\.txt|sw\.js|manifest\.webmanifest|build-id)$/.test(pathname);
   if (site?.maintenance && !open && !req.cookies.get("maint_ok")) return NextResponse.rewrite(new URL("/onderhoud", req.url), { status: 503, headers: { "Retry-After": "3600" } });
+
+  const alias = (await getAliases())[pathname.replace(/\/+$/, "") || "/"];
+  if (alias && alias !== pathname && !pathname.startsWith("/dashboard")) return NextResponse.rewrite(new URL(`${alias}${req.nextUrl.search}`, req.url));
 
   const adminArea = pathname.startsWith("/dashboard") || pathname === "/login";
   if (cfg?.geo?.enabled && !pathname.startsWith("/geo-blocked") && !(cfg.geo.admin_bypass && adminArea)) {

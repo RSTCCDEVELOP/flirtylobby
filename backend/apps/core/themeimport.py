@@ -283,7 +283,7 @@ def _complete(values):
 
 
 def _schema_for_ai():
-    skip = {"brand_logo", "remember_collapse", "sidebar_auto", "version_notice", "device_mobile", "device_tablet", "device_desktop", "device_app"}
+    skip = {"brand_logo", "remember_collapse", "sidebar_auto", "nav_default", "version_notice", "device_mobile", "device_tablet", "device_desktop", "device_app"}
     out = []
     for g in T.SCHEMA:
         for f in g["fields"]:

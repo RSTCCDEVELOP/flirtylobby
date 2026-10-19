@@ -7,7 +7,10 @@ import GrantsEditor from "../../../../components/GrantsEditor";
 import MediaPicker from "../../../../components/MediaPicker";
 import { useModule } from "../../../../components/Modules";
 import SysButton, { BUTTON_ICONS } from "../../../../components/SysButton";
+import { PlaceControls, placeStyle } from "../../../../components/ImagePlace";
+import { PagesPanel } from "../../../../components/PluginPages";
 import Tabs from "../../../../components/Tabs";
+import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { useView } from "../../../../lib/useView";
@@ -18,10 +21,17 @@ import { lvl } from "../../../../lib/perms";
 const BTN = { as_button: false, labels: {}, icon: "heart", variant: "primary", size: "md", radius: "default", color: "" };
 const blank = { names: {}, descriptions: {}, recipients: {}, button: BTN, system_object: false, actions: [], info: { titles: {}, texts: {}, media: null }, thanks: { titles: {}, texts: {}, media: null }, min_amount: "2", max_amount: "100", step: "1", default_amount: "10", goal: "", allow_message: true, allow_anonymous: true, grants: [], grant_days: 30, min_for_grants: "0", active: true, order: 0 };
 
+// the website page where visitors donate (made of blocks, with a hero) and the screens that belong to it
+const PAGES = [{ key: "donations", title: "Doneren", path: "/doneren", description: "Waar bezoekers een bedrag kiezen: openingstekst, uitleg en de donatie-acties." }];
+const LINKS = [
+  { href: "/dashboard/mijn-donaties", title: "Mijn donaties (voor leden)", description: "De pagina waar een lid zijn eigen donaties ziet." },
+  { href: "/dashboard/admin/orders", title: "Orders", description: "Bestellingen en betalingen." },
+];
+
 export default function DonationsAdmin() {
   const { user } = useAuth();
   const L = lvl(user, "donations");
-  const [tab, setTab] = useState("campaigns");
+  const [tab, setTab] = useState("pages");
   const [camps, setCamps] = useState([]);
   const [rec, setRec] = useState(null);
   const [opts, setOpts] = useState(null);
@@ -34,8 +44,6 @@ export default function DonationsAdmin() {
   const [sec, setSec] = useState("settings"); // tab of the form: settings | info | thanks
   const [picker, setPicker] = useState(null); // "info" | "thanks" while the media picker is open
   const [aiText, setAiText] = useState("");
-  const [gates, setGates] = useState(null);
-  useEffect(() => { api("/subscriptions/admin/settings/").then(setGates).catch(() => {}); }, []);
   const sysOn = useModule("sysobjects");
   const view = useView("donation-campaigns");
   useEffect(() => { api("/languages/").then((d) => { setLangs(d); setLang(d.default || d.languages[0]?.code || "nl"); }).catch(() => {}); }, []);
@@ -111,11 +119,14 @@ export default function DonationsAdmin() {
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
       {rec && <div className="sub-stats"><div className="card"><span className="muted">{tx("Totaal ontvangen")}</span><strong>{money(rec.total, cur)}</strong></div><div className="card"><span className="muted">{tx("Aantal donaties")}</span><strong>{rec.count}</strong></div></div>}
-      <Tabs value={tab} onChange={setTab} tabs={[["campaigns", "Donatie-acties", null, camps.length], ["received", "Ontvangen"], ["access", "Toegang"]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["pages", "Pagina's"], ["campaigns", "Donatie-acties", null, camps.length], ["received", "Ontvangen"]]} />
+
+      {tab === "pages" && <PagesPanel items={PAGES} links={LINKS} />}
 
       {tab === "campaigns" && (
         <>
         <ViewBar view={view} count={`${camps.length}`} placeholder={tx("Zoek een actie…")} />
+        <Paged id="donation-campaigns" query={view.q}>
         <div className={`sub-plans${view.cls}`}>
           {camps.filter((c) => view.match(c.name, c.description, Object.values(c.names || {}).join(" "), c.recipient)).map((c) => (
             <div className={`card sub-plan${c.active ? "" : " off"}`} key={c.id}>
@@ -136,20 +147,8 @@ export default function DonationsAdmin() {
           ))}
           {!camps.length && <p className="muted">{tx("Nog geen acties. Maak je eerste donatie-actie.")}</p>}
         </div>
+        </Paged>
         </>
-      )}
-
-      {tab === "access" && gates && (
-        <div className="card form">
-          <h3 style={{ margin: 0 }}>{tx("Wat vraagt toegang?")}</h3>
-          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Standaard is alles gratis. Zet een onderdeel aan om het alleen open te stellen voor wie een abonnement of een actie van een donatie heeft. De acties die je bij een donatie-actie instelt (tabblad Acties) geven die toegang.")} <a href="/dashboard/admin/actions">{tx("Alle onderdelen en voorwaarden beheer je bij Actions.")}</a></p>
-          {[["site", "De hele website"], ["chat", "Chat"], ["chat_media", "Foto's en video's in de chat"], ["video_chat", "Videochat"], ["likes", "Likes per dag"]].map(([k, l]) => (
-            <label className="check sec-toggle" key={k}>
-              <input type="checkbox" checked={!!gates.gates[k]} disabled={L < 3} onChange={async (e) => { try { setGates(await api("/subscriptions/admin/settings/", { method: "PUT", body: { gates: { [k]: e.target.checked } } })); } catch (er) { setMsg({ ok: false, text: errorText(er) }); } }} />
-              <span><strong>{tx(l)}</strong></span>
-            </label>
-          ))}
-        </div>
       )}
 
       {tab === "received" && rec && (
@@ -184,8 +183,8 @@ export default function DonationsAdmin() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save}>
             <h2>{modal.id ? tx("Actie wijzigen") : tx("Nieuwe donatie-actie")}</h2>
-            <Tabs value={sec} onChange={setSec} tabs={[["settings", "Instellingen"], ["info", "Popup info"], ["thanks", "Bedankt popup"], ["actions", "Acties", null, modal.actions?.length || null]]} />
-            {sec !== "actions" && <Tabs className="lang-tabs" value={lang} onChange={setLang} tabs={langs.languages.map((l) => [l.code, l.native_name || l.code, null, modal.names[l.code] ? "✓" : null])} />}
+            <Tabs value={sec} onChange={setSec} tabs={[["settings", "Instellingen"], ["info", "Popup info"], ["thanks", "Bedankt popup"]]} />
+            <Tabs className="lang-tabs" value={lang} onChange={setLang} tabs={langs.languages.map((l) => [l.code, l.native_name || l.code, null, modal.names[l.code] ? "✓" : null])} />
             {sec === "settings" && (
               <>
             <div className="form-grid">
@@ -249,37 +248,6 @@ export default function DonationsAdmin() {
             </div>
               </>
             )}
-            {sec === "actions" && (
-              <div className="pop-edit">
-                <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Wat de donateur nu mag gebruiken omdat hij gedoneerd heeft. Kies per actie vanaf welk bedrag, wanneer het geldt en hoe vaak. Alleen voor donateurs met een account. Deze instellingen gelden voor alle talen.")}</p>
-                {modal.actions.map((a, i) => {
-                  const sp = opts.grant_types.find((x) => x.type === a.type);
-                  const upd = (patch) => setModal((m) => ({ ...m, actions: m.actions.map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
-                  return (
-                    <div className="card action-row" key={i}>
-                      <div className="grant-row">
-                        <select value={a.type} onChange={(e) => upd({ type: e.target.value, ref: "", value: 0 })}>{opts.grant_types.map((g) => <option key={g.type} value={g.type}>{tx(g.label)}</option>)}</select>
-                        {sp?.ref === "page" && <select value={a.ref || ""} onChange={(e) => upd({ ref: e.target.value })}><option value="">{tx("Kies een pagina…")}</option>{opts.pages.map((p) => <option key={p.key} value={p.key}>{p.title}</option>)}</select>}
-                        {sp?.ref === "product" && <select value={a.ref || ""} onChange={(e) => upd({ ref: e.target.value })}><option value="">{tx("Kies een product…")}</option>{opts.products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>}
-                        {sp?.ref === "text" && <input value={a.ref || ""} maxLength={80} placeholder={tx("bv. cursus-1")} onChange={(e) => upd({ ref: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })} />}
-                        {sp?.value && <input type="number" min={0} value={a.value ?? 0} placeholder={tx("0 = onbeperkt")} title={tx("0 = onbeperkt")} onChange={(e) => upd({ value: e.target.value })} />}
-                        {!sp?.ref && !sp?.value && <span className="muted grant-help">{tx(sp?.help || "")}</span>}
-                        <button type="button" className="btn sm danger" onClick={() => setModal((m) => ({ ...m, actions: m.actions.filter((_, j) => j !== i) }))}>{tx("Weg")}</button>
-                      </div>
-                      <div className="form-grid">
-                        <label>{tx("Geldt vanaf (datum en tijd)")}<input type="datetime-local" value={a.from || ""} onChange={(e) => upd({ from: e.target.value })} /></label>
-                        <label>{tx("Deadline (datum en tijd)")}<input type="datetime-local" value={a.until || ""} onChange={(e) => upd({ until: e.target.value })} /></label>
-                        <label>{tx("Hoe vaak te gebruiken (0 = zo lang de actie geldt)")}<input type="number" min={0} value={a.uses ?? 0} onChange={(e) => upd({ uses: e.target.value })} /></label>
-                        <label>{tx("Vanaf bedrag")}<input type="number" min={0} step="0.01" value={a.min_amount ?? 0} onChange={(e) => upd({ min_amount: e.target.value })} /></label>
-                      </div>
-                      <label className="check sec-toggle"><input type="checkbox" checked={!!a.session_only} onChange={(e) => upd({ session_only: e.target.checked })} /><span><strong>{tx("Alleen deze sessie")}</strong><br /><small className="muted">{tx("Geldt alleen zolang de donateur ingelogd blijft; na uitloggen is de actie voorbij.")}</small></span></label>
-                    </div>
-                  );
-                })}
-                {!modal.actions.length && <p className="muted" style={{ margin: 0 }}>{tx("Nog geen acties voor donateurs.")}</p>}
-                <div><button type="button" className="btn sm" onClick={() => setModal((m) => ({ ...m, actions: [...m.actions, { type: "chat", ref: "", value: 0, from: "", until: "", uses: 0, session_only: false, min_amount: "0" }] }))}>{tx("+ Actie toevoegen")}</button></div>
-              </div>
-            )}
             {["info", "thanks"].includes(sec) && (
               <div className="pop-edit">
                 <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{sec === "info" ? tx("Dit venster verschijnt als iemand op de knop klikt, boven de schuifbalk: leg uit waarvoor de donatie is.") : tx("Dit venster verschijnt nadat iemand heeft gedoneerd.")}</p>
@@ -291,16 +259,25 @@ export default function DonationsAdmin() {
                 </div>
                 <div className="pop-image">
                   <strong style={{ fontSize: ".9rem" }}>{tx("Afbeelding")}</strong>
-                  {modal[sec].image_url && <img src={mediaUrl(modal[sec].image_url)} alt="" />}
-                  <div className="sub-actions">
-                    <button type="button" className="btn sm" onClick={() => setPicker(sec)}>{tx("Media")}</button>
-                    {modal[sec].media && <button type="button" className="btn sm danger" onClick={() => setModal((m) => ({ ...m, [sec]: { ...m[sec], media: null, image_url: null } }))}>{tx("Verwijderen")}</button>}
+                  <div className="pop-image-cols">
+                    <div className="pop-image-left">
+                      {modal[sec].image_url ? <img src={mediaUrl(modal[sec].image_url)} alt="" style={{ maxHeight: 160, width: "auto", maxWidth: "100%" }} /> : <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Nog geen afbeelding.")}</span>}
+                      <div className="sub-actions">
+                        <button type="button" className="btn sm" onClick={() => setPicker(sec)}>{tx("Media")}</button>
+                        {modal[sec].media && <button type="button" className="btn sm danger" onClick={() => setModal((m) => ({ ...m, [sec]: { ...m[sec], media: null, image_url: null } }))}>{tx("Verwijderen")}</button>}
+                      </div>
+                    </div>
+                    <div className="pop-image-right">
+                      <small className="muted">{tx("Uitlijning en grootte in het venster")}</small>
+                      <PlaceControls value={modal[sec].placement} disabled={!modal[sec].image_url} onChange={(v) => setModal((m) => ({ ...m, [sec]: { ...m[sec], placement: v } }))} />
+                      {!modal[sec].image_url && <small className="muted">{tx("Kies eerst een afbeelding.")}</small>}
+                    </div>
                   </div>
                 </div>
                 <div className="sys-demo pop-preview">
                   <small className="muted">{tx("Voorbeeld")} · {langs.languages.find((l) => l.code === lang)?.native_name || lang}</small>
                   <div className="card pop-card">
-                    {modal[sec].image_url && <img src={mediaUrl(modal[sec].image_url)} alt="" />}
+                    {modal[sec].image_url && <img src={mediaUrl(modal[sec].image_url)} alt="" style={placeStyle(modal[sec].placement)} />}
                     <h3 style={{ margin: 0 }}>{modal[sec].titles?.[lang] || (sec === "info" ? tx("Titel van het venster") : tx("Bedankt!"))}</h3>
                     <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{modal[sec].texts?.[lang] || tx("De tekst komt hier.")}</p>
                     {sec === "info" && <div className="don-amount" style={{ fontSize: "1.4rem" }}>€ {Number(modal.default_amount || 0).toFixed(2)}</div>}
@@ -313,7 +290,7 @@ export default function DonationsAdmin() {
               <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>
               <button className="btn primary">{tx("Opslaan")}</button>
             </div>
-            {picker && <MediaPicker onPick={(it) => { setModal((m) => ({ ...m, [picker]: { ...m[picker], media: it.id, image_url: it.url } })); setPicker(null); }} onClose={() => setPicker(null)} />}
+            {picker && <MediaPicker onPick={(it) => { setModal((m) => ({ ...m, [picker]: { ...m[picker], media: it.id, image_url: it.url, placement: m[picker].placement || "center:full" } })); setPicker(null); }} onClose={() => setPicker(null)} />}
           </form>
         </div>
       )}

@@ -6,7 +6,7 @@ import Collapsible from "../../../../components/Collapsible";
 import { IconGrid, IconRefresh, IconSettings } from "../../../../components/Icons";
 import SaveStatus from "../../../../components/SaveStatus";
 import Tabs from "../../../../components/Tabs";
-import { api, apiBase, errorText, getToken } from "../../../../lib/api";
+import { api, apiBase, downloadFile, errorText, getToken } from "../../../../lib/api";
 import { useAutoSave } from "../../../../lib/autosave";
 import { PluginConfig, PluginTabs, PluginWarnings, SECTION_LABEL } from "../../../../components/PluginParts";
 import { confirmDialog } from "../../../../lib/dialog";
@@ -96,6 +96,7 @@ export default function PluginsPage() {
               <div className="row" style={{ justifyContent: "flex-start" }}>
                 <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Beheerpagina")}</a>
                 {p.enabled && p.has_web && p.menu && <a className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</a>}
+                {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg({ ok: false, text: errorText(e) }))}>{tx("Downloaden (zip)")}</button>}
                 <button type="button" className="btn danger" onClick={() => remove(p)}>{tx("Verwijderen")}</button>
               </div>
             </Collapsible>

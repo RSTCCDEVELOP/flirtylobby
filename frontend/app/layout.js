@@ -4,6 +4,8 @@ import { BrandingProvider } from "../components/BrandingContext";
 import Gates from "../components/Gates";
 import { ContentProvider, EditBanner } from "../components/EditMode";
 import { SessionProvider } from "../components/Session";
+import PrefsSync from "../components/PrefsSync";
+import SlugSync from "../components/SlugSync";
 import { ModulesProvider } from "../components/Modules";
 import { UiProvider } from "../components/Ui";
 import { ChatProvider, ChatWidget } from "../components/Chat";
@@ -135,6 +137,8 @@ export default async function RootLayout({ children }) {
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>
         <SessionProvider>
+        <PrefsSync />
+        <SlugSync />
         <ChatProvider>
         <MenuProvider value={menu}>
         <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>

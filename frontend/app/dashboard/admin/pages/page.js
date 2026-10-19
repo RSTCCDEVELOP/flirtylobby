@@ -8,6 +8,7 @@ import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { useModules } from "../../../../components/Modules";
 import Tabs from "../../../../components/Tabs";
 import { useSession } from "../../../../components/Session";
+import PagePreview from "../../../../components/PagePreview";
 import PageSettingsModal from "../../../../components/PageSettingsModal";
 import { menuLabel } from "../../../../components/SiteMenu";
 import { IconUser } from "../../../../components/Icons";
@@ -19,6 +20,9 @@ import { api, errorText } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { lvl } from "../../../../lib/perms";
 
+// the pages whose blocks can be looked at and edited right here: own pages, and the standard pages that have blocks
+const WITH_BLOCKS = { members: "members", products: "products", subscriptions: "subscriptions", donations: "donations", "plugin-games": "games", cart: "cart", checkout: "checkout", product: "product", community: "community", search: "search", payment: "payment" };
+const blocksKey = (p) => (p.kind === "content" ? p.key : WITH_BLOCKS[p.key] || null);
 const KIND = { system: "Systeempagina", content: "Eigen pagina", link: "Link" };
 const AUDIENCE = { all: "Iedereen", members: "Alleen ingelogde users", guests: "Alleen bezoekers (niet ingelogd)" };
 const EMPTY = { kind: "content", title: {}, url: "", audience: "all", new_tab: false, in_menu: true };
@@ -36,6 +40,7 @@ export default function PagesAdmin() {
   const mods = useModules();
   const router = useRouter();
   const [settings, setSettings] = useState(null); // page whose settings pop-up is open
+  const [view, setView] = useState(null); // the page shown (and edited) in this screen: {url, title, edit}
   const { canEdit, setEditMode } = useSession();
   // open the page with edit mode switched on, so the texts can be changed right there
   const editPage = (p) => { setEditMode(true); router.push(p.path); };
@@ -108,6 +113,7 @@ export default function PagesAdmin() {
       <Tabs value={scope} onChange={(v) => { setPages(null); setScope(v); }} tabs={[["public", "Openbaar"], ["private", "Privé"]]} />
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
+      {view && <PagePreview key={`${view.key}-${view.edit}`} pageKey={view.key} path={view.url} withTitle={view.withTitle} title={view.title} startEdit={view.edit} onClose={() => setView(null)} />}
       <Collapsible id={`pages-overview-${scope}`} title={priv ? tx("Overzicht van de privé pagina's") : tx("Overzicht van de pagina's")}>
         <ViewBar view={tv} />
         <TableView view={tv}>
@@ -124,8 +130,9 @@ export default function PagesAdmin() {
                     <td><Sw checked={p.enabled} disabled={L < 2 || p.locked} onChange={(v) => patch(p, { enabled: v })} /></td>
                     <td><Sw checked={p.in_menu} disabled={L < 2} onChange={(v) => patch(p, { in_menu: v })} /></td>
                     <td className="actions">
+                      {blocksKey(p) && <button className="btn sm" onClick={() => { setView({ key: blocksKey(p), url: p.path, title: label(p), withTitle: p.kind === "content", edit: false }); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{tx("Bekijken")}</button>}
+                      {blocksKey(p) && canEdit && <button className="btn sm primary" onClick={() => { setView({ key: blocksKey(p), url: p.path, title: label(p), withTitle: p.kind === "content", edit: true }); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{tx("Bewerken")}</button>}
                       <a className="btn sm" href={p.path} {...(priv ? {} : { target: "_blank", rel: "noreferrer" })}>{tx("Openen")}</a>
-                      {p.editable && canEdit && <button className="btn sm" onClick={() => editPage(p)}>{tx("Bewerk pagina")}</button>}
                       {L >= 2 && <button className="btn sm" onClick={() => setSettings(p)}>{tx("Instellingen")}</button>}
                       {L >= 3 && p.kind !== "system" && <button className="btn sm danger" onClick={() => remove(p)}>{tx("Verwijder")}</button>}
                     </td>

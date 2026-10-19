@@ -145,7 +145,7 @@ def out(man, enabled, builtin):
             "assets": sorted(man.get("assets", {})), "home_count": len(man.get("home", []))}
 
 
-KEEP = ("remember_collapse", "sidebar_auto", "version_notice", "device_mobile", "device_tablet", "device_desktop", "device_app")  # interface behaviour: a theme changes the look only
+KEEP = ("remember_collapse", "sidebar_auto", "nav_default", "version_notice", "device_mobile", "device_tablet", "device_desktop", "device_app")  # interface behaviour: a theme changes the look only
 
 
 def manifest_of(key):

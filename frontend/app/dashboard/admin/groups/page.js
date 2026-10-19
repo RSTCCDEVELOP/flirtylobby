@@ -146,7 +146,7 @@ export default function Groups() {
 
             <div>
               <strong style={{ fontSize: ".85rem" }}>{tx("Leden (")}{modal.members.length})</strong>
-              <input style={{ margin: ".4rem 0" }} placeholder={tx("Zoek een user…")} value={q} onChange={(e) => setQ(e.target.value)} />
+              <input type="search" style={{ margin: ".4rem 0" }} placeholder={tx("Zoek een user…")} value={q} onChange={(e) => setQ(e.target.value)} />
               <div className="member-pick">
                 {shownUsers.map((u) => (
                   <label className="check" key={u.id}>

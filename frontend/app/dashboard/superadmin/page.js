@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
 import SettingsBackup from "../../../components/SettingsBackup";
+import SystemReset from "../../../components/SystemReset";
 
 export default function SuperAdminHome() {
   return (
@@ -22,6 +23,9 @@ export default function SuperAdminHome() {
       </Collapsible>
       <Collapsible id="super-backup" title={tx("Instellingen back-up")}>
         <SettingsBackup />
+      </Collapsible>
+      <Collapsible id="super-reset" title={tx("Systeem resetten")}>
+        <SystemReset />
       </Collapsible>
       <Collapsible id="super-all" title={tx("Alle beheeronderdelen")}>
         <AdminTiles all />

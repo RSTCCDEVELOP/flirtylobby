@@ -2,7 +2,7 @@ import logging
 
 from django.db import connection
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
@@ -281,6 +281,23 @@ def system_settings(request):
         system.save(cleaned)
     return Response({"settings": system.get(), "checks": system.checks(request), "env": system.env_files(), "environments": system.ENVIRONMENTS,
                      "request_origin": f"{request.scheme}://{request.get_host()}"})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def system_reset(request):
+    """Back to a clean system (see apps/core/reset.py). Superadmins only. GET: what would go. POST {confirm: "RESET", password}: do it."""
+    from . import reset
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins mogen het systeem resetten."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "GET":
+        return Response(reset.summary())
+    if str(request.data.get("confirm", "")).strip() != "RESET":
+        return Response({"detail": "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
+    if not request.user.check_password(str(request.data.get("password", ""))):
+        return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"removed": reset.perform(request.user)})
 
 
 @api_view(["POST"])

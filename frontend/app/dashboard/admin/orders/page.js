@@ -4,6 +4,7 @@ import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
+import DashHero from "../../../../components/DashHero";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
@@ -48,18 +49,13 @@ export default function Orders() {
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>{tx("Orders")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{tx("Bestellingen uit de webshop (")}{open} {tx("wachten op actie). De producten, verzendmethoden en kortingscodes beheer je in de plugin Webshop.")}</p>
-        </div>
-        <CollapseAll />
-      </div>
+      <DashHero title="Orders" text={`${tx("Bestellingen uit de webshop (")}${open} ${tx("wachten op actie). De producten, verzendmethoden en kortingscodes beheer je in de plugin Webshop.")}`} actions={[{ href: "/dashboard/admin/plugins/webshop", label: "Webshop" }]} />
+      <div className="row" style={{ justifyContent: "flex-end", marginBottom: ".6rem" }}><CollapseAll /></div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       <Collapsible id="shop-orders" title={tx("Bestellingen ({0})", orders.length)}>
         <div className="row" style={{ justifyContent: "flex-start", marginBottom: ".75rem" }}>
-          <input style={{ maxWidth: 260 }} placeholder={tx("Zoek op nummer, naam of e-mail…")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
+          <input type="search" style={{ maxWidth: 260 }} placeholder={tx("Zoek op nummer, naam of e-mail…")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
           <select style={{ width: "auto" }} value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
             <option value="">{tx("Alle statussen")}</option>
             {Object.entries(ORDER_STATUS).map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}
@@ -91,32 +87,7 @@ export default function Orders() {
         </TableView>
       </Collapsible>
 
-      <Collapsible id="shop-vat" title={tx("Btw en betalen")}>
-        {cfg && (
-          <>
-            <label className="check sec-toggle">
-              <span className="switch"><input type="checkbox" checked={cfg.prices_include_vat} disabled={L < 2} onChange={(e) => saveCfg({ prices_include_vat: e.target.checked })} /><span /></span>
-              <span>{tx("Ingevoerde prijzen zijn inclusief btw")}<small className="muted"> {tx("Uit = prijzen zijn exclusief btw en de btw komt er bij het afrekenen bovenop.")}</small></span>
-            </label>
-            <div className="theme-grid" style={{ marginTop: ".75rem" }}>
-              <label>{tx("Standaard btw-percentage")}
-                <select value={cfg.default_vat} disabled={L < 2} onChange={(e) => saveCfg({ default_vat: e.target.value })}>{cfg.vat_rates.map((r) => <option key={r} value={r}>{r}%</option>)}</select>
-              </label>
-              <label>{tx("Beschikbare percentages")} <small className="muted">{tx("gescheiden door komma's")}</small>
-                <input defaultValue={cfg.vat_rates.join(", ")} disabled={L < 2} onBlur={(e) => saveCfg({ vat_rates: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} />
-              </label>
-              <label>{tx("Btw op verzendkosten")}
-                <select value={cfg.shipping_vat} disabled={L < 2} onChange={(e) => saveCfg({ shipping_vat: e.target.value })}>{cfg.vat_rates.map((r) => <option key={r} value={r}>{r}%</option>)}</select>
-              </label>
-            </div>
-            <p className="muted" style={{ fontSize: ".85rem" }}>{tx("Per product kies je een eigen percentage; leeg = standaard. De btw staat per regel op de order.")}</p>
-            <label className="check sec-toggle" style={{ marginTop: ".5rem" }}>
-              <span className="switch"><input type="checkbox" checked={cfg.pay_online} disabled={L < 2} onChange={(e) => saveCfg({ pay_online: e.target.checked })} /><span /></span>
-              <span>{tx("Online betalen bij het afrekenen")}<small className="muted"> {tx("Uit = bestelling plaatsen en achteraf betalen per factuur. Aan werkt nu alleen met de sandbox (gesimuleerde betaling).")}</small></span>
-            </label>
-          </>
-        )}
-      </Collapsible>
+      <p className="muted" style={{ fontSize: ".85rem" }}>{tx("Btw en betalen stel je in bij")} <a href="/dashboard/admin/plugins/webshop">{tx("Webshop")}</a>.</p>
 
 
 

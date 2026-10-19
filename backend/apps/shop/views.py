@@ -3,7 +3,7 @@ import logging
 from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.permissions import has_level_for
@@ -54,6 +54,15 @@ def settings_admin(request):
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response(service.settings())
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, module_required("orders")])
+def my_orders(request):
+    """The member's own orders (webshop, subscriptions and donations that made an order), newest first, with the link to follow each one."""
+    rows = Order.objects.filter(user=request.user).order_by("-id")[:100]
+    return Response([{"number": o.number, "token": o.token, "status": o.status, "status_label": o.get_status_display(), "kind": o.kind, "total": str(o.total), "currency": o.currency,
+                      "created_at": o.created_at} for o in rows])
 
 
 @api_view(["GET"])

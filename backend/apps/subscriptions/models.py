@@ -145,6 +145,7 @@ class ActionItem(models.Model):
     mode = models.CharField(max_length=3, default="any")  # any = one condition is enough, all = every condition
     share = models.BooleanField(default=False)  # also valid for the other party the member is chatting / connected with (not only for the member himself)
     conditions = models.JSONField(default=list, blank=True)  # [{"type": …, params}]; empty = the default: a subscription or donor action that gives this item
+    rule = models.JSONField(default=dict, blank=True)  # "Geldig tot": what a donor gets when a donation gives this item: {valid_for, from, until, uses, session_only, min_amount}
     order = models.PositiveIntegerField(default=0)
 
     class Meta:

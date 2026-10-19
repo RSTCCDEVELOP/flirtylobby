@@ -61,12 +61,17 @@ ANIMS = [
 
 LOGOS = [
     {"value": "custom", "label": "Eigen logo (Logo's & beeld)", "css": ""},
+    {"value": "easy2edit", "label": "Easy2edit-logo", "css": ""},
     {"value": "rstcc", "label": "RSTCC-logo", "css": ""},
     {"value": "studio2", "label": "Studio2-logo", "css": ""},
 ]
 
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
 
+NAV_DEFAULT = [
+    {"value": "tiles", "label": "Tegels: per menugroep een pagina met tegels", "css": ""},
+    {"value": "menu", "label": "Menu: de pagina's staan in het menu links", "css": ""},
+]
 SIDEBAR_AUTO = [
     {"value": "never", "label": "Nooit: alleen zelf in- en uitklappen", "css": ""},
     {"value": "after_click", "label": "Na het kiezen van een pagina", "css": ""},
@@ -167,6 +172,7 @@ SCHEMA = [
     ]},
     {"key": "defaults", "label": "Standaardinstellingen", "fields": [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
+        choice("nav_default", "Hoe werkt het linker menu (standaard; iedereen kan zelf wisselen)", "tiles", None, NAV_DEFAULT),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
         choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
     ]},
@@ -186,8 +192,8 @@ SCHEMA = [
         number("content_w", "Breedte van de inhoud van pagina's", 1100, "--content-w", "px", 720, 1600, 20),
     ]},
     {"key": "brand", "label": "Merkkleuren", "fields": [
-        color("primary", "Primaire kleur (knoppen, links, actief menu)", "#1b97d3", "--blue"),
-        color("secondary", "Secundaire kleur (avatar, accenten)", "#f08a35", "--orange"),
+        color("primary", "Primaire kleur (knoppen, links, actief menu)", "#f2823f", "--blue"),
+        color("secondary", "Secundaire kleur (avatar, accenten)", "#939497", "--orange"),
         color("gender_m", "Kleur voor mannen", "#3b82f6", "--g-m"),
         color("gender_f", "Kleur voor vrouwen", "#ec4899", "--g-f"),
         color("gender_x", "Kleur voor overig", "#eab308", "--g-x"),
@@ -223,7 +229,7 @@ SCHEMA = [
         choice("default_mode", "Start in (voor bezoekers die zelf nog niets gekozen hebben)", "system", None, MODES),
     ]},
     {"key": "logo", "label": "Logo bij dit thema", "fields": [
-        choice("brand_logo", "Logo (header, login, homepage, favicon)", "custom", None, LOGOS),
+        choice("brand_logo", "Logo (header, login, homepage, favicon)", "easy2edit", None, LOGOS),
     ]},
     {"key": "light", "label": "Kleuren: lichte modus", "fields": _mode_colors(
         "light", "light", ["#ffffff", "#f4f6fa", "#ffffff", "#f9fafc", "#e5e8ef", "#1f2937", "#6b7280"])},
@@ -343,7 +349,8 @@ def _neutrals(hue, tint):
 # Only the two house styles live in the system. All other themes are theme packages (<root>/themes/<key>/theme.json)
 # that are switched on or off in Admin -> Themapakketten (see themepacks.py).
 PRESET_DEFS = [
-    {"key": "standaard", "name": "RSTCC", "description": "De oorspronkelijke stijl met het RSTCC-logo.", "overrides": {"brand_logo": "rstcc"}, "builtin": True},
+    {"key": "easy2edit", "name": "Easy2edit", "description": "Het standaardthema van Easy2edit: oranje en grijs, met het Easy2edit-logo.", "overrides": {"brand_logo": "easy2edit", "primary": "#f2823f", "secondary": "#939497"}, "builtin": True},
+    {"key": "standaard", "name": "RSTCC", "description": "De oorspronkelijke stijl met het RSTCC-logo.", "overrides": {"brand_logo": "rstcc", "primary": "#1b97d3", "secondary": "#f08a35"}, "builtin": True},
 ]
 
 

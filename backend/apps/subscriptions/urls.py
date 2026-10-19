@@ -24,6 +24,7 @@ urlpatterns = [
     path("subscriptions/me/", views.me),
     path("subscriptions/me/<int:pk>/<str:act>/", views.me_action),
     path("subscriptions/access/", views.access),
+    path("donations/mine/", views.my_donations),
     path("donations/campaigns/", views.campaigns_public),
     path("donations/donate/", views.donate),
 ] + router.urls

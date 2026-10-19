@@ -3,9 +3,10 @@
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
-import GrantsEditor from "../../../../components/GrantsEditor";
 import { useModule } from "../../../../components/Modules";
+import { PagesPanel } from "../../../../components/PluginPages";
 import Tabs from "../../../../components/Tabs";
+import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { api, errorText } from "../../../../lib/api";
 import { useView } from "../../../../lib/useView";
@@ -14,19 +15,19 @@ import { money } from "../../../../lib/format";
 import { lvl } from "../../../../lib/perms";
 
 const STATUS_BADGE = { pending: "off", trial: "ok", active: "ok", past_due: "off", canceled: "off", expired: "off" };
-const GATES = [
-  ["site", "De hele website", "Zonder abonnement kom je alleen op de inlog- en abonnementspagina's."],
-  ["chat", "Chat", "Alleen leden met een abonnement kunnen berichten sturen in de chat."],
-  ["chat_media", "Foto's en video's in de chat", "Delen van foto's en video's vraagt een abonnement."],
-  ["video_chat", "Videochat", "Videobellen via de chat en de directe verbinding vraagt een abonnement."],
-  ["likes", "Likes per dag", "Zonder abonnement geldt het aantal likes hieronder; een abonnement met 'Likes per dag' geeft meer of onbeperkt."],
-];
 const blank = { system_object: false, button: {}, name: "", description: "", price: "0", vat_rate: "21", interval: "month", duration_days: 0, trial_days: 0, grants: [], highlight: false, active: true, order: 0 };
+
+// the website page where visitors choose a subscription (made of blocks, with a hero) and the screens that belong to it
+const PAGES = [{ key: "subscriptions", title: "Abonnementen", path: "/abonnementen", description: "Waar bezoekers een abonnement kiezen: openingstekst, uitleg en de abonnementen." }];
+const LINKS = [
+  { href: "/dashboard/subscriptions", title: "Mijn abonnementen (voor leden)", description: "Het dashboard van een lid: lopende abonnementen, verlengen en opzeggen." },
+  { href: "/dashboard/admin/orders", title: "Orders", description: "De orders die bij abonnementen horen." },
+];
 
 export default function SubscriptionsAdmin() {
   const { user } = useAuth();
   const L = lvl(user, "subscriptions");
-  const [tab, setTab] = useState("plans");
+  const [tab, setTab] = useState("pages");
   const [plans, setPlans] = useState([]);
   const [members, setMembers] = useState([]);
   const [opts, setOpts] = useState(null);
@@ -107,11 +108,14 @@ export default function SubscriptionsAdmin() {
           <div className="card"><span className="muted">{tx("Abonnementen te koop")}</span><strong>{stats.plans}</strong></div>
         </div>
       )}
-      <Tabs value={tab} onChange={setTab} tabs={[["plans", "Abonnementen", null, plans.length], ["members", "Abonnees"], ["settings", "Instellingen"]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["pages", "Pagina's"], ["plans", "Abonnementen", null, plans.length], ["members", "Abonnees"], ["settings", "Instellingen"]]} />
+
+      {tab === "pages" && <PagesPanel items={PAGES} links={LINKS} />}
 
       {tab === "plans" && (
         <>
         <ViewBar view={view} count={`${plans.length}`} placeholder={tx("Zoek een abonnement…")} />
+        <Paged id="subscription-plans" query={view.q}>
         <div className={`sub-plans${view.cls}`}>
           {plans.filter((p) => view.match(p.name, p.description, p.grants_text.map((g) => g.label).join(" "))).map((p) => (
             <div className={`card sub-plan${p.active ? "" : " off"}`} key={p.id}>
@@ -134,13 +138,14 @@ export default function SubscriptionsAdmin() {
           ))}
           {!plans.length && <p className="muted">{tx("Nog geen abonnementen. Maak je eerste abonnement.")}</p>}
         </div>
+        </Paged>
         </>
       )}
 
       {tab === "members" && (
         <div className="card">
           <div className="sub-filter">
-            <input placeholder={tx("Zoek op naam of e-mail")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
+            <input type="search" placeholder={tx("Zoek op naam of e-mail")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
             <select value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
               <option value="">{tx("Alle statussen")}</option>
               {["pending", "trial", "active", "past_due", "canceled", "expired"].map((s) => <option key={s} value={s}>{tx({ pending: "Wacht op betaling", trial: "Proefperiode", active: "Actief", past_due: "Betaling achterstallig", canceled: "Opgezegd (loopt af)", expired: "Verlopen" }[s])}</option>)}
@@ -171,12 +176,7 @@ export default function SubscriptionsAdmin() {
         <div className="card form">
           <h3 style={{ margin: 0 }}>{tx("Wat vraagt een abonnement?")}</h3>
           <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Standaard is alles gratis. Zet een onderdeel hier aan om het alleen open te stellen voor leden met een abonnement dat die toegang geeft. Pagina's, content en diensten koppel je bij het abonnement zelf.")} <a href="/dashboard/admin/actions">{tx("Alle onderdelen en voorwaarden beheer je bij Actions.")}</a></p>
-          {GATES.map(([k, label, help]) => (
-            <label className="check sec-toggle" key={k}>
-              <input type="checkbox" checked={!!cfg.gates[k]} disabled={L < 3} onChange={(e) => saveCfg({ gates: { [k]: e.target.checked } })} />
-              <span><strong>{tx(label)}</strong><br /><small className="muted">{tx(help)}</small></span>
-            </label>
-          ))}
+          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}><a href="/dashboard/admin/actions">{tx("Wat toegang vraagt (de hele website, chat, videochat, likes en meer) beheer je bij Actions.")}</a></p>
           <div className="grid2">
             <label>{tx("Gratis likes per dag (zonder abonnement)")}<input type="number" min={0} value={cfg.free_likes_per_day} disabled={L < 3} onChange={(e) => setCfg({ ...cfg, free_likes_per_day: e.target.value })} onBlur={(e) => saveCfg({ free_likes_per_day: e.target.value })} /></label>
             <label>{tx("Dagen respijt na een gemiste betaling")}<input type="number" min={0} max={90} value={cfg.grace_days} disabled={L < 3} onChange={(e) => setCfg({ ...cfg, grace_days: e.target.value })} onBlur={(e) => saveCfg({ grace_days: e.target.value })} /></label>
@@ -209,7 +209,11 @@ export default function SubscriptionsAdmin() {
             <label>{tx("Omschrijving")}<textarea rows={2} value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} /></label>
             <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{modal.interval === "once" ? tx("Eenmalig: er wordt één order gemaakt.") : tx("Herhaald: bij elke nieuwe periode wordt automatisch een nieuwe order gemaakt tot het lid opzegt.")}</p>
             <strong style={{ fontSize: ".9rem" }}>{tx("Wat geeft dit abonnement?")}</strong>
-            <GrantsEditor value={modal.grants} options={opts} onChange={(g) => setModal({ ...modal, grants: g })} />
+            <div className="act-links">
+              <strong style={{ fontSize: ".85rem" }}>{tx("Acties van dit abonnement")}</strong>
+              {(modal.grants_text || []).length > 0 ? <ul className="sub-grants" style={{ margin: ".3rem 0" }}>{modal.grants_text.map((g, i) => <li key={i}>{tx(g.label)}</li>)}</ul> : <small className="muted">{tx("Nog geen acties gekoppeld.")}</small>}
+              <small className="muted">{tx("Welke acties een abonnement geeft stel je in bij Actions: kies per onderdeel in welke abonnementen het zit. Een abonnement kan meerdere acties hebben.")} <a href="/dashboard/admin/actions">{tx("Naar Actions")}</a></small>
+            </div>
             <div className="row-checks">
               <label className="check"><input type="checkbox" checked={modal.active} onChange={(e) => setModal({ ...modal, active: e.target.checked })} /> {tx("Te koop")}</label>
               <label className="check"><input type="checkbox" checked={modal.highlight} onChange={(e) => setModal({ ...modal, highlight: e.target.checked })} /> {tx("Markeren als populair")}</label>

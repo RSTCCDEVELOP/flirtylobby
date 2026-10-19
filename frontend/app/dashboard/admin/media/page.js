@@ -123,7 +123,7 @@ export default function Media() {
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       <div className="card media-bar">
-        <input style={{ maxWidth: 260 }} placeholder={tx("Zoek op naam of tag…")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
+        <input type="search" style={{ maxWidth: 260 }} placeholder={tx("Zoek op naam of tag…")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
         <select style={{ width: "auto" }} value={filter.kind} onChange={(e) => setFilter({ ...filter, kind: e.target.value })}>
           <option value="">{tx("Alles")}</option><option value="image">{tx("Afbeeldingen")}</option><option value="video">{tx("Video's")}</option>
         </select>

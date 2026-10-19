@@ -23,6 +23,8 @@ DEFAULTS = {
     "variant": "classic",      # classic | centered | banner | minimal
     "code_style": "card",      # verification mails: card | boxes | plain | band
     "show_logo": True,
+    "logo_align": "auto",      # auto (follows the variant) | left | center | right
+    "logo_size": "m",          # s | m | l
     "footer": "",              # extra footer text
     "custom": {"accent": "#1b97d3", "background": "#f4f6fa", "card": "#ffffff", "text": "#1f2937", "muted": "#6b7280",
                "font": "system", "radius": 12},
@@ -60,6 +62,14 @@ def _apply(cur, incoming):
         if incoming["code_style"] not in CODE_STYLES:
             raise Invalid("Kies een van de opmaken voor verificatiemails.")
         cur["code_style"] = incoming["code_style"]
+    if "logo_align" in incoming:
+        if incoming["logo_align"] not in ("auto", "left", "center", "right"):
+            raise Invalid("Kies links, midden, rechts of automatisch voor het logo.")
+        cur["logo_align"] = incoming["logo_align"]
+    if "logo_size" in incoming:
+        if incoming["logo_size"] not in ("s", "m", "l"):
+            raise Invalid("Kies een klein, gewoon of groot logo.")
+        cur["logo_size"] = incoming["logo_size"]
     for k in ("show_logo",):
         if k in incoming:
             cur[k] = bool(incoming[k])
@@ -112,7 +122,7 @@ def _site_url(base_url=None):
 def _logo_url(values, base_url, api_base):
     """Absolute URL of the logo, or "" (then the brand name is shown)."""
     site = _site_url(base_url)
-    sets = {"rstcc": "/logos/rstcc/logo.png", "studio2": "/logos/studio2/logo.png"}
+    sets = {"easy2edit": "/logos/easy2edit/logo.png", "rstcc": "/logos/rstcc/logo.png", "studio2": "/logos/studio2/logo.png"}
     which = values.get("brand_logo", "custom")
     if which in sets and site:
         return site + sets[which]
@@ -147,7 +157,7 @@ def _logo_file(values):
 
     which = values.get("brand_logo", "custom")
     try:
-        if which in ("rstcc", "studio2"):
+        if which in ("easy2edit", "rstcc", "studio2"):
             f = Path(dj_settings.PROJECT_ROOT) / "frontend" / "public" / "logos" / which / "logo.png"
             return (f.read_bytes(), "image/png") if f.is_file() else None
         from apps.branding.models import SiteAsset
@@ -270,7 +280,13 @@ def to_html(subject, body, base_url=None, api_base=None, s=None, code=None, inli
     v = s.get("variant", "classic")
     ta = "center" if v == "centered" else "left"
     blocks = [b.replace('style="margin:', f'style="text-align:{ta};margin:', 1) for b in blocks]
-    logo = (f'<img src="{html.escape(p["logo"], quote=True)}" alt="{html.escape(brand)}" height="44" style="display:inline-block;height:44px;border:0">'
+    lh = {"s": 32, "m": 44, "l": 64}.get(s.get("logo_size"), 44)
+    la = s.get("logo_align") if s.get("logo_align") in ("left", "center", "right") else ""  # "" = as the variant has it
+
+    def al(default):
+        return la or default
+
+    logo = (f'<img src="{html.escape(p["logo"], quote=True)}" alt="{html.escape(brand)}" height="{lh}" style="display:inline-block;height:{lh}px;border:0">'
             if p["logo"] else "")
     name_color = "#ffffff" if v == "banner" else p["accent"]
     brandname = f'<span style="font-size:20px;font-weight:700;color:{name_color}">{html.escape(brand)}</span>'
@@ -279,16 +295,16 @@ def to_html(subject, body, base_url=None, api_base=None, s=None, code=None, inli
     page_bg = p["card"] if v == "minimal" else p["background"]
     if v == "banner":  # coloured bar with the logo in a white tag, the message box hangs under it
         pill = f'<span style="display:inline-block;background:#ffffff;padding:8px 16px;border-radius:{r}px">{logo}</span>' if logo else brandname
-        top = f'<tr><td align="center" style="background:{p["accent"]};padding:22px 16px;border-radius:{r}px {r}px 0 0">{pill}</td></tr>'
+        top = f'<tr><td align="{al("center")}" style="background:{p["accent"]};padding:22px 16px;border-radius:{r}px {r}px 0 0">{pill}</td></tr>'
         card = f'background:{p["card"]};border:1px solid {p["line"]};border-top:0;border-radius:0 0 {r}px {r}px;padding:28px 28px 12px'
     elif v == "minimal":  # no box: logo top right under an accent line
-        top = f'<tr><td align="right" style="border-top:4px solid {p["accent"]};padding:18px 0 22px">{logo or brandname}</td></tr>'
+        top = f'<tr><td align="{al("right")}" style="border-top:4px solid {p["accent"]};padding:18px 0 22px">{logo or brandname}</td></tr>'
         card = "padding:0 0 12px"
     elif v == "centered":
-        top = f'<tr><td align="center" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
+        top = f'<tr><td align="{al("center")}" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
         card = f'background:{p["card"]};border:1px solid {p["line"]};border-radius:{r}px;padding:28px 28px 12px'
     else:  # classic: logo centred above the box, text left
-        top = f'<tr><td align="center" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
+        top = f'<tr><td align="{al("center")}" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
         card = f'background:{p["card"]};border:1px solid {p["line"]};border-radius:{r}px;padding:28px 28px 12px'
     return f"""<!doctype html>
 <html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><style>:root{{color-scheme:light only;supported-color-schemes:light}}</style><title>{html.escape(subject)}</title></head>

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 KEY_RE = re.compile(r"[a-z0-9][a-z0-9-]{1,58}")
 RESERVED = {"admin", "api", "login", "dashboard", "p", "static", "media"}
-PRIVATE_RESERVED = {"admin", "community", "plugins", "profile", "subscriptions", "superadmin"}  # the folders of the dashboard itself: a private page cannot take their address
+PRIVATE_RESERVED = {"admin", "community", "plugins", "profile", "subscriptions", "superadmin", "mijn-bestellingen", "mijn-donaties", "groep"}  # the folders of the dashboard itself: a private page cannot take their address
 
 
 def _bg(p):
@@ -38,7 +38,7 @@ def _bg(p):
 def _out(p):
     return {"background": _bg(p), "id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
             "scope": p.scope, "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
-            "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "editable": p.kind == "content" or p.key in service.EDITABLE}
+            "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "editable": p.kind == "content" or p.key in service.EDITABLE}
 
 
 @api_view(["GET"])
@@ -87,6 +87,33 @@ def public_page(request, key):
     return Response({"key": p.key, "scope": p.scope, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key)})
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def by_url(request):
+    """Public: the standard page (content page with an address of its own, like /community) at ?path=; 404 when there is none or its module is off."""
+    path = "/" + str(request.query_params.get("path") or "").strip("/")
+    p = next((x for x in Page.objects.filter(scope="public", kind__in=("content", "system", "link")) if path in x.all_paths()), None)  # the address in any language leads to the page
+    if not p or not modules.enabled("pages") or not service.available(p):
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    return Response({"key": p.key, "kind": p.kind, "canonical": p.path, "title": p.title})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def aliases(request):
+    """Public: the addresses of the standard pages in every language. {aliases: {address: canonical address}, pages: {key: {canonical, urls: {lang: address}}}}; only pages that are on."""
+    out, pages = {}, {}
+    if modules.enabled("pages"):
+        for p in Page.objects.filter(scope="public", kind__in=("content", "system", "link")):
+            if not p.slugs or not service.available(p):
+                continue
+            urls = {l: p.path_in(l) for l in service.LANG_CODES}
+            pages[p.key] = {"canonical": p.path, "urls": urls}
+            for a in p.all_paths()[1:]:
+                out[a] = p.path
+    return Response({"aliases": out, "pages": pages})
+
+
 @api_view(["GET", "POST"])
 @permission_classes([has_level_for("pages", {"GET": "use", "POST": "manage"}), module_required("pages")])
 def pages(request):
@@ -115,6 +142,8 @@ def pages(request):
                 return bad("Geef een geldige link (https://… of /pad).")
         last = Page.objects.order_by("-order").first()
         p = Page.objects.create(key=key, kind=kind, title=title, url=url, scope=scope, audience="members" if scope == "private" else "all", in_menu=bool(d.get("in_menu", True)), order=(last.order + 1) if last else 0)
+        service.fill_slugs(p)
+        p.save()
         logger.info("Page '%s' created by %s", key, request.user.email)
         return Response(_out(p), status=status.HTTP_201_CREATED)
     scope = "private" if request.query_params.get("scope") == "private" else "public"
@@ -177,6 +206,11 @@ def page(request, pk):
             except (TypeError, ValueError):
                 return bad("Ongeldige donkerte.")
             p.background = {"type": b["type"], "media": item.id, "overlay": round(overlay, 2)}
+    if "slugs" in d or "title" in d:
+        if isinstance(d.get("slugs"), dict) or not p.slugs:
+            err = service.fill_slugs(p, d.get("slugs") if isinstance(d.get("slugs"), dict) else None)
+            if err:
+                return bad(err)
     if "parent" in d:
         par = Page.objects.filter(pk=d["parent"]).first() if d["parent"] else None
         if par and (par.pk == p.pk or par.parent_id):

@@ -1,4 +1,5 @@
 import logging
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.db.models import Count, Q, Sum
@@ -88,7 +89,8 @@ def clean_actions(raw):
             minimum = max(Decimal("0"), Decimal(str(a.get("min_amount") or 0)))
         except (ValueError, InvalidOperation):
             raise serializers.ValidationError("Aantal keer en minimumbedrag moeten getallen zijn.")
-        out.append({**g[0], "from": frm, "until": until, "uses": uses, "session_only": bool(a.get("session_only")), "min_amount": str(minimum)})
+        valid_for = a.get("valid_for") if a.get("valid_for") in service.VALID_FOR else ""
+        out.append({**g[0], "from": frm, "until": until, "valid_for": valid_for, "uses": uses, "session_only": bool(a.get("session_only")), "min_amount": str(minimum)})
     return out[:30]
 
 
@@ -112,7 +114,8 @@ def clean_popup(raw):
     media = p.get("media")
     if not (isinstance(media, int) and MediaItem.objects.filter(pk=media, kind="image").exists()):
         media = None
-    return {"titles": clean_texts(p.get("titles"), 120), "texts": clean_texts(p.get("texts"), 1500), "media": media}
+    pl = p.get("placement") if re.fullmatch(r"(left|center|right):(s|m|l|full|[1-9][0-9]{0,3}px|[1-9][0-9]{0,2}%)", str(p.get("placement") or "")) else "center:full"  # how the picture sits: align:size
+    return {"titles": clean_texts(p.get("titles"), 120), "texts": clean_texts(p.get("texts"), 1500), "media": media, "placement": pl}
 
 
 def popup_public(p):
@@ -122,7 +125,7 @@ def popup_public(p):
 
     p = p or {}
     item = MediaItem.objects.filter(pk=p.get("media")).first() if p.get("media") else None
-    return {"titles": p.get("titles") or {}, "texts": p.get("texts") or {}, "image": default_storage.url(item.key) if item else None, "media": p.get("media")}
+    return {"titles": p.get("titles") or {}, "texts": p.get("texts") or {}, "image": default_storage.url(item.key) if item else None, "media": p.get("media"), "placement": p.get("placement") or "center:full"}
 
 
 def _text(d, default):
@@ -402,7 +405,7 @@ def options(request):
     from apps.shop import catalog
 
     return Response({
-        "grant_types": [{"type": k, "label": v["label"], "ref": v["ref"], "value": bool(v.get("value")), "help": v["help"]} for k, v in service.GRANT_TYPES.items()],
+        "grant_types": [{"type": k, "label": v["label"], "ref": v["ref"], "value": bool(v.get("value")), "help": v["help"], "themes": v.get("themes")} for k, v in service.GRANT_TYPES.items()], "theme": service.profile_theme(),
         "pages": [{"key": p.key, "title": p.title.get("nl") or next(iter(p.title.values()), p.key)} for p in Page.objects.filter(kind="content")],
         "products": catalog.active(),
         "intervals": [{"value": v, "label": l} for v, l in INTERVALS],
@@ -723,11 +726,93 @@ def _clean_conditions(raw):
     return out[:10]
 
 
+def _rule_out(i):
+    r = i.rule or {}
+    loc = actions_local([{"from": r.get("from"), "until": r.get("until")}])[0]  # the moments as local time for the form
+    return {"valid_for": r.get("valid_for", ""), "from": loc["from"], "until": loc["until"], "uses": int(r.get("uses") or 0), "session_only": bool(r.get("session_only")), "min_amount": str(r.get("min_amount") or "0")}
+
+
+def _clean_rule(raw):
+    """"Geldig tot": how long and how often a donor may use the item after a donation."""
+    from decimal import Decimal, InvalidOperation
+
+    raw = raw if isinstance(raw, dict) else {}
+    frm, until = _dt(raw.get("from")), _dt(raw.get("until"))
+    if frm and until and until <= frm:
+        raise ValueError("De einddatum moet na de begindatum liggen.")
+    try:
+        uses = max(0, min(100000, int(raw.get("uses") or 0)))
+        minimum = max(Decimal("0"), Decimal(str(raw.get("min_amount") or 0)))
+    except (ValueError, InvalidOperation):
+        raise ValueError("Aantal keer en minimumbedrag moeten getallen zijn.")
+    return {"valid_for": raw.get("valid_for") if raw.get("valid_for") in service.VALID_FOR else "", "from": frm, "until": until, "uses": uses, "session_only": bool(raw.get("session_only")), "min_amount": str(minimum)}
+
+
+def _grant_of(i):
+    """The donor action that gives this item: (type, ref). Built-in: its own key; own items: page / content / service with their reference."""
+    if i.kind == "builtin":
+        return (i.key, "") if i.key in service.GRANT_TYPES else None
+    return (i.kind, i.ref) if i.kind in ("page", "content", "service", "game") else None
+
+
+def _linked(i):
+    """Ids of the donation setups (Admin -> Donaties) that give this item to a donor."""
+    g = _grant_of(i)
+    if not g:
+        return []
+    return [c.id for c in DonationCampaign.objects.all() if any(a.get("type") == g[0] and str(a.get("ref") or "") == str(g[1]) for a in c.actions or [])]
+
+
+def _linked_plans(i):
+    """Ids of the subscriptions that give this item (an item can be in several subscriptions, a subscription can hold several items)."""
+    g = _grant_of(i)
+    if not g:
+        return []
+    return [p.id for p in Plan.objects.all() if any(a.get("type") == g[0] and str(a.get("ref") or "") == str(g[1]) for a in p.grants or [])]
+
+
+def _set_plan_links(i, ids):
+    g = _grant_of(i)
+    if not g:
+        return
+    want = {int(x) for x in ids if str(x).isdigit()}
+    for p in Plan.objects.all():
+        grants = list(p.grants or [])
+        has = [a for a in grants if a.get("type") == g[0] and str(a.get("ref") or "") == str(g[1])]
+        if p.id in want and not has:
+            grants.append({"type": g[0], "ref": g[1] if i.kind != "builtin" else "", "value": 0})
+        elif p.id not in want and has:
+            grants = [a for a in grants if a not in has]
+        else:
+            continue
+        p.grants = grants
+        p.save(update_fields=["grants"])
+
+
+def _set_links(i, ids):
+    """Link the item to exactly these donation setups: an action is added to (or taken from) the setup."""
+    g = _grant_of(i)
+    if not g:
+        return
+    want = {int(x) for x in ids if str(x).isdigit()}
+    for c in DonationCampaign.objects.all():
+        acts = list(c.actions or [])
+        has = [a for a in acts if a.get("type") == g[0] and str(a.get("ref") or "") == str(g[1])]
+        if c.id in want and not has:
+            acts.append({"type": g[0], "ref": g[1] if i.kind != "builtin" else "", "value": 0, "from": None, "until": None, "valid_for": "", "uses": 0, "session_only": False, "min_amount": "0"})
+        elif c.id not in want and has:
+            acts = [a for a in acts if a not in has]
+        else:
+            continue
+        c.actions = acts
+        c.save(update_fields=["actions"])
+
+
 def _item_row(i):
     spec = service.CATALOG_BY_KEY.get(i.key)
     name = spec[1] if spec else (i.name or i.key)
-    return {"key": i.key, "kind": i.kind, "ref": i.ref, "name": name, "description": spec[3] if spec else i.description, "group": spec[2] if spec else "Eigen onderdelen",
-            "builtin": bool(spec), "gated": i.gated, "mode": i.mode, "share": i.share, "pair": i.key in service.PAIR_KEYS, "conditions": i.conditions or [], "order": i.order}
+    return {"key": i.key, "kind": i.kind, "ref": i.ref, "name": name, "description": spec[3] if spec else i.description, "group": spec[2] if spec else ("Games" if i.kind == "game" else "Eigen onderdelen"),
+            "themes": (spec[4] if spec and len(spec) > 4 else None), "donations": _linked(i), "plans": _linked_plans(i), "rule": _rule_out(i), "suggest": service.SUGGEST.get(i.key, ""), "builtin": bool(spec), "gated": i.gated, "mode": i.mode, "share": i.share, "pair": i.key in service.PAIR_KEYS, "conditions": i.conditions or [], "order": i.order}
 
 
 @api_view(["GET", "POST"])
@@ -756,7 +841,7 @@ def actions_admin(request):
 
     return Response({
         "items": [_item_row(i) for i in ActionItem.objects.all()],
-        "options": {"plans": [{"id": p.id, "name": p.name} for p in Plan.objects.all()], "campaigns": [{"id": c.id, "name": c.name} for c in DonationCampaign.objects.all()],
+        "options": {"theme": service.profile_theme(), "plans": [{"id": p.id, "name": p.name} for p in Plan.objects.all()], "campaigns": [{"id": c.id, "name": c.name} for c in DonationCampaign.objects.all()],
                     "roles": [{"id": r.id, "name": r.name} for r in Role.objects.all()], "condition_types": [{"type": k, "label": v} for k, v in service.CONDITION_TYPES.items()],
                     "pages": [{"key": p.key, "title": p.title.get("nl") or next(iter(p.title.values()), p.key)} for p in Page.objects.filter(kind="content")],
                     "products": catalog.active()}})
@@ -769,13 +854,31 @@ def action_one(request, key):
     if not item:
         return bad("Niet gevonden.", 404)
     if request.method == "DELETE":
-        if item.kind == "builtin":
-            return bad("Een ingebouwd onderdeel kun je niet verwijderen; zet het open voor iedereen.")
+        if item.kind in ("builtin", "game"):
+            return bad("Dit onderdeel kun je niet verwijderen; zet het open voor iedereen.")
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     d = request.data
+    was_gated = item.gated
     if "gated" in d:
         item.gated = bool(d["gated"])
+    if isinstance(d.get("plans"), list):
+        _set_plan_links(item, d["plans"])
+    elif item.gated and not was_gated and Plan.objects.count() == 1 and not _linked_plans(item):  # first time it is gated: with only one subscription, that one is used
+        _set_plan_links(item, [Plan.objects.first().id])
+    if isinstance(d.get("donations"), list):
+        _set_links(item, d["donations"])
+    elif item.gated and not was_gated and __import__("apps.core.modules", fromlist=["x"]).enabled("donations"):  # first time it is gated: with only one donation setup, that one is used
+        camps = list(DonationCampaign.objects.all())
+        if len(camps) == 1 and not _linked(item):
+            _set_links(item, [camps[0].id])
+    if "rule" in d:
+        try:
+            item.rule = _clean_rule(d["rule"])
+        except ValueError as e:
+            return bad(str(e))
+    elif item.gated and not was_gated and not item.rule and service.SUGGEST.get(item.key):
+        item.rule = {"valid_for": service.SUGGEST[item.key], "from": None, "until": None, "uses": 0, "session_only": False, "min_amount": "0"}  # our proposal, until the admin changes it
     if d.get("mode") in ("any", "all"):
         item.mode = d["mode"]
     if "share" in d and item.key in service.PAIR_KEYS:
@@ -790,6 +893,15 @@ def action_one(request, key):
         item.description = str(d.get("description", item.description))[:300]
     item.save()
     return Response(_item_row(item))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def my_donations(request):
+    """The member's own donations, newest first."""
+    rows = Donation.objects.filter(user=request.user).select_related("campaign").order_by("-id")[:100]
+    return Response([{"id": d.id, "campaign": d.campaign.names.get("nl") if getattr(d.campaign, "names", None) else d.campaign.name, "amount": str(d.amount), "status": d.status, "status_label": d.get_status_display(),
+                      "paid_at": d.paid_at, "created_at": d.created_at} for d in rows])
 
 
 @api_view(["GET"])

@@ -29,11 +29,11 @@ def parse(raw):
         "name": name, "title": str(d.get("title") or name)[:100], "version": _ver(d.get("version"), "version"), "system_version": _ver(d.get("system_version") or "0.0.0", "system_version"),
         "schema": max(0, int(d.get("schema") or 0)) if str(d.get("schema") or 0).isdigit() else 0,
         "description": str(d.get("description") or "")[:2000], "author": str(d.get("author") or "")[:100],
-        "python": _file(d.get("python"), ".py"), "web": _file(d.get("web"), ".html"), "admin_web": _file(d.get("admin_web"), ".html"),
+        "python": _file(d.get("python"), ".py"), "web": _file(d.get("web"), ".html"), "admin_web": _file(d.get("admin_web"), ".html"), "settings_web": _file(d.get("settings_web"), ".html"), "blocks_page": str(d.get("blocks_page") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,40}", str(d.get("blocks_page") or "")) else "", "admin_links": _admin_links(d.get("admin_links")),
         "permissions": [str(x)[:60] for x in (d.get("permissions") or []) if isinstance(x, str)][:30],
         "events": [str(x)[:40] for x in (d.get("events") or []) if isinstance(x, str)][:30],
         "section": _section(d.get("section")), "menu": None, "public_pages": _public_pages(d.get("public_pages")), "site_link": _site_link(d.get("site_link")), "provides": [x for x in (d.get("provides") or []) if x in PROVIDES],
-        "content_dirs": [x for x in (d.get("content_dirs") or []) if isinstance(x, str) and re.fullmatch(r"[a-z][a-z0-9_-]{0,30}", x)][:5], "admin_label": str(d.get("admin_label") or "")[:30], "content_label": str(d.get("content_label") or "")[:30], "content_sdk": str(d.get("content_sdk") or "") if re.fullmatch(r"web/[A-Za-z0-9_.-]{1,60}\.js", str(d.get("content_sdk") or "")) else "", "content_item": str(d.get("content_item") or "")[:40] if re.fullmatch(r"[A-Za-z0-9_.-]{3,40}\.json", str(d.get("content_item") or "")) else "", "public_path": str(d.get("public_path") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,30}", str(d.get("public_path") or "")) and str(d.get("public_path")) not in RESERVED else "", "page_object": bool(d.get("page_object")) and bool(_file(d.get("web"), ".html")), "config": [],
+        "content_dirs": [x for x in (d.get("content_dirs") or []) if isinstance(x, str) and re.fullmatch(r"[a-z][a-z0-9_-]{0,30}", x)][:5], "admin_label": str(d.get("admin_label") or "")[:30], "content_label": str(d.get("content_label") or "")[:30], "content_sdk": str(d.get("content_sdk") or "") if re.fullmatch(r"web/[A-Za-z0-9_.-]{1,60}\.js", str(d.get("content_sdk") or "")) else "", "content_item": str(d.get("content_item") or "")[:40] if re.fullmatch(r"[A-Za-z0-9_.-]{3,40}\.json", str(d.get("content_item") or "")) else "", "public_path": str(d.get("public_path") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,30}", str(d.get("public_path") or "")) and str(d.get("public_path")) not in RESERVED else "", "page_object": bool(d.get("page_object")) and bool(_file(d.get("web"), ".html")), "config": [], "parts": _parts(d.get("parts")),
     }
     m = d.get("menu")
     if isinstance(m, dict) and out["web"]:
@@ -63,7 +63,25 @@ def _public_pages(v):
         path = str(x.get("path") or "").strip("/")
         if not re.fullmatch(r"[a-z0-9-]+(/(<[a-z]+>|[a-z0-9-]+))*", path) or path.split("/")[0] in RESERVED:
             raise ManifestError(f"Ongeldig of gereserveerd adres in public_pages: {path or '?'}")
-        out.append({"path": path, "file": _file(x.get("file"), ".html"), "title": str(x.get("title") or "")[:80], "noindex": bool(x.get("noindex"))})
+        out.append({"path": path, "file": _file(x.get("file"), ".html"), "title": str(x.get("title") or "")[:80], "noindex": bool(x.get("noindex")), "page": str(x.get("page") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,40}", str(x.get("page") or "")) else "", "description": str(x.get("description") or "")[:200]})
+    return out[:20]
+
+
+def _admin_links(v):
+    """Links to other admin screens that belong to the plugin: [{"href": "/dashboard/admin/orders", "title": "...", "description": "..."}]."""
+    out = []
+    for x in v or []:
+        if isinstance(x, dict) and re.fullmatch(r"/dashboard/[a-z0-9/_-]{1,80}", str(x.get("href") or "")):
+            out.append({"href": x["href"], "title": str(x.get("title") or x["href"])[:80], "description": str(x.get("description") or "")[:200]})
+    return out[:10]
+
+
+def _parts(v):
+    """Parts of the plugin that can be put on a page in edit mode and moved around (a product overview, the cart ...): [{"key": "products", "title": "...", "file": "web/products.html"}]."""
+    out = []
+    for x in v or []:
+        if isinstance(x, dict) and re.fullmatch(r"[a-z][a-z0-9-]{1,30}", str(x.get("key") or "")) and _file(x.get("file"), ".html"):
+            out.append({"key": x["key"], "title": str(x.get("title") or x["key"])[:80], "file": _file(x.get("file"), ".html")})
     return out[:20]
 
 

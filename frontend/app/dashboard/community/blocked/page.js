@@ -24,7 +24,7 @@ export default function Blocked() {
       <p className="muted">{tx("Wie je blokkeert kan jou niet meer zien of vinden in dit systeem, en jij hem of haar ook niet. Berichten, chat en profielen zijn dan voor elkaar onzichtbaar.")}</p>
       {msg && <div className="alert">{msg.text}</div>}
       <Collapsible id="block-add" title={tx("Iemand blokkeren")}>
-        <input placeholder={tx("Zoek een lid op naam…")} value={q} onChange={(e) => setQ(e.target.value)} />
+        <input type="search" placeholder={tx("Zoek een lid op naam…")} value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="suggest">{found.map((u) => <button key={u.id} type="button" onClick={() => block(u)}>{u.name} {tx("blokkeren")}</button>)}</div>
         <small className="muted">{tx("Je vindt hier alleen leden die jij kunt zien. Staat iemand er niet bij? Open zijn profielpagina en blokkeer daar.")}</small>
       </Collapsible>

@@ -7,8 +7,9 @@ import { alertDialog } from "../lib/dialog";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { cardFieldsText } from "./ProfileFields";
 import { useChat } from "./Chat";
-import { IconHeart, IconMail, IconRefresh, IconX } from "./Icons";
+import { IconBack, IconHeart, IconMail, IconRefresh, IconX } from "./Icons";
 import VerifyBadge from "./VerifyBadge";
+import { AvailChips } from "./Availability";
 
 const THRESHOLD = 110;
 
@@ -25,6 +26,8 @@ export default function Swiper() {
   const [msg, setMsg] = useState("");
   const [match, setMatch] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [last, setLast] = useState(null); // the card that was decided on last: {card, like}, for "undo"
+  const [info, setInfo] = useState(false); // the profile text on the card
   const start = useRef(null);
   const seen = useRef(new Set());
 
@@ -44,7 +47,7 @@ export default function Swiper() {
   useEffect(() => { load(); }, [load]);
 
   const top = cards?.[0];
-  useEffect(() => { setPhoto(0); setMsgOpen(false); setMsg(""); }, [top?.id]);
+  useEffect(() => { setPhoto(0); setMsgOpen(false); setMsg(""); setInfo(false); }, [top?.id]);
 
   const next = (id) => {
     seen.current.add(id);
@@ -64,8 +67,23 @@ export default function Swiper() {
         const r = await api("/discover/like/", { method: "POST", body: { user: c.id, message } });
         if (r.match) setMatch(c);
       } else await api(`/discover/pass/${c.id}/`, { method: "POST", body: {} });
+      setLast({ card: c, like });
       setTimeout(() => next(c.id), 220);
     } catch (e) { setFly(0); setBusy(false); setDrag(null); await alertDialog(errorText(e)); }
+  };
+
+  // undo the last choice: the card comes back on top
+  const rewind = async () => {
+    if (!last || busy) return;
+    setBusy(true);
+    try {
+      if (last.like) await api(`/discover/like/${last.card.id}/?undo=1`, { method: "DELETE" });
+      else await api(`/discover/pass/${last.card.id}/`, { method: "DELETE" });
+      seen.current.delete(last.card.id);
+      setCards((cur) => [last.card, ...(cur || []).filter((c) => c.id !== last.card.id)]);
+      setLast(null);
+    } catch (e) { await alertDialog(errorText(e)); }
+    setBusy(false);
   };
 
   useEffect(() => {
@@ -73,16 +91,20 @@ export default function Swiper() {
       if (match || msgOpen || /input|textarea|select/i.test(e.target.tagName)) return;
       if (e.key === "ArrowRight") decide(true);
       if (e.key === "ArrowLeft") decide(false);
+      if (e.key === "ArrowUp" || e.key === "i") { e.preventDefault?.(); setInfo((v) => !v); }
+      if (e.key === "Backspace" || e.key === "z") rewind();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   });
 
-  const onDown = (e) => { if (busy) return; start.current = { x: e.clientX, y: e.clientY, moved: false }; e.currentTarget.setPointerCapture?.(e.pointerId); };
+  const onDown = (e) => { if (busy) return; start.current = { x: e.clientX, y: e.clientY, moved: false, t: performance.now(), lx: e.clientX, lt: performance.now(), v: 0 }; e.currentTarget.setPointerCapture?.(e.pointerId); };
   const onMove = (e) => {
     if (!start.current) return;
     const dx = e.clientX - start.current.x, dy = e.clientY - start.current.y;
     if (Math.abs(dx) > 6) start.current.moved = true;
+    const now = performance.now();
+    if (now - start.current.lt > 16) { start.current.v = (e.clientX - start.current.lx) / (now - start.current.lt); start.current.lx = e.clientX; start.current.lt = now; } // px per ms
     setDrag({ x: dx, y: dy });
   };
   const onUp = (e) => {
@@ -96,7 +118,8 @@ export default function Swiper() {
       setDrag(null);
       return;
     }
-    if (Math.abs(dx) > THRESHOLD) decide(dx > 0); else setDrag(null);
+    const fling = Math.abs(s.v) > 0.6 && Math.abs(dx) > 40; // a quick flick counts, however short
+    if (Math.abs(dx) > THRESHOLD || fling) decide((fling ? s.v : dx) > 0); else setDrag(null);
   };
 
   if (!cards) return <p className="muted">{tx("Laden…")}</p>;
@@ -105,16 +128,20 @@ export default function Swiper() {
   const x = fly ? fly * 700 : drag?.x || 0, y = fly ? 0 : (drag?.y || 0) * 0.25;
   const style = { transform: `translate(${x}px, ${y}px) rotate(${x / 18}deg)`, transition: drag && !fly ? "none" : "transform .22s ease" };
   const likeOp = Math.min(1, Math.max(0, x / THRESHOLD)), passOp = Math.min(1, Math.max(0, -x / THRESHOLD));
+  const progress = Math.min(1, Math.abs(x) / THRESHOLD); // the cards behind come forward while the top card is dragged away
+  const backStyle = (i) => ({ transform: `translateY(${(i - progress) * 12}px) scale(${1 - (i - progress) * 0.05})`, opacity: 1 - (i - progress) * 0.18, transition: drag && !fly ? "none" : "transform .22s ease, opacity .22s ease" });
+  const tint = x > 0 ? `rgba(34,197,94,${likeOp * 0.28})` : `rgba(239,68,68,${passOp * 0.28})`;
 
   return (
     <div className="swipe">
       {top ? (
         <>
           <div className="swipe-stack">
-            {cards[1] && <div className="swipe-card back" aria-hidden="true">{cards[1].photos[0] && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(cards[1].photos[0])} alt="" />}</div>}
+            {[2, 1].map((i) => cards[i] && <div key={cards[i].id} className="swipe-card back" aria-hidden="true" style={backStyle(i)}>{cards[i].photos[0] && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(cards[i].photos[0])} alt="" />}</div>)}
             <div className="swipe-card" data-g={top.gender || undefined} style={style} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => { start.current = null; setDrag(null); }}>
               {top.photos.length ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(top.photos[photo] || top.photos[0])} alt={top.name} draggable={false} /> : <span className="swipe-nophoto muted">{tx("Geen foto")}</span>}
               {top.photos.length > 1 && <span className="swipe-dots">{top.photos.map((_, i) => <i key={i} className={i === photo ? "on" : ""} />)}</span>}
+              <span className="swipe-tint" style={{ background: tint }} />
               <span className="swipe-stamp like" style={{ opacity: likeOp }}>{tx("LEUK")}</span>
               <span className="swipe-stamp pass" style={{ opacity: passOp }}>{tx("NEE")}</span>
               {top.likes_me && <span className="badge ok swipe-likesme"><IconHeart fill="currentColor" width={13} height={13} /> {tx("Vindt jou al leuk")}</span>}
@@ -122,8 +149,13 @@ export default function Swiper() {
                 <strong>{top.name}{top.age ? `, ${top.age}` : ""} <VerifyBadge status={top.verification} size={16} /></strong>
                 <span>{[top.city, top.distance_km ? `${top.distance_km} km` : null].filter(Boolean).join(" · ")}</span>
                 {top.headline && <span>{top.headline}</span>}
+                <AvailChips items={top.available} max={4} />
+                {info && top.bio && <span className="swipe-bio">{top.bio}</span>}
                 {top.card_fields?.length > 0 && <span className="swipe-fields">{cardFieldsText(top.card_fields)}</span>}
-                <Link href={`/leden/${top.slug}`} className="swipe-more" onPointerDown={(e) => e.stopPropagation()}>{tx("Bekijk profiel")}</Link>
+                <span className="row" style={{ gap: ".4rem", flexWrap: "nowrap" }}>
+                  {top.bio && <button type="button" className="swipe-more" onPointerDown={(e) => e.stopPropagation()} onClick={() => setInfo((v) => !v)}>{info ? tx("Minder") : tx("Meer over mij")}</button>}
+                  <Link href={`/leden/${top.slug}`} className="swipe-more" onPointerDown={(e) => e.stopPropagation()}>{tx("Bekijk profiel")}</Link>
+                </span>
               </div>
             </div>
           </div>
@@ -141,11 +173,12 @@ export default function Swiper() {
           )}
 
           <div className="swipe-actions">
+            <button className="swipe-btn small" onClick={rewind} disabled={busy || !last} aria-label={tx("Ongedaan maken")} title={tx("Ongedaan maken")}><IconBack width={20} height={20} /></button>
             <button className="swipe-btn pass" onClick={() => decide(false)} disabled={busy} aria-label={tx("Niet interessant")} title={tx("Niet interessant")}><IconX width={26} height={26} /></button>
             {top.accept_messages && <button className="swipe-btn msg" onClick={() => setMsgOpen(!msgOpen)} disabled={busy} aria-label={tx("Leuk vinden met een bericht")} title={tx("Leuk vinden met een bericht")}><IconMail width={22} height={22} /></button>}
             <button className="swipe-btn like" onClick={() => decide(true)} disabled={busy} aria-label={tx("Leuk vinden")} title={tx("Leuk vinden")}><IconHeart width={26} height={26} fill="currentColor" /></button>
           </div>
-          <small className="muted swipe-hint">{tx("Sleep de kaart naar rechts om te liken, naar links om over te slaan. Of gebruik de pijltjestoetsen.")}</small>
+          <small className="muted swipe-hint">{tx("Sleep de kaart naar rechts om te liken, naar links om over te slaan. Of gebruik de pijltjestoetsen (↑ voor meer info, Backspace om ongedaan te maken).")}</small>
         </>
       ) : (
         <div className="card swipe-empty">

@@ -76,7 +76,7 @@ export default function ThemePacksAdmin() {
       {(
         <div>
           <div className="row" style={{ justifyContent: "space-between", marginBottom: "1rem" }}>
-            <input style={{ maxWidth: 300 }} placeholder={tx("Zoek een thema…")} value={q} onChange={(e) => setQ(e.target.value)} />
+            <input type="search" style={{ maxWidth: 300 }} placeholder={tx("Zoek een thema…")} value={q} onChange={(e) => setQ(e.target.value)} />
             {L >= 2 && <button className="btn primary" onClick={() => setChooser(true)}>{tx("+ Nieuw themapakket")}</button>}
           </div>
           <div className="preset-grid pack-grid">

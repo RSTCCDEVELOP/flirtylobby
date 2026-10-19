@@ -2,7 +2,7 @@
 
 import { tx } from "../lib/t";
 import { IconEdit } from "./Icons";
-import { alertDialog } from "../lib/dialog";
+import { alertDialog, confirmDialog } from "../lib/dialog";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
@@ -10,6 +10,7 @@ import MediaPicker from "./MediaPicker";
 import { useModule } from "./Modules";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
 import RichHtml from "./SysObjects";
+import { PlaceControls, placeStyle } from "./ImagePlace";
 import { useSession } from "./Session";
 
 const ContentContext = createContext({ blocks: {}, setBlock: () => {}, defaultLang: "nl", languages: [] });
@@ -135,7 +136,7 @@ export function EditBanner() {
 
 // Edit mode: wrap any image so a content editor can swap it from the media library.
 // target: "block:<key>" | "asset:<slot>" | "photo:<id>"
-export function ImageEdit({ target, children, className = "" }) {
+export function ImageEdit({ target, children, className = "", placement, onPlace, removable = false }) {
   const { editing } = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -149,10 +150,16 @@ export function ImageEdit({ target, children, className = "" }) {
       router.refresh();
     } catch (e) { (await alertDialog(errorText(e))); }
   }
+  async function remove() {
+    if (!(await confirmDialog(tx("Deze afbeelding of video van de pagina verwijderen?"), { danger: true }))) return;
+    await pick(null);
+  }
   return (
     <span className={`img-edit ${className}`}>
       {children}
+      {onPlace && <span className="img-place-bar" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}><PlaceControls compact value={placement} onChange={onPlace} /></span>}
       <button type="button" className="img-edit-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }} title={tx("Afbeelding wijzigen")}><IconEdit width={14} height={14} /> {tx("Wijzig")}</button>
+      {removable && <button type="button" className="img-edit-btn img-del-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); remove(); }} title={tx("Afbeelding verwijderen")}>{tx("Verwijder")}</button>}
       {open && <MediaPicker onPick={pick} onClose={() => setOpen(false)} />}
     </span>
   );
@@ -160,11 +167,16 @@ export function ImageEdit({ target, children, className = "" }) {
 
 // <EditableImage id="home.hero" fallback={<Logo />} />: image stored as a content block
 export function EditableImage({ id, fallback = null, alt = "", className = "" }) {
-  const { blocks } = useContext(ContentContext);
+  const { blocks, setBlock, defaultLang } = useContext(ContentContext);
   const url = blocks[id]?.["*"];
+  const placement = blocks[`${id}.pl`]?.[defaultLang]; // how it sits: "align:size", chosen with every picture (stored with the page texts)
+  const place = async (v) => {
+    setBlock(`${id}.pl`, defaultLang, v);
+    try { await api("/content/save/", { method: "PUT", body: { key: `${id}.pl`, lang: defaultLang, text: v } }); } catch (e) { (await alertDialog(errorText(e))); }
+  };
   return (
-    <ImageEdit target={`block:${id}`}>
-      {url ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} /> : fallback}
+    <ImageEdit target={`block:${id}`} placement={placement} onPlace={url ? place : undefined} removable={!!url}>
+      {url ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} style={placement ? placeStyle(placement) : undefined} /> : fallback}
     </ImageEdit>
   );
 }

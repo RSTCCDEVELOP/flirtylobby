@@ -5,6 +5,7 @@ import { IconChat, IconHeart, IconMail, IconStar } from "../../../../components/
 import { alertDialog } from "../../../../lib/dialog";
 import { cardFieldsText } from "../../../../components/ProfileFields";
 import Swiper from "../../../../components/Swiper";
+import { AvailChips, AvailPicker, useAvailability } from "../../../../components/Availability";
 import VerifyBadge from "../../../../components/VerifyBadge";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -19,7 +20,7 @@ const TABS = [
 ];
 const AIMS = { dating: "Daten", relationship: "Relatie", friends: "Vriendschap", chat: "Chatten", appointments: "Afspraakjes", erotic: "Erotiek", activities: "Samen op pad", travel: "Reisgenoot" }; // labels of every kind; the filter only offers the switched-on ones
 const GENDER = GENDER_LABELS;
-const EMPTY = { gender: "", age_min: "", age_max: "", city: "", country: "", interest: "", aim: "", online: false, photo: false, q: "", distance_km: "", sort: "" };
+const EMPTY = { available: "", gender: "", age_min: "", age_max: "", city: "", country: "", interest: "", aim: "", online: false, photo: false, q: "", distance_km: "", sort: "" };
 
 function Card({ m, onChange }) {
   const chat = useChat();
@@ -37,6 +38,7 @@ function Card({ m, onChange }) {
         <span className="muted" style={{ fontSize: ".85rem" }}>{[GENDER[m.gender], m.city, m.distance_km ? `${m.distance_km} km` : null, AIMS[m.aim]].filter(Boolean).join(" · ")}</span>
         {m.headline && <span style={{ fontSize: ".875rem" }}>{m.headline}</span>}
         {m.card_fields?.length > 0 && <span style={{ fontSize: ".8rem" }}>{cardFieldsText(m.card_fields)}</span>}
+        <AvailChips items={m.available} />
         {m.interests.length > 0 && <span className="chips" style={{ margin: ".25rem 0" }}>{m.interests.map((t) => <span key={t} className="chip" style={{ cursor: "default", fontSize: ".75rem" }}>{t}</span>)}</span>}
         <div className="row" style={{ justifyContent: "flex-start", gap: ".35rem" }}>
           <button className={`btn sm ${m.liked ? "primary" : ""}`} disabled={busy} title={tx("Leuk vinden")} onClick={() => act(() => (m.liked ? api(`/discover/like/${m.id}/`, { method: "DELETE" }) : api("/discover/like/", { method: "POST", body: { user: m.id } })))}><IconHeart fill={m.liked ? "currentColor" : "none"} /> {tx("Leuk")}</button>
@@ -59,6 +61,7 @@ export default function Discover() {
   const [list, setList] = useState(null);
   const [err, setErr] = useState("");
   const [cfg, setCfg] = useState(null);
+  const availGroups = useAvailability();
   const [pcfg, setPcfg] = useState(null); // profile theme: built-in fields on/off + configurable fields
   const [search, setSearch] = useState(null); // per profile type: title + which filters show, swipe deck on/off
   useEffect(() => {
@@ -121,6 +124,12 @@ export default function Discover() {
               : <label key={x.key}>{x.label}<input value={f[`f_${x.key}`] || ""} onChange={(e) => setF({ ...f, [`f_${x.key}`]: e.target.value })} /></label>
             ))}
           </div>
+          {availGroups?.length > 0 && (
+            <div style={{ marginTop: ".75rem" }}>
+              <strong style={{ fontSize: ".85rem" }}>{tx("Beschikbaar voor")}</strong>
+              <AvailPicker compact groups={availGroups} value={f.available ? f.available.split(",") : []} onChange={(v) => setF({ ...f, available: v.join(",") })} />
+            </div>
+          )}
           <div className="row" style={{ justifyContent: "flex-start", marginTop: ".75rem" }}>
             {show("online") && <label className="check"><input type="checkbox" checked={f.online} onChange={set("online")} /> {tx("Nu online")}</label>}
             {show("photo") && <label className="check"><input type="checkbox" checked={f.photo} onChange={set("photo")} /> {tx("Met foto")}</label>}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { api, apiBase } from "../lib/api";
+import { api, apiBase, downloadFile, errorText } from "../lib/api";
+import { confirmDialog } from "../lib/dialog";
 import { useAuth } from "./AuthContext";
 import { useAutoSave } from "../lib/autosave";
 import { tx } from "../lib/t";
@@ -382,11 +383,33 @@ export function PluginContent({ p, onSaved }) {
   const [edit, setEdit] = useState(null);   // item name
   const [view, setView] = useState(null);   // {item, config}
   const [err, setErr] = useState("");
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
+  const file = useRef(null);
   const patch = async (item, body) => { setErr(""); try { onSaved(await api(`/plugins/${p.name}/items/${item.name}/`, { method: "PATCH", body })); } catch (e) { setErr(e?.message || tx("Opslaan mislukt.")); } };
+  // add a game from a zip (a folder with game.json), like uploading a plugin
+  const upload = async (files) => {
+    const f = [...(files || [])].find((x) => /\.zip$/i.test(x.name));
+    if (!f) { setErr(tx("Kies een zipbestand met een spel.")); return; }
+    setBusy(true); setErr("");
+    try { const fd = new FormData(); fd.append("file", f); const r = await api(`/plugins/${p.name}/items/upload/`, { method: "POST", body: fd }); onSaved(r); } catch (e) { setErr(errorText(e)); }
+    setBusy(false);
+  };
+  const remove = async (i) => {
+    if (!(await confirmDialog(tx("Spel \"{0}\" verwijderen? De bestanden gaan weg; scores en voortgang van leden worden daarna opgeruimd.", i.title), { danger: true }))) return;
+    setErr("");
+    try { onSaved(await api(`/plugins/${p.name}/items/${i.name}/`, { method: "DELETE" })); } catch (e) { setErr(errorText(e)); }
+  };
   const cur = items.find((i) => i.name === edit);
   return (
     <div className="stack-sm">
-      <p className="muted" style={{ margin: 0 }}>{tx("Gevonden in de map van deze plugin: {0}. Zet een map met een game.json erbij of upload een zip bij het beheer van de plugin; ze worden vanzelf herkend.", items.length)}</p>
+      <p className="muted" style={{ margin: 0 }}>{tx("Gevonden in de map van deze plugin: {0}. Upload een zip met een map met een game.json erbij, of zet de map er zelf in; ze worden vanzelf herkend.", items.length)}</p>
+      <div className={`drop${over ? " over" : ""}`} style={{ padding: "1rem" }} onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={(e) => { e.preventDefault(); setOver(false); upload(e.dataTransfer.files); }}>
+        <input ref={file} type="file" accept=".zip,application/zip" hidden onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+        <button type="button" className="btn primary" disabled={busy} onClick={() => file.current?.click()}>{busy ? tx("Bezig…") : tx("Spel uploaden (zip)")}</button>
+        <small className="muted" style={{ display: "block", marginTop: ".4rem" }}>{tx("Of sleep het zipbestand hierheen. Een spel met dezelfde naam wordt bijgewerkt; je instellingen en afbeelding blijven.")}</small>
+      </div>
       {err && <div className="alert">{err}</div>}
       {items.length ? (
         <div className="plugin-items">
@@ -403,6 +426,8 @@ export function PluginContent({ p, onSaved }) {
                 </label>
                 <button type="button" className="btn sm icon" title={tx("Instellingen")} aria-label={tx("Instellingen")} disabled={i.problem} onClick={() => setEdit(i.name)}><IconSettings /></button>
                 <button type="button" className="btn sm icon" title={tx("Voorbeeld")} aria-label={tx("Voorbeeld")} disabled={i.problem} onClick={() => setView({ item: i, config: i.config })}><IconEye /></button>
+                {user?.is_staff && <button type="button" className="btn sm" title={tx("Download als zip")} onClick={() => downloadFile(`/plugins/${p.name}/items/${i.name}/download/`, `${i.name}.zip`).catch((e) => setErr(errorText(e)))}>{tx("Download")}</button>}
+                <button type="button" className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>
               </span>
             </div>
           ))}
@@ -418,7 +443,7 @@ export function PluginTabs({ p, onSaved, extra = [], first = "overview", childre
   const [tab, setTab] = useState(first);
   return (
     <>
-      <Tabs value={tab} onChange={setTab} tabs={[...extra.map(([k, l, i]) => [k, l, i]), ...(p.content_items ? [["content", p.content_label || "Inhoud", <IconGrid key="c" />, p.content_items.length]] : []), ["overview", "Overzicht", <IconEye key="o" />], ["placement", "Plaatsing", <IconGrid key="p" />], ["settings", "Instellingen", <IconSettings key="s" />], ["details", "Details", <IconGrid key="d" />]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[...extra.map(([k, l, i]) => [k, l, i]), ...(p.content_items ? [["content", p.content_label || "Inhoud", <IconGrid key="c" />, p.content_items.length]] : []), ["overview", "Overzicht", <IconEye key="o" />], ["placement", "Plaatsing", <IconGrid key="p" />], ...(p.settings_web && !p.config_schema?.length ? [] : [["settings", "Instellingen", <IconSettings key="s" />]]), ["details", "Details", <IconGrid key="d" />]]} />
       <div style={{ marginTop: "1rem" }}>
         {tab === "overview" && <PluginOverview p={p} />}
         {tab === "content" && <PluginContent p={p} onSaved={onSaved} />}

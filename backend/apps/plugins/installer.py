@@ -289,6 +289,124 @@ def effective_players(cap, st):
             "chat": bool(st.get("chat")) and multi, "direct": bool(st.get("direct")) and cap["max"] >= 2 and cap["min"] <= 2}
 
 
+ITEM_EXT = {"html", "htm", "js", "mjs", "css", "json", "png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "mp3", "ogg", "wav", "mp4", "webm", "woff", "woff2", "ttf", "txt", "md", "wasm", "bin", "atlas", "glb"}
+ITEM_MAX_FILE_MB, ITEM_MAX_UNPACKED_MB, ITEM_ZIP_MB = 15, 60, 30
+ITEM_NAME_RE = re.compile(r"^[a-z][a-z0-9-]{1,38}[a-z0-9]$")
+
+
+def add_item_zip(p, data):
+    """Put a new item (a game) in the content folder of a plugin from a zip: a folder with the plugin's item file (game.json) in it. An existing item with the same name is replaced.
+    Returns the name of the item. Only safe file types, paths and sizes; the item runs sealed off, like every item of the plugin."""
+    import json
+
+    if not p.manifest.get("content_dirs") or not p.manifest.get("content_item"):
+        raise InstallError("Deze plugin heeft geen onderdelen om te uploaden.")
+    if len(data) > ITEM_ZIP_MB * 2**20:
+        raise InstallError(f"Het zipbestand is groter dan {ITEM_ZIP_MB} MB.")
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(data))
+    except zipfile.BadZipFile:
+        raise InstallError("Dit is geen geldig zipbestand.")
+    spec = p.manifest["content_item"]
+    infos = [i for i in zf.infolist() if not i.is_dir() and not i.filename.startswith("__MACOSX/") and not i.filename.split("/")[-1].startswith(".")]
+    names = [i.filename for i in infos]
+    prefix = ""
+    if spec not in names:  # the item may sit in one folder inside the zip
+        tops = {n.split("/")[0] for n in names}
+        if len(tops) == 1 and f"{next(iter(tops))}/{spec}" in names:
+            prefix = next(iter(tops)) + "/"
+        else:
+            raise InstallError(f"{spec} ontbreekt in het zipbestand.")
+    try:
+        man = json.loads(zf.read(prefix + spec).decode("utf-8"))
+        name = str(man["name"])
+    except (ValueError, KeyError, UnicodeDecodeError):
+        raise InstallError(f"{spec} is niet te lezen of heeft geen \"name\".")
+    if not ITEM_NAME_RE.match(name):
+        raise InstallError("De naam in het bestand is ongeldig (3-40 tekens: a-z, 0-9 en -, begint met een letter).")
+    total = 0
+    for i in infos:
+        n = i.filename[len(prefix):]
+        if not i.filename.startswith(prefix) or not n:
+            continue
+        if n.startswith("/") or ".." in n.split("/") or "\\" in n or ((i.external_attr >> 16) & 0o170000) == 0o120000:
+            raise InstallError(f"Onveilig pad in het pakket: {n}")
+        if (n.rsplit(".", 1)[-1].lower() if "." in n else "") not in ITEM_EXT:
+            raise InstallError(f"Dit bestandstype is niet toegestaan: {n}")
+        if i.file_size > ITEM_MAX_FILE_MB * 2**20:
+            raise InstallError(f"{n} is te groot (maximaal {ITEM_MAX_FILE_MB} MB per bestand).")
+        total += i.file_size
+        if total > ITEM_MAX_UNPACKED_MB * 2**20:
+            raise InstallError(f"Het uitgepakte pakket is te groot (maximaal {ITEM_MAX_UNPACKED_MB} MB).")
+    base = plugin_dir(p.name) / p.manifest["content_dirs"][0]
+    base.mkdir(parents=True, exist_ok=True)
+    tmp = base / f".{name}.tmp"
+    shutil.rmtree(tmp, ignore_errors=True)
+    for i in infos:
+        if not i.filename.startswith(prefix) or not i.filename[len(prefix):]:
+            continue
+        dest = (tmp / i.filename[len(prefix):]).resolve()
+        if tmp.resolve() not in dest.parents:
+            shutil.rmtree(tmp, ignore_errors=True)
+            raise InstallError(f"Onveilig pad in het pakket: {i.filename}")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with zf.open(i) as src, open(dest, "wb") as out:
+            shutil.copyfileobj(src, out)
+    target = base / name
+    keep = [x for x in ("cover.png", "cover.jpg", "cover.jpeg", "cover.webp") if (target / x).is_file()]  # the picture the superadmin chose stays when a game is updated
+    for x in keep:
+        if not (tmp / x).exists():
+            shutil.copy2(target / x, tmp / x)
+    if (target / "about").is_dir() and not (tmp / "about").exists():
+        shutil.copytree(target / "about", tmp / "about")
+    shutil.rmtree(target, ignore_errors=True)
+    tmp.rename(target)
+    return name
+
+
+def _zip_dir(folder, top, skip=(".data", "__pycache__", ".DS_Store", ".tmp")):
+    """The files of a folder as a zip (in memory), inside one folder `top` when given."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in sorted(Path(folder).rglob("*")):
+            rel = f.relative_to(folder)
+            if not f.is_file() or f.is_symlink() or any(part in skip or part.startswith(".") and part not in (".htaccess",) for part in rel.parts):
+                continue
+            zf.write(f, (f"{top}/" if top else "") + rel.as_posix())
+    return buf.getvalue()
+
+
+def zip_plugin(p):
+    """The installed plugin as a zip that can be installed again on another site (plugin.json and plugin.sig at the top; the data of the plugin stays out)."""
+    return _zip_dir(plugin_dir(p.name), "")
+
+
+def zip_item(p, name):
+    """One item (a game) as a zip with a folder of its own, ready to upload again."""
+    if not p.manifest.get("content_dirs") or not ITEM_NAME_RE.match(name or ""):
+        raise InstallError("Dit onderdeel bestaat niet.")
+    d = plugin_dir(p.name) / p.manifest["content_dirs"][0] / name
+    if not d.is_dir():
+        raise InstallError("Dit onderdeel bestaat niet.")
+    return _zip_dir(d, name)
+
+
+def remove_item(p, name):
+    """Take an item out of the content folder of a plugin (its files and the state the superadmin gave it)."""
+    if not p.manifest.get("content_dirs") or not ITEM_NAME_RE.match(name or ""):
+        raise InstallError("Dit onderdeel bestaat niet.")
+    target = plugin_dir(p.name) / p.manifest["content_dirs"][0] / name
+    if not target.is_dir():
+        raise InstallError("Dit onderdeel bestaat niet.")
+    shutil.rmtree(target, ignore_errors=True)
+    cfg = dict(p.config or {})
+    items = dict(cfg.get("_items") or {})
+    items.pop(name, None)
+    cfg["_items"] = items
+    p.config = cfg
+    p.save(update_fields=["config", "updated_at"])
+
+
 ABOUT_LAYOUTS = ("left", "right", "top", "gallery")  # the explanation block of an item: picture left, right, above the text, or a gallery below it
 MAX_ABOUT_IMAGES = 8
 
@@ -484,13 +602,13 @@ def sync_menu_page(p):
         return
     label = (p.manifest.get("menu") or {}).get("label") or p.title
     if row:
-        Page.objects.filter(pk=row.pk).update(url=url, scope=scope, audience="all" if scope == "public" else "members", enabled=True)  # (the title, place and menu choice stay as the administrator set them)
+        Page.objects.filter(pk=row.pk).update(module=f"plugin:{p.name}", url=url, scope=scope, audience="all" if scope == "public" else "members", enabled=True)  # (the title, place and menu choice stay as the administrator set them)
         return
     key, n = f"plugin-{p.name}", 2
     while Page.objects.filter(key=key).exists():
         key, n = f"plugin-{p.name}-{n}", n + 1
     last = Page.objects.order_by("-order").first()
-    Page.objects.create(key=key, kind="link", title={"nl": label}, url=url, scope=scope, in_menu=True, audience="all" if scope == "public" else "members", source=src, order=(last.order + 1) if last else 0)
+    Page.objects.create(key=key, kind="link", title={"nl": label}, url=url, scope=scope, module=f"plugin:{p.name}", in_menu=True, audience="all" if scope == "public" else "members", source=src, order=(last.order + 1) if last else 0)
 
 
 def save_placement(p, group=None, page_object=None, page_public=None):

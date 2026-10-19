@@ -130,6 +130,18 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
               </label>
             </div>
           )}
+          <div className="theme-grid" style={{ marginTop: "1.25rem" }}>
+            <label>{tx("Logo uitlijnen")}
+              <select value={cfg.logo_align || "auto"} disabled={!canEdit} onChange={(e) => set({ logo_align: e.target.value })}>
+                <option value="auto">{tx("Volgens de opmaakvariant")}</option><option value="left">{tx("Links")}</option><option value="center">{tx("Midden")}</option><option value="right">{tx("Rechts")}</option>
+              </select>
+            </label>
+            <label>{tx("Formaat van het logo")}
+              <select value={cfg.logo_size || "m"} disabled={!canEdit} onChange={(e) => set({ logo_size: e.target.value })}>
+                <option value="s">{tx("Klein")}</option><option value="m">{tx("Middel")}</option><option value="l">{tx("Groot")}</option>
+              </select>
+            </label>
+          </div>
           <label className="check sec-toggle" style={{ marginTop: "1.25rem" }}>
             <span className="switch"><input type="checkbox" checked={cfg.show_logo} disabled={!canEdit} onChange={(e) => set({ show_logo: e.target.checked })} /><span /></span>
             <span>{tx("Logo bovenaan tonen")} <small className="muted">{tx("Zonder logo staat de naam van de website bovenaan.")}</small></span>

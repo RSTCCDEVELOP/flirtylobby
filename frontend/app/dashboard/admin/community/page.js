@@ -8,7 +8,9 @@ import { DirectDataFields } from "../../../../components/DirectDataForm";
 import { IconBell, IconChat, IconEdit, IconEye, IconImage, IconPin, IconRocket, IconSearch, IconSettings, IconSliders, IconUsers } from "../../../../components/Icons";
 import { useModules } from "../../../../components/Modules";
 import ProfileFieldsAdmin from "../../../../components/ProfileFieldsAdmin";
+import AvailabilityAdmin from "../../../../components/AvailabilityAdmin";
 import Tabs from "../../../../components/Tabs";
+import { PagesPanel } from "../../../../components/PluginPages";
 import { api, errorText } from "../../../../lib/api";
 import { useAutoSave } from "../../../../lib/autosave";
 import SaveStatus from "../../../../components/SaveStatus";
@@ -25,11 +27,23 @@ const Sw = ({ label, hint, checked, onChange, disabled }) => (
   </label>
 );
 
+// the website pages of the community (each one is made of blocks that are moved around in edit mode) and the screens that belong to them
+const COMMUNITY_PAGES = [
+  { key: "community", title: "Community", path: "/community", description: "De openingspagina van de community: wat leden hier kunnen doen." },
+  { key: "members", title: "Leden", path: "/leden", description: "Het overzicht van de leden." },
+  { key: "search", title: "Zoeken", path: "/zoeken", description: "Zoeken en matchen tussen leden." },
+];
+const COMMUNITY_LINKS = [
+  { href: "/dashboard/community", title: "Mijn community (voor leden)", description: "Het dashboard van een lid: ontdekken, berichten, chat en profiel." },
+  { href: "/dashboard/admin/pages", title: "Alle pagina's", description: "Alle pagina's van de website, ook de eigen pagina's." },
+];
+
 export default function CommunityAdmin() {
   const { user } = useAuth();
   const mods = useModules();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState(null);
+  const [top, setTop] = useState("pages"); // Pagina's | Instellingen
   const [dtab, setDtab] = useState("settings"); // Directe verbinding: settings | data | connect | actions
   const [xtab, setXtab] = useState("join"); // Zoeken & matchen: join | search | distance | alerts
   const [ctab, setCtab] = useState("how"); // Chat: how | look | share | conn
@@ -60,6 +74,9 @@ export default function CommunityAdmin() {
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
+      <Tabs value={top} onChange={setTop} tabs={[["pages", "Pagina's", <IconEdit key="p" />], ["settings", "Instellingen", <IconSettings key="s" />]]} />
+      {top === "pages" && <PagesPanel items={COMMUNITY_PAGES} links={COMMUNITY_LINKS} />}
+      {top === "settings" && <>
       <div className="cards" style={{ marginBottom: "1rem", marginTop: 0 }}>
         <div className="card stat"><span>{tx("Actieve profielen")}</span><strong>{d.counts.profiles}</strong></div>
         <div className="card stat"><span>{tx("Berichten")}</span><strong>{d.counts.messages}</strong></div>
@@ -306,8 +323,9 @@ export default function CommunityAdmin() {
                   <option value="auto">{tx("Automatisch (aan bij het thema Dating)")}</option><option value="on">{tx("Altijd aan")}</option><option value="off">{tx("Uit")}</option>
                 </select>
               </label>
-              <Num label={tx("Weggeswipete profielen verbergen")} hint="dagen" min={1} max={365} value={s.discover.pass_days} disabled={!can("discover")} onChange={(v) => set("discover", "pass_days", v)} />
+              <Num label={tx("Weggeswipete profielen verbergen")} hint="dagen" min={1} max={365} value={s.discover.pass_days} disabled={!can("discover") || s.discover.pass_forever} onChange={(v) => set("discover", "pass_days", v)} />
             </div>
+            <Sw label={tx("Mensen die je niet leuk vindt nooit meer tonen")} hint={tx("Een profiel dat je wegswipet komt niet meer terug, ook niet in het zoeken. Uit = het komt na het aantal dagen hierboven weer terug. Leden kunnen het ongedaan maken met de gele knop.")} checked={!!s.discover.pass_forever} disabled={!can("discover")} onChange={(v) => set("discover", "pass_forever", v)} />
             <small className="muted">{tx("Leden doen zelf mee via hun profiel (geboortedatum nodig). Een zoeker ziet alleen profielen die hij mag zien volgens zichtbaarheid, taal en blokkades.")}</small>
             </div>
           )}
@@ -321,6 +339,12 @@ export default function CommunityAdmin() {
             <Num label={tx("Max. berichten per minuut per user")} min={1} max={120} value={s.messages.rate_per_minute} disabled={!can("messages")} onChange={(v) => set("messages", "rate_per_minute", v)} />
           </div>
           <small className="muted">{tx("Berichten gaan door het woordfilter van Beveiliging. De ontvanger krijgt een e-mailmelding via je Communicatie-instellingen (sandbox-postvak als de sandbox aan staat).")}</small>
+        </Collapsible>
+      )}
+
+      {show("profiles") && (
+        <Collapsible id="comm-available" title={tx("Beschikbaar voor")}>
+          <AvailabilityAdmin langs={langs} />
         </Collapsible>
       )}
 
@@ -351,6 +375,7 @@ export default function CommunityAdmin() {
           <small className="muted">{tx("Users blokkeren elkaar zelf (Community → Geblokkeerd). Een geblokkeerde user kan de ander niet zien, vinden, berichten of chatten. Superadmins zien altijd alles.")}</small>
         </Collapsible>
       )}
+      </>}
     </>
   );
 }

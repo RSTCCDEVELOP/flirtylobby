@@ -48,6 +48,18 @@ export async function api(path, { method = "GET", body } = {}) {
   return translateTree(data);
 }
 
+// Download a file the API makes (with the login of the member): the browser saves it under `filename`
+export async function downloadFile(path, filename) {
+  const token = getToken();
+  const res = await fetch(`${getBase()}/api${path}`, { headers: token ? { Authorization: `Token ${token}` } : {} });
+  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(await res.blob());
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
 // Flatten DRF field errors into one readable string
 export function errorText(err) {
   if (!(err instanceof ApiError) || !err.data) return tx(err.message || "Er ging iets mis.");
