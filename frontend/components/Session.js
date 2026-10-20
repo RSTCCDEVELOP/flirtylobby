@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api, clearToken, getToken } from "../lib/api";
 import { lvl } from "../lib/perms";
+import { confirmDialog } from "../lib/dialog";
+import { tx } from "../lib/t";
 import { useModule } from "./Modules";
 
 const SessionContext = createContext({ user: null, ready: false, editing: false });
@@ -30,9 +32,10 @@ export function SessionProvider({ children }) {
     let alive = true;
     const load = () => {
       if (!getToken()) { setUser(null); return setReady(true); }
+      const used = getToken();
       api("/auth/me/")
-        .then((u) => alive && setUser(u))
-        .catch(() => { clearToken(); })
+        .then((u) => alive && getToken() === used && setUser(u))
+        .catch((e) => { if (e?.status === 401 && getToken() === used) clearToken(); }) // only the login this answer belongs to: a slow answer for an old token must not wipe the login that was made meanwhile (that made people log in twice)
         .finally(() => alive && setReady(true));
     };
     load();
@@ -42,10 +45,27 @@ export function SessionProvider({ children }) {
 
   const editModule = useModule("edit_mode");
   const canEdit = editModule && !preview && lvl(user, "edit_mode") >= 2;
-  const setEditMode = useCallback((on) => {
+  // Editing is made for a big screen: on a phone it is off, and switching it on asks first (the answer counts for this visit).
+  const [small, setSmall] = useState(false);
+  const [mobileOk, setMobileOk] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 720px)");
+    const on = () => setSmall(mq.matches);
+    on(); mq.addEventListener?.("change", on);
+    try { setMobileOk(sessionStorage.getItem("edit-mobile-ok") === "1"); } catch {}
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
+  const setEditMode = useCallback(async (on) => {
+    if (on && small && !mobileOk) {
+      const yes = await confirmDialog(tx("Bewerken is gemaakt voor een groot scherm. Op een telefoon is het lastig werken en kan de pagina er anders uitzien. Toch bewerken?"), { okLabel: tx("Toch bewerken"), cancelLabel: tx("Niet bewerken") });
+      if (!yes) return;
+      setMobileOk(true);
+      try { sessionStorage.setItem("edit-mobile-ok", "1"); } catch {}
+    }
     setEditModeState(on);
     try { localStorage.setItem("editMode", on ? "1" : "0"); } catch {}
-  }, []);
+  }, [small, mobileOk]);
+  const allowed = !small || mobileOk;
 
   const logout = useCallback(async () => {
     try { await api("/auth/logout/", { method: "POST" }); } catch {}
@@ -54,7 +74,7 @@ export function SessionProvider({ children }) {
   }, []);
 
   return (
-    <SessionContext.Provider value={{ user, ready, logout, canEdit, editMode, setEditMode, editing: canEdit && editMode }}>
+    <SessionContext.Provider value={{ user, ready, logout, canEdit, editMode: editMode && allowed, setEditMode, editing: canEdit && editMode && allowed }}>
       {children}
     </SessionContext.Provider>
   );

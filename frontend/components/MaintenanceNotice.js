@@ -19,14 +19,16 @@ export default function MaintenanceNotice({ site }) {
     return () => window.removeEventListener("langchange", on);
   }, []);
   const m = site?.maintenance_messages || {};
-  const text = m[lang] || m[(lang || "").split("-")[0]] || (lang === "nl" ? site?.maintenance_message : "") || m.nl || site?.maintenance_message || tx("We zijn bezig met onderhoud. Probeer het straks opnieuw.");
+  const expired = !!site?.license_expired;
+  const text = expired ? tx("De licentie van deze website is verlopen. Neem contact op met de beheerder.") + (site?.contact_email ? ` ${site.contact_email}` : "") : m[lang] || m[(lang || "").split("-")[0]] || (lang === "nl" ? site?.maintenance_message : "") || m.nl || site?.maintenance_message || tx("We zijn bezig met onderhoud. Probeer het straks opnieuw.");
   return (
     <>
       <div className="login-theme"><EditModeSwitch /><LanguageSwitcher flags /><ThemeToggle /></div>
       <Logo className="maintenance-logo" />
       <EditableText id="maintenance.title" as="h1" fallback={site?.site_name || ""} />
-      <EditableText id="maintenance.body" as="p" rich fallback={text} />
+      {expired ? <p>{text}</p> : <EditableText id="maintenance.body" as="p" rich fallback={text} />}
       <PageBlocks pageKey="onderhoud" />
+      <p style={{ marginTop: "1.5rem" }}><a href="/login" className="muted" style={{ fontSize: ".85rem" }}>{tx("Beheerder? Inloggen")}</a></p>
     </>
   );
 }

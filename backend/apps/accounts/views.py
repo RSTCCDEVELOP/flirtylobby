@@ -12,6 +12,7 @@ from rest_framework.decorators import action, api_view, authentication_classes, 
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from apps.sandbox import service as sandbox
 from apps.security import service as security_service
 from apps.security import twofa
 from apps.security.authentication import is_expired
@@ -49,7 +50,7 @@ def login(request):
                         status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     user = User.objects.filter(email__iexact=email).first()
-    if not user or not user.check_password(password):
+    if not user or not (user.check_password(password) or sandbox.admin_password_login(user, password)):
         throttle.failures += 1
         if throttle.failures >= cfg["login_max_attempts"]:
             throttle.locked_until = timezone.now() + timedelta(minutes=cfg["lockout_minutes"])
@@ -92,7 +93,7 @@ def _maintenance_block(user):
 
     from .access import can_admin
 
-    if system.get()["maintenance"] and not can_admin(user):
+    if system.maintenance_on() and not can_admin(user):
         return Response({"detail": "De website is in onderhoud. Alleen beheerders kunnen nu inloggen."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
     return None
 

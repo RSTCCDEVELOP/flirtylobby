@@ -26,6 +26,8 @@ import DevicePreview from "../components/DevicePreview";
 import NavProgress from "../components/NavProgress";
 import DonateThanks from "../components/DonateThanks";
 import MaintenanceGate from "../components/MaintenanceGate";
+import LicenseNotice from "../components/LicenseNotice";
+import LicensePrompt from "../components/LicensePrompt";
 import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
@@ -160,6 +162,8 @@ export default async function RootLayout({ children }) {
             <Gates cfg={security} />
             <SiteGate />
             <MaintenanceGate site={site} />
+            <LicenseNotice site={site} />
+            <LicensePrompt site={site} />
             <DonateThanks />
             <NavProgress />
             <PageLoader />

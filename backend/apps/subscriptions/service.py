@@ -615,6 +615,13 @@ def on_payment(payment):
         d.save()
         give_rewards(d)
         _mail_donation(d)
+        try:
+            from apps.notifications.service import notify
+
+            if d.user_id:
+                notify(d.user, "donation", "Bedankt voor je donatie", f"{d.campaign.title}: {d.amount}", url="/dashboard/mijn-donaties")
+        except Exception:  # noqa: BLE001
+            pass
     elif payment.status in ("failed", "canceled", "expired") and d.status == "pending":
         d.status = "failed"
         d.save(update_fields=["status"])
@@ -739,6 +746,12 @@ def _activate(sub, order):
     first = sub.periods == 1
     if first:
         _mail(sub.user, f"Je abonnement {sub.plan.name} is actief", f"Bedankt! Je abonnement {sub.plan.name} loopt tot {sub.period_end:%d-%m-%Y}." if sub.period_end else f"Bedankt! Je abonnement {sub.plan.name} is actief.")
+        try:
+            from apps.notifications.service import notify
+
+            notify(sub.user, "subscription", f"Je abonnement {sub.plan.name} is actief", url="/dashboard/subscriptions")
+        except Exception:  # noqa: BLE001
+            pass
     logger.info("Subscription %s active until %s (period %s)", sub.pk, sub.period_end, sub.periods)
 
 

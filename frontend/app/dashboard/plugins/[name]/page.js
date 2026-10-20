@@ -12,6 +12,8 @@ export default function PluginPage() {
   const { name } = useParams();
   const [p, setP] = useState(null);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState({});
+  useEffect(() => { setQuery(Object.fromEntries(new URLSearchParams(window.location.search))); }, []); // e.g. ?with=12: a plugin can start from the address
   useEffect(() => { api("/plugins/menu/").then((list) => setP(list.find((x) => x.name === name) || false)).catch((e) => setError(errorText(e))); }, [name]);
   if (error) return <div className="alert">{error}</div>;
   if (p === null) return <Busy />;
@@ -19,7 +21,7 @@ export default function PluginPage() {
   return (
     <>
       <div className="page-head"><div><h1>{p.label}</h1><p className="muted" style={{ margin: 0 }}>{p.title}</p></div></div>
-      <PluginFrame name={name} title={p.title} />
+      <PluginFrame name={name} title={p.title} route={{ path: "/", params: {}, query }} />
     </>
   );
 }

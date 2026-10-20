@@ -1,12 +1,13 @@
 """Back to a clean system ("reset"): everything that belongs to one website goes, the installation itself stays.
 
 GOES:   every user except the superadmins (with photos, profiles, messages, chats, orders ...), the media library and its files, pages and their blocks,
-        the texts edited on the website, plugins (with their data and files), theme packages of the site, imported sites, system objects, products/orders,
+        the texts edited on the website, the data of the plugins (the plugins stay installed, switched off), theme packages of the site, imported sites, system objects, products/orders,
         subscriptions and donations, notifications, dashboards, logos and home photos.
 STAYS:  the superadmins, the languages, the settings of the installation (names, addresses, security, mail, API keys, roles) and the built-in themes.
-THEN:   all modules off (the ones that are always on stay on), the theme becomes Easy2edit.
+THEN:   all modules off (only the core ones stay: users, dashboard, security, module management), all plugins off, the theme becomes Easy2edit and the licence is emptied.
 """
 import logging
+import shutil
 from pathlib import Path
 
 from django.core.files.storage import default_storage
@@ -17,12 +18,12 @@ logger = logging.getLogger(__name__)
 # models (app_label.Model) of which every row goes
 WIPE = [
     "core.ContentBlock", "core.DashboardLayout", "core.ThemeImportJob", "core.UserShortcuts", "core.UserPrefs",
-    "accounts.PendingRegistration", "accounts.UserGroup", "accounts.ModuleGrant",
+    "accounts.PendingRegistration", "accounts.Invitation", "notifications.Notification", "notifications.NotificationPref", "accounts.UserGroup", "accounts.ModuleGrant",
     "branding.SiteAsset", "branding.HomePhoto", "seo.SeoPage",
     "sandbox.SandboxMessage", "sandbox.SandboxPayment", "shop.OrderItem", "shop.Order",
     "social.DirectMessage", "social.ChatMessage", "social.ChatSignal", "social.Like", "social.Favorite", "social.ProfileVisit", "social.Connection",
     "social.DirectRoom", "social.DirectSignal", "social.Pass", "social.ProfileAllow", "social.Block", "social.Notification",
-    "subscriptions.Plan", "subscriptions.Subscription", "subscriptions.DonationCampaign", "subscriptions.Donation", "subscriptions.DonorAction", "subscriptions.ActionItem",
+    "subscriptions.Subscription", "subscriptions.Plan", "subscriptions.Donation", "subscriptions.DonationCampaign", "subscriptions.DonorAction", "subscriptions.ActionItem",
     "sysobjects.SystemObject", "siteimport.SiteImport", "security.LoginThrottle",
 ]
 
@@ -69,6 +70,15 @@ def _files_of_removed():
     return keys + fields
 
 
+def clear_license():
+    """Empty the licence: number, client, end date and price. The reseller data stays (it says where a new licence can be bought)."""
+    from .models import License
+    from . import system
+
+    License.objects.filter(pk=1).update(number="", client="", client_address="", valid_until=None, price=0, payment_ref="", issued_at=None)
+    system.license_changed()
+
+
 def perform(keep=None):
     """Do the reset. Returns what was removed. keep = the superadmin who asks (stays in any case; all superadmins stay)."""
     from apps.accounts.models import User
@@ -83,7 +93,15 @@ def perform(keep=None):
     files = _files_of_removed()
     gone_users = list(User.objects.filter(is_staff=False).values_list("pk", flat=True))
 
+    from django.db import connection
+
     with transaction.atomic():
+        # plugins: their data goes (it belongs to users and products that are removed) but the plugins themselves stay installed, switched off
+        with connection.cursor() as cur:
+            for pl in Plugin.objects.all():
+                prefix = "plg_" + pl.name.replace("-", "_") + "_"
+                for tb in [x for x in connection.introspection.table_names() if x.startswith(prefix)]:
+                    cur.execute(f'DELETE FROM "{tb}"')
         for label in WIPE:
             mdl = _model(label)
             if mdl:
@@ -105,22 +123,18 @@ def perform(keep=None):
                 ModuleState.objects.create(key=m["key"], enabled=False)
         # look: the default (Easy2edit)
         SiteSettings.objects.update_or_create(pk=1, defaults={"theme": {}})
+        clear_license()  # a clean system has no licence either
 
-    # plugins (with their data and files) and the theme packages of the site (their folders)
-    from django.db import connection
-
+    # plugins: all switched off (they stay installed; their files of data are cleared) and the theme packages of the site (their folders)
     from apps.plugins import runtime
 
     for p in list(Plugin.objects.all()):
         try:
             runtime.unload(p.name)
-            installer.remove(p)
-            prefix = "plg_" + p.name.replace("-", "_") + "_"  # the tables of the plugin go as well
-            with connection.cursor() as cur:
-                for t in [t for t in connection.introspection.table_names() if t.startswith(prefix)]:
-                    cur.execute(f'DROP TABLE IF EXISTS "{t}"')
+            shutil.rmtree(installer.root() / ".data" / p.name, ignore_errors=True)
+            Plugin.objects.filter(pk=p.pk).update(enabled=False, error="")
         except Exception:  # noqa: BLE001
-            logger.exception("Reset: plugin %s could not be removed completely", p.name)
+            logger.exception("Reset: plugin %s could not be switched off completely", p.name)
     for key in list(ThemePack.objects.values_list("key", flat=True)):
         themepacks.remove(key)
     for d in Path(themepacks.root()).glob("*/theme.json") if themepacks.root().exists() else []:
@@ -128,8 +142,6 @@ def perform(keep=None):
             themepacks.remove(d.parent.name)
 
     # what is left on the disk of the library: the folders of imported sites, the old image folders and the folders of the removed users
-    import shutil
-
     from django.conf import settings
 
     media = Path(settings.MEDIA_ROOT)

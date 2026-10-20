@@ -18,7 +18,7 @@ def sources():
     return {"donation": DonationCampaign.objects.filter(system_object=True), "plan": Plan.objects.filter(system_object=True),
             "plugin": [p for p in Plugin.objects.all() if installer.as_page_object(p)],
             "plugin_item": [(p, i) for p in Plugin.objects.all() for i in (installer.content_items(p) or []) if i["object"] and not i["problem"] and p.manifest.get("web")],
-            "plugin_part": [(p, x) for p in Plugin.objects.all() for x in (p.manifest.get("parts") or [])]}  # parts of a plugin (product overview, cart ...) to move around on a page
+            "plugin_part": [(p, x) for p in Plugin.objects.all() for x in installer.all_parts(p)]}  # parts of a plugin (product overview, cart ...) to move around on a page
 
 
 def sync():

@@ -336,6 +336,18 @@ def like(request, uid=None):
             Notification.objects.create(user=target, kind="like", from_user=me)
         if sent:
             Notification.objects.create(user=target, kind="message", from_user=me, text=msg[:200])
+        try:
+            from apps.notifications.service import notify
+
+            if match:
+                notify(target, "match", f"Match met {who}", url="/dashboard/community/discover", from_user=me)
+                notify(me, "match", f"Match met {service.display_name(target)}", url="/dashboard/community/discover", from_user=target)
+            else:
+                notify(target, "like", f"{who} vindt je leuk", url="/dashboard/community/discover", from_user=me)
+            if sent:
+                notify(target, "message", f"Bericht van {who}", msg[:200], url="/dashboard/community/messages", from_user=me)
+        except Exception:  # noqa: BLE001
+            pass
         if not match and cfg.get("like_email"):
             try:
                 from apps.communication import sending

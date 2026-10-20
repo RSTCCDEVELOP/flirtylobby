@@ -7,6 +7,7 @@ import { cardFieldsText } from "../../../../components/ProfileFields";
 import Swiper from "../../../../components/Swiper";
 import { AvailChips, AvailPicker, useAvailability } from "../../../../components/Availability";
 import VerifyBadge from "../../../../components/VerifyBadge";
+import Tabs from "../../../../components/Tabs";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useChat } from "../../../../components/Chat";
@@ -57,6 +58,7 @@ export default function Discover() {
   const [tab, setTab] = useState("suggested");
   const [pageTitle, setPageTitle] = useState("");
   const [f, setF] = useState(EMPTY);
+  const [ftab, setFtab] = useState("general"); // the search filters in tabs
   const [data, setData] = useState(null);
   const [list, setList] = useState(null);
   const [err, setErr] = useState("");
@@ -92,6 +94,9 @@ export default function Discover() {
   if (mods.discover === false) return <p className="muted">{tx("Zoeken & matchen staat uit.")}</p>;
   const on = (b) => pcfg?.builtin?.[b] !== false;
   const show = (id) => !search?.filters || search.filters.includes(id); // filters that belong to this profile type
+  const cnt = (keys) => { const n = keys.filter((k) => f[k] && f[k] !== "0").length; return n || null; }; // how many filters of a tab are filled in
+  const hasLoc = (on("city") && (show("city") || show("country"))) || (cfg?.distance_enabled && show("distance"));
+  const hasProfile = (on("interests") && show("interest")) || (on("aim") && show("aim")) || (pcfg?.fields || []).some((x) => x.filter);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
   return (
     <>
@@ -106,16 +111,26 @@ export default function Discover() {
       </div>
       {tab === "search" && (
         <div className="card" style={{ margin: "1rem 0" }}>
-          <div className="theme-grid">
+          <Tabs value={ftab} onChange={setFtab} tabs={[
+            ["general", "Algemeen", null, cnt(["q", "gender", "age_min", "age_max", "sort", "online", "photo"])],
+            ...(hasLoc ? [["location", "Locatie", null, cnt(["city", "country", "distance_km"])]] : []),
+            ...(hasProfile ? [["profile", "Interesses & profiel", null, cnt(["interest", "aim", ...Object.keys(f).filter((k) => k.startsWith("f_"))])]] : []),
+            ...(availGroups?.length > 0 ? [["avail", "Beschikbaar voor", null, cnt(["available"])]] : []),
+          ]} />
+          <div className="theme-grid" style={{ marginTop: ".9rem" }} hidden={ftab !== "general"}>
             <label>{tx("Naam of tekst")}<input value={f.q} onChange={set("q")} /></label>
             {on("gender") && show("gender") && <label>{tx("Geslacht")}<select value={f.gender} onChange={set("gender")}><option value="">{tx("Maakt niet uit")}</option>{Object.entries(GENDER).filter(([k]) => genders.includes(k)).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select></label>}
             {on("birth_date") && show("age") && <label>{tx("Leeftijd van")}<input type="number" min={18} max={99} value={f.age_min} onChange={set("age_min")} /></label>}
             {on("birth_date") && show("age") && <label>{tx("Leeftijd tot")}<input type="number" min={18} max={99} value={f.age_max} onChange={set("age_max")} /></label>}
+            {show("sort") && <label>{tx("Sorteren")}<select value={f.sort} onChange={set("sort")}><option value="">{tx("Standaard")}</option><option value="active">{tx("Laatst actief")}</option><option value="newest">{tx("Nieuwste")}</option>{cfg?.distance_enabled && <option value="distance">{tx("Dichtstbij")}</option>}</select></label>}
+          </div>
+          <div className="theme-grid" style={{ marginTop: ".9rem" }} hidden={ftab !== "location"}>
             {on("city") && show("city") && <label>{tx("Plaats")}<input value={f.city} onChange={set("city")} /></label>}
             {on("city") && show("country") && <label>{tx("Land (code)")}<input value={f.country} maxLength={2} onChange={set("country")} placeholder="NL" /></label>}
-            {on("interests") && show("interest") && <label>{tx("Interesse")}<input value={f.interest} onChange={set("interest")} placeholder={tx("bv. wandelen")} /></label>}
             {cfg?.distance_enabled && show("distance") && <label>{tx("Binnen")}<select value={f.distance_km} onChange={set("distance_km")}><option value="">{tx("Overal")}</option>{cfg.radii.map((r) => <option key={r} value={r}>{r} {tx("km")}</option>)}</select></label>}
-            {show("sort") && <label>{tx("Sorteren")}<select value={f.sort} onChange={set("sort")}><option value="">{tx("Standaard")}</option><option value="active">{tx("Laatst actief")}</option><option value="newest">{tx("Nieuwste")}</option>{cfg?.distance_enabled && <option value="distance">{tx("Dichtstbij")}</option>}</select></label>}
+          </div>
+          <div className="theme-grid" style={{ marginTop: ".9rem" }} hidden={ftab !== "profile"}>
+            {on("interests") && show("interest") && <label>{tx("Interesse")}<input value={f.interest} onChange={set("interest")} placeholder={tx("bv. wandelen")} /></label>}
             {on("aim") && show("aim") && <label>{tx("Zoekt")}<select value={f.aim} onChange={set("aim")}><option value="">{tx("Alles")}</option>{(pcfg?.aims || Object.entries(AIMS)).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select></label>}
             {(pcfg?.fields || []).filter((x) => x.filter).map((x) => (
               x.type === "checkbox" ? <label key={x.key} className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={f[`f_${x.key}`] === "1"} onChange={(e) => setF({ ...f, [`f_${x.key}`]: e.target.checked ? "1" : "" })} /> {x.label}</label>
@@ -124,13 +139,15 @@ export default function Discover() {
               : <label key={x.key}>{x.label}<input value={f[`f_${x.key}`] || ""} onChange={(e) => setF({ ...f, [`f_${x.key}`]: e.target.value })} /></label>
             ))}
           </div>
+          <div style={{ marginTop: ".9rem" }} hidden={ftab !== "avail"}>
           {availGroups?.length > 0 && (
-            <div style={{ marginTop: ".75rem" }}>
+            <div>
               <strong style={{ fontSize: ".85rem" }}>{tx("Beschikbaar voor")}</strong>
               <AvailPicker compact groups={availGroups} value={f.available ? f.available.split(",") : []} onChange={(v) => setF({ ...f, available: v.join(",") })} />
             </div>
           )}
-          <div className="row" style={{ justifyContent: "flex-start", marginTop: ".75rem" }}>
+          </div>
+          <div className="row" style={{ justifyContent: "flex-start", marginTop: ".9rem" }}>
             {show("online") && <label className="check"><input type="checkbox" checked={f.online} onChange={set("online")} /> {tx("Nu online")}</label>}
             {show("photo") && <label className="check"><input type="checkbox" checked={f.photo} onChange={set("photo")} /> {tx("Met foto")}</label>}
             <button className="btn sm" onClick={() => setF(EMPTY)}>{tx("Wissen")}</button>

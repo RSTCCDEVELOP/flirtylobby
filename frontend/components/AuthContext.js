@@ -19,13 +19,20 @@ export function AuthProvider({ children }) {
       router.replace("/login");
       return;
     }
-    api("/auth/me/")
-      .then(setUser)
-      .catch(() => {
-        clearToken();
-        router.replace("/login");
-      })
-      .finally(() => setLoading(false));
+    // Only a refused login (401) logs the person out. A hiccup of the server (restart, slow answer, network) must not: that made people log in twice. Retry a few times first.
+    let alive = true;
+    let used = getToken();
+    const load = (left) => api("/auth/me/")
+      .then((u) => alive && (setUser(u), setLoading(false)))
+      .catch((e) => {
+        if (!alive) return;
+        if (getToken() !== used) { used = getToken(); if (used) load(left); return; } // a new login was made meanwhile: leave it alone and ask again for that one
+        if (e?.status === 401 || e?.status === 403) { clearToken(); router.replace("/login"); setLoading(false); }
+        else if (left > 0) setTimeout(() => load(left - 1), 1500);
+        else setLoading(false);
+      });
+    load(5);
+    return () => { alive = false; };
   }, [router]);
 
   const logout = useCallback(async () => {

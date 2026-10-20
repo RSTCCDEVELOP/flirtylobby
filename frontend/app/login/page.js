@@ -20,6 +20,8 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
   const [canRegister, setCanRegister] = useState(false);
+  const [hydrated, setHydrated] = useState(false); // before the page is alive a submit would reload it (the person then has to log in again)
+  useEffect(() => setHydrated(true), []);
   const [challenge, setChallenge] = useState(null); // {challenge, method, destination} after the password step
   const [code, setCode] = useState("");
   const [info, setInfo] = useState("");
@@ -30,7 +32,9 @@ export default function Login() {
     setBusy(true);
     setError("");
     try {
-      const r = await api("/auth/login/", { method: "POST", body: { email, password } });
+      // read what is really in the fields: a password manager or autofill (iPhone, Safari) fills them without telling the page, and the state is still empty (then the first try failed and the second worked)
+      const f = new FormData(e.currentTarget);
+      const r = await api("/auth/login/", { method: "POST", body: { email: String(f.get("email") || email).trim(), password: String(f.get("password") || password) } });
       if (r.twofa_required) { setChallenge(r); setBusy(false); return; }
       setToken(r.token);
       router.push("/dashboard");
@@ -88,14 +92,14 @@ export default function Login() {
         <EditableText id="login.title" as="h1" fallbacks={{ nl: "Inloggen", en: "Log in", de: "Anmelden", fr: "Connexion", es: "Iniciar sesión", pt: "Entrar", zh: "登录", ar: "تسجيل الدخول" }} fallback="Inloggen" />
         <EditableText id="login.intro" as="p" fallback="" className="muted" />
         <label>{tx("E-mailadres")}
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" />
+          <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} onInput={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" autoCapitalize="none" autoCorrect="off" />
         </label>
         <label>{tx("Wachtwoord")}
-          <input type={show ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+          <input type={show ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} onInput={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
         </label>
         <label className="check"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /> {tx("Toon wachtwoord")}</label>
         {error && <div className="alert">{error}</div>}
-        <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Inloggen")}</button>
+        <button className="btn primary" disabled={busy || !hydrated}>{busy ? tx("Bezig…") : tx("Inloggen")}</button>
         {canRegister && <Link href="/registreren" className="center">{tx("Nog geen account? Aanmelden")}</Link>}
         <Link href="/" className="muted center">{tx("← Terug naar website")}</Link>
       </form>

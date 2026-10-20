@@ -81,6 +81,8 @@ MODULES = [
     {"key": "plugins", "group": "Systeem", "label": "Plugins",
      "desc": "Losse programma's (plugins) uploaden die met het systeem samenwerken en alle functies kunnen gebruiken. Alleen voor superadmins; plugins draaien als vertrouwde code.",
      "default": False},
+    {"key": "notifications", "group": "Systeem", "label": "Notificaties",
+     "desc": "Meldingen voor gebruikers van het systeem en alle modules: een belletje en pagina met alle meldingen, berichten van de beheerder en per gebruiker te kiezen welke meldingen en e-mails hij wil."},
     {"key": "sandbox", "group": "Systeem", "label": "Sandbox",
      "desc": "Testomgeving: e-mail, sms, betalingen en andere externe diensten simuleren zonder dat de echte API's worden aangeroepen."},
     {"key": "system", "group": "Systeem", "label": "Basisgegevens",

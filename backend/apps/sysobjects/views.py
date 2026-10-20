@@ -26,10 +26,10 @@ def _row(o, public=False):
             return None
         data, names, button = {"name": src.name, "item": it["name"], "title": it["title"], "enabled": src.enabled and it["enabled"], "public": it["public"]}, {"": it["title"], **it["meta"]["titles"]}, {}
     elif o.kind == "plugin_part":
-        part = next((x for x in src.manifest.get("parts") or [] if x["key"] == o.ref_key), None)
+        part = next((x for x in __import__("apps.plugins.installer", fromlist=["all_parts"]).all_parts(src) if x["key"] == o.ref_key), None)
         if not part:
             return None
-        data, names, button = {"name": src.name, "part": part["key"], "file": part["file"], "title": part["title"], "enabled": src.enabled}, {"": part["title"]}, {}
+        data, names, button = {"name": src.name, "part": part["key"], "file": part["file"], "query": part.get("query") or {}, "title": part["title"], "enabled": src.enabled}, {"": part["title"]}, {}
     elif o.kind == "plugin":
         data, names, button = {"name": src.name, "title": src.title, "enabled": src.enabled}, {"": src.title}, {}
     elif o.kind == "donation":

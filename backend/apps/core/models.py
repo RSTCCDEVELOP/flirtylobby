@@ -87,6 +87,34 @@ class SystemSettings(models.Model):
     data = models.JSONField(default=dict, blank=True)
 
 
+class License(models.Model):
+    """Singleton (pk=1): the licence number of this installation and the client (opdrachtgever). Made by the superadmin."""
+
+    number = models.CharField(max_length=40, blank=True)
+    client = models.CharField(max_length=200, blank=True)
+    client_address = models.CharField(max_length=300, blank=True)
+    issued_at = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)  # empty = no end date
+    price = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # what a renewal costs (0 = renewing is not offered online)
+    renew_months = models.PositiveSmallIntegerField(default=12)
+    base_price = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # the price of the platform itself (incl. VAT); the parts in use come on top
+    payment_ref = models.CharField(max_length=40, blank=True)  # the open renewal payment
+    reseller_name = models.CharField(max_length=120, blank=True)  # who sells the licence: shown to administrators when there is none
+    reseller_email = models.EmailField(blank=True)
+    reseller_url = models.CharField(max_length=300, blank=True)  # the page where a licence is ordered and paid
+
+
+class ComponentPrice(models.Model):
+    """The price (incl. VAT) of a module, a plugin or a game of a plugin. While it is in use it counts towards the price of the licence (see license_price.py)."""
+
+    kind = models.CharField(max_length=8)  # module | plugin | game
+    key = models.CharField(max_length=120)  # module key · plugin name · "plugin:game"
+    price = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["kind", "key"], name="uniq_component_price")]
+
+
 class ThemePack(models.Model):
     """A theme package from the themes folder (<root>/themes/<key>/theme.json): switched on = offered in Admin -> Vormgeving."""
 

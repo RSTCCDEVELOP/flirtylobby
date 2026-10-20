@@ -9,6 +9,10 @@ from .models import Page, PageLayout
 
 TEXTS = json.loads((Path(__file__).parent / "data" / "default_texts.json").read_text(encoding="utf-8"))
 LANGS = ("nl", "en", "de", "fr", "es", "pt", "zh", "ar")
+try:  # page names and addresses in the other languages of the system (made once with Claude, see data/extra_langs.json)
+    EXTRA = json.loads((Path(__file__).parent / "data" / "extra_langs.json").read_text(encoding="utf-8"))
+except (OSError, ValueError):
+    EXTRA = {"titles": {}, "slugs": {}}
 
 
 # pages with a screen of their own that also get an opening text and cards (shown above the screen), with blocks per community theme
@@ -22,7 +26,7 @@ def slugs_of(key):
 
 
 def title(key):
-    return {l: TEXTS[f"title.{key}"][l] for l in LANGS if TEXTS[f"title.{key}"].get(l)}
+    return {**EXTRA["titles"].get(key, {}), **{l: TEXTS[f"title.{key}"][l] for l in LANGS if TEXTS[f"title.{key}"].get(l)}}
 
 
 # Pages that already have their own screen in the frontend: only their names (in every language) and the link to the module are set here.
@@ -202,6 +206,19 @@ def ensure_pages():
         row = Page.objects.filter(key=key).first() or (Page.objects.filter(key="plugin-games").first() if key == "games" else None)
         if row and not row.slugs:
             Page.objects.filter(pk=row.pk).update(slugs=sl)
+    # every page gets its name and address in the languages it still misses (extra languages; nothing that was set is changed)
+    for key, per in EXTRA["titles"].items():
+        row = Page.objects.filter(key=key).first()
+        if row:
+            merged = {**per, **(row.title or {})}
+            if merged != (row.title or {}):
+                Page.objects.filter(pk=row.pk).update(title=merged)
+    for key, per in EXTRA["slugs"].items():
+        row = Page.objects.filter(key=key).first() or (Page.objects.filter(key="plugin-games").first() if key == "games" else None)
+        if row and row.slugs:
+            merged = {**per, **row.slugs}
+            if merged != row.slugs:
+                Page.objects.filter(pk=row.pk).update(slugs=merged)
     # the names of the pages that already exist, in the languages they still miss (and the games page the plugins module made)
     for key in ("games", "members", "products", "subscriptions", "donations"):
         row = Page.objects.filter(key=key).first() or (Page.objects.filter(key="plugin-games").first() if key == "games" else None)

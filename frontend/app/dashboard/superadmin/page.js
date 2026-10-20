@@ -4,6 +4,8 @@ import { tx } from "../../../lib/t";
 import Link from "next/link";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
+import LicenseAdmin from "../../../components/LicenseAdmin";
+import PresetPicker from "../../../components/PresetPicker";
 import ProfileThemeSwitches from "../../../components/ProfileThemeSwitches";
 import SettingsBackup from "../../../components/SettingsBackup";
 import SystemReset from "../../../components/SystemReset";
@@ -22,11 +24,17 @@ export default function SuperAdminHome() {
           </Link>
         </div>
       </Collapsible>
+      <Collapsible id="super-license" title={tx("Licentie")}>
+        <LicenseAdmin />
+      </Collapsible>
       <Collapsible id="super-themes" title={tx("Profielthema's (community)")}>
         <ProfileThemeSwitches />
       </Collapsible>
       <Collapsible id="super-backup" title={tx("Instellingen back-up")}>
         <SettingsBackup />
+      </Collapsible>
+      <Collapsible id="super-presets" title={tx("Standaard installaties")}>
+        <PresetPicker />
       </Collapsible>
       <Collapsible id="super-reset" title={tx("Systeem resetten")}>
         <SystemReset />

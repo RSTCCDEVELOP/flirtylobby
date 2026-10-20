@@ -11,6 +11,7 @@ import { canAdmin, lvl } from "../lib/perms";
 import { IconBag, IconChat, IconGrid, IconGroup, IconKey, IconMail, IconSearch, IconShield, IconUser, IconUsers } from "./Icons";
 import { BarChart, Donut } from "./Charts";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
+import AgendaTile from "./AgendaTile";
 
 /* Dashboard blocks. A block only exists while its module is on and the user has the access it needs (see `available`).
    To add one: write a component, add an entry to WIDGETS. */
@@ -227,6 +228,7 @@ export const WIDGETS = [
   { id: "welcome", group: "Algemeen", title: "Welkom", desc: "Begroeting", size: 2, ok: () => true, C: Welcome },
   { id: "notice", group: "Algemeen", title: "Mededeling", desc: "Een bericht van de beheerders voor alle gebruikers", size: 2, ok: () => true, C: Notice },
   { id: "shortcuts", group: "Algemeen", title: "Snelkoppelingen", desc: "Snel naar je pagina's", size: 2, ok: () => true, C: Shortcuts },
+  { id: "agenda", group: "Algemeen", title: "Agenda", desc: "Je komende afspraken, op jouw manier: lijst, eerstvolgende, week, maand of compact", size: 1, ok: ({ mods }) => mods["plugin:agenda"] === true, C: AgendaTile },
   { id: "profile", group: "Community", title: "Mijn profielpagina", desc: "Status van je profiel", size: 1, ok: ({ mods }) => on(mods, "profiles"), C: ProfileBlock },
   { id: "messages", group: "Community", title: "Berichten", desc: "Ongelezen berichten en laatste gesprekken", size: 1, ok: ({ mods }) => on(mods, "messages"), C: MessagesBlock },
   { id: "chat", group: "Community", title: "Chat", desc: "Ongelezen chatberichten", size: 1, ok: ({ mods }) => on(mods, "chat"), C: ChatBlock },
@@ -251,11 +253,11 @@ export const byId = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
 export const DASH_THEMES = { normal: "Normaal", dating: "Dating", sporters: "Sporters", business: "Business", webshop: "Webshop" };
 export const DASH_LAYOUTS = [["calm", "Rustig"], ["standard", "Standaard"], ["full", "Uitgebreid"]];
 const THEME_DASH = {
-  normal: { calm: ["welcome", "find", "messages"], standard: ["welcome", "shortcuts", "messages", "chat", "profile"], full: ["welcome", "notice", "shortcuts", "messages", "chat", "direct", "profile", "matches", "visits_chart"], suggested: ["find", "shortcuts", "chat", "direct", "notice"] },
-  dating: { calm: ["welcome", "swipe", "matches"], standard: ["welcome", "swipe", "matches", "messages", "visits_chart", "profile", "chat"], full: ["welcome", "notice", "shortcuts", "matches", "messages", "visits_chart", "profile", "chat", "direct"], suggested: ["find", "visits_chart", "direct", "chat", "shortcuts"] },
-  sporters: { calm: ["welcome", "find", "profile"], standard: ["welcome", "shortcuts", "profile", "messages", "chat", "direct"], full: ["welcome", "notice", "shortcuts", "profile", "messages", "chat", "direct", "matches", "visits_chart"], suggested: ["find", "notice", "direct", "chat", "matches"] },
-  business: { calm: ["welcome", "find", "messages"], standard: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart"], full: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart", "chat", "direct", "users_stats"], suggested: ["find", "notice", "visits_chart", "direct", "users_stats"] },
-  webshop: { calm: ["welcome", "orders_recent", "low_stock"], standard: ["welcome", "orders_chart", "orders_recent", "low_stock", "messages", "shortcuts"], full: ["welcome", "notice", "orders_chart", "orders_recent", "low_stock", "media_usage", "messages", "shortcuts", "profile"], suggested: ["orders_chart", "orders_recent", "low_stock", "media_usage"] },
+  normal: { calm: ["welcome", "agenda", "find", "messages"], standard: ["welcome", "agenda", "shortcuts", "messages", "chat", "profile"], full: ["welcome", "agenda", "notice", "shortcuts", "messages", "chat", "direct", "profile", "matches", "visits_chart"], suggested: ["agenda", "find", "shortcuts", "chat", "direct", "notice"] },
+  dating: { calm: ["welcome", "agenda", "swipe", "matches"], standard: ["welcome", "agenda", "swipe", "matches", "messages", "visits_chart", "profile", "chat"], full: ["welcome", "agenda", "notice", "shortcuts", "matches", "messages", "visits_chart", "profile", "chat", "direct"], suggested: ["agenda", "find", "visits_chart", "direct", "chat", "shortcuts"] },
+  sporters: { calm: ["welcome", "agenda", "find", "profile"], standard: ["welcome", "agenda", "shortcuts", "profile", "messages", "chat", "direct"], full: ["welcome", "agenda", "notice", "shortcuts", "profile", "messages", "chat", "direct", "matches", "visits_chart"], suggested: ["agenda", "find", "notice", "direct", "chat", "matches"] },
+  business: { calm: ["welcome", "agenda", "find", "messages"], standard: ["welcome", "agenda", "notice", "shortcuts", "messages", "profile", "visits_chart"], full: ["welcome", "agenda", "notice", "shortcuts", "messages", "profile", "visits_chart", "chat", "direct", "users_stats"], suggested: ["agenda", "find", "notice", "visits_chart", "direct", "users_stats"] },
+  webshop: { calm: ["welcome", "agenda", "orders_recent", "low_stock"], standard: ["welcome", "agenda", "orders_chart", "orders_recent", "low_stock", "messages", "shortcuts"], full: ["welcome", "agenda", "notice", "orders_chart", "orders_recent", "low_stock", "media_usage", "messages", "shortcuts", "profile"], suggested: ["agenda", "orders_chart", "orders_recent", "low_stock", "media_usage"] },
 };
 const dash = (theme) => THEME_DASH[theme] || THEME_DASH.normal;
 export const suggestedFor = (theme) => dash(theme).suggested;

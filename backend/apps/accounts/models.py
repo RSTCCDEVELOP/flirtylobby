@@ -131,3 +131,33 @@ class PendingRegistration(models.Model):
     sent_at = models.DateTimeField(null=True, blank=True)
     decoy = models.BooleanField(default=False)  # e-mail already has an account: look the same, never succeed
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Invitation(models.Model):
+    """An invitation to create an account (Admin → Users → Nodig uit). The link holds a secret token; only its hash is stored."""
+
+    token_hash = models.CharField(max_length=64, unique=True)
+    email = models.EmailField()
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    roles = models.ManyToManyField(Role, blank=True, related_name="+")
+    groups = models.ManyToManyField("UserGroup", blank=True, related_name="+")
+    grants = models.JSONField(default=list, blank=True)  # [{"module": key, "level": 1-3}]
+    require_terms = models.BooleanField(default=True)
+    terms_url = models.CharField(max_length=300, blank=True)
+    require_email_verify = models.BooleanField(default=True)
+    expires_at = models.DateTimeField()
+    created_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+    user = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    pending = models.JSONField(default=dict, blank=True)  # password HASH while the e-mail code is still to be entered
+    code_hash = models.CharField(max_length=64, blank=True)
+    code_expires = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    code_sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]

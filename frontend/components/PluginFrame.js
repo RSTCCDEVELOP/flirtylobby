@@ -21,6 +21,8 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
   const dash = useAuth(), site = useSession(); // in the dashboard the AuthContext, on the public site the Session
   const user = dash?.user ?? site?.user ?? null;
   const frame = useRef(null);
+  const routeRef = useRef(route);
+  routeRef.current = route; // the page asks for it later than this render: always the latest
   const dict = useRef({ keys: [], dict: {} });
   const [height, setHeight] = useState(640);
   const router = useRouter();
@@ -36,7 +38,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
         const lang = getLanguage();
         try { const r = await fetch(`${apiBase()}/api/plugins/lang/${name}/?lang=${lang}`); if (r.ok) dict.current = await r.json(); } catch {}
         const strings = Object.fromEntries(dict.current.keys.map((k) => [k, makeTranslator(dict.current.dict, tx)(k)]));
-        frame.current.contentWindow.postMessage({ plugin: "init", name, lang, strings, apiBase: apiBase(), route: route || {}, siteOrigin: window.location.origin, vars: siteVars(), attrs: { blocks: document.documentElement.dataset.blocks || "card", hero: document.documentElement.dataset.hero || "0", list: document.documentElement.dataset.list || "grid", center: document.documentElement.dataset.center || "0", pagesize: document.documentElement.dataset.pagesize || "all" }, scheme: scheme(), user: { id: user?.id, name: user?.first_name || user?.email, email: user?.email, is_staff: !!user?.is_staff } }, "*");
+        frame.current.contentWindow.postMessage({ plugin: "init", name, lang, strings, apiBase: apiBase(), route: routeRef.current || {}, siteOrigin: window.location.origin, vars: siteVars(), attrs: { blocks: document.documentElement.dataset.blocks || "card", hero: document.documentElement.dataset.hero || "0", list: document.documentElement.dataset.list || "grid", center: document.documentElement.dataset.center || "0", pagesize: document.documentElement.dataset.pagesize || "all" }, scheme: scheme(), user: { id: user?.id, name: user?.first_name || user?.email, email: user?.email, is_staff: !!user?.is_staff } }, "*");
       } else if (d.plugin === "confirm") reply({ ok: true, data: await confirmDialog(String(d.message || ""), { title: d.opts?.title, okLabel: d.opts?.okLabel, danger: !!d.opts?.danger }) });
       else if (d.plugin === "store") {  // the page has no storage of its own: keep it per plugin in this browser
         const k = `plg:${name}:${String(d.key || "").slice(0, 60)}`;

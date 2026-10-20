@@ -57,3 +57,4 @@ export const IconCoffee = (props) => <svg {...p} {...props}><path d="M4 8h12v6a5
 export const IconRocket = (props) => <svg {...p} {...props}><path d="M12 3c3.5 2 5.5 5.5 5 10l-2 2h-6l-2-2c-.5-4.500 1.500-8 5-10zM9 15l-3 3 .5 3 3-1M15 15l3 3-.5 3-3-1" /><circle cx="12" cy="10" r="1.500" /></svg>;
 export const IconCard = (props) => <svg {...p} {...props}><rect x="3" y="5.500" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h3" /></svg>;
 export const IconHelp = () => <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></svg>;
+export const IconInfo = () => <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>;

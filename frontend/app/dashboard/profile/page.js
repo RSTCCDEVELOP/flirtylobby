@@ -9,7 +9,9 @@ import PhotoDrop from "../../../components/PhotoDrop";
 import TwoFactorProfile from "../../../components/TwoFactorProfile";
 import ProfileBlock from "../../../components/ProfileBlock";
 import PublicProfileBlock from "../../../components/PublicProfileBlock";
-import { IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../components/Icons";
+import NotificationPrefs from "../../../components/NotificationPrefs";
+import { useModule } from "../../../components/Modules";
+import { IconBell, IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../components/Icons";
 import { countryOptions } from "../../../lib/countries";
 import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
@@ -19,6 +21,7 @@ import { useAutoSave } from "../../../lib/autosave";
 import SaveStatus from "../../../components/SaveStatus";
 
 export default function Profile() {
+  const notifyOn = useModule("notifications");
   const genders = useGenders();
   const { user, setUser } = useAuth();
   const [form, setForm] = useState({
@@ -84,7 +87,10 @@ export default function Profile() {
       )}
       <div className="page-head">
         <h1 style={{ margin: 0 }}>{tx("Mijn profiel")} <VerifyBadge status={user.verification} size={26} label /></h1>
-        <Link className="btn" href="/dashboard/community/profile">{tx("Instellingen openbaar profiel")}</Link>
+        <span className="head-actions">
+          {notifyOn && <Link className="btn" href="/dashboard/notifications?tab=prefs">{tx("Instellingen meldingen")}</Link>}
+          <Link className="btn" href="/dashboard/community/profile">{tx("Instellingen openbaar profiel")}</Link>
+        </span>
       </div>
       <div className="profile-cols">
       <div className="profile-col">
@@ -135,6 +141,11 @@ export default function Profile() {
       </div>
       </form>
 
+      {notifyOn && (
+        <ProfileBlock id="p-notify" icon={<IconBell />} title={tx("Meldingen")} hint={tx("Welke meldingen je ziet en wanneer je een e-mail krijgt.")}>
+          <NotificationPrefs />
+        </ProfileBlock>
+      )}
       <ProfileBlock id="p-security" icon={<IconLock />} title={tx("Beveiliging")} hint={tx("Wachtwoord en inloggen met een code.")}>
         <form className="form" onSubmit={changePassword}>
           <strong style={{ fontSize: ".9rem" }}>{tx("Wachtwoord wijzigen")}</strong>

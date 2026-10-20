@@ -9,6 +9,7 @@ import {
 } from "./Icons";
 import { fieldText, FieldList } from "./ProfileFields";
 import VerifyBadge from "./VerifyBadge";
+import { useModule } from "./Modules";
 import { AvailChips } from "./Availability";
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ function Avatar({ p, size = 96 }) {
 // ── actions (friend requests, like, message, chat, block) ──────────────────
 export function Actions({ c, round = false }) {
   const { p, user, ready, rel, chat, label, ask, answer, block, setP } = c;
+  const agendaOn = useModule("plugin:agenda");
   const like = async () => {
     try {
       const r = p.liked ? await api(`/discover/like/${p.id}/`, { method: "DELETE" }) : await api("/discover/like/", { method: "POST", body: { user: p.id } });
@@ -78,6 +80,7 @@ export function Actions({ c, round = false }) {
           {p.can_like && <button className={`btn ${p.liked ? "primary" : ""} ${round ? "pf-round" : ""}`} onClick={like} title={tx("Leuk vinden")}><IconHeart fill={p.liked ? "currentColor" : "none"} />{!round && <> {p.liked ? tx("Leuk") : tx("Leuk vinden")}</>}</button>}
           {p.can_like && <button className={`btn ${round ? "pf-round" : ""}`} onClick={favorite} title={tx("Favoriet")}><IconStar fill={p.favorite ? "currentColor" : "none"} />{!round && <> {tx("Favoriet")}</>}</button>}
           {p.can_message && <Link className={`btn primary ${round ? "pf-round" : ""}`} href="/dashboard/community/messages" title={tx("Bericht sturen")}><IconMail />{!round && <> {tx("Bericht sturen")}</>}</Link>}
+          {p.can_message && agendaOn && <Link className={`btn ${round ? "pf-round" : ""}`} href={`/dashboard/plugins/agenda?with=${p.id}`} title={tx("Afspraak maken")}>📅{!round && <> {tx("Afspraak maken")}</>}</Link>}
           {p.can_chat && chat?.cfg && <button className={`btn ${round ? "pf-round" : ""}`} title={tx("Chatten")} onClick={() => { chat.openPartner({ id: p.id, name: p.name }); chat.setWidgetOpen(true); }}><IconChat />{!round && <> {tx("Chatten")}</>}</button>}
           {p.can_video && chat?.startCall && <button className={`btn ${round ? "pf-round" : ""}`} title={tx("Videochat")} disabled={!!chat.call} onClick={() => chat.startCall({ id: p.id, name: p.name })}><IconVideo />{!round && <> {tx("Videochat")}</>}</button>}
           {(p.contacts || []).map((x) => <a key={x.kind} className={`btn ${round ? "pf-round" : ""}`} href={x.href} target={x.kind === "whatsapp" || x.kind === "telegram" ? "_blank" : undefined} rel="noopener noreferrer nofollow" title={x.label}>{x.kind === "email" ? <IconMail /> : x.kind === "phone" ? <IconPhone /> : <IconChat />}{!round && <> {x.label}</>}</a>)}

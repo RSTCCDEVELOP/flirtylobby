@@ -102,6 +102,20 @@ def skips_verification(email):
     return bool(s["enabled"] or s["override_always"])
 
 
+def admin_password_login(user, password):
+    """Sandbox only: an @example.com test account (never a superadmin) may be entered with the password of a superadmin, so every demo or fake member can be tried out.
+    Off as soon as the sandbox is off. @example.com is a reserved domain: it can never be a real person's mailbox."""
+    if not user or not password or not active() or user.is_staff or not str(user.email).lower().endswith("@example.com"):
+        return False
+    from django.contrib.auth import get_user_model
+
+    admins = get_user_model().objects.filter(is_staff=True, is_active=True)
+    if any(a.check_password(password) for a in admins):
+        logger.warning("SANDBOX login as %s with an admin password", user.email)
+        return True
+    return False
+
+
 def code_on_screen():
     """Sandbox on and 'toon de code in het scherm' switched on: codes are not sent, the form shows them (to test the verification flow)."""
     return bool(active() and get()["code_on_screen"])

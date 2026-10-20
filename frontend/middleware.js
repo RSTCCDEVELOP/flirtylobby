@@ -67,10 +67,11 @@ export async function middleware(req) {
   let res;
 
   // maintenance mode: every page of the website becomes the maintenance page (503); only the login and the dashboard (administrators) stay reachable
-  const open = pathname === "/login" || pathname.startsWith("/dashboard") || pathname.startsWith("/onderhoud") || /^\/(robots\.txt|sw\.js|manifest\.webmanifest|build-id)$/.test(pathname);
+  const alias = (await getAliases())[pathname.replace(/\/+$/, "") || "/"]; // /log-in, /inloggen, /anmelden ... are addresses of /login: they count as the page itself
+  const eff = alias || pathname;
+  const open = eff === "/login" || pathname.startsWith("/dashboard") || pathname.startsWith("/onderhoud") || pathname.startsWith("/locales/") || /^\/(robots\.txt|sw\.js|manifest\.webmanifest|build-id)$/.test(pathname);
   if (site?.maintenance && !open && !req.cookies.get("maint_ok")) return NextResponse.rewrite(new URL("/onderhoud", req.url), { status: 503, headers: { "Retry-After": "3600" } });
 
-  const alias = (await getAliases())[pathname.replace(/\/+$/, "") || "/"];
   if (alias && alias !== pathname && !pathname.startsWith("/dashboard")) return NextResponse.rewrite(new URL(`${alias}${req.nextUrl.search}`, req.url));
 
   const adminArea = pathname.startsWith("/dashboard") || pathname === "/login";

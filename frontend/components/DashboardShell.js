@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import FaqDrawer from "./FaqDrawer";
+import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -23,7 +24,7 @@ import { useShortcuts } from "../lib/shortcuts";
 import { useNavMode } from "../lib/navmode";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart, IconHelp } from "./Icons";
+import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
@@ -33,6 +34,7 @@ const NAV = [
   { href: "/dashboard/subscriptions", label: "Mijn abonnementen", icon: <IconStar />, module: "subscriptions" },
   { href: "/dashboard/help", label: "Help", icon: <IconHelp />, module: "help" },
   { href: "/dashboard/faq", label: "FAQ", icon: <IconHelp />, module: "faq", faqPrivate: true },
+  { href: "/dashboard/notifications", label: "Meldingen", icon: <IconBell />, module: "notifications" },
 ];
 
 // Bottom group of the main menu
@@ -73,6 +75,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/subscriptions", label: "Abonnementen", icon: <IconStar /> },
   { href: "/dashboard/admin/donations", label: "Donaties", icon: <IconHeart /> },
   { href: "/dashboard/admin/faq", label: "FAQ", icon: <IconHelp /> },
+  { href: "/dashboard/admin/notifications", label: "Notificaties", icon: <IconBell /> },
   { href: "/dashboard/admin/help", label: "Help", icon: <IconHelp />, helpLayer: true },
   { href: "/dashboard/admin/helptips", label: "Help-teksten", icon: <IconEdit /> },
   { href: "/dashboard/admin/actions", label: "Actions", icon: <IconLock /> },
@@ -104,7 +107,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/orders": "a-shop", "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };
 
 export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };
@@ -342,6 +345,7 @@ export default function DashboardShell({ children }) {
             <NavGroup id="a-manage" title="Beheer" active={inAdmin || inSuper} badge={0}>
               {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
               {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}
+              <InfoDialog className="nav-link nav-info" />
             </NavGroup>
           </div>
         )}

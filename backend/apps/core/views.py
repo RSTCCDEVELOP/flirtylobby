@@ -311,7 +311,38 @@ def system_reset(request):
         return Response({"detail": "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
     if not request.user.check_password(str(request.data.get("password", ""))):
         return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
-    return Response({"removed": reset.perform(request.user)})
+    removed = reset.perform(request.user)
+    applied = None
+    if request.data.get("preset"):  # start straight from a standard installation
+        from . import presets
+
+        if request.data["preset"] in presets.BY_KEY:
+            applied = presets.apply(request.data["preset"])
+    return Response({"removed": removed, "applied": applied})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def presets_list(request):
+    """The standard installations (superadmins)."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    return Response(presets.listing())
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_apply(request, key):
+    """Switch everything for a standard installation: modules, plugins and the community theme. Superadmins only; no data is removed."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    return Response(presets.apply(key))
 
 
 @api_view(["POST"])
@@ -606,3 +637,185 @@ def theme_pack_refine(request, key):
     except themepacks.ThemeError as e:
         return _bad(str(e))
     return Response({"summary": summary, "changed": sorted(changes), "values": theme.merged(themepacks._doc(key)["values"]), "packs": themepacks.listing()})
+
+
+def _license_out():
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    from . import license_price, system
+
+    return {"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "", "issued_at": lic.issued_at if lic else None,
+            "valid_until": lic.valid_until.isoformat() if lic and lic.valid_until else None, "expired": system.license_info()["expired"],
+            "price": str(license_price.refresh()), "base_price": str(lic.base_price) if lic else "0.00", "renew_months": lic.renew_months if lic else 12, "has": system.license_info()["has"],
+            "reseller": {"name": lic.reseller_name, "email": lic.reseller_email, "url": lic.reseller_url} if lic else {"name": "", "email": "", "url": ""}}
+
+
+@api_view(["GET", "PUT", "POST", "DELETE"])
+@permission_classes([IsAdminUser])  # superadmins only
+def system_license(request):
+    """GET the licence; PUT {client}; POST makes a new licence number (XXXX-XXXX-XXXX-XXXX)."""
+    import secrets
+
+    from django.utils import timezone
+
+    from .models import License
+
+    from . import system
+
+    lic, _ = License.objects.get_or_create(pk=1)
+    if request.method == "PUT":
+        from datetime import date
+
+        d = request.data
+        if "client" in d:
+            lic.client = str(d.get("client") or "").strip()[:200]
+        if "client_address" in d:
+            lic.client_address = str(d.get("client_address") or "").strip()[:300]
+        if "valid_until" in d:
+            try:
+                lic.valid_until = date.fromisoformat(str(d["valid_until"])) if d.get("valid_until") else None
+            except ValueError:
+                return Response({"detail": "Geef een geldige datum."}, status=400)
+        if "base_price" in d:
+            try:
+                from decimal import Decimal
+
+                lic.base_price = max(Decimal(str(d["base_price"] or 0)), Decimal("0")).quantize(Decimal("0.01"))
+            except Exception:  # noqa: BLE001
+                return Response({"detail": "Geef een geldig bedrag."}, status=400)
+        if "renew_months" in d:
+            try:
+                lic.renew_months = min(max(int(d["renew_months"]), 1), 120)
+            except (TypeError, ValueError):
+                return Response({"detail": "Geef een aantal maanden (1-120)."}, status=400)
+        for k, n in (("reseller_name", 120), ("reseller_email", 254), ("reseller_url", 300)):
+            if k in d:
+                setattr(lic, k, str(d.get(k) or "").strip()[:n])
+        if lic.reseller_url and not re.fullmatch(r"https?://[^\s]{3,290}|/[^\s]{0,290}", lic.reseller_url):
+            return Response({"detail": "Geef een geldige link (https://…)."}, status=400)
+        lic.save(update_fields=["client", "client_address", "valid_until", "base_price", "renew_months", "reseller_name", "reseller_email", "reseller_url"])
+    elif request.method == "DELETE":  # empty the licence (the reseller data stays: it says where a new one is bought)
+        from .reset import clear_license
+
+        clear_license()
+        lic.refresh_from_db()
+    elif request.method == "POST":
+        alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I: easy to read out
+        lic.number = "-".join("".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(4))
+        lic.issued_at = timezone.now()
+        lic.save(update_fields=["number", "issued_at"])
+    system.license_changed()
+    return Response(_license_out())
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def license_status(request):
+    """For administrators (also when the licence has run out): the state of the licence and what renewing costs."""
+    from apps.accounts.access import can_admin
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    out = _license_out()
+    out["can_pay"] = bool(float(out["price"]) > 0)
+    return Response(out)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def license_pay(request):
+    """An administrator pays the renewal of the licence (a payment, simulated in the sandbox). Answer: {url} to continue at."""
+    from apps.accounts.access import can_admin
+    from apps.sandbox import service as sandbox
+
+    from . import system
+    from .models import License
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    from . import license_price
+
+    lic, _ = License.objects.get_or_create(pk=1)
+    license_price.refresh()
+    lic.refresh_from_db()
+    if lic.price <= 0:
+        return Response({"detail": "Verlengen is niet online mogelijk: neem contact op met de leverancier."}, status=400)
+    base = (request.headers.get("Origin") or "").rstrip("/")
+    back = f"{base}/dashboard/license" if base else ""
+    try:
+        p = sandbox.create_payment(lic.price, "EUR", f"Licentie {lic.number or ''}".strip(), sandbox.payment_provider(), back)
+    except (sandbox.NotConfigured, ValueError) as e:
+        return Response({"detail": str(e)}, status=400)
+    lic.payment_ref = p.ref
+    lic.save(update_fields=["payment_ref"])
+    done = sandbox.settle(p, back or "/dashboard/license")  # automatic mode: paid at once
+    system.license_changed()
+    return Response({"url": done or f"/sandbox/checkout/{p.ref}"})
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAdminUser])  # superadmins only
+def license_prices(request):
+    """The price (incl. VAT) of every module, plugin and game, and what is in use now. PUT {prices: {"module:faq": "2.50", "plugin:games": "10", "game:games:chess": "1"}}."""
+    from decimal import Decimal, InvalidOperation
+
+    from . import license_price
+    from .models import ComponentPrice, License
+
+    if request.method == "PUT":
+        for k, v in (request.data.get("prices") or {}).items():
+            kind, _, key = str(k).partition(":")
+            if kind not in ("module", "plugin", "game") or not key:
+                continue
+            try:
+                price = max(Decimal(str(v or 0)), Decimal("0")).quantize(Decimal("0.01"))
+            except (InvalidOperation, ValueError):
+                return Response({"detail": f"Ongeldig bedrag voor {key}."}, status=400)
+            if price > 0:
+                ComponentPrice.objects.update_or_create(kind=kind, key=key[:120], defaults={"price": price})
+            else:
+                ComponentPrice.objects.filter(kind=kind, key=key).delete()
+    lic, _ = License.objects.get_or_create(pk=1)
+    price = license_price.refresh()
+    items = [{**c, "price": str(c["price"])} for c in license_price.catalog()]
+    return Response({"items": items, "base_price": str(lic.base_price), "total": str(price), "in_use": str(price - lic.base_price)})
+
+
+def on_license_payment(payment):
+    """After a payment status change: a paid renewal moves the end date on (from today, or from the old end date when that is still ahead)."""
+    from datetime import date
+
+    from . import system
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.payment_ref or lic.payment_ref != payment.ref or payment.status != "paid":
+        return
+    start = max(date.today(), lic.valid_until or date.today())
+    y, m = divmod(start.month - 1 + lic.renew_months, 12)
+    import calendar
+
+    year, month = start.year + y, m + 1
+    lic.valid_until = date(year, month, min(start.day, calendar.monthrange(year, month)[1]))
+    lic.payment_ref = ""
+    lic.save(update_fields=["valid_until", "payment_ref"])
+    system.license_changed()
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def system_info(request):
+    """Info for the Info pop-up in the Beheer menu: the version of Easy2edit and the installed plugins."""
+    from django.conf import settings as dj
+
+    from apps.plugins.models import Plugin
+
+    plugins = [{"name": p.name, "title": p.manifest.get("title") or p.name, "version": p.manifest.get("version", ""), "enabled": p.enabled, "author": p.manifest.get("author", "")} for p in Plugin.objects.order_by("name")]
+    from apps.core import modules, system
+
+    sysdata = system.get()
+    on = modules.states()
+    mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "desc": m.get("desc", ""), "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core"))} for m in modules.MODULES]
+    return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
+                     "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})

@@ -430,6 +430,12 @@ def connections(request):
         c = c or Connection(from_user=me, to_user=target, kind=kind)
         c.status, c.message, c.decided_at, c.created_at = "pending", msg, None, timezone.now()
         c.save()
+        try:
+            from apps.notifications.service import notify
+
+            notify(target, "request", f"Verzoek van {service.display_name(me)}", msg[:200], url="/dashboard/community/requests", from_user=me)
+        except Exception:  # noqa: BLE001
+            pass
         return Response({"relation": _relation(me, target)}, status=status.HTTP_201_CREATED)
 
     hidden = service.hidden_ids(me)
@@ -539,6 +545,12 @@ def msg_thread(request, uid):
         if DirectMessage.objects.filter(sender=me, created_at__gt=timezone.now() - timedelta(minutes=1)).count() >= cfg["rate_per_minute"]:
             return bad("Je verstuurt te snel. Probeer het zo opnieuw.", status.HTTP_429_TOO_MANY_REQUESTS)
         DirectMessage.objects.create(sender=me, recipient=other, subject=subject, body=body)
+        try:
+            from apps.notifications.service import notify
+
+            notify(other, "message", f"Bericht van {service.display_name(me)}", (subject or body)[:200], url="/dashboard/community/messages", from_user=me)
+        except Exception:  # noqa: BLE001
+            pass
         subs.charge(subs.access(me, "messages", other)[1] or me, "messages")
         try:
             from apps.communication import sending
@@ -628,6 +640,12 @@ def chat_thread(request, uid):
             m.attachment_kind, m.attachment_name = kind, f.name[:200]
             m.attachment.save(f"{uuid.uuid4().hex}.{ext}", f, save=False)
         m.save()
+        try:
+            from apps.notifications.service import notify
+
+            notify(other, "chat", f"Chat van {service.display_name(me)}", (body or "")[:200], url="/dashboard/community/chat", from_user=me)
+        except Exception:  # noqa: BLE001
+            pass
         subs.charge(payer or me, "chat")
         if f:
             subs.charge(payer_media or me, "chat_media")

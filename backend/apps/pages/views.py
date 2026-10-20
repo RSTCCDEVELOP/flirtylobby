@@ -2,7 +2,7 @@ import logging
 import re
 
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -99,6 +99,7 @@ def by_url(request):
 
 
 @api_view(["GET"])
+@authentication_classes([])  # public: a stale token in the browser must not break it (the maintenance page needs it to find the login page)
 @permission_classes([AllowAny])
 def aliases(request):
     """Public: the addresses of the standard pages in every language. {aliases: {address: canonical address}, pages: {key: {canonical, urls: {lang: address}}}}; only pages that are on."""
@@ -107,7 +108,7 @@ def aliases(request):
         for p in Page.objects.filter(scope="public", kind__in=("content", "system", "link", "menu")):
             if not p.slugs or not service.available(p):
                 continue
-            urls = {l: p.path_in(l) for l in service.LANG_CODES}
+            urls = {l: p.path_in(l) for l in service.lang_codes()}
             pages[p.key] = {"canonical": p.path, "urls": urls}
             for a in p.all_paths()[1:]:
                 out[a] = p.path

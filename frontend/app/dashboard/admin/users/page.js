@@ -9,6 +9,7 @@ import { useAuth } from "../../../../components/AuthContext";
 import VerifyBadge, { VERIFY } from "../../../../components/VerifyBadge";
 import Collapsible from "../../../../components/Collapsible";
 import Tabs from "../../../../components/Tabs";
+import UserInvites from "../../../../components/UserInvites";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
@@ -105,6 +106,7 @@ export default function Users() {
         <h1>{tx("Users")}</h1>
         <div className="head-actions">
           {L >= 3 && fake?.available && <button className="btn" onClick={() => setFk({ count: 3, gender: "", photos: 2, mood: "", busy: false, error: "", done: "" })}>✨ {tx("Nep-gebruikers (AI)")}</button>}
+          {L >= 3 && <button className="btn" onClick={() => window.dispatchEvent(new Event("invite-open"))}>{tx("Nodig uit")}</button>}
           {L >= 3 && <button className="btn primary" onClick={() => { setTab("account"); setModal({ ...EMPTY }); }}>{tx("+ Nieuwe gebruiker")}</button>}
         </div>
       </div>
@@ -153,6 +155,8 @@ export default function Users() {
         </table>
       </TableView>
       </Collapsible>
+
+      {L >= 3 && <UserInvites roles={roles} groups={groups} />}
 
       {fk && (
         <div className="overlay" onClick={() => !fk.busy && setFk(null)}>

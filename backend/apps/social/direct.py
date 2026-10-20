@@ -288,6 +288,12 @@ def guest_chat_request(request, token):
 
             Notification.objects.filter(user=room.owner, kind="dchat", seen=False).delete()
             Notification.objects.create(user=room.owner, kind="dchat", text=room.guest_name[:60])
+            try:
+                from apps.notifications.service import notify
+
+                notify(room.owner, "direct", f"{room.guest_name[:60]} vraagt een chat aan", url="/dashboard/community/direct")
+            except Exception:  # noqa: BLE001
+                pass
     return Response({"chat_request": room.chat_request})
 
 

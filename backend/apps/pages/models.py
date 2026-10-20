@@ -34,7 +34,7 @@ class Page(models.Model):
     def path_in(self, lang):
         """The address of this page in a language (zh and ar use the English one; the canonical one when there is none)."""
         sl = self.slugs or {}
-        s = sl.get(lang) or (sl.get("en") if lang in ("zh", "ar") else "")
+        s = sl.get(lang) or (sl.get("en") if lang != "nl" else "")  # a language without an address of its own uses the English one
         if s and self.scope == "public" and self.kind in ("system", "content", "link"):
             return "/" + s.strip("/")
         return self.path

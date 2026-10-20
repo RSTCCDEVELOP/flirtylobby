@@ -117,7 +117,7 @@ function BirthForm({ min, redirect, onOk, onStop }) {
   const y = parseInt(year, 10);
   const valid = month && y >= 1900 && y <= now.getFullYear();
   const check = () => {
-    if (ageFrom(y, parseInt(month, 10)) >= min) return onOk();
+    if (ageFrom(y, parseInt(month, 10)) >= min) { try { localStorage.setItem("age:birth", JSON.stringify({ y, m: parseInt(month, 10) })); } catch {} return onOk(); } // remembered: the sign-up and invitation forms start from it
     if (redirect) return void (window.location.href = redirect); // too young and a redirect is set: straight to that site
     setYoung(true);
   };

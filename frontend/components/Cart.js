@@ -24,7 +24,7 @@ export function ShopLinks() {
   }, [links]);
   return links.map((l) => (
     <Link key={l.name} href={l.path} className="shop-link" title={tx(l.label)}>
-      {l.icon === "cart" && <IconCart />} {tx(l.label)}{counts[l.name] > 0 && <span className="cart-count">{counts[l.name]}</span>}
+      {l.icon === "cart" && <IconCart />} <span className={l.icon === "cart" ? "shop-label" : undefined}>{tx(l.label)}</span>{counts[l.name] > 0 && <span className="cart-count">{counts[l.name]}</span>}
     </Link>
   ));
 }

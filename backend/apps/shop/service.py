@@ -103,3 +103,10 @@ def on_payment(payment):
         from apps.subscriptions import service as subs
 
         subs.on_order_status(order, before)
+        try:
+            from apps.notifications.service import notify
+
+            if order.user_id:
+                notify(order.user, "order", f"Bestelling {order.number}: {order.status}", url="/dashboard/mijn-bestellingen")
+        except Exception:  # noqa: BLE001
+            pass

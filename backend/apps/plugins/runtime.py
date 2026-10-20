@@ -19,7 +19,7 @@ from . import installer, manifest as mf, signing
 from .models import Plugin
 
 logger = logging.getLogger(__name__)
-EVENTS = ["user_registered", "user_login", "listing_created", "bid_placed", "booking_created"]
+EVENTS = ["user_registered", "user_login", "listing_created", "bid_placed", "booking_created", "agenda_event_created", "agenda_event_responded"]
 LOADED = {}      # name -> Loaded, per process
 _checked = {"t": 0}
 TTL = 5

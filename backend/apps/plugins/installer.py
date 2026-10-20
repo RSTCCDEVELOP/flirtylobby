@@ -574,6 +574,22 @@ def menu_group(p):
     return g if g in mf.MENU_GROUPS else (p.manifest.get("menu") or {}).get("group", "other")
 
 
+def all_parts(p):
+    """The parts of a plugin for pages: those in plugin.json, and (while it runs) the ones it offers itself with system.provide("parts", fn)."""
+    parts = list(p.manifest.get("parts") or [])
+    try:
+        from . import runtime
+
+        runtime.ensure_loaded()  # a plugin that is on but not loaded in this process yet
+        fn = (runtime.LOADED.get(p.name).provides if runtime.LOADED.get(p.name) else {}).get("parts")
+        for x in (fn() if fn else []) or []:
+            if isinstance(x, dict) and re.fullmatch(r"[a-z][a-z0-9-]{1,60}", str(x.get("key") or "")) and str(x.get("file") or "").startswith("web/"):
+                parts.append({"key": x["key"], "title": str(x.get("title") or x["key"])[:80], "file": x["file"], "query": {str(k)[:30]: str(v)[:80] for k, v in (x.get("query") or {}).items()}})
+    except Exception:  # noqa: BLE001 - a plugin must never break the system objects
+        pass
+    return parts
+
+
 def as_page_object(p):
     """May the plugin be put on a page as a system object? Only if it offers that (plugin.json) and an admin allowed it."""
     return bool(p.manifest.get("page_object")) and bool((p.config or {}).get("_page_object"))

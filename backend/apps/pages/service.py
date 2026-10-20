@@ -19,7 +19,16 @@ SYSTEM = [
     ("privacy", "/privacy", "privacy_pages", False, "all", {"nl": "Privacybeleid", "en": "Privacy policy", "de": "Datenschutz", "fr": "Confidentialité", "es": "Privacidad", "pt": "Privacidade", "zh": "隐私政策", "ar": "سياسة الخصوصية"}),
     ("cookies", "/cookies", "privacy_pages", False, "all", {"nl": "Cookiebeleid", "en": "Cookie policy", "de": "Cookie-Richtlinie", "fr": "Politique de cookies", "es": "Política de cookies", "pt": "Política de cookies", "zh": "Cookie 政策", "ar": "سياسة ملفات الارتباط"}),
 ]
-LANG_CODES = ("nl", "en", "de", "fr", "es", "pt", "zh", "ar")
+BASE_LANGS = ("nl", "en", "de", "fr", "es", "pt", "zh", "ar")
+
+
+def lang_codes():
+    """Every language of the system, also the ones that are switched off (the data of a page is kept for all of them)."""
+    try:
+        codes = list(Language.objects.values_list("code", flat=True))
+    except Exception:  # noqa: BLE001 (before the first migration)
+        codes = []
+    return tuple(codes) or BASE_LANGS
 ALWAYS_ON = {"home", "login", "notfound"}  # cannot be switched off
 # pages whose texts can be edited in edit mode (own pages always can)
 EDITABLE = {"home", "login", "notfound"}
@@ -82,7 +91,7 @@ def _tree(qs):
     ok = {p.id: p for p in pages if available(p) and p.in_menu}
 
     def item(p):
-        return {"id": p.id, "key": p.key, "titles": p.title, "url": p.path, "urls": {l: p.path_in(l) for l in LANG_CODES}, "new_tab": p.new_tab, "audience": p.audience, "kind": p.kind, "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "children": []}
+        return {"id": p.id, "key": p.key, "titles": p.title, "url": p.path, "urls": {l: p.path_in(l) for l in lang_codes()}, "new_tab": p.new_tab, "audience": p.audience, "kind": p.kind, "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "children": []}
 
     top = [item(p) for p in ok.values() if p.parent_id is None]
     by_id = {t["id"]: t for t in top}

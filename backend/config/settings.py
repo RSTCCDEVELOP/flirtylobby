@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.subscriptions",
     "apps.sysobjects",
     "apps.faq",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [

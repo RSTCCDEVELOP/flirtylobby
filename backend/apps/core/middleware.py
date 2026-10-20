@@ -26,7 +26,7 @@ class MaintenanceMiddleware:
     """Maintenance mode (Basisgegevens): while it is on, only administrators use the system. Visitors and members get 503 for everything that changes data
     (except logging in, which itself refuses non-administrators); a member who is still logged in gets 503 for the whole API (except /api/auth/ and /api/site/)."""
 
-    OPEN = ("/api/auth/", "/api/site/")
+    OPEN = ("/api/auth/", "/api/site/", "/api/pages/aliases/")
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -37,7 +37,7 @@ class MaintenanceMiddleware:
             try:
                 from . import system
 
-                on = system.get()["maintenance"]
+                on = system.maintenance_on()
             except Exception:  # noqa: BLE001
                 on = False
             if on and not self._admin(request) and (request.method not in ("GET", "HEAD", "OPTIONS") or request.META.get("HTTP_AUTHORIZATION")):

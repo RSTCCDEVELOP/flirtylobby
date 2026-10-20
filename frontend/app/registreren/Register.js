@@ -12,6 +12,7 @@ import { api, setToken, errorText } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { GENDER_LABELS, useGenders } from "../../lib/genders";
 import CodeInput from "../../components/CodeInput";
+import { checkedBirthMonth } from "../../lib/age-check";
 
 
 const EMPTY = { first_name: "", last_name: "", display_name: "", email: "", password: "", password2: "", birth_date: "", gender: "", phone: "", method: "", accept: false };
@@ -30,6 +31,7 @@ export default function Register() {
   const router = useRouter();
   const [cfg, setCfg] = useState(null);
   const [f, setF] = useState(EMPTY);
+  useEffect(() => { const b = checkedBirthMonth(); if (b) setF((x) => (x.birth_date ? x : { ...x, birth_date: b })); }, []); // month and year from the 18+ check
   const [step, setStep] = useState(null); // null = form, else {token, step, destination, steps_left}
   const [code, setCode] = useState("");
   const [errors, setErrors] = useState({});

@@ -492,6 +492,17 @@ def frame_ancestors(request=None):
     origins = [*settings.CORS_ALLOWED_ORIGINS, system.origin(system.get().get("frontend_url")), system.origin(system.get().get("backend_url"))]
     if request is not None:
         origins.append(f"{request.scheme}://{request.get_host()}")
+        if settings.DEBUG:  # development: the site is also opened from another device on the local network (http://10.x.x.x:5173): its pages may frame the plugin too
+            import ipaddress
+            from urllib.parse import urlparse
+
+            ref = urlparse(request.META.get("HTTP_REFERER", ""))
+            try:
+                private = ref.hostname == "localhost" or ipaddress.ip_address(ref.hostname or "").is_private
+            except ValueError:
+                private = False
+            if private and ref.scheme in ("http", "https"):
+                origins.append(f"{ref.scheme}://{ref.netloc}")
     return " ".join(["'self'", *dict.fromkeys(o for o in origins if o)])
 
 
