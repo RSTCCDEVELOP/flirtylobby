@@ -68,7 +68,8 @@ LOGOS = [
 
 LOADER_STYLES = [{"value": v, "label": l, "css": ""} for v, l in (
     ("ring", "Ring"), ("dots", "Stippen"), ("bar", "Voortgangsbalk"), ("pulse", "Pulserende bol"), ("orbit", "Baantjes"), ("squares", "Blokjes"),
-    ("wave", "Golf"), ("skeleton", "Pagina-schets"), ("logo", "Logo"))]
+    ("wave", "Golf"), ("skeleton", "Pagina-schets"), ("logo", "Logo"), ("image", "Eigen afbeelding"))]
+LOADER_ANIM = [{"value": v, "label": l, "css": ""} for v, l in (("pulse", "Pulseren"), ("spin", "Draaien"), ("bounce", "Springen"), ("none", "Stilstaand"))]
 LOADER_WHEN = [{"value": "first", "label": "Alleen bij het eerste laden van de site", "css": ""}, {"value": "always", "label": "Ook tussen pagina's", "css": ""}]
 LOADER_BACKDROP = [{"value": "page", "label": "Achtergrond van de pagina", "css": ""}, {"value": "glass", "label": "Glas (vervaagd)", "css": ""}, {"value": "dim", "label": "Donker gedimd", "css": ""}]
 def _opts(*pairs):
@@ -241,6 +242,17 @@ SCHEMA = [
         number("loader_size", "Grootte", 56, None, "px", 24, 120),
         number("loader_min", "Minimaal zichtbaar", 400, None, "ms", 0, 3000, 50),
         choice("loader_percent", "Percentage tonen onder de loader", "no", None, YESNO),
+        number("loader_image_id", "Eigen afbeelding voor de loader (nummer uit de media)", 0, None, "", 0, 100000000),
+        number("loader_image_size", "Grootte van de eigen afbeelding", 80, None, "px", 24, 500),
+        number("loader_image_opacity", "Doorzichtigheid van de eigen afbeelding", 100, None, "%", 5, 100, 5),
+        number("loader_image_bg_opacity", "Doorzichtigheid van de achtergrondkleur", 100, None, "%", 0, 100, 5),
+        number("loader_image_radius", "Ronde hoeken van de eigen afbeelding", 0, None, "px", 0, 250),
+        number("loader_image_border", "Rand om de eigen afbeelding (dikte)", 0, None, "px", 0, 24),
+        color("loader_image_border_color", "Kleur van de rand", "#f2823f", None),
+        choice("loader_image_bg_on", "Achtergrondkleur achter de eigen afbeelding", "no", None, YESNO),
+        color("loader_image_bg", "Achtergrondkleur", "#ffffff", None),
+        number("loader_image_pad", "Ruimte tussen rand en afbeelding", 0, None, "px", 0, 60),
+        choice("loader_image_anim", "Beweging van de eigen afbeelding", "pulse", None, LOADER_ANIM),
         number("loader_opacity", "Doorzichtigheid van de laag achter de loader", 100, None, "%", 10, 100, 5),
         choice("loader_lazy", "Lazy load: afbeeldingen laden pas als je ze nodig hebt", "yes", None, YESNO),
         choice("page_transition", "Pagina-overgang", "none", None, TRANSITIONS),

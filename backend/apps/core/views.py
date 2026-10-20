@@ -28,9 +28,23 @@ from . import theme  # noqa: E402
 from .models import SiteSettings  # noqa: E402
 
 
+def _loader_image(values):
+    """The address of the own picture of the page loader (from the media library), or ''."""
+    try:
+        from django.core.files.storage import default_storage
+
+        from apps.medialib.models import MediaItem
+
+        mid = int(values.get("loader_image_id") or 0)
+        item = MediaItem.objects.filter(pk=mid, kind="image").first() if mid else None
+        return default_storage.url(item.key) if item else ""
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _theme_payload(values, with_schema=False):
     css, fonts_url = theme.build(values)
-    payload = {"values": values, "css": css, "fonts_url": fonts_url}
+    payload = {"values": {**values, "loader_image_url": _loader_image(values)}, "css": css, "fonts_url": fonts_url}
     if with_schema:
         payload["schema"] = theme.SCHEMA
         payload["presets"] = theme.presets()
@@ -47,7 +61,7 @@ def theme_settings(request):
 
     if not modules.enabled("theme") or not access_level(request.user, "theme") >= 2:
         return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
-    clean, errors = theme.validate(request.data.get("values"))
+    clean, errors = theme.validate({k: v for k, v in (request.data.get("values") or {}).items() if k != "loader_image_url"})
     if errors:
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     final = theme.merged(clean)

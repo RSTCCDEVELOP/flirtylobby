@@ -2372,3 +2372,7 @@ html.fixed-dragging .pb-cell.edit { outline: 2px dashed color-mix(in srgb, var(-
 @keyframes faqin { from { transform: translateX(30px); opacity: 0; } }
 .faq-drawer-x { position: absolute; top: .7rem; right: .8rem; }
 .faq-drawer .faq-head { flex-direction: column; align-items: flex-start; gap: .4rem; } .faq-drawer .faq-art { max-width: 90px; }
+
+.ld-image img { height: var(--ld, 56px); width: auto; max-width: 70vw; display: block; }
+.ld-image.an-pulse { animation: ldlogo 1.4s ease-in-out infinite; } .ld-image.an-spin { animation: ldspin 1.4s linear infinite; } .ld-image.an-bounce { animation: ldbounce .9s ease-in-out infinite; }
+@keyframes ldbounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }

@@ -1,12 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { mediaUrl } from "../lib/api";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "./BrandingContext";
 import { useUi } from "./Ui";
 
 // Page loaders in the style of the theme (colours, rounding and logo come from the theme): the pictures are CSS only
-export const LOADER_STYLES = ["ring", "dots", "bar", "pulse", "orbit", "squares", "wave", "skeleton", "logo"];
+export const LOADER_STYLES = ["ring", "dots", "bar", "pulse", "orbit", "squares", "wave", "skeleton", "logo", "image"];
 
 // the number under the animation: it climbs while the page loads (slower and slower towards 90) and jumps to 100 when the loader ends
 export function Percent({ done = false, running = true }) {
@@ -21,7 +22,7 @@ export function Percent({ done = false, running = true }) {
   return <div className="ld-pct" aria-hidden="true">{n}%</div>;
 }
 
-export function LoaderArt({ kind = "ring", size = 56 }) {
+export function LoaderArt({ kind = "ring", size = 56, image = "", anim = "pulse", look = {} }) {
   const st = { "--ld": `${size}px` };
   if (kind === "dots") return <span className="ld ld-dots" style={st}><i /><i /><i /></span>;
   if (kind === "bar") return <span className="ld ld-bar" style={st}><i /></span>;
@@ -30,6 +31,7 @@ export function LoaderArt({ kind = "ring", size = 56 }) {
   if (kind === "squares") return <span className="ld ld-squares" style={st}>{Array.from({ length: 9 }, (_, n) => <i key={n} style={{ animationDelay: `${(n % 3 + Math.floor(n / 3)) * 0.12}s` }} />)}</span>;
   if (kind === "wave") return <span className="ld ld-wave" style={st}>{[0, 1, 2, 3, 4].map((n) => <i key={n} style={{ animationDelay: `${n * 0.1}s` }} />)}</span>;
   if (kind === "skeleton") return <span className="ld ld-skeleton" style={st}><i className="a" /><i className="b" /><i className="c" /><i className="d" /></span>;
+  if (kind === "image") return image ? <span className={`ld ld-image an-${anim}`} style={{ ...st, width: "auto", height: "auto", padding: `${Number(look.loader_image_pad) || 0}px`, borderRadius: `${Number(look.loader_image_radius) || 0}px`, overflow: "hidden", ...(Number(look.loader_image_border) > 0 ? { border: `${Number(look.loader_image_border)}px solid ${look.loader_image_border_color || "#f2823f"}` } : {}), ...(look.loader_image_bg_on === "yes" ? { background: `color-mix(in srgb, ${look.loader_image_bg || "#ffffff"} ${look.loader_image_bg_opacity ?? 100}%, transparent)` } : {}) }}>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={mediaUrl(image)} alt="" style={{ opacity: (look.loader_image_opacity ?? 100) / 100, borderRadius: Math.max(0, (Number(look.loader_image_radius) || 0) - (Number(look.loader_image_pad) || 0)) }} /></span> : <span className="ld ld-ring" style={st}><i /></span>;
   if (kind === "logo") return <span className="ld ld-logo" style={st}><Logo /></span>;
   return <span className="ld ld-ring" style={st}><i /></span>;
 }
@@ -76,7 +78,7 @@ export default function PageLoader() {
   if (!on || !show) return null;
   return (
     <div className={`page-loader bd-${ui.loader_backdrop || "page"}`} style={{ "--ldo": ui.loader_opacity ?? 100 }} role="status" aria-live="polite" aria-label="Laden">
-      <div className="ld-stack"><LoaderArt kind={ui.loader_style || "ring"} size={Number(ui.loader_size) || 56} />{ui.loader_percent === "yes" && <Percent />}</div>
+      <div className="ld-stack"><LoaderArt kind={ui.loader_style || "ring"} size={ui.loader_style === "image" ? Number(ui.loader_image_size) || 80 : Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div>
     </div>
   );
 }
@@ -104,7 +106,7 @@ export function LoaderTest({ values, onClose, ms = 3000 }) {
   if (!on) return null;
   return (
     <div className={`page-loader bd-${values.loader_backdrop || "page"}`} style={{ cursor: "pointer", "--ldo": values.loader_opacity ?? 100 }} onClick={() => { setOn(false); onClose?.(); }} role="status">
-      <div className="ld-stack"><LoaderArt kind={values.loader_style || "ring"} size={Number(values.loader_size) || 56} />{values.loader_percent === "yes" && <Percent />}</div>
+      <div className="ld-stack"><LoaderArt kind={values.loader_style || "ring"} size={values.loader_style === "image" ? Number(values.loader_image_size) || 80 : Number(values.loader_size) || 56} image={values.loader_image_url} anim={values.loader_image_anim} look={values} />{values.loader_percent === "yes" && <Percent />}</div>
     </div>
   );
 }
@@ -170,6 +172,6 @@ export function Busy({ full = false, label = "Laden…" }) {
   const ui = useUi() || {};
   const on = ui.loader_on === "yes";
   if (!on) return full ? <div className="splash">{label}</div> : <p className="muted">{label}</p>;
-  if (full) return <div className={`page-loader bd-${ui.loader_backdrop || "page"}`} style={{ "--ldo": ui.loader_opacity ?? 100 }} role="status" aria-label={label}><div className="ld-stack"><LoaderArt kind={ui.loader_style || "ring"} size={Number(ui.loader_size) || 56} />{ui.loader_percent === "yes" && <Percent />}</div></div>;
+  if (full) return <div className={`page-loader bd-${ui.loader_backdrop || "page"}`} style={{ "--ldo": ui.loader_opacity ?? 100 }} role="status" aria-label={label}><div className="ld-stack"><LoaderArt kind={ui.loader_style || "ring"} size={ui.loader_style === "image" ? Number(ui.loader_image_size) || 80 : Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div></div>;
   return <div className="busy" role="status" aria-label={label}><LoaderArt kind={ui.loader_style || "ring"} size={Math.min(Number(ui.loader_size) || 56, 56)} /></div>;
 }

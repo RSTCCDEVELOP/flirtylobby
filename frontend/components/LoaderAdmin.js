@@ -4,14 +4,16 @@ import { Busy } from "./PageLoader";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAutoSave } from "../lib/autosave";
-import { api, errorText } from "../lib/api";
+import { api, errorText, mediaUrl } from "../lib/api";
 import { tx } from "../lib/t";
 import { LOADER_STYLES, LoaderArt, LoaderTest } from "./PageLoader";
 import Collapsible, { CollapseAll } from "./Collapsible";
+import MediaPicker from "./MediaPicker";
 import SaveStatus from "./SaveStatus";
 
 // Page loaders: lazy load, the look of the loader (in the style of the theme) and a test button. Saved by itself, with the theme.
-const NAMES = { ring: "Ring", dots: "Stippen", bar: "Voortgangsbalk", pulse: "Pulserende bol", orbit: "Baantjes", squares: "Blokjes", wave: "Golf", skeleton: "Pagina-schets", logo: "Logo" };
+const NAMES = { ring: "Ring", dots: "Stippen", bar: "Voortgangsbalk", pulse: "Pulserende bol", orbit: "Baantjes", squares: "Blokjes", wave: "Golf", skeleton: "Pagina-schets", logo: "Logo", image: "Eigen afbeelding" };
+const ANIMS = [["pulse", "Pulseren"], ["spin", "Draaien"], ["bounce", "Springen"], ["none", "Stilstaand"]];
 const WHEN = [["first", "Alleen bij het eerste laden van de site"], ["always", "Ook tussen pagina's"]];
 const BACKDROP = [["page", "Achtergrond van de pagina"], ["glass", "Glas (vervaagd)"], ["dim", "Donker gedimd"]];
 const TRANS = [["none", "Geen"], ["fade", "Vervagen"], ["slide", "Schuiven"], ["zoom", "Inzoomen"], ["blur", "Scherp worden"]];
@@ -37,11 +39,12 @@ export default function LoaderAdmin({ canEdit = true }) {
   const router = useRouter();
   const [vals, setVals] = useState(null);
   const [msg, setMsg] = useState(null);
+  const [pick, setPick] = useState(false);
   const [test, setTest] = useState(0); // 0 = none, otherwise the number of the preview that is showing (a new number restarts it)
   const [ms, setMs] = useState(3000);
   const show = (n = 3000) => { setMs(n); setTest((t) => t + 1); };
   useEffect(() => { api("/theme/").then((d) => setVals(d.values)).catch((e) => setMsg(errorText(e))); }, []);
-  const auto = useAutoSave(vals, async () => { try { const d = await api("/theme/", { method: "PUT", body: { values: vals } }); setVals(d.values); window.dispatchEvent(new Event("theme-saved")); router.refresh(); setMsg(null); } catch (e) { setMsg(errorText(e)); return false; } }, { ready: !!vals && canEdit, delay: 800 });
+  const auto = useAutoSave(vals, async () => { try { const d = await api("/theme/", { method: "PUT", body: { values: Object.fromEntries(Object.entries(vals).filter(([k]) => k !== "loader_image_url")) } }); setVals(d.values); window.dispatchEvent(new Event("theme-saved")); router.refresh(); setMsg(null); } catch (e) { setMsg(errorText(e)); return false; } }, { ready: !!vals && canEdit, delay: 800 });
   if (!vals) return msg ? <div className="alert">{msg}</div> : <Busy />;
   const set = (patch) => setVals({ ...vals, ...patch });
   const setShow = (patch) => { set(patch); show(1600); }; // a change of the loader shows the loader at once
@@ -65,14 +68,39 @@ export default function LoaderAdmin({ canEdit = true }) {
           <strong className="opt-title">{tx("Soort loader")}</strong>
           <div className="loader-tiles">
             {LOADER_STYLES.map((k) => (
-              <button key={k} type="button" className={`loader-tile${vals.loader_style === k ? " on" : ""}`} disabled={!canEdit} onClick={() => setShow({ loader_style: k })} aria-pressed={vals.loader_style === k}>
-                <LoaderArt kind={k} size={40} />
+              <button key={k} type="button" className={`loader-tile${vals.loader_style === k ? " on" : ""}`} disabled={!canEdit} onClick={() => { if (k === "image") { setVals((v) => ({ ...v, loader_style: "image" })); setPick(true); } else setShow({ loader_style: k }); }} aria-pressed={vals.loader_style === k}>
+                <LoaderArt kind={k} size={40} image={vals.loader_image_url} anim="none" />
                 <span>{tx(NAMES[k])}</span>
               </button>
             ))}
           </div>
         </div>
         <Sw label={tx("Percentage tonen onder de animatie")} hint={tx("Een getal van 0 tot 100% dat meeloopt met het laden.")} checked={vals.loader_percent === "yes"} disabled={!canEdit} onChange={(v) => setShow({ loader_percent: v ? "yes" : "no" })} />
+        {vals.loader_style === "image" && (
+          <Collapsible id="loader-image" title={tx("Eigen afbeelding")} defaultOpen>
+          <div className="form">
+            <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", gap: ".8rem" }}>
+              {vals.loader_image_url ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(vals.loader_image_url)} alt="" style={{ height: 56, borderRadius: 8 }} /> : <span className="muted">{tx("Nog geen afbeelding gekozen: er verschijnt tijdelijk de ring.")}</span>}
+              <button type="button" className="btn" disabled={!canEdit} onClick={() => setPick(true)}>{tx("Kies uit de media")}</button>
+              {vals.loader_image_id > 0 && <button type="button" className="btn danger" disabled={!canEdit} onClick={() => setShow({ loader_image_id: 0, loader_image_url: "" })}>{tx("Verwijderen")}</button>}
+            </div>
+            <label style={{ maxWidth: 420 }}>{tx("Grootte van de afbeelding")} <small className="muted">{vals.loader_image_size ?? 80} px</small>
+              <input type="range" min={24} max={500} step={4} disabled={!canEdit} value={vals.loader_image_size ?? 80} onChange={(e) => set({ loader_image_size: Number(e.target.value) })} onMouseUp={() => show(1600)} onTouchEnd={() => show(1600)} onKeyUp={() => show(1600)} />
+            </label>
+            <label style={{ maxWidth: 420 }}>{tx("Doorzichtigheid van de afbeelding")} <small className="muted">{vals.loader_image_opacity ?? 100}% {tx("zichtbaar")}</small><input type="range" min={5} max={100} step={5} disabled={!canEdit} value={vals.loader_image_opacity ?? 100} onChange={(e) => set({ loader_image_opacity: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>
+            <div className="theme-grid">
+              <label>{tx("Ronde hoeken")} <small className="muted">{vals.loader_image_radius ?? 0} px</small><input type="range" min={0} max={250} step={2} disabled={!canEdit} value={vals.loader_image_radius ?? 0} onChange={(e) => set({ loader_image_radius: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>
+              <label>{tx("Rand (dikte)")} <small className="muted">{vals.loader_image_border ?? 0} px</small><input type="range" min={0} max={24} step={1} disabled={!canEdit} value={vals.loader_image_border ?? 0} onChange={(e) => set({ loader_image_border: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>
+              {(vals.loader_image_border ?? 0) > 0 && <label>{tx("Kleur van de rand")}<input type="color" disabled={!canEdit} value={vals.loader_image_border_color || "#f2823f"} onChange={(e) => set({ loader_image_border_color: e.target.value })} onBlur={() => show(1600)} style={{ height: "2.6rem", padding: 2 }} /></label>}
+              <label>{tx("Ruimte tussen rand en afbeelding")} <small className="muted">{vals.loader_image_pad ?? 0} px</small><input type="range" min={0} max={60} step={2} disabled={!canEdit} value={vals.loader_image_pad ?? 0} onChange={(e) => set({ loader_image_pad: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>
+            </div>
+            <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={vals.loader_image_bg_on === "yes"} disabled={!canEdit} onChange={(e) => setShow({ loader_image_bg_on: e.target.checked ? "yes" : "no" })} /><span /></span><span>{tx("Achtergrondkleur achter de afbeelding")}</span></label>
+            {vals.loader_image_bg_on === "yes" && <label style={{ maxWidth: 420 }}>{tx("Doorzichtigheid van de achtergrondkleur")} <small className="muted">{vals.loader_image_bg_opacity ?? 100}% {tx("zichtbaar")}</small><input type="range" min={0} max={100} step={5} disabled={!canEdit} value={vals.loader_image_bg_opacity ?? 100} onChange={(e) => set({ loader_image_bg_opacity: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>}
+            {vals.loader_image_bg_on === "yes" && <label style={{ maxWidth: 200 }}>{tx("Achtergrondkleur")}<input type="color" disabled={!canEdit} value={vals.loader_image_bg || "#ffffff"} onChange={(e) => set({ loader_image_bg: e.target.value })} onBlur={() => show(1600)} style={{ height: "2.6rem", padding: 2 }} /></label>}
+            <label style={{ maxWidth: 260 }}>{tx("Beweging")}<select disabled={!canEdit} value={vals.loader_image_anim || "pulse"} onChange={(e) => setShow({ loader_image_anim: e.target.value })}>{ANIMS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
+          </div>
+          </Collapsible>
+        )}
         <div className="theme-grid">
           <label>{tx("Wanneer")}<select disabled={!canEdit} value={vals.loader_when} onChange={(e) => set({ loader_when: e.target.value })}>{WHEN.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
           <label>{tx("Achtergrond")}<select disabled={!canEdit} value={vals.loader_backdrop} onChange={(e) => setShow({ loader_backdrop: e.target.value })}>{BACKDROP.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
@@ -105,6 +133,7 @@ export default function LoaderAdmin({ canEdit = true }) {
         <Sw label={tx("Knop om terug naar boven te gaan")} checked={vals.scroll_top === "yes"} disabled={!canEdit} onChange={(v) => set({ scroll_top: v ? "yes" : "no" })} />
         </div>
       </Collapsible>
+      {pick && <MediaPicker kind="image" onClose={() => { setPick(false); setVals((v) => (v.loader_style === "image" && !v.loader_image_id ? { ...v, loader_style: "ring" } : v)); }} onPick={(it) => { setPick(false); setShow({ loader_image_id: it.id, loader_image_url: it.url, loader_style: "image" }); }} />}
       {test > 0 && <LoaderTest key={test} values={vals} ms={ms} onClose={() => setTest(0)} />}
     </div>
   );
