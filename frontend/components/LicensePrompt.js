@@ -1,0 +1,43 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
+import { canAdmin } from "../lib/perms";
+import { tx } from "../lib/t";
+import { useAuth } from "./AuthContext";
+import { useModules } from "./Modules";
+import { useSession } from "./Session";
+
+// Every time an administrator logs in and the website has no licence: ask to arrange it now (the payment page, or contact the reseller).
+const keyOf = () => `licprompt:${(localStorage.getItem("token") || "").slice(-10)}`;
+
+export default function LicensePrompt({ site }) {
+  const dash = useAuth(), site_ = useSession(); // in the dashboard the AuthContext knows the person, on the website the Session
+  const user = dash?.user ?? site_?.user ?? null, ready = site_?.ready ?? true;
+  const mods = useModules();
+  const [lic, setLic] = useState(null);
+  const admin = !!user && (user.is_staff || canAdmin(user, mods));
+  useEffect(() => {
+    if (!ready || !admin || !site?.license_missing) return;
+    try { if (sessionStorage.getItem(keyOf())) return; } catch { return; }
+    api("/system/license/status/").then((s) => { if (!s.has) setLic(s); }).catch(() => {});
+  }, [ready, admin, site?.license_missing]);
+  const dismiss = () => { try { sessionStorage.setItem(keyOf(), "1"); } catch {} setLic(null); }; // asked once per login: the answer is remembered when the window is closed (the page can remount before that)
+  if (!lic) return null;
+  const r = lic.reseller || {};
+  return (
+    <div className="overlay" onClick={dismiss}>
+      <div className="card modal" role="dialog" aria-label={tx("Geen licentie")} onClick={(e) => e.stopPropagation()} style={{ display: "grid", gap: ".8rem", maxWidth: 480 }}>
+        <h2 style={{ margin: 0 }}>{tx("Er is geen licentie ingesteld")}</h2>
+        <p className="muted" style={{ margin: 0 }}>{tx("De website werkt ook zonder licentie, maar onderaan elke pagina staat dan dat er geen licentie in gebruik is. Regel je licentie nu.")}</p>
+        {r.name && <p style={{ margin: 0 }}>{tx("Reseller")}: <strong>{r.name}</strong></p>}
+        <div className="row" style={{ flexWrap: "nowrap", gap: ".5rem", justifyContent: "flex-end" }}>
+          <button type="button" className="btn" onClick={dismiss}>{tx("Later")}</button>
+          {(r.email || r.url) && (r.url ? <a className="btn" href={r.url} target="_blank" rel="noopener noreferrer">{tx("Contact met reseller")}</a> : <a className="btn" href={`mailto:${r.email}`}>{tx("Contact met reseller")}</a>)}
+          <Link className="btn primary" href="/dashboard/license" onClick={dismiss}>{tx("Licentie regelen")}</Link>
+        </div>
+      </div>
+    </div>
+  );
+}

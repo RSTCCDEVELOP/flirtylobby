@@ -1,0 +1,72 @@
+"use client";
+
+import { tx } from "../../../lib/t";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { api, errorText } from "../../../lib/api";
+import { confirmDialog } from "../../../lib/dialog";
+import DashHero from "../../../components/DashHero";
+import { money } from "../../../lib/format";
+
+const BADGE = { pending: "off", trial: "ok", active: "ok", past_due: "off", canceled: "off", expired: "off" };
+
+export default function MySubscriptions() {
+  const [d, setD] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const load = useCallback(() => api("/subscriptions/me/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
+  useEffect(() => { load(); }, [load]);
+
+  async function act(s, what) {
+    if (what === "cancel" && !(await confirmDialog(tx("Opzeggen? Je houdt toegang tot het einde van de betaalde periode."), { danger: true }))) return;
+    try {
+      const r = await api(`/subscriptions/me/${s.id}/${what}/`, { method: "POST", body: { return_base: window.location.origin } });
+      if (r.checkout_path) { window.location.href = r.checkout_path; return; }
+      await load();
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+  }
+
+  if (!d) return <p className="muted">{msg?.text || tx("Laden…")}</p>;
+  const list = d.subscriptions.filter((s) => s.status !== "expired" || s.period_end);
+  const nextPay = list.filter((s) => s.recurring && ["trial", "active", "past_due"].includes(s.status) && !s.cancel_at_period_end && s.period_end).map((s) => s.period_end).sort()[0];
+  return (
+    <>
+      <DashHero title="Mijn abonnementen" textId="page.my-subscriptions.intro" actions={[{ href: "/abonnementen", label: "Alle abonnementen" }, ...(d.donations ? [{ href: "/dashboard/mijn-donaties", label: "Mijn donaties" }] : [])]}
+        stats={[
+          { label: "Actieve abonnementen", value: list.filter((s) => ["trial", "active", "past_due"].includes(s.status)).length },
+          { label: "Volgende betaling", value: nextPay ? new Date(nextPay).toLocaleDateString() : "—", hint: nextPay ? undefined : tx("Geen herhaalde betaling") },
+          ...(d.likes_left !== null && d.gates?.likes ? [{ label: "Likes over vandaag", value: d.likes_left }] : []),
+          ...(d.rewards?.length ? [{ label: "Acties dankzij donaties", value: d.rewards.length }] : []),
+        ]} />
+      {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
+      {d.likes_left !== null && d.gates?.likes && <div className="alert ok" style={{ marginBottom: "1rem" }}>{tx("Likes over vandaag")}: <strong>{d.likes_left}</strong></div>}
+      {d.rewards?.length > 0 && (
+        <div className="card" style={{ marginBottom: "1rem" }}>
+          <strong>{tx("Mijn acties (dankzij een donatie)")}</strong>
+          <ul className="sub-grants" style={{ marginTop: ".5rem" }}>
+            {d.rewards.map((r) => (
+              <li key={r.id}>{tx(r.label)}{r.until ? ` · ${tx("tot")} ${new Date(r.until).toLocaleString()}` : ""}{r.uses_left !== null ? ` · ${r.uses_left} ${tx("keer over")}` : ""}{r.session_only ? ` · ${tx("alleen deze sessie")}` : ""}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="sub-plans">
+        {list.map((s) => (
+          <div className="card sub-plan" key={s.id}>
+            <div className="sub-plan-top"><strong>{s.plan_name}</strong><span className={`badge ${BADGE[s.status]}`}>{tx(s.status_label)}</span></div>
+            <div className="sub-price">{s.manual ? tx("Gratis") : money(s.price)} <small>{s.recurring ? tx("per periode") : tx("eenmalig")}</small></div>
+            <div className="muted" style={{ fontSize: ".85rem" }}>
+              {s.period_end ? `${s.status === "canceled" || s.cancel_at_period_end ? tx("Loopt af op") : s.recurring ? tx("Volgende betaling") : tx("Toegang tot")} ${new Date(s.period_end).toLocaleDateString()}` : tx("Onbeperkt")}
+            </div>
+            {s.open_order && <div className="alert">{tx("Openstaand")}: {money(s.open_order.total)} ({s.open_order.number})</div>}
+            <div className="sub-actions">
+              {s.open_order && <button className="btn sm primary" onClick={() => act(s, "pay")}>{tx("Nu betalen")}</button>}
+              {s.status === "canceled" && s.period_end && new Date(s.period_end) > new Date() && <button className="btn sm" onClick={() => act(s, "resume")}>{tx("Weer verlengen")}</button>}
+              {["trial", "active", "past_due"].includes(s.status) && !s.cancel_at_period_end && s.recurring && <button className="btn sm danger" onClick={() => act(s, "cancel")}>{tx("Opzeggen")}</button>}
+            </div>
+          </div>
+        ))}
+        {!list.length && <p className="muted">{tx("Je hebt nog geen abonnement.")} <Link href="/abonnementen">{tx("Bekijk de abonnementen")}</Link></p>}
+      </div>
+    </>
+  );
+}

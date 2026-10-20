@@ -1,0 +1,51 @@
+{
+  "name": "hello",
+  "title": "Hello (voorbeeldplugin)",
+  "version": "1.0.0",
+  "system_version": "1.0.0",
+  "schema": 0,
+  "description": "Voorbeeld om mee te beginnen: een eigen pagina in het dashboard, een route, een gebeurtenis en instellingen.",
+  "author": "RST Coaching & Consultancy",
+  "section": "system",
+  "python": "plugin.py",
+  "web": "web/index.html",
+  "menu": {
+    "label": "Hello",
+    "access": "members"
+  },
+  "permissions": [
+    "gebruikers lezen",
+    "e-mail versturen"
+  ],
+  "events": [
+    "user_registered",
+    "listing_created"
+  ],
+  "config": [
+    {
+      "key": "greeting",
+      "label": "Begroeting",
+      "type": "text",
+      "default": "Hallo",
+      "hint": "Deze tekst staat op de pagina van de plugin."
+    },
+    {
+      "key": "loud",
+      "label": "Roepen (hoofdletters)",
+      "type": "bool",
+      "default": false
+    },
+    {
+      "key": "notify_email",
+      "label": "Mail bij nieuwe leden naar",
+      "type": "text",
+      "default": ""
+    },
+    {
+      "key": "api_key",
+      "label": "Geheime sleutel (voorbeeld)",
+      "type": "secret",
+      "default": ""
+    }
+  ]
+}

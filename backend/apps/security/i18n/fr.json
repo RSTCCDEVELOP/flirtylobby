@@ -1,0 +1,53 @@
+{
+ "geo": {
+  "title": "Non disponible dans ton pays",
+  "message": "Ce site web n'est malheureusement pas disponible dans ta région."
+ },
+ "age": {
+  "title": "As-tu {age} ans ou plus ?",
+  "message": "Ce site web est réservé aux visiteurs de {age} ans et plus.",
+  "yes": "Oui, j'ai {age}+",
+  "no": "Non",
+  "deny_message": "Tu n'as malheureusement pas accès à ce site web."
+ },
+ "gambling": {
+  "title": "Joue de manière responsable",
+  "message": "Tu dois avoir au moins {age} ans pour jouer à des jeux d'argent. Les jeux d'argent peuvent créer une dépendance.",
+  "warnings": [
+   "Ne joue jamais avec de l'argent dont tu as besoin.",
+   "Les jeux d'argent peuvent mener à la dépendance.",
+   "Cherche de l'aide si le jeu devient un problème."
+  ],
+  "confirm": "J'ai {age}+ et je comprends les risques",
+  "deny": "Quitter"
+ },
+ "cookies": {
+  "title": "Cookies",
+  "message": "Nous utilisons des cookies pour faire fonctionner le site web et l'améliorer.",
+  "accept_all": "Tout accepter",
+  "reject": "Uniquement nécessaires",
+  "settings": "Paramètres",
+  "save": "Enregistrer mon choix",
+  "policy_link": "Politique de cookies",
+  "cat_necessary": "Nécessaires",
+  "cat_necessary_desc": "Indispensables au fonctionnement du site web. Toujours activés.",
+  "cat_analytics": "Statistiques",
+  "cat_analytics_desc": "Aperçu anonyme de l'utilisation du site web.",
+  "cat_marketing": "Marketing",
+  "cat_marketing_desc": "Pour rendre les publicités plus pertinentes.",
+  "cat_preferences": "Préférences",
+  "cat_preferences_desc": "Mémorise tes paramètres, comme la langue.",
+  "policy_title": "Politique de cookies",
+  "policy_body": "Décris ici quels cookies tu utilises et pourquoi."
+ },
+ "twofa": {
+  "email_subject": "Ton code de vérification",
+  "email_body": "Ton code de vérification est {code}. Il est valable {minutes} minutes. Tu ne l'as pas demandé ? Ignore alors ce message.",
+  "sms_body": "Ton code de vérification est {code}. Valable {minutes} min."
+ },
+ "registration": {
+  "email_subject": "Confirme ton adresse e-mail",
+  "email_body": "Ton code de confirmation est {code}. Il est valable {minutes} minutes. Tu n'as pas créé de compte ? Ignore alors ce message.",
+  "sms_body": "Ton code de confirmation est {code}. Valable {minutes} min."
+ }
+}
