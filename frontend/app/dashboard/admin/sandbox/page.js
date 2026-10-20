@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -54,7 +55,7 @@ export default function Sandbox() {
   }
   const run = async (fn, okText) => { try { await fn(); if (okText) setMsg({ ok: true, text: okText }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } loadData(); };
 
-  if (!s) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!s) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const edit = L >= 2;
 
   return (

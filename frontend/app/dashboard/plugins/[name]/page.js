@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import PluginFrame from "../../../../components/PluginFrame";
@@ -13,7 +14,7 @@ export default function PluginPage() {
   const [error, setError] = useState("");
   useEffect(() => { api("/plugins/menu/").then((list) => setP(list.find((x) => x.name === name) || false)).catch((e) => setError(errorText(e))); }, [name]);
   if (error) return <div className="alert">{error}</div>;
-  if (p === null) return <p className="muted">{tx("Laden…")}</p>;
+  if (p === null) return <Busy />;
   if (p === false) return <p className="muted">{tx("Deze plugin bestaat niet, staat uit of is niet voor jou.")}</p>;
   return (
     <>

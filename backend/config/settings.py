@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.siteimport",
     "apps.subscriptions",
     "apps.sysobjects",
+    "apps.faq",
 ]
 
 MIDDLEWARE = [

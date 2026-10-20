@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
+import FaqDrawer from "./FaqDrawer";
+import { useFaqSettings } from "../lib/faq-settings";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Logo } from "./BrandingContext";
@@ -21,7 +23,7 @@ import { useShortcuts } from "../lib/shortcuts";
 import { useNavMode } from "../lib/navmode";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart } from "./Icons";
+import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart, IconHelp } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
@@ -29,6 +31,8 @@ const NAV = [
   { href: "/dashboard/community/mypage", label: "Mijn profielpagina", icon: <IconEye />, module: "profiles", community: true }, // the page as others see it, inside the dashboard
   { href: "/dashboard/community/profile", label: "Wijzig profiel", icon: <IconEdit />, module: "profiles", community: true }, // editing goes here
   { href: "/dashboard/subscriptions", label: "Mijn abonnementen", icon: <IconStar />, module: "subscriptions" },
+  { href: "/dashboard/help", label: "Help", icon: <IconHelp />, module: "help" },
+  { href: "/dashboard/faq", label: "FAQ", icon: <IconHelp />, module: "faq", faqPrivate: true },
 ];
 
 // Bottom group of the main menu
@@ -51,6 +55,7 @@ const COMMUNITY = [
 const SUPER_NAV = [
   { href: "/dashboard/superadmin", label: "Overzicht", icon: <IconHome /> },
   { href: "/dashboard/superadmin/modules", label: "Modules", icon: <IconGrid /> },
+  { href: "/dashboard/superadmin/help", label: "Help", icon: <IconHelp /> },
 ];
 
 const ADMIN_NAV = [
@@ -67,6 +72,9 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/orders", label: "Orders", icon: <IconReceipt /> },
   { href: "/dashboard/admin/subscriptions", label: "Abonnementen", icon: <IconStar /> },
   { href: "/dashboard/admin/donations", label: "Donaties", icon: <IconHeart /> },
+  { href: "/dashboard/admin/faq", label: "FAQ", icon: <IconHelp /> },
+  { href: "/dashboard/admin/help", label: "Help", icon: <IconHelp />, helpLayer: true },
+  { href: "/dashboard/admin/helptips", label: "Help-teksten", icon: <IconEdit /> },
   { href: "/dashboard/admin/actions", label: "Actions", icon: <IconLock /> },
   { href: "/dashboard/admin/media", label: "Media", icon: <IconFolder />, perm: "media.manage" },
   { href: "/dashboard/admin/security", label: "Beveiliging", icon: <IconLock />, perm: "security.manage" },
@@ -94,7 +102,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/themes": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
-  "/dashboard/admin/orders": "a-shop",
+  "/dashboard/admin/orders": "a-shop", "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
   "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system",
 };
@@ -218,7 +226,8 @@ export default function DashboardShell({ children }) {
   const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false));
   const inSuper = pathname.startsWith("/dashboard/superadmin");
   const inAdmin = pathname.startsWith("/dashboard/admin");
-  const allowedAdminNav = ADMIN_NAV.filter((n) => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
+  const faqSet = useFaqSettings(); // Admin → FAQ → Instellingen: is the Help link shown in the left menus
+  const allowedAdminNav = ADMIN_NAV.filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
     <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={closeMenu}>
@@ -274,9 +283,10 @@ export default function DashboardShell({ children }) {
         <nav className="topnav">
           {(() => {
             // the private pages (Mijn community, Mijn abonnementen, Mijn bestellingen, Mijn donaties ...) hang under "Homepage" as a drop-down
-            const flat = privMenu.flatMap((it) => [it, ...(it.children || [])]);
+            const flat = privMenu.flatMap((it) => (it.kind === "menu" ? [{ ...it, heading: true }, ...(it.children || []).map((c) => ({ ...c, sub: true }))] : [it, ...(it.children || [])]));
             const link = (it) => {
               const label = menuLabel(it.titles);
+              if (it.heading) return <span key={it.id} className="nav-group-label">{label}</span>;
               return /^https?:/.test(it.url) ? <a key={it.id} href={it.url} target={it.new_tab ? "_blank" : undefined} rel="noopener noreferrer">{label}</a> : <Link key={it.id} href={it.url} className={pathname === it.url || pathname.startsWith(it.url + "/") ? "active" : ""}>{label}</Link>;
             };
             if (!flat.length) return <Link href="/">{tx("Homepage")}</Link>;
@@ -294,6 +304,7 @@ export default function DashboardShell({ children }) {
           <NotificationBell />
           <ChatButton />
           <LanguageSwitcher />
+          <FaqDrawer dashboard />
           <ThemeToggle />
           <UserMenu user={user} onLogout={logout} showDashboard={false} />
         </div>
@@ -308,7 +319,7 @@ export default function DashboardShell({ children }) {
           <>
             <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>
             <div className="side-title">{tx("Super admin")}</div>
-            {SUPER_NAV.map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/superadmin"} />)}
+            {SUPER_NAV.filter((n) => !n.href.endsWith("/help") || faqSet.nav_link).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/superadmin"} />)}
             <div className="side-title">{tx("Alle beheerpagina's")}</div>
             {renderGroups(allowedAdminNav.filter((n) => n.href !== "/dashboard/admin"), ADMIN_GROUPS, ADMIN_GROUP_OF)}
           </>
@@ -321,7 +332,7 @@ export default function DashboardShell({ children }) {
           </>
         ) : (
           <>
-            {NAV.filter((n) => !n.hidden && (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
+            {NAV.filter((n) => !n.hidden && (n.href !== "/dashboard/help" || faqSet.nav_link) && (!n.faqPrivate || (faqSet.nav_link && faqSet.page_scope === "private")) && (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
             {renderGroups([...communityLinks.map(withBadge), ...pluginUser], COMMUNITY_GROUPS, { ...COMMUNITY_GROUP_OF, ...pluginUserGroup })}
             {pluginUser.filter((n) => !pluginUserGroup[n.href]).map((n) => <NavLink key={n.href} n={n} />)}
           </>

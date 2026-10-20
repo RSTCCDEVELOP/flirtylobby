@@ -172,5 +172,34 @@ def theme_payload(key):
     return {"theme": key, "builtin": dict(t["builtin"]), "fields": [dict(x, options=list(x["options"])) for x in t["fields"]]}
 
 
-def public_list():
-    return [{"key": k, "label": t["label"], "desc": t["desc"], "fields": len(t["fields"])} for k, t in THEMES.items()]
+BASIC = "normal"  # the basic theme: always on
+
+
+def enabled():
+    """The profile themes that may be used (a superadmin switches them on): only the basic one by default. The theme in use always stays available."""
+    from apps.core.models import SystemSettings
+
+    from . import service
+
+    stored = SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
+    on = {k for k in (stored.get("community_themes") or []) if k in THEMES}
+    try:
+        on.add(service.get()["profiles"]["theme"])
+    except Exception:  # noqa: BLE001
+        pass
+    return on | {BASIC}
+
+
+def set_enabled(keys):
+    from apps.core.models import SystemSettings
+
+    row, _ = SystemSettings.objects.get_or_create(pk=1)
+    data = dict(row.data or {})
+    data["community_themes"] = [k for k in THEMES if k in set(keys) and k != BASIC]
+    row.data = data
+    row.save()
+
+
+def public_list(everything=False):
+    on = enabled()
+    return [{"key": k, "label": t["label"], "desc": t["desc"], "fields": len(t["fields"]), "enabled": k in on} for k, t in THEMES.items() if everything or k in on]

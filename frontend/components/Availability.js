@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { getLanguage, tx } from "../lib/t";
@@ -27,7 +28,7 @@ export function useAvailability() {
 
 // pick items: value = list of keys
 export function AvailPicker({ value, onChange, groups, compact = false }) {
-  if (!groups) return <p className="muted">{tx("Laden…")}</p>;
+  if (!groups) return <Busy />;
   if (!groups.length) return <p className="muted" style={{ margin: 0 }}>{tx("Er zijn nog geen keuzes. De beheerder maakt ze bij Admin → Community.")}</p>;
   const toggle = (k) => onChange(value.includes(k) ? value.filter((x) => x !== k) : [...value, k]);
   return (

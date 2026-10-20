@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -26,7 +27,7 @@ function Detail({ imp, onChanged }) {
     try { await api(`/siteimport/${imp.id}/asset/`, { method: "POST", body: { media: a.media, role: pick[a.media] || (ROLE_NAME[a.role] && a.role !== "image" ? a.role : "logo") } }); setMsg({ ok: true, text: tx("Ingesteld. Zie Logo's & beeld.") }); onChanged(); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
-  if (!d) return <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return <Busy />;
   return (
     <div className="si-detail">
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
@@ -241,7 +242,7 @@ export default function SiteImport() {
       {proposal && proposal.status === "proposal" && <Proposal key={proposal.id} imp={proposal} onDone={approved} onCancel={() => cancelProposal(proposal)} />}
 
       <Collapsible id="si-list" title={`${tx("Geïmporteerde sites")} (${list?.length ?? 0})`} defaultOpen>
-        {!list && <p className="muted">{tx("Laden…")}</p>}
+        {!list && <Busy />}
         {list && !list.length && <p className="muted" style={{ margin: 0 }}>{tx("Nog niets geïmporteerd.")}</p>}
         {(list || []).filter((i) => i.status === "proposal").map((i) => (
           <div key={i.id} className="card si-card">

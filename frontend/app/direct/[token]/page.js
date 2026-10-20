@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../components/PageLoader";
 import { tx } from "../../../lib/t";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -84,7 +85,7 @@ export default function DirectGuest() {
       <div className="card login-card" style={{ maxWidth: 640, width: "100%" }}>
         {!chatting && (info?.taken && !secret ? <TakenQr /> : <Logo className="direct-logo" />)}
         {!chatting && <h1>{tx("Directe verbinding")}</h1>}
-        {!info && !error && <p className="muted">{tx("Laden…")}</p>}
+        {!info && !error && <Busy />}
         {error && <div className="alert">{error}</div>}
         {error && !secret && <Link href="/direct" className="btn primary">{tx("Verbind opnieuw")}</Link>}
         {info && !info.role && !info.taken && !error && !secret && (

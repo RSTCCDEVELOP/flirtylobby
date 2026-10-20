@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
@@ -64,7 +65,7 @@ export default function PluginsPage() {
 
   const outdated = d?.plugins.filter((p) => ["outdated", "incompatible", "newer"].includes(p.compat)) || [];
   if (!user?.is_staff) return <p className="muted">{tx("Alleen superadmins beheren plugins.")}</p>;
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   return (
     <>

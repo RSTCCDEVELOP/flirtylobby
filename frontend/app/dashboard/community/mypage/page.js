@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { useEffect, useState } from "react";
 import ProfileView from "../../../leden/[slug]/ProfileView";
 import { tx } from "../../../../lib/t";
@@ -9,7 +10,7 @@ import { api } from "../../../../lib/api";
 export default function MyPage() {
   const [slug, setSlug] = useState(null);
   useEffect(() => { api("/profile/me/").then((d) => setSlug(d.slug)).catch(() => setSlug("")); }, []);
-  if (slug === null) return <p className="muted">{tx("Laden…")}</p>;
+  if (slug === null) return <Busy />;
   if (!slug) return <p className="muted">{tx("Je hebt nog geen profielpagina.")}</p>;
   return <ProfileView slug={slug} initial={null} embedded />;
 }

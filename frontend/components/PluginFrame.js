@@ -53,7 +53,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
       else if (d.plugin === "go" && typeof d.path === "string") { if (d.path.startsWith("/") && !d.path.startsWith("//")) router.push(d.path); else if (/^https?:\/\//.test(d.path)) window.location.href = d.path; }
       else if (d.plugin === "media") setAsk({ type: "media", id: d.id });
       else if (d.plugin === "html") setAsk({ type: "html", id: d.id, html: String(d.html || ""), title: d.opts?.title });
-      else if (d.plugin === "resize") setHeight(Math.max(300, Math.min(4000, Number(d.height) || 640)));
+      else if (d.plugin === "resize") setHeight(Math.max(120, Math.min(30000, Number(d.height) || 640)));
       else if (d.plugin === "api" && typeof d.path === "string" && d.path.startsWith("/")) {
         try { reply({ ok: true, data: await api(d.path, { method: (d.opts?.method || "GET").toUpperCase(), body: d.opts?.body }) }); }
         catch (err) { reply({ ok: false, error: text(errorText(err)) }); }
@@ -69,7 +69,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
 
   return (
     <>
-      <iframe ref={frame} title={title || name} src={`${apiBase()}/api/plugins/web/${name}/${file}`} sandbox="allow-scripts allow-forms allow-popups allow-downloads" allow="fullscreen" allowFullScreen style={{ width: "100%", height, border: bare ? 0 : "1px solid var(--line)", borderRadius: bare ? 0 : 12, background: bare ? "transparent" : "var(--card)" }} />
+      <iframe ref={frame} scrolling="no" title={title || name} src={`${apiBase()}/api/plugins/web/${name}/${file}`} sandbox="allow-scripts allow-forms allow-popups allow-downloads" allow="fullscreen" allowFullScreen style={{ width: "100%", height, border: bare ? 0 : "1px solid var(--line)", borderRadius: bare ? 0 : 12, background: bare ? "transparent" : "var(--card)" }} />
       {ask?.type === "media" && <MediaPicker onClose={() => answer(ask.id, null)} onPick={(item) => answer(ask.id, { id: item.id, url: item.url })} />}
       {ask?.type === "html" && <RichEditor title={ask.title || tx("Tekst bewerken")} initialHtml={ask.html} onSave={async (html) => answer(ask.id, html)} onPlain={async (t) => answer(ask.id, `<p>${t.replace(/</g, "&lt;")}</p>`)} onClose={() => answer(ask.id, null)} />}
     </>

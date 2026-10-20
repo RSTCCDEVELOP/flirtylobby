@@ -4,6 +4,7 @@ import { tx } from "../../../lib/t";
 import Link from "next/link";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
+import ProfileThemeSwitches from "../../../components/ProfileThemeSwitches";
 import SettingsBackup from "../../../components/SettingsBackup";
 import SystemReset from "../../../components/SystemReset";
 
@@ -20,6 +21,9 @@ export default function SuperAdminHome() {
             <small>{tx("En bepaal wie ze mag gebruiken")}</small>
           </Link>
         </div>
+      </Collapsible>
+      <Collapsible id="super-themes" title={tx("Profielthema's (community)")}>
+        <ProfileThemeSwitches />
       </Collapsible>
       <Collapsible id="super-backup" title={tx("Instellingen back-up")}>
         <SettingsBackup />

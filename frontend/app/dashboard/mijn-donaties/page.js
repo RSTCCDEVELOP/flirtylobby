@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../components/PageLoader";
 import { useEffect, useState } from "react";
 import { api, errorText } from "../../../lib/api";
 import DashHero from "../../../components/DashHero";
@@ -32,7 +33,7 @@ export default function MyDonations() {
         </div>
       )}
       {error && <div className="alert">{error}</div>}
-      {rows === null ? <p className="muted">{tx("Laden…")}</p> : !rows.length ? <p className="muted">{tx("Je hebt nog niet gedoneerd.")}</p> : (
+      {rows === null ? <Busy /> : !rows.length ? <p className="muted">{tx("Je hebt nog niet gedoneerd.")}</p> : (
         <>
           <div className="card" style={{ overflowX: "auto" }}>
             <table>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../components/PageLoader";
 import { tx } from "../../../lib/t";
 import { alertDialog, confirmDialog, promptDialog } from "../../../lib/dialog";
 import Link from "next/link";
@@ -78,7 +79,7 @@ export default function ProfileView({ slug, initial, embedded = false }) {
             <Link className="btn primary" href="/dashboard/community/profile">{tx("Zichtbaarheid aanpassen")}</Link>
           </div>
         )}
-        {!p && !missing && !hidden && <p className="muted">{tx("Laden…")}</p>}
+        {!p && !missing && !hidden && <Busy />}
         {missing && !p && <p className="muted">{tx("Deze pagina bestaat niet of is niet voor jou zichtbaar.")} {!user && <Link href="/login" style={{ color: "var(--blue)" }}>{tx("Log in")}</Link>}</p>}
         {p && <ProfileLayout c={{ p, setP, user, ready, rel, chat, label, ask, answer, block, i, setI }} />}
       </main>

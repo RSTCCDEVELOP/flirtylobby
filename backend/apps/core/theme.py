@@ -66,6 +66,17 @@ LOGOS = [
     {"value": "studio2", "label": "Studio2-logo", "css": ""},
 ]
 
+LOADER_STYLES = [{"value": v, "label": l, "css": ""} for v, l in (
+    ("ring", "Ring"), ("dots", "Stippen"), ("bar", "Voortgangsbalk"), ("pulse", "Pulserende bol"), ("orbit", "Baantjes"), ("squares", "Blokjes"),
+    ("wave", "Golf"), ("skeleton", "Pagina-schets"), ("logo", "Logo"))]
+LOADER_WHEN = [{"value": "first", "label": "Alleen bij het eerste laden van de site", "css": ""}, {"value": "always", "label": "Ook tussen pagina's", "css": ""}]
+LOADER_BACKDROP = [{"value": "page", "label": "Achtergrond van de pagina", "css": ""}, {"value": "glass", "label": "Glas (vervaagd)", "css": ""}, {"value": "dim", "label": "Donker gedimd", "css": ""}]
+def _opts(*pairs):
+    return [{"value": v, "label": l, "css": ""} for v, l in pairs]
+
+
+TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"), ("zoom", "Inzoomen"), ("blur", "Scherp worden"))
+REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
 
 NAV_DEFAULT = [
@@ -137,6 +148,28 @@ CHAT_LABELS = [{"value": "icon", "label": "Alleen een icoon 💬", "css": ""}, {
 WEIGHTS = [{"value": str(w), "label": str(w), "css": str(w)} for w in (500, 600, 700, 800)]
 
 
+TEXT_WEIGHTS = [{"value": str(w), "label": str(w), "css": str(w)} for w in (400, 500, 600, 700, 800)]
+TEXT_COLORS = [{"value": v, "label": l, "css": c} for v, l, c in (("text", "Tekstkleur", "var(--text)"), ("primary", "Primaire kleur", "var(--blue)"), ("secondary", "Secundaire kleur", "var(--orange)"), ("muted", "Gedempt", "var(--muted)"))]
+TEXT_FONTS = [{"value": "body", "label": "Lettertype van de tekst", "css": "var(--font-body)"}, {"value": "heading", "label": "Lettertype van de koppen", "css": "var(--font-heading)"}]
+TRACKING = [{"value": v, "label": l, "css": c} for v, l, c in (("tight", "Smal", "-.02em"), ("normal", "Normaal", "0"), ("wide", "Ruim", ".04em"), ("wider", "Extra ruim", ".1em"))]
+# text styles used in blocks and pages (the editor offers them: Kop 1, Kop 2, Kop 3, Alinea): size, weight, colour, font, line height and letter spacing, per theme
+TEXT_STYLES = [("k1", "Kop 1", 1.9, "700", "heading", 1.2), ("k2", "Kop 2", 1.4, "700", "heading", 1.25), ("k3", "Kop 3", 1.15, "600", "heading", 1.3), ("k4", "Kop 4", 1.0, "600", "heading", 1.35), ("p", "Alinea", 1.0, "400", "body", 1.65)]
+
+
+def _text_style_fields():
+    out = []
+    for k, label, size, weight, font, lh in TEXT_STYLES:
+        out += [
+            number(f"ts_{k}_size", f"{label}: grootte", size, f"--ts-{k}-size", "rem", 0.75, 4, 0.05),
+            choice(f"ts_{k}_weight", f"{label}: dikte", weight, f"--ts-{k}-weight", TEXT_WEIGHTS),
+            choice(f"ts_{k}_color", f"{label}: kleur", "text", f"--ts-{k}-color", TEXT_COLORS),
+            choice(f"ts_{k}_font", f"{label}: lettertype", font, f"--ts-{k}-font", TEXT_FONTS),
+            number(f"ts_{k}_lh", f"{label}: regelafstand", lh, f"--ts-{k}-lh", "", 1, 2.2, 0.05),
+            choice(f"ts_{k}_track", f"{label}: letterafstand", "normal", f"--ts-{k}-track", TRACKING),
+        ]
+    return out
+
+
 def color(key, label, default, css, mode="both"):
     return {"key": key, "label": label, "type": "color", "default": default, "css": css, "mode": mode}
 
@@ -200,6 +233,24 @@ SCHEMA = [
         color("danger", "Gevaar (verwijderen, fouten)", "#dc2626", "--danger"),
         color("ok", "Succes", "#16a34a", "--ok"),
     ]},
+    {"key": "loader", "label": "Paginaloader", "fields": [
+        choice("loader_on", "Paginaloader tonen", "no", None, YESNO),
+        choice("loader_style", "Soort loader", "ring", None, LOADER_STYLES),
+        choice("loader_when", "Wanneer", "first", None, LOADER_WHEN),
+        choice("loader_backdrop", "Achtergrond", "page", None, LOADER_BACKDROP),
+        number("loader_size", "Grootte", 56, None, "px", 24, 120),
+        number("loader_min", "Minimaal zichtbaar", 400, None, "ms", 0, 3000, 50),
+        choice("loader_percent", "Percentage tonen onder de loader", "no", None, YESNO),
+        number("loader_opacity", "Doorzichtigheid van de laag achter de loader", 100, None, "%", 10, 100, 5),
+        choice("loader_lazy", "Lazy load: afbeeldingen laden pas als je ze nodig hebt", "yes", None, YESNO),
+        choice("page_transition", "Pagina-overgang", "none", None, TRANSITIONS),
+        number("page_transition_ms", "Duur van de overgang", 350, None, "ms", 100, 1000, 50),
+        choice("scroll_reveal", "Scrolleffect: onderdelen verschijnen in beeld", "none", None, REVEALS),
+        number("scroll_reveal_ms", "Duur van het scrolleffect", 600, None, "ms", 200, 1500, 50),
+        choice("scroll_parallax", "Parallax: achtergronden bewegen trager mee", "no", None, YESNO),
+        choice("scroll_progress", "Voortgangsbalk bovenaan bij scrollen", "no", None, YESNO),
+        choice("scroll_top", "Knop om terug naar boven te gaan", "no", None, YESNO),
+    ]},
     {"key": "popups", "label": "Popups (leeftijd, gokken, cookies)", "fields": [
         number("popup_overlay", "Donkerte van de achtergrond", 0.72, "--popup-overlay", "", 0, 0.95, 0.01),
         number("popup_blur", "Vervaging van de achtergrond", 6, "--popup-blur", "px", 0, 24),
@@ -244,6 +295,7 @@ SCHEMA = [
         number("line_height", "Regelafstand", 1.5, "--lh", "", 1.2, 2, 0.05),
         choice("heading_weight", "Dikte koppen", "700", "--fw-heading", WEIGHTS),
     ]},
+    {"key": "textstyles", "label": "Tekststijlen (koppen en alinea's)", "fields": _text_style_fields()},
     {"key": "layout", "label": "Vorm en ruimte", "fields": [
         number("radius", "Afronding kaarten", 14, "--radius", "px", 0, 28),
         number("btn_radius", "Afronding knoppen en velden", 10, "--btn-radius", "px", 0, 30),

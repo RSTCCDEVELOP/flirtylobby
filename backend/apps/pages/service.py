@@ -12,6 +12,7 @@ SYSTEM = [
     ("members", "/leden", "profiles", True, "all", {"nl": "Leden", "en": "Members", "de": "Mitglieder", "fr": "Membres", "es": "Miembros", "pt": "Membros", "zh": "会员", "ar": "الأعضاء"}),
     ("subscriptions", "/abonnementen", "subscriptions", False, "all", {"nl": "Abonnementen", "en": "Subscriptions", "de": "Abonnements", "fr": "Abonnements", "es": "Suscripciones", "pt": "Subscrições", "zh": "订阅", "ar": "الاشتراكات"}),
     ("donations", "/doneren", "donations", False, "all", {"nl": "Doneren", "en": "Donate", "de": "Spenden", "fr": "Faire un don", "es": "Donar", "pt": "Doar", "zh": "捐赠", "ar": "تبرع"}),
+    ("faq", "/faq", "faq", False, "all", {"nl": "FAQ", "en": "FAQ", "de": "FAQ", "fr": "FAQ", "es": "Preguntas frecuentes", "pt": "Perguntas frequentes", "zh": "常见问题", "ar": "الأسئلة الشائعة"}),
     ("register", "/registreren", "registration", False, "guests", {"nl": "Aanmelden", "en": "Sign up", "de": "Registrieren", "fr": "S’inscrire", "es": "Registrarse", "pt": "Registar", "zh": "注册", "ar": "إنشاء حساب"}),
     ("login", "/login", "", False, "guests", {"nl": "Inloggen", "en": "Log in", "de": "Anmelden", "fr": "Connexion", "es": "Iniciar sesión", "pt": "Entrar", "zh": "登录", "ar": "تسجيل الدخول"}),
     ("notfound", "/404", "", False, "all", {"nl": "Pagina niet gevonden (404)", "en": "Page not found (404)", "de": "Seite nicht gefunden (404)", "fr": "Page introuvable (404)", "es": "Página no encontrada (404)", "pt": "Página não encontrada (404)", "zh": "页面未找到 (404)", "ar": "الصفحة غير موجودة (404)"}),
@@ -81,13 +82,14 @@ def _tree(qs):
     ok = {p.id: p for p in pages if available(p) and p.in_menu}
 
     def item(p):
-        return {"id": p.id, "key": p.key, "titles": p.title, "url": p.path, "urls": {l: p.path_in(l) for l in LANG_CODES}, "new_tab": p.new_tab, "audience": p.audience, "children": []}
+        return {"id": p.id, "key": p.key, "titles": p.title, "url": p.path, "urls": {l: p.path_in(l) for l in LANG_CODES}, "new_tab": p.new_tab, "audience": p.audience, "kind": p.kind, "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "children": []}
 
     top = [item(p) for p in ok.values() if p.parent_id is None]
     by_id = {t["id"]: t for t in top}
     for p in ok.values():
         if p.parent_id and p.parent_id in by_id:  # a child of a hidden/disabled parent is hidden too
             by_id[p.parent_id]["children"].append(item(p))
+    top = [t for t in top if t["kind"] != "menu" or t["children"]]  # a text-only item without anything under it is not shown
     order = {p.id: (p.order, p.id) for p in pages}
     top.sort(key=lambda t: order[t["id"]])
     for t in top:
@@ -115,7 +117,7 @@ def _slugify(text):
 
 
 def has_slugs(page):
-    return page.scope == "public" and page.kind in ("system", "content") and page.key != "home" and "<" not in (page.url or "")
+    return page.scope == "public" and page.kind in ("system", "content", "menu") and page.key != "home" and "<" not in (page.url or "")
 
 
 def fill_slugs(page, given=None):
@@ -149,3 +151,75 @@ def fill_slugs(page, given=None):
         out[c] = v
     page.slugs = out
     return None
+
+
+# ── the look of the header menu ─────────────────────────────────────────────
+DEVICES = ("desktop", "tablet", "mobile")
+FORMS = ("bar", "hamburger", "drawer-left", "drawer-right", "fullscreen", "bottom")  # the form of the menu on a device
+DEFAULT_MENU = {
+    "breakpoints": {"tablet": 1024, "mobile": 700},
+    "forms": {"desktop": "bar", "tablet": "bar", "mobile": "hamburger"},
+    "align": {"desktop": "left", "tablet": "left", "mobile": "left"},  # left | center | right (of the header)
+    "toggle_pos": {"desktop": "right", "tablet": "right", "mobile": "right"},  # where the hamburger button sits in the header: left | center | right
+    "sub": {"desktop": "dropdown", "tablet": "dropdown", "mobile": "accordion"},  # dropdown | mega | accordion
+    "open_on": {"desktop": "hover", "tablet": "click", "mobile": "click"},  # how a sub menu opens: hover | click
+    "item_style": "theme",  # theme (follows the theme) | text | underline | pill | button | outline
+    "size": "md",  # sm | md | lg
+    "uppercase": False,
+    "arrows": True,  # a small arrow at items with a sub menu
+    "overlay": True,  # drawer / full screen: dim the page behind it
+    "close_on_click": True,  # close the menu after a click on a link
+    "sticky_bottom": True,  # the bottom bar stays at the bottom
+    "height": {"desktop": 0, "tablet": 0, "mobile": 0},  # height of the header (px); 0 = what the theme says
+    "bg": "",  # colour of the header ("" = the colour of the theme)
+    "bg_opacity": 0.88,  # 0 (see-through) to 1 (solid)
+    "blur": 10,  # blur of what is behind a see-through header (px)
+    "float": "none",  # after scrolling: none | shadow (a shadow) | float (a floating, rounded bar) | hide (away when scrolling down, back when scrolling up)
+    "float_after": 80,  # after how many px of scrolling
+}
+CHOICES = {"float": ("none", "shadow", "float", "hide"), "align": ("left", "center", "right"), "sub": ("dropdown", "mega", "accordion"), "open_on": ("hover", "click"), "item_style": ("theme", "text", "underline", "pill", "button", "outline"), "size": ("sm", "md", "lg")}
+
+
+def menu_settings():
+    from .models import MenuSettings
+
+    row = MenuSettings.objects.filter(pk=1).first()
+    return clean_menu_settings((row.data if row else {}) or {})
+
+
+def clean_menu_settings(d):
+    d = d if isinstance(d, dict) else {}
+    out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in DEFAULT_MENU.items()}
+    bp = d.get("breakpoints") or {}
+    for k, lo, hi in (("tablet", 700, 1600), ("mobile", 320, 1200)):
+        try:
+            out["breakpoints"][k] = min(max(int(bp.get(k, out["breakpoints"][k])), lo), hi)
+        except (TypeError, ValueError):
+            pass
+    if out["breakpoints"]["mobile"] >= out["breakpoints"]["tablet"]:
+        out["breakpoints"]["mobile"] = out["breakpoints"]["tablet"] - 1
+    for key, allowed in (("forms", FORMS), ("toggle_pos", CHOICES["align"]), *((k, v) for k, v in CHOICES.items() if k in ("align", "sub", "open_on"))):
+        for dev in DEVICES:
+            v = (d.get(key) or {}).get(dev)
+            if v in allowed:
+                out[key][dev] = v
+    for key in ("item_style", "size", "float"):
+        if d.get(key) in CHOICES[key]:
+            out[key] = d[key]
+    for dev in DEVICES:
+        try:
+            h = int((d.get("height") or {}).get(dev, out["height"][dev]))
+            out["height"][dev] = 0 if h <= 0 else min(max(h, 40), 160)
+        except (TypeError, ValueError):
+            pass
+    bg = str(d.get("bg") or "")
+    out["bg"] = bg if re.fullmatch(r"#[0-9a-fA-F]{6}", bg) else ""
+    for key, lo, hi, cast in (("bg_opacity", 0, 1, float), ("blur", 0, 30, int), ("float_after", 10, 600, int)):
+        try:
+            out[key] = round(min(max(cast(d.get(key, out[key])), lo), hi), 2) if cast is float else min(max(cast(d.get(key, out[key])), lo), hi)
+        except (TypeError, ValueError):
+            pass
+    for key in ("uppercase", "arrows", "overlay", "close_on_click", "sticky_bottom"):
+        if key in d:
+            out[key] = bool(d[key])
+    return out

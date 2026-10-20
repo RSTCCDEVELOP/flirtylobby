@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import { confirmDialog } from "../lib/dialog";
 import { useRouter } from "next/navigation";
@@ -85,7 +86,7 @@ export default function BrandingAdmin() {
     });
   }
 
-  if (!data) return <p className="muted">{tx("Laden…")}</p>;
+  if (!data) return <Busy />;
 
   return (
     <>

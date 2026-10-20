@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -122,7 +123,7 @@ export default function Swiper() {
     if (Math.abs(dx) > THRESHOLD || fling) decide((fling ? s.v : dx) > 0); else setDrag(null);
   };
 
-  if (!cards) return <p className="muted">{tx("Laden…")}</p>;
+  if (!cards) return <Busy />;
   if (locked) return <div className="alert">{tx("Swipen is alleen voor leden die zelf meedoen.")} <Link href="/dashboard/community/profile" style={{ textDecoration: "underline" }}>{tx("Doe mee via je profiel")}</Link>.</div>;
 
   const x = fly ? fly * 700 : drag?.x || 0, y = fly ? 0 : (drag?.y || 0) * 0.25;

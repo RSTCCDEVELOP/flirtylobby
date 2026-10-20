@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -68,7 +69,7 @@ export default function Seo() {
   useEffect(() => { load(); }, [load]);
 
   const auto = useAutoSave(data, save, { ready: !!data && L >= 2 }); // saves by itself, no Save button
-  if (!data) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!data) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   const set = (sec) => (k, v) => setData((d) => ({ ...d, [sec]: { ...d[sec], [k]: v } }));
   const site = set("site"), ver = set("verification"), bots = set("bots"), rob = set("robots"), map = set("sitemap"), llms = set("llms"), sc = set("schema");

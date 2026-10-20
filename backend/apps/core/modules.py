@@ -32,6 +32,10 @@ MODULES = [
      "desc": "Meertaligheid en taalkeuze. Uit = alleen de standaardtaal."},
     {"key": "seo", "group": "Content", "label": "SEO",
      "desc": "Zoekmachines, bots en AI-agents: robots.txt, sitemap, llms.txt, paginatitels, omschrijvingen en structured data."},
+    {"key": "help", "group": "Content", "label": "Easy2edit-help",
+     "desc": "De uitleg van Easy2edit zelf (het systeem), alleen in het dashboard, in alle talen. Gebruikers zien alleen de uitleg over onderdelen waar ze rechten voor hebben."},
+    {"key": "faq", "group": "Content", "label": "FAQ van je website",
+     "desc": "Je eigen veelgestelde vragen, zelf te maken en te vertalen, op de pagina /faq. Zet de pagina in het menu bij Pagina's."},
     {"key": "privacy_pages", "group": "Content", "label": "Privacy- en cookiepagina",
      "desc": "De publieke pagina's /privacy en /cookies met links in de footer."},
     # ── Webshop ──

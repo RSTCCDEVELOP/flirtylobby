@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../components/PageLoader";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, errorText } from "../../../lib/api";
@@ -25,7 +26,7 @@ export default function MyOrders() {
           { label: "Totaal besteed", value: rows ? money(rows.filter((o) => !["canceled", "refunded", "new", "pending_payment"].includes(o.status)).reduce((a, o) => a + Number(o.total), 0), "EUR") : null },
         ]} />
       {error && <div className="alert">{error}</div>}
-      {rows === null ? <p className="muted">{tx("Laden…")}</p> : !rows.length ? <p className="muted">{tx("Je hebt nog geen bestellingen.")}</p> : (
+      {rows === null ? <Busy /> : !rows.length ? <p className="muted">{tx("Je hebt nog geen bestellingen.")}</p> : (
         <div className="card" style={{ overflowX: "auto" }}>
           <table>
             <thead><tr><th>{tx("Bestelling")}</th><th>{tx("Soort")}</th><th>{tx("Datum")}</th><th>{tx("Status")}</th><th>{tx("Totaal")}</th><th /></tr></thead>

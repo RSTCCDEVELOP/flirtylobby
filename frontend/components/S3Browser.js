@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
@@ -86,7 +87,7 @@ export default function S3Browser({ integration, onClose }) {
         </div>
         {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
         <div className={`s3b-list${over ? " over" : ""}`}>
-          {!data && <p className="muted">{tx("Laden…")}</p>}
+          {!data && <Busy />}
           {data && !data.folders.length && !data.files.length && <p className="muted s3b-empty">{tx("Deze map is leeg. Sleep bestanden hierheen om te uploaden.")}</p>}
           {data?.folders.map((f) => (
             <div className="s3b-row" key={f.path}>

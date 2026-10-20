@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../components/PageLoader";
 import { tx } from "../../lib/t";
 import { confirmDialog } from "../../lib/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -32,7 +33,7 @@ export default function DashboardHome() {
   const timer = useRef(null);
 
   useEffect(() => { api("/dashboard/layout/").then((s) => { setState(s); setMeta({ theme: s.theme || "normal", swipe: !!s.swipe }); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
-  if (!state) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!state) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   const columns = state.columns || 2;
   // every block gets a column: -1 = full width on top, 0..n-1 = column (legacy blocks are spread over the columns)

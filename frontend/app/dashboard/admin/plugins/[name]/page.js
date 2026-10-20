@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../../components/PageLoader";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -27,7 +28,7 @@ export default function PluginAdminPage() {
   }
   if (!user?.is_staff) return <p className="muted">{tx("Alleen superadmins beheren plugins.")}</p>;
   if (msg && p === null) return <div className="alert">{msg}</div>;
-  if (p === null) return <p className="muted">{tx("Laden…")}</p>;
+  if (p === null) return <Busy />;
   if (p === false) return <p className="muted">{tx("Deze plugin bestaat niet.")} <Link href="/dashboard/admin/plugins" style={{ color: "var(--blue)" }}>{tx("Naar alle plugins")}</Link></p>;
 
   const hasPages = (p.public_pages || []).some((x) => x.page) || !!p.blocks_page || !!p.admin_links?.length;

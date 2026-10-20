@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { api, apiBase, errorText } from "../lib/api";
@@ -70,7 +71,7 @@ export default function GamesPage({ preview = false }) {
           </span>
         </span>
       </div>
-      {games === null ? <p className="muted">{tx("Laden…")}</p> : (
+      {games === null ? <Busy /> : (
         <Paged id="games-page" selector=".games-grid" query={`${q}|${cat}`}><div className="games-grid" data-view={mode || undefined}>
           {list.map((g) => (
             <button key={g.slug} type="button" className="card games-card" onClick={() => { if (g.sample) return; user ? setOpen(g) : (window.location.href = "/login"); }}>

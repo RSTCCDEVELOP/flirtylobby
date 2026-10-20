@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../../components/AuthContext";
 import BrandingAdmin from "../../../../components/BrandingAdmin";
 import EmailLayoutAdmin from "../../../../components/EmailLayoutAdmin";
-import { IconGrid, IconImage, IconMail, IconPalette } from "../../../../components/Icons";
+import { IconGrid, IconImage, IconMail, IconPalette, IconRocket } from "../../../../components/Icons";
 import { useModule } from "../../../../components/Modules";
 import Tabs from "../../../../components/Tabs";
+import LoaderAdmin from "../../../../components/LoaderAdmin";
 import ThemeLayout from "../../../../components/ThemeLayout";
 import ThemeLook from "../../../../components/ThemeLook";
 import ThemePacksAdmin from "../../../../components/ThemePacksAdmin";
@@ -26,6 +27,7 @@ function ThemeAdmin() {
     themeOn && lvl(user, "theme") >= 1 && ["packs", "Thema's", <IconGrid key="p" />],
     themeOn && lvl(user, "theme") >= 1 && ["look", "Vormgeving", <IconPalette key="l" />],
     themeOn && lvl(user, "theme") >= 1 && ["layout", "Layout", <IconGrid key="y" />],
+    themeOn && lvl(user, "theme") >= 1 && ["loader", "Laden", <IconRocket key="r" />],
     brandingOn && lvl(user, "branding") >= 1 && ["brand", "Logo's & beeld", <IconImage key="b" />],
     commOn && lvl(user, "communication") >= 1 && ["email", "E-mail", <IconMail key="e" />],
   ].filter(Boolean);
@@ -47,6 +49,7 @@ function ThemeAdmin() {
         {tab === "packs" && <ThemePacksAdmin />}
         {tab === "look" && <ThemeLook />}
         {tab === "layout" && <ThemeLayout />}
+        {tab === "loader" && <LoaderAdmin canEdit={lvl(user, "theme") >= 2} />}
         {tab === "brand" && <BrandingAdmin />}
         {tab === "email" && <EmailLayoutAdmin canEdit={lvl(user, "communication") >= 2} onMessage={setMsg} />}
       </div>

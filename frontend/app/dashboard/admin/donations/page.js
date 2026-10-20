@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -104,7 +105,7 @@ export default function DonationsAdmin() {
   const remove = async (c) => { if (await confirmDialog(tx("Actie \"{0}\" verwijderen?", c.name), { danger: true })) { try { await api(`/subscriptions/admin/campaigns/${c.id}/`, { method: "DELETE" }); loadCamps(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } } };
   const toggle = async (c) => { await api(`/subscriptions/admin/campaigns/${c.id}/`, { method: "PATCH", body: { active: !c.active } }); loadCamps(); };
 
-  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;  // an error is shown instead of waiting forever
+  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <Busy />;  // an error is shown instead of waiting forever
   const cur = opts.currency || "EUR";
   const set = (k) => (e) => setModal({ ...modal, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 

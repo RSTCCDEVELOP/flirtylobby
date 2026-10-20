@@ -1,6 +1,8 @@
-import { tx } from "../../lib/t";
+"use client";
 
-// Shown at once while the next dashboard page loads (instead of a screen that seems to do nothing).
+import { Busy } from "../../components/PageLoader";
+
+// Shown at once while the next dashboard page loads: the loader of the settings (Thema → Laden)
 export default function Loading() {
-  return <p className="muted" style={{ padding: "1rem 0" }}>{tx("Laden…")}</p>;
+  return <Busy />;
 }

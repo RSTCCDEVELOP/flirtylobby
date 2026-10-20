@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
@@ -54,7 +55,7 @@ export default function SystemPage() {
   }
 
   const auto = useAutoSave(form, save, { ready: !!d, delay: 1200 }); // saves by itself, no Save button
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const clientApi = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
   const checks = [...d.checks];
   if (d.settings.backend_url && clientApi && clientApi !== d.settings.backend_url.replace(/\/$/, "")) {

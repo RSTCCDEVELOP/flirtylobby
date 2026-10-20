@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../components/PageLoader";
 import { tx } from "../../../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -21,7 +22,7 @@ export default function OrderStatus({ number, token }) {
     <div className="site">
       <SiteHeader />
       <main className="shop">
-        {o === undefined && <p className="muted">{tx("Laden…")}</p>}
+        {o === undefined && <Busy />}
         {o === null && <p className="muted">{tx("Deze bestelling is niet gevonden.")}</p>}
         {o && (
           <>

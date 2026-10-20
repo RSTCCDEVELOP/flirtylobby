@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -85,7 +86,7 @@ export default function SubscriptionsAdmin() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
 
-  if (!opts || !cfg) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!opts || !cfg) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const cur = opts.currency || "EUR";
   const iv = (v) => opts.intervals.find((i) => i.value === v)?.label || v;
 

@@ -452,6 +452,12 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     editHtml: function (html, opts) { return call("html", { html: html || "", opts: opts || {} }); },  /* the system's text editor: resolves the new html, or null */
     resize: function (h) { parent.postMessage({ plugin: "resize", height: h }, "*"); }
   };
+  /* the page always fits its frame: no scrollbar inside the frame, the frame grows and shrinks with the content */
+  var st = document.createElement("style"); st.textContent = "html{overflow-y:hidden}"; (document.head || document.documentElement).appendChild(st);
+  function fit() { var b = document.body; if (!b || document.documentElement.hasAttribute("data-noauto")) return; var cs = getComputedStyle(b); parent.postMessage({ plugin: "resize", height: Math.ceil(b.getBoundingClientRect().height + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0)) }, "*"); }
+  if (window.ResizeObserver) { document.addEventListener("DOMContentLoaded", function () { new ResizeObserver(fit).observe(document.body); fit(); }); }
+  window.addEventListener("load", fit);
+  window.addEventListener("resize", fit);
   parent.postMessage({ plugin: "hello" }, "*");
 })();
 """

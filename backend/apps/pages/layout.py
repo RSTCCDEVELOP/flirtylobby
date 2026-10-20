@@ -58,6 +58,105 @@ def with_urls(data):
     return out
 
 
+PADS = ("none", "sm", "md", "lg", "xl")
+HEIGHTS = ("px", "pct", "full")
+
+
+TOKENS = ("primary", "secondary", "card", "page", "text", "muted", "ok", "danger", "white", "black")
+FONTS = ("body", "heading", "serif", "mono")
+HEX = re.compile(r"#[0-9a-fA-F]{6}")
+
+
+def _col(v):
+    v = str(v or "")
+    return v if v in TOKENS or HEX.fullmatch(v) else ""
+
+
+def _style(st):
+    """Look of a block or hero: background colour (a colour of the theme or an own colour) with transparency, text colour and font. Empty = what the theme says."""
+    if not isinstance(st, dict):
+        return {}
+    out = {}
+    if _col(st.get("bg")):
+        out["bg"] = _col(st["bg"])
+        try:
+            out["bg_a"] = min(max(int(st.get("bg_a", 100)), 0), 100)
+        except (TypeError, ValueError):
+            out["bg_a"] = 100
+    if _col(st.get("color")):
+        out["color"] = _col(st["color"])
+    if st.get("font") in FONTS:
+        out["font"] = st["font"]
+    if st.get("radius") not in (None, ""):
+        try:
+            out["radius"] = min(max(int(st["radius"]), 0), 200)
+        except (TypeError, ValueError):
+            pass
+    return out
+
+
+TAGS = ("k1", "k2", "k3", "k4", "p")
+
+
+def _item_style(st):
+    """Look of one text: a text style of the theme (Kop 1-4, Alinea) and/or an own size, colour and font."""
+    if not isinstance(st, dict):
+        return {}
+    out = {}
+    if st.get("tag") in TAGS:
+        out["tag"] = st["tag"]
+    try:
+        if st.get("size") not in (None, "", 0):
+            out["size"] = round(min(max(float(st["size"]), 0.6), 6), 2)
+    except (TypeError, ValueError):
+        pass
+    if _col(st.get("color")):
+        out["color"] = _col(st["color"])
+    if st.get("font") in FONTS:
+        out["font"] = st["font"]
+    if st.get("align") in ("left", "center", "right"):
+        out["align"] = st["align"]
+    if re.fullmatch(r"[1-9][0-9]{0,3}(px|%)", str(st.get("w") or "")):
+        out["w"] = str(st["w"])
+    for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 200)):
+        if st.get(key) not in (None, ""):
+            try:
+                out[key] = min(max(int(st[key]), lo), hi)
+            except (TypeError, ValueError):
+                pass
+    return out
+
+
+def _row_extra(r):
+    """Extra settings of a row: a hero (a banner: its name or "custom"), the height of a hero (px, % of the screen or the full screen) and the space (padding) above and below."""
+    out = {}
+    if r.get("hero"):
+        out["hero"] = str(r["hero"])[:20]
+        if r.get("h_mode") in HEIGHTS:
+            out["h_mode"] = r["h_mode"]
+            try:
+                out["h"] = min(max(int(r.get("h") or 0), 10 if r["h_mode"] == "pct" else 80), 100 if r["h_mode"] == "pct" else 1600) if r["h_mode"] != "full" else 100
+            except (TypeError, ValueError):
+                out["h"] = 50 if r["h_mode"] == "pct" else 400
+    if r.get("pad") in PADS:
+        out["pad"] = r["pad"]
+    if r.get("fx") in ("none", "fade", "up", "down", "zoom", "left", "right", "blur"):
+        out["fx"] = r["fx"]  # the scroll effect of this block ("" = what the theme says)
+    if r.get("screen"):
+        out["screen"] = True  # the width is a share of the whole browser window, not of the page column
+    if r.get("hero") and r.get("v") in ("top", "center", "bottom"):
+        out["v"] = r["v"]
+    if _style(r.get("style")):
+        out["style"] = _style(r["style"])
+    return out
+
+
+def _moved(data):
+    """The fixed elements of a page (logo, title, intro) that were dragged into a block: their content keys (they are hidden at their old place)."""
+    m = [str(k) for k in ((data or {}).get("moved") or []) if re.fullmatch(r"[a-z0-9._-]{1,80}", str(k))][:30]
+    return {"moved": m} if m else {}
+
+
 def _list(v):
     """How the lists on a page (games, products, subscriptions ...) are shown: as a grid or in rows, centred or not."""
     if not isinstance(v, dict):
@@ -98,14 +197,14 @@ def clean(data):
                 if t not in TYPES:
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
-                items.append({"id": uid(it.get("id")), "type": t, "ref": str(it.get("ref") or "")[:80]})
+                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image") and _item_style(it.get("style")) else {})})
             cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})
-        out.append({"bg": clean_bg(r.get("bg")), "id": uid(r.get("id")), "cols": cols, "width": _pct(r.get("width"), 30, 100, "default"), "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells, **({"hero": str(r["hero"])[:20]} if r.get("hero") else {})})
+        out.append({"bg": clean_bg(r.get("bg")), "id": uid(r.get("id")), "cols": cols, "width": _pct(r.get("width"), 30, 100, "default"), "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells, **_row_extra(r)})
     if n_items > MAX_ITEMS:
         raise ValueError("Te veel onderdelen op één pagina.")
-    return {"rows": out, "bg": clean_bg((data or {}).get("bg")), "preset": (data or {}).get("preset") if (data or {}).get("preset") in PRESETS else "", **({"hero_off": True} if (data or {}).get("hero_off") else {}), **_list((data or {}).get("list")), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
+    return {"rows": out, "bg": clean_bg((data or {}).get("bg")), "preset": (data or {}).get("preset") if (data or {}).get("preset") in PRESETS else "", **({"hero_off": True} if (data or {}).get("hero_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
 
 
 PRESETS = ("auto", "single", "two", "three", "four", "hero", "split")  # the layouts ("Opmaak") a page can be given; "auto" = the layout of the community theme (standard pages only)
@@ -114,8 +213,8 @@ PRESETS = ("auto", "single", "two", "three", "four", "hero", "split")  # the lay
 def reflow(data, preset):
     """The same items (text, pictures, system objects) in another grid. The ids of the items stay (so their texts stay); rows and cells are new."""
     old = (data or {}).get("rows", [])
-    hero = next((r for r in old if r.get("hero")), None)  # the hero stays at the top of every layout
-    items = [it for r in old if r is not hero for c in r.get("cells", []) for it in c.get("items", [])]
+    heroes = [r for r in old if r.get("hero")]  # the heroes stay at the top of every layout
+    items = [it for r in old if not r.get("hero") for c in r.get("cells", []) for it in c.get("items", [])]
     n = [0]
 
     def cell(its, halign="left", width="auto"):
@@ -138,9 +237,9 @@ def reflow(data, preset):
         half = (len(items) + 1) // 2
         rows = [row([cell(items[:half], "left", "66"), cell(items[half:], "left", "33")], "lg")] if items else []
     else:
-        rows = [r for r in old if r is not hero]
-    rows = ([hero] if hero else []) + rows
-    return {"rows": rows, "bg": (data or {}).get("bg", {}), **({"hero_off": True} if (data or {}).get("hero_off") else {}), **_list((data or {}).get("list")), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
+        rows = [r for r in old if not r.get("hero")]
+    rows = heroes + rows
+    return {"rows": rows, "bg": (data or {}).get("bg", {}), **({"hero_off": True} if (data or {}).get("hero_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}),  **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
 
 
 @api_view(["POST"])

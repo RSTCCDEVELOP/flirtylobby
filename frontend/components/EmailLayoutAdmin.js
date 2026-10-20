@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
@@ -76,7 +77,7 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
   }, [cfg, kind]);
 
   const auto = useAutoSave(cfg, save, { ready: !!cfg && canEdit, delay: 1000 }); // saves by itself, no Save button
-  if (!cfg) return <p className="muted">{tx("Laden…")}</p>;
+  if (!cfg) return <Busy />;
   const set = (patch) => setCfg({ ...cfg, ...patch });
   const setCustom = (patch) => setCfg({ ...cfg, custom: { ...cfg.custom, ...patch } });
 

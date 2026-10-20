@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import Link from "next/link";
@@ -33,7 +34,7 @@ export default function Requests() {
   const respond = (c, action) => act(() => api(`/connections/${c.id}/respond/`, { method: "POST", body: { action } }));
   const remove = async (c, text) => (await confirmDialog(text)) && act(() => api(`/connections/${c.id}/`, { method: "DELETE" }));
 
-  if (!d) return error ? <div className="alert">{error}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return error ? <div className="alert">{error}</div> : <Busy />;
   return (
     <>
       <h1>{tx("Vrienden & verzoeken")}</h1>

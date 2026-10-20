@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -149,7 +150,7 @@ export default function Actions() {
 
   const items = useMemo(() => (d?.items || []).filter((i) => (!i.themes || i.themes.includes(d.options.theme)) && view.match(i.name, i.description, i.group, summary(i, d.options)) && (!state || (state === "gated" ? i.gated : state === "open" ? !i.gated : i.builtin === false))), [d, view, state]);
   const groups = useMemo(() => [...new Set(items.map((i) => i.group))], [items]);
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const o = d.options;
   const passed = check ? Object.fromEntries(check.items.map((i) => [i.key, i])) : {};
 

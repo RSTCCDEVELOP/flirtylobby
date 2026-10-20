@@ -9,6 +9,8 @@ export const TILES = [
   { href: "/dashboard/admin/communication", title: "Communicatie", big: "E-mail en mobiele nummers", small: "Afzenders, antwoordadressen en nummers", modules: ["communication"] },
   { href: "/dashboard/admin/integrations", title: "API keys", big: "Externe koppelingen", small: "Aan/uit, testen en beheren", modules: ["integrations"] },
   { href: "/dashboard/admin/orders", title: "Orders", big: "Bestellingen en webshop", small: "Status, klantgegevens en instellingen", modules: ["orders"] },
+  { href: "/dashboard/admin/faq", title: "FAQ", big: "Eigen veelgestelde vragen", small: "Maken, vertalen en ordenen voor de pagina /faq", modules: ["faq"] },
+  { href: "/dashboard/admin/helptips", title: "Help-teksten", big: "Uitleg in de bewerkmodus", small: "Wijzig de uitleg van het vraagteken per taal", modules: ["pages"] },
   { href: "/dashboard/admin/media", title: "Media", big: "Afbeeldingen & video's", small: "Lokaal of S3, per bestand", modules: ["media"] },
   { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat", "directconnect"] },
   { href: "/dashboard/admin/seo", title: "SEO", big: "Zoekmachines, bots en AI-agents", small: "robots.txt, sitemap, llms.txt, titels", modules: ["seo"] },

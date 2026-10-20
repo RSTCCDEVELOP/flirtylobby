@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useEffect, useMemo, useState } from "react";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
@@ -117,7 +118,7 @@ export default function Security() {
   }, []);
 
   const auto = useAutoSave(data, save, { ready: !!data && canSave }); // saves by itself, no Save button
-  if (!data) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!data) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   const set = (section) => (key, value) => setData((d) => ({ ...d, [section]: { ...d[section], [key]: value } }));
   const text = (section, key) => data[section].texts?.[lang]?.[key] ?? "";

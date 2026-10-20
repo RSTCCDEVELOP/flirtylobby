@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
@@ -14,7 +15,7 @@ export default function AvailabilityAdmin({ langs = [] }) {
   const load = useCallback(() => api("/community/availability/admin/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
   const act = async (fn) => { setMsg(null); try { await fn(); await load(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const codes = (langs.length ? langs : [{ code: "nl", native_name: "Nederlands" }]).filter((l) => l.enabled !== false);
   const add = (g) => act(async () => { await api("/community/availability/admin/", { method: "POST", body: { group: g, label: draft[g] || {} } }); setDraft((x) => ({ ...x, [g]: {} })); });
   const patch = (it, body) => act(() => api(`/community/availability/admin/${it.id}/`, { method: "PATCH", body }));

@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import VisibilityPicker from "../../../../components/VisibilityPicker";
@@ -46,7 +47,7 @@ export default function MyProfile() {
   // what the member edits (photos and the allowed list have their own calls and are not part of it)
   const editable = p ? (({ photos, allowed, ...rest }) => rest)(p) : null;
   const auto = useAutoSave(editable, save, { ready: !!p, delay: 1200 }); // saves by itself, no Save button
-  if (!p) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!p) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const set = (k, v) => setP({ ...p, [k]: v });
   const bi = (k) => p.profile_cfg?.builtin?.[k] !== false; // built-in field switched on by the admin (Community -> Profielvelden)
   const setContact = (k, v) => setP((cur) => ({ ...cur, contact: { ...(cur.contact || {}), [k]: v } }));

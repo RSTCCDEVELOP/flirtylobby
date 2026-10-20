@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
@@ -65,7 +66,7 @@ export default function ThemePacksAdmin() {
   }
   async function scan() { setBusy(true); await load(); setBusy(false); setMsg({ ok: true, text: tx("Map gescand.") }); }
 
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const packs = d.packs.filter((p) => !q || `${p.name} ${p.description}`.toLowerCase().includes(q.toLowerCase()));
 
   return (

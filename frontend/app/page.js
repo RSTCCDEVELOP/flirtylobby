@@ -3,6 +3,7 @@ import SiteHeader from "../components/SiteHeader";
 import { EditableImage, EditableText } from "../components/EditMode";
 import { Logo, HomePhotos } from "../components/BrandingContext";
 
+import Movable from "../components/Movable";
 import PageBlocks from "../components/PageBlocks";
 import { pageMetadata } from "../lib/seo";
 
@@ -14,9 +15,9 @@ export default function Home() {
     <div className="site">
       <SiteHeader />
       <main className="uc">
-        <EditableImage id="home.hero" fallback={<Logo />} />
-        <EditableText id="home.title" as="h1" fallback="Onze website is in aanbouw" />
-        <EditableText id="home.text" as="p" rich fallback="We werken hard aan een nieuwe website. Binnenkort vind je hier meer informatie." />
+        <Movable page="home" id="home.hero" type="image"><EditableImage id="home.hero" fallback={<Logo />} /></Movable>
+        <Movable page="home" id="home.title" type="text"><EditableText id="home.title" as="h1" fallback="Onze website is in aanbouw" /></Movable>
+        <Movable page="home" id="home.text" type="text"><EditableText id="home.text" as="p" rich fallback="We werken hard aan een nieuwe website. Binnenkort vind je hier meer informatie." /></Movable>
         <HomePhotos />
         <PageBlocks pageKey="home" />
       </main>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../components/PageLoader";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EditableText } from "../../../components/EditMode";
@@ -24,7 +25,7 @@ export default function DashboardPage() {
     })();
     return () => { alive = false; };
   }, [slug]);
-  if (found === null) return <p className="muted">{tx("Laden…")}</p>;
+  if (found === null) return <Busy />;
   if (!found) return <p className="muted">{tx("Deze pagina bestaat niet, staat uit of is niet voor jou.")}</p>;
   if (found.plugin) {
     const p = found.plugin;

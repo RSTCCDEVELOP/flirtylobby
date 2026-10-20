@@ -1,0 +1,402 @@
+{
+ "help": {
+  "nl": "Help: zet de uitleg aan of uit. Wijs daarna een icoon aan voor uitleg over wat het doet.",
+  "en": "Help: turn the explanations on or off. Then point to an icon to see what it does.",
+  "zh": "帮助：开启或关闭说明。然后将鼠标移到图标上查看其作用。",
+  "ar": "المساعدة: قم بتشغيل أو إيقاف الشرح. ثم أشر إلى أيقونة لمعرفة ما تفعله.",
+  "pt": "Ajuda: ative ou desative as explicações. Depois, aponte para um ícone para ver o que ele faz.",
+  "es": "Ayuda: activa o desactiva las explicaciones. Luego, señala un icono para ver qué hace.",
+  "de": "Hilfe: Schalte die Erklärungen ein oder aus. Zeige danach auf ein Symbol, um zu sehen, was es tut.",
+  "fr": "Aide : activez ou désactivez les explications. Pointez ensuite sur une icône pour voir ce qu'elle fait."
+ },
+ "row-move": {
+  "nl": "Verplaats dit blok of deze hero een plek omhoog of omlaag. Slepen met het icoon linksboven kan ook.",
+  "en": "Move this block or hero up or down one position. You can also drag it using the icon in the top left.",
+  "zh": "将此区块或主图上移或下移一个位置。也可以使用左上角的图标拖动。",
+  "ar": "انقل هذه الكتلة أو هذا القسم الرئيسي خطوة للأعلى أو للأسفل. يمكنك أيضًا السحب باستخدام الأيقونة في أعلى اليسار.",
+  "pt": "Mova este bloco ou hero uma posição para cima ou para baixo. Também é possível arrastar usando o ícone no canto superior esquerdo.",
+  "es": "Mueve este bloque o hero una posición hacia arriba o hacia abajo. También puedes arrastrarlo con el icono de la esquina superior izquierda.",
+  "de": "Verschiebe diesen Block oder Hero eine Position nach oben oder unten. Du kannst ihn auch mit dem Symbol oben links ziehen.",
+  "fr": "Déplacez ce bloc ou ce hero d'une position vers le haut ou vers le bas. Vous pouvez aussi le faire glisser avec l'icône en haut à gauche."
+ },
+ "row-delete": {
+  "nl": "Verwijdert dit blok of deze hero met alles wat erin staat. Je krijgt eerst een vraag om te bevestigen.",
+  "en": "Deletes this block or hero, along with everything in it. You will be asked to confirm first.",
+  "zh": "删除此区块或主图及其中的所有内容。系统会先要求您确认。",
+  "ar": "يحذف هذه الكتلة أو هذا القسم الرئيسي مع كل ما بداخله. سيُطلب منك التأكيد أولاً.",
+  "pt": "Exclui este bloco ou hero com tudo o que ele contém. Você será solicitado a confirmar antes.",
+  "es": "Elimina este bloque o hero con todo su contenido. Primero se te pedirá que confirmes.",
+  "de": "Löscht diesen Block oder Hero mit allem, was darin enthalten ist. Du wirst zuerst um Bestätigung gebeten.",
+  "fr": "Supprime ce bloc ou ce hero avec tout son contenu. Une confirmation vous sera d'abord demandée."
+ },
+ "bg": {
+  "nl": "Achtergrond van dit blok: kies een afbeelding of video uit de mediabibliotheek en bepaal hoe donker die wordt, zodat de tekst leesbaar blijft.",
+  "en": "Background of this block: choose an image or video from the media library and decide how dark it becomes, so the text stays readable.",
+  "zh": "此区块的背景：从媒体库中选择图片或视频，并设置其暗度，以保证文字清晰可读。",
+  "ar": "خلفية هذه الكتلة: اختر صورة أو فيديو من مكتبة الوسائط وحدد درجة الإظلام بحيث يبقى النص قابلاً للقراءة.",
+  "pt": "Fundo deste bloco: escolha uma imagem ou vídeo da biblioteca de mídia e defina o quão escuro ele fica, para que o texto continue legível.",
+  "es": "Fondo de este bloque: elige una imagen o video de la biblioteca de medios y define cuán oscuro se vuelve, para que el texto siga siendo legible.",
+  "de": "Hintergrund dieses Blocks: Wähle ein Bild oder Video aus der Mediathek und bestimme, wie dunkel es wird, damit der Text lesbar bleibt.",
+  "fr": "Arrière-plan de ce bloc : choisissez une image ou une vidéo dans la médiathèque et déterminez son niveau d'assombrissement, afin que le texte reste lisible."
+ },
+ "colorpick": {
+  "nl": "Kies een kleur uit het palet van het thema, of een eigen kleur met de kleurkiezer. Het kruisje betekent: zoals het thema.",
+  "en": "Choose a color from the theme's palette, or pick your own with the color picker. The cross means: as set by the theme.",
+  "zh": "从主题调色板中选择颜色，或使用取色器自定义颜色。叉号表示：使用主题默认设置。",
+  "ar": "اختر لونًا من لوحة ألوان القالب، أو لونًا خاصًا بك باستخدام أداة اختيار الألوان. العلامة × تعني: كما هو في القالب.",
+  "pt": "Escolha uma cor da paleta do tema ou uma cor própria com o seletor de cores. O X significa: conforme o tema.",
+  "es": "Elige un color de la paleta del tema o uno propio con el selector de color. La cruz significa: como el tema.",
+  "de": "Wähle eine Farbe aus der Theme-Palette oder eine eigene mit dem Farbwähler. Das Kreuz bedeutet: wie im Theme festgelegt.",
+  "fr": "Choisissez une couleur dans la palette du thème, ou une couleur personnalisée avec le sélecteur. La croix signifie : comme défini par le thème."
+ },
+ "stylebox": {
+  "nl": "Opmaak: kleuren, doorzichtigheid, lettertype en ronde hoeken. Met Terug naar thema zet je alles weer op de standaard van het thema.",
+  "en": "Style: colors, transparency, font and rounded corners. Use 'Back to theme' to reset everything to the theme's default.",
+  "zh": "样式：颜色、透明度、字体和圆角。点击“恢复主题”可将所有设置重置为主题默认值。",
+  "ar": "التنسيق: الألوان، الشفافية، الخط، والزوايا المستديرة. استخدم 'الرجوع إلى القالب' لإعادة ضبط كل شيء إلى الإعدادات الافتراضية للقالب.",
+  "pt": "Estilo: cores, transparência, fonte e cantos arredondados. Use 'Voltar ao tema' para redefinir tudo ao padrão do tema.",
+  "es": "Estilo: colores, transparencia, tipografía y esquinas redondeadas. Usa 'Volver al tema' para restablecer todo a los valores predeterminados del tema.",
+  "de": "Stil: Farben, Transparenz, Schriftart und abgerundete Ecken. Mit 'Zurück zum Theme' setzt du alles auf die Theme-Standardwerte zurück.",
+  "fr": "Style : couleurs, transparence, police et coins arrondis. Utilisez « Retour au thème » pour tout réinitialiser aux valeurs par défaut du thème."
+ },
+ "alpha": {
+  "nl": "Doorzichtigheid: schuif naar links voor meer doorzichtig, naar rechts voor meer zichtbaar.",
+  "en": "Transparency: slide left for more transparent, right for more visible.",
+  "zh": "透明度：向左滑动更透明，向右滑动更明显。",
+  "ar": "الشفافية: اسحب لليسار لمزيد من الشفافية، ولليمين لمزيد من الوضوح.",
+  "pt": "Transparência: deslize para a esquerda para mais transparência, para a direita para mais visibilidade.",
+  "es": "Transparencia: desliza hacia la izquierda para más transparencia, hacia la derecha para más visibilidad.",
+  "de": "Transparenz: nach links schieben für mehr Durchsichtigkeit, nach rechts für mehr Sichtbarkeit.",
+  "fr": "Transparence : faites glisser vers la gauche pour plus de transparence, vers la droite pour plus de visibilité."
+ },
+ "col-layout": {
+  "nl": "Kolomindeling: kies hoeveel kolommen dit blok of deze hero heeft en hoe breed ze zijn, bijvoorbeeld 50/50, 66/33 of drie gelijke kolommen. De onderdelen blijven staan; je sleept ze naar een andere kolom.",
+  "en": "Column layout: choose how many columns this block or hero has and how wide they are, for example 50/50, 66/33 or three equal columns. The elements stay in place; you drag them to a different column.",
+  "zh": "列布局：选择此区块或主图的列数及宽度，例如50/50、66/33或三等分列。内容元素保持不变，您可以将其拖动到其他列中。",
+  "ar": "تخطيط الأعمدة: اختر عدد الأعمدة في هذه الكتلة أو القسم الرئيسي وعرضها، على سبيل المثال 50/50، 66/33 أو ثلاثة أعمدة متساوية. تبقى العناصر في مكانها؛ يمكنك سحبها إلى عمود آخر.",
+  "pt": "Layout de colunas: escolha quantas colunas este bloco ou hero tem e qual a largura delas, por exemplo 50/50, 66/33 ou três colunas iguais. Os elementos permanecem no lugar; você os arrasta para outra coluna.",
+  "es": "Diseño de columnas: elige cuántas columnas tiene este bloque o hero y cuán anchas son, por ejemplo 50/50, 66/33 o tres columnas iguales. Los elementos permanecen en su lugar; los arrastras a otra columna.",
+  "de": "Spaltenlayout: Lege fest, wie viele Spalten dieser Block oder Hero hat und wie breit sie sind, zum Beispiel 50/50, 66/33 oder drei gleiche Spalten. Die Elemente bleiben erhalten; du ziehst sie in eine andere Spalte.",
+  "fr": "Disposition des colonnes : choisissez le nombre de colonnes de ce bloc ou de ce hero et leur largeur, par exemple 50/50, 66/33 ou trois colonnes égales. Les éléments restent en place ; vous les faites glisser vers une autre colonne."
+ },
+ "row-field": {
+  "nl": "Een instelling van dit blok: kolommen, breedte, ruimte, hoogte of uitlijning. Elke wijziging wordt direct opgeslagen.",
+  "en": "A setting for this block: columns, width, spacing, height, or alignment. Every change is saved automatically.",
+  "zh": "此区块的设置：列数、宽度、间距、高度或对齐方式。每次更改都会自动保存。",
+  "ar": "إعداد لهذا الكتلة: الأعمدة، العرض، التباعد، الارتفاع أو المحاذاة. يتم حفظ كل تغيير تلقائيًا.",
+  "pt": "Uma configuração deste bloco: colunas, largura, espaçamento, altura ou alinhamento. Cada alteração é guardada automaticamente.",
+  "es": "Un ajuste de este bloque: columnas, ancho, espaciado, altura o alineación. Cada cambio se guarda automáticamente.",
+  "de": "Eine Einstellung dieses Blocks: Spalten, Breite, Abstand, Höhe oder Ausrichtung. Jede Änderung wird automatisch gespeichert.",
+  "fr": "Un réglage de ce bloc : colonnes, largeur, espacement, hauteur ou alignement. Chaque modification est enregistrée automatiquement."
+ },
+ "empty-image": {
+  "nl": "Een lege afbeelding: klik om een afbeelding of video uit de mediabibliotheek te kiezen of te uploaden.",
+  "en": "An empty image: click to choose or upload an image or video from the media library.",
+  "zh": "一张空图片：点击以从媒体库中选择或上传图片或视频。",
+  "ar": "صورة فارغة: انقر لاختيار أو رفع صورة أو فيديو من مكتبة الوسائط.",
+  "pt": "Uma imagem vazia: clique para escolher ou carregar uma imagem ou vídeo da biblioteca de média.",
+  "es": "Una imagen vacía: haz clic para elegir o subir una imagen o vídeo de la biblioteca multimedia.",
+  "de": "Ein leeres Bild: Klicken, um ein Bild oder Video aus der Mediathek auszuwählen oder hochzuladen.",
+  "fr": "Une image vide : cliquez pour choisir ou téléverser une image ou une vidéo depuis la bibliothèque de médias."
+ },
+ "device": {
+  "nl": "Weergave testen: bekijk de pagina zoals hij eruitziet op een telefoon, tablet of computer.",
+  "en": "Test the display: see how the page looks on a phone, tablet, or computer.",
+  "zh": "测试显示效果：查看页面在手机、平板或电脑上的显示效果。",
+  "ar": "اختبار العرض: شاهد كيف تبدو الصفحة على الهاتف أو الجهاز اللوحي أو الكمبيوتر.",
+  "pt": "Testar a visualização: veja como a página fica num telemóvel, tablet ou computador.",
+  "es": "Probar la visualización: mira cómo se ve la página en un teléfono, tableta u ordenador.",
+  "de": "Darstellung testen: Sieh dir an, wie die Seite auf einem Smartphone, Tablet oder Computer aussieht.",
+  "fr": "Tester l'affichage : voyez à quoi ressemble la page sur un téléphone, une tablette ou un ordinateur."
+ },
+ "preview-bar": {
+  "nl": "Bekijken of Bewerken, de breedte van het apparaat (computer, tablet, telefoon), de pagina openen in een eigen venster, of sluiten.",
+  "en": "View or Edit, the device width (computer, tablet, phone), open the page in its own window, or close.",
+  "zh": "查看或编辑、设备宽度（电脑、平板、手机）、在独立窗口中打开页面，或关闭。",
+  "ar": "عرض أو تحرير، عرض الجهاز (كمبيوتر، جهاز لوحي، هاتف)، فتح الصفحة في نافذة خاصة بها، أو الإغلاق.",
+  "pt": "Ver ou Editar, a largura do dispositivo (computador, tablet, telemóvel), abrir a página numa janela própria, ou fechar.",
+  "es": "Ver o Editar, el ancho del dispositivo (ordenador, tableta, teléfono), abrir la página en su propia ventana, o cerrar.",
+  "de": "Ansehen oder Bearbeiten, die Gerätebreite (Computer, Tablet, Telefon), die Seite in einem eigenen Fenster öffnen oder schließen.",
+  "fr": "Afficher ou Modifier, la largeur de l'appareil (ordinateur, tablette, téléphone), ouvrir la page dans sa propre fenêtre, ou fermer."
+ },
+ "banner": {
+  "nl": "Bewerkmodus staat aan. Opslaan gebeurt automatisch bij elke wijziging.",
+  "en": "Edit mode is on. Changes are saved automatically.",
+  "zh": "编辑模式已开启。每次更改都会自动保存。",
+  "ar": "وضع التحرير مفعّل. يتم الحفظ تلقائيًا مع كل تغيير.",
+  "pt": "O modo de edição está ativado. As alterações são guardadas automaticamente.",
+  "es": "El modo de edición está activado. Los cambios se guardan automáticamente.",
+  "de": "Der Bearbeitungsmodus ist aktiviert. Änderungen werden automatisch gespeichert.",
+  "fr": "Le mode édition est activé. Les modifications sont enregistrées automatiquement."
+ },
+ "image": {
+  "nl": "Een afbeelding die je kunt wijzigen: gebruik Wijzig om te vervangen, het tandwiel voor grootte, uitlijning en doorzichtigheid, en Verwijder om hem weg te halen.",
+  "en": "An image you can change: use Edit to replace it, the gear icon for size, alignment, and transparency, and Delete to remove it.",
+  "zh": "一张可修改的图片：使用\"编辑\"替换它，使用齿轮图标调整大小、对齐方式和透明度，使用\"删除\"移除它。",
+  "ar": "صورة يمكنك تغييرها: استخدم تحرير لاستبدالها، وأيقونة الترس للحجم والمحاذاة والشفافية، واحذف لإزالتها.",
+  "pt": "Uma imagem que podes alterar: usa Editar para a substituir, o ícone de engrenagem para tamanho, alinhamento e transparência, e Eliminar para a remover.",
+  "es": "Una imagen que puedes cambiar: usa Editar para reemplazarla, el icono de engranaje para el tamaño, la alineación y la transparencia, y Eliminar para quitarla.",
+  "de": "Ein Bild, das du ändern kannst: Verwende „Bearbeiten“, um es zu ersetzen, das Zahnradsymbol für Größe, Ausrichtung und Transparenz, und „Löschen“, um es zu entfernen.",
+  "fr": "Une image que vous pouvez modifier : utilisez Modifier pour la remplacer, l'icône d'engrenage pour la taille, l'alignement et la transparence, et Supprimer pour la retirer."
+ },
+ "row-grip": {
+  "nl": "Sleep dit blok of deze hero naar een andere plek op de pagina, ook naar boven. Een blauwe lijn laat zien waar het landt.",
+  "en": "Drag this block or hero to another spot on the page, even to the top. A blue line shows where it will land.",
+  "zh": "将此区块或主图拖动到页面上的其他位置，甚至可以拖到顶部。蓝线会显示放置的位置。",
+  "ar": "اسحب هذه الكتلة أو العنصر الرئيسي إلى مكان آخر في الصفحة، حتى إلى الأعلى. يظهر خط أزرق يوضح مكان وضعه.",
+  "pt": "Arrasta este bloco ou destaque para outro local da página, mesmo para o topo. Uma linha azul mostra onde vai ficar.",
+  "es": "Arrastra este bloque o héroe a otro lugar de la página, incluso hacia arriba. Una línea azul muestra dónde se colocará.",
+  "de": "Ziehe diesen Block oder Hero an eine andere Stelle der Seite, auch nach oben. Eine blaue Linie zeigt, wo er landen wird.",
+  "fr": "Faites glisser ce bloc ou cette bannière vers un autre endroit de la page, même tout en haut. Une ligne bleue indique où il atterrira."
+ },
+ "block-gear": {
+  "nl": "Instellingen van dit blok: kolommen, breedte, hoogte (bij een hero), ruimte, achtergrondkleur met doorzichtigheid, tekstkleur, lettertype, ronde hoeken en een achtergrond van een afbeelding of video.",
+  "en": "Settings for this block: columns, width, height (for a hero), spacing, background color with transparency, text color, font, rounded corners, and a background image or video.",
+  "zh": "此区块的设置：列数、宽度、高度（针对主图）、间距、带透明度的背景颜色、文字颜色、字体、圆角，以及背景图片或视频。",
+  "ar": "إعدادات هذه الكتلة: الأعمدة، العرض، الارتفاع (للعنصر الرئيسي)، التباعد، لون الخلفية مع الشفافية، لون النص، الخط، الزوايا المستديرة، وخلفية من صورة أو فيديو.",
+  "pt": "Definições deste bloco: colunas, largura, altura (para um destaque), espaçamento, cor de fundo com transparência, cor do texto, tipo de letra, cantos arredondados e um fundo de imagem ou vídeo.",
+  "es": "Ajustes de este bloque: columnas, ancho, altura (para un héroe), espaciado, color de fondo con transparencia, color del texto, fuente, esquinas redondeadas, y un fondo de imagen o vídeo.",
+  "de": "Einstellungen dieses Blocks: Spalten, Breite, Höhe (bei einem Hero), Abstand, Hintergrundfarbe mit Transparenz, Textfarbe, Schriftart, abgerundete Ecken und ein Hintergrund aus Bild oder Video.",
+  "fr": "Paramètres de ce bloc : colonnes, largeur, hauteur (pour une bannière), espacement, couleur d'arrière-plan avec transparence, couleur du texte, police, coins arrondis, et une image ou vidéo d'arrière-plan."
+ },
+ "page-gear": {
+  "nl": "Instellingen van de hele pagina: ruimte (padding), items per pagina, breedte, raster of rijen, hero tonen en de opmaak van de blokken.",
+  "en": "Settings for the whole page: spacing (padding), items per page, width, grid or rows, show hero, and the layout of the blocks.",
+  "zh": "整页设置：间距（内边距）、每页项目数、宽度、网格或行数、是否显示主图，以及各区块的排版方式。",
+  "ar": "إعدادات الصفحة بأكملها: المسافة الداخلية (padding)، عدد العناصر في كل صفحة، العرض، الشبكة أو الصفوف، إظهار القسم الرئيسي، وتنسيق الكتل.",
+  "pt": "Configurações de toda a página: espaçamento (padding), itens por página, largura, grade ou linhas, exibir destaque e o layout dos blocos.",
+  "es": "Ajustes de toda la página: espaciado (padding), elementos por página, ancho, cuadrícula o filas, mostrar el destacado principal y el diseño de los bloques.",
+  "de": "Einstellungen für die gesamte Seite: Abstand (Padding), Elemente pro Seite, Breite, Raster oder Zeilen, Hero anzeigen und das Layout der Blöcke.",
+  "fr": "Paramètres de toute la page : espacement (padding), éléments par page, largeur, grille ou lignes, afficher le hero et la mise en page des blocs."
+ },
+ "text-gear": {
+  "nl": "Tekstinstellingen: kies een tekststijl van het thema (Kop 1 tot 4, Alinea), een eigen grootte, kleur of lettertype.",
+  "en": "Text settings: choose a text style from the theme (Heading 1 to 4, Paragraph), a custom size, color or font.",
+  "zh": "文本设置：从主题中选择文本样式（标题1至4、段落），或自定义大小、颜色或字体。",
+  "ar": "إعدادات النص: اختر نمط نص من القالب (العنوان 1 إلى 4، الفقرة)، أو حجمًا أو لونًا أو خطًا مخصصًا.",
+  "pt": "Configurações de texto: escolha um estilo de texto do tema (Título 1 a 4, Parágrafo), um tamanho, cor ou fonte personalizados.",
+  "es": "Ajustes de texto: elige un estilo de texto del tema (Encabezado 1 a 4, Párrafo), un tamaño, color o fuente personalizados.",
+  "de": "Textein­stellungen: Wähle einen Textstil aus dem Theme (Überschrift 1 bis 4, Absatz), eine eigene Größe, Farbe oder Schriftart.",
+  "fr": "Paramètres de texte : choisissez un style de texte du thème (Titre 1 à 4, Paragraphe), une taille, une couleur ou une police personnalisée."
+ },
+ "image-gear": {
+  "nl": "Afbeeldingsinstellingen: uitlijnen links, midden of rechts, grootte in pixels of procenten, doorzichtigheid en ronde hoeken.",
+  "en": "Image settings: align left, center or right, size in pixels or percentages, transparency and rounded corners.",
+  "zh": "图片设置：左对齐、居中或右对齐，以像素或百分比设置大小，透明度及圆角效果。",
+  "ar": "إعدادات الصورة: المحاذاة إلى اليسار أو الوسط أو اليمين، الحجم بالبكسل أو النسبة المئوية، الشفافية والزوايا المستديرة.",
+  "pt": "Configurações de imagem: alinhar à esquerda, centro ou direita, tamanho em pixels ou porcentagem, transparência e cantos arredondados.",
+  "es": "Ajustes de imagen: alinear a la izquierda, al centro o a la derecha, tamaño en píxeles o porcentajes, transparencia y esquinas redondeadas.",
+  "de": "Bildeinstellungen: links, mittig oder rechts ausrichten, Größe in Pixeln oder Prozent, Transparenz und abgerundete Ecken.",
+  "fr": "Paramètres d'image : alignement à gauche, au centre ou à droite, taille en pixels ou en pourcentage, transparence et coins arrondis."
+ },
+ "image-delete": {
+  "nl": "Verwijdert deze afbeelding of video van de pagina. Het onderdeel blijft staan, zodat je een andere kunt kiezen.",
+  "en": "Removes this image or video from the page. The element stays in place, so you can choose another one.",
+  "zh": "从页面中移除此图片或视频。该元素会保留，方便您选择其他内容。",
+  "ar": "يزيل هذه الصورة أو الفيديو من الصفحة. يبقى العنصر في مكانه حتى تتمكن من اختيار صورة أخرى.",
+  "pt": "Remove esta imagem ou vídeo da página. O elemento permanece no lugar, para que você possa escolher outro.",
+  "es": "Elimina esta imagen o vídeo de la página. El elemento permanece en su lugar, para que puedas elegir otro.",
+  "de": "Entfernt dieses Bild oder Video von der Seite. Das Element bleibt bestehen, damit du ein anderes auswählen kannst.",
+  "fr": "Supprime cette image ou vidéo de la page. L'élément reste en place, afin que vous puissiez en choisir un autre."
+ },
+ "image-change": {
+  "nl": "Wijzig: kies een andere afbeelding of video uit de mediabibliotheek, of upload een nieuwe.",
+  "en": "Change: choose a different image or video from the media library, or upload a new one.",
+  "zh": "更改：从媒体库中选择其他图片或视频，或上传新的文件。",
+  "ar": "تغيير: اختر صورة أو فيديو مختلفًا من مكتبة الوسائط، أو قم بتحميل واحد جديد.",
+  "pt": "Alterar: escolha outra imagem ou vídeo da biblioteca de mídia, ou envie um novo.",
+  "es": "Cambiar: elige otra imagen o vídeo de la biblioteca multimedia, o sube uno nuevo.",
+  "de": "Ändern: Wähle ein anderes Bild oder Video aus der Mediathek oder lade ein neues hoch.",
+  "fr": "Modifier : choisissez une autre image ou vidéo dans la bibliothèque de médias, ou téléchargez-en une nouvelle."
+ },
+ "image-place": {
+  "nl": "Uitlijning en grootte van deze afbeelding: klein, middel, groot, volledige breedte of een eigen formaat.",
+  "en": "Alignment and size of this image: small, medium, large, full width or a custom size.",
+  "zh": "此图片的对齐方式和大小：小、中、大、全宽或自定义尺寸。",
+  "ar": "محاذاة وحجم هذه الصورة: صغير، متوسط، كبير، العرض الكامل أو حجم مخصص.",
+  "pt": "Alinhamento e tamanho desta imagem: pequeno, médio, grande, largura total ou um tamanho personalizado.",
+  "es": "Alineación y tamaño de esta imagen: pequeño, mediano, grande, ancho completo o un tamaño personalizado.",
+  "de": "Ausrichtung und Größe dieses Bildes: klein, mittel, groß, volle Breite oder eine eigene Größe.",
+  "fr": "Alignement et taille de cette image : petite, moyenne, grande, pleine largeur ou taille personnalisée."
+ },
+ "item-grip": {
+  "nl": "Sleep dit onderdeel (tekst, afbeelding of object) naar een andere plek, ook naar een andere kolom.",
+  "en": "Drag this element (text, image or object) to a different spot, even to another column.",
+  "zh": "将此元素（文本、图片或对象）拖动到其他位置，甚至可以拖到另一列。",
+  "ar": "اسحب هذا العنصر (نص أو صورة أو كائن) إلى مكان آخر، حتى إلى عمود آخر.",
+  "pt": "Arraste este elemento (texto, imagem ou objeto) para outro lugar, até mesmo para outra coluna.",
+  "es": "Arrastra este elemento (texto, imagen u objeto) a otro lugar, incluso a otra columna.",
+  "de": "Ziehe dieses Element (Text, Bild oder Objekt) an eine andere Stelle, auch in eine andere Spalte.",
+  "fr": "Faites glisser cet élément (texte, image ou objet) vers un autre emplacement, même vers une autre colonne."
+ },
+ "item-delete": {
+  "nl": "Haalt dit onderdeel van de pagina.",
+  "en": "Removes this element from the page.",
+  "zh": "从页面中删除此元素。",
+  "ar": "يزيل هذا العنصر من الصفحة.",
+  "pt": "Remove este elemento da página.",
+  "es": "Elimina este elemento de la página.",
+  "de": "Entfernt dieses Element von der Seite.",
+  "fr": "Supprime cet élément de la page."
+ },
+ "cell-add": {
+  "nl": "Voeg in deze kolom een tekst, een afbeelding of een systeemobject toe. Onder Raster in dit blok kies je 1 tot 4 kolommen voor het hele blok, ook in een hero.",
+  "en": "Add a text, an image, or a system object to this column. Under Grid in this block, choose 1 to 4 columns for the entire block, including in a hero.",
+  "zh": "在此列中添加文本、图片或系统对象。在此区块的“网格”中，可为整个区块选择1到4列，包括在主图区中。",
+  "ar": "أضف نصًا أو صورة أو عنصر نظام إلى هذا العمود. ضمن الشبكة في هذه الكتلة، اختر من 1 إلى 4 أعمدة للكتلة بأكملها، بما في ذلك في البانر الرئيسي.",
+  "pt": "Adicione um texto, uma imagem ou um objeto do sistema a esta coluna. Em Grade neste bloco, escolha de 1 a 4 colunas para o bloco inteiro, inclusive num hero.",
+  "es": "Añade un texto, una imagen o un objeto del sistema a esta columna. En Cuadrícula de este bloque, elige de 1 a 4 columnas para todo el bloque, también en un hero.",
+  "de": "Füge dieser Spalte einen Text, ein Bild oder ein Systemobjekt hinzu. Unter Raster in diesem Block wählst du 1 bis 4 Spalten für den gesamten Block, auch in einem Hero.",
+  "fr": "Ajoutez un texte, une image ou un objet système à cette colonne. Sous Grille dans ce bloc, choisissez de 1 à 4 colonnes pour l'ensemble du bloc, y compris dans un hero."
+ },
+ "grid-add": {
+  "nl": "Raster: een blok met kolommen (standaard drie) en een eigen hoogte, uitlijning en achtergrond, maar zonder de banner-uitstraling van een hero. Zet er tekst, afbeeldingen of objecten in.",
+  "en": "Grid: a block with columns (three by default) and its own height, alignment, and background, but without the banner look of a hero. Add text, images, or objects to it.",
+  "zh": "网格：一个带有列（默认三列）的区块，拥有自己的高度、对齐方式和背景，但没有主图区的横幅效果。可在其中添加文本、图片或对象。",
+  "ar": "الشبكة: كتلة تحتوي على أعمدة (ثلاثة افتراضيًا) بارتفاع ومحاذاة وخلفية خاصة بها، ولكن بدون مظهر البانر الخاص بالبانر الرئيسي. أضف نصًا أو صورًا أو عناصر إليها.",
+  "pt": "Grade: um bloco com colunas (três por padrão) e altura, alinhamento e fundo próprios, mas sem o visual de banner de um hero. Insira texto, imagens ou objetos.",
+  "es": "Cuadrícula: un bloque con columnas (tres por defecto) y su propia altura, alineación y fondo, pero sin el aspecto de banner de un hero. Añade texto, imágenes u objetos.",
+  "de": "Raster: ein Block mit Spalten (standardmäßig drei) sowie einer eigenen Höhe, Ausrichtung und Hintergrund, jedoch ohne die Banner-Optik eines Heros. Füge Text, Bilder oder Objekte hinzu.",
+  "fr": "Grille : un bloc avec des colonnes (trois par défaut) ayant sa propre hauteur, son alignement et son arrière-plan, mais sans l'aspect bannière d'un hero. Ajoutez-y du texte, des images ou des objets."
+ },
+ "row-add": {
+  "nl": "Voeg een nieuw blok met 1 tot 4 kolommen toe, of een hero: een banner met een eigen hoogte en achtergrond.",
+  "en": "Add a new block with 1 to 4 columns, or a hero: a banner with its own height and background.",
+  "zh": "添加一个新的区块，带1到4列，或添加一个主图区：一个具有自定义高度和背景的横幅。",
+  "ar": "أضف كتلة جديدة بعدد أعمدة من 1 إلى 4، أو بانرًا رئيسيًا: شريط بارتفاع وخلفية خاصة به.",
+  "pt": "Adicione um novo bloco com 1 a 4 colunas, ou um hero: um banner com altura e fundo próprios.",
+  "es": "Añade un nuevo bloque con 1 a 4 columnas, o un hero: un banner con su propia altura y fondo.",
+  "de": "Füge einen neuen Block mit 1 bis 4 Spalten hinzu oder einen Hero: ein Banner mit eigener Höhe und Hintergrund.",
+  "fr": "Ajoutez un nouveau bloc avec 1 à 4 colonnes, ou un hero : une bannière avec sa propre hauteur et son arrière-plan."
+ },
+ "cell-align": {
+  "nl": "Uitlijnen van de onderdelen in deze kolom: links, midden of rechts, boven, midden of onder.",
+  "en": "Align the elements in this column: left, center, or right, top, middle, or bottom.",
+  "zh": "对齐此列中的元素：左、中或右，顶部、中间或底部。",
+  "ar": "محاذاة العناصر في هذا العمود: يسار أو وسط أو يمين، أعلى أو وسط أو أسفل.",
+  "pt": "Alinhe os elementos nesta coluna: esquerda, centro ou direita, topo, meio ou base.",
+  "es": "Alinea los elementos en esta columna: izquierda, centro o derecha, arriba, en medio o abajo.",
+  "de": "Ausrichtung der Elemente in dieser Spalte: links, mittig oder rechts, oben, mittig oder unten.",
+  "fr": "Alignez les éléments de cette colonne : gauche, centre ou droite, haut, milieu ou bas."
+ },
+ "rowbar": {
+  "nl": "De instellingen van dit blok. Sluit ze met het tandwiel linksboven in het blok.",
+  "en": "The settings for this block. Close them with the gear icon in the top-left corner of the block.",
+  "zh": "此区块的设置。可通过区块左上角的齿轮图标关闭。",
+  "ar": "إعدادات هذه الكتلة. أغلقها بأيقونة الترس في أعلى يسار الكتلة.",
+  "pt": "As configurações deste bloco. Feche-as com a engrenagem no canto superior esquerdo do bloco.",
+  "es": "Los ajustes de este bloque. Ciérralos con el icono de engranaje en la esquina superior izquierda del bloque.",
+  "de": "Die Einstellungen dieses Blocks. Schließe sie über das Zahnrad oben links im Block.",
+  "fr": "Les paramètres de ce bloc. Fermez-les avec l'icône d'engrenage en haut à gauche du bloc."
+ },
+ "text": {
+  "nl": "Klik op de tekst om hem te wijzigen. Met Uitgebreid open je de volledige tekst-editor met koppen, lijsten en links. Alles wordt direct opgeslagen.",
+  "en": "Click on the text to edit it. Use Advanced to open the full text editor with headings, lists, and links. Everything is saved automatically.",
+  "zh": "点击文本进行修改。点击“高级”可打开完整的文本编辑器，支持标题、列表和链接。所有内容都会自动保存。",
+  "ar": "انقر على النص لتعديله. استخدم خيار متقدم لفتح محرر النصوص الكامل مع العناوين والقوائم والروابط. يتم حفظ كل شيء تلقائيًا.",
+  "pt": "Clique no texto para editá-lo. Use Avançado para abrir o editor de texto completo com títulos, listas e links. Tudo é salvo automaticamente.",
+  "es": "Haz clic en el texto para editarlo. Usa Avanzado para abrir el editor de texto completo con títulos, listas y enlaces. Todo se guarda automáticamente.",
+  "de": "Klicke auf den Text, um ihn zu bearbeiten. Mit Erweitert öffnest du den vollständigen Text-Editor mit Überschriften, Listen und Links. Alles wird automatisch gespeichert.",
+  "fr": "Cliquez sur le texte pour le modifier. Utilisez Avancé pour ouvrir l'éditeur de texte complet avec titres, listes et liens. Tout est enregistré automatiquement."
+ },
+ "page-settings": {
+  "nl": "Pagina-instellingen: de naam per taal, het adres per taal, SEO en de achtergrond van deze pagina.",
+  "en": "Page settings: the name per language, the address per language, SEO, and the background of this page.",
+  "zh": "页面设置：每种语言的名称、每种语言的网址、SEO以及此页面的背景。",
+  "ar": "إعدادات الصفحة: الاسم لكل لغة، والعنوان لكل لغة، وتحسين محركات البحث (SEO)، وخلفية هذه الصفحة.",
+  "pt": "Configurações da página: o nome por idioma, o endereço por idioma, SEO e o fundo desta página.",
+  "es": "Ajustes de la página: el nombre por idioma, la dirección por idioma, SEO y el fondo de esta página.",
+  "de": "Seiteneinstellungen: der Name pro Sprache, die Adresse pro Sprache, SEO und der Hintergrund dieser Seite.",
+  "fr": "Paramètres de la page : le nom par langue, l'adresse par langue, le SEO et l'arrière-plan de cette page."
+ },
+ "edit-switch": {
+  "nl": "Zet de bewerkmodus aan of uit. Als hij uit staat zien bezoekers de pagina zoals hij is.",
+  "en": "Turn edit mode on or off. When it's off, visitors see the page as it actually is.",
+  "zh": "开启或关闭编辑模式。关闭时，访客将看到页面的实际效果。",
+  "ar": "تشغيل وضع التحرير أو إيقافه. عند إيقافه، يرى الزوار الصفحة كما هي فعليًا.",
+  "pt": "Ative ou desative o modo de edição. Quando desativado, os visitantes veem a página como ela realmente é.",
+  "es": "Activa o desactiva el modo de edición. Cuando está desactivado, los visitantes ven la página tal como es realmente.",
+  "de": "Schalte den Bearbeitungsmodus ein oder aus. Ist er aus, sehen Besucher die Seite so, wie sie wirklich ist.",
+  "fr": "Activez ou désactivez le mode édition. Lorsqu'il est désactivé, les visiteurs voient la page telle qu'elle est réellement."
+ },
+ "layout": {
+  "nl": "Kies de opmaak van de pagina: de blokken blijven staan, alleen het raster verandert. Herstel zet de standaard van het thema terug.",
+  "en": "Choose the layout of the page: the blocks stay in place, only the grid changes. Reset restores the theme's default.",
+  "zh": "选择页面的布局:区块保持不变,只有网格会改变。重置会恢复主题的默认设置。",
+  "ar": "اختر تخطيط الصفحة: تبقى الكتل في مكانها، ويتغيّر الشبكة فقط. تعيد 'إعادة التعيين' الإعداد الافتراضي للقالب.",
+  "pt": "Escolha o layout da página: os blocos permanecem no lugar, apenas a grelha muda. Repor restaura a predefinição do tema.",
+  "es": "Elige el diseño de la página: los bloques permanecen en su lugar, solo cambia la cuadrícula. Restablecer recupera el valor predeterminado del tema.",
+  "de": "Wähle das Layout der Seite: Die Blöcke bleiben an ihrem Platz, nur das Raster ändert sich. Zurücksetzen stellt die Standardeinstellung des Themes wieder her.",
+  "fr": "Choisissez la mise en page : les blocs restent en place, seule la grille change. Réinitialiser rétablit le réglage par défaut du thème."
+ },
+ "menu-site": {
+  "nl": "Het menu van de website. Je bewerkt het in Admin → Pagina's → Menu: items maken, slepen naar een submenu, de vorm per apparaat en de header instellen.",
+  "en": "The website's menu. You edit it in Admin → Pagina's → Menu: create items, drag them into a submenu, and set the style per device and the header.",
+  "zh": "网站的菜单。您可以在 Admin → Pagina's → Menu 中编辑它:创建项目、将其拖入子菜单,并设置每种设备的样式和页眉。",
+  "ar": "قائمة الموقع. يمكنك تعديلها من خلال Admin → Pagina's → Menu: إنشاء عناصر، سحبها إلى قائمة فرعية، وضبط الشكل حسب الجهاز وإعداد الرأس (header).",
+  "pt": "O menu do site. Edita-o em Admin → Pagina's → Menu: criar itens, arrastar para um submenu, definir o estilo por dispositivo e o cabeçalho.",
+  "es": "El menú del sitio web. Lo editas en Admin → Pagina's → Menu: crea elementos, arrástralos a un submenú y configura el estilo según el dispositivo y el encabezado.",
+  "de": "Das Menü der Website. Du bearbeitest es unter Admin → Pagina's → Menu: Einträge erstellen, in ein Untermenü ziehen und die Darstellung pro Gerät sowie den Header einstellen.",
+  "fr": "Le menu du site. Vous le modifiez dans Admin → Pagina's → Menu : créez des éléments, glissez-les dans un sous-menu, et définissez l'apparence par appareil ainsi que l'en-tête."
+ },
+ "menu-toggle": {
+  "nl": "Het hamburger-icoon: opent het menu op een telefoon of tablet. Vorm en positie stel je in bij Admin → Pagina's → Menu → Instellingen.",
+  "en": "The hamburger icon: opens the menu on a phone or tablet. Set the style and position in Admin → Pagina's → Menu → Instellingen.",
+  "zh": "汉堡图标:在手机或平板电脑上打开菜单。您可以在 Admin → Pagina's → Menu → Instellingen 中设置样式和位置。",
+  "ar": "أيقونة الهامبرغر: تفتح القائمة على الهاتف أو الجهاز اللوحي. يمكنك ضبط الشكل والموضع من Admin → Pagina's → Menu → Instellingen.",
+  "pt": "O ícone de hambúrguer: abre o menu num telemóvel ou tablet. Define o estilo e a posição em Admin → Pagina's → Menu → Instellingen.",
+  "es": "El icono de hamburguesa: abre el menú en un teléfono o tableta. Configura el estilo y la posición en Admin → Pagina's → Menu → Instellingen.",
+  "de": "Das Hamburger-Icon: öffnet das Menü auf einem Smartphone oder Tablet. Form und Position stellst du unter Admin → Pagina's → Menu → Instellingen ein.",
+  "fr": "L'icône hamburger : ouvre le menu sur un téléphone ou une tablette. Réglez la forme et la position dans Admin → Pagina's → Menu → Instellingen."
+ },
+ "menu-bottom": {
+  "nl": "De menubalk onderaan het scherm, zoals een app. Aan te zetten per apparaat bij de menu-instellingen.",
+  "en": "The menu bar at the bottom of the screen, like an app. Can be enabled per device in the menu settings.",
+  "zh": "屏幕底部的菜单栏,就像应用程序一样。可以在菜单设置中按设备启用。",
+  "ar": "شريط القائمة في أسفل الشاشة، تمامًا مثل أحد التطبيقات. يمكن تفعيله لكل جهاز من إعدادات القائمة.",
+  "pt": "A barra de menu na parte inferior do ecrã, como numa aplicação. Pode ser ativada por dispositivo nas definições do menu.",
+  "es": "La barra de menú en la parte inferior de la pantalla, como en una app. Se puede activar por dispositivo en la configuración del menú.",
+  "de": "Die Menüleiste am unteren Bildschirmrand, wie bei einer App. Kann pro Gerät in den Menü-Einstellungen aktiviert werden.",
+  "fr": "La barre de menu en bas de l'écran, comme dans une application. Peut être activée par appareil dans les paramètres du menu."
+ },
+ "header": {
+  "nl": "De header van de website: logo, menu en knoppen. Hoogte, achtergrond, doorzichtigheid en gedrag bij scrollen stel je in bij Admin → Pagina's → Menu → Instellingen.",
+  "en": "The website's header: logo, menu and buttons. Set the height, background, transparency and scroll behavior in Admin → Pagina's → Menu → Instellingen.",
+  "zh": "网站的页眉:徽标、菜单和按钮。您可以在 Admin → Pagina's → Menu → Instellingen 中设置高度、背景、透明度和滚动行为。",
+  "ar": "رأس الموقع: الشعار، القائمة، والأزرار. يمكنك ضبط الارتفاع والخلفية والشفافية وسلوك التمرير من Admin → Pagina's → Menu → Instellingen.",
+  "pt": "O cabeçalho do site: logótipo, menu e botões. Define a altura, o fundo, a transparência e o comportamento ao deslocar em Admin → Pagina's → Menu → Instellingen.",
+  "es": "El encabezado del sitio web: logo, menú y botones. Configura la altura, el fondo, la transparencia y el comportamiento al desplazarse en Admin → Pagina's → Menu → Instellingen.",
+  "de": "Der Header der Website: Logo, Menü und Buttons. Höhe, Hintergrund, Transparenz und Scrollverhalten stellst du unter Admin → Pagina's → Menu → Instellingen ein.",
+  "fr": "L'en-tête du site : logo, menu et boutons. Réglez la hauteur, l'arrière-plan, la transparence et le comportement au défilement dans Admin → Pagina's → Menu → Instellingen."
+ },
+ "_dim": {
+  "nl": "Help: wijs een icoon of onderdeel aan voor uitleg. Druk op Esc of op ? om te sluiten.",
+  "en": "Help: point at an icon or element for an explanation. Press Esc or ? to close.",
+  "zh": "帮助:将鼠标指向图标或元素以获取说明。按 Esc 或 ? 关闭。",
+  "ar": "المساعدة: أشر إلى أيقونة أو عنصر للحصول على شرح. اضغط على Esc أو ? للإغلاق.",
+  "pt": "Ajuda: aponta para um ícone ou elemento para obter uma explicação. Pressiona Esc ou ? para fechar.",
+  "es": "Ayuda: señala un icono o elemento para obtener una explicación. Pulsa Esc o ? para cerrar.",
+  "de": "Hilfe: Zeige auf ein Icon oder Element für eine Erklärung. Drücke Esc oder ?, um zu schließen.",
+  "fr": "Aide : pointez vers une icône ou un élément pour obtenir une explication. Appuyez sur Échap ou ? pour fermer."
+ },
+ "_on": {
+  "nl": "Help uit",
+  "en": "Help off",
+  "zh": "关闭帮助",
+  "ar": "إيقاف المساعدة",
+  "pt": "Ajuda desativada",
+  "es": "Ayuda desactivada",
+  "de": "Hilfe aus",
+  "fr": "Aide désactivée"
+ },
+ "_off": {
+  "nl": "Help aan: wijs een icoon aan voor uitleg",
+  "en": "Help on: point at an icon for an explanation",
+  "zh": "帮助已开启:将鼠标指向图标以获取说明",
+  "ar": "تفعيل المساعدة: أشر إلى أيقونة للحصول على شرح",
+  "pt": "Ajuda ativada: aponta para um ícone para obter uma explicação",
+  "es": "Ayuda activada: señala un icono para obtener una explicación",
+  "de": "Hilfe an: Zeige auf ein Icon für eine Erklärung",
+  "fr": "Aide activée : pointez vers une icône pour obtenir une explication"
+ }
+}

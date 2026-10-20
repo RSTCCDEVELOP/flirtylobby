@@ -735,6 +735,8 @@ def apply_theme(request):
     key = request.data.get("theme")
     if key not in themes.THEMES:
         return bad("Onbekend thema.")
+    if key not in themes.enabled():
+        return bad("Dit thema staat uit. Een superadmin zet het aan bij Super admin → Profielthema's.", status.HTTP_403_FORBIDDEN)
     cfg = service.save({"profiles": themes.theme_payload(key)}, ["profiles"])
     from apps.pages import defaults as page_defaults
 
@@ -774,3 +776,18 @@ def settings_admin(request):
 def genders_public(request):
     """Public: which genders the forms offer (couple only with the Dating theme)."""
     return Response({"genders": list(service.genders())})
+
+
+@api_view(["GET", "PUT"])
+@permission_classes(AUTH)
+def theme_switches(request):
+    """Superadmin: which profile themes can be used (only the basic one is on by default)."""
+    if not request.user.is_staff:
+        return bad("Alleen een superadmin mag dit.", status.HTTP_403_FORBIDDEN)
+    if request.method == "PUT":
+        keys = request.data.get("enabled")
+        if not isinstance(keys, list):
+            return bad("Ongeldige keuze.")
+        themes.set_enabled([k for k in keys if k in themes.THEMES])
+    current = service.get()["profiles"]["theme"]
+    return Response({"themes": [{**t, "locked": t["key"] in (themes.BASIC, current), "active": t["key"] == current} for t in themes.public_list(everything=True)]})

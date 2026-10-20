@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import { confirmDialog } from "../lib/dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -174,7 +175,7 @@ export default function ThemeLook() {
   }
 
   const auto = useAutoSave(values, save, { ready: !!values && L >= 2, delay: 1200 }); // saves by itself, no Save button
-  if (!values) return <p className="muted">{tx("Laden…")}</p>;
+  if (!values) return <Busy />;
 
   return (
     <>
@@ -253,7 +254,7 @@ export default function ThemeLook() {
         </div>
       </Collapsible>
 
-      {schema.filter((g) => g.key !== "defaults" && g.key !== "devices" && g.key !== "interface_look" && g.key !== "page_layout").map((g) => (
+      {schema.filter((g) => g.key !== "defaults" && g.key !== "devices" && g.key !== "interface_look" && g.key !== "page_layout" && g.key !== "loader").map((g) => (
         <Collapsible key={g.key} id={`theme-${g.key}`} title={g.label} className="theme-group">
           <div className="theme-grid">
             {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}

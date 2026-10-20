@@ -15,6 +15,8 @@ urlpatterns = [
     path("pages/by-url/", views.by_url),
     path("pages/aliases/", views.aliases),
     path("pages/order/", views.menu_order),
+    path("pages/translate/", views.translate),
+    path("pages/menu-settings/", views.menu_settings),
     path("pages/", views.pages),
     path("pages/<int:pk>/", views.page),
 ]

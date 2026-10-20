@@ -13,6 +13,7 @@ urlpatterns = [
     path("community/config/", v.config),
     path("community/settings/", v.settings_admin),
     path("community/theme/", v.apply_theme),
+    path("community/theme-switches/", v.theme_switches),
     path("profile/me/", v.profile_me),
     path("profile/me/photos/", v.profile_photo_add),
     path("profile/me/photos/order/", v.profile_photo_order),

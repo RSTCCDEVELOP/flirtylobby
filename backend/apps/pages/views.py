@@ -38,14 +38,14 @@ def _bg(p):
 def _out(p):
     return {"background": _bg(p), "id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
             "scope": p.scope, "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
-            "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "editable": p.kind == "content" or p.key in service.EDITABLE}
+            "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "editable": p.kind == "content" or p.key in service.EDITABLE}
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def menu(request):
     """Public: the header menu (only what is switched on)."""
-    return Response({"items": service.menu() if modules.enabled("pages") else service.default_menu()})
+    return Response({"items": service.menu() if modules.enabled("pages") else service.default_menu(), "settings": service.menu_settings()})
 
 
 @api_view(["GET"])
@@ -92,7 +92,7 @@ def public_page(request, key):
 def by_url(request):
     """Public: the standard page (content page with an address of its own, like /community) at ?path=; 404 when there is none or its module is off."""
     path = "/" + str(request.query_params.get("path") or "").strip("/")
-    p = next((x for x in Page.objects.filter(scope="public", kind__in=("content", "system", "link")) if path in x.all_paths()), None)  # the address in any language leads to the page
+    p = next((x for x in Page.objects.filter(scope="public", kind__in=("content", "system", "link", "menu")) if path in x.all_paths()), None)  # the address in any language leads to the page
     if not p or not modules.enabled("pages") or not service.available(p):
         return Response(status=status.HTTP_404_NOT_FOUND)
     return Response({"key": p.key, "kind": p.kind, "canonical": p.path, "title": p.title})
@@ -104,7 +104,7 @@ def aliases(request):
     """Public: the addresses of the standard pages in every language. {aliases: {address: canonical address}, pages: {key: {canonical, urls: {lang: address}}}}; only pages that are on."""
     out, pages = {}, {}
     if modules.enabled("pages"):
-        for p in Page.objects.filter(scope="public", kind__in=("content", "system", "link")):
+        for p in Page.objects.filter(scope="public", kind__in=("content", "system", "link", "menu")):
             if not p.slugs or not service.available(p):
                 continue
             urls = {l: p.path_in(l) for l in service.LANG_CODES}
@@ -121,8 +121,8 @@ def pages(request):
     if request.method == "POST":
         d = request.data
         kind = d.get("kind")
-        if kind not in ("content", "link"):
-            return bad("Kies een eigen pagina of een link.")
+        if kind not in ("content", "link", "menu"):
+            return bad("Kies een eigen pagina, een link of een menu-item.")
         title = _titles(d.get("title"))
         if not title:
             return bad("Geef de pagina een naam.")
@@ -147,7 +147,38 @@ def pages(request):
         logger.info("Page '%s' created by %s", key, request.user.email)
         return Response(_out(p), status=status.HTTP_201_CREATED)
     scope = "private" if request.query_params.get("scope") == "private" else "public"
-    return Response({"pages": [_out(p) for p in Page.objects.filter(scope=scope)], "can_manage": level(request.user, "pages") >= 3})
+    from apps.integrations import ai
+
+    return Response({"pages": [_out(p) for p in Page.objects.filter(scope=scope)], "can_manage": level(request.user, "pages") >= 3, "ai": ai.available()})
+
+
+@api_view(["POST"])
+@permission_classes([has_level_for("pages", {"POST": "edit"}), module_required("pages")])
+def translate(request):
+    """The name of a menu item or page in EVERY language of the system (also the ones that are off), translated by Claude from the default language."""
+    import json
+
+    from apps.core import themeimport
+    from apps.core.models import Language
+    from apps.integrations import ai
+
+    text = str(request.data.get("text") or "").strip()[:80]
+    if not text:
+        return bad("Vul eerst de naam in.")
+    if not ai.available():
+        return bad("Claude is niet gekoppeld. Vul de namen zelf in of koppel Claude bij Admin → API keys.")
+    default = Language.objects.filter(is_default=True).values_list("code", flat=True).first() or "nl"
+    todo = [(l.code, l.name) for l in Language.objects.all() if l.code != default]
+    system = ("You translate the short name of a website menu item (one or two words). Keep it short, natural and neutral. "
+              "Answer with ONE JSON object only, no text around it: {\"titles\": {code: translation}} with an entry for every requested language code.")
+    prompt = json.dumps({"text": text, "source_language": default, "languages": [{"code": c, "name": n} for c, n in todo]}, ensure_ascii=False)
+    try:
+        out = themeimport._parse_json(ai.claude(system, prompt, max_tokens=1500, timeout=60), need=("titles",))
+    except (ValueError, KeyError) as e:
+        return bad(f"Vertalen mislukt: {e}")
+    got = out.get("titles") or {}
+    titles = {default: text, **{c: str(got.get(c) or "").strip()[:80] for c, _n in todo if str(got.get(c) or "").strip()}}
+    return Response({"titles": titles})
 
 
 def _titles(raw):
@@ -211,6 +242,12 @@ def page(request, pk):
             err = service.fill_slugs(p, d.get("slugs") if isinstance(d.get("slugs"), dict) else None)
             if err:
                 return bad(err)
+    if "cta" in d:
+        p.cta = bool(d["cta"])
+    if "label_link" in d:
+        p.label_link = bool(d["label_link"])
+    if isinstance(d.get("devices"), dict):
+        p.devices = {k: bool(d["devices"].get(k, True)) for k in service.DEVICES}
     if "parent" in d:
         par = Page.objects.filter(pk=d["parent"]).first() if d["parent"] else None
         if par and (par.pk == p.pk or par.parent_id):
@@ -241,3 +278,16 @@ def menu_order(request):
     for n, i in enumerate(items):
         Page.objects.filter(pk=i["id"]).update(parent_id=parents[i["id"]], order=n)
     return Response({"pages": [_out(p) for p in Page.objects.all()]})
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([AllowAny])
+def menu_settings(request):
+    """The look of the header menu: GET for everyone (the site needs it), PUT for those who manage the pages."""
+    from .models import MenuSettings
+
+    if request.method == "PUT":
+        if not request.user.is_authenticated or level(request.user, "pages") < 3 or not modules.enabled("pages"):
+            return Response({"detail": "Je hebt hier geen rechten voor."}, status=status.HTTP_403_FORBIDDEN)
+        MenuSettings.objects.update_or_create(pk=1, defaults={"data": service.clean_menu_settings(request.data)})
+    return Response(service.menu_settings())

@@ -1,0 +1,1963 @@
+{
+ "groups": {
+  "start": {
+   "en": "Getting started",
+   "de": "Erste Schritte",
+   "fr": "Premiers pas",
+   "es": "Primeros pasos",
+   "pt": "Primeiros passos",
+   "zh": "快速入门",
+   "ar": "ابدأ الآن"
+  },
+  "site": {
+   "en": "Pages and menu",
+   "de": "Seiten und Menü",
+   "fr": "Pages et menu",
+   "es": "Páginas y menú",
+   "pt": "Páginas e menu",
+   "zh": "页面和菜单",
+   "ar": "الصفحات والقائمة"
+  },
+  "edit": {
+   "en": "Editing on the website",
+   "de": "Bearbeiten auf der Website",
+   "fr": "Modifier sur le site",
+   "es": "Editar en el sitio web",
+   "pt": "Editar no site",
+   "zh": "在网站上编辑",
+   "ar": "التحرير على الموقع"
+  },
+  "design": {
+   "en": "Design and media",
+   "de": "Design und Medien",
+   "fr": "Design et médias",
+   "es": "Diseño y medios",
+   "pt": "Design e mídia",
+   "zh": "设计和媒体",
+   "ar": "التصميم والوسائط"
+  },
+  "shop": {
+   "en": "Webshop, subscriptions and donations",
+   "de": "Webshop, Abonnements und Spenden",
+   "fr": "Boutique en ligne, abonnements et dons",
+   "es": "Tienda online, suscripciones y donaciones",
+   "pt": "Loja online, assinaturas e doações",
+   "zh": "网店、订阅和捐款",
+   "ar": "المتجر الإلكتروني، الاشتراكات والتبرعات"
+  },
+  "community": {
+   "en": "Community and games",
+   "de": "Community und Spiele",
+   "fr": "Communauté et jeux",
+   "es": "Comunidad y juegos",
+   "pt": "Comunidade e jogos",
+   "zh": "社区和游戏",
+   "ar": "المجتمع والألعاب"
+  },
+  "people": {
+   "en": "Users and permissions",
+   "de": "Benutzer und Rechte",
+   "fr": "Utilisateurs et droits",
+   "es": "Usuarios y permisos",
+   "pt": "Usuários e permissões",
+   "zh": "用户和权限",
+   "ar": "المستخدمون والصلاحيات"
+  },
+  "security": {
+   "en": "Security",
+   "de": "Sicherheit",
+   "fr": "Sécurité",
+   "es": "Seguridad",
+   "pt": "Segurança",
+   "zh": "安全",
+   "ar": "الأمان"
+  },
+  "account": {
+   "en": "My account",
+   "de": "Mein Konto",
+   "fr": "Mon compte",
+   "es": "Mi cuenta",
+   "pt": "Minha conta",
+   "zh": "我的账户",
+   "ar": "حسابي"
+  },
+  "social": {
+   "en": "Community and games",
+   "de": "Community und Spiele",
+   "fr": "Communauté et jeux",
+   "es": "Comunidad y juegos",
+   "pt": "Comunidade e jogos",
+   "zh": "社区与游戏",
+   "ar": "المجتمع والألعاب"
+  },
+  "money": {
+   "en": "Subscriptions, donations and orders",
+   "de": "Abonnements, Spenden und Bestellungen",
+   "fr": "Abonnements, dons et commandes",
+   "es": "Suscripciones, donaciones y pedidos",
+   "pt": "Assinaturas, doações e pedidos",
+   "zh": "订阅、捐赠和订单",
+   "ar": "الاشتراكات والتبرعات والطلبات"
+  },
+  "adminplug": {
+   "en": "Manage plugins and games",
+   "de": "Plugins und Spiele verwalten",
+   "fr": "Gérer les plugins et les jeux",
+   "es": "Gestionar plugins y juegos",
+   "pt": "Gerir plugins e jogos",
+   "zh": "管理插件和游戏",
+   "ar": "إدارة الإضافات والألعاب"
+  },
+  "system": {
+   "en": "System and plugins",
+   "de": "System und Plugins",
+   "fr": "Système et plugins",
+   "es": "Sistema y plugins",
+   "pt": "Sistema e plugins",
+   "zh": "系统和插件",
+   "ar": "النظام والإضافات"
+  }
+ },
+ "items": {
+  "what": {
+   "q": {
+    "en": "What is Easy2edit?",
+    "de": "Was ist Easy2edit?",
+    "fr": "Qu'est-ce qu'Easy2edit ?",
+    "es": "¿Qué es Easy2edit?",
+    "pt": "O que é o Easy2edit?",
+    "zh": "什么是 Easy2edit？",
+    "ar": "ما هو Easy2edit؟"
+   },
+   "a": {
+    "en": "Easy2edit is a simple, modular management system for websites and portals. You only switch on what you need: pages, webshop, community, subscriptions, donations and more. What's switched off won't show up anywhere.",
+    "de": "Easy2edit ist ein einfaches, modulares Verwaltungssystem für Websites und Portale. Du schaltest nur ein, was du brauchst: Seiten, Webshop, Community, Abonnements, Spenden und mehr. Was ausgeschaltet ist, taucht nirgendwo auf.",
+    "fr": "Easy2edit est un système de gestion simple et modulaire pour sites web et portails. Tu actives uniquement ce dont tu as besoin : pages, boutique en ligne, communauté, abonnements, dons et plus encore. Ce qui est désactivé n'apparaît nulle part.",
+    "es": "Easy2edit es un sistema de gestión sencillo y modular para sitios web y portales. Solo activas lo que necesitas: páginas, tienda online, comunidad, suscripciones, donaciones y mucho más. Lo que está desactivado no aparece en ningún sitio.",
+    "pt": "O Easy2edit é um sistema de gestão simples e modular para sites e portais. Você ativa apenas o que precisa: páginas, loja virtual, comunidade, assinaturas, doações e muito mais. O que está desativado não aparece em lugar nenhum.",
+    "zh": "Easy2edit 是一个简单、模块化的网站和门户网站管理系统。你只需启用所需的功能：页面、网店、社区、订阅、捐赠等等。未启用的功能不会出现在任何地方。",
+    "ar": "Easy2edit هو نظام إدارة بسيط ومعياري للمواقع الإلكترونية والبوابات. تقوم بتفعيل ما تحتاجه فقط: الصفحات، المتجر الإلكتروني، المجتمع، الاشتراكات، التبرعات والمزيد. ما يكون معطلاً لا يظهر في أي مكان."
+   }
+  },
+  "dash": {
+   "q": {
+    "en": "What will I find in my dashboard?",
+    "de": "Was finde ich in meinem Dashboard?",
+    "fr": "Que trouve-t-on dans mon tableau de bord ?",
+    "es": "¿Qué encuentro en mi panel de control?",
+    "pt": "O que encontro no meu painel?",
+    "zh": "我的仪表板中有什么？",
+    "ar": "ماذا أجد في لوحة التحكم الخاصة بي؟"
+   },
+   "a": {
+    "en": "The dashboard is your personal environment. On the left you choose between Menu and Tiles: in Tiles you see a large tile for each component, in Menu a list. At the top, use the search bar to search through all settings, and use the star to create a shortcut on your dashboard.",
+    "de": "Das Dashboard ist deine persönliche Umgebung. Links wählst du zwischen Menü und Kacheln: Bei Kacheln siehst du für jeden Bereich eine große Kachel, bei Menü eine Liste. Oben in der Suchleiste durchsuchst du alle Einstellungen, und mit dem Stern erstellst du eine Verknüpfung auf deinem Dashboard.",
+    "fr": "Le tableau de bord est ton espace personnel. À gauche, tu choisis entre Menu et Tuiles : dans Tuiles, tu vois une grande tuile par composant, dans Menu une liste. En haut, dans la barre de recherche, tu recherches dans tous les paramètres, et avec l'étoile tu crées un raccourci sur ton tableau de bord.",
+    "es": "El panel de control es tu espacio personal. A la izquierda eliges entre Menú y Mosaicos: en Mosaicos ves un gran mosaico por cada componente, en Menú una lista. Arriba, en la barra de búsqueda, buscas en todos los ajustes, y con la estrella creas un acceso directo en tu panel de control.",
+    "pt": "O painel é o seu ambiente pessoal. À esquerda, você escolhe entre Menu e Blocos: em Blocos, você vê um bloco grande para cada componente, em Menu uma lista. Na barra de pesquisa no topo, você pesquisa em todas as configurações, e com a estrela você cria um atalho no seu painel.",
+    "zh": "仪表板是你的个人工作区。左侧可以选择“菜单”或“磁贴”：在“磁贴”视图中，每个组件都显示为一个大图块，在“菜单”视图中则显示为列表。在顶部的搜索栏中可以搜索所有设置，点击星号可在仪表板上创建快捷方式。",
+    "ar": "لوحة التحكم هي بيئتك الشخصية. على اليسار تختار بين القائمة والبلاطات: في البلاطات ترى بلاطة كبيرة لكل عنصر، وفي القائمة ترى قائمة. في أعلى شريط البحث يمكنك البحث في جميع الإعدادات، وباستخدام النجمة يمكنك إنشاء اختصار على لوحة التحكم الخاصة بك."
+   }
+  },
+  "search": {
+   "q": {
+    "en": "How do I search for a setting?",
+    "de": "Wie suche ich eine Einstellung?",
+    "fr": "Comment rechercher un paramètre ?",
+    "es": "¿Cómo busco un ajuste?",
+    "pt": "Como pesquiso uma configuração?",
+    "zh": "如何搜索某项设置？",
+    "ar": "كيف أبحث عن إعداد ما؟"
+   },
+   "a": {
+    "en": "Type a word into the search bar at the top of the dashboard, in any language. You'll only see results you have access to. Click on a result and the right screen opens, with the correct block or tab displayed.",
+    "de": "Gib oben in der Suchleiste des Dashboards ein Wort ein, in jeder Sprache. Du siehst nur Ergebnisse, zu denen du Zugriff hast. Klickst du auf ein Ergebnis, öffnet sich der passende Bildschirm und der richtige Block oder Tab wird geöffnet.",
+    "fr": "Tape un mot dans la barre de recherche en haut du tableau de bord, dans n'importe quelle langue. Tu ne vois que les résultats auxquels tu as accès. Clique sur un résultat et le bon écran s'ouvre, avec le bloc ou l'onglet correct affiché.",
+    "es": "Escribe una palabra en la barra de búsqueda en la parte superior del panel de control, en cualquier idioma. Solo verás los resultados a los que tengas acceso. Haz clic en un resultado y se abrirá la pantalla correcta, con el bloque o pestaña adecuados.",
+    "pt": "Digite uma palavra na barra de pesquisa no topo do painel, em qualquer idioma. Você só verá os resultados aos quais tem acesso. Clique em um resultado e a tela correta é aberta, com o bloco ou aba corretos exibidos.",
+    "zh": "在仪表板顶部的搜索栏中输入一个词，支持任何语言。你只会看到你有权限访问的结果。点击某个结果后，会打开正确的界面，并显示相应的区块或标签页。",
+    "ar": "اكتب كلمة في شريط البحث أعلى لوحة التحكم، بأي لغة. ستظهر لك فقط النتائج التي لديك صلاحية الوصول إليها. انقر على نتيجة ما لتفتح الشاشة الصحيحة، مع عرض الكتلة أو علامة التبويب الصحيحة."
+   }
+  },
+  "lang": {
+   "q": {
+    "en": "How do I switch languages?",
+    "de": "Wie wechsle ich die Sprache?",
+    "fr": "Comment changer de langue ?",
+    "es": "¿Cómo cambio de idioma?",
+    "pt": "Como mudo de idioma?",
+    "zh": "如何切换语言？",
+    "ar": "كيف أغيّر اللغة؟"
+   },
+   "a": {
+    "en": "Choose the language selector at the top. All texts are ready in every language; you'll only see the languages that are turned on in the selection. The language is remembered for your next visit.",
+    "de": "Wählen Sie oben die Sprachauswahl. Alle Texte liegen in allen Sprachen bereit; in der Auswahl sehen Sie nur die aktivierten Sprachen. Die Sprache wird für Ihren nächsten Besuch gemerkt.",
+    "fr": "Choisissez le sélecteur de langue en haut. Tous les textes sont prêts dans toutes les langues ; seules les langues activées apparaissent dans la sélection. La langue est mémorisée pour votre prochaine visite.",
+    "es": "Elige el selector de idioma en la parte superior. Todos los textos están disponibles en todos los idiomas; en la selección solo verás los idiomas activados. El idioma se recordará para tu próxima visita.",
+    "pt": "Escolha o seletor de idioma no topo. Todos os textos estão prontos em todos os idiomas; na seleção você só verá os idiomas ativados. O idioma é lembrado para a sua próxima visita.",
+    "zh": "在顶部选择语言选择器。所有文本已准备好多种语言版本；在选项中你只会看到已启用的语言。系统会记住该语言，供你下次访问使用。",
+    "ar": "اختر محدد اللغة في الأعلى. جميع النصوص جاهزة بكل اللغات؛ ستظهر في القائمة فقط اللغات المفعّلة. سيتم تذكر اللغة لزيارتك القادمة."
+   }
+  },
+  "mode": {
+   "q": {
+    "en": "Light or dark?",
+    "de": "Hell oder dunkel?",
+    "fr": "Clair ou sombre ?",
+    "es": "¿Claro u oscuro?",
+    "pt": "Claro ou escuro?",
+    "zh": "浅色还是深色？",
+    "ar": "فاتح أم داكن؟"
+   },
+   "a": {
+    "en": "Use the sun or moon button at the top to switch between a light and a dark view. The website's colors remain those of the theme.",
+    "de": "Mit der Sonnen- oder Mondtaste oben wechseln Sie zwischen einer hellen und einer dunklen Ansicht. Die Farben der Website bleiben die des Themas.",
+    "fr": "Utilisez le bouton soleil ou lune en haut pour basculer entre un affichage clair et sombre. Les couleurs du site web restent celles du thème.",
+    "es": "Con el botón de sol o luna en la parte superior, cambias entre una vista clara y una oscura. Los colores del sitio web siguen siendo los del tema.",
+    "pt": "Com o botão de sol ou lua no topo, você alterna entre uma exibição clara e escura. As cores do site continuam sendo as do tema.",
+    "zh": "使用顶部的太阳或月亮按钮，可在浅色和深色显示之间切换。网站的颜色仍保持主题原有的配色。",
+    "ar": "استخدم زر الشمس أو القمر في الأعلى للتبديل بين العرض الفاتح والداكن. تبقى ألوان الموقع كما هي حسب القالب."
+   }
+  },
+  "pages": {
+   "q": {
+    "en": "How do I manage pages?",
+    "de": "Wie verwalte ich Seiten?",
+    "fr": "Comment gérer les pages ?",
+    "es": "¿Cómo gestiono las páginas?",
+    "pt": "Como gerencio as páginas?",
+    "zh": "如何管理页面？",
+    "ar": "كيف أدير الصفحات؟"
+   },
+   "a": {
+    "en": "Go to Admin → Pagina's. There you'll find all the website's pages, including custom pages and links. For each page, you can turn it on or off, choose who can see it (everyone, logged-in users, or visitors only), and set the name, address, and SEO per language.",
+    "de": "Gehen Sie zu Admin → Pagina's. Dort finden Sie alle Seiten der Website, die eigenen Seiten und die Links. Pro Seite schalten Sie die Seite ein oder aus, wählen Sie, wer sie sieht (alle, eingeloggte Benutzer oder nur Besucher), und stellen Sie Name, Adresse und SEO pro Sprache ein.",
+    "fr": "Allez dans Admin → Pagina's. Vous y trouverez toutes les pages du site, les pages personnalisées et les liens. Pour chaque page, vous pouvez l'activer ou la désactiver, choisir qui la voit (tout le monde, les utilisateurs connectés ou seulement les visiteurs) et définir le nom, l'adresse et le SEO par langue.",
+    "es": "Ve a Admin → Pagina's. Allí encontrarás todas las páginas del sitio web, las páginas propias y los enlaces. Por cada página puedes activarla o desactivarla, elegir quién la ve (todos, usuarios conectados o solo visitantes) y configurar el nombre, la dirección y el SEO por idioma.",
+    "pt": "Vá para Admin → Pagina's. Lá você encontrará todas as páginas do site, as páginas próprias e os links. Para cada página, você pode ativá-la ou desativá-la, escolher quem a vê (todos, usuários conectados ou apenas visitantes) e definir o nome, o endereço e o SEO por idioma.",
+    "zh": "前往 Admin → Pagina's。在那里你可以找到网站的所有页面，包括自定义页面和链接。对于每个页面，你可以开启或关闭它，选择谁可以看到它（所有人、已登录用户或仅访客），并为每种语言设置名称、地址和SEO。",
+    "ar": "اذهب إلى Admin → Pagina's. ستجد هناك جميع صفحات الموقع، والصفحات الخاصة والروابط. لكل صفحة، يمكنك تفعيلها أو تعطيلها، واختيار من يمكنه رؤيتها (الجميع، المستخدمون المسجلون، أو الزوار فقط)، وتحديد الاسم والعنوان وإعدادات SEO لكل لغة."
+   }
+  },
+  "newitem": {
+   "q": {
+    "en": "How do I create a new item?",
+    "de": "Wie erstelle ich ein neues Element?",
+    "fr": "Comment créer un nouvel élément ?",
+    "es": "¿Cómo creo un nuevo elemento?",
+    "pt": "Como crio um novo item?",
+    "zh": "如何创建新项目？",
+    "ar": "كيف أنشئ عنصرًا جديدًا؟"
+   },
+   "a": {
+    "en": "In the Menu tab, click + New item. Choose a custom page with text, a link to an address, or a menu item that's just text and opens a dropdown. If Claude is connected, you only need to type the name once, and Claude will create it in all languages.",
+    "de": "Klicken Sie im Tab Menu auf + Neues Element. Wählen Sie eine eigene Seite mit Text, einen Link zu einer Adresse oder ein Menüelement, das nur Text ist und ein Dropdown öffnet. Wenn Claude verbunden ist, geben Sie den Namen einmal ein, und Claude erstellt ihn in allen Sprachen.",
+    "fr": "Dans l'onglet Menu, cliquez sur + Nouvel élément. Choisissez une page personnalisée avec du texte, un lien vers une adresse, ou un élément de menu qui est juste du texte et ouvre un menu déroulant. Si Claude est connecté, il vous suffit de taper le nom une fois, et Claude le créera dans toutes les langues.",
+    "es": "En la pestaña Menu, haz clic en + Nuevo elemento. Elige una página propia con texto, un enlace a una dirección, o un elemento de menú que sea solo texto y abra un menú desplegable. Si Claude está conectado, solo necesitas escribir el nombre una vez, y Claude lo creará en todos los idiomas.",
+    "pt": "Na aba Menu, clique em + Novo item. Escolha uma página própria com texto, um link para um endereço, ou um item de menu que seja apenas texto e abra um menu suspenso. Se o Claude estiver conectado, você só precisa digitar o nome uma vez, e o Claude o criará em todos os idiomas.",
+    "zh": "在 Menu 选项卡中，点击 + 新建项目。选择带文本的自定义页面、指向某地址的链接，或仅为文本并打开下拉菜单的菜单项。如果已连接 Claude，你只需输入一次名称，Claude 会自动为所有语言创建它。",
+    "ar": "في تبويب Menu، انقر على + عنصر جديد. اختر صفحة خاصة بها نص، أو رابطًا لعنوان، أو عنصر قائمة يكون نصًا فقط ويفتح قائمة منسدلة. إذا كان Claude متصلاً، يكفي كتابة الاسم مرة واحدة، وسيقوم Claude بإنشائه بجميع اللغات."
+   }
+  },
+  "menu": {
+   "q": {
+    "en": "How do I create a dropdown menu?",
+    "de": "Wie erstelle ich ein Dropdown-Menü?",
+    "fr": "Comment créer un menu déroulant ?",
+    "es": "¿Cómo creo un menú desplegable?",
+    "pt": "Como crio um menu suspenso?",
+    "zh": "如何创建下拉菜单？",
+    "ar": "كيف أنشئ قائمة منسدلة؟"
+   },
+   "a": {
+    "en": "In Pagina's → Menu, drag a page using the drag icon onto another menu item to make it a submenu. If you drag it to the edge of an item, it will be placed before or after it. Drag an item back to 'Niet in het menu' to remove it from the menu.",
+    "de": "Ziehe in Pagina's → Menu eine Seite mit dem Ziehsymbol auf einen anderen Menüpunkt, dann wird sie zu einem Untermenü. Ziehst du sie auf den Rand eines Punkts, wird sie davor oder danach platziert. Ziehe einen Punkt zurück zu 'Niet in het menu', um ihn aus dem Menü zu entfernen.",
+    "fr": "Dans Pagina's → Menu, faites glisser une page avec l'icône de déplacement sur un autre élément de menu pour en faire un sous-menu. Si vous la déposez sur le bord d'un élément, elle sera placée avant ou après. Faites glisser un élément vers 'Niet in het menu' pour le retirer du menu.",
+    "es": "En Pagina's → Menu, arrastra una página con el icono de arrastre sobre otro elemento del menú para convertirla en submenú. Si la arrastras al borde de un elemento, se colocará antes o después. Arrastra un elemento de vuelta a 'Niet in het menu' para quitarlo del menú.",
+    "pt": "Em Pagina's → Menu, arraste uma página com o ícone de arrastar sobre outro item do menu para transformá-la em submenu. Se arrastar para a borda de um item, ele será colocado antes ou depois. Arraste um item de volta para 'Niet in het menu' para removê-lo do menu.",
+    "zh": "在 Pagina's → Menu 中，使用拖动图标将一个页面拖到另一个菜单项上，即可将其变为子菜单。如果拖到某个项目的边缘，则会被放置在该项目之前或之后。将项目拖回 'Niet in het menu' 即可将其从菜单中移除。",
+    "ar": "في Pagina's → Menu، اسحب صفحة باستخدام أيقونة السحب فوق عنصر قائمة آخر لتصبح قائمة فرعية. إذا سحبتها إلى حافة عنصر ما، سيتم وضعها قبله أو بعده. اسحب العنصر مرة أخرى إلى 'Niet in het menu' لإزالته من القائمة."
+   }
+  },
+  "menuset": {
+   "q": {
+    "en": "How do I set the shape of the menu?",
+    "de": "Wie stelle ich die Form des Menüs ein?",
+    "fr": "Comment définir la forme du menu ?",
+    "es": "¿Cómo configuro la forma del menú?",
+    "pt": "Como defino a forma do menu?",
+    "zh": "如何设置菜单的样式？",
+    "ar": "كيف أضبط شكل القائمة؟"
+   },
+   "a": {
+    "en": "In Pagina's → Menu → Instellingen, choose the shape per device (computer, tablet, phone): menu bar, hamburger, side panel, full screen, or a bar at the bottom. You also set the submenu, style, size, and position of the menu and hamburger icon. The preview shows immediately how it will look.",
+    "de": "Wähle in Pagina's → Menu → Instellingen pro Gerät (Computer, Tablet, Handy) die Form: Menüleiste, Hamburger, Seitenpanel, Vollbild oder eine Leiste unten. Außerdem stellst du das Untermenü, den Stil, die Größe und die Position von Menü und Hamburger-Symbol ein. Die Vorschau zeigt sofort, wie es aussehen wird.",
+    "fr": "Dans Pagina's → Menu → Instellingen, choisissez la forme selon l'appareil (ordinateur, tablette, téléphone) : barre de menu, hamburger, panneau latéral, plein écran ou une barre en bas. Vous définissez aussi le sous-menu, le style, la taille et la position du menu et de l'icône hamburger. L'aperçu montre immédiatement le résultat.",
+    "es": "En Pagina's → Menu → Instellingen, elige la forma según el dispositivo (ordenador, tableta, teléfono): barra de menú, hamburguesa, panel lateral, pantalla completa o una barra inferior. También configuras el submenú, el estilo, el tamaño y la posición del menú y del icono hamburguesa. La vista previa muestra de inmediato cómo quedará.",
+    "pt": "Em Pagina's → Menu → Instellingen, escolha a forma por dispositivo (computador, tablet, telemóvel): barra de menu, hambúrguer, painel lateral, ecrã inteiro ou uma barra na parte inferior. Também define o submenu, o estilo, o tamanho e a posição do menu e do ícone de hambúrguer. A pré-visualização mostra imediatamente como ficará.",
+    "zh": "在 Pagina's → Menu → Instellingen 中，根据设备（电脑、平板、手机）选择样式：菜单栏、汉堡菜单、侧边栏、全屏或底部栏。你还可以设置子菜单、样式、大小以及菜单和汉堡图标的位置。预览会立即显示效果。",
+    "ar": "في Pagina's → Menu → Instellingen، اختر الشكل حسب الجهاز (كمبيوتر، جهاز لوحي، هاتف): شريط قائمة، قائمة الهامبرغر، لوحة جانبية، شاشة كاملة أو شريط في الأسفل. كما يمكنك ضبط القائمة الفرعية والنمط والحجم وموضع القائمة وأيقونة الهامبرغر. تعرض المعاينة فورًا كيف ستبدو النتيجة."
+   }
+  },
+  "header": {
+   "q": {
+    "en": "How do I customize the header?",
+    "de": "Wie passe ich den Header an?",
+    "fr": "Comment personnaliser l'en-tête ?",
+    "es": "¿Cómo personalizo el encabezado?",
+    "pt": "Como personalizo o cabeçalho?",
+    "zh": "如何自定义页眉？",
+    "ar": "كيف أخصص الترويسة (الهيدر)؟"
+   },
+   "a": {
+    "en": "In the menu settings, you choose the height, background color, transparency, and blur of the header. You also determine what happens after scrolling: nothing, a shadow, a floating bar, or the header disappears when scrolling down.",
+    "de": "In den Menüeinstellungen wählst du die Höhe, die Hintergrundfarbe, die Transparenz und die Unschärfe des Headers. Außerdem legst du fest, was nach dem Scrollen passiert: nichts, ein Schatten, eine schwebende Leiste oder der Header verschwindet beim Herunterscrollen.",
+    "fr": "Dans les paramètres du menu, choisissez la hauteur, la couleur de fond, la transparence et le flou de l'en-tête. Vous déterminez aussi ce qui se passe après le défilement : rien, une ombre, une barre flottante ou la disparition de l'en-tête lors du défilement vers le bas.",
+    "es": "En la configuración del menú eliges la altura, el color de fondo, la transparencia y el desenfoque del encabezado. También defines qué sucede tras desplazarse: nada, una sombra, una barra flotante o que el encabezado desaparezca al bajar.",
+    "pt": "Nas definições do menu, escolhe a altura, a cor de fundo, a transparência e o desfoque do cabeçalho. Também determinas o que acontece após o deslocamento (scroll): nada, uma sombra, uma barra flutuante ou o cabeçalho desaparece ao rolar para baixo.",
+    "zh": "在菜单设置中，你可以选择页眉的高度、背景颜色、透明度和模糊效果。你还可以设置滚动后的效果：无变化、阴影、悬浮栏，或向下滚动时页眉消失。",
+    "ar": "في إعدادات القائمة، تختار الارتفاع ولون الخلفية والشفافية والضبابية للترويسة. كما تحدد ما يحدث بعد التمرير: لا شيء، أو ظل، أو شريط عائم، أو اختفاء الترويسة عند التمرير لأسفل."
+   }
+  },
+  "slug": {
+   "q": {
+    "en": "Can a page have its own address per language?",
+    "de": "Kann eine Seite pro Sprache eine eigene Adresse haben?",
+    "fr": "Une page peut-elle avoir sa propre adresse par langue ?",
+    "es": "¿Puede una página tener su propia dirección por idioma?",
+    "pt": "Uma página pode ter um endereço próprio por idioma?",
+    "zh": "页面可以为每种语言设置独立的地址吗？",
+    "ar": "هل يمكن أن يكون لكل صفحة عنوان خاص بكل لغة؟"
+   },
+   "a": {
+    "en": "Yes. Open the page settings and select the Address tab. There you'll find the address in each language. A visitor will reach the same page with any address. Languages that are turned off automatically get an address too, so it's ready when needed.",
+    "de": "Ja. Öffne die Einstellungen einer Seite und wähle den Tab Adresse. Dort findest du die Adresse in jeder Sprache. Ein Besucher gelangt mit jeder Adresse auf dieselbe Seite. Sprachen, die ausgeschaltet sind, erhalten automatisch ebenfalls eine Adresse, sodass sie bereitsteht.",
+    "fr": "Oui. Ouvrez les paramètres d'une page et sélectionnez l'onglet Adresse. Vous y trouverez l'adresse dans chaque langue. Un visiteur arrive sur la même page quelle que soit l'adresse utilisée. Les langues désactivées reçoivent elles aussi automatiquement une adresse, prête à l'emploi.",
+    "es": "Sí. Abre la configuración de una página y selecciona la pestaña Dirección. Allí encontrarás la dirección en cada idioma. Un visitante llegará a la misma página con cualquier dirección. Los idiomas desactivados también reciben automáticamente una dirección, lista para cuando se necesite.",
+    "pt": "Sim. Abra as definições de uma página e selecione o separador Endereço. Lá encontra o endereço em cada idioma. Um visitante chega à mesma página com qualquer endereço. Os idiomas desativados também recebem automaticamente um endereço, pronto para quando for necessário.",
+    "zh": "可以。打开页面设置并选择“地址”选项卡。那里列出了每种语言对应的地址。无论使用哪种地址，访客都会进入同一个页面。即使某种语言被关闭，也会自动生成相应的地址，以备随时使用。",
+    "ar": "نعم. افتح إعدادات الصفحة واختر علامة التبويب 'العنوان'. ستجد هناك العنوان لكل لغة. يصل الزائر إلى نفس الصفحة بأي عنوان. اللغات غير المفعّلة تحصل تلقائيًا أيضًا على عنوان، حتى يكون جاهزًا عند الحاجة."
+   }
+  },
+  "private": {
+   "q": {
+    "en": "What are private pages?",
+    "de": "Was sind private Seiten?",
+    "fr": "Que sont les pages privées ?",
+    "es": "¿Qué son las páginas privadas?",
+    "pt": "O que são páginas privadas?",
+    "zh": "什么是私密页面？",
+    "ar": "ما هي الصفحات الخاصة؟"
+   },
+   "a": {
+    "en": "Private pages are only for logged-in members and are located at /dashboard/<page>. They get their own menu in the dashboard header. Create them in Admin → Pagina's on the Private tab.",
+    "de": "Private Seiten sind nur für eingeloggte Mitglieder sichtbar und befinden sich unter /dashboard/<Seite>. Sie erhalten ein eigenes Menü in der Kopfzeile des Dashboards. Erstelle sie in Admin → Pagina's auf der Registerkarte „Privat“.",
+    "fr": "Les pages privées sont réservées aux membres connectés et se trouvent à /dashboard/<page>. Elles obtiennent leur propre menu dans l'en-tête du tableau de bord. Créez-les dans Admin → Pagina's, dans l'onglet « Privé ».",
+    "es": "Las páginas privadas son solo para miembros que han iniciado sesión y se encuentran en /dashboard/<página>. Obtienen su propio menú en la cabecera del panel. Créalas en Admin → Pagina's, en la pestaña Privado.",
+    "pt": "As páginas privadas são apenas para membros com sessão iniciada e ficam em /dashboard/<página>. Elas recebem um menu próprio no cabeçalho do painel. Crie-as em Admin → Pagina's, na aba Privado.",
+    "zh": "私密页面仅供已登录会员查看，地址为 /dashboard/<页面>。它们会在仪表盘的页眉中拥有自己的菜单。请在 Admin → Pagina's 的“私密”选项卡中创建它们。",
+    "ar": "الصفحات الخاصة مخصصة فقط للأعضاء المسجلين وتقع على /dashboard/<الصفحة>. تحصل على قائمة خاصة بها في رأس لوحة التحكم. أنشئها في Admin → Pagina's ضمن علامة التبويب خاص."
+   }
+  },
+  "editmode": {
+   "q": {
+    "en": "How do I edit a page on the website?",
+    "de": "Wie bearbeite ich eine Seite auf der Website?",
+    "fr": "Comment modifier une page sur le site web ?",
+    "es": "¿Cómo edito una página del sitio web?",
+    "pt": "Como edito uma página no site?",
+    "zh": "如何编辑网站上的页面？",
+    "ar": "كيف أقوم بتحرير صفحة على الموقع؟"
+   },
+   "a": {
+    "en": "Turn on the Edit switch in the header. Click texts with a dotted line to change them. Images get a Change and Delete button. Everything is saved instantly; you don't need to save anything manually.",
+    "de": "Schalte den Schalter „Bearbeiten“ in der Kopfzeile ein. Klicke auf Texte mit einer gepunkteten Linie, um sie zu ändern. Bilder erhalten eine Schaltfläche „Ändern“ und „Löschen“. Alles wird sofort gespeichert; du musst nichts manuell speichern.",
+    "fr": "Activez l'interrupteur Modifier dans l'en-tête. Cliquez sur les textes soulignés par une ligne en pointillés pour les modifier. Les images reçoivent un bouton Modifier et Supprimer. Tout est enregistré instantanément ; vous n'avez rien à sauvegarder.",
+    "es": "Activa el interruptor Editar en la cabecera. Haz clic en los textos con línea punteada para modificarlos. Las imágenes tienen un botón Cambiar y Eliminar. Todo se guarda al instante; no necesitas guardar nada manualmente.",
+    "pt": "Ative o interruptor Editar no cabeçalho. Clique nos textos com uma linha pontilhada para alterá-los. As imagens recebem um botão Alterar e Eliminar. Tudo é guardado automaticamente; não precisa de guardar nada.",
+    "zh": "在页眉中打开“编辑”开关。点击带虚线的文字即可进行修改。图片会出现“更改”和“删除”按钮。所有内容都会立即保存，无需手动保存。",
+    "ar": "قم بتفعيل مفتاح التحرير في الترويسة. انقر على النصوص التي تحتوي على خط منقط لتغييرها. تحصل الصور على زر تغيير وحذف. يتم حفظ كل شيء فورًا؛ لا داعي لحفظ أي شيء يدويًا."
+   }
+  },
+  "blocks": {
+   "q": {
+    "en": "How do blocks and rows work?",
+    "de": "Wie funktionieren Blöcke und Zeilen?",
+    "fr": "Comment fonctionnent les blocs et les lignes ?",
+    "es": "¿Cómo funcionan los bloques y las filas?",
+    "pt": "Como funcionam os blocos e as linhas?",
+    "zh": "区块和行是如何工作的？",
+    "ar": "كيف تعمل الكتل والصفوف؟"
+   },
+   "a": {
+    "en": "A page consists of rows with 1 to 4 columns. In each column, you can place text, an image, or a system object. Drag an element by its ⋮⋮ handle to a new spot; a blue line shows where it will land. Use Delete to remove an element from the page.",
+    "de": "Eine Seite besteht aus Zeilen mit 1 bis 4 Spalten. In jede Spalte setzt du Text, ein Bild oder ein Systemobjekt. Ziehe ein Element an seinem Griff ⋮⋮ an eine andere Stelle; eine blaue Linie zeigt, wo es landet. Mit „Löschen“ entfernst du ein Element von der Seite.",
+    "fr": "Une page se compose de lignes avec 1 à 4 colonnes. Dans chaque colonne, vous placez du texte, une image ou un objet système. Faites glisser un élément grâce à la poignée ⋮⋮ vers un autre endroit ; une ligne bleue indique où il atterrira. Utilisez Supprimer pour enlever un élément de la page.",
+    "es": "Una página consta de filas con 1 a 4 columnas. En cada columna colocas texto, una imagen o un objeto del sistema. Arrastra un elemento desde su asa ⋮⋮ a otro lugar; una línea azul muestra dónde se colocará. Usa Eliminar para quitar un elemento de la página.",
+    "pt": "Uma página é composta por linhas com 1 a 4 colunas. Em cada coluna, você coloca texto, uma imagem ou um objeto do sistema. Arraste um elemento pela alça ⋮⋮ para outro local; uma linha azul mostra onde ele será posicionado. Use Eliminar para remover um elemento da página.",
+    "zh": "一个页面由若干行组成，每行可有1到4列。每列中可以放置文字、图片或系统对象。通过拖动元素的⋮⋮手柄将其移动到新位置；蓝色线条会显示放置的位置。使用“删除”可将元素从页面中移除。",
+    "ar": "تتكون الصفحة من صفوف تحتوي على 1 إلى 4 أعمدة. في كل عمود، يمكنك وضع نص أو صورة أو كائن نظام. اسحب عنصرًا من المقبض ⋮⋮ إلى مكان آخر؛ يظهر خط أزرق يوضح مكان وضعه. استخدم حذف لإزالة عنصر من الصفحة."
+   }
+  },
+  "layout": {
+   "q": {
+    "en": "How do I choose the layout of a page?",
+    "de": "Wie wähle ich das Layout einer Seite?",
+    "fr": "Comment choisir la mise en page d'une page ?",
+    "es": "¿Cómo elijo el diseño de una página?",
+    "pt": "Como escolho o layout de uma página?",
+    "zh": "如何选择页面的布局？",
+    "ar": "كيف أختار تخطيط الصفحة؟"
+   },
+   "a": {
+    "en": "Above the blocks, you choose a layout: stacked, two, three or four columns, hero with cards, or wide and narrow. The texts stay the same; only the grid changes. Use Restore to bring back the theme's default layout.",
+    "de": "Über den Blöcken wählst du ein Layout: untereinander, zwei, drei oder vier Spalten, Hero mit Karten oder breit und schmal. Die Texte bleiben erhalten; nur das Raster ändert sich. Mit „Zurücksetzen“ stellst du das Standardlayout des Themes wieder her.",
+    "fr": "Au-dessus des blocs, vous choisissez une mise en page : empilée, deux, trois ou quatre colonnes, héros avec cartes, ou large et étroit. Les textes restent en place ; seule la grille change. Utilisez Réinitialiser pour rétablir la disposition par défaut du thème.",
+    "es": "Encima de los bloques eliges un diseño: apilado, dos, tres o cuatro columnas, héroe con tarjetas, o ancho y estrecho. Los textos permanecen; solo cambia la cuadrícula. Usa Restablecer para volver al diseño predeterminado del tema.",
+    "pt": "Acima dos blocos, você escolhe um layout: empilhado, duas, três ou quatro colunas, herói com cartões, ou largo e estreito. Os textos permanecem; apenas a grelha muda. Use Restaurar para voltar ao layout padrão do tema.",
+    "zh": "在区块上方可以选择布局：堆叠、两列、三列或四列、带卡片的英雄区，或宽窄布局。文字内容保持不变，只有网格会改变。使用“恢复”可将主题的默认布局重置回来。",
+    "ar": "أعلى الكتل، تختار تخطيطًا: متراص، عمودين، ثلاثة أو أربعة أعمدة، بطل مع بطاقات، أو عريض وضيق. تبقى النصوص كما هي؛ تتغير الشبكة فقط. استخدم استعادة لإعادة التخطيط الافتراضي للقالب."
+   }
+  },
+  "lists": {
+   "q": {
+    "en": "Grid or rows, centering, width and pagination",
+    "de": "Raster oder Zeilen, Zentrierung, Breite und Paginierung",
+    "fr": "Grille ou lignes, centrage, largeur et pagination",
+    "es": "Cuadrícula o filas, centrado, ancho y paginación",
+    "pt": "Grade ou linhas, centralização, largura e paginação",
+    "zh": "网格或行、居中、宽度和分页",
+    "ar": "شبكة أو صفوف، التوسيط، العرض والترقيم"
+   },
+   "a": {
+    "en": "For lists such as games and products, you choose per page whether to use a grid or rows and whether the items are centered. You also set whether the page stays within the column or is full-width, and how many items to show per page: 5, 10, 25, 100 or all.",
+    "de": "Bei Listen wie Spielen und Produkten wählst du pro Seite ein Raster oder Zeilen und ob die Elemente zentriert sind. Außerdem stellst du ein, ob die Seite in der Spalte bleibt oder seitenbreit ist, und wie viele Elemente pro Seite angezeigt werden: 5, 10, 25, 100 oder alle.",
+    "fr": "Pour les listes comme les jeux et les produits, vous choisissez par page une grille ou des lignes et si les éléments sont centrés. Vous définissez également si la page reste dans la colonne ou occupe toute la largeur, et combien d'éléments afficher par page : 5, 10, 25, 100 ou tous.",
+    "es": "En listas como juegos y productos, eliges por página una cuadrícula o filas y si los elementos están centrados. También configuras si la página se mantiene en la columna o es de ancho completo, y cuántos elementos mostrar por página: 5, 10, 25, 100 o todos.",
+    "pt": "Em listas como jogos e produtos, você escolhe por página uma grade ou linhas e se os itens ficam centralizados. Também define se a página permanece na coluna ou é de largura total, e quantos itens mostrar por página: 5, 10, 25, 100 ou todos.",
+    "zh": "对于游戏和产品等列表，您可以按页面选择使用网格或行，以及项目是否居中显示。您还可以设置页面是保持在栏内还是全宽显示，以及每页显示多少项目：5、10、25、100 或全部。",
+    "ar": "بالنسبة للقوائم مثل الألعاب والمنتجات، تختار لكل صفحة شبكة أو صفوف وما إذا كانت العناصر موسطة. كما تحدد ما إذا كانت الصفحة تبقى ضمن العمود أو بعرض كامل، وعدد العناصر المعروضة في كل صفحة: 5 أو 10 أو 25 أو 100 أو الكل."
+   }
+  },
+  "imgsize": {
+   "q": {
+    "en": "How do I size an image?",
+    "de": "Wie mache ich ein Bild größer?",
+    "fr": "Comment dimensionner une image ?",
+    "es": "¿Cómo cambio el tamaño de una imagen?",
+    "pt": "Como defino o tamanho de uma imagem?",
+    "zh": "如何调整图片大小？",
+    "ar": "كيف أحدد حجم الصورة؟"
+   },
+   "a": {
+    "en": "For an image, choose Small, Medium, Large, Full width or Custom size. With Custom size, you type a width in pixels or percentages. You also set the alignment left, center or right there.",
+    "de": "Wähle bei einem Bild Klein, Mittel, Groß, Volle Breite oder Eigenes Format. Bei Eigenes Format gibst du eine Breite in Pixeln oder Prozent ein. Dort stellst du auch die Ausrichtung links, mittig oder rechts ein.",
+    "fr": "Pour une image, choisissez Petit, Moyen, Grand, Pleine largeur ou Taille personnalisée. Avec Taille personnalisée, vous indiquez une largeur en pixels ou en pourcentage. Vous y réglez également l'alignement à gauche, au centre ou à droite.",
+    "es": "En una imagen, elige Pequeño, Medio, Grande, Ancho completo o Tamaño personalizado. Con Tamaño personalizado, introduces un ancho en píxeles o porcentajes. Allí también ajustas la alineación a la izquierda, al centro o a la derecha.",
+    "pt": "Em uma imagem, escolha Pequeno, Médio, Grande, Largura total ou Tamanho personalizado. Com Tamanho personalizado, você digita uma largura em pixels ou porcentagem. Lá também define o alinhamento à esquerda, ao centro ou à direita.",
+    "zh": "为图片选择小、中、大、全宽或自定义大小。选择自定义大小时，您可以输入以像素或百分比表示的宽度。您也可以在那里设置左对齐、居中或右对齐。",
+    "ar": "اختر للصورة صغير أو متوسط أو كبير أو عرض كامل أو حجم مخصص. عند اختيار حجم مخصص، تكتب عرضًا بالبكسل أو بالنسبة المئوية. كما تحدد هناك المحاذاة إلى اليسار أو الوسط أو اليمين."
+   }
+  },
+  "bg": {
+   "q": {
+    "en": "Background of a row or hero",
+    "de": "Hintergrund einer Zeile oder des Hero",
+    "fr": "Arrière-plan d'une ligne ou du hero",
+    "es": "Fondo de una fila o del hero",
+    "pt": "Fundo de uma linha ou do hero",
+    "zh": "行或 hero 的背景",
+    "ar": "خلفية صف أو الـ hero"
+   },
+   "a": {
+    "en": "In edit mode, choose an image or video as the background for a row or the hero, and set how dark it becomes so that text stays readable.",
+    "de": "Im Bearbeitungsmodus wählst du für eine Zeile oder den Hero ein Bild oder Video als Hintergrund aus und bestimmst, wie dunkel es wird, damit der Text lesbar bleibt.",
+    "fr": "En mode édition, choisissez une image ou une vidéo comme arrière-plan pour une ligne ou le hero, et déterminez à quel point il s'assombrit afin que le texte reste lisible.",
+    "es": "En el modo de edición, eliges una imagen o vídeo como fondo para una fila o el hero, y determinas qué tan oscuro se vuelve para que el texto siga siendo legible.",
+    "pt": "No modo de edição, você escolhe uma imagem ou vídeo como fundo para uma linha ou o hero, e define o quão escuro ele fica para que o texto permaneça legível.",
+    "zh": "在编辑模式下，您可以为一行或 hero 选择图片或视频作为背景，并设置其变暗的程度，以确保文字保持清晰可读。",
+    "ar": "في وضع التحرير، تختار صورة أو فيديو كخلفية لصف أو للـ hero، وتحدد درجة التعتيم بحيث يبقى النص واضحًا للقراءة."
+   }
+  },
+  "objects": {
+   "q": {
+    "en": "What are system objects?",
+    "de": "Was sind Systemobjekte?",
+    "fr": "Que sont les objets système ?",
+    "es": "¿Qué son los objetos del sistema?",
+    "pt": "O que são objetos do sistema?",
+    "zh": "什么是系统对象？",
+    "ar": "ما هي كائنات النظام؟"
+   },
+   "a": {
+    "en": "System objects are components from other modules, such as a donation button, a subscription, or part of the webshop, that you place on a page in edit mode. Admin → System objects shows which ones exist and lets you turn them on or off.",
+    "de": "Systemobjekte sind Bestandteile anderer Module, wie zum Beispiel eine Spendenschaltfläche, ein Abonnement oder ein Teil des Webshops, die du im Bearbeitungsmodus auf einer Seite platzierst. Unter Admin → Systemobjekte siehst du, welche es gibt, und kannst sie ein- oder ausschalten.",
+    "fr": "Les objets système sont des éléments provenant d'autres modules, comme un bouton de don, un abonnement ou une partie de la boutique en ligne, que tu places sur une page en mode édition. Admin → Objets système indique lesquels existent et te permet de les activer ou de les désactiver.",
+    "es": "Los objetos del sistema son elementos de otros módulos, como un botón de donación, una suscripción o una parte de la tienda web, que colocas en una página en modo de edición. Admin → Objetos del sistema muestra cuáles existen y te permite activarlos o desactivarlos.",
+    "pt": "Objetos do sistema são componentes de outros módulos, como um botão de doação, uma assinatura ou uma parte da loja virtual, que você coloca numa página em modo de edição. Admin → Objetos do sistema mostra quais existem e permite ativá-los ou desativá-los.",
+    "zh": "系统对象是来自其他模块的组件，例如捐赠按钮、订阅或网店的一部分，你可以在编辑模式下将其放置到页面上。管理 → 系统对象显示有哪些系统对象，你可以开启或关闭它们。",
+    "ar": "كائنات النظام هي مكونات من وحدات أخرى، مثل زر التبرع أو الاشتراك أو جزء من المتجر الإلكتروني، تقوم بوضعها على صفحة في وضع التحرير. يعرض لك الإدارة → كائنات النظام الكائنات الموجودة ويتيح لك تفعيلها أو إيقافها."
+   }
+  },
+  "theme": {
+   "q": {
+    "en": "How do I change the theme?",
+    "de": "Wie wechsle ich das Theme?",
+    "fr": "Comment changer de thème ?",
+    "es": "¿Cómo cambio de tema?",
+    "pt": "Como mudo o tema?",
+    "zh": "如何更换主题？",
+    "ar": "كيف أغيّر السمة (الثيم)؟"
+   },
+   "a": {
+    "en": "Go to Admin → Website → Theme. There you choose a theme or theme pack with colors, fonts, shapes, logos, and email layout. If you switch themes, the banners and examples will change too.",
+    "de": "Gehe zu Admin → Website → Theme. Dort wählst du ein Theme oder Themenpaket mit Farben, Schriftarten, Formen, Logos und E-Mail-Layout. Wenn du das Theme wechselst, ändern sich auch die Banner und Beispiele.",
+    "fr": "Va dans Admin → Website → Thème. Là, tu choisis un thème ou un pack de thème avec des couleurs, des polices, des formes, des logos et une mise en page des e-mails. Si tu changes de thème, les bannières et les exemples changent également.",
+    "es": "Ve a Admin → Website → Tema. Allí eliges un tema o un paquete de temas con colores, fuentes, formas, logotipos y diseño de correo electrónico. Si cambias de tema, los banners y los ejemplos también cambiarán.",
+    "pt": "Vá a Admin → Website → Tema. Lá você escolhe um tema ou pacote de temas com cores, fontes, formas, logotipos e layout de e-mail. Se mudar de tema, os banners e exemplos também mudam.",
+    "zh": "前往 管理 → 网站 → 主题。在那里你可以选择一个主题或主题包，包含颜色、字体、形状、徽标和电子邮件布局。更换主题时，横幅和示例也会随之改变。",
+    "ar": "اذهب إلى الإدارة → الموقع → السمة. هناك يمكنك اختيار سمة أو حزمة سمات تحتوي على ألوان وخطوط وأشكال وشعارات وتنسيق بريد إلكتروني. عند تغيير السمة، ستتغير أيضًا اللافتات والأمثلة."
+   }
+  },
+  "themepack": {
+   "q": {
+    "en": "What is a theme pack?",
+    "de": "Was ist ein Themenpaket?",
+    "fr": "Qu'est-ce qu'un pack de thème ?",
+    "es": "¿Qué es un paquete de temas?",
+    "pt": "O que é um pacote de temas?",
+    "zh": "什么是主题包？",
+    "ar": "ما هي حزمة السمات؟"
+   },
+   "a": {
+    "en": "A theme pack is a zip file containing a complete theme. You can import, edit, download, or delete packs. Easy2edit, RSTCC, and Studio2 are built in and cannot be deleted.",
+    "de": "Ein Themenpaket ist eine Zip-Datei mit einem kompletten Theme. Du kannst Pakete importieren, bearbeiten, herunterladen oder löschen. Easy2edit, RSTCC und Studio2 sind integriert und können nicht gelöscht werden.",
+    "fr": "Un pack de thème est un fichier zip contenant un thème complet. Tu peux importer, modifier, télécharger ou supprimer des packs. Easy2edit, RSTCC et Studio2 sont intégrés et ne peuvent pas être supprimés.",
+    "es": "Un paquete de temas es un archivo zip con un tema completo. Puedes importar, editar, descargar o eliminar paquetes. Easy2edit, RSTCC y Studio2 están integrados y no se pueden eliminar.",
+    "pt": "Um pacote de temas é um arquivo zip com um tema completo. Você pode importar, editar, baixar ou excluir pacotes. Easy2edit, RSTCC e Studio2 são integrados e não podem ser excluídos.",
+    "zh": "主题包是一个包含完整主题的压缩文件。你可以导入、编辑、下载或删除主题包。Easy2edit、RSTCC 和 Studio2 是内置的，无法删除。",
+    "ar": "حزمة السمات هي ملف مضغوط يحتوي على سمة كاملة. يمكنك استيراد الحزم أو تعديلها أو تنزيلها أو حذفها. Easy2edit وRSTCC وStudio2 مدمجة ولا يمكن حذفها."
+   }
+  },
+  "branding": {
+   "q": {
+    "en": "Where do I put my logo?",
+    "de": "Wo lege ich mein Logo fest?",
+    "fr": "Où mettre mon logo ?",
+    "es": "¿Dónde coloco mi logotipo?",
+    "pt": "Onde coloco meu logotipo?",
+    "zh": "我的徽标该放在哪里？",
+    "ar": "أين أضع شعاري؟"
+   },
+   "a": {
+    "en": "In Admin → Website → Logos and images, you choose the logo, the favicon, the app icon, and the homepage photos, including a separate version for dark mode.",
+    "de": "Unter Admin → Website → Logos und Bilder wählst du das Logo, das Favicon, das App-Symbol und die Fotos der Startseite aus, auch eine separate Version für die Dunkelansicht.",
+    "fr": "Dans Admin → Website → Logos et images, tu choisis le logo, le favicon, l'icône de l'application et les photos de la page d'accueil, ainsi qu'une version distincte pour l'affichage sombre.",
+    "es": "En Admin → Website → Logotipos e imágenes, eliges el logotipo, el favicon, el icono de la aplicación y las fotos de la página de inicio, incluida una versión independiente para el modo oscuro.",
+    "pt": "Em Admin → Website → Logotipos e imagens, você escolhe o logotipo, o favicon, o ícone do aplicativo e as fotos da página inicial, incluindo uma versão separada para exibição no modo escuro.",
+    "zh": "在 管理 → 网站 → 徽标和图片 中，你可以选择徽标、favicon、应用图标以及主页照片，还包括一个单独的深色模式版本。",
+    "ar": "في الإدارة → الموقع → الشعارات والصور، تختار الشعار، وأيقونة المفضلة (favicon)، وأيقونة التطبيق، وصور الصفحة الرئيسية، بما في ذلك نسخة منفصلة للعرض الداكن."
+   }
+  },
+  "media": {
+   "q": {
+    "en": "How does the media library work?",
+    "de": "Wie funktioniert die Mediathek?",
+    "fr": "Comment fonctionne la bibliothèque média ?",
+    "es": "¿Cómo funciona la biblioteca multimedia?",
+    "pt": "Como funciona a biblioteca de mídia?",
+    "zh": "媒体库是如何工作的？",
+    "ar": "كيف تعمل مكتبة الوسائط؟"
+   },
+   "a": {
+    "en": "In Admin → Media you manage all images and videos, locally or on S3. You can also upload in any selection window. When you place an image somewhere, you immediately choose how it's displayed: alignment and size.",
+    "de": "In Admin → Medien verwaltest du alle Bilder und Videos, lokal oder auf S3. Hochladen ist auch in jedem Auswahlfenster möglich. Wenn du irgendwo ein Bild platzierst, wählst du sofort, wie es dargestellt wird: Ausrichtung und Größe.",
+    "fr": "Dans Admin → Média, vous gérez toutes les images et vidéos, en local ou sur S3. Le téléchargement est aussi possible dans chaque fenêtre de sélection. Lorsque vous placez une image quelque part, vous choisissez immédiatement comment elle s'affiche : alignement et taille.",
+    "es": "En Admin → Media gestionas todas las imágenes y vídeos, localmente o en S3. También puedes subir archivos desde cualquier ventana de selección. Al colocar una imagen en algún lugar, eliges de inmediato cómo se muestra: alineación y tamaño.",
+    "pt": "Em Admin → Mídia você gerencia todas as imagens e vídeos, localmente ou no S3. O upload também é possível em qualquer janela de seleção. Ao colocar uma imagem em algum lugar, você escolhe imediatamente como ela é exibida: alinhamento e tamanho.",
+    "zh": "在 Admin → 媒体 中，你可以管理所有图片和视频，无论是本地存储还是存储在 S3 上。上传功能在任何选择窗口中也可使用。当你在某处放置一张图片时，你可以立即选择它的显示方式：对齐方式和大小。",
+    "ar": "في Admin ← الوسائط تدير جميع الصور ومقاطع الفيديو، محليًا أو على S3. يمكن الرفع أيضًا في أي نافذة اختيار. عند وضع صورة في أي مكان، تختار فورًا كيفية عرضها: المحاذاة والحجم."
+   }
+  },
+  "email": {
+   "q": {
+    "en": "What does an email look like?",
+    "de": "Wie sieht eine E-Mail aus?",
+    "fr": "À quoi ressemble un e-mail ?",
+    "es": "¿Qué aspecto tiene un correo electrónico?",
+    "pt": "Como é um e-mail?",
+    "zh": "电子邮件是什么样子的？",
+    "ar": "كيف يبدو البريد الإلكتروني؟"
+   },
+   "a": {
+    "en": "You set the layout of emails in the theme, Email tab, with a preview and a test email. Senders, reply addresses and numbers are found in Admin → Communication.",
+    "de": "Die Formatierung von E-Mails stellst du im Thema ein, Reiter E-Mail, mit einer Vorschau und einer Test-E-Mail. Absender, Antwortadressen und Nummern findest du unter Admin → Kommunikation.",
+    "fr": "Vous définissez la mise en forme des e-mails dans le thème, onglet E-mail, avec un aperçu et un e-mail de test. Les expéditeurs, adresses de réponse et numéros se trouvent dans Admin → Communication.",
+    "es": "El formato de los correos electrónicos se configura en el tema, pestaña Correo electrónico, con una vista previa y un correo de prueba. Los remitentes, direcciones de respuesta y números se encuentran en Admin → Comunicación.",
+    "pt": "Você define o layout dos e-mails no tema, aba E-mail, com uma pré-visualização e um e-mail de teste. Remetentes, endereços de resposta e números estão em Admin → Comunicação.",
+    "zh": "你可以在主题的“电子邮件”选项卡中设置邮件的格式，并提供预览和测试邮件。发件人、回复地址和号码在 Admin → 通讯 中设置。",
+    "ar": "تضبط تنسيق رسائل البريد الإلكتروني في القالب، علامة التبويب البريد الإلكتروني، مع معاينة ورسالة تجريبية. المرسلون وعناوين الرد والأرقام تجدها في Admin ← التواصل."
+   }
+  },
+  "seo": {
+   "q": {
+    "en": "How do I find my site in Google?",
+    "de": "Wie finde ich meine Website bei Google?",
+    "fr": "Comment trouver mon site sur Google ?",
+    "es": "¿Cómo encuentro mi sitio en Google?",
+    "pt": "Como encontro meu site no Google?",
+    "zh": "如何在谷歌中找到我的网站？",
+    "ar": "كيف أجد موقعي في جوجل؟"
+   },
+   "a": {
+    "en": "In Admin → SEO you set the title, description, share image and noindex per page and language. Robots.txt, the sitemap and llms.txt for AI agents are also managed there.",
+    "de": "In Admin → SEO legst du pro Seite und Sprache den Titel, die Beschreibung, das Teilen-Bild und noindex fest. Auch robots.txt, die Sitemap und llms.txt für KI-Agenten werden dort verwaltet.",
+    "fr": "Dans Admin → SEO, vous définissez par page et par langue le titre, la description, l'image de partage et le noindex. Le fichier robots.txt, le plan du site et llms.txt pour les agents IA y sont également gérés.",
+    "es": "En Admin → SEO defines por página e idioma el título, la descripción, la imagen para compartir y el noindex. También se gestionan allí el robots.txt, el mapa del sitio y el llms.txt para agentes de IA.",
+    "pt": "Em Admin → SEO você define por página e idioma o título, a descrição, a imagem de compartilhamento e o noindex. O robots.txt, o mapa do site e o llms.txt para agentes de IA também são gerenciados lá.",
+    "zh": "在 Admin → SEO 中，你可以为每个页面和语言设置标题、描述、分享图片和 noindex。robots.txt、站点地图以及用于 AI 代理的 llms.txt 也在此管理。",
+    "ar": "في Admin ← SEO تضبط لكل صفحة ولغة العنوان والوصف وصورة المشاركة وnoindex. كما تُدار هناك robots.txt وخريطة الموقع وllms.txt لوكلاء الذكاء الاصطناعي."
+   }
+  },
+  "shop": {
+   "q": {
+    "en": "How does the webshop work?",
+    "de": "Wie funktioniert der Webshop?",
+    "fr": "Comment fonctionne la boutique en ligne ?",
+    "es": "¿Cómo funciona la tienda online?",
+    "pt": "Como funciona a loja online?",
+    "zh": "网店是如何工作的？",
+    "ar": "كيف يعمل المتجر الإلكتروني؟"
+   },
+   "a": {
+    "en": "The webshop is a plugin. In Admin → Plugins → Webshop you manage products, groups, shipping methods and discount codes. On the Pages tab you edit the Products, Product, Cart and Checkout pages, and under Settings you configure VAT and online payment.",
+    "de": "Der Webshop ist ein Plugin. In Admin → Plugins → Webshop verwaltest du Produkte, Gruppen, Versandmethoden und Rabattcodes. Im Reiter Seiten bearbeitest du die Seiten Produkte, Produkt, Warenkorb und Kasse, und bei Einstellungen richtest du Mehrwertsteuer und Online-Zahlung ein.",
+    "fr": "La boutique en ligne est un plugin. Dans Admin → Plugins → Boutique, vous gérez les produits, groupes, méthodes d'expédition et codes de réduction. Dans l'onglet Pages, vous modifiez les pages Produits, Produit, Panier et Commande, et dans Paramètres, vous configurez la TVA et le paiement en ligne.",
+    "es": "La tienda online es un plugin. En Admin → Plugins → Tienda gestionas productos, grupos, métodos de envío y códigos de descuento. En la pestaña Páginas editas las páginas Productos, Producto, Carrito y Pago, y en Configuración ajustas el IVA y el pago en línea.",
+    "pt": "A loja online é um plugin. Em Admin → Plugins → Loja você gerencia produtos, grupos, métodos de envio e códigos de desconto. Na aba Páginas você edita as páginas Produtos, Produto, Carrinho e Finalizar Compra, e em Configurações você define o IVA e o pagamento online.",
+    "zh": "网店是一个插件。在 Admin → 插件 → 网店 中，你可以管理产品、分组、配送方式和折扣码。在“页面”选项卡中，你可以编辑产品列表、产品详情、购物车和结账页面，在“设置”中可以配置增值税和在线支付。",
+    "ar": "المتجر الإلكتروني هو إضافة. في Admin ← الإضافات ← المتجر تدير المنتجات والمجموعات وطرق الشحن وأكواد الخصم. في علامة التبويب الصفحات تحرر صفحات المنتجات والمنتج وعربة التسوق والدفع، وفي الإعدادات تضبط ضريبة القيمة المضافة والدفع الإلكتروني."
+   }
+  },
+  "orders": {
+   "q": {
+    "en": "Where can I see orders?",
+    "de": "Wo sehe ich Bestellungen?",
+    "fr": "Où puis-je voir les commandes ?",
+    "es": "¿Dónde puedo ver los pedidos?",
+    "pt": "Onde vejo os pedidos?",
+    "zh": "我在哪里可以查看订单？",
+    "ar": "أين يمكنني رؤية الطلبات؟"
+   },
+   "a": {
+    "en": "In Admin → Orders you'll find all orders from the webshop, subscriptions, and donations. You can see customer details and status, and change the status or issue a refund. Members can see their own orders under Mijn bestellingen.",
+    "de": "In Admin → Orders stehen alle Bestellungen aus dem Webshop, Abonnements und Spenden. Du siehst Kundendaten und Status und kannst den Status ändern oder eine Rückerstattung vornehmen. Mitglieder sehen ihre eigenen Bestellungen unter Mijn bestellingen.",
+    "fr": "Dans Admin → Orders, vous trouverez toutes les commandes de la boutique en ligne, des abonnements et des dons. Vous voyez les données du client et le statut, et pouvez modifier le statut ou effectuer un remboursement. Les membres voient leurs propres commandes dans Mijn bestellingen.",
+    "es": "En Admin → Orders encontrarás todos los pedidos de la tienda online, las suscripciones y las donaciones. Verás los datos del cliente y el estado, y podrás cambiar el estado o realizar un reembolso. Los miembros ven sus propios pedidos en Mijn bestellingen.",
+    "pt": "Em Admin → Orders estão todos os pedidos da loja online, assinaturas e doações. Você vê os dados do cliente e o status, e pode alterar o status ou fazer um reembolso. Os membros veem os seus próprios pedidos em Mijn bestellingen.",
+    "zh": "在 Admin → Orders 中可以查看来自网店、订阅和捐赠的所有订单。您可以看到客户信息和状态，并可以更改状态或办理退款。会员可以在 Mijn bestellingen 中查看自己的订单。",
+    "ar": "في Admin → Orders تجد جميع الطلبات من المتجر الإلكتروني والاشتراكات والتبرعات. يمكنك رؤية بيانات العميل والحالة، كما يمكنك تغيير الحالة أو إجراء استرداد. يرى الأعضاء طلباتهم الخاصة في Mijn bestellingen."
+   }
+  },
+  "subs": {
+   "q": {
+    "en": "How do I create a subscription?",
+    "de": "Wie erstelle ich ein Abonnement?",
+    "fr": "Comment créer un abonnement ?",
+    "es": "¿Cómo creo una suscripción?",
+    "pt": "Como crio uma assinatura?",
+    "zh": "如何创建订阅？",
+    "ar": "كيف أنشئ اشتراكًا؟"
+   },
+   "a": {
+    "en": "In Admin → Abonnementen you create subscriptions with a price, period, and trial period. You link actions to a subscription: what a subscriber is allowed to do, until when, and how often. An order is created each period. You can see subscribers and revenue in the overview.",
+    "de": "In Admin → Abonnementen erstellst du Abonnements mit einem Preis, einem Zeitraum und einer Testphase. Du verknüpfst Aktionen mit einem Abonnement: was ein Abonnent tun darf, bis wann und wie oft. Jede Periode entsteht eine Bestellung. Abonnenten und Umsatz siehst du in der Übersicht.",
+    "fr": "Dans Admin → Abonnementen, vous créez des abonnements avec un prix, une période et une période d'essai. Vous liez des actions à un abonnement : ce qu'un abonné peut faire, jusqu'à quand et à quelle fréquence. Une commande est créée à chaque période. Vous voyez les abonnés et le chiffre d'affaires dans l'aperçu.",
+    "es": "En Admin → Abonnementen creas suscripciones con un precio, un período y un período de prueba. Vinculas acciones a una suscripción: lo que un suscriptor puede hacer, hasta cuándo y con qué frecuencia. Cada período se genera un pedido. Verás los suscriptores y los ingresos en el resumen.",
+    "pt": "Em Admin → Abonnementen cria assinaturas com um preço, período e período de teste. Você vincula ações a uma assinatura: o que um assinante pode fazer, até quando e com que frequência. A cada período é criado um pedido. Você vê os assinantes e a receita na visão geral.",
+    "zh": "在 Admin → Abonnementen 中，您可以创建带有价格、周期和试用期的订阅。您可以将操作与订阅关联：订阅者可以做什么、截止到何时以及频率如何。每个周期都会生成一个订单。您可以在概览中查看订阅者和收入。",
+    "ar": "في Admin → Abonnementen تنشئ اشتراكات بسعر وفترة وفترة تجريبية. تربط إجراءات بالاشتراك: ما يُسمح للمشترك بفعله، وحتى متى، وبأي معدل. يتم إنشاء طلب في كل فترة. يمكنك رؤية المشتركين والإيرادات في النظرة العامة."
+   }
+  },
+  "donate": {
+   "q": {
+    "en": "How do donations work?",
+    "de": "Wie funktionieren Spenden?",
+    "fr": "Comment fonctionnent les dons ?",
+    "es": "¿Cómo funcionan las donaciones?",
+    "pt": "Como funcionam as doações?",
+    "zh": "捐赠如何运作？",
+    "ar": "كيف تعمل التبرعات؟"
+   },
+   "a": {
+    "en": "In Admin → Donaties you create donation campaigns with a minimum, maximum, and target amount. Visitors choose the amount using a slider. For each campaign, you set up popups, thank-you texts, and actions that a donor receives.",
+    "de": "In Admin → Donaties erstellst du Spendenaktionen mit einem Mindest-, Höchst- und Zielbetrag. Besucher wählen den Betrag mit einem Schieberegler. Für jede Aktion richtest du Popups, Dankestexte und Aktionen ein, die ein Spender zusätzlich erhält.",
+    "fr": "Dans Admin → Donaties, vous créez des campagnes de dons avec un montant minimum, maximum et un objectif. Les visiteurs choisissent le montant à l'aide d'un curseur. Pour chaque campagne, vous configurez des popups, des textes de remerciement et des actions supplémentaires accordées au donateur.",
+    "es": "En Admin → Donaties creas campañas de donación con un importe mínimo, máximo y objetivo. Los visitantes eligen el importe con un control deslizante. Para cada campaña, configuras ventanas emergentes, textos de agradecimiento y acciones adicionales que recibe el donante.",
+    "pt": "Em Admin → Donaties cria campanhas de doação com um valor mínimo, máximo e objetivo. Os visitantes escolhem o valor através de um controlo deslizante. Para cada campanha, você configura pop-ups, textos de agradecimento e ações extras que o doador recebe.",
+    "zh": "在 Admin → Donaties 中，您可以创建带有最小值、最大值和目标金额的捐赠活动。访客可以使用滑块选择金额。针对每个活动，您可以设置弹窗、感谢文字以及捐赠者额外获得的操作。",
+    "ar": "في Admin → Donaties تنشئ حملات تبرع بحد أدنى وحد أقصى ومبلغ مستهدف. يختار الزوار المبلغ باستخدام شريط التمرير. لكل حملة، تقوم بإعداد النوافذ المنبثقة ونصوص الشكر والإجراءات الإضافية التي يحصل عليها المتبرع."
+   }
+  },
+  "actions": {
+   "q": {
+    "en": "What are actions?",
+    "de": "Was sind Aktionen?",
+    "fr": "Que sont les actions ?",
+    "es": "¿Qué son las acciones?",
+    "pt": "O que são ações?",
+    "zh": "什么是操作？",
+    "ar": "ما هي الإجراءات؟"
+   },
+   "a": {
+    "en": "Actions are things a user is allowed to do, such as liking, chatting, or playing a game. You link them to a subscription or donation with a 'valid until' date. The overview is under Admin → Acties, with suggestions to get you started.",
+    "de": "Aktionen sind Dinge, die ein Benutzer tun darf, wie Likes, Chatten oder ein Spiel spielen. Du verknüpfst sie mit einem Abonnement oder einer Spende mit einem 'gültig bis'-Datum. Die Übersicht findest du unter Admin → Acties, mit Vorschlägen für den Einstieg.",
+    "fr": "Les actions sont des choses qu'un utilisateur est autorisé à faire, comme aimer, discuter ou jouer à un jeu. Vous les liez à un abonnement ou à un don avec une date de 'validité jusqu'au'. L'aperçu se trouve dans Admin → Acties, avec des suggestions pour commencer.",
+    "es": "Las acciones son cosas que un usuario puede hacer, como dar me gusta, chatear o jugar a un juego. Las vinculas a una suscripción o donación con una fecha de 'válido hasta'. El resumen está en Admin → Acties, con sugerencias para empezar.",
+    "pt": "Ações são coisas que um utilizador pode fazer, como dar likes, conversar ou jogar um jogo. Você as vincula a uma assinatura ou doação com uma data de 'válido até'. A visão geral está em Admin → Acties, com sugestões para começar.",
+    "zh": "操作是用户被允许执行的事情，例如点赞、聊天或玩游戏。您可以将它们与订阅或捐赠关联，并设置“有效期至”。概览位于 Admin → Acties，并附有帮助您入门的建议。",
+    "ar": "الإجراءات هي أشياء يُسمح للمستخدم بالقيام بها، مثل الإعجاب أو الدردشة أو لعب لعبة. تربطها باشتراك أو تبرع مع تاريخ 'صالح حتى'. تجد النظرة العامة في Admin → Acties، مع اقتراحات لمساعدتك على البدء."
+   }
+  },
+  "mysubs": {
+   "q": {
+    "en": "Where can I see my subscriptions and donations?",
+    "de": "Wo sehe ich meine Abonnements und Spenden?",
+    "fr": "Où puis-je voir mes abonnements et dons ?",
+    "es": "¿Dónde veo mis suscripciones y donaciones?",
+    "pt": "Onde vejo as minhas subscrições e doações?",
+    "zh": "我在哪里可以看到我的订阅和捐款？",
+    "ar": "أين يمكنني رؤية اشتراكاتي وتبرعاتي؟"
+   },
+   "a": {
+    "en": "On Mijn abonnementen and Mijn donaties in your dashboard you'll find your current subscriptions, their end date, and the donations you've made. You can renew or cancel a subscription there.",
+    "de": "Unter Mijn abonnementen und Mijn donaties in deinem Dashboard findest du deine laufenden Abonnements, das Enddatum und deine getätigten Spenden. Dort kannst du ein Abonnement verlängern oder kündigen.",
+    "fr": "Sur Mijn abonnementen et Mijn donaties dans votre tableau de bord, vous retrouvez vos abonnements en cours, leur date de fin et les dons que vous avez effectués. Vous pouvez y renouveler ou résilier un abonnement.",
+    "es": "En Mijn abonnementen y Mijn donaties, dentro de tu panel, encontrarás tus suscripciones activas, su fecha de finalización y las donaciones que has realizado. Allí puedes renovar o cancelar una suscripción.",
+    "pt": "Em Mijn abonnementen e Mijn donaties, no teu painel, encontras as tuas subscrições ativas, a data de término e as doações que fizeste. Ali podes renovar ou cancelar uma subscrição.",
+    "zh": "在仪表盘的 Mijn abonnementen 和 Mijn donaties 中，你可以查看当前的订阅、到期日期以及你所做的捐款。你也可以在那里续订或取消订阅。",
+    "ar": "في Mijn abonnementen و Mijn donaties ضمن لوحة التحكم الخاصة بك، ستجد اشتراكاتك الحالية وتاريخ انتهائها والتبرعات التي قمت بها. يمكنك من هناك تجديد اشتراك أو إلغاءه."
+   }
+  },
+  "profile": {
+   "q": {
+    "en": "How do I create my profile?",
+    "de": "Wie erstelle ich mein Profil?",
+    "fr": "Comment créer mon profil ?",
+    "es": "¿Cómo creo mi perfil?",
+    "pt": "Como crio o meu perfil?",
+    "zh": "如何创建我的个人资料？",
+    "ar": "كيف أنشئ ملفي الشخصي؟"
+   },
+   "a": {
+    "en": "Go to Mijn community → Wijzig profiel. Fill in your details, add photos, and choose who can see your profile: everyone, members, friends, or selected members. You can also set it so others only see you if you like them.",
+    "de": "Gehe zu Mijn community → Wijzig profiel. Trage deine Daten ein, füge Fotos hinzu und wähle aus, wer dein Profil sehen kann: alle, Mitglieder, Freunde oder ausgewählte Mitglieder. Du kannst auch einstellen, dass andere dich nur sehen, wenn du sie ebenfalls magst.",
+    "fr": "Allez dans Mijn community → Wijzig profiel. Complétez vos informations, ajoutez des photos et choisissez qui peut voir votre profil : tout le monde, les membres, les amis ou des membres sélectionnés. Vous pouvez également définir que les autres ne vous voient que si vous les aimez aussi.",
+    "es": "Ve a Mijn community → Wijzig profiel. Completa tus datos, añade fotos y elige quién puede ver tu perfil: todos, miembros, amigos o miembros seleccionados. También puedes configurar que otros solo te vean si a ti también te gustan ellos.",
+    "pt": "Vai a Mijn community → Wijzig profiel. Preenche os teus dados, adiciona fotos e escolhe quem pode ver o teu perfil: todos, membros, amigos ou membros selecionados. Também podes definir que os outros só te veem se tu também gostares deles.",
+    "zh": "前往 Mijn community → Wijzig profiel。填写你的信息，添加照片，并选择谁可以看到你的资料：所有人、会员、好友或指定会员。你还可以设置只有当你也喜欢对方时，对方才能看到你。",
+    "ar": "اذهب إلى Mijn community → Wijzig profiel. أدخل بياناتك، أضف صورًا، واختر من يمكنه رؤية ملفك الشخصي: الجميع، الأعضاء، الأصدقاء، أو أعضاء محددون. يمكنك أيضًا ضبط الإعداد بحيث لا يراك الآخرون إلا إذا أعجبوا بك أيضًا."
+   }
+  },
+  "available": {
+   "q": {
+    "en": "What does Beschikbaar voor mean?",
+    "de": "Was bedeutet Beschikbaar voor?",
+    "fr": "Que signifie Beschikbaar voor ?",
+    "es": "¿Qué significa Beschikbaar voor?",
+    "pt": "O que significa Beschikbaar voor?",
+    "zh": "Beschikbaar voor 是什么意思？",
+    "ar": "ماذا يعني Beschikbaar voor؟"
+   },
+   "a": {
+    "en": "Here you choose what you're open to, such as games, a chat, or a certain type of date. Others can search based on this.",
+    "de": "Hier wählst du, wofür du offen bist, zum Beispiel Spiele, ein Chat oder eine bestimmte Art von Date. Andere können danach suchen.",
+    "fr": "Ici, vous choisissez ce à quoi vous êtes ouvert, par exemple des jeux, un chat ou un certain type de rendez-vous. Les autres peuvent faire une recherche sur cette base.",
+    "es": "Aquí eliges para qué estás disponible, por ejemplo juegos, un chat o un tipo de cita concreto. Los demás pueden buscar según esto.",
+    "pt": "Aqui escolhes para que estás disponível, por exemplo jogos, um chat ou um determinado tipo de encontro. Os outros podem procurar com base nisso.",
+    "zh": "在这里你可以选择自己愿意接受的内容，比如游戏、聊天或某种类型的约会。其他人可以据此进行搜索。",
+    "ar": "هنا تختار ما أنت منفتح عليه، مثل الألعاب أو الدردشة أو نوع معين من المواعيد. يمكن للآخرين البحث بناءً على ذلك."
+   }
+  },
+  "messages": {
+   "q": {
+    "en": "How do I send a message or chat?",
+    "de": "Wie sende ich eine Nachricht oder chatte ich?",
+    "fr": "Comment envoyer un message ou discuter en chat ?",
+    "es": "¿Cómo envío un mensaje o chateo?",
+    "pt": "Como envio uma mensagem ou converso por chat?",
+    "zh": "如何发送消息或聊天？",
+    "ar": "كيف أرسل رسالة أو أقوم بالمحادثة؟"
+   },
+   "a": {
+    "en": "Messages work like an inbox. Chat is live, with photos, videos, and video chat. You use both via My community, if the administrator has enabled them.",
+    "de": "Nachrichten funktionieren wie ein Postfach. Chat ist live, mit Fotos, Videos und Videochat. Beides nutzt du über Meine Community, sofern der Administrator sie aktiviert hat.",
+    "fr": "Les messages fonctionnent comme une boîte de réception. Le chat est en direct, avec photos, vidéos et appels vidéo. Vous utilisez les deux via Ma communauté, si l'administrateur les a activés.",
+    "es": "Los mensajes funcionan como una bandeja de entrada. El chat es en vivo, con fotos, vídeos y videochat. Ambos se usan a través de Mi comunidad, si el administrador los ha activado.",
+    "pt": "As mensagens funcionam como uma caixa de entrada. O chat é ao vivo, com fotos, vídeos e videochamada. Você usa ambos através de Minha comunidade, se o administrador os tiver ativado.",
+    "zh": "消息就像一个收件箱。聊天是实时的，可以分享照片、视频和视频聊天。只要管理员已启用这些功能，您就可以通过“我的社区”使用这两项功能。",
+    "ar": "تعمل الرسائل مثل صندوق الوارد. المحادثة مباشرة، مع إمكانية مشاركة الصور ومقاطع الفيديو والمحادثة المرئية. يمكنك استخدام كليهما عبر مجتمعي، إذا قام المسؤول بتفعيلهما."
+   }
+  },
+  "direct": {
+   "q": {
+    "en": "What is a direct connection?",
+    "de": "Was ist eine Direktverbindung?",
+    "fr": "Qu'est-ce qu'une connexion directe ?",
+    "es": "¿Qué es una conexión directa?",
+    "pt": "O que é uma conexão direta?",
+    "zh": "什么是直接连接？",
+    "ar": "ما هو الاتصال المباشر؟"
+   },
+   "a": {
+    "en": "With a direct connection, you talk directly with one other person, via a code, link, or QR code, even without an account. You can chat, share photos and videos, and video call.",
+    "de": "Mit einer Direktverbindung sprichst du direkt mit einer anderen Person, über einen Code, Link oder QR-Code, auch ohne Konto. Du kannst chatten, Fotos und Videos teilen und per Video telefonieren.",
+    "fr": "Avec une connexion directe, vous parlez directement avec une autre personne, via un code, un lien ou un code QR, même sans compte. Vous pouvez discuter, partager des photos et des vidéos, et passer des appels vidéo.",
+    "es": "Con una conexión directa, hablas directamente con otra persona, mediante un código, un enlace o un código QR, incluso sin tener una cuenta. Puedes chatear, compartir fotos y vídeos, y hacer videollamadas.",
+    "pt": "Com uma conexão direta, você fala diretamente com outra pessoa, através de um código, link ou código QR, mesmo sem ter uma conta. Você pode conversar por chat, compartilhar fotos e vídeos, e fazer videochamadas.",
+    "zh": "通过直接连接，您可以借助代码、链接或二维码直接与另一人交流，即使没有账户也可以。您可以聊天、分享照片和视频，以及进行视频通话。",
+    "ar": "من خلال الاتصال المباشر، يمكنك التحدث مباشرة مع شخص آخر، عبر رمز أو رابط أو رمز استجابة سريعة (QR)، حتى بدون حساب. يمكنك الدردشة ومشاركة الصور ومقاطع الفيديو وإجراء مكالمات الفيديو."
+   }
+  },
+  "comm": {
+   "q": {
+    "en": "How do I set up the community?",
+    "de": "Wie richte ich die Community ein?",
+    "fr": "Comment configurer la communauté ?",
+    "es": "¿Cómo configuro la comunidad?",
+    "pt": "Como configuro a comunidade?",
+    "zh": "如何设置社区？",
+    "ar": "كيف أقوم بإعداد المجتمع؟"
+   },
+   "a": {
+    "en": "Admin → Community has two tabs: Pages and Settings. There you organize the Community, Members, and Search pages, and set up profiles, search, chat, direct connection, and distance.",
+    "de": "Admin → Community hat zwei Reiter: Seiten und Einstellungen. Dort richtest du die Seiten Community, Mitglieder und Suche ein und konfigurierst Profile, Suche, Chat, Direktverbindung und Entfernung.",
+    "fr": "Admin → Community comporte deux onglets : Pages et Paramètres. Vous y organisez les pages Communauté, Membres et Recherche, et configurez les profils, la recherche, le chat, la connexion directe et la distance.",
+    "es": "Admin → Community tiene dos pestañas: Páginas y Ajustes. Allí organizas las páginas Comunidad, Miembros y Buscar, y configuras los perfiles, la búsqueda, el chat, la conexión directa y la distancia.",
+    "pt": "Admin → Community tem duas abas: Páginas e Configurações. Lá você organiza as páginas Comunidade, Membros e Buscar, e configura os perfis, a busca, o chat, a conexão direta e a distância.",
+    "zh": "管理 → Community 有两个标签页：页面和设置。在那里您可以整理社区、成员和搜索页面，并设置个人资料、搜索、聊天、直接连接和距离。",
+    "ar": "تحتوي الإدارة → Community على علامتي تبويب: الصفحات والإعدادات. هناك يمكنك تنظيم صفحات المجتمع والأعضاء والبحث، وإعداد الملفات الشخصية والبحث والمحادثة والاتصال المباشر والمسافة."
+   }
+  },
+  "games": {
+   "q": {
+    "en": "How do the games work?",
+    "de": "Wie funktionieren die Spiele?",
+    "fr": "Comment fonctionnent les jeux ?",
+    "es": "¿Cómo funcionan los juegos?",
+    "pt": "Como funcionam os jogos?",
+    "zh": "游戏是如何运作的？",
+    "ar": "كيف تعمل الألعاب؟"
+   },
+   "a": {
+    "en": "Games are a plugin. Each game is its own package that you upload, download, or remove. For each game, you set an age limit, public or members-only access, instructions with images, and actions. The Games page is located at /games, or for members, at /dashboard/games.",
+    "de": "Spiele sind ein Plugin. Jedes Spiel ist ein eigenes Paket, das du hochlädst, herunterlädst oder entfernst. Pro Spiel legst du eine Altersgrenze, öffentlich oder nur für Mitglieder, Anleitungen mit Bildern und Aktionen fest. Die Seite Spiele befindet sich unter /games oder, für Mitglieder, unter /dashboard/games.",
+    "fr": "Les jeux sont un plugin. Chaque jeu est un package distinct que vous téléchargez, importez ou supprimez. Pour chaque jeu, vous définissez une limite d'âge, un accès public ou réservé aux membres, des instructions avec images, et des actions. La page Jeux se trouve sur /games ou, pour les membres, sur /dashboard/games.",
+    "es": "Los juegos son un plugin. Cada juego es un paquete independiente que puedes subir, descargar o eliminar. Para cada juego, defines un límite de edad, acceso público o solo para miembros, instrucciones con imágenes y acciones. La página Juegos se encuentra en /games o, para los miembros, en /dashboard/games.",
+    "pt": "Os jogos são um plugin. Cada jogo é um pacote próprio que você carrega, baixa ou remove. Para cada jogo, você define um limite de idade, acesso público ou apenas para membros, instruções com imagens e ações. A página Jogos está em /games ou, para membros, em /dashboard/games.",
+    "zh": "游戏是一个插件。每个游戏都是一个独立的程序包，您可以上传、下载或删除。您可以为每个游戏设置年龄限制、公开或仅限会员、带图片的说明和操作。游戏页面位于 /games，对于会员则位于 /dashboard/games。",
+    "ar": "الألعاب هي إضافة (plugin). كل لعبة عبارة عن حزمة مستقلة يمكنك تحميلها أو تنزيلها أو إزالتها. لكل لعبة، يمكنك تحديد حد العمر، والوصول العام أو للأعضاء فقط، والتعليمات مع الصور، والإجراءات. تقع صفحة الألعاب على /games، أو للأعضاء، على /dashboard/games."
+   }
+  },
+  "users": {
+   "q": {
+    "en": "How do I manage users?",
+    "de": "Wie verwalte ich Benutzer?",
+    "fr": "Comment puis-je gérer les utilisateurs ?",
+    "es": "¿Cómo gestiono los usuarios?",
+    "pt": "Como gerencio os usuários?",
+    "zh": "如何管理用户？",
+    "ar": "كيف أدير المستخدمين؟"
+   },
+   "a": {
+    "en": "In Admin → Users you see all users. You create them, edit them, and assign them roles and groups. You can switch between list and tile view and paginate.",
+    "de": "Unter Admin → Benutzer siehst du alle Benutzer. Du legst sie an, bearbeitest sie und weist ihnen Rollen und Gruppen zu. Du kannst zwischen Listen- und Kachelansicht wechseln und paginieren.",
+    "fr": "Dans Admin → Utilisateurs, vous voyez tous les utilisateurs. Vous les créez, les modifiez et leur attribuez des rôles et des groupes. Vous pouvez basculer entre la vue liste et la vue vignettes, et paginer.",
+    "es": "En Admin → Usuarios ves todos los usuarios. Puedes crearlos, modificarlos y asignarles roles y grupos. Puedes cambiar entre vista de lista y de mosaicos, y paginar.",
+    "pt": "Em Admin → Usuários você vê todos os usuários. Você os cria, edita e atribui-lhes funções e grupos. Você pode alternar entre a visualização em lista e em blocos, e paginar.",
+    "zh": "在管理 → 用户中，您可以查看所有用户。您可以创建、编辑用户，并为他们分配角色和组。您可以在列表和图块视图之间切换，并进行分页。",
+    "ar": "في الإدارة ← المستخدمون، يمكنك رؤية جميع المستخدمين. يمكنك إنشاؤهم وتعديلهم ومنحهم أدوارًا ومجموعات. يمكنك التبديل بين عرض القائمة وعرض البطاقات والتنقل بين الصفحات."
+   }
+  },
+  "roles": {
+   "q": {
+    "en": "What are roles and groups?",
+    "de": "Was sind Rollen und Gruppen?",
+    "fr": "Que sont les rôles et les groupes ?",
+    "es": "¿Qué son los roles y los grupos?",
+    "pt": "O que são funções e grupos?",
+    "zh": "什么是角色和组？",
+    "ar": "ما هي الأدوار والمجموعات؟"
+   },
+   "a": {
+    "en": "A role bundles permissions. A user group gives its members the group's roles and access to modules. For each module you decide whether someone may use it (1), edit it (2), or manage it (3).",
+    "de": "Eine Rolle bündelt Rechte. Eine Benutzergruppe gibt ihren Mitgliedern die Rollen und den Zugang zu den Modulen der Gruppe. Für jedes Modul legst du fest, ob jemand es nutzen (1), bearbeiten (2) oder verwalten (3) darf.",
+    "fr": "Un rôle regroupe des droits. Un groupe d'utilisateurs donne à ses membres les rôles et l'accès aux modules du groupe. Pour chaque module, vous déterminez si une personne peut l'utiliser (1), le modifier (2) ou le gérer (3).",
+    "es": "Un rol agrupa permisos. Un grupo de usuarios otorga a sus miembros los roles y el acceso a los módulos del grupo. Para cada módulo decides si alguien puede usarlo (1), editarlo (2) o gestionarlo (3).",
+    "pt": "Uma função agrupa permissões. Um grupo de usuários concede aos seus membros as funções e o acesso aos módulos do grupo. Para cada módulo, você decide se alguém pode usá-lo (1), editá-lo (2) ou geri-lo (3).",
+    "zh": "角色是权限的集合。用户组赋予其成员该组的角色以及对模块的访问权限。对于每个模块，您可以决定某人是否可以使用（1）、编辑（2）或管理（3）它。",
+    "ar": "يجمع الدور الصلاحيات معًا. تمنح مجموعة المستخدمين أعضاءها أدوار المجموعة وإمكانية الوصول إلى وحداتها. لكل وحدة، تحدد ما إذا كان بإمكان الشخص استخدامها (1)، أو تعديلها (2)، أو إدارتها (3)."
+   }
+  },
+  "security": {
+   "q": {
+    "en": "What security features are available?",
+    "de": "Welche Sicherheitsfunktionen gibt es?",
+    "fr": "Quelle sécurité est disponible ?",
+    "es": "¿Qué seguridad hay disponible?",
+    "pt": "Que segurança está disponível?",
+    "zh": "有哪些安全功能？",
+    "ar": "ما هي ميزات الأمان المتوفرة؟"
+   },
+   "a": {
+    "en": "You can set password rules, login attempts, sessions, and sign-in. There's also a country check, an age check, a gambling pop-up, a cookie banner, and a word filter, each of which can be turned on or off.",
+    "de": "Du legst Passwortregeln, Anmeldeversuche, Sitzungen und die Anmeldung fest. Außerdem gibt es eine Länderprüfung, eine Altersprüfung, ein Glücksspiel-Popup, einen Cookie-Banner und einen Wortfilter, die jeweils ein- oder ausgeschaltet werden können.",
+    "fr": "Vous définissez les règles de mot de passe, les tentatives de connexion, les sessions et la connexion. Il y a également un contrôle de pays, un contrôle d'âge, une pop-up de jeux d'argent, une bannière de cookies et un filtre de mots, chacun pouvant être activé ou désactivé.",
+    "es": "Configuras las reglas de contraseña, los intentos de inicio de sesión, las sesiones y el acceso. Además, hay un control de país, un control de edad, una ventana emergente de apuestas, un aviso de cookies y un filtro de palabras, cada uno activable o desactivable.",
+    "pt": "Você define regras de senha, tentativas de login, sessões e acesso. Além disso, há uma verificação de país, uma verificação de idade, um pop-up de jogos de azar, um aviso de cookies e um filtro de palavras, cada um podendo ser ativado ou desativado.",
+    "zh": "您可以设置密码规则、登录尝试次数、会话和登录方式。此外还有国家检查、年龄检查、博彩弹窗、Cookie横幅和敏感词过滤器，每项都可以开启或关闭。",
+    "ar": "يمكنك ضبط قواعد كلمة المرور، ومحاولات تسجيل الدخول، والجلسات، وتسجيل الدخول. بالإضافة إلى ذلك، هناك فحص للدولة، وفحص للعمر، ونافذة منبثقة للمقامرة، وشريط ملفات تعريف الارتباط (كوكيز)، وفلتر للكلمات، ويمكن تفعيل أو إلغاء تفعيل كل منها."
+   }
+  },
+  "twofa": {
+   "q": {
+    "en": "How do I enable two-step verification?",
+    "de": "Wie aktiviere ich die Zwei-Faktor-Authentifizierung?",
+    "fr": "Comment activer la vérification en deux étapes ?",
+    "es": "¿Cómo activo la verificación en dos pasos?",
+    "pt": "Como ativo a verificação em duas etapas?",
+    "zh": "如何开启两步验证？",
+    "ar": "كيف أقوم بتفعيل التحقق بخطوتين؟"
+   },
+   "a": {
+    "en": "Go to your profile and choose Two-step verification. You'll receive a code by email or SMS, or use an authenticator app. A code can only be used once.",
+    "de": "Gehe zu deinem Profil und wähle Zwei-Faktor-Authentifizierung. Du erhältst einen Code per E-Mail oder SMS oder verwendest eine Authenticator-App. Ein Code funktioniert nur einmal.",
+    "fr": "Allez dans votre profil et choisissez Vérification en deux étapes. Vous recevez un code par e-mail ou SMS, ou utilisez une application d'authentification. Un code ne fonctionne qu'une seule fois.",
+    "es": "Ve a tu perfil y elige Verificación en dos pasos. Recibirás un código por correo electrónico o SMS, o usarás una aplicación de autenticación. Un código solo funciona una vez.",
+    "pt": "Vá ao seu perfil e escolha Verificação em duas etapas. Você recebe um código por e-mail ou SMS, ou usa um aplicativo autenticador. Um código funciona apenas uma vez.",
+    "zh": "前往您的个人资料并选择两步验证。您将通过电子邮件或短信收到验证码，或使用身份验证器应用。每个验证码只能使用一次。",
+    "ar": "اذهب إلى ملفك الشخصي واختر التحقق بخطوتين. ستحصل على رمز عبر البريد الإلكتروني أو الرسائل النصية، أو يمكنك استخدام تطبيق مصادقة. يعمل كل رمز مرة واحدة فقط."
+   }
+  },
+  "plugins": {
+   "q": {
+    "en": "What are plugins?",
+    "de": "Was sind Plugins?",
+    "fr": "Que sont les plugins ?",
+    "es": "¿Qué son los plugins?",
+    "pt": "O que são plugins?",
+    "zh": "什么是插件？",
+    "ar": "ما هي الإضافات (plugins)؟"
+   },
+   "a": {
+    "en": "Plugins are separate, signed programs that you upload, such as the webshop, the marketplace, and the games. A plugin can come with its own page, settings, menu items, and system objects. Only superadmins manage plugins.",
+    "de": "Plugins sind separate, signierte Programme, die du hochlädst, wie der Webshop, der Marktplatz und die Spiele. Ein Plugin kann eine eigene Seite, Einstellungen, Menüpunkte und Systemobjekte mitbringen. Nur Superadmins verwalten Plugins.",
+    "fr": "Les plugins sont des programmes distincts et signés que vous téléchargez, comme la boutique en ligne, la place de marché et les jeux. Un plugin peut apporter sa propre page, ses paramètres, ses éléments de menu et ses objets système. Seuls les superadmins gèrent les plugins.",
+    "es": "Los plugins son programas independientes y firmados que subes, como la tienda web, el mercado y los juegos. Un plugin puede incluir su propia página, configuraciones, elementos de menú y objetos del sistema. Solo los superadministradores gestionan los plugins.",
+    "pt": "Os plugins são programas separados e assinados que você carrega, como a loja online, o mercado e os jogos. Um plugin pode trazer a sua própria página, definições, itens de menu e objetos do sistema. Apenas os superadministradores gerem os plugins.",
+    "zh": "插件是您上传的独立、经过签名的程序，例如网店、市场和游戏。一个插件可以带有自己的页面、设置、菜单项和系统对象。只有超级管理员可以管理插件。",
+    "ar": "الإضافات هي برامج منفصلة وموقّعة تقوم بتحميلها، مثل المتجر الإلكتروني والسوق والألعاب. يمكن أن تأتي الإضافة بصفحتها الخاصة وإعداداتها وعناصر القائمة وكائنات النظام الخاصة بها. يقوم المشرفون العامون فقط بإدارة الإضافات."
+   }
+  },
+  "themes": {
+   "q": {
+    "en": "Which profile themes can be chosen?",
+    "de": "Welche Profilthemen können ausgewählt werden?",
+    "fr": "Quels thèmes de profil peuvent être choisis ?",
+    "es": "¿Qué temas de perfil se pueden elegir?",
+    "pt": "Quais temas de perfil podem ser escolhidos?",
+    "zh": "可以选择哪些个人资料主题？",
+    "ar": "ما هي سمات الملف الشخصي التي يمكن اختيارها؟"
+   },
+   "a": {
+    "en": "Superadmins go to Super admin → Profielthema's to turn on which themes (Normal, Sporters, Dating, Business, Webshop) community managers are allowed to choose. Only Normal is enabled by default.",
+    "de": "Superadmins aktivieren unter Super admin → Profielthema's, welche Themen (Normal, Sporters, Dating, Business, Webshop) die Community-Manager auswählen dürfen. Standardmäßig ist nur Normal aktiviert.",
+    "fr": "Les superadmins activent dans Super admin → Profielthema's les thèmes (Normal, Sporters, Dating, Business, Webshop) que les gestionnaires de communauté peuvent choisir. Seul Normal est activé par défaut.",
+    "es": "Los superadministradores activan en Super admin → Profielthema's qué temas (Normal, Sporters, Dating, Business, Webshop) pueden elegir los administradores de la comunidad. Solo Normal está activado por defecto.",
+    "pt": "Os superadministradores ativam em Super admin → Profielthema's quais temas (Normal, Sporters, Dating, Business, Webshop) os gestores da comunidade podem escolher. Apenas o Normal está ativado por padrão.",
+    "zh": "超级管理员在 Super admin → Profielthema's 中设置社区管理员可以选择哪些主题（Normal、Sporters、Dating、Business、Webshop）。默认只启用 Normal。",
+    "ar": "يقوم المشرفون العامون بتفعيل السمات (Normal وSporters وDating وBusiness وWebshop) التي يُسمح لمديري المجتمع باختيارها من خلال Super admin → Profielthema's. يتم تفعيل Normal فقط افتراضيًا."
+   }
+  },
+  "maint": {
+   "q": {
+    "en": "What is maintenance mode?",
+    "de": "Was ist der Wartungsmodus?",
+    "fr": "Qu'est-ce que le mode maintenance ?",
+    "es": "¿Qué es el modo de mantenimiento?",
+    "pt": "O que é o modo de manutenção?",
+    "zh": "什么是维护模式？",
+    "ar": "ما هو وضع الصيانة؟"
+   },
+   "a": {
+    "en": "In maintenance mode, everyone sees a message in their own language. Only an admin or superadmin can still log in at /login. You turn it on in the system settings.",
+    "de": "Im Wartungsmodus sieht jeder eine Nachricht in seiner eigenen Sprache. Nur ein Admin oder Superadmin kann sich noch unter /login anmelden. Du aktivierst ihn im System.",
+    "fr": "En mode maintenance, tout le monde voit un message dans sa propre langue. Seul un admin ou un superadmin peut encore se connecter sur /login. Vous l'activez dans le système.",
+    "es": "En el modo de mantenimiento, todos ven un mensaje en su propio idioma. Solo un administrador o superadministrador puede seguir iniciando sesión en /login. Lo activas en el sistema.",
+    "pt": "No modo de manutenção, todos veem uma mensagem no seu próprio idioma. Apenas um administrador ou superadministrador ainda pode iniciar sessão em /login. Você ativa-o no sistema.",
+    "zh": "在维护模式下，每个人都会看到用自己语言显示的消息。只有管理员或超级管理员仍可在 /login 登录。您可以在系统中启用它。",
+    "ar": "في وضع الصيانة، يرى الجميع رسالة بلغتهم الخاصة. يمكن فقط للمشرف أو المشرف العام تسجيل الدخول عبر /login. يمكنك تفعيله من خلال النظام."
+   }
+  },
+  "apikeys": {
+   "q": {
+    "en": "What are API keys for?",
+    "de": "Wofür dienen API-Keys?",
+    "fr": "À quoi servent les clés API ?",
+    "es": "¿Para qué sirven las claves API?",
+    "pt": "Para que servem as chaves API?",
+    "zh": "API密钥有什么用？",
+    "ar": "ما هو الغرض من مفاتيح API؟"
+   },
+   "a": {
+    "en": "At Admin → API keys you connect external services such as Claude, Stripe, S3 and Postmark. Claude is used to create texts in all languages.",
+    "de": "Unter Admin → API keys verbindest du externe Dienste wie Claude, Stripe, S3 und Postmark. Claude wird verwendet, um Texte in allen Sprachen zu erstellen.",
+    "fr": "Dans Admin → API keys, vous connectez des services externes comme Claude, Stripe, S3 et Postmark. Claude est utilisé pour créer des textes dans toutes les langues.",
+    "es": "En Admin → API keys conectas servicios externos como Claude, Stripe, S3 y Postmark. Claude se utiliza para crear textos en todos los idiomas.",
+    "pt": "Em Admin → API keys você conecta serviços externos como Claude, Stripe, S3 e Postmark. O Claude é usado para criar textos em todos os idiomas.",
+    "zh": "在 Admin → API keys 中，您可以连接外部服务，如 Claude、Stripe、S3 和 Postmark。Claude 用于创建所有语言的文本。",
+    "ar": "في Admin → API keys يمكنك ربط خدمات خارجية مثل Claude وStripe وS3 وPostmark. يُستخدم Claude لإنشاء النصوص بجميع اللغات."
+   }
+  },
+  "backup": {
+   "q": {
+    "en": "How do I make a backup or reset the system?",
+    "de": "Wie erstelle ich ein Backup oder setze ich das System zurück?",
+    "fr": "Comment faire une sauvegarde ou réinitialiser le système ?",
+    "es": "¿Cómo hago una copia de seguridad o reinicio el sistema?",
+    "pt": "Como faço um backup ou redefino o sistema?",
+    "zh": "如何备份或重置系统？",
+    "ar": "كيف أقوم بعمل نسخة احتياطية أو إعادة تعيين النظام؟"
+   },
+   "a": {
+    "en": "At Super admin you export and import your settings, themes and plugins in one file. With Systeem resetten you erase all data and restore everything to default; this requires confirmation with a password.",
+    "de": "Unter Super admin exportierst und importierst du Einstellungen, Themes und Plugins in einer Datei. Mit Systeem resetten löschst du alle Daten und setzt alles auf die Standardeinstellungen zurück; dies erfordert eine Bestätigung mit einem Passwort.",
+    "fr": "Dans Super admin, vous exportez et importez vos paramètres, thèmes et plugins dans un seul fichier. Avec Systeem resetten, vous effacez toutes les données et remettez tout aux valeurs par défaut ; cela nécessite une confirmation avec un mot de passe.",
+    "es": "En Super admin exportas e importas tu configuración, temas y plugins en un solo archivo. Con Systeem resetten borras todos los datos y restableces todo a los valores predeterminados; esto requiere una confirmación con una contraseña.",
+    "pt": "Em Super admin você exporta e importa suas configurações, temas e plugins em um único arquivo. Com Systeem resetten você apaga todos os dados e restaura tudo para o padrão; isso requer confirmação com uma senha.",
+    "zh": "在 Super admin 中，您可以将设置、主题和插件导出和导入到一个文件中。使用 Systeem resetten 会清除所有数据并将一切恢复为默认设置；这需要使用密码进行确认。",
+    "ar": "في Super admin يمكنك تصدير واستيراد الإعدادات والقوالب والإضافات في ملف واحد. باستخدام Systeem resetten تقوم بمسح جميع البيانات وإعادة كل شيء إلى الإعدادات الافتراضية؛ يتطلب ذلك تأكيدًا بكلمة مرور."
+   }
+  },
+  "easy": {
+   "q": {
+    "en": "Why does Easy2edit appear at the bottom?",
+    "de": "Warum steht Easy2edit unten?",
+    "fr": "Pourquoi Easy2edit apparaît-il en bas ?",
+    "es": "¿Por qué aparece Easy2edit abajo?",
+    "pt": "Por que o Easy2edit aparece no rodapé?",
+    "zh": "为什么页面底部会显示 Easy2edit？",
+    "ar": "لماذا يظهر Easy2edit في الأسفل؟"
+   },
+   "a": {
+    "en": "At the bottom of each page there's a small mention of Easy2edit. A superadmin turns this on or off at Admin → Overzicht → Over Easy2edit.",
+    "de": "Am Ende jeder Seite steht ein kleiner Hinweis auf Easy2edit. Ein Superadmin schaltet dies unter Admin → Overzicht → Over Easy2edit ein oder aus.",
+    "fr": "En bas de chaque page figure une petite mention d'Easy2edit. Un superadmin l'active ou la désactive dans Admin → Overzicht → Over Easy2edit.",
+    "es": "Al final de cada página hay una pequeña mención de Easy2edit. Un superadministrador la activa o desactiva en Admin → Overzicht → Over Easy2edit.",
+    "pt": "No rodapé de cada página há uma pequena menção ao Easy2edit. Um superadministrador ativa ou desativa isso em Admin → Overzicht → Over Easy2edit.",
+    "zh": "每个页面底部都有一个关于 Easy2edit 的小提示。超级管理员可以在 Admin → Overzicht → Over Easy2edit 中打开或关闭此功能。",
+    "ar": "في أسفل كل صفحة يوجد ذكر صغير لـ Easy2edit. يقوم المسؤول الأعلى بتفعيل أو إيقاف ذلك من خلال Admin → Overzicht → Over Easy2edit."
+   }
+  },
+  "chat": {
+   "q": {
+    "en": "How do I chat with someone?",
+    "de": "Wie chatte ich mit jemandem?",
+    "fr": "Comment discuter avec quelqu'un ?",
+    "es": "¿Cómo chateo con alguien?",
+    "pt": "Como converso com alguém?",
+    "zh": "我如何与某人聊天？",
+    "ar": "كيف أتحدث مع شخص ما؟"
+   },
+   "a": {
+    "en": "Open Chat in your dashboard, choose a member and type a message. You can send photos and videos, and if it's enabled, make video calls. Chat is live; messages in the inbox are for when someone isn't available.",
+    "de": "Öffne Chat in deinem Dashboard, wähle ein Mitglied und schreibe eine Nachricht. Du kannst Fotos und Videos senden und, wenn es aktiviert ist, Videoanrufe machen. Chat ist live; Nachrichten im Postfach sind für den Fall, dass jemand nicht erreichbar ist.",
+    "fr": "Ouvrez Chat dans votre tableau de bord, choisissez un membre et tapez un message. Vous pouvez envoyer des photos et des vidéos, et si c'est activé, passer des appels vidéo. Chat se fait en direct ; les messages dans la boîte de réception sont pour quand quelqu'un n'est pas disponible.",
+    "es": "Abre Chat en tu panel de control, elige un miembro y escribe un mensaje. Puedes enviar fotos y vídeos, y si está activado, hacer videollamadas. Chat es en directo; los mensajes en la bandeja de entrada son para cuando alguien no está disponible.",
+    "pt": "Abra o Chat no seu painel, escolha um membro e escreva uma mensagem. Pode enviar fotos e vídeos e, se estiver ativado, fazer videochamadas. O Chat é em direto; as mensagens na caixa de entrada são para quando alguém não está disponível.",
+    "zh": "在您的仪表盘中打开聊天，选择一个成员并输入消息。您可以发送照片和视频，如果已启用，还可以进行视频通话。聊天是实时的；收件箱中的消息用于对方不在线时。",
+    "ar": "افتح الدردشة في لوحة التحكم الخاصة بك، واختر عضوًا واكتب رسالة. يمكنك إرسال الصور ومقاطع الفيديو، وإذا كانت مفعّلة، إجراء مكالمات فيديو. الدردشة مباشرة؛ الرسائل في صندوق الوارد مخصصة لحالة عدم توفر الشخص."
+   }
+  },
+  "swipe": {
+   "q": {
+    "en": "How does swiping work?",
+    "de": "Wie funktioniert das Wischen (Swipen)?",
+    "fr": "Comment fonctionne le swipe ?",
+    "es": "¿Cómo funciona deslizar (swipe)?",
+    "pt": "Como funciona o swipe?",
+    "zh": "滑动功能是如何运作的?",
+    "ar": "كيف يعمل التمرير (swipe)؟"
+   },
+   "a": {
+    "en": "In Search & match, you see one profile at a time. Swipe right if you like someone, and left if you don't. Use the back button to undo your last choice. If you both like each other, it's a match and you can get in touch.",
+    "de": "Bei Suchen & Matchen siehst du jeweils ein Profil. Wische nach rechts, wenn dir jemand gefällt, und nach links, wenn nicht. Mit der Zurück-Taste kannst du deine letzte Wahl rückgängig machen. Gefallt ihr euch gegenseitig, ist es ein Match und ihr könnt Kontakt aufnehmen.",
+    "fr": "Dans Rechercher & matcher, vous voyez un profil à la fois. Glissez vers la droite si la personne vous plaît, et vers la gauche si ce n'est pas le cas. Le bouton retour permet d'annuler votre dernier choix. Si vous vous plaisez mutuellement, c'est un match et vous pouvez entrer en contact.",
+    "es": "En Buscar y emparejar, ves un perfil a la vez. Desliza hacia la derecha si te gusta alguien y hacia la izquierda si no. Con el botón de retroceso puedes deshacer tu última elección. Si os gustáis mutuamente, es un match y podéis poneros en contacto.",
+    "pt": "Em Pesquisar & combinar, vês um perfil de cada vez. Desliza para a direita se gostares de alguém e para a esquerda se não gostares. Com o botão de retrocesso podes desfazer a tua última escolha. Se gostarem um do outro, é um match e podem entrar em contacto.",
+    "zh": "在\"搜索与匹配\"中，你每次只会看到一个资料。如果你喜欢某人，向右滑动；如果不喜欢，向左滑动。使用返回按钮可以撤销你上一次的选择。如果你们互相喜欢，就会配对成功，然后就可以联系对方了。",
+    "ar": "في البحث والمطابقة، ترى ملفًا شخصيًا واحدًا في كل مرة. مرر إلى اليمين إذا أعجبك شخص ما، وإلى اليسار إذا لم يعجبك. يمكنك استخدام زر الرجوع للتراجع عن اختيارك الأخير. إذا أعجب كل منكما بالآخر، فهذه مطابقة ويمكنكما التواصل."
+   }
+  },
+  "hide": {
+   "q": {
+    "en": "Can I hide people I don't like?",
+    "de": "Kann ich Personen ausblenden, die mir nicht gefallen?",
+    "fr": "Puis-je masquer les personnes que je n'aime pas ?",
+    "es": "¿Puedo ocultar a las personas que no me gustan?",
+    "pt": "Posso esconder pessoas de quem não gosto?",
+    "zh": "我可以隐藏不喜欢的人吗?",
+    "ar": "هل يمكنني إخفاء الأشخاص الذين لا أحبهم؟"
+   },
+   "a": {
+    "en": "Yes. People you don't like will disappear from your list for a while, or permanently if the administrator has enabled that option. This keeps your list tidy.",
+    "de": "Ja. Personen, die dir nicht gefallen, siehst du eine Zeit lang nicht mehr, oder nie mehr, wenn der Administrator das so eingestellt hat. So bleibt deine Liste übersichtlich.",
+    "fr": "Oui. Les personnes que vous n'aimez pas disparaissent pendant un certain temps, ou définitivement si l'administrateur a activé cette option. Votre liste reste ainsi bien organisée.",
+    "es": "Sí. Las personas que no te gustan desaparecerán de tu lista durante un tiempo, o para siempre si el administrador ha activado esa opción. Así tu lista se mantiene ordenada.",
+    "pt": "Sim. As pessoas de quem não gostas deixam de aparecer durante algum tempo, ou para sempre se o administrador tiver ativado essa opção. Assim, a tua lista mantém-se organizada.",
+    "zh": "可以。你不喜欢的人会在一段时间内从你的列表中消失，如果管理员启用了相应设置，则会永久消失。这样可以让你的列表保持整洁。",
+    "ar": "نعم. الأشخاص الذين لا تحبهم سيختفون من قائمتك لفترة من الوقت، أو بشكل دائم إذا قام المسؤول بتفعيل هذا الخيار. بهذه الطريقة تبقى قائمتك مرتبة."
+   }
+  },
+  "visible": {
+   "q": {
+    "en": "Who can see my profile?",
+    "de": "Wer kann mein Profil sehen?",
+    "fr": "Qui peut voir mon profil ?",
+    "es": "¿Quién puede ver mi perfil?",
+    "pt": "Quem pode ver o meu perfil?",
+    "zh": "谁可以看到我的资料?",
+    "ar": "من يمكنه رؤية ملفي الشخصي؟"
+   },
+   "a": {
+    "en": "In Edit profile, you choose the visibility: everyone, members, friends, or selected members. Visibility is switched off by default until you turn it on. You can also set it so others only see you if you like them, and you can block users.",
+    "de": "Bei Profil bearbeiten wählst du die Sichtbarkeit: jeder, Mitglieder, Freunde oder ausgewählte Mitglieder. Die Sichtbarkeit ist standardmäßig ausgeschaltet, bis du sie aktivierst. Du kannst auch einstellen, dass andere dich nur sehen, wenn du sie magst, und du kannst Nutzer blockieren.",
+    "fr": "Dans Modifier le profil, vous choisissez la visibilité : tout le monde, les membres, les amis ou des membres sélectionnés. La visibilité est désactivée par défaut jusqu'à ce que vous l'activiez. Vous pouvez aussi configurer que les autres ne vous voient que si vous les aimez, et vous pouvez bloquer des utilisateurs.",
+    "es": "En Editar perfil, eliges la visibilidad: todos, miembros, amigos o miembros seleccionados. La visibilidad está desactivada por defecto hasta que la actives. También puedes configurar que los demás solo te vean si a ti te gustan ellos, y puedes bloquear usuarios.",
+    "pt": "Em Editar perfil, escolhes a visibilidade: todos, membros, amigos ou membros selecionados. A visibilidade está desativada por predefinição até a ativares. Também podes definir que os outros só te veem se tu gostares deles, e podes bloquear utilizadores.",
+    "zh": "在\"编辑资料\"中，你可以选择可见范围：所有人、会员、好友或指定会员。可见性默认是关闭的，直到你打开它。你还可以设置只有你喜欢的人才能看到你，并且你可以屏蔽用户。",
+    "ar": "في تعديل الملف الشخصي، تختار مستوى الظهور: الجميع، الأعضاء، الأصدقاء، أو أعضاء محددون. الظهور معطل افتراضيًا حتى تقوم بتفعيله. يمكنك أيضًا ضبط الإعداد بحيث يراك الآخرون فقط إذا كنت تحبهم، ويمكنك حظر المستخدمين."
+   }
+  },
+  "friends": {
+   "q": {
+    "en": "How do friend and photo requests work?",
+    "de": "Wie funktionieren Freundschafts- und Fotoanfragen?",
+    "fr": "Comment fonctionnent les demandes d'amitié et de photos ?",
+    "es": "¿Cómo funcionan las solicitudes de amistad y de fotos?",
+    "pt": "Como funcionam os pedidos de amizade e de fotos?",
+    "zh": "好友请求和照片请求是如何运作的?",
+    "ar": "كيف تعمل طلبات الصداقة وطلبات الصور؟"
+   },
+   "a": {
+    "en": "You can send a request to become friends or to view someone's private photos. The other person accepts or declines. You can see your requests under My community → Friends and requests.",
+    "de": "Du kannst eine Anfrage senden, um Freunde zu werden oder um die privaten Fotos von jemandem zu sehen. Die andere Person akzeptiert oder lehnt ab. Deine Anfragen findest du unter Meine Community → Freunde und Anfragen.",
+    "fr": "Vous pouvez envoyer une demande pour devenir amis ou pour voir les photos privées de quelqu'un. L'autre personne accepte ou refuse. Vous retrouvez vos demandes dans Ma communauté → Amis et demandes.",
+    "es": "Puedes enviar una solicitud para hacerte amigo de alguien o para ver sus fotos privadas. La otra persona acepta o rechaza. Puedes ver tus solicitudes en Mi comunidad → Amigos y solicitudes.",
+    "pt": "Podes enviar um pedido para seres amigo de alguém ou para veres as fotos privadas dessa pessoa. A outra pessoa aceita ou recusa. Podes ver os teus pedidos em A minha comunidade → Amigos e pedidos.",
+    "zh": "你可以发送请求来成为好友，或者请求查看某人的私人照片。对方可以接受或拒绝。你可以在\"我的社区 → 好友与请求\"中查看你的请求。",
+    "ar": "يمكنك إرسال طلب لتصبح صديقًا أو لرؤية الصور الخاصة لشخص ما. يقوم الشخص الآخر بالقبول أو الرفض. يمكنك رؤية طلباتك في مجتمعي → الأصدقاء والطلبات."
+   }
+  },
+  "dating": {
+   "q": {
+    "en": "How do I find a date or a match?",
+    "de": "Wie finde ich ein Date oder einen Match?",
+    "fr": "Comment trouver un rendez-vous ou un match ?",
+    "es": "¿Cómo encuentro una cita o una coincidencia?",
+    "pt": "Como encontro um encontro ou uma combinação?",
+    "zh": "如何找到约会对象或匹配？",
+    "ar": "كيف أجد موعدًا أو تطابقًا؟"
+   },
+   "a": {
+    "en": "In your profile, turn on what you're looking for and for which age and distance. Then search under Search & match with filters or swipe through the recommendations. You'll see matches and visitors on your My Community page.",
+    "de": "Gib in deinem Profil an, wonach du suchst und für welches Alter und welche Entfernung. Suche danach unter Suchen & Matchen mit Filtern oder wische durch die Empfehlungen. Matches und Besucher siehst du auf deiner Meine Community-Seite.",
+    "fr": "Indiquez dans votre profil ce que vous recherchez, ainsi que l'âge et la distance souhaités. Recherchez ensuite via Rechercher & matcher avec des filtres ou faites défiler les recommandations. Vous verrez les matchs et les visiteurs sur votre page Ma communauté.",
+    "es": "Activa en tu perfil lo que buscas y para qué edad y distancia. Luego busca en Buscar y emparejar con filtros o desliza por las recomendaciones. Verás coincidencias y visitantes en tu página Mi comunidad.",
+    "pt": "Ative no seu perfil o que você procura e para que idade e distância. Em seguida, pesquise em Pesquisar & combinar com filtros ou deslize pelas recomendações. Você verá combinações e visitantes na sua página Minha comunidade.",
+    "zh": "在你的个人资料中设置你想寻找的对象、年龄范围和距离。然后在搜索与匹配中使用筛选条件搜索，或滑动浏览推荐内容。你可以在我的社区页面查看匹配和访客。",
+    "ar": "قم بتفعيل ما تبحث عنه في ملفك الشخصي، بما في ذلك العمر والمسافة. ثم ابحث في البحث والمطابقة باستخدام الفلاتر أو مرر عبر التوصيات. ستجد التطابقات والزوار في صفحة مجتمعي."
+   }
+  },
+  "chat2": {
+   "q": {
+    "en": "Can I chat without an account?",
+    "de": "Kann ich ohne Konto chatten?",
+    "fr": "Puis-je discuter sans compte ?",
+    "es": "¿Puedo chatear sin una cuenta?",
+    "pt": "Posso conversar sem uma conta?",
+    "zh": "没有账户可以聊天吗？",
+    "ar": "هل يمكنني الدردشة بدون حساب؟"
+   },
+   "a": {
+    "en": "With a direct connection, you talk to one other person via a link, code or QR code. The other person doesn't need an account. Once you're done, you close the connection.",
+    "de": "Mit einer direkten Verbindung sprichst du mit einer anderen Person über einen Link, Code oder QR-Code. Die andere Person braucht kein Konto. Sobald ihr fertig seid, schließt du die Verbindung.",
+    "fr": "Avec une connexion directe, vous parlez à une autre personne via un lien, un code ou un code QR. L'autre personne n'a pas besoin de compte. Une fois que vous avez terminé, vous fermez la connexion.",
+    "es": "Con una conexión directa, hablas con otra persona a través de un enlace, código o código QR. La otra persona no necesita una cuenta. Cuando hayáis terminado, cierras la conexión.",
+    "pt": "Com uma conexão direta, você conversa com outra pessoa por meio de um link, código ou código QR. A outra pessoa não precisa de uma conta. Quando terminarem, você encerra a conexão.",
+    "zh": "通过直接连接，你可以通过链接、代码或二维码与另一个人交谈。对方不需要账户。完成后，关闭连接即可。",
+    "ar": "من خلال اتصال مباشر، يمكنك التحدث مع شخص آخر عبر رابط أو رمز أو رمز QR. لا يحتاج الشخص الآخر إلى حساب. بمجرد الانتهاء، تقوم بإغلاق الاتصال."
+   }
+  },
+  "gameuser": {
+   "q": {
+    "en": "How do I play a game?",
+    "de": "Wie spiele ich ein Spiel?",
+    "fr": "Comment jouer à un jeu ?",
+    "es": "¿Cómo juego un juego?",
+    "pt": "Como jogo um jogo?",
+    "zh": "如何玩游戏？",
+    "ar": "كيف ألعب لعبة؟"
+   },
+   "a": {
+    "en": "Open Games, choose a game and click Play. Some games have an age restriction: if you're too young, you'll get a warning. Your scores are saved and you play alone or with others in a room.",
+    "de": "Öffne Spiele, wähle ein Spiel aus und klicke auf Spielen. Einige Spiele haben eine Altersbeschränkung: Bist du zu jung, erhältst du eine Warnung. Deine Punktzahlen werden gespeichert und du spielst allein oder mit anderen in einem Raum.",
+    "fr": "Ouvrez Jeux, choisissez un jeu et cliquez sur Jouer. Certains jeux ont une limite d'âge : si vous êtes trop jeune, vous recevrez un avertissement. Vos scores sont enregistrés et vous jouez seul ou avec d'autres dans une salle.",
+    "es": "Abre Juegos, elige un juego y haz clic en Jugar. Algunos juegos tienen una restricción de edad: si eres demasiado joven, recibirás una advertencia. Tus puntuaciones se guardan y juegas solo o con otros en una sala.",
+    "pt": "Abra Jogos, escolha um jogo e clique em Jogar. Alguns jogos têm restrição de idade: se você for muito jovem, receberá um aviso. Suas pontuações são salvas e você joga sozinho ou com outras pessoas em uma sala.",
+    "zh": "打开游戏，选择一个游戏并点击开始游戏。部分游戏有年龄限制：如果你年龄太小，会收到提示。你的分数会被保存，你可以独自游戏，也可以在房间里和其他人一起玩。",
+    "ar": "افتح الألعاب، اختر لعبة وانقر على لعب. بعض الألعاب لها قيود عمرية: إذا كنت صغيرًا جدًا، ستتلقى تحذيرًا. يتم حفظ نتائجك ويمكنك اللعب بمفردك أو مع آخرين في غرفة."
+   }
+  },
+  "shopuser": {
+   "q": {
+    "en": "How do I order something?",
+    "de": "Wie bestelle ich etwas?",
+    "fr": "Comment commander quelque chose ?",
+    "es": "¿Cómo pido algo?",
+    "pt": "Como faço um pedido?",
+    "zh": "如何下单购买？",
+    "ar": "كيف أطلب شيئًا؟"
+   },
+   "a": {
+    "en": "Choose a product in the shop, add it to your shopping cart and check out. Whether you pay online or receive an invoice afterwards depends on the shop. You'll see your orders under My Orders.",
+    "de": "Wähle ein Produkt im Shop aus, lege es in deinen Warenkorb und schließe die Bestellung ab. Ob du online bezahlst oder im Nachhinein eine Rechnung erhältst, hängt vom Shop ab. Deine Bestellungen siehst du unter Meine Bestellungen.",
+    "fr": "Choisissez un produit dans la boutique, ajoutez-le à votre panier et procédez au paiement. Le fait de payer en ligne ou de recevoir une facture ultérieurement dépend de la boutique. Vous retrouverez vos commandes sous Mes commandes.",
+    "es": "Elige un producto en la tienda, añádelo a tu carrito y finaliza la compra. Si pagas en línea o recibes una factura posteriormente depende de la tienda. Verás tus pedidos en Mis pedidos.",
+    "pt": "Escolha um produto na loja, adicione-o ao seu carrinho e finalize a compra. Se você paga online ou recebe uma fatura posteriormente depende da loja. Você verá seus pedidos em Meus pedidos.",
+    "zh": "在商店中选择一个产品，将其放入购物车并结账。你是在线付款还是之后收到发票，取决于该商店的设置。你可以在我的订单中查看你的订单。",
+    "ar": "اختر منتجًا في المتجر، وأضفه إلى سلة التسوق الخاصة بك وأكمل عملية الدفع. سواء كنت تدفع عبر الإنترنت أو تتلقى فاتورة لاحقًا، فهذا يعتمد على المتجر. ستجد طلباتك في طلباتي."
+   }
+  },
+  "ordersuser": {
+   "q": {
+    "en": "Where can I see my orders?",
+    "de": "Wo sehe ich meine Bestellungen?",
+    "fr": "Où puis-je voir mes commandes ?",
+    "es": "¿Dónde puedo ver mis pedidos?",
+    "pt": "Onde posso ver os meus pedidos?",
+    "zh": "我在哪里可以查看我的订单？",
+    "ar": "أين يمكنني رؤية طلباتي؟"
+   },
+   "a": {
+    "en": "On My orders in your dashboard, you'll find all your orders with their status. There you can also see whether an order has been paid or shipped.",
+    "de": "Unter Meine Bestellungen in deinem Dashboard findest du alle deine Bestellungen mit dem Status. Dort siehst du auch, ob eine Bestellung bereits bezahlt oder versandt wurde.",
+    "fr": "Sous Mes commandes dans votre tableau de bord, vous trouverez toutes vos commandes avec leur statut. Vous y verrez aussi si une commande a déjà été payée ou expédiée.",
+    "es": "En Mis pedidos de tu panel encontrarás todos tus pedidos con su estado. Allí también verás si un pedido ya ha sido pagado o enviado.",
+    "pt": "Em Meus pedidos no seu painel, você encontrará todos os seus pedidos com o status. Lá você também vê se um pedido já foi pago ou enviado.",
+    "zh": "在仪表盘的“我的订单”中，您可以看到所有订单及其状态。您还可以在那里查看订单是否已付款或已发货。",
+    "ar": "في صفحة طلباتي ضمن لوحة التحكم الخاصة بك، ستجد جميع طلباتك مع حالتها. يمكنك أيضًا معرفة ما إذا كان الطلب قد تم دفعه أو شحنه."
+   }
+  },
+  "subsuser": {
+   "q": {
+    "en": "How do I take out a subscription?",
+    "de": "Wie schließe ich ein Abonnement ab?",
+    "fr": "Comment puis-je souscrire à un abonnement ?",
+    "es": "¿Cómo puedo tomar una suscripción?",
+    "pt": "Como faço para assinar?",
+    "zh": "我如何订阅？",
+    "ar": "كيف أشترك في باقة؟"
+   },
+   "a": {
+    "en": "On the Subscriptions page, choose the subscription that suits you and check out. It will then appear under My subscriptions, with the end date. A subscription gives you extra options, like more likes or chatting. You can cancel it; it will then continue until the end date.",
+    "de": "Wähle auf der Seite Abonnements das passende Abonnement aus und schließe den Kauf ab. Danach findest du es unter Meine Abonnements mit dem Enddatum. Ein Abonnement bietet dir zusätzliche Möglichkeiten, wie mehr Likes oder Chatten. Du kannst es kündigen; es läuft dann noch bis zum Enddatum weiter.",
+    "fr": "Sur la page Abonnements, choisissez l'abonnement qui vous convient et procédez au paiement. Il apparaîtra ensuite dans Mes abonnements, avec la date de fin. Un abonnement vous offre des possibilités supplémentaires, comme plus de likes ou le chat. Vous pouvez le résilier ; il continuera alors jusqu'à la date de fin.",
+    "es": "En la página Suscripciones, elige la suscripción que mejor te convenga y completa el pago. Luego aparecerá en Mis suscripciones, con la fecha de finalización. Una suscripción te da posibilidades adicionales, como más \"me gusta\" o chat. Puedes cancelarla; seguirá activa hasta la fecha de finalización.",
+    "pt": "Na página Assinaturas, escolha a assinatura que combina com você e finalize o pagamento. Depois, ela aparecerá em Minhas assinaturas, com a data de término. Uma assinatura oferece possibilidades extras, como mais curtidas ou chat. Você pode cancelá-la; ela continuará ativa até a data de término.",
+    "zh": "在订阅页面选择适合您的订阅并完成付款。之后它会显示在“我的订阅”中，并带有到期日期。订阅会为您提供额外的功能，例如更多点赞或聊天。您可以取消订阅；取消后订阅仍会持续到到期日期。",
+    "ar": "اختر من صفحة الاشتراكات الباقة التي تناسبك وأكمل الدفع. بعد ذلك ستظهر في صفحة اشتراكاتي مع تاريخ الانتهاء. يمنحك الاشتراك إمكانيات إضافية، مثل المزيد من الإعجابات أو الدردشة. يمكنك إلغاؤه؛ وسيستمر العمل به حتى تاريخ الانتهاء."
+   }
+  },
+  "donateuser": {
+   "q": {
+    "en": "How do I donate?",
+    "de": "Wie spende ich?",
+    "fr": "Comment puis-je faire un don ?",
+    "es": "¿Cómo puedo donar?",
+    "pt": "Como faço para doar?",
+    "zh": "我如何捐款？",
+    "ar": "كيف يمكنني التبرع؟"
+   },
+   "a": {
+    "en": "On the Donate page, choose a campaign, slide to the amount, and confirm. You can add a message or stay anonymous. Your donations can be found under My donations. Sometimes you'll receive extra options for a while as a thank you.",
+    "de": "Wähle auf der Seite Spenden eine Aktion aus, schiebe den Regler auf den Betrag und bestätige. Du kannst eine Nachricht hinterlassen oder anonym bleiben. Deine Spenden findest du unter Meine Spenden. Manchmal erhältst du als Dankeschön für eine Weile zusätzliche Möglichkeiten.",
+    "fr": "Sur la page Faire un don, choisissez une campagne, faites glisser jusqu'au montant et confirmez. Vous pouvez ajouter un message ou rester anonyme. Vos dons se trouvent dans Mes dons. Parfois, vous recevez des possibilités supplémentaires pendant un certain temps en remerciement.",
+    "es": "En la página Donar, elige una campaña, desliza hasta el importe y confirma. Puedes añadir un mensaje o permanecer anónimo. Tus donaciones se encuentran en Mis donaciones. A veces, como agradecimiento, recibirás posibilidades adicionales durante un tiempo.",
+    "pt": "Na página Doar, escolha uma campanha, deslize até o valor e confirme. Você pode deixar uma mensagem ou permanecer anônimo. Suas doações ficam em Minhas doações. Às vezes, como agradecimento, você recebe possibilidades extras por um tempo.",
+    "zh": "在捐款页面选择一个活动，滑动选择金额并确认。您可以留言或保持匿名。您的捐款会显示在“我的捐款”中。有时作为感谢，您会在一段时间内获得额外的功能。",
+    "ar": "اختر من صفحة التبرع حملة ما، ثم اسحب لتحديد المبلغ وقم بالتأكيد. يمكنك إضافة رسالة أو البقاء مجهولاً. ستجد تبرعاتك في صفحة تبرعاتي. أحيانًا قد تحصل على إمكانيات إضافية لفترة من الزمن كشكر لك."
+   }
+  },
+  "short": {
+   "q": {
+    "en": "How do I create a shortcut?",
+    "de": "Wie erstelle ich eine Verknüpfung?",
+    "fr": "Comment créer un raccourci ?",
+    "es": "¿Cómo creo un acceso directo?",
+    "pt": "Como crio um atalho?",
+    "zh": "我如何创建快捷方式？",
+    "ar": "كيف أنشئ اختصارًا؟"
+   },
+   "a": {
+    "en": "Find a setting or page and click the star icon. The shortcut will appear on your dashboard. Click the star icon again to remove it.",
+    "de": "Suche eine Einstellung oder Seite und klicke auf das Sternchen. Die Verknüpfung erscheint dann auf deinem Dashboard. Klicke erneut auf das Sternchen, um sie wieder zu entfernen.",
+    "fr": "Recherchez un paramètre ou une page et cliquez sur l'étoile. Le raccourci apparaîtra sur votre tableau de bord. Cliquez à nouveau sur l'étoile pour le supprimer.",
+    "es": "Busca una configuración o página y haz clic en la estrella. El acceso directo aparecerá en tu panel. Haz clic de nuevo en la estrella para eliminarlo.",
+    "pt": "Procure uma configuração ou página e clique na estrela. O atalho aparecerá no seu painel. Clique novamente na estrela para removê-lo.",
+    "zh": "找到某个设置或页面，点击星形图标。快捷方式会出现在您的仪表盘上。再次点击星形图标即可将其移除。",
+    "ar": "ابحث عن إعداد أو صفحة وانقر على أيقونة النجمة. سيظهر الاختصار في لوحة التحكم الخاصة بك. انقر على أيقونة النجمة مرة أخرى لإزالته."
+   }
+  },
+  "tiles": {
+   "q": {
+    "en": "Menu or Tegels?",
+    "de": "Menu oder Tegels?",
+    "fr": "Menu ou Tegels ?",
+    "es": "¿Menú o Tegels?",
+    "pt": "Menu ou Tegels?",
+    "zh": "菜单还是方块（Tegels）？",
+    "ar": "القائمة أم Tegels؟"
+   },
+   "a": {
+    "en": "At the top left of the dashboard, you switch between Menu and Tegels. Your choice is remembered, even on another computer.",
+    "de": "Oben links im Dashboard wechselst du zwischen Menu und Tegels. Deine Wahl wird gespeichert, auch auf einem anderen Computer.",
+    "fr": "En haut à gauche du tableau de bord, vous basculez entre Menu et Tegels. Votre choix est mémorisé, même sur un autre ordinateur.",
+    "es": "En la parte superior izquierda del panel, cambias entre Menu y Tegels. Tu elección se recuerda, incluso en otro ordenador.",
+    "pt": "No canto superior esquerdo do painel, você alterna entre Menu e Tegels. Sua escolha é lembrada, mesmo em outro computador.",
+    "zh": "在仪表盘左上角，你可以在 Menu 和 Tegels 之间切换。你的选择会被记住，即使在另一台电脑上也是如此。",
+    "ar": "في أعلى يسار لوحة التحكم، يمكنك التبديل بين Menu و Tegels. يتم تذكر اختيارك، حتى على جهاز كمبيوتر آخر."
+   }
+  },
+  "gamemanage": {
+   "q": {
+    "en": "How do I manage the games?",
+    "de": "Wie verwalte ich die Spiele?",
+    "fr": "Comment gérer les jeux ?",
+    "es": "¿Cómo gestiono los juegos?",
+    "pt": "Como gerencio os jogos?",
+    "zh": "如何管理游戏？",
+    "ar": "كيف أدير الألعاب؟"
+   },
+   "a": {
+    "en": "Go to Admin → Plugins → Spelletjes. The Spellen tab shows all games with on/off, settings, preview, download and delete. Under Pagina's you edit the Spelletjes page, and under Acties you determine what a player is allowed to do.",
+    "de": "Gehe zu Admin → Plugins → Spelletjes. Der Tab Spellen zeigt alle Spiele mit Ein/Aus, Einstellungen, Vorschau, Download und Löschen. Unter Pagina's bearbeitest du die Seite Spelletjes und unter Acties legst du fest, was ein Spieler darf.",
+    "fr": "Allez dans Admin → Plugins → Spelletjes. L'onglet Spellen affiche tous les jeux avec activation/désactivation, paramètres, aperçu, téléchargement et suppression. Sous Pagina's, vous modifiez la page Spelletjes, et sous Acties, vous définissez ce qu'un joueur est autorisé à faire.",
+    "es": "Ve a Admin → Plugins → Spelletjes. La pestaña Spellen muestra todos los juegos con activar/desactivar, configuración, vista previa, descarga y eliminación. En Pagina's editas la página Spelletjes y en Acties decides qué puede hacer un jugador.",
+    "pt": "Vá para Admin → Plugins → Spelletjes. A aba Spellen mostra todos os jogos com ativar/desativar, configurações, pré-visualização, download e exclusão. Em Pagina's você edita a página Spelletjes e em Acties define o que um jogador pode fazer.",
+    "zh": "前往 Admin → Plugins → Spelletjes。Spellen 标签页显示所有游戏，包括开/关、设置、预览、下载和删除。在 Pagina's 中可以编辑 Spelletjes 页面，在 Acties 中可以设定玩家可以执行的操作。",
+    "ar": "انتقل إلى Admin → Plugins → Spelletjes. يعرض تبويب Spellen جميع الألعاب مع التفعيل/الإيقاف والإعدادات والمعاينة والتنزيل والحذف. في Pagina's يمكنك تعديل صفحة Spelletjes، وفي Acties تحدد ما يُسمح للاعب بفعله."
+   }
+  },
+  "gameupload": {
+   "q": {
+    "en": "How do I upload a game?",
+    "de": "Wie lade ich ein Spiel hoch?",
+    "fr": "Comment télécharger un jeu ?",
+    "es": "¿Cómo subo un juego?",
+    "pt": "Como faço upload de um jogo?",
+    "zh": "如何上传游戏？",
+    "ar": "كيف أرفع لعبة؟"
+   },
+   "a": {
+    "en": "In Spelletjes → Spellen → Spel uploaden (zip), choose a zip with a folder and a game.json, or drag the file there. A game with the same name will be updated; settings and image remain. You can download a zip and delete a game in the same place.",
+    "de": "Wähle unter Spelletjes → Spellen → Spel uploaden (zip) eine Zip-Datei mit einem Ordner und einer game.json, oder ziehe die Datei dorthin. Ein Spiel mit demselben Namen wird aktualisiert; Einstellungen und Bild bleiben erhalten. Eine Zip-Datei herunterladen und ein Spiel löschen kannst du an derselben Stelle.",
+    "fr": "Dans Spelletjes → Spellen → Spel uploaden (zip), choisissez un fichier zip contenant un dossier et un game.json, ou faites-le glisser à cet endroit. Un jeu portant le même nom sera mis à jour ; les paramètres et l'image restent inchangés. Vous pouvez télécharger un zip et supprimer un jeu au même endroit.",
+    "es": "En Spelletjes → Spellen → Spel uploaden (zip), elige un archivo zip con una carpeta y un game.json, o arrastra el archivo hasta allí. Un juego con el mismo nombre se actualizará; la configuración y la imagen se mantienen. Descargar un zip y eliminar un juego se puede hacer en el mismo lugar.",
+    "pt": "Em Spelletjes → Spellen → Spel uploaden (zip), escolha um arquivo zip com uma pasta e um game.json, ou arraste o arquivo até lá. Um jogo com o mesmo nome será atualizado; as configurações e a imagem permanecem. Baixar um zip e excluir um jogo pode ser feito no mesmo lugar.",
+    "zh": "在 Spelletjes → Spellen → Spel uploaden (zip) 中，选择包含文件夹和 game.json 的压缩包，或将文件拖放到此处。同名的游戏会被更新；设置和图片会保留。下载压缩包和删除游戏也可以在同一位置完成。",
+    "ar": "في Spelletjes → Spellen → Spel uploaden (zip)، اختر ملف zip يحتوي على مجلد وملف game.json، أو اسحب الملف إلى هناك. سيتم تحديث اللعبة التي تحمل نفس الاسم؛ وتبقى الإعدادات والصورة كما هي. يمكن تنزيل ملف zip وحذف لعبة من نفس المكان."
+   }
+  },
+  "gameset": {
+   "q": {
+    "en": "What do I set per game?",
+    "de": "Was stelle ich pro Spiel ein?",
+    "fr": "Que dois-je configurer pour chaque jeu ?",
+    "es": "¿Qué configuro por juego?",
+    "pt": "O que configuro por jogo?",
+    "zh": "每个游戏需要设置什么？",
+    "ar": "ما الذي أقوم بإعداده لكل لعبة؟"
+   },
+   "a": {
+    "en": "For each game you choose the image, the title and explanation per language (with Claude all languages at once), the age limit, whether the game is public or only for members, and how many players it has. A preview shows what the game looks like for players.",
+    "de": "Pro Spiel wählst du das Bild, den Titel und die Erklärung pro Sprache (mit Claude alle Sprachen gleichzeitig), die Altersgrenze, ob das Spiel öffentlich oder nur für Mitglieder ist, und wie viele Spieler es hat. Eine Vorschau zeigt, wie das Spiel für Spieler aussieht.",
+    "fr": "Pour chaque jeu, vous choisissez l'image, le titre et l'explication par langue (avec Claude, toutes les langues en même temps), la limite d'âge, si le jeu est public ou réservé aux membres, et le nombre de joueurs. Un aperçu montre à quoi ressemble le jeu pour les joueurs.",
+    "es": "Para cada juego eliges la imagen, el título y la explicación por idioma (con Claude, todos los idiomas a la vez), el límite de edad, si el juego es público o solo para miembros, y cuántos jugadores tiene. Una vista previa muestra cómo se ve el juego para los jugadores.",
+    "pt": "Para cada jogo você escolhe a imagem, o título e a explicação por idioma (com Claude, todos os idiomas de uma vez), o limite de idade, se o jogo é público ou apenas para membros, e quantos jogadores ele tem. Uma pré-visualização mostra como o jogo aparece para os jogadores.",
+    "zh": "每个游戏你可以选择图片、各语言的标题和说明（使用 Claude 可一次性生成所有语言）、年龄限制、游戏是公开还是仅限会员，以及玩家人数。预览功能可以展示游戏在玩家眼中的样子。",
+    "ar": "لكل لعبة تختار الصورة، والعنوان والشرح لكل لغة (باستخدام Claude لجميع اللغات دفعة واحدة)، والحد العمري، وما إذا كانت اللعبة عامة أو للأعضاء فقط، وعدد اللاعبين فيها. تعرض المعاينة شكل اللعبة كما يراها اللاعبون."
+   }
+  },
+  "webpages": {
+   "q": {
+    "en": "How do I customize the shop pages?",
+    "de": "Wie passe ich die Shop-Seiten an?",
+    "fr": "Comment modifier les pages de la boutique ?",
+    "es": "¿Cómo personalizo las páginas de la tienda?",
+    "pt": "Como personalizo as páginas da loja?",
+    "zh": "如何自定义商店页面？",
+    "ar": "كيف أقوم بتخصيص صفحات المتجر؟"
+   },
+   "a": {
+    "en": "In Admin → Plugins → Webshop → Pages you can view and edit Products, Product, Cart and Checkout on screen. Drag blocks, change texts and choose a layout. You set VAT and online payment on the Settings tab.",
+    "de": "In Admin → Plugins → Webshop → Seiten siehst und bearbeitest du Produkte, Produkt, Warenkorb und Kasse auf dem Bildschirm. Ziehe Blöcke, ändere Texte und wähle ein Layout. MwSt. und Online-Zahlung stellst du auf dem Reiter Einstellungen ein.",
+    "fr": "Dans Admin → Plugins → Boutique en ligne → Pages, vous consultez et modifiez Produits, Produit, Panier et Paiement à l'écran. Déplacez des blocs, modifiez les textes et choisissez une mise en page. La TVA et le paiement en ligne se configurent dans l'onglet Paramètres.",
+    "es": "En Admin → Plugins → Tienda → Páginas puedes ver y editar Productos, Producto, Carrito y Pago en pantalla. Arrastra bloques, cambia textos y elige un diseño. El IVA y el pago en línea se configuran en la pestaña Ajustes.",
+    "pt": "Em Admin → Plugins → Loja → Páginas, você visualiza e edita Produtos, Produto, Carrinho e Finalizar compra na tela. Arraste blocos, altere textos e escolha um layout. O IVA e o pagamento online são configurados na aba Configurações.",
+    "zh": "在 管理后台 → 插件 → 网店 → 页面 中，您可以查看和编辑屏幕上的产品列表、产品、购物车和结账页面。拖动区块、修改文本并选择版式。增值税和在线支付在“设置”选项卡中配置。",
+    "ar": "في لوحة التحكم → الإضافات → المتجر الإلكتروني → الصفحات، يمكنك عرض وتحرير صفحات المنتجات والمنتج وسلة التسوق والدفع على الشاشة. اسحب الكتل، وعدّل النصوص، واختر تنسيقًا. يتم ضبط ضريبة القيمة المضافة والدفع عبر الإنترنت في علامة التبويب الإعدادات."
+   }
+  },
+  "themeupload": {
+   "q": {
+    "en": "How do I upload a theme?",
+    "de": "Wie lade ich ein Theme hoch?",
+    "fr": "Comment télécharger un thème ?",
+    "es": "¿Cómo subo un tema?",
+    "pt": "Como faço upload de um tema?",
+    "zh": "如何上传主题？",
+    "ar": "كيف أقوم برفع قالب؟"
+   },
+   "a": {
+    "en": "Go to Admin → Website → Themes and choose New theme package to upload a zip. Then choose Use to apply it, or Edit to change colors, fonts and logos. You can also download a package.",
+    "de": "Gehe zu Admin → Website → Themes und wähle Neues Theme-Paket, um eine Zip-Datei hochzuladen. Danach wählst du Verwenden, um es anzuwenden, oder Bearbeiten, um Farben, Schriftarten und Logos zu ändern. Ein Paket kannst du auch herunterladen.",
+    "fr": "Allez dans Admin → Site web → Thèmes et choisissez Nouveau pack de thème pour télécharger un fichier zip. Choisissez ensuite Utiliser pour l'appliquer, ou Modifier pour changer les couleurs, polices et logos. Vous pouvez aussi télécharger un pack.",
+    "es": "Ve a Admin → Sitio web → Temas y elige Nuevo paquete de tema para subir un archivo zip. Luego elige Usar para aplicarlo, o Editar para cambiar colores, fuentes y logotipos. También puedes descargar un paquete.",
+    "pt": "Vá para Admin → Site → Temas e escolha Novo pacote de tema para fazer upload de um arquivo zip. Em seguida, escolha Usar para aplicá-lo, ou Editar para alterar cores, fontes e logotipos. Também é possível baixar um pacote.",
+    "zh": "前往 管理后台 → 网站 → 主题，选择“新建主题包”以上传压缩包。然后选择“使用”来应用它，或选择“编辑”来更改颜色、字体和徽标。您也可以下载一个主题包。",
+    "ar": "اذهب إلى لوحة التحكم → الموقع الإلكتروني → القوالب واختر حزمة قالب جديدة لرفع ملف مضغوط. بعد ذلك اختر استخدام لتطبيقه، أو تحرير لتغيير الألوان والخطوط والشعارات. يمكنك أيضًا تنزيل حزمة."
+   }
+  },
+  "pluginupload": {
+   "q": {
+    "en": "How do I upload and install a plugin?",
+    "de": "Wie lade ich ein Plugin hoch und installiere es?",
+    "fr": "Comment télécharger et installer un plugin ?",
+    "es": "¿Cómo subo e instalo un plugin?",
+    "pt": "Como faço upload e instalo um plugin?",
+    "zh": "如何上传并安装插件？",
+    "ar": "كيف أقوم برفع وتثبيت إضافة؟"
+   },
+   "a": {
+    "en": "Go to Admin → Plugins and choose Upload plugin. Only a plugin signed by the developer will run. Then you turn it on. Uploading a new version updates the plugin; its data is kept.",
+    "de": "Gehe zu Admin → Plugins und wähle Plugin hochladen. Nur ein vom Entwickler signiertes Plugin wird ausgeführt. Danach schaltest du es ein. Das Hochladen einer neuen Version aktualisiert das Plugin; seine Daten bleiben erhalten.",
+    "fr": "Allez dans Admin → Plugins et choisissez Télécharger un plugin. Seul un plugin signé par le développeur peut fonctionner. Activez-le ensuite. Télécharger une nouvelle version met à jour le plugin ; ses données sont conservées.",
+    "es": "Ve a Admin → Plugins y elige Subir plugin. Solo funciona un plugin firmado por el desarrollador. Luego lo activas. Subir una nueva versión actualiza el plugin; sus datos se conservan.",
+    "pt": "Vá para Admin → Plugins e escolha Fazer upload de plugin. Somente um plugin assinado pelo desenvolvedor funciona. Depois, ative-o. Fazer upload de uma nova versão atualiza o plugin; seus dados são mantidos.",
+    "zh": "前往 管理后台 → 插件，选择“上传插件”。只有经过开发者签名的插件才能运行。然后将其启用。上传新版本会更新插件，其数据将被保留。",
+    "ar": "اذهب إلى لوحة التحكم → الإضافات واختر رفع إضافة. لا تعمل إلا الإضافة الموقّعة من قبل المطوّر. بعد ذلك قم بتفعيلها. رفع إصدار جديد يحدّث الإضافة؛ وتبقى بياناتها محفوظة."
+   }
+  },
+  "pluginset": {
+   "q": {
+    "en": "How do I configure a plugin?",
+    "de": "Wie konfiguriere ich ein Plugin?",
+    "fr": "Comment configurer un plugin ?",
+    "es": "¿Cómo configuro un plugin?",
+    "pt": "Como configuro um plugin?",
+    "zh": "如何配置插件？",
+    "ar": "كيف أقوم بإعداد إضافة؟"
+   },
+   "a": {
+    "en": "Open the plugin. Placement determines where its page appears in the menu, whether the page is public or behind the login (for example /games or /dashboard/games), and whether it may appear as a system object on a page. Under Settings you'll find its own options; they are saved automatically.",
+    "de": "Öffne das Plugin. Die Platzierung bestimmt, wo seine Seite im Menü steht, ob die Seite öffentlich ist oder hinter dem Login liegt (zum Beispiel /games oder /dashboard/games) und ob es als Systemobjekt auf einer Seite erscheinen darf. Unter Einstellungen findest du seine eigenen Optionen; sie werden automatisch gespeichert.",
+    "fr": "Ouvrez le plugin. L'emplacement détermine où sa page apparaît dans le menu, si la page est publique ou derrière la connexion (par exemple /games ou /dashboard/games) et s'il peut apparaître comme objet système sur une page. Sous Paramètres se trouvent ses propres options ; elles sont enregistrées automatiquement.",
+    "es": "Abre el plugin. La ubicación determina dónde aparece su página en el menú, si la página es pública o está detrás del inicio de sesión (por ejemplo /games o /dashboard/games) y si puede aparecer como objeto del sistema en una página. En Ajustes encontrarás sus propias opciones; se guardan automáticamente.",
+    "pt": "Abra o plugin. O posicionamento determina onde sua página aparece no menu, se a página é pública ou está atrás do login (por exemplo /games ou /dashboard/games) e se ele pode aparecer como objeto do sistema em uma página. Em Configurações estão suas próprias opções; elas são salvas automaticamente.",
+    "zh": "打开该插件。“位置”决定其页面在菜单中的位置、该页面是公开的还是需要登录后才能访问（例如 /games 或 /dashboard/games），以及它是否可以作为系统对象出现在页面上。“设置”中列出了它自己的选项，这些选项会自动保存。",
+    "ar": "افتح الإضافة. يحدد الموضع مكان ظهور صفحتها في القائمة، وما إذا كانت الصفحة عامة أو تتطلب تسجيل الدخول (مثل /games أو /dashboard/games)، وما إذا كان يمكن أن تظهر كعنصر نظام على صفحة ما. ضمن الإعدادات ستجد خياراتها الخاصة، ويتم حفظها تلقائيًا."
+   }
+  },
+  "pluginpages": {
+   "q": {
+    "en": "What are the Pages and Games tabs of a plugin?",
+    "de": "Was sind die Reiter Seiten und Spiele eines Plugins?",
+    "fr": "Que sont les onglets Pages et Jeux d'un plugin ?",
+    "es": "¿Qué son las pestañas Páginas y Juegos de un plugin?",
+    "pt": "O que são as abas Páginas e Jogos de um plugin?",
+    "zh": "插件的“页面”和“游戏”标签页是什么？",
+    "ar": "ما هي علامتا التبويب الصفحات والألعاب الخاصة بإضافة ما؟"
+   },
+   "a": {
+    "en": "A plugin can bring its own website pages. On the Pages tab you view and edit them on screen. A plugin with its own components, such as games, has a tab to upload and configure them.",
+    "de": "Ein Plugin kann eigene Websiteseiten mitbringen. Im Reiter Seiten siehst und bearbeitest du sie auf dem Bildschirm. Ein Plugin mit eigenen Komponenten, wie Spielen, hat einen Reiter, um sie hochzuladen und einzurichten.",
+    "fr": "Un plugin peut apporter ses propres pages de site web. Dans l'onglet Pages, vous les consultez et les modifiez à l'écran. Un plugin avec ses propres composants, comme des jeux, dispose d'un onglet pour les télécharger et les configurer.",
+    "es": "Un plugin puede traer sus propias páginas web. En la pestaña Páginas las ves y editas en pantalla. Un plugin con componentes propios, como juegos, tiene una pestaña para subirlos y configurarlos.",
+    "pt": "Um plugin pode trazer suas próprias páginas do site. Na aba Páginas, você as visualiza e edita na tela. Um plugin com componentes próprios, como jogos, tem uma aba para fazer o upload e configurá-los.",
+    "zh": "插件可以带有自己的网站页面。在“页面”标签页中，您可以在屏幕上查看和编辑它们。带有自己组件（如游戏）的插件有一个标签页，用于上传和设置它们。",
+    "ar": "يمكن أن تحتوي الإضافة على صفحات موقع خاصة بها. في علامة التبويب الصفحات، يمكنك عرضها وتحريرها على الشاشة. الإضافة التي تحتوي على مكونات خاصة بها، مثل الألعاب، لديها علامة تبويب لتحميلها وإعدادها."
+   }
+  },
+  "pluginlang": {
+   "q": {
+    "en": "How do I check the translations of a plugin?",
+    "de": "Wie überprüfe ich die Übersetzungen eines Plugins?",
+    "fr": "Comment vérifier les traductions d'un plugin ?",
+    "es": "¿Cómo compruebo las traducciones de un plugin?",
+    "pt": "Como verifico as traduções de um plugin?",
+    "zh": "我如何检查插件的翻译？",
+    "ar": "كيف أتحقق من ترجمات إضافة ما؟"
+   },
+   "a": {
+    "en": "Under Overview and Details of the plugin you can see which languages it has been translated into and what is missing. You translate a plugin with the plugin_translate tool.",
+    "de": "Unter Übersicht und Details des Plugins siehst du, in welche Sprachen es übersetzt ist und was fehlt. Ein Plugin übersetzt du mit dem Tool plugin_translate.",
+    "fr": "Dans Aperçu et Détails du plugin, vous voyez dans quelles langues il est traduit et ce qui manque. Vous traduisez un plugin avec l'outil plugin_translate.",
+    "es": "En Resumen y Detalles del plugin ves en qué idiomas está traducido y qué falta. Traduces un plugin con la herramienta plugin_translate.",
+    "pt": "Em Visão Geral e Detalhes do plugin, você vê em quais idiomas ele está traduzido e o que falta. Você traduz um plugin com a ferramenta plugin_translate.",
+    "zh": "在插件的“概览”和“详情”中，您可以看到它已被翻译成哪些语言以及缺少什么。您可以使用 plugin_translate 工具翻译插件。",
+    "ar": "في نظرة عامة وتفاصيل الإضافة، يمكنك معرفة اللغات التي تمت الترجمة إليها وما هو مفقود. يمكنك ترجمة الإضافة باستخدام أداة plugin_translate."
+   }
+  },
+  "hero": {
+   "q": {
+    "en": "How do heroes work?",
+    "de": "Wie funktionieren Heroes?",
+    "fr": "Comment fonctionnent les heroes ?",
+    "es": "¿Cómo funcionan los heroes?",
+    "pt": "Como funcionam os heroes?",
+    "zh": "Hero横幅是如何工作的？",
+    "ar": "كيف تعمل عناصر Hero؟"
+   },
+   "a": {
+    "en": "The hero is the banner at the top of a page, shown in the theme's colours. You can turn the banner of the page itself on or off. In addition, you can add as many hero blocks as you like with Hero in the bottom bar, in any position, each with its own height: in pixels, a percentage of the screen, or full screen. Every hero has the same options as a page: a background image or video, darkness, alignment and spacing.",
+    "de": "Der Hero ist das Banner oben auf einer Seite, in den Farben des Themes. Das Banner der Seite selbst kannst du ein- oder ausschalten. Außerdem kannst du über Hero in der unteren Leiste so viele Hero-Blöcke hinzufügen, wie du möchtest, an jeder beliebigen Stelle, jeweils mit eigener Höhe: in Pixeln, als Prozentsatz des Bildschirms oder im Vollbild. Jeder Hero hat dieselben Optionen wie eine Seite: ein Hintergrundbild oder -video, Verdunkelung, Ausrichtung und Abstand.",
+    "fr": "Le hero est la bannière en haut d'une page, dans les couleurs du thème. Vous activez ou désactivez vous-même la bannière de la page. De plus, avec Hero dans la barre du bas, vous pouvez ajouter autant de blocs hero que vous voulez, à n'importe quel endroit, chacun avec sa propre hauteur : en pixels, en pourcentage de l'écran ou en plein écran. Chaque hero dispose des mêmes options qu'une page : une image ou vidéo de fond, un assombrissement, un alignement et un espacement.",
+    "es": "El hero es el banner en la parte superior de una página, con los colores del tema. El banner de la propia página puedes activarlo o desactivarlo. Además, con Hero en la barra inferior puedes añadir tantos bloques hero como quieras, en cualquier lugar, cada uno con su propia altura: en píxeles, un porcentaje de la pantalla o pantalla completa. Cada hero tiene las mismas opciones que una página: una imagen o vídeo de fondo, oscurecimiento, alineación y espacio.",
+    "pt": "O hero é o banner no topo de uma página, nas cores do tema. O banner da própria página você ativa ou desativa. Além disso, com Hero na barra inferior, você adiciona quantos blocos hero quiser, em qualquer lugar, cada um com sua própria altura: em pixels, uma porcentagem da tela ou tela cheia. Cada hero tem as mesmas opções que uma página: uma imagem ou vídeo de fundo, escurecimento, alinhamento e espaçamento.",
+    "zh": "Hero是页面顶部的横幅，使用主题的配色。页面本身的横幅可以开启或关闭。此外，你可以在底部栏使用Hero功能，在任意位置添加任意数量的Hero模块，每个都可以设置自己的高度：像素、屏幕百分比或全屏。每个Hero都拥有和页面相同的选项：背景图片或视频、暗化程度、对齐方式和间距。",
+    "ar": "الـHero هو اللافتة الموجودة أعلى الصفحة، بألوان القالب المستخدم. يمكنك تفعيل أو إيقاف لافتة الصفحة نفسها. بالإضافة إلى ذلك، يمكنك عبر خيار Hero الموجود في الشريط السفلي إضافة أي عدد تريده من كتل Hero، في أي مكان، ولكل منها ارتفاع خاص بها: بالبكسل، أو كنسبة مئوية من الشاشة، أو ملء الشاشة بالكامل. يتمتع كل Hero بنفس خيارات الصفحة: صورة أو فيديو خلفية، درجة التعتيم، المحاذاة والمسافات."
+   }
+  },
+  "modules": {
+   "q": {
+    "en": "How do I turn modules on or off?",
+    "de": "Wie schalte ich Module ein oder aus?",
+    "fr": "Comment activer ou désactiver des modules ?",
+    "es": "¿Cómo activo o desactivo módulos?",
+    "pt": "Como ativo ou desativo módulos?",
+    "zh": "如何启用或禁用模块？",
+    "ar": "كيف أقوم بتفعيل أو إيقاف الوحدات (Modules)؟"
+   },
+   "a": {
+    "en": "Superadmins go to Super admin → Modules. A module that is switched off is no longer visible anywhere and its API rejects requests. You also decide there who is allowed to use a module. The Easy2edit help (this explanation system) and your website's FAQ are also modules that you can turn on or off there.",
+    "de": "Superadmins gehen zu Super admin → Modules. Ein ausgeschaltetes Modul ist nirgendwo mehr sichtbar und seine API lehnt Anfragen ab. Dort legst du auch fest, wer ein Modul nutzen darf. Die Easy2edit-Hilfe (dieses Erklärsystem) und die FAQ deiner Website sind ebenfalls Module, die du dort ein- oder ausschaltest.",
+    "fr": "Les super-administrateurs vont dans Super admin → Modules. Un module désactivé n'est plus visible nulle part et son API refuse les requêtes. Vous y déterminez également qui est autorisé à utiliser un module. L'aide Easy2edit (ce système d'explications) et la FAQ de votre site web sont également des modules que vous activez ou désactivez à cet endroit.",
+    "es": "Los superadministradores van a Super admin → Modules. Un módulo desactivado deja de ser visible en cualquier parte y su API rechaza las solicitudes. Allí también decides quién puede utilizar un módulo. La ayuda de Easy2edit (este sistema de explicaciones) y las preguntas frecuentes de tu sitio web también son módulos que activas o desactivas allí.",
+    "pt": "Os superadministradores acessam Super admin → Modules. Um módulo desativado deixa de ser visível em qualquer lugar e sua API rejeita solicitações. Lá você também decide quem pode usar um módulo. A ajuda do Easy2edit (este sistema de explicações) e as perguntas frequentes do seu site também são módulos que você ativa ou desativa ali.",
+    "zh": "超级管理员前往 Super admin → Modules。被关闭的模块将不再在任何地方显示，其API也会拒绝请求。你还可以在这里决定谁可以使用某个模块。Easy2edit帮助（即本说明系统）以及你网站的常见问题解答（FAQ）也是可以在这里开启或关闭的模块。",
+    "ar": "يذهب المسؤولون الخارقون (Superadmins) إلى Super admin → Modules. الوحدة التي يتم إيقافها لا تظهر في أي مكان بعد الآن، وواجهة برمجتها (API) ترفض الطلبات. كما تحدد هناك من يُسمح له باستخدام الوحدة. مساعدة Easy2edit (نظام الشرح هذا) والأسئلة الشائعة لموقعك هي أيضًا وحدات يمكنك تفعيلها أو إيقافها من هناك."
+   }
+  },
+  "heroblock": {
+   "q": {
+    "en": "How do I add a hero block?",
+    "de": "Wie füge ich einen Hero-Block hinzu?",
+    "fr": "Comment ajouter un bloc hero ?",
+    "es": "¿Cómo añado un bloque hero?",
+    "pt": "Como adiciono um bloco hero?",
+    "zh": "如何添加Hero模块？",
+    "ar": "كيف أضيف كتلة Hero؟"
+   },
+   "a": {
+    "en": "In edit mode, click Hero at the bottom of the page. You'll get a banner with a text block. Under Height, choose Pixels, Percentage of the screen or Full screen, and give it a background image or video. You can add more than one hero and move them around using the arrows.",
+    "de": "Klicke im Bearbeitungsmodus unten auf der Seite auf Hero. Du erhältst ein Banner mit einem Textblock. Wähle bei Höhe zwischen Pixel, Prozent des Bildschirms oder Vollbild und gib ihm einen Hintergrund mit Bild oder Video. Du kannst mehrere Heroes hinzufügen und sie mit den Pfeilen verschieben.",
+    "fr": "En mode édition, cliquez sur Hero en bas de la page. Vous obtenez une bannière avec un bloc de texte. Sous Hauteur, choisissez Pixels, Pourcentage de l'écran ou Plein écran, et ajoutez-lui une image ou une vidéo de fond. Vous pouvez ajouter plusieurs heroes et les déplacer à l'aide des flèches.",
+    "es": "En el modo de edición, haz clic en Hero en la parte inferior de la página. Obtendrás un banner con un bloque de texto. En Altura, elige Píxeles, Porcentaje de la pantalla o Pantalla completa, y añádele una imagen o vídeo de fondo. Puedes añadir más de un hero y moverlos con las flechas.",
+    "pt": "No modo de edição, clique em Hero na parte inferior da página. Você obterá um banner com um bloco de texto. Em Altura, escolha Pixels, Porcentagem da tela ou Tela cheia, e adicione uma imagem ou vídeo de fundo. Você pode adicionar mais de um hero e movê-los com as setas.",
+    "zh": "在编辑模式下，点击页面底部的Hero。你会得到一个带有文字模块的横幅。在“高度”中选择像素、屏幕百分比或全屏，并为其添加背景图片或视频。你可以添加多个Hero模块，并使用箭头移动它们的顺序。",
+    "ar": "في وضع التحرير، انقر على Hero أسفل الصفحة. ستحصل على لافتة تحتوي على كتلة نصية. اختر تحت خيار الارتفاع إما بكسل، أو نسبة مئوية من الشاشة، أو ملء الشاشة بالكامل، وأضف لها صورة أو فيديو خلفية. يمكنك إضافة أكثر من Hero واحد وترتيبها باستخدام الأسهم."
+   }
+  },
+  "padding": {
+   "q": {
+    "en": "How do I set the spacing (padding)?",
+    "de": "Wie stelle ich den Abstand (Padding) ein?",
+    "fr": "Comment régler l'espacement (padding) ?",
+    "es": "¿Cómo ajusto el espacio (padding)?",
+    "pt": "Como defino o espaçamento (padding)?",
+    "zh": "如何设置间距（padding）？",
+    "ar": "كيف أقوم بضبط المسافة (padding)؟"
+   },
+   "a": {
+    "en": "Above the blocks, you choose the spacing for the whole page: None, Small, Normal, Large or Extra large. Per row, you can override this with Space above and below.",
+    "de": "Oberhalb der Blöcke wählst du den Abstand für die gesamte Seite: Keiner, Klein, Normal, Groß oder Extra groß. Pro Zeile kannst du das mit Abstand oben und unten überschreiben.",
+    "fr": "Au-dessus des blocs, vous choisissez l'espacement pour toute la page : Aucun, Petit, Normal, Grand ou Extra grand. Par ligne, vous pouvez le remplacer avec Espace au-dessus et en dessous.",
+    "es": "Encima de los bloques eliges el espacio para toda la página: Ninguno, Pequeño, Normal, Grande o Extra grande. Por fila, puedes anular esto con Espacio arriba y abajo.",
+    "pt": "Acima dos blocos, você escolhe o espaçamento para toda a página: Nenhum, Pequeno, Normal, Grande ou Extra grande. Por linha, você pode substituir isso com Espaço acima e abaixo.",
+    "zh": "在模块上方，你可以选择整个页面的间距：无、小、正常、大或特大。你也可以在每一行使用“上方间距”和“下方间距”来覆盖该设置。",
+    "ar": "أعلى الكتل، تختار المسافة الخاصة بالصفحة بأكملها: بدون، صغيرة، عادية، كبيرة أو كبيرة جدًا. ولكل صف، يمكنك تجاوز ذلك باستخدام خيار المسافة أعلى وأسفل."
+   }
+  },
+  "loader": {
+   "q": {
+    "en": "How do I set up a page loader?",
+    "de": "Wie richte ich einen Seiten-Loader ein?",
+    "fr": "Comment configurer un chargeur de page ?",
+    "es": "¿Cómo configuro un cargador de página?",
+    "pt": "Como configuro um carregador de página?",
+    "zh": "如何设置页面加载器？",
+    "ar": "كيف أقوم بإعداد شاشة تحميل الصفحة؟"
+   },
+   "a": {
+    "en": "Go to Admin → Website → Thema → Laden. Turn on the page loader, choose from nine types that follow the theme colors, and set when it appears, the background, the transparency, the size, and how long it stays visible at minimum. With Test de loader you can see the result right away. There you can also turn on lazy load, so images only load when they come into view.",
+    "de": "Gehen Sie zu Admin → Website → Thema → Laden. Aktivieren Sie den Seiten-Loader, wählen Sie aus neun Arten, die den Farben des Themas folgen, und legen Sie fest, wann er erscheint, den Hintergrund, die Transparenz, die Größe und wie lange er mindestens sichtbar bleibt. Mit Test de loader sehen Sie das Ergebnis sofort. Dort aktivieren Sie auch Lazy Load, sodass Bilder erst geladen werden, wenn sie in den sichtbaren Bereich kommen.",
+    "fr": "Allez dans Admin → Website → Thema → Laden. Activez le chargeur de page, choisissez parmi neuf types qui suivent les couleurs du thème, et définissez quand il apparaît, l'arrière-plan, la transparence, la taille et sa durée minimale de visibilité. Avec Test de loader, vous voyez le résultat immédiatement. Vous y activez aussi le lazy load, afin que les images ne se chargent que lorsqu'elles entrent dans le champ de vision.",
+    "es": "Ve a Admin → Website → Thema → Laden. Activa el cargador de página, elige entre nueve tipos que siguen los colores del tema, y define cuándo aparece, el fondo, la transparencia, el tamaño y cuánto tiempo permanece visible como mínimo. Con Test de loader verás el resultado al instante. Allí también activas lazy load, para que las imágenes solo se carguen cuando aparezcan en pantalla.",
+    "pt": "Vá para Admin → Website → Thema → Laden. Ative o carregador de página, escolha entre nove tipos que seguem as cores do tema, e defina quando ele aparece, o fundo, a transparência, o tamanho e por quanto tempo fica visível no mínimo. Com Test de loader você vê o resultado imediatamente. Lá você também ativa o lazy load, para que as imagens só carreguem quando entrarem na tela.",
+    "zh": "进入 Admin → Website → Thema → Laden。打开页面加载器，从九种跟随主题颜色的样式中选择，并设置它何时出现、背景、透明度、大小以及最短显示时间。通过 Test de loader 可以立即查看效果。在那里你还可以开启延迟加载（lazy load），使图片只有在进入视野时才加载。",
+    "ar": "انتقل إلى Admin → Website → Thema → Laden. قم بتفعيل شاشة تحميل الصفحة، واختر من بين تسعة أنواع تتبع ألوان القالب، وحدد متى تظهر، والخلفية، والشفافية، والحجم، والمدة الدنيا لظهورها. باستخدام Test de loader يمكنك رؤية النتيجة فورًا. هناك يمكنك أيضًا تفعيل التحميل الكسول (lazy load)، بحيث لا يتم تحميل الصور إلا عند ظهورها في الشاشة."
+   }
+  },
+  "transition": {
+   "q": {
+    "en": "What are page transitions and scroll effects?",
+    "de": "Was sind Seitenübergänge und Scroll-Effekte?",
+    "fr": "Que sont les transitions de page et les effets de défilement ?",
+    "es": "¿Qué son las transiciones de página y los efectos de desplazamiento?",
+    "pt": "O que são transições de página e efeitos de rolagem?",
+    "zh": "什么是页面过渡效果和滚动效果？",
+    "ar": "ما هي انتقالات الصفحات وتأثيرات التمرير؟"
+   },
+   "a": {
+    "en": "Also under Thema → Laden. A page transition is the effect when you move to another page: fade, slide, zoom in, or sharpen. Scroll effects make elements appear as they come into view and include parallax, a progress bar, and a back-to-top button. For people who prefer less motion, this is automatically turned off.",
+    "de": "Ebenfalls unter Thema → Laden. Ein Seitenübergang ist der Effekt beim Wechsel zu einer anderen Seite: Ausblenden, Verschieben, Hineinzoomen oder Schärfen. Scroll-Effekte lassen Elemente erscheinen, wenn sie in den sichtbaren Bereich kommen, und umfassen Parallax, eine Fortschrittsleiste und eine Zurück-nach-oben-Schaltfläche. Für Personen, die weniger Bewegung bevorzugen, ist dies automatisch ausgeschaltet.",
+    "fr": "Également sous Thema → Laden. Une transition de page est l'effet lorsque vous passez à une autre page : fondu, glissement, zoom avant ou mise au point. Les effets de défilement font apparaître des éléments lorsqu'ils entrent dans le champ de vision et comprennent le parallax, une barre de progression et un bouton de retour en haut. Pour les personnes qui préfèrent moins de mouvement, cette fonction est automatiquement désactivée.",
+    "es": "También en Thema → Laden. Una transición de página es el efecto al pasar a otra página: desvanecimiento, deslizamiento, acercamiento o enfoque. Los efectos de desplazamiento hacen que los elementos aparezcan cuando entran en pantalla e incluyen parallax, una barra de progreso y un botón para volver arriba. Para quienes prefieren menos movimiento, esto se desactiva automáticamente.",
+    "pt": "Também em Thema → Laden. Uma transição de página é o efeito ao ir para outra página: desvanecer, deslizar, aproximar ou focar. Os efeitos de rolagem fazem elementos aparecerem quando entram na tela e incluem parallax, uma barra de progresso e um botão para voltar ao topo. Para quem prefere menos movimento, isso é desativado automaticamente.",
+    "zh": "同样在 Thema → Laden 下。页面过渡是切换到另一个页面时的效果：淡入淡出、滑动、放大或变清晰。滚动效果让元素在进入视野时出现，包括视差效果（parallax）、进度条和返回顶部按钮。对于偏好较少动态效果的人，此功能会自动关闭。",
+    "ar": "أيضًا ضمن Thema → Laden. انتقال الصفحة هو التأثير الذي يظهر عند الانتقال إلى صفحة أخرى: التلاشي، أو الانزلاق، أو التكبير، أو التوضيح. تجعل تأثيرات التمرير العناصر تظهر عند دخولها إلى الشاشة، وتشمل تأثير العمق (parallax)، وشريط التقدم، وزر العودة إلى الأعلى. بالنسبة للأشخاص الذين يفضلون حركة أقل، يتم إيقاف هذه الميزة تلقائيًا."
+   }
+  },
+  "faqown": {
+   "q": {
+    "en": "How do I create my own FAQ?",
+    "de": "Wie erstelle ich meine eigene FAQ?",
+    "fr": "Comment créer ma propre FAQ ?",
+    "es": "¿Cómo creo mi propia FAQ?",
+    "pt": "Como crio meu próprio FAQ?",
+    "zh": "如何创建我自己的常见问题解答（FAQ）？",
+    "ar": "كيف أنشئ الأسئلة الشائعة الخاصة بي؟"
+   },
+   "a": {
+    "en": "Go to Admin → FAQ and click Nieuwe vraag. Fill in the question and answer for each language, or let Claude translate them into all languages. You can turn questions on or off and set their order. The questions appear on /faq; add that page to the menu yourself under Pagina's.",
+    "de": "Gehen Sie zu Admin → FAQ und klicken Sie auf Nieuwe vraag. Geben Sie die Frage und die Antwort für jede Sprache ein, oder lassen Sie sie von Claude in alle Sprachen übersetzen. Sie können Fragen ein- oder ausschalten und die Reihenfolge festlegen. Die Fragen stehen auf /faq; fügen Sie diese Seite selbst unter Pagina's dem Menü hinzu.",
+    "fr": "Allez dans Admin → FAQ et cliquez sur Nieuwe vraag. Remplissez la question et la réponse pour chaque langue, ou laissez Claude les traduire dans toutes les langues. Vous pouvez activer ou désactiver les questions et définir leur ordre. Les questions se trouvent sur /faq ; ajoutez cette page vous-même au menu sous Pagina's.",
+    "es": "Ve a Admin → FAQ y haz clic en Nieuwe vraag. Completa la pregunta y la respuesta para cada idioma, o deja que Claude las traduzca a todos los idiomas. Puedes activar o desactivar preguntas y determinar su orden. Las preguntas aparecen en /faq; añade tú mismo esa página al menú en Pagina's.",
+    "pt": "Vá para Admin → FAQ e clique em Nieuwe vraag. Preencha a pergunta e a resposta para cada idioma, ou deixe o Claude traduzi-las para todos os idiomas. Você pode ativar ou desativar perguntas e definir a ordem. As perguntas ficam em /faq; adicione essa página você mesmo ao menu em Pagina's.",
+    "zh": "进入 Admin → FAQ，点击 Nieuwe vraag（新建问题）。为每种语言填写问题和答案，或让 Claude 将其翻译成所有语言。你可以启用或禁用问题，并设置顺序。这些问题显示在 /faq 页面上；请自行将该页面添加到 Pagina's（页面）菜单中。",
+    "ar": "انتقل إلى Admin → FAQ وانقر على Nieuwe vraag. أدخل السؤال والجواب لكل لغة، أو دع Claude يترجمها إلى جميع اللغات. يمكنك تفعيل أو تعطيل الأسئلة وتحديد ترتيبها. تظهر الأسئلة في الصفحة /faq؛ أضف هذه الصفحة بنفسك إلى القائمة ضمن Pagina's."
+   }
+  },
+  "helplayers": {
+   "q": {
+    "en": "How does the Help section of Easy2edit work?",
+    "de": "Wie funktioniert die Hilfe von Easy2edit?",
+    "fr": "Comment fonctionne l'aide d'Easy2edit ?",
+    "es": "¿Cómo funciona la Ayuda de Easy2edit?",
+    "pt": "Como funciona a Ajuda do Easy2edit?",
+    "zh": "Easy2edit 的帮助功能是如何运作的？",
+    "ar": "كيف تعمل المساعدة في Easy2edit؟"
+   },
+   "a": {
+    "en": "The Help section has three layers: Gebruiker, Beheer, and Super admin, each with explanations for those who have rights to them. You'll find it as Help in the dashboard, in the Admin menu, and in the Super admin menu. Only the parts that are turned on and that you have rights for will be shown.",
+    "de": "Die Hilfe hat drei Ebenen: Gebruiker, Beheer und Super admin, jeweils mit Erklärungen für diejenigen, die dafür Rechte haben. Sie finden sie als Help im Dashboard, im Admin-Menü und im Super admin-Menü. Es werden nur Teile angezeigt, die aktiviert sind und für die Sie Rechte haben.",
+    "fr": "L'aide comporte trois niveaux : Gebruiker, Beheer et Super admin, chacun avec des explications pour ceux qui y ont des droits. Vous la trouverez sous Help dans le tableau de bord, dans le menu Admin et dans le menu Super admin. Seuls les éléments activés et pour lesquels vous avez des droits s'affichent.",
+    "es": "La Ayuda tiene tres niveles: Gebruiker, Beheer y Super admin, cada uno con explicaciones para quienes tienen permisos para ello. La encontrarás como Help en el panel, en el menú Admin y en el menú Super admin. Solo se muestran las partes que están activadas y para las que tienes permisos.",
+    "pt": "A Ajuda tem três camadas: Gebruiker, Beheer e Super admin, cada uma com explicações para quem tem permissões para isso. Você a encontra como Help no painel, no menu Admin e no menu Super admin. Só aparecem as partes que estão ativadas e para as quais você tem permissões.",
+    "zh": "帮助功能分为三个层级：Gebruiker（用户）、Beheer（管理）和 Super admin（超级管理员），每个层级都为拥有相应权限的人提供说明。你可以在仪表盘、Admin 菜单和 Super admin 菜单中找到 Help（帮助）。只有已启用且你拥有权限的部分才会显示。",
+    "ar": "تتكون المساعدة من ثلاث طبقات: Gebruiker وBeheer وSuper admin، ولكل منها شرح لمن لديه صلاحيات للوصول إليها. تجدها باسم Help في لوحة التحكم، وفي قائمة Admin، وفي قائمة Super admin. لا تظهر إلا الأجزاء المفعّلة والتي لديك صلاحية الوصول إليها."
+   }
+  },
+  "discover": {
+   "q": {
+    "en": "How do I search for and meet people?",
+    "de": "Wie suche und treffe ich Menschen?",
+    "fr": "Comment puis-je rechercher et rencontrer des personnes ?",
+    "es": "¿Cómo busco y conozco a personas?",
+    "pt": "Como procuro e conheço pessoas?",
+    "zh": "我如何搜索和结识他人？",
+    "ar": "كيف أبحث عن أشخاص وألتقي بهم؟"
+   },
+   "a": {
+    "en": "In Search & match, you search for other members using filters. If you like someone, you let them know; if you both like each other, it's a match. People you didn't like won't be shown to you again.",
+    "de": "Bei Suchen & Matchen suchst du mit Filtern nach anderen Mitgliedern. Gefällt dir jemand, lässt du es ihn wissen; gefallt ihr euch beide gegenseitig, ist es ein Match. Wen du nicht mochtest, wird dir nicht mehr angezeigt.",
+    "fr": "Dans Rechercher & Matcher, vous recherchez d'autres membres à l'aide de filtres. Si quelqu'un vous plaît, vous le lui faites savoir ; si vous vous plaisez mutuellement, c'est un match. Les personnes que vous n'avez pas aimées ne vous seront plus montrées.",
+    "es": "En Buscar y conectar, buscas a otros miembros utilizando filtros. Si alguien te gusta, se lo haces saber; si os gustáis mutuamente, es un match. A las personas que no te gustaron ya no se te mostrarán.",
+    "pt": "Em Pesquisar e combinar, você procura outros membros usando filtros. Se gostar de alguém, você avisa; se vocês gostarem um do outro, é um match. As pessoas de quem você não gostou não serão mais mostradas.",
+    "zh": "在“搜索与匹配”中，你可以使用筛选条件来查找其他会员。如果你喜欢某人，可以告诉对方；如果你们互相喜欢，就是配对成功。你不喜欢的人将不会再显示给你。",
+    "ar": "في البحث والمطابقة، تبحث عن أعضاء آخرين باستخدام الفلاتر. إذا أعجبك شخص ما، تخبره بذلك؛ وإذا أعجب كل منكما بالآخر، يصبح ذلك تطابقاً. الأشخاص الذين لم يعجبوك لن يتم عرضهم لك مرة أخرى."
+   }
+  },
+  "undo": {
+   "q": {
+    "en": "Can I undo a change?",
+    "de": "Kann ich eine Änderung rückgängig machen?",
+    "fr": "Puis-je annuler une modification ?",
+    "es": "¿Puedo deshacer un cambio?",
+    "pt": "Posso desfazer uma alteração?",
+    "zh": "我可以撤销更改吗？",
+    "ar": "هل يمكنني التراجع عن تغيير؟"
+   },
+   "a": {
+    "en": "Yes. In edit mode, there's an undo arrow at the top right. Each click reverts the last change, up to 10 steps: texts, images, blocks and their settings. The shortcut is Ctrl or Cmd + Z. The number next to the arrow shows how many steps you can still undo.",
+    "de": "Ja. Im Bearbeitungsmodus befindet sich oben rechts ein Rückgängig-Pfeil. Jeder Klick macht die letzte Änderung rückgängig, bis zu 10 Schritte: Texte, Bilder, Blöcke und deren Einstellungen. Die Tastenkombination ist Strg oder Cmd + Z. Die Zahl neben dem Pfeil zeigt, wie viele Schritte du noch rückgängig machen kannst.",
+    "fr": "Oui. En mode édition, une flèche d'annulation se trouve en haut à droite. Chaque clic annule la dernière modification, jusqu'à 10 étapes : textes, images, blocs et leurs paramètres. Le raccourci clavier est Ctrl ou Cmd + Z. Le chiffre à côté de la flèche indique combien d'étapes vous pouvez encore annuler.",
+    "es": "Sí. En el modo de edición hay una flecha de deshacer arriba a la derecha. Cada clic revierte el último cambio, hasta 10 pasos: textos, imágenes, bloques y su configuración. El atajo de teclado es Ctrl o Cmd + Z. El número junto a la flecha muestra cuántos pasos puedes deshacer todavía.",
+    "pt": "Sim. No modo de edição, há uma seta de desfazer no canto superior direito. Cada clique desfaz a última alteração, até 10 passos: textos, imagens, blocos e as suas definições. O atalho é Ctrl ou Cmd + Z. O número junto à seta mostra quantos passos ainda podes desfazer.",
+    "zh": "可以。在编辑模式下，右上角有一个撤销箭头。每次点击都会撤销最后一次更改，最多可撤销10步：文本、图片、区块及其设置。快捷键是 Ctrl 或 Cmd + Z。箭头旁边的数字显示你还能撤销多少步。",
+    "ar": "نعم. في وضع التحرير، يوجد سهم للتراجع في الأعلى على اليمين. كل نقرة تلغي آخر تغيير، حتى 10 خطوات: النصوص والصور والكتل وإعداداتها. اختصار لوحة المفاتيح هو Ctrl أو Cmd + Z. الرقم بجانب السهم يوضح عدد الخطوات التي لا يزال بإمكانك التراجع عنها."
+   }
+  },
+  "helpmode": {
+   "q": {
+    "en": "How does help work in edit mode?",
+    "de": "Wie funktioniert die Hilfe im Bearbeitungsmodus?",
+    "fr": "Comment fonctionne l'aide en mode édition ?",
+    "es": "¿Cómo funciona la ayuda en el modo de edición?",
+    "pt": "Como funciona a ajuda no modo de edição?",
+    "zh": "编辑模式下的帮助功能如何使用？",
+    "ar": "كيف تعمل المساعدة في وضع التحرير؟"
+   },
+   "a": {
+    "en": "Click the question mark at the top right. The page darkens, and when you point to an icon or element, an explanation of what it does appears. Press Esc or click the question mark to close it. Admins can change the texts under Admin → Help texts, per language.",
+    "de": "Klicke oben rechts auf das Fragezeichen. Die Seite wird dunkel, und wenn du mit dem Mauszeiger auf ein Symbol oder Element zeigst, erscheint eine Erklärung dazu, was es macht. Drücke Esc oder klicke auf das Fragezeichen, um zu schließen. Administratoren ändern die Texte unter Admin → Hilfetexte, pro Sprache.",
+    "fr": "Cliquez sur le point d'interrogation en haut à droite. La page s'assombrit et, lorsque vous pointez une icône ou un élément, une explication de son fonctionnement apparaît. Appuyez sur Échap ou cliquez sur le point d'interrogation pour fermer. Les administrateurs modifient les textes dans Admin → Textes d'aide, par langue.",
+    "es": "Haz clic en el signo de interrogación arriba a la derecha. La página se oscurece y, al señalar un icono o elemento, aparece una explicación de lo que hace. Pulsa Esc o haz clic en el signo de interrogación para cerrar. Los administradores modifican los textos en Admin → Textos de ayuda, por idioma.",
+    "pt": "Clica no ponto de interrogação no canto superior direito. A página escurece e, ao apontares para um ícone ou elemento, surge uma explicação sobre o que ele faz. Prime Esc ou clica no ponto de interrogação para fechar. Os administradores alteram os textos em Admin → Textos de ajuda, por idioma.",
+    "zh": "点击右上角的问号。页面会变暗，当你指向某个图标或元素时，会出现关于其功能的说明。按Esc键或点击问号即可关闭。管理员可以在「管理 → 帮助文本」中按语言修改文本。",
+    "ar": "انقر على علامة الاستفهام في الأعلى على اليمين. ستصبح الصفحة داكنة، وعند الإشارة إلى أيقونة أو عنصر ما، يظهر شرح لوظيفته. اضغط على Esc أو انقر على علامة الاستفهام للإغلاق. يقوم المسؤولون بتعديل النصوص في لوحة التحكم ← نصوص المساعدة، لكل لغة."
+   }
+  },
+  "columns": {
+   "q": {
+    "en": "How do I create a column layout?",
+    "de": "Wie erstelle ich eine Spaltenaufteilung?",
+    "fr": "Comment créer une disposition en colonnes ?",
+    "es": "¿Cómo creo una disposición de columnas?",
+    "pt": "Como crio uma disposição em colunas?",
+    "zh": "如何创建分栏布局？",
+    "ar": "كيف أنشئ تخطيط أعمدة؟"
+   },
+   "a": {
+    "en": "Open the gear icon at the top left of a block or hero and choose a tile under Column layout, for example 50/50, 66/33, or three equal columns. Whatever was already in the block stays, and you drag elements to a different column. On a narrow screen, the columns stack on top of each other.",
+    "de": "Öffne das Zahnrad oben links in einem Block oder Hero und wähle bei Spaltenaufteilung eine Kachel, zum Beispiel 50/50, 66/33 oder drei gleiche Spalten. Was bereits im Block stand, bleibt erhalten, und du ziehst Elemente in eine andere Spalte. Auf einem schmalen Bildschirm werden die Spalten untereinander angezeigt.",
+    "fr": "Ouvrez la roue dentée en haut à gauche d'un bloc ou d'un hero et choisissez une tuile dans Disposition en colonnes, par exemple 50/50, 66/33 ou trois colonnes égales. Ce qui se trouvait déjà dans le bloc reste en place, et vous faites glisser des éléments vers une autre colonne. Sur un écran étroit, les colonnes s'affichent les unes sous les autres.",
+    "es": "Abre el icono de engranaje en la parte superior izquierda de un bloque o hero y elige una opción en Disposición de columnas, por ejemplo 50/50, 66/33 o tres columnas iguales. Lo que ya estaba en el bloque se mantiene, y puedes arrastrar elementos a otra columna. En una pantalla estrecha, las columnas se apilan una encima de otra.",
+    "pt": "Abre a roda dentada no canto superior esquerdo de um bloco ou hero e escolhe um padrão em Disposição em colunas, por exemplo 50/50, 66/33 ou três colunas iguais. O que já estava no bloco permanece, e podes arrastar elementos para outra coluna. Num ecrã estreito, as colunas ficam dispostas uma por baixo da outra.",
+    "zh": "打开区块或主图左上角的齿轮图标，在「分栏布局」中选择一个样式，例如50/50、66/33或三等分栏。区块中已有的内容会保留，你可以将元素拖到其他栏中。在窄屏幕上，各栏会上下排列。",
+    "ar": "افتح أيقونة الترس في الأعلى على اليسار في كتلة أو قسم رئيسي، واختر نمطًا ضمن تخطيط الأعمدة، مثل 50/50 أو 66/33 أو ثلاثة أعمدة متساوية. ما كان موجودًا بالفعل في الكتلة يبقى كما هو، ويمكنك سحب العناصر إلى عمود آخر. على الشاشات الضيقة، تظهر الأعمدة الواحد فوق الآخر."
+   }
+  },
+  "fullwidth": {
+   "q": {
+    "en": "Can a block use the full width of the browser?",
+    "de": "Kann ein Block die volle Breite des Browsers nutzen?",
+    "fr": "Un bloc peut-il utiliser toute la largeur du navigateur ?",
+    "es": "¿Puede un bloque usar todo el ancho del navegador?",
+    "pt": "Um bloco pode usar toda a largura do navegador?",
+    "zh": "区块可以使用浏览器的整个宽度吗？",
+    "ar": "هل يمكن لكتلة أن تستخدم العرض الكامل للمتصفح؟"
+   },
+   "a": {
+    "en": "Yes. In the block's gear icon, choose The entire browser under Width is a part of. Then use Width to set the percentage of the screen. This way, for example, a hero section runs from edge to edge.",
+    "de": "Ja. Wähle im Zahnrad eines Blocks bei Breite ist ein Teil von: Der gesamte Browser. Danach legst du mit Breite den Prozentsatz des Bildschirms fest. So läuft zum Beispiel ein Hero von Rand zu Rand.",
+    "fr": "Oui. Dans la roue dentée d'un bloc, choisissez Tout le navigateur sous Largeur fait partie de. Ensuite, utilisez Largeur pour définir le pourcentage de l'écran. Ainsi, par exemple, un hero s'étend d'un bord à l'autre.",
+    "es": "Sí. En el icono de engranaje de un bloque, elige Todo el navegador en Ancho es parte de. Luego, usa Ancho para definir el porcentaje de la pantalla. Así, por ejemplo, un hero se extiende de borde a borde.",
+    "pt": "Sim. Na roda dentada de um bloco, escolhe Todo o navegador em Largura é parte de. Depois, usa Largura para definir a percentagem do ecrã. Assim, por exemplo, um hero estende-se de margem a margem.",
+    "zh": "可以。在区块的齿轮图标中，在「宽度是以下项的一部分」选项下选择「整个浏览器」。然后使用「宽度」设置屏幕的百分比。这样，例如主图区块就能从一边延伸到另一边。",
+    "ar": "نعم. في أيقونة الترس الخاصة بالكتلة، اختر كامل المتصفح ضمن العرض هو جزء من. بعد ذلك، استخدم العرض لتحديد نسبة الشاشة. بهذه الطريقة، يمتد القسم الرئيسي مثلاً من حافة إلى أخرى."
+   }
+  },
+  "blockfx": {
+   "q": {
+    "en": "Can every block have its own scroll effect?",
+    "de": "Kann jeder Block einen eigenen Scroll-Effekt haben?",
+    "fr": "Chaque bloc peut-il avoir son propre effet de défilement ?",
+    "es": "¿Puede cada bloque tener su propio efecto de desplazamiento?",
+    "pt": "Cada bloco pode ter seu próprio efeito de rolagem?",
+    "zh": "每个区块都可以有自己的滚动效果吗？",
+    "ar": "هل يمكن أن يكون لكل كتلة تأثير تمرير خاص بها؟"
+   },
+   "a": {
+    "en": "Yes. In the gear icon of a block or hero, you'll find Scroll effect: like the theme, no effect, or a custom effect such as fade, slide up or down, from left or right, zoom in, and sharpen.",
+    "de": "Ja. Im Zahnrad eines Blocks oder Hero-Bereichs findest du Scroll-Effekt: wie das Thema, kein Effekt, oder ein eigener Effekt wie Einblenden, nach oben oder unten schieben, von links oder rechts, Hineinzoomen und Scharfwerden.",
+    "fr": "Oui. Dans la roue dentée d'un bloc ou d'un hero se trouve Effet de défilement : comme le thème, aucun effet, ou un effet personnalisé tel que fondu, glissement vers le haut ou vers le bas, depuis la gauche ou la droite, zoom avant et mise au point.",
+    "es": "Sí. En el icono de engranaje de un bloque o hero encontrarás Efecto de desplazamiento: como el tema, sin efecto, o un efecto personalizado como desvanecer, deslizar hacia arriba o hacia abajo, desde la izquierda o la derecha, acercar el zoom y enfocar.",
+    "pt": "Sim. No ícone de engrenagem de um bloco ou hero está Efeito de rolagem: como o tema, sem efeito, ou um efeito personalizado como desvanecer, deslizar para cima ou para baixo, da esquerda ou da direita, aproximar o zoom e focar.",
+    "zh": "可以。在区块或主视觉的齿轮图标中有“滚动效果”：可以选择与主题一致、无效果，或自定义效果，如淡入淡出、向上或向下滑动、从左或从右滑入、放大缩小和变清晰。",
+    "ar": "نعم. في أيقونة الترس الخاصة بالكتلة أو قسم الهيرو، ستجد تأثير التمرير: مثل القالب، بدون تأثير، أو تأثير مخصص مثل التلاشي، الانزلاق لأعلى أو لأسفل، من اليسار أو اليمين، التكبير والتوضيح."
+   }
+  },
+  "heroalign": {
+   "q": {
+    "en": "How do I vertically align the content of a hero?",
+    "de": "Wie richte ich den Inhalt eines Hero-Bereichs in der Höhe aus?",
+    "fr": "Comment aligner verticalement le contenu d'un hero ?",
+    "es": "¿Cómo alineo verticalmente el contenido de un hero?",
+    "pt": "Como alinho o conteúdo de um hero na altura?",
+    "zh": "如何在垂直方向上对齐主视觉的内容？",
+    "ar": "كيف أقوم بمحاذاة محتوى قسم الهيرو عموديًا؟"
+   },
+   "a": {
+    "en": "First choose a height for the hero (pixels, percentage of the screen, or full screen). Then choose Vertical alignment: top, centered, or bottom. With an automatic height, there's nothing to align.",
+    "de": "Wähle zunächst beim Hero-Bereich eine Höhe (Pixel, Prozent des Bildschirms oder Vollbild). Danach wählst du bei Vertikale Ausrichtung: oben, zentriert oder unten. Bei einer automatischen Höhe gibt es nichts auszurichten.",
+    "fr": "Choisissez d'abord une hauteur pour le hero (pixels, pourcentage de l'écran ou plein écran). Ensuite, choisissez Alignement vertical : en haut, centré ou en bas. Avec une hauteur automatique, il n'y a rien à aligner.",
+    "es": "Primero elige una altura para el hero (píxeles, porcentaje de la pantalla o pantalla completa). Luego, elige Alineación vertical: arriba, centrado o abajo. Con una altura automática, no hay nada que alinear.",
+    "pt": "Primeiro escolha uma altura para o hero (pixels, porcentagem da tela ou tela cheia). Depois escolha em Alinhamento vertical: topo, centralizado ou base. Com uma altura automática, não há nada para alinhar.",
+    "zh": "首先为主视觉选择一个高度（像素、屏幕百分比或全屏）。然后在“垂直对齐”中选择：顶部、居中或底部。如果是自动高度，则没有可对齐的内容。",
+    "ar": "اختر أولاً ارتفاعًا لقسم الهيرو (بالبكسل، كنسبة مئوية من الشاشة، أو ملء الشاشة). ثم اختر في المحاذاة العمودية: أعلى، في المنتصف، أو أسفل. في حالة الارتفاع التلقائي، لا يوجد شيء لمحاذاته."
+   }
+  },
+  "blockstyle": {
+   "q": {
+    "en": "How do I give a block a background color or font?",
+    "de": "Wie gebe ich einem Block eine Hintergrundfarbe oder Schriftart?",
+    "fr": "Comment donner à un bloc une couleur de fond ou une police ?",
+    "es": "¿Cómo le doy a un bloque un color de fondo o una fuente?",
+    "pt": "Como dou a um bloco uma cor de fundo ou fonte?",
+    "zh": "如何为区块设置背景颜色或字体？",
+    "ar": "كيف أعطي كتلة لونًا للخلفية أو خطًا؟"
+   },
+   "a": {
+    "en": "In the gear icon of a block or hero, you'll find Styling of this block. Choose a background color from the theme's palette or a custom color, with transparency, a text color, a font, and rounded corners in pixels. Back to theme resets everything to the default.",
+    "de": "Im Zahnrad eines Blocks oder Hero-Bereichs findest du Formatierung dieses Blocks. Wähle eine Hintergrundfarbe aus der Palette des Themes oder eine eigene Farbe, mit Transparenz, eine Textfarbe, eine Schriftart und abgerundete Ecken in Pixeln. Zurück zum Thema setzt alles wieder auf den Standard zurück.",
+    "fr": "Dans la roue dentée d'un bloc ou d'un hero se trouve Mise en forme de ce bloc. Choisissez une couleur de fond dans la palette du thème ou une couleur personnalisée, avec transparence, une couleur de texte, une police et des coins arrondis en pixels. Retour au thème remet tout aux valeurs par défaut.",
+    "es": "En el icono de engranaje de un bloque o hero encontrarás Estilo de este bloque. Elige un color de fondo de la paleta del tema o un color personalizado, con transparencia, un color de texto, una fuente y esquinas redondeadas en píxeles. Volver al tema restablece todo a los valores predeterminados.",
+    "pt": "No ícone de engrenagem de um bloco ou hero está Estilo deste bloco. Escolha uma cor de fundo da paleta do tema ou uma cor personalizada, com transparência, uma cor de texto, uma fonte e cantos arredondados em pixels. Voltar ao tema redefine tudo para o padrão.",
+    "zh": "在区块或主视觉的齿轮图标中有“此区块的样式”。可以从主题调色板中选择背景颜色，或自定义颜色，并设置透明度、文字颜色、字体以及以像素为单位的圆角。点击“恢复为主题”可将所有设置恢复为默认值。",
+    "ar": "في أيقونة الترس الخاصة بالكتلة أو قسم الهيرو، ستجد تنسيق هذه الكتلة. اختر لون خلفية من لوحة ألوان القالب أو لونًا مخصصًا، مع الشفافية، ولون نص، وخط، وزوايا مستديرة بالبكسل. الرجوع إلى القالب يعيد كل شيء إلى الإعدادات الافتراضية."
+   }
+  },
+  "textsettings": {
+   "q": {
+    "en": "How do I customize a text or image individually?",
+    "de": "Wie passe ich einen Text oder ein Bild individuell an?",
+    "fr": "Comment personnaliser un texte ou une image séparément ?",
+    "es": "¿Cómo personalizo un texto o una imagen por separado?",
+    "pt": "Como personalizo um texto ou imagem separadamente?",
+    "zh": "如何单独调整文字或图片？",
+    "ar": "كيف أقوم بتخصيص نص أو صورة بشكل منفصل؟"
+   },
+   "a": {
+    "en": "Every text and every image has its own gear icon. For text, choose a text style from the theme (Heading 1 to 4 or Paragraph), a custom size, color, or font. For an image, choose the alignment left, center, or right, the size in pixels or percentages, the transparency, and rounded corners.",
+    "de": "Jeder Text und jedes Bild hat ein eigenes Zahnrad. Bei Text wählst du einen Textstil des Themes (Überschrift 1 bis 4 oder Absatz), eine eigene Größe, Farbe oder Schriftart. Bei einem Bild wählst du die Ausrichtung links, mittig oder rechts, die Größe in Pixel oder Prozent, die Transparenz und abgerundete Ecken.",
+    "fr": "Chaque texte et chaque image a sa propre roue dentée. Pour le texte, choisissez un style de texte du thème (Titre 1 à 4 ou Paragraphe), une taille, une couleur ou une police personnalisée. Pour une image, choisissez l'alignement à gauche, au centre ou à droite, la taille en pixels ou en pourcentages, la transparence et les coins arrondis.",
+    "es": "Cada texto y cada imagen tiene su propio icono de engranaje. Para el texto, elige un estilo de texto del tema (Encabezado 1 a 4 o Párrafo), un tamaño, color o fuente personalizados. Para una imagen, elige la alineación izquierda, centro o derecha, el tamaño en píxeles o porcentajes, la transparencia y las esquinas redondeadas.",
+    "pt": "Cada texto e cada imagem tem seu próprio ícone de engrenagem. Para o texto, escolha um estilo de texto do tema (Título 1 a 4 ou Parágrafo), um tamanho, cor ou fonte personalizados. Para uma imagem, escolha o alinhamento à esquerda, ao centro ou à direita, o tamanho em pixels ou porcentagens, a transparência e os cantos arredondados.",
+    "zh": "每段文字和每张图片都有自己的齿轮图标。对于文字，可以选择主题的文字样式（标题1至4或段落），以及自定义大小、颜色或字体。对于图片，可以选择左对齐、居中或右对齐，以像素或百分比设置大小，设置透明度和圆角。",
+    "ar": "كل نص وكل صورة لهما أيقونة ترس خاصة بهما. بالنسبة للنص، اختر نمط نص من القالب (عنوان 1 إلى 4 أو فقرة)، وحجمًا مخصصًا، ولونًا، أو خطًا. بالنسبة للصورة، اختر المحاذاة إلى اليسار أو الوسط أو اليمين، والحجم بالبكسل أو النسبة المئوية، والشفافية، والزوايا المستديرة."
+   }
+  },
+  "movefixed": {
+   "q": {
+    "en": "Can I drag the logo or title into a block?",
+    "de": "Kann ich das Logo oder den Titel in einen Block ziehen?",
+    "fr": "Puis-je glisser le logo ou le titre dans un bloc ?",
+    "es": "¿Puedo arrastrar el logo o el título a un bloque?",
+    "pt": "Posso arrastar o logotipo ou o título para um bloco?",
+    "zh": "我可以把标志或标题拖到区块中吗？",
+    "ar": "هل يمكنني سحب الشعار أو العنوان إلى كتلة؟"
+   },
+   "a": {
+    "en": "Yes, on the homepage. The logo, title, and intro have a drag icon in the corner of their dashed outline. Drag them into a column of a block or hero. If you remove them from there, they'll return to their original spot.",
+    "de": "Ja, auf der Startseite. Das Logo, der Titel und die Einleitung haben ein Ziehsymbol an der Ecke ihrer gestrichelten Linie. Ziehe sie in eine Spalte eines Blocks oder Hero. Entfernst du sie dort wieder, kehren sie an ihre ursprüngliche Stelle zurück.",
+    "fr": "Oui, sur la page d'accueil. Le logo, le titre et l'intro ont une icône de déplacement au coin de leur bordure en pointillés. Faites-les glisser vers une colonne d'un bloc ou d'un hero. Si vous les retirez de là, ils retournent à leur emplacement d'origine.",
+    "es": "Sí, en la página de inicio. El logo, el título y la introducción tienen un icono de arrastre en la esquina de su línea punteada. Arrástralos a una columna de un bloque o hero. Si los quitas de allí, volverán a su lugar original.",
+    "pt": "Sim, na página inicial. O logotipo, o título e a introdução têm um ícone de arraste no canto da sua linha pontilhada. Arraste-os para uma coluna de um bloco ou hero. Se os remover de lá, voltam ao seu lugar original.",
+    "zh": "可以，在首页上。标志、标题和简介在其虚线框的角落有一个拖动图标。将它们拖到区块或主图的某一列中。如果再从那里移除，它们会回到原来的位置。",
+    "ar": "نعم، في الصفحة الرئيسية. يحتوي الشعار والعنوان والمقدمة على أيقونة سحب في زاوية الإطار المنقط الخاص بها. اسحبها إلى عمود في كتلة أو قسم رئيسي (هيرو). إذا أزلتها من هناك مرة أخرى، فستعود إلى مكانها الأصلي."
+   }
+  },
+  "textstyles": {
+   "q": {
+    "en": "How do I set up headings and paragraphs in the theme?",
+    "de": "Wie stelle ich Überschriften und Absätze im Theme ein?",
+    "fr": "Comment régler les titres et les paragraphes dans le thème ?",
+    "es": "¿Cómo configuro los encabezados y párrafos en el tema?",
+    "pt": "Como configuro os títulos e parágrafos no tema?",
+    "zh": "如何在主题中设置标题和段落？",
+    "ar": "كيف أقوم بإعداد العناوين والفقرات في القالب؟"
+   },
+   "a": {
+    "en": "Go to Admin → Website → Theme → Design → Text styles. For each style (Heading 1 to 4 and Paragraph), set the size, weight, color, font, line spacing, and letter spacing. Each theme has its own values, and the texts in blocks and pages follow them.",
+    "de": "Gehe zu Admin → Website → Theme → Gestaltung → Textstile. Für jeden Stil (Überschrift 1 bis 4 und Absatz) legst du Größe, Dicke, Farbe, Schriftart, Zeilenabstand und Buchstabenabstand fest. Jedes Theme hat eigene Werte, und die Texte in Blöcken und Seiten folgen ihnen.",
+    "fr": "Allez dans Admin → Website → Thème → Mise en forme → Styles de texte. Pour chaque style (Titre 1 à 4 et Paragraphe), définissez la taille, l'épaisseur, la couleur, la police, l'interligne et l'espacement des lettres. Chaque thème a ses propres valeurs, et les textes des blocs et des pages les suivent.",
+    "es": "Ve a Admin → Website → Tema → Diseño → Estilos de texto. Para cada estilo (Encabezado 1 a 4 y Párrafo) ajustas el tamaño, grosor, color, tipo de letra, interlineado y espaciado entre letras. Cada tema tiene sus propios valores y los textos en bloques y páginas los siguen.",
+    "pt": "Vá a Admin → Website → Tema → Design → Estilos de texto. Para cada estilo (Título 1 a 4 e Parágrafo), defines o tamanho, a espessura, a cor, a fonte, o espaçamento entre linhas e o espaçamento entre letras. Cada tema tem os seus próprios valores e os textos em blocos e páginas seguem-nos.",
+    "zh": "进入 Admin → Website → 主题 → 设计 → 文字样式。为每种样式（标题1至4和段落）设置大小、粗细、颜色、字体、行距和字距。每个主题都有自己的数值，区块和页面中的文字会遵循这些设置。",
+    "ar": "اذهب إلى Admin → Website → القالب → التصميم → أنماط النص. لكل نمط (العنوان 1 إلى 4 والفقرة)، حدد الحجم والسماكة واللون والخط وتباعد الأسطر وتباعد الأحرف. لكل قالب قيمه الخاصة، وتتبعها النصوص الموجودة في الكتل والصفحات."
+   }
+  },
+  "loaderpct": {
+   "q": {
+    "en": "Can I show a percentage below the loader?",
+    "de": "Kann ich unter dem Loader einen Prozentsatz anzeigen?",
+    "fr": "Puis-je afficher un pourcentage sous le chargeur ?",
+    "es": "¿Puedo mostrar un porcentaje debajo del cargador?",
+    "pt": "Posso mostrar uma percentagem por baixo do loader?",
+    "zh": "我可以在加载器下方显示百分比吗？",
+    "ar": "هل يمكنني عرض نسبة مئوية أسفل شاشة التحميل؟"
+   },
+   "a": {
+    "en": "Yes. In Theme → Loading → Page loader, turn on the Show percentage switch below the animation. A number from 0 to 100% then counts along. It's an estimate, not an actual measurement.",
+    "de": "Ja. Aktiviere bei Theme → Laden → Seiten-Loader den Schalter Prozentsatz anzeigen unter der Animation. Es läuft dann eine Zahl von 0 bis 100 % mit. Es handelt sich um eine Schätzung, keine echte Messung.",
+    "fr": "Oui. Dans Thème → Chargement → Chargeur de page, activez l'interrupteur Afficher le pourcentage sous l'animation. Un chiffre de 0 à 100 % défile alors. C'est une estimation, pas une mesure réelle.",
+    "es": "Sí. En Tema → Carga → Cargador de página, activa el interruptor Mostrar porcentaje debajo de la animación. Entonces aparecerá un número que va de 0 a 100 %. Es una estimación, no una medición real.",
+    "pt": "Sim. Em Tema → Carregamento → Loader de página, ativa o interruptor Mostrar percentagem por baixo da animação. Aparece então um número de 0 a 100%. É uma estimativa, não uma medição real.",
+    "zh": "可以。在 主题 → 加载 → 页面加载器 中，打开动画下方的“显示百分比”开关。随后会显示一个从0到100%变化的数字。这只是一个估算值，并非真实测量。",
+    "ar": "نعم. في القالب → التحميل → محمل الصفحة، قم بتفعيل مفتاح إظهار النسبة المئوية أسفل الرسم المتحرك. سيظهر عندها رقم يتغير من 0 إلى 100%. إنه تقدير وليس قياسًا فعليًا."
+   }
+  },
+  "transswitch": {
+   "q": {
+    "en": "Can I turn off the page transition?",
+    "de": "Kann ich den Seitenübergang ausschalten?",
+    "fr": "Puis-je désactiver la transition de page ?",
+    "es": "¿Puedo desactivar la transición de página?",
+    "pt": "Posso desativar a transição de página?",
+    "zh": "我可以关闭页面过渡效果吗？",
+    "ar": "هل يمكنني إيقاف انتقال الصفحة؟"
+   },
+   "a": {
+    "en": "Yes. In Theme → Loading → Page transition, there's a Use page transition switch. Off means no effect. On shows the options fade, slide, zoom in, and sharpen, with a duration.",
+    "de": "Ja. Bei Theme → Laden → Seitenübergang befindet sich der Schalter Seitenübergang verwenden. Aus bedeutet kein Effekt. An zeigt die Optionen Einblenden, Schieben, Hineinzoomen und Scharfstellen mit einer Dauer.",
+    "fr": "Oui. Dans Thème → Chargement → Transition de page se trouve l'interrupteur Utiliser la transition de page. Désactivé signifie aucun effet. Activé affiche les options fondu, glissement, zoom avant et mise au point, avec une durée.",
+    "es": "Sí. En Tema → Carga → Transición de página se encuentra el interruptor Usar transición de página. Desactivado significa sin efecto. Activado muestra las opciones desvanecer, deslizar, acercar y enfocar, con una duración.",
+    "pt": "Sim. Em Tema → Carregamento → Transição de página encontra-se o interruptor Usar transição de página. Desativado significa sem efeito. Ativado mostra as opções esbater, deslizar, aumentar zoom e focar, com uma duração.",
+    "zh": "可以。在 主题 → 加载 → 页面过渡 中有一个“使用页面过渡”开关。关闭表示没有效果。开启后会显示淡入淡出、滑动、放大和变清晰等选项，并可设置持续时间。",
+    "ar": "نعم. في القالب → التحميل → انتقال الصفحة يوجد مفتاح استخدام انتقال الصفحة. الإيقاف يعني عدم وجود تأثير. التفعيل يعرض خيارات التلاشي والانزلاق والتكبير والتوضيح، مع مدة زمنية."
+   }
+  },
+  "themeswitch": {
+   "q": {
+    "en": "How do I choose which profile themes are available?",
+    "de": "Wie wähle ich aus, welche Profilthemen verfügbar sind?",
+    "fr": "Comment choisir les thèmes de profil disponibles ?",
+    "es": "¿Cómo elijo qué temas de perfil están disponibles?",
+    "pt": "Como escolho quais temas de perfil estão disponíveis?",
+    "zh": "如何选择可用的个人资料主题？",
+    "ar": "كيف أختار السمات الشخصية المتاحة؟"
+   },
+   "a": {
+    "en": "Go to Super admin → Profile themes. There you can switch each theme (Normal, Sports, Dating, Business, Webshop) on or off to decide whether it can be chosen. Only Normal is on by default, and a theme that is currently in use stays on.",
+    "de": "Gehe zu Super admin → Profilthemen. Dort kannst du für jedes Thema (Normal, Sportler, Dating, Business, Webshop) festlegen, ob es ausgewählt werden kann. Standardmäßig ist nur Normal aktiviert, und ein Thema, das gerade verwendet wird, bleibt aktiviert.",
+    "fr": "Allez dans Super admin → Thèmes de profil. Vous pouvez y activer ou désactiver chaque thème (Normal, Sportifs, Rencontres, Business, Boutique en ligne) pour déterminer s'il peut être choisi. Seul Normal est activé par défaut, et un thème actuellement utilisé reste activé.",
+    "es": "Ve a Super admin → Temas de perfil. Allí puedes activar o desactivar cada tema (Normal, Deportes, Citas, Negocios, Tienda online) para decidir si se puede elegir. Solo Normal está activado por defecto, y un tema que esté en uso permanece activado.",
+    "pt": "Vá a Super admin → Temas de perfil. Lá você pode ativar ou desativar cada tema (Normal, Desportistas, Namoro, Negócios, Loja virtual) para decidir se pode ser escolhido. Apenas o Normal está ativado por padrão, e um tema que esteja em uso permanece ativado.",
+    "zh": "前往“超级管理员 → 个人资料主题”。在那里，你可以为每个主题（普通、运动、约会、商务、网店）设置是否可供选择。默认只有“普通”处于启用状态，正在使用中的主题会保持启用。",
+    "ar": "اذهب إلى المشرف العام ← سمات الملف الشخصي. هناك يمكنك تفعيل أو إلغاء تفعيل كل سمة (عادي، رياضيون، مواعدة، أعمال، متجر إلكتروني) لتحديد ما إذا كان يمكن اختيارها. السمة العادية فقط مفعّلة افتراضيًا، وأي سمة قيد الاستخدام حاليًا تبقى مفعّلة."
+   }
+  }
+ }
+}

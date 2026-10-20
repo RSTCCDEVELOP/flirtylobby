@@ -11,9 +11,12 @@ import { UiProvider } from "../components/Ui";
 import { ChatProvider, ChatWidget } from "../components/Chat";
 import DialogHost from "../components/DialogHost";
 import DomTranslate from "../components/DomTranslate";
+import PageLoader, { LazyImages, PageTransition, ScrollFx } from "../components/PageLoader";
 import { MenuProvider } from "../components/SiteMenu";
 import { getBackgrounds, getMenu } from "../lib/pages-server";
 import PageBackdrop from "../components/PageBackdrop";
+import UndoButton from "../components/UndoButton";
+import EditHelp from "../components/EditHelp";
 import PageSettingsButton from "../components/PageSettingsButton";
 import { DirectHostProvider } from "../components/DirectHost";
 import LangRoot from "../components/LangRoot";
@@ -146,10 +149,12 @@ export default async function RootLayout({ children }) {
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
               <DirectHostProvider>
               <PageBackdrop map={backgrounds} />
-              {children}
+              <PageTransition>{children}</PageTransition>
               <SiteCredit show={site?.show_credit !== false} />
               <EditBanner />
               <PageSettingsButton />
+              <EditHelp />
+              <UndoButton />
               </DirectHostProvider>
             </ContentProvider>
             <Gates cfg={security} />
@@ -157,6 +162,9 @@ export default async function RootLayout({ children }) {
             <MaintenanceGate site={site} />
             <DonateThanks />
             <NavProgress />
+            <PageLoader />
+            <LazyImages />
+            <ScrollFx />
             <DevicePreview />
             <PaymentRequired />
         <SandboxBadge status={sandbox} />

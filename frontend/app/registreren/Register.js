@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../components/PageLoader";
 import { getLanguage, tx } from "../../lib/t";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import Link from "next/link";
@@ -137,7 +138,7 @@ export default function Register() {
     catch (e2) { setError(errorText(e2)); }
   }
 
-  if (!cfg) return <Shell onSubmit={(e) => e.preventDefault()}><Logo />{error ? <div className="alert">{error}</div> : <p className="muted">{tx("Laden…")}</p>}</Shell>;
+  if (!cfg) return <Shell onSubmit={(e) => e.preventDefault()}><Logo />{error ? <div className="alert">{error}</div> : <Busy />}</Shell>;
   if (!cfg.enabled) return <Shell onSubmit={(e) => e.preventDefault()}><Logo /><h1>{tx("Aanmelden")}</h1><p className="muted">{tx("Aanmelden is op dit moment niet mogelijk.")}</p><Link href="/login" className="btn">{tx("Naar inloggen")}</Link></Shell>;
   if (cfg.unavailable) return <Shell onSubmit={(e) => e.preventDefault()}><Logo /><h1>{tx("Aanmelden")}</h1><div className="alert">{tx("Aanmelden is tijdelijk niet mogelijk. Probeer het later opnieuw.")}</div><Link href="/login" className="btn">{tx("Naar inloggen")}</Link></Shell>;
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -28,7 +29,7 @@ export default function SysObjectsAdmin() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
 
-  if (!items) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!items) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const lang = (() => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } })();
   return (
     <>

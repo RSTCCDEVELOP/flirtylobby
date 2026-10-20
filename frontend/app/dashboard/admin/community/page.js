@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -52,7 +53,7 @@ export default function CommunityAdmin() {
   const load = useCallback(() => api("/community/settings/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
   const auto = useAutoSave(d?.settings, save, { ready: !!d }); // saves by itself, no Save button
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   const s = d.settings, lv = d.sections;
   const set = (sec, k, v) => setD({ ...d, settings: { ...s, [sec]: { ...s[sec], [k]: v } } });

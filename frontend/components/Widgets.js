@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -19,7 +20,7 @@ const useData = (path, deps = []) => {
   useEffect(() => { api(path).then(setD).catch(() => setD(null)); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   return d;
 };
-const Loading = ({ d }) => (d === undefined ? <p className="muted">{tx("Laden…")}</p> : d === null ? <p className="muted">{tx("Niet beschikbaar.")}</p> : null);
+const Loading = ({ d }) => (d === undefined ? <Busy /> : d === null ? <p className="muted">{tx("Niet beschikbaar.")}</p> : null);
 const monthName = (ym) => new Date(`${ym}-01`).toLocaleDateString("nl-NL", { month: "short" });
 
 function Welcome({ ctx }) {
@@ -197,7 +198,7 @@ function DirectBlock() {
     const t = setInterval(load, 4000);
     return () => { stop = true; clearInterval(t); };
   }, []);
-  if (!rooms) return <p className="muted">{tx("Laden…")}</p>;
+  if (!rooms) return <Busy />;
   const connected = rooms.filter((r) => r.guest_online);
   return (
     <>

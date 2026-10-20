@@ -27,6 +27,12 @@ export default function AdminHome() {
       </Collapsible>
 
       <Collapsible id="admin-about" title={tx("Over Easy2edit")}>
+        <div className="about-logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/easy2edit/logo.png" alt="Easy2edit" className="logo-light has-dark" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/easy2edit/logo_dark.png" alt="Easy2edit" className="logo-dark" />
+        </div>
         <div className="stack-sm" style={{ maxWidth: 760 }}>
           <p style={{ margin: 0 }}><strong>{tx("Easy2edit is een eenvoudig, modulair beheersysteem voor portals en data.")}</strong></p>
           <p style={{ margin: 0 }}>{tx("Je bouwt je website of portal uit blokken die je zelf aan- en uitzet: gebruikers en rollen, pagina's en menu, community, abonnementen, SEO en meer. Wat je niet nodig hebt, staat uit en komt niet in beeld.")}</p>
