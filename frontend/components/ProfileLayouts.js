@@ -5,10 +5,12 @@ import Link from "next/link";
 import { alertDialog } from "../lib/dialog";
 import { api, mediaUrl } from "../lib/api";
 import {
-  IconBolt, IconBriefcase, IconChat, IconFriends, IconGlobe, IconHeart, IconImage, IconLink, IconLock, IconMail, IconPin, IconStar, IconTrophy, IconTruck, IconUser,
+  IconBolt, IconBriefcase, IconChat, IconFriends, IconGlobe, IconHeart, IconImage, IconLink, IconLock, IconMail, IconPhone, IconPin, IconStar, IconTrophy, IconTruck, IconUser, IconVideo,
 } from "./Icons";
 import { fieldText, FieldList } from "./ProfileFields";
 import VerifyBadge from "./VerifyBadge";
+import { useModule } from "./Modules";
+import { AvailChips } from "./Availability";
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 const byKey = (fields = []) => Object.fromEntries(fields.map((f) => [f.key, f]));
@@ -52,6 +54,7 @@ function Avatar({ p, size = 96 }) {
 // ── actions (friend requests, like, message, chat, block) ──────────────────
 export function Actions({ c, round = false }) {
   const { p, user, ready, rel, chat, label, ask, answer, block, setP } = c;
+  const agendaOn = useModule("plugin:agenda");
   const like = async () => {
     try {
       const r = p.liked ? await api(`/discover/like/${p.id}/`, { method: "DELETE" }) : await api("/discover/like/", { method: "POST", body: { user: p.id } });
@@ -77,7 +80,10 @@ export function Actions({ c, round = false }) {
           {p.can_like && <button className={`btn ${p.liked ? "primary" : ""} ${round ? "pf-round" : ""}`} onClick={like} title={tx("Leuk vinden")}><IconHeart fill={p.liked ? "currentColor" : "none"} />{!round && <> {p.liked ? tx("Leuk") : tx("Leuk vinden")}</>}</button>}
           {p.can_like && <button className={`btn ${round ? "pf-round" : ""}`} onClick={favorite} title={tx("Favoriet")}><IconStar fill={p.favorite ? "currentColor" : "none"} />{!round && <> {tx("Favoriet")}</>}</button>}
           {p.can_message && <Link className={`btn primary ${round ? "pf-round" : ""}`} href="/dashboard/community/messages" title={tx("Bericht sturen")}><IconMail />{!round && <> {tx("Bericht sturen")}</>}</Link>}
+          {p.can_message && agendaOn && <Link className={`btn ${round ? "pf-round" : ""}`} href={`/dashboard/plugins/agenda?with=${p.id}`} title={tx("Afspraak maken")}>📅{!round && <> {tx("Afspraak maken")}</>}</Link>}
           {p.can_chat && chat?.cfg && <button className={`btn ${round ? "pf-round" : ""}`} title={tx("Chatten")} onClick={() => { chat.openPartner({ id: p.id, name: p.name }); chat.setWidgetOpen(true); }}><IconChat />{!round && <> {tx("Chatten")}</>}</button>}
+          {p.can_video && chat?.startCall && <button className={`btn ${round ? "pf-round" : ""}`} title={tx("Videochat")} disabled={!!chat.call} onClick={() => chat.startCall({ id: p.id, name: p.name })}><IconVideo />{!round && <> {tx("Videochat")}</>}</button>}
+          {(p.contacts || []).map((x) => <a key={x.kind} className={`btn ${round ? "pf-round" : ""}`} href={x.href} target={x.kind === "whatsapp" || x.kind === "telegram" ? "_blank" : undefined} rel="noopener noreferrer nofollow" title={x.label}>{x.kind === "email" ? <IconMail /> : x.kind === "phone" ? <IconPhone /> : <IconChat />}{!round && <> {x.label}</>}</a>)}
           <button className="btn danger" onClick={block}>{tx("Blokkeren")}</button>
         </div>
       )}
@@ -287,5 +293,6 @@ const LAYOUTS = { normal: Normal, dating: Dating, sporters: Sporters, business: 
 // The public profile page follows the community theme chosen in Admin -> Community -> Profielthema
 export default function ProfileLayout({ c }) {
   const Layout = LAYOUTS[c.p.theme] || Normal;
-  return <div className={`pf pf-theme-${LAYOUTS[c.p.theme] ? c.p.theme : "normal"}`}><Layout c={c} /></div>;
+  // the member's own colour theme (Wijzig profiel → Design) for his page
+  return <div className={`pf pf-theme-${LAYOUTS[c.p.theme] ? c.p.theme : "normal"} ${c.p.design ? "pt-wrap" : ""}`} data-pt={c.p.design || undefined}><Layout c={c} />{c.p.available?.length > 0 && !c.p.locked && <section className="card" style={{ marginTop: "1rem" }}><h2>{tx("Beschikbaar voor")}</h2><AvailChips items={c.p.available} max={50} /></section>}</div>;
 }

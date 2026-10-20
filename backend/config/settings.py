@@ -6,6 +6,18 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent  # backend/ (Docker: /app/backend)
 PROJECT_ROOT = BASE_DIR.parent  # Docker: /app
 
+# ── System and site apart ───────────────────────────────────────────────────
+# The SYSTEM is backend/ + frontend/ (updated as a whole, never holds anything of one website).
+# Everything of ONE website lives in SITE_DIR (default <project-root>/site): Database/, media/, plugins/, themes/, content/.
+# An update of the system never touches SITE_DIR. A path can still be set one by one (DB_PATH, MEDIA_ROOT, PLUGINS_DIR, THEMES_DIR);
+# an installation from before this layout keeps working: when site/<x> does not exist yet but the old place does, the old place is used.
+SITE_DIR = Path(os.getenv("SITE_DIR") or PROJECT_ROOT / "site")
+
+
+def _site_path(name, legacy):
+    new = SITE_DIR / name
+    return new if new.exists() or not legacy.exists() else legacy
+
 load_dotenv(BASE_DIR / ".env")
 
 
@@ -39,10 +51,13 @@ INSTALLED_APPS = [
     "apps.sandbox",
     "apps.shop",
     "apps.social",
+    "apps.plugins",
     "apps.pages",
     "apps.siteimport",
     "apps.subscriptions",
     "apps.sysobjects",
+    "apps.faq",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [
@@ -56,6 +71,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.SiteTimezoneMiddleware",
+    "apps.core.middleware.MaintenanceMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -91,7 +107,7 @@ if os.getenv("DB_ENGINE", "sqlite") == "postgres":
         }
     }
 else:
-    DB_PATH = Path(os.getenv("DB_PATH") or PROJECT_ROOT / "Database" / "db.sqlite3")
+    DB_PATH = Path(os.getenv("DB_PATH") or _site_path("Database", PROJECT_ROOT / "Database") / "db.sqlite3")
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": DB_PATH}}
 
@@ -116,7 +132,11 @@ STORAGES = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 MEDIA_URL = "/media/"
-MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or BASE_DIR / "media")
+MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or _site_path("media", BASE_DIR / "media"))
+_VERSION_FILE = next((f for f in (BASE_DIR / "VERSION", PROJECT_ROOT / "VERSION") if f.is_file()), None)  # backend/VERSION: it is inside the Docker image too
+SYSTEM_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE else "0.0.0"  # the version of this system; plugins are built for one
+PLUGINS_DIR = Path(os.getenv("PLUGINS_DIR") or _site_path("plugins", PROJECT_ROOT / "plugins"))  # the plugins of this site: developed or uploaded here (not in the system repository)
+THEMES_DIR = Path(os.getenv("THEMES_DIR") or _site_path("themes", PROJECT_ROOT / "themes"))  # the theme packages of this site: one folder per theme with a theme.json
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

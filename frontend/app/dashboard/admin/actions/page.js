@@ -1,8 +1,11 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
+import Tabs from "../../../../components/Tabs";
+import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { api, errorText } from "../../../../lib/api";
 import { alertDialog, confirmDialog } from "../../../../lib/dialog";
@@ -36,12 +39,83 @@ function summary(item, o) {
   return parts.join(item.mode === "all" ? ` ${tx("én")} ` : ` ${tx("of")} `);
 }
 
+// The things that can give this item: donations and subscriptions. Drag one to the list on the right (or click the arrow) and the item is linked to it; drag it back to unlink.
+function LinkLists({ modal, setModal, o }) {
+  const [over, setOver] = useState("");
+  const all = [...(o.campaigns || []).map((c) => ({ id: `d:${c.id}`, label: c.name, kind: "donation" })), ...(o.plans || []).map((p) => ({ id: `p:${p.id}`, label: p.name, kind: "plan" }))];
+  const linked = new Set([...(modal.donations || []).map((x) => `d:${x}`), ...(modal.plans || []).map((x) => `p:${x}`)]);
+  const move = (id, to) => {
+    const [t, n] = [id[0], Number(id.slice(2))];
+    const key = t === "d" ? "donations" : "plans";
+    const cur = modal[key] || [];
+    setModal({ ...modal, [key]: to === "linked" ? [...new Set([...cur, n])] : cur.filter((x) => x !== n) });
+  };
+  const item = (x, to) => (
+    <li key={x.id} className="link-item" draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", x.id); e.dataTransfer.effectAllowed = "move"; }} onDoubleClick={() => move(x.id, to)}>
+      <span className={`badge ${x.kind === "donation" ? "ok" : ""}`}>{x.kind === "donation" ? tx("Donatie") : tx("Abonnement")}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>{x.label}</span>
+      <button type="button" className="btn sm" title={to === "linked" ? tx("Koppelen") : tx("Ontkoppelen")} aria-label={to === "linked" ? tx("Koppelen") : tx("Ontkoppelen")} onClick={() => move(x.id, to)}>{to === "linked" ? "→" : "←"}</button>
+    </li>
+  );
+  const box = (title, list, to, hint) => (
+    <div className={`link-box${over === to ? " over" : ""}`} onDragOver={(e) => { e.preventDefault(); setOver(to); }} onDragLeave={() => setOver("")} onDrop={(e) => { e.preventDefault(); setOver(""); const id = e.dataTransfer.getData("text/plain"); if (id) move(id, to); }}>
+      <strong style={{ fontSize: ".85rem" }}>{title}</strong>
+      <ul>{list.map((x) => item(x, to === "linked" ? "free" : "linked"))}{!list.length && <li className="muted link-empty">{hint}</li>}</ul>
+    </div>
+  );
+  return (
+    <div className="act-links">
+      <strong style={{ fontSize: ".85rem" }}>{tx("Gekoppeld aan")}</strong>
+      <small className="muted" style={{ display: "block" }}>{tx("Sleep een donatie of abonnement naar de lijst rechts: dan geeft dat dit onderdeel aan wie het neemt. Sleep terug om te ontkoppelen.")}</small>
+      <div className="link-lists">
+        {box(tx("Beschikbaar"), all.filter((x) => !linked.has(x.id)), "free", tx("Alles is gekoppeld."))}
+        {box(tx("Gekoppeld"), all.filter((x) => linked.has(x.id)), "linked", tx("Sleep hier iets naartoe."))}
+      </div>
+    </div>
+  );
+}
+
+const PRESETS = [["1h", "1 uur"], ["1d", "1 dag"], ["1w", "1 week"], ["1m", "1 maand"], ["3m", "3 maanden"], ["1y", "1 jaar"], ["", "Altijd geldig (geen einde)"]];
+
+// "Geldig tot": how long (and how often) a donor may use this item after a completed donation. Applies to every donation that gives the item.
+function ValidTab({ modal, setModal, o }) {
+  const r = modal.rule || {};
+  const set = (patch) => setModal({ ...modal, rule: { ...r, ...patch } });
+  const linked = (modal.donations || []).length > 0;
+  return (
+    <div className="stack-sm">
+      <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Hoelang mag een donateur dit onderdeel gebruiken nadat zijn donatie is voltooid? Dit geldt voor elke donatie die dit onderdeel geeft.")}{!modal.gated ? ` ${tx("Zet eerst Afschermen aan bij Instellingen.")}` : !linked && o.campaigns?.length ? ` ${tx("Koppel bij Instellingen een donatie, anders is er niets om te laten verlopen.")}` : ""}</p>
+      <div className="avail-pick">
+        {PRESETS.map(([v, l]) => (
+          <button key={v || "always"} type="button" className={`avail-chip pick ${(r.valid_for || "") === v ? "on" : ""}`} aria-pressed={(r.valid_for || "") === v} onClick={() => set({ valid_for: v })}>
+            {tx(l)}{modal.suggest === v && v ? ` · ${tx("voorstel")}` : ""}
+          </button>
+        ))}
+      </div>
+      {modal.suggest && (r.valid_for || "") !== modal.suggest && <div><button type="button" className="btn sm" onClick={() => set({ valid_for: modal.suggest })}>{tx("Ons voorstel gebruiken")}: {tx(PRESETS.find(([v]) => v === modal.suggest)?.[1] || "")}</button></div>}
+      <div className="form-grid">
+        <label>{tx("Hoe vaak te gebruiken")} <small className="muted">{tx("(0 = zo vaak als hij wil)")}</small><input type="number" min={0} value={r.uses ?? 0} onChange={(e) => set({ uses: e.target.value })} /></label>
+        <label>{tx("Vanaf bedrag")}<input type="number" min={0} step="0.01" value={r.min_amount ?? 0} onChange={(e) => set({ min_amount: e.target.value })} /></label>
+      </div>
+      <label className="check sec-toggle"><input type="checkbox" checked={!!r.session_only} onChange={(e) => set({ session_only: e.target.checked })} /><span><strong>{tx("Alleen deze sessie")}</strong><br /><small className="muted">{tx("Geldt alleen zolang de donateur ingelogd blijft; na uitloggen is de actie voorbij.")}</small></span></label>
+      <details>
+        <summary className="muted" style={{ cursor: "pointer", fontSize: ".85rem" }}>{tx("Vaste data (optioneel)")}</summary>
+        <div className="form-grid" style={{ marginTop: ".5rem" }}>
+          <label>{tx("Geldt vanaf (datum en tijd)")}<input type="datetime-local" value={r.from || ""} onChange={(e) => set({ from: e.target.value })} /></label>
+          <label>{tx("Deadline (datum en tijd)")}<input type="datetime-local" value={r.until || ""} onChange={(e) => set({ until: e.target.value })} /></label>
+        </div>
+      </details>
+    </div>
+  );
+}
+
 export default function Actions() {
   const { user } = useAuth();
   const L = Math.max(lvl(user, "subscriptions"), lvl(user, "donations"));
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState(null);
   const [modal, setModal] = useState(null); // item being edited
+  const [mtab, setMtab] = useState("settings"); // settings | valid
   const [add, setAdd] = useState(null); // own item being added
   const [email, setEmail] = useState("");
   const [check, setCheck] = useState(null);
@@ -57,7 +131,7 @@ export default function Actions() {
   };
   const submitModal = async (e) => {
     e.preventDefault();
-    const r = await save(modal, { gated: modal.gated, mode: modal.mode, conditions: modal.conditions, ...(modal.pair ? { share: !!modal.share } : {}), ...(modal.builtin ? {} : { name: modal.name, description: modal.description }) });
+    const r = await save(modal, { gated: modal.gated, mode: modal.mode, conditions: modal.conditions, ...(modal.gated && o.campaigns?.length ? { donations: modal.donations || [] } : {}), ...(modal.gated && o.plans?.length ? { plans: modal.plans || [] } : {}), rule: modal.rule, ...(modal.pair ? { share: !!modal.share } : {}), ...(modal.builtin ? {} : { name: modal.name, description: modal.description }) });
     if (r) setModal(null);
   };
   const create = async (e) => {
@@ -74,9 +148,9 @@ export default function Actions() {
     try { setCheck(await api(`/subscriptions/admin/actions/check/?email=${encodeURIComponent(email)}`)); } catch (er) { setCheck(null); setMsg({ ok: false, text: errorText(er) }); }
   };
 
-  const items = useMemo(() => (d?.items || []).filter((i) => view.match(i.name, i.description, i.group, summary(i, d.options)) && (!state || (state === "gated" ? i.gated : state === "open" ? !i.gated : i.builtin === false))), [d, view, state]);
+  const items = useMemo(() => (d?.items || []).filter((i) => (!i.themes || i.themes.includes(d.options.theme)) && view.match(i.name, i.description, i.group, summary(i, d.options)) && (!state || (state === "gated" ? i.gated : state === "open" ? !i.gated : i.builtin === false))), [d, view, state]);
   const groups = useMemo(() => [...new Set(items.map((i) => i.group))], [items]);
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const o = d.options;
   const passed = check ? Object.fromEntries(check.items.map((i) => [i.key, i])) : {};
 
@@ -125,6 +199,7 @@ export default function Actions() {
       {groups.map((g) => (
         <section key={g} className="act-group">
           <h2>{tx(g)}</h2>
+          <Paged id={`actions-${g}`} query={view.q}>
           <div className={`sub-plans${view.cls}`}>
             {items.filter((i) => i.group === g).map((i) => (
               <div className={`card sub-plan${i.gated ? "" : " off"}`} key={i.key}>
@@ -136,16 +211,19 @@ export default function Actions() {
                 </div>
                 {i.description && <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx(i.description)}</p>}
                 <div className="act-sum">{summary(i, o)}{i.gated && i.share ? ` · ${tx("geldt ook voor de ander")}` : ""}</div>
+                {i.gated && i.plans?.length > 0 && <small className="muted">{tx("Abonnement")}: {i.plans.map((id) => o.plans?.find((p) => p.id === id)?.name).filter(Boolean).join(", ")}</small>}
+                {i.gated && i.donations?.length > 0 && <small className="muted">{tx("Donatie")}: {i.donations.map((id) => o.campaigns?.find((c) => c.id === id)?.name).filter(Boolean).join(", ")}</small>}
                 {check && i.gated && passed[i.key]?.conditions.length > 0 && (
                   <ul className="act-why">{passed[i.key].conditions.map((c, k) => <li key={k} className={c.ok ? "yes" : "no"}>{c.ok ? "✓" : "✗"} {tx(c.reason)}</li>)}</ul>
                 )}
                 <div className="sub-actions">
                   {L >= 3 && <label className="switch" title={i.gated ? tx("Afgeschermd: klik om open te zetten") : tx("Open: klik om af te schermen")}><input type="checkbox" checked={i.gated} onChange={(e) => save(i, { gated: e.target.checked })} /><span /></label>}
-                  {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i, conditions: i.conditions.map((c) => ({ ...c })) })}>{tx("Voorwaarden")}</button>}
+                  {L >= 2 && <button className="btn sm" onClick={() => { setMtab("settings"); setModal({ ...i, conditions: i.conditions.map((c) => ({ ...c })), rule: { ...(i.rule || {}) }, plans: [...(i.plans || [])], donations: [...(i.donations || [])] }); }}>{tx("Voorwaarden")}</button>}
                 </div>
               </div>
             ))}
           </div>
+          </Paged>
         </section>
       ))}
       {!items.length && <p className="muted">{tx("Niets gevonden.")}</p>}
@@ -160,8 +238,11 @@ export default function Actions() {
                 <label>{tx("Omschrijving")}<input value={modal.description} maxLength={300} onChange={(e) => setModal({ ...modal, description: e.target.value })} /></label>
               </div>
             )}
+            <Tabs value={mtab} onChange={setMtab} tabs={[["settings", "Instellingen"], ["valid", "Geldig tot"]]} />
+            {mtab === "settings" && (
+              <>
             <label className="check sec-toggle">
-              <input type="checkbox" checked={modal.gated} onChange={(e) => setModal({ ...modal, gated: e.target.checked })} />
+              <input type="checkbox" checked={modal.gated} onChange={(e) => setModal({ ...modal, gated: e.target.checked, ...(e.target.checked && o.campaigns?.length === 1 && !(modal.donations || []).length ? { donations: [o.campaigns[0].id] } : {}) })} />
               <span><strong>{tx("Afschermen")}</strong><br /><small className="muted">{tx("Uit = iedereen kan dit gebruiken. Aan = alleen wie aan de voorwaarden voldoet.")}</small></span>
             </label>
             {modal.gated && (
@@ -172,6 +253,7 @@ export default function Actions() {
                     <option value="all">{tx("Alle voorwaarden (én)")}</option>
                   </select>
                 </label>
+                {(o.plans?.length > 0 || o.campaigns?.length > 0) && <LinkLists modal={modal} setModal={setModal} o={o} />}
                 <div className="grants">
                   {modal.conditions.map((c, i) => condRow(c, i, setModal))}
                   {!modal.conditions.length && <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Geen voorwaarden gekozen: dan geldt een abonnement of donatie-actie die dit onderdeel geeft (bij Abonnementen en Donaties).")}</p>}
@@ -186,6 +268,9 @@ export default function Actions() {
                 <div className="act-sum">{summary(modal, o)}{modal.pair && modal.share ? ` · ${tx("geldt ook voor de ander")}` : ""}</div>
               </>
             )}
+              </>
+            )}
+            {mtab === "valid" && <ValidTab modal={modal} setModal={setModal} o={o} />}
             <div className="row">
               {!modal.builtin && L >= 3 && <button type="button" className="btn danger" onClick={() => remove(modal)}>{tx("Verwijderen")}</button>}
               <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>

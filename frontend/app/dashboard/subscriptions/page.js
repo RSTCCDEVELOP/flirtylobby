@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText } from "../../../lib/api";
 import { confirmDialog } from "../../../lib/dialog";
+import DashHero from "../../../components/DashHero";
 import { money } from "../../../lib/format";
 
 const BADGE = { pending: "off", trial: "ok", active: "ok", past_due: "off", canceled: "off", expired: "off" };
@@ -26,9 +27,16 @@ export default function MySubscriptions() {
 
   if (!d) return <p className="muted">{msg?.text || tx("Laden…")}</p>;
   const list = d.subscriptions.filter((s) => s.status !== "expired" || s.period_end);
+  const nextPay = list.filter((s) => s.recurring && ["trial", "active", "past_due"].includes(s.status) && !s.cancel_at_period_end && s.period_end).map((s) => s.period_end).sort()[0];
   return (
     <>
-      <div className="page-head"><h1>{tx("Mijn abonnementen")}</h1><Link className="btn" href="/abonnementen">{tx("Alle abonnementen")}</Link></div>
+      <DashHero title="Mijn abonnementen" textId="page.my-subscriptions.intro" actions={[{ href: "/abonnementen", label: "Alle abonnementen" }, ...(d.donations ? [{ href: "/dashboard/mijn-donaties", label: "Mijn donaties" }] : [])]}
+        stats={[
+          { label: "Actieve abonnementen", value: list.filter((s) => ["trial", "active", "past_due"].includes(s.status)).length },
+          { label: "Volgende betaling", value: nextPay ? new Date(nextPay).toLocaleDateString() : "—", hint: nextPay ? undefined : tx("Geen herhaalde betaling") },
+          ...(d.likes_left !== null && d.gates?.likes ? [{ label: "Likes over vandaag", value: d.likes_left }] : []),
+          ...(d.rewards?.length ? [{ label: "Acties dankzij donaties", value: d.rewards.length }] : []),
+        ]} />
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
       {d.likes_left !== null && d.gates?.likes && <div className="alert ok" style={{ marginBottom: "1rem" }}>{tx("Likes over vandaag")}: <strong>{d.likes_left}</strong></div>}
       {d.rewards?.length > 0 && (

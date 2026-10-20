@@ -2,7 +2,7 @@ import logging
 
 from django.db import connection
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
@@ -28,9 +28,23 @@ from . import theme  # noqa: E402
 from .models import SiteSettings  # noqa: E402
 
 
+def _loader_image(values):
+    """The address of the own picture of the page loader (from the media library), or ''."""
+    try:
+        from django.core.files.storage import default_storage
+
+        from apps.medialib.models import MediaItem
+
+        mid = int(values.get("loader_image_id") or 0)
+        item = MediaItem.objects.filter(pk=mid, kind="image").first() if mid else None
+        return default_storage.url(item.key) if item else ""
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _theme_payload(values, with_schema=False):
     css, fonts_url = theme.build(values)
-    payload = {"values": values, "css": css, "fonts_url": fonts_url}
+    payload = {"values": {**values, "loader_image_url": _loader_image(values)}, "css": css, "fonts_url": fonts_url}
     if with_schema:
         payload["schema"] = theme.SCHEMA
         payload["presets"] = theme.presets()
@@ -47,7 +61,7 @@ def theme_settings(request):
 
     if not modules.enabled("theme") or not access_level(request.user, "theme") >= 2:
         return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
-    clean, errors = theme.validate(request.data.get("values"))
+    clean, errors = theme.validate({k: v for k, v in (request.data.get("values") or {}).items() if k != "loader_image_url"})
     if errors:
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
     final = theme.merged(clean)
@@ -217,7 +231,9 @@ from .models import ModuleState  # noqa: E402
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def modules_public(request):
-    return Response(modules.states())
+    from apps.plugins.models import Plugin
+
+    return Response({**modules.states(), **{f"plugin:{n}": on for n, on in Plugin.objects.values_list("name", "enabled")}})  # plugins count as modules for the website
 
 
 def _module_payload():
@@ -279,3 +295,527 @@ def system_settings(request):
         system.save(cleaned)
     return Response({"settings": system.get(), "checks": system.checks(request), "env": system.env_files(), "environments": system.ENVIRONMENTS,
                      "request_origin": f"{request.scheme}://{request.get_host()}"})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def system_reset(request):
+    """Back to a clean system (see apps/core/reset.py). Superadmins only. GET: what would go. POST {confirm: "RESET", password}: do it."""
+    from . import reset
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins mogen het systeem resetten."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "GET":
+        return Response(reset.summary())
+    if str(request.data.get("confirm", "")).strip() != "RESET":
+        return Response({"detail": "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
+    if not request.user.check_password(str(request.data.get("password", ""))):
+        return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
+    removed = reset.perform(request.user)
+    applied = None
+    if request.data.get("preset"):  # start straight from a standard installation
+        from . import presets
+
+        if request.data["preset"] in presets.BY_KEY:
+            applied = presets.apply(request.data["preset"])
+    return Response({"removed": removed, "applied": applied})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def presets_list(request):
+    """The standard installations (superadmins)."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    return Response(presets.listing())
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_apply(request, key):
+    """Switch everything for a standard installation: modules, plugins and the community theme. Superadmins only; no data is removed."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    return Response(presets.apply(key))
+
+
+@api_view(["POST"])
+@permission_classes([has_level("system", "manage"), module_required("system")])
+def maintenance_translate(request):
+    """The maintenance notice in every language of the system (also the ones that are off), translated by Claude. Fills the languages that are empty; overwrite=true replaces them all."""
+    import json
+
+    from apps.integrations import ai
+
+    from . import themeimport
+
+    cfg = system.get()
+    default = Language.objects.filter(is_default=True).values_list("code", flat=True).first() or "nl"
+    msgs = dict(cfg["maintenance_messages"])
+    source = msgs.get(default) or cfg["maintenance_message"] or "We zijn bezig met onderhoud. Probeer het straks opnieuw."
+    overwrite = bool(request.data.get("overwrite"))
+    todo = [(l.code, l.name) for l in Language.objects.all() if l.code != default and (overwrite or not msgs.get(l.code))]
+    if not todo:
+        return Response({"settings": system.get(), "translated": 0})
+    if not ai.available():
+        return Response({"detail": "Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan."}, status=status.HTTP_400_BAD_REQUEST)
+    prompt = json.dumps({"text": source, "source_language": default, "languages": [{"code": c, "name": n} for c, n in todo]}, ensure_ascii=False)
+    sysmsg = "You translate a short maintenance notice of a website. Keep the meaning and the friendly tone. Answer with ONE JSON object only, no text around it: {\"messages\": {code: translation}} with an entry for every requested language code."
+    try:
+        out = themeimport._parse_json(ai.claude(sysmsg, prompt, max_tokens=3000, timeout=90), need=("messages",))
+    except ValueError as e:
+        return Response({"detail": f"Vertalen mislukt: {e}"}, status=status.HTTP_502_BAD_GATEWAY)
+    got = out.get("messages") or {}
+    msgs[default] = source
+    n = 0
+    for c, _name in todo:
+        t = str(got.get(c) or "").strip()
+        if t:
+            msgs[c] = t[:500]
+            n += 1
+    system.save({"maintenance_messages": msgs})
+    return Response({"settings": system.get(), "translated": n})
+
+
+# ── Theme packages (Admin -> Themapakketten) ────────────────────────────────
+from django.http import HttpResponse  # noqa: E402
+from rest_framework.parsers import FormParser, MultiPartParser  # noqa: E402
+from rest_framework.decorators import parser_classes  # noqa: E402
+
+from . import themepacks  # noqa: E402
+from .models import ThemePack  # noqa: E402
+
+PACKS = [has_level_for("theme", {"GET": "use", "DELETE": "manage"}, default="edit"), module_required("theme")]
+_bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
+
+
+@api_view(["GET"])
+@permission_classes(PACKS)
+def theme_packs(request):
+    themepacks.scan()
+    from apps.integrations import ai
+
+    return Response({"packs": themepacks.listing(), "ai": ai.available(), "folder": str(themepacks.root()), "system_version": __import__("django.conf", fromlist=["settings"]).settings.SYSTEM_VERSION})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+@parser_classes([MultiPartParser, FormParser])
+def theme_pack_upload(request):
+    f = request.FILES.get("file")
+    if not f or not f.name.lower().endswith(".zip"):
+        return _bad("Kies een zipbestand met een thema.")
+    try:
+        themepacks.install_zip(f.read())
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes(PACKS)
+def theme_pack(request, key):
+    themepacks.scan()
+    builtin = key in themepacks.BUILTIN_KEYS()
+    row = None if builtin else ThemePack.objects.filter(key=key).first()
+    if not row and not builtin:
+        return _bad("Dit themapakket bestaat niet.", status.HTTP_404_NOT_FOUND)
+    if builtin and request.method == "DELETE":
+        return _bad("Een ingebouwd thema kan niet worden verwijderd. Je kunt het wel herstellen.")
+    if request.method == "DELETE":
+        themepacks.remove(key)
+    else:
+        if "enabled" in request.data and row:
+            row.enabled = bool(request.data.get("enabled"))
+            row.save(update_fields=["enabled", "updated_at"])
+        if any(k in request.data for k in ("name", "description", "version", "mode", "home", "values")):
+            try:
+                themepacks.update_meta(key, request.data)
+            except themepacks.ThemeError as e:
+                return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+def _pack_call(fn, *a):
+    try:
+        fn(*a)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_create(request):
+    name = str(request.data.get("name") or "").strip()
+    if not name:
+        return _bad("Geef het thema een naam.")
+    try:
+        key = themepacks.create(name, bool(request.data.get("from_current")))
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"key": key, "packs": themepacks.listing()}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes(PACKS)
+def theme_pack_assets(request, key):
+    try:
+        return Response(themepacks.data_urls(key))
+    except themepacks.ThemeError as e:
+        return _bad(str(e), status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["PUT", "DELETE"])
+@permission_classes(PACKS)
+@parser_classes([MultiPartParser, FormParser])
+def theme_pack_slot(request, key, slot):
+    if request.method == "DELETE":
+        return _pack_call(themepacks.clear_slot, key, slot)
+    f = request.FILES.get("image")
+    return _pack_call(themepacks.set_slot, key, slot, f.read()) if f else _bad("Kies een afbeelding.")
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+@parser_classes([MultiPartParser, FormParser])
+def theme_pack_home_add(request, key):
+    f = request.FILES.get("image")
+    return _pack_call(themepacks.add_home, key, f.read(), request.data.get("caption", "")) if f else _bad("Kies een afbeelding.")
+
+
+@api_view(["DELETE"])
+@permission_classes(PACKS)
+def theme_pack_home_del(request, key, index):
+    return _pack_call(themepacks.remove_home, key, index)
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_capture(request, key):
+    return _pack_call(themepacks.capture, key)
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_use(request, key):
+    """Make a theme (colours, fonts, shapes; optionally its logos and home photos) the look of the website."""
+    with_files = bool(request.data.get("files"))
+    if with_files and not (modules.enabled("branding") and access_level(request.user, "branding") >= 2):
+        return _bad("Je hebt geen rechten om logo's te wijzigen.", status.HTTP_403_FORBIDDEN)
+    try:
+        slots, photos = themepacks.use(key, with_files)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    logger.info("Theme %s put in use by %s (files=%s)", key, request.user.email, with_files)
+    return Response({"slots": slots, "photos": photos, "packs": themepacks.listing()})
+
+
+@api_view(["POST"])
+@permission_classes([has_level("branding", "edit"), module_required("branding"), *PACKS])
+def theme_pack_apply(request, key):
+    """Use the logos and home photos of a package for the site."""
+    try:
+        slots, photos = themepacks.apply_files(key)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    logger.info("Theme package %s applied (%s logos, %s photos) by %s", key, slots, photos, request.user.email)
+    return Response({"slots": slots, "photos": photos})
+
+
+@api_view(["GET"])
+@permission_classes(PACKS)
+def theme_pack_download(request, key):
+    data = themepacks.as_zip(key)
+    if not data:
+        return _bad("Dit themapakket bestaat niet.", status.HTTP_404_NOT_FOUND)
+    r = HttpResponse(data, content_type="application/zip")
+    r["Content-Disposition"] = f'attachment; filename="theme-{key}.zip"'
+    return r
+
+
+# ── A theme from a website address (draft first, then saved as a package) ───
+from . import themeimport  # noqa: E402
+from .models import ThemeImportJob  # noqa: E402
+
+
+def _job(request, pk):
+    try:
+        return ThemeImportJob.objects.filter(pk=pk, user=request.user).first()
+    except (ValueError, TypeError):
+        return None
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_import_start(request):
+    from apps.siteimport.importer import ImportError_
+
+    try:
+        job = themeimport.start(request.user, str(request.data.get("url") or ""))
+    except (ImportError_, themepacks.ThemeError) as e:
+        return _bad(str(e))
+    return Response(themeimport.public(job), status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "DELETE"])
+@permission_classes(PACKS)
+def theme_import(request, pk):
+    job = _job(request, pk)
+    if not job:
+        return _bad("Dit import bestaat niet (meer).", status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        themeimport.cleanup(job)
+        job.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(themeimport.public(job))
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_import_save(request, pk):
+    job = _job(request, pk)
+    if not job:
+        return _bad("Dit import bestaat niet (meer).", status.HTTP_404_NOT_FOUND)
+    b = request.data
+    photos = [int(i) for i in b.get("photos", [])]
+    if photos and not (modules.enabled("media") and access_level(request.user, "media") >= 2):
+        return _bad("Je hebt geen rechten om foto's aan de mediabibliotheek toe te voegen.", status.HTTP_403_FORBIDDEN)
+    try:
+        key, imported = themeimport.save(job, str(b.get("name") or "").strip()[:60], b.get("description"), [str(x) for x in b.get("assets", [])], [int(i) for i in b.get("home", [])],
+                                         b.get("values") if isinstance(b.get("values"), dict) else None, photos, request.user)
+    except (themepacks.ThemeError, ValueError) as e:
+        return _bad(str(e))
+    return Response({"key": key, "photos": imported, "packs": themepacks.listing()}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_import_refine(request, pk):
+    """Claude improves the draft after what the user writes; ?undo=1 puts the previous version back."""
+    job = _job(request, pk)
+    if not job:
+        return _bad("Dit import bestaat niet (meer).", status.HTTP_404_NOT_FOUND)
+    try:
+        if request.data.get("undo"):
+            themeimport.undo(job)
+            summary = ""
+        else:
+            summary = themeimport.refine(job, str(request.data.get("prompt") or ""))
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    job.refresh_from_db()
+    return Response({**themeimport.public(job), "summary": summary})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_reset(request, key):
+    """RSTCC / Studio2 back to the values of the system."""
+    try:
+        themepacks.reset_builtin(key)
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"packs": themepacks.listing()})
+
+
+@api_view(["POST"])
+@permission_classes(PACKS)
+def theme_pack_refine(request, key):
+    """Claude improves the settings of a package after what the user writes. The answer holds the previous values, so the screen can undo it."""
+    try:
+        doc = themepacks._doc(key)
+        cur = theme.merged(doc["values"])
+        changes, summary, _name, _desc = themeimport.refine_values(cur, str(request.data.get("prompt") or ""), doc.get("name", ""))
+        themepacks.update_meta(key, {"values": changes})
+    except themepacks.ThemeError as e:
+        return _bad(str(e))
+    return Response({"summary": summary, "changed": sorted(changes), "values": theme.merged(themepacks._doc(key)["values"]), "packs": themepacks.listing()})
+
+
+def _license_out():
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    from . import license_price, system
+
+    return {"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "", "issued_at": lic.issued_at if lic else None,
+            "valid_until": lic.valid_until.isoformat() if lic and lic.valid_until else None, "expired": system.license_info()["expired"],
+            "price": str(license_price.refresh()), "base_price": str(lic.base_price) if lic else "0.00", "renew_months": lic.renew_months if lic else 12, "has": system.license_info()["has"],
+            "reseller": {"name": lic.reseller_name, "email": lic.reseller_email, "url": lic.reseller_url} if lic else {"name": "", "email": "", "url": ""}}
+
+
+@api_view(["GET", "PUT", "POST", "DELETE"])
+@permission_classes([IsAdminUser])  # superadmins only
+def system_license(request):
+    """GET the licence; PUT {client}; POST makes a new licence number (XXXX-XXXX-XXXX-XXXX)."""
+    import secrets
+
+    from django.utils import timezone
+
+    from .models import License
+
+    from . import system
+
+    lic, _ = License.objects.get_or_create(pk=1)
+    if request.method == "PUT":
+        from datetime import date
+
+        d = request.data
+        if "client" in d:
+            lic.client = str(d.get("client") or "").strip()[:200]
+        if "client_address" in d:
+            lic.client_address = str(d.get("client_address") or "").strip()[:300]
+        if "valid_until" in d:
+            try:
+                lic.valid_until = date.fromisoformat(str(d["valid_until"])) if d.get("valid_until") else None
+            except ValueError:
+                return Response({"detail": "Geef een geldige datum."}, status=400)
+        if "base_price" in d:
+            try:
+                from decimal import Decimal
+
+                lic.base_price = max(Decimal(str(d["base_price"] or 0)), Decimal("0")).quantize(Decimal("0.01"))
+            except Exception:  # noqa: BLE001
+                return Response({"detail": "Geef een geldig bedrag."}, status=400)
+        if "renew_months" in d:
+            try:
+                lic.renew_months = min(max(int(d["renew_months"]), 1), 120)
+            except (TypeError, ValueError):
+                return Response({"detail": "Geef een aantal maanden (1-120)."}, status=400)
+        for k, n in (("reseller_name", 120), ("reseller_email", 254), ("reseller_url", 300)):
+            if k in d:
+                setattr(lic, k, str(d.get(k) or "").strip()[:n])
+        if lic.reseller_url and not re.fullmatch(r"https?://[^\s]{3,290}|/[^\s]{0,290}", lic.reseller_url):
+            return Response({"detail": "Geef een geldige link (https://…)."}, status=400)
+        lic.save(update_fields=["client", "client_address", "valid_until", "base_price", "renew_months", "reseller_name", "reseller_email", "reseller_url"])
+    elif request.method == "DELETE":  # empty the licence (the reseller data stays: it says where a new one is bought)
+        from .reset import clear_license
+
+        clear_license()
+        lic.refresh_from_db()
+    elif request.method == "POST":
+        alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I: easy to read out
+        lic.number = "-".join("".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(4))
+        lic.issued_at = timezone.now()
+        lic.save(update_fields=["number", "issued_at"])
+    system.license_changed()
+    return Response(_license_out())
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def license_status(request):
+    """For administrators (also when the licence has run out): the state of the licence and what renewing costs."""
+    from apps.accounts.access import can_admin
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    out = _license_out()
+    out["can_pay"] = bool(float(out["price"]) > 0)
+    return Response(out)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def license_pay(request):
+    """An administrator pays the renewal of the licence (a payment, simulated in the sandbox). Answer: {url} to continue at."""
+    from apps.accounts.access import can_admin
+    from apps.sandbox import service as sandbox
+
+    from . import system
+    from .models import License
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    from . import license_price
+
+    lic, _ = License.objects.get_or_create(pk=1)
+    license_price.refresh()
+    lic.refresh_from_db()
+    if lic.price <= 0:
+        return Response({"detail": "Verlengen is niet online mogelijk: neem contact op met de leverancier."}, status=400)
+    base = (request.headers.get("Origin") or "").rstrip("/")
+    back = f"{base}/dashboard/license" if base else ""
+    try:
+        p = sandbox.create_payment(lic.price, "EUR", f"Licentie {lic.number or ''}".strip(), sandbox.payment_provider(), back)
+    except (sandbox.NotConfigured, ValueError) as e:
+        return Response({"detail": str(e)}, status=400)
+    lic.payment_ref = p.ref
+    lic.save(update_fields=["payment_ref"])
+    done = sandbox.settle(p, back or "/dashboard/license")  # automatic mode: paid at once
+    system.license_changed()
+    return Response({"url": done or f"/sandbox/checkout/{p.ref}"})
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAdminUser])  # superadmins only
+def license_prices(request):
+    """The price (incl. VAT) of every module, plugin and game, and what is in use now. PUT {prices: {"module:faq": "2.50", "plugin:games": "10", "game:games:chess": "1"}}."""
+    from decimal import Decimal, InvalidOperation
+
+    from . import license_price
+    from .models import ComponentPrice, License
+
+    if request.method == "PUT":
+        for k, v in (request.data.get("prices") or {}).items():
+            kind, _, key = str(k).partition(":")
+            if kind not in ("module", "plugin", "game") or not key:
+                continue
+            try:
+                price = max(Decimal(str(v or 0)), Decimal("0")).quantize(Decimal("0.01"))
+            except (InvalidOperation, ValueError):
+                return Response({"detail": f"Ongeldig bedrag voor {key}."}, status=400)
+            if price > 0:
+                ComponentPrice.objects.update_or_create(kind=kind, key=key[:120], defaults={"price": price})
+            else:
+                ComponentPrice.objects.filter(kind=kind, key=key).delete()
+    lic, _ = License.objects.get_or_create(pk=1)
+    price = license_price.refresh()
+    items = [{**c, "price": str(c["price"])} for c in license_price.catalog()]
+    return Response({"items": items, "base_price": str(lic.base_price), "total": str(price), "in_use": str(price - lic.base_price)})
+
+
+def on_license_payment(payment):
+    """After a payment status change: a paid renewal moves the end date on (from today, or from the old end date when that is still ahead)."""
+    from datetime import date
+
+    from . import system
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.payment_ref or lic.payment_ref != payment.ref or payment.status != "paid":
+        return
+    start = max(date.today(), lic.valid_until or date.today())
+    y, m = divmod(start.month - 1 + lic.renew_months, 12)
+    import calendar
+
+    year, month = start.year + y, m + 1
+    lic.valid_until = date(year, month, min(start.day, calendar.monthrange(year, month)[1]))
+    lic.payment_ref = ""
+    lic.save(update_fields=["valid_until", "payment_ref"])
+    system.license_changed()
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def system_info(request):
+    """Info for the Info pop-up in the Beheer menu: the version of Easy2edit and the installed plugins."""
+    from django.conf import settings as dj
+
+    from apps.plugins.models import Plugin
+
+    plugins = [{"name": p.name, "title": p.manifest.get("title") or p.name, "version": p.manifest.get("version", ""), "enabled": p.enabled, "author": p.manifest.get("author", "")} for p in Plugin.objects.order_by("name")]
+    from apps.core import modules, system
+
+    sysdata = system.get()
+    on = modules.states()
+    mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "desc": m.get("desc", ""), "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core"))} for m in modules.MODULES]
+    return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
+                     "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})

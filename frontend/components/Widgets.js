@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -10,6 +11,7 @@ import { canAdmin, lvl } from "../lib/perms";
 import { IconBag, IconChat, IconGrid, IconGroup, IconKey, IconMail, IconSearch, IconShield, IconUser, IconUsers } from "./Icons";
 import { BarChart, Donut } from "./Charts";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
+import AgendaTile from "./AgendaTile";
 
 /* Dashboard blocks. A block only exists while its module is on and the user has the access it needs (see `available`).
    To add one: write a component, add an entry to WIDGETS. */
@@ -19,7 +21,7 @@ const useData = (path, deps = []) => {
   useEffect(() => { api(path).then(setD).catch(() => setD(null)); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   return d;
 };
-const Loading = ({ d }) => (d === undefined ? <p className="muted">{tx("Laden…")}</p> : d === null ? <p className="muted">{tx("Niet beschikbaar.")}</p> : null);
+const Loading = ({ d }) => (d === undefined ? <Busy /> : d === null ? <p className="muted">{tx("Niet beschikbaar.")}</p> : null);
 const monthName = (ym) => new Date(`${ym}-01`).toLocaleDateString("nl-NL", { month: "short" });
 
 function Welcome({ ctx }) {
@@ -36,9 +38,9 @@ function Shortcuts({ ctx }) {
     on(mods, "discover") && ["/dashboard/community/discover", tx("Zoeken & matchen"), tx("Vind nieuwe mensen"), <IconSearch key="i" />, "blue"],
     on(mods, "messages") && ["/dashboard/community/messages", tx("Berichten"), tx("Je postvak"), <IconMail key="i" />, "orange"],
     on(mods, "chat") && ["/dashboard/community/chat", tx("Chat"), tx("Praat live"), <IconChat key="i" />, "blue"],
-    on(mods, "chat") && chat?.method === "webrtc" && ["/dashboard/community/direct", tx("Directe verbinding"), tx("Uitnodigen via link"), <IconKey key="i" />, "orange"],
+    on(mods, "directconnect") && ["/dashboard/community/direct", tx("Directe verbinding"), tx("Uitnodigen via link"), <IconKey key="i" />, "orange"],
     on(mods, "profiles") && ["/dashboard/community/requests", tx("Vrienden & verzoeken"), tx("Wie wil je kennen"), <IconGroup key="i" />, "blue"],
-    on(mods, "products") && ["/producten", tx("Webshop"), tx("Bekijk de producten"), <IconBag key="i" />, "orange"],
+    mods["plugin:webshop"] === true && ["/producten", tx("Webshop"), tx("Bekijk de producten"), <IconBag key="i" />, "orange"],
     canAdmin(user, mods) && ["/dashboard/admin", tx("Admin"), tx("Beheer de site"), <IconShield key="i" />, "blue"],
     user.is_staff && ["/dashboard/superadmin", tx("Super admin"), tx("Modules en rechten"), <IconGrid key="i" />, "orange"],
   ].filter(Boolean);
@@ -164,7 +166,7 @@ function OrdersRecent() {
 function LowStock() {
   const d = useData("/dashboard/stats/?kind=low_stock");
   if (!d) return <Loading d={d} />;
-  return <><ul className="widget-list">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "stock-out" : "stock-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">{tx("Alle producten hebben voldoende voorraad.")}</p>}<Link className="btn sm" href="/dashboard/admin/products">{tx("Producten")}</Link></>;
+  return <><ul className="widget-list">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "stock-out" : "stock-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">{tx("Alle producten hebben voldoende voorraad.")}</p>}<Link className="btn sm" href="/dashboard/admin/plugins/webshop">{tx("Producten")}</Link></>;
 }
 
 function MediaUsage() {
@@ -197,7 +199,7 @@ function DirectBlock() {
     const t = setInterval(load, 4000);
     return () => { stop = true; clearInterval(t); };
   }, []);
-  if (!rooms) return <p className="muted">{tx("Laden…")}</p>;
+  if (!rooms) return <Busy />;
   const connected = rooms.filter((r) => r.guest_online);
   return (
     <>
@@ -226,10 +228,11 @@ export const WIDGETS = [
   { id: "welcome", group: "Algemeen", title: "Welkom", desc: "Begroeting", size: 2, ok: () => true, C: Welcome },
   { id: "notice", group: "Algemeen", title: "Mededeling", desc: "Een bericht van de beheerders voor alle gebruikers", size: 2, ok: () => true, C: Notice },
   { id: "shortcuts", group: "Algemeen", title: "Snelkoppelingen", desc: "Snel naar je pagina's", size: 2, ok: () => true, C: Shortcuts },
+  { id: "agenda", group: "Algemeen", title: "Agenda", desc: "Je komende afspraken, op jouw manier: lijst, eerstvolgende, week, maand of compact", size: 1, ok: ({ mods }) => mods["plugin:agenda"] === true, C: AgendaTile },
   { id: "profile", group: "Community", title: "Mijn profielpagina", desc: "Status van je profiel", size: 1, ok: ({ mods }) => on(mods, "profiles"), C: ProfileBlock },
   { id: "messages", group: "Community", title: "Berichten", desc: "Ongelezen berichten en laatste gesprekken", size: 1, ok: ({ mods }) => on(mods, "messages"), C: MessagesBlock },
   { id: "chat", group: "Community", title: "Chat", desc: "Ongelezen chatberichten", size: 1, ok: ({ mods }) => on(mods, "chat"), C: ChatBlock },
-  { id: "direct", group: "Community", title: "Directe verbinding", desc: "Wie nu rechtstreeks met je verbonden is", size: 1, ok: ({ mods, chat }) => on(mods, "chat") && chat?.method === "webrtc", C: DirectBlock },
+  { id: "direct", group: "Community", title: "Directe verbinding", desc: "Wie nu rechtstreeks met je verbonden is", size: 1, ok: ({ mods }) => on(mods, "directconnect"), C: DirectBlock },
   { id: "matches", group: "Community", title: "Matches & likes", desc: "Je matches, nieuwe likes en favorieten", size: 1, ok: ({ mods }) => on(mods, "profiles", "discover"), C: MatchesBlock },
   { id: "find", group: "Community", title: "Zoeken", desc: "Snel naar de zoekpagina van jouw profieltype", size: 1, ok: ({ mods }) => on(mods, "profiles", "discover"), C: FindBlock },
   { id: "swipe", group: "Community", title: "Swipen", desc: "Like, sla over of stuur een kort bericht", size: 1, ok: ({ mods, swipe }) => on(mods, "profiles", "discover") && !!swipe, C: SwipeBlock },
@@ -238,7 +241,7 @@ export const WIDGETS = [
   { id: "users_chart", group: "Beheer", title: "Nieuwe users per maand", desc: "Grafiek van de laatste 12 maanden", size: 2, ok: ({ user }) => lvl(user, "users") >= 1, C: UsersChart },
   { id: "orders_chart", group: "Beheer", title: "Omzet per dag", desc: "Grafiek van de laatste 30 dagen", size: 2, ok: ({ user, mods }) => on(mods, "orders") && lvl(user, "orders") >= 1, C: OrdersChart },
   { id: "orders_recent", group: "Beheer", title: "Laatste bestellingen", desc: "De nieuwste orders", size: 1, ok: ({ user, mods }) => on(mods, "orders") && lvl(user, "orders") >= 1, C: OrdersRecent },
-  { id: "low_stock", group: "Beheer", title: "Lage voorraad", desc: "Producten die bijna op zijn", size: 1, ok: ({ user, mods }) => on(mods, "products") && lvl(user, "products") >= 1, C: LowStock },
+  { id: "low_stock", group: "Beheer", title: "Lage voorraad", desc: "Producten die bijna op zijn", size: 1, ok: ({ user, mods }) => mods["plugin:webshop"] === true && lvl(user, "orders") >= 1, C: LowStock },
   { id: "media_usage", group: "Beheer", title: "Mediagebruik", desc: "Aantal en grootte van je bestanden", size: 1, ok: ({ user, mods }) => on(mods, "media") && lvl(user, "media") >= 1, C: MediaUsage },
   { id: "sandbox", group: "Beheer", title: "Sandbox", desc: "Staat de testomgeving aan?", size: 1, ok: ({ user, mods }) => on(mods, "sandbox") && lvl(user, "sandbox") >= 1, C: SandboxBlock },
   { id: "modules", group: "Beheer", title: "Modules", desc: "Welke modules aan staan", size: 1, ok: ({ user }) => user.is_staff, C: ModulesBlock },
@@ -250,11 +253,11 @@ export const byId = Object.fromEntries(WIDGETS.map((w) => [w.id, w]));
 export const DASH_THEMES = { normal: "Normaal", dating: "Dating", sporters: "Sporters", business: "Business", webshop: "Webshop" };
 export const DASH_LAYOUTS = [["calm", "Rustig"], ["standard", "Standaard"], ["full", "Uitgebreid"]];
 const THEME_DASH = {
-  normal: { calm: ["welcome", "find", "messages"], standard: ["welcome", "shortcuts", "messages", "chat", "profile"], full: ["welcome", "notice", "shortcuts", "messages", "chat", "direct", "profile", "matches", "visits_chart"], suggested: ["find", "shortcuts", "chat", "direct", "notice"] },
-  dating: { calm: ["welcome", "swipe", "matches"], standard: ["welcome", "swipe", "matches", "messages", "visits_chart", "profile", "chat"], full: ["welcome", "notice", "shortcuts", "matches", "messages", "visits_chart", "profile", "chat", "direct"], suggested: ["find", "visits_chart", "direct", "chat", "shortcuts"] },
-  sporters: { calm: ["welcome", "find", "profile"], standard: ["welcome", "shortcuts", "profile", "messages", "chat", "direct"], full: ["welcome", "notice", "shortcuts", "profile", "messages", "chat", "direct", "matches", "visits_chart"], suggested: ["find", "notice", "direct", "chat", "matches"] },
-  business: { calm: ["welcome", "find", "messages"], standard: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart"], full: ["welcome", "notice", "shortcuts", "messages", "profile", "visits_chart", "chat", "direct", "users_stats"], suggested: ["find", "notice", "visits_chart", "direct", "users_stats"] },
-  webshop: { calm: ["welcome", "orders_recent", "low_stock"], standard: ["welcome", "orders_chart", "orders_recent", "low_stock", "messages", "shortcuts"], full: ["welcome", "notice", "orders_chart", "orders_recent", "low_stock", "media_usage", "messages", "shortcuts", "profile"], suggested: ["orders_chart", "orders_recent", "low_stock", "media_usage"] },
+  normal: { calm: ["welcome", "agenda", "find", "messages"], standard: ["welcome", "agenda", "shortcuts", "messages", "chat", "profile"], full: ["welcome", "agenda", "notice", "shortcuts", "messages", "chat", "direct", "profile", "matches", "visits_chart"], suggested: ["agenda", "find", "shortcuts", "chat", "direct", "notice"] },
+  dating: { calm: ["welcome", "agenda", "swipe", "matches"], standard: ["welcome", "agenda", "swipe", "matches", "messages", "visits_chart", "profile", "chat"], full: ["welcome", "agenda", "notice", "shortcuts", "matches", "messages", "visits_chart", "profile", "chat", "direct"], suggested: ["agenda", "find", "visits_chart", "direct", "chat", "shortcuts"] },
+  sporters: { calm: ["welcome", "agenda", "find", "profile"], standard: ["welcome", "agenda", "shortcuts", "profile", "messages", "chat", "direct"], full: ["welcome", "agenda", "notice", "shortcuts", "profile", "messages", "chat", "direct", "matches", "visits_chart"], suggested: ["agenda", "find", "notice", "direct", "chat", "matches"] },
+  business: { calm: ["welcome", "agenda", "find", "messages"], standard: ["welcome", "agenda", "notice", "shortcuts", "messages", "profile", "visits_chart"], full: ["welcome", "agenda", "notice", "shortcuts", "messages", "profile", "visits_chart", "chat", "direct", "users_stats"], suggested: ["agenda", "find", "notice", "visits_chart", "direct", "users_stats"] },
+  webshop: { calm: ["welcome", "agenda", "orders_recent", "low_stock"], standard: ["welcome", "agenda", "orders_chart", "orders_recent", "low_stock", "messages", "shortcuts"], full: ["welcome", "agenda", "notice", "orders_chart", "orders_recent", "low_stock", "media_usage", "messages", "shortcuts", "profile"], suggested: ["agenda", "orders_chart", "orders_recent", "low_stock", "media_usage"] },
 };
 const dash = (theme) => THEME_DASH[theme] || THEME_DASH.normal;
 export const suggestedFor = (theme) => dash(theme).suggested;

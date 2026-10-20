@@ -8,11 +8,12 @@ export const TILES = [
   { href: "/dashboard/admin/languages", title: "Talen", big: "Talen & standaardtaal", small: "Welke talen de website aanbiedt", modules: ["languages"] },
   { href: "/dashboard/admin/communication", title: "Communicatie", big: "E-mail en mobiele nummers", small: "Afzenders, antwoordadressen en nummers", modules: ["communication"] },
   { href: "/dashboard/admin/integrations", title: "API keys", big: "Externe koppelingen", small: "Aan/uit, testen en beheren", modules: ["integrations"] },
-  { href: "/dashboard/admin/products", title: "Producten", big: "Producten en productgroepen", small: "Prijzen, voorraad, foto's en beschrijving", modules: ["products"] },
   { href: "/dashboard/admin/orders", title: "Orders", big: "Bestellingen en webshop", small: "Status, klantgegevens en instellingen", modules: ["orders"] },
+  { href: "/dashboard/admin/notifications", title: "Notificaties", big: "Meldingen aan gebruikers", small: "Weergave, soorten, e-mail en berichten sturen", modules: ["notifications"] },
+  { href: "/dashboard/admin/faq", title: "FAQ", big: "Eigen veelgestelde vragen", small: "Maken, vertalen en ordenen voor de pagina /faq", modules: ["faq"] },
+  { href: "/dashboard/admin/helptips", title: "Help-teksten", big: "Uitleg in de bewerkmodus", small: "Wijzig de uitleg van het vraagteken per taal", modules: ["pages"] },
   { href: "/dashboard/admin/media", title: "Media", big: "Afbeeldingen & video's", small: "Lokaal of S3, per bestand", modules: ["media"] },
-  { href: "/dashboard/admin/branding", title: "Logo's & beeld", big: "Logo, favicon, foto's", small: "Voor de website en onderhoudspagina", modules: ["branding"] },
-  { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat"] },
+  { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat", "directconnect"] },
   { href: "/dashboard/admin/seo", title: "SEO", big: "Zoekmachines, bots en AI-agents", small: "robots.txt, sitemap, llms.txt, titels", modules: ["seo"] },
   { href: "/dashboard/admin/security", title: "Beveiliging", big: "Landen, 18+, cookies", small: "Toegang, popups en verboden woorden", modules: SEC },
   { href: "/dashboard/admin/subscriptions", title: "Abonnementen", big: "Toegang verkopen", small: "Abonnementen met een order per periode en toegang tot site, chat, video en meer", modules: ["subscriptions"] },
@@ -24,7 +25,7 @@ export const TILES = [
   { href: "/dashboard/admin/pages", title: "Pagina's", big: "Pagina's en header-menu", small: "Overzicht, menu-editor, eigen pagina's en links", modules: ["pages"] },
   { href: "/dashboard/admin/sysobjects", title: "Systeemobjecten", big: "Onderdelen voor op pagina's", small: "Donatieknoppen en abonnementen die je in bewerkmodus op een pagina zet", modules: ["sysobjects"] },
   { href: "/dashboard/admin/siteimport", title: "Site importeren", big: "Een andere site inlezen", small: "Thema, pagina's, startpagina en afbeeldingen; weer te verwijderen", modules: ["siteimport"] },
-  { href: "/dashboard/admin/theme", title: "Vormgeving", big: "Kleuren & lettertypen", small: "Stijl van de hele website", modules: ["theme"] },
+  { href: "/dashboard/admin/theme", title: "Thema", big: "Thema's, kleuren, logo's, e-mail", small: "De hele uitstraling van de website", modules: ["theme", "branding"] },
 ];
 
 export const LEVEL_LABEL = { 1: "Gebruik", 2: "Bewerken", 3: "Beheer" };

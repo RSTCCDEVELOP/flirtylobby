@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from apps.accounts.access import level
 
 from . import modules
-from .models import DashboardLayout
+from .models import DashboardLayout, UserShortcuts
 
 
 def _theme():
@@ -83,6 +83,50 @@ def default_layout(request):
         columns = _cols(request.data.get("columns"))
         DashboardLayout.objects.update_or_create(user=None, defaults={"widgets": _clean(request.data.get("widgets"), columns), "columns": columns})
     return Response({"ok": True})
+
+
+def _clean_shortcuts(items):
+    out, seen = [], set()
+    for x in items if isinstance(items, list) else []:
+        href, title = (str(x.get("href", "")), str(x.get("title", "")).strip()[:80]) if isinstance(x, dict) else ("", "")
+        # only pages of this site (no other host, no scheme)
+        if re.fullmatch(r"/[A-Za-z0-9/_\-]{1,160}", href) and not href.startswith("//") and title and href not in seen:
+            seen.add(href)
+            out.append({"href": href, "title": title})
+    return out[:24]
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def shortcuts(request):
+    """Shortcut tiles on the user's own dashboard."""
+    row = UserShortcuts.objects.filter(user=request.user).first()
+    if request.method == "PUT":
+        row, _ = UserShortcuts.objects.update_or_create(user=request.user, defaults={"items": _clean_shortcuts(request.data.get("items"))})
+    return Response({"items": row.items if row else []})
+
+
+PREF_KEY = re.compile(r"^(?:(?:collapse|collapse-pin|navg|navg-pin|view):[A-Za-z0-9_.\-]{1,80}|navmode|sidebar|lastBackendUrl|theme|lang|editMode|directSize|directPos|directView)$")
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def prefs(request):
+    """The personal settings of this user, kept in the database so they are the same on every computer. PUT {set: {key: text}, remove: [key]}."""
+    from .models import UserPrefs
+
+    row = UserPrefs.objects.filter(user=request.user).first()
+    data = dict(row.data) if row else {}
+    if request.method == "PUT":
+        for k, v in (request.data.get("set") or {}).items() if isinstance(request.data.get("set"), dict) else []:
+            if PREF_KEY.match(str(k)):
+                data[str(k)] = str(v)[:200]
+        for k in request.data.get("remove") or [] if isinstance(request.data.get("remove"), list) else []:
+            data.pop(str(k), None)
+        if len(data) > 600:
+            return Response({"detail": "Te veel instellingen."}, status=status.HTTP_400_BAD_REQUEST)
+        UserPrefs.objects.update_or_create(user=request.user, defaults={"data": data})
+    return Response({"prefs": data})
 
 
 def _days(n):
@@ -164,9 +208,9 @@ def stats(request):
         return Response([{"number": o.number, "name": o.name, "total": str(o.total), "status": o.status, "at": o.created_at} for o in Order.objects.all()[:6]])
 
     if kind == "low_stock":
-        if level(me, "products") < 1 or not modules.enabled("products"):
+        if level(me, "orders") < 1 or not modules.enabled("plugin:webshop"):
             return deny
-        from apps.shop.models import Product
+        from apps.shop import catalog
 
-        return Response([{"id": p.id, "name": p.name, "stock": p.stock} for p in Product.objects.filter(active=True, stock__isnull=False, stock__lte=5).order_by("stock")[:8]])
+        return Response(catalog.low_stock())
     return Response({"detail": "Onbekend."}, status=status.HTTP_400_BAD_REQUEST)

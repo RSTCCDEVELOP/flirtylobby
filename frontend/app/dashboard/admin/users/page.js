@@ -1,5 +1,6 @@
 "use client";
 
+import MediaField from "../../../../components/MediaField";
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
@@ -8,16 +9,19 @@ import { useAuth } from "../../../../components/AuthContext";
 import VerifyBadge, { VERIFY } from "../../../../components/VerifyBadge";
 import Collapsible from "../../../../components/Collapsible";
 import Tabs from "../../../../components/Tabs";
+import UserInvites from "../../../../components/UserInvites";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
+import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { lvl } from "../../../../lib/perms";
 
 const EMPTY = { user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
 const initials = (u) => (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
 
 export default function Users() {
+  const genders = useGenders();
   const tv = useView("users", "list");
   const { user: me } = useAuth();
   const router = useRouter();
@@ -102,6 +106,7 @@ export default function Users() {
         <h1>{tx("Users")}</h1>
         <div className="head-actions">
           {L >= 3 && fake?.available && <button className="btn" onClick={() => setFk({ count: 3, gender: "", photos: 2, mood: "", busy: false, error: "", done: "" })}>✨ {tx("Nep-gebruikers (AI)")}</button>}
+          {L >= 3 && <button className="btn" onClick={() => window.dispatchEvent(new Event("invite-open"))}>{tx("Nodig uit")}</button>}
           {L >= 3 && <button className="btn primary" onClick={() => { setTab("account"); setModal({ ...EMPTY }); }}>{tx("+ Nieuwe gebruiker")}</button>}
         </div>
       </div>
@@ -151,6 +156,8 @@ export default function Users() {
       </TableView>
       </Collapsible>
 
+      {L >= 3 && <UserInvites roles={roles} groups={groups} />}
+
       {fk && (
         <div className="overlay" onClick={() => !fk.busy && setFk(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={makeFakes}>
@@ -158,7 +165,7 @@ export default function Users() {
             <p className="muted" style={{ margin: 0, fontSize: ".88rem" }}>{tx("Claude verzint personen met voor- en achternaam en vult het profiel in volgens de profielvelden van de community-instellingen")}{fake?.fields?.length ? ` (${fake.fields.slice(0, 6).join(", ")}${fake.fields.length > 6 ? ", …" : ""})` : ""}. {tx("Als foto's krijgen ze getekende avatars in de kleur van hun geslacht. Een echt portret kan AI hier niet maken.")}</p>
             <div className="form-grid">
               <label>{tx("Aantal (1–10)")}<input type="number" min={1} max={10} value={fk.count} onChange={(e) => setFk({ ...fk, count: e.target.value })} /></label>
-              <label>{tx("Geslacht")}<select value={fk.gender} onChange={(e) => setFk({ ...fk, gender: e.target.value })}><option value="">{tx("Gemengd")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Overig")}</option></select></label>
+              <label>{tx("Geslacht")}<select value={fk.gender} onChange={(e) => setFk({ ...fk, gender: e.target.value })}><option value="">{tx("Gemengd")}</option>{genders.map((g) => <option key={g} value={g}>{tx(GENDER_LABELS[g])}</option>)}</select></label>
               <label>{tx("Foto's per gebruiker (0–4)")}<input type="number" min={0} max={4} value={fk.photos} onChange={(e) => setFk({ ...fk, photos: e.target.value })} /></label>
             </div>
             <label>{tx("Sfeer of wens (optioneel)")}<input value={fk.mood} maxLength={300} placeholder={tx("bv. sportieve mensen tussen 30 en 45 uit Brabant")} onChange={(e) => setFk({ ...fk, mood: e.target.value })} /></label>
@@ -203,10 +210,7 @@ export default function Users() {
             <div className="photo-row" hidden={tab !== "profile"}>
               {modal.preview || modal.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={modal.preview || mediaUrl(modal.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{initials(modal)}</span>}
               <span className="row" style={{ justifyContent: "flex-start" }}>
-                <label className="btn sm" style={{ cursor: "pointer" }}>
-                  {modal.preview || modal.image ? tx("Foto vervangen") : tx("Foto uploaden")}
-                  <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files[0]; e.target.value = ""; if (f) photo(f); }} />
-                </label>
+                <MediaField onFiles={(fs) => photo(fs[0])} />
                 {(modal.image || modal.preview) && <button type="button" className="btn sm danger" onClick={() => photo(null)}>{tx("Foto verwijderen")}</button>}
               </span>
             </div>

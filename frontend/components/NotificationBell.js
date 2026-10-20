@@ -7,11 +7,17 @@ import { api, mediaUrl } from "../lib/api";
 import { IconBell, IconHeart, IconMail } from "./Icons";
 import { useModule } from "./Modules";
 import { useSession } from "./Session";
+import NotificationFeed from "./NotificationFeed";
 
 const LINK = { like: "/dashboard/community/discover?tab=likedme", match: "/dashboard/community/discover?tab=matches", message: "/dashboard/community/messages", dchat: "/dashboard/community/direct" };
 
 // Bell in the header: who liked you, new matches and short messages. A new one also pops up as a notice for a moment.
 export default function NotificationBell() {
+  const generic = useModule("notifications");
+  return generic ? <NotificationFeed /> : <LegacyBell />;
+}
+
+function LegacyBell() {
   const { user } = useSession();
   const on = useModule("profiles");
   const [data, setData] = useState({ unseen: 0, items: [] });

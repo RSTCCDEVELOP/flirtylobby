@@ -24,8 +24,10 @@ class Profile(models.Model):
     languages = models.JSONField(default=list, blank=True)  # visible in these (active) languages; empty = all
     searchable_local = models.BooleanField(default=True)  # findable in the member search of this system
     searchable_public = models.BooleanField(default=False)  # findable by search engines (sitemap + index)
-    accept_messages = models.BooleanField(default=True)
-    accept_chat = models.BooleanField(default=True)
+    accept_messages = models.BooleanField(default=False)
+    accept_chat = models.BooleanField(default=False)
+    contact = models.JSONField(default=dict, blank=True)  # how others may contact this member: {"video": bool, "whatsapp": {"on", "value", "friends"}, ...}; everything off by default
+    design = models.CharField(max_length=20, blank=True)  # colour theme of the profile page (themes.PROFILE_DESIGNS); empty = the site style
     # "Zoeken & matchen" (dating-style discovery)
     discover = models.BooleanField(default=False)  # takes part: can search others and be found
     gender = models.CharField(max_length=1, blank=True)  # m | f | x
@@ -43,6 +45,8 @@ class Profile(models.Model):
     show_distance = models.BooleanField(default=True)
     show_age = models.BooleanField(default=True)
     show_city = models.BooleanField(default=True)
+    visible_if_liked = models.BooleanField(default=False)  # others only see this profile when this member has liked them
+    available = models.JSONField(default=list, blank=True)  # "Beschikbaar voor": keys of AvailabilityOption (games, direct connection, chat, type of date, type of connection ...)
     updated_at = models.DateTimeField(auto_now=True)
 
 
@@ -218,6 +222,8 @@ class DirectRoom(models.Model):
     guest_gender = models.CharField(max_length=1, blank=True)  # m | f | x, asked before connecting
     chat_request = models.CharField(max_length=8, blank=True)  # the guest asks to chat: "" | asked | declined | accepted
     guest_key = models.CharField(max_length=64, blank=True)  # secret of the one guest who joined
+    owner_langs = models.CharField(max_length=60, blank=True)  # languages (codes, comma separated) the visitor wants to connect in
+    guest_langs = models.CharField(max_length=60, blank=True)
     guest_seen = models.DateTimeField(null=True, blank=True)
     owner_seen = models.DateTimeField(null=True, blank=True)
 
@@ -254,3 +260,21 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
+
+class AvailabilityOption(models.Model):
+    """One thing a member can be "available for" (profile block "Beschikbaar voor"), also used to search on.
+    Own items (custom) are made in Admin -> Community; items that come from a module (a game, direct connection, chat, video chat) are added by the system
+    while that module is on, and can only be switched on or off."""
+
+    GROUPS = [("games", "Games"), ("direct", "Directe verbinding"), ("chat", "Chat en videochat"), ("date", "Soort date"), ("connection", "Soort connectie"), ("work", "Werk en netwerk"), ("training", "Samen sporten")]
+
+    key = models.CharField(max_length=60, unique=True)
+    group = models.CharField(max_length=12, default="date")
+    label = models.JSONField(default=dict)  # {"nl": "...", "en": "..."}
+    enabled = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    source = models.CharField(max_length=40, blank=True)  # "" = own item; "game:<name>" | "direct" | "chat" | "video" = from a module
+
+    class Meta:
+        ordering = ["order", "id"]

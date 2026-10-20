@@ -8,6 +8,7 @@ import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
 import { alertDialog } from "../../../../lib/dialog";
+import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { useView } from "../../../../lib/useView";
 import S3Browser from "../../../../components/S3Browser";
@@ -158,6 +159,7 @@ export default function Integrations() {
 
       <Collapsible id="integrations-list" title={tx("Koppelingen")}>
       <ViewBar view={view} count={`${items.length}`} placeholder={tx("Zoek een koppeling…")} />
+      <Paged id="integrations" query={view.q}>
       <div className={`api-grid${view.cls}`}>
         {items.filter((i) => view.match(i.name, i.slug, i.provider_label, i.last_test_message)).map((i) => {
           const st = statusOf(i);
@@ -193,6 +195,7 @@ export default function Integrations() {
         })}
         {!items.length && <p className="muted">{tx("Nog geen koppelingen.")}</p>}
       </div>
+      </Paged>
       </Collapsible>
 
       {browse && <S3Browser integration={browse} onClose={() => setBrowse(null)} />}

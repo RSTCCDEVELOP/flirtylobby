@@ -1,9 +1,12 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const TIMEZONES = ["Europe/Amsterdam", "Europe/Brussels", "Europe/Berlin", "Europe/Paris", "Europe/London", "Europe/Madrid", "Europe/Lisbon", "Europe/Rome", "Europe/Vienna", "Europe/Zurich", "Europe/Athens", "Europe/Istanbul", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "UTC"];
 const ENV_NAME = { production: "Live (productie)", staging: "Test (staging)", development: "Ontwikkeling" };
@@ -32,15 +35,27 @@ export default function SystemPage() {
   const [msg, setMsg] = useState(null);
   const load = (r) => { setD(r); setForm({ ...r.settings, extra_origins: (r.settings.extra_origins || []).join(", "), aliases: (r.settings.aliases || []).join(", ") }); };
   useEffect(() => { api("/system/").then(load).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
+  const [trBusy, setTrBusy] = useState(false);
+  async function translateNotice() {
+    setTrBusy(true); setMsg(null);
+    try {
+      await save(); // the source text first
+      const r = await api("/system/maintenance-translate/", { method: "POST", body: {} });
+      setForm((f) => ({ ...f, maintenance_messages: r.settings.maintenance_messages }));
+      setMsg({ ok: true, text: r.translated ? tx("{0} talen zijn ingevuld.", r.translated) : tx("Alle talen waren al ingevuld.") });
+    } catch (err) { setMsg({ ok: false, text: errorText(err) }); }
+    setTrBusy(false);
+  }
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   async function save(e) {
-    e.preventDefault();
-    try { load(await api("/system/", { method: "PUT", body: { ...form, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean), aliases: String(form.aliases || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg({ ok: true, text: tx("Opgeslagen.") }); }
-    catch (err) { setMsg({ ok: false, text: errorText(err) }); }
+    e?.preventDefault?.();
+    try { load(await api("/system/", { method: "PUT", body: { ...form, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean), aliases: String(form.aliases || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg(null); }
+    catch (err) { setMsg({ ok: false, text: errorText(err) }); return false; }
   }
 
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  const auto = useAutoSave(form, save, { ready: !!d, delay: 1200 }); // saves by itself, no Save button
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const clientApi = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
   const checks = [...d.checks];
   if (d.settings.backend_url && clientApi && clientApi !== d.settings.backend_url.replace(/\/$/, "")) {
@@ -71,9 +86,24 @@ export default function SystemPage() {
           <p className="muted" style={{ margin: ".4rem 0", fontSize: ".82rem" }}>{tx("De naam van de website staat in de header, de titel van het browsertabblad, e-mails, de app-naam en de 2-staps-app. Het tabblad toont op de startpagina de tabbladtitel (leeg = de naam van de website); andere pagina's tonen \"paginatitel | naam van de website\". De titel per pagina stel je in bij SEO of bij de pagina-instellingen.")}</p>
           <label className="check sec-toggle">
             <input type="checkbox" checked={!!form.maintenance} onChange={set("maintenance")} />
-            <span><strong>{tx("Onderhoudsmodus")}</strong><br /><small className="muted">{tx("Bezoekers zien een melding; superadmins en de inlogpagina blijven bereikbaar.")}</small></span>
+            <span><strong>{tx("Onderhoudsmodus")}</strong><br /><small className="muted">{tx("Bezoekers zien alleen een onderhoudspagina, zonder menu's. Inloggen via /login kan alleen voor superadmins en beheerders.")}</small></span>
           </label>
-          {form.maintenance && <label>{tx("Melding tijdens onderhoud")}<input value={form.maintenance_message} onChange={set("maintenance_message")} maxLength={500} placeholder={tx("We zijn bezig met onderhoud. Probeer het straks opnieuw.")} /></label>}
+          {form.maintenance && (
+            <>
+              <label>{tx("Melding tijdens onderhoud")}<input value={form.maintenance_message} onChange={set("maintenance_message")} maxLength={500} placeholder={tx("We zijn bezig met onderhoud. Probeer het straks opnieuw.")} /></label>
+              <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
+                <button type="button" className="btn sm primary" disabled={trBusy} onClick={translateNotice}>{trBusy ? tx("Claude vertaalt…") : tx("Vertaal de melding in alle talen")}</button>
+                <small className="muted">{tx("Maakt de melding voor alle talen van het systeem, ook de talen die uit staan. De tekst hierboven is de bron.")}</small>
+              </div>
+              {Object.keys(form.maintenance_messages || {}).length > 0 && (
+                <div className="grid2">
+                  {Object.entries(form.maintenance_messages).map(([c, t]) => (
+                    <label key={c}>{c.toUpperCase()}<input value={t} maxLength={500} onChange={(e) => setForm({ ...form, maintenance_messages: { ...form.maintenance_messages, [c]: e.target.value } })} /></label>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </Collapsible>
         <Collapsible id="sys-urls" title={tx("Adressen")} defaultOpen>
           <p className="muted" style={{ marginTop: 0, fontSize: ".85rem" }}>{tx("Zonder pad en zonder slash erachter. Het website-adres mag de API gebruiken zonder dat je de server-instellingen aanpast.")}</p>
@@ -116,7 +146,7 @@ export default function SystemPage() {
             <label>{tx("Profielfoto (MB)")}<input type="number" min="1" max="50" value={form.max_photo_mb} onChange={set("max_photo_mb")} /></label>
           </div>
         </Collapsible>
-        <div className="profile-save"><button className="btn primary">{tx("Opslaan")}</button></div>
+        <div className="profile-save"><SaveStatus auto={auto} /></div>
       </form>
 
       <Collapsible id="sys-checks" title={`${tx("Controle van de installatie")}${bad ? ` · ${bad} ${tx("fout")}` : ""}${warn ? ` · ${warn} ${tx("let op")}` : ""}`} defaultOpen>

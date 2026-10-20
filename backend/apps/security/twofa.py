@@ -142,7 +142,9 @@ def issue_code(user, force_email=False):
 
     code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
     fmt = lambda t: t.replace("{code}", code).replace("{minutes}", str(cfg["code_minutes"]))  # noqa: E731
-    deliver(user, fmt(_text("email_subject")), fmt(_text("email_body")), fmt(_text("sms_body")), force_email)
+    on_screen = sandbox.code_on_screen()  # sandbox: nothing is sent, the screen shows the code
+    if not on_screen:
+        deliver(user, fmt(_text("email_subject")), fmt(_text("email_body")), fmt(_text("sms_body")), force_email, code=code)
     user.otp_token = _hash(user, code)
     user.otp_expires = timezone.now() + timedelta(minutes=cfg["code_minutes"])
     user.otp_attempts = 0
@@ -150,6 +152,7 @@ def issue_code(user, force_email=False):
     user.save(update_fields=["otp_token", "otp_expires", "otp_attempts", "otp_sent_at"])
     if dj_settings.DEBUG:
         logger.warning("2FA code for %s (DEBUG only): %s", user.email, code)
+    return code if on_screen else None
 
 
 def app_start(user):
@@ -229,13 +232,13 @@ def send_sms(phone, text):
                 "body": {"type": "text", "text": {"text": text}}})
 
 
-def deliver(user, subject, email_body, sms_body, force_email=False):
+def deliver(user, subject, email_body, sms_body, force_email=False, code=None):
     from apps.sandbox import service as sandbox
 
     if user.twofa_method == "sms" and not force_email:
         return send_sms(user.phone, sms_body)
 
     try:
-        sending.send_email(user.email, subject, email_body, purpose="security")
+        sending.send_email(user.email, subject, email_body, purpose="security", code=code)
     except sending.DeliveryError as e:
         raise DeliveryError(str(e))

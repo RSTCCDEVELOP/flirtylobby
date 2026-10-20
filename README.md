@@ -75,4 +75,3 @@ Create an admin user: `docker compose exec backend python manage.py createsuperu
 ## Beheer (dashboard)
 - Login: `/login`. The first admin is created on start from `ADMIN_EMAIL` / `ADMIN_PASSWORD` (`python manage.py ensure_admin`).
 - `/dashboard`: dashboard, own profile. `/dashboard/admin`: users (create/block/delete), members, design ("Vormgeving": colors, fonts, sizes; defined in `backend/apps/core/theme.py`).
-# easy2edit

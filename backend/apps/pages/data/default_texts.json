@@ -1,0 +1,632 @@
+{
+ "title.games": {
+  "nl": "Spelletjes",
+  "en": "Games",
+  "de": "Spiele",
+  "fr": "Jeux",
+  "es": "Juegos",
+  "pt": "Jogos",
+  "zh": "游戏",
+  "ar": "الألعاب"
+ },
+ "title.community": {
+  "nl": "Community",
+  "en": "Community",
+  "de": "Community",
+  "fr": "Communauté",
+  "es": "Comunidad",
+  "pt": "Comunidade",
+  "zh": "社区",
+  "ar": "المجتمع"
+ },
+ "title.search": {
+  "nl": "Zoeken & matchen",
+  "en": "Search & match",
+  "de": "Suchen & matchen",
+  "fr": "Rechercher & matcher",
+  "es": "Buscar & hacer match",
+  "pt": "Procurar & combinar",
+  "zh": "搜索与匹配",
+  "ar": "البحث والمطابقة"
+ },
+ "title.cart": {
+  "nl": "Winkelwagen",
+  "en": "Shopping cart",
+  "de": "Warenkorb",
+  "fr": "Panier",
+  "es": "Carrito de compra",
+  "pt": "Carrinho de compras",
+  "zh": "购物车",
+  "ar": "سلة التسوق"
+ },
+ "title.checkout": {
+  "nl": "Afrekenen",
+  "en": "Checkout",
+  "de": "Zur Kasse",
+  "fr": "Paiement",
+  "es": "Finalizar compra",
+  "pt": "Finalizar compra",
+  "zh": "结账",
+  "ar": "الدفع"
+ },
+ "title.payment": {
+  "nl": "Betalen & verzenden",
+  "en": "Payment & shipping",
+  "de": "Zahlung & Versand",
+  "fr": "Paiement & livraison",
+  "es": "Pago & envío",
+  "pt": "Pagamento & envio",
+  "zh": "付款与配送",
+  "ar": "الدفع والشحن"
+ },
+ "title.members": {
+  "nl": "Leden",
+  "en": "Members",
+  "de": "Mitglieder",
+  "fr": "Membres",
+  "es": "Miembros",
+  "pt": "Membros",
+  "zh": "会员",
+  "ar": "الأعضاء"
+ },
+ "title.products": {
+  "nl": "Producten",
+  "en": "Products",
+  "de": "Produkte",
+  "fr": "Produits",
+  "es": "Productos",
+  "pt": "Produtos",
+  "zh": "产品",
+  "ar": "المنتجات"
+ },
+ "title.subscriptions": {
+  "nl": "Abonnementen",
+  "en": "Subscriptions",
+  "de": "Abonnements",
+  "fr": "Abonnements",
+  "es": "Suscripciones",
+  "pt": "Subscrições",
+  "zh": "订阅",
+  "ar": "الاشتراكات"
+ },
+ "title.donations": {
+  "nl": "Doneren",
+  "en": "Donations",
+  "de": "Spenden",
+  "fr": "Dons",
+  "es": "Donaciones",
+  "pt": "Doações",
+  "zh": "捐赠",
+  "ar": "التبرعات"
+ },
+ "title.my-community": {
+  "nl": "Mijn community",
+  "en": "My community",
+  "de": "Meine Community",
+  "fr": "Ma communauté",
+  "es": "Mi comunidad",
+  "pt": "A minha comunidade",
+  "zh": "我的社区",
+  "ar": "مجتمعي"
+ },
+ "title.my-subscriptions": {
+  "nl": "Mijn abonnementen",
+  "en": "My subscriptions",
+  "de": "Meine Abonnements",
+  "fr": "Mes abonnements",
+  "es": "Mis suscripciones",
+  "pt": "As minhas subscrições",
+  "zh": "我的订阅",
+  "ar": "اشتراكاتي"
+ },
+ "community.intro.normal": {
+  "nl": "Ontmoet andere leden, deel verhalen en blijf met elkaar in contact.",
+  "en": "Meet other members, share stories and stay in touch with each other.",
+  "de": "Triff andere Mitglieder, teile Geschichten und bleib miteinander in Kontakt.",
+  "fr": "Rencontrez d'autres membres, partagez des histoires et restez en contact.",
+  "es": "Conoce a otros miembros, comparte historias y mantente en contacto.",
+  "pt": "Conhece outros membros, partilha histórias e mantém-te em contacto.",
+  "zh": "结识其他会员，分享故事，保持彼此联系。",
+  "ar": "تعرف على أعضاء آخرين، وشارك القصص، وابقَ على تواصل مع بعضكم البعض."
+ },
+ "community.intro.dating": {
+  "nl": "Ontmoet nieuwe mensen, swipe door profielen, chat en maak een match.",
+  "en": "Meet new people, swipe through profiles, chat and make a match.",
+  "de": "Lerne neue Leute kennen, swipe durch Profile, chatte und finde ein Match.",
+  "fr": "Rencontrez de nouvelles personnes, swipez les profils, discutez et trouvez un match.",
+  "es": "Conoce a gente nueva, desliza perfiles, chatea y haz match.",
+  "pt": "Conhece pessoas novas, desliza por perfis, conversa e faz um match.",
+  "zh": "结识新朋友，滑动浏览资料，聊天并进行配对。",
+  "ar": "تعرف على أشخاص جدد، وتصفح الملفات الشخصية، ودردش وقم بالمطابقة."
+ },
+ "community.intro.business": {
+  "nl": "Bouw je netwerk: vind vakgenoten, vacatures en nieuwe samenwerkingen.",
+  "en": "Build your network: find colleagues, job vacancies and new collaborations.",
+  "de": "Baue dein Netzwerk auf: finde Fachkollegen, Stellenangebote und neue Kooperationen.",
+  "fr": "Développez votre réseau : trouvez des collègues, des offres d'emploi et de nouvelles collaborations.",
+  "es": "Construye tu red: encuentra colegas, vacantes de trabajo y nuevas colaboraciones.",
+  "pt": "Constrói a tua rede: encontra colegas de profissão, vagas de emprego e novas colaborações.",
+  "zh": "建立你的人脉：寻找同行、职位空缺和新的合作机会。",
+  "ar": "ابنِ شبكتك: اعثر على زملاء المهنة والوظائف الشاغرة والتعاونات الجديدة."
+ },
+ "community.intro.sporters": {
+  "nl": "Vind trainingsmaatjes, deel je doelen en beweeg samen.",
+  "en": "Find training buddies, share your goals and get moving together.",
+  "de": "Finde Trainingspartner, teile deine Ziele und bewege dich gemeinsam.",
+  "fr": "Trouvez des partenaires d'entraînement, partagez vos objectifs et bougez ensemble.",
+  "es": "Encuentra compañeros de entrenamiento, comparte tus metas y muévete junto a otros.",
+  "pt": "Encontra parceiros de treino, partilha os teus objetivos e move-te em conjunto.",
+  "zh": "寻找训练伙伴，分享你的目标，一起运动。",
+  "ar": "ابحث عن رفاق التدريب، وشارك أهدافك، وتحركوا معًا."
+ },
+ "community.intro.webshop": {
+  "nl": "Ontmoet verkopers en winkels en blijf in contact met je favorieten.",
+  "en": "Meet sellers and shops and stay in touch with your favorites.",
+  "de": "Triff Verkäufer und Shops und bleib mit deinen Favoriten in Kontakt.",
+  "fr": "Rencontrez des vendeurs et des boutiques et restez en contact avec vos favoris.",
+  "es": "Conoce vendedores y tiendas y mantente en contacto con tus favoritos.",
+  "pt": "Conhece vendedores e lojas e mantém-te em contacto com os teus favoritos.",
+  "zh": "结识卖家和商店，与你喜欢的保持联系。",
+  "ar": "تعرف على البائعين والمتاجر وابقَ على تواصل مع مفضلاتك."
+ },
+ "community.card1": {
+  "nl": "Maak een profiel\nVertel wie je bent en bepaal zelf wie je profiel ziet.",
+  "en": "Create a profile\nTell who you are and decide who sees your profile.",
+  "de": "Profil erstellen\nErzähle, wer du bist, und bestimme selbst, wer dein Profil sieht.",
+  "fr": "Créez un profil\nDites qui vous êtes et décidez qui voit votre profil.",
+  "es": "Crea un perfil\nCuenta quién eres y decide quién ve tu perfil.",
+  "pt": "Cria um perfil\nConta quem és e decide quem vê o teu perfil.",
+  "zh": "创建资料\n介绍你自己，并决定谁可以查看你的资料。",
+  "ar": "أنشئ ملفًا شخصيًا\nأخبر من أنت وحدد من يرى ملفك الشخصي."
+ },
+ "community.card2": {
+  "nl": "Zoek en ontmoet\nVind leden die bij je passen en stuur een bericht.",
+  "en": "Search and meet\nFind members who match you and send a message.",
+  "de": "Suchen und treffen\nFinde Mitglieder, die zu dir passen, und schick eine Nachricht.",
+  "fr": "Recherchez et rencontrez\nTrouvez des membres qui vous correspondent et envoyez un message.",
+  "es": "Busca y conoce\nEncuentra miembros que encajen contigo y envía un mensaje.",
+  "pt": "Procura e conhece\nEncontra membros que combinam contigo e envia uma mensagem.",
+  "zh": "搜索与结识\n找到适合你的会员并发送消息。",
+  "ar": "ابحث والتقِ\nاعثر على أعضاء يناسبونك وأرسل رسالة."
+ },
+ "community.card3": {
+  "nl": "Chat en speel\nPraat live met elkaar of speel samen een spel.",
+  "en": "Chat and play\nTalk to each other live or play a game together.",
+  "de": "Chatten und spielen\nUnterhalte dich live miteinander oder spiel gemeinsam ein Spiel.",
+  "fr": "Discutez et jouez\nParlez-vous en direct ou jouez ensemble à un jeu.",
+  "es": "Chatea y juega\nHabla en directo con otros o juega juntos a un juego.",
+  "pt": "Conversa e joga\nFala ao vivo com os outros ou joga um jogo em conjunto.",
+  "zh": "聊天与游戏\n实时交流，或一起玩游戏。",
+  "ar": "دردش والعب\nتحدثوا مباشرة مع بعضكم أو العبوا لعبة معًا."
+ },
+ "search.intro": {
+  "nl": "Vind leden die bij je passen. Log in om te zoeken, te swipen en een match te maken.",
+  "en": "Find members who match you. Log in to search, swipe and make a match.",
+  "de": "Finde Mitglieder, die zu dir passen. Logge dich ein, um zu suchen, zu swipen und ein Match zu finden.",
+  "fr": "Trouvez des membres qui vous correspondent. Connectez-vous pour rechercher, swiper et trouver un match.",
+  "es": "Encuentra miembros que encajen contigo. Inicia sesión para buscar, deslizar y hacer match.",
+  "pt": "Encontra membros que combinam contigo. Inicia sessão para procurar, deslizar e fazer um match.",
+  "zh": "找到适合你的会员。登录即可搜索、滑动浏览并进行配对。",
+  "ar": "اعثر على أعضاء يناسبونك. سجّل الدخول للبحث والتصفح والمطابقة."
+ },
+ "search.card1": {
+  "nl": "Zoek gericht\nFilter op leeftijd, plaats, interesses en meer.",
+  "en": "Search specifically\nFilter by age, location, interests and more.",
+  "de": "Gezielt suchen\nFiltere nach Alter, Ort, Interessen und mehr.",
+  "fr": "Recherchez de manière ciblée\nFiltrez par âge, lieu, intérêts et plus encore.",
+  "es": "Busca de forma precisa\nFiltra por edad, ubicación, intereses y más.",
+  "pt": "Procura de forma direcionada\nFiltra por idade, localização, interesses e muito mais.",
+  "zh": "精准搜索\n按年龄、地点、兴趣等进行筛选。",
+  "ar": "ابحث بدقة\nصفّ النتائج حسب العمر والموقع والاهتمامات والمزيد."
+ },
+ "search.card2": {
+  "nl": "Swipe door profielen\nGeef een hartje aan wie je leuk vindt.",
+  "en": "Swipe through profiles\nGive a heart to who you like.",
+  "de": "Wische durch Profile\nGib ein Herz an, wen du magst.",
+  "fr": "Faites défiler les profils\nDonnez un cœur à ceux qui vous plaisent.",
+  "es": "Desliza por los perfiles\nDa un corazón a quien te guste.",
+  "pt": "Desliza pelos perfis\nDá um coração a quem gostas.",
+  "zh": "滑动浏览资料\n给你喜欢的人点个爱心。",
+  "ar": "تصفح الملفات الشخصية بالتمرير\nأعط قلبًا لمن يعجبك."
+ },
+ "search.card3": {
+  "nl": "Maak een match\nAls jullie elkaar leuk vinden, kun je direct contact opnemen.",
+  "en": "Make a match\nIf you both like each other, you can get in touch right away.",
+  "de": "Erstelle ein Match\nWenn ihr euch beide mögt, könnt ihr sofort Kontakt aufnehmen.",
+  "fr": "Faites un match\nSi vous vous plaisez mutuellement, vous pouvez entrer en contact immédiatement.",
+  "es": "Haz un match\nSi os gustáis mutuamente, podéis poneros en contacto al instante.",
+  "pt": "Faz um match\nSe gostarem um do outro, podem entrar em contacto de imediato.",
+  "zh": "配对成功\n如果你们彼此喜欢，就可以立即取得联系。",
+  "ar": "اصنع تطابقًا\nإذا أعجب كل منكما بالآخر، يمكنكما التواصل فورًا."
+ },
+ "payment.intro": {
+  "nl": "Hoe je betaalt, wanneer je bestelling bij je is en wat je doet als je iets wilt retourneren.",
+  "en": "How you pay, when your order will arrive and what to do if you want to return something.",
+  "de": "Wie du bezahlst, wann deine Bestellung ankommt und was du tun kannst, wenn du etwas zurücksenden möchtest.",
+  "fr": "Comment payer, quand votre commande arrivera et que faire si vous souhaitez retourner un article.",
+  "es": "Cómo pagar, cuándo llegará tu pedido y qué hacer si quieres devolver algo.",
+  "pt": "Como pagar, quando a tua encomenda chega e o que fazer se quiseres devolver algo.",
+  "zh": "如何付款、订单何时送达，以及如果想要退货该怎么做。",
+  "ar": "كيفية الدفع، وموعد وصول طلبك، وماذا تفعل إذا أردت إرجاع شيء ما."
+ },
+ "payment.card1": {
+  "nl": "Betalen\nKies bij het afrekenen je betaalmethode. Je betaling is beveiligd.",
+  "en": "Pay\nChoose your payment method at checkout. Your payment is secure.",
+  "de": "Bezahlen\nWähle beim Checkout deine Zahlungsmethode. Deine Zahlung ist sicher.",
+  "fr": "Payer\nChoisissez votre mode de paiement lors du passage en caisse. Votre paiement est sécurisé.",
+  "es": "Pagar\nElige tu método de pago al finalizar la compra. Tu pago está protegido.",
+  "pt": "Pagar\nEscolhe o teu método de pagamento no checkout. O teu pagamento é seguro.",
+  "zh": "付款\n在结账时选择你的付款方式。你的付款是安全的。",
+  "ar": "الدفع\nاختر طريقة الدفع عند إتمام الطلب. دفعتك آمنة."
+ },
+ "payment.card2": {
+  "nl": "Verzenden\nJe krijgt een e-mail zodra je bestelling onderweg is.",
+  "en": "Shipping\nYou'll get an email as soon as your order is on its way.",
+  "de": "Versand\nDu erhältst eine E-Mail, sobald deine Bestellung unterwegs ist.",
+  "fr": "Expédition\nVous recevrez un e-mail dès que votre commande sera en route.",
+  "es": "Envío\nRecibirás un correo electrónico en cuanto tu pedido esté en camino.",
+  "pt": "Envio\nRecebes um e-mail assim que a tua encomenda estiver a caminho.",
+  "zh": "配送\n一旦你的订单发出，你会收到一封电子邮件。",
+  "ar": "الشحن\nستصلك رسالة بريد إلكتروني بمجرد أن يكون طلبك في الطريق."
+ },
+ "payment.card3": {
+  "nl": "Retourneren\nNiet tevreden? Neem contact met ons op en we regelen het.",
+  "en": "Returns\nNot happy? Contact us and we'll sort it out.",
+  "de": "Zurücksenden\nNicht zufrieden? Kontaktiere uns und wir regeln das.",
+  "fr": "Retourner\nPas satisfait ? Contactez-nous et nous nous en occuperons.",
+  "es": "Devolver\n¿No estás satisfecho? Contáctanos y lo solucionaremos.",
+  "pt": "Devolver\nNão estás satisfeito? Contacta-nos e tratamos disso.",
+  "zh": "退货\n不满意吗？联系我们，我们会为你处理。",
+  "ar": "الإرجاع\nغير راضٍ؟ تواصل معنا وسنقوم بترتيب الأمر."
+ },
+ "cta.login": {
+  "nl": "Inloggen of aanmelden",
+  "en": "Log in or sign up",
+  "de": "Anmelden oder registrieren",
+  "fr": "Se connecter ou s'inscrire",
+  "es": "Iniciar sesión o registrarse",
+  "pt": "Iniciar sessão ou registar",
+  "zh": "登录或注册",
+  "ar": "تسجيل الدخول أو إنشاء حساب"
+ },
+ "title.my-orders": {
+  "nl": "Mijn bestellingen",
+  "en": "My Orders",
+  "de": "Meine Bestellungen",
+  "fr": "Mes commandes",
+  "es": "Mis pedidos",
+  "pt": "As Minhas Encomendas",
+  "zh": "我的订单",
+  "ar": "طلباتي"
+ },
+ "title.my-donations": {
+  "nl": "Mijn donaties",
+  "en": "My Donations",
+  "de": "Meine Spenden",
+  "fr": "Mes dons",
+  "es": "Mis donaciones",
+  "pt": "As Minhas Doações",
+  "zh": "我的捐款",
+  "ar": "تبرعاتي"
+ },
+ "members.intro": {
+  "nl": "Maak kennis met onze leden. Blader door de profielen en zoek iemand die bij je past.",
+  "en": "Meet our members. Browse the profiles and find someone who suits you.",
+  "de": "Lernen Sie unsere Mitglieder kennen. Durchstöbern Sie die Profile und finden Sie jemanden, der zu Ihnen passt.",
+  "fr": "Faites connaissance avec nos membres. Parcourez les profils et trouvez quelqu'un qui vous correspond.",
+  "es": "Conoce a nuestros miembros. Navega por los perfiles y encuentra a alguien que te convenga.",
+  "pt": "Conheça os nossos membros. Veja os perfis e encontre alguém que combine consigo.",
+  "zh": "认识我们的会员。浏览个人资料，找到适合你的人。",
+  "ar": "تعرّف على أعضائنا. تصفح الملفات الشخصية وابحث عن شخص يناسبك."
+ },
+ "members.card1": {
+  "nl": "Ontdek profielen\nBekijk wie er is en waar iedereen voor staat.",
+  "en": "Discover profiles\nSee who's there and what everyone stands for.",
+  "de": "Profile entdecken\nSehen Sie, wer da ist und wofür jeder steht.",
+  "fr": "Découvrez les profils\nVoyez qui est là et ce que chacun représente.",
+  "es": "Descubre perfiles\nMira quién está y qué representa cada uno.",
+  "pt": "Descubra perfis\nVeja quem está presente e o que cada um representa.",
+  "zh": "发现个人资料\n看看有谁，以及每个人代表什么。",
+  "ar": "اكتشف الملفات الشخصية\nشاهد من موجود وما يمثله كل شخص."
+ },
+ "members.card2": {
+  "nl": "Veilig en eerlijk\nLeden bepalen zelf wie hun profiel ziet.",
+  "en": "Safe and fair\nMembers decide for themselves who sees their profile.",
+  "de": "Sicher und fair\nMitglieder entscheiden selbst, wer ihr Profil sieht.",
+  "fr": "Sûr et équitable\nLes membres décident eux-mêmes qui voit leur profil.",
+  "es": "Seguro y justo\nLos miembros deciden ellos mismos quién ve su perfil.",
+  "pt": "Seguro e justo\nOs membros decidem quem vê o seu perfil.",
+  "zh": "安全又公平\n会员可自行决定谁能查看他们的资料。",
+  "ar": "آمن وعادل\nيقرر الأعضاء بأنفسهم من يرى ملفهم الشخصي."
+ },
+ "members.card3": {
+  "nl": "Neem contact op\nStuur een bericht of start een chat.",
+  "en": "Get in touch\nSend a message or start a chat.",
+  "de": "Kontakt aufnehmen\nSenden Sie eine Nachricht oder starten Sie einen Chat.",
+  "fr": "Contactez-nous\nEnvoyez un message ou démarrez une discussion.",
+  "es": "Ponte en contacto\nEnvía un mensaje o inicia un chat.",
+  "pt": "Entre em contacto\nEnvie uma mensagem ou inicie uma conversa.",
+  "zh": "联系对方\n发送消息或开始聊天。",
+  "ar": "تواصل معنا\nأرسل رسالة أو ابدأ محادثة."
+ },
+ "products.intro": {
+  "nl": "Ontdek ons aanbod. Kies wat je wilt en reken veilig af.",
+  "en": "Discover our range. Choose what you want and pay safely.",
+  "de": "Entdecken Sie unser Angebot. Wählen Sie, was Sie möchten, und bezahlen Sie sicher.",
+  "fr": "Découvrez notre offre. Choisissez ce que vous voulez et payez en toute sécurité.",
+  "es": "Descubre nuestra oferta. Elige lo que quieras y paga de forma segura.",
+  "pt": "Descubra a nossa oferta. Escolha o que quer e pague com segurança.",
+  "zh": "发现我们的产品系列。选择你想要的，安全结账。",
+  "ar": "اكتشف تشكيلتنا. اختر ما تريد وادفع بأمان."
+ },
+ "products.card1": {
+  "nl": "Zorgvuldig gekozen\nElk product is met aandacht geselecteerd.",
+  "en": "Carefully chosen\nEach product is selected with care.",
+  "de": "Sorgfältig ausgewählt\nJedes Produkt wird mit Sorgfalt ausgewählt.",
+  "fr": "Choisis avec soin\nChaque produit est sélectionné avec attention.",
+  "es": "Cuidadosamente elegidos\nCada producto se selecciona con esmero.",
+  "pt": "Escolhidos com cuidado\nCada produto é selecionado com atenção.",
+  "zh": "精心挑选\n每一件产品都经过用心挑选。",
+  "ar": "مُختارة بعناية\nيتم اختيار كل منتج بعناية فائقة."
+ },
+ "products.card2": {
+  "nl": "Veilig betalen\nBetaal met de methode die jij het fijnst vindt.",
+  "en": "Pay safely\nPay with the method you find most convenient.",
+  "de": "Sicher bezahlen\nBezahlen Sie mit der Methode, die Ihnen am liebsten ist.",
+  "fr": "Payez en toute sécurité\nPayez avec la méthode qui vous convient le mieux.",
+  "es": "Pago seguro\nPaga con el método que más te convenga.",
+  "pt": "Pagamento seguro\nPague com o método que mais lhe convier.",
+  "zh": "安全支付\n使用你最喜欢的方式付款。",
+  "ar": "ادفع بأمان\nادفع بالطريقة التي تفضلها."
+ },
+ "products.card3": {
+  "nl": "Snel geleverd\nJe krijgt een e-mail zodra je bestelling onderweg is.",
+  "en": "Fast delivery\nYou'll receive an email as soon as your order is on its way.",
+  "de": "Schnell geliefert\nSie erhalten eine E-Mail, sobald Ihre Bestellung unterwegs ist.",
+  "fr": "Livraison rapide\nVous recevrez un e-mail dès que votre commande sera en route.",
+  "es": "Entrega rápida\nRecibirás un correo electrónico en cuanto tu pedido esté en camino.",
+  "pt": "Entrega rápida\nReceberá um e-mail assim que a sua encomenda estiver a caminho.",
+  "zh": "快速送达\n订单一旦发出，你将收到电子邮件通知。",
+  "ar": "توصيل سريع\nستتلقى بريدًا إلكترونيًا بمجرد أن يكون طلبك في الطريق."
+ },
+ "subscriptions.intro": {
+  "nl": "Kies het abonnement dat bij je past en krijg toegang tot meer.",
+  "en": "Choose the subscription that suits you and get access to more.",
+  "de": "Wählen Sie das Abonnement, das zu Ihnen passt, und erhalten Sie Zugang zu mehr.",
+  "fr": "Choisissez l'abonnement qui vous convient et accédez à davantage.",
+  "es": "Elige la suscripción que mejor te convenga y obtén acceso a más.",
+  "pt": "Escolha a subscrição que mais combina consigo e tenha acesso a mais.",
+  "zh": "选择适合你的订阅方案，获得更多权限。",
+  "ar": "اختر الاشتراك الذي يناسبك واحصل على المزيد."
+ },
+ "subscriptions.card1": {
+  "nl": "Eenmalig of herhaald\nBetaal per periode en zeg op wanneer je wilt.",
+  "en": "One-time or recurring\nPay per period and cancel whenever you want.",
+  "de": "Einmalig oder wiederkehrend\nZahlen Sie pro Zeitraum und kündigen Sie, wann Sie möchten.",
+  "fr": "Unique ou récurrent\nPayez par période et annulez quand vous le souhaitez.",
+  "es": "Único o recurrente\nPaga por período y cancela cuando quieras.",
+  "pt": "Único ou recorrente\nPague por período e cancele quando quiser.",
+  "zh": "单次或定期\n按周期付款，随时可以取消。",
+  "ar": "مرة واحدة أو متكرر\nادفع عن كل فترة وألغِ الاشتراك متى شئت."
+ },
+ "subscriptions.card2": {
+  "nl": "Direct toegang\nNa je betaling kun je meteen aan de slag.",
+  "en": "Instant access\nAfter your payment you can get started right away.",
+  "de": "Sofortiger Zugang\nNach deiner Zahlung kannst du sofort loslegen.",
+  "fr": "Accès immédiat\nAprès votre paiement, vous pouvez commencer tout de suite.",
+  "es": "Acceso inmediato\nTras tu pago, puedes empezar de inmediato.",
+  "pt": "Acesso imediato\nApós o pagamento, podes começar de imediato.",
+  "zh": "即时访问\n付款后即可立即开始使用。",
+  "ar": "وصول فوري\nبعد الدفع يمكنك البدء على الفور."
+ },
+ "subscriptions.card3": {
+  "nl": "Alles in je account\nBekijk en beheer je abonnement in je dashboard.",
+  "en": "Everything in your account\nView and manage your subscription in your dashboard.",
+  "de": "Alles in deinem Konto\nSieh dir dein Abonnement in deinem Dashboard an und verwalte es.",
+  "fr": "Tout dans votre compte\nConsultez et gérez votre abonnement dans votre tableau de bord.",
+  "es": "Todo en tu cuenta\nConsulta y gestiona tu suscripción en tu panel de control.",
+  "pt": "Tudo na tua conta\nConsulta e gere a tua subscrição no teu painel.",
+  "zh": "账户中的一切\n在仪表盘中查看和管理您的订阅。",
+  "ar": "كل شيء في حسابك\nاطّلع على اشتراكك وأدره من لوحة التحكم الخاصة بك."
+ },
+ "donations.intro": {
+  "nl": "Steun ons met een gift. Elk bedrag helpt, groot of klein.",
+  "en": "Support us with a gift. Every amount helps, big or small.",
+  "de": "Unterstütze uns mit einer Spende. Jeder Betrag hilft, groß oder klein.",
+  "fr": "Soutenez-nous avec un don. Chaque montant compte, petit ou grand.",
+  "es": "Apóyanos con una donación. Cada cantidad ayuda, grande o pequeña.",
+  "pt": "Apoia-nos com uma doação. Cada valor ajuda, grande ou pequeno.",
+  "zh": "请捐赠支持我们。无论金额大小都有帮助。",
+  "ar": "ادعمنا بتبرع. كل مبلغ يساعد، كبيرًا كان أم صغيرًا."
+ },
+ "donations.card1": {
+  "nl": "Jij bepaalt het bedrag\nKies met de schuifbalk wat je wilt geven.",
+  "en": "You decide the amount\nUse the slider to choose what you want to give.",
+  "de": "Du bestimmst den Betrag\nWähle mit dem Schieberegler, was du geben möchtest.",
+  "fr": "Vous décidez du montant\nUtilisez le curseur pour choisir ce que vous voulez donner.",
+  "es": "Tú decides el importe\nUsa el control deslizante para elegir cuánto quieres dar.",
+  "pt": "Tu decides o valor\nUsa o cursor para escolher quanto queres dar.",
+  "zh": "金额由您决定\n使用滑块选择您想捐赠的金额。",
+  "ar": "أنت تحدد المبلغ\nاستخدم شريط التمرير لاختيار المبلغ الذي تريد التبرع به."
+ },
+ "donations.card2": {
+  "nl": "Veilig betalen\nJe donatie wordt beveiligd verwerkt.",
+  "en": "Secure payment\nYour donation is processed securely.",
+  "de": "Sicheres Bezahlen\nDeine Spende wird sicher verarbeitet.",
+  "fr": "Paiement sécurisé\nVotre don est traité en toute sécurité.",
+  "es": "Pago seguro\nTu donación se procesa de forma segura.",
+  "pt": "Pagamento seguro\nA tua doação é processada de forma segura.",
+  "zh": "安全支付\n您的捐款将被安全处理。",
+  "ar": "دفع آمن\nيتم معالجة تبرعك بأمان."
+ },
+ "donations.card3": {
+  "nl": "Bedankt!\nJe krijgt een bevestiging en soms extra toegang als dank.",
+  "en": "Thank you!\nYou'll receive a confirmation and sometimes extra access as a thank you.",
+  "de": "Danke!\nDu erhältst eine Bestätigung und manchmal zusätzlichen Zugang als Dankeschön.",
+  "fr": "Merci !\nVous recevez une confirmation et parfois un accès supplémentaire en remerciement.",
+  "es": "¡Gracias!\nRecibirás una confirmación y, a veces, acceso adicional como agradecimiento.",
+  "pt": "Obrigado!\nRecebes uma confirmação e, por vezes, acesso extra como agradecimento.",
+  "zh": "谢谢您！\n您将收到确认信息，有时还会获得额外访问权限以表感谢。",
+  "ar": "شكرًا لك!\nستتلقى تأكيدًا وأحيانًا وصولًا إضافيًا كعربون شكر."
+ },
+ "games.intro": {
+  "nl": "Speel direct een spel, alleen of samen met anderen.",
+  "en": "Play a game right away, alone or together with others.",
+  "de": "Spiele sofort ein Spiel, allein oder gemeinsam mit anderen.",
+  "fr": "Jouez à un jeu immédiatement, seul ou avec d'autres.",
+  "es": "Juega de inmediato, solo o con otras personas.",
+  "pt": "Joga de imediato, sozinho ou com outras pessoas.",
+  "zh": "立即开始游戏，可以单独玩，也可以和他人一起玩。",
+  "ar": "العب لعبة على الفور، بمفردك أو مع آخرين."
+ },
+ "games.card1": {
+  "nl": "Altijd een spel\nKies uit onze verzameling, van arcade tot bordspel.",
+  "en": "Always a game\nChoose from our collection, from arcade to board games.",
+  "de": "Immer ein Spiel\nWähle aus unserer Sammlung, von Arcade bis Brettspiel.",
+  "fr": "Toujours un jeu\nChoisissez parmi notre collection, de l'arcade au jeu de société.",
+  "es": "Siempre un juego\nElige entre nuestra colección, desde arcade hasta juegos de mesa.",
+  "pt": "Sempre um jogo\nEscolhe da nossa coleção, desde arcade a jogos de tabuleiro.",
+  "zh": "总有游戏可玩\n从我们的收藏中挑选，从街机游戏到桌游应有尽有。",
+  "ar": "لعبة دائمًا\nاختر من مجموعتنا، من ألعاب الأركيد إلى ألعاب الطاولة."
+ },
+ "games.card2": {
+  "nl": "Samen spelen\nMaak een kamer en nodig anderen uit.",
+  "en": "Play together\nCreate a room and invite others.",
+  "de": "Gemeinsam spielen\nErstelle einen Raum und lade andere ein.",
+  "fr": "Jouer ensemble\nCréez une salle et invitez d'autres personnes.",
+  "es": "Juega en compañía\nCrea una sala e invita a otras personas.",
+  "pt": "Joga em conjunto\nCria uma sala e convida outras pessoas.",
+  "zh": "一起玩\n创建房间并邀请其他人。",
+  "ar": "العب مع الآخرين\nأنشئ غرفة وادعُ الآخرين."
+ },
+ "games.card3": {
+  "nl": "Scores en ranglijst\nVerbeter je score en zie hoe je het doet.",
+  "en": "Scores and leaderboard\nImprove your score and see how you're doing.",
+  "de": "Punktzahlen und Bestenliste\nVerbessere deine Punktzahl und sieh, wie du abschneidest.",
+  "fr": "Scores et classement\nAméliorez votre score et voyez comment vous vous en sortez.",
+  "es": "Puntuaciones y clasificación\nMejora tu puntuación y comprueba cómo lo estás haciendo.",
+  "pt": "Pontuações e classificação\nMelhora a tua pontuação e vê como estás a sair-te.",
+  "zh": "分数与排行榜\n提升您的分数，查看您的表现如何。",
+  "ar": "النتائج ولوحة المتصدرين\nحسّن نتيجتك وشاهد كيف أداؤك."
+ },
+ "my-community.intro.normal": {
+  "nl": "Alles over je profiel, berichten en contacten op één plek.",
+  "en": "Everything about your profile, messages and contacts in one place.",
+  "de": "Alles über dein Profil, Nachrichten und Kontakte an einem Ort.",
+  "fr": "Tout sur votre profil, vos messages et vos contacts au même endroit.",
+  "es": "Todo sobre tu perfil, mensajes y contactos en un solo lugar.",
+  "pt": "Tudo sobre o teu perfil, mensagens e contactos num só lugar.",
+  "zh": "你的个人资料、消息和联系人,尽在一处。",
+  "ar": "كل ما يتعلق بملفك الشخصي ورسائلك وجهات اتصالك في مكان واحد."
+ },
+ "my-community.intro.dating": {
+  "nl": "Je matches, likes en berichten: alles om iemand leuks te ontmoeten.",
+  "en": "Your matches, likes and messages: everything to meet someone special.",
+  "de": "Deine Matches, Likes und Nachrichten: alles, um jemanden Besonderen zu treffen.",
+  "fr": "Vos matchs, likes et messages : tout pour rencontrer quelqu'un de sympa.",
+  "es": "Tus matches, likes y mensajes: todo para conocer a alguien especial.",
+  "pt": "Os teus matches, gostos e mensagens: tudo para conheceres alguém especial.",
+  "zh": "你的配对、点赞和消息:遇见心仪之人所需的一切。",
+  "ar": "تطابقاتك وإعجاباتك ورسائلك: كل ما تحتاجه للقاء شخص رائع."
+ },
+ "my-community.intro.business": {
+  "nl": "Je netwerk, berichten en contacten: bouw aan kansen en samenwerkingen.",
+  "en": "Your network, messages and contacts: build opportunities and collaborations.",
+  "de": "Dein Netzwerk, Nachrichten und Kontakte: Baue Chancen und Kooperationen auf.",
+  "fr": "Votre réseau, vos messages et vos contacts : développez des opportunités et des collaborations.",
+  "es": "Tu red, mensajes y contactos: construye oportunidades y colaboraciones.",
+  "pt": "A tua rede, mensagens e contactos: constrói oportunidades e colaborações.",
+  "zh": "你的人脉、消息和联系人:共创机遇与合作。",
+  "ar": "شبكتك ورسائلك وجهات اتصالك: ابنِ فرصًا وشراكات."
+ },
+ "my-community.intro.sporters": {
+  "nl": "Je trainingsmaatjes, berichten en groepen: samen sta je sterker.",
+  "en": "Your training buddies, messages and groups: together you're stronger.",
+  "de": "Deine Trainingspartner, Nachrichten und Gruppen: Gemeinsam seid ihr stärker.",
+  "fr": "Vos partenaires d'entraînement, messages et groupes : ensemble, vous êtes plus forts.",
+  "es": "Tus compañeros de entrenamiento, mensajes y grupos: juntos sois más fuertes.",
+  "pt": "Os teus parceiros de treino, mensagens e grupos: juntos são mais fortes.",
+  "zh": "你的训练伙伴、消息和群组:团结力量大。",
+  "ar": "رفاقك في التمرين ورسائلك ومجموعاتك: معًا أنتم أقوى."
+ },
+ "my-community.intro.webshop": {
+  "nl": "Je contacten, berichten en favoriete verkopers en winkels.",
+  "en": "Your contacts, messages and favourite sellers and shops.",
+  "de": "Deine Kontakte, Nachrichten und bevorzugten Verkäufer und Shops.",
+  "fr": "Vos contacts, messages et vendeurs et boutiques préférés.",
+  "es": "Tus contactos, mensajes y vendedores y tiendas favoritas.",
+  "pt": "Os teus contactos, mensagens e vendedores e lojas favoritas.",
+  "zh": "你的联系人、消息以及喜爱的卖家和店铺。",
+  "ar": "جهات اتصالك ورسائلك والبائعون والمتاجر المفضلة لديك."
+ },
+ "my-subscriptions.intro": {
+  "nl": "Je abonnementen, wat ze je geven en wanneer ze verlopen of verlengd worden.",
+  "en": "Your subscriptions, what they offer you and when they expire or renew.",
+  "de": "Deine Abonnements, was sie dir bieten und wann sie ablaufen oder verlängert werden.",
+  "fr": "Vos abonnements, ce qu'ils vous apportent et quand ils expirent ou se renouvellent.",
+  "es": "Tus suscripciones, lo que te ofrecen y cuándo caducan o se renuevan.",
+  "pt": "As tuas subscrições, o que te oferecem e quando expiram ou são renovadas.",
+  "zh": "你的订阅服务,包含的权益以及到期或续订时间。",
+  "ar": "اشتراكاتك وما تقدمه لك ومتى تنتهي أو يتم تجديدها."
+ },
+ "my-orders.intro": {
+  "nl": "Al je bestellingen en wat de status ervan is.",
+  "en": "All your orders and their current status.",
+  "de": "Alle deine Bestellungen und ihr aktueller Status.",
+  "fr": "Toutes vos commandes et leur statut.",
+  "es": "Todos tus pedidos y su estado actual.",
+  "pt": "Todas as tuas encomendas e o respetivo estado.",
+  "zh": "你的所有订单及其状态。",
+  "ar": "جميع طلباتك وحالتها الحالية."
+ },
+ "my-donations.intro": {
+  "nl": "Je donaties en wat je daarvoor hebt gekregen. Bedankt voor je steun!",
+  "en": "Your donations and what you received for them. Thank you for your support!",
+  "de": "Deine Spenden und was du dafür erhalten hast. Danke für deine Unterstützung!",
+  "fr": "Vos dons et ce que vous avez reçu en retour. Merci pour votre soutien !",
+  "es": "Tus donaciones y lo que has recibido a cambio. ¡Gracias por tu apoyo!",
+  "pt": "As tuas doações e o que recebeste em troca. Obrigado pelo teu apoio!",
+  "zh": "你的捐赠以及由此获得的回馈。感谢你的支持!",
+  "ar": "تبرعاتك وما حصلت عليه مقابلها. شكرًا لدعمك!"
+ },
+ "title.product": {
+  "nl": "Product",
+  "en": "Product",
+  "de": "Produkt",
+  "fr": "Produit",
+  "es": "Producto",
+  "pt": "Produto",
+  "zh": "产品",
+  "ar": "المنتج"
+ },
+ "cart.intro": {
+  "nl": "Controleer je bestelling. Je kunt aantallen aanpassen of producten weghalen.",
+  "en": "Check your order. You can adjust quantities or remove products.",
+  "de": "Überprüfe deine Bestellung. Du kannst Mengen anpassen oder Produkte entfernen.",
+  "fr": "Vérifiez votre commande. Vous pouvez ajuster les quantités ou retirer des produits.",
+  "es": "Revisa tu pedido. Puedes ajustar las cantidades o eliminar productos.",
+  "pt": "Verifica a tua encomenda. Podes ajustar quantidades ou remover produtos.",
+  "zh": "请检查您的订单。您可以调整数量或移除商品。",
+  "ar": "راجع طلبك. يمكنك تعديل الكميات أو إزالة المنتجات."
+ },
+ "checkout.intro": {
+  "nl": "Vul je gegevens in en kies hoe je wilt betalen. Je betaling is beveiligd.",
+  "en": "Fill in your details and choose how you want to pay. Your payment is secure.",
+  "de": "Gib deine Daten ein und wähle aus, wie du bezahlen möchtest. Deine Zahlung ist sicher.",
+  "fr": "Remplissez vos coordonnées et choisissez votre mode de paiement. Votre paiement est sécurisé.",
+  "es": "Introduce tus datos y elige cómo quieres pagar. Tu pago está protegido.",
+  "pt": "Preenche os teus dados e escolhe como queres pagar. O teu pagamento está seguro.",
+  "zh": "请填写您的信息并选择支付方式。您的付款是安全的。",
+  "ar": "أدخل بياناتك واختر طريقة الدفع. دفعتك آمنة."
+ },
+ "product.intro": {
+  "nl": "Heb je een vraag over dit product? Neem gerust contact met ons op.",
+  "en": "Do you have a question about this product? Feel free to contact us.",
+  "de": "Hast du eine Frage zu diesem Produkt? Kontaktiere uns gerne.",
+  "fr": "Vous avez une question sur ce produit ? N'hésitez pas à nous contacter.",
+  "es": "¿Tienes alguna pregunta sobre este producto? No dudes en contactarnos.",
+  "pt": "Tens alguma dúvida sobre este produto? Não hesites em contactar-nos.",
+  "zh": "对这款产品有疑问吗？欢迎随时联系我们。",
+  "ar": "هل لديك سؤال حول هذا المنتج؟ لا تتردد في التواصل معنا."
+ }
+}

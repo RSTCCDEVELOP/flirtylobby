@@ -6,9 +6,11 @@ const base = () => process.env.API_URL_INTERNAL || "http://localhost:8000";
 export async function getMenu() {
   try {
     const res = await fetch(`${base()}/api/pages/menu/`, { cache: "no-store" });
-    return res.ok ? (await res.json()).items || [] : [];
+    if (!res.ok) return { items: [], settings: null };
+    const d = await res.json();
+    return { items: d.items || [], settings: d.settings || null };
   } catch {
-    return [];
+    return { items: [], settings: null };
   }
 }
 

@@ -17,10 +17,13 @@ urlpatterns = [
     path("api/", include("apps.sandbox.urls")),
     path("api/", include("apps.shop.urls")),
     path("api/", include("apps.social.urls")),
+    path("api/", include("apps.plugins.urls")),
     path("api/", include("apps.pages.urls")),
     path("api/", include("apps.siteimport.urls")),
     path("api/", include("apps.subscriptions.urls")),
     path("api/", include("apps.sysobjects.urls")),
+    path("api/", include("apps.faq.urls")),
+    path("api/", include("apps.notifications.urls")),
 ]
 
 if settings.DEBUG:

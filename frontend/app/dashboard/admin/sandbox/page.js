@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -54,7 +55,7 @@ export default function Sandbox() {
   }
   const run = async (fn, okText) => { try { await fn(); if (okText) setMsg({ ok: true, text: okText }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } loadData(); };
 
-  if (!s) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!s) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const edit = L >= 2;
 
   return (
@@ -100,7 +101,7 @@ export default function Sandbox() {
         </div>}
         <div className="theme-grid">
           <label>{tx("Vaste verificatiecode")} <small className="muted">{tx("leeg = willekeurig (zie postvak)")}</small>
-            <input value={s.fixed_code} inputMode="numeric" maxLength={8} placeholder={tx("bv. 123456")} disabled={!edit} onChange={(e) => setS({ ...s, fixed_code: e.target.value })} onBlur={(e) => save({ fixed_code: e.target.value })} />
+            <input value={s.fixed_code} inputMode="numeric" maxLength={6} placeholder={tx("bv. 123456")} disabled={!edit} onChange={(e) => setS({ ...s, fixed_code: e.target.value })} onBlur={(e) => save({ fixed_code: e.target.value })} />
           </label>
           <label>{tx("Land van alle bezoekers")} <small className="muted">{tx("bij gesimuleerde landcontrole")}</small>
             <select value={s.geo_country} disabled={!edit} onChange={(e) => save({ geo_country: e.target.value })}>
@@ -111,8 +112,30 @@ export default function Sandbox() {
         <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Niet gesimuleerd: het verplaatsen van bestanden naar S3 en het ophalen van Google Fonts. Die gebruiken nog de echte diensten.")}</p>
       </Collapsible>
 
+      <Collapsible id="sandbox-codes" title={tx("Verificatiecodes en e-mail testen")}>
+        <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Wat gebeurt er met codes en berichten (aanmelden, inloggen, e-mail en sms) zolang de sandbox aan staat?")}</p>
+        <div className="vis-options">{[
+          ["screen", "Code in het scherm tonen", "Er wordt niets verstuurd. De code staat in het verificatiescherm met een knop Invullen, zodat je de flow snel test."],
+          ["mailbox", "Naar het sandbox-postvak", "Niet echt verstuurd: e-mail en sms komen in het sandbox-postvak hieronder."],
+          ["send", "Echt versturen", "E-mail en sms gaan echt naar het adres of nummer, via je gekoppelde diensten. Zo test je ook de bezorging."],
+        ].map(([k, label, hint]) => {
+          const cur = s.code_on_screen ? "screen" : s.simulate.email ? "mailbox" : "send";
+          return (
+            <label key={k} className={`card vis ${cur === k ? "active" : ""}`}>
+              <input type="radio" name="codes" disabled={!edit} checked={cur === k} onChange={() => save({ code_on_screen: k === "screen", simulate: { email: k !== "send", sms: k !== "send" } })} />
+              <span><strong>{tx(label)}</strong><small className="muted"> {tx(hint)}</small></span>
+            </label>
+          );
+        })}</div>
+        {!s.code_on_screen && !s.simulate.email && <div className="alert">{tx("Let op: e-mail en sms worden nu echt verstuurd, ook al staat de sandbox aan.")}</div>}
+      </Collapsible>
+
       <Collapsible id="sandbox-override" title={tx("Override (uitzonderingen op de regels)")}>
         <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Uitzonderingen op de beveiligingsregels, handig om te testen of voor vaste testaccounts.")}</p>
+        <label className="check sec-toggle">
+          <span className="switch"><input type="checkbox" checked={s.override_on !== false} disabled={!edit} onChange={(e) => save({ override_on: e.target.checked })} /><span /></span>
+          <span><strong>{tx("Override gebruiken")}</strong><br /><small className="muted">{tx("Uit = de lijst hieronder telt niet mee: ook deze adressen doen de verificatie, ook als de sandbox aan staat.")}</small></span>
+        </label>
         <label>{tx("E-mailadressen zonder verificatie")}
           <input value={mails} disabled={!edit} placeholder="test@voorbeeld.nl, demo@voorbeeld.nl" onChange={(e) => setMails(e.target.value)} onBlur={() => save({ override_emails: mails })} />
         </label>

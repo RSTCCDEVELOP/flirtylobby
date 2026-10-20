@@ -35,9 +35,13 @@ services:
       POSTGRES_HOST: db
       MEDIA_ROOT: /data/media
       STATIC_ROOT: /data/static
+      PLUGINS_DIR: /data/plugins
+      THEMES_DIR: /data/themes
     volumes:
       - media:/data/media
       - static:/data/static
+      - plugins:/data/plugins
+      - themes:/data/themes
     depends_on:
       db:
         condition: service_healthy
@@ -86,5 +90,7 @@ volumes:
   pgdata:
   media:
   static:
+  plugins:
+  themes:
   certs:
   certbot-www:

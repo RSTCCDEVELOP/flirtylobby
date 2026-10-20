@@ -52,7 +52,7 @@ export function translateTree(data) {
 export async function loadDictionary(code) {
   if (!code || code === "nl") return {};
   try {
-    const r = await fetch(`/locales/${code}.json`, { cache: "force-cache" });
+    const r = await fetch(`/locales/${code}.json`, { cache: "no-cache" });
     return r.ok ? await r.json() : {};
   } catch {
     return {};

@@ -4,6 +4,7 @@ import { tx } from "../lib/t";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { canAdmin } from "../lib/perms";
+import InfoDialog from "./InfoDialog";
 import { useModules } from "./Modules";
 import { useSession } from "./Session";
 
@@ -21,6 +22,7 @@ export default function AdminBar() {
       <Link href="/dashboard">{tx("Dashboard")}</Link>
       {admin && <Link href="/dashboard/admin">{tx("Admin")}</Link>}
       {user.is_staff && <Link href="/dashboard/superadmin">{tx("Super admin")}</Link>}
+      <InfoDialog className="admin-bar-info">{tx("Info")}</InfoDialog>
     </nav>
   );
 }

@@ -61,12 +61,29 @@ ANIMS = [
 
 LOGOS = [
     {"value": "custom", "label": "Eigen logo (Logo's & beeld)", "css": ""},
+    {"value": "easy2edit", "label": "Easy2edit-logo", "css": ""},
     {"value": "rstcc", "label": "RSTCC-logo", "css": ""},
     {"value": "studio2", "label": "Studio2-logo", "css": ""},
 ]
 
+LOADER_STYLES = [{"value": v, "label": l, "css": ""} for v, l in (
+    ("ring", "Ring"), ("dots", "Stippen"), ("bar", "Voortgangsbalk"), ("pulse", "Pulserende bol"), ("orbit", "Baantjes"), ("squares", "Blokjes"),
+    ("wave", "Golf"), ("skeleton", "Pagina-schets"), ("logo", "Logo"), ("image", "Eigen afbeelding"))]
+LOADER_ANIM = [{"value": v, "label": l, "css": ""} for v, l in (("pulse", "Pulseren"), ("spin", "Draaien"), ("bounce", "Springen"), ("none", "Stilstaand"))]
+LOADER_WHEN = [{"value": "first", "label": "Alleen bij het eerste laden van de site", "css": ""}, {"value": "always", "label": "Ook tussen pagina's", "css": ""}]
+LOADER_BACKDROP = [{"value": "page", "label": "Achtergrond van de pagina", "css": ""}, {"value": "glass", "label": "Glas (vervaagd)", "css": ""}, {"value": "dim", "label": "Donker gedimd", "css": ""}]
+def _opts(*pairs):
+    return [{"value": v, "label": l, "css": ""} for v, l in pairs]
+
+
+TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"), ("zoom", "Inzoomen"), ("blur", "Scherp worden"))
+REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
 
+NAV_DEFAULT = [
+    {"value": "tiles", "label": "Tegels: per menugroep een pagina met tegels", "css": ""},
+    {"value": "menu", "label": "Menu: de pagina's staan in het menu links", "css": ""},
+]
 SIDEBAR_AUTO = [
     {"value": "never", "label": "Nooit: alleen zelf in- en uitklappen", "css": ""},
     {"value": "after_click", "label": "Na het kiezen van een pagina", "css": ""},
@@ -88,10 +105,70 @@ SYSTEM_POPUPS = [
     {"value": "bold", "label": "Gedurfd (dikke rand en schaduw)", "css": ""},
 ]
 
+# ── Page layout templates: the most common variants of header, menu, footer and blocks (read by the frontend as data attributes) ──
+HEADER_LAYOUTS = [
+    {"value": "classic", "label": "Klassiek: logo links, menu en knoppen rechts", "css": ""},
+    {"value": "centered", "label": "Gecentreerd: logo in het midden, menu eronder", "css": ""},
+    {"value": "split", "label": "Verdeeld: menu links, logo midden, knoppen rechts", "css": ""},
+    {"value": "minimal", "label": "Minimaal: logo en een menuknop", "css": ""},
+]
+HEADER_STYLES = [
+    {"value": "solid", "label": "Vlak met lijn eronder", "css": ""},
+    {"value": "shadow", "label": "Met schaduw", "css": ""},
+    {"value": "glass", "label": "Glas (doorzichtig)", "css": ""},
+    {"value": "plain", "label": "Zonder achtergrond", "css": ""},
+]
+MENU_STYLES = [
+    {"value": "text", "label": "Tekst", "css": ""},
+    {"value": "underline", "label": "Onderstreept", "css": ""},
+    {"value": "pills", "label": "Knoppen (afgerond)", "css": ""},
+    {"value": "boxed", "label": "Omkaderd", "css": ""},
+]
+FOOTER_LAYOUTS = [
+    {"value": "simple", "label": "Eenvoudig: alles gecentreerd onder elkaar", "css": ""},
+    {"value": "columns", "label": "Kolommen: links, sociaal en gegevens", "css": ""},
+    {"value": "split", "label": "Verdeeld: gegevens links, links rechts", "css": ""},
+    {"value": "minimal", "label": "Minimaal: één regel", "css": ""},
+]
+FOOTER_TONES = [
+    {"value": "page", "label": "Zelfde als de pagina", "css": ""},
+    {"value": "card", "label": "Vlak met lijn erboven", "css": ""},
+    {"value": "dark", "label": "Donker", "css": ""},
+    {"value": "brand", "label": "In de huisstijlkleur", "css": ""},
+]
+BLOCK_STYLES = [
+    {"value": "card", "label": "Kaart (rand en schaduw)", "css": ""},
+    {"value": "flat", "label": "Vlak (zonder rand)", "css": ""},
+    {"value": "outline", "label": "Alleen rand", "css": ""},
+    {"value": "elevated", "label": "Verhoogd (sterke schaduw)", "css": ""},
+]
+
 CHAT_SIDES = [{"value": "right", "label": "Rechtsonder", "css": "flex-end"}, {"value": "left", "label": "Linksonder", "css": "flex-start"}]
 CHAT_LABELS = [{"value": "icon", "label": "Alleen een icoon 💬", "css": ""}, {"value": "text", "label": "Icoon met tekst 'Chat'", "css": ""}]
 
 WEIGHTS = [{"value": str(w), "label": str(w), "css": str(w)} for w in (500, 600, 700, 800)]
+
+
+TEXT_WEIGHTS = [{"value": str(w), "label": str(w), "css": str(w)} for w in (400, 500, 600, 700, 800)]
+TEXT_COLORS = [{"value": v, "label": l, "css": c} for v, l, c in (("text", "Tekstkleur", "var(--text)"), ("primary", "Primaire kleur", "var(--blue)"), ("secondary", "Secundaire kleur", "var(--orange)"), ("muted", "Gedempt", "var(--muted)"))]
+TEXT_FONTS = [{"value": "body", "label": "Lettertype van de tekst", "css": "var(--font-body)"}, {"value": "heading", "label": "Lettertype van de koppen", "css": "var(--font-heading)"}]
+TRACKING = [{"value": v, "label": l, "css": c} for v, l, c in (("tight", "Smal", "-.02em"), ("normal", "Normaal", "0"), ("wide", "Ruim", ".04em"), ("wider", "Extra ruim", ".1em"))]
+# text styles used in blocks and pages (the editor offers them: Kop 1, Kop 2, Kop 3, Alinea): size, weight, colour, font, line height and letter spacing, per theme
+TEXT_STYLES = [("k1", "Kop 1", 1.9, "700", "heading", 1.2), ("k2", "Kop 2", 1.4, "700", "heading", 1.25), ("k3", "Kop 3", 1.15, "600", "heading", 1.3), ("k4", "Kop 4", 1.0, "600", "heading", 1.35), ("p", "Alinea", 1.0, "400", "body", 1.65)]
+
+
+def _text_style_fields():
+    out = []
+    for k, label, size, weight, font, lh in TEXT_STYLES:
+        out += [
+            number(f"ts_{k}_size", f"{label}: grootte", size, f"--ts-{k}-size", "rem", 0.75, 4, 0.05),
+            choice(f"ts_{k}_weight", f"{label}: dikte", weight, f"--ts-{k}-weight", TEXT_WEIGHTS),
+            choice(f"ts_{k}_color", f"{label}: kleur", "text", f"--ts-{k}-color", TEXT_COLORS),
+            choice(f"ts_{k}_font", f"{label}: lettertype", font, f"--ts-{k}-font", TEXT_FONTS),
+            number(f"ts_{k}_lh", f"{label}: regelafstand", lh, f"--ts-{k}-lh", "", 1, 2.2, 0.05),
+            choice(f"ts_{k}_track", f"{label}: letterafstand", "normal", f"--ts-{k}-track", TRACKING),
+        ]
+    return out
 
 
 def color(key, label, default, css, mode="both"):
@@ -129,19 +206,62 @@ SCHEMA = [
     ]},
     {"key": "defaults", "label": "Standaardinstellingen", "fields": [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
+        choice("nav_default", "Hoe werkt het linker menu (standaard; iedereen kan zelf wisselen)", "tiles", None, NAV_DEFAULT),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
-        choice("system_popup", "Uiterlijk van systeem-popups, vensters en bijbehorende tabbladen", "clean", None, SYSTEM_POPUPS),
-        choice("tab_style", "Uiterlijk van tabbladen (standaard voor de hele website)", "pills", None, TAB_STYLES),
         choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
     ]},
+    {"key": "interface_look", "label": "Tabbladen en vensters", "fields": [  # part of a theme: edited in Thema -> Layout
+        choice("system_popup", "Uiterlijk van systeem-popups, vensters en bijbehorende tabbladen", "clean", None, SYSTEM_POPUPS),
+        choice("tab_style", "Uiterlijk van tabbladen (standaard voor de hele website)", "pills", None, TAB_STYLES),
+    ]},
+    {"key": "page_layout", "label": "Pagina-indeling", "fields": [  # part of a theme: edited in Thema -> Layout
+        choice("header_layout", "Header: indeling", "classic", None, HEADER_LAYOUTS),
+        choice("header_style", "Header: uiterlijk", "solid", None, HEADER_STYLES),
+        choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, YESNO),
+        choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
+        choice("footer_layout", "Footer: indeling", "simple", None, FOOTER_LAYOUTS),
+        choice("footer_tone", "Footer: kleur", "page", None, FOOTER_TONES),
+        choice("block_style", "Blokken en kaarten op de website", "card", None, BLOCK_STYLES),
+        number("block_gap", "Ruimte tussen blokken", 1.25, "--block-gap", "rem", 0.5, 3, 0.25),
+        number("content_w", "Breedte van de inhoud van pagina's", 1100, "--content-w", "px", 720, 1600, 20),
+    ]},
     {"key": "brand", "label": "Merkkleuren", "fields": [
-        color("primary", "Primaire kleur (knoppen, links, actief menu)", "#1b97d3", "--blue"),
-        color("secondary", "Secundaire kleur (avatar, accenten)", "#f08a35", "--orange"),
+        color("primary", "Primaire kleur (knoppen, links, actief menu)", "#f2823f", "--blue"),
+        color("secondary", "Secundaire kleur (avatar, accenten)", "#939497", "--orange"),
         color("gender_m", "Kleur voor mannen", "#3b82f6", "--g-m"),
         color("gender_f", "Kleur voor vrouwen", "#ec4899", "--g-f"),
         color("gender_x", "Kleur voor overig", "#eab308", "--g-x"),
         color("danger", "Gevaar (verwijderen, fouten)", "#dc2626", "--danger"),
         color("ok", "Succes", "#16a34a", "--ok"),
+    ]},
+    {"key": "loader", "label": "Paginaloader", "fields": [
+        choice("loader_on", "Paginaloader tonen", "no", None, YESNO),
+        choice("loader_style", "Soort loader", "ring", None, LOADER_STYLES),
+        choice("loader_when", "Wanneer", "first", None, LOADER_WHEN),
+        choice("loader_backdrop", "Achtergrond", "page", None, LOADER_BACKDROP),
+        number("loader_size", "Grootte", 56, None, "px", 24, 120),
+        number("loader_min", "Minimaal zichtbaar", 400, None, "ms", 0, 3000, 50),
+        choice("loader_percent", "Percentage tonen onder de loader", "no", None, YESNO),
+        number("loader_image_id", "Eigen afbeelding voor de loader (nummer uit de media)", 0, None, "", 0, 100000000),
+        number("loader_image_size", "Grootte van de eigen afbeelding", 80, None, "px", 24, 500),
+        number("loader_image_opacity", "Doorzichtigheid van de eigen afbeelding", 100, None, "%", 5, 100, 5),
+        number("loader_image_bg_opacity", "Doorzichtigheid van de achtergrondkleur", 100, None, "%", 0, 100, 5),
+        number("loader_image_radius", "Ronde hoeken van de eigen afbeelding", 0, None, "px", 0, 250),
+        number("loader_image_border", "Rand om de eigen afbeelding (dikte)", 0, None, "px", 0, 24),
+        color("loader_image_border_color", "Kleur van de rand", "#f2823f", None),
+        choice("loader_image_bg_on", "Achtergrondkleur achter de eigen afbeelding", "no", None, YESNO),
+        color("loader_image_bg", "Achtergrondkleur", "#ffffff", None),
+        number("loader_image_pad", "Ruimte tussen rand en afbeelding", 0, None, "px", 0, 60),
+        choice("loader_image_anim", "Beweging van de eigen afbeelding", "pulse", None, LOADER_ANIM),
+        number("loader_opacity", "Doorzichtigheid van de laag achter de loader", 100, None, "%", 10, 100, 5),
+        choice("loader_lazy", "Lazy load: afbeeldingen laden pas als je ze nodig hebt", "yes", None, YESNO),
+        choice("page_transition", "Pagina-overgang", "none", None, TRANSITIONS),
+        number("page_transition_ms", "Duur van de overgang", 350, None, "ms", 100, 1000, 50),
+        choice("scroll_reveal", "Scrolleffect: onderdelen verschijnen in beeld", "none", None, REVEALS),
+        number("scroll_reveal_ms", "Duur van het scrolleffect", 600, None, "ms", 200, 1500, 50),
+        choice("scroll_parallax", "Parallax: achtergronden bewegen trager mee", "no", None, YESNO),
+        choice("scroll_progress", "Voortgangsbalk bovenaan bij scrollen", "no", None, YESNO),
+        choice("scroll_top", "Knop om terug naar boven te gaan", "no", None, YESNO),
     ]},
     {"key": "popups", "label": "Popups (leeftijd, gokken, cookies)", "fields": [
         number("popup_overlay", "Donkerte van de achtergrond", 0.72, "--popup-overlay", "", 0, 0.95, 0.01),
@@ -172,7 +292,7 @@ SCHEMA = [
         choice("default_mode", "Start in (voor bezoekers die zelf nog niets gekozen hebben)", "system", None, MODES),
     ]},
     {"key": "logo", "label": "Logo bij dit thema", "fields": [
-        choice("brand_logo", "Logo (header, login, homepage, favicon)", "custom", None, LOGOS),
+        choice("brand_logo", "Logo (header, login, homepage, favicon)", "easy2edit", None, LOGOS),
     ]},
     {"key": "light", "label": "Kleuren: lichte modus", "fields": _mode_colors(
         "light", "light", ["#ffffff", "#f4f6fa", "#ffffff", "#f9fafc", "#e5e8ef", "#1f2937", "#6b7280"])},
@@ -187,6 +307,7 @@ SCHEMA = [
         number("line_height", "Regelafstand", 1.5, "--lh", "", 1.2, 2, 0.05),
         choice("heading_weight", "Dikte koppen", "700", "--fw-heading", WEIGHTS),
     ]},
+    {"key": "textstyles", "label": "Tekststijlen (koppen en alinea's)", "fields": _text_style_fields()},
     {"key": "layout", "label": "Vorm en ruimte", "fields": [
         number("radius", "Afronding kaarten", 14, "--radius", "px", 0, 28),
         number("btn_radius", "Afronding knoppen en velden", 10, "--btn-radius", "px", 0, 30),
@@ -266,7 +387,7 @@ def build(values):
     return css, fonts_url
 
 
-# ── Presets ("thema's") ─────────────────────────────────────────────────────
+# ── Helpers for making themes (also used by Site importeren and the theme import) ──
 import colorsys  # noqa: E402
 
 
@@ -277,7 +398,7 @@ def _hex(h, s, l):
 
 def _neutrals(hue, tint):
     """Light + dark neutral colors tinted with `hue`; `tint` (0-1) is how colorful the greys are."""
-    c = lambda mode, name, s, l: (f"{mode}_{name}", _hex(hue, s, l))
+    c = lambda mode, name, s, l: (f"{mode}_{name}", _hex(hue, s, l))  # noqa: E731
     return dict([
         ("light_page", _hex(hue, tint * 0.8, 0.995 - tint * 0.04)),
         c("light", "bg", tint, 0.965), c("light", "card", tint * 0.3, 1.0), c("light", "hover", tint, 0.985),
@@ -288,98 +409,42 @@ def _neutrals(hue, tint):
     ])
 
 
-def _preset(name, desc, primary, secondary, hue, tint=0.25, body="System", heading=None, **layout):
-    overrides = {"primary": primary, "secondary": secondary, **_neutrals(hue, tint),
-                 "font_body": body, "font_heading": heading or body, **layout}
-    return {"key": name.lower().replace(" ", "-").replace("&", "en"), "name": name, "description": desc, "overrides": overrides}
-
-
+# ── Built-in themes ─────────────────────────────────────────────────────────
+# Only the two house styles live in the system. All other themes are theme packages (<root>/themes/<key>/theme.json)
+# that are switched on or off in Admin -> Themapakketten (see themepacks.py).
 PRESET_DEFS = [
-    {"key": "standaard", "name": "Standaard (RSTCC)", "description": "De oorspronkelijke stijl met het RSTCC-logo.", "overrides": {"brand_logo": "rstcc"}},
-    _preset("Oceaan", "Frisse blauwtinten", "#0ea5e9", "#14b8a6", 200, 0.3, "Inter", radius=14),
-    _preset("Bosgroen", "Rustig en natuurlijk", "#16a34a", "#ca8a04", 140, 0.2, "Nunito", radius=16),
-    _preset("Zonsondergang", "Warm oranje en rood", "#f97316", "#e11d48", 20, 0.3, "Poppins", radius=18),
-    _preset("Lavendel", "Zacht paars", "#8b5cf6", "#ec4899", 260, 0.3, "Poppins", radius=20, btn_radius=14),
-    _preset("Roze suiker", "Speels en rond", "#ec4899", "#f59e0b", 330, 0.35, "Nunito", radius=24, btn_radius=24),
-    _preset("Nacht indigo", "Diep indigo", "#6366f1", "#22d3ee", 235, 0.35, "Inter", radius=12),
-    _preset("Minimal zwart", "Strak, scherp, zonder schaduw", "#111827", "#6b7280", 220, 0.05, "Inter",
-            radius=4, btn_radius=4, shadow="none"),
-    _preset("Koffie", "Warme aardetinten met serif koppen", "#92400e", "#d97706", 30, 0.3, "Lato", "Merriweather", radius=10),
-    _preset("Roest", "Terracotta en teal", "#c2410c", "#0d9488", 15, 0.25, "Montserrat", radius=8),
-    _preset("Smaragd", "Helder groen met indigo", "#059669", "#6366f1", 160, 0.25, "Open Sans", radius=12),
-    _preset("Koraal", "Levendig koraalrood", "#f43f5e", "#fb923c", 350, 0.3, "Montserrat", radius=16),
-    _preset("Staal", "Zakelijk grijsblauw", "#475569", "#0ea5e9", 215, 0.15, "Roboto", radius=6, btn_radius=6),
-    _preset("Goud luxe", "Elegant met serif koppen", "#b45309", "#1f2937", 40, 0.2, "Lato", "Playfair Display",
-            radius=2, btn_radius=2, heading_weight="600", shadow="strong"),
-    _preset("Mint", "Fris mint en roze", "#14b8a6", "#f472b6", 175, 0.3, "Nunito", radius=20),
-    _preset("Cyber", "Scherp neon op donker-blauw", "#06b6d4", "#a3e635", 195, 0.4, "Roboto",
-            radius=0, btn_radius=0, heading_weight="800"),
-    _preset("Rood klassiek", "Krachtig rood", "#dc2626", "#1f2937", 0, 0.15, "Roboto", radius=6),
-    _preset("Marine", "Klassiek marineblauw met goud", "#1e40af", "#f59e0b", 225, 0.3, "Open Sans", radius=8),
-    _preset("Pastel perzik", "Zacht en vriendelijk", "#fb7185", "#fbbf24", 15, 0.4, "Nunito", radius=28, btn_radius=28),
-    _preset("Olijf", "Aards groen", "#65a30d", "#a16207", 85, 0.25, "Lato", radius=12),
-    _preset("Royal paars", "Koninklijk paars en goud", "#7e22ce", "#eab308", 280, 0.3, "Inter", "Playfair Display", radius=14),
-    _preset("Terra", "Klei en zand", "#b45f3c", "#4d7c6f", 20, 0.22, "Open Sans", "Merriweather", radius=10),
-    _preset("Arctic", "IJsblauw, ruim en groot", "#38bdf8", "#818cf8", 205, 0.3, "Inter", radius=16, font_size_base=17),
-    _preset("Compact zakelijk", "Dicht op elkaar, veel op één scherm", "#2563eb", "#64748b", 220, 0.2, "Inter",
-            radius=6, btn_radius=6, font_size_base=14, content_pad=1.25, header_h=56, sidebar_w=210,
-            site_header_h=60, logo_h=38, site_logo_h=42),
-    _preset("Groot en luchtig", "Grote tekst en veel ruimte", "#0d9488", "#f97316", 170, 0.25, "Poppins",
-            radius=22, font_size_base=18, content_pad=3, sidebar_w=280, line_height=1.7, header_h=72),
+    {"key": "easy2edit", "name": "Easy2edit", "description": "Het standaardthema van Easy2edit: oranje en grijs, met het Easy2edit-logo.", "overrides": {"brand_logo": "easy2edit", "primary": "#f2823f", "secondary": "#939497"}, "builtin": True},
+    {"key": "standaard", "name": "RSTCC", "description": "De oorspronkelijke stijl met het RSTCC-logo.", "overrides": {"brand_logo": "rstcc", "primary": "#1b97d3", "secondary": "#f08a35"}, "builtin": True},
 ]
 
 
 def _explicit(name, desc, mode, primary, secondary, light, dark, danger, ok, **layout):
-    """Preset with hand-picked palettes. light/dark = (page, bg, card, hover, line, text, muted)."""
+    """Theme with hand-picked palettes. light/dark = (page, bg, card, hover, line, text, muted)."""
     names = ["page", "bg", "card", "hover", "line", "text", "muted"]
     overrides = {"primary": primary, "secondary": secondary, "danger": danger, "ok": ok, "default_mode": mode, **layout}
     overrides.update({f"light_{n}": v for n, v in zip(names, light)})
     overrides.update({f"dark_{n}": v for n, v in zip(names, dark)})
-    return {"key": name.lower().replace(" ", "-"), "name": name, "description": desc, "overrides": overrides, "mode": mode}
+    return {"key": name.lower().replace(" ", "-"), "name": name, "description": desc, "overrides": overrides, "mode": mode, "builtin": True}
 
 
-PRESET_DEFS += [
-    _explicit("Romantisch", "Zacht roze, goud en serif koppen", "light", "#d6336c", "#b8860b",
-              ("#fff8f8", "#fdf2f4", "#ffffff", "#fff1f3", "#f5d5db", "#4a1d2b", "#9a6b78"),
-              ("#1f1218", "#170d12", "#2a1820", "#34202a", "#4a2d3a", "#fbe8ee", "#c79aab"),
-              "#be123c", "#2f855a", font_body="Nunito", font_heading="Playfair Display", radius=20,
-              btn_radius=24, shadow="soft", heading_weight="600"),
-    _explicit("Zwart (OLED)", "Echt zwart met scherpe randen", "dark", "#3b82f6", "#a3a3a3",
-              ("#ffffff", "#f5f5f5", "#ffffff", "#fafafa", "#e5e5e5", "#0a0a0a", "#737373"),
-              ("#000000", "#000000", "#0a0a0a", "#141414", "#262626", "#fafafa", "#8a8a8a"),
-              "#ef4444", "#22c55e", font_body="Inter", font_heading="Inter", radius=10, btn_radius=8, shadow="none"),
-    _explicit("Apple licht", "macOS/iOS look, licht", "light", "#0071e3", "#ff9500",
-              ("#ffffff", "#f5f5f7", "#ffffff", "#f5f5f7", "#d2d2d7", "#1d1d1f", "#86868b"),
-              ("#000000", "#000000", "#1c1c1e", "#2c2c2e", "#38383a", "#f5f5f7", "#98989d"),
-              "#ff3b30", "#34c759", font_body="San Francisco", font_heading="San Francisco", radius=14,
-              btn_radius=12, shadow="soft", heading_weight="600"),
-    _explicit("Apple donker", "macOS/iOS look, donker", "dark", "#0a84ff", "#ff9f0a",
-              ("#ffffff", "#f2f2f7", "#ffffff", "#f2f2f7", "#d1d1d6", "#000000", "#8e8e93"),
-              ("#000000", "#000000", "#1c1c1e", "#2c2c2e", "#38383a", "#ffffff", "#98989d"),
-              "#ff453a", "#30d158", font_body="San Francisco", font_heading="San Francisco", radius=14,
-              btn_radius=12, shadow="none", heading_weight="600"),
-    _explicit("Windows", "Windows 11 (Fluent) look", "light", "#0067c0", "#6b69d6",
-              ("#ffffff", "#f3f3f3", "#ffffff", "#f9f9f9", "#e5e5e5", "#1b1b1b", "#5d5d5d"),
-              ("#1c1c1c", "#202020", "#2b2b2b", "#323232", "#3a3a3a", "#ffffff", "#9d9d9d"),
-              "#c42b1c", "#0f7b0f", font_body="Segoe UI", font_heading="Segoe UI", radius=8, btn_radius=4,
-              shadow="soft", heading_weight="600"),
-]
-
-
-def presets():
-    out = []
-    for p in PRESET_DEFS:
-        values = merged(p["overrides"])
-        _, errors = validate(values)
-        assert not errors, (p["key"], errors)
-        out.append({"key": p["key"], "name": p["name"], "description": p["description"],
-                    "mode": p.get("mode"), "values": values})
-    return out
-
-
-PRESET_DEFS.insert(1, _explicit(
+PRESET_DEFS.append(_explicit(
     "Studio2", "Oranje en grijs, passend bij het Studio2-logo", "light", "#f18745", "#939497",
     ("#ffffff", "#f6f6f6", "#ffffff", "#fafafa", "#e6e6e6", "#373736", "#7c7d80"),
     ("#1c1c1d", "#141414", "#242425", "#2d2d2e", "#3a3a3b", "#f1f1f1", "#a0a1a4"),
     "#dc2626", "#16a34a", font_body="Montserrat", font_heading="Montserrat", radius=6, btn_radius=6,
-    shadow="soft", heading_weight="600", brand_logo="studio2"))
+    shadow="soft", heading_weight="600", brand_logo="studio2", header_layout="classic", header_style="solid", menu_style="underline", footer_layout="columns", footer_tone="card", block_style="card"))
+
+
+def presets():
+    """The built-in themes plus the theme packages that are switched on."""
+    from . import themepacks
+
+    out = []
+    builtin = [{"key": m["key"], "name": m["name"], "description": m["description"], "mode": m.get("mode"), "overrides": m["values"], "assets": len(m.get("assets", {})) + len(m.get("home", []))} for m in themepacks.builtin_manifests()]
+    for p in [*builtin, *themepacks.enabled_defs()]:
+        values = merged(p["overrides"])
+        _, errors = validate(values)
+        if errors:
+            continue
+        out.append({"key": p["key"], "name": p["name"], "description": p["description"], "mode": p.get("mode"), "assets": p.get("assets", 0), "values": values})
+    return out

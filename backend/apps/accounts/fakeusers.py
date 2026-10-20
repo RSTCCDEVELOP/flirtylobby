@@ -13,6 +13,7 @@ from datetime import date, timedelta
 from django.core.files.base import ContentFile
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.permissions import has_level
@@ -53,7 +54,8 @@ def _simulated(n, gender, fields):
             elif t == "checkbox":
                 vals[f["key"]] = random.choice([True, False])
             elif t == "number":
-                vals[f["key"]] = random.randint(1, 30)
+                unit = str(f.get("unit") or "").lower()
+                vals[f["key"]] = random.randint(150, 200) if unit == "cm" else random.randint(1, 10) if unit in ("uur", "jaar") else random.randint(1, 30)
             elif t in ("text", "textarea"):
                 vals[f["key"]] = f"{f.get('label', '')} van {first}"[:80]
         out.append({"first_name": first, "last_name": random.choice(LAST), "gender": g, "age": random.randint(22, 58), "city": city[0], "country": city[1], "function": "Testgebruiker",
@@ -208,3 +210,55 @@ def fake_users(request):
     made = [_create(p, fields, photos) for p in people if isinstance(p, dict)]
     logger.info("%s fake users created by %s", len(made), request.user.email)
     return Response({"created": [{"id": u.id, "name": f"{u.first_name} {u.last_name}", "email": u.email} for u in made], "simulated": simulated, "count": fakes.count()}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated, module_required("profiles")])
+def fill_own_profile(request):
+    """Test tool (sandbox only): AI fills in the whole profile of the logged-in member (profile fields, interests, aim, design, and two avatars when there are no photos)."""
+    from apps.integrations import ai
+    from apps.sandbox import service as sandbox
+    from apps.social import service as social
+    from apps.social import themes
+    from apps.social.models import ProfilePhoto
+
+    ok = sandbox.active() and (ai.available() or sandbox.active("integrations"))
+    if request.method == "GET":
+        return Response({"available": ok, "simulated": sandbox.active("integrations")})
+    if not ok:
+        return bad("Alleen met de sandbox aan en de Claude-koppeling (of gesimuleerde koppelingen).")
+    me, fields = request.user, _fields()
+    p = social.profile_of(me)
+    own_g = p.gender if p.gender in ("m", "f", "x") else ""
+    try:
+        people, _ = _generate(1, own_g, str(request.data.get("mood") or "").strip()[:300], fields)
+        person = people[0]
+    except Exception as e:  # noqa: BLE001 - shown to the tester
+        logger.warning("fill own profile failed: %s", e)
+        return bad(str(e) or "Invullen is niet gelukt. Probeer het nog eens.")
+    gender = p.gender if p.gender in social.genders() else (person.get("gender") if person.get("gender") in social.genders() else random.choice("mfx"))
+    age = max(18, min(80, int(person.get("age") or 30) if str(person.get("age") or "").isdigit() else 30))
+    born = date.today() - timedelta(days=age * 365 + random.randint(0, 300))
+    p.enabled, p.discover, p.visibility = True, True, p.visibility if p.visibility != "hidden" else "members"
+    p.headline, p.bio = str(person.get("headline") or "")[:150], str(person.get("bio") or "")[:2000]
+    p.gender, p.birth_date = gender, born
+    p.city, p.country = str(person.get("city") or "")[:100], str(person.get("country") or "").upper()[:2]
+    p.interests = [str(x)[:30] for x in (person.get("interests") or [])][:8]
+    aims = [k for k, _ in social.aims()]
+    p.aim = person.get("aim") if person.get("aim") in aims else (random.choice(aims) if aims else "")
+    p.looking_for_genders = random.sample(list(social.genders()), random.randint(1, 2))
+    p.design = random.choice(["", *themes.PROFILE_DESIGNS])
+    vals = person.get("fields") or {}
+    p.data = {f["key"]: _clean_value(f, vals.get(f["key"])) for f in fields if f["key"] in vals}
+    p.save()
+    type(me).objects.filter(pk=me.pk).update(gender=gender, birth_date=born, city=p.city, country=p.country)
+    if not p.photos.exists():
+        first = me.first_name or "Test"
+        for i in range(2):
+            photo = ProfilePhoto(profile=p, visibility="public", order=i)
+            photo.image.save("p.jpg", ContentFile(_avatar(gender if gender in HUE else "x", first, f"{me.pk}-{i}")), save=False)
+            photo.save()
+            social.make_blur(photo)
+            photo.save()
+    return Response({"ok": True})
+

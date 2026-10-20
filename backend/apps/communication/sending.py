@@ -40,7 +40,7 @@ def email_integration():
     return None
 
 
-def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None):
+def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None, code=None):
     """Send an e-mail (plain text or HTML, see Communicatie -> E-mailopmaak). Sender and reply-to come from the communication page (fallback: the integration's own sender)."""
     from apps.sandbox import service as sandbox
 
@@ -57,7 +57,7 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
         raise DeliveryError("E-mail is niet gekoppeld.")
     from . import layout
 
-    text, html_body = layout.build(subject, body, base_url, api_base)
+    text, html_body, inline = layout.build_full(subject, body, base_url, api_base, code=code)
     c = obj.config
     frm = from_addr or sender("email_from", purpose) or c.get("from_email")
     if not frm:
@@ -67,6 +67,10 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
         payload = {"From": frm, "To": to, "Subject": subject, "TextBody": text, "MessageStream": "outbound"}
         if html_body:
             payload["HtmlBody"] = html_body
+            if inline:  # the logo travels inside the message
+                import base64
+
+                payload["Attachments"] = [{"Name": f"{cid}.{mime.split('/')[-1]}", "Content": base64.b64encode(data).decode(), "ContentType": mime, "ContentID": f"cid:{cid}"} for cid, data, mime in inline]
         if reply:
             payload["ReplyTo"] = reply
         return post_json("https://api.postmarkapp.com/email", {"X-Postmark-Server-Token": c["server_token"]}, payload)
@@ -77,6 +81,8 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
     msg.set_content(text)
     if html_body:
         msg.add_alternative(html_body, subtype="html")
+        for cid, data, mime in inline:  # the logo travels inside the message
+            msg.get_payload()[-1].add_related(data, *mime.split("/"), cid=f"<{cid}>")
     try:
         security = c.get("security", "starttls")
         port = int(c.get("port") or (465 if security == "ssl" else 587))

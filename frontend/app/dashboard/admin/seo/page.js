@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -7,6 +8,8 @@ import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import MediaPicker from "../../../../components/MediaPicker";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const DOT = { ok: "ok", warn: "warn", fail: "fail", info: "none" };
 const origin = () => (typeof window === "undefined" ? "" : window.location.origin);
@@ -65,7 +68,8 @@ export default function Seo() {
   }, [loadAudit, loadPreviews]);
   useEffect(() => { load(); }, [load]);
 
-  if (!data) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  const auto = useAutoSave(data, save, { ready: !!data && L >= 2 }); // saves by itself, no Save button
+  if (!data) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   const set = (sec) => (k, v) => setData((d) => ({ ...d, [sec]: { ...d[sec], [k]: v } }));
   const site = set("site"), ver = set("verification"), bots = set("bots"), rob = set("robots"), map = set("sitemap"), llms = set("llms"), sc = set("schema");
@@ -74,10 +78,10 @@ export default function Seo() {
     try {
       const r = await api("/seo/settings/", { method: "PUT", body: data });
       setData(r.settings);
-      setMsg({ ok: true, text: tx("SEO-instellingen opgeslagen.") });
+      setMsg(null);
       loadAudit();
       loadPreviews();
-    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); return false; }
   }
 
   // page editor
@@ -104,7 +108,7 @@ export default function Seo() {
         </div>
         <div className="row">
           <CollapseAll />
-          <button className="btn primary" onClick={save} disabled={L < 2}>{tx("Opslaan")}</button>
+          <SaveStatus auto={auto} />
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
@@ -141,7 +145,7 @@ export default function Seo() {
         </label>
         <div className="photo-row">
           {data.site.default_og_media ? <span className="muted">{tx("Deelafbeelding gekozen")}</span> : <span className="muted">{tx("Geen deelafbeelding (1200×630 aanbevolen)")}</span>}
-          <button type="button" className="btn sm" onClick={() => setPicker("site")} disabled={L < 2}>{tx("Deelafbeelding kiezen")}</button>
+          <button type="button" className="btn sm" onClick={() => setPicker("site")} disabled={L < 2}>{tx("Media")}</button>
           {data.site.default_og_media && <button type="button" className="btn sm danger" onClick={() => site("default_og_media", null)}>{tx("Verwijderen")}</button>}
         </div>
         <h3>{tx("Verificatie (Search Console)")}</h3>
@@ -180,7 +184,7 @@ export default function Seo() {
           <label>{tx("Canonical URL (optioneel)")}<input value={current.canonical} placeholder={`${base}${path}`} onChange={(e) => setPage({ canonical: e.target.value })} /></label>
           <div className="photo-row">
             {current.og_image && <img src={mediaUrl(current.og_image)} alt="" className="photo-preview" style={{ borderRadius: 8 }} />}
-            <button type="button" className="btn sm" onClick={() => setPicker("page")} disabled={L < 2}>{tx("Deelafbeelding")}</button>
+            <button type="button" className="btn sm" onClick={() => setPicker("page")} disabled={L < 2}>{tx("Media")}</button>
             {current.og_media && <button type="button" className="btn sm danger" onClick={() => setPage({ og_media: null, og_image: null })}>{tx("Verwijderen")}</button>}
           </div>
         </div>

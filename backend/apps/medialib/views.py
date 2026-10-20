@@ -227,3 +227,21 @@ def replace(request):
         return Response({"detail": "Ongeldig doel."}, status=status.HTTP_400_BAD_REQUEST)
     logger.info("Image %s changed by %s", target, request.user.email)
     return Response({"ok": True})
+
+
+@api_view(["GET"])
+@permission_classes([use_media, mod_media])
+def file(request, pk):
+    """The file itself (for screens that want a library picture as an upload: logo of a theme, photo of a user, …)."""
+    import mimetypes
+
+    from django.http import FileResponse, Http404
+
+    item = _scope(request).filter(pk=pk).first()
+    if not item:
+        raise Http404()
+    try:
+        fh = default_storage.open(item.key, "rb")
+    except Exception:  # noqa: BLE001
+        raise Http404()
+    return FileResponse(fh, content_type=item.mime or mimetypes.guess_type(item.key)[0] or "application/octet-stream")

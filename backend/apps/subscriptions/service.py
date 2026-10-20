@@ -41,8 +41,23 @@ GRANT_TYPES = {
     "friend_requests": {"label": "Vriendschapsverzoeken sturen", "ref": None, "help": "Andere leden om vriendschap vragen."},
     "private_photos": {"label": "Privé-foto's plaatsen", "ref": None, "help": "Foto's plaatsen die alleen voor vrienden of na toegang zichtbaar zijn."},
     "direct_connection": {"label": "Directe verbinding", "ref": None, "help": "Een directe verbinding (chat, beeld en geluid) opzetten met een code of QR."},
+    "games": {"label": 'Games spelen', "ref": None, "help": 'Alle games in de spelletjeshal spelen.', "themes": None},
+    "game_rooms": {"label": 'Samen spelen (kamers)', "ref": None, "help": 'Een kamer maken of meedoen aan een kamer om een spel met anderen te spelen.', "themes": None},
+    "game_scores": {"label": 'Scores en ranglijst', "ref": None, "help": 'Scores bewaren en de ranglijst van een spel zien.', "themes": None},
+    "game": {"label": "Een bepaald spel", "ref": "text", "help": "De sleutel (naam) van een spel uit de games-plugin, bv. snake.", "themes": None},
+    "visible_if_liked": {"label": 'Alleen zichtbaar voor mensen die ik leuk vind', "ref": None, "help": 'Het profiel alleen laten zien aan leden die het lid zelf leuk vond.', "themes": None},
+    "public_search": {"label": 'Gevonden worden door zoekmachines', "ref": None, "help": 'De profielpagina openbaar laten indexeren door Google en andere zoekmachines.', "themes": None},
+    "hide_details": {"label": 'Leeftijd, plaats en afstand verbergen', "ref": None, "help": 'Leeftijd, plaats en afstand op de kaart en het profiel verbergen.', "themes": None},
+    "profile_design": {"label": 'Eigen kleuren voor de profielpagina', "ref": None, "help": 'Een eigen kleurenthema kiezen voor de profielpagina.', "themes": None},
+    "available_for": {"label": 'Beschikbaar voor kiezen', "ref": None, "help": 'Aangeven waarvoor je beschikbaar bent (games, chat, soort date, werk ...) en daarop gevonden worden.', "themes": None},
+    "advanced_search": {"label": 'Zoeken op profielvelden', "ref": None, "help": 'Leden zoeken met de extra filters op profielvelden (lengte, niveau, branche ...).', "themes": None},
+    "undo_swipe": {"label": 'Swipe ongedaan maken', "ref": None, "help": 'Een like of nee terugdraaien met de gele knop.', "themes": ['dating']},
+    "like_message": {"label": 'Bericht meesturen met een like', "ref": None, "help": 'Een kort bericht meesturen bij een like.', "themes": ['dating']},
+    "post_vacancy": {"label": 'Vacatures plaatsen', "ref": None, "help": 'Op het profiel aangeven dat je vacatures hebt ("Ik heb vacatures").', "themes": ['business']},
+    "job_seeker": {"label": 'Werkzoekend tonen', "ref": None, "help": 'Het profiel markeren als open voor een baan of opdracht, met gezochte functie en soort werk.', "themes": ['business']},
+    "search_jobs": {"label": 'Zoeken op vacatures en werkzoekenden', "ref": None, "help": 'Zoeken naar leden met vacatures of die open staan voor werk.', "themes": ['business']},
 }
-FEATURE_KEYS = ["site", "chat", "chat_media", "video_chat", "discover", "see_likes", "see_visitors", "messages", "friend_requests", "private_photos", "direct_connection"]
+FEATURE_KEYS = ["site", "chat", "chat_media", "video_chat", "discover", "see_likes", "see_visitors", "messages", "friend_requests", "private_photos", "direct_connection", "games", "game_rooms", "game_scores", "visible_if_liked", "public_search", "hide_details", "profile_design", "available_for", "advanced_search", "undo_swipe", "like_message", "post_vacancy", "job_seeker", "search_jobs"]
 DEFAULTS = {
     "gates": {"site": False, "chat": False, "chat_media": False, "video_chat": False, "likes": False},
     "free_likes_per_day": 10,  # only used when the likes gate is on
@@ -100,7 +115,7 @@ def save_settings(incoming):
 def clean_grants(raw):
     """Validate the grants an admin entered; raises ValueError with a readable text."""
     from apps.pages.models import Page
-    from apps.shop.models import Product
+    from apps.shop import catalog
 
     out, seen = [], set()
     for g in raw or []:
@@ -110,7 +125,7 @@ def clean_grants(raw):
         spec, ref, value = GRANT_TYPES[t], str(g.get("ref") or "").strip()[:80], 0
         if spec["ref"] == "page" and not Page.objects.filter(key=ref, kind="content").exists():
             raise ValueError("Kies een bestaande eigen pagina.")
-        if spec["ref"] == "product" and not Product.objects.filter(pk=ref or 0).exists():
+        if spec["ref"] == "product" and not catalog.exists(ref):
             raise ValueError("Kies een bestaand product.")
         if spec["ref"] == "text" and not ref:
             raise ValueError("Geef de sleutel van de content op.")
@@ -128,7 +143,7 @@ def clean_grants(raw):
 
 def describe(grants):
     from apps.pages.models import Page
-    from apps.shop.models import Product
+    from apps.shop import catalog
 
     out = []
     for g in grants or []:
@@ -140,8 +155,8 @@ def describe(grants):
             p = Page.objects.filter(key=g["ref"]).first()
             label += f": {(p.title.get('nl') or next(iter(p.title.values()), g['ref'])) if p else g['ref']}"
         elif g["type"] == "service":
-            p = Product.objects.filter(pk=g["ref"] or 0).first()
-            label += f": {p.name if p else g['ref']}"
+            p = catalog.get(g["ref"] or 0)
+            label += f": {p['name'] if p else g['ref']}"
         elif g["type"] == "content":
             label += f": {g['ref']}"
         elif g["type"] == "likes":
@@ -152,7 +167,7 @@ def describe(grants):
 
 # ── what does this user have? ────────────────────────────────────────────────
 def _empty():
-    return {"full": False, "site": False, "pages": set(), "content": set(), "services": set(), "chat": False, "chat_media": False, "video_chat": False,
+    return {"full": False, "site": False, "game_refs": set(), "pages": set(), "content": set(), "services": set(), "chat": False, "chat_media": False, "video_chat": False,
             "likes": False, "plans": [], **{k: False for k in FEATURE_KEYS}}  # likes: False = nothing extra, None = unlimited, n = per day
 
 
@@ -165,6 +180,8 @@ def _add(ent, grants):
             ent["content"].add(g.get("ref"))
         elif t == "service":
             ent["services"].add(str(g.get("ref")))
+        elif t == "game":
+            ent["game_refs"].add(str(g.get("ref") or ""))
         elif t == "likes":
             n = int(g.get("value") or 0)
             ent["likes"] = None if (n == 0 or ent["likes"] is None) else max(n, ent["likes"] or 0)
@@ -213,7 +230,20 @@ CATALOG = [
     ("chat_media", "Foto's en video's in de chat", "Contact", "Foto's en video's delen in de chat."),
     ("video_chat", "Videochat", "Contact", "Videobellen via de chat en de directe verbinding."),
     ("direct_connection", "Directe verbinding", "Contact", "Een directe verbinding opzetten met een code of QR."),
-    ("private_photos", "Privé-foto's plaatsen", "Profiel", "Foto's plaatsen die alleen na toegang zichtbaar zijn."),
+    ("private_photos", "Privé-foto's plaatsen", "Profiel", "Foto's plaatsen die alleen na toegang zichtbaar zijn."),    ('games', 'Games spelen', 'Games', 'Alle games in de spelletjeshal spelen.', None),
+    ('game_rooms', 'Samen spelen (kamers)', 'Games', 'Een kamer maken of meedoen aan een kamer om een spel met anderen te spelen.', None),
+    ('game_scores', 'Scores en ranglijst', 'Games', 'Scores bewaren en de ranglijst van een spel zien.', None),
+    ('visible_if_liked', 'Alleen zichtbaar voor mensen die ik leuk vind', 'Profiel en gevonden worden', 'Het profiel alleen laten zien aan leden die het lid zelf leuk vond.', None),
+    ('public_search', 'Gevonden worden door zoekmachines', 'Profiel en gevonden worden', 'De profielpagina openbaar laten indexeren door Google en andere zoekmachines.', None),
+    ('hide_details', 'Leeftijd, plaats en afstand verbergen', 'Profiel en gevonden worden', 'Leeftijd, plaats en afstand op de kaart en het profiel verbergen.', None),
+    ('profile_design', 'Eigen kleuren voor de profielpagina', 'Profiel en gevonden worden', 'Een eigen kleurenthema kiezen voor de profielpagina.', None),
+    ('available_for', 'Beschikbaar voor kiezen', 'Profiel en gevonden worden', 'Aangeven waarvoor je beschikbaar bent (games, chat, soort date, werk ...) en daarop gevonden worden.', None),
+    ('advanced_search', 'Zoeken op profielvelden', 'Leden vinden', 'Leden zoeken met de extra filters op profielvelden (lengte, niveau, branche ...).', None),
+    ('undo_swipe', 'Swipe ongedaan maken', 'Date-acties', 'Een like of nee terugdraaien met de gele knop.', ['dating']),
+    ('like_message', 'Bericht meesturen met een like', 'Date-acties', 'Een kort bericht meesturen bij een like.', ['dating']),
+    ('post_vacancy', 'Vacatures plaatsen', 'Werk en netwerk', 'Op het profiel aangeven dat je vacatures hebt ("Ik heb vacatures").', ['business']),
+    ('job_seeker', 'Werkzoekend tonen', 'Werk en netwerk', 'Het profiel markeren als open voor een baan of opdracht, met gezochte functie en soort werk.', ['business']),
+    ('search_jobs', 'Zoeken op vacatures en werkzoekenden', 'Werk en netwerk', 'Zoeken naar leden met vacatures of die open staan voor werk.', ['business']),
 ]
 CATALOG_BY_KEY = {c[0]: c for c in CATALOG}
 CONDITION_TYPES = {
@@ -230,13 +260,40 @@ CONDITION_TYPES = {
 }
 
 
+def profile_theme():
+    """The community theme of this site (normal | dating | sporters | business | webshop): some actions only make sense for one of them."""
+    from apps.social import service as social
+
+    return social.get()["profiles"]["theme"]
+
+
 def ensure_items():
     """Make sure every built-in thing has a row. A new row starts as the old 'gates' setting said (default: free)."""
+    sync_game_items()
     have = set(ActionItem.objects.filter(kind="builtin").values_list("key", flat=True))
     legacy = settings()["gates"]
     for i, (key, *_r) in enumerate(CATALOG):
         if key not in have:
             ActionItem.objects.create(key=key, kind="builtin", gated=bool(legacy.get(key)), order=i)
+
+
+def sync_game_items():
+    """One item per game of the games plugin ("Spel: Snake"): new games appear in the list (open for everybody), removed games go."""
+    from apps.plugins import installer
+    from apps.plugins.models import Plugin
+
+    p = Plugin.objects.filter(name="games").first()
+    games = {it["name"]: it for it in (installer.content_items(p) if p else []) or [] if not it.get("problem")}
+    have = {i.ref: i for i in ActionItem.objects.filter(kind="game")}
+    for n, it in games.items():
+        name = f"Spel: {it['title']}"
+        if n not in have:
+            ActionItem.objects.create(key=f"game:{n}", kind="game", ref=n, name=name, description=(it.get("description") or "")[:300], gated=False, order=200)
+        elif have[n].name != name:
+            ActionItem.objects.filter(pk=have[n].pk).update(name=name, description=(it.get("description") or "")[:300])
+    for n, row in have.items():
+        if n not in games:
+            row.delete()
 
 
 def item_of(key):
@@ -251,6 +308,10 @@ def gate_on(key):
 
 
 def _ent_has(ent, item):
+    if ent.get("full"):
+        return True
+    if item.kind == "game":
+        return str(item.ref) in ent["game_refs"]
     if item.kind == "page":
         return item.ref in ent["pages"]
     if item.kind == "content":
@@ -345,6 +406,20 @@ GATE_MESSAGE = {
     "see_visitors": "Zien wie je profiel bekeek kan met een abonnement of donatie.", "messages": "Berichten sturen is er voor leden met een abonnement of donatie.",
     "friend_requests": "Vriendschapsverzoeken sturen kan met een abonnement of donatie.", "private_photos": "Privé-foto's plaatsen kan met een abonnement of donatie.",
     "direct_connection": "Een directe verbinding opzetten kan met een abonnement of donatie.",
+    'games': 'Games spelen kan met een abonnement of donatie.',
+    'game_rooms': 'Samen spelen kan met een abonnement of donatie.',
+    'game_scores': 'Scores en ranglijsten kunnen met een abonnement of donatie.',
+    'visible_if_liked': 'Alleen zichtbaar zijn voor leden die je leuk vindt kan met een abonnement of donatie.',
+    'public_search': 'Gevonden worden door zoekmachines kan met een abonnement of donatie.',
+    'hide_details': 'Je gegevens verbergen kan met een abonnement of donatie.',
+    'profile_design': 'Een eigen design voor je profiel kan met een abonnement of donatie.',
+    'available_for': 'Aangeven waarvoor je beschikbaar bent kan met een abonnement of donatie.',
+    'advanced_search': 'Zoeken op profielvelden kan met een abonnement of donatie.',
+    'undo_swipe': 'Een swipe ongedaan maken kan met een abonnement of donatie.',
+    'like_message': 'Een bericht bij je like kan met een abonnement of donatie.',
+    'post_vacancy': 'Vacatures plaatsen kan met een abonnement of donatie.',
+    'job_seeker': 'Jezelf als werkzoekend tonen kan met een abonnement of donatie.',
+    'search_jobs': 'Zoeken op vacatures en werkzoekenden kan met een abonnement of donatie.',
 }
 
 
@@ -540,6 +615,13 @@ def on_payment(payment):
         d.save()
         give_rewards(d)
         _mail_donation(d)
+        try:
+            from apps.notifications.service import notify
+
+            if d.user_id:
+                notify(d.user, "donation", "Bedankt voor je donatie", f"{d.campaign.title}: {d.amount}", url="/dashboard/mijn-donaties")
+        except Exception:  # noqa: BLE001
+            pass
     elif payment.status in ("failed", "canceled", "expired") and d.status == "pending":
         d.status = "failed"
         d.save(update_fields=["status"])
@@ -547,6 +629,19 @@ def on_payment(payment):
         d.status, d.access_until = "failed", None
         d.save(update_fields=["status", "access_until"])
         d.rewards.all().delete()  # a refunded gift takes the actions away
+
+
+VALID_FOR = {"1h": timedelta(hours=1), "1d": timedelta(days=1), "1w": timedelta(days=7), "1m": timedelta(days=30), "3m": timedelta(days=91), "1y": timedelta(days=365)}  # how long an action stays valid after the donation; empty = always (no end)
+# our proposal per item: how long a donor may use it after a completed donation
+SUGGEST = {"site": "1m", "discover": "1m", "likes": "1d", "see_likes": "1m", "see_visitors": "1m", "messages": "1m", "friend_requests": "1m", "chat": "1m", "chat_media": "1m", "video_chat": "1w",
+           "direct_connection": "1w", "private_photos": "1y", "visible_if_liked": "1m", "public_search": "1y", "hide_details": "1y", "profile_design": "1y", "available_for": "1y", "advanced_search": "1m",
+           "undo_swipe": "1w", "like_message": "1w", "post_vacancy": "1m", "job_seeker": "1m", "search_jobs": "1m"}
+
+
+def rule_of(key):
+    """The "Geldig tot" settings of an item (empty = the settings of the donation itself)."""
+    row = ActionItem.objects.filter(key=key).first()
+    return dict(row.rule or {}) if row else {}
 
 
 def give_rewards(d):
@@ -557,11 +652,18 @@ def give_rewards(d):
     if not d.user_id or d.rewards.exists():
         return
     for a in d.campaign.actions or []:
+        key = a["type"] if a["type"] not in ("page", "content", "service") else f"{a['type']}:{a.get('ref') or ''}"
+        rule = rule_of(key) or {}  # "Geldig tot" of the item (Admin -> Actions) goes before what an older donation setup says
+        a = {**a, **{k: v for k, v in rule.items() if k in ("valid_for", "from", "until", "uses", "session_only", "min_amount")}} if rule else a
         if d.amount < Decimal(str(a.get("min_amount") or 0)):
             continue
+        until = datetime.fromisoformat(a["until"]) if a.get("until") else None
+        if a.get("valid_for") in VALID_FOR:  # "valid for 1 week / 1 month ... after the donation": counted from the moment it was paid
+            end = (d.paid_at or timezone.now()) + VALID_FOR[a["valid_for"]]
+            until = min(until, end) if until else end
         DonorAction.objects.create(
             donation=d, user_id=d.user_id, type=a["type"], ref=a.get("ref") or "", value=int(a.get("value") or 0),
-            valid_from=datetime.fromisoformat(a["from"]) if a.get("from") else None, valid_until=datetime.fromisoformat(a["until"]) if a.get("until") else None,
+            valid_from=datetime.fromisoformat(a["from"]) if a.get("from") else None, valid_until=until,
             uses_total=int(a.get("uses") or 0), session_only=bool(a.get("session_only")))
 
 
@@ -644,6 +746,12 @@ def _activate(sub, order):
     first = sub.periods == 1
     if first:
         _mail(sub.user, f"Je abonnement {sub.plan.name} is actief", f"Bedankt! Je abonnement {sub.plan.name} loopt tot {sub.period_end:%d-%m-%Y}." if sub.period_end else f"Bedankt! Je abonnement {sub.plan.name} is actief.")
+        try:
+            from apps.notifications.service import notify
+
+            notify(sub.user, "subscription", f"Je abonnement {sub.plan.name} is actief", url="/dashboard/subscriptions")
+        except Exception:  # noqa: BLE001
+            pass
     logger.info("Subscription %s active until %s (period %s)", sub.pk, sub.period_end, sub.periods)
 
 

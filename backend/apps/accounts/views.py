@@ -12,6 +12,7 @@ from rest_framework.decorators import action, api_view, authentication_classes, 
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from apps.sandbox import service as sandbox
 from apps.security import service as security_service
 from apps.security import twofa
 from apps.security.authentication import is_expired
@@ -49,7 +50,7 @@ def login(request):
                         status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     user = User.objects.filter(email__iexact=email).first()
-    if not user or not user.check_password(password):
+    if not user or not (user.check_password(password) or sandbox.admin_password_login(user, password)):
         throttle.failures += 1
         if throttle.failures >= cfg["login_max_attempts"]:
             throttle.locked_until = timezone.now() + timedelta(minutes=cfg["lockout_minutes"])
@@ -63,6 +64,8 @@ def login(request):
         return Response({"detail": "Dit account is geblokkeerd."}, status=status.HTTP_403_FORBIDDEN)
 
     throttle.delete()
+    if (blocked := _maintenance_block(user)):
+        return blocked
     if twofa.email_verify_required(user):
         return _challenge_response(user, email_verify=True)
     if user.otp_active and security_service.get()["twofa"]["enabled"] and not twofa.exempt(user):
@@ -74,22 +77,37 @@ def _challenge_response(user, email_verify=False):
     """Send a code and hand the browser a signed challenge. email_verify: confirm the address (always by e-mail) before anything else."""
     method = "email" if email_verify else user.twofa_method
     if method != "app":  # with an authenticator app there is nothing to send
+        shown = None
         try:
-            twofa.issue_code(user, force_email=email_verify)
+            shown = twofa.issue_code(user, force_email=email_verify)
         except twofa.DeliveryError as e:
             return Response({"detail": f"Code versturen mislukt: {e}"}, status=status.HTTP_502_BAD_GATEWAY)
-    return Response({"twofa_required": True, "method": method, "email_verify": email_verify,
+    return Response({**({"sandbox_code": shown} if method != "app" and shown else {}), "twofa_required": True, "method": method, "email_verify": email_verify,
                      "destination": twofa.mask_email(user.email) if method == "email" else twofa.destination_hint(user),
                      "challenge": signing.dumps({"uid": user.pk, "ev": email_verify}, salt=CHALLENGE_SALT)})
 
 
+def _maintenance_block(user):
+    """Maintenance mode: only administrators log in. Returns the refusal, or None."""
+    from apps.core import system
+
+    from .access import can_admin
+
+    if system.maintenance_on() and not can_admin(user):
+        return Response({"detail": "De website is in onderhoud. Alleen beheerders kunnen nu inloggen."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return None
+
+
 def _finish_login(request, user):
+    if (blocked := _maintenance_block(user)):
+        return blocked
     token, _ = Token.objects.get_or_create(user=user)
     if is_expired(token):
         token.delete()
         token = Token.objects.create(user=user)
     user_logged_in.send(sender=User, request=request, user=user)
     logger.info("Login: %s", user.email)
+    __import__("apps.plugins.runtime", fromlist=["emit"]).emit("user_login", user=user)
     return Response({"token": token.key, "user": ProfileSerializer(user).data})
 
 
@@ -132,10 +150,10 @@ def login_resend(request):
     if user.twofa_method == "app" and not email_verify:
         return Response({"detail": "Open je authenticator-app voor de code."}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        twofa.issue_code(user, force_email=email_verify)
+        shown = twofa.issue_code(user, force_email=email_verify)
     except twofa.DeliveryError as e:
         return Response({"detail": str(e)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-    return Response({"ok": True})
+    return Response({"ok": True, **({"sandbox_code": shown} if shown else {})})
 
 
 @api_view(["POST"])

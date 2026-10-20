@@ -20,7 +20,7 @@ from .models import DirectMessage, Favorite, Like, Notification, Pass, Profile, 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 DISCOVER = [IsAuthenticated, module_required("profiles", "discover")]
-GENDERS, AIMS = ("m", "f", "x"), ("dating", "relationship", "friends", "chat")
+GENDERS, AIMS = ("m", "f", "x", "k"), ("dating", "relationship", "friends", "chat")  # k = couple, only valid with the Dating theme (service.genders())
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 
 
@@ -34,7 +34,7 @@ def age_of(p):
 def validate_dating_fields(p, b):
     """Apply gender, birth date, city, interests, preferences from a profile PUT. Returns an error message or None."""
     if "gender" in b:
-        if b["gender"] not in ("", *GENDERS):
+        if b["gender"] not in ("", *service.genders()) and b["gender"] != p.gender:
             return "Ongeldig geslacht."
         p.gender = b["gender"]
     if "birth_date" in b:
@@ -72,9 +72,9 @@ def validate_dating_fields(p, b):
             return f"Bevat niet toegestane woorden: {', '.join(words)}."
         p.interests = tags[:12]
     if "looking_for_genders" in b:
-        p.looking_for_genders = [g for g in (b["looking_for_genders"] or []) if g in GENDERS]
+        p.looking_for_genders = [g for g in (b["looking_for_genders"] or []) if g in service.genders()]
     if "aim" in b:
-        if b["aim"] not in ("", *AIMS):
+        if b["aim"] not in ("", *(k for k, _ in service.aims())) and b["aim"] != p.aim:
             return "Ongeldig doel."
         p.aim = b["aim"]
     for k in ("age_min", "age_max"):
@@ -116,7 +116,21 @@ def _card(p, me, likes=None, favs=None, matches=None, mine=None):
     return service.mask({"id": u.id, "slug": p.slug, "name": service.display_name(u), "headline": p.headline, "photo": service.photo_url(u, me),
             "age": age_of(p) if p.show_age else None, "city": p.city if p.show_city else "", "country": p.country if p.show_city else "",
             "gender": p.gender, "aim": p.aim, "interests": p.interests[:6], "online": service.online(u), "verification": u.verification, "card_fields": service.visible_fields(p, me, only_card=True),
-            "distance_km": _distance(mine, p), "liked": liked, "favorite": fav, "match": match, "accept_messages": p.accept_messages, "accept_chat": p.accept_chat})
+            "distance_km": _distance(mine, p), "available": _avail(p), "liked": liked, "favorite": fav, "match": match, "accept_messages": p.accept_messages, "accept_chat": p.accept_chat})
+
+
+def _avail(p):
+    from . import availability
+
+    return availability.of_profile(p)
+
+
+def _passed(me, cfg):
+    """The people this member swiped away: hidden for a number of days, or for good (Admin -> Community -> Zoeken & matchen)."""
+    qs = Pass.objects.filter(from_user=me)
+    if not cfg.get("pass_forever"):
+        qs = qs.filter(created_at__gt=timezone.now() - timedelta(days=cfg["pass_days"]))
+    return set(qs.values_list("to_user_id", flat=True))
 
 
 def _distance(mine, p):
@@ -146,8 +160,6 @@ def _my_profile(me):
     return p if p and p.enabled and p.discover else None
 
 
-@api_view(["GET"])
-@permission_classes(DISCOVER)
 def _need(me, key):
     """402 with the reason when this part is behind a subscription / donation (Admin -> Subscription -> Actions)."""
     from apps.subscriptions import service as subs
@@ -156,6 +168,8 @@ def _need(me, key):
         return Response({"detail": subs.GATE_MESSAGE.get(key, "Hiervoor heb je een abonnement of donatie nodig."), "subscribe": True}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
 
+@api_view(["GET"])
+@permission_classes(DISCOVER)
 def search(request):
     me, g, cfg = request.user, request.query_params.get, service.get()["discover"]
     if (blocked := _need(me, "discover")):
@@ -164,9 +178,11 @@ def search(request):
     if cfg["require_to_search"] and not _my_profile(me):
         return Response({"results": [], "participating": False, "locked": True, "me": {"gender": "", "interests": []}})
     qs = _base(me)
+    if cfg.get("pass_forever"):  # swiped away = never shown again, also in the search
+        qs = qs.exclude(user_id__in=_passed(me, cfg))
     if g("gender") in GENDERS:
         qs = qs.filter(gender=g("gender"))
-    if g("aim") in AIMS:
+    if g("aim") in dict(service.aims()):
         qs = qs.filter(aim=g("aim"))
     if g("country"):
         qs = qs.filter(country=g("country").upper())
@@ -192,8 +208,18 @@ def search(request):
     lang = g("lang")
     sort = g("sort") or cfg["default_sort"]
     results = [p for p in qs.order_by("-id" if sort == "newest" else "-user__last_seen")[:600] if service.can_view(me, p, lang)]
+    wanted = {k for k in (g("available") or "").split(",") if k}  # "Beschikbaar voor": members who are available for at least one of these
+    if wanted:
+        results = [p for p in results if wanted & set(p.available or [])]
 
     # filters on the configured profile fields (only fields this member may see)
+    from .views import FIELD_SEARCH_GATES, gate_response
+
+    if any(k.startswith("f_") and v for k, v in request.query_params.items()):  # searching on profile fields is an action of its own
+        used = {k[2:].rsplit("_", 1)[0] if k.endswith(("_min", "_max")) else k[2:] for k, v in request.query_params.items() if k.startswith("f_") and v}
+        for key in ["advanced_search", *{FIELD_SEARCH_GATES[u] for u in used if u in FIELD_SEARCH_GATES}]:
+            if (blocked := gate_response(me, key)):
+                return blocked
     for fl in service.get()["profiles"]["fields"]:
         if not fl["filter"]:
             continue
@@ -259,6 +285,10 @@ def like(request, uid=None):
     if not target or target.id == me.id or service.is_blocked_between(me, target):
         return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == "DELETE":
+        from .views import gate_response
+
+        if (blocked := gate_response(me, "undo_swipe")) and request.query_params.get("undo") == "1":  # taking a like back from the swipe deck
+            return blocked
         Like.objects.filter(from_user=me, to_user=target).delete()
         Notification.objects.filter(user=target, kind="like", from_user=me, seen=False).delete()
         return Response({"liked": False, "match": False})
@@ -286,6 +316,11 @@ def like(request, uid=None):
     if msg:  # a short message together with the like (swipe deck)
         from apps.security.words import find_forbidden
 
+        from .views import gate_response
+
+        if (blocked := gate_response(me, "like_message")):
+            return blocked
+
         if find_forbidden(msg):
             return bad("Je bericht bevat niet toegestane woorden.")
         if tp.accept_messages and service.module_on("messages"):
@@ -301,6 +336,18 @@ def like(request, uid=None):
             Notification.objects.create(user=target, kind="like", from_user=me)
         if sent:
             Notification.objects.create(user=target, kind="message", from_user=me, text=msg[:200])
+        try:
+            from apps.notifications.service import notify
+
+            if match:
+                notify(target, "match", f"Match met {who}", url="/dashboard/community/discover", from_user=me)
+                notify(me, "match", f"Match met {service.display_name(target)}", url="/dashboard/community/discover", from_user=target)
+            else:
+                notify(target, "like", f"{who} vindt je leuk", url="/dashboard/community/discover", from_user=me)
+            if sent:
+                notify(target, "message", f"Bericht van {who}", msg[:200], url="/dashboard/community/messages", from_user=me)
+        except Exception:  # noqa: BLE001
+            pass
         if not match and cfg.get("like_email"):
             try:
                 from apps.communication import sending
@@ -405,8 +452,7 @@ def deck(request):
     if cfg["require_to_search"] and not _my_profile(me):
         return Response({"cards": [], "locked": True})
     likes, liked_me, favs, matches = _sets(me)
-    since = timezone.now() - timedelta(days=cfg["pass_days"])
-    passed = set(Pass.objects.filter(from_user=me, created_at__gt=since).values_list("to_user_id", flat=True))
+    passed = _passed(me, cfg)
     lang = request.query_params.get("lang")
     qs = _base(me).exclude(user_id__in=likes | passed)
     people = [p for p in qs.order_by("-user__last_seen")[:200] if service.can_view(me, p, lang) and _compatible(mine, p)]
@@ -418,10 +464,17 @@ def deck(request):
     return Response({"cards": cards, "locked": False})
 
 
-@api_view(["POST"])
+@api_view(["POST", "DELETE"])
 @permission_classes(DISCOVER)
 def pass_(request, uid):
     me = request.user
+    if request.method == "DELETE":  # undo the last swipe to the left: the person comes back in the deck
+        from .views import gate_response
+
+        if (blocked := gate_response(me, "undo_swipe")):
+            return blocked
+        Pass.objects.filter(from_user=me, to_user_id=uid).delete()
+        return Response({"passed": False})
     target = User.objects.filter(pk=uid, is_active=True).first()
     if not target or target.id == me.id:
         return Response(status=status.HTTP_404_NOT_FOUND)

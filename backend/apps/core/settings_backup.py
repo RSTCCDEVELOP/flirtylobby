@@ -55,7 +55,7 @@ def listing():
     return [{k: v for k, v in s.items() if k not in ("export", "apply")} for s in sorted(SECTIONS.values(), key=lambda s: (s["order"], s["key"]))]
 
 
-def export(keys=None, include_secrets=False, include_files=True):
+def export(keys=None, include_secrets=False, include_files=True, extra=None):
     """The bundle: {format, version, exported_at, sections: {key: {"v", "data"}}}. A part that fails is left out and listed under `errors`."""
     discover()
     out, errors = {}, {}
@@ -63,7 +63,7 @@ def export(keys=None, include_secrets=False, include_files=True):
         if keys is not None and key not in keys:
             continue
         try:
-            out[key] = {"v": s["version"], "label": s["label"], "data": s["export"]({"include_secrets": include_secrets, "include_files": include_files})}
+            out[key] = {"v": s["version"], "label": s["label"], "data": s["export"]({**(extra or {}), "include_secrets": include_secrets, "include_files": include_files})}
         except Exception as e:  # noqa: BLE001
             logger.exception("export of %s failed", key)
             errors[key] = str(e)

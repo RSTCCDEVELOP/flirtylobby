@@ -137,7 +137,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         return value
 
     def validate_gender(self, value):
-        if value not in ("", "m", "f", "x"):
+        from apps.social import service as social
+
+        if value not in ("", *social.genders()) and value != getattr(self.instance, "gender", None):
             raise serializers.ValidationError("Ongeldig geslacht.")
         return value
 

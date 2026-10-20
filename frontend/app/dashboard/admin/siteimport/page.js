@@ -1,11 +1,11 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
 import { IconFolder, IconGlobe, IconImage } from "../../../../components/Icons";
-import PopupStyleGallery from "../../../../components/PopupStyleGallery";
 import Tabs from "../../../../components/Tabs";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
@@ -27,7 +27,7 @@ function Detail({ imp, onChanged }) {
     try { await api(`/siteimport/${imp.id}/asset/`, { method: "POST", body: { media: a.media, role: pick[a.media] || (ROLE_NAME[a.role] && a.role !== "image" ? a.role : "logo") } }); setMsg({ ok: true, text: tx("Ingesteld. Zie Logo's & beeld.") }); onChanged(); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
-  if (!d) return <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return <Busy />;
   return (
     <div className="si-detail">
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
@@ -62,18 +62,14 @@ function Detail({ imp, onChanged }) {
 }
 
 const PROFILE_LABEL = { normal: "Normaal", dating: "Dating", sporters: "Sporters", business: "Business", webshop: "Webshop" };
-const POPUP_LABEL = { clean: "Strak", header: "Kopbalk", glass: "Glas", minimal: "Minimaal", bold: "Gedurfd" };
 
 // The proposal made from the site: check and adjust it, then approve. Nothing is created before the approval.
 function Proposal({ imp, onDone, onCancel }) {
   const pr = imp.proposal;
-  const [tab, setTab] = useState("theme");
+  const [tab, setTab] = useState("profile");
   const [name, setName] = useState(pr.theme.name);
-  const [colors, setColors] = useState({ primary: pr.theme.values.primary, secondary: pr.theme.values.secondary });
   const [profile, setProfile] = useState(pr.profile.key);
   const [useProfile, setUseProfile] = useState(true);
-  const [popup, setPopup] = useState(pr.popup.key);
-  const [usePopup, setUsePopup] = useState(true);
   const [pages, setPages] = useState(pr.pages.map((p) => ({ i: p.i, include: true, title: p.title, in_menu: p.in_menu })));
   const [home, setHome] = useState(!!pr.home.title);
   const [assets, setAssets] = useState(pr.assets.map((a) => ({ file: a.file, include: true, role: a.role })));
@@ -85,7 +81,7 @@ function Proposal({ imp, onDone, onCancel }) {
 
   const approve = async () => {
     setBusy(true); setErr("");
-    try { onDone(await api(`/siteimport/${imp.id}/approve/`, { method: "POST", body: { name, colors, profile: useProfile ? profile : null, popup: usePopup ? popup : null, pages, home: { include: home }, assets } })); }
+    try { onDone(await api(`/siteimport/${imp.id}/approve/`, { method: "POST", body: { name, profile: useProfile ? profile : null, pages, home: { include: home }, assets } })); }
     catch (e) { setErr(errorText(e)); setBusy(false); }
   };
 
@@ -94,24 +90,9 @@ function Proposal({ imp, onDone, onCancel }) {
       <div className="si-head">
         <div className="grow"><strong style={{ fontSize: "1.1rem" }}>{tx("Voorstel voor")} “{imp.name}”</strong><br /><small className="muted">{tx("Bron")}: {imp.source} · {tx("Bestanden in")} <code>{imp.folder}</code></small></div>
       </div>
-      <p className="muted" style={{ margin: 0 }}>{tx("Controleer het voorstel. Er is nog niets aan je site veranderd: pas na je akkoord worden de pagina's, afbeeldingen en het thema aangemaakt.")}</p>
+      <p className="muted" style={{ margin: 0 }}>{tx("Controleer het voorstel. Er is nog niets aan je site veranderd: pas na je akkoord worden de pagina's en afbeeldingen aangemaakt.")}</p>
       {imp.notes?.length > 0 && <div className="alert">{imp.notes.join(" ")}</div>}
-      <Tabs value={tab} onChange={setTab} tabs={[["theme", "Thema"], ["profile", "Profielen"], ["popup", "Popups"], ["pages", "Pagina's", null, nPages + (home ? 1 : 0)], ["assets", "Afbeeldingen", null, nAssets]]} />
-
-      {tab === "theme" && (
-        <div className="form">
-          <label>{tx("Naam van het thema")}<input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} /></label>
-          <div className="theme-grid">
-            {["primary", "secondary"].map((k) => (
-              <label key={k}>{tx(k === "primary" ? "Hoofdkleur" : "Tweede kleur")}
-                <span className="color-row"><input type="color" value={colors[k]} onChange={(e) => setColors({ ...colors, [k]: e.target.value })} /><input value={colors[k]} onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setColors({ ...colors, [k]: e.target.value })} /></span>
-              </label>
-            ))}
-          </div>
-          <div><small className="muted">{tx("Gevonden kleuren")}</small><br /><span className="si-swatches">{pr.theme.palette.map((c) => <i key={c} style={{ background: c }} title={c} />)}</span></div>
-          <div className="si-stats"><span>{tx("Lettertype")}: <strong>{pr.theme.fonts.slice(0, 2).join(", ") || tx("niet gevonden")}</strong></span>{pr.theme.dark && <span className="badge">{tx("Donker thema")}</span>}<span>{tx("Afronding")}: <strong>{pr.theme.values.radius ?? "–"}px</strong></span></div>
-        </div>
-      )}
+      <Tabs value={tab} onChange={setTab} tabs={[["profile", "Profielen"], ["pages", "Pagina's", null, nPages + (home ? 1 : 0)], ["assets", "Afbeeldingen", null, nAssets]]} />
 
       {tab === "profile" && (
         <div className="form">
@@ -127,13 +108,6 @@ function Proposal({ imp, onDone, onCancel }) {
         </div>
       )}
 
-      {tab === "popup" && (
-        <div className="form">
-          <p className="muted" style={{ margin: 0 }}>{tx("Voorstel voor de popups en vensters")}: <strong>{tx(POPUP_LABEL[pr.popup.key])}</strong>. {tx(pr.popup.reason)}</p>
-          <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={usePopup} onChange={(e) => setUsePopup(e.target.checked)} /><span /></span><span>{tx("Popup-stijl meenemen in dit thema")}</span></label>
-          {usePopup && <PopupStyleGallery value={popup} onChange={setPopup} />}
-        </div>
-      )}
 
       {tab === "pages" && (
         <div className="form">
@@ -171,7 +145,7 @@ function Proposal({ imp, onDone, onCancel }) {
 
       {err && <div className="alert">{err}</div>}
       <div className="row" style={{ justifyContent: "flex-start" }}>
-        <button className="btn primary" disabled={busy || !name.trim()} onClick={approve}>{busy ? tx("Bezig…") : tx("Akkoord: importeren en thema aanmaken")}</button>
+        <button className="btn primary" disabled={busy || !name.trim()} onClick={approve}>{busy ? tx("Bezig…") : tx("Akkoord: importeren")}</button>
         <button className="btn danger" disabled={busy} onClick={onCancel}>{tx("Weggooien")}</button>
       </div>
     </div>
@@ -211,10 +185,10 @@ export default function SiteImport() {
     await run("cancel", () => api(`/siteimport/${i.id}/`, { method: "DELETE" }), () => tx("Weggegooid."));
     setProposal(null);
   };
-  const approved = async (r) => { setProposal(null); await load(); setOpen(r.id); setMsg({ ok: true, text: tx("Thema \"{0}\" is aangemaakt in de map {1}. Kies hieronder \"Thema gebruiken\" om het in te schakelen.", r.name, r.folder) }); };
+  const approved = async (r) => { setProposal(null); await load(); setOpen(r.id); setMsg({ ok: true, text: tx("Import \"{0}\" is aangemaakt in de map {1}.", r.name, r.folder) }); };
   const toggle = (i, what, on) => run(what + i.id, () => api(`/siteimport/${i.id}/${what}/`, { method: "POST", body: { apply: on } }), () => (on ? tx("Gebruikt.") : tx("Teruggezet.")));
   const remove = async (i) => {
-    if (!(await confirmDialog(tx("\"{0}\" verwijderen? Het thema, de {1} pagina's en de {2} afbeeldingen die hiervan zijn ingelezen worden ook verwijderd. Het thema en de startpagina gaan terug naar hoe ze waren.", i.name, i.pages, i.images), { danger: true, title: tx("Import verwijderen"), okLabel: tx("Verwijderen") }))) return;
+    if (!(await confirmDialog(tx("\"{0}\" verwijderen? De {1} pagina's en de {2} afbeeldingen die hiervan zijn ingelezen worden ook verwijderd. Het profieltype en de startpagina gaan terug naar hoe ze waren.", i.name, i.pages, i.images), { danger: true, title: tx("Import verwijderen"), okLabel: tx("Verwijderen") }))) return;
     await run("del" + i.id, () => api(`/siteimport/${i.id}/`, { method: "DELETE" }), () => tx("Verwijderd, met alles wat ervan was ingelezen."));
     if (open === i.id) setOpen(null);
   };
@@ -226,14 +200,14 @@ export default function SiteImport() {
       <div className="page-head">
         <div>
           <h1>{tx("Site importeren")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{tx("Lees een andere website in: je krijgt een thema, de pagina's, een basis-startpagina en de iconen en afbeeldingen. Niets verandert op je site totdat je het zelf aanzet, en alles is weer te verwijderen.")}</p>
+          <p className="muted" style={{ margin: 0 }}>{tx("Lees een andere website in: je krijgt de pagina's, een basis-startpagina, het profieltype en de afbeeldingen. Een thema (kleuren, logo's, e-mail) maak je bij Thema → Nieuw themapakket → Importeren van een website. Niets verandert op je site totdat je het zelf aanzet, en alles is weer te verwijderen.")}</p>
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       {canManage && (
         <Collapsible id="si-new" title={tx("Nieuwe import")} defaultOpen>
-          <label style={{ maxWidth: 420, marginBottom: ".75rem" }}>{tx("Naam van het thema")} <small className="muted">{tx("ook de naam van de map met alle bestanden")}</small><input value={themeName} maxLength={120} onChange={(e) => setThemeName(e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
+          <label style={{ maxWidth: 420, marginBottom: ".75rem" }}>{tx("Naam van de import")} <small className="muted">{tx("ook de naam van de map met alle bestanden")}</small><input value={themeName} maxLength={120} onChange={(e) => setThemeName(e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
           <Tabs value={tab} onChange={setTab} tabs={[["url", "Website-adres", <IconGlobe key="u" />], ["folder", "Map op de server", <IconFolder key="f" />], ["zip", "ZIP-bestand", <IconImage key="z" />]]} />
           {tab === "url" && (
             <form className="row" style={{ flexWrap: "nowrap", alignItems: "end", marginTop: ".75rem" }} onSubmit={(e) => { e.preventDefault(); start({ kind: "url", url, name: themeName }); }}>
@@ -268,7 +242,7 @@ export default function SiteImport() {
       {proposal && proposal.status === "proposal" && <Proposal key={proposal.id} imp={proposal} onDone={approved} onCancel={() => cancelProposal(proposal)} />}
 
       <Collapsible id="si-list" title={`${tx("Geïmporteerde sites")} (${list?.length ?? 0})`} defaultOpen>
-        {!list && <p className="muted">{tx("Laden…")}</p>}
+        {!list && <Busy />}
         {list && !list.length && <p className="muted" style={{ margin: 0 }}>{tx("Nog niets geïmporteerd.")}</p>}
         {(list || []).filter((i) => i.status === "proposal").map((i) => (
           <div key={i.id} className="card si-card">
@@ -287,15 +261,12 @@ export default function SiteImport() {
             </div>
             <div className="si-stats">
               <span><strong>{i.pages}</strong> {tx("pagina's")}</span><span><strong>{i.images}</strong> {tx("afbeeldingen")}</span>
-              {i.theme.fonts?.length > 0 && <span>{tx("Lettertype")}: <strong>{i.theme.fonts.slice(0, 2).join(", ")}</strong></span>}
-              {i.theme.dark && <span className="badge">{tx("Donker thema")}</span>}
-              {i.theme.popup && <span className="badge">{tx("Popups")}: {tx(POPUP_LABEL[i.theme.popup])}</span>}
               {i.theme.profile && <span className="badge">{tx("Profielen")}: {tx(PROFILE_LABEL[i.theme.profile])}</span>}
             </div>
             <div className="row" style={{ justifyContent: "flex-start" }}>
-              {canManage && (i.theme.applied
-                ? <button className="btn" disabled={!!busy} onClick={() => toggle(i, "theme", false)}>{tx("Thema terugzetten")}</button>
-                : <button className="btn primary" disabled={!!busy} onClick={() => toggle(i, "theme", true)}>{tx("Thema gebruiken")}</button>)}
+              {canManage && i.theme.profile && (i.theme.applied
+                ? <button className="btn" disabled={!!busy} onClick={() => toggle(i, "theme", false)}>{tx("Profieltype terugzetten")}</button>
+                : <button className="btn primary" disabled={!!busy} onClick={() => toggle(i, "theme", true)}>{tx("Profieltype gebruiken")}</button>)}
               {canManage && i.home.exists && (i.home.applied
                 ? <button className="btn" disabled={!!busy} onClick={() => toggle(i, "home", false)}>{tx("Startpagina terugzetten")}</button>
                 : <button className="btn" disabled={!!busy} onClick={() => toggle(i, "home", true)}>{tx("Startpagina overnemen")}</button>)}

@@ -15,7 +15,7 @@ from .models import DirectRoom, DirectSignal
 
 ONLINE = timedelta(seconds=12)
 MAX_ACTIVE = 5
-KINDS = ("sdp", "ice", "call", "accept", "decline", "end", "chat", "ack", "text")
+KINDS = ("sdp", "ice", "call", "accept", "decline", "end", "chat", "ack", "text", "game")
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 
 
@@ -29,7 +29,41 @@ def _ice():
 
 def _enabled():
     c = service.get()["chat"]
-    return service.module_on("chat") and c["method"] == "webrtc"
+    return service.module_on("directconnect")
+
+
+def _min_age():
+    from apps.core import modules
+    from apps.security import service as sec
+
+    return int(sec.get()["age"]["min_age"]) if modules.enabled("age_gate") else 18
+
+
+def _profile_extra(data):
+    """What the sign-in screen may ask on top of name and gender (Community -> Directe verbinding -> Gegevens): (languages, error)."""
+    cfg = service.get()["direct"]
+    langs = ""
+    if cfg["ask_languages"]:
+        valid = set(service.active_languages())
+        langs = ",".join(c for c in dict.fromkeys(str(x) for x in (data.get("languages") or []) if isinstance(x, str)) if c in valid)[:60]
+    if cfg["ask_birth"]:
+        try:
+            year, month = int(data.get("birth_year")), int(data.get("birth_month"))
+            assert 1 <= month <= 12 and 1900 <= year <= timezone.now().year
+        except (TypeError, ValueError, AssertionError):
+            return "", "Vul je geboortemaand en geboortejaar in."
+        now = timezone.now()
+        if ((now.year - year) * 12 + (now.month - month) - 1) // 12 < _min_age():
+            return "", f"Je moet minimaal {_min_age()} jaar zijn."
+    return langs, None
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def config(request):
+    """Public: what the sign-in screen asks (set in Community -> Directe verbinding)."""
+    c = service.get()["direct"]
+    return Response({"enabled": _enabled(), "couple": "k" in service.genders(), "ask_languages": c["ask_languages"], "ask_birth": c["ask_birth"], "min_age": _min_age()})
 
 
 def _alive(room):
@@ -52,6 +86,7 @@ def _new_code():
 
 def _state(room):
     return {"owner_online": _recent(room.owner_seen), "guest_online": _recent(room.guest_seen), "guest_name": room.guest_name, "guest_gender": room.guest_gender, "owner_gender": (getattr(room.owner, "gender", "") if room.owner else room.owner_gender) or "", "chat_request": room.chat_request,
+            "owner_langs": [x for x in room.owner_langs.split(",") if x], "guest_langs": [x for x in room.guest_langs.split(",") if x],
             "owner_name": service.display_name(room.owner) if room.owner else room.owner_name, "expires_at": room.expires_at}
 
 
@@ -73,7 +108,7 @@ def _room(token):
 
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated, module_required("chat")])
+@permission_classes([IsAuthenticated, module_required("directconnect")])
 def rooms(request):
     """List my open invitations / create a new one."""
     if request.method == "POST":
@@ -87,7 +122,7 @@ def rooms(request):
         DirectRoom.objects.filter(owner=request.user, expires_at__lt=timezone.now()).delete()
         # one direct connection at a time: a new invitation replaces (closes) the open one
         DirectRoom.objects.filter(owner=request.user, closed=False).update(closed=True)
-        hours = service.get()["chat"]["direct_hours"]
+        hours = service.get()["direct"]["hours"]
         room = DirectRoom.objects.create(token=secrets.token_urlsafe(24), code=_new_code(), owner=request.user, expires_at=timezone.now() + timedelta(hours=hours))
     out = [{"token": r.token, "code": r.code, **_state(r)} for r in DirectRoom.objects.filter(owner=request.user, closed=False, expires_at__gt=timezone.now()).order_by("-id")]
     return Response(out, status=status.HTTP_201_CREATED if request.method == "POST" else 200)
@@ -115,11 +150,14 @@ def room_anon(request):
     if find_forbidden(name):
         return bad("Deze naam is niet toegestaan.")
     gender = str(request.data.get("gender") or "")
-    if gender not in ("m", "f", "x"):
+    if gender not in service.genders():
         return bad("Kies je geslacht.")
-    hours = service.get()["chat"]["direct_hours"]
+    langs, err = _profile_extra(request.data)
+    if err:
+        return bad(err)
+    hours = service.get()["direct"]["hours"]
     DirectRoom.objects.filter(owner__isnull=True, expires_at__lt=timezone.now()).delete()
-    room = DirectRoom.objects.create(token=secrets.token_urlsafe(24), code=_new_code(), owner=None, owner_name=name, owner_gender=gender,
+    room = DirectRoom.objects.create(token=secrets.token_urlsafe(24), code=_new_code(), owner=None, owner_name=name, owner_gender=gender, owner_langs=langs,
                                      owner_key=secrets.token_urlsafe(24), expires_at=timezone.now() + timedelta(hours=hours))
     return Response({"token": room.token, "code": room.code, "key": room.owner_key}, status=status.HTTP_201_CREATED)
 
@@ -147,8 +185,8 @@ def room_close(request, token):
 
 def _reset_guest(room):
     """End the current connection: the guest is out; the invitation stays open for a new guest."""
-    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen, room.chat_request = "", "", "", None, ""
-    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen", "chat_request"])
+    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen, room.chat_request, room.guest_langs = "", "", "", None, "", ""
+    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen", "chat_request", "guest_langs"])
     room.signals.all().delete()
 
 
@@ -200,7 +238,7 @@ def room_info(request, token):
         return bad("Deze uitnodiging is verlopen of ingetrokken.", status.HTTP_404_NOT_FOUND)
     role = _role(request, room)
     return Response({**_state(room), "role": role, "taken": bool(room.guest_key) and role != "guest", "code": room.code, "ice_servers": _ice(),
-                     "chat": {k: service.get()["chat"][k] for k in ("photos", "videos", "video_chat", "max_image_mb", "max_video_mb")}})
+                     "chat": {k: service.get()["direct"][k] for k in ("chat", "photos", "videos", "video_chat", "max_image_mb", "max_video_mb")}})
 
 
 @api_view(["POST"])
@@ -223,12 +261,15 @@ def room_join(request, token):
     if find_forbidden(name):
         return bad("Deze naam is niet toegestaan.")
     gender = str(request.data.get("gender") or "")
-    if gender not in ("m", "f", "x"):
+    if gender not in service.genders():
         gender = getattr(request.user, "gender", "") if request.user.is_authenticated else ""
-    if gender not in ("m", "f", "x"):
+    if gender not in service.genders():
         return bad("Kies je geslacht.")
-    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen = name, gender, secrets.token_urlsafe(24), timezone.now()
-    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen"])
+    langs, err = _profile_extra(request.data)
+    if err:
+        return bad(err)
+    room.guest_name, room.guest_gender, room.guest_key, room.guest_seen, room.guest_langs = name, gender, secrets.token_urlsafe(24), timezone.now(), langs
+    room.save(update_fields=["guest_name", "guest_gender", "guest_key", "guest_seen", "guest_langs"])
     return Response({"key": room.guest_key, "role": "guest"})
 
 
@@ -247,6 +288,12 @@ def guest_chat_request(request, token):
 
             Notification.objects.filter(user=room.owner, kind="dchat", seen=False).delete()
             Notification.objects.create(user=room.owner, kind="dchat", text=room.guest_name[:60])
+            try:
+                from apps.notifications.service import notify
+
+                notify(room.owner, "direct", f"{room.guest_name[:60]} vraagt een chat aan", url="/dashboard/community/direct")
+            except Exception:  # noqa: BLE001
+                pass
     return Response({"chat_request": room.chat_request})
 
 

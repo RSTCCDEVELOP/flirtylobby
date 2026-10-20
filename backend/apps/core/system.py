@@ -18,9 +18,10 @@ DEFAULTS = {
     "aliases": [],  # extra domain names of the website (www.x.nl, x.nl): visitors can be sent on to the main address
     "redirect_aliases": False,
     "timezone": "Europe/Amsterdam",
-    "maintenance": False, "maintenance_message": "",
+    "maintenance": False, "maintenance_message": "", "maintenance_messages": {},  # the notice per language: {code: text}
     "max_image_mb": "20", "max_video_mb": "300", "max_photo_mb": "5",
     "footer_text": "",
+    "show_credit": True,  # "© Easy2edit <year>" with a link at the bottom of every page
     "social_facebook": "", "social_instagram": "", "social_x": "", "social_linkedin": "", "social_youtube": "", "social_tiktok": "",
 }
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
@@ -72,7 +73,7 @@ def clean(incoming):
             if bad:
                 errors[k] = f"Ongeldige domeinnaam: {bad[0]} (bv. voorbeeld.nl, zonder https://)."
             out[k] = list(dict.fromkeys(items))[:20]
-        elif k in ("redirect_aliases", "maintenance"):
+        elif k in ("redirect_aliases", "maintenance", "show_credit"):
             out[k] = bool(v)
         elif k == "timezone":
             try:
@@ -93,6 +94,8 @@ def clean(incoming):
             if v and not re.match(r"^https?://[^\s]{3,200}$", v):
                 errors[k] = "Gebruik een volledig adres, bv. https://www.instagram.com/jouwnaam."
             out[k] = v
+        elif k == "maintenance_messages":
+            out[k] = {str(c)[:10]: str(t or "").strip()[:500] for c, t in (v.items() if isinstance(v, dict) else []) if re.fullmatch(r"[a-zA-Z-]{2,10}", str(c)) and str(t or "").strip()}
         elif k in ("maintenance_message", "footer_text"):
             out[k] = str(v or "").strip()[:500]
         else:
@@ -214,11 +217,42 @@ def primary_host():
     return urlparse(get()["frontend_url"]).netloc
 
 
+_lic = {"t": 0, "v": None}
+
+
+def license_info():
+    """{number, client, valid_until, expired}: the licence of this installation (cached a few seconds)."""
+    import time
+    from datetime import date
+
+    if _lic["v"] is None or time.time() - _lic["t"] > 15:
+        from .models import License
+
+        try:
+            lic = License.objects.filter(pk=1).first()
+        except Exception:  # noqa: BLE001 (before the first migration)
+            lic = None
+        _lic.update(t=time.time(), v={"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "",
+                                      "valid_until": lic.valid_until.isoformat() if lic and lic.valid_until else None, "has": bool(lic and lic.number),
+                                      "reseller": {"name": lic.reseller_name, "email": lic.reseller_email, "url": lic.reseller_url} if lic else {"name": "", "email": "", "url": ""},
+                                      "expired": bool(lic and lic.number and lic.valid_until and lic.valid_until < date.today())})
+    return _lic["v"]
+
+
+def license_changed():
+    _lic["v"] = None
+
+
+def maintenance_on():
+    """Maintenance mode of Basisgegevens, or a licence that has run out: the website then shows the maintenance page (administrators keep working to renew it)."""
+    return bool(get()["maintenance"] or license_info()["expired"])
+
+
 def public():
     """What the website itself needs (no secrets): name, domains, contact, footer, maintenance."""
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
-            "maintenance": s["maintenance"], "maintenance_message": s["maintenance_message"], "footer_text": s["footer_text"],
+            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"],
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}}

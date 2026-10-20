@@ -2,6 +2,7 @@ import { tx } from "../lib/t";
 import Link from "next/link";
 import { Logo } from "./BrandingContext";
 import { ImageEdit } from "./EditMode";
+import FaqDrawer from "./FaqDrawer";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
 import SiteUserArea from "./SiteUserArea";
@@ -27,6 +28,7 @@ export default function SiteHeader() {
           <ChatButton />
         <EditModeSwitch />
         <LanguageSwitcher />
+        <FaqDrawer />
         <ThemeToggle />
         <SiteUserArea />
       </div>

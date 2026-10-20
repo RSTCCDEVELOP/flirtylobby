@@ -4,8 +4,11 @@ import { tx } from "../lib/t";
 import { IconCamera, IconChat, IconMic, IconPaperclip, IconVideo } from "./Icons";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { ageFrom, MONTHS } from "../lib/age";
 import { pick } from "../lib/i18n";
 import { Logo } from "./BrandingContext";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useSession } from "./Session";
 
 const ORDER = ["age", "gambling", "cookies"];
 const NEVER = ["/dashboard", "/login", "/geo-blocked"];
@@ -105,7 +108,51 @@ function SampleWindow({ start, onClose }) {
   );
 }
 
+// Age popups ask for month and year of birth, unless the member's profile already knows the date. Too young: change the date or stop.
+function BirthForm({ min, redirect, onOk, onStop }) {
+  const now = new Date();
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [young, setYoung] = useState(false);
+  const y = parseInt(year, 10);
+  const valid = month && y >= 1900 && y <= now.getFullYear();
+  const check = () => {
+    if (ageFrom(y, parseInt(month, 10)) >= min) { try { localStorage.setItem("age:birth", JSON.stringify({ y, m: parseInt(month, 10) })); } catch {} return onOk(); } // remembered: the sign-up and invitation forms start from it
+    if (redirect) return void (window.location.href = redirect); // too young and a redirect is set: straight to that site
+    setYoung(true);
+  };
+  if (young) return (
+    <>
+      <div className="alert">{tx("Volgens deze geboortedatum ben je jonger dan {0}. Je hebt geen toegang.", min)}</div>
+      <div className="row">
+        <button type="button" className="btn" onClick={onStop}>{tx("Stoppen")}</button>
+        <button type="button" className="btn primary" onClick={() => setYoung(false)}>{tx("Datum aanpassen")}</button>
+      </div>
+    </>
+  );
+  return (
+    <form className="form" onSubmit={(e) => { e.preventDefault(); if (valid) check(); }}>
+      <div className="row" style={{ flexWrap: "nowrap", alignItems: "flex-end" }}>
+        <label style={{ flex: 2 }}>{tx("Geboortemaand")}
+          <select value={month} onChange={(e) => setMonth(e.target.value)} required>
+            <option value="">{tx("Kies…")}</option>
+            {MONTHS.map((m, i) => <option key={m} value={i + 1}>{tx(m)}</option>)}
+          </select>
+        </label>
+        <label style={{ flex: 1 }}>{tx("Geboortejaar")}
+          <input value={year} onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="1990" required autoComplete="bday-year" />
+        </label>
+      </div>
+      <div className="row">
+        <button type="button" className="btn" onClick={onStop}>{tx("Stoppen")}</button>
+        <button className="btn primary" disabled={!valid}>{tx("Doorgaan")}</button>
+      </div>
+    </form>
+  );
+}
+
 export default function Gates({ cfg }) {
+  const { user } = useSession();
   const pathname = usePathname();
   const [lang, setLang] = useState(cfg?.default_language || "nl");
   const [done, setDone] = useState({});
@@ -133,6 +180,12 @@ export default function Gates({ cfg }) {
     setActive(ORDER.find((n) => due(n, cfg[n], pathname, done)) || null);
   }, [cfg, pathname, done]);
   useEffect(evaluate, [evaluate]);
+  // a member whose profile has a birth date old enough does not need to be asked
+  useEffect(() => {
+    if (test || (active !== "age" && active !== "gambling") || !user?.birth_date) return;
+    const [by, bm] = String(user.birth_date).split("-").map(Number);
+    if (by && bm && ageFrom(by, bm) >= cfg[active].min_age) { remember(active, cfg[active]); setDone((d) => ({ ...d, [active]: true })); }
+  }, [active, test, user, cfg]);
 
   // footer link "Cookie-instellingen" reopens the banner
   useEffect(() => {
@@ -208,18 +261,16 @@ export default function Gates({ cfg }) {
             <p>{pick(gate.texts, lang, cfg.default_language, "deny_message") || t("message")}</p>
           ) : (
             <>
+              <div className="gate-lang"><LanguageSwitcher flags /></div>
               <h2>{t("title")}</h2>
               <p>{t("message")}</p>
               {warnings.length > 0 && <ul className="gate-warnings">{warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>}
               {needsConfirm && (
                 <label className="check"><input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} /> {t("confirm")}</label>
               )}
-              <div className="row">
-                <button className="btn" onClick={deny}>{t(current === "age" ? "no" : "deny")}</button>
-                <button className="btn primary" disabled={needsConfirm && !checked} onClick={finish}>
-                  {t(current === "age" ? "yes" : "confirm") || "OK"}
-                </button>
-              </div>
+              {needsConfirm && !checked
+                ? <div className="row"><button type="button" className="btn" onClick={deny}>{t("deny")}</button></div>
+                : <BirthForm min={gate.min_age} redirect={test ? "" : gate.deny_url} onOk={finish} onStop={deny} />}
             </>
           )}
         </div>

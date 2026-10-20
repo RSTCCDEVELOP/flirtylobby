@@ -1,5 +1,7 @@
 import { tx } from "../../lib/t";
 import SiteFooter from "../../components/SiteFooter";
+import PageBlocks from "../../components/PageBlocks";
+import Paged from "../../components/Paged";
 import SiteHeader from "../../components/SiteHeader";
 import Donate from "../../components/Donate";
 import { pageMetadata } from "../../lib/seo";
@@ -17,7 +19,8 @@ export default async function DonatePage() {
       <SiteHeader />
       <main className="shop">
         <h1>{tx("Doneren")}</h1>
-        <Donate />
+        <PageBlocks pageKey="donations" />
+        <Paged id="donations-page" selector=".don-grid"><Donate /></Paged>
       </main>
       <SiteFooter />
     </div>

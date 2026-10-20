@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { useUi } from "./Ui";
 
 // Instant feedback on a click on an internal link: a thin bar at the top until the next page is there.
 // (The next page may still be loading its data; without this it looks as if nothing happened and people click again.)
@@ -27,6 +28,9 @@ function Bar() {
   return on ? <div className="nav-progress" role="progressbar" aria-label="Laden"><i /></div> : null;
 }
 
+// the thin bar is the old loader: it stays away when the page loader of the settings (Thema → Laden) is on
 export default function NavProgress() {
+  const ui = useUi() || {};
+  if (ui.loader_on === "yes") return null;
   return <Suspense fallback={null}><Bar /></Suspense>;
 }

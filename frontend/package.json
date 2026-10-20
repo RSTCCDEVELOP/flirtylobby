@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/build-search-index.mjs",
     "dev": "next dev -p 5173 -H 0.0.0.0",
+    "prebuild": "node scripts/build-search-index.mjs",
     "build": "next build",
     "start": "next start -p 5173 -H 0.0.0.0"
   },

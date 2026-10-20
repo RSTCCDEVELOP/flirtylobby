@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useEffect, useMemo, useState } from "react";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
@@ -7,6 +8,8 @@ import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import { useModules } from "../../../../components/Modules";
 import { api, errorText } from "../../../../lib/api";
+import { useAutoSave } from "../../../../lib/autosave";
+import SaveStatus from "../../../../components/SaveStatus";
 
 const FREQ = [
   ["always", "Bij elke paginalading"],
@@ -47,7 +50,7 @@ function CountryPicker({ selected, codes, onChange }) {
         ))}
         {!selected.length && <span className="muted">{tx("Nog geen landen gekozen.")}</span>}
       </div>
-      <input placeholder={tx("Zoek een land om toe te voegen…")} value={q} onChange={(e) => setQ(e.target.value)} />
+      <input type="search" placeholder={tx("Zoek een land om toe te voegen…")} value={q} onChange={(e) => setQ(e.target.value)} />
       {matches.length > 0 && (
         <div className="suggest">
           {matches.map((c) => (
@@ -114,7 +117,8 @@ export default function Security() {
     }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
   }, []);
 
-  if (!data) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  const auto = useAutoSave(data, save, { ready: !!data && canSave }); // saves by itself, no Save button
+  if (!data) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   const set = (section) => (key, value) => setData((d) => ({ ...d, [section]: { ...d[section], [key]: value } }));
   const text = (section, key) => data[section].texts?.[lang]?.[key] ?? "";
@@ -133,11 +137,13 @@ export default function Security() {
     try {
       const r = await api("/security/settings/", { method: "PUT", body: data });
       setData(r.settings);
-      setMsg({ ok: true, text: tx("Beveiliging opgeslagen.") });
+      setMsg(null);
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
+      return false;
     }
   }
+
 
   async function checkWords() {
     const r = await api("/security/words/check/", { method: "POST", body: { text: test.text } });
@@ -156,7 +162,7 @@ export default function Security() {
         </div>
         <div className="row">
           <CollapseAll />
-          <button className="btn primary" onClick={save} disabled={!canSave}>{tx("Opslaan")}</button>
+          <SaveStatus auto={auto} />
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
@@ -221,7 +227,7 @@ export default function Security() {
         <GateFields s={age} set={set("age")} />
         <div className="grid2">
           <Num label={tx("Minimumleeftijd")} min={1} max={99} value={age.min_age} onChange={(v) => set("age")("min_age", v)} />
-          <label>{tx("Bij 'Nee' doorsturen naar (optioneel)")}
+          <label>{tx("Doorsturen naar bij 'Nee', 'Stoppen' of te jong (optioneel)")}
             <input value={age.deny_url} placeholder="https://…" onChange={(e) => set("age")("deny_url", e.target.value)} />
           </label>
         </div>
@@ -241,7 +247,7 @@ export default function Security() {
         <GateFields s={gambling} set={set("gambling")} />
         <div className="grid2">
           <Num label={tx("Minimumleeftijd")} min={1} max={99} value={gambling.min_age} onChange={(v) => set("gambling")("min_age", v)} />
-          <label>{tx("Bij weigeren doorsturen naar (optioneel)")}
+          <label>{tx("Doorsturen naar bij weigeren, 'Stoppen' of te jong (optioneel)")}
             <input value={gambling.deny_url} placeholder="https://…" onChange={(e) => set("gambling")("deny_url", e.target.value)} />
           </label>
         </div>

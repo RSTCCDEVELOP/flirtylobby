@@ -21,12 +21,16 @@ DEFAULTS = {
     "design": "theme",         # theme | custom
     "brand_name": "",          # shown when there is no logo
     "variant": "classic",      # classic | centered | banner | minimal
+    "code_style": "card",      # verification mails: card | boxes | plain | band
     "show_logo": True,
+    "logo_align": "auto",      # auto (follows the variant) | left | center | right
+    "logo_size": "m",          # s | m | l
     "footer": "",              # extra footer text
     "custom": {"accent": "#1b97d3", "background": "#f4f6fa", "card": "#ffffff", "text": "#1f2937", "muted": "#6b7280",
                "font": "system", "radius": 12},
 }
 VARIANTS = ("classic", "centered", "banner", "minimal")
+CODE_STYLES = ("card", "boxes", "plain", "band")
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -54,6 +58,18 @@ def _apply(cur, incoming):
         if incoming["variant"] not in VARIANTS:
             raise Invalid("Kies een van de vier opmaakvarianten.")
         cur["variant"] = incoming["variant"]
+    if "code_style" in incoming:
+        if incoming["code_style"] not in CODE_STYLES:
+            raise Invalid("Kies een van de opmaken voor verificatiemails.")
+        cur["code_style"] = incoming["code_style"]
+    if "logo_align" in incoming:
+        if incoming["logo_align"] not in ("auto", "left", "center", "right"):
+            raise Invalid("Kies links, midden, rechts of automatisch voor het logo.")
+        cur["logo_align"] = incoming["logo_align"]
+    if "logo_size" in incoming:
+        if incoming["logo_size"] not in ("s", "m", "l"):
+            raise Invalid("Kies een klein, gewoon of groot logo.")
+        cur["logo_size"] = incoming["logo_size"]
     for k in ("show_logo",):
         if k in incoming:
             cur[k] = bool(incoming[k])
@@ -106,7 +122,7 @@ def _site_url(base_url=None):
 def _logo_url(values, base_url, api_base):
     """Absolute URL of the logo, or "" (then the brand name is shown)."""
     site = _site_url(base_url)
-    sets = {"rstcc": "/logos/rstcc/logo.png", "studio2": "/logos/studio2/logo.png"}
+    sets = {"easy2edit": "/logos/easy2edit/logo.png", "rstcc": "/logos/rstcc/logo.png", "studio2": "/logos/studio2/logo.png"}
     which = values.get("brand_logo", "custom")
     if which in sets and site:
         return site + sets[which]
@@ -117,6 +133,44 @@ def _logo_url(values, base_url, api_base):
         if a and (api_base or site):
             return (api_base or site).rstrip("/") + a.image.url
     return ""
+
+
+def _lum(hex_):
+    r, g, b = (int(hex_[i:i + 2], 16) for i in (1, 3, 5))
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+
+def _light(hex_, fallback):
+    """An e-mail is always a light (white) message: a dark colour from the theme is replaced."""
+    return hex_ if isinstance(hex_, str) and HEX.match(hex_) and _lum(hex_) > 0.85 else fallback
+
+
+def _tint(hex_, amount=0.09):
+    """The colour at 9% on white: a soft background for the code."""
+    r, g, b = (int(hex_[i:i + 2], 16) for i in (1, 3, 5))
+    return "#%02x%02x%02x" % tuple(round(255 - (255 - c) * amount) for c in (r, g, b))
+
+
+def _logo_file(values):
+    """(bytes, mime) of the logo from a file on this server, to send inside the e-mail when there is no public address for it."""
+    from pathlib import Path
+
+    which = values.get("brand_logo", "custom")
+    try:
+        if which in ("easy2edit", "rstcc", "studio2"):
+            f = Path(dj_settings.PROJECT_ROOT) / "frontend" / "public" / "logos" / which / "logo.png"
+            return (f.read_bytes(), "image/png") if f.is_file() else None
+        from apps.branding.models import SiteAsset
+
+        a = SiteAsset.objects.filter(slot="logo").first()
+        if a:
+            with a.image.open("rb") as fh:
+                import mimetypes
+
+                return fh.read(), mimetypes.guess_type(a.image.name)[0] or "image/png"
+    except Exception:  # noqa: BLE001 - no logo file is fine: the name is shown
+        pass
+    return None
 
 
 def palette(base_url=None, api_base=None, s=None):
@@ -133,7 +187,11 @@ def palette(base_url=None, api_base=None, s=None):
         p = {"accent": values["primary"], "background": values.get("light_bg", "#f4f6fa"), "card": values.get("light_card", "#ffffff"),
              "text": values.get("light_text", "#1f2937"), "muted": values.get("light_muted", "#6b7280"), "font": stack,
              "radius": int(values.get("btn_radius", 10)) + 2, "line": values.get("light_line", "#e5e8ef")}
+    p["card"], p["background"] = _light(p["card"], "#ffffff"), _light(p["background"], "#f4f6fa")  # always a light message
+    if p["text"] and _lum(p["text"]) > 0.5:
+        p["text"] = "#1f2937"
     p["logo"] = _logo_url(values, base_url, api_base) if s["show_logo"] else ""
+    p["logo_file"] = _logo_file(values) if s["show_logo"] and not p["logo"] else None
     return p
 
 
@@ -169,17 +227,46 @@ def _plain_links(text, accent):
     return "".join(out)
 
 
-def to_html(subject, body, base_url=None, api_base=None, s=None):
+def to_html(subject, body, base_url=None, api_base=None, s=None, code=None, inline=None):
+    """The HTML of a message. code: a verification code, shown big in its own box. inline: a list that gets (cid, bytes, mime) for images sent inside the message."""
     s = s or get()
     p = palette(base_url, api_base, s)
+    if not p["logo"] and p.get("logo_file") and inline is not None:
+        inline.append(("logo", *p["logo_file"]))
+        p["logo"] = "cid:logo"
     p["font"] = html.escape(p["font"], quote=True)  # the stack contains quotes and goes into style="…"
     from apps.core import system
 
     brand = s["brand_name"] or system.site_name()
     site = _site_url(base_url)
     blocks = []
+
+    def code_box():
+        style, c, acc, rad = s.get("code_style", "card"), html.escape(str(code)), p["accent"], p["radius"]
+        mono = "Menlo,Consolas,'Courier New',monospace"
+        if style == "boxes":  # a box per digit, like the code screen of the website
+            cells = "".join(f'<td bgcolor="{_tint(acc)}" align="center" width="46" style="width:46px;height:56px;background:{_tint(acc)};border:1px solid {acc}55;border-radius:{min(rad, 10)}px;'
+                            f'font-family:{mono};font-size:28px;font-weight:700;color:{acc};text-align:center">{ch}</td><td width="8" style="width:8px;font-size:0">&nbsp;</td>' for ch in c)
+            return f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:22px auto"><tr>{cells}</tr></table>'
+        if style == "plain":
+            return f'<p style="margin:22px 0;text-align:center;font-family:{mono};font-size:40px;font-weight:700;letter-spacing:12px;color:{acc}">{c}</p>'
+        if style == "band":
+            return (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0"><tr><td bgcolor="{acc}" align="center" style="background:{acc};border-radius:{rad}px;'
+                    f'padding:18px;font-family:{mono};font-size:34px;font-weight:700;letter-spacing:12px;color:#ffffff;text-align:center">{c}</td></tr></table>')
+        return (f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:22px auto"><tr><td bgcolor="{_tint(acc)}" align="center" '
+                f'style="background:{_tint(acc)};border:1px solid {acc}33;border-radius:{rad}px;padding:16px 34px;font-family:{mono};'
+                f'font-size:34px;font-weight:700;letter-spacing:10px;color:{acc};text-align:center">{c}</td></tr></table>')
     for para in re.split(r"\n{2,}", (body or "").strip()):
         if not para.strip():
+            continue
+        if code and str(code) in para:  # "Your code is 123456. Valid 15 minutes." -> text, the code in a box, text
+            before, _, after = para.partition(str(code))
+            if before.strip():
+                blocks.append(f'<p style="margin:0 0 4px;line-height:1.6;text-align:center">{_inline(before.strip(), p["accent"], site)}</p>')
+            blocks.append(code_box())
+            rest = after.lstrip(" .:\n").strip()
+            if rest:
+                blocks.append(f'<p style="margin:0 0 16px;line-height:1.6;text-align:center;color:{p["muted"]};font-size:14px">{_inline(rest, p["accent"], site)}</p>')
             continue
         only_link = LINK.fullmatch(para.strip())
         if only_link:  # a paragraph that is just [text](url) becomes a button
@@ -193,7 +280,13 @@ def to_html(subject, body, base_url=None, api_base=None, s=None):
     v = s.get("variant", "classic")
     ta = "center" if v == "centered" else "left"
     blocks = [b.replace('style="margin:', f'style="text-align:{ta};margin:', 1) for b in blocks]
-    logo = (f'<img src="{html.escape(p["logo"], quote=True)}" alt="{html.escape(brand)}" height="44" style="display:inline-block;height:44px;border:0">'
+    lh = {"s": 32, "m": 44, "l": 64}.get(s.get("logo_size"), 44)
+    la = s.get("logo_align") if s.get("logo_align") in ("left", "center", "right") else ""  # "" = as the variant has it
+
+    def al(default):
+        return la or default
+
+    logo = (f'<img src="{html.escape(p["logo"], quote=True)}" alt="{html.escape(brand)}" height="{lh}" style="display:inline-block;height:{lh}px;border:0">'
             if p["logo"] else "")
     name_color = "#ffffff" if v == "banner" else p["accent"]
     brandname = f'<span style="font-size:20px;font-weight:700;color:{name_color}">{html.escape(brand)}</span>'
@@ -202,35 +295,47 @@ def to_html(subject, body, base_url=None, api_base=None, s=None):
     page_bg = p["card"] if v == "minimal" else p["background"]
     if v == "banner":  # coloured bar with the logo in a white tag, the message box hangs under it
         pill = f'<span style="display:inline-block;background:#ffffff;padding:8px 16px;border-radius:{r}px">{logo}</span>' if logo else brandname
-        top = f'<tr><td align="center" style="background:{p["accent"]};padding:22px 16px;border-radius:{r}px {r}px 0 0">{pill}</td></tr>'
+        top = f'<tr><td align="{al("center")}" style="background:{p["accent"]};padding:22px 16px;border-radius:{r}px {r}px 0 0">{pill}</td></tr>'
         card = f'background:{p["card"]};border:1px solid {p["line"]};border-top:0;border-radius:0 0 {r}px {r}px;padding:28px 28px 12px'
     elif v == "minimal":  # no box: logo top right under an accent line
-        top = f'<tr><td align="right" style="border-top:4px solid {p["accent"]};padding:18px 0 22px">{logo or brandname}</td></tr>'
+        top = f'<tr><td align="{al("right")}" style="border-top:4px solid {p["accent"]};padding:18px 0 22px">{logo or brandname}</td></tr>'
         card = "padding:0 0 12px"
     elif v == "centered":
-        top = f'<tr><td align="center" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
+        top = f'<tr><td align="{al("center")}" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
         card = f'background:{p["card"]};border:1px solid {p["line"]};border-radius:{r}px;padding:28px 28px 12px'
     else:  # classic: logo centred above the box, text left
-        top = f'<tr><td align="center" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
+        top = f'<tr><td align="{al("center")}" style="padding:0 4px 18px">{logo or brandname}</td></tr>'
         card = f'background:{p["card"]};border:1px solid {p["line"]};border-radius:{r}px;padding:28px 28px 12px'
     return f"""<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(subject)}</title></head>
-<body style="margin:0;padding:0;background:{page_bg};font-family:{p["font"]};color:{p["text"]}">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{page_bg};padding:24px 12px"><tr><td align="center">
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><style>:root{{color-scheme:light only;supported-color-schemes:light}}</style><title>{html.escape(subject)}</title></head>
+<body bgcolor="{page_bg}" style="margin:0;padding:0;background:{page_bg};font-family:{p["font"]};color:{p["text"]}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="{page_bg}" style="background:{page_bg};padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
 {top}
-<tr><td style="{card};font-size:15px;color:{p["text"]}">
-<h1 style="margin:0 0 18px;font-size:20px;line-height:1.3;text-align:{ta};color:{p["text"]}">{html.escape(subject)}</h1>
+<tr><td bgcolor="{p["card"]}" style="{card};font-size:15px;color:{p["text"]};border-top:4px solid {p["accent"]}">
+<h1 style="margin:0 0 18px;font-size:22px;line-height:1.3;text-align:{"center" if code else ta};color:{p["text"]}">{html.escape(subject)}</h1>
 {"".join(blocks)}
 </td></tr>
 <tr><td style="padding:16px 8px;font-size:12px;line-height:1.5;color:{p["muted"]};text-align:{"left" if v == "minimal" else "center"}">{foot}{"<br>" if foot and site else ""}{html.escape(site) if site else ""}</td></tr>
 </table></td></tr></table></body></html>"""
 
 
-def build(subject, body, base_url=None, api_base=None, s=None):
-    """(text, html_or_None) for an outgoing message, following the settings."""
+def build_full(subject, body, base_url=None, api_base=None, s=None, code=None):
+    """(text, html_or_None, inline_images) for an outgoing message, following the settings."""
     s = s or get()
     text = body if not s["footer"] else f"{body}\n\n--\n{s['footer']}"
+    inline = []
     if s["format"] == "html":
-        return text, to_html(subject, body, base_url, api_base, s)
-    return text, None
+        return text, to_html(subject, body, base_url, api_base, s, code, inline), inline
+    return text, None, []
+
+
+def build(subject, body, base_url=None, api_base=None, s=None, code=None):
+    """(text, html_or_None) for an outgoing message (used by the preview)."""
+    text, html_body, inline = build_full(subject, body, base_url, api_base, s, code)
+    if html_body and inline:  # a preview in the browser cannot show cid: images: use the file itself
+        import base64
+
+        cid, data, mime = inline[0]
+        html_body = html_body.replace(f"cid:{cid}", f"data:{mime};base64,{base64.b64encode(data).decode()}")
+    return text, html_body

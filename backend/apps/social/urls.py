@@ -1,14 +1,19 @@
 from django.urls import path
 
+from . import availability as av
 from . import direct as dr
 from . import discover as d
 from . import views as v
 
 urlpatterns = [
     path("community/summary/", v.summary),
+    path("community/availability/", av.options),
+    path("community/availability/admin/", av.admin_list),
+    path("community/availability/admin/<int:pk>/", av.admin_item),
     path("community/config/", v.config),
     path("community/settings/", v.settings_admin),
     path("community/theme/", v.apply_theme),
+    path("community/theme-switches/", v.theme_switches),
     path("profile/me/", v.profile_me),
     path("profile/me/photos/", v.profile_photo_add),
     path("profile/me/photos/order/", v.profile_photo_order),
@@ -41,6 +46,8 @@ urlpatterns = [
     path("chat/signal/", v.chat_signal),
     path("chat/signals/", v.chat_signals),
     path("chat/presence/", v.chat_presence),
+    path("genders/", v.genders_public),
+    path("direct/config/", dr.config),
     path("direct/code/", dr.room_by_code),
     path("direct/anon/", dr.room_anon),
     path("direct/<str:token>/owner-leave/", dr.room_owner_leave),

@@ -1,54 +1,30 @@
 "use client";
 
 import { tx } from "../lib/t";
-import { IconCart, IconCheck } from "./Icons";
+import { IconCart } from "./Icons";
 import Link from "next/link";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { useModule } from "./Modules";
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
 
-const CartContext = createContext({ items: [], count: 0, add: () => {}, setQty: () => {}, remove: () => {}, clear: () => {} });
-export const useCart = () => useContext(CartContext);
-
-// The cart lives in the browser (ids + quantities only); prices and stock are always checked on the server
-export function CartProvider({ children }) {
-  const [items, setItems] = useState([]);
-  useEffect(() => { try { setItems(JSON.parse(localStorage.getItem("cart")) || []); } catch {} }, []);
-  const save = useCallback((next) => { setItems(next); try { localStorage.setItem("cart", JSON.stringify(next)); } catch {} }, []);
-  const add = (id, qty = 1) => save(items.some((i) => i.id === id) ? items.map((i) => (i.id === id ? { ...i, qty: Math.min(99, i.qty + qty) } : i)) : [...items, { id, qty }]);
-  const setQty = (id, qty) => save(items.map((i) => (i.id === id ? { ...i, qty: Math.max(1, Math.min(99, qty)) } : i)));
-  const remove = (id) => save(items.filter((i) => i.id !== id));
-  const clear = () => save([]);
-  return <CartContext.Provider value={{ items, count: items.reduce((n, i) => n + i.qty, 0), add, setQty, remove, clear }}>{children}</CartContext.Provider>;
-}
-
-// Cart button in the header (only when the orders module is on). Page links come from the menu (Admin -> Pagina's).
+// Links that plugins put in the header of the website (site_link in plugin.json), with a counter from the plugin's own storage (the cart)
 export function ShopLinks() {
-  const { count } = useCart();
-  const orders = useModule("orders");
-  return (
-    <>
-      {orders && (
-        <Link href="/winkelwagen" className="shop-link" title={tx("Winkelwagen")}>
-          <IconCart /> {tx("Winkelwagen")}{count > 0 && <span className="cart-count">{count}</span>}
-        </Link>
-      )}
-    </>
-  );
-}
-
-export function AddToCart({ id, disabled }) {
-  const { add } = useCart();
-  const orders = useModule("orders");
-  const [qty, setQty] = useState(1);
-  const [done, setDone] = useState(false);
-  if (!orders) return null;
-  return (
-    <div className="add-cart">
-      <input type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} aria-label={tx("Aantal")} />
-      <button className="btn primary" disabled={disabled} onClick={() => { add(id, qty); setDone(true); setTimeout(() => setDone(false), 1800); }}>
-        {disabled ? tx("Uitverkocht") : done ? <>{tx("Toegevoegd")} <IconCheck /></> : tx("In winkelwagen")}
-      </button>
-      {done && <Link href="/winkelwagen" className="btn">{tx("Naar winkelwagen")}</Link>}
-    </div>
-  );
+  const [links, setLinks] = useState([]);
+  const [counts, setCounts] = useState({});
+  useEffect(() => { api("/plugins/public/").then(setLinks).catch(() => setLinks([])); }, []);
+  useEffect(() => {
+    const read = () => setCounts(Object.fromEntries(links.filter((l) => l.count_store).map((l) => {
+      let n = 0;
+      try { const v = JSON.parse(localStorage.getItem(`plg:${l.name}:${l.count_store}`)); n = Array.isArray(v) ? v.reduce((a, i) => a + (Number(i.qty) || 0), 0) : 0; } catch {}
+      return [l.name, n];
+    })));
+    read();
+    window.addEventListener("plugin-store", read);
+    window.addEventListener("storage", read);
+    return () => { window.removeEventListener("plugin-store", read); window.removeEventListener("storage", read); };
+  }, [links]);
+  return links.map((l) => (
+    <Link key={l.name} href={l.path} className="shop-link" title={tx(l.label)}>
+      {l.icon === "cart" && <IconCart />} <span className={l.icon === "cart" ? "shop-label" : undefined}>{tx(l.label)}</span>{counts[l.name] > 0 && <span className="cart-count">{counts[l.name]}</span>}
+    </Link>
+  ));
 }

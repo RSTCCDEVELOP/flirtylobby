@@ -4,6 +4,7 @@ import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { money } from "../lib/format";
+import { placeStyle } from "./ImagePlace";
 import { useSession } from "./Session";
 
 export function Campaign({ c, currency, user, onClose }) {
@@ -30,7 +31,7 @@ export function Campaign({ c, currency, user, onClose }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: ".6rem" }}><h2>{c.name}</h2>{onClose && <button type="button" className="btn sm" onClick={onClose}>{tx("Sluiten")}</button>}</div>
       {c.infoView && (c.infoView.image || c.infoView.title || c.infoView.text) && (
         <div className="don-info">
-          {c.infoView.image && <img src={mediaUrl(c.infoView.image)} alt="" />}
+          {c.infoView.image && <img src={mediaUrl(c.infoView.image)} alt="" style={placeStyle(c.infoView.placement)} />}
           {c.infoView.title && <strong>{c.infoView.title}</strong>}
           {c.infoView.text && <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{c.infoView.text}</p>}
         </div>
@@ -65,7 +66,7 @@ export function Campaign({ c, currency, user, onClose }) {
 export function localised(c) {
   let lang = "nl";
   try { lang = localStorage.getItem("lang") || "nl"; } catch {}
-  const view = (p) => ({ title: p?.titles?.[lang] || p?.titles?.nl || Object.values(p?.titles || {})[0] || "", text: p?.texts?.[lang] || p?.texts?.nl || Object.values(p?.texts || {})[0] || "", image: p?.image || null });
+  const view = (p) => ({ title: p?.titles?.[lang] || p?.titles?.nl || Object.values(p?.titles || {})[0] || "", text: p?.texts?.[lang] || p?.texts?.nl || Object.values(p?.texts || {})[0] || "", image: p?.image || null, placement: p?.placement || "center:full" });
   return { ...c, name: c.names?.[lang] || c.names?.nl || c.name, description: c.descriptions?.[lang] ?? c.descriptions?.nl ?? c.description, recipient: c.recipients?.[lang] || c.recipients?.nl || c.recipient,
            infoView: view(c.info), thanksView: view(c.thanks) };
 }
@@ -80,7 +81,7 @@ export default function Donate() {
   const thanks = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bedankt");
   return (
     <div className="don-grid">
-      {thanks && <div className="alert ok" style={{ gridColumn: "1 / -1" }}>{tx("Bedankt voor je donatie!")}</div>}
+      {thanks && <div className="alert ok" data-nopage style={{ gridColumn: "1 / -1" }}>{tx("Bedankt voor je donatie!")}</div>}
       {data.campaigns.map((c) => <Campaign key={c.id} c={localised(c)} currency={data.currency} user={user} />)}
       {!data.campaigns.length && <p className="muted">{tx("Er zijn nu geen donatie-acties.")}</p>}
     </div>

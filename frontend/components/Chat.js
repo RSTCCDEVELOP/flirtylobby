@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { confirmDialog } from "../lib/dialog";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { api, errorText, getToken, mediaUrl } from "../lib/api";
+import { useModule } from "./Modules";
 import { useSession } from "./Session";
 import { useUi } from "./Ui";
 import { DirectSlot, useDirectHost } from "./DirectHost";
@@ -49,6 +50,7 @@ export function ChatProvider({ children }) {
   // where the chat popups sit (Admin -> Community -> Chat); empty = the side from Vormgeving
   useEffect(() => { const el = document.documentElement; if (cfg?.popup_position) el.dataset.chatPos = cfg.popup_position; else delete el.dataset.chatPos; }, [cfg?.popup_position]);
 
+  const directOn = useModule("directconnect");
   // config (only for logged-in users)
   useEffect(() => {
     if (!user || !getToken()) return setCfg(null);
@@ -57,7 +59,7 @@ export function ChatProvider({ children }) {
 
   // someone opened my invitation link and connected: take me to the dashboard, where a block shows who it is
   useEffect(() => {
-    if (!user || cfg?.method !== "webrtc") { setDirectActive([]); return; }
+    if (!user || !directOn) { setDirectActive([]); return; }
     let stop = false;
     const check = async () => {
       try {
@@ -78,7 +80,7 @@ export function ChatProvider({ children }) {
     check();
     const t = setInterval(check, 5000);
     return () => { stop = true; clearInterval(t); };
-  }, [user, cfg?.method, router]);
+  }, [user, directOn, router]);
 
   const loadConvs = useCallback(() => {
     if (cfgRef.current?.method === "portal") api("/chat/conversations/").then(setConvs).catch(() => {});
@@ -350,7 +352,7 @@ export function ChatPanel({ compact = false }) {
     <div className={`chat ${compact ? "compact" : ""}`}>
       {(!compact || !active) && (
         <div className="chat-list">
-          <input placeholder={tx("Zoek een lid om te chatten…")} value={q} onChange={(e) => setQ(e.target.value)} />
+          <input type="search" placeholder={tx("Zoek een lid om te chatten…")} value={q} onChange={(e) => setQ(e.target.value)} />
           {people.filter((p) => p.accept_chat).map((p) => <button key={p.id} className="chat-row" onClick={() => { setDirectSel(null); openPartner(p); setQ(""); }}><Dot on={p.online} /> {p.name} <small className="muted">{tx("nieuw gesprek")}</small></button>)}
           {direct.map((d) => (
             <button key={d.token} className={`chat-row ${directSel === d.token ? "active" : ""}`} onClick={() => openDirect(d)}>

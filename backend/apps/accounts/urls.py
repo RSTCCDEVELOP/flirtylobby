@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import fakeusers, registration, views
+from . import fakeusers, invitations, registration, views
 
 router = DefaultRouter()
 router.register("users", views.UserViewSet, basename="users")
@@ -10,16 +10,25 @@ router.register("user-groups", views.UserGroupViewSet, basename="user-groups")
 
 urlpatterns = [
     path("users/fake/", fakeusers.fake_users),
+    path("profile/me/fill-test/", fakeusers.fill_own_profile),
     path("auth/login/", views.login),
     path("auth/login/verify/", views.login_verify),
     path("auth/login/resend/", views.login_resend),
     path("auth/register/config/", registration.config),
+    path("auth/register/name/", registration.free_name),
+    path("auth/register/email/", registration.check_email),
     path("auth/register/", registration.start),
     path("auth/register/verify/", registration.verify),
     path("auth/register/resend/", registration.resend),
     path("auth/2fa/start/", views.twofa_start),
     path("auth/2fa/confirm/", views.twofa_confirm),
     path("auth/2fa/disable/", views.twofa_disable),
+    path("invitations/", invitations.invitations),
+    path("invitations/<int:pk>/", invitations.invitation),
+    path("invitations/<int:pk>/resend/", invitations.invitation_resend),
+    path("invite/<str:token>/", invitations.invite),
+    path("invite/<str:token>/verify/", invitations.invite_verify),
+    path("invite/<str:token>/resend/", invitations.invite_resend),
     path("module-grants/", views.module_grants),
     path("module-grants/<int:pk>/", views.module_grant),
     path("auth/logout/", views.logout),

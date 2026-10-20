@@ -15,6 +15,7 @@ function base() {
 const BASE_CACHE = { v: null };
 const getBase = () => (BASE_CACHE.v ??= base());
 
+export const apiBase = () => getBase();
 export const mediaUrl = (path) => (path?.startsWith("http") ? path : `${getBase()}${path}`);
 
 export const getToken = () => (typeof window === "undefined" ? null : localStorage.getItem("token"));
@@ -45,6 +46,18 @@ export async function api(path, { method = "GET", body } = {}) {
   if (res.status === 402 && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("payment-required", { detail: data?.detail }));  // a subscription is needed: see PaymentRequired
   if (!res.ok) throw new ApiError(res.status, data);
   return translateTree(data);
+}
+
+// Download a file the API makes (with the login of the member): the browser saves it under `filename`
+export async function downloadFile(path, filename) {
+  const token = getToken();
+  const res = await fetch(`${getBase()}/api${path}`, { headers: token ? { Authorization: `Token ${token}` } : {} });
+  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(await res.blob());
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
 // Flatten DRF field errors into one readable string

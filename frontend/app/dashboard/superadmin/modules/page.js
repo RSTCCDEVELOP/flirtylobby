@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { IconUser } from "../../../../components/Icons";
+import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { useView } from "../../../../lib/useView";
 import { api, errorText } from "../../../../lib/api";
@@ -131,6 +132,23 @@ export default function ModulesPage() {
     setBusy("");
   }
 
+  // switch on the modules another module needs (and the ones those need, in turn)
+  async function enableNeeded(keys) {
+    setBusy("needed"); setMsg(null);
+    try {
+      let fresh = mods, todo = [...keys], guard = 0;
+      while (todo.length && guard++ < 10) {
+        for (const k of todo) fresh = await api(`/modules/${k}/`, { method: "PATCH", body: { enabled: true } });
+        todo = [...new Set(fresh.filter((x) => x.enabled).flatMap((x) => (x.requires || []).filter((r) => !r.enabled).map((r) => r.key)))];
+      }
+      setMods(fresh);
+      setMsg({ ok: true, text: tx("De modules zijn aangezet.") });
+      router.refresh();
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy("");
+  }
+  const missingAll = [...new Map(mods.filter((m) => m.enabled).flatMap((m) => (m.requires || []).filter((r) => !r.enabled)).map((r) => [r.key, r])).values()];
+
   if (!user.is_staff) return null;
   const on = mods.filter((m) => m.enabled).length;
 
@@ -144,6 +162,12 @@ export default function ModulesPage() {
         <CollapseAll />
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
+      {missingAll.length > 0 && (
+        <div className="alert" style={{ marginBottom: "1rem", display: "flex", gap: ".8rem", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <span>{tx("Er staan modules aan die een andere module nodig hebben die uit staat: {0}.", missingAll.map((r) => r.label).join(", "))}</span>
+          <button type="button" className="btn primary" disabled={busy === "needed"} onClick={() => enableNeeded(missingAll.map((r) => r.key))}>{busy === "needed" ? tx("Bezig…") : tx("Zet ze aan")}</button>
+        </div>
+      )}
       <ViewBar view={view} count={`${on}/${mods.length}`} placeholder={tx("Zoek een module…")} />
 
       {GROUPS.map((g) => {
@@ -152,6 +176,7 @@ export default function ModulesPage() {
         if (view.q.trim() && !shownList.length) return null;
         return (
           <Collapsible key={g} id={`modules-${g}`} title={`${tx(g)} (${list.filter((m) => m.enabled).length}/${list.length})`}>
+            <Paged id={`modules-${g}`} query={view.q}>
             <div className={`module-grid${view.cls}`}>
               {shownList.map((m) => (
                 <div key={m.key} className={`card module-tile ${m.enabled ? "" : "off"}`}>
@@ -172,12 +197,16 @@ export default function ModulesPage() {
                   </div>
                   <p className="muted">{m.desc}</p>
                   {m.enabled && (m.requires || []).filter((r) => !r.enabled).map((r) => (
-                    <div className="alert" key={r.key} style={{ margin: ".4rem 0", fontSize: ".8rem" }}>{tx("Heeft ook de module {0} nodig; die staat uit.", r.label)}</div>
+                    <div className="alert" key={r.key} style={{ margin: ".4rem 0", fontSize: ".8rem", display: "flex", gap: ".5rem", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+                      <span>{tx("Heeft ook de module {0} nodig; die staat uit.", r.label)}</span>
+                      <button type="button" className="btn sm primary" disabled={busy === "needed"} onClick={() => enableNeeded([r.key])}>{tx("Zet aan")}</button>
+                    </div>
                   ))}
                   <span className={`badge ${m.enabled ? "ok" : "off"}`}>{m.core ? tx("Kern") : m.enabled ? tx("Aan") : tx("Uit")}</span>
                 </div>
               ))}
             </div>
+            </Paged>
           </Collapsible>
         );
       })}

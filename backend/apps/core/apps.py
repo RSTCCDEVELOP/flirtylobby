@@ -20,3 +20,10 @@ class CoreConfig(AppConfig):
                 return False
 
         check_request_enabled.connect(allow_configured)
+
+        from apps.sandbox import service as sandbox
+
+        from . import views
+
+        if views.on_license_payment not in sandbox.HOOKS:
+            sandbox.HOOKS.append(views.on_license_payment)  # a paid licence renewal

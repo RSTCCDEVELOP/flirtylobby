@@ -9,13 +9,20 @@ import PhotoDrop from "../../../components/PhotoDrop";
 import TwoFactorProfile from "../../../components/TwoFactorProfile";
 import ProfileBlock from "../../../components/ProfileBlock";
 import PublicProfileBlock from "../../../components/PublicProfileBlock";
-import { IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../components/Icons";
+import NotificationPrefs from "../../../components/NotificationPrefs";
+import { useModule } from "../../../components/Modules";
+import { IconBell, IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../components/Icons";
 import { countryOptions } from "../../../lib/countries";
 import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
+import { GENDER_LABELS, useGenders } from "../../../lib/genders";
 import { confirmDialog, promptDialog } from "../../../lib/dialog";
+import { useAutoSave } from "../../../lib/autosave";
+import SaveStatus from "../../../components/SaveStatus";
 
 export default function Profile() {
+  const notifyOn = useModule("notifications");
+  const genders = useGenders();
   const { user, setUser } = useAuth();
   const [form, setForm] = useState({
     first_name: user.first_name, last_name: user.last_name, display_name: user.display_name || "", birth_date: user.birth_date || "", gender: user.gender || "", phone: user.phone || "", address: user.address || "", postal_code: user.postal_code || "", city: user.city || "", country: user.country || "", function: user.function,
@@ -29,16 +36,18 @@ export default function Profile() {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   async function save(e) {
-    e.preventDefault();
+    e?.preventDefault?.();
     try {
       setUser(await api("/auth/me/", { method: "PATCH", body: { ...form, birth_date: form.birth_date || null } }));
-      setMsg({ ok: true, text: tx("Profiel opgeslagen.") });
+      setMsg(null);
     } catch (err) {
       const age = err.data?.birth_date && [].concat(err.data.birth_date).join(" ");
       if (age) setPopup({ title: tx("Leeftijdscontrole"), text: age });
       else setMsg({ ok: false, text: errorText(err) });
+      return false;
     }
   }
+  const auto = useAutoSave(form, save, { delay: 1200 }); // saves by itself, no Save button
 
   async function changePassword(e) {
     e.preventDefault();
@@ -78,7 +87,10 @@ export default function Profile() {
       )}
       <div className="page-head">
         <h1 style={{ margin: 0 }}>{tx("Mijn profiel")} <VerifyBadge status={user.verification} size={26} label /></h1>
-        <Link className="btn" href="/dashboard/community/profile">{tx("Instellingen openbaar profiel")}</Link>
+        <span className="head-actions">
+          {notifyOn && <Link className="btn" href="/dashboard/notifications?tab=prefs">{tx("Instellingen meldingen")}</Link>}
+          <Link className="btn" href="/dashboard/community/profile">{tx("Instellingen openbaar profiel")}</Link>
+        </span>
       </div>
       <div className="profile-cols">
       <div className="profile-col">
@@ -93,7 +105,7 @@ export default function Profile() {
           <label>{tx("Geboortedatum")}<input type="date" value={form.birth_date} max={new Date().toISOString().slice(0, 10)} onChange={set("birth_date")} /></label>
           <label>{tx("Geslacht")}
             <select value={form.gender} onChange={set("gender")}>
-              <option value="">{tx("Niet opgegeven")}</option><option value="m">{tx("Man")}</option><option value="f">{tx("Vrouw")}</option><option value="x">{tx("Anders")}</option>
+              <option value="">{tx("Niet opgegeven")}</option>{genders.map((g) => <option key={g} value={g}>{tx(GENDER_LABELS[g])}</option>)}
             </select>
           </label>
         </div>
@@ -124,11 +136,16 @@ export default function Profile() {
         <label>{tx("Omschrijving")}<textarea rows={5} value={form.description} onChange={set("description")} /></label>
       </ProfileBlock>
       <div className="profile-save">
-        <button className="btn primary">{tx("Opslaan")}</button>
+        <SaveStatus auto={auto} />
         {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       </div>
       </form>
 
+      {notifyOn && (
+        <ProfileBlock id="p-notify" icon={<IconBell />} title={tx("Meldingen")} hint={tx("Welke meldingen je ziet en wanneer je een e-mail krijgt.")}>
+          <NotificationPrefs />
+        </ProfileBlock>
+      )}
       <ProfileBlock id="p-security" icon={<IconLock />} title={tx("Beveiliging")} hint={tx("Wachtwoord en inloggen met een code.")}>
         <form className="form" onSubmit={changePassword}>
           <strong style={{ fontSize: ".9rem" }}>{tx("Wachtwoord wijzigen")}</strong>

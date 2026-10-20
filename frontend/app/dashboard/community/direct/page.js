@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import { useCallback, useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
 import { useChat } from "../../../../components/Chat";
+import { useModule } from "../../../../components/Modules";
 import { DirectSlot, useDirectHost } from "../../../../components/DirectHost";
 import { api, errorText } from "../../../../lib/api";
 
@@ -69,6 +70,7 @@ function Invite({ room, open, onOpen, onChat, onClose, onDisconnect, onRenew, on
 
 export default function Direct() {
   const chat = useChat();
+  const directOn = useModule("directconnect");
   const [rooms, setRooms] = useState(null);
   const host = useDirectHost();
   const open = host?.session || null; // {token, info, mode}: lives in the host, so it keeps running when you leave this page
@@ -119,7 +121,7 @@ export default function Direct() {
     try { setOpen({ token: r.token, mode, info: await api(`/direct/${r.token}/`) }); host.setMini(false); } catch (e) { setError(errorText(e)); }
   };
 
-  if (chat?.cfg && chat.cfg.method !== "webrtc") return <p className="muted">{tx("Directe verbinding staat uit. Een superadmin kan dit aanzetten bij Admin → Community → Chat.")}</p>;
+  if (!directOn) return <p className="muted">{tx("Directe verbinding staat uit. Een superadmin kan dit aanzetten bij Admin → Modules.")}</p>;
   return (
     <>
       <div className="page-head">

@@ -1,10 +1,12 @@
 "use client";
 
+import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import SysButton from "../../../../components/SysButton";
+import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { api, errorText } from "../../../../lib/api";
 import { useView } from "../../../../lib/useView";
@@ -27,7 +29,7 @@ export default function SysObjectsAdmin() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
 
-  if (!items) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!items) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   const lang = (() => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } })();
   return (
     <>
@@ -39,6 +41,7 @@ export default function SysObjectsAdmin() {
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
       <ViewBar view={view} count={`${items.length}`} placeholder={tx("Zoek een object…")} />
+      <Paged id="sysobjects" query={view.q}>
       <div className={`sub-plans${view.cls}`}>
         {items.filter((o) => view.match(o.slug, o.kind_label, Object.values(o.names || {}).join(" "))).map((o) => {
           const name = o.names?.[lang] || o.names?.nl || Object.values(o.names || {})[0] || o.data?.name || o.slug;
@@ -61,6 +64,7 @@ export default function SysObjectsAdmin() {
         })}
         {!items.length && <p className="muted">{tx("Nog geen systeemobjecten. Zet bij een donatie-actie of abonnement het vinkje Systeemobject aan.")}</p>}
       </div>
+      </Paged>
     </>
   );
 }

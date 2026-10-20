@@ -19,11 +19,20 @@ def f(key, label, type="text", options=None, **kw):
             "visibility": kw.get("visibility", "members"), "card": kw.get("card", False), "filter": kw.get("filter", False), "group": kw.get("group", "")}
 
 
+ORIENTATION_OPTIONS = ["Heteroseksueel", "Homoseksueel", "Biseksueel", "Panseksueel", "Anders", "Liever niet zeggen"]
+
 THEMES = {
     "normal": {
         "label": "Normaal", "desc": "Een eenvoudig ledenprofiel: kopregel, over mij, plaats en interesses.",
         "builtin": {"headline": True, "bio": True, "gender": True, "birth_date": True, "city": True, "interests": True, "aim": False},
-        "fields": [f("occupation", "Beroep of bezigheid", "text", visibility="public", card=True, filter=True), f("website", "Website", "url", visibility="public")],
+        "fields": [
+            f("occupation", "Beroep of bezigheid", "text", visibility="public", card=True, filter=True, group="Over mij"),
+            f("languages", "Talen", "multiselect", ["Nederlands", "Engels", "Duits", "Frans", "Spaans", "Anders"], visibility="members", filter=True, group="Over mij"),
+            f("education", "Opleiding", "select", ["MBO", "HBO", "WO", "Anders"], visibility="members", group="Over mij"),
+            f("hobbies", "Hobby's", "text", visibility="members", group="Over mij"),
+            f("website", "Website", "url", visibility="public", group="Links"),
+            f("instagram", "Instagram", "url", visibility="members", group="Links"),
+        ],
     },
     "sporters": {
         "label": "Sporters", "desc": "Sport, niveau, doelen en trainingsmaatjes.",
@@ -40,6 +49,9 @@ THEMES = {
             f("events", "Evenementen of wedstrijden", "text", visibility="public", group="Sport"),
             f("travel", "Reisbereid voor trainen", "select", ["Alleen in de buurt", "Tot 25 km", "Tot 50 km", "Overal"], visibility="members", filter=True, group="Training"),
             f("buddy", "Ik zoek een trainingsmaatje", "checkbox", visibility="public", card=True, filter=True, group="Training"),
+            f("pace", "Tempo of vermogen", "text", visibility="members", group="Sport"),
+            f("coach", "Ik ben coach of trainer", "checkbox", visibility="public", filter=True, group="Sport"),
+            f("injury", "Blessurehistorie of beperkingen", "text", visibility="friends", group="Training"),
         ],
     },
     "dating": {
@@ -57,6 +69,14 @@ THEMES = {
             f("job", "Beroep", "text", visibility="members", group="Over mij"),
             f("languages", "Talen", "multiselect", ["Nederlands", "Engels", "Duits", "Frans", "Spaans", "Anders"], visibility="members", filter=True, group="Over mij"),
             f("pets", "Huisdieren", "select", ["Geen", "Hond", "Kat", "Anders"], visibility="members", group="Leefstijl"),
+            f("living", "Woonsituatie", "select", ["Alleen", "Samenwonend", "Bij ouders", "Woongroep"], visibility="members", group="Leefstijl"),
+            f("diet", "Eetstijl", "select", ["Alles", "Vegetarisch", "Veganistisch", "Halal", "Koosjer", "Anders"], visibility="members", filter=True, group="Leefstijl"),
+            f("exercise", "Sporten", "select", ["Nooit", "Soms", "Wekelijks", "Dagelijks"], visibility="members", group="Leefstijl"),
+            f("music", "Muziek", "multiselect", ["Pop", "Rock", "Hiphop", "Dance", "Jazz", "Klassiek", "Latin", "Metal", "Nederlandstalig"], visibility="members", group="Interesses"),
+            f("weekend", "Een perfect weekend", "multiselect", ["Uitgaan", "Thuis chillen", "Wandelen", "Reizen", "Sporten", "Cultuur", "Vrienden zien"], visibility="members", group="Interesses"),
+            f("zodiac", "Sterrenbeeld", "select", ["Ram", "Stier", "Tweelingen", "Kreeft", "Leeuw", "Maagd", "Weegschaal", "Schorpioen", "Boogschutter", "Steenbok", "Waterman", "Vissen"], visibility="members", group="Over mij"),
+            f("first_date", "Ideale eerste date", "select", ["Koffie of thee", "Wandeling", "Diner", "Drankje", "Activiteit", "Online"], visibility="members", filter=True, group="Daten"),
+            f("orientation", "Seksuele geaardheid", "select", ORIENTATION_OPTIONS, visibility="members", filter=True, group="Over mij"),
             f("religion", "Geloof", "select", ["Geen", "Christelijk", "Islamitisch", "Joods", "Boeddhistisch", "Anders"], visibility="friends", group="Over mij"),
         ],
     },
@@ -80,6 +100,14 @@ THEMES = {
             f("website", "Website", "url", visibility="public", group="Contact"),
             f("linkedin", "LinkedIn", "url", visibility="members", group="Contact"),
             f("available", "Open voor netwerkgesprekken", "checkbox", visibility="public", card=True, filter=True, group="Netwerk"),
+            f("seniority", "Niveau", "select", ["Student", "Junior", "Medior", "Senior", "Management", "Directie"], visibility="public", filter=True, group="Bedrijf"),
+            f("skills", "Vaardigheden", "text", visibility="public", group="Netwerk"),
+            f("languages", "Talen", "multiselect", ["Nederlands", "Engels", "Duits", "Frans", "Spaans", "Anders"], visibility="public", filter=True, group="Netwerk"),
+            f("mentor", "Ik wil mentor zijn", "checkbox", visibility="public", filter=True, group="Netwerk"),
+            f("speaker", "Beschikbaar als spreker of trainer", "checkbox", visibility="public", filter=True, group="Netwerk"),
+            f("salary", "Salarisindicatie", "select", ["Tot 2.500", "2.500 - 3.500", "3.500 - 5.000", "5.000+", "In overleg"], visibility="members", group="Werk zoeken"),
+            f("notice", "Beschikbaar per", "select", ["Direct", "Binnen 1 maand", "Binnen 3 maanden", "Later"], visibility="public", filter=True, group="Werk zoeken"),
+            f("job_offer", "Mijn vacature (titel en korte tekst)", "textarea", visibility="public", group="Werk zoeken"),
         ],
     },
     "webshop": {
@@ -97,6 +125,32 @@ THEMES = {
         ],
     },
 }
+
+
+# Colour themes a member can give his profile page (Wijzig profiel -> Design). The colours live in the frontend (lib/profile-designs.js).
+PROFILE_DESIGNS = ["ocean", "forest", "sunset", "midnight", "lavender", "mono", "rose", "rainbow", "trans", "bi", "lesbian", "nonbinary"]
+
+
+# What members can look for ("Ik zoek"). The admin switches them on and off (Community -> Algemeen). Switching one on adds its profile fields
+# (also as search filters); switching it off removes those fields again. "default" is the state of a new site.
+AIM_OPTIONS = [
+    {"key": "dating", "label": "Daten", "desc": "Kennismaken met het oog op een date.", "default": True, "fields": []},
+    {"key": "relationship", "label": "Een relatie", "desc": "Op zoek naar een vaste partner.", "default": True, "fields": []},
+    {"key": "friends", "label": "Vriendschap", "desc": "Nieuwe vrienden maken.", "default": True, "fields": []},
+    {"key": "chat", "label": "Gewoon chatten", "desc": "Alleen een praatje, zonder verplichtingen.", "default": True, "fields": []},
+    {"key": "appointments", "label": "Afspraakjes", "desc": "Vrijblijvend afspreken, zonder vaste relatie.", "default": False, "fields": [
+        f("availability", "Wanneer kan ik afspreken", "multiselect", ["Overdag", "Avond", "Weekend", "Flexibel"], visibility="members", filter=True, group="Afspraken"),
+        f("meet_place", "Waar spreek ik af", "multiselect", ["Bij mij thuis", "Bij jou thuis", "Neutrale plek", "Hotel"], visibility="members", group="Afspraken")]},
+    {"key": "erotic", "label": "Erotiek", "desc": "Erotische contacten voor volwassenen (alleen 18+). Gevoelige gegevens: vermeld dit in je privacybeleid.", "default": False, "fields": [
+        f("erotic_wish", "Wat zoek ik", "multiselect", ["Vrijblijvend", "Vaste afspraak", "Open relatie", "Swingen", "Fetisj / BDSM", "Anders"], visibility="members", filter=True, group="Erotiek"),
+        f("erotic_limits", "Grenzen", "textarea", visibility="friends", group="Erotiek")]},
+    {"key": "activities", "label": "Samen op pad", "desc": "Samen iets ondernemen: uit eten, wandelen, concerten.", "default": False, "fields": [
+        f("activities", "Activiteiten", "multiselect", ["Uit eten", "Wandelen", "Concert", "Theater", "Sporten", "Uitgaan", "Cultuur"], visibility="members", filter=True, group="Samen op pad")]},
+    {"key": "travel", "label": "Reisgenoot", "desc": "Samen op reis.", "default": False, "fields": [
+        f("travel_style", "Reisstijl", "select", ["Stedentrip", "Strand", "Actief", "Rondreis", "Camping"], visibility="members", filter=True, group="Reizen"),
+        f("travel_when", "Wanneer", "text", visibility="members", group="Reizen")]},
+]
+AIM_KEYS = [o["key"] for o in AIM_OPTIONS]
 
 
 # How the search page looks per theme: which built-in filters show, and whether the swipe deck (like Tinder) is on by default.
@@ -118,5 +172,34 @@ def theme_payload(key):
     return {"theme": key, "builtin": dict(t["builtin"]), "fields": [dict(x, options=list(x["options"])) for x in t["fields"]]}
 
 
-def public_list():
-    return [{"key": k, "label": t["label"], "desc": t["desc"], "fields": len(t["fields"])} for k, t in THEMES.items()]
+BASIC = "normal"  # the basic theme: always on
+
+
+def enabled():
+    """The profile themes that may be used (a superadmin switches them on): only the basic one by default. The theme in use always stays available."""
+    from apps.core.models import SystemSettings
+
+    from . import service
+
+    stored = SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
+    on = {k for k in (stored.get("community_themes") or []) if k in THEMES}
+    try:
+        on.add(service.get()["profiles"]["theme"])
+    except Exception:  # noqa: BLE001
+        pass
+    return on | {BASIC}
+
+
+def set_enabled(keys):
+    from apps.core.models import SystemSettings
+
+    row, _ = SystemSettings.objects.get_or_create(pk=1)
+    data = dict(row.data or {})
+    data["community_themes"] = [k for k in THEMES if k in set(keys) and k != BASIC]
+    row.data = data
+    row.save()
+
+
+def public_list(everything=False):
+    on = enabled()
+    return [{"key": k, "label": t["label"], "desc": t["desc"], "fields": len(t["fields"]), "enabled": k in on} for k, t in THEMES.items() if everything or k in on]

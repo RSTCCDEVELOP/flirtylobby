@@ -1,17 +1,22 @@
+import SiteCredit from "../components/SiteCredit";
 import "./globals.css";
 import { BrandingProvider } from "../components/BrandingContext";
 import Gates from "../components/Gates";
 import { ContentProvider, EditBanner } from "../components/EditMode";
 import { SessionProvider } from "../components/Session";
+import PrefsSync from "../components/PrefsSync";
+import SlugSync from "../components/SlugSync";
 import { ModulesProvider } from "../components/Modules";
 import { UiProvider } from "../components/Ui";
-import { CartProvider } from "../components/Cart";
 import { ChatProvider, ChatWidget } from "../components/Chat";
 import DialogHost from "../components/DialogHost";
 import DomTranslate from "../components/DomTranslate";
+import PageLoader, { LazyImages, PageTransition, ScrollFx } from "../components/PageLoader";
 import { MenuProvider } from "../components/SiteMenu";
 import { getBackgrounds, getMenu } from "../lib/pages-server";
 import PageBackdrop from "../components/PageBackdrop";
+import UndoButton from "../components/UndoButton";
+import EditHelp from "../components/EditHelp";
 import PageSettingsButton from "../components/PageSettingsButton";
 import { DirectHostProvider } from "../components/DirectHost";
 import LangRoot from "../components/LangRoot";
@@ -21,6 +26,8 @@ import DevicePreview from "../components/DevicePreview";
 import NavProgress from "../components/NavProgress";
 import DonateThanks from "../components/DonateThanks";
 import MaintenanceGate from "../components/MaintenanceGate";
+import LicenseNotice from "../components/LicenseNotice";
+import LicensePrompt from "../components/LicensePrompt";
 import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
@@ -125,7 +132,7 @@ export default async function RootLayout({ children }) {
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
-    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} suppressHydrationWarning>
+    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} data-hl={theme?.values?.header_layout || "classic"} data-hstyle={theme?.values?.header_style || "solid"} data-hsticky={theme?.values?.header_sticky || "yes"} data-menu={theme?.values?.menu_style || "text"} data-fl={theme?.values?.footer_layout || "simple"} data-ft={theme?.values?.footer_tone || "page"} data-blocks={theme?.values?.block_style || "card"} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript(theme?.values?.default_mode) }} />
         {theme?.fonts_url && <link rel="stylesheet" href={theme.fonts_url} />}
@@ -135,7 +142,8 @@ export default async function RootLayout({ children }) {
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>
         <SessionProvider>
-        <CartProvider>
+        <PrefsSync />
+        <SlugSync />
         <ChatProvider>
         <MenuProvider value={menu}>
         <LangRoot languages={langs?.languages || []} defaultLanguage={langs?.default || "nl"}>
@@ -143,16 +151,24 @@ export default async function RootLayout({ children }) {
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
               <DirectHostProvider>
               <PageBackdrop map={backgrounds} />
-              {children}
+              <PageTransition>{children}</PageTransition>
+              <SiteCredit show={site?.show_credit !== false} />
               <EditBanner />
               <PageSettingsButton />
+              <EditHelp />
+              <UndoButton />
               </DirectHostProvider>
             </ContentProvider>
             <Gates cfg={security} />
             <SiteGate />
             <MaintenanceGate site={site} />
+            <LicenseNotice site={site} />
+            <LicensePrompt site={site} />
             <DonateThanks />
             <NavProgress />
+            <PageLoader />
+            <LazyImages />
+            <ScrollFx />
             <DevicePreview />
             <PaymentRequired />
         <SandboxBadge status={sandbox} />
@@ -167,7 +183,6 @@ export default async function RootLayout({ children }) {
         </LangRoot>
         </MenuProvider>
         </ChatProvider>
-        </CartProvider>
         </SessionProvider>
         </UiProvider>
         </ModulesProvider>

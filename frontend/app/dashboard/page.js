@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy } from "../../components/PageLoader";
 import { tx } from "../../lib/t";
 import { confirmDialog } from "../../lib/dialog";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -10,6 +11,8 @@ import { IconChat, IconX } from "../../components/Icons";
 import { useAuth } from "../../components/AuthContext";
 import { useChat } from "../../components/Chat";
 import { useModules } from "../../components/Modules";
+import DashboardSearch from "../../components/DashboardSearch";
+import DashboardShortcuts from "../../components/DashboardShortcuts";
 import DashboardLibrary from "../../components/DashboardLibrary";
 import { byId, defaultLayout, themeLayout, WIDGETS } from "../../components/Widgets";
 import { api, errorText } from "../../lib/api";
@@ -30,7 +33,7 @@ export default function DashboardHome() {
   const timer = useRef(null);
 
   useEffect(() => { api("/dashboard/layout/").then((s) => { setState(s); setMeta({ theme: s.theme || "normal", swipe: !!s.swipe }); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
-  if (!state) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!state) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
 
   const columns = state.columns || 2;
   // every block gets a column: -1 = full width on top, 0..n-1 = column (legacy blocks are spread over the columns)
@@ -130,13 +133,15 @@ export default function DashboardHome() {
   return (
     <>
       <div className="page-head">
-        <div><h1 style={{ margin: 0 }}>{tx("Dashboard")}</h1></div>
+        <div style={{ flex: "0 0 auto" }}><h1 style={{ margin: 0 }}>{tx("Dashboard")}</h1></div>
+        <DashboardSearch />
         <div className="row">
           {editing && <button className="btn" onClick={reset}>{tx("Standaard herstellen")}</button>}
           {editing && state.can_set_default && <button className="btn" onClick={setDefault}>{tx("Opslaan als standaard voor iedereen")}</button>}
           <button className={`btn ${editing ? "primary" : ""}`} onClick={() => setEditing(!editing)}>{editing ? tx("Klaar") : tx("Dashboard aanpassen")}</button>
         </div>
       </div>
+      <DashboardShortcuts />
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       {editing && <DashboardLibrary theme={state.theme} ctx={ctx} onDashIds={layout.map((l) => l.id)} onAdd={add} onLayout={applyLayout} />}
