@@ -1,5 +1,5 @@
-# Production stack, lives in /opt/flirtylobby on the VPS (as docker-compose.yml)
-name: flirtylobby
+# Production stack, lives in /opt/hebbesfashion on the VPS (as docker-compose.yml)
+name: hebbesfashion
 
 services:
   db:

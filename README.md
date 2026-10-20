@@ -1,4 +1,4 @@
-# Flirtylobby
+# Hebbes Fashion
 
 Django (DRF) backend + Next.js (SSR) frontend.
 
@@ -52,18 +52,18 @@ docker compose up --build
 
 Don't run both at the same time on the same SQLite file.
 
-## Production (VPS, `/opt/flirtylobby`)
+## Production (VPS, `/opt/hebbesfashion`)
 
 Stack (`deploy/docker-compose.prod.yml`): postgres, backend (gunicorn), frontend, nginx (forces HTTPS for `DOMAIN` and `api.DOMAIN`), certbot (renews every 12h; nginx reloads every 6h). Images come from `ghcr.io`.
 
 One-time VPS setup:
 1. DNS A-records for `DOMAIN` and `api.DOMAIN` -> VPS. Docker + compose installed.
-2. `mkdir -p /opt/flirtylobby` and create `/opt/flirtylobby/.env` from `deploy/.env.example`.
+2. `mkdir -p /opt/hebbesfashion` and create `/opt/hebbesfashion/.env` from `deploy/.env.example`.
 3. GitHub repo settings:
    - Variable: `DOMAIN`
    - Secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `GHCR_USER`, `GHCR_PULL_TOKEN` (PAT with `read:packages`)
 4. Push to `main`: the workflow builds + pushes images and copies the deploy files. The first run stops short of starting (no certificate yet), so then run on the VPS:
-   `cd /opt/flirtylobby && ./init-letsencrypt.sh`
+   `cd /opt/hebbesfashion && ./init-letsencrypt.sh`
 5. Later pushes pull the new images and restart automatically.
 
 Create an admin user: `docker compose exec backend python manage.py createsuperuser`.
