@@ -29,6 +29,24 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const hasPath = page.path?.startsWith("/");
+  const [acc, setAcc] = useState({ users: [...(page.access?.users || [])], groups: [...(page.access?.groups || [])] }); // who may open the page; both empty = everybody
+  const [pick, setPick] = useState({ type: "all", id: "" });
+  const [people, setPeople] = useState({ users: [], groups: [] });
+  useEffect(() => {
+    if (page.kind === "system") return;
+    api("/users/").then((u) => setPeople((x) => ({ ...x, users: u }))).catch(() => {});
+    api("/user-groups/").then((g) => setPeople((x) => ({ ...x, groups: g }))).catch(() => {});
+  }, [page.kind]);
+  const userName = (u) => [u.first_name, u.last_name].filter(Boolean).join(" ") || u.email;
+  const options = pick.type === "user" ? people.users.filter((u) => !acc.users.some((x) => x.id === u.id)).map((u) => ({ id: u.id, label: `${userName(u)} (${u.email})` }))
+    : pick.type === "group" ? people.groups.filter((g) => !acc.groups.some((x) => x.id === g.id)).map((g) => ({ id: g.id, label: g.name })) : [];
+  function addAccess() {
+    if (pick.type === "all") { setAcc({ users: [], groups: [] }); return; }
+    if (!pick.id) return;
+    const id = Number(pick.id), o = options.find((x) => x.id === id);
+    setAcc(pick.type === "user" ? { ...acc, users: [...acc.users, { id, name: o?.label || String(id) }] } : { ...acc, groups: [...acc.groups, { id, name: o?.label || String(id) }] });
+    setPick({ ...pick, id: "" });
+  }
 
   useEffect(() => {
     if (!canSeo || !hasPath) return;
@@ -48,7 +66,7 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
     setBusy(true); setError("");
     try {
       const body = { title: form.title, background: bg.type === "none" || !bg.media ? {} : { type: bg.type, media: bg.media, overlay: bg.overlay } };
-      if (page.kind !== "system") { body.audience = form.audience; body.new_tab = form.new_tab; }
+      if (page.kind !== "system") { body.audience = form.audience; body.new_tab = form.new_tab; body.access = { users: acc.users.map((x) => x.id), groups: acc.groups.map((x) => x.id) }; }
       body.devices = mo.devices; body.cta = mo.cta; if (page.kind === "menu") body.label_link = mo.label_link;
       if (page.kind === "link") body.url = form.url;
       if (page.has_slugs) body.slugs = Object.fromEntries(langs.map((l) => [l.code, form.slugs?.[l.code] || ""])); // only the languages that are on are shown; the others get an address by themselves
@@ -93,6 +111,27 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
                     <span className="switch"><input type="checkbox" checked={form.new_tab} onChange={(e) => setForm({ ...form, new_tab: e.target.checked })} /><span /></span>
                     <span>{tx("Opent in een nieuw tabblad")}</span>
                   </label>
+                </div>
+              )}
+              {page.kind !== "system" && (
+                <div className="form" style={{ gap: ".4rem" }}>
+                  <strong style={{ fontSize: ".85rem" }}>{tx("Rechten")}</strong>
+                  <div className="chips" style={{ marginBottom: 0 }}>
+                    {!acc.users.length && !acc.groups.length && <span className="chip" style={{ cursor: "default" }}>{tx("Iedereen")}</span>}
+                    {acc.groups.map((g) => <span key={`g${g.id}`} className="chip" style={{ cursor: "default" }}><b>{tx("Groep")}</b> {g.name}<button type="button" className="icon-btn" aria-label={tx("Verwijder")} title={tx("Verwijder")} onClick={() => setAcc({ ...acc, groups: acc.groups.filter((x) => x.id !== g.id) })}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button></span>)}
+                    {acc.users.map((u) => <span key={`u${u.id}`} className="chip" style={{ cursor: "default" }}><b>{tx("User")}</b> {u.name}<button type="button" className="icon-btn" aria-label={tx("Verwijder")} title={tx("Verwijder")} onClick={() => setAcc({ ...acc, users: acc.users.filter((x) => x.id !== u.id) })}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button></span>)}
+                  </div>
+                  <div className="grant-add" style={{ flexWrap: "nowrap" }}>
+                    <select value={pick.type} onChange={(e) => setPick({ type: e.target.value, id: "" })} style={{ flex: "0 0 auto" }}>
+                      <option value="all">{tx("Iedereen")}</option><option value="user">{tx("User")}</option><option value="group">{tx("User group")}</option>
+                    </select>
+                    <select value={pick.id} disabled={pick.type === "all"} onChange={(e) => setPick({ ...pick, id: e.target.value })}>
+                      <option value="">{pick.type === "group" ? tx("Kies een groep…") : pick.type === "user" ? tx("Kies een user…") : tx("Iedereen mag de pagina openen")}</option>
+                      {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                    </select>
+                    <button type="button" className="btn" style={{ whiteSpace: "nowrap" }} disabled={pick.type !== "all" && !pick.id} onClick={addAccess}>{pick.type === "all" ? tx("Iedereen") : tx("Toevoegen")}</button>
+                  </div>
+                  <small className="muted">{tx("Zonder users of groepen mag iedereen de pagina openen (zie Voor wie). Met een lijst alleen die users en de leden van die groepen, plus beheerders van de pagina's.")}</small>
                 </div>
               )}
               <small className="muted">{tx("Adres")}: <code>{page.path}</code></small>

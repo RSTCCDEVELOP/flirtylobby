@@ -19,7 +19,7 @@ import { VISIBILITY_ICON } from "../../../../components/VisibilityPicker";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
-import { api, errorText } from "../../../../lib/api";
+import { api, apiBase, errorText, getToken } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { lvl } from "../../../../lib/perms";
 
@@ -80,6 +80,29 @@ export default function PagesAdmin() {
     return () => window.removeEventListener("pages-changed", loadCfg);
   }, [scope, menuTab]);
   const act = async (fn) => { setMsg(null); try { await fn(); await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed")); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
+  const fileIn = useRef(null);
+  const [fKind, setFKind] = useState(""); // filter of the list: kind, status, menu
+  const [fState, setFState] = useState("");
+  const [fMenu, setFMenu] = useState("");
+  async function exportPage(p) { // the page with its blocks, linked content and pictures as a zip
+    setMsg(null);
+    const res = await fetch(`${apiBase()}/api/pages/${p.id}/export/`, { headers: { Authorization: `Token ${getToken()}` } });
+    if (!res.ok) return setMsg({ ok: false, text: tx("De pagina kon niet worden geëxporteerd.") });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(await res.blob()); a.download = `page-${p.key}.zip`; a.click();
+    setMsg({ ok: true, text: tx("De pagina is geëxporteerd en staat ook in de map site/{0}/{1}.", priv ? "private" : "public", p.key) });
+  }
+  async function importPage(file) { // a zip from the export of another website
+    if (!file) return;
+    setBusy(true); setMsg(null);
+    try {
+      const fd = new FormData(); fd.append("file", file); fd.append("scope", scope);
+      const r = await api("/pages/import/", { method: "POST", body: fd });
+      await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed"));
+      setMsg({ ok: true, text: [tx("De pagina {0} is geïmporteerd ({1} bestanden, {2} teksten). Hij gebruikt het thema van deze website.", menuLabel(r.page.title), r.media, r.blocks), ...(r.notes || [])].join(" ") });
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  }
   const patch = (p, body) => act(() => api(`/pages/${p.id}/`, { method: "PATCH", body }));
 
   // ── menu structure: top level items with their sub items ──────────────────
@@ -209,6 +232,7 @@ export default function PagesAdmin() {
   const editLangs = langs.languages.length ? langs.languages : [{ code: "nl", native_name: "Nederlands" }];
   const activeLang = editLangs.some((l) => l.code === nameLang) ? nameLang : langs.default;
   const visible = (p) => p.enabled && p.available;
+  const shown = pages.filter((p) => tv.match(label(p), p.path, p.key, tx(KIND[p.kind])) && (!fKind || p.kind === fKind) && (!fState || (fState === "on") === visible(p)) && (!fMenu || (fMenu === "in") === p.in_menu));
 
   return (
     <>
@@ -224,12 +248,23 @@ export default function PagesAdmin() {
 
       {view && <PagePreview key={`${view.key}-${view.edit}`} pageKey={view.key} path={view.url} withTitle={view.withTitle} title={view.title} startEdit={view.edit} onClose={() => setView(null)} />}
       <Collapsible id={`pages-overview-${scope}`} title={priv ? tx("Overzicht van de privé pagina's") : tx("Overzicht van de pagina's")}>
-        <ViewBar view={tv} />
+        <ViewBar view={tv} count={shown.length}
+          extra={<>
+            <select value={fKind} onChange={(e) => setFKind(e.target.value)} aria-label={tx("Soort")}><option value="">{tx("Alle soorten")}</option>{Object.entries(KIND).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
+            <select value={fState} onChange={(e) => setFState(e.target.value)} aria-label={tx("Status")}><option value="">{tx("Alle statussen")}</option><option value="on">{tx("Aan")}</option><option value="off">{tx("Uit")}</option></select>
+            <select value={fMenu} onChange={(e) => setFMenu(e.target.value)} aria-label={tx("In menu")}><option value="">{tx("Menu: alles")}</option><option value="in">{tx("In het menu")}</option><option value="out">{tx("Niet in het menu")}</option></select>
+          </>} />
+        {L >= 3 && (
+          <div className="row" style={{ marginBottom: ".5rem" }}>
+            <button type="button" className="btn sm" disabled={busy} onClick={() => fileIn.current?.click()}>{tx("Pagina importeren (.zip)")}</button>
+            <input ref={fileIn} type="file" accept=".zip,application/zip" hidden onChange={(e) => { importPage(e.target.files[0]); e.target.value = ""; }} />
+          </div>
+        )}
         <TableView view={tv}>
           <table>
             <thead><tr><th>{tx("Pagina")}</th><th>{tx("Adres")}</th><th>{tx("Status")}</th><th>{tx("Actief")}</th><th>{tx("In menu")}</th><th /></tr></thead>
             <tbody>
-              {pages.map((p) => {
+              {shown.map((p) => {
                 const [cls, text] = status(p);
                 return (
                   <tr key={p.id}>
@@ -242,12 +277,14 @@ export default function PagesAdmin() {
                       {blocksKey(p) && <button className="btn sm" onClick={() => { setView({ key: blocksKey(p), url: p.path, title: label(p), withTitle: p.kind === "content", edit: false }); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{tx("Bekijken")}</button>}
                       {blocksKey(p) && canEdit && <button className="btn sm primary" onClick={() => { setView({ key: blocksKey(p), url: p.path, title: label(p), withTitle: p.kind === "content", edit: true }); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{tx("Bewerken")}</button>}
                       <a className="btn sm" href={p.path} {...(priv ? {} : { target: "_blank", rel: "noreferrer" })}>{tx("Openen")}</a>
+                      {L >= 2 && p.kind === "content" && <button className="btn sm" onClick={() => exportPage(p)}>{tx("Exporteren")}</button>}
                       {L >= 2 && <button className="btn sm" onClick={() => setSettings(p)}>{tx("Instellingen")}</button>}
                       {L >= 3 && p.kind !== "system" && <button className="btn sm danger" onClick={() => remove(p)}>{tx("Verwijder")}</button>}
                     </td>
                   </tr>
                 );
               })}
+              {!shown.length && <tr><td colSpan={6} className="muted">{tx("Geen pagina's gevonden.")}</td></tr>}
             </tbody>
           </table>
         </TableView>

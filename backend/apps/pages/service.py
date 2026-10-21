@@ -66,6 +66,27 @@ def available(page):
     return True
 
 
+def restricted(page):
+    return bool((page.access or {}).get("users") or (page.access or {}).get("groups"))
+
+
+def can_see(user, page):
+    """May this visitor open the page? A page without a list of users/groups is for everybody (the audience still decides who sees it in the menu).
+    With a list: only the listed users, the members of the listed groups, and those who manage the pages."""
+    if not restricted(page):
+        return True
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff:
+        return True
+    from apps.accounts.access import level
+
+    if level(user, "pages") >= 2:
+        return True
+    acc = page.access
+    return user.id in (acc.get("users") or []) or user.user_groups.filter(id__in=acc.get("groups") or []).exists()
+
+
 def title_of(page, lang=None):
     default = Language.objects.filter(is_default=True).values_list("code", flat=True).first() or "nl"
     t = page.title or {}
@@ -75,20 +96,20 @@ def title_of(page, lang=None):
     return page.key
 
 
-def menu():
+def menu(user=None):
     """The header menu: only pages that are on (and whose module is on), two levels deep."""
     ensure_defaults()
-    return _tree(Page.objects.filter(scope="public"))
+    return _tree(Page.objects.filter(scope="public"), user)
 
 
-def private_menu():
+def private_menu(user=None):
     """The menu of the dashboard (the header of a logged-in member): the private pages that are on."""
-    return _tree(Page.objects.filter(scope="private"))
+    return _tree(Page.objects.filter(scope="private"), user)
 
 
-def _tree(qs):
+def _tree(qs, user=None):
     pages = list(qs.select_related("parent"))
-    ok = {p.id: p for p in pages if available(p) and p.in_menu}
+    ok = {p.id: p for p in pages if available(p) and p.in_menu and can_see(user, p)}
 
     def item(p):
         return {"id": p.id, "key": p.key, "titles": p.title, "url": p.path, "urls": {l: p.path_in(l) for l in lang_codes()}, "new_tab": p.new_tab, "audience": p.audience, "kind": p.kind, "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "children": []}
