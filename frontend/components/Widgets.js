@@ -158,7 +158,7 @@ function OrdersRecent() {
     <>
       <ul className="widget-list">{d.map((o) => <li key={o.number}><span><strong>{o.number}</strong> {o.name}</span><span>{money(o.total)} <span className={`badge ${ORDER_STATUS[o.status][1]}`}>{ORDER_STATUS[o.status][0]}</span></span></li>)}</ul>
       {!d.length && <p className="muted">{tx("Nog geen bestellingen.")}</p>}
-      <Link className="btn sm" href="/dashboard/admin/orders">{tx("Alle orders")}</Link>
+      <Link className="btn sm" href="/dashboard/admin/plugins/orders">{tx("Alle orders")}</Link>
     </>
   );
 }

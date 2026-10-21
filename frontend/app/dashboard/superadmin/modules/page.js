@@ -108,10 +108,12 @@ export default function ModulesPage() {
   const view = useView("modules");
 
   const load = useCallback(() => api("/modules/all/").then(setMods).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
-  useEffect(() => { load(); }, [load]);
+  const [pk, setPk] = useState([]);
+  const loadPk = useCallback(() => api("/modules/packages/").then(setPk).catch(() => {}), []);
+  useEffect(() => { load(); loadPk(); }, [load, loadPk]);
 
   async function toggle(m) {
-    if (m.core) return;
+    if (m.core || m.plugin) return;
     const next = !m.enabled;
     if (!next && !(await confirmDialog(tx("Module \"{0}\" uitzetten? De functie is dan overal inactief.", m.label)))) return;
     setBusy(m.key);
@@ -129,6 +131,19 @@ export default function ModulesPage() {
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
     }
+    setBusy("");
+  }
+
+  async function togglePackage(p, on) { // all modules of a package on or off at once
+    if (!on && !(await confirmDialog(tx("Alle modules van het pakket \"{0}\" uitzetten?", p.label)))) return;
+    setBusy("pkg"); setMsg(null);
+    try {
+      let fresh = mods;
+      for (const m of p.modules) if (!m.plugin && m.enabled !== on) fresh = await api(`/modules/${m.key}/`, { method: "PATCH", body: { enabled: on } });
+      setMods(fresh); await loadPk();
+      setMsg({ ok: true, text: tx("{0} staat nu {1}.", p.label, on ? "aan" : "uit") });
+      router.refresh();
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy("");
   }
 
@@ -168,11 +183,35 @@ export default function ModulesPage() {
           <button type="button" className="btn primary" disabled={busy === "needed"} onClick={() => enableNeeded(missingAll.map((r) => r.key))}>{busy === "needed" ? tx("Bezig…") : tx("Zet ze aan")}</button>
         </div>
       )}
+      {pk.length > 0 && (
+        <Collapsible id="modules-packages" title={tx("Pakketten (los van het kern-CMS)")}>
+          <p className="muted" style={{ margin: 0 }}>{tx("Het kern-CMS is het product. Deze onderdelen passen niet bij elke doelgroep en verkoop je als apart pakket met een eigen prijs in de licentie. Een pakket aan- of uitzetten zet al zijn modules aan of uit.")}</p>
+          <div className="module-grid" style={{ marginTop: ".6rem" }}>
+            {pk.map((p) => {
+              const onCount = p.modules.filter((m) => m.enabled).length, all = onCount === p.modules.length;
+              return (
+                <div key={p.key} className={`card module-tile ${onCount ? "" : "off"}`}>
+                  <div className="module-top">
+                    <strong>{tx(p.label)}</strong>
+                    <label className="switch" title={all ? tx("Het hele pakket uitzetten") : tx("Het hele pakket aanzetten")}>
+                      <input type="checkbox" checked={onCount > 0} disabled={!!busy} onChange={() => togglePackage(p, onCount === 0)} /><span />
+                    </label>
+                  </div>
+                  <p className="muted">{tx(p.desc)}</p>
+                  <small className="muted">{p.modules.map((m) => `${m.label} ${m.enabled ? "✓" : "–"}`).join(" · ")}</small>
+                  <span className={`badge ${onCount ? "ok" : "off"}`}>{onCount}/{p.modules.length} {tx("aan")}{Number(p.price) > 0 ? ` · ${new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(p.price))} ${tx("per maand")}` : ""}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Collapsible>
+      )}
       <ViewBar view={view} count={`${on}/${mods.length}`} placeholder={tx("Zoek een module…")} />
 
       {GROUPS.map((g) => {
         const list = mods.filter((m) => m.group === g);
         const shownList = list.filter((m) => view.match(m.label, m.desc, m.key));
+        if (!list.length) return null; // a group without modules (e.g. Webshop without its plugin) is not shown
         if (view.q.trim() && !shownList.length) return null;
         return (
           <Collapsible key={g} id={`modules-${g}`} title={`${tx(g)} (${list.filter((m) => m.enabled).length}/${list.length})`}>
@@ -189,8 +228,8 @@ export default function ModulesPage() {
                           {m.grants > 0 && <span className="module-count">{m.grants}</span>}
                         </button>
                       )}
-                      <label className="switch" title={m.core ? tx("Kernmodule: altijd aan") : m.enabled ? tx("Uitzetten") : tx("Aanzetten")}>
-                        <input type="checkbox" checked={m.enabled} disabled={m.core || busy === m.key} onChange={() => toggle(m)} />
+                      <label className="switch" title={m.core ? tx("Kernmodule: altijd aan") : m.plugin ? tx("Dit is een plugin: aan of uit zet je bij Plugins") : m.enabled ? tx("Uitzetten") : tx("Aanzetten")}>
+                        <input type="checkbox" checked={m.enabled} disabled={m.core || !!m.plugin || busy === m.key} onChange={() => toggle(m)} />
                         <span />
                       </label>
                     </span>

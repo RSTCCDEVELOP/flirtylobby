@@ -14,7 +14,7 @@ from .models import PageLayout
 
 ID_RE = re.compile(r"^[a-z0-9]{4,16}$")
 KEY_RE = re.compile(r"^[a-z0-9_-]{1,80}$")
-HALIGN, VALIGN, GAPS, TYPES = ("left", "center", "right"), ("top", "center", "bottom"), ("sm", "md", "lg"), ("text", "image", "object")
+HALIGN, VALIGN, GAPS, TYPES = ("left", "center", "right"), ("top", "center", "bottom"), ("sm", "md", "lg"), ("text", "image", "object", "heading")
 MAX_ROWS, MAX_ITEMS = 40, 300
 
 
@@ -40,7 +40,23 @@ def clean_bg(bg):
         overlay = min(max(float(bg.get("overlay", 0.35)), 0), 0.9)
     except (TypeError, ValueError):
         overlay = 0.35
-    return {"type": bg["type"], "media": item.id, "overlay": round(overlay, 2)}
+    out = {"type": bg["type"], "media": item.id, "overlay": round(overlay, 2)}
+    hv = bg.get("hover")
+    if isinstance(hv, dict) and hv.get("mode") in ("opacity", "swap"):
+        try:
+            op = int(min(max(float(hv.get("opacity", 60)), 0), 100))
+        except (TypeError, ValueError):
+            op = 60
+        h = {"mode": hv["mode"], "opacity": op}
+        if hv["mode"] == "swap":
+            other = MediaItem.objects.filter(pk=hv.get("media"), kind__in=("image", "video")).first()
+            if not other:
+                h = None
+            else:
+                h.update({"type": other.kind, "media": other.id})
+        if h:
+            out["hover"] = h
+    return out
 
 
 def with_urls(data):
@@ -51,7 +67,14 @@ def with_urls(data):
 
     def one(bg):
         item = MediaItem.objects.filter(pk=(bg or {}).get("media")).first() if bg else None
-        return {**bg, "url": default_storage.url(item.key)} if item else {}
+        if not item:
+            return {}
+        out_bg = {**bg, "url": default_storage.url(item.key)}
+        hv = bg.get("hover")
+        other = MediaItem.objects.filter(pk=hv.get("media")).first() if isinstance(hv, dict) and hv.get("media") else None
+        if other:
+            out_bg["hover"] = {**hv, "url": default_storage.url(other.key)}
+        return out_bg
 
     out = {**data, "rows": [{**r, "bg": one(r.get("bg"))} for r in data.get("rows", [])]}
     out["bg"] = one(data.get("bg"))
@@ -116,6 +139,13 @@ def _item_style(st):
         out["font"] = st["font"]
     if st.get("align") in ("left", "center", "right"):
         out["align"] = st["align"]
+    if str(st.get("weight") or "") in ("400", "500", "600", "700", "800"):
+        out["weight"] = str(st["weight"])  # a heading: how bold
+    try:
+        if st.get("mb") not in (None, ""):
+            out["mb"] = round(min(max(float(st["mb"]), 0), 6), 2)  # a heading: space below it (rem)
+    except (TypeError, ValueError):
+        pass
     if re.fullmatch(r"[1-9][0-9]{0,3}(px|%)", str(st.get("w") or "")):
         out["w"] = str(st["w"])
     for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 200)):
@@ -132,19 +162,45 @@ def _row_extra(r):
     out = {}
     if r.get("hero"):
         out["hero"] = str(r["hero"])[:20]
-        if r.get("h_mode") in HEIGHTS:
-            out["h_mode"] = r["h_mode"]
+    if r.get("h_mode") in HEIGHTS:  # the height: any block can have one (not only a hero)
+        out["h_mode"] = r["h_mode"]
+        try:
+            out["h"] = min(max(int(r.get("h") or 0), 10 if r["h_mode"] == "pct" else 80), 100 if r["h_mode"] == "pct" else 1600) if r["h_mode"] != "full" else 100
+        except (TypeError, ValueError):
+            out["h"] = 50 if r["h_mode"] == "pct" else 400
+    pd = r.get("padding")
+    if isinstance(pd, dict):  # the space inside the block per side, in pixels: top (t), right (r), bottom (b), left (l)
+        clean = {}
+        for k in ("t", "r", "b", "l"):
             try:
-                out["h"] = min(max(int(r.get("h") or 0), 10 if r["h_mode"] == "pct" else 80), 100 if r["h_mode"] == "pct" else 1600) if r["h_mode"] != "full" else 100
+                if pd.get(k) is not None and pd.get(k) != "":
+                    clean[k] = min(max(int(pd[k]), 0), 400)
             except (TypeError, ValueError):
-                out["h"] = 50 if r["h_mode"] == "pct" else 400
+                pass
+        if clean:
+            out["padding"] = clean
     if r.get("pad") in PADS:
         out["pad"] = r["pad"]
     if r.get("fx") in ("none", "fade", "up", "down", "zoom", "left", "right", "blur"):
         out["fx"] = r["fx"]  # the scroll effect of this block ("" = what the theme says)
     if r.get("screen"):
         out["screen"] = True  # the width is a share of the whole browser window, not of the page column
-    if r.get("hero") and r.get("v") in ("top", "center", "bottom"):
+    if r.get("top") in ("touch", "prev"):
+        out["top"] = r["top"]  # touch: directly against the header (no space above it); prev: directly against the block above it
+    try:
+        if r.get("mt") not in (None, ""):
+            out["mt"] = min(max(int(r["mt"]), 0), 300)  # the space between this block and the one above it, in pixels
+    except (TypeError, ValueError):
+        pass
+    title = str(r.get("title") or "").strip()[:80]
+    if title:
+        out["title"] = title  # the name of the block (shown in edit mode and usable as a link)
+    anchor = re.sub(r"[^a-z0-9-]+", "-", str(r.get("anchor") or "").lower()).strip("-")[:40]
+    if anchor:
+        out["anchor"] = anchor  # the block can be opened with page-address#anchor
+    if r.get("sq_mobile"):
+        out["sq_mobile"] = True  # no rounded corners on a phone (the corners are square there)
+    if r.get("v") in ("top", "center", "bottom"):
         out["v"] = r["v"]
     if _style(r.get("style")):
         out["style"] = _style(r["style"])
@@ -197,13 +253,22 @@ def clean(data):
                 if t not in TYPES:
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
-                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image") and _item_style(it.get("style")) else {})})
+                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading") and _item_style(it.get("style")) else {})})
             cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})
         out.append({"bg": clean_bg(r.get("bg")), "id": uid(r.get("id")), "cols": cols, "width": _pct(r.get("width"), 30, 100, "default"), "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells, **_row_extra(r)})
     if n_items > MAX_ITEMS:
         raise ValueError("Te veel onderdelen op één pagina.")
+    seen = set()
+    for row in out:  # an anchor is used once on a page
+        a = row.get("anchor")
+        if a:
+            base, n = a, 2
+            while a in seen:
+                a, n = f"{base}-{n}", n + 1
+            seen.add(a)
+            row["anchor"] = a
     return {"rows": out, "bg": clean_bg((data or {}).get("bg")), "preset": (data or {}).get("preset") if (data or {}).get("preset") in PRESETS else "", **({"hero_off": True} if (data or {}).get("hero_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
 
 

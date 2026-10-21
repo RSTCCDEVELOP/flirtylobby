@@ -159,7 +159,7 @@ function FaqSettings({ canEdit }) {
       <div className="card form">
         <strong>{tx("FAQ als pagina")}</strong>
         <div className="loader-tiles" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
-          {[["public", "Publiek", "Iedereen ziet de FAQ op /faq."], ["private", "Privé", "Alleen ingelogde gebruikers, op /dashboard/faq."]].map(([k, l, h]) => (
+          {[["public", "Publiek", "Iedereen ziet de FAQ op /faq."], ["private", "Dashboard", "Alleen ingelogde gebruikers, op /dashboard/faq."]].map(([k, l, h]) => (
             <button key={k} type="button" className={`loader-tile${cfg.page_scope === k ? " on" : ""}`} disabled={!canEdit} onClick={() => save({ page_scope: k })} aria-pressed={cfg.page_scope === k} style={{ alignItems: "flex-start", textAlign: "left" }}>
               <strong>{tx(l)}</strong><small className="muted">{tx(h)}</small>
             </button>

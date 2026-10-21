@@ -39,7 +39,7 @@ def _bg(p):
 def _out(p):
     return {"background": _bg(p), "id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
             "scope": p.scope, "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
-            "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "access": _access(p), "editable": p.kind == "content" or p.key in service.EDITABLE}
+            "setup": p.setup or {}, "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "access": _access(p), "editable": p.kind == "content" or p.key in service.EDITABLE}
 
 
 def _access(p):
@@ -170,7 +170,11 @@ def pages(request):
     scope = "private" if request.query_params.get("scope") == "private" else "public"
     from apps.integrations import ai
 
-    return Response({"pages": [_out(p) for p in Page.objects.filter(scope=scope)], "can_manage": level(request.user, "pages") >= 3, "ai": ai.available()})
+    from . import standard
+
+    std = standard._standard_texts()
+    rows = [{**_out(p), "resettable": standard.has_default(p.key), "modified": standard.modified(p, std)} for p in Page.objects.filter(scope=scope)]  # a standard page that was changed can go back to its first setup
+    return Response({"pages": rows, "can_manage": level(request.user, "pages") >= 3, "ai": ai.available()})
 
 
 @api_view(["POST"])
@@ -183,13 +187,16 @@ def translate(request):
     from apps.core.models import Language
     from apps.integrations import ai
 
+    default = Language.objects.filter(is_default=True).values_list("code", flat=True).first() or "nl"
+    if request.data.get("list"):  # every language of the system (also the ones that are off), so the screen can translate them one by one with a progress bar
+        return Response({"default": default, "languages": [{"code": l.code, "name": l.name} for l in Language.objects.all() if l.code != default]})
     text = str(request.data.get("text") or "").strip()[:80]
     if not text:
         return bad("Vul eerst de naam in.")
     if not ai.available():
         return bad("Claude is niet gekoppeld. Vul de namen zelf in of koppel Claude bij Admin → API keys.")
-    default = Language.objects.filter(is_default=True).values_list("code", flat=True).first() or "nl"
-    todo = [(l.code, l.name) for l in Language.objects.all() if l.code != default]
+    codes = request.data.get("codes")  # only these languages (default: all of them)
+    todo = [(l.code, l.name) for l in Language.objects.all() if l.code != default and (not isinstance(codes, list) or l.code in codes)]
     system = ("You translate the short name of a website menu item (one or two words). Keep it short, natural and neutral. "
               "Answer with ONE JSON object only, no text around it: {\"titles\": {code: translation}} with an entry for every requested language code.")
     prompt = json.dumps({"text": text, "source_language": default, "languages": [{"code": c, "name": n} for c, n in todo]}, ensure_ascii=False)
@@ -265,6 +272,14 @@ def page(request, pk):
                 return bad(err)
     if "access" in d:
         p.access = _clean_access(d["access"])
+    if "setup" in d:  # the setup of this page: its own theme, header and footer on or off (empty = follow the theme in use)
+        from apps.core import themepacks
+
+        raw = d["setup"] if isinstance(d["setup"], dict) else {}
+        key = str(raw.get("theme") or "")
+        if key and not themepacks.manifest_of(key):
+            return bad("Dit thema bestaat niet.")
+        p.setup = {k: v for k, v in {"theme": key, "header": raw.get("header") if raw.get("header") in ("show", "hide") else "", "footer": raw.get("footer") if raw.get("footer") in ("show", "hide") else ""}.items() if v}
     if "cta" in d:
         p.cta = bool(d["cta"])
     if "label_link" in d:
@@ -319,7 +334,7 @@ def menu_settings(request):
 @api_view(["GET"])
 @permission_classes([has_level("pages", "edit"), module_required("pages")])
 def export_page(request, pk):
-    """The page with its blocks, linked content and pictures as a zip (a copy is also kept in site/public/<key> or site/private/<key>)."""
+    """The page with its blocks, linked content and pictures as a zip (a copy is also kept in site/pages/<key>.zip)."""
     from django.http import HttpResponse
 
     from . import portable
@@ -340,16 +355,98 @@ def export_page(request, pk):
 @permission_classes([has_level("pages", "manage"), module_required("pages")])
 @parser_classes([MultiPartParser, FormParser])
 def import_page(request):
-    """A page from a zip that was made with the export. The page uses the theme of this website."""
+    """A page (or several, selected_pages.zip) from a zip that was made with the export. inspect=1: only say what is in it (and which pages exist already).
+    mode: copy | replace | skip for pages that exist already; menus=1: also place them in the menu as the package says."""
     from . import portable
 
     f = request.FILES.get("file")
     if not f or not f.name.lower().endswith(".zip"):
         return bad("Kies een zipbestand met een pagina.")
     try:
-        out = portable.import_zip(f.read(), request.user, request.data.get("scope"))
+        if str(request.data.get("inspect") or "") in ("1", "true"):
+            return Response(portable.inspect(f.read()))
+        out = portable.import_any(f.read(), request.user, request.data.get("scope"), str(request.data.get("mode") or "copy"), str(request.data.get("menus") or "") in ("1", "true"))
     except portable.PortableError as e:
         return bad(str(e))
-    logger.info("Page '%s' imported by %s", out["page"].key, request.user.email)
-    return Response({"page": _out(out["page"]), "notes": out["notes"], "media": out["media"], "blocks": out["blocks"]}, status=status.HTTP_201_CREATED)
+    logger.info("Pages imported by %s (%s replaced, %s skipped)", request.user.email, len(out["replaced"]), len(out["skipped"]))
+    return Response({"page": _out(out["page"]) if out["page"] else None, "notes": out["notes"], "warnings": out["warnings"], "media": out["media"], "blocks": out["blocks"], "pages": out["pages"],
+                     "replaced": out["replaced"], "skipped": out["skipped"], "menu_items": out["menu_items"]}, status=status.HTTP_201_CREATED)
 
+
+@api_view(["POST"])
+@permission_classes([has_level("pages", "edit"), module_required("pages")])
+def export_pages(request):
+    """A package (zip) for every selected page, written to site/pages/<key>.zip: {"ids": [...]}."""
+    from . import portable
+
+    ids = [int(i) for i in (request.data.get("ids") or []) if str(i).isdigit()][:200]
+    pages = list(Page.objects.filter(pk__in=ids, kind="content"))
+    if not pages:
+        return bad("Kies eerst één of meer eigen pagina's.")
+    done, failed, bundle = portable.export_many(pages, bool(request.data.get("bundle")), bool(request.data.get("menus")))
+    return Response({"folder": str(portable.pages_dir()), "files": [{"key": k, "file": f} for k, f in done.items()], "failed": failed, "bundle": bundle})
+
+
+
+@api_view(["POST"])
+@permission_classes([has_level("pages", "edit"), module_required("pages")])
+def translate_page(request, pk):
+    """Claude makes or updates all texts of this page and its SEO in every language: {"list": true} gives the languages, {"lang": "de"} does one language."""
+    from apps.integrations import ai
+
+    from . import ai_texts
+
+    p = Page.objects.filter(pk=pk).first()
+    if not p:
+        return bad("Niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if request.data.get("list"):
+        default, langs = ai_texts.languages()
+        src = ai_texts.source_blocks(p)[0]
+        langs = [l for l in [{"code": default, "name": default}, *langs] if l["code"] != src] + [{"code": src, "name": src}]  # the source language only gets its SEO (its texts are the source)
+        return Response({"default": default, "languages": langs, "texts": len(ai_texts.source_blocks(p)[1]), "source": ai_texts.source_blocks(p)[0], "ai": ai.available()})
+    if not ai.available():
+        return bad("Claude is niet gekoppeld. Koppel Claude bij Admin → API keys.")
+    code = str(request.data.get("lang") or "")
+    seo_ok = modules.enabled("seo") and level(request.user, "seo") >= 2
+    try:
+        return Response(ai_texts.run(p, code, seo=seo_ok))
+    except ai_texts.AiTextError as e:
+        return bad(str(e))
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def page_setup(request, key):
+    """Public: how a page is built: with a header and a footer or not, and its own theme (css limited to the page). What the page does not set follows the theme in use."""
+    from apps.core import theme, themepacks
+    from apps.core.models import SiteSettings
+    from apps.core.views import _theme_payload
+
+    p = Page.objects.filter(key=key).first()
+    setup = (p.setup if p else None) or {}
+    active = theme.merged(SiteSettings.load().theme if modules.enabled("theme") else {})
+    chosen = themepacks.manifest_of(setup.get("theme") or "") if setup.get("theme") else None
+    values = theme.merged(chosen["values"]) if chosen else active
+    out = {"header": (setup.get("header") or values.get("page_header") or "show") != "hide", "footer": (setup.get("footer") or values.get("page_footer") or "show") != "hide", "theme": None, "css": "", "fonts_url": ""}
+    if chosen and modules.enabled("theme"):
+        payload = _theme_payload(values)
+        css = payload["css"].replace('html:root,html:root[data-theme="light"]', ".page-scope").replace('html:root[data-theme="dark"]', 'html[data-theme="dark"] .page-scope').replace("html:root", ".page-scope")
+        out.update({"theme": setup["theme"], "css": css, "fonts_url": payload.get("fonts_url") or ""})
+    return Response(out)
+
+
+@api_view(["POST"])
+@permission_classes([has_level("pages", "manage"), module_required("pages")])
+def reset_page(request, pk):
+    """A standard page goes back to its first setup: its name, menu place, rights, background, blocks and texts are what the system made."""
+    from . import standard
+
+    p = Page.objects.filter(pk=pk).first()
+    if not p:
+        return bad("Niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if not standard.has_default(p.key):
+        return bad("Deze pagina heeft geen standaard om naar terug te gaan.")
+    standard.reset(p)
+    logger.info("Page '%s' reset to its standard by %s", p.key, request.user.email)
+    return Response({**_out(p), "resettable": True, "modified": False})

@@ -62,16 +62,37 @@ function PopupMock({ p }) {
   return <div className={`lay-screen ${p.kind}`}><span className="lay-bar" /><span className="lay-lines" />{body}</div>;
 }
 
-function PageMock({ type, logo, v = {} }) {
+function PageMock({ type, logo, v = {}, scroll = false }) { // scroll: the page is shown scrolled down (does the header stay at the top?)
   const Logo = () => (logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="lay-logo-img" /> : <i className="lay-logo" />);
-  const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mfl": v.footer_layout || "simple", "data-mft": v.footer_tone || "page", "data-mblocks": v.block_style || "card" };
+  const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mfl": v.footer_layout || "simple", "data-mft": v.footer_tone || "page", "data-mfbrand": v.footer_brand || "none", "data-mfsocial": v.footer_social || "show", "data-mfmeta": v.footer_meta || "show", "data-mfsize": v.footer_size || "normal", "data-mblocks": v.block_style || "card" };
   if (type === "site") {
+    const noHead = v.page_header === "hide", noFoot = v.page_footer === "hide";
+    const top = <div className="lay-top"><Logo /><span className="lay-menu"><b /><b /><b /></span><span className="lay-burger"><b /><b /><b /></span><span className="lay-actions"><i /><i /></span></div>;
+    if (scroll) { // "Header blijft bovenaan staan": scrolled down, with or without the header at the top
+      const stays = (v.header_sticky || "yes") !== "no";
+      return (
+        <div className="lay-page site scrolled" {...attrs}>
+          {stays && top}
+          <div className="lay-cards"><i /><i /><i /></div>
+          <div className="lay-cards"><i /><i /><i /></div>
+          <span className="lay-scrollhint">{stays ? "↓ header blijft" : "↓ header scrolt weg"}</span>
+        </div>
+      );
+    }
     return (
       <div className="lay-page site" {...attrs}>
-        <div className="lay-top"><Logo /><span className="lay-menu"><b /><b /><b /></span><span className="lay-burger"><b /><b /><b /></span><span className="lay-actions"><i /><i /></span></div>
+        {!noHead && top}
         <div className="lay-hero"><strong>{tx("Welkom")}</strong><span className="lay-btn primary">{tx("Meedoen")}</span></div>
         <div className="lay-cards"><i /><i /><i /></div>
-        <div className="lay-foot"><span><b /><b /></span><span><b /><b /></span><span><b /><b /><b /></span></div>
+        {!noFoot && <div className="lay-foot"><span className="lay-fbrand"><i /><b /></span><span className="lay-flinks"><b /><b /></span><span className="lay-fsocial"><b /><b /></span><span className="lay-fmeta"><b /><b /><b /></span><span className="lay-fbar"><b /><b /></span></div>}
+      </div>
+    );
+  }
+  if (type === "foot") { // the footer in the picture: a small header and a strip of content, then the footer itself (it takes the room of the page)
+    return (
+      <div className="lay-page site footdemo" {...attrs}>
+        <div className="lay-strip"><b /><b /></div>
+        <div className="lay-foot"><span className="lay-fbrand"><i /><b /></span><span className="lay-flinks"><b /><b /><b /></span><span className="lay-fsocial"><b /><b /><b /></span><span className="lay-fmeta"><b /><b /><b /></span><span className="lay-fbar"><b /><b /></span></div>
       </div>
     );
   }
@@ -88,6 +109,17 @@ function PageMock({ type, logo, v = {} }) {
       <div className="lay-top"><Logo /></div>
       <div className="lay-form"><strong>{tx("Inloggen")}</strong><span className="lay-input" /><span className="lay-input" /><span className="lay-btn primary">{tx("Inloggen")}</span></div>
     </div>
+  );
+}
+
+// A switch: on this page-wide default (a page can set its own at Pagina-instellingen -> Pagina-opzet)
+function DefaultSwitch({ on, onChange, disabled, label, hint }) {
+  return (
+    <label className="packlay-row packlay-card" style={{ opacity: disabled ? .6 : 1 }}>
+      <span className="switch"><input type="checkbox" checked={on} disabled={disabled} onChange={(e) => onChange(e.target.checked)} /><span /></span>
+      <span className="packlay-text"><strong>{label}</strong><small className="muted">{hint}</small></span>
+      <span className="packlay-state muted">{on ? tx("Aan") : tx("Uit")}</span>
+    </label>
   );
 }
 
@@ -120,7 +152,7 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
   return (
     <div className="stack-sm">
       <p className="muted" style={{ margin: 0 }}>{tx("Zo zien pagina's en popups eruit met het thema dat nu in gebruik is, op een telefoon, een iPad en een computer. De afronding, kleuren, breedte en schaduw van popups pas je aan bij Vormgeving.")}</p>
-      {!draft && <Tabs value={section} onChange={setSection} tabs={[["templates", "Pagina-indeling"], ["style", "Tabbladen en vensters"], ["pages", "Voorbeeld: pagina's"], ["popups", "Voorbeeld: popups"]]} />}
+      {!draft && <Tabs value={section} onChange={setSection} tabs={[["templates", "Pagina-indeling"], ["header", "Header"], ["footer", "Footer"], ["style", "Tabbladen en vensters"], ["pages", "Voorbeeld: pagina's"], ["popups", "Voorbeeld: popups"]]} />}
       {(sec === "pages" || sec === "popups") && <div className="row" style={{ justifyContent: "flex-start" }}>
         {DEV.map(([k, l, h]) => <button key={k} type="button" className={`btn ${dev === k ? "primary" : ""}`} title={tx(h)} onClick={() => setDev(k)}>{tx(l)}</button>)}
       </div>}
@@ -145,7 +177,7 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
         <>
           <h2 style={{ margin: "1rem 0 0" }}>{tx("Pagina-indeling van de website")}</h2>
           <p className="muted" style={{ margin: 0 }}>{tx("Kies de indeling van header, menu, footer en blokken. De voorbeelden hieronder passen direct mee en de website volgt na het kiezen.")}</p>
-          {[["Header", ["header_layout", "header_style", "header_sticky"]], ["Menu", ["menu_style"]], ["Footer", ["footer_layout", "footer_tone"]], ["Blokken en kaarten", ["block_style"]]].map(([title, keys]) => (
+          {[["Header", ["header_layout", "header_style", "header_sticky"]], ["Menu", ["menu_style"]], ["Header en footer op pagina's", ["page_header", "page_footer"]], ["Blokken en kaarten", ["block_style"]]].map(([title, keys]) => (
             <div key={title} className="stack-sm">
               <strong>{tx(title)}</strong>
               {look.fields.filter((f) => keys.includes(f.key)).map((f) => (
@@ -154,7 +186,7 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
                   <div className="preset-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
                     {f.choices.map((c) => (
                       <button key={c.value} type="button" disabled={L < 2} className={`preset opt ${look.values[f.key] === c.value ? "active" : ""}`} onClick={() => pick(f.key, c.value)}>
-                        {f.key !== "header_sticky" && <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" v={{ ...look.values, [f.key]: c.value }} /></span>}
+                        <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" scroll={f.key === "header_sticky"} v={{ ...look.values, [f.key]: c.value }} /></span>
                         <strong style={{ fontSize: ".85rem" }}>{tx(c.label)}</strong>
                       </button>
                     ))}
@@ -171,6 +203,57 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
             ))}
           </div>
 
+        </>
+      )}
+
+      {!draft && look && sec === "header" && (
+        <>
+          <h2 style={{ margin: "1rem 0 0" }}>{tx("Header van de website")}</h2>
+          <DefaultSwitch on={(look.values.page_header || "show") !== "hide"} disabled={L < 2} onChange={(v) => pick("page_header", v ? "show" : "hide")} label={tx("Header standaard tonen")} hint={tx("Voor alle pagina's van dit thema. Per pagina zet je hem aan of uit bij Pagina-instellingen → Pagina-opzet.")} />
+          {[["Indeling", ["header_layout"]], ["Uiterlijk", ["header_style"]], ["Gedrag bij scrollen", ["header_sticky"]], ["Menu", ["menu_style"]]].map(([title, keys]) => (
+            <div key={title} className="stack-sm">
+              <strong>{tx(title)}</strong>
+              {look.fields.filter((f) => keys.includes(f.key)).map((f) => (
+                <div key={f.key} className="stack-sm" style={{ gap: ".4rem" }}>
+                  <small className="muted">{tx(f.label)}</small>
+                  <div className="preset-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
+                    {f.choices.map((c) => (
+                      <button key={c.value} type="button" disabled={L < 2} className={`preset opt ${look.values[f.key] === c.value ? "active" : ""}`} onClick={() => pick(f.key, c.value)}>
+                        <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" scroll={f.key === "header_sticky"} v={{ ...look.values, [f.key]: c.value }} /></span>
+                        <strong style={{ fontSize: ".85rem" }}>{tx(c.label)}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </>
+      )}
+
+      {!draft && look && sec === "footer" && (
+        <>
+          <h2 style={{ margin: "1rem 0 0" }}>{tx("Footer van de website")}</h2>
+          <DefaultSwitch on={(look.values.page_footer || "show") !== "hide"} disabled={L < 2} onChange={(v) => pick("page_footer", v ? "show" : "hide")} label={tx("Footer standaard tonen")} hint={tx("Voor alle pagina's van dit thema. Per pagina zet je hem aan of uit bij Pagina-instellingen → Pagina-opzet.")} />
+          <p className="muted" style={{ margin: 0 }}>{tx("Kies de indeling van de footer: acht varianten, met of zonder logo en naam, sociale media en bedrijfsgegevens. De voorbeelden passen direct mee en de website volgt na het kiezen. De teksten en gegevens zelf stel je in bij Admin → Systeem → Basisgegevens → Voettekst en sociale media.")}</p>
+          {[["Indeling", ["footer_layout"]], ["Kleur", ["footer_tone"]], ["Logo en naam", ["footer_brand"]], ["Onderdelen", ["footer_social", "footer_meta"]], ["Ruimte", ["footer_size"]]].map(([title, keys]) => (
+            <div key={title} className="stack-sm">
+              <strong>{tx(title)}</strong>
+              {look.fields.filter((f) => keys.includes(f.key)).map((f) => (
+                <div key={f.key} className="stack-sm" style={{ gap: ".4rem" }}>
+                  {keys.length > 1 && <small className="muted">{tx(f.label)}</small>}
+                  <div className="preset-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
+                    {f.choices.map((c) => (
+                      <button key={c.value} type="button" disabled={L < 2} className={`preset opt ${look.values[f.key] === c.value ? "active" : ""}`} onClick={() => pick(f.key, c.value)}>
+                        <span className="lay-frame opt" aria-hidden="true"><PageMock type="foot" v={{ ...look.values, [f.key]: c.value }} /></span>
+                        <strong style={{ fontSize: ".85rem" }}>{tx(c.label)}</strong>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
         </>
       )}
 

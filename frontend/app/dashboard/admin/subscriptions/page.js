@@ -22,7 +22,7 @@ const blank = { system_object: false, button: {}, name: "", description: "", pri
 const PAGES = [{ key: "subscriptions", title: "Abonnementen", path: "/abonnementen", description: "Waar bezoekers een abonnement kiezen: openingstekst, uitleg en de abonnementen." }];
 const LINKS = [
   { href: "/dashboard/subscriptions", title: "Mijn abonnementen (voor leden)", description: "Het dashboard van een lid: lopende abonnementen, verlengen en opzeggen." },
-  { href: "/dashboard/admin/orders", title: "Orders", description: "De orders die bij abonnementen horen." },
+  { href: "/dashboard/admin/plugins/orders", title: "Orders", description: "De orders die bij abonnementen horen." },
 ];
 
 export default function SubscriptionsAdmin() {

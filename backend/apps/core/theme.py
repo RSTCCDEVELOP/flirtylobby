@@ -129,7 +129,23 @@ FOOTER_LAYOUTS = [
     {"value": "columns", "label": "Kolommen: links, sociaal en gegevens", "css": ""},
     {"value": "split", "label": "Verdeeld: gegevens links, links rechts", "css": ""},
     {"value": "minimal", "label": "Minimaal: één regel", "css": ""},
+    {"value": "brand", "label": "Merk links: logo en tekst, de rest in kolommen", "css": ""},
+    {"value": "stack", "label": "Gecentreerd met merk bovenaan", "css": ""},
+    {"value": "bar", "label": "Twee lagen: kolommen en een balk onderaan", "css": ""},
+    {"value": "mega", "label": "Groot: merk en tekst breed, daaronder drie kolommen", "css": ""},
 ]
+FOOTER_BRANDS = [
+    {"value": "none", "label": "Geen (alleen waar de indeling het vraagt)", "css": ""},
+    {"value": "name", "label": "Naam van de website", "css": ""},
+    {"value": "logo", "label": "Logo", "css": ""},
+    {"value": "both", "label": "Logo en naam", "css": ""},
+]
+FOOTER_SIZES = [
+    {"value": "compact", "label": "Compact", "css": ""},
+    {"value": "normal", "label": "Normaal", "css": ""},
+    {"value": "roomy", "label": "Ruim", "css": ""},
+]
+SHOWHIDE = [{"value": "show", "label": "Tonen", "css": ""}, {"value": "hide", "label": "Verbergen", "css": ""}]
 FOOTER_TONES = [
     {"value": "page", "label": "Zelfde als de pagina", "css": ""},
     {"value": "card", "label": "Vlak met lijn erboven", "css": ""},
@@ -221,6 +237,12 @@ SCHEMA = [
         choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
         choice("footer_layout", "Footer: indeling", "simple", None, FOOTER_LAYOUTS),
         choice("footer_tone", "Footer: kleur", "page", None, FOOTER_TONES),
+        choice("footer_brand", "Footer: logo en naam", "none", None, FOOTER_BRANDS),
+        choice("footer_social", "Footer: sociale media", "show", None, SHOWHIDE),
+        choice("footer_meta", "Footer: bedrijfsgegevens", "show", None, SHOWHIDE),
+        choice("footer_size", "Footer: ruimte", "normal", None, FOOTER_SIZES),
+        choice("page_header", "Header op pagina's (standaard)", "show", None, SHOWHIDE),
+        choice("page_footer", "Footer op pagina's (standaard)", "show", None, SHOWHIDE),
         choice("block_style", "Blokken en kaarten op de website", "card", None, BLOCK_STYLES),
         number("block_gap", "Ruimte tussen blokken", 1.25, "--block-gap", "rem", 0.5, 3, 0.25),
         number("content_w", "Breedte van de inhoud van pagina's", 1100, "--content-w", "px", 720, 1600, 20),

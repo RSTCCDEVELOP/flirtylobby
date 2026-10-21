@@ -27,3 +27,7 @@ class CoreConfig(AppConfig):
 
         if views.on_license_payment not in sandbox.HOOKS:
             sandbox.HOOKS.append(views.on_license_payment)  # a paid licence renewal
+        from apps import commerce
+
+        if commerce.payment_changed not in sandbox.HOOKS:
+            sandbox.HOOKS.append(commerce.payment_changed)  # a payment changed: the plugin Orders updates its order

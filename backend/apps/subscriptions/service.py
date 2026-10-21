@@ -1,7 +1,7 @@
 """
 Subscriptions and donations.
 
-  Plan (what is sold, price, once or every period, what it gives)  ->  Subscription (one member's) -> Order per period (apps/shop Order, kind "subscription")
+  Plan (what is sold, price, once or every period, what it gives)  ->  Subscription (one member's) -> Order per period (plugin Orders, kind "subscription")
   DonationCampaign (a gift with a slider between min and max)      ->  Donation  ->  Order (kind "donation")
 
 What a plan or donation gives is a list of grants: {"type", "ref", "value"}. Parts of the site ask `can()` / `entitlements()`:
@@ -16,6 +16,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db import transaction
 from django.utils import timezone
 
+from apps import commerce
 from apps.core import modules
 
 from .models import ActionItem, Donation, DonationCampaign, DonorAction, Plan, Subscription, SubscriptionSettings
@@ -115,7 +116,7 @@ def save_settings(incoming):
 def clean_grants(raw):
     """Validate the grants an admin entered; raises ValueError with a readable text."""
     from apps.pages.models import Page
-    from apps.shop import catalog
+    from apps.commerce import catalog
 
     out, seen = [], set()
     for g in raw or []:
@@ -143,7 +144,7 @@ def clean_grants(raw):
 
 def describe(grants):
     from apps.pages.models import Page
-    from apps.shop import catalog
+    from apps.commerce import catalog
 
     out = []
     for g in grants or []:
@@ -489,51 +490,28 @@ def locked_products():
 
 # ── orders ───────────────────────────────────────────────────────────────────
 def _order(user, kind, ref_id, title, amount, vat_rate, period_no=1, contact=None):
-    from apps.shop.models import Order, OrderItem
-    from apps.shop.service import settings as shop_settings
-
-    c = contact or {}
-    amount = money(amount)
-    vat = money(amount - amount / (1 + Decimal(str(vat_rate)) / 100)) if vat_rate else Decimal("0.00")
-    name = c.get("name") or (user.get_full_name() or user.email or user.username if user else "") or "Onbekend"
-    order = Order.objects.create(
-        token=secrets.token_urlsafe(18), kind=kind, ref_id=ref_id, period_no=period_no, status="new", name=name[:150],
-        email=(c.get("email") or (user.email if user else "") or "")[:254], phone=(getattr(user, "phone", "") or "")[:30],
-        street=(c.get("street") or getattr(user, "address", "") or "-")[:200], postal_code=(getattr(user, "postal_code", "") or "-")[:20],
-        city=(getattr(user, "city", "") or "-")[:100], country=(getattr(user, "country", "") or "NL")[:2], subtotal=amount, vat_total=vat, total=amount,
-        currency=shop_settings()["currency"], user=user, shipping_method="-")
-    order.number = f"{order.created_at.year}-{order.id:05d}"
-    order.save(update_fields=["number"])
-    OrderItem.objects.create(order=order, product=None, name=title[:200], sku=kind, unit_price=amount, quantity=1, line_total=amount, vat_rate=vat_rate or 0, vat_amount=vat)
-    return order
+    """One order with one line (the Orders plugin makes it)."""
+    return commerce.need_orders().create_simple(user, kind, ref_id, title, amount, vat_rate, period_no, contact)
 
 
 def ensure_can_pay():
-    """Fail before anything is created when online payment is required but not available."""
-    from apps.sandbox import service as sandbox
-    from apps.shop.service import settings as shop_settings
-
-    if shop_settings()["pay_online"] and not sandbox.active("payments"):
+    """Fail before anything is created when orders are not possible or online payment is wanted but not available."""
+    if not commerce.orders():
+        raise SubError(commerce.NO_ORDERS)
+    if commerce.pay_online_wanted() and not commerce.can_pay_online():
         raise SubError("Online betalen is nog niet beschikbaar.")
 
 
 def start_payment(order, return_base=""):
-    """Online (sandbox) payment, or pay by invoice. Returns the checkout path or None."""
-    from apps.sandbox import service as sandbox
-    from apps.shop.service import settings as shop_settings
-
+    """Online payment (plugin Betalen), or pay by invoice. Returns the checkout path or None."""
     if order.total <= 0:
         mark_paid(order)
         return None
-    if shop_settings()["pay_online"]:
-        if not sandbox.active("payments"):
+    if commerce.pay_online_wanted():
+        if not commerce.can_pay_online():
             raise SubError("Online betalen is nog niet beschikbaar.")
         back = f"{return_base.rstrip('/')}/bestelling/{order.number}?t={order.token}" if return_base else ""
-        payment = sandbox.create_payment(order.total, order.currency, f"Bestelling {order.number}", sandbox.payment_provider(), back)
-        order.status, order.payment_ref = "pending_payment", payment.ref
-        order.save(update_fields=["status", "payment_ref"])
-        done = sandbox.settle(payment, back or "/dashboard/subscriptions")  # automatic mode: paid at once
-        return done or f"/sandbox/checkout/{payment.ref}"
+        return commerce.payments().pay_order(order, back, back or "/dashboard/subscriptions")
     if settings()["invoice_activate"] or order.kind == "donation":
         mark_paid(order, note="op factuur")
     return None
@@ -777,9 +755,7 @@ def resume(sub):
 
 
 def open_orders(sub):
-    from apps.shop.models import Order
-
-    return Order.objects.filter(kind="subscription", ref_id=sub.pk, status__in=("new", "pending_payment"))
+    return commerce.open_orders("subscription", sub.pk)
 
 
 def process_due(user=None):
@@ -838,9 +814,7 @@ def donate(campaign, amount, user=None, name="", email="", message="", anonymous
     if campaign.step > 0 and ((amount - campaign.min_amount) / campaign.step) % 1 != 0 and amount != campaign.max_amount:
         amount = campaign.min_amount + ((amount - campaign.min_amount) / campaign.step).to_integral_value(rounding=ROUND_HALF_UP) * campaign.step
         amount = min(max(amount, campaign.min_amount), campaign.max_amount)
-    from apps.sandbox import service as sandbox
-
-    if not sandbox.active("payments"):
+    if not commerce.can_pay_online():
         raise SubError("Online betalen is nog niet beschikbaar.")  # a gift needs a real (or simulated) payment: no paying by invoice
     if not user and not email:
         raise SubError("Vul je e-mailadres in, dan sturen we een bevestiging.")
@@ -853,11 +827,12 @@ def donate(campaign, amount, user=None, name="", email="", message="", anonymous
                                 message=(message if campaign.allow_message else "")[:300], anonymous=bool(anonymous and campaign.allow_anonymous))
     path = return_path if return_path.startswith("/") and not return_path.startswith("//") else "/doneren"
     back = f"{return_base.rstrip('/')}{path}{'&' if '?' in path else '?'}bedankt={campaign.id}" if return_base else ""
-    payment = sandbox.create_payment(amount, "EUR", f"Donatie {campaign.name}", sandbox.payment_provider(), back)
+    pay = commerce.payments()
+    payment = pay.create(amount, "EUR", f"Donatie {campaign.name}", back)
     d.payment_ref = payment.ref
     d.save(update_fields=["payment_ref"])
-    done = sandbox.settle(payment, back or f"/doneren?bedankt={campaign.id}")  # automatic mode: paid at once
-    return d, done or f"/sandbox/checkout/{payment.ref}"
+    done = pay.settle(payment, back or f"/doneren?bedankt={campaign.id}")  # automatic mode: paid at once
+    return d, done or pay.checkout_path(payment)
 
 
 def raised(campaign):

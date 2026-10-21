@@ -30,6 +30,8 @@ def parse(raw):
         "schema": max(0, int(d.get("schema") or 0)) if str(d.get("schema") or 0).isdigit() else 0,
         "description": str(d.get("description") or "")[:2000], "author": str(d.get("author") or "")[:100],
         "python": _file(d.get("python"), ".py"), "web": _file(d.get("web"), ".html"), "admin_web": _file(d.get("admin_web"), ".html"), "settings_web": _file(d.get("settings_web"), ".html"), "blocks_page": str(d.get("blocks_page") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,40}", str(d.get("blocks_page") or "")) else "", "admin_links": _admin_links(d.get("admin_links")),
+        "requires": [str(x) for x in (d.get("requires") or []) if isinstance(x, str) and NAME_RE.match(str(x))][:10],  # plugins that must be installed and on for this one to run
+        "admin_entries": _admin_entries(d.get("admin_entries")),
         "permissions": [str(x)[:60] for x in (d.get("permissions") or []) if isinstance(x, str)][:30],
         "events": [str(x)[:40] for x in (d.get("events") or []) if isinstance(x, str)][:30],
         "section": _section(d.get("section")), "menu": None, "public_pages": _public_pages(d.get("public_pages")), "site_link": _site_link(d.get("site_link")), "provides": [x for x in (d.get("provides") or []) if x in PROVIDES],
@@ -51,7 +53,7 @@ def parse(raw):
     return out
 
 
-PROVIDES = ("catalog", "parts")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda)
+PROVIDES = ("catalog", "parts", "orders", "payments")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda)
 
 
 def _public_pages(v):
@@ -65,6 +67,24 @@ def _public_pages(v):
             raise ManifestError(f"Ongeldig of gereserveerd adres in public_pages: {path or '?'}")
         out.append({"path": path, "file": _file(x.get("file"), ".html"), "title": str(x.get("title") or "")[:80], "noindex": bool(x.get("noindex")), "page": str(x.get("page") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,40}", str(x.get("page") or "")) else "", "description": str(x.get("description") or "")[:200]})
     return out[:20]
+
+
+def _admin_entries(v):
+    """Own places in the admin menu and on the tile page of the plugin's section: [{"label": "Producten", "tab": "products"}] opens the admin page of the plugin at that tab;
+    [{"label": "Bestellingen", "href": "/dashboard/admin/plugins/orders"}] opens another admin page."""
+    out = []
+    for x in v or []:
+        if not isinstance(x, dict) or not str(x.get("label") or "").strip():
+            continue
+        e = {"label": str(x["label"])[:40]}
+        if re.fullmatch(r"[a-z][a-z0-9-]{0,24}", str(x.get("tab") or "")):
+            e["tab"] = x["tab"]
+        elif re.fullmatch(r"/dashboard/[a-z0-9/_-]{1,80}", str(x.get("href") or "")):
+            e["href"] = x["href"]
+        else:
+            continue
+        out.append(e)
+    return out[:12]
 
 
 def _admin_links(v):

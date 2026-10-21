@@ -29,7 +29,7 @@ def geocode(city, country):
     else:
         q = urllib.parse.urlencode({"city": city, "countrycodes": country.lower(), "format": "json", "limit": 1})
         contact = service.get()["discover"]["geocoder_contact"] or "unknown"
-        req = urllib.request.Request(f"https://nominatim.openstreetmap.org/search?{q}", headers={"User-Agent": f"flirtylobby/1.0 ({contact})"})
+        req = urllib.request.Request(f"https://nominatim.openstreetmap.org/search?{q}", headers={"User-Agent": f"easy2edit/1.0 ({contact})"})
         try:
             with urllib.request.urlopen(req, timeout=5) as r:
                 data = json.load(r)

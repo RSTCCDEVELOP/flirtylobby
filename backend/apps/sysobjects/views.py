@@ -24,14 +24,18 @@ def _row(o, public=False):
         it = next((i for i in installer.content_items(src) or [] if i["name"] == o.ref_key), None)
         if not it or not it["object"]:
             return None
-        data, names, button = {"name": src.name, "item": it["name"], "title": it["title"], "enabled": src.enabled and it["enabled"], "public": it["public"]}, {"": it["title"], **it["meta"]["titles"]}, {}
+        data, names, button = {"name": src.name, "plugin_title": src.title, "admin_web": src.manifest.get("admin_web", ""), "item": it["name"], "title": it["title"], "enabled": src.enabled and it["enabled"], "public": it["public"]}, {"": it["title"], **it["meta"]["titles"]}, {}
     elif o.kind == "plugin_part":
         part = next((x for x in __import__("apps.plugins.installer", fromlist=["all_parts"]).all_parts(src) if x["key"] == o.ref_key), None)
         if not part:
             return None
-        data, names, button = {"name": src.name, "part": part["key"], "file": part["file"], "query": part.get("query") or {}, "title": part["title"], "enabled": src.enabled}, {"": part["title"]}, {}
+        data, names, button = {"name": src.name, "plugin_title": src.title, "admin_web": src.manifest.get("admin_web", ""), "part": part["key"], "file": part["file"], "query": part.get("query") or {}, "title": part["title"], "enabled": src.enabled}, {"": part["title"]}, {}
+    elif o.kind == "media":
+        from apps.medialib import mediaviews
+
+        data, names, button = {"name": src.name, "type": src.type, "type_label": mediaviews.LABEL[src.type], "settings": mediaviews.clean_settings(src.type, src.settings), "items": mediaviews.items(src), "enabled": True}, {"": src.name}, {}
     elif o.kind == "plugin":
-        data, names, button = {"name": src.name, "title": src.title, "enabled": src.enabled}, {"": src.title}, {}
+        data, names, button = {"name": src.name, "title": src.title, "admin_web": src.manifest.get("admin_web", ""), "enabled": src.enabled}, {"": src.title}, {}
     elif o.kind == "donation":
         data = sv._campaign_public(src, detail=False)
         names, button = src.names or {"": src.name}, src.button or {}
@@ -41,7 +45,7 @@ def _row(o, public=False):
     row = {"id": o.id, "slug": o.slug, "kind": o.kind, "enabled": o.enabled, "names": names, "button": button, "data": data}
     if not public:
         row.update(kind_label=dict(SystemObject.KINDS)[o.kind], used_on=service.usage(o.slug), source_id=o.ref_id,
-                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions"}.get(o.kind, f"/dashboard/admin/plugins/{src.name}"))
+                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media"}.get(o.kind, f"/dashboard/admin/plugins/{src.name}"))
     return row
 
 
@@ -71,7 +75,7 @@ def public_list(request):
 
     out = []
     for o in SystemObject.objects.filter(enabled=True):
-        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins"}[o.kind]):
+        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins", "media": "media"}[o.kind]):
             continue
         r = _row(o, public=True)
         if r and o.kind in ("plugin", "plugin_item", "plugin_part") and not r["data"]["enabled"]:

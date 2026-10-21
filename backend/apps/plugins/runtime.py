@@ -189,6 +189,51 @@ def load(p):
     return None
 
 
+def requirement_problem(p, on=None):
+    """Why the plugins this one needs are not there (text), or None. `on` = names of the plugins that are switched on."""
+    need = (p.manifest or {}).get("requires") or []
+    if not need:
+        return None
+    if on is None:
+        on = set(Plugin.objects.filter(enabled=True).values_list("name", flat=True))
+    missing = [n for n in need if n not in on]
+    if not missing:
+        return None
+    titles = {x.name: x.title for x in Plugin.objects.filter(name__in=missing)}
+    return "Deze plugin werkt alleen samen met: " + ", ".join(titles.get(n, n) for n in missing) + ". Installeer die plugin en zet hem aan."
+
+
+def requirement_chain(p):
+    """(to_switch_on, not_installed): the plugins this one needs that are installed but off (the ones they need first), and the names that are not installed at all."""
+    have = {x.name: x for x in Plugin.objects.all()}
+    order, missing = [], []
+
+    def walk(plugin):
+        for n in (plugin.manifest or {}).get("requires") or []:
+            if n not in have:
+                if n not in missing:
+                    missing.append(n)
+                continue
+            walk(have[n])
+            if not have[n].enabled and have[n] not in order:
+                order.append(have[n])
+    walk(p)
+    return order, missing
+
+
+def dependents(name, on=None):
+    """Names of the switched-on plugins that need `name` (directly or through another)."""
+    on = on if on is not None else {p.name: p for p in Plugin.objects.filter(enabled=True)}
+    out, todo = [], [name]
+    while todo:
+        cur = todo.pop()
+        for n, p in on.items():
+            if n not in out and cur in ((p.manifest or {}).get("requires") or []):
+                out.append(n)
+                todo.append(n)
+    return out
+
+
 def start_problem(p):
     """Why a plugin may not run (text), or None: it is not signed by our developer, or it is for a different generation of the system."""
     sig = signing.verify(installer.plugin_dir(p.name))
@@ -226,15 +271,46 @@ def ensure_loaded(force=False):
         on = {p.name: p for p in Plugin.objects.filter(enabled=True)}
     except Exception:  # noqa: BLE001 - database not ready (migrations)
         return
+    ok = _runnable(on)  # a plugin runs only when the plugins it needs run too
     for name in list(LOADED):
-        if name not in on:
+        if name not in ok:
             _unload(name)
-    for name, p in on.items():
+    for name in _order(ok):
+        p = ok[name]
         cur = LOADED.get(name)
         if not cur or cur.stamp != p.updated_at:
             err = load(p)
             if err:
                 Plugin.objects.filter(pk=p.pk).update(error=err, enabled=False)
+                _unload(name)
+
+
+def _runnable(on):
+    """{name: plugin} of the switched-on plugins whose requirements are (recursively) met."""
+    ok = dict(on)
+    changed = True
+    while changed:
+        changed = False
+        for n, p in list(ok.items()):
+            if any(r not in ok for r in ((p.manifest or {}).get("requires") or [])):
+                del ok[n]
+                changed = True
+    return ok
+
+
+def _order(ok):
+    """Names, the plugins that are needed first."""
+    out = []
+
+    def add(n):
+        if n in out or n not in ok:
+            return
+        for r in (ok[n].manifest or {}).get("requires") or []:
+            add(r)
+        out.append(n)
+    for n in ok:
+        add(n)
+    return out
 
 
 def emit(event, **data):

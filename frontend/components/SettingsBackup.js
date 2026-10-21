@@ -61,7 +61,7 @@ export default function SettingsBackup() {
       const a = document.createElement("a");
       const d = new Date(), p = (n) => String(n).padStart(2, "0");
       a.href = URL.createObjectURL(blob);
-      a.download = `flirtylobby-instellingen-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+      a.download = `easy2edit-instellingen-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       const failed = Object.keys(b.errors || {});

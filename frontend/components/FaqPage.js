@@ -2,6 +2,8 @@
 
 import { Busy } from "./PageLoader";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { setDeepLink } from "../lib/deeplink";
 import { api, errorText } from "../lib/api";
 import { getLanguage, tx } from "../lib/t";
 import FaqArt from "./FaqArt";
@@ -19,6 +21,8 @@ export default function FaqPage({ withTitle = true, layer: first = "user", singl
   const [open, setOpen] = useState("");
   const [group, setGroup] = useState("");
   const [layer, setLayer] = useState(first);
+  const router = useRouter();
+  const go = (g) => { setDeepLink(g); router.push(g.href); }; // to the page, the tab and the block of this setting
   useEffect(() => {
     if (!ready) return;
     api(`/help/?lang=${encodeURIComponent(getLanguage())}&layer=${layer}`).then((d) => { setData(d); setGroup(""); }).catch((e) => setErr(errorText(e)));
@@ -50,6 +54,7 @@ export default function FaqPage({ withTitle = true, layer: first = "user", singl
               <details key={i.id} className="faq-item" open={open === i.id || !!q.trim()} onToggle={(e) => { if (e.currentTarget.open) setOpen(i.id); else if (open === i.id) setOpen(""); }}>
                 <summary>{i.q}</summary>
                 <p>{i.a}</p>
+                {i.go && <button type="button" className="btn sm primary faq-go" onClick={() => go(i.go)} title={tx("Ga naar deze instelling")}>{tx("GO")} →</button>}
               </details>
             ))}
           </div>

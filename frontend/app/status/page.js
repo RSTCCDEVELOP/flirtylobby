@@ -19,7 +19,7 @@ export default async function Home() {
   const health = await getHealth();
   return (
     <main>
-      <h1>{tx("Flirtylobby")}</h1>
+      <h1>{tx("Easy2edit")}</h1>
       <h2>{tx("Server-side (SSR)")}</h2>
       <pre>{JSON.stringify(health, null, 2)}</pre>
       <h2>{tx("Client-side (browser)")}</h2>

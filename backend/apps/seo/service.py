@@ -143,7 +143,7 @@ def sitemap_urls():
     """[(path, label)] for sitemap.xml and llms.txt: the pages above plus products and public member profiles."""
     out = list(pages())
     if modules.enabled("plugin:webshop"):
-        from apps.shop import catalog
+        from apps.commerce import catalog
 
         out += catalog.sitemap()
     if modules.enabled("profiles"):

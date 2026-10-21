@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from apps.accounts.access import level
 from apps.core import modules
 
+from .go import go_of
 from .source import GROUPS, ITEMS
 
 LANGS = ("nl", "en", "de", "fr", "es", "pt", "zh", "ar")
@@ -26,6 +27,8 @@ def allowed(user, need):
     if need == "all":
         return True
     authed = bool(user and user.is_authenticated)
+    if need == "admin":  # anything of the admin menu: super admins, or a person with some access to a module
+        return authed and (user.is_staff or any(level(user, m["key"]) >= 1 for m in modules.MODULES if m.get("acl", True) and m["key"] not in ("dashboard", "modules")))
     if need == "member":
         return authed
     if need == "staff":
@@ -101,7 +104,7 @@ def help_view(request):
         if lay != layer:
             continue
         tr = t["items"].get(i, {})
-        items.append({"id": i, "group": group, "q": q_nl if lang == "nl" else pick(tr.get("q"), lang) or q_nl, "a": a_nl if lang == "nl" else pick(tr.get("a"), lang) or a_nl})
+        items.append({"id": i, "group": group, "q": q_nl if lang == "nl" else pick(tr.get("q"), lang) or q_nl, "a": a_nl if lang == "nl" else pick(tr.get("a"), lang) or a_nl, "go": go_of(i)})
     used = {i["group"] for i in items}
     groups = [{"id": g, "art": art, "title": title if lang == "nl" else pick(t["groups"].get(g), lang) or title} for g, lay, title, art in GROUPS if lay == layer and g in used]
     return Response({"layer": layer, "layers": layers, "groups": groups, "items": items})

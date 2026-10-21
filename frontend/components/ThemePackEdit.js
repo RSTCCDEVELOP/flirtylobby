@@ -38,6 +38,7 @@ export default function ThemePackEdit({ pack, onClose, onChanged }) {
   const [ai, setAi] = useState(false); // Claude linked?
   const [ask, setAsk] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [refUrl, setRefUrl] = useState(""); // a page on the web whose colours Claude uses for this theme
   const [undoStack, setUndoStack] = useState([]); // values before each change by Claude
   const [note, setNote] = useState("");
   const base = `/theme/packs/${pack.key}`;
@@ -48,8 +49,8 @@ export default function ThemePackEdit({ pack, onClose, onChanged }) {
     setAiBusy(true); setMsg(null); setNote("");
     try {
       const before = vals;
-      const r = await api(`${base}/refine/`, { method: "POST", body: { prompt: ask } });
-      setUndoStack((u) => [...u.slice(-4), before]); setVals(r.values); onChanged(r.packs); setNote(r.summary); setAsk("");
+      const r = await api(`${base}/refine/`, { method: "POST", body: { prompt: ask, url: refUrl } });
+      setUndoStack((u) => [...u.slice(-4), before]); setVals(r.values); onChanged(r.packs); setNote(r.summary); setAsk(""); setRefUrl("");
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setAiBusy(false);
   }
@@ -79,7 +80,7 @@ export default function ThemePackEdit({ pack, onClose, onChanged }) {
     <div className="overlay" onClick={onClose}>
       <div className="card modal form" style={{ maxWidth: 980 }} onClick={(e) => e.stopPropagation()}>
         <h2>{tx("Themapakket bewerken")}: {pack.name}</h2>
-        <Tabs value={tab} onChange={setTab} tabs={[["info", "Gegevens", <IconSettings key="i" />], ["style", "Instellingen", <IconPalette key="s" />], ["ai", "AI", <IconAi key="ai" />], ["preview", "Voorbeelden", <IconGrid key="v" />], ["brand", "Logo's & beeld", <IconImage key="b" />], ["home", "Homepagefoto's", <IconImage key="h" />, files?.home?.length || undefined]]} />
+        <Tabs value={tab} onChange={setTab} tabs={[["info", "Gegevens", <IconSettings key="i" />], ["layout", "Layout", <IconGrid key="l" />], ["style", "Instellingen", <IconPalette key="s" />], ["ai", "AI", <IconAi key="ai" />], ["preview", "Voorbeelden", <IconGrid key="v" />], ["brand", "Logo's & beeld", <IconImage key="b" />], ["home", "Homepagefoto's", <IconImage key="h" />, files?.home?.length || undefined]]} />
         {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
 
         {tab === "info" && (
@@ -101,6 +102,34 @@ export default function ThemePackEdit({ pack, onClose, onChanged }) {
             </div>
             <small className="muted">{pack.builtin ? tx("Dit thema hoort bij het systeem. Je aanpassingen worden naast de standaard bewaard; met Standaard herstellen zet je de oorspronkelijke waarden terug. ") : ""}{tx("De kleuren, lettertypen en vormen van een pakket pas je aan bij Vormgeving. Zet daarna met de knop hierboven de huidige website (met logo's en homepagefoto's) in dit pakket.")}</small>
           </>
+        )}
+
+        {tab === "layout" && vals && (
+          <div className="packlay">
+            <div className="packlay-head">
+              <small className="muted">{tx("De basisindeling van dit thema. Een pagina kan dit voor zichzelf anders instellen (Pagina-instellingen → Pagina-opzet).")}</small>
+              <SaveStatus auto={auto} />
+            </div>
+            <div className="packlay-card">
+              {[["page_header", "Header", "De kopbalk met logo en menu"], ["page_footer", "Footer", "De voetbalk onderaan de pagina"]].map(([k, l, h]) => (
+                <label key={k} className="packlay-row">
+                  <span className="switch"><input type="checkbox" checked={(vals[k] || "show") !== "hide"} onChange={(e) => setVals((x) => ({ ...x, [k]: e.target.checked ? "show" : "hide" }))} /><span /></span>
+                  <span className="packlay-text"><strong>{tx(l)}</strong><small className="muted">{tx(h)}</small></span>
+                  <span className="packlay-state muted">{(vals[k] || "show") !== "hide" ? tx("Aan") : tx("Uit")}</span>
+                </label>
+              ))}
+            </div>
+            <div className="packlay-card">
+              <strong>{tx("Weergave")}</strong>
+              <div className="pb-seg">
+                {[["system", "Automatisch", "volgt het apparaat van de bezoeker"], ["light", "Licht", ""], ["dark", "Donker", ""]].map(([k, l, h]) => (
+                  <button type="button" key={k} className={(vals.default_mode || "system") === k ? "on" : ""} title={tx(h)} onClick={() => setVals((x) => ({ ...x, default_mode: k }))}>{tx(l)}</button>
+                ))}
+              </div>
+              <small className="muted">{tx("Waarmee een bezoeker begint die zelf nog niets heeft gekozen. De zon- en maanknop blijft werken.")}</small>
+            </div>
+            <small className="muted">{tx("Meer over header, menu, footer en blokken staat bij Instellingen → Pagina-indeling.")}</small>
+          </div>
         )}
 
         {tab === "style" && vals && (
@@ -132,12 +161,16 @@ export default function ThemePackEdit({ pack, onClose, onChanged }) {
                 <label>{tx("Wat moet er anders?")}
                   <textarea rows={3} value={ask} maxLength={800} disabled={aiBusy} onChange={(e) => setAsk(e.target.value)} placeholder={tx("Bijvoorbeeld: maak de kleuren warmer, de hoeken rond en de popups rustiger.")} />
                 </label>
+                <label>{tx("Link naar een pagina met kleuren om te gebruiken (optioneel)")}
+                  <input type="url" value={refUrl} maxLength={500} disabled={aiBusy} onChange={(e) => setRefUrl(e.target.value)} placeholder="https://voorbeeld.nl" />
+                  <small className="muted">{tx("Claude leest de kleuren en lettertypen van die pagina en gebruikt ze voor dit thema, samen met wat je hierboven schrijft.")}</small>
+                </label>
                 <div className="row" style={{ justifyContent: "flex-start" }}>
                   {["Warmere kleuren", "Meer contrast", "Rondere vormen", "Strakker en zakelijker", "Rustiger popups", "Donkerder thema", "Andere header en footer"].map((x) => <button key={x} type="button" className="chip" disabled={aiBusy} onClick={() => setAsk(tx(x))}>{tx(x)}</button>)}
                 </div>
                 {aiBusy && <div className="imp-bar imp-wait" role="progressbar"><span /></div>}
                 <div className="row" style={{ justifyContent: "flex-start" }}>
-                  <button type="button" className="btn primary" disabled={aiBusy || ask.trim().length < 3 || !vals} onClick={improve}>{aiBusy ? tx("Claude past het thema aan…") : tx("Verbeter met AI")}</button>
+                  <button type="button" className="btn primary" disabled={aiBusy || (ask.trim().length < 3 && !refUrl.trim()) || !vals} onClick={improve}>{aiBusy ? tx("Claude past het thema aan…") : tx("Verbeter met AI")}</button>
                   {undoStack.length > 0 && <button type="button" className="btn" disabled={aiBusy} onClick={undo}>{tx("Ongedaan maken")}</button>}
                 </div>
                 {note && <div className="alert ok">{note}</div>}

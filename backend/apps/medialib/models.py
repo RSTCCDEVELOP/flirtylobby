@@ -63,3 +63,18 @@ class FileKey(models.Model):
     scope = models.CharField(max_length=40, unique=True)
     wrapped = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MediaView(models.Model):
+    """A way to show pictures on a page (photo book, carousel, photo wall, slideshow): a system object that is put on a page in edit mode."""
+
+    TYPES = [("album", "Fotoboek"), ("carousel", "Beeldcarrousel"), ("wall", "Fotomuur"), ("slideshow", "Diavoorstelling")]
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=70, unique=True)
+    type = models.CharField(max_length=12, choices=TYPES)
+    source = models.JSONField(default=dict, blank=True)  # {mode: "ids"|"tags"|"all", ids: [...], tags: [...], limit}
+    settings = models.JSONField(default=dict, blank=True)  # the effects and settings of the type (see mediaviews.py)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]

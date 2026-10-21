@@ -15,6 +15,7 @@ services:
       - ./Database:/app/Database
       - ./themes:/app/themes
       - ./site:/app/site
+      - ./backups:/app/backups
 
   frontend:
     build:

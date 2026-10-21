@@ -8,7 +8,7 @@ import Collapsible from "./Collapsible";
 import ThemeImport from "./ThemeImport";
 import ThemePackEdit from "./ThemePackEdit";
 import { api, apiBase, errorText, getToken } from "../lib/api";
-import { confirmDialog } from "../lib/dialog";
+import { alertDialog, confirmDialog } from "../lib/dialog";
 import { lvl } from "../lib/perms";
 import { tx } from "../lib/t";
 
@@ -58,7 +58,12 @@ export default function ThemePacksAdmin() {
   }
   async function buildDist() {
     setBusy(true); setMsg(null);
-    try { const r = await api("/theme/packs/dist/", { method: "POST", body: {} }); setMsg({ ok: true, text: tx("{0} zips staan in {1}.", r.files.length, r.folder) }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    try {
+      const r = await api("/theme/packs/dist/", { method: "POST", body: {} });
+      const text = tx("{0} zips staan in {1}.", r.files.length, r.folder);
+      setMsg({ ok: true, text });
+      await alertDialog(`${tx("Export klaar")}\n${text}`);
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); await alertDialog(errorText(e)); }
     setBusy(false);
   }
   async function upload(file) {
@@ -139,7 +144,7 @@ export default function ThemePacksAdmin() {
           <p className="muted" style={{ margin: 0 }}>{tx("Alle thema's in één zipbestand, met hun logo's en afbeeldingen. Importeer het in een andere website met Pakket uploaden hieronder. Ook van elk thema los staat een zip in de map {0}; die map hoort niet bij de repository.", d.dist)}</p>
           <div className="row">
             <button type="button" className="btn primary" style={{ whiteSpace: "nowrap" }} onClick={downloadAll}>{tx("Alle thema's downloaden (zip)")}</button>
-            {L >= 2 && <button type="button" className="btn" style={{ whiteSpace: "nowrap" }} disabled={busy} onClick={buildDist}>{tx("Zips in .dist bijwerken")}</button>}
+            {user?.is_staff && L >= 2 && <button type="button" className="btn" style={{ whiteSpace: "nowrap" }} disabled={busy} onClick={buildDist}>{tx("Exporteer alle thema's (themes/.dist/themes)")}</button>}
           </div>
         </div>
       </Collapsible>

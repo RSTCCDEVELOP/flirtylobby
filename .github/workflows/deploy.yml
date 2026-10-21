@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  PROJECT: flirtylobby
+  PROJECT: easy2edit
 
 jobs:
   build:

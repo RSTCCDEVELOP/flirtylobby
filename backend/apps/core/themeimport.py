@@ -311,18 +311,56 @@ def _ask_ai(info):
     return _ai_json(system, prompt, 4000, 110)
 
 
-def refine_values(values, request_text, site=""):
-    """Claude changes the settings of a theme after the text of the user. Returns (changes, summary, name, description)."""
+def reference_site(url):
+    """The colours and fonts of a page on the web (the page and its own stylesheets), as a small summary for Claude to base a theme on."""
+    url = (url or "").strip()
+    if not url:
+        return None
+    if not re.match(r"^https?://", url):
+        url = "https://" + url
+    try:
+        fetcher = si.WebFetcher(url)
+        base, data, _ = fetcher.get(url, si.MAX_HTML)
+        root = si.parse_html(data.decode("utf-8", "replace"))
+        css = "\n".join(" ".join(k for k in st.kids if isinstance(k, str)) for st in si.find(root, "style"))
+        for l in [urljoin(base, l.attrs.get("href", "")) for l in si.find(root, "link", lambda n: "stylesheet" in n.attrs.get("rel", "").lower())][:si.MAX_STYLESHEETS]:
+            try:
+                if l.startswith("https://fonts.googleapis.com"):
+                    css += f"\n/* {l} */"
+                elif fetcher.same_site(l):
+                    css += "\n" + fetcher.get(l, si.MAX_CSS)[1].decode("utf-8", "replace")
+            except si.ImportError_:
+                continue
+        weight, bg, fg, fonts = si.analyse_css(css)
+        tc = next((m.attrs.get("content") for m in si.find(root, "meta") if m.attrs.get("name") == "theme-color"), None)
+    except si.ImportError_ as e:
+        raise themepacks.ThemeError(f"De pagina kon niet worden gelezen: {e}")
+    tok = site_tokens(css)
+    if not weight and not tok["light"] and not tok["dark"] and not tc:
+        raise themepacks.ThemeError("Op die pagina zijn geen kleuren gevonden (de stijlbladen staan misschien op een ander adres). Probeer een andere pagina.")
+    return {"url": base, "theme_color": tc, "page_background": bg, "page_text": fg, "palette_most_used_first": list(weight)[:10] if not hasattr(weight, "most_common") else [c for c, _n in weight.most_common(10)],
+            "named_colours_light": tok["light"], "named_colours_dark": tok["dark"], "fonts": (list(fonts)[:4] if not hasattr(fonts, "most_common") else [f for f, _n in fonts.most_common(4)])}
+
+
+def refine_values(values, request_text, site="", reference_url=""):
+    """Claude changes the settings of a theme after the text of the user (and, when a web address is given, after the colours and fonts of that page).
+    Returns (changes, summary, name, description)."""
     if not ai.available():
         raise themepacks.ThemeError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
+    ref = reference_site(reference_url)
     ask = (request_text or "").strip()[:800]
+    if ref and len(ask) < 3:
+        ask = "Gebruik de kleuren en lettertypen van de pagina in reference_site voor dit thema."
     if len(ask) < 3:
         raise themepacks.ThemeError("Schrijf wat er anders moet.")
     system = ("You are a web designer who improves a theme for a content management system. The user asks for a change. "
               "Answer with ONE JSON object only, no text around it: {\"values\": {setting: value}, \"summary\": one short Dutch sentence about what you changed, \"name\": optional new name, \"description\": optional new Dutch sentence}. "
               "In values only put the settings that change, with the right type (hex colours like #aabbcc, numbers within the range, one of the options). Keep the result consistent: "
               "text must stay readable on its background in light and dark, and light_*/dark_* neutrals must match the primary colour when you change it. The page templates (header_layout, header_style, header_sticky, menu_style, footer_layout, footer_tone, block_style, block_gap, content_w) belong to the theme: change them when the request is about layout.")
-    prompt = json.dumps({"request": ask, "current_values": values, "site": site, "settings": _schema_for_ai()}, ensure_ascii=False)
+    if ref:
+        system += (" The user also gave a web page as an example (reference_site, read from that page: its colours and fonts). Use those colours and fonts as the base for the new theme "
+                   "(brand colour as primary, neutrals for the backgrounds and text) but still follow the request, and keep the result readable in light and dark.")
+    prompt = json.dumps({"request": ask, "current_values": values, "site": site, "settings": _schema_for_ai(), **({"reference_site": ref} if ref else {})}, ensure_ascii=False)
     try:
         out = _ai_json(system, prompt, 3500, 90)
     except (ValueError, KeyError) as e:

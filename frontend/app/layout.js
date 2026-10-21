@@ -1,3 +1,4 @@
+import SiteBack from "../components/SiteBack";
 import SiteCredit from "../components/SiteCredit";
 import "./globals.css";
 import { BrandingProvider } from "../components/BrandingContext";
@@ -132,7 +133,7 @@ export default async function RootLayout({ children }) {
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
-    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} data-hl={theme?.values?.header_layout || "classic"} data-hstyle={theme?.values?.header_style || "solid"} data-hsticky={theme?.values?.header_sticky || "yes"} data-menu={theme?.values?.menu_style || "text"} data-fl={theme?.values?.footer_layout || "simple"} data-ft={theme?.values?.footer_tone || "page"} data-blocks={theme?.values?.block_style || "card"} suppressHydrationWarning>
+    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} data-hl={theme?.values?.header_layout || "classic"} data-hstyle={theme?.values?.header_style || "solid"} data-hsticky={theme?.values?.header_sticky || "yes"} data-menu={theme?.values?.menu_style || "text"} data-fl={theme?.values?.footer_layout || "simple"} data-ft={theme?.values?.footer_tone || "page"} data-fbrand={theme?.values?.footer_brand || "none"} data-fsocial={theme?.values?.footer_social || "show"} data-fmeta={theme?.values?.footer_meta || "show"} data-fsize={theme?.values?.footer_size || "normal"} data-blocks={theme?.values?.block_style || "card"} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript(theme?.values?.default_mode) }} />
         {theme?.fonts_url && <link rel="stylesheet" href={theme.fonts_url} />}
@@ -151,6 +152,7 @@ export default async function RootLayout({ children }) {
             <ContentProvider initial={content} defaultLang={langs?.default || "nl"} languages={(langs?.languages || []).map((l) => l.code)}>
               <DirectHostProvider>
               <PageBackdrop map={backgrounds} />
+              <SiteBack />
               <PageTransition>{children}</PageTransition>
               <SiteCredit show={site?.show_credit !== false} />
               <EditBanner />

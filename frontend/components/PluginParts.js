@@ -53,11 +53,16 @@ const GROUPS = [["mine", "Mijn community"], ["contact", "Contact"], ["other", "L
 // Where the plugin sits in the member dashboard, and whether it may be put on a page as a system object (each change is saved at once)
 export function PluginPlacement({ p, onSaved }) {
   const [err, setErr] = useState("");
-  const patch = async (body) => { setErr(""); try { onSaved(await api(`/plugins/${p.name}/`, { method: "PATCH", body })); } catch (e) { setErr(e?.message || tx("Opslaan mislukt.")); } };
+  const patch = async (body) => { setErr(""); try { onSaved(await api(`/plugins/${p.name}/`, { method: "PATCH", body })); window.dispatchEvent(new Event("plugins-changed")); } catch (e) { setErr(e?.message || tx("Opslaan mislukt.")); } }; // (the menus follow at once)
   return (
     <div className="form">
       {err && <div className="alert">{err}</div>}
-      <h3 style={{ margin: 0 }}>{tx("Menu van het gebruikersdashboard")}</h3>
+      <h3 style={{ margin: 0 }}>{tx("Beheer: menu en tegels")}</h3>
+      <label>{tx("Plaats de beheerpagina van deze plugin bij")}
+        <select value={p.section} onChange={(e) => patch({ admin_section: e.target.value })}>{Object.entries(SECTION_LABEL).map(([k, l]) => <option key={k} value={k}>{tx(l)}{k === p.section_default ? ` (${tx("standaard")})` : ""}</option>)}</select>
+      </label>
+      <small className="muted">{tx("Hier staat de plugin in het Admin-menu en op de tegelpagina van die groep (bijvoorbeeld Orders bij Webshop).")}</small>
+      <h3 style={{ margin: ".6rem 0 0" }}>{tx("Menu van het gebruikersdashboard")}</h3>
       {p.menu ? (
         <>
           <label>{tx("Plaats de pagina van deze plugin in")}

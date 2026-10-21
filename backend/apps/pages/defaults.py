@@ -37,7 +37,7 @@ SCREENS = [
     ("my-community", "/dashboard/community", "profiles|discover|messages|chat", "private", True),
     ("product", "/producten/<slug>", "plugin:webshop", "public", False),
     ("my-subscriptions", "/dashboard/subscriptions", "subscriptions", "private", True),
-    ("my-orders", "/dashboard/mijn-bestellingen", "orders", "private", True),
+    ("my-orders", "/dashboard/plugins/orders", "plugin:orders", "private", True),
     ("my-donations", "/dashboard/mijn-donaties", "donations", "private", True),
 ]
 # Pages with texts and blocks that the administrator can change in edit mode (content pages at an address of their own).

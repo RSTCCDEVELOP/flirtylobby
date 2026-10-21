@@ -38,9 +38,9 @@ def _out(p):
     sig = signing.verify(installer.plugin_dir(p.name))
     built = p.manifest.get("system_version", "0.0.0")
     return {"signature": sig, "dev_mode": sig == "missing" and signing.dev_mode_allowed(), "system_version": settings.SYSTEM_VERSION, "built_for": built,
-            "compat": mf.compatibility(built, settings.SYSTEM_VERSION), "languages": installer.lang_state(p.name), "blocked": runtime.start_problem(p),
+            "compat": mf.compatibility(built, settings.SYSTEM_VERSION), "languages": installer.lang_state(p.name), "blocked": runtime.start_problem(p), "requires": p.manifest.get("requires", []), "required_by": runtime.dependents(p.name), "requires_off": [{"name": x.name, "title": x.title} for x in runtime.requirement_chain(p)[0]], "requires_missing": runtime.requirement_chain(p)[1],
             "name": p.name, "title": p.title, "version": p.version, "description": p.description, "author": p.author, "enabled": p.enabled, "error": p.error,
-            "permissions": p.manifest.get("permissions", []), "events": p.manifest.get("events", []), "has_python": bool(p.manifest.get("python")), "section": p.manifest.get("section", "system"), "admin_web": p.manifest.get("admin_web", ""), "settings_web": p.manifest.get("settings_web", ""), "blocks_page": p.manifest.get("blocks_page", ""), "admin_links": p.manifest.get("admin_links", []), "has_web": bool(p.manifest.get("web")),
+            "permissions": p.manifest.get("permissions", []), "events": p.manifest.get("events", []), "has_python": bool(p.manifest.get("python")), "section": installer.admin_section(p), "section_default": p.manifest.get("section", "system"), "admin_web": p.manifest.get("admin_web", ""), "settings_web": p.manifest.get("settings_web", ""), "blocks_page": p.manifest.get("blocks_page", ""), "admin_links": p.manifest.get("admin_links", []), "admin_entries": p.manifest.get("admin_entries", []), "has_web": bool(p.manifest.get("web")),
             "menu": p.manifest.get("menu"), "public_pages": p.manifest.get("public_pages", []), "site_link": p.manifest.get("site_link"), "provides": p.manifest.get("provides", []), "admin_label": p.manifest.get("admin_label", ""), "content_label": p.manifest.get("content_label", ""), "active_languages": active_languages() if p.manifest.get("content_dirs") else [], "all_languages": active_languages(everything=True) if p.manifest.get("content_dirs") else [], "content_items": installer.content_items(p), "menu_group": installer.menu_group(p), "page_object_offered": bool(p.manifest.get("page_object")), "public_path": p.manifest.get("public_path", ""), "page_public": installer.page_public(p), "page_object": installer.as_page_object(p), "config_schema": p.manifest.get("config", []), "config": installer.public_config(p), "updated_at": p.updated_at}
 
 
@@ -93,6 +93,8 @@ def plugin(request, name):
     if not p:
         return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
     if request.method == "DELETE":
+        if need := runtime.dependents(p.name):
+            return bad("Eerst deze plugins uitzetten of verwijderen: " + ", ".join(need) + ". Zij hebben deze plugin nodig.")
         runtime.unload(p.name)
         installer.remove(p)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -105,14 +107,29 @@ def plugin(request, name):
                 if err:
                     Plugin.objects.filter(pk=p.pk).update(error=err, enabled=False)
                     p.refresh_from_db()
-        if "menu_group" in request.data or "page_object" in request.data or "page_public" in request.data:
-            installer.save_placement(p, request.data.get("menu_group"), request.data.get("page_object") if "page_object" in request.data else None, request.data.get("page_public") if "page_public" in request.data else None)
+        if "menu_group" in request.data or "page_object" in request.data or "page_public" in request.data or "admin_section" in request.data:
+            installer.save_placement(p, request.data.get("menu_group"), request.data.get("page_object") if "page_object" in request.data else None, request.data.get("page_public") if "page_public" in request.data else None, request.data.get("admin_section"))
             p.refresh_from_db()
             from apps.sysobjects import service as sysobj
             sysobj.sync()
             installer.sync_menu_page(p)
         if "enabled" in request.data:
             want = bool(request.data["enabled"])
+            if want:
+                todo, absent = runtime.requirement_chain(p)
+                if absent:
+                    return bad("Deze plugin heeft nog niet geïnstalleerde plugins nodig: " + ", ".join(absent) + ". Installeer die eerst.")
+                if todo and not request.data.get("with_requires"):
+                    return bad("Zet eerst ook aan: " + ", ".join(x.title for x in todo) + ".")
+                for dep in todo:  # the plugins this one needs, the ones they need first
+                    err = runtime.load(dep)
+                    if err:
+                        Plugin.objects.filter(pk=dep.pk).update(error=err, enabled=False)
+                        return bad(f"{dep.title} kon niet worden gestart: {err}")
+                    Plugin.objects.filter(pk=dep.pk).update(enabled=True, error="")
+            if not want and (need := runtime.dependents(p.name)):
+                names = dict(Plugin.objects.filter(name__in=need).values_list("name", "title"))
+                return bad("Eerst deze plugins uitzetten: " + ", ".join(names.get(n, n) for n in need) + ". Zij hebben deze plugin nodig.")
             if want:
                 err = runtime.load(p)
                 if err:
@@ -391,7 +408,7 @@ def menu(request):
     if request.query_params.get("scope") == "admin":
         if not request.user.is_staff:
             return Response([])
-        return Response([{"name": p.name, "label": p.title, "title": p.title, "section": p.manifest.get("section", "system"), "has_admin": bool(p.manifest.get("admin_web"))} for p in Plugin.objects.filter(enabled=True)])
+        return Response([{"name": p.name, "label": p.title, "title": p.title, "section": installer.admin_section(p), "has_admin": bool(p.manifest.get("admin_web")), "entries": p.manifest.get("admin_entries", [])} for p in Plugin.objects.filter(enabled=True)])
     for p in Plugin.objects.filter(enabled=True):
         m, web = p.manifest.get("menu"), p.manifest.get("web")
         if m and web and (m["access"] == "members" or request.user.is_staff):  # the page of the plugin in the menu
@@ -432,6 +449,7 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     if (d.scheme) { document.documentElement.style.colorScheme = d.scheme; }  /* a transparent page in a frame gets a white canvas unless it says which scheme it uses */
     if (d.plugin === "init" && d.attrs) { Object.keys(d.attrs).forEach(function (k) { document.documentElement.setAttribute("data-" + k, d.attrs[k]); }); }  /* the layout choices of the theme (block style) */
     if (d.plugin === "init") { strings = d.strings || {}; document.documentElement.lang = d.lang || "nl"; resolveReady({ user: d.user, name: d.name, apiBase: d.apiBase, lang: d.lang, route: d.route || {}, siteOrigin: d.siteOrigin || "" }); }
+    if (d.plugin === "attrs" && d.attrs) { Object.keys(d.attrs).forEach(function (k) { document.documentElement.setAttribute("data-" + k, d.attrs[k]); }); }  /* a choice of the site changed (edit mode on/off) */
     if (d.plugin === "rehello") { parent.postMessage({ plugin: "hello" }, "*"); }  /* the page loaded before the site was ready to answer (server-rendered page): ask again */
     if (d.plugin === "reply" && pending[d.id]) { var p = pending[d.id]; delete pending[d.id]; d.ok ? p.resolve(d.data) : p.reject(new Error(d.error || "Mislukt")); }
   });
@@ -447,6 +465,7 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
       remove: function (k) { return call("store", { op: "remove", key: k }); }
     },
     upload: function (path, file, fields) { return call("upload", { path: path, file: file, fields: fields || {} }); },  /* send a file (multipart) to the system API as the member: resolves the answer */
+    openAdmin: function (file, query) { parent.postMessage({ plugin: "openadmin", file: file, query: query || {} }, "*"); },  /* the admin screen of this plugin in a popup of the site (edit mode only) */
     go: function (path) { parent.postMessage({ plugin: "go", path: path }, "*"); },  /* open an address of the website (or a full link) */
     pickMedia: function () { return call("media", {}); },  /* the media library of the system: resolves {id, url} or null */
     editHtml: function (html, opts) { return call("html", { html: html || "", opts: opts || {} }); },  /* the system's text editor: resolves the new html, or null */

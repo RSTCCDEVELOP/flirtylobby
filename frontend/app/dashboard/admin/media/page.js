@@ -7,14 +7,112 @@ import { useAuth } from "../../../../components/AuthContext";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
 import TagModal from "../../../../components/TagModal";
-import { IconImage } from "../../../../components/Icons";
+import { IconImage, IconGrid } from "../../../../components/Icons";
+import Tabs from "../../../../components/Tabs";
+import MediaViewEditor from "../../../../components/MediaViewEditor";
 
 const fmt = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+
+// The media system objects (photo book, carousel, photo wall, slideshow): blocks for a page that show pictures of the library, with effects.
+function MediaObjects({ canEdit, canManage, setMsg }) {
+  const [views, setViews] = useState(null);
+  const [used, setUsed] = useState({});
+  const [edit, setEdit] = useState(undefined); // undefined = closed, null = new, object = editing
+  const [busy, setBusy] = useState("");
+  const [hasDemoImages, setHasDemoImages] = useState(false);
+  const load = useCallback(() => {
+    api("/mediaviews/demo/").then((c) => setHasDemoImages(c.images > 0 || c.views > 0)).catch(() => {});
+    api("/mediaviews/").then(setViews).catch((e) => { setViews([]); setMsg({ ok: false, text: errorText(e) }); });
+    api("/sysobjects/admin/").then((rows) => setUsed(Object.fromEntries(rows.filter((o) => o.kind === "media").map((o) => [o.data?.name, o.used_on || []])))).catch(() => {});
+  }, [setMsg]);
+  useEffect(() => { load(); }, [load]);
+  const [make, setMake] = useState(null); // the question "how many example pictures": {count}
+  async function demo(count) {
+    setBusy("demo");
+    try { const r = await api("/mediaviews/demo/", { method: "POST", body: { replace: true, count } }); setMsg({ ok: true, text: tx("{0} voorbeelden gemaakt: fotoboek, beeldcarrousel, fotomuur en diavoorstelling.", r.made) }); load(); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(""); setMake(null);
+  }
+  const [ask, setAsk] = useState(null); // the question "what to remove": {counts, pick}
+  async function removeDemo() {
+    try { const counts = await api("/mediaviews/demo/"); setAsk({ counts, pick: { views: counts.views > 0, images: counts.images > 0 } }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+  }
+  async function doRemove() {
+    const what = Object.keys(ask.pick).filter((k) => ask.pick[k]);
+    if (!what.length) return;
+    try {
+      const r = await api("/mediaviews/demo/", { method: "POST", body: { remove: true, what } });
+      setMsg({ ok: true, text: `${tx("Verwijderd")}: ${what.map((k) => `${k === "views" ? tx("voorbeeld-onderdelen") : tx("voorbeeldfoto's")} ${r.removed[k] ?? 0}`).join(", ")}.` });
+      setAsk(null); load();
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); setAsk(null); }
+  }
+  async function remove(v) {
+    if (!(await confirmDialog(tx("\"{0}\" verwijderen? Pagina's waar het op staat tonen het niet meer.", v.name), { danger: true }))) return;
+    try { await api(`/mediaviews/${v.id}/`, { method: "DELETE" }); load(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+  }
+  if (views === null) return <p className="muted">{tx("Laden…")}</p>;
+  return (
+    <>
+      <p className="muted" style={{ margin: "0 0 1rem" }}>{tx("Blokken met foto's uit je bibliotheek die je in de bewerkmodus op een pagina zet: een fotoboek, een beeldcarrousel, een fotomuur of een diavoorstelling, elk met eigen effecten en instellingen.")}</p>
+      {canEdit && <div className="row" style={{ marginBottom: "1rem" }}>
+        <button className="btn primary" onClick={() => setEdit(null)}>{tx("+ Nieuw media-onderdeel")}</button>
+        <button className="btn" onClick={() => setMake({ count: 16 })} disabled={!!busy}>{busy ? tx("Bezig…") : tx("4 voorbeelden maken")}</button>
+        {(views.some((v) => v.slug.startsWith("demo-")) || hasDemoImages) && <button className="btn danger" onClick={removeDemo} disabled={!!busy}>{tx("Voorbeelden verwijderen")}</button>}
+      </div>}
+      {!views.length && <p className="muted">{tx("Nog geen media-onderdelen. Maak er een, of klik op \"4 voorbeelden maken\".")}</p>}
+      <div className="int-list">
+        {views.map((v) => (
+          <div className="card int-item" key={v.id}>
+            <div style={{ display: "flex", gap: ".3rem" }}>{v.items.slice(0, 3).map((i, k) => /* eslint-disable-next-line @next/next/no-img-element */ <img key={k} src={mediaUrl(i.url)} alt="" style={{ width: 54, height: 54, objectFit: "cover", borderRadius: 8 }} />)}</div>
+            <div className="int-main">
+              <strong>{v.name} <span className="badge">{tx(v.type_label)}</span></strong>
+              <span className="muted">{v.items.length} {tx("foto's")} · {tx("effect")}: {v.settings.hover || v.settings.transition} · {used[v.name]?.length ? `${tx("Op pagina")}: ${used[v.name].join(", ")}` : tx("Nog op geen enkele pagina")}</span>
+            </div>
+            <div className="int-actions">
+              {canEdit && <button className="btn sm" onClick={() => setEdit(v)}>{tx("Bewerk")}</button>}
+              {canManage && <button className="btn sm danger" onClick={() => remove(v)}>{tx("Verwijder")}</button>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {make && (
+        <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) setMake(null); }}>
+          <div className="card modal" role="dialog" aria-label={tx("Voorbeelden maken")}>
+            <h2 style={{ margin: 0 }}>{tx("Voorbeelden maken")}</h2>
+            <p className="muted" style={{ margin: 0 }}>{tx("Je krijgt een fotoboek, een beeldcarrousel, een fotomuur en een diavoorstelling. Hoeveel voorbeeldfoto's moeten er gemaakt worden? De foto's komen in je mediabibliotheek met de tag demo.")}</p>
+            <label>{tx("Aantal voorbeeldfoto's")}
+              <span className="row" style={{ gap: ".6rem" }}><input type="range" min={4} max={48} step={4} value={make.count} onChange={(e) => setMake({ count: Number(e.target.value) })} style={{ flex: 1 }} disabled={!!busy} /><strong>{make.count}</strong></span>
+            </label>
+            <small className="muted">{tx("Er zijn 16 verschillende taferelen; daarna komen dezelfde in een andere kleur.")}</small>
+            {busy && <div className="prog-wrap"><div className="prog-label">{tx("Foto's tekenen…")}</div><div className="prog ind"><div className="bar" /></div></div>}
+            <div className="row"><button className="btn" onClick={() => setMake(null)} disabled={!!busy}>{tx("Annuleren")}</button><button className="btn primary" onClick={() => demo(make.count)} disabled={!!busy}>{busy ? tx("Bezig…") : tx("Maken")}</button></div>
+          </div>
+        </div>
+      )}
+      {ask && (
+        <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setAsk(null); }}>
+          <div className="card modal" role="dialog" aria-label={tx("Wat wil je verwijderen?")}>
+            <h2 style={{ margin: 0 }}>{tx("Wat wil je verwijderen?")}</h2>
+            {[["views", "Voorbeeld-onderdelen (fotoboek, carrousel ...)"], ["images", "Voorbeeldfoto's"]].map(([k, l]) => (
+              <label key={k} className="check"><input type="checkbox" checked={!!ask.pick[k]} disabled={!ask.counts[k]} onChange={(e) => setAsk({ ...ask, pick: { ...ask.pick, [k]: e.target.checked } })} /> {tx(l)} <small className="muted">({ask.counts[k] || 0})</small></label>
+            ))}
+            <small className="muted">{tx("Je eigen foto's en media-onderdelen blijven altijd staan: alleen wat de voorbeelden hebben gemaakt kan worden verwijderd.")}</small>
+            <div className="row"><button className="btn" onClick={() => setAsk(null)}>{tx("Annuleren")}</button><button className="btn danger" onClick={doRemove} disabled={!Object.values(ask.pick).some(Boolean)}>{tx("Verwijderen")}</button></div>
+          </div>
+        </div>
+      )}
+      {edit !== undefined && <MediaViewEditor view={edit} onClose={() => setEdit(undefined)} onSaved={load} />}
+    </>
+  );
+}
 
 export default function Media() {
   const { user } = useAuth();
   const L = lvl(user, "media");
   const [data, setData] = useState({ items: [], s3_available: false });
+  const [area, setArea] = useState("library"); // tab: "library" (the files) | "system" (the system objects: blocks for pages such as the product overviews of the webshop)
+  const [objCount, setObjCount] = useState(undefined);
+  useEffect(() => { api("/mediaviews/").then((r) => setObjCount(r.length)).catch(() => setObjCount(undefined)); }, [area]);
   const [filter, setFilter] = useState({ kind: "", storage: "", q: "", tag: "" });
   const [userData, setUserData] = useState(false); // superuser only: also show files of members (profile photos, chat)
   const [tagFor, setTagFor] = useState(null); // ids whose tags are being edited
@@ -104,7 +202,11 @@ export default function Media() {
           {L >= 2 && <button className="btn primary" onClick={() => input.current.click()}>{tx("+ Uploaden")}</button>}
         </div>
       </div>
-      {L >= 2 && (
+      <Tabs value={area} onChange={(k) => { setArea(k); setSelected([]); }}
+        tabs={[["library", "Media", <IconImage key="m" />, data.total], ["system", "Systeemobjecten", <IconGrid key="s" />, objCount]]} />
+      {area === "system" && msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
+      {area === "system" && <MediaObjects canEdit={L >= 2} canManage={L >= 3} setMsg={setMsg} />}
+      {area === "library" && L >= 2 && (
         <div className="card media-upload">
           <div className="dropzone" role="button" tabIndex={0} onClick={() => input.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && input.current.click()}>
             <span>{tx("Sleep één of meer bestanden hierheen, of klik om te kiezen")}</span>
@@ -120,6 +222,7 @@ export default function Media() {
           )}
         </div>
       )}
+      {area === "library" && <>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       <div className="card media-bar">
@@ -184,6 +287,7 @@ export default function Media() {
         {!items.length && <p className="muted">{tx("Geen bestanden. Upload er een, of klik op \"Lokale bestanden zoeken\".")}</p>}
       </div>
       {tagFor && <TagModal count={tagFor.length} known={(data.tags || []).map((t) => t.tag)} present={[...new Set(items.filter((i) => tagFor.includes(i.id)).flatMap((i) => i.tags || []))]} onApply={applyTags} onClose={() => setTagFor(null)} />}
+      </>}
       </div>
     </>
   );

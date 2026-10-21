@@ -43,10 +43,12 @@ MODULES = [
      "desc": "Abonnementen die toegang geven (site, pagina's, content, chat, video, likes, diensten), eenmalig of herhaald, met een order per periode.",
      "default": False, "requires": ["orders"]},
     {"key": "donations", "group": "Subscription", "label": "Donaties",
-     "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest. Werkt zonder de webshop.",
-     "default": False},
-    {"key": "orders", "group": "Webshop", "label": "Orders & betalen",
-     "desc": "Orderbeheer, btw en betalen voor de webshop (plugin), abonnementen en donaties, en de bestelstatus."},
+     "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest. Werkt zonder de webshop, maar heeft de plugins Orders en Betalen nodig.",
+     "default": False, "requires": ["orders", "payments"]},
+    {"key": "orders", "group": "Subscription", "label": "Orders", "plugin": "orders",
+     "desc": "Orderbeheer, btw en de bestelstatus voor de webshop, abonnementen en donaties. Is de plugin Orders: aan of uit zet je bij Plugins; hier stel je alleen in wie erbij mag."},
+    {"key": "payments", "group": "Subscription", "label": "Betalen", "plugin": "payments",
+     "desc": "Online betalen voor bestellingen, abonnementen en donaties. Is de plugin Betalen (heeft Orders nodig): aan of uit zet je bij Plugins; hier stel je alleen in wie erbij mag."},
     # ── Community ──
     {"key": "profiles", "group": "Community", "label": "Profielen & blokkeren",
      "desc": "Eigen profielpagina met meerdere foto's, zichtbaarheid per taal en groep, ledenzoeker en het blokkeren van andere users."},
@@ -89,6 +91,8 @@ MODULES = [
      "desc": "Naam en adressen van de website (frontend en API), contactgegevens en een controlelijst plus kant-en-klare instellingen voor de deployment."},
     {"key": "storage", "group": "Systeem", "label": "Mappenstructuur",
      "desc": "Waar bestanden staan (gebruikers, website, overig): map, lokaal of S3, en versleuteling per gebruiker."},
+    {"key": "backups", "group": "Systeem", "label": "Backup",
+     "desc": "Backups van de website per dag, week of maand (pagina's, menu's, teksten, afbeeldingen, thema en instellingen van modules en plugins), terugzetten en downloaden. De standaardgegevens van easy2edit zitten er niet in."},
     {"key": "roles", "group": "Systeem", "label": "Rollen",
      "desc": "Rollen en rechten. Uit = alleen superadmins hebben rechten."},
     # ── Kern (altijd aan) ──
@@ -98,6 +102,20 @@ MODULES = [
      "desc": "Inlogslot, sessieduur, wachtwoordregels en beveiligingsheaders.", "core": True},
     {"key": "modules", "group": "Kern", "label": "Modulebeheer", "desc": "Deze pagina. Alleen voor superadmins.", "core": True, "acl": False},
 ]
+# ── Packages: what is sold apart from the core CMS ──
+# The core CMS (pages, edit mode, media, themes, languages, SEO, security, backups …) is the product. These parts are not for every target group, so they are
+# sold as separate packages: a package is on while one of its modules is on, and has its own price in the licence (Super admin → Licentie).
+PACKAGES = [
+    {"key": "community", "label": "Community & dating", "desc": "Profielen, zoeken en matchen, berichten, chat en directe verbinding: voor community's, netwerken en datingplatforms.",
+     "modules": ["profiles", "discover", "messages", "chat", "directconnect"]},
+    {"key": "age", "label": "Leeftijd, land & gokken", "desc": "Leeftijdscontrole (18+), landcontrole en de gokken-popup (24+): alleen voor doelgroepen waar dat verplicht of gewenst is.",
+     "modules": ["age_gate", "geo", "gambling"]},
+    {"key": "commerce", "label": "Webshop, abonnementen & donaties", "desc": "Bestellingen en betalen, abonnementen en donaties: voor wie online iets verkoopt of geld ophaalt.",
+     "modules": ["orders", "payments", "subscriptions", "donations"]},
+]
+PACKAGE_OF = {k: p["key"] for p in PACKAGES for k in p["modules"]}
+for _m in MODULES:
+    _m["package"] = PACKAGE_OF.get(_m["key"], "cms")  # everything else is the core CMS
 BY_KEY = {m["key"]: m for m in MODULES}
 
 _cache = {"t": 0, "v": None}
@@ -110,7 +128,7 @@ def states():
         from .models import ModuleState
 
         stored = dict(ModuleState.objects.values_list("key", "enabled"))
-        _cache.update(t=now, v={m["key"]: True if m.get("core") else stored.get(m["key"], m.get("default", True)) for m in MODULES})
+        _cache.update(t=now, v={m["key"]: True if m.get("core") else plugin_on(m["plugin"]) if m.get("plugin") else stored.get(m["key"], m.get("default", True)) for m in MODULES})  # "plugin": on while that plugin is on
     return _cache["v"]
 
 

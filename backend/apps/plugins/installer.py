@@ -627,8 +627,16 @@ def sync_menu_page(p):
     Page.objects.create(key=key, kind="link", title={"nl": label}, url=url, scope=scope, module=f"plugin:{p.name}", in_menu=True, audience="all" if scope == "public" else "members", source=src, order=(last.order + 1) if last else 0)
 
 
-def save_placement(p, group=None, page_object=None, page_public=None):
+def admin_section(p):
+    """In which part of the admin menu (and which group of tiles) the admin page of the plugin sits: the choice of the superadmin, else what the plugin proposes."""
+    s = (p.config or {}).get("_admin_section")
+    return s if s in mf.SECTIONS else p.manifest.get("section", "system")
+
+
+def save_placement(p, group=None, page_object=None, page_public=None, section=None):
     cfg = dict(p.config or {})
+    if section in mf.SECTIONS:
+        cfg["_admin_section"] = section
     if page_public is not None:
         cfg["_page_public"] = bool(page_public)
     if group in mf.MENU_GROUPS:

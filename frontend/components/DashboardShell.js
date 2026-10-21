@@ -9,6 +9,7 @@ import FaqDrawer from "./FaqDrawer";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
 import ThemeToggle from "./ThemeToggle";
+import { EditModeSwitch } from "./EditMode";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Logo } from "./BrandingContext";
 import UserMenu from "./UserMenu";
@@ -24,7 +25,7 @@ import { useShortcuts } from "../lib/shortcuts";
 import { useNavMode } from "../lib/navmode";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
+import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
@@ -71,7 +72,6 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/sysobjects", label: "Systeemobjecten", icon: <IconGrid /> },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
-  { href: "/dashboard/admin/orders", label: "Orders", icon: <IconReceipt /> },
   { href: "/dashboard/admin/subscriptions", label: "Abonnementen", icon: <IconStar /> },
   { href: "/dashboard/admin/donations", label: "Donaties", icon: <IconHeart /> },
   { href: "/dashboard/admin/faq", label: "FAQ", icon: <IconHelp /> },
@@ -85,6 +85,8 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/seo", label: "SEO", icon: <IconSearch /> },
   { href: "/dashboard/admin/system", label: "Basisgegevens", icon: <IconSettings />, perm: "system.manage" },
   { href: "/dashboard/admin/storage", label: "Mappenstructuur", icon: <IconFolder />, perm: "storage.manage" },
+  { href: "/dashboard/admin/backups", label: "Backup", icon: <IconArchive />, perm: "backups.manage" },
+  { href: "/dashboard/admin/license", label: "Licentie", icon: <IconKey />, perm: "system.manage" },
   { href: "/dashboard/admin/sandbox", label: "Sandbox", icon: <IconFlask /> },
   { href: "/dashboard/admin/plugins", label: "Plugins", icon: <IconGrid /> },
   { href: "/dashboard/admin/theme", label: "Thema", icon: <IconPalette />, perm: "theme.manage" },
@@ -105,9 +107,9 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/themes": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
-  "/dashboard/admin/orders": "a-shop", "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
+  "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };
 
 export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };
@@ -198,7 +200,7 @@ export default function DashboardShell({ children }) {
   }, [communityOn, pathname]);
   // plugins with a page of their own (switched on, and for this user)
   const [pluginMenu, setPluginMenu] = useState([]);
-  const [privMenu, setPrivMenu] = useState([]); // the private pages (Admin -> Pagina's, tab Privé): a menu in the header of the dashboard
+  const [privMenu, setPrivMenu] = useState([]); // the dashboard pages (Admin -> Pagina's, tab Dashboard): a menu in the header of the dashboard
   useEffect(() => {
     const load = () => api("/pages/private-menu/").then((d) => setPrivMenu(d.items || [])).catch(() => setPrivMenu([]));
     if (user) load(); else setPrivMenu([]);
@@ -224,7 +226,9 @@ export default function DashboardShell({ children }) {
   // a plugin belongs to a section (plugin.json): its page sits in that part of the menu, its admin page in that part of the admin menu
   const pluginUser = pluginMenu.map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section, group: x.group }));
   const pluginUserGroup = Object.fromEntries(pluginUser.filter((n) => n.group === "mine" || n.group === "contact").map((n) => [n.href, n.group === "mine" ? "c-mine" : "c-contact"]));
-  const pluginAdminItems = pluginAdmin.map((x) => ({ href: `/dashboard/admin/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section }));
+  // a plugin has its own page and (plugin.json admin_entries) own places in the menu: the products and the orders of the webshop
+  const pluginAdminItems = pluginAdmin.flatMap((x) => [{ href: `/dashboard/admin/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section },
+    ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugins/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, section: x.section }))]);
   const pluginAdminGroup = Object.fromEntries(pluginAdminItems.map((n) => [n.href, ADMIN_SECTION_GROUP[n.section] || "a-system"]));
   const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false));
   const inSuper = pathname.startsWith("/dashboard/superadmin");
@@ -308,6 +312,7 @@ export default function DashboardShell({ children }) {
           <ChatButton />
           <LanguageSwitcher />
           <FaqDrawer dashboard />
+          <EditModeSwitch />
           <ThemeToggle />
           <UserMenu user={user} onLogout={logout} showDashboard={false} />
         </div>

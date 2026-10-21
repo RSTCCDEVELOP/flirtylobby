@@ -5,6 +5,8 @@ import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
 import CookieSettingsButton from "./CookieSettingsButton";
 import { getSite } from "../lib/site-server";
+import { Logo } from "./BrandingContext";
+import FooterEdit from "./FooterEdit";
 
 const SOCIAL = { facebook: "Facebook", instagram: "Instagram", x: "X", linkedin: "LinkedIn", youtube: "YouTube", tiktok: "TikTok" };
 const PRIVACY = { nl: "Privacybeleid", en: "Privacy policy" };
@@ -15,6 +17,12 @@ export default async function SiteFooter() {
   const t = (k) => pick(cfg?.cookies?.texts, lang, cfg?.default_language, k);
   return (
     <footer className="site-footer">
+      <FooterEdit />
+      <div className="foot-brand"> {/* shown by the footer layout (Thema → Footer): logo and/or name, with the footer text */}
+        <span className="foot-logo"><Logo /></span>
+        <strong className="foot-name">{site?.site_name || site?.company_name || ""}</strong>
+        {site?.footer_text && <span className="foot-text">{site.footer_text}</span>}
+      </div>
       <div className="foot-links">
         {mods.privacy_pages !== false && <Link href="/privacy">{PRIVACY[lang] || PRIVACY[cfg?.default_language] || PRIVACY.nl}</Link>}
         {cfg?.cookies?.enabled && <CookieSettingsButton label={t("policy_link")} event="open-cookie-policy" />}

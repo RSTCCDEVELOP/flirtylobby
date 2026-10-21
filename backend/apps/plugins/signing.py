@@ -16,7 +16,10 @@ SKIP_DIRS = {"__pycache__", ".git", "node_modules", "dist"}
 
 
 def private_key_path():
-    return Path(os.getenv("PLUGIN_SIGNING_KEY") or Path.home() / ".flirtylobby" / "plugin-signing.pem")
+    if os.getenv("PLUGIN_SIGNING_KEY"):
+        return Path(os.environ["PLUGIN_SIGNING_KEY"])
+    new, old = Path.home() / ".easy2edit" / "plugin-signing.pem", Path.home() / ".flirtylobby" / "plugin-signing.pem"
+    return old if old.is_file() and not new.is_file() else new  # a key that was made before the rename in ~/.flirtylobby/ is still used
 
 
 def content_dirs(root):

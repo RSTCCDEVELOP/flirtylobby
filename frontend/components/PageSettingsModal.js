@@ -3,20 +3,25 @@
 import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
-import { IconImage, IconSearch, IconSliders } from "./Icons";
+import { IconImage, IconSearch, IconSliders, IconUser } from "./Icons";
 import LayoutPresets from "./LayoutPresets";
 import MediaPicker from "./MediaPicker";
 import Tabs from "./Tabs";
+import { translateName } from "../lib/translate-name";
+import { alertDialog, confirmDialog } from "../lib/dialog";
 
 const AUDIENCE = { all: "Iedereen", members: "Alleen ingelogde users", guests: "Alleen bezoekers (niet ingelogd)" };
 const BG = [["none", "Geen"], ["image", "Afbeelding"], ["video", "Video"]];
 const emptySeo = { title: "", description: "", og_media: null, og_image: null, noindex: false, canonical: "" };
 
 // Pop-up with the basics of one page: name, audience, SEO per language and a background (picture or video) from the media library.
-export default function PageSettingsModal({ page, languages, defaultLang, onClose, onSaved, canSeo }) {
+export default function PageSettingsModal({ ai, page, languages, defaultLang, onClose, onSaved, canSeo }) {
   const langs = languages.length ? languages : [{ code: "nl", native_name: "Nederlands" }];
   const [tab, setTab] = useState("general");
   const [form, setForm] = useState({ slugs: { ...(page.slugs || {}) }, title: { ...page.title }, audience: page.audience, new_tab: !!page.new_tab, url: page.url || "" });
+  const [setup, setSetup] = useState({ theme: page.setup?.theme || "", header: page.setup?.header || "", footer: page.setup?.footer || "" }); // this page only: its own theme, header and footer
+  const [themes, setThemes] = useState([]);
+  const [defaults, setDefaults] = useState({ page_header: "show", page_footer: "show" });
   const [mo, setMo] = useState({ devices: { desktop: page.devices?.desktop !== false, tablet: page.devices?.tablet !== false, mobile: page.devices?.mobile !== false }, cta: !!page.cta, label_link: !!page.label_link }); // the item in the header menu
   const [bg, setBg] = useState(page.background?.type ? { ...page.background } : { type: "none", overlay: 0.35 });
   const [nameLang, setNameLang] = useState(defaultLang || langs[0].code); // the language tab of the name
@@ -29,6 +34,46 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const hasPath = page.path?.startsWith("/");
+  const canSetup = (page.kind === "content" || page.kind === "system") && page.scope !== "private";
+  useEffect(() => {
+    if (!canSetup) return;
+    api("/theme/packs/").then((d) => setThemes((d.packs || []).filter((x) => x.builtin || x.enabled).map((x) => ({ key: x.key, name: x.name })))).catch(() => {});
+    api("/theme/").then((d) => setDefaults({ page_header: d.values?.page_header || "show", page_footer: d.values?.page_footer || "show" })).catch(() => {});
+  }, [canSetup]);
+  const [trProg, setTrProg] = useState(null); // {done, total} while Claude translates the name
+  const [allProg, setAllProg] = useState(null); // {done, total} while Claude makes every text and the SEO of this page in every language
+  async function translateEverything() {
+    if (!(await confirmDialog(tx("Claude maakt alle teksten van deze pagina en de SEO-titel en -omschrijving in alle talen (ook de talen die uit staan). Wat er al staat in die talen wordt bijgewerkt. Doorgaan?"), { okLabel: tx("Maken en bijwerken"), cancelLabel: tx("Annuleren") }))) return;
+    setBusy(true); setError("");
+    const sum = { texts: 0, seo: 0, names: 0, failed: [] };
+    try {
+      const { languages } = await api(`/pages/${page.id}/translate-all/`, { method: "POST", body: { list: true } });
+      setAllProg({ done: 0, total: languages.length });
+      let next = 0, done = 0;
+      const worker = async () => {
+        while (next < languages.length) {
+          const l = languages[next++];
+          try { const r = await api(`/pages/${page.id}/translate-all/`, { method: "POST", body: { lang: l.code } }); sum.texts += r.texts; sum.seo += r.seo ? 1 : 0; sum.names += r.title ? 1 : 0; } catch (e) { sum.failed.push(`${l.code}: ${errorText(e)}`); }
+          setAllProg({ done: ++done, total: languages.length });
+        }
+      };
+      await Promise.all([worker(), worker()]);
+      setAllProg(null); setBusy(false);
+      await alertDialog(`${tx("Klaar")}\n${tx("{0} teksten, {1} namen en {2} SEO-items gemaakt of bijgewerkt.", sum.texts, sum.names, sum.seo)}${sum.failed.length ? `\n\n${tx("Mislukt")}:\n${sum.failed.slice(0, 8).join("\n")}` : ""}`);
+      onSaved();
+    } catch (err) { setError(errorText(err)); setAllProg(null); setBusy(false); }
+  }
+  async function translateAll() { // the name in EVERY language (also the ones that are off) from the default one
+    const text = (form.title?.[defaultLang] || "").trim();
+    if (!text) return;
+    setBusy(true); setError("");
+    try {
+      const { titles, failed } = await translateName(text, defaultLang, setTrProg);
+      setForm((f) => ({ ...f, title: { ...f.title, ...titles } }));
+      if (failed) setError(tx("{0} talen konden niet worden vertaald; die nemen de hoofdtaal over.", failed));
+    } catch (err) { setError(errorText(err)); }
+    setTrProg(null); setBusy(false);
+  }
   const [acc, setAcc] = useState({ users: [...(page.access?.users || [])], groups: [...(page.access?.groups || [])] }); // who may open the page; both empty = everybody
   const [pick, setPick] = useState({ type: "all", id: "" });
   const [people, setPeople] = useState({ users: [], groups: [] });
@@ -66,6 +111,7 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
     setBusy(true); setError("");
     try {
       const body = { title: form.title, background: bg.type === "none" || !bg.media ? {} : { type: bg.type, media: bg.media, overlay: bg.overlay } };
+      if (canSetup) body.setup = setup;
       if (page.kind !== "system") { body.audience = form.audience; body.new_tab = form.new_tab; body.access = { users: acc.users.map((x) => x.id), groups: acc.groups.map((x) => x.id) }; }
       body.devices = mo.devices; body.cta = mo.cta; if (page.kind === "menu") body.label_link = mo.label_link;
       if (page.kind === "link") body.url = form.url;
@@ -84,7 +130,7 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
     } catch (err) { setError(errorText(err)); setBusy(false); }
   }
 
-  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
+  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
   return (
     <div className="overlay" onClick={onClose}>
       <form className="card modal pgs form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
@@ -95,6 +141,17 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
           {tab === "general" && (
             <>
               <strong style={{ fontSize: ".85rem" }}>{tx("Naam")}</strong>
+              {ai && (
+                <>
+                  <button type="button" className="btn sm" style={{ justifySelf: "start" }} disabled={busy || !form.title?.[defaultLang]?.trim()} onClick={translateAll}>{tx("Vertaal naar alle talen")}</button>
+                  {trProg && (
+                    <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={trProg.total} aria-valuenow={trProg.done}>
+                      <div className="progress-top"><span>{tx("Vertalen…")}</span><strong>{trProg.done} / {trProg.total}</strong></div>
+                      <div className="progress-track"><i style={{ width: `${Math.round((trProg.done / Math.max(1, trProg.total)) * 100)}%` }} /></div>
+                    </div>
+                  )}
+                </>
+              )}
               <Tabs className="lang-tabs" value={nameLang} onChange={setNameLang} tabs={langs.map((l) => [l.code, l.native_name, null, form.title?.[l.code] ? "✓" : null])} />
               {langs.filter((l) => l.code === nameLang).map((l) => (
                 <label key={l.code}>{l.native_name}
@@ -104,16 +161,60 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
               {page.kind === "link" && <label>{tx("Link")}<input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://… of /pad" required /></label>}
               {page.kind !== "system" && (
                 <div className="theme-grid">
-                  <label>{tx("Voor wie")}
-                    <select value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}>{Object.entries(AUDIENCE).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
-                  </label>
                   <label className="check sec-toggle">
                     <span className="switch"><input type="checkbox" checked={form.new_tab} onChange={(e) => setForm({ ...form, new_tab: e.target.checked })} /><span /></span>
                     <span>{tx("Opent in een nieuw tabblad")}</span>
                   </label>
                 </div>
               )}
-              {page.kind !== "system" && (
+              <small className="muted">{tx("Adres")}: <code>{page.path}</code></small>
+              {ai && (page.kind === "content" || page.kind === "system") && (
+                <div className="card" style={{ display: "grid", gap: ".4rem" }}>
+                  <strong style={{ fontSize: ".85rem" }}>{tx("Alle talen")}</strong>
+                  <small className="muted">{tx("Maak alle teksten van deze pagina, de naam en de SEO-titel en -omschrijving in alle talen met Claude, of werk ze bij.")}</small>
+                  <div><button type="button" className="btn primary sm" disabled={busy} onClick={translateEverything}>{tx("Teksten en SEO in alle talen maken of bijwerken")}</button></div>
+                  {allProg && (
+                    <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={allProg.total} aria-valuenow={allProg.done}>
+                      <div className="progress-top"><span>{tx("Bezig…")}</span><strong>{allProg.done} / {allProg.total}</strong></div>
+                      <div className="progress-track"><i style={{ width: `${Math.round((allProg.done / Math.max(1, allProg.total)) * 100)}%` }} /></div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {tab === "setup" && canSetup && (
+            <>
+              <p className="muted" style={{ margin: 0 }}>{tx("De opzet van alleen deze pagina: een eigen thema en de header en footer aan of uit. Wat je leeg laat volgt het thema van de website; die standaard stel je in bij Thema → Layout.")}</p>
+              <label>{tx("Thema van deze pagina")}
+                <select value={setup.theme} onChange={(e) => setSetup({ ...setup, theme: e.target.value })}>
+                  <option value="">{tx("Zoals de website")}</option>
+                  {themes.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
+                </select>
+              </label>
+              <div className="theme-grid">
+                <label>{tx("Header")}
+                  <select value={setup.header} onChange={(e) => setSetup({ ...setup, header: e.target.value })}>
+                    <option value="">{tx("Standaard van het thema")} ({defaults.page_header === "hide" ? tx("verborgen") : tx("getoond")})</option><option value="show">{tx("Tonen")}</option><option value="hide">{tx("Verbergen")}</option>
+                  </select>
+                </label>
+                <label>{tx("Footer")}
+                  <select value={setup.footer} onChange={(e) => setSetup({ ...setup, footer: e.target.value })}>
+                    <option value="">{tx("Standaard van het thema")} ({defaults.page_footer === "hide" ? tx("verborgen") : tx("getoond")})</option><option value="show">{tx("Tonen")}</option><option value="hide">{tx("Verbergen")}</option>
+                  </select>
+                </label>
+              </div>
+              <small className="muted">{tx("Het thema van de pagina bepaalt de kleuren, lettertypen en vormen. De indeling van de header en de footer volgt het thema van de website.")}</small>
+            </>
+          )}
+
+          {tab === "security" && page.kind !== "system" && (
+            <>
+              <p className="muted" style={{ margin: 0 }}>{tx("Wie de pagina mag openen. Standaard is de pagina openbaar: iedereen mag hem openen.")}</p>
+              <label>{tx("Voor wie")}
+                    <select value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}>{Object.entries(AUDIENCE).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
+                  </label>
                 <div className="form" style={{ gap: ".4rem" }}>
                   <strong style={{ fontSize: ".85rem" }}>{tx("Rechten")}</strong>
                   <div className="chips" style={{ marginBottom: 0 }}>
@@ -133,8 +234,6 @@ export default function PageSettingsModal({ page, languages, defaultLang, onClos
                   </div>
                   <small className="muted">{tx("Zonder users of groepen mag iedereen de pagina openen (zie Voor wie). Met een lijst alleen die users en de leden van die groepen, plus beheerders van de pagina's.")}</small>
                 </div>
-              )}
-              <small className="muted">{tx("Adres")}: <code>{page.path}</code></small>
             </>
           )}
 

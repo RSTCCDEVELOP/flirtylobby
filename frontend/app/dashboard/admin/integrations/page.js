@@ -60,7 +60,7 @@ export default function Integrations() {
         const b = await api("/admin/integrations/export/", { method: "POST", body: { password: xfer.password } });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }));
-        a.download = "flirtylobby-api-koppelingen.json";
+        a.download = "easy2edit-api-koppelingen.json";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
         setXfer(null);

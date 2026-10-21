@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { dragFixed, movedFor, subscribeMoved } from "../lib/moved";
 import { tx } from "../lib/t";
 import { useSession } from "./Session";
+import { useIsGone } from "./EditMode";
 
 // A fixed element of a page (logo, title, intro text) with a drag handle at its top left in edit mode: drag it into a block or a hero.
 // Once it sits in a block it is hidden here (and shown there); removing it from the block brings it back.
@@ -11,10 +12,11 @@ export const GripContext = createContext(null); // a picture draws the handle it
 
 export default function Movable({ page, id, type, children }) {
   const { editing } = useSession();
+  const gone = useIsGone(id);
   const [, tick] = useState(0);
   useEffect(() => subscribeMoved(() => tick((n) => n + 1)), []);
   const set = movedFor(page);
-  if (set && set.has(id)) return null;
+  if (gone || (set && set.has(id))) return null; // removed with the trash icon, or moved into a block
   if (!editing) return children;
   const grip = (
     <span className="movable-grip" draggable title={tx("Sleep dit onderdeel naar een blok of een hero")}

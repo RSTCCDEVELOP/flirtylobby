@@ -16,7 +16,11 @@ SITE_DIR = Path(os.getenv("SITE_DIR") or PROJECT_ROOT / "site")
 
 def _site_path(name, legacy):
     new = SITE_DIR / name
-    return new if new.exists() or not legacy.exists() else legacy
+    def filled(d):
+        return d.is_dir() and any(not x.name.startswith(".") for x in d.iterdir())
+    if new.exists() and (filled(new) or not filled(legacy)):  # an empty site folder (made by a visit) must not hide the folder that holds the real content
+        return new
+    return new if not legacy.exists() else legacy
 
 load_dotenv(BASE_DIR / ".env")
 
@@ -49,7 +53,6 @@ INSTALLED_APPS = [
     "apps.communication",
     "apps.seo",
     "apps.sandbox",
-    "apps.shop",
     "apps.social",
     "apps.plugins",
     "apps.pages",
@@ -58,6 +61,7 @@ INSTALLED_APPS = [
     "apps.sysobjects",
     "apps.faq",
     "apps.notifications",
+    "apps.backups",
 ]
 
 MIDDLEWARE = [
@@ -137,6 +141,8 @@ _VERSION_FILE = next((f for f in (BASE_DIR / "VERSION", PROJECT_ROOT / "VERSION"
 SYSTEM_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE else "0.0.0"  # the version of this system; plugins are built for one
 PLUGINS_DIR = Path(os.getenv("PLUGINS_DIR") or _site_path("plugins", PROJECT_ROOT / "plugins"))  # the plugins of this site: developed or uploaded here (not in the system repository)
 THEMES_DIR = Path(os.getenv("THEMES_DIR") or _site_path("themes", PROJECT_ROOT / "themes"))  # the theme packages of this site: one folder per theme with a theme.json
+THEMES_DIST_DIR = Path(os.getenv("THEMES_DIST_DIR") or PROJECT_ROOT / "themes" / ".dist")  # the exported zips of themes (<dir>/themes) and languages (<dir>/languages), in the project folder (git-ignored)
+BACKUPS_DIR = Path(os.getenv("BACKUPS_DIR") or PROJECT_ROOT / "backups")  # the backup files (Admin -> Backup); not part of the repository
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

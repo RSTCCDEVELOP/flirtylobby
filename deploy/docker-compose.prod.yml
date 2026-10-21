@@ -1,5 +1,5 @@
-# Production stack, lives in /opt/flirtylobby on the VPS (as docker-compose.yml)
-name: flirtylobby
+# Production stack, lives in /opt/easy2edit on the VPS (as docker-compose.yml)
+name: easy2edit
 
 services:
   db:

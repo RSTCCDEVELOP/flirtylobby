@@ -3,6 +3,7 @@
 import { tx } from "../lib/t";
 import { useEffect, useRef, useState } from "react";
 import { useUi } from "./Ui";
+import { deepLink } from "../lib/deeplink";
 
 // Open/closed state of a foldable block, remembered per `id` (when "remember" is on). Accordion: opening a block closes the other open
 // blocks on the page, unless they are pinned. Shared by <Collapsible /> and <ProfileBlock />.
@@ -67,9 +68,25 @@ export function PinButton({ pinned, onClick }) {
 
 // Card whose body can be folded. <CollapseAll /> folds every block on the page.
 export default function Collapsible({ id, title, children, className = "", defaultOpen = false }) {
-  const { open, toggle, pinned, togglePin } = useAccordion(id, defaultOpen);
+  const { open, toggle, pinned, togglePin, openNow } = useAccordion(id, defaultOpen);
+  const ref = useRef(null);
+  const asked = useRef(0);
+  const openRef = useRef(openNow);
+  openRef.current = openNow;
+  useEffect(() => { // coming from "GO" in the help: this block was asked for
+    let timer;
+    const apply = () => {
+      const dl = deepLink();
+      if (!id || !dl?.open?.includes(id) || asked.current === dl.at) return;
+      asked.current = dl.at;
+      timer = setTimeout(() => { openRef.current(); setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120); }, 150);
+    };
+    apply();
+    window.addEventListener("deeplink", apply);
+    return () => { clearTimeout(timer); window.removeEventListener("deeplink", apply); };
+  }, [id]);
   return (
-    <section className={`card collapsible ${open ? "open" : ""} ${className}`}>
+    <section ref={ref} className={`card collapsible ${open ? "open" : ""} ${className}`}>
       <div className="collapse-row">
         <button type="button" className="collapse-head" onClick={toggle} aria-expanded={open}>
           <h2>{title}</h2>

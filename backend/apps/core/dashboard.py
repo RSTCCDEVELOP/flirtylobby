@@ -160,10 +160,11 @@ def stats(request):
     if kind == "orders_daily":
         if level(me, "orders") < 1 or not modules.enabled("orders"):
             return deny
-        from apps.shop.models import Order
+        from apps import commerce
 
-        rows = {r["d"]: (r["n"], r["t"] or 0) for r in Order.objects.filter(created_at__gte=since).exclude(status__in=["canceled", "refunded"])
-                .annotate(d=TruncDate("created_at")).values("d").annotate(n=Count("id"), t=Sum("total"))}
+        if not commerce.orders():
+            return deny
+        rows = {r["d"]: (r["n"], r["t"] or 0) for r in commerce.orders().revenue_rows(since)}
         pts = [{"label": d.strftime("%d/%m"), "value": float(rows.get(d, (0, 0))[1]), "count": rows.get(d, (0, 0))[0]} for d in _days(30)]
         return Response({"points": pts, "revenue": sum(p["value"] for p in pts), "orders": sum(p["count"] for p in pts)})
 
@@ -203,14 +204,14 @@ def stats(request):
     if kind == "orders_recent":
         if level(me, "orders") < 1 or not modules.enabled("orders"):
             return deny
-        from apps.shop.models import Order
+        from apps import commerce
 
-        return Response([{"number": o.number, "name": o.name, "total": str(o.total), "status": o.status, "at": o.created_at} for o in Order.objects.all()[:6]])
+        return Response(commerce.orders().recent(6) if commerce.orders() else [])
 
     if kind == "low_stock":
         if level(me, "orders") < 1 or not modules.enabled("plugin:webshop"):
             return deny
-        from apps.shop import catalog
+        from apps.commerce import catalog
 
         return Response(catalog.low_stock())
     return Response({"detail": "Onbekend."}, status=status.HTTP_400_BAD_REQUEST)

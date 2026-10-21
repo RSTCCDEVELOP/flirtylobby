@@ -67,7 +67,7 @@ def scan():
     """Register the theme folders; forget rows whose folder is gone. Returns (found, problems)."""
     found, problems, keys = [], [], set()
     for d in sorted(root().iterdir()):
-        if not d.is_dir() or d.name.startswith("."):
+        if not d.is_dir() or d.name.startswith(".") or d.name == "language":  # language packages live in <themes>/language
             continue
         try:
             man = parse((d / "theme.json").read_bytes(), builtin_ok=True)
@@ -100,7 +100,7 @@ def enabled_defs():
     return [{"key": r.key, "name": r.manifest["name"], "description": r.manifest["description"], "mode": r.manifest.get("mode"), "overrides": r.manifest["values"], "assets": len(r.manifest.get("assets", {})) + len(r.manifest.get("home", []))} for r in rows]
 
 
-COMPLETE_KEYS = ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w", "tab_style", "system_popup", *[f"ts_{k}_{f}" for k in ("k1", "k2", "k3", "k4", "p") for f in ("size", "weight", "color", "font", "lh", "track")])  # a theme always holds these
+COMPLETE_KEYS = ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "footer_brand", "footer_social", "footer_meta", "footer_size", "page_header", "page_footer", "block_style", "block_gap", "content_w", "tab_style", "system_popup", *[f"ts_{k}_{f}" for k in ("k1", "k2", "k3", "k4", "p") for f in ("size", "weight", "color", "font", "lh", "track")])  # a theme always holds these
 
 
 def BUILTIN_KEYS():
@@ -267,14 +267,14 @@ def as_zip_all():
 
 
 def dist_dir():
-    """<themes>/.dist: a zip of every theme (and of all themes together) to import elsewhere. The themes folder is not part of the repository, so neither is this."""
-    d = root() / ".dist"
-    d.mkdir(exist_ok=True)
+    """<project>/themes/.dist/themes: a zip of every theme (and of all themes together) to import elsewhere. The themes folder is not part of the repository, so neither is this."""
+    d = settings.THEMES_DIST_DIR / "themes"
+    d.mkdir(parents=True, exist_ok=True)
     return d
 
 
 def build_dist():
-    """Write <themes>/.dist/<key>-<version>.zip for every theme and alle-themas.zip. Old versions of a zip stay. Returns the names."""
+    """Write <project>/themes/.dist/themes/<key>-<version>.zip for every theme and alle-themas.zip. Old versions of a zip stay. Returns the names."""
     out = []
     for key in all_keys():
         man = manifest_of(key)
@@ -433,7 +433,7 @@ def capture(key):
     d, doc = _dir(key), _doc(key)
     cur = theme.merged(SiteSettings.load().theme)
     values = dict(SiteSettings.load().theme) or {"primary": theme.DEFAULTS["primary"]}
-    for k in ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w", "tab_style", "system_popup"):
+    for k in ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "footer_brand", "footer_social", "footer_meta", "footer_size", "page_header", "page_footer", "block_style", "block_gap", "content_w", "tab_style", "system_popup"):
         values[k] = cur[k]  # a package always holds the complete page templates
     for slot in SLOTS:
         clear_slot(key, slot)

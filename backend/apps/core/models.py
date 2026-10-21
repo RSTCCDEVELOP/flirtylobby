@@ -95,9 +95,19 @@ class License(models.Model):
     client_address = models.CharField(max_length=300, blank=True)
     issued_at = models.DateTimeField(null=True, blank=True)
     valid_until = models.DateField(null=True, blank=True)  # empty = no end date
-    price = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # what a renewal costs (0 = renewing is not offered online)
-    renew_months = models.PositiveSmallIntegerField(default=12)
-    base_price = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # the price of the platform itself (incl. VAT); the parts in use come on top
+    price = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # what a renewal costs = the price per month x renew_months (0 = renewing is not offered online)
+    renew_months = models.PositiveSmallIntegerField(default=1)  # the period that is paid at once: 1 (month), 3 (quarter) or 12 (year)
+    base_price = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # the price of the platform itself PER MONTH (incl. VAT); the parts in use come on top
+    backup_included = models.PositiveSmallIntegerField(default=5)  # backups (all limits of the backup module added up) that are in the base price
+    backup_slot_price = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # per month, for every backup above that (incl. VAT)
+    payment_method = models.CharField(max_length=8, default="online")  # how the administrator pays: online (a payment every period) | auto (automatic collection, a subscription) | invoice (on account)
+    allowed_methods = models.JSONField(default=list, blank=True)  # which of these the superadmin offers (empty = online and invoice)
+    sub_status = models.CharField(max_length=10, blank=True)  # the licence subscription: "" (none) | active | cancelled
+    sub_provider = models.CharField(max_length=10, blank=True)  # mollie | stripe
+    sub_ref = models.CharField(max_length=60, blank=True)  # the reference of the subscription / mandate at the provider
+    sub_started_at = models.DateTimeField(null=True, blank=True)
+    sub_amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # the amount that the subscription at Stripe collects now (kept in line with the price)
+    stripe_config_encrypted = models.TextField(blank=True)  # the Stripe account of whoever sells the licence (keys encrypted): NOT the Stripe link of the website's own shop
     payment_ref = models.CharField(max_length=40, blank=True)  # the open renewal payment
     reseller_name = models.CharField(max_length=120, blank=True)  # who sells the licence: shown to administrators when there is none
     reseller_email = models.EmailField(blank=True)

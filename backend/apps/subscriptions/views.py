@@ -11,7 +11,9 @@ from rest_framework.response import Response
 
 from apps.accounts.permissions import has_level, has_level_any, has_level_for
 from apps.core.modules import module_required
-from apps.shop.service import unique_slug
+from django.utils.text import slugify
+
+from apps import commerce
 
 from . import service
 from .models import INTERVALS, ActionItem, Donation, DonationCampaign, Plan, Subscription
@@ -177,6 +179,14 @@ class PlanSerializer(serializers.ModelSerializer):
         obj = super().update(inst, data)
         __import__("apps.sysobjects.service", fromlist=["sync"]).sync()
         return obj
+
+
+def unique_slug(model, text, exclude_pk=None):
+    base = slugify(text) or "item"
+    slug, n = base, 2
+    while model.objects.filter(slug=slug).exclude(pk=exclude_pk).exists():
+        slug, n = f"{base}-{n}", n + 1
+    return slug
 
 
 class CampaignSerializer(serializers.ModelSerializer):
@@ -402,14 +412,14 @@ def _either_module():
 @permission_classes([has_level_any(("subscriptions", "use"), ("donations", "use")), _either_module()])
 def options(request):
     from apps.pages.models import Page
-    from apps.shop import catalog
+    from apps.commerce import catalog
 
     return Response({
         "grant_types": [{"type": k, "label": v["label"], "ref": v["ref"], "value": bool(v.get("value")), "help": v["help"], "themes": v.get("themes")} for k, v in service.GRANT_TYPES.items()], "theme": service.profile_theme(),
         "pages": [{"key": p.key, "title": p.title.get("nl") or next(iter(p.title.values()), p.key)} for p in Page.objects.filter(kind="content")],
         "products": catalog.active(),
         "intervals": [{"value": v, "label": l} for v, l in INTERVALS],
-        "currency": __import__("apps.shop.service", fromlist=["settings"]).settings()["currency"],
+        "currency": commerce.settings()["currency"],
     })
 
 
@@ -569,7 +579,7 @@ def plans_public(request):
             mine[s.plan_id] = s.status
     cfg = service.settings()
     return Response({"plans": [_plan_public(p, mine) for p in Plan.objects.filter(active=True)], "intro": cfg["intro"], "site_message": cfg["site_message"], "site_gate": cfg["gates"]["site"],
-                     "currency": __import__("apps.shop.service", fromlist=["settings"]).settings()["currency"]})
+                     "currency": commerce.settings()["currency"]})
 
 
 @api_view(["POST"])
@@ -675,7 +685,7 @@ def _campaign_public(c, detail=False):
 @permission_classes([AllowAny, module_required("donations")])
 def campaigns_public(request):
     return Response({"campaigns": [_campaign_public(c, True) for c in DonationCampaign.objects.filter(active=True)],
-                     "currency": __import__("apps.shop.service", fromlist=["settings"]).settings()["currency"]})
+                     "currency": commerce.settings()["currency"]})
 
 
 @api_view(["POST"])
@@ -820,7 +830,7 @@ def _item_row(i):
 def actions_admin(request):
     """The list of everything that can be paid for or earned, with its conditions. POST adds an own item (page, piece of content or service)."""
     from apps.pages.models import Page
-    from apps.shop import catalog
+    from apps.commerce import catalog
 
     if request.method == "POST":
         kind, ref = request.data.get("kind"), str(request.data.get("ref") or "").strip()[:80]

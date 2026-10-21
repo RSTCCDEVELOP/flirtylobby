@@ -20,7 +20,8 @@ import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
 import { api, apiBase, errorText, getToken } from "../../../../lib/api";
-import { confirmDialog } from "../../../../lib/dialog";
+import { alertDialog, confirmDialog } from "../../../../lib/dialog";
+import { translateName } from "../../../../lib/translate-name";
 import { lvl } from "../../../../lib/perms";
 
 // the pages whose blocks can be looked at and edited right here: own pages, and the standard pages that have blocks
@@ -90,16 +91,68 @@ export default function PagesAdmin() {
     if (!res.ok) return setMsg({ ok: false, text: tx("De pagina kon niet worden geëxporteerd.") });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(await res.blob()); a.download = `page-${p.key}.zip`; a.click();
-    setMsg({ ok: true, text: tx("De pagina is geëxporteerd en staat ook in de map site/{0}/{1}.", priv ? "private" : "public", p.key) });
+    setMsg({ ok: true, text: tx("De pagina is geëxporteerd en staat ook in site/pages/{0}.zip.", p.key) });
   }
-  async function importPage(file) { // a zip from the export of another website
+  const [sel, setSel] = useState(() => new Set()); // ids of the own pages that are selected for a package
+  const toggleSel = (id) => setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  async function exportSelected() { // a package (zip with the page, its pictures and videos, objects and what it needs) per selected page in site/pages/<page>.zip
+    const menus = await confirmDialog(tx("Moeten de menu's ook mee? Dan gaan de plek in het menu, de volgorde en de dropdowns van de geselecteerde pagina's mee, zodat ze op de andere website op dezelfde plek komen."), { okLabel: tx("Ja, menu's meenemen"), cancelLabel: tx("Nee, alleen de pagina's") });
+    const bundle = sel.size > 1 && await confirmDialog(tx("Wil je ook één totaalpakket van de {0} geselecteerde pagina's (selected_pages.zip)? Dat kun je in één keer importeren.", sel.size), { okLabel: tx("Ja, ook een totaalpakket"), cancelLabel: tx("Nee, alleen losse pakketten") });
+    setBusy(true); setMsg(null);
+    try {
+      const r = await api("/pages/export/", { method: "POST", body: { ids: [...sel], bundle, menus } });
+      const failed = Object.entries(r.failed || {});
+      const text = tx("{0} pakketten staan in {1}.", r.files.length, r.folder) + (r.bundle ? `\n${tx("Totaalpakket")}: ${r.bundle}` : "") + (failed.length ? `\n${failed.map(([k, v]) => `${k}: ${v}`).join("\n")}` : "");
+      setMsg({ ok: !failed.length, text: text.replace("\n", " ") });
+      setSel(new Set());
+      await alertDialog(`${tx("Export klaar")}\n${text}`);
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); await alertDialog(errorText(e)); }
+    setBusy(false);
+  }
+  const [importPlan, setImportPlan] = useState(null); // {file, info, mode, menus}: what is in the package, and what to do with pages that exist already
+  async function importPage(file) { // a zip from the export of another website (one page, or selected_pages.zip with several, maybe with menus)
     if (!file) return;
     setBusy(true); setMsg(null);
     try {
-      const fd = new FormData(); fd.append("file", file); fd.append("scope", scope);
+      const fd = new FormData(); fd.append("file", file); fd.append("inspect", "1");
+      const info = await api("/pages/import/", { method: "POST", body: fd });
+      if (info.pages.some((p) => p.exists) || info.menu) { setImportPlan({ file, info, mode: "copy", menus: !!info.menu }); setBusy(false); return; }
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); setBusy(false); return; }
+    await runImport(file, { mode: "copy", menus: false });
+  }
+  async function confirmImport() {
+    const { file, info, mode, menus } = importPlan;
+    const existing = info.pages.filter((p) => p.exists);
+    if (mode === "replace" && existing.length && !(await confirmDialog(tx("Let op: deze pagina's bestaan al en worden overschreven. Hun blokken en teksten worden vervangen door die uit het pakket en dat kun je niet ongedaan maken:\n\n{0}", existing.map((p) => `• ${p.title} (/${p.key})`).join("\n")), { danger: true, okLabel: tx("Ja, overschrijven"), cancelLabel: tx("Annuleren") }))) return;
+    setImportPlan(null);
+    await runImport(file, { mode, menus });
+  }
+  async function runImport(file, { mode, menus }) {
+    setBusy(true); setMsg(null);
+    try {
+      const fd = new FormData(); fd.append("file", file); fd.append("scope", scope); fd.append("mode", mode); if (menus) fd.append("menus", "1");
       const r = await api("/pages/import/", { method: "POST", body: fd });
       await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed"));
-      setMsg({ ok: true, text: [tx("De pagina {0} is geïmporteerd ({1} bestanden, {2} teksten). Hij gebruikt het thema van deze website.", menuLabel(r.page.title), r.media, r.blocks), ...(r.notes || [])].join(" ") });
+      const parts = [r.pages > 1 ? tx("{0} pagina's zijn geïmporteerd ({1} bestanden, {2} teksten). Ze gebruiken het thema van deze website.", r.pages, r.media, r.blocks) : r.pages === 1 && r.page ? tx("De pagina {0} is geïmporteerd ({1} bestanden, {2} teksten). Hij gebruikt het thema van deze website.", menuLabel(r.page.title), r.media, r.blocks) : "",
+        r.replaced?.length ? tx("Overschreven: {0}.", r.replaced.join(", ")) : "", r.skipped?.length ? tx("Overgeslagen (bestonden al): {0}.", r.skipped.join(", ")) : "", r.menu_items ? tx("{0} menu-items geplaatst.", r.menu_items) : "", ...(r.notes || [])].filter(Boolean);
+      setMsg({ ok: true, text: parts.join(" ") });
+      const w = r.warnings || {};
+      const todo = [
+        ...(w.modules || []).map((m) => `${tx("Zet de module aan")}: ${m.label}`),
+        ...(w.plugins || []).map((x) => `${x.state === "missing" ? tx("Installeer de plugin") : tx("Zet de plugin aan")}: ${x.title}${x.version ? ` ${x.version}` : ""}`),
+        ...(w.objects || []).map((o) => `${tx("Maak het systeemobject")}: ${o.label || o.slug}`),
+      ];
+      if (todo.length) await alertDialog(`${tx("De pagina's zijn geïmporteerd, maar hebben nog dit nodig:")}\n\n${todo.map((x) => `• ${x}`).join("\n")}`);
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  }
+  async function resetPage(p) { // a standard page that was changed: back to the first setup
+    if (!(await confirmDialog(tx("\"{0}\" terugzetten naar de eerste opzet? De naam, het menu, de rechten, de blokken en de teksten van deze pagina worden vervangen door wat het systeem maakte. Wat je zelf hebt aangepast gaat verloren.", label(p)), { danger: true, okLabel: tx("Terugzetten"), cancelLabel: tx("Annuleren") }))) return;
+    setBusy(true); setMsg(null);
+    try {
+      await api(`/pages/${p.id}/reset/`, { method: "POST", body: {} });
+      await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed"));
+      setMsg({ ok: true, text: tx("\"{0}\" staat weer op de eerste opzet.", label(p)) });
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   }
@@ -136,16 +189,24 @@ export default function PagesAdmin() {
         const src = body.title?.[langs.default] || Object.values(body.title || {}).find(Boolean) || "";
         body.title = (await api("/pages/translate/", { method: "POST", body: { text: src } })).titles;
       }
+      const main = (body.title?.[langs.default] || "").trim();
+      if (main) body.title = { ...body.title, ...Object.fromEntries(editLangs.filter((l) => !(body.title?.[l.code] || "").trim()).map((l) => [l.code, main])) }; // a language left empty takes over the main language
       if (id) await api(`/pages/${id}/`, { method: "PATCH", body: { title: body.title, audience: body.audience, new_tab: body.new_tab, ...(body.kind === "link" ? { url: body.url } : {}) } });
       else await api("/pages/", { method: "POST", body: { ...body, scope } });
       setModal(null); await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed"));
     } catch (err) { setModal({ ...modal, error: errorText(err) }); }
     setBusy(false);
   }
-  async function translateAgain() { // an existing menu item: fill every language from the default one
-    setBusy(true);
-    try { const r = await api("/pages/translate/", { method: "POST", body: { text: modal.title?.[langs.default] || "" } }); setModal({ ...modal, title: { ...modal.title, ...r.titles }, error: "" }); } catch (err) { setModal({ ...modal, error: errorText(err) }); }
-    setBusy(false);
+  const [trProg, setTrProg] = useState(null); // {done, total} while Claude translates the name
+  async function translateAll() { // fill EVERY language (also the ones that are off) from the default one, with a progress bar
+    const text = (modal.title?.[langs.default] || "").trim();
+    if (!text) return;
+    setBusy(true); setModal((m) => ({ ...m, error: "" }));
+    try {
+      const { titles, failed } = await translateName(text, langs.default, setTrProg);
+      setModal((m) => ({ ...m, title: { ...m.title, ...titles }, error: failed ? tx("{0} talen konden niet worden vertaald; die nemen de hoofdtaal over.", failed) : "" }));
+    } catch (err) { setModal((m) => ({ ...m, error: errorText(err) })); }
+    setTrProg(null); setBusy(false);
   }
 
   // drag a page onto a menu item: it goes under it (a dropdown); onto the left or right edge of an item: before or after it
@@ -239,36 +300,41 @@ export default function PagesAdmin() {
       <div className="page-head">
         <div>
           <h1>{tx("Pagina's")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{priv ? tx("Privé pagina's: alleen voor ingelogde leden, op /dashboard/<pagina>, met een eigen menu in de header van het dashboard.") : tx("Alle pagina's van de website en het menu in de header. Alleen wat aan staat wordt getoond.")}</p>
+          <p className="muted" style={{ margin: 0 }}>{priv ? tx("Dashboardpagina's: alleen voor ingelogde leden, op /dashboard/<pagina>, met een eigen menu in de header van het dashboard.") : tx("Alle pagina's van de website en het menu in de header. Alleen wat aan staat wordt getoond.")}</p>
         </div>
         <div className="row"><CollapseAll /></div>
       </div>
-      <Tabs value={scope} onChange={(v) => { setPages(null); setScope(v); }} tabs={[["public", "Openbaar"], ["private", "Privé"]]} />
+      <Tabs value={scope} onChange={(v) => { setPages(null); setScope(v); }} tabs={[["public", "Openbaar"], ["private", "Dashboard"]]} />
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       {view && <PagePreview key={`${view.key}-${view.edit}`} pageKey={view.key} path={view.url} withTitle={view.withTitle} title={view.title} startEdit={view.edit} onClose={() => setView(null)} />}
-      <Collapsible id={`pages-overview-${scope}`} title={priv ? tx("Overzicht van de privé pagina's") : tx("Overzicht van de pagina's")}>
+      <Collapsible id={`pages-overview-${scope}`} title={priv ? tx("Overzicht van de dashboardpagina's") : tx("Overzicht van de pagina's")}>
         <ViewBar view={tv} count={shown.length}
+          after={L >= 3 && <button type="button" className="btn primary sm" onClick={() => setModal({ ...EMPTY })} title={tx("Nieuwe pagina")} aria-label={tx("Nieuwe pagina")}>{tx("+ Nieuwe pagina")}</button>}
           extra={<>
             <select value={fKind} onChange={(e) => setFKind(e.target.value)} aria-label={tx("Soort")}><option value="">{tx("Alle soorten")}</option>{Object.entries(KIND).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
             <select value={fState} onChange={(e) => setFState(e.target.value)} aria-label={tx("Status")}><option value="">{tx("Alle statussen")}</option><option value="on">{tx("Aan")}</option><option value="off">{tx("Uit")}</option></select>
             <select value={fMenu} onChange={(e) => setFMenu(e.target.value)} aria-label={tx("In menu")}><option value="">{tx("Menu: alles")}</option><option value="in">{tx("In het menu")}</option><option value="out">{tx("Niet in het menu")}</option></select>
           </>} />
-        {L >= 3 && (
+        {L >= 2 && (
           <div className="row" style={{ marginBottom: ".5rem" }}>
-            <button type="button" className="btn sm" disabled={busy} onClick={() => fileIn.current?.click()}>{tx("Pagina importeren (.zip)")}</button>
+            {L >= 3 && <button type="button" className="btn sm" disabled={busy} onClick={() => fileIn.current?.click()}>{tx("Pagina importeren (.zip)")}</button>}
             <input ref={fileIn} type="file" accept=".zip,application/zip" hidden onChange={(e) => { importPage(e.target.files[0]); e.target.value = ""; }} />
+            <button type="button" className="btn sm primary" disabled={busy || !sel.size} onClick={exportSelected}>{tx("Pakketten maken")}{sel.size ? ` (${sel.size})` : ""}</button>
+            {sel.size > 0 && <button type="button" className="btn sm" onClick={() => setSel(new Set())}>{tx("Selectie wissen")}</button>}
+            {sel.size === 0 && <small className="muted">{tx("Vink eigen pagina's aan om er een pakket (zip) van te maken. Het komt in site/pages/.")}</small>}
           </div>
         )}
         <TableView view={tv}>
           <table>
-            <thead><tr><th>{tx("Pagina")}</th><th>{tx("Adres")}</th><th>{tx("Status")}</th><th>{tx("Actief")}</th><th>{tx("In menu")}</th><th /></tr></thead>
+            <thead><tr>{L >= 2 && <th style={{ width: "2rem" }}><input type="checkbox" aria-label={tx("Alle eigen pagina's selecteren")} checked={shown.some((p) => p.kind === "content") && shown.filter((p) => p.kind === "content").every((p) => sel.has(p.id))} onChange={(e) => setSel(e.target.checked ? new Set(shown.filter((p) => p.kind === "content").map((p) => p.id)) : new Set())} /></th>}<th>{tx("Pagina")}</th><th>{tx("Adres")}</th><th>{tx("Status")}</th><th>{tx("Actief")}</th><th>{tx("In menu")}</th><th /></tr></thead>
             <tbody>
               {shown.map((p) => {
                 const [cls, text] = status(p);
                 return (
                   <tr key={p.id}>
-                    <td><strong>{label(p)}</strong><br /><small className="muted">{tx(KIND[p.kind])}{p.audience !== "all" ? ` · ${tx(AUDIENCE[p.audience])}` : ""}</small></td>
+                    {L >= 2 && <td>{p.kind === "content" && <input type="checkbox" aria-label={tx("Selecteren")} checked={sel.has(p.id)} onChange={() => toggleSel(p.id)} />}</td>}
+                    <td><strong>{label(p)}</strong><br /><small className="muted">{tx(KIND[p.kind])}{p.audience !== "all" ? ` · ${tx(AUDIENCE[p.audience])}` : ""}{p.resettable && p.modified ? ` · ${tx("gewijzigd")}` : ""}</small></td>
                     <td><code>{p.path}</code></td>
                     <td><span className={`badge ${cls}`}>{text}</span></td>
                     <td><Sw checked={p.enabled} disabled={L < 2 || p.locked} onChange={(v) => patch(p, { enabled: v })} /></td>
@@ -279,19 +345,20 @@ export default function PagesAdmin() {
                       <a className="btn sm" href={p.path} {...(priv ? {} : { target: "_blank", rel: "noreferrer" })}>{tx("Openen")}</a>
                       {L >= 2 && p.kind === "content" && <button className="btn sm" onClick={() => exportPage(p)}>{tx("Exporteren")}</button>}
                       {L >= 2 && <button className="btn sm" onClick={() => setSettings(p)}>{tx("Instellingen")}</button>}
+                      {L >= 3 && p.resettable && p.modified && <button className="btn sm" title={tx("Terug naar de eerste opzet van deze standaardpagina")} onClick={() => resetPage(p)}>{tx("Herstel")}</button>}
                       {L >= 3 && p.kind !== "system" && <button className="btn sm danger" onClick={() => remove(p)}>{tx("Verwijder")}</button>}
                     </td>
                   </tr>
                 );
               })}
-              {!shown.length && <tr><td colSpan={6} className="muted">{tx("Geen pagina's gevonden.")}</td></tr>}
+              {!shown.length && <tr><td colSpan={7} className="muted">{tx("Geen pagina's gevonden.")}</td></tr>}
             </tbody>
           </table>
         </TableView>
         <small className="muted">{tx("Een pagina waarvan de module uit staat (bijvoorbeeld Producten) verdwijnt vanzelf uit de website en het menu. De tekst van een eigen pagina bewerk je op de pagina zelf in de bewerkmodus.")}</small>
       </Collapsible>
 
-      <Collapsible id={`pages-menu-${scope}`} title={priv ? tx("Privé menu (header van het dashboard)") : tx("Menu-editor (header)")}>
+      <Collapsible id={`pages-menu-${scope}`} title={priv ? tx("Dashboardmenu (header van het dashboard)") : tx("Menu-editor (header)")}>
         {!priv && <Tabs value={menuTab} onChange={setMenuTab} tabs={[["menu", "Menu"], ["settings", "Instellingen"]]} />}
         {!priv && menuTab === "settings" && <MenuSettingsAdmin canEdit={L >= 3} />}
         {(priv || menuTab === "menu") && <>
@@ -361,8 +428,40 @@ export default function PagesAdmin() {
       </Collapsible>
 
       {settings && (
-        <PageSettingsModal page={settings} languages={langs.languages} defaultLang={langs.default} canSeo={mods?.seo !== false && lvl(user, "seo") >= 1}
+        <PageSettingsModal ai={ai} page={settings} languages={langs.languages} defaultLang={langs.default} canSeo={mods?.seo !== false && lvl(user, "seo") >= 1}
           onClose={() => setSettings(null)} onSaved={async () => { setSettings(null); await load(); router.refresh(); setMsg({ ok: true, text: tx("Pagina-instellingen opgeslagen.") }); }} />
+      )}
+
+      {importPlan && (
+        <div className="overlay" onClick={() => setImportPlan(null)}>
+          <div className="card modal form" onClick={(e) => e.stopPropagation()}>
+            <h2>{tx("Pakket importeren")}</h2>
+            <div style={{ display: "grid", gap: ".3rem", maxHeight: "30vh", overflow: "auto" }}>
+              {importPlan.info.pages.map((p) => (
+                <div key={p.key} className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
+                  <span><strong>{p.title}</strong> <small className="muted">/{p.key}</small></span>
+                  {p.exists ? <span className="badge off">{tx("bestaat al")}</span> : <span className="badge ok">{tx("nieuw")}</span>}
+                </div>
+              ))}
+            </div>
+            {importPlan.info.pages.some((p) => p.exists) && (
+              <>
+                <div className="alert">{tx("Een of meer pagina's bestaan al op deze website. Kies wat er mee moet gebeuren.")}</div>
+                {[["copy", "Een nieuwe pagina ernaast maken (met een nieuw adres)"], ["replace", "Bestaande pagina's overschrijven (blokken en teksten worden vervangen)"], ["skip", "Bestaande pagina's overslaan"]].map(([k, l]) => (
+                  <label key={k} className="check" style={{ alignItems: "flex-start" }}>
+                    <input type="radio" name="impmode" checked={importPlan.mode === k} onChange={() => setImportPlan({ ...importPlan, mode: k })} /><span>{tx(l)}</span>
+                  </label>
+                ))}
+                {importPlan.mode === "replace" && importPlan.info.pages.some((p) => p.exists && !p.replaceable) && <small className="muted">{tx("Pagina's die geen eigen pagina zijn (systeempagina's of links) worden niet overschreven: daar komt een nieuwe pagina naast.")}</small>}
+              </>
+            )}
+            {importPlan.info.menu && <Sw label={tx("Menu's ook importeren (plek in het menu, volgorde en dropdowns)")} checked={importPlan.menus} onChange={(v) => setImportPlan({ ...importPlan, menus: v })} />}
+            <div className="row">
+              <button type="button" className="btn" onClick={() => setImportPlan(null)}>{tx("Annuleren")}</button>
+              <button type="button" className={`btn ${importPlan.mode === "replace" ? "danger" : "primary"}`} onClick={confirmImport}>{importPlan.mode === "replace" ? tx("Importeren en overschrijven") : tx("Importeren")}</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {modal && (
@@ -387,7 +486,17 @@ export default function PagesAdmin() {
               <>
             <strong style={{ fontSize: ".85rem" }}>{tx("Naam per taal")}</strong>
             {modal.kind === "menu" && !ai && !modal.id && <small className="muted">{tx("Claude is niet gekoppeld: vul de naam zelf in per taal. Koppelen kan bij Admin → API keys.")}</small>}
-            {modal.kind === "menu" && ai && modal.id && <button type="button" className="btn sm" disabled={busy || !modal.title?.[langs.default]} onClick={translateAgain}>{tx("Vertaal naar alle talen")}</button>}
+            {ai && (
+              <>
+                <button type="button" className="btn sm" disabled={busy || !modal.title?.[langs.default]?.trim()} onClick={translateAll}>{tx("Vertaal naar alle talen")}</button>
+                {trProg && (
+                  <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={trProg.total} aria-valuenow={trProg.done}>
+                    <div className="progress-top"><span>{tx("Vertalen…")}</span><strong>{trProg.done} / {trProg.total}</strong></div>
+                    <div className="progress-track"><i style={{ width: `${Math.round((trProg.done / Math.max(1, trProg.total)) * 100)}%` }} /></div>
+                  </div>
+                )}
+              </>
+            )}
             <Tabs className="lang-tabs" value={activeLang} onChange={setNameLang} tabs={editLangs.map((l) => [l.code, l.native_name || l.code, null, modal.title?.[l.code] ? "✓" : null])} />
             {editLangs.filter((l) => l.code === activeLang).map((l) => (
               <label key={l.code}>{l.native_name}

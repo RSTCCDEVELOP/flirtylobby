@@ -5,7 +5,7 @@ class SystemObject(models.Model):
     """An item of another module that can be put on a page in edit mode (a donation button, a subscription, …).
     The source (campaign, plan) says "System Object" with a checkbox; this registry is what the page editor offers."""
 
-    KINDS = [("donation", "Donatie"), ("plan", "Abonnement"), ("plugin", "Plugin"), ("plugin_item", "Onderdeel van een plugin"), ("plugin_part", "Pluginblok")]
+    KINDS = [("donation", "Donatie"), ("plan", "Abonnement"), ("plugin", "Plugin"), ("plugin_item", "Onderdeel van een plugin"), ("plugin_part", "Pluginblok"), ("media", "Media")]
     kind = models.CharField(max_length=12, choices=KINDS)
     ref_id = models.PositiveIntegerField()
     ref_key = models.CharField(max_length=60, blank=True)  # for a part of a plugin (a game): its name in the plugin folder

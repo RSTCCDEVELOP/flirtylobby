@@ -13,6 +13,12 @@ import { pushUndo } from "../lib/undo";
 import { SysObjectBySlug } from "./SysObjects";
 import LayoutPresets from "./LayoutPresets";
 import { BgControls, BgLayer } from "./SectionBg";
+import Tabs from "./Tabs";
+import PluginFrame from "./PluginFrame";
+import MediaViewEditor from "./MediaViewEditor";
+import BlockNav from "./BlockNav";
+import { IconEdit, IconTrash } from "./Icons";
+import { createPortal } from "react-dom";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
 const newCell = () => ({ id: uid(), width: "auto", halign: "left", valign: "top", items: [] });
@@ -75,6 +81,14 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const drag = useRef(null);
   const [itemOpen, setItemOpen] = useState({}); // texts whose settings (text style, size, colour, font) are open
   const [pageOpen, setPageOpen] = useState(false); // the page settings (space, items per page, width, hero, layout) are folded away until the gear is clicked
+  const [objPop, setObjPop] = useState(null); // {cell: id} while the system objects popup is open
+  const [objQ, setObjQ] = useState("");
+  const [objTab, setObjTab] = useState("");
+  const [mediaEdit, setMediaEdit] = useState(null); // a media system object (photo book, carousel ...) being edited in a popup
+  const [objEdit, setObjEdit] = useState(null); // the system object that is being edited in a popup
+  const objDirty = useRef(false);
+  const closeObjEdit = () => { setObjEdit(null); if (objDirty.current) { objDirty.current = false; window.location.reload(); } }; // something changed: the page shows the new version
+  const [panelTab, setPanelTab] = useState({}); // the tab of the settings panel per row
   const [barOpen, setBarOpen] = useState({}); // rows whose settings panel is open (the gear in the corner): {rowId: true}
   const toggleBar = (id) => setBarOpen((m) => ({ ...m, [id]: !m[id] }));
   const rowDrag = useRef(null); // a whole row (block, hero) that is being dragged
@@ -107,6 +121,12 @@ export default function PageBlocks({ pageKey, title = "" }) {
     document.documentElement.dataset.hero = "1";
     return () => { delete par.dataset.hero; delete document.documentElement.dataset.hero; };
   }, [heroTheme, layout, title]);
+  useEffect(() => { // a link with #anchor goes to that block (also when the blocks arrive a moment after the page)
+    if (!layout || typeof window === "undefined" || !window.location.hash) return;
+    const h = decodeURIComponent(window.location.hash.slice(1));
+    const t = setTimeout(() => document.getElementById(h)?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+    return () => clearTimeout(t);
+  }, [layout?.rows?.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (editing && objOn) api("/sysobjects/").then(setObjects).catch(() => {}); }, [editing, objOn]);
 
   // every change is saved a moment later
@@ -150,6 +170,10 @@ export default function PageBlocks({ pageKey, title = "" }) {
     r.cells.forEach((c, i) => { c.width = widths[i] === "auto" ? "auto" : widths[i]; });
     return l;
   });
+  const heroNo = useRef({}); // the number of each hero on the page: a hero without a name of its own is "hero", "hero-2" ...
+  const anchorOf = (r) => r.anchor || (r.hero ? (heroNo.current[r.id] > 1 ? `hero-${heroNo.current[r.id]}` : "hero") : "");
+  const rowNavId = (r, i) => anchorOf(r) || `blok-${i + 1}`; // every block can be reached: its own anchor, else blok-1, blok-2 ...
+  const titleOf = (r) => r.title || (r.hero ? (heroNo.current[r.id] > 1 ? `Hero ${heroNo.current[r.id]}` : "Hero") : "");
   const setRow = (rid, patch) => change((l) => {
     const r = l.rows.find((x) => x.id === rid);
     Object.assign(r, patch);
@@ -173,8 +197,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
     else delRow(r.id);
   };
   const delRow = (rid) => change((l) => { l.rows = l.rows.filter((x) => x.id !== rid); return l; });
+  const setAllCells = (rid, patch) => change((l) => { const row = l.rows.find((x) => x.id === rid); if (row) row.cells.forEach((c) => Object.assign(c, patch)); return l; });
   const setCell = (cid, patch) => change((l) => { Object.assign(l.rows.flatMap((r) => r.cells).find((c) => c.id === cid), patch); return l; });
-  const addItem = (cid, type, ref = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref }); return l; }); };
+  const addItem = (cid, type, ref = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref, ...(type === "heading" ? { style: { tag: "k2" } } : {}) }); return l; }); };
   const setItem = (iid, patch) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { x.style = { ...(x.style || {}), ...patch }; Object.keys(x.style).forEach((k) => { if (x.style[k] === "" || x.style[k] == null) delete x.style[k]; }); if (!Object.keys(x.style).length) delete x.style; } }))); return l; });
   const dropFixed = (cid, before) => { // a fixed element of the page (logo, title, intro) is dropped in a cell
     const f = dragFixed();
@@ -198,11 +223,12 @@ export default function PageBlocks({ pageKey, title = "" }) {
 
   const renderItem = (c, it) => {
     const key = it.ref && it.type !== "object" ? it.ref : `layout.${pageKey}.${it.id}`; // a fixed element that was dragged in keeps its own content key
-    const body = it.type === "text" ? <div className={`pb-tstyle${it.style?.tag ? ` ts-${it.style.tag}` : ""}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}`} style={{ ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}) }}><EditableText id={key} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" /></div>
-      : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : editing ? <div className="pb-ph">{tx("Klik om een afbeelding te kiezen")}</div> : null} /></div>
+    const body = it.type === "text" ? <div className={`pb-tstyle${it.style?.tag ? ` ts-${it.style.tag}` : ""}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}`} style={{ ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}) }}><EditableText id={key} removable={false} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" /></div>
+      : it.type === "heading" ? <div className={`pb-tstyle ts-${it.style?.tag || "k2"}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}${it.style?.weight ? " ts-weight" : ""}`} style={{ ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}), ...(it.style?.weight ? { "--ti-weight": it.style.weight } : {}), textAlign: it.style?.align || c.halign, ...(it.style?.mb !== undefined ? { marginBottom: `${it.style.mb}rem` } : {}) }}><EditableText id={key} removable={false} as={{ k1: "h2", k2: "h3", k3: "h4", k4: "h5" }[it.style?.tag || "k2"] || "h3"} fallback={editing ? tx("Klik om een kop te typen") : ""} className="pb-text pb-heading" /></div>
+      : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} removable={false} className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : editing ? <div className="pb-ph">{tx("Klik om een afbeelding te kiezen")}</div> : null} /></div>
       : <SysObjectBySlug slug={it.ref} />;
     if (!editing) return <div className={`pb-item${it.type === "object" ? " obj" : ""}`} key={it.id} style={{ textAlign: c.halign }}>{body}</div>;
-    const label = it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
+    const label = it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
     const shown = over?.id === it.id ? ` drop-${over.pos}` : "";
     const hover = (e) => { // above the middle of the item = before it, below = after it
       if ((!drag.current && !dragFixed()) || drag.current === it.id) return;
@@ -228,11 +254,20 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <span className="pb-grip" title={tx("Sleep om te verplaatsen")} draggable
             onDragStart={(e) => { drag.current = it.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", it.id); const box = e.currentTarget.closest(".pb-item"); if (box) e.dataTransfer.setDragImage(box, 16, 16); setTimeout(() => { setDragOn(it.id); setDragging(true); }, 0); }}
             onDragEnd={() => { drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>⋮⋮ <small>{label}</small></span>
-          {it.type === "text" && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => setItemOpen((m) => ({ ...m, [it.id]: !m[it.id] }))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
+          {(it.type === "text" || it.type === "heading") && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => setItemOpen((m) => ({ ...m, [it.id]: !m[it.id] }))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
           </button>}
+          {it.type === "object" && (() => { // a system object (product overview, donation, subscription ...): its settings, in a popup (a donation or subscription: its own admin page)
+            const o = objects.find((x) => x.slug === it.ref);
+            if (!o) return null;
+            const plug = o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part";
+            const href = o.kind === "donation" ? "/dashboard/admin/donations" : o.kind === "plan" ? "/dashboard/admin/subscriptions" : "";
+            if (o.kind === "media") return <button type="button" className="btn sm pb-edit" title={tx("Dit systeemobject bewerken")} aria-label={tx("Dit systeemobject bewerken")} onClick={() => api("/mediaviews/").then((vs) => { const v = vs.find((x) => x.name === o.data?.name); if (v) setMediaEdit(v); })}><IconEdit width={13} height={13} /></button>;
+            if (plug && o.data?.admin_web) return <button type="button" className="btn sm pb-edit" title={tx("Dit systeemobject bewerken")} aria-label={tx("Dit systeemobject bewerken")} onClick={() => setObjEdit(o)}><IconEdit width={13} height={13} /></button>;
+            return href ? <a className="btn sm pb-edit" href={href} target="_blank" rel="noreferrer" title={tx("Dit systeemobject bewerken")} aria-label={tx("Dit systeemobject bewerken")}><IconEdit width={13} height={13} /></a> : null;
+          })()}
           </span>
-          <button type="button" className="btn sm danger pb-x" title={tx("Dit onderdeel van de pagina verwijderen")} onClick={() => delItem(it.id)}>{tx("Verwijder")}</button>
+          <button type="button" className="btn sm danger pb-x pb-trash" title={tx("Dit onderdeel van de pagina verwijderen")} aria-label={tx("Dit onderdeel van de pagina verwijderen")} onClick={() => delItem(it.id)}><IconTrash width={22} height={22} /></button>
         </div>
         {it.type === "image" && itemOpen[it.id] && (
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
@@ -250,13 +285,25 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <button type="button" className="btn sm" disabled={!it.style} onClick={() => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === it.id) delete x.style; }))); return l; })}>{tx("Terug naar standaard")}</button></div>
           </div>
         )}
-        {it.type === "text" && itemOpen[it.id] && (
+        {(it.type === "text" || it.type === "heading") && itemOpen[it.id] && (
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
-            <strong>{tx("Tekstinstellingen")}</strong>
-            <div className="pb-stylerow"><span>{tx("Opmaak")}</span>
-              <select value={it.style?.tag || ""} onChange={(e) => setItem(it.id, { tag: e.target.value })}>
-                <option value="">{tx("Zoals in de tekst")}</option><option value="k1">{tx("Kop 1")}</option><option value="k2">{tx("Kop 2")}</option><option value="k3">{tx("Kop 3")}</option><option value="k4">{tx("Kop 4")}</option><option value="p">{tx("Alinea")}</option>
+            <strong>{it.type === "heading" ? tx("Titel setup") : tx("Tekstinstellingen")}</strong>
+            <div className="pb-stylerow"><span>{it.type === "heading" ? tx("Niveau") : tx("Opmaak")}</span>
+              <select value={it.type === "heading" ? it.style?.tag || "k2" : it.style?.tag || ""} onChange={(e) => setItem(it.id, { tag: e.target.value })}>
+                {it.type !== "heading" && <option value="">{tx("Zoals in de tekst")}</option>}<option value="k1">{tx("Kop 1")}</option><option value="k2">{tx("Kop 2")}</option><option value="k3">{tx("Kop 3")}</option><option value="k4">{tx("Kop 4")}</option>{it.type !== "heading" && <option value="p">{tx("Alinea")}</option>}
               </select></div>
+            {it.type === "heading" && (
+              <>
+                <div className="pb-stylerow"><span>{tx("Uitlijnen")}</span>
+                  <span className="pb-seg">{[["", "Zoals de kolom"], ["left", "Links"], ["center", "Midden"], ["right", "Rechts"]].map(([k, l]) => <button type="button" key={k || "col"} className={(it.style?.align || "") === k ? "on" : ""} onClick={() => setItem(it.id, { align: k })}>{tx(l)}</button>)}</span></div>
+                <div className="pb-stylerow"><span>{tx("Dikte")}</span>
+                  <select value={it.style?.weight || ""} onChange={(e) => setItem(it.id, { weight: e.target.value })}>
+                    <option value="">{tx("Zoals het thema")}</option><option value="400">{tx("Normaal")}</option><option value="500">{tx("Medium")}</option><option value="600">{tx("Halfvet")}</option><option value="700">{tx("Vet")}</option><option value="800">{tx("Extra vet")}</option>
+                  </select></div>
+                <div className="pb-stylerow"><span>{tx("Ruimte eronder")}</span>
+                  <input type="range" min={0} max={4} step={0.25} value={it.style?.mb ?? 0.5} onChange={(e) => setItem(it.id, { mb: Number(e.target.value) })} style={{ width: 160 }} /><small className="muted">{it.style?.mb ?? 0.5} rem</small></div>
+              </>
+            )}
             <div className="pb-stylerow"><span>{tx("Lettergrootte")}</span>
               <input type="number" min={0.6} max={6} step={0.1} value={it.style?.size || ""} placeholder={tx("Thema")} onChange={(e) => setItem(it.id, { size: e.target.value === "" ? "" : Number(e.target.value) })} style={{ width: "6rem" }} /><small className="muted">rem</small></div>
             <div className="pb-stylerow"><span>{tx("Kleur")}</span><ColorPick value={it.style?.color || ""} onChange={(v) => setItem(it.id, { color: v })} /></div>
@@ -292,11 +339,16 @@ export default function PageBlocks({ pageKey, title = "" }) {
       {heroTheme && !heroRow && (title || h1) && (
         <div className="pb-rowwrap hero" data-t={heroTheme}><h1 className="pb-hero-title">{title || h1}</h1></div>
       )}
+      {(() => { // number the heroes; the blocks that have a name or an anchor go in the list at the top left
+        heroNo.current = {}; let n = 0; layout.rows.forEach((x) => { if (x.hero) heroNo.current[x.id] = ++n; });
+        const shown = layout.rows.filter((r) => !(heroOff && own(r)) && (editing || r.hero || r.bg?.url || r.cells.some((c) => c.items.length)));
+        return <BlockNav items={shown.map((r) => ({ id: layout.rows.filter((x) => !(heroOff && own(x))).indexOf(r) >= 0 ? rowNavId(r, layout.rows.filter((x) => !(heroOff && own(x))).indexOf(r)) : "", title: titleOf(r) || `${tx("Blok")} ${layout.rows.filter((x) => !(heroOff && own(x))).indexOf(r) + 1}` })).filter((i) => i.id)} />;
+      })()}
       {layout.rows.filter((r) => !(heroOff && own(r))).map((r, ri) => (
-        <div className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.hero && r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color ? " tcolor" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
+        <div id={rowNavId(r, ri)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color ? " tcolor" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOverRow((o) => (o?.id === r.id ? null : o)); }}
           onDrop={(e) => { if (!rowDrag.current) return; e.preventDefault(); e.stopPropagation(); const pos = overRow?.id === r.id ? overRow.pos : "before"; dropRow(r.id, pos); rowDrag.current = null; setOverRow(null); setDragging(false); }}
-          data-pad={r.pad || undefined} data-fx={r.fx || undefined} style={{ ...styleCss(r.style), ...(r.screen ? { width: `${r.width && r.width !== "default" ? r.width : 100}vw`, maxWidth: "none", marginLeft: "calc(50% - 50vw)", marginRight: "calc(50% - 50vw)", paddingLeft: 0, paddingRight: 0 } : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.hero && r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>
+          data-sqm={r.sq_mobile ? "1" : undefined} data-pad={r.pad || undefined} data-fx={r.fx || undefined} data-v={r.v || undefined} data-touch={r.top === "touch" ? "1" : undefined} data-prev={r.top === "prev" ? "1" : undefined} style={{ ...styleCss(r.style), ...(r.mt !== undefined && r.mt !== null && r.top !== "touch" ? { marginTop: `calc(${r.mt}px - var(--pbg, 1.2rem))` } : {}), ...(r.padding ? { ...(r.padding.t != null ? { paddingTop: `${r.padding.t}px` } : {}), ...(r.padding.r != null ? { paddingRight: `${r.padding.r}px` } : {}), ...(r.padding.b != null ? { paddingBottom: `${r.padding.b}px` } : {}), ...(r.padding.l != null ? { paddingLeft: `${r.padding.l}px` } : {}) } : {}), ...(r.screen ? { width: `${r.width && r.width !== "default" ? r.width : 100}vw`, maxWidth: "none", marginLeft: "calc(50% - 50vw)", marginRight: "calc(50% - 50vw)", paddingLeft: 0, paddingRight: 0 } : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>
           <BgLayer bg={r.bg} />
           {editing && (
             <div className="pb-corner">
@@ -310,9 +362,57 @@ export default function PageBlocks({ pageKey, title = "" }) {
               </button>
             </div>
           )}
-          {editing && barOpen[r.id] && (
-            <div className="pb-rowbar pop">
-              <strong>{r.hero === "plain" ? tx("Raster") : r.hero ? tx("Hero") : tx("Raster")}</strong>
+          {editing && mediaEdit && r === layout.rows[0] && <MediaViewEditor view={mediaEdit} onClose={() => setMediaEdit(null)} onSaved={() => window.location.reload()} />}
+          {editing && objEdit && typeof document !== "undefined" && r === layout.rows[0] && createPortal(
+            <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) closeObjEdit(); }}>
+              <div className="pb-objpop" role="dialog" aria-label={tx("Systeemobject bewerken")} style={{ width: "min(860px, 100%)" }}>
+                <div className="pb-objhead"><strong>{objEdit.data?.title || objEdit.names?.[""] || objEdit.slug}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={closeObjEdit} aria-label={tx("Sluiten")}>×</button></div>
+                <PluginFrame name={objEdit.data.name} file={objEdit.data.admin_web} bare route={{ params: {}, query: { popup: "1", ...(objEdit.data.query?.design ? { tab: "designs", edit: objEdit.data.query.design } : {}) } }} onWrite={() => { objDirty.current = true; }} />
+              </div>
+            </div>, document.body)}
+          {editing && objPop && objPop.row === r.id && typeof document !== "undefined" && createPortal(
+            <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) setObjPop(null); }}>
+              <div className="pb-objpop" role="dialog" aria-label={tx("Systeemobjecten")}>
+                <div className="pb-objhead"><strong>{tx("Systeemobjecten")}</strong>
+                  <input type="search" value={objQ} onChange={(e) => setObjQ(e.target.value)} placeholder={tx("Zoeken")} autoFocus />
+                  <button type="button" className="pb-panelx" onClick={() => setObjPop(null)} aria-label={tx("Sluiten")}>×</button></div>
+                {!objects.length && <small className="muted">{tx("Nog geen systeemobjecten (zie Admin → Systeemobjecten).")}</small>}
+                {(() => { // one tab per module: donations, subscriptions and every plugin on its own
+                  const nameOf = (o) => `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}`;
+                  const tabOf = (o) => (o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part") ? `plugin:${o.data?.name || "plugin"}` : o.kind;
+                  const labelOf = (o) => o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin");
+                  const hits = objects.filter((o) => !objQ || nameOf(o).toLowerCase().includes(objQ.toLowerCase()));
+                  const tabs = [];
+                  for (const o of hits) if (!tabs.some((x) => x[0] === tabOf(o))) tabs.push([tabOf(o), labelOf(o), null, 0]);
+                  tabs.forEach((x) => { x[3] = hits.filter((o) => tabOf(o) === x[0]).length; });
+                  const cur = tabs.some((x) => x[0] === objTab) ? objTab : tabs[0]?.[0];
+                  return <>
+                    {tabs.length > 0 && <Tabs value={cur} onChange={setObjTab} tabs={tabs.map(([k, l, i, n]) => [k, tx(l), i || undefined, n])} />}
+                    <div className="pb-objgrid" style={{ marginTop: ".7rem" }}>{hits.filter((o) => tabOf(o) === cur).map((o) => <button type="button" key={o.slug} onClick={() => { addItem(objPop.cell, "object", o.slug); setObjPop(null); }}>{nameOf(o)}</button>)}</div>
+                    {objQ && !tabs.length && <small className="muted">{tx("Niets gevonden.")}</small>}
+                  </>;
+                })()}
+              </div>
+            </div>, document.body)}
+          {editing && (anchorOf(r) || titleOf(r)) && <span className="pb-rowtag" title={tx("Het adres van dit blok")}>{titleOf(r)}{anchorOf(r) && <b> #{anchorOf(r)}</b>}</span>}
+          {editing && barOpen[r.id] && typeof document !== "undefined" && createPortal(
+            <div className="pb-popback" onMouseDown={(e) => { if (e.target === e.currentTarget) toggleBar(r.id); }}>
+            <div className="pb-rowbar pop pb-center" role="dialog" aria-label={tx("Instellingen")} onMouseDown={(e) => e.stopPropagation()}>
+              <div className="pb-panelhead"><strong>{r.hero === "plain" ? tx("Raster") : r.hero ? tx("Hero") : tx("Rij")}</strong>
+                <button type="button" className="icon-btn pb-panelx" onClick={() => toggleBar(r.id)} aria-label={tx("Sluiten")} title={tx("Sluiten")}>✕</button>
+                <Tabs className="pb-paneltabs" value={panelTab[r.id] || "layout"} onChange={(v) => setPanelTab((t) => ({ ...t, [r.id]: v }))} tabs={[["layout", "Indeling"], ["size", "Afmetingen"], ["align", "Uitlijning"], ["pad", "Ruimte"], ["style", "Opmaak"], ["bg", "Achtergrond"]]} />
+              </div>
+              {(panelTab[r.id] || "layout") === "layout" && (
+                <div className="pb-panelbody">
+              <div className="pb-aligngroup wide pb-anchorbox">
+                <strong>{tx("Titel en adres van dit blok")}</strong>
+                <div className="pb-anchorrow">
+                  <label>{tx("Titel")}<input value={r.title ?? titleOf(r)} maxLength={80} placeholder={tx("Bijvoorbeeld: Over ons")} onChange={(e) => setRow(r.id, { title: e.target.value })} /></label>
+                  <label>{tx("Anker")}<span className="pb-anchorin">#<input value={r.anchor ?? anchorOf(r)} maxLength={40} placeholder="over-ons" onChange={(e) => setRow(r.id, { anchor: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-") })} /></span></label>
+                </div>
+                {anchorOf(r) && <small className="muted">{tx("Link naar dit blok:")} <code>{typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}#${anchorOf(r)}` : `#${anchorOf(r)}`}</code>{" "}
+                  <button type="button" className="btn sm" onClick={() => navigator.clipboard?.writeText(`${window.location.origin}${window.location.pathname}#${anchorOf(r)}`)}>{tx("Kopieer")}</button></small>}
+              </div>
               <div className="pb-colchooser" role="group" aria-label={tx("Kolomindeling")}>
                 <strong>{tx("Kolomindeling")}</strong>
                 <span className="pb-coltiles">
@@ -328,10 +428,14 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 </span>
               </div>
               <label>{tx("Kolommen")}<select value={r.cols} onChange={(e) => setRow(r.id, { cols: Number(e.target.value) })}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+              <label>{tx("Ruimte")}<select value={r.gap} onChange={(e) => setRow(r.id, { gap: e.target.value })}><option value="sm">{tx("Klein")}</option><option value="md">{tx("Normaal")}</option><option value="lg">{tx("Groot")}</option></select></label>
+                </div>
+              )}
+              {panelTab[r.id] === "size" && (
+                <div className="pb-panelbody">
               <label>{tx("Breedte is een deel van")}<select value={r.screen ? "screen" : "page"} onChange={(e) => setRow(r.id, { screen: e.target.value === "screen", width: e.target.value === "screen" && (!r.width || r.width === "default") ? "100" : r.width })}><option value="page">{tx("De pagina")}</option><option value="screen">{tx("De hele browser (volle breedte)")}</option></select></label>
               <label>{tx("Breedte")}<select value={r.width || "default"} onChange={(e) => setRow(r.id, { width: e.target.value })}>{ROW_WIDTHS.map((w) => <option key={w} value={w}>{w === "default" ? tx("Standaard") : w === "100" ? (r.screen ? "100% (hele browser)" : tx("100% (paginabreed)")) : `${w}%`}</option>)}</select></label>
-              <label>{tx("Ruimte")}<select value={r.gap} onChange={(e) => setRow(r.id, { gap: e.target.value })}><option value="sm">{tx("Klein")}</option><option value="md">{tx("Normaal")}</option><option value="lg">{tx("Groot")}</option></select></label>
-              {r.hero && (
+              {true && (
                 <label>{tx("Hoogte")}
                   <select value={r.h_mode || "auto"} onChange={(e) => { const m = e.target.value; setRow(r.id, m === "auto" ? { h_mode: "", h: 0 } : { h_mode: m, h: m === "px" ? 400 : m === "pct" ? 50 : 100 }); }}>
                     <option value="auto">{tx("Automatisch")}</option><option value="px">{tx("Pixels")}</option><option value="pct">{tx("Procent van het scherm")}</option><option value="full">{tx("Volledig scherm")}</option>
@@ -340,6 +444,69 @@ export default function PageBlocks({ pageKey, title = "" }) {
                   {(r.h_mode === "px" || r.h_mode === "pct") && <small className="muted">{r.h_mode === "px" ? "px" : "%"}</small>}
                 </label>
               )}
+              <label>{tx("Ruimte boven en onder")}<select value={r.pad || ""} onChange={(e) => setRow(r.id, { pad: e.target.value })}><option value="">{tx("Pagina")}</option>{PAD_OPTS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
+                </div>
+              )}
+              {panelTab[r.id] === "align" && (
+                <div className="pb-panelbody">
+                  <div className="pb-aligngroup">
+                    <strong>{tx("Horizontaal in het blok")}</strong>
+                    <span className="pb-seg">{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={r.cells.every((c) => c.halign === k) ? "on" : ""} title={tx(l)} onClick={() => setAllCells(r.id, { halign: k })}>{g} {tx(l)}</button>)}</span>
+                  </div>
+                  <div className="pb-aligngroup">
+                    <strong>{tx("Verticaal in de kolommen")}</strong>
+                    <span className="pb-seg">{[["top", "⤒", "Boven"], ["center", "↕", "Midden"], ["bottom", "⤓", "Onder"]].map(([k, g, l]) => <button type="button" key={k} className={r.cells.every((c) => c.valign === k) ? "on" : ""} title={tx(l)} onClick={() => setAllCells(r.id, { valign: k })}>{g} {tx(l)}</button>)}</span>
+                  </div>
+              {true && (<>
+                <label>{tx("Plek van het blok op de pagina")}
+                  <select value={r.v || "center"} onChange={(e) => setRow(r.id, { v: e.target.value })} disabled={!r.h_mode} title={!r.h_mode ? tx("Kies eerst een hoogte") : undefined}>
+                    <option value="top">{tx("Boven")}</option><option value="center">{tx("Gecentreerd")}</option><option value="bottom">{tx("Onder")}</option>
+                  </select>
+                </label>
+              
+                  {true && (
+                    <label>{tx("Plaats in het scherm")}
+                      <select value={r.top || ""} onChange={(e) => setRow(r.id, { top: e.target.value })}>
+                        <option value="">{tx("Onder de header / het vorige blok (met ruimte)")}</option><option value="touch">{tx("Direct tegen de header")}</option><option value="prev">{tx("Tegen het vorige blok")}</option>
+                      </select>
+                    </label>
+                  )}
+                  <label className="pb-padslider wide">{tx("Ruimte tussen de blokken")}
+                    <input type="range" min={0} max={200} step={4} value={r.mt ?? 24} onChange={(e) => setRow(r.id, { mt: Number(e.target.value) })} aria-label={tx("Ruimte tussen de blokken")} />
+                    <small className="muted">{r.mt === undefined || r.mt === null ? tx("standaard") : `${r.mt} px`}</small>
+                  </label>
+                  {r.mt !== undefined && r.mt !== null && <button type="button" className="btn sm" onClick={() => setRow(r.id, { mt: null })}>{tx("Ruimte terug naar standaard")}</button>}
+                </>)}
+                </div>
+              )}
+              {panelTab[r.id] === "pad" && (
+                <div className="pb-panelbody">
+                  <div className="pb-aligngroup wide">
+                    <strong>{tx("Ruimte binnen het blok (padding)")}</strong>
+                    <div className="pb-padgrid">
+                  <label className="pb-padslider">{tx("Boven")}
+                    <input type="range" min={0} max={200} step={4} value={r.padding?.t ?? 0} onChange={(e) => setRow(r.id, { padding: { ...(r.padding || {}), t: Number(e.target.value) } })} aria-label={tx("Boven")} />
+                    <small className="muted">{r.padding?.t ?? 0} px</small>
+                  </label>
+                  <label className="pb-padslider">{tx("Rechts")}
+                    <input type="range" min={0} max={200} step={4} value={r.padding?.r ?? 0} onChange={(e) => setRow(r.id, { padding: { ...(r.padding || {}), r: Number(e.target.value) } })} aria-label={tx("Rechts")} />
+                    <small className="muted">{r.padding?.r ?? 0} px</small>
+                  </label>
+                  <label className="pb-padslider">{tx("Onder")}
+                    <input type="range" min={0} max={200} step={4} value={r.padding?.b ?? 0} onChange={(e) => setRow(r.id, { padding: { ...(r.padding || {}), b: Number(e.target.value) } })} aria-label={tx("Onder")} />
+                    <small className="muted">{r.padding?.b ?? 0} px</small>
+                  </label>
+                  <label className="pb-padslider">{tx("Links")}
+                    <input type="range" min={0} max={200} step={4} value={r.padding?.l ?? 0} onChange={(e) => setRow(r.id, { padding: { ...(r.padding || {}), l: Number(e.target.value) } })} aria-label={tx("Links")} />
+                    <small className="muted">{r.padding?.l ?? 0} px</small>
+                  </label>
+                    </div>
+                    <button type="button" className="btn sm" disabled={!r.padding} onClick={() => setRow(r.id, { padding: null })}>{tx("Terug naar standaard")}</button>
+                  </div>
+                </div>
+              )}
+              {panelTab[r.id] === "style" && (
+                <div className="pb-panelbody">
               <div className="pb-stylebox">
                 <strong>{tx("Opmaak van dit blok")}</strong>
                 <div className="pb-stylerow"><span>{tx("Achtergrondkleur")}</span><ColorPick value={r.style?.bg || ""} onChange={(v) => setRow(r.id, { style: { ...(r.style || {}), bg: v, bg_a: r.style?.bg_a ?? 100 } })} />
@@ -349,6 +516,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
                   <input type="number" min={0} max={200} step={2} value={r.style?.radius ?? ""} placeholder={tx("Thema")} onChange={(e) => setRow(r.id, { style: { ...(r.style || {}), radius: e.target.value === "" ? "" : Number(e.target.value) } })} style={{ width: "6rem" }} /><small className="muted">px</small>
                   <input type="range" min={0} max={80} step={2} value={r.style?.radius ?? 0} onChange={(e) => setRow(r.id, { style: { ...(r.style || {}), radius: Number(e.target.value) } })} style={{ width: 140 }} aria-label={tx("Ronde hoeken")} />
                 </div>
+                <div className="pb-stylerow pb-mobradius"><span>{tx("Ronde hoeken op mobiel")}</span>
+                  <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!r.sq_mobile} onChange={(e) => setRow(r.id, { sq_mobile: !e.target.checked })} /><span /></span><span>{r.sq_mobile ? tx("Uit: op een telefoon zijn de hoeken recht") : tx("Aan: ook op een telefoon")}</span></label>
+                </div>
                 <div className="pb-stylerow"><span>{tx("Lettertype")}</span>
                   <select value={r.style?.font || ""} onChange={(e) => setRow(r.id, { style: { ...(r.style || {}), font: e.target.value } })}>
                     <option value="">{tx("Zoals het thema")}</option><option value="body">{tx("Lettertype van de tekst")}</option><option value="heading">{tx("Lettertype van de koppen")}</option><option value="serif">Serif</option><option value="mono">Monospace</option>
@@ -356,25 +526,27 @@ export default function PageBlocks({ pageKey, title = "" }) {
                   <button type="button" className="btn sm" disabled={!r.style || !Object.keys(r.style).length} onClick={() => setRow(r.id, { style: {} })}>{tx("Terug naar thema")}</button>
                 </div>
               </div>
-              {r.hero && (
-                <label>{tx("Uitlijnen in de hoogte")}
-                  <select value={r.v || "center"} onChange={(e) => setRow(r.id, { v: e.target.value })} disabled={!r.h_mode} title={!r.h_mode ? tx("Kies eerst een hoogte") : undefined}>
-                    <option value="top">{tx("Boven")}</option><option value="center">{tx("Gecentreerd")}</option><option value="bottom">{tx("Onder")}</option>
-                  </select>
-                </label>
-              )}
               <label>{tx("Scrolleffect")}
                 <select value={r.fx || ""} onChange={(e) => setRow(r.id, { fx: e.target.value })}>
                   <option value="">{tx("Zoals het thema")}</option><option value="none">{tx("Geen effect")}</option><option value="fade">{tx("Vervagen")}</option><option value="up">{tx("Omhoog schuiven")}</option><option value="down">{tx("Omlaag schuiven")}</option><option value="left">{tx("Van links")}</option><option value="right">{tx("Van rechts")}</option><option value="zoom">{tx("Inzoomen")}</option><option value="blur">{tx("Scherp worden")}</option>
                 </select>
               </label>
-              <label>{tx("Ruimte boven en onder")}<select value={r.pad || ""} onChange={(e) => setRow(r.id, { pad: e.target.value })}><option value="">{tx("Pagina")}</option>{PAD_OPTS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
+                </div>
+              )}
+              {panelTab[r.id] === "bg" && (
+                <div className="pb-panelbody">
               <BgControls bg={r.bg} onChange={(bg) => setRow(r.id, { bg })} />
-              <span className="pb-spacer" />
-              <button type="button" className="btn sm" disabled={ri === 0} onClick={() => moveRow(r.id, -1)} title={tx("Omhoog")}>↑</button>
-              <button type="button" className="btn sm" disabled={ri === layout.rows.length - 1} onClick={() => moveRow(r.id, 1)} title={tx("Omlaag")}>↓</button>
-              <button type="button" className="btn sm danger" onClick={() => removeRow(r)}>{r.hero === "plain" ? tx("Raster verwijderen") : r.hero ? tx("Hero verwijderen") : tx("Rij verwijderen")}</button>
+                  <small className="muted">{tx("Een afbeelding of video achter dit blok, met de donkerte erover.")}</small>
+                </div>
+              )}
+              <div className="pb-panelfoot">
+                <button type="button" className="btn sm" disabled={ri === 0} onClick={() => moveRow(r.id, -1)} title={tx("Omhoog")}>↑</button>
+                <button type="button" className="btn sm" disabled={ri === layout.rows.length - 1} onClick={() => moveRow(r.id, 1)} title={tx("Omlaag")}>↓</button>
+                <span className="pb-spacer" />
+              <button type="button" className="btn sm danger pb-trash" onClick={() => removeRow(r)} title={r.hero === "plain" ? tx("Raster verwijderen") : r.hero ? tx("Hero verwijderen") : tx("Rij verwijderen")} aria-label={r.hero === "plain" ? tx("Raster verwijderen") : r.hero ? tx("Hero verwijderen") : tx("Rij verwijderen")}><IconTrash width={22} height={22} /></button>
+              </div>
             </div>
+            </div>, document.body
           )}
           {own(r) && (title || h1) && <h1 className="pb-hero-title">{title || h1}</h1>}
           <div className={`pb-row gap-${r.gap}`} style={{ "--cols": r.cols, "--tpl": columns(r) }}>
@@ -391,13 +563,12 @@ export default function PageBlocks({ pageKey, title = "" }) {
                       <button type="button" className="btn sm primary" onClick={() => setMenu(menu === c.id ? null : c.id)}>+ {tx("Toevoegen")}</button>
                       {menu === c.id && (
                         <div className="pb-menu">
+                          <button type="button" onClick={() => addItem(c.id, "heading")}>{tx("Kop")}</button>
                           <button type="button" onClick={() => addItem(c.id, "text")}>{tx("Tekst")}</button>
                           <button type="button" onClick={() => addItem(c.id, "image")}>{tx("Afbeelding")}</button>
                           <div className="pb-menu-h">{tx("Raster in dit blok")}</div>
                           <span className="pb-menu-cols">{[1, 2, 3, 4].map((n) => <button type="button" key={n} className={r.cols === n ? "on" : ""} onClick={() => { setMenu(null); setRow(r.id, { cols: n }); }} title={n === 1 ? tx("Eén kolom") : `${n} ${tx("kolommen")}`}>{n}</button>)}<small className="muted">{tx("kolommen")}</small></span>
-                          {objOn && <div className="pb-menu-h">{tx("Systeemobjecten")}</div>}
-                          {objOn && objects.map((o) => <button type="button" key={o.slug} onClick={() => addItem(c.id, "object", o.slug)}>{o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug} <small className="muted">{o.kind === "donation" ? tx("Donatie") : (o.kind === "plugin" || o.kind === "plugin_item") ? tx("Plugin") : tx("Abonnement")}</small></button>)}
-                          {objOn && !objects.length && <small className="muted" style={{ padding: ".3rem .6rem" }}>{tx("Nog geen systeemobjecten (zie Admin → Systeemobjecten).")}</small>}
+                          {objOn && <button type="button" onClick={() => { setMenu(null); setObjQ(""); setObjPop({ cell: c.id, row: r.id }); }}>{tx("Systeemobjecten")}… <small className="muted">{objects.length}</small></button>}
                         </div>
                       )}
                     </span>

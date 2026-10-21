@@ -46,7 +46,7 @@ Alles wat bij DEZE website hoort staat hier. Een update van het systeem (backend
 - plugins/    de plugins van deze site (ondertekend, uit plugins/.dist of ontwikkeld)
 - themes/     de themapakketten van deze site
 - public/     exports van pagina's van de website (public/<pagina>/)
-- private/    exports van privé pagina's (private/<pagina>/)
+- private/    exports van dashboardpagina's (private/<pagina>/)
 - content/    exports, imports en losse bestanden (logo's, instellingen-exports)
 
 Zet deze map in een eigen (privé) repository of maak er een back-up van. Een andere website = een andere site-map met dezelfde systeemcode.

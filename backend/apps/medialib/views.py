@@ -245,3 +245,77 @@ def file(request, pk):
     except Exception:  # noqa: BLE001
         raise Http404()
     return FileResponse(fh, content_type=item.mime or mimetypes.guess_type(item.key)[0] or "application/octet-stream")
+
+
+# ── media system objects: photo book, carousel, photo wall, slideshow ───────────────
+from apps.accounts.permissions import has_level_for  # noqa: E402
+
+from . import mediaviews  # noqa: E402
+from .models import MediaView  # noqa: E402
+
+views_perm = [has_level_for("media", {"GET": "use"}, default="edit"), mod_media]
+
+
+def _sync_objects():
+    try:
+        from apps.sysobjects import service as sysobj
+
+        sysobj.sync()
+    except Exception:  # noqa: BLE001  (the system objects are optional)
+        pass
+
+
+@api_view(["GET", "POST"])
+@permission_classes(views_perm)
+def mediaviews_list(request):
+    if request.method == "POST":
+        try:
+            v = mediaviews.apply(MediaView(), request.data if isinstance(request.data, dict) else {})
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        _sync_objects()
+        return Response(mediaviews.out(v), status=status.HTTP_201_CREATED)
+    return Response([mediaviews.out(v) for v in MediaView.objects.all()])
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes(views_perm)
+def mediaviews_one(request, pk):
+    v = MediaView.objects.filter(pk=pk).first()
+    if not v:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        v.delete()
+        _sync_objects()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    try:
+        mediaviews.apply(v, request.data if isinstance(request.data, dict) else {})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(mediaviews.out(v))
+
+
+@api_view(["GET", "POST"])
+@permission_classes(views_perm)
+def mediaviews_demo(request):
+    """Make the four example objects (photo book, carousel, photo wall, slideshow) from the pictures of the library."""
+    if request.method == "GET":  # what the demo has made (for the question "what to remove")
+        return Response(mediaviews.demo_counts())
+    if request.data.get("remove"):  # the demo objects and/or the example pictures
+        asked = request.data.get("what")
+        what = [x for x in (["views", "images"] if asked is None else asked) if x in ("views", "images")]
+        if not what:
+            return Response({"detail": "Kies wat je wilt verwijderen."}, status=status.HTTP_400_BAD_REQUEST)
+        done = mediaviews.remove_demo(what)
+        _sync_objects()
+        return Response({"removed": done, "counts": mediaviews.demo_counts()})
+    try:
+        try:
+            count = int(request.data.get("count") or 16)
+        except (TypeError, ValueError):
+            count = 16
+        n = mediaviews.demo(replace=bool(request.data.get("replace", True)), count=count)
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    _sync_objects()
+    return Response({"made": n}, status=status.HTTP_201_CREATED)

@@ -12,6 +12,7 @@ export const IconHistory = () => <svg {...p}><circle cx="12" cy="12" r="9" /><pa
 export const IconKey = () => <svg {...p}><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2L20 3M16 7l3 3M14 9l2 2" /></svg>;
 export const IconImage = () => <svg {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="M21 16l-5-5-8 8" /></svg>;
 export const IconLock = () => <svg {...p}><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" /></svg>;
+export const IconArchive = () => <svg {...p}><rect x="3" y="4" width="18" height="5" rx="1.5" /><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4" /></svg>;
 export const IconFolder = () => <svg {...p}><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>;
 export const IconGrid = () => <svg {...p}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>;
 export const IconGroup = () => <svg {...p}><circle cx="8" cy="9" r="3" /><circle cx="17" cy="10" r="2.5" /><path d="M2.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5M15 15c3 0 6 1.4 6 4" /></svg>;
@@ -71,3 +72,4 @@ export const PRESET_ICONS = {
   gamepad: <><rect x="2.5" y="7" width="19" height="11" rx="5" /><path d="M7.5 10.5v4M5.5 12.5h4M15.5 11.5h.01M18 13.5h.01" /></>,
 };
 export const PresetIcon = ({ name, size = 26 }) => PRESET_ICONS[name] ? <svg {...p} width={size} height={size}>{PRESET_ICONS[name]}</svg> : null;
+export const IconTrash = I(<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />);

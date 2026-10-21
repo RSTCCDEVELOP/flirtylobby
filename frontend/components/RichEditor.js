@@ -12,7 +12,7 @@ import { useModule } from "./Modules";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 // images are stored with relative /media/ paths; show them via the API origin while editing
 export const toDisplay = (html) => html.replaceAll('src="/media/', `src="${API}/media/`);
-const toStored = (html) => html.replaceAll(`src="${API}/media/`, 'src="/media/');
+export const toStored = (html) => html.replaceAll(`src="${API}/media/`, 'src="/media/');
 
 const escapeHtml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export const plainToHtml = (t) => t.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("");

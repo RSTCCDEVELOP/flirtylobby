@@ -39,7 +39,9 @@ export default function PluginsPage() {
   }
   async function toggle(p, on) {
     setMsg(null);
-    try { upd(await api(`/plugins/${p.name}/`, { method: "PATCH", body: { enabled: on } })); window.dispatchEvent(new Event("plugins-changed")); }
+    const off = on ? p.requires_off || [] : [];
+    if (off.length && !(await confirmDialog(tx("{0} heeft ook {1} nodig. Die staan nog uit. Ook aanzetten?", p.title, off.map((x) => x.title).join(", ")), { title: tx("Plugins aanzetten"), okLabel: tx("Alles aanzetten") }))) return;
+    try { upd(await api(`/plugins/${p.name}/`, { method: "PATCH", body: { enabled: on, with_requires: off.length > 0 } })); window.dispatchEvent(new Event("plugins-changed")); if (off.length) load(); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); load(); }
   }
   async function remove(p) {
@@ -86,13 +88,18 @@ export default function PluginsPage() {
 
       {tab === "installed" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
+          <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem" }}>
+            <button type="button" className="btn" disabled={busy} onClick={scan}>{tx("Map op de server scannen")}</button>
+            <small className="muted"><code>{d.folder}</code></small>
+          </div>
           {!d.plugins.length && <p className="muted">{tx("Er zijn nog geen plugins. Upload een zipbestand, of zet een map in")} <code>{d.folder}</code> {tx("en kies Map scannen.")}</p>}
           {d.plugins.map((p) => (
             <Collapsible key={p.name} id={`plugin-${p.name}`} title={`${p.title}  ·  ${tx("plugin")} ${p.version}  ·  ${tx("systeem")} ${p.built_for}${["outdated", "incompatible", "newer"].includes(p.compat) ? "  ⚠" : ""}`}>
               <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-                <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.enabled} disabled={!p.enabled && !!p.blocked} onChange={(e) => toggle(p, e.target.checked)} /><span /></span><span><strong>{p.enabled ? tx("Aan") : tx("Uit")}</strong></span></label>
+                <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.enabled} disabled={!p.enabled && (!!p.blocked || (p.requires_missing || []).length > 0)} onChange={(e) => toggle(p, e.target.checked)} /><span /></span><span><strong>{p.enabled ? tx("Aan") : tx("Uit")}</strong></span></label>
                 <span className="muted">{tx("Plugin")} {p.version} · {tx("voor systeem")} {p.built_for} · {tx(SECTION_LABEL[p.section] || p.section)}</span>
               </div>
+              {(p.requires?.length > 0 || p.required_by?.length > 0) && <p className="muted" style={{ margin: ".4rem 0 0", fontSize: ".85rem" }}>{p.requires?.length > 0 && <>{tx("Heeft nodig:")} {p.requires.join(", ")}. </>}{p.required_by?.length > 0 && <>{tx("Nodig voor:")} {p.required_by.join(", ")}.</>}{(p.requires_missing || []).length > 0 ? ` ${tx("Nog niet geïnstalleerd:")} ${p.requires_missing.join(", ")}.` : (p.requires_off || []).length > 0 && !p.enabled ? ` ${tx("Staan nog uit:")} ${p.requires_off.map((x) => x.title).join(", ")}.` : ""}</p>}
               <PluginTabs p={p} onSaved={upd} />
               <div className="row" style={{ justifyContent: "flex-start" }}>
                 <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Beheerpagina")}</a>
@@ -114,6 +121,10 @@ export default function PluginsPage() {
             <input ref={input} type="file" accept=".zip,application/zip" hidden onChange={(e) => { upload(e.target.files[0]); e.target.value = ""; }} />
           </div>
           <small className="muted">{tx("Maximaal {0} MB. Het zipbestand moet een plugin.json bevatten.", d.max_zip_mb)}</small>
+          <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem", borderTop: "1px solid var(--line)", paddingTop: ".8rem" }}>
+            <button type="button" className="btn" disabled={busy} onClick={scan}>{busy ? tx("Bezig…") : tx("Map op de server scannen")}</button>
+            <small className="muted">{tx("Zoekt plugins in")} <code>{d.folder}</code></small>
+          </div>
         </div>
       )}
 

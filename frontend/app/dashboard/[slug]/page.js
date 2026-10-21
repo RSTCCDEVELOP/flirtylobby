@@ -11,7 +11,7 @@ import { api } from "../../../lib/api";
 import { menuLabel } from "../../../components/SiteMenu";
 import { tx } from "../../../lib/t";
 
-// A page at its own address inside the dashboard, /dashboard/<slug>: the page of a plugin (public_path in plugin.json) or a private page (Admin -> Pagina's, tab Privé).
+// A page at its own address inside the dashboard, /dashboard/<slug>: the page of a plugin (public_path in plugin.json) or a dashboard page (Admin -> Pagina's, tab Dashboard).
 export default function DashboardPage() {
   const { slug } = useParams();
   const [found, setFound] = useState(null); // {plugin} | {page} | false

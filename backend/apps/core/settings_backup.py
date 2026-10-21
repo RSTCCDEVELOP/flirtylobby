@@ -23,7 +23,8 @@ from django.db import transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
-FORMAT = "flirtylobby-settings"
+FORMAT = "easy2edit-settings"
+OLD_FORMATS = ("flirtylobby-settings",)  # files made before the rename still load
 FORMAT_VERSION = 1
 SECTIONS = {}
 _discovered = False
@@ -73,7 +74,7 @@ def export(keys=None, include_secrets=False, include_files=True, extra=None):
 
 def check(bundle):
     """Is this a settings file? Raises ValueError with a readable text."""
-    if not isinstance(bundle, dict) or bundle.get("format") != FORMAT or not isinstance(bundle.get("sections"), dict):
+    if not isinstance(bundle, dict) or bundle.get("format") not in (FORMAT, *OLD_FORMATS) or not isinstance(bundle.get("sections"), dict):
         raise ValueError("Dit is geen instellingenbestand van dit systeem.")
     if int(bundle.get("version", 0) or 0) > FORMAT_VERSION:
         raise ValueError("Dit bestand komt uit een nieuwere versie en kan hier niet worden geladen.")

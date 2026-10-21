@@ -35,7 +35,7 @@ export default function SystemReset() {
       const a = document.createElement("a");
       const d = new Date(), p = (n) => String(n).padStart(2, "0");
       a.href = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }));
-      a.download = `flirtylobby-back-up-voor-reset-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+      a.download = `easy2edit-back-up-voor-reset-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       setSaved(true);

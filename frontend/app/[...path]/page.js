@@ -4,9 +4,11 @@ import PageBlocks from "../../components/PageBlocks";
 import { PageRouteProvider } from "../../components/PageRoute";
 import Paywall from "../../components/Paywall";
 import PluginPublic from "../../components/PluginPublic";
+import PageShell from "../../components/PageShell";
 import SiteFooter from "../../components/SiteFooter";
 import SiteHeader from "../../components/SiteHeader";
 import { getOwnPage } from "../../lib/pages-server";
+import { getPageSetup } from "../../lib/page-setup-server";
 
 export const dynamic = "force-dynamic";
 
@@ -72,15 +74,14 @@ export default async function PluginSitePage({ params, searchParams }) {
   const own = sp ? await getOwnPage(sp.key) : null;
   if (!sp || !own) notFound();
   const slug = sp.key;
+  const setup = await getPageSetup(slug);
   return (
-    <div className="site">
-      <SiteHeader />
+    <PageShell setup={setup}>
       <main className="doc">
         <EditableText id={`page.${slug}.title`} as="h1" fallbacks={own.title} fallback={own.title.nl || Object.values(own.title)[0]} />
         <Paywall page={slug}><EditableText id={`page.${slug}.body`} as="div" rich fallback="" className="doc-rich" /></Paywall>
         <PageBlocks pageKey={slug} />
       </main>
-      <SiteFooter />
-    </div>
+    </PageShell>
   );
 }

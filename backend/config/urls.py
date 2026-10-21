@@ -15,7 +15,6 @@ urlpatterns = [
     path("api/", include("apps.communication.urls")),
     path("api/", include("apps.seo.urls")),
     path("api/", include("apps.sandbox.urls")),
-    path("api/", include("apps.shop.urls")),
     path("api/", include("apps.social.urls")),
     path("api/", include("apps.plugins.urls")),
     path("api/", include("apps.pages.urls")),
@@ -24,6 +23,7 @@ urlpatterns = [
     path("api/", include("apps.sysobjects.urls")),
     path("api/", include("apps.faq.urls")),
     path("api/", include("apps.notifications.urls")),
+    path("api/", include("apps.backups.urls")),
 ]
 
 if settings.DEBUG:

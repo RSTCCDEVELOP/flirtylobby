@@ -1,5 +1,5 @@
 // UI translations. The Dutch text itself is the key: t("Opslaan") -> "Save" when the language is English.
-// Dictionaries live in public/locales/<code>.json ({ "Dutch text": "translation" }); a missing entry falls back to the Dutch text.
+// Dictionaries live in public/locales/<code>.json ({ "Dutch text": "translation" }) or, when installed as a language package, in the API; a missing entry falls back to the Dutch text.
 // Keys with {0}, {1} … are templates: t("Maximaal {0} foto's", 10). Messages from the API (already filled in) are matched against those templates too.
 let LANG = "nl";
 let DICT = {};
@@ -51,6 +51,11 @@ export function translateTree(data) {
 
 export async function loadDictionary(code) {
   if (!code || code === "nl") return {};
+  try { // an installed language package (Admin -> Talen -> Importeren) takes the place of the file that comes with the system
+    const { apiBase } = await import("./api");
+    const r = await fetch(`${apiBase()}/api/languages/${code}/dictionary/`, { cache: "no-cache" });
+    if (r.ok) return await r.json();
+  } catch {}
   try {
     const r = await fetch(`/locales/${code}.json`, { cache: "no-cache" });
     return r.ok ? await r.json() : {};

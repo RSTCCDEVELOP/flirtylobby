@@ -7,7 +7,8 @@ import os
 
 from cryptography.fernet import Fernet, InvalidToken
 
-FORMAT = "flirtylobby-api-keys"
+FORMAT = "easy2edit-api-keys"
+OLD_FORMATS = ("flirtylobby-api-keys",)  # files made before the rename still load
 ROUNDS = 390_000
 
 
@@ -21,7 +22,7 @@ def pack(rows, password):
 
 
 def unpack(bundle, password):
-    if not isinstance(bundle, dict) or bundle.get("format") != FORMAT:
+    if not isinstance(bundle, dict) or bundle.get("format") not in (FORMAT, *OLD_FORMATS):
         raise ValueError("Dit is geen exportbestand van API-koppelingen.")
     try:
         return json.loads(_fernet(password, base64.b64decode(bundle["salt"])).decrypt(bundle["data"].encode()))

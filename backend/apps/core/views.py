@@ -100,8 +100,10 @@ from .models import Language  # noqa: E402
 
 
 def _lang(l):
+    from . import langpacks
+
     return {"code": l.code, "name": l.name, "native_name": l.native_name, "rtl": l.rtl,
-            "enabled": l.enabled, "is_default": l.is_default}
+            "enabled": l.enabled, "is_default": l.is_default, "protected": l.code in langpacks.PROTECTED or l.is_default, "package": langpacks.installed(l.code) is not None}
 
 
 def _switcher():
@@ -140,16 +142,86 @@ def languages_all(request):
     return Response([_lang(l) for l in Language.objects.all()])
 
 
-@api_view(["PATCH"])
-@permission_classes([has_level("languages", "edit"), module_required("languages")])
+@api_view(["PATCH", "DELETE"])
+@permission_classes([has_level_for("languages", {"PATCH": "edit", "DELETE": "manage"}), module_required("languages")])
 def language_update(request, code):
     lang = get_object_or_404(Language, code=code)
+    if request.method == "DELETE":
+        from . import langpacks
+
+        try:
+            langpacks.remove(lang)
+        except langpacks.LanguageError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response([_lang(l) for l in Language.objects.all()])
     enabled = bool(request.data.get("enabled"))
     if not enabled and lang.is_default:
         return Response({"detail": "De standaardtaal kan niet worden uitgezet."}, status=status.HTTP_400_BAD_REQUEST)
     lang.enabled = enabled
     lang.save(update_fields=["enabled"])
     return Response(_lang(lang))
+
+
+# ── Language packages (Admin -> Talen): import for admins, export for superadmins ──
+from rest_framework.decorators import parser_classes  # noqa: E402
+from rest_framework.parsers import FormParser, MultiPartParser  # noqa: E402
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def language_dictionary(request, code):
+    """The interface texts of an installed language package (the languages that come with the system are static files of the frontend)."""
+    from . import langpacks
+
+    pack = langpacks.installed(code)
+    if not pack or not Language.objects.filter(code=code).exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    return Response(pack["ui"])
+
+
+@api_view(["POST"])
+@permission_classes([has_level("languages", "edit"), module_required("languages")])
+@parser_classes([MultiPartParser, FormParser])
+def language_import(request):
+    from . import langpacks
+
+    f = request.FILES.get("file")
+    if not f or not f.name.lower().endswith(".zip"):
+        return Response({"detail": "Kies een zipbestand met een taal."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        codes = langpacks.install_zip(f.read())
+    except langpacks.LanguageError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"installed": codes, "languages": [_lang(l) for l in Language.objects.all()]})
+
+
+def _superadmin(request):
+    return bool(request.user.is_staff or request.user.is_superuser)
+
+
+@api_view(["POST"])
+@permission_classes([has_level("languages", "manage"), module_required("languages")])
+def language_export(request):
+    """Superadmins: write a zip per language and all_languages.zip into <project>/themes/.dist/languages."""
+    from . import langpacks
+
+    if not _superadmin(request):
+        return Response({"detail": "Alleen een superadmin kan talen exporteren."}, status=status.HTTP_403_FORBIDDEN)
+    return Response({"folder": str(langpacks.dist_dir()), "files": langpacks.build_dist()})
+
+
+@api_view(["GET"])
+@permission_classes([has_level("languages", "manage"), module_required("languages")])
+def language_export_all(request):
+    from django.http import HttpResponse
+
+    from . import langpacks
+
+    if not _superadmin(request):
+        return Response({"detail": "Alleen een superadmin kan talen exporteren."}, status=status.HTTP_403_FORBIDDEN)
+    r = HttpResponse(langpacks.as_zip_all(), content_type="application/zip")
+    r["Content-Disposition"] = 'attachment; filename="all_languages.zip"'
+    return r
 
 
 @api_view(["POST"])
@@ -270,6 +342,8 @@ def module_update(request, key):
         return Response({"detail": "Onbekende module."}, status=status.HTTP_404_NOT_FOUND)
     if m.get("core"):
         return Response({"detail": "Kernmodules kunnen niet worden uitgezet."}, status=status.HTTP_400_BAD_REQUEST)
+    if m.get("plugin"):
+        return Response({"detail": "Deze module is een plugin: zet hem aan of uit bij Admin → Plugins."}, status=status.HTTP_400_BAD_REQUEST)
     on = bool(request.data.get("enabled"))
     ModuleState.objects.update_or_create(key=key, defaults={"enabled": on})
     modules.invalidate()
@@ -436,7 +510,9 @@ def theme_pack_download_all(request):
 @api_view(["POST"])
 @permission_classes([has_level("theme", "edit"), module_required("theme")])
 def theme_pack_dist(request):
-    """Write the zips of all themes into <themes>/.dist."""
+    """Superadmins: write the zips of all themes into <project>/themes/.dist/themes."""
+    if not _superadmin(request):
+        return Response({"detail": "Alleen een superadmin kan thema's exporteren."}, status=status.HTTP_403_FORBIDDEN)
     names = themepacks.build_dist()
     return Response({"folder": str(themepacks.dist_dir()), "files": names})
 
@@ -655,7 +731,7 @@ def theme_pack_refine(request, key):
     try:
         doc = themepacks._doc(key)
         cur = theme.merged(doc["values"])
-        changes, summary, _name, _desc = themeimport.refine_values(cur, str(request.data.get("prompt") or ""), doc.get("name", ""))
+        changes, summary, _name, _desc = themeimport.refine_values(cur, str(request.data.get("prompt") or ""), doc.get("name", ""), str(request.data.get("url") or "")[:500])
         themepacks.update_meta(key, {"values": changes})
     except themepacks.ThemeError as e:
         return _bad(str(e))
@@ -671,7 +747,10 @@ def _license_out():
     return {"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "", "issued_at": lic.issued_at if lic else None,
             "valid_until": lic.valid_until.isoformat() if lic and lic.valid_until else None, "expired": system.license_info()["expired"],
             "price": str(license_price.refresh()), "base_price": str(lic.base_price) if lic else "0.00", "renew_months": lic.renew_months if lic else 12, "has": system.license_info()["has"],
-            "reseller": {"name": lic.reseller_name, "email": lic.reseller_email, "url": lic.reseller_url} if lic else {"name": "", "email": "", "url": ""}}
+            "monthly": str(license_price.monthly(lic)), "quarterly": str(license_price.for_period(3, lic)), "yearly": str(license_price.for_period(12, lic)),
+            "backup_included": lic.backup_included if lic else 5, "backup_slot_price": str(lic.backup_slot_price) if lic else "0.00", "backup_slots": license_price.backup_slots(),
+            "reseller": {"name": lic.reseller_name, "email": lic.reseller_email, "url": lic.reseller_url} if lic else {"name": "", "email": "", "url": ""},
+            "billing": __import__("apps.core.license_billing", fromlist=["state"]).state(lic) if lic else None}
 
 
 @api_view(["GET", "PUT", "POST", "DELETE"])
@@ -709,15 +788,38 @@ def system_license(request):
                 return Response({"detail": "Geef een geldig bedrag."}, status=400)
         if "renew_months" in d:
             try:
-                lic.renew_months = min(max(int(d["renew_months"]), 1), 120)
+                lic.renew_months = int(d["renew_months"])
             except (TypeError, ValueError):
-                return Response({"detail": "Geef een aantal maanden (1-120)."}, status=400)
+                lic.renew_months = 0
+            if lic.renew_months not in (1, 3, 12):
+                return Response({"detail": "Kies per maand, per kwartaal of per jaar."}, status=400)
+        if "allowed_methods" in d:
+            from . import license_billing
+
+            lst = [m for m in (d["allowed_methods"] if isinstance(d["allowed_methods"], list) else []) if m in license_billing.METHODS]
+            if not lst:
+                return Response({"detail": "Bied minstens één betaalmethode aan."}, status=400)
+            lic.allowed_methods = lst
+            if lic.payment_method not in lst:
+                lic.payment_method = lst[0]
+        if "backup_included" in d:
+            try:
+                lic.backup_included = min(max(int(d["backup_included"]), 0), 1000)
+            except (TypeError, ValueError):
+                return Response({"detail": "Geef een aantal backups."}, status=400)
+        if "backup_slot_price" in d:
+            try:
+                from decimal import Decimal
+
+                lic.backup_slot_price = max(Decimal(str(d["backup_slot_price"] or 0)), Decimal("0")).quantize(Decimal("0.01"))
+            except Exception:  # noqa: BLE001
+                return Response({"detail": "Geef een geldig bedrag."}, status=400)
         for k, n in (("reseller_name", 120), ("reseller_email", 254), ("reseller_url", 300)):
             if k in d:
                 setattr(lic, k, str(d.get(k) or "").strip()[:n])
         if lic.reseller_url and not re.fullmatch(r"https?://[^\s]{3,290}|/[^\s]{0,290}", lic.reseller_url):
             return Response({"detail": "Geef een geldige link (https://…)."}, status=400)
-        lic.save(update_fields=["client", "client_address", "valid_until", "base_price", "renew_months", "reseller_name", "reseller_email", "reseller_url"])
+        lic.save(update_fields=["client", "client_address", "valid_until", "base_price", "renew_months", "allowed_methods", "payment_method", "backup_included", "backup_slot_price", "reseller_name", "reseller_email", "reseller_url"])
     elif request.method == "DELETE":  # empty the licence (the reseller data stays: it says where a new one is bought)
         from .reset import clear_license
 
@@ -757,6 +859,18 @@ def license_pay(request):
 
     if not can_admin(request.user):
         return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    from . import license_stripe
+
+    if license_stripe.active():  # the licence's own Stripe account: a Checkout page
+        from . import license_price as _lp
+
+        price = _lp.refresh()
+        if float(price) <= 0:
+            return Response({"detail": "De licentie heeft geen prijs."}, status=400)
+        try:
+            return Response({"url": license_stripe.checkout(request.user, price, License.objects.get_or_create(pk=1)[0].renew_months)})
+        except license_stripe.StripeError as e:
+            return Response({"detail": str(e)}, status=400)
     from . import license_price
 
     lic, _ = License.objects.get_or_create(pk=1)
@@ -789,7 +903,7 @@ def license_prices(request):
     if request.method == "PUT":
         for k, v in (request.data.get("prices") or {}).items():
             kind, _, key = str(k).partition(":")
-            if kind not in ("module", "plugin", "game") or not key:
+            if kind not in ("module", "plugin", "game", "package") or not key:
                 continue
             try:
                 price = max(Decimal(str(v or 0)), Decimal("0")).quantize(Decimal("0.01"))
@@ -802,28 +916,39 @@ def license_prices(request):
     lic, _ = License.objects.get_or_create(pk=1)
     price = license_price.refresh()
     items = [{**c, "price": str(c["price"])} for c in license_price.catalog()]
-    return Response({"items": items, "base_price": str(lic.base_price), "total": str(price), "in_use": str(price - lic.base_price)})
+    month = license_price.monthly(lic)
+    return Response({"items": items, "base_price": str(lic.base_price), "total": str(price), "in_use": str(month - lic.base_price), "months": lic.renew_months, "monthly": str(month),
+                     "quarterly": str(license_price.for_period(3, lic)), "yearly": str(license_price.for_period(12, lic))})
 
 
-def on_license_payment(payment):
-    """After a payment status change: a paid renewal moves the end date on (from today, or from the old end date when that is still ahead)."""
+def extend_license(lic):
+    """The licence runs one more period (from today, or from the old end date when that is still ahead)."""
     from datetime import date
-
-    from . import system
-    from .models import License
-
-    lic = License.objects.filter(pk=1).first()
-    if not lic or not lic.payment_ref or lic.payment_ref != payment.ref or payment.status != "paid":
-        return
-    start = max(date.today(), lic.valid_until or date.today())
-    y, m = divmod(start.month - 1 + lic.renew_months, 12)
     import calendar
 
+    from . import system
+
+    start = max(date.today(), lic.valid_until or date.today())
+    y, m = divmod(start.month - 1 + lic.renew_months, 12)
     year, month = start.year + y, m + 1
     lic.valid_until = date(year, month, min(start.day, calendar.monthrange(year, month)[1]))
     lic.payment_ref = ""
     lic.save(update_fields=["valid_until", "payment_ref"])
     system.license_changed()
+
+
+def on_license_payment(payment):
+    """After a payment status change: a paid renewal moves the end date on."""
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.payment_ref or lic.payment_ref != payment.ref:
+        return
+    if payment.status == "paid":
+        extend_license(lic)
+    elif payment.status in ("failed", "canceled", "expired"):
+        lic.payment_ref = ""  # the next try can start
+        lic.save(update_fields=["payment_ref"])
 
 
 @api_view(["GET"])
@@ -842,3 +967,131 @@ def system_info(request):
     mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "desc": m.get("desc", ""), "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core"))} for m in modules.MODULES]
     return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
                      "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})
+
+
+# ── Licence for the administrator: costs and how to pay ─────────────────────
+def _admin_only(request):
+    from apps.accounts.access import can_admin
+
+    return can_admin(request.user)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def license_usage(request):
+    """The licence for administrators: what is in use and what it costs (per month, quarter, year), the payment method and the subscription."""
+    from decimal import Decimal
+
+    from . import license_billing, license_price
+    from .models import License
+
+    if not _admin_only(request):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    lic, _ = License.objects.get_or_create(pk=1)
+    items = [{"kind": c["kind"], "key": c["key"], "label": c["label"], "group": c["group"], "price": str(c["price"])} for c in license_price.catalog() if c["active"] and c["price"] > 0]
+    out = _license_out()
+    out.update({"items": items, "months": lic.renew_months, "backup_slots": license_price.backup_slots(), "billing": license_billing.state(lic), "can_pay": float(out["price"]) > 0})
+    return Response(out)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def license_method(request):
+    from . import license_billing
+
+    if not _admin_only(request):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    try:
+        license_billing.set_method(str(request.data.get("method") or ""))
+    except license_billing.BillingError as e:
+        return Response({"detail": str(e)}, status=400)
+    return Response(_license_out())
+
+
+@api_view(["POST", "DELETE"])
+@permission_classes([IsAuthenticated])
+def license_subscribe(request):
+    """POST: start automatic collection (a subscription). DELETE: stop it."""
+    from . import license_billing
+
+    if not _admin_only(request):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    try:
+        if request.method == "DELETE":
+            license_billing.stop_subscription()
+            return Response(_license_out())
+        p = license_billing.start_subscription(request.user)
+    except license_billing.BillingError as e:
+        return Response({"detail": str(e)}, status=400)
+    if isinstance(p, dict):  # Stripe Checkout
+        return Response({**_license_out(), "url": p["url"]})
+    from apps.sandbox import service as sandbox
+
+    return Response({**_license_out(), "url": sandbox.settle(p) or f"/sandbox/checkout/{p.ref}"})
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])  # superadmins only
+def license_invoice_paid(request):
+    """On account: the invoice was paid, the licence is extended with one period."""
+    from . import license_billing
+
+    license_billing.mark_invoice_paid()
+    return Response(_license_out())
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])  # superadmins only
+def module_packages(request):
+    """The add-on packages (not the core CMS): which modules, how many are on, and the price per month in the licence."""
+    from . import license_price
+
+    on = modules.states()
+    prices = {c["key"]: c["price"] for c in license_price.catalog() if c["kind"] == "package"}
+    label = {m["key"]: m["label"] for m in modules.MODULES}
+    return Response([{**{k: p[k] for k in ("key", "label", "desc")}, "modules": [{"key": k, "label": label[k], "enabled": bool(on.get(k, True))} for k in p["modules"]], "price": str(prices.get(p["key"], 0))}
+                     for p in modules.PACKAGES])
+
+
+@api_view(["GET", "PUT", "POST"])
+@permission_classes([IsAdminUser])  # superadmins only
+def license_stripe_settings(request):
+    """The Stripe account of the licence (keys never go back to the screen). POST tests the key."""
+    from . import license_stripe
+
+    if request.method == "PUT":
+        try:
+            license_stripe.save_config(request.data)
+        except license_stripe.StripeError as e:
+            return Response({"detail": str(e)}, status=400)
+    elif request.method == "POST":
+        ok, msg = license_stripe.test()
+        return Response({"ok": ok, "message": msg, **license_stripe.public()})
+    out = license_stripe.public()
+    base = (__import__("apps.core.system", fromlist=["get"]).get().get("backend_url") or "").rstrip("/") or request.build_absolute_uri("/").rstrip("/")
+    out["webhook_url"] = f"{base}/api/system/license/stripe-webhook/"
+    return Response(out)
+
+
+from django.http import HttpResponse, JsonResponse  # noqa: E402
+from django.views.decorators.csrf import csrf_exempt  # noqa: E402
+
+
+@csrf_exempt
+def license_stripe_webhook(request):
+    """Stripe tells us a licence payment happened (signature checked with the webhook secret)."""
+    import json as _json
+
+    from . import license_stripe
+
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    secret = license_stripe.config().get("webhook_secret")
+    if not secret:
+        return HttpResponse("webhook-geheim ontbreekt", status=400)
+    try:
+        license_stripe.verify(request.body, request.META.get("HTTP_STRIPE_SIGNATURE", ""), secret)
+        event = _json.loads(request.body)
+    except (license_stripe.StripeError, ValueError) as e:
+        return HttpResponse(str(e), status=400)
+    return JsonResponse({"result": license_stripe.handle(event)})

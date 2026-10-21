@@ -32,6 +32,7 @@ def _normalise(raw):
 
 
 def _derived():
+    # the old product name is part of the key on purpose: renaming it would make files that are already encrypted unreadable
     return hashlib.sha256(b"flirtylobby-file-key:" + settings.SECRET_KEY.encode()).digest()
 
 

@@ -77,3 +77,6 @@ backend/imports/
 
 # ── Plugins: developed in /plugins/<name> or uploaded in the system; never part of the repository ──
 /plugins/
+
+# ── backups of the website (Admin -> Backup) ──
+/backups/

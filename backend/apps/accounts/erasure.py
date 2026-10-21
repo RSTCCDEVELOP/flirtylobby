@@ -33,7 +33,6 @@ def _remove_item(item):
 def erase_user(user):
     from apps.medialib import areas, filecrypt
     from apps.medialib.models import MediaItem
-    from apps.shop.models import Order
     from apps.social.models import ChatMessage, ProfilePhoto
 
     uid, folder = user.pk, areas.config()["users"]["folder"]
@@ -55,7 +54,10 @@ def erase_user(user):
     shutil.rmtree(os.path.join(str(settings.MEDIA_ROOT), folder, str(uid)), ignore_errors=True)
     with transaction.atomic():
         filecrypt.drop_key(f"user:{uid}")
-        Order.objects.filter(user=user).update(user=None, **ORDER_BLANK)
+        from apps import commerce
+
+        if commerce.orders():
+            commerce.orders().anonymize(user, ORDER_BLANK)
         user.roles.clear()
         user.user_groups.clear()
         user.grants.all().delete()

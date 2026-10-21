@@ -3,7 +3,7 @@
 Doel: het **systeem** (Easy2edit) blijft één code-basis die je op elke website kunt bijwerken, en alles van **één website** staat apart, zodat een update nooit content overschrijft.
 
 ```
-flirtylobby/                 ← SYSTEEM  (git: RSTCCDEVELOP/easy2edit en /flirtylobby)
+easy2edit/                   ← SYSTEEM  (git: RSTCCDEVELOP/easy2edit)
 ├── backend/                 Django: kern, modules, plugin-runtime, API
 ├── frontend/                Next.js: website, dashboard, admin
 ├── deploy/                  nginx, docker-compose.prod, certificaten

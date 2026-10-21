@@ -20,7 +20,7 @@ WIPE = [
     "core.ContentBlock", "core.DashboardLayout", "core.ThemeImportJob", "core.UserShortcuts", "core.UserPrefs",
     "accounts.PendingRegistration", "accounts.Invitation", "notifications.Notification", "notifications.NotificationPref", "accounts.UserGroup", "accounts.ModuleGrant",
     "branding.SiteAsset", "branding.HomePhoto", "seo.SeoPage",
-    "sandbox.SandboxMessage", "sandbox.SandboxPayment", "shop.OrderItem", "shop.Order",
+    "sandbox.SandboxMessage", "sandbox.SandboxPayment", "plugin_orders.OrderItem", "plugin_orders.Order",
     "social.DirectMessage", "social.ChatMessage", "social.ChatSignal", "social.Like", "social.Favorite", "social.ProfileVisit", "social.Connection",
     "social.DirectRoom", "social.DirectSignal", "social.Pass", "social.ProfileAllow", "social.Block", "social.Notification",
     "subscriptions.Subscription", "subscriptions.Plan", "subscriptions.Donation", "subscriptions.DonationCampaign", "subscriptions.DonorAction", "subscriptions.ActionItem",

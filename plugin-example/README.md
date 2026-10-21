@@ -15,7 +15,7 @@ plugins/hello/
 
 ## Ontwikkelen en bouwen (alleen de ontwikkelaar)
 ```
-python manage.py plugin_keygen            # eenmalig: maakt de sleutel (privé in ~/.flirtylobby/, publiek in apps/plugins/developer_public.pem)
+python manage.py plugin_keygen            # eenmalig: maakt de sleutel (privé in ~/.easy2edit/, publiek in apps/plugins/developer_public.pem)
 # werk in plugins/<naam>/ ; in de ontwikkelomgeving (DEBUG) draait een niet-ondertekende map
 python manage.py plugin_translate <naam>  # verzamelt de teksten (t("…") in de pagina, T("…") in plugin.py, plugin.json) en vult lang/<code>.json voor ALLE talen
 python manage.py plugin_build <naam>      # zet system_version op de huidige systeemversie (bestand backend/VERSION), controleert de talen, ondertekent, maakt plugins/.dist/<naam>-<versie>.zip

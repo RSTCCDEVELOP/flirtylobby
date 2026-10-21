@@ -131,10 +131,10 @@ def payment_provider():
 
 def payment_targets():
     """Which functions of the system pay through this simulation: only what is switched on."""
+    from apps import commerce
     from apps.integrations.models import Integration
-    from apps.shop.service import settings as shop_settings
 
-    shop_on = modules.enabled("orders") and shop_settings()["pay_online"]
+    shop_on = commerce.pay_online_wanted()
     links = set(Integration.objects.filter(provider__in=("stripe", "mollie"), enabled=True).values_list("provider", flat=True))
     return [
         {"key": "stripe", "label": "Stripe", "on": "stripe" in links}, {"key": "mollie", "label": "Mollie", "on": "mollie" in links},
