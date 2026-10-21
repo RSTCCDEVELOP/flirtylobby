@@ -190,26 +190,41 @@ def use(key, with_files=False):
 
 
 def install_zip(data):
-    """Unpack an uploaded theme package (only theme.json is used). Returns the key."""
+    """Unpack an uploaded zip: one theme (theme.json, or <key>/theme.json) or a bundle with a folder per theme (all-themes). Returns the installed keys.
+    In a bundle the built-in themes (RSTCC, Studio2) are skipped; a broken theme stops the whole install before anything is written."""
     if len(data) > MAX_ZIP:
         raise ThemeError("Het zipbestand is te groot voor een thema.")
     try:
         zf = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile:
         raise ThemeError("Dit is geen geldig zipbestand.")
-    names = [n for n in zf.namelist() if not n.endswith("/") and not n.startswith("__MACOSX")]
-    hit = next((n for n in names if n == "theme.json" or (n.count("/") == 1 and n.endswith("/theme.json"))), None)
-    if not hit:
+    names = [n for n in zf.namelist() if not n.endswith("/") and not n.startswith("__MACOSX") and "/__MACOSX" not in n and not n.rsplit("/", 1)[-1].startswith("._")]
+    hits = sorted(n for n in names if n == "theme.json" or (n.count("/") == 1 and n.endswith("/theme.json")))
+    if not hits:
         raise ThemeError("theme.json ontbreekt in het zipbestand.")
-    man = parse(zf.read(hit))
-    target = root() / man["key"]
-    target.mkdir(exist_ok=True)
-    base = hit[: -len("theme.json")]
-    files = {n[len(base):]: base64.b64encode(zf.read(n)).decode() for n in names if n.startswith(base) and n != hit and zf.getinfo(n).file_size <= MAX_IMG}
-    (target / "theme.json").write_text(json.dumps({k: man[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, indent=2, ensure_ascii=False) + "\n")
-    write_files_b64(man["key"], files)
+    bundle = len(hits) > 1
+    parsed = []
+    for hit in hits:
+        try:
+            man = parse(zf.read(hit))
+        except ThemeError as e:
+            if bundle and "ingebouwd thema" in str(e):
+                continue
+            raise ThemeError(f"{hit}: {e}" if bundle else str(e))
+        parsed.append((hit, man))
+    if not parsed:
+        raise ThemeError("Er zit geen installeerbaar thema in het zipbestand.")
+    keys = []
+    for hit, man in parsed:
+        target = root() / man["key"]
+        target.mkdir(exist_ok=True)
+        base = hit[: -len("theme.json")]
+        files = {n[len(base):]: base64.b64encode(zf.read(n)).decode() for n in names if n.startswith(base) and n != hit and zf.getinfo(n).file_size <= MAX_IMG}
+        (target / "theme.json").write_text(json.dumps({k: man[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, indent=2, ensure_ascii=False) + "\n")
+        write_files_b64(man["key"], files)
+        keys.append(man["key"])
     scan()
-    return man["key"]
+    return keys
 
 
 def as_zip(key):

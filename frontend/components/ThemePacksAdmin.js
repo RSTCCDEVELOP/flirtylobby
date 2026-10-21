@@ -55,8 +55,9 @@ export default function ThemePacksAdmin() {
     setBusy(true); setMsg(null);
     try {
       const fd = new FormData(); fd.append("file", file);
-      set(await api("/theme/packs/upload/", { method: "POST", body: fd }));
-      setMsg({ ok: true, text: tx("Themapakket geïnstalleerd. Zet het aan als je het wilt gebruiken.") });
+      const r = await api("/theme/packs/upload/", { method: "POST", body: fd });
+      set(r);
+      setMsg({ ok: true, text: (r.installed || []).length > 1 ? tx("{0} themapakketten geïnstalleerd. Zet aan wat je wilt gebruiken.", r.installed.length) : tx("Themapakket geïnstalleerd. Zet het aan als je het wilt gebruiken.") });
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   }

@@ -412,10 +412,10 @@ def theme_pack_upload(request):
     if not f or not f.name.lower().endswith(".zip"):
         return _bad("Kies een zipbestand met een thema.")
     try:
-        themepacks.install_zip(f.read())
+        keys = themepacks.install_zip(f.read())
     except themepacks.ThemeError as e:
         return _bad(str(e))
-    return Response({"packs": themepacks.listing()})
+    return Response({"packs": themepacks.listing(), "installed": keys})
 
 
 @api_view(["PATCH", "DELETE"])
