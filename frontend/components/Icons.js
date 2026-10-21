@@ -58,3 +58,16 @@ export const IconRocket = (props) => <svg {...p} {...props}><path d="M12 3c3.5 2
 export const IconCard = (props) => <svg {...p} {...props}><rect x="3" y="5.500" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h3" /></svg>;
 export const IconHelp = () => <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></svg>;
 export const IconInfo = () => <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>;
+
+// One-colour line icons of the standard installations (Super admin): they follow the colour of the theme through currentColor
+export const PRESET_ICONS = {
+  cart: <><path d="M3 4h2.5l2 11h10l2-8H7" /><circle cx="9" cy="19.5" r="1.2" /><circle cx="17" cy="19.5" r="1.2" /></>,
+  building: <><path d="M5 21V4a1 1 0 011-1h8a1 1 0 011 1v17M15 9h3a1 1 0 011 1v11M3 21h18M9 7h2M9 11h2M9 15h2" /></>,
+  handshake: <><path d="M2.5 11l4-4 4 1.5 3-1.5 4 3 3-1.5v6l-3 1.5-2.5 2.5a2 2 0 01-3 0l-.5-.5-1.5 1a2 2 0 01-2.8-.5L4.5 14zM10.5 8.5L14 12" /></>,
+  heart: <path d="M12 20.5C5 16 3 12.5 3 9.5a4.5 4.5 0 018-2.8 4.5 4.5 0 018 2.8c0 3-2 6.5-9 11z" />,
+  medal: <><circle cx="12" cy="15" r="5" /><path d="M8.5 10.7L6 3h4l2 4 2-4h4l-2.5 7.7M12 12.5v5" /></>,
+  ribbon: <><path d="M12 14a5.5 5.5 0 10-5.5-5.5c0 2 1.5 3.7 3 5.2L8 21l4-2.5 4 2.5-2.5-7.3c1.5-1.5 3-3.2 3-5.2" /></>,
+  tag: <><path d="M3 12V4a1 1 0 011-1h8l9 9-9 9z" /><circle cx="8" cy="8" r="1.3" /></>,
+  gamepad: <><rect x="2.5" y="7" width="19" height="11" rx="5" /><path d="M7.5 10.5v4M5.5 12.5h4M15.5 11.5h.01M18 13.5h.01" /></>,
+};
+export const PresetIcon = ({ name, size = 26 }) => PRESET_ICONS[name] ? <svg {...p} width={size} height={size}>{PRESET_ICONS[name]}</svg> : null;

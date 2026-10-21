@@ -190,44 +190,98 @@ def use(key, with_files=False):
 
 
 def install_zip(data):
-    """Unpack an uploaded theme package (only theme.json is used). Returns the key."""
+    """Unpack an uploaded theme package (only theme.json and the pictures are used), or a package with ALL themes (one folder per theme).
+    Returns the keys of the installed themes; the built-in themes (RSTCC, Studio2) in a bundle are skipped."""
     if len(data) > MAX_ZIP:
         raise ThemeError("Het zipbestand is te groot voor een thema.")
     try:
         zf = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile:
         raise ThemeError("Dit is geen geldig zipbestand.")
-    names = [n for n in zf.namelist() if not n.endswith("/") and not n.startswith("__MACOSX")]
-    hit = next((n for n in names if n == "theme.json" or (n.count("/") == 1 and n.endswith("/theme.json"))), None)
-    if not hit:
+    names = [n for n in zf.namelist() if not n.endswith("/") and not n.startswith("__MACOSX") and ".." not in n.split("/")]
+    hits = [n for n in names if n == "theme.json" or (n.count("/") == 1 and n.endswith("/theme.json"))]
+    if not hits:
         raise ThemeError("theme.json ontbreekt in het zipbestand.")
-    man = parse(zf.read(hit))
-    target = root() / man["key"]
-    target.mkdir(exist_ok=True)
-    base = hit[: -len("theme.json")]
-    files = {n[len(base):]: base64.b64encode(zf.read(n)).decode() for n in names if n.startswith(base) and n != hit and zf.getinfo(n).file_size <= MAX_IMG}
-    (target / "theme.json").write_text(json.dumps({k: man[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, indent=2, ensure_ascii=False) + "\n")
-    write_files_b64(man["key"], files)
+    bundle = len(hits) > 1
+    keys = []
+    for hit in hits:
+        try:
+            man = parse(zf.read(hit))
+        except ThemeError:
+            if bundle:
+                continue  # in a bundle a built-in theme or a broken one is skipped
+            raise
+        target = root() / man["key"]
+        target.mkdir(exist_ok=True)
+        base = hit[: -len("theme.json")]
+        files = {n[len(base):]: base64.b64encode(zf.read(n)).decode() for n in names if n.startswith(base) and n != hit and zf.getinfo(n).file_size <= MAX_IMG}
+        (target / "theme.json").write_text(json.dumps({k: man[k] for k in ("key", "name", "description", "version", "system_version", "mode", "values", "home")}, indent=2, ensure_ascii=False) + "\n")
+        write_files_b64(man["key"], files)
+        keys.append(man["key"])
+    if not keys:
+        raise ThemeError("Er staat geen bruikbaar thema in het zipbestand.")
     scan()
-    return man["key"]
+    return keys if bundle else keys[0]
 
 
-def as_zip(key):
+def _add_theme(z, key, top=True):
+    """The files of one theme into an open zip: <key>/theme.json (+ its pictures when it is a package or a changed built-in theme)."""
     man = next((m for m in builtin_manifests() if m["key"] == key), None)
     if man:
         raw = json.dumps(man, indent=2, ensure_ascii=False)
     else:
         f = root() / key / "theme.json"
         if not KEY_RE.match(key) or not f.is_file():
-            return None
+            return False
         raw = f.read_text()
+    z.writestr(f"{key}/theme.json", raw)
+    if not man or man.get("customized"):
+        for name, b64 in files_b64(key).items():
+            z.writestr(f"{key}/{name}", base64.b64decode(b64))
+    return True
+
+
+def as_zip(key):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr(f"{key}/theme.json", raw)
-        if not man or man.get("customized"):
-            for name, b64 in files_b64(key).items():
-                z.writestr(f"{key}/{name}", base64.b64decode(b64))
+        if not _add_theme(z, key):
+            return None
     return buf.getvalue()
+
+
+def all_keys():
+    scan()
+    return [m["key"] for m in builtin_manifests()] + [r.key for r in ThemePack.objects.order_by("key")]
+
+
+def as_zip_all():
+    """ALL themes in one zip (one folder per theme): the built-in ones and every package. Import it again with "Pakket uploaden"."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for key in all_keys():
+            _add_theme(z, key)
+    return buf.getvalue()
+
+
+def dist_dir():
+    """<themes>/.dist: a zip of every theme (and of all themes together) to import elsewhere. The themes folder is not part of the repository, so neither is this."""
+    d = root() / ".dist"
+    d.mkdir(exist_ok=True)
+    return d
+
+
+def build_dist():
+    """Write <themes>/.dist/<key>-<version>.zip for every theme and alle-themas.zip. Old versions of a zip stay. Returns the names."""
+    out = []
+    for key in all_keys():
+        man = manifest_of(key)
+        raw = as_zip(key)
+        if raw and man:
+            name = f"{key}-{man['version']}.zip"
+            (dist_dir() / name).write_bytes(raw)
+            out.append(name)
+    (dist_dir() / "alle-themas.zip").write_bytes(as_zip_all())
+    return out + ["alle-themas.zip"]
 
 
 def remove(key):

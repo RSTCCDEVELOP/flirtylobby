@@ -2457,7 +2457,7 @@ html.fixed-dragging .pb-cell.edit { outline: 2px dashed color-mix(in srgb, var(-
 .tile-switch { position: absolute; top: .6rem; right: .6rem; }
 .tile-off { opacity: .55; } .tile-off:hover { opacity: .9; }
 .preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: .8rem; }
-.preset-card { display: flex; flex-direction: column; gap: .6rem; } .preset-head { display: flex; align-items: center; gap: .6rem; font-size: 1.05rem; } .preset-ico { font-size: 1.6rem; }
+.preset-card { display: flex; flex-direction: column; gap: .6rem; } .preset-head { display: flex; align-items: center; gap: .6rem; font-size: 1.05rem; } .preset-ico { display: inline-grid; place-items: center; color: var(--primary); }
 .preset-card .chips { display: flex; flex-wrap: wrap; gap: .3rem; } .preset-card .btn { margin-top: auto; }
 .btn-link { all: unset; cursor: pointer; font-size: .8rem; color: var(--blue); }
 

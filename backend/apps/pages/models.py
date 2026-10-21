@@ -22,6 +22,7 @@ class Page(models.Model):
     label_link = models.BooleanField(default=False)  # a text-only item: its name also opens the overview page of the item
     slugs = models.JSONField(default=dict, blank=True)  # the address in every language: {"nl": "abonnementen", "en": "subscriptions", ...}; they all lead to this one page
     scope = models.CharField(max_length=8, default="public", db_index=True)  # "public": the website (/p/<key>, header menu); "private": behind the login (/dashboard/<key>, menu of the dashboard)
+    access = models.JSONField(default=dict, blank=True)  # who may open the page: {} = everybody (see audience); {"users": [ids], "groups": [ids]} = only those users and the members of those groups
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
     order = models.PositiveIntegerField(default=0)
     source = models.CharField(max_length=40, blank=True, db_index=True)  # "import:<id>" for pages that come from a site import

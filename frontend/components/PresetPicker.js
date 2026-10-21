@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
+import { PresetIcon } from "./Icons";
 
 // Standard installations: a kind of business with its modules, plugins and community theme. One click switches everything (Super admin).
 export function usePresets() {
@@ -37,7 +38,7 @@ export default function PresetPicker() {
       <div className="preset-grid">
         {list.map((p) => (
           <div key={p.key} className="card preset-card">
-            <div className="preset-head"><span className="preset-ico">{p.icon}</span><strong>{tx(p.name)}</strong></div>
+            <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong></div>
             <p className="muted" style={{ margin: 0 }}>{tx(p.desc)}</p>
             <div className="chips">
               {p.plugins.map((x) => <span key={x.name} className={`badge ${x.installed ? "ok" : "off"}`} title={x.installed ? "" : tx("Niet geïnstalleerd")}>{x.title}</span>)}
