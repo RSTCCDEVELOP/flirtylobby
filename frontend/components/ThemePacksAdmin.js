@@ -50,6 +50,17 @@ export default function ThemePacksAdmin() {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(await res.blob()); a.download = `theme-${p.key}.zip`; a.click();
   }
+  async function downloadAll() {
+    const res = await fetch(`${apiBase()}/api/theme/packs/download-all/`, { headers: { Authorization: `Token ${getToken()}` } });
+    if (!res.ok) return setMsg({ ok: false, text: tx("Het pakket kon niet worden opgehaald.") });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(await res.blob()); a.download = "themes-all.zip"; a.click();
+  }
+  async function buildDist() {
+    setBusy(true); setMsg(null);
+    try { const r = await api("/theme/packs/dist/", { method: "POST", body: {} }); setMsg({ ok: true, text: tx("{0} zips staan in {1}.", r.files.length, r.folder) }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  }
   async function upload(file) {
     if (!file) return;
     setBusy(true); setMsg(null);
@@ -123,9 +134,19 @@ export default function ThemePacksAdmin() {
         </div>
       )}
 
+      <Collapsible id="theme-pack-all" title={tx("Alle thema's (exporteren)")}>
+        <div style={{ display: "grid", gap: ".6rem" }}>
+          <p className="muted" style={{ margin: 0 }}>{tx("Alle thema's in één zipbestand, met hun logo's en afbeeldingen. Importeer het in een andere website met Pakket uploaden hieronder. Ook van elk thema los staat een zip in de map {0}; die map hoort niet bij de repository.", d.dist)}</p>
+          <div className="row">
+            <button type="button" className="btn primary" style={{ whiteSpace: "nowrap" }} onClick={downloadAll}>{tx("Alle thema's downloaden (zip)")}</button>
+            {L >= 2 && <button type="button" className="btn" style={{ whiteSpace: "nowrap" }} disabled={busy} onClick={buildDist}>{tx("Zips in .dist bijwerken")}</button>}
+          </div>
+        </div>
+      </Collapsible>
+
       <Collapsible id="theme-pack-upload" title={tx("Pakket uploaden")}>
         <div>
-          <p className="muted">{tx("Een themapakket is een zipbestand met één bestand: theme.json. Download een bestaand pakket als voorbeeld.")}</p>
+          <p className="muted">{tx("Een themapakket is een zipbestand met één bestand: theme.json. Een zip met alle thema's (één map per thema) wordt ook geïmporteerd. Download een bestaand pakket als voorbeeld.")}</p>
           {L >= 2 ? (
             <div className={`dropzone ${over ? "over" : ""}`} role="button" tabIndex={0} onClick={() => input.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && input.current.click()}
               onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={(e) => { e.preventDefault(); setOver(false); upload(e.dataTransfer.files[0]); }}>

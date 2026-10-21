@@ -2,7 +2,8 @@ import logging
 import re
 
 from rest_framework import status
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, parser_classes, permission_classes
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -38,21 +39,40 @@ def _bg(p):
 def _out(p):
     return {"background": _bg(p), "id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
             "scope": p.scope, "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
-            "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "editable": p.kind == "content" or p.key in service.EDITABLE}
+            "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "access": _access(p), "editable": p.kind == "content" or p.key in service.EDITABLE}
+
+
+def _access(p):
+    """Who may open the page: {users: [{id, name}], groups: [{id, name}]}; both empty = everybody."""
+    from apps.accounts.models import User, UserGroup
+
+    acc = p.access or {}
+    return {"users": [{"id": u.id, "name": " ".join(filter(None, [u.first_name, u.last_name])) or u.email} for u in User.objects.filter(pk__in=acc.get("users") or [])],
+            "groups": [{"id": g.id, "name": g.name} for g in UserGroup.objects.filter(pk__in=acc.get("groups") or [])]}
+
+
+def _clean_access(raw):
+    from apps.accounts.models import User, UserGroup
+
+    raw = raw if isinstance(raw, dict) else {}
+    ids = lambda k: [int(x) for x in raw.get(k) or [] if str(x).isdigit()][:200]  # noqa: E731
+    users = sorted(User.objects.filter(pk__in=ids("users")).values_list("id", flat=True))
+    groups = sorted(UserGroup.objects.filter(pk__in=ids("groups")).values_list("id", flat=True))
+    return {"users": users, "groups": groups} if users or groups else {}
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def menu(request):
     """Public: the header menu (only what is switched on)."""
-    return Response({"items": service.menu() if modules.enabled("pages") else service.default_menu(), "settings": service.menu_settings()})
+    return Response({"items": service.menu(request.user) if modules.enabled("pages") else service.default_menu(), "settings": service.menu_settings()})
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def private_menu(request):
     """Members: the menu of the dashboard (private pages that are on)."""
-    return Response({"items": service.private_menu()})
+    return Response({"items": service.private_menu(request.user)})
 
 
 @api_view(["GET"])
@@ -80,7 +100,7 @@ def public_state(request):
 def public_page(request, key):
     """Public: one own page (title per language) if it is on."""
     p = Page.objects.filter(key=key, kind="content").first()
-    if not p or not modules.enabled("pages") or not service.available(p) or (p.scope == "private" and not request.user.is_authenticated):
+    if not p or not modules.enabled("pages") or not service.available(p) or (p.scope == "private" and not request.user.is_authenticated) or not service.can_see(request.user, p):
         return Response(status=status.HTTP_404_NOT_FOUND)
     from apps.subscriptions import service as subs
 
@@ -93,7 +113,7 @@ def by_url(request):
     """Public: the standard page (content page with an address of its own, like /community) at ?path=; 404 when there is none or its module is off."""
     path = "/" + str(request.query_params.get("path") or "").strip("/")
     p = next((x for x in Page.objects.filter(scope="public", kind__in=("content", "system", "link", "menu")) if path in x.all_paths()), None)  # the address in any language leads to the page
-    if not p or not modules.enabled("pages") or not service.available(p):
+    if not p or not modules.enabled("pages") or not service.available(p) or not service.can_see(request.user, p):
         return Response(status=status.HTTP_404_NOT_FOUND)
     return Response({"key": p.key, "kind": p.kind, "canonical": p.path, "title": p.title})
 
@@ -243,6 +263,8 @@ def page(request, pk):
             err = service.fill_slugs(p, d.get("slugs") if isinstance(d.get("slugs"), dict) else None)
             if err:
                 return bad(err)
+    if "access" in d:
+        p.access = _clean_access(d["access"])
     if "cta" in d:
         p.cta = bool(d["cta"])
     if "label_link" in d:
@@ -292,3 +314,42 @@ def menu_settings(request):
             return Response({"detail": "Je hebt hier geen rechten voor."}, status=status.HTTP_403_FORBIDDEN)
         MenuSettings.objects.update_or_create(pk=1, defaults={"data": service.clean_menu_settings(request.data)})
     return Response(service.menu_settings())
+
+
+@api_view(["GET"])
+@permission_classes([has_level("pages", "edit"), module_required("pages")])
+def export_page(request, pk):
+    """The page with its blocks, linked content and pictures as a zip (a copy is also kept in site/public/<key> or site/private/<key>)."""
+    from django.http import HttpResponse
+
+    from . import portable
+
+    p = Page.objects.filter(pk=pk).first()
+    if not p:
+        return bad("Niet gevonden.", status.HTTP_404_NOT_FOUND)
+    try:
+        data = portable.as_zip(p)
+    except portable.PortableError as e:
+        return bad(str(e))
+    r = HttpResponse(data, content_type="application/zip")
+    r["Content-Disposition"] = f'attachment; filename="page-{p.key}.zip"'
+    return r
+
+
+@api_view(["POST"])
+@permission_classes([has_level("pages", "manage"), module_required("pages")])
+@parser_classes([MultiPartParser, FormParser])
+def import_page(request):
+    """A page from a zip that was made with the export. The page uses the theme of this website."""
+    from . import portable
+
+    f = request.FILES.get("file")
+    if not f or not f.name.lower().endswith(".zip"):
+        return bad("Kies een zipbestand met een pagina.")
+    try:
+        out = portable.import_zip(f.read(), request.user, request.data.get("scope"))
+    except portable.PortableError as e:
+        return bad(str(e))
+    logger.info("Page '%s' imported by %s", out["page"].key, request.user.email)
+    return Response({"page": _out(out["page"]), "notes": out["notes"], "media": out["media"], "blocks": out["blocks"]}, status=status.HTTP_201_CREATED)
+

@@ -186,9 +186,15 @@ def content_public(request):
 
     items = {i.id: i for i in MediaItem.objects.all()}
     hidden = {k for k in subs.locked_pages() if not subs.page_ok(request.user, k)}
+    from apps.pages import service as pages_service
+    from apps.pages.models import Page
+
+    closed = {p.key for p in Page.objects.exclude(access={}) if not pages_service.can_see(request.user, p)}  # pages for chosen users / groups only
     for b in ContentBlock.objects.all():
         if hidden and b.key.startswith("page.") and b.key.split(".")[1] in hidden and not b.key.endswith(".title"):
             continue  # the text of a subscribers-only page stays on the server
+        if closed and b.key.split(".")[0] in ("page", "layout") and b.key.split(".")[1] in closed:
+            continue
         text = b.text
         if text.startswith(richtext.PREFIX):
             def url_for(i):
@@ -401,7 +407,7 @@ def theme_packs(request):
     themepacks.scan()
     from apps.integrations import ai
 
-    return Response({"packs": themepacks.listing(), "ai": ai.available(), "folder": str(themepacks.root()), "system_version": __import__("django.conf", fromlist=["settings"]).settings.SYSTEM_VERSION})
+    return Response({"packs": themepacks.listing(), "ai": ai.available(), "folder": str(themepacks.root()), "dist": str(themepacks.dist_dir()), "system_version": __import__("django.conf", fromlist=["settings"]).settings.SYSTEM_VERSION})
 
 
 @api_view(["POST"])
@@ -416,6 +422,23 @@ def theme_pack_upload(request):
     except themepacks.ThemeError as e:
         return _bad(str(e))
     return Response({"packs": themepacks.listing(), "installed": keys})
+
+
+@api_view(["GET"])
+@permission_classes(PACKS)
+def theme_pack_download_all(request):
+    """ALL themes in one zip."""
+    r = HttpResponse(themepacks.as_zip_all(), content_type="application/zip")
+    r["Content-Disposition"] = 'attachment; filename="themes-all.zip"'
+    return r
+
+
+@api_view(["POST"])
+@permission_classes([has_level("theme", "edit"), module_required("theme")])
+def theme_pack_dist(request):
+    """Write the zips of all themes into <themes>/.dist."""
+    names = themepacks.build_dist()
+    return Response({"folder": str(themepacks.dist_dir()), "files": names})
 
 
 @api_view(["PATCH", "DELETE"])

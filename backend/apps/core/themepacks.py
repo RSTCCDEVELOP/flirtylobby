@@ -227,22 +227,64 @@ def install_zip(data):
     return keys
 
 
-def as_zip(key):
+def _add_theme(z, key, top=True):
+    """The files of one theme into an open zip: <key>/theme.json (+ its pictures when it is a package or a changed built-in theme)."""
     man = next((m for m in builtin_manifests() if m["key"] == key), None)
     if man:
         raw = json.dumps(man, indent=2, ensure_ascii=False)
     else:
         f = root() / key / "theme.json"
         if not KEY_RE.match(key) or not f.is_file():
-            return None
+            return False
         raw = f.read_text()
+    z.writestr(f"{key}/theme.json", raw)
+    if not man or man.get("customized"):
+        for name, b64 in files_b64(key).items():
+            z.writestr(f"{key}/{name}", base64.b64decode(b64))
+    return True
+
+
+def as_zip(key):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr(f"{key}/theme.json", raw)
-        if not man or man.get("customized"):
-            for name, b64 in files_b64(key).items():
-                z.writestr(f"{key}/{name}", base64.b64decode(b64))
+        if not _add_theme(z, key):
+            return None
     return buf.getvalue()
+
+
+def all_keys():
+    scan()
+    return [m["key"] for m in builtin_manifests()] + [r.key for r in ThemePack.objects.order_by("key")]
+
+
+def as_zip_all():
+    """ALL themes in one zip (one folder per theme): the built-in ones and every package. Import it again with "Pakket uploaden"."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for key in all_keys():
+            _add_theme(z, key)
+    return buf.getvalue()
+
+
+def dist_dir():
+    """<themes>/.dist: a zip of every theme (and of all themes together) to import elsewhere. The themes folder is not part of the repository, so neither is this."""
+    d = root() / ".dist"
+    d.mkdir(exist_ok=True)
+    return d
+
+
+def build_dist():
+    """Write <themes>/.dist/<key>-<version>.zip for every theme and alle-themas.zip. Old versions of a zip stay. Returns the names."""
+    out = []
+    for key in all_keys():
+        man = manifest_of(key)
+        raw = as_zip(key)
+        if raw and man:
+            name = f"{key}-{man['version']}.zip"
+            (dist_dir() / name).write_bytes(raw)
+            out.append(name)
+    (dist_dir() / "alle-themas.zip").write_bytes(as_zip_all())
+    return out + ["alle-themas.zip"]
 
 
 def remove(key):

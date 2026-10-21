@@ -17,6 +17,8 @@ urlpatterns = [
     path("pages/order/", views.menu_order),
     path("pages/translate/", views.translate),
     path("pages/menu-settings/", views.menu_settings),
+    path("pages/import/", views.import_page),
+    path("pages/<int:pk>/export/", views.export_page),
     path("pages/", views.pages),
     path("pages/<int:pk>/", views.page),
 ]

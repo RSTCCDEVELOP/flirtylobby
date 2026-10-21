@@ -39,6 +39,8 @@ urlpatterns = [
     path("theme/reset/", views.theme_reset, name="theme-reset"),
     path("theme/packs/", views.theme_packs),
     path("theme/packs/upload/", views.theme_pack_upload),
+    path("theme/packs/download-all/", views.theme_pack_download_all),
+    path("theme/packs/dist/", views.theme_pack_dist),
     path("theme/packs/create/", views.theme_pack_create),
     path("theme/import/", views.theme_import_start),
     path("theme/import/<uuid:pk>/", views.theme_import),

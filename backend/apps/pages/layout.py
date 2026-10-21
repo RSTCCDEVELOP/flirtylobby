@@ -295,6 +295,12 @@ def layout(request, key):
     obj = PageLayout.objects.filter(key=key).first()
     from apps.social import service as social
 
+    from . import service as page_service
+    from .models import Page
+
+    pg = Page.objects.filter(key=key).first()
+    if pg and not page_service.can_see(request.user, pg):
+        obj = None  # a page for chosen users / groups: the blocks stay on the server
     try:
         theme = social.get()["profiles"]["theme"]
     except Exception:  # noqa: BLE001

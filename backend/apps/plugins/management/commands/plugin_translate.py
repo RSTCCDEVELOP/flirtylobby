@@ -45,6 +45,21 @@ def system_dictionary(code):
         return {}
 
 
+def biggest_object(raw):
+    """The JSON object with the most entries in an answer (Claude sometimes writes a broken first try before the real one)."""
+    dec, best = json.JSONDecoder(), None
+    for m in re.finditer(r"\{", raw):
+        try:
+            obj, _ = dec.raw_decode(raw[m.start():])
+        except ValueError:
+            continue
+        if isinstance(obj, dict) and (best is None or len(obj) > len(best)):
+            best = obj
+    if best is None:
+        raise ValueError("geen JSON in het antwoord")
+    return best
+
+
 def fill(folder, ask_ai=True, out=None):
     """Write <plugin>/lang/<code>.json for every language of the system: own translations stay, the rest comes from the system's own texts, then from Claude when linked.
     Returns {code: [missing keys]}."""
@@ -65,15 +80,32 @@ def fill(folder, ask_ai=True, out=None):
         todo = [k for k in keys if not cur.get(k)]
         if todo and ask_ai:
             try:
+                from concurrent.futures import ThreadPoolExecutor
+
                 from apps.integrations import ai
 
                 if ai.available():
-                    raw = ai.claude(f"Translate these Dutch interface texts for a website into the language with code '{code}'. Keep {{0}}, {{1}} placeholders and punctuation. Answer ONLY with a JSON object {{dutch: translation}}.",
-                                    json.dumps(todo, ensure_ascii=False), 4000)
-                    got = json.loads(re.search(r"\{.*\}", raw, re.S).group(0))
-                    for k in todo:
-                        if isinstance(got.get(k), str) and got[k].strip():
-                            cur[k] = got[k]
+                    def chunk(part):  # a few texts per request: one big request is cut off by the answer limit and gives nothing at all
+                        for _try in range(2):
+                            try:
+                                raw = ai.claude(f"Translate these Dutch interface texts for a website into the language with code '{code}'. Keep {{0}}, {{1}} placeholders and punctuation. Answer ONLY with a JSON object {{dutch: translation}}.",
+                                                json.dumps(part, ensure_ascii=False), 4000)
+                                return biggest_object(raw)
+                            except Exception as e:  # noqa: BLE001
+                                err = e
+                        if len(part) > 3:  # still no valid answer: try it in smaller pieces
+                            half = len(part) // 2
+                            return {**chunk(part[:half]), **chunk(part[half:])}
+                        if out:
+                            out.write(f"  ({code}) een deel vertalen lukte niet: {err}")
+                        return {}
+
+                    parts = [todo[i:i + 30] for i in range(0, len(todo), 30)]
+                    with ThreadPoolExecutor(4) as pool:
+                        for got in pool.map(chunk, parts):
+                            for k in todo:
+                                if isinstance(got.get(k), str) and got[k].strip():
+                                    cur[k] = got[k]
             except Exception as e:  # noqa: BLE001
                 if out:
                     out.write(f"  ({code}) vertalen met Claude lukte niet: {e}")
