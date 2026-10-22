@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePresets } from "./PresetPicker";
 import ProgressBar from "./ProgressBar";
-import { api, errorText } from "../lib/api";
+import { api, errorText, clearToken } from "../lib/api";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 
@@ -61,7 +61,7 @@ export default function SystemReset() {
     setJob(""); setFinished(false); setBusy(false);
   }
 
-  const close = () => { if (!busy) { setStep(0); if (step === 3) window.location.href = "/dashboard/superadmin"; } };
+  const close = () => { if (!busy) { setStep(0); if (step === 3) { if (adminMail) { clearToken(); window.location.href = "/login"; } else window.location.href = "/dashboard/superadmin"; } } };
   return (
     <>
       <p className="muted" style={{ marginTop: 0 }}>{tx("Maakt het systeem schoon: alle gebruikers (behalve de superadmins), afbeeldingen, pagina's, thema's en gegevens van de modules en plugins worden verwijderd. Alle modules en alle plugins gaan uit (alleen Users en de kernonderdelen blijven aan), het thema wordt Easy2edit en de licentie wordt leeggemaakt.")}</p>
@@ -121,7 +121,7 @@ export default function SystemReset() {
               <>
                 <h2 style={{ margin: 0 }}>{tx("Het systeem is schoon")}</h2>
                 <p style={{ margin: 0 }}>{tx("Alle gegevens van de site zijn verwijderd, alle modules en plugins staan uit en het thema is Easy2edit. Zet bij Super admin → Modules en Plugins aan wat je nodig hebt.")}</p>
-                {adminMail && <p style={{ margin: 0 }}>{tx("De standaard superadmin is {0}. Andere superadmins zijn verwijderd; log opnieuw in met het standaardwachtwoord.", adminMail)}</p>}
+                {adminMail && <p style={{ margin: 0 }}>{tx("De standaard superadmin is {0}. Andere superadmins zijn verwijderd en iedereen is uitgelogd: log opnieuw in met het standaardwachtwoord.", adminMail)}</p>}
                 <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" onClick={close}>{tx("Sluiten")}</button></div>
               </>
             )}

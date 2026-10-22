@@ -91,8 +91,14 @@ def standard_admin():
     user = User.objects.filter(email__iexact=email).first() or User(username=email, email=email)
     user.is_staff = user.is_superuser = user.is_active = True
     user.set_password(password)
+    user.twofa_method, user.totp_secret, user.totp_last_step = "", "", 0  # the standard admin can always log in with the password
     user.save()
     User.objects.filter(is_staff=True).exclude(pk=user.pk).delete()
+    from django.core.cache import cache
+    from rest_framework.authtoken.models import Token
+
+    Token.objects.all().delete()  # everybody is logged out, also the one who did the reset
+    cache.clear()  # login throttles and lockouts
     return email
 
 

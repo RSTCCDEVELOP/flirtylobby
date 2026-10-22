@@ -1194,6 +1194,14 @@ def on_license_payment(payment):
         lic.save(update_fields=["payment_ref"])
 
 
+def _build_number(dj):
+    """The build number from backend/BUILD, read each time so a pull shows the new number without a restart."""
+    try:
+        return int((dj.BASE_DIR / "BUILD").read_text().strip())
+    except (OSError, ValueError):
+        return dj.SYSTEM_BUILD
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def system_info(request):
@@ -1208,7 +1216,7 @@ def system_info(request):
     sysdata = system.get()
     on = modules.states()
     mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "desc": m.get("desc", ""), "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core"))} for m in modules.MODULES]
-    return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "build": dj.SYSTEM_BUILD, "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
+    return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "build": _build_number(dj), "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
                      "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})
 
 
