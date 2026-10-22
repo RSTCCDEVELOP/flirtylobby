@@ -1,0 +1,1130 @@
+{
+ "format": "site-defaults",
+ "version": 1,
+ "captured_at": "2026-10-22T11:05:09+00:00",
+ "bundle": {
+  "format": "easy2edit-settings",
+  "version": 1,
+  "exported_at": "2026-10-22T11:05:09+00:00",
+  "secrets_included": false,
+  "files_included": false,
+  "sections": {
+   "theme": {
+    "v": 1,
+    "label": "Vormgeving",
+    "data": {}
+   },
+   "security": {
+    "v": 1,
+    "label": "Beveiliging",
+    "data": {
+     "basic": {
+      "login_max_attempts": 5,
+      "lockout_minutes": 15,
+      "token_lifetime_hours": 168,
+      "password_min_length": 8,
+      "password_complexity": false,
+      "security_headers": true,
+      "hsts": true
+     },
+     "geo": {
+      "enabled": false,
+      "mode": "block",
+      "countries": [],
+      "always_allow_ips": [],
+      "admin_bypass": true,
+      "unknown_action": "block",
+      "trust_country_header": false,
+      "texts": {
+       "nl": {
+        "title": "Niet beschikbaar in jouw land",
+        "message": "Deze website is helaas niet beschikbaar in jouw regio."
+       },
+       "en": {
+        "title": "Not available in your country",
+        "message": "Unfortunately this website is not available in your region."
+       },
+       "ar": {
+        "title": "غير متاح في بلدك",
+        "message": "نأسف، هذا الموقع غير متاح في منطقتك."
+       },
+       "de": {
+        "title": "In deinem Land nicht verfügbar",
+        "message": "Diese Website ist in deiner Region leider nicht verfügbar."
+       },
+       "es": {
+        "title": "No disponible en tu país",
+        "message": "Lamentablemente, este sitio web no está disponible en tu región."
+       },
+       "fr": {
+        "title": "Non disponible dans ton pays",
+        "message": "Ce site web n'est malheureusement pas disponible dans ta région."
+       },
+       "pt": {
+        "title": "Indisponível no teu país",
+        "message": "Infelizmente, este site não está disponível na tua região."
+       },
+       "zh": {
+        "title": "在你的国家不可用",
+        "message": "很抱歉，本网站在你所在的地区不可用。"
+       }
+      },
+      "test_local": true
+     },
+     "age": {
+      "enabled": false,
+      "frequency": "session",
+      "days": 30,
+      "show_on": "all",
+      "exclude_paths": [],
+      "version": 1,
+      "min_age": 18,
+      "deny_url": "",
+      "texts": {
+       "nl": {
+        "title": "Ben je {age} jaar of ouder?",
+        "message": "Deze website is alleen bestemd voor bezoekers van {age} jaar en ouder.",
+        "yes": "Ja, ik ben {age}+",
+        "no": "Nee",
+        "deny_message": "Je hebt helaas geen toegang tot deze website."
+       },
+       "en": {
+        "title": "Are you {age} or older?",
+        "message": "This website is only for visitors aged {age} and over.",
+        "yes": "Yes, I am {age}+",
+        "no": "No",
+        "deny_message": "Sorry, you cannot access this website."
+       },
+       "ar": {
+        "title": "هل عمرك {age} سنة أو أكثر؟",
+        "message": "هذا الموقع مخصص فقط للزوار الذين يبلغ عمرهم {age} سنة فأكثر.",
+        "yes": "نعم، عمري {age}+",
+        "no": "لا",
+        "deny_message": "نأسف، لا يمكنك الوصول إلى هذا الموقع."
+       },
+       "de": {
+        "title": "Bist du {age} Jahre oder älter?",
+        "message": "Diese Website ist nur für Besucher ab {age} Jahren bestimmt.",
+        "yes": "Ja, ich bin {age}+",
+        "no": "Nein",
+        "deny_message": "Du hast leider keinen Zugang zu dieser Website."
+       },
+       "es": {
+        "title": "¿Tienes {age} años o más?",
+        "message": "Este sitio web está destinado únicamente a visitantes de {age} años o más.",
+        "yes": "Sí, tengo {age}+",
+        "no": "No",
+        "deny_message": "Lamentablemente, no tienes acceso a este sitio web."
+       },
+       "fr": {
+        "title": "As-tu {age} ans ou plus ?",
+        "message": "Ce site web est réservé aux visiteurs de {age} ans et plus.",
+        "yes": "Oui, j'ai {age}+",
+        "no": "Non",
+        "deny_message": "Tu n'as malheureusement pas accès à ce site web."
+       },
+       "pt": {
+        "title": "Tens {age} anos ou mais?",
+        "message": "Este site destina-se apenas a visitantes com {age} anos ou mais.",
+        "yes": "Sim, tenho {age}+",
+        "no": "Não",
+        "deny_message": "Infelizmente, não tens acesso a este site."
+       },
+       "zh": {
+        "title": "你是否年满 {age} 岁？",
+        "message": "本网站仅供年满 {age} 岁的访客使用。",
+        "yes": "是，我已年满 {age} 岁",
+        "no": "否",
+        "deny_message": "很抱歉，你无法访问本网站。"
+       }
+      }
+     },
+     "gambling": {
+      "enabled": false,
+      "frequency": "session",
+      "days": 30,
+      "show_on": "all",
+      "exclude_paths": [],
+      "version": 1,
+      "min_age": 24,
+      "deny_url": "",
+      "require_confirm": true,
+      "texts": {
+       "nl": {
+        "title": "Speel bewust",
+        "message": "Je moet minimaal {age} jaar zijn om te gokken. Gokken kan verslavend zijn.",
+        "warnings": [
+         "Speel nooit met geld dat je nodig hebt.",
+         "Gokken kan leiden tot verslaving.",
+         "Zoek hulp als gokken een probleem wordt."
+        ],
+        "confirm": "Ik ben {age}+ en begrijp de risico's",
+        "deny": "Verlaten"
+       },
+       "en": {
+        "title": "Play responsibly",
+        "message": "You must be at least {age} to gamble. Gambling can be addictive.",
+        "warnings": [
+         "Never gamble with money you need.",
+         "Gambling can lead to addiction.",
+         "Seek help if gambling becomes a problem."
+        ],
+        "confirm": "I am {age}+ and understand the risks",
+        "deny": "Leave"
+       },
+       "ar": {
+        "title": "العب بمسؤولية",
+        "message": "يجب أن يكون عمرك {age} سنة على الأقل للمقامرة. قد تسبب المقامرة الإدمان.",
+        "warnings": [
+         "لا تلعب أبدًا بمال تحتاجه.",
+         "قد تؤدي المقامرة إلى الإدمان.",
+         "اطلب المساعدة إذا أصبحت المقامرة مشكلة."
+        ],
+        "confirm": "عمري {age}+ وأتفهم المخاطر",
+        "deny": "مغادرة"
+       },
+       "de": {
+        "title": "Spiele verantwortungsvoll",
+        "message": "Du musst mindestens {age} Jahre alt sein, um zu spielen. Glücksspiel kann süchtig machen.",
+        "warnings": [
+         "Spiele nie mit Geld, das du brauchst.",
+         "Glücksspiel kann zu Sucht führen.",
+         "Such dir Hilfe, wenn Glücksspiel zum Problem wird."
+        ],
+        "confirm": "Ich bin {age}+ und verstehe die Risiken",
+        "deny": "Verlassen"
+       },
+       "es": {
+        "title": "Juega con conciencia",
+        "message": "Debes tener al menos {age} años para jugar. El juego puede crear adicción.",
+        "warnings": [
+         "Nunca juegues con dinero que necesites.",
+         "El juego puede crear adicción.",
+         "Busca ayuda si el juego se convierte en un problema."
+        ],
+        "confirm": "Tengo {age}+ y entiendo los riesgos",
+        "deny": "Salir"
+       },
+       "fr": {
+        "title": "Joue de manière responsable",
+        "message": "Tu dois avoir au moins {age} ans pour jouer à des jeux d'argent. Les jeux d'argent peuvent créer une dépendance.",
+        "warnings": [
+         "Ne joue jamais avec de l'argent dont tu as besoin.",
+         "Les jeux d'argent peuvent mener à la dépendance.",
+         "Cherche de l'aide si le jeu devient un problème."
+        ],
+        "confirm": "J'ai {age}+ et je comprends les risques",
+        "deny": "Quitter"
+       },
+       "pt": {
+        "title": "Joga com consciência",
+        "message": "Tens de ter pelo menos {age} anos para jogar. O jogo pode criar dependência.",
+        "warnings": [
+         "Nunca jogues com dinheiro de que precisas.",
+         "O jogo pode levar à dependência.",
+         "Procura ajuda se o jogo se tornar um problema."
+        ],
+        "confirm": "Tenho {age}+ e compreendo os riscos",
+        "deny": "Sair"
+       },
+       "zh": {
+        "title": "理性游戏",
+        "message": "你必须年满 {age} 岁才能参与赌博。赌博可能令人上瘾。",
+        "warnings": [
+         "切勿使用你生活所需的钱来赌博。",
+         "赌博可能导致成瘾。",
+         "如果赌博成为问题，请寻求帮助。"
+        ],
+        "confirm": "我已年满 {age} 岁并了解风险",
+        "deny": "离开"
+       }
+      }
+     },
+     "cookies": {
+      "enabled": true,
+      "frequency": "days",
+      "days": 365,
+      "show_on": "all",
+      "exclude_paths": [],
+      "version": 1,
+      "position": "bottom",
+      "show_reject": true,
+      "analytics": true,
+      "marketing": true,
+      "preferences": true,
+      "texts": {
+       "nl": {
+        "title": "Cookies",
+        "message": "Wij gebruiken cookies om de website te laten werken en te verbeteren.",
+        "accept_all": "Alles accepteren",
+        "reject": "Alleen noodzakelijk",
+        "settings": "Instellingen",
+        "save": "Keuze opslaan",
+        "policy_link": "Cookiebeleid",
+        "cat_necessary": "Noodzakelijk",
+        "cat_necessary_desc": "Nodig om de website te laten werken. Altijd aan.",
+        "cat_analytics": "Statistieken",
+        "cat_analytics_desc": "Anoniem inzicht in het gebruik van de website.",
+        "cat_marketing": "Marketing",
+        "cat_marketing_desc": "Om advertenties relevanter te maken.",
+        "cat_preferences": "Voorkeuren",
+        "cat_preferences_desc": "Onthoudt je instellingen, zoals taal.",
+        "policy_title": "Cookiebeleid",
+        "policy_body": "Hier beschrijf je welke cookies je gebruikt en waarom."
+       },
+       "en": {
+        "title": "Cookies",
+        "message": "We use cookies to make the website work and to improve it.",
+        "accept_all": "Accept all",
+        "reject": "Necessary only",
+        "settings": "Settings",
+        "save": "Save choice",
+        "policy_link": "Cookie policy",
+        "cat_necessary": "Necessary",
+        "cat_necessary_desc": "Required for the website to work. Always on.",
+        "cat_analytics": "Analytics",
+        "cat_analytics_desc": "Anonymous insight into how the site is used.",
+        "cat_marketing": "Marketing",
+        "cat_marketing_desc": "To make advertising more relevant.",
+        "cat_preferences": "Preferences",
+        "cat_preferences_desc": "Remembers your settings, such as language.",
+        "policy_title": "Cookie policy",
+        "policy_body": "Describe here which cookies you use and why."
+       },
+       "ar": {
+        "title": "ملفات تعريف الارتباط",
+        "message": "نستخدم ملفات تعريف الارتباط (الكوكيز) لتشغيل الموقع وتحسينه.",
+        "accept_all": "قبول الكل",
+        "reject": "الضرورية فقط",
+        "settings": "الإعدادات",
+        "save": "حفظ الاختيار",
+        "policy_link": "سياسة الكوكيز",
+        "cat_necessary": "ضرورية",
+        "cat_necessary_desc": "لازمة لعمل الموقع. مفعّلة دائمًا.",
+        "cat_analytics": "الإحصاءات",
+        "cat_analytics_desc": "رؤية مجهولة الهوية لكيفية استخدام الموقع.",
+        "cat_marketing": "التسويق",
+        "cat_marketing_desc": "لجعل الإعلانات أكثر ملاءمة.",
+        "cat_preferences": "التفضيلات",
+        "cat_preferences_desc": "تتذكر إعداداتك، مثل اللغة.",
+        "policy_title": "سياسة الكوكيز",
+        "policy_body": "هنا تصف ملفات تعريف الارتباط التي تستخدمها وسبب استخدامها."
+       },
+       "de": {
+        "title": "Cookies",
+        "message": "Wir verwenden Cookies, damit die Website funktioniert und um sie zu verbessern.",
+        "accept_all": "Alle akzeptieren",
+        "reject": "Nur notwendige",
+        "settings": "Einstellungen",
+        "save": "Auswahl speichern",
+        "policy_link": "Cookie-Richtlinie",
+        "cat_necessary": "Notwendig",
+        "cat_necessary_desc": "Erforderlich, damit die Website funktioniert. Immer an.",
+        "cat_analytics": "Statistiken",
+        "cat_analytics_desc": "Anonymer Einblick in die Nutzung der Website.",
+        "cat_marketing": "Marketing",
+        "cat_marketing_desc": "Um Werbung relevanter zu machen.",
+        "cat_preferences": "Präferenzen",
+        "cat_preferences_desc": "Merkt sich deine Einstellungen, wie die Sprache.",
+        "policy_title": "Cookie-Richtlinie",
+        "policy_body": "Hier beschreibst du, welche Cookies du verwendest und warum."
+       },
+       "es": {
+        "title": "Cookies",
+        "message": "Usamos cookies para que el sitio web funcione y para mejorarlo.",
+        "accept_all": "Aceptar todo",
+        "reject": "Solo las necesarias",
+        "settings": "Ajustes",
+        "save": "Guardar selección",
+        "policy_link": "Política de cookies",
+        "cat_necessary": "Necesarias",
+        "cat_necessary_desc": "Imprescindibles para que el sitio web funcione. Siempre activadas.",
+        "cat_analytics": "Estadísticas",
+        "cat_analytics_desc": "Información anónima sobre el uso del sitio web.",
+        "cat_marketing": "Marketing",
+        "cat_marketing_desc": "Para que los anuncios sean más relevantes.",
+        "cat_preferences": "Preferencias",
+        "cat_preferences_desc": "Recuerda tus ajustes, como el idioma.",
+        "policy_title": "Política de cookies",
+        "policy_body": "Aquí describes qué cookies utilizas y por qué."
+       },
+       "fr": {
+        "title": "Cookies",
+        "message": "Nous utilisons des cookies pour faire fonctionner le site web et l'améliorer.",
+        "accept_all": "Tout accepter",
+        "reject": "Uniquement nécessaires",
+        "settings": "Paramètres",
+        "save": "Enregistrer mon choix",
+        "policy_link": "Politique de cookies",
+        "cat_necessary": "Nécessaires",
+        "cat_necessary_desc": "Indispensables au fonctionnement du site web. Toujours activés.",
+        "cat_analytics": "Statistiques",
+        "cat_analytics_desc": "Aperçu anonyme de l'utilisation du site web.",
+        "cat_marketing": "Marketing",
+        "cat_marketing_desc": "Pour rendre les publicités plus pertinentes.",
+        "cat_preferences": "Préférences",
+        "cat_preferences_desc": "Mémorise tes paramètres, comme la langue.",
+        "policy_title": "Politique de cookies",
+        "policy_body": "Décris ici quels cookies tu utilises et pourquoi."
+       },
+       "pt": {
+        "title": "Cookies",
+        "message": "Utilizamos cookies para fazer o site funcionar e para o melhorar.",
+        "accept_all": "Aceitar tudo",
+        "reject": "Apenas necessários",
+        "settings": "Definições",
+        "save": "Guardar escolha",
+        "policy_link": "Política de cookies",
+        "cat_necessary": "Necessários",
+        "cat_necessary_desc": "Necessários para o site funcionar. Sempre ativos.",
+        "cat_analytics": "Estatísticas",
+        "cat_analytics_desc": "Informação anónima sobre a utilização do site.",
+        "cat_marketing": "Marketing",
+        "cat_marketing_desc": "Para tornar os anúncios mais relevantes.",
+        "cat_preferences": "Preferências",
+        "cat_preferences_desc": "Lembra as tuas definições, como o idioma.",
+        "policy_title": "Política de cookies",
+        "policy_body": "Aqui descreves que cookies utilizas e porquê."
+       },
+       "zh": {
+        "title": "Cookie",
+        "message": "我们使用 Cookie 来保证网站正常运行并不断改进。",
+        "accept_all": "全部接受",
+        "reject": "仅必要的",
+        "settings": "设置",
+        "save": "保存选择",
+        "policy_link": "Cookie 政策",
+        "cat_necessary": "必要",
+        "cat_necessary_desc": "网站正常运行所必需。始终开启。",
+        "cat_analytics": "统计",
+        "cat_analytics_desc": "以匿名方式了解网站的使用情况。",
+        "cat_marketing": "营销",
+        "cat_marketing_desc": "使广告更相关。",
+        "cat_preferences": "偏好",
+        "cat_preferences_desc": "记住你的设置，例如语言。",
+        "policy_title": "Cookie 政策",
+        "policy_body": "请在此说明你使用哪些 Cookie 以及原因。"
+       }
+      }
+     },
+     "words": {
+      "enabled": false,
+      "lists": {}
+     },
+     "twofa": {
+      "required_for": "none",
+      "allow_email": true,
+      "allow_sms": true,
+      "code_minutes": 10,
+      "max_attempts": 5,
+      "texts": {
+       "nl": {
+        "email_subject": "Je verificatiecode",
+        "email_body": "Je verificatiecode is {code}. Deze is {minutes} minuten geldig. Heb je dit niet aangevraagd? Negeer dit bericht dan.",
+        "sms_body": "Je verificatiecode is {code}. Geldig {minutes} min."
+       },
+       "en": {
+        "email_subject": "Your verification code",
+        "email_body": "Your verification code is {code}. It is valid for {minutes} minutes. Did not request this? Ignore this message.",
+        "sms_body": "Your verification code is {code}. Valid {minutes} min."
+       },
+       "ar": {
+        "email_subject": "رمز التحقق الخاص بك",
+        "email_body": "رمز التحقق الخاص بك هو {code}. صالح لمدة {minutes} دقيقة. إذا لم تطلب هذا الرمز، فتجاهل هذه الرسالة.",
+        "sms_body": "رمز التحقق الخاص بك هو {code}. صالح لمدة {minutes} دقيقة."
+       },
+       "de": {
+        "email_subject": "Dein Bestätigungscode",
+        "email_body": "Dein Bestätigungscode lautet {code}. Er ist {minutes} Minuten gültig. Hast du ihn nicht angefordert? Dann ignoriere diese Nachricht.",
+        "sms_body": "Dein Bestätigungscode lautet {code}. Gültig {minutes} Min."
+       },
+       "es": {
+        "email_subject": "Tu código de verificación",
+        "email_body": "Tu código de verificación es {code}. Es válido durante {minutes} minutos. ¿No lo has solicitado tú? Ignora este mensaje.",
+        "sms_body": "Tu código de verificación es {code}. Válido {minutes} min."
+       },
+       "fr": {
+        "email_subject": "Ton code de vérification",
+        "email_body": "Ton code de vérification est {code}. Il est valable {minutes} minutes. Tu ne l'as pas demandé ? Ignore alors ce message.",
+        "sms_body": "Ton code de vérification est {code}. Valable {minutes} min."
+       },
+       "pt": {
+        "email_subject": "O teu código de verificação",
+        "email_body": "O teu código de verificação é {code}. É válido durante {minutes} minutos. Não pediste este código? Ignora esta mensagem.",
+        "sms_body": "O teu código de verificação é {code}. Válido {minutes} min."
+       },
+       "zh": {
+        "email_subject": "你的验证码",
+        "email_body": "你的验证码是 {code}，{minutes} 分钟内有效。如果不是你本人请求的，请忽略此消息。",
+        "sms_body": "你的验证码是 {code}。{minutes} 分钟内有效。"
+       }
+      },
+      "enabled": true,
+      "app_issuer": "",
+      "allow_app": true
+     },
+     "registration": {
+      "enabled": false,
+      "verify_email": true,
+      "require_phone": false,
+      "require_birth_date": true,
+      "code_minutes": 15,
+      "texts": {
+       "nl": {
+        "email_subject": "Bevestig je e-mailadres",
+        "email_body": "Je bevestigingscode is {code}. Deze is {minutes} minuten geldig. Heb je geen account aangemaakt? Negeer dit bericht dan.",
+        "sms_body": "Je bevestigingscode is {code}. Geldig {minutes} min."
+       },
+       "en": {
+        "email_subject": "Confirm your e-mail address",
+        "email_body": "Your confirmation code is {code}. It is valid for {minutes} minutes. Did not create an account? Ignore this message.",
+        "sms_body": "Your confirmation code is {code}. Valid {minutes} min."
+       },
+       "ar": {
+        "email_subject": "أكّد بريدك الإلكتروني",
+        "email_body": "رمز التأكيد الخاص بك هو {code}. صالح لمدة {minutes} دقيقة. إذا لم تنشئ حسابًا، فتجاهل هذه الرسالة.",
+        "sms_body": "رمز التأكيد الخاص بك هو {code}. صالح لمدة {minutes} دقيقة."
+       },
+       "de": {
+        "email_subject": "Bestätige deine E-Mail-Adresse",
+        "email_body": "Dein Bestätigungscode lautet {code}. Er ist {minutes} Minuten gültig. Hast du kein Konto erstellt? Dann ignoriere diese Nachricht.",
+        "sms_body": "Dein Bestätigungscode lautet {code}. Gültig {minutes} Min."
+       },
+       "es": {
+        "email_subject": "Confirma tu correo electrónico",
+        "email_body": "Tu código de confirmación es {code}. Es válido durante {minutes} minutos. ¿No has creado ninguna cuenta? Ignora este mensaje.",
+        "sms_body": "Tu código de confirmación es {code}. Válido {minutes} min."
+       },
+       "fr": {
+        "email_subject": "Confirme ton adresse e-mail",
+        "email_body": "Ton code de confirmation est {code}. Il est valable {minutes} minutes. Tu n'as pas créé de compte ? Ignore alors ce message.",
+        "sms_body": "Ton code de confirmation est {code}. Valable {minutes} min."
+       },
+       "pt": {
+        "email_subject": "Confirma o teu endereço de e-mail",
+        "email_body": "O teu código de confirmação é {code}. É válido durante {minutes} minutos. Não criaste nenhuma conta? Ignora esta mensagem.",
+        "sms_body": "O teu código de confirmação é {code}. Válido {minutes} min."
+       },
+       "zh": {
+        "email_subject": "验证你的邮箱地址",
+        "email_body": "你的验证码是 {code}，{minutes} 分钟内有效。如果你没有创建账户，请忽略此消息。",
+        "sms_body": "你的验证码是 {code}。{minutes} 分钟内有效。"
+       }
+      }
+     },
+     "email_verify": {
+      "enabled": false
+     }
+    }
+   },
+   "languages": {
+    "v": 1,
+    "label": "Talen",
+    "data": {
+     "switcher": "dropdown",
+     "languages": [
+      {
+       "code": "nl",
+       "name": "Nederlands",
+       "native_name": "Nederlands",
+       "rtl": false,
+       "enabled": true,
+       "is_default": true,
+       "order": 0
+      },
+      {
+       "code": "en",
+       "name": "Engels",
+       "native_name": "English",
+       "rtl": false,
+       "enabled": true,
+       "is_default": false,
+       "order": 1
+      },
+      {
+       "code": "zh",
+       "name": "Chinees",
+       "native_name": "中文",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 2
+      },
+      {
+       "code": "ar",
+       "name": "Arabisch",
+       "native_name": "العربية",
+       "rtl": true,
+       "enabled": false,
+       "is_default": false,
+       "order": 3
+      },
+      {
+       "code": "pt",
+       "name": "Portugees",
+       "native_name": "Português",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 4
+      },
+      {
+       "code": "es",
+       "name": "Spaans",
+       "native_name": "Español",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 5
+      },
+      {
+       "code": "de",
+       "name": "Duits",
+       "native_name": "Deutsch",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 6
+      },
+      {
+       "code": "fr",
+       "name": "Frans",
+       "native_name": "Français",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 7
+      },
+      {
+       "code": "it",
+       "name": "Italiaans",
+       "native_name": "Italiano",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 8
+      },
+      {
+       "code": "ru",
+       "name": "Russisch",
+       "native_name": "Русский",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 9
+      },
+      {
+       "code": "ja",
+       "name": "Japans",
+       "native_name": "日本語",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 10
+      },
+      {
+       "code": "ko",
+       "name": "Koreaans",
+       "native_name": "한국어",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 11
+      },
+      {
+       "code": "hi",
+       "name": "Hindi",
+       "native_name": "हिन्दी",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 12
+      },
+      {
+       "code": "tr",
+       "name": "Turks",
+       "native_name": "Türkçe",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 13
+      },
+      {
+       "code": "pl",
+       "name": "Pools",
+       "native_name": "Polski",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 14
+      },
+      {
+       "code": "sv",
+       "name": "Zweeds",
+       "native_name": "Svenska",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 15
+      },
+      {
+       "code": "da",
+       "name": "Deens",
+       "native_name": "Dansk",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 16
+      },
+      {
+       "code": "no",
+       "name": "Noors",
+       "native_name": "Norsk",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 17
+      },
+      {
+       "code": "fi",
+       "name": "Fins",
+       "native_name": "Suomi",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 18
+      },
+      {
+       "code": "el",
+       "name": "Grieks",
+       "native_name": "Ελληνικά",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 19
+      },
+      {
+       "code": "cs",
+       "name": "Tsjechisch",
+       "native_name": "Čeština",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 20
+      },
+      {
+       "code": "hu",
+       "name": "Hongaars",
+       "native_name": "Magyar",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 21
+      },
+      {
+       "code": "ro",
+       "name": "Roemeens",
+       "native_name": "Română",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 22
+      },
+      {
+       "code": "uk",
+       "name": "Oekraïens",
+       "native_name": "Українська",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 23
+      },
+      {
+       "code": "id",
+       "name": "Indonesisch",
+       "native_name": "Bahasa Indonesia",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 24
+      },
+      {
+       "code": "th",
+       "name": "Thais",
+       "native_name": "ไทย",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 25
+      },
+      {
+       "code": "vi",
+       "name": "Vietnamees",
+       "native_name": "Tiếng Việt",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 26
+      },
+      {
+       "code": "he",
+       "name": "Hebreeuws",
+       "native_name": "עברית",
+       "rtl": true,
+       "enabled": false,
+       "is_default": false,
+       "order": 27
+      },
+      {
+       "code": "fa",
+       "name": "Perzisch",
+       "native_name": "فارسی",
+       "rtl": true,
+       "enabled": false,
+       "is_default": false,
+       "order": 28
+      },
+      {
+       "code": "ur",
+       "name": "Urdu",
+       "native_name": "اردو",
+       "rtl": true,
+       "enabled": false,
+       "is_default": false,
+       "order": 29
+      },
+      {
+       "code": "bn",
+       "name": "Bengaals",
+       "native_name": "বাংলা",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 30
+      },
+      {
+       "code": "bg",
+       "name": "Bulgaars",
+       "native_name": "Български",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 31
+      },
+      {
+       "code": "hr",
+       "name": "Kroatisch",
+       "native_name": "Hrvatski",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 32
+      },
+      {
+       "code": "sk",
+       "name": "Slowaaks",
+       "native_name": "Slovenčina",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 33
+      },
+      {
+       "code": "sl",
+       "name": "Sloveens",
+       "native_name": "Slovenščina",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 34
+      },
+      {
+       "code": "sr",
+       "name": "Servisch",
+       "native_name": "Српски",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 35
+      },
+      {
+       "code": "lt",
+       "name": "Litouws",
+       "native_name": "Lietuvių",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 36
+      },
+      {
+       "code": "lv",
+       "name": "Lets",
+       "native_name": "Latviešu",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 37
+      },
+      {
+       "code": "et",
+       "name": "Estisch",
+       "native_name": "Eesti",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 38
+      },
+      {
+       "code": "ca",
+       "name": "Catalaans",
+       "native_name": "Català",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 39
+      },
+      {
+       "code": "ms",
+       "name": "Maleis",
+       "native_name": "Bahasa Melayu",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 40
+      },
+      {
+       "code": "tl",
+       "name": "Filipijns",
+       "native_name": "Filipino",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 41
+      },
+      {
+       "code": "sw",
+       "name": "Swahili",
+       "native_name": "Kiswahili",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 42
+      },
+      {
+       "code": "af",
+       "name": "Afrikaans",
+       "native_name": "Afrikaans",
+       "rtl": false,
+       "enabled": false,
+       "is_default": false,
+       "order": 43
+      }
+     ]
+    }
+   },
+   "community": {
+    "v": 1,
+    "label": "Community",
+    "data": {
+     "profiles": {
+      "max_photos": 10,
+      "default_visibility": "members",
+      "private_photos": true,
+      "requests_enabled": true,
+      "decline_days": 14,
+      "max_private_photos": 10,
+      "theme": "normal",
+      "builtin": {
+       "headline": true,
+       "bio": true,
+       "gender": true,
+       "birth_date": true,
+       "city": true,
+       "interests": true,
+       "aim": false
+      },
+      "fields": [
+       {
+        "key": "occupation",
+        "label": "Beroep of bezigheid",
+        "type": "text",
+        "options": [],
+        "unit": "",
+        "required": false,
+        "visibility": "public",
+        "card": true,
+        "filter": true,
+        "group": "Over mij"
+       },
+       {
+        "key": "languages",
+        "label": "Talen",
+        "type": "multiselect",
+        "options": [
+         "Nederlands",
+         "Engels",
+         "Duits",
+         "Frans",
+         "Spaans",
+         "Anders"
+        ],
+        "unit": "",
+        "required": false,
+        "visibility": "members",
+        "card": false,
+        "filter": true,
+        "group": "Over mij"
+       },
+       {
+        "key": "education",
+        "label": "Opleiding",
+        "type": "select",
+        "options": [
+         "MBO",
+         "HBO",
+         "WO",
+         "Anders"
+        ],
+        "unit": "",
+        "required": false,
+        "visibility": "members",
+        "card": false,
+        "filter": false,
+        "group": "Over mij"
+       },
+       {
+        "key": "hobbies",
+        "label": "Hobby's",
+        "type": "text",
+        "options": [],
+        "unit": "",
+        "required": false,
+        "visibility": "members",
+        "card": false,
+        "filter": false,
+        "group": "Over mij"
+       },
+       {
+        "key": "website",
+        "label": "Website",
+        "type": "url",
+        "options": [],
+        "unit": "",
+        "required": false,
+        "visibility": "public",
+        "card": false,
+        "filter": false,
+        "group": "Links"
+       },
+       {
+        "key": "instagram",
+        "label": "Instagram",
+        "type": "url",
+        "options": [],
+        "unit": "",
+        "required": false,
+        "visibility": "members",
+        "card": false,
+        "filter": false,
+        "group": "Links"
+       }
+      ]
+     },
+     "messages": {
+      "max_length": 5000,
+      "rate_per_minute": 20
+     },
+     "discover": {
+      "min_age": 18,
+      "max_age": 99,
+      "max_results": 60,
+      "require_photo": 0,
+      "default_sort": "active",
+      "suggestions": true,
+      "require_to_search": true,
+      "require_to_like": true,
+      "show_non_participants": false,
+      "show_visitors": true,
+      "visitors_days": 30,
+      "show_likes_received": true,
+      "match_email": true,
+      "like_email": false,
+      "swipe": "auto",
+      "pass_days": 30,
+      "pass_forever": false,
+      "distance_enabled": true,
+      "radii": [
+       5,
+       10,
+       25,
+       50,
+       100,
+       250
+      ],
+      "max_distance_km": 500,
+      "geocoder_contact": ""
+     },
+     "chat": {
+      "method": "webrtc",
+      "display": "page",
+      "style": "button",
+      "popup_position": "",
+      "show_on": [
+       "home",
+       "website",
+       "dashboard",
+       "backend"
+      ],
+      "photos": true,
+      "videos": true,
+      "video_chat": true,
+      "max_image_mb": 10,
+      "max_video_mb": 50,
+      "stun": [
+       "stun:stun.l.google.com:19302"
+      ],
+      "turn_url": "",
+      "turn_user": "",
+      "turn_credential": ""
+     },
+     "general": {
+      "aim_dating": true,
+      "aim_relationship": true,
+      "aim_friends": true,
+      "aim_chat": true,
+      "aim_appointments": false,
+      "aim_erotic": false,
+      "aim_activities": false,
+      "aim_travel": false
+     },
+     "direct": {
+      "hours": 2,
+      "ask_languages": false,
+      "ask_birth": false,
+      "chat": true,
+      "photos": true,
+      "videos": true,
+      "video_chat": true,
+      "max_image_mb": 10,
+      "max_video_mb": 50
+     }
+    }
+   },
+   "dashboard": {
+    "v": 1,
+    "label": "Standaard dashboard",
+    "data": null
+   }
+  },
+  "errors": {}
+ },
+ "system": {
+  "refresh_seconds": "30",
+  "signal_seconds": "30",
+  "max_image_mb": "20",
+  "max_video_mb": "300",
+  "max_photo_mb": "5",
+  "show_credit": true,
+  "timezone": "Europe/Amsterdam"
+ }
+}
