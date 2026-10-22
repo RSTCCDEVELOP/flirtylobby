@@ -25,7 +25,7 @@ function Popup({ onClose }) {
         {!d && !err && <p className="muted">{tx("Laden…")}</p>}
         {d && (
           <>
-            <h2 style={{ margin: ".4rem 0 0", textAlign: "center" }}>{d.name} <small className="muted">{tx("versie")} {d.version}</small></h2>
+            <h2 style={{ margin: ".4rem 0 0", textAlign: "center" }}>{d.name} <small className="muted">{tx("versie")} {d.version} {tx("build")} {d.build}</small></h2>
             <Tabs value={tab} onChange={setTab} tabs={[["info", "Info"], ["plugins", "Plugins", null, d.plugins.length], ["modules", "Modules", null, d.modules.length], ["about", "Over"]]} />
             <div style={{ marginTop: ".8rem" }}>
               {tab === "info" && (
@@ -35,7 +35,7 @@ function Popup({ onClose }) {
                     .filter(([, v]) => v).map(([k, v]) => (
                       <li key={k}><span>{tx(k)}</span><span className="info-ver">{/^https?:\/\//.test(v) ? <a href={v} target="_blank" rel="noreferrer">{v}</a> : k === "E-mail" || k === "Support" ? <a href={`mailto:${v}`}>{v}</a> : v}</span></li>
                     ))}
-                  <li><span>{tx("Versie")}</span><span className="info-ver">{d.version}</span></li>
+                  <li><span>{tx("Versie")}</span><span className="info-ver">{d.version} {tx("build")} {d.build}</span></li>
                   <li><span>{tx("Plugins")}</span><span className="info-ver">{d.plugins.filter((p) => p.enabled).length} {tx("aan")} / {d.plugins.length}</span></li>
                   <li><span>{tx("Modules")}</span><span className="info-ver">{d.modules.filter((m) => m.enabled).length} {tx("aan")} / {d.modules.length}</span></li>
                 </ul>

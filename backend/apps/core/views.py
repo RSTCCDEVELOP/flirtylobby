@@ -1208,7 +1208,7 @@ def system_info(request):
     sysdata = system.get()
     on = modules.states()
     mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "desc": m.get("desc", ""), "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core"))} for m in modules.MODULES]
-    return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
+    return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "build": dj.SYSTEM_BUILD, "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
                      "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})
 
 
