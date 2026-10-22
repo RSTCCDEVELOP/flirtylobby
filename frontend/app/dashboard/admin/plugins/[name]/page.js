@@ -10,6 +10,7 @@ import PluginFrame from "../../../../../components/PluginFrame";
 import PluginPages from "../../../../../components/PluginPages";
 import { IconEdit } from "../../../../../components/Icons";
 import { PluginTabs } from "../../../../../components/PluginParts";
+import { PluginAbout, PluginObjects } from "../../../../../components/PluginExtras";
 import { api, downloadFile, errorText } from "../../../../../lib/api";
 import { tx } from "../../../../../lib/t";
 import { confirmDialog } from "../../../../../lib/dialog";
@@ -40,6 +41,8 @@ export default function PluginAdminPage() {
     ...(p.admin_web && p.enabled ? [["manage", p.admin_label || "Beheer", <IconEye key="m" />]] : []),
     ...(hasPages ? [["pages", "Pagina's", <IconEdit key="pg" />]] : []),
     ...(p.settings_web && p.enabled ? [["shopsettings", "Instellingen", <IconSettings key="ss" />]] : []),
+    ...((p.provides || []).includes("parts") ? [["objects", "Systeemobjecten", <IconEdit key="so" />]] : []),
+    ["about", "Omschrijving", <IconEye key="ab" />],
   ];
 
   return (
@@ -61,6 +64,8 @@ export default function PluginAdminPage() {
           <>
             {tab === "manage" && p.admin_web && p.enabled && <PluginFrame key={wanted} name={name} file={p.admin_web} title={`${p.title} – ${tx("beheer")}`} route={wanted ? { params: {}, query: { tab: wanted } } : null} />}
             {tab === "pages" && <PluginPages p={p} />}
+            {tab === "objects" && <PluginObjects p={p} />}
+            {tab === "about" && <PluginAbout p={p} />}
             {tab === "shopsettings" && p.settings_web && p.enabled && <PluginFrame name={name} file={p.settings_web} title={`${p.title} – ${tx("instellingen")}`} bare />}
           </>
         )}

@@ -91,6 +91,8 @@ MODULES = [
      "desc": "Naam en adressen van de website (frontend en API), contactgegevens en een controlelijst plus kant-en-klare instellingen voor de deployment."},
     {"key": "storage", "group": "Systeem", "label": "Mappenstructuur",
      "desc": "Waar bestanden staan (gebruikers, website, overig): map, lokaal of S3, en versleuteling per gebruiker."},
+    {"key": "stats", "group": "Systeem", "label": "Statistieken",
+     "desc": "Grafieken en cijfers over de hele website: bezoekers, SEO, bots en AI-aanroepen, en per module en plugin een eigen tabblad. Modules en plugins schrijven hun cijfers hierheen."},
     {"key": "backups", "group": "Systeem", "label": "Backup",
      "desc": "Backups van de website per dag, week of maand (pagina's, menu's, teksten, afbeeldingen, thema en instellingen van modules en plugins), terugzetten en downloaden. De standaardgegevens van easy2edit zitten er niet in."},
     {"key": "roles", "group": "Systeem", "label": "Rollen",

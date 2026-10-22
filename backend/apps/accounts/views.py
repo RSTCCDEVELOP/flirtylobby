@@ -58,6 +58,7 @@ def login(request):
             logger.warning("Login locked for %s", email)
         throttle.save()
         logger.warning("Failed login for %s", email)
+        __import__("apps.stats.service", fromlist=["record"]).record("users", "login_failed")
         return Response({"detail": "Onjuist e-mailadres of wachtwoord."}, status=status.HTTP_400_BAD_REQUEST)
     if not user.is_active:
         logger.warning("Blocked user tried to log in: %s", email)
@@ -107,6 +108,7 @@ def _finish_login(request, user):
         token = Token.objects.create(user=user)
     user_logged_in.send(sender=User, request=request, user=user)
     logger.info("Login: %s", user.email)
+    __import__("apps.stats.service", fromlist=["record"]).record("users", "login", user.id)
     __import__("apps.plugins.runtime", fromlist=["emit"]).emit("user_login", user=user)
     return Response({"token": token.key, "user": ProfileSerializer(user).data})
 

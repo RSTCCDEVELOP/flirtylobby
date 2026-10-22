@@ -253,7 +253,7 @@ def clean(data):
                 if t not in TYPES:
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
-                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading") and _item_style(it.get("style")) else {})})
+                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading") and _item_style(it.get("style")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
             cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})

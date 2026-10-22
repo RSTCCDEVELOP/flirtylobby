@@ -85,6 +85,12 @@ export async function middleware(req) {
   }
   res = res || NextResponse.next();
 
+  // programs (search engines, AI bots) do not run scripts: the server tells the statistics about them
+  const ua = req.headers.get("user-agent") || "";
+  if (/bot|crawl|spider|slurp|gpt|claude|perplexity|bytespider|facebookexternalhit|bingpreview|ahrefs|semrush|mj12/i.test(ua) && !adminArea && !pathname.startsWith("/_next")) {
+    fetch(`${API}/api/stats/bot/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: pathname, ua }), cache: "no-store" }).catch(() => {});
+  }
+
   if (cfg?.basic?.security_headers !== false) {
     res.headers.set("X-Content-Type-Options", "nosniff");
     res.headers.set("X-Frame-Options", "SAMEORIGIN"); // our own device preview (edit mode) shows pages in a frame

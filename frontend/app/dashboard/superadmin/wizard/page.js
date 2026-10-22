@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api, errorText, apiBase, getToken } from "../../../../lib/api";
-import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
+import { PresetIcon } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import PriceBlock from "../../../../components/PriceBlock";
 
@@ -27,22 +27,24 @@ export default function Wizard() {
   const [lang, setLang] = useState("nl");
   const [mailTo, setMailTo] = useState("");
   const [cfgDoc, setCfgDoc] = useState(null);
+  const [inst, setInst] = useState({ preset: "", demo: false, shops: "clothing", defaults: true });
+  const [withJson, setWithJson] = useState(true);
   const [msg, setMsg] = useState(null);
   useEffect(() => { api("/system/wizard/").then((c) => { setConf(c); setAnswers((a) => ({ ...a, hosting: c.default_hosting, email: Number(c.default_email) || 0 })); setCu((x) => ({ ...x, company: c.settings.client || x.company })); if (c.reseller) setRs((x) => ({ ...x, ...c.reseller })); setSite(c.settings.site_name || ""); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
   const key = JSON.stringify(answers);
-  useEffect(() => { if (step >= 3) api("/system/wizard/", { method: "POST", body: { answers } }).then(setPlan).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, [step, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (step >= 4) api("/system/wizard/", { method: "POST", body: { answers } }).then(setPlan).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, [step, key]); // eslint-disable-line react-hooks/exhaustive-deps
   const mailTier = (n) => { let per = 0; (conf?.email?.tiers || []).forEach((t) => { if (n >= t.from) per = t.price; }); return per; };
   const mailPer = mailTier(Number(answers.email) || 0), mailPrice = mailPer * (Number(answers.email) || 0);
   const visible = useMemo(() => (conf?.questions || []).filter((q) => (q.requires || []).every((r) => answers[r])), [conf, answers]);
   if (!conf) return msg ? <div className="alert">{msg.text}</div> : null;
-  const STEPS = [tx("Gegevens"), tx("Vragen"), tx("Hosting en e-mail"), tx("Overzicht en prijs"), tx("Installeren")];
-  const run = async () => {
-    if (!(await confirmDialog(tx("De modules en plugins worden nu ingesteld zoals in het overzicht. Je gegevens blijven bestaan. Doorgaan?"), { okLabel: tx("Installeren"), cancelLabel: tx("Annuleren") }))) return;
-    setBusy(true); setMsg(null);
-    try { await api("/system/wizard/", { method: "POST", body: { answers, apply: true, customer: cu, reseller: rs, site_name: site, period, lang } }); setStep(4); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
-    setBusy(false);
+  const STEPS = [tx("Gegevens"), tx("Installatie"), tx("Vragen"), tx("Hosting en e-mail"), tx("Overzicht en prijs"), tx("Downloaden en mailen")];
+  const pickInst = (i) => {
+    const blank = Object.fromEntries((conf.questions || []).map((q) => [q.key, false]));
+    setInst({ ...inst, preset: i ? i.key : "" });
+    if (i) setAnswers({ ...answers, ...blank, ...i.answers });
   };
-  const body = () => ({ answers, customer: cu, reseller: rs, site_name: site, period, lang });
+  const cur = (conf.installations || []).find((x) => x.key === inst.preset);
+  const body = () => ({ answers, customer: cu, reseller: rs, installation: inst, site_name: site, period, lang });
   const download = async () => {
     setBusy(true); setMsg(null);
     try {
@@ -54,7 +56,7 @@ export default function Wizard() {
   };
   const mail = async () => {
     setBusy(true); setMsg(null);
-    try { const r = await api("/system/wizard/pdf/", { method: "POST", body: { ...body(), mode: "mail", email: mailTo || cu.email } }); setMsg({ ok: true, text: tx("De offerte is gemaild naar {0}.", r.sent) }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    try { const r = await api("/system/wizard/pdf/", { method: "POST", body: { ...body(), mode: "mail", email: mailTo || cu.email, with_config: withJson } }); setMsg({ ok: true, text: tx("De offerte is gemaild naar {0}.", r.sent) }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
   const downloadConfig = async () => {
@@ -110,6 +112,46 @@ export default function Wizard() {
       )}
 
       {step === 1 && (
+        <div className="stack" style={{ gap: "1.6rem", maxWidth: 980 }}>
+          <div>
+            <h2 style={{ margin: 0 }}>{tx("Welke standaard installatie?")}</h2>
+            <p className="muted" style={{ margin: ".3rem 0 0" }}>{tx("Kies een standaard installatie als beginpunt. In de volgende stap kun je nog onderdelen aan- of uitzetten.")}</p>
+          </div>
+          <div className="wz-grid">
+            <label className={`wz-q${!inst.preset ? " on" : ""}`}>
+              <input type="radio" name="inst" checked={!inst.preset} onChange={() => pickInst(null)} style={{ marginTop: ".3rem" }} />
+              <span className="wz-text"><strong>{tx("Eigen samenstelling")}</strong><small className="muted">{tx("Geen standaard installatie: je kiest zelf de onderdelen met een paar vragen.")}</small></span>
+            </label>
+            {(conf.installations || []).map((i) => (
+              <label key={i.key} className={`wz-q${inst.preset === i.key ? " on" : ""}`}>
+                <input type="radio" name="inst" checked={inst.preset === i.key} onChange={() => pickInst(i)} style={{ marginTop: ".3rem" }} />
+                <span className="wz-text"><strong><span className="preset-ico" style={{ display: "inline-flex", verticalAlign: "middle", marginRight: ".4rem" }}><PresetIcon name={i.icon} /></span>{tx(i.name)}</strong><small className="muted">{tx(i.desc)}</small></span>
+              </label>
+            ))}
+          </div>
+          <div className="stack" style={{ gap: ".8rem" }}>
+            <h3 style={{ margin: 0 }}>{tx("Bij het installeren")}</h3>
+            <div className="wz-opts">
+            <label className="wz-q"><span className="switch"><input type="checkbox" checked={inst.demo} onChange={(e) => setInst({ ...inst, demo: e.target.checked })} /><span /></span><span className="wz-text"><strong>{tx("Demo-gegevens installeren")}</strong><small className="muted">{tx("Voorbeeldplaatjes, gebruikers, inhoud, systeemobjecten en bestellingen om alles te testen.")}</small></span></label>
+            {inst.demo && cur?.webshop && (
+              <label>{tx("Welke shopindeling wil je als demo?")}
+                <select value={inst.shops} onChange={(e) => setInst({ ...inst, shops: e.target.value })}>
+                  <option value="clothing">{tx("Kleding (dames, heren, kinderen)")}</option>
+                  <option value="furniture">{tx("Meubels (woonkamer, slaapkamer, kantoor)")}</option>
+                  <option value="grocery">{tx("Supermarkt (boodschappen)")}</option>
+                  <option value="standard">{tx("Standaard producten")}</option>
+                  <option value="all">{tx("Alle vier de winkels")}</option>
+                </select>
+              </label>
+            )}
+            {conf.defaults_available && <label className="wz-q"><span className="switch"><input type="checkbox" checked={inst.defaults} onChange={(e) => setInst({ ...inst, defaults: e.target.checked })} /><span /></span><span className="wz-text"><strong>{tx("Standaard instellingen toepassen")}</strong><small className="muted">{tx("De vastgelegde standaard: beveiliging, community, talen, dashboard, vormgeving en vernieuwen.")}</small></span></label>}
+            </div>
+          </div>
+          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(0)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => setStep(2)}>{tx("Volgende")}</button></div>
+        </div>
+      )}
+
+      {step === 2 && (
         <div className="stack" style={{ gap: "2rem", maxWidth: 980 }}>
           <div>
             <h2 style={{ margin: 0 }}>{tx("Wat heb je nodig?")}</h2>
@@ -123,11 +165,11 @@ export default function Wizard() {
               </label>
             ))}
           </div>
-          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(0)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => setStep(2)}>{tx("Volgende")}</button></div>
+          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(1)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => setStep(3)}>{tx("Volgende")}</button></div>
         </div>
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <div className="stack" style={{ gap: "2rem", maxWidth: 980 }}>
           <div>
             <h2 style={{ margin: "0 0 .3rem" }}>{tx("Welke hosting wil je?")}</h2>
@@ -157,11 +199,11 @@ export default function Wizard() {
             </div>
             <small className="muted">{conf.email.tiers.map((t, i) => `${tx("vanaf")} ${t.from}: ${eur(t.price)}`).join(" · ")} {tx("per adres. Hoe meer adressen, hoe lager de prijs per adres.")}</small>
           </div>
-          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(1)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => setStep(3)}>{tx("Volgende")}</button></div>
+          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(2)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => setStep(4)}>{tx("Volgende")}</button></div>
         </div>
       )}
 
-      {step === 3 && plan && (
+      {step === 4 && plan && (
         <div className="stack" style={{ gap: "2rem" }}>
           <div className="card wz-card" style={{ maxWidth: 980 }}>
             <h2 style={{ margin: 0 }}>{tx("Wat je krijgt")}</h2>
@@ -172,8 +214,22 @@ export default function Wizard() {
             </div>
           </div>
           <div style={{ maxWidth: 980 }}><PriceBlock price={plan} period={period} onPeriod={setPeriod} /></div>
+          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(3)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => setStep(5)}>{tx("Volgende")}</button></div>
+        </div>
+      )}
+
+      {step === 5 && (
+        <div className="stack" style={{ gap: "2rem" }}>
           <div className="card wz-card" style={{ maxWidth: 980 }}>
-            <h2 style={{ margin: 0 }}>{tx("Offerte als PDF")}</h2>
+            <h2 style={{ margin: 0 }}>{tx("Gegevens voor de facturatie")}</h2>
+            <p className="muted" style={{ margin: 0 }}>{tx("Deze komen in de installatieconfiguratie (JSON).")}</p>
+            <div className="pe-cols">
+              <label>{tx("KvK-nummer")}<input value={cu.kvk} onChange={setC("kvk")} /></label>
+              <label>{tx("Btw-nummer")}<input value={cu.vat_id} onChange={setC("vat_id")} /></label>
+            </div>
+          </div>
+          <div className="card wz-card" style={{ maxWidth: 980 }}>
+            <h2 style={{ margin: 0 }}>{tx("Downloaden en mailen")}</h2>
             <div className="pe-cols">
               <label>{tx("Taal van de offerte")}<select value={lang} onChange={(e) => setLang(e.target.value)}>{[["nl", "Nederlands"], ["en", "English"], ["de", "Deutsch"], ["fr", "Français"], ["es", "Español"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
               <label>{tx("E-mailadres om de offerte naartoe te sturen")}<input type="email" value={mailTo || cu.email} onChange={(e) => setMailTo(e.target.value)} placeholder="naam@bedrijf.nl" /></label>
@@ -181,26 +237,13 @@ export default function Wizard() {
             <div className="row" style={{ gap: ".6rem", flexWrap: "wrap" }}>
               <button type="button" className="btn" disabled={busy} onClick={download}>⬇ {tx("PDF downloaden")}</button>
               <button type="button" className="btn" disabled={busy || !(mailTo || cu.email).includes("@")} onClick={mail}>✉ {tx("PDF mailen")}</button>
+              <button type="button" className="btn primary" onClick={downloadConfig}>⬇ {tx("Installatie JSON downloaden")}</button>
             </div>
+            <label className="wz-q" style={{ alignItems: "center" }}><span className="switch"><input type="checkbox" checked={withJson} onChange={(e) => setWithJson(e.target.checked)} /><span /></span><span>{tx("Bij het mailen ook de installatieconfiguratie (JSON) meesturen")}</span></label>
+            <small className="muted">{tx("De JSON installeer je op een server met: python manage.py install_config bestand.json")}</small>
             <small className="muted">{tx("De offerte heeft de huisstijl van Easy2edit, met de gekozen looptijd gemarkeerd. De namen van de onderdelen staan in het Nederlands.")}</small>
           </div>
-          <div className="card wz-card" style={{ maxWidth: 980 }}>
-            <h2 style={{ margin: 0 }}>{tx("Nog twee gegevens voor de facturatie")}</h2>
-            <div className="pe-cols">
-              <label>{tx("KvK-nummer")}<input value={cu.kvk} onChange={setC("kvk")} /></label>
-              <label>{tx("Btw-nummer")}<input value={cu.vat_id} onChange={setC("vat_id")} /></label>
-            </div>
-            <div><button type="button" className="btn" onClick={downloadConfig}>⬇ {tx("Configuratie downloaden (JSON)")}</button> <small className="muted">{tx("Daarmee kun je later op een server installeren: python manage.py install_config bestand.json")}</small></div>
-          </div>
-          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(2)}>{tx("Terug")}</button><button type="button" className="btn primary" disabled={busy} onClick={run}>{busy ? tx("Bezig…") : `${tx("Installeren")}${chosen ? ` (${tx(chosen.label).toLowerCase()})` : ""}`}</button></div>
-        </div>
-      )}
-
-      {step === 4 && (
-        <div className="card wz-card" style={{ maxWidth: 560 }}>
-          <h2 style={{ margin: 0 }}>✓ {tx("Klaar")}</h2>
-          <p style={{ margin: 0 }}>{tx("De website {0} is ingesteld voor {1}. De licentie staat op de gekozen periode.", site, name)}</p>
-          <div><button type="button" className="btn primary" onClick={() => { window.location.href = "/dashboard/superadmin"; }}>{tx("Naar Super admin")}</button></div>
+          <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(4)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => { window.location.href = "/dashboard/superadmin"; }}>{tx("Klaar")}</button></div>
         </div>
       )}
     </>

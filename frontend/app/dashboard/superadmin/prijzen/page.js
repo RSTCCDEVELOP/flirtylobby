@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { api, errorText } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
 import Tabs from "../../../../components/Tabs";
+import MarketingTile from "../../../../components/MarketingTile";
+import SalesTest from "../../../../components/SalesTest";
+import { useAuth } from "../../../../components/AuthContext";
 import PriceAI from "../../../../components/PriceAI";
 
 // The price list (apps/core/pricing.json, goes with every installation): base price, discounts per period and the price of every package, module and plugin, per month ex VAT.
@@ -17,7 +20,26 @@ export default function PriceEditor() {
   const [mail, setMail] = useState({ max: 200, tiers: [] });
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [sales, setSales] = useState(null);
   const load = (d) => { setData(d); setCfg({ rst_share: d.config.rst_share ?? 0, base_price: d.config.base_price, vat_rate: d.config.vat_rate, periods: d.config.periods, imp: { hourly_rate: d.config.implementation?.hourly_rate ?? 0, design_hours: d.config.implementation?.design_hours ?? 0, setup_hours: d.config.implementation?.setup_hours ?? 0 } }); setHours(d.config.implementation?.items || {}); setMail({ max: d.email.max, tiers: d.email.tiers.map((t) => ({ ...t })) }); setHost({ usd_eur: d.hosting.config.usd_eur, markup: d.hosting.config.markup, default: d.hosting.config.default, options: Object.fromEntries(d.hosting.config.options.map((o) => [o.key, { price: o.price, do_usd: o.do_usd }])) }); setItems(Object.fromEntries(d.catalog.map((c) => [c.key, c.price]))); };
+  useEffect(() => { api("/system/sales/").then(setSales).catch(() => {}); }, []);
+  const { user } = useAuth();
+  const [test, setTest] = useState(""); // the method being tried
+  const [mk, setMk] = useState(null); // the marketing tiles
+  useEffect(() => { if (tab === "marketing" && !mk) api("/system/marketing/").then(setMk).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+  const mkSave = async (body) => { try { setMk(await api("/system/marketing/", { method: "POST", body })); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
+  const [sd, setSd] = useState(null); // the Sales settings being edited: {recipients, verify_email, options}
+  useEffect(() => { if (sales && !sd) setSd({ recipients: (sales.recipients || []).join(", "), verify_email: !!sales.verify_email, verify_method: sales.verify_method || "code", installations: sales.options.installations ?? sales.installations.map((i) => i.key), questions: sales.options.questions ?? sales.questions.map((q) => q.key), hosting: sales.options.hosting ?? sales.hosting.map((h) => h.key), email: sales.options.email !== false }); }, [sales]); // eslint-disable-line react-hooks/exhaustive-deps
+  const saveSales = async () => {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await api("/system/sales/", { method: "POST", body: { recipients: sd.recipients, verify_email: sd.verify_email, verify_method: sd.verify_method, options: { installations: sd.installations, questions: sd.questions, hosting: sd.hosting, email: sd.email } } });
+      setSales(r); setMsg({ ok: true, text: tx("Opgeslagen.") });
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
+  const flip = (k, v) => setSd((x) => ({ ...x, [k]: x[k].includes(v) ? x[k].filter((y) => y !== v) : [...x[k], v] }));
+  const toggleObject = async (on) => { try { setSales(await api("/system/sales/", { method: "POST", body: { system_object: on } })); setMsg({ ok: true, text: on ? tx("Het systeemobject is gemaakt. Je vindt het in de bewerkmodus bij Systeemobjecten.") : tx("Het systeemobject is verwijderd.") }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   useEffect(() => { api("/system/pricing/").then(load).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
   if (!data) return msg ? <div className="alert">{msg.text}</div> : null;
   const save = async () => {
@@ -26,7 +48,7 @@ export default function PriceEditor() {
     setBusy(false);
   };
   const groups = [...new Set(data.catalog.map((c) => c.group))];
-  const TABS = [["basis", tx("Basis en korting")], ["impl", tx("Ontwerp en implementatie")], ["host", tx("Hosting en inkoop")], ["mail", tx("E-mail")], ...groups.map((g) => [g, tx(g)])];
+  const TABS = [["basis", tx("Basis en korting")], ["impl", tx("Ontwerp en implementatie")], ["host", tx("Hosting en inkoop")], ["mail", tx("E-mail")], ...groups.map((g) => [g, tx(g)]), ["sales", tx("Sales")], ["marketing", tx("Marketing")]];
   return (
     <>
       <div className="row between" style={{ alignItems: "center" }}><h1 style={{ margin: 0 }}>{tx("Prijzen")}</h1><PriceAI onDone={() => api("/system/pricing/").then(load)} /></div>
@@ -97,7 +119,102 @@ export default function PriceEditor() {
           ))}
         </div>
       ))}
-      <div style={{ marginTop: "1rem" }}><button type="button" className="btn primary" disabled={busy} onClick={save}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>
+      {tab === "sales" && (
+        <div className="stack" style={{ gap: "1.2rem" }}>
+          <div className="card stack" style={{ gap: "1rem" }}>
+            <h2 style={{ margin: 0 }}>{tx("Calculatieformulier")}</h2>
+            <label className={`wz-q${sales?.system_object ? " on" : ""}`}>
+              <span className="switch"><input type="checkbox" checked={!!sales?.system_object} onChange={(e) => toggleObject(e.target.checked)} /><span /></span>
+              <span className="wz-text"><strong>{tx("Systeemobject: calculatieformulier")}</strong><small className="muted">{tx("Maakt een systeemobject van het calculatieformulier. In de bewerkmodus zet je het op een pagina: bezoekers kiezen wat ze nodig hebben, zien de prijs per maand, kwartaal en jaar en krijgen de offerte als PDF per e-mail. De inkoopprijzen en marges zijn niet zichtbaar.")}</small></span>
+            </label>
+            {sales?.system_object && <small className="muted">{tx("Naam van het object")}: <strong>{tx("Prijsberekening")}</strong> · {sales.slug}</small>}
+          </div>
+          {sd && (
+            <>
+              <div className="card stack" style={{ gap: "1rem" }}>
+                <h2 style={{ margin: 0 }}>{tx("Aanvragen")}</h2>
+                <label>{tx("E-mailadressen van de reseller die de aanvraag ontvangen")}
+                  <input value={sd.recipients} onChange={(e) => setSd({ ...sd, recipients: e.target.value })} placeholder="verkoop@bedrijf.nl, tweede@bedrijf.nl" />
+                  <small className="muted">{tx("Meerdere adressen scheid je met een komma. Leeg = het e-mailadres van de reseller uit de wizard.")}</small>
+                </label>
+                <label className={`wz-q${sd.verify_email ? " on" : ""}`}>
+                  <span className="switch"><input type="checkbox" checked={sd.verify_email} onChange={(e) => setSd({ ...sd, verify_email: e.target.checked })} /><span /></span>
+                  <span className="wz-text"><strong>{tx("E-mailadres eerst bevestigen")}</strong><small className="muted">{tx("Voor de offerte verstuurd wordt, vult de bezoeker zijn e-mailadres in een venster in en typt de code van 6 letters en cijfers die per e-mail komt. Zo kloppen de adressen en kan niemand de offerte naar een ander sturen.")}</small></span>
+                </label>
+                {sd.verify_email && (
+                  <div className="stack" style={{ gap: ".5rem" }}>
+                    <strong>{tx("Methode van bevestiging")}</strong>
+                    <div className="wz-grid">
+                      {[["code", "Code per e-mail", "De bezoeker krijgt een code van 6 letters en cijfers per e-mail en typt die over in een venster."], ["screen", "Code op het scherm", "Een willekeurige code van hoofdletters en cijfers staat als plaatje in het venster en wordt met het toetsenbord overgetikt. Er gaat geen e-mail naar de bezoeker; dit stopt robots."], ["link", "Link in de e-mail", "De bezoeker opent een link in de e-mail; het formulier wacht en gaat daarna zelf verder."]].map(([k, name, desc]) => (
+                        <label key={k} className={`wz-q${sd.verify_method === k ? " on" : ""}`}>
+                          <input type="radio" name="vm" checked={sd.verify_method === k} onChange={() => setSd({ ...sd, verify_method: k })} />
+                          <span className="wz-text"><strong>{tx(name)}</strong><small className="muted">{tx(desc)}</small>
+                            <span><button type="button" className="btn sm" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTest(k); }}>{tx("Test")}</button></span></span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="card stack" style={{ gap: "1rem" }}>
+                <h2 style={{ margin: 0 }}>{tx("Opties in het formulier")}</h2>
+                <p className="muted" style={{ margin: 0 }}>{tx("Zet aan wat bezoekers in het calculatieformulier kunnen kiezen. Wat uit staat, is niet te zien en telt niet mee in de prijs.")}</p>
+                <h3 style={{ margin: ".2rem 0 0" }}>{tx("Standaard installaties")}</h3>
+                <div className="wz-grid">
+                  {sales.installations.map((i) => (
+                    <label key={i.key} className={`wz-q${sd.installations.includes(i.key) ? " on" : ""}`}>
+                      <span className="switch"><input type="checkbox" checked={sd.installations.includes(i.key)} onChange={() => flip("installations", i.key)} /><span /></span>
+                      <span className="wz-text"><strong>{tx(i.name)}</strong></span>
+                    </label>
+                  ))}
+                </div>
+                <h3 style={{ margin: ".4rem 0 0" }}>{tx("Onderdelen")}</h3>
+                <div className="wz-grid">
+                  {sales.questions.map((q) => (
+                    <label key={q.key} className={`wz-q${sd.questions.includes(q.key) ? " on" : ""}`}>
+                      <span className="switch"><input type="checkbox" checked={sd.questions.includes(q.key)} onChange={() => flip("questions", q.key)} /><span /></span>
+                      <span className="wz-text"><strong>{tx(q.label)}</strong></span>
+                    </label>
+                  ))}
+                </div>
+                <h3 style={{ margin: ".4rem 0 0" }}>{tx("Hosting")}</h3>
+                <div className="wz-grid">
+                  {sales.hosting.map((h) => (
+                    <label key={h.key} className={`wz-q${sd.hosting.includes(h.key) ? " on" : ""}`}>
+                      <span className="switch"><input type="checkbox" checked={sd.hosting.includes(h.key)} onChange={() => flip("hosting", h.key)} /><span /></span>
+                      <span className="wz-text"><strong>{tx(h.label)}</strong></span>
+                    </label>
+                  ))}
+                </div>
+                <label className={`wz-q${sd.email ? " on" : ""}`} style={{ maxWidth: 420 }}>
+                  <span className="switch"><input type="checkbox" checked={sd.email} onChange={(e) => setSd({ ...sd, email: e.target.checked })} /><span /></span>
+                  <span className="wz-text"><strong>{tx("E-mail op een eigen domein")}</strong><small className="muted">{tx("De schuif met het aantal e-mailadressen.")}</small></span>
+                </label>
+              </div>
+              <div className="save-bar"><button type="button" className="btn primary" disabled={busy} onClick={saveSales}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>
+            </>
+          )}
+        </div>
+      )}
+      {tab === "marketing" && mk && (
+        <div className="stack" style={{ gap: "1.4rem" }}>
+          <div className="card stack" style={{ gap: "1rem" }}>
+            <h2 style={{ margin: 0 }}>{tx("Easy2edit marketing")}</h2>
+            <label className={`wz-q${mk.enabled ? " on" : ""}`}>
+              <span className="switch"><input type="checkbox" checked={mk.enabled} onChange={(e) => mkSave({ enabled: e.target.checked })} /><span /></span>
+              <span className="wz-text"><strong>{tx("Marketing-systeemobjecten")}</strong><small className="muted">{tx("Voor elke module komt er een tegel (systeemobject) die je in de bewerkmodus op een pagina zet. De tegel opent een venster met een marketingtekst over de module, met voorbeelden met verzonnen gegevens, in het thema van je site. Zet hier alles of per module aan of uit.")}</small></span>
+            </label>
+          </div>
+          {mk.enabled && [...new Set(mk.items.map((i) => i.group))].map((g) => (
+            <div key={g} className="stack" style={{ gap: ".8rem" }}>
+              <h3 style={{ margin: ".3rem 0 0" }}>{tx(g)}</h3>
+              <div className="mk-grid">{mk.items.filter((i) => i.group === g).map((i) => <MarketingTile key={i.key} module={i.key} title={i.label} tagline={i.tagline} admin on={i.on} onToggle={(v) => mkSave({ modules: { [i.key]: v } })} />)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {test && <SalesTest method={test} email={user?.email || ""} onClose={() => setTest("")} />}
+      {tab !== "sales" && tab !== "marketing" && <div className="save-bar"><button type="button" className="btn primary" disabled={busy} onClick={save}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>}
     </>
   );
 }

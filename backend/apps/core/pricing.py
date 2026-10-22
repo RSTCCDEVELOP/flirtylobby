@@ -253,6 +253,15 @@ def plan(answers):
     return {"modules": sorted(want), "plugins": sorted(plugs), "answers": sorted(on), **plan_of(want, plugs, answers.get("hosting"), answers.get("email"))}
 
 
+def public_plan(plan):
+    """A plan for visitors: without what it costs us (purchase price, hosting costs, margin and the share of RST)."""
+    drop = ("purchase", "purchase_per_month", "hosting_cost", "hosting_profit", "margin", "rst_share")
+    out = {k: plan[k] for k in ("monthly", "lines", "includes", "answers") if k in plan}
+    out["periods"] = [{k: v for k, v in p.items() if k not in drop} for p in plan["periods"]]
+    out["implementation"] = {k: v for k, v in (plan.get("implementation") or {}).items() if k in ("hours", "rate", "price", "price_incl_vat", "note")}
+    return out
+
+
 def apply_to_license():
     """The prices of pricing.json into the licence (Super admin -> Licentie): base price and the price of every component, incl. VAT."""
     from .models import ComponentPrice, License
@@ -364,6 +373,37 @@ def reseller_of(d):
     return out
 
 
+SHOP_SETS = ("clothing", "furniture", "grocery", "standard", "all")
+
+
+def answers_of(preset):
+    """The answers of the wizard that a standard installation stands for: a question is yes when the modules (or the plugin) it stands for are in that installation."""
+    from . import presets
+
+    want, plugs = presets._wanted_modules(preset), set(presets.plugins_for(preset))
+    out = {}
+    for q in load()["wizard"]:
+        if q.get("type") == "choice":
+            continue
+        mods, pl = q.get("modules", []), q.get("plugins", [])
+        if pl:
+            out[q["key"]] = pl[0] in plugs
+        elif mods:
+            out[q["key"]] = set(mods) <= want
+    return out
+
+
+def installation_of(d):
+    """What the wizard decides about the standard installation: which one (or none = own composition), demo data (and the shop set) and the standard settings."""
+    from . import presets, site_defaults
+
+    inst = d.get("installation") if isinstance(d.get("installation"), dict) else {}
+    key = inst.get("preset") if inst.get("preset") in presets.BY_KEY else ""
+    shops = inst.get("shops") if inst.get("shops") in SHOP_SETS else ""
+    return {"preset": key, "theme": presets.BY_KEY[key]["theme"] if key else "normal", "demo": bool(inst.get("demo")), "shops": shops,
+            "defaults": bool(inst.get("defaults")) and site_defaults.PATH.is_file()}
+
+
 def build_config(d):
     """The configuration of an installation as one JSON document: customer, website, answers, modules, plugins, hosting, e-mail and prices. Used by apply_config (also later, on another server)."""
     from django.utils import timezone
@@ -374,7 +414,7 @@ def build_config(d):
     cu["contact"] = (" ".join(x for x in (cu["first_name"], cu["last_name"]) if x)) or cu["contact"]
     period = d.get("period") if d.get("period") in ("month", "quarter", "year") else "year"
     ho = hosting_price(answers.get("hosting"))[1]
-    return {"format": "easy2edit-install", "version": 1, "created_at": timezone.now().isoformat(timespec="seconds"), "customer": cu, "reseller": reseller_of(d),
+    return {"format": "easy2edit-install", "version": 1, "created_at": timezone.now().isoformat(timespec="seconds"), "customer": cu, "reseller": reseller_of(d), "installation": installation_of(d),
             "site": {"name": str(d.get("site_name") or "").strip()[:100], "language": d.get("lang") if d.get("lang") in ("nl", "en", "de", "fr", "es") else "nl", "theme": "easy2edit"},
             "answers": answers, "modules": plan["modules"], "plugins": plan["plugins"], "hosting": {"choice": ho["key"] if ho else "", "label": ho["label"] if ho else ""},
             "email": {"addresses": int(answers.get("email") or 0)}, "licence": {"period": period, "months": {"month": 1, "quarter": 3, "year": 12}[period]},
@@ -390,7 +430,20 @@ def apply_config(cfg):
     if cfg.get("format") != "easy2edit-install":
         raise ValueError("Dit is geen installatieconfiguratie van Easy2edit.")
     cu, site = cfg.get("customer") or {}, cfg.get("site") or {}
-    result = presets.apply("wizard", {"modules": cfg.get("modules") or [], "plugins": cfg.get("plugins") or [], "theme": "normal"})
+    inst = cfg.get("installation") or {}
+    key = inst.get("preset") if inst.get("preset") in presets.BY_KEY else "wizard"
+    result = presets.apply(key, {"modules": cfg.get("modules") or [], "plugins": cfg.get("plugins") or [], "theme": presets.BY_KEY[key]["theme"] if key in presets.BY_KEY else "normal"})
+    if inst.get("defaults"):  # the saved standard settings (security, community, languages, dashboard, look); the names below come after, so they stay
+        from . import site_defaults
+
+        result["defaults"] = [r for r in site_defaults.apply() if not r.get("ok")] or True
+    if inst.get("demo"):
+        from . import demo
+
+        try:
+            result["demo"] = demo.create(preset=key if key in presets.BY_KEY else None, shops=inst.get("shops") or None)
+        except Exception as e:  # noqa: BLE001 - the installation itself is done; the demo data can be made later
+            result["demo_error"] = str(e)[:200]
     address = ", ".join(x for x in (cu.get("street"), " ".join(x for x in (cu.get("postal_code"), cu.get("city")) if x), cu.get("country")) if x)
     data = {"site_name": site.get("name", ""), "company_name": cu.get("company", ""), "contact_email": cu.get("email", ""), "phone": cu.get("mobile") or cu.get("phone", ""), "address": address, "kvk": cu.get("kvk", ""), "vat_id": cu.get("vat_id", "")}
     system.save({k: v for k, v in data.items() if v})
@@ -404,4 +457,5 @@ def apply_config(cfg):
     lic.reseller_url = (rs.get("website") or lic.reseller_url)[:300]
     lic.save(update_fields=["client", "client_address", "renew_months", "reseller_name", "reseller_email", "reseller_url"])
     apply_to_license()
-    return {"modules_on": result["modules_on"], "plugins_on": result["plugins_on"], "plugins_missing": result["plugins_missing"]}
+    return {"modules_on": result["modules_on"], "plugins_on": result["plugins_on"], "plugins_missing": result["plugins_missing"], "preset": key if key != "wizard" else "",
+            **{k: result[k] for k in ("defaults", "demo", "demo_error") if k in result}}

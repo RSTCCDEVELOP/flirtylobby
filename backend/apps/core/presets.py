@@ -12,25 +12,25 @@ BASE = ["pages", "edit_mode", "media", "branding", "theme", "languages", "privac
 ALWAYS_ON = ["system", "plugins", "storage", "backups"]
 
 PRESETS = [
-    {"key": "standaard-website", "name": "Standaard website", "icon": "globe", "theme": "normal", "plugins": [],
-     "desc": "Alleen een website: pagina's en menu, media en systeemobjecten, FAQ en SEO. Zonder community, abonnementen, donaties of webshop. Met demo-gegevens heb je meteen een complete site.",
+    {"key": "standaard-website", "name": "Standaard website", "icon": "globe", "theme": "normal", "plugins": ["documents"],
+     "desc": "Alleen een website: pagina's en menu, media en systeemobjecten, FAQ en SEO, en documentbeheer. Zonder community, abonnementen, donaties of webshop. Met demo-gegevens heb je meteen een complete site.",
      "modules": BASE + ["seo", "faq", "sysobjects", "siteimport", "integrations"]},
     {"key": "webshop", "name": "Webwinkel", "icon": "cart", "theme": "webshop", "plugins": ["webshop"],
      "desc": "Producten verkopen met winkelwagen, bestellingen en online betalen. Klantaccounts, e-mailmeldingen en een FAQ.",
      "modules": BASE + ["seo", "faq", "orders", "subscriptions", "integrations", "sysobjects"]},
-    {"key": "bedrijfswebsite", "name": "Bedrijfswebsite", "icon": "building", "theme": "normal", "plugins": [],
+    {"key": "bedrijfswebsite", "name": "Bedrijfswebsite", "icon": "building", "theme": "normal", "plugins": ["documents"],
      "desc": "Een gewone website voor je bedrijf: pagina's, menu, bewerkmodus, SEO, FAQ en contact. Zonder community of webshop.",
      "modules": ["pages", "edit_mode", "media", "branding", "theme", "languages", "seo", "faq", "privacy_pages", "cookies", "communication", "help", "sysobjects"]},
-    {"key": "zakelijk-netwerk", "name": "Zakelijk netwerk", "icon": "handshake", "theme": "business", "plugins": ["agenda", "marketplace"],
-     "desc": "Een besloten netwerk voor ondernemers: profielen, zoeken, berichten en chat, een agenda voor afspraken en een marktplaats voor diensten.",
+    {"key": "zakelijk-netwerk", "name": "Zakelijk netwerk", "icon": "handshake", "theme": "business", "plugins": ["agenda", "marketplace", "documents"],
+     "desc": "Een besloten netwerk voor ondernemers: profielen, zoeken, berichten en chat, een agenda voor afspraken, een marktplaats voor diensten en documentbeheer.",
      "modules": BASE + ["seo", "faq", "profiles", "discover", "messages", "chat", "roles", "sysobjects"]},
     {"key": "datingplatform", "name": "Datingplatform", "icon": "heart", "theme": "dating", "plugins": ["agenda", "games"],
      "desc": "Leden vinden elkaar met zoeken en swipen, chatten en videobellen. Met leeftijdscontrole, abonnementen en een agenda voor dates en spelletjes.",
      "modules": BASE + ["faq", "profiles", "discover", "messages", "chat", "directconnect", "subscriptions", "donations", "age_gate", "word_filter", "twofa", "geo", "sysobjects"]},
-    {"key": "sportclub", "name": "Sportclub of vereniging", "icon": "medal", "theme": "sporters", "plugins": ["agenda", "games"],
+    {"key": "sportclub", "name": "Sportclub of vereniging", "icon": "medal", "theme": "sporters", "plugins": ["agenda", "games", "documents"],
      "desc": "Een club met ledenprofielen, trainingsmaatjes zoeken, chat, een clubagenda met evenementen, lidmaatschappen en donaties.",
      "modules": BASE + ["seo", "faq", "profiles", "discover", "messages", "chat", "subscriptions", "donations", "sysobjects"]},
-    {"key": "stichting", "name": "Stichting of goed doel", "icon": "ribbon", "theme": "normal", "plugins": ["agenda"],
+    {"key": "stichting", "name": "Stichting of goed doel", "icon": "ribbon", "theme": "normal", "plugins": ["agenda", "documents"],
      "desc": "Donaties en vrienden-abonnementen, een agenda met evenementen op de website, nieuws, FAQ en meldingen aan leden.",
      "modules": BASE + ["seo", "faq", "donations", "subscriptions", "integrations", "sysobjects"]},
     {"key": "marktplaats", "name": "Marktplaats", "icon": "tag", "theme": "webshop", "plugins": ["marketplace", "agenda"],
@@ -41,6 +41,134 @@ PRESETS = [
      "modules": BASE + ["faq", "profiles", "messages", "chat", "subscriptions", "donations", "sysobjects"]},
 ]
 BY_KEY = {p["key"]: p for p in PRESETS}
+DEMO_PARTS = {"media": "Voorbeeldplaatjes", "heroes": "Hero-achtergronden", "users": "Gebruikers met profiel", "plans": "Abonnementen", "money": "Donatie-acties met giften", "faq": "FAQ-vragen", "pages": "Pagina's",
+              "views": "Media-systeemobjecten"}
+DEMO_DEFAULT = {"media": 16, "heroes": 6, "users": 8}
+
+
+def edits(key):
+    """What the superadmin changed in this standard installation (Super admin → Standaard installaties → Inhoud bekijken): {modules, plugins, pages: {add, remove}, demo: {drop, media, heroes, users}}."""
+    return dict(((_data().get("preset_edits") or {}).get(key)) or {})
+
+
+def get(key):
+    """The standard installation as it is now: the built-in definition with the superadmin's changes (modules and plugins added or removed)."""
+    base = BY_KEY.get(key)
+    if not base:
+        return None
+    e = edits(key)
+    out = dict(base)
+    for field in ("modules", "plugins"):
+        d = e.get(field) or {}
+        out[field] = [x for x in [*base[field], *(d.get("add") or [])] if x not in (d.get("remove") or [])]
+        out[field] = list(dict.fromkeys(out[field]))
+    return out
+
+
+def demo_config(key):
+    """The demo data of an installation: the parts that are left out and the numbers (pictures, backgrounds, users)."""
+    d = dict(edits(key).get("demo") or {})
+    return {"drop": [x for x in d.get("drop", []) if x in DEMO_PARTS or str(x).startswith("plugin:")], **{k: int(d.get(k, v)) for k, v in DEMO_DEFAULT.items()}}
+
+
+def page_edits(key):
+    d = edits(key).get("pages") or {}
+    return {"add": list(d.get("add") or []), "remove": list(d.get("remove") or [])}
+
+
+def edit_options(key):
+    """Everything the editor offers, with what is chosen now (and what the built-in definition has): modules, installed plugins, existing pages, demo parts."""
+    from apps.plugins.models import Plugin
+    from apps.pages.models import Page
+
+    base, cur = BY_KEY[key], get(key)
+    want = _wanted_modules(cur)
+    core = {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)
+    chosen = set(cur["modules"])
+    needs = {}
+    for m in modules.MODULES:
+        if m["key"] in want:
+            for r in m.get("requires", []):
+                needs.setdefault(r, []).append(m["label"])
+    mods = [{"key": m["key"], "label": m["label"], "group": m.get("group", ""), "desc": m.get("desc", ""), "on": m["key"] in chosen, "auto": m["key"] in want and m["key"] not in chosen, "base": m["key"] in base["modules"],
+             "needed_by": needs.get(m["key"], []), "always": m["key"] in core} for m in modules.MODULES if m["key"] not in core]
+    plugs_on = set(cur["plugins"])
+    plugs = [{"name": p.name, "title": p.title or p.name, "enabled": p.enabled, "on": p.name in plugs_on, "base": p.name in base["plugins"], "requires": (p.manifest or {}).get("requires") or []} for p in Plugin.objects.order_by("name")]
+    contents = _contents(cur) or {}
+    in_now = {x["key"] for x in contents.get("pages", [])}
+    pe = page_edits(key)
+    pages = [{"key": pg.key, "title": (pg.title or {}).get("nl") or (pg.title or {}).get("en") or pg.key, "on": pg.key in in_now, "kind": pg.kind, "module": pg.module or ""}
+             for pg in Page.objects.filter(scope="public", kind__in=("system", "content")).exclude(source="demo").order_by("order", "id")]
+    dc = demo_config(key)
+    parts = _demo_parts(key, ignore_drop=True)
+    titles = {p.name: p.title or p.name for p in Plugin.objects.all()}
+    return {"key": key, "name": base["name"], "modules": mods, "plugins": plugs, "pages": pages, "page_edits": pe, "edited": bool(edits(key)),
+            "demo": {"parts": [{"key": x, "label": DEMO_PARTS.get(x) or ("Demo van " + titles.get(x[7:], x[7:]) if x.startswith("plugin:") else x), "on": x not in dc["drop"]} for x in parts], "media": dc["media"], "heroes": dc["heroes"], "users": dc["users"]}}
+
+
+def save_edits(key, body):
+    """Save the superadmin's choices as changes against the built-in definition. Everything added must exist: modules in the system, plugins installed (on or off), pages in the website."""
+    from apps.plugins.models import Plugin
+    from apps.pages.models import Page
+
+    base = BY_KEY[key]
+    out = {}
+    if "modules" in body:
+        want = [str(x) for x in (body["modules"] or [])]
+        unknown = [x for x in want if x not in modules.BY_KEY]
+        if unknown:
+            raise ValueError(f"Deze module bestaat niet: {unknown[0]}.")
+        out["modules"] = {"add": [x for x in want if x not in base["modules"]], "remove": [x for x in base["modules"] if x not in want]}
+    if "plugins" in body:
+        want = [str(x) for x in (body["plugins"] or [])]
+        have = set(Plugin.objects.values_list("name", flat=True))
+        missing = [x for x in want if x not in have]
+        if missing:
+            raise ValueError(f"De plugin \"{missing[0]}\" is niet geïnstalleerd: installeer hem eerst bij Admin → Plugins (hij hoeft niet aan te staan).")
+        out["plugins"] = {"add": [x for x in want if x not in base["plugins"]], "remove": [x for x in base["plugins"] if x not in want]}
+    pages_on = None
+    if "pages_on" in body:
+        have = set(Page.objects.filter(scope="public", kind__in=("system", "content")).exclude(source="demo").values_list("key", flat=True))
+        pages_on = [str(x) for x in (body["pages_on"] or [])]
+        missing = [x for x in pages_on if x not in have]
+        if missing:
+            raise ValueError(f"Deze pagina bestaat niet: {missing[0]}.")
+    elif isinstance(body.get("pages"), dict):
+        have = set(Page.objects.filter(scope="public", kind__in=("system", "content")).exclude(source="demo").values_list("key", flat=True))
+        add, rem = [str(x) for x in body["pages"].get("add", [])], [str(x) for x in body["pages"].get("remove", [])]
+        missing = [x for x in add + rem if x not in have]
+        if missing:
+            raise ValueError(f"Deze pagina bestaat niet: {missing[0]}.")
+        out["pages"] = {"add": list(dict.fromkeys(add)), "remove": [x for x in dict.fromkeys(rem) if x not in add]}
+    if isinstance(body.get("demo"), dict):
+        d = body["demo"]
+        drop = [str(x) for x in d.get("drop", []) if x in DEMO_PARTS or str(x).startswith("plugin:")]
+        num = lambda k, hi: max(0, min(hi, int(d.get(k, DEMO_DEFAULT[k]) or 0)))  # noqa: E731
+        out["demo"] = {"drop": drop, "media": num("media", 80), "heroes": num("heroes", 24), "users": num("users", 200)}
+    data = _data()
+    allx = dict(data.get("preset_edits") or {})
+    cur = dict(allx.get(key) or {})
+    cur.update(out)
+    if pages_on is not None:  # the pages follow the modules and plugins as they are after this save: what differs becomes an addition or a removal
+        data["preset_edits"] = {**allx, key: cur}
+        _save_data(data)
+        mine = {pg.key for pg in _module_pages(get(key))}
+        cur["pages"] = {"add": [k for k in pages_on if k not in mine], "remove": [k for k in mine if k not in pages_on]}
+        data = _data()
+        allx = dict(data.get("preset_edits") or {})
+    allx[key] = {k: v for k, v in cur.items() if v and not (isinstance(v, dict) and not any(v.values()) and k != "demo")}
+    data["preset_edits"] = allx
+    _save_data(data)
+    return edit_options(key)
+
+
+def reset_edits(key):
+    data = _data()
+    allx = dict(data.get("preset_edits") or {})
+    allx.pop(key, None)
+    data["preset_edits"] = allx
+    _save_data(data)
+    return edit_options(key)
 
 
 def _wanted_modules(preset):
@@ -74,6 +202,20 @@ def ensure_home_logo():
     return True
 
 
+def _module_pages(p):
+    """The pages that belong to an installation by its modules and plugins (before the superadmin's additions and removals)."""
+    from apps.pages.models import Page
+
+    want, plugs = _wanted_modules(p), plugins_for(p)
+    out = []
+    for pg in Page.objects.filter(scope="public", kind__in=("system", "content")).exclude(source="demo").order_by("order", "id"):
+        mods = [m for m in (pg.module or "").split("|") if m]
+        if mods and not any((m in want) if not m.startswith("plugin:") else (m[7:] in plugs) for m in mods):
+            continue
+        out.append(pg)
+    return out
+
+
 def _contents(p):
     """What an installation holds: its pages, modules and plugins (for the pop-up Inhoud en prijs)."""
     try:
@@ -87,6 +229,11 @@ def _contents(p):
             mods = [m for m in (pg.module or "").split("|") if m]
             if mods and not any((m in want) if not m.startswith("plugin:") else (m[7:] in plugs) for m in mods):
                 continue
+            pages.append({"key": pg.key, "title": (pg.title or {}).get("nl") or (pg.title or {}).get("en") or pg.key, "url": pg.url or f"/p/{pg.key}"})
+        pe = page_edits(p.get("key", "")) if p.get("key") else {"add": [], "remove": []}
+        have = {x["key"] for x in pages}
+        pages = [x for x in pages if x["key"] not in pe["remove"]]
+        for pg in Page.objects.filter(scope="public", kind__in=("system", "content"), key__in=[k for k in pe["add"] if k not in have]).exclude(source="demo").order_by("order", "id"):
             pages.append({"key": pg.key, "title": (pg.title or {}).get("nl") or (pg.title or {}).get("en") or pg.key, "url": pg.url or f"/p/{pg.key}"})
         core = {m["key"] for m in modules.MODULES if m.get("core")}
         mods_out = [{"key": m["key"], "label": m["label"], "desc": m.get("desc", "")} for m in modules.MODULES if m["key"] in want and m["key"] not in core]
@@ -107,12 +254,12 @@ def _price(p):
         return None
 
 
-def _demo_parts(key):
+def _demo_parts(key, ignore_drop=False):
     """What the demo data of this installation makes (see apps/core/demo.py)."""
     try:
         from . import demo
 
-        return demo.parts_for(key)
+        return demo.parts_for(key, ignore_drop=ignore_drop)
     except Exception:  # noqa: BLE001
         return []
 
@@ -125,9 +272,10 @@ def listing():
     allowed = admin_allowed()
     act = active()
     out = []
-    for p in PRESETS:
+    for base in PRESETS:
+        p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -342,7 +490,7 @@ def apply(key, preset=None):
 
     from .models import ModuleState
 
-    preset = preset or BY_KEY.get(key)
+    preset = preset or get(key)
     if not preset:
         raise KeyError(key)
     want = _wanted_modules(preset)
@@ -400,6 +548,14 @@ def apply(key, preset=None):
         _apply_saved_pages(key)  # the pages that were saved in this installation come back as they were
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: saved pages could not be put back", key)
+    try:  # pages the superadmin added to or took out of this installation: on or off (they must exist; they need not be active now)
+        from apps.pages.models import Page
+
+        pe = page_edits(key)
+        Page.objects.filter(key__in=pe["add"]).update(enabled=True)
+        Page.objects.filter(key__in=pe["remove"]).update(enabled=False, in_menu=False)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: the edited pages could not be set", key)
     data = _data()
     data["active_preset"] = key
     _save_data(data)

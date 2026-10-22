@@ -36,7 +36,8 @@
     "plugin:marketplace": 6,
     "plugin:games": 5,
     "plugin:orders": 0,
-    "plugin:payments": 0
+    "plugin:payments": 0,
+    "plugin:documents": 4
   },
   "wizard": [
     {
@@ -149,6 +150,14 @@
       ]
     },
     {
+      "key": "documents",
+      "label": "Wil je documenten beheren (uploaden, tags, rechten per gebruiker of groep)?",
+      "help": "Mappen, tags, opslag op S3 en versleuteling.",
+      "plugins": [
+        "documents"
+      ]
+    },
+    {
       "key": "age",
       "label": "Is de site alleen voor volwassenen (leeftijdscontrole 18+)?",
       "modules": [
@@ -233,7 +242,8 @@
       "module:siteimport": 4,
       "module:integrations": 3,
       "module:word_filter": 1,
-      "module:twofa": 1
+      "module:twofa": 1,
+      "plugin:documents": 6
     }
   },
   "rst_share": 35,

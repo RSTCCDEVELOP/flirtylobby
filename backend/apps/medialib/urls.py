@@ -17,5 +17,6 @@ urlpatterns = [
     path("mediaviews/<int:pk>/", views.mediaviews_one),
     path("storage/", storage_views.settings_view),
     path("storage/apply/", storage_views.apply_view),
+    path("files/key/", storage_views.key_view),
     path("files/<str:token>/", storage_views.serve),
 ]

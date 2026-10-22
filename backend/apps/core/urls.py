@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import backup_views, dashboard, views
+from . import backup_views, dashboard, marketing, sales, views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
@@ -10,6 +10,20 @@ urlpatterns = [
     path("system/demo/", views.demo_data),
     path("system/pricing/", views.pricing_view),
     path("system/wizard/", views.wizard_view),
+    path("system/sales/", sales.admin),
+    path("system/marketing/", marketing.admin),
+    path("system/marketing/<slug:module>/ai/", marketing.ai),
+    path("marketing/<slug:module>/", marketing.public),
+    path("sales/calculator/", sales.calc_config),
+    path("sales/calculator/plan/", sales.calc_plan),
+    path("sales/calculator/quote/", sales.calc_quote),
+    path("sales/calculator/verify/", sales.calc_verify),
+    path("sales/calculator/verify/check/", sales.calc_verify_check),
+    path("sales/calculator/verify/status/", sales.calc_verify_status),
+    path("sales/calculator/verify/screen/", sales.calc_verify_screen),
+    path("system/sales/test/", sales.admin_test),
+    path("system/sales/test/check/", sales.admin_test_check),
+    path("sales/calculator/confirm/<str:token>/", sales.calc_confirm),
     path("system/wizard/pdf/", views.wizard_pdf),
     path("system/pricing/ai/", views.pricing_ai),
     path("system/refresh/", views.refresh_settings),
@@ -17,6 +31,7 @@ urlpatterns = [
     path("system/presets/", views.presets_list),
     path("system/presets/admin/", views.presets_admin),
     path("system/presets/<slug:key>/page/", views.presets_page),
+    path("system/presets/<slug:key>/edit/", views.presets_edit),
     path("system/presets/<slug:key>/remove/", views.presets_remove),
     path("system/presets/<slug:key>/apply/", views.presets_apply),
     path("system/license/", views.system_license),

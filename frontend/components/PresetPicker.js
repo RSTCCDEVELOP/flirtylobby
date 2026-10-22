@@ -108,7 +108,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       <div className="preset-grid">
         {list.map((p) => (
           <div key={p.key} className={`card preset-card${p.active ? " preset-active" : ""}`}>
-            <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong>{p.active && <span className="badge ok preset-used">{tx("In gebruik")}</span>}</div>
+            <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong>{p.active && <span className="badge ok preset-used">{tx("In gebruik")}</span>}{manage && !adminOnly && p.edited && <span className="badge preset-used">{tx("Aangepast")}</span>}</div>
             {manage && (
               <label className="check sec-toggle">
                 <span className="switch"><input type="checkbox" checked={!!p.admin} onChange={(e) => release(p, e.target.checked)} /><span /></span>
@@ -123,7 +123,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
             </div>
             <button type="button" className="btn-link" onClick={() => setOpen(open === p.key ? "" : p.key)}>{open === p.key ? tx("Verberg modules") : tx("Toon modules")}</button>
             {open === p.key && <small className="muted">{p.modules.map((m) => tx(m)).join(", ")}</small>}
-            {demo && <div className="preset-demo"><strong>{tx("Demo-gegevens")}</strong><DemoData preset={p.key} price={p.price} contents={p.contents} showPurchase={!adminOnly} active={!!p.active} parts={p.demo_parts} shop={(p.plugins || []).some((x) => x.name === "webshop")} /></div>}
+            {demo && <div className="preset-demo"><strong>{tx("Demo-gegevens")}</strong><DemoData preset={p.key} name={p.name} editable={manage && !adminOnly} demoCfg={p.demo_cfg} price={p.price} contents={p.contents} showPurchase={!adminOnly} active={!!p.active} parts={p.demo_parts} shop={(p.plugins || []).some((x) => x.name === "webshop")} /></div>}
             {p.active
               ? <button type="button" className="btn danger" disabled={!!busy} onClick={() => unapply(p)}>{busy === p.key ? tx("Bezig…") : tx("Installatie verwijderen")}</button>
               : <button type="button" className="btn primary" disabled={!!busy} onClick={() => apply(p)}>{busy === p.key ? tx("Bezig…") : tx("Deze installatie instellen")}</button>}

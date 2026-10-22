@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "apps.subscriptions",
     "apps.sysobjects",
     "apps.faq",
+    "apps.stats",
     "apps.notifications",
     "apps.backups",
 ]

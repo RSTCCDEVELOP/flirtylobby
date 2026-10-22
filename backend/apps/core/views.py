@@ -510,13 +510,23 @@ def wizard_pdf(request):
             return Response({"detail": "Vul een geldig e-mailadres in."}, status=status.HTTP_400_BAD_REQUEST)
         t = pricing_pdf.T[lang]
         try:
-            sending.send_email(to, f"{t['title']} Easy2edit – {site}", f"{t['title']}: {site}\n\n{t['total']}: {pricing_pdf.eur(plan['monthly'])}\n\n{t['contact']}", attachments=[(fname, pdf, "application/pdf")])
+            files = [(fname, pdf, "application/pdf")]
+            if d.get("with_config"):  # the installation configuration (JSON) goes with it
+                files.append((fname[:-4].replace(f"easy2edit-{t['title'].lower()}-", "easy2edit-installatie-") + ".json", __import__("json").dumps(pricing.build_config(d), indent=2, ensure_ascii=False).encode(), "application/json"))
+            sending.send_email(to, f"{t['title']} Easy2edit – {site}", f"{t['title']}: {site}\n\n{t['total']}: {pricing_pdf.eur(plan['monthly'])}\n\n{t['contact']}", attachments=files)
         except sending.DeliveryError as e:
             return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
         return Response({"sent": to})
     resp = HttpResponse(pdf, content_type="application/pdf")
     resp["Content-Disposition"] = f'attachment; filename="{fname}"'
     return resp
+
+
+def _wizard_installations():
+    """The standard installations for the wizard, each with the answers it stands for."""
+    from . import presets, pricing
+
+    return [{"key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"], "webshop": "webshop" in p["plugins"], "answers": pricing.answers_of(p)} for p in (presets.get(x["key"]) for x in presets.PRESETS)]
 
 
 @api_view(["GET", "POST"])
@@ -530,7 +540,7 @@ def wizard_view(request):
         return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
     cfg = pricing.load()
     if request.method == "GET":
-        return Response({"email": pricing.email_config(), "default_email": 0, "hosting": pricing.hosting_options(), "default_hosting": (cfg.get("hosting") or {}).get("default", "shared"), "questions": [{k: q.get(k) for k in ("key", "label", "help", "requires", "type") } for q in cfg["wizard"] if q.get("type") != "choice"], "periods": cfg["periods"], "vat_rate": cfg["vat_rate"], "reseller": pricing.reseller_of({}), "settings": {"site_name": system.get().get("site_name", ""), "client": License.objects.filter(pk=1).values_list("client", flat=True).first() or ""}})
+        return Response({"email": pricing.email_config(), "default_email": 0, "hosting": pricing.hosting_options(), "default_hosting": (cfg.get("hosting") or {}).get("default", "shared"), "questions": [{k: q.get(k) for k in ("key", "label", "help", "requires", "type") } for q in cfg["wizard"] if q.get("type") != "choice"], "periods": cfg["periods"], "vat_rate": cfg["vat_rate"], "reseller": pricing.reseller_of({}), "installations": _wizard_installations(), "defaults_available": __import__("apps.core.site_defaults", fromlist=["PATH"]).PATH.is_file(), "settings": {"site_name": system.get().get("site_name", ""), "client": License.objects.filter(pk=1).values_list("client", flat=True).first() or ""}})
     d = request.data if isinstance(request.data, dict) else {}
     plan = pricing.plan({k: (v if k in ("hosting", "email") else bool(v)) for k, v in (d.get("answers") or {}).items()})
     if d.get("config"):  # only the document, to download
@@ -581,6 +591,26 @@ def presets_apply(request, key):
     if who == "admin" and key not in presets.admin_allowed():
         return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
     return Response(presets.apply(key))
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAuthenticated])
+def presets_edit(request, key):
+    """The content of a standard installation (superadmins only): GET = what can be chosen and what is chosen, PUT {modules, plugins, pages: {add, remove}, demo: {drop, media, heroes, users}} = save, DELETE = back to the built-in definition."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins mogen de inhoud van een standaard installatie wijzigen."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "DELETE":
+        return Response(presets.reset_edits(key))
+    if request.method == "PUT":
+        try:
+            return Response(presets.save_edits(key, request.data if isinstance(request.data, dict) else {}))
+        except (ValueError, TypeError) as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(presets.edit_options(key))
 
 
 @api_view(["GET", "POST"])

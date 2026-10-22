@@ -67,6 +67,19 @@ class System:
         self.version = plugin.version
 
     @property
+    def stats(self):
+        """Statistieken: system.stats.record("download", key="contract.pdf", n=1). Counted per day under this plugin's own tab."""
+        from apps.stats import service as stats
+
+        name = self.name
+
+        class _Stats:
+            @staticmethod
+            def record(event, key="", n=1):
+                stats.record(f"plugin:{name}", str(event)[:40], key, n)
+        return _Stats()
+
+    @property
     def User(self):
         from django.contrib.auth import get_user_model
 

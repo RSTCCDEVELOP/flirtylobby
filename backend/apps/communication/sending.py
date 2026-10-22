@@ -101,3 +101,24 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
             smtp.send_message(msg)
     except Exception as e:
         raise DeliveryError(f"Verzenden mislukt: {e}")
+
+
+def _counted(fn):
+    """Every e-mail that goes out (or fails) is counted in Statistieken."""
+    import functools
+
+    @functools.wraps(fn)
+    def run(*a, **k):
+        from apps.stats import service as stats
+
+        try:
+            r = fn(*a, **k)
+        except DeliveryError:
+            stats.record("communication", "email_failed", k.get("purpose") or "")
+            raise
+        stats.record("communication", "email_sent", k.get("purpose") or "overig")
+        return r
+    return run
+
+
+send_email = _counted(send_email)

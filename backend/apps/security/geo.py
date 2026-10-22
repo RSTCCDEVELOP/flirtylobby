@@ -30,7 +30,7 @@ def _lookup(ip):
     return country
 
 
-def check(ip, header_country=None):
+def _check(ip, header_country=None):
     """Returns (allowed, country)."""
     cfg = service.get()["geo"]
     if not cfg["enabled"]:
@@ -63,3 +63,11 @@ def check(ip, header_country=None):
 
     listed = country in cfg["countries"]
     return (not listed if cfg["mode"] == "block" else listed), country
+
+
+def check(ip, header_country=None):
+    """Returns (allowed, country); a blocked visit is counted in Statistieken."""
+    allowed, country = _check(ip, header_country)
+    if not allowed:
+        __import__("apps.stats.service", fromlist=["record"]).record("geo", "blocked", country or "onbekend")
+    return allowed, country

@@ -10,6 +10,7 @@ import { useModules } from "../../../../components/Modules";
 import { api, errorText } from "../../../../lib/api";
 import { useAutoSave } from "../../../../lib/autosave";
 import SaveStatus from "../../../../components/SaveStatus";
+import { confirmDialog } from "../../../../lib/dialog";
 
 const FREQ = [
   ["always", "Bij elke paginalading"],
@@ -89,6 +90,49 @@ function GateFields({ s, set }) {
         <span className="muted" style={{ fontSize: ".8rem" }}>{tx("Versie")} {s.version}{tx(". Bezoekers die al gekozen hebben, krijgen het weer te zien na opslaan.")}</span>
       </div>
     </>
+  );
+}
+
+// Beveiliging → Bestanden: the key that encrypts files (documents, media). Only there when the S3 API is on; a new key is shown once.
+function FileKey({ user }) {
+  const [st, setSt] = useState(null);
+  const [fresh, setFresh] = useState("");
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  useEffect(() => { api("/files/key/").then(setSt).catch(() => setSt({ available: false })); }, []);
+  if (!st?.available || !user?.is_staff) return null;
+  const run = async (body, question) => {
+    if (question && !(await confirmDialog(question, { danger: true }))) return;
+    setBusy(true); setMsg(null); setFresh("");
+    try { const r = await api("/files/key/", { method: "POST", body }); setSt(r); if (r.key) setFresh(r.key); setValue(""); setMsg({ ok: true, text: tx("De sleutel is opgeslagen. Versleutelde bestanden blijven leesbaar.") }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
+  const SRC = { environment: tx("de omgeving (FILE_ENCRYPTION_KEY)"), database: tx("de sleutel hieronder"), derived: tx("de sleutel van de server (standaard)") };
+  return (
+    <Collapsible id="sec-files" title={tx("Bestanden")}>
+      <p className="muted" style={{ margin: 0 }}>{tx("Met deze hoofdsleutel worden bestanden versleuteld (AES-256): documenten, media en bestanden van gebruikers, wanneer versleuteling is aangezet. Elke map of gebruiker heeft een eigen sleutel; die wordt met de hoofdsleutel ingepakt.")}</p>
+      <div className="grid2">
+        <label>{tx("Nu in gebruik")}<input readOnly value={SRC[st.source] || st.source} /></label>
+        <label>{tx("Versleutelde bestanden")}<input readOnly value={`${st.files} · ${st.keys} ${tx("sleutels")}`} /></label>
+      </div>
+      {fresh && (
+        <div className="alert ok">
+          <strong>{tx("Je nieuwe sleutel (wordt maar één keer getoond; bewaar hem veilig):")}</strong>
+          <div className="row" style={{ marginTop: ".4rem" }}><code style={{ wordBreak: "break-all" }}>{fresh}</code><button type="button" className="btn sm" onClick={() => navigator.clipboard?.writeText(fresh)}>{tx("Kopiëren")}</button></div>
+        </div>
+      )}
+      {st.env && <p className="muted" style={{ margin: 0 }}>{tx("De omgeving heeft een eigen sleutel (FILE_ENCRYPTION_KEY): die gaat voor. Een sleutel hier wordt alleen gebruikt om oudere bestanden te lezen.")}</p>}
+      <div className="row">
+        <button type="button" className="btn" disabled={busy} onClick={() => run({ action: "generate" }, st.has_key ? tx("Een nieuwe sleutel maken? De oude blijft bewaard om bestanden te lezen, maar bewaar de nieuwe veilig.") : null)}>{st.has_key ? tx("Nieuwe sleutel maken") : tx("Sleutel maken")}</button>
+        {st.has_key && <button type="button" className="btn danger" disabled={busy} onClick={() => run({ action: "remove" }, tx("De sleutel verwijderen? Bestanden worden opnieuw ingepakt met de sleutel van de omgeving of van de server."))}>{tx("Sleutel verwijderen")}</button>}
+      </div>
+      <div className="color-row">
+        <input value={value} placeholder={tx("Of plak hier een eigen sleutel (minstens 32 tekens)")} autoComplete="off" onChange={(e) => setValue(e.target.value)} />
+        <button type="button" className="btn" disabled={busy || value.trim().length < 32} onClick={() => run({ action: "set", value })}>{tx("Gebruiken")}</button>
+      </div>
+      {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
+    </Collapsible>
   );
 }
 
@@ -420,6 +464,7 @@ export default function Security() {
         <p className="muted" style={{ margin: 0, fontSize: ".8rem" }}>{tx("De test gebruikt de laatst opgeslagen lijst.")}</p>
       </Collapsible>
       )}
+      <FileKey user={user} />
     </>
   );
 }

@@ -22,6 +22,7 @@ urlpatterns = [
     path("api/", include("apps.subscriptions.urls")),
     path("api/", include("apps.sysobjects.urls")),
     path("api/", include("apps.faq.urls")),
+    path("api/", include("apps.stats.urls")),
     path("api/", include("apps.notifications.urls")),
     path("api/", include("apps.backups.urls")),
 ]

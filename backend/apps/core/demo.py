@@ -222,13 +222,13 @@ def make_content(parts=("plans", "money", "faq", "pages")):
 PART_ORDER = ["media", "heroes", "users", "plans", "money", "faq", "pages", "views"]
 
 
-def parts_for(preset=None, content=True, objects=True, orders=True, media=1, heroes=1, users=1):
+def parts_for(preset=None, content=True, objects=True, orders=True, media=1, heroes=1, users=1, ignore_drop=False):
     """The parts of the demo data for a standard installation (or for everything): what its modules and plugins use."""
     want, only, views = None, None, True
     if preset:
         from . import presets
 
-        p = presets.BY_KEY[preset]
+        p = presets.get(preset)
         want, only = presets._wanted_modules(p), set(presets.plugins_for(p))
     has = lambda *m: want is None or bool(want & set(m))  # noqa: E731
     out = []
@@ -243,6 +243,9 @@ def parts_for(preset=None, content=True, objects=True, orders=True, media=1, her
     if objects and has("media"):
         out.append("views")
     out += [f"plugin:{n}" for n, _p in _plugins_named(only)]
+    if preset and not ignore_drop:  # parts the superadmin left out of this installation's demo data
+        drop = set(presets.demo_config(preset)["drop"])
+        out = [x for x in out if x not in drop]
     return out
 
 

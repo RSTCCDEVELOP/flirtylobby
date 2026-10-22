@@ -7,7 +7,7 @@ from django.core import signing
 from django.http import Http404, HttpResponse, StreamingHttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.permissions import has_level
@@ -121,3 +121,56 @@ def serve(request, token):
     resp["Cache-Control"] = "private, max-age=3600"
     resp["X-Content-Type-Options"] = "nosniff"
     return resp
+
+
+# ── the master key for file encryption: Beveiliging → Bestanden (only when S3 is linked and on) ─────────────────────────────
+def _s3_integration():
+    from apps.integrations.models import Integration
+
+    return Integration.objects.filter(provider="s3").order_by("-enabled", "id").first()
+
+
+def _key_state():
+    obj = _s3_integration()
+    has = bool(obj and (obj.config.get("encryption_key") or "").strip())
+    return {"available": s3.available(), "source": filecrypt.master_source(), "has_key": has, "env": bool(os.environ.get("FILE_ENCRYPTION_KEY")), "keys": FileKey.objects.count(),
+            "files": MediaItem.objects.filter(encrypted=True).count()}
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def key_view(request):
+    """GET: the state of the master key. POST {action: "generate"|"set"|"remove", value}: change it (superadmins). A new key is shown once, at once after it was made.
+    Every file key is wrapped again with the new master first, so encrypted files stay readable."""
+    import base64
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if not s3.available():
+        return Response({"available": False})  # the key is only shown and changed when the S3 API is on
+    if request.method == "GET":
+        return Response(_key_state())
+    obj = _s3_integration()
+    action = str(request.data.get("action") or "")
+    if action == "generate":
+        value = base64.urlsafe_b64encode(os.urandom(32)).decode().rstrip("=")
+    elif action == "set":
+        value = str(request.data.get("value") or "").strip()
+        if len(value) < 32:
+            return Response({"detail": "Een sleutel heeft minstens 32 tekens."}, status=status.HTTP_400_BAD_REQUEST)
+    elif action == "remove":
+        value = ""
+    else:
+        return Response({"detail": "Onbekende actie."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        filecrypt.rewrap_all(value)
+    except Exception as e:  # noqa: BLE001 - nothing was changed yet
+        return Response({"detail": f"De bestandssleutels konden niet opnieuw worden ingepakt: {str(e)[:150]}"}, status=status.HTTP_400_BAD_REQUEST)
+    cfg = dict(obj.config)
+    if value:
+        cfg["encryption_key"] = value
+    else:
+        cfg.pop("encryption_key", None)
+    obj.config = cfg
+    obj.save()
+    return Response({**_key_state(), **({"key": value} if action == "generate" else {})})

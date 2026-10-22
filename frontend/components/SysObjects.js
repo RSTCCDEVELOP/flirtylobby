@@ -14,6 +14,8 @@ import { usePageRoute } from "./PageRoute";
 import PluginFrame from "./PluginFrame";
 import SysButton from "./SysButton";
 import MediaView from "./MediaViews";
+import PriceCalculator from "./PriceCalculator";
+import MarketingTile from "./MarketingTile";
 
 let cache = null; // the list of objects is the same for every widget on the page
 const load = () => (cache ||= api("/sysobjects/").catch(() => { cache = null; return []; }));
@@ -22,12 +24,14 @@ export const resetSysObjects = () => { cache = null; };
 const langNow = () => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } };
 const PER = { week: "per week", month: "per maand", quarter: "per kwartaal", year: "per jaar", once: "eenmalig" };
 
-function Widget({ obj }) {
+function Widget({ obj, layout = "1" }) {
   const { user } = useSession();
   const [open, setOpen] = useState(false);
   const lang = langNow();
   const d = obj.data;
   const route = usePageRoute();
+  if (obj.kind === "calculator") return <PriceCalculator layout={layout} />;
+  if (obj.kind === "marketing") return <MarketingTile module={d.module} layout={layout} />;
   if (obj.kind === "media") return <MediaView type={d.type} settings={d.settings} items={d.items} />;
   if (obj.kind === "plugin_part") return d.enabled === false ? null : <PluginFrame name={d.name} file={d.file} title={d.title} route={{ path: "/", params: {}, ...(route || {}), query: { ...((route || {}).query || {}), ...(d.query || {}) } }} bare />;  // a block of a plugin page (the product overview, the cart ...), movable on the page
   if (obj.kind === "plugin") return <PluginFrame name={d.name} title={d.title} />;
@@ -61,12 +65,15 @@ function Widget({ obj }) {
 }
 
 // One system object by its slug (used by the page blocks)
-export function SysObjectBySlug({ slug }) {
+// layout "1" to "4": four looks to choose from per system object on a page. The marketing tile and the calculation form draw them themselves; the other objects get the look from the wrapper (card, banner, compact).
+export function SysObjectBySlug({ slug, layout = "1" }) {
   const on = useModule("sysobjects");
   const [objs, setObjs] = useState([]);
   useEffect(() => { if (on) load().then(setObjs); }, [on]);
   const o = objs.find((x) => x.slug === slug);
-  return on && o ? <Widget obj={o} /> : null;
+  const own = o && (o.kind === "marketing" || o.kind === "calculator");
+  const n = ["1", "2", "3", "4"].includes(String(layout)) ? String(layout) : "1";
+  return on && o ? <div className={`so so-${own ? "own" : n}`} data-layout={n}><Widget obj={o} layout={n} /></div> : null;
 }
 
 // Rich text from a page, with the system objects placed in it (<div data-sysobject="slug">) shown as real widgets.

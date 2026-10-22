@@ -87,7 +87,7 @@ export default function InfoDialog({ className = "", children }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className={className} onClick={() => setOpen(true)}>{children || <><IconInfo /> {tx("Info")}</>}</button>
+      <button type="button" className={className} onClick={() => setOpen(true)}>{children || <><IconInfo /> <span className="label">{tx("Info")}</span></>}</button>
       {open && <Popup onClose={() => setOpen(false)} />}
     </>
   );

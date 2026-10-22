@@ -200,6 +200,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const setAllCells = (rid, patch) => change((l) => { const row = l.rows.find((x) => x.id === rid); if (row) row.cells.forEach((c) => Object.assign(c, patch)); return l; });
   const setCell = (cid, patch) => change((l) => { Object.assign(l.rows.flatMap((r) => r.cells).find((c) => c.id === cid), patch); return l; });
   const addItem = (cid, type, ref = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref, ...(type === "heading" ? { style: { tag: "k2" } } : {}) }); return l; }); };
+  const setObjLayout = (iid, n) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { if (n === "1") delete x.layout; else x.layout = n; } }))); return l; });
   const setItem = (iid, patch) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { x.style = { ...(x.style || {}), ...patch }; Object.keys(x.style).forEach((k) => { if (x.style[k] === "" || x.style[k] == null) delete x.style[k]; }); if (!Object.keys(x.style).length) delete x.style; } }))); return l; });
   const dropFixed = (cid, before) => { // a fixed element of the page (logo, title, intro) is dropped in a cell
     const f = dragFixed();
@@ -226,7 +227,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
     const body = it.type === "text" ? <div className={`pb-tstyle${it.style?.tag ? ` ts-${it.style.tag}` : ""}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}`} style={{ ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}) }}><EditableText id={key} removable={false} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" /></div>
       : it.type === "heading" ? <div className={`pb-tstyle ts-${it.style?.tag || "k2"}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}${it.style?.weight ? " ts-weight" : ""}`} style={{ ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}), ...(it.style?.weight ? { "--ti-weight": it.style.weight } : {}), textAlign: it.style?.align || c.halign, ...(it.style?.mb !== undefined ? { marginBottom: `${it.style.mb}rem` } : {}) }}><EditableText id={key} removable={false} as={{ k1: "h2", k2: "h3", k3: "h4", k4: "h5" }[it.style?.tag || "k2"] || "h3"} fallback={editing ? tx("Klik om een kop te typen") : ""} className="pb-text pb-heading" /></div>
       : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} removable={false} className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : editing ? <div className="pb-ph">{tx("Klik om een afbeelding te kiezen")}</div> : null} /></div>
-      : <SysObjectBySlug slug={it.ref} />;
+      : <SysObjectBySlug slug={it.ref} layout={it.layout} />;
     if (!editing) return <div className={`pb-item${it.type === "object" ? " obj" : ""}`} key={it.id} style={{ textAlign: c.halign }}>{body}</div>;
     const label = it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
     const shown = over?.id === it.id ? ` drop-${over.pos}` : "";
@@ -312,6 +313,16 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 <option value="">{tx("Zoals het thema")}</option><option value="body">{tx("Lettertype van de tekst")}</option><option value="heading">{tx("Lettertype van de koppen")}</option><option value="serif">Serif</option><option value="mono">Monospace</option>
               </select>
               <button type="button" className="btn sm" disabled={!it.style} onClick={() => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === it.id) delete x.style; }))); return l; })}>{tx("Terug naar thema")}</button></div>
+          </div>
+        )}
+        {it.type === "object" && objects.some((o) => o.slug === it.ref) && (
+          <div className="so-picker" onMouseDown={(e) => e.stopPropagation()} role="group" aria-label={tx("Opmaak van dit systeemobject")}>
+            <span>{tx("Opmaak")}</span>
+            {["1", "2", "3", "4"].map((n) => (
+              <button key={n} type="button" className={(it.layout || "1") === n ? "on" : ""} title={`${tx("Opmaak")} ${n}: ${[tx("Standaard"), tx("Kaart"), tx("Banner"), tx("Compact")][Number(n) - 1]}`} aria-pressed={(it.layout || "1") === n} onClick={() => setObjLayout(it.id, n)}>
+                <i className={`so-ico so-ico-${n}`} aria-hidden="true"><b /><b /><b /></i>{n}
+              </button>
+            ))}
           </div>
         )}
         {body}

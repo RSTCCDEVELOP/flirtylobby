@@ -87,6 +87,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/seo", label: "SEO", icon: <IconSearch /> },
   { href: "/dashboard/admin/system", label: "Basisgegevens", icon: <IconSettings />, perm: "system.manage" },
   { href: "/dashboard/admin/storage", label: "Mappenstructuur", icon: <IconFolder />, perm: "storage.manage" },
+  { href: "/dashboard/admin/statistieken", label: "Statistieken", icon: <IconGrid />, perm: "stats.use" },
   { href: "/dashboard/admin/backups", label: "Backup", icon: <IconArchive />, perm: "backups.manage" },
   { href: "/dashboard/admin/license", label: "Licentie", icon: <IconKey />, perm: "system.manage" },
   { href: "/dashboard/admin/sandbox", label: "Sandbox", icon: <IconFlask /> },
@@ -112,7 +113,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };
 
 export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };

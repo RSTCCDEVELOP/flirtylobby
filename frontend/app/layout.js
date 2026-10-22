@@ -40,6 +40,7 @@ import PaymentRequired from "../components/PaymentRequired";
 import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
 import { LOGO_SETS } from "../lib/logos";
+import StatBeacon from "../components/StatBeacon";
 import SandboxBadge from "../components/SandboxBadge";
 import { absoluteUrl, getSeo } from "../lib/seo";
 
@@ -174,6 +175,7 @@ export default async function RootLayout({ children }) {
             <LicensePrompt site={site} />
             <DonateThanks />
             <NavProgress />
+            <StatBeacon />
             <PageLoader />
             <LazyImages />
             <ScrollFx />

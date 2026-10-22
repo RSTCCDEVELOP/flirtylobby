@@ -87,6 +87,27 @@ class SystemSettings(models.Model):
     data = models.JSONField(default=dict, blank=True)
 
 
+class SalesVerification(models.Model):
+    """E-mail confirmation of the calculation form by a link: the visitor opens the link in the mail, the form (waiting for it) then gets its proof."""
+
+    nonce = models.CharField(max_length=60, unique=True)
+    email = models.EmailField()
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MarketingText(models.Model):
+    """The marketing text of a module in one language, made or improved with the AI (Super admin → Prijzen → Marketing). The built-in Dutch and English texts are in marketing_content.py."""
+
+    module = models.CharField(max_length=40)
+    lang = models.CharField(max_length=10)
+    data = models.JSONField(default=dict)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [("module", "lang")]
+
+
 class License(models.Model):
     """Singleton (pk=1): the licence number of this installation and the client (opdrachtgever). Made by the superadmin."""
 

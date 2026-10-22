@@ -1,5 +1,6 @@
 "use client";
 
+import ProgressBar from "./ProgressBar";
 import { useState } from "react";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
@@ -48,6 +49,7 @@ export default function PriceAI({ onDone }) {
                 <label style={{ display: "grid", gap: ".5rem" }}>{tx("Minimale winstmarge op hosting en inkoop (%)")}<input type="number" min="0" max="90" value={a.margin} onChange={(e) => setA({ ...a, margin: e.target.value })} /></label>
                 <label style={{ display: "grid", gap: ".5rem" }}>{tx("Opmerkingen (optioneel)")}<textarea rows="3" value={a.notes} onChange={(e) => setA({ ...a, notes: e.target.value })} /></label>
                 <div className="row" style={{ gap: ".6rem" }}><button type="button" className="btn" onClick={close}>{tx("Annuleren")}</button><button type="button" className="btn primary" disabled={busy} onClick={ask}>{busy ? tx("De AI rekent…") : tx("Bereken voorstel")}</button></div>
+                <ProgressBar running={busy} label={tx("De AI vergelijkt de markt en rekent de prijzen door…")} />
               </>
             ) : (
               <>
@@ -68,6 +70,7 @@ export default function PriceAI({ onDone }) {
                   ))}
                 </div>
                 <div className="row" style={{ gap: ".6rem" }}><button type="button" className="btn" onClick={() => setRes(null)}>{tx("Opnieuw")}</button><button type="button" className="btn primary" disabled={busy || !Object.values(pick).some(Boolean)} onClick={accept}>{busy ? tx("Bezig…") : tx("Akkoord: prijzen aanpassen")}</button></div>
+                <ProgressBar running={busy} label={tx("De prijzen worden aangepast…")} />
               </>
             )}
           </div>

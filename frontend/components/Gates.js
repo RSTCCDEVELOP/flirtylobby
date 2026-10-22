@@ -1,5 +1,6 @@
 "use client";
 
+import { statEvent } from "../lib/stat";
 import { tx } from "../lib/t";
 import { IconCamera, IconChat, IconMic, IconPaperclip, IconVideo } from "./Icons";
 import { usePathname } from "next/navigation";
@@ -241,13 +242,14 @@ export default function Gates({ cfg }) {
   const gate = cfg[current];
   const t = (k) => pick(gate.texts, lang, cfg.default_language, k).toString().replaceAll("{age}", gate.min_age ?? "");
   const finish = () => {
+    if (!test && (current === "age" || current === "gambling")) statEvent(current === "age" ? "age_gate" : current, "confirmed");
     setChecked(false);
     setPanel(false);
     if (test) return setTest(null); // preview: remember nothing
     remember(active, gate);
     setDone((d) => ({ ...d, [active]: true }));
   };
-  const deny = () => (test ? setTest(null) : gate.deny_url ? (window.location.href = gate.deny_url) : setDenied(true));
+  const deny = () => (test ? setTest(null) : (statEvent(current === "age" ? "age_gate" : current, "left"), gate.deny_url) ? (window.location.href = gate.deny_url) : setDenied(true));
 
   if (current === "age" || current === "gambling") {
     const warnings = current === "gambling" ? pick(gate.texts, lang, cfg.default_language, "warnings") : [];
@@ -284,6 +286,7 @@ export default function Gates({ cfg }) {
   const save = (c) => {
     if (!test) write(localStorage, "cookie-consent", { v: gate.version, t: Date.now(), choices: c });
     if (!test) window.dispatchEvent(new CustomEvent("cookie-consent", { detail: c }));
+    if (!test) statEvent("cookies", c === all ? "accept_all" : Object.values(c).some(Boolean) ? "custom" : "reject");
     finish();
   };
   const all = Object.fromEntries(offered.map((c) => [c, true]));

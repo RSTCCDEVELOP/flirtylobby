@@ -52,18 +52,21 @@ def _text(content, mime):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def robots_txt(request):
+    __import__("apps.stats.service", fromlist=["record_file"]).record_file(request, "robots")
     return _text(output.robots(_base(request)), "text/plain")
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def sitemap_xml(request):
+    __import__("apps.stats.service", fromlist=["record_file"]).record_file(request, "sitemap")
     return _text(output.sitemap(_base(request)), "application/xml")
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def llms_txt(request):
+    __import__("apps.stats.service", fromlist=["record_file"]).record_file(request, "llms")
     content = output.llms(_base(request))
     if content is None:
         raise Http404

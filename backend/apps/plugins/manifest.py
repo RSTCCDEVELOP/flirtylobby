@@ -28,7 +28,7 @@ def parse(raw):
     out = {
         "name": name, "title": str(d.get("title") or name)[:100], "version": _ver(d.get("version"), "version"), "system_version": _ver(d.get("system_version") or "0.0.0", "system_version"),
         "schema": max(0, int(d.get("schema") or 0)) if str(d.get("schema") or 0).isdigit() else 0,
-        "description": str(d.get("description") or "")[:2000], "author": str(d.get("author") or "")[:100],
+        "description": str(d.get("description") or "")[:2000], "descriptions": _descriptions(d.get("descriptions")), "author": str(d.get("author") or "")[:100],
         "python": _file(d.get("python"), ".py"), "web": _file(d.get("web"), ".html"), "admin_web": _file(d.get("admin_web"), ".html"), "settings_web": _file(d.get("settings_web"), ".html"), "blocks_page": str(d.get("blocks_page") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,40}", str(d.get("blocks_page") or "")) else "", "admin_links": _admin_links(d.get("admin_links")),
         "requires": [str(x) for x in (d.get("requires") or []) if isinstance(x, str) and NAME_RE.match(str(x))][:10],  # plugins that must be installed and on for this one to run
         "admin_entries": _admin_entries(d.get("admin_entries")),
@@ -53,7 +53,7 @@ def parse(raw):
     return out
 
 
-PROVIDES = ("catalog", "parts", "orders", "payments", "demo")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda); demo = example data for "Demo-gegevens" (counts, create, remove)
+PROVIDES = ("catalog", "parts", "orders", "payments", "demo", "stats")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda); demo = example data for "Demo-gegevens" (counts, create, remove)
 
 
 def _public_pages(v):
@@ -94,6 +94,13 @@ def _admin_links(v):
         if isinstance(x, dict) and re.fullmatch(r"/dashboard/[a-z0-9/_-]{1,80}", str(x.get("href") or "")):
             out.append({"href": x["href"], "title": str(x.get("title") or x["href"])[:80], "description": str(x.get("description") or "")[:200]})
     return out[:10]
+
+
+def _descriptions(v):
+    """The explanation of the plugin in every language: {"en": "...", "de": "..."} (shown on the tab Omschrijving of the plugin)."""
+    if not isinstance(v, dict):
+        return {}
+    return {str(k)[:5]: str(x)[:2000] for k, x in v.items() if re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", str(k)) and isinstance(x, str) and x.strip()}
 
 
 def _parts(v):
