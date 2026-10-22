@@ -22,13 +22,14 @@ export default function GroupTiles({ id }) {
   const [plugins, setPlugins] = useState([]);
   const [summary, setSummary] = useState(null); // the numbers that the left menu shows (new messages, requests ...): the tiles show them too
   const chat = useChat();
+  const communityOn = ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false);  // no calls for the community while its modules are off
   useEffect(() => {
-    if (admin) return undefined;
+    if (admin || !communityOn) return undefined;
     const load = () => api("/community/summary/").then(setSummary).catch(() => {});
     load();
     const t = setInterval(load, refreshMs(20000));
     return () => clearInterval(t);
-  }, [admin]);
+  }, [admin, communityOn]);
   const countOf = (n) => (n.badge === "direct_active" ? chat?.directActive?.length || 0 : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) || 0 : 0);
   useEffect(() => {
     if (mods.plugins === false) return;

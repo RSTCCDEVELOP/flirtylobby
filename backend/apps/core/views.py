@@ -401,6 +401,48 @@ def system_reset(request):
     return Response({"removed": removed, "applied": applied})
 
 
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def refresh_settings(request):
+    """How often the pages ask the server for news (superadmins, always: not tied to a module). {refresh_seconds, signal_seconds}."""
+    from . import system
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "POST":
+        out = {}
+        for k, lo, hi in (("refresh_seconds", 0, 600), ("signal_seconds", 0, 30)):
+            if k in request.data:
+                try:
+                    out[k] = str(max(lo, min(hi, int(request.data[k]))))
+                except (TypeError, ValueError):
+                    return Response({"detail": "Geef een geheel getal op."}, status=status.HTTP_400_BAD_REQUEST)
+        if out:
+            system.save(out)
+    cur = system.get()
+    return Response({"refresh_seconds": int(cur["refresh_seconds"] or 0), "signal_seconds": int(cur["signal_seconds"] or 0)})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def site_defaults_view(request):
+    """The saved default settings (superadmins). GET: what is saved. POST {action: "capture" | "apply"}."""
+    from . import site_defaults
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "POST":
+        action = request.data.get("action")
+        if action == "capture":
+            return Response(site_defaults.capture())
+        if action == "apply":
+            if not site_defaults.info()["exists"]:
+                return Response({"detail": "Er zijn nog geen standaard instellingen opgeslagen."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"results": site_defaults.apply(), **site_defaults.info()})
+        return Response({"detail": "Onbekende actie."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(site_defaults.info())
+
+
 def _preset_access(user):
     """Superadmins may use every standard installation; administrators (system: manage) only those the superadmin released."""
     return "all" if user.is_staff else ("admin" if access_level(user, "system") >= 3 else None)
@@ -450,6 +492,8 @@ def demo_data(request):
     from . import presets as presets_mod
 
     preset = d.get("preset") if d.get("preset") in presets_mod.BY_KEY else None
+    if preset and not d.get("remove") and presets_mod.active() != preset:  # demo data is made for the installation that is set and in use
+        return Response({"detail": "Stel eerst deze installatie in: demo-gegevens kunnen pas worden gemaakt als de installatie actief is."}, status=status.HTTP_400_BAD_REQUEST)
     try:
         opts = dict(content=bool(d.get("content", True)), objects=bool(d.get("objects", True)), orders=bool(d.get("orders", True)), media=d.get("media", 16), heroes=d.get("heroes", 6), users=d.get("users", 8))
         shops_ = [x for x in (d.get("shops") or []) if x in ("clothing", "furniture", "grocery", "standard")] or None
@@ -699,7 +743,7 @@ def theme_pack_capture(request, key):
 def theme_pack_use(request, key):
     """Make a theme (colours, fonts, shapes; optionally its logos and home photos) the look of the website."""
     with_files = bool(request.data.get("files"))
-    if with_files and not (modules.enabled("branding") and access_level(request.user, "branding") >= 2):
+    if with_files and not request.user.is_staff and not (modules.enabled("branding") and access_level(request.user, "branding") >= 2):  # a superadmin may always
         return _bad("Je hebt geen rechten om logo's te wijzigen.", status.HTTP_403_FORBIDDEN)
     try:
         slots, photos = themepacks.use(key, with_files)

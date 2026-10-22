@@ -61,7 +61,7 @@ export default function PrefsSync() {
       const seed = {};
       try { Object.keys(localStorage).filter((k) => synced(k) && !(k in server)).forEach((k) => { seed[k] = localStorage.getItem(k); }); } catch {}
       if (Object.keys(seed).length) api("/dashboard/prefs/", { method: "PUT", body: { set: seed, remove: [] } }).catch(() => {});
-      if (changed) {  // the screen was drawn with the old values: once more with the settings of this person
+      if (changed && !/^\/(login|registreren|wachtwoord)/.test(window.location.pathname)) {  // the screen was drawn with the old values: once more with the settings of this person (not while logging in: the page is on its way to the dashboard, a reload would keep the person on the login page)
         try {
           const last = Number(sessionStorage.getItem("prefs-reload") || 0);
           if (Date.now() - last > 20000) { sessionStorage.setItem("prefs-reload", String(Date.now())); window.location.reload(); }

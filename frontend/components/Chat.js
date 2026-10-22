@@ -52,17 +52,20 @@ export function ChatProvider({ children }) {
   useEffect(() => { const el = document.documentElement; if (cfg?.popup_position) el.dataset.chatPos = cfg.popup_position; else delete el.dataset.chatPos; }, [cfg?.popup_position]);
 
   const directOn = useModule("directconnect");
+  const chatOn = useModule("chat");
   // config (only for logged-in users)
   useEffect(() => {
-    if (!user || !getToken()) return setCfg(null);
+    if (!user || !getToken() || !(chatOn || directOn)) return setCfg(null);  // only while the chat or the direct connection is on
     api("/community/config/").then((d) => setCfg(d.chat)).catch(() => setCfg(null));
-  }, [user]);
+  }, [user, chatOn, directOn]);
 
   // someone opened my invitation link and connected: take me to the dashboard, where a block shows who it is
   useEffect(() => {
     if (!user || !directOn) { setDirectActive([]); return; }
     let stop = false;
+    let denied = 0;
     const check = async () => {
+      if (Date.now() < denied) return;
       try {
         const rooms = await api("/direct/rooms/");
         const online = new Map(rooms.filter((r) => r.guest_online).map((r) => [r.token, r.guest_name]));
@@ -76,7 +79,7 @@ export function ChatProvider({ children }) {
         if (where === "/dashboard") return; // the block is already in view
         if (where.startsWith("/dashboard/community/direct")) return router.push("/dashboard");
         if (await confirmDialog(tx("{0} is verbonden via je uitnodiging.", fresh.map(([, n]) => n).join(", ")), { title: tx("Nieuwe verbinding"), okLabel: tx("Naar het dashboard"), cancelLabel: tx("Later") })) router.push("/dashboard");
-      } catch {}
+      } catch (e) { if ([401, 403, 404].includes(e?.status)) denied = Date.now() + 5 * 60 * 1000; }
     };
     check();
     const t = setInterval(check, refreshMs(5000));
@@ -177,14 +180,16 @@ export function ChatProvider({ children }) {
     } catch (e) { console.warn("signal", e); }
   }, [getPeer, signal, endCall]);
 
-  const needSignaling = !!cfg && (cfg.method === "webrtc" || cfg.video_chat);
+  const needSignaling = chatOn && !!cfg && (cfg.method === "webrtc" || cfg.video_chat);  // only while the chat module is on
   useEffect(() => {
     if (!needSignaling) return;
+    let denied = 0;  // the server says "no" (the chat is off or not for this user): ask again after a few minutes, not every second
     const t = setInterval(async () => {
+      if (Date.now() < denied) return;
       try {
         const list = await api(`/chat/signals/?after=${lastSignal.current}`);
         for (const s of list) { lastSignal.current = Math.max(lastSignal.current, s.id); await handleSignal(s); }
-      } catch {}
+      } catch (e) { if ([401, 403, 404].includes(e?.status)) denied = Date.now() + 5 * 60 * 1000; }
     }, signalMs(1500));
     return () => clearInterval(t);
   }, [needSignaling, handleSignal]);

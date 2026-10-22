@@ -180,6 +180,20 @@ def test_custom(c):
     return _http_get(base.rstrip("/") + "/" + (c.get("test_path") or "").lstrip("/"), headers)
 
 
+def test_google_login(c):
+    cid = (c.get("client_id") or "").strip()
+    if not cid.endswith(".apps.googleusercontent.com"):
+        return False, "Dit lijkt geen Google Client-ID (het eindigt op .apps.googleusercontent.com)."
+    return True, "Client-ID ziet er goed uit. Zet bij Google Cloud je websiteadres bij 'Geautoriseerde JavaScript-bronnen'."
+
+
+def test_apple_login(c):
+    cid = (c.get("client_id") or "").strip()
+    if not cid or " " in cid or "." not in cid:
+        return False, "Vul de Services-ID in (bijvoorbeeld com.jouwbedrijf.web)."
+    return True, "Services-ID ingevuld. Zet bij Apple de domeinnaam en de terugkeer-URL van je website bij deze Services-ID."
+
+
 def f(key, label, kind="text", secret=False, default="", options=None, required=True):
     return {"key": key, "label": label, "type": kind, "secret": secret, "default": default,
             "options": options, "required": required}
@@ -217,6 +231,8 @@ PROVIDERS = {
           options=[{"value": "starttls", "label": "STARTTLS"}, {"value": "ssl", "label": "SSL/TLS"}, {"value": "none", "label": "Geen"}]),
         f("username", "Gebruikersnaam", required=False), f("password", "Wachtwoord", secret=True, required=False),
         f("from_email", "Afzender (e-mailadres)", required=False)]},
+    "google_login": {"label": "Inloggen met Google", "test": test_google_login, "fields": [f("client_id", "Client-ID (Google Cloud, type Webapplicatie)")]},
+    "apple_login": {"label": "Inloggen met Apple", "test": test_apple_login, "fields": [f("client_id", "Services-ID (Apple Developer, Identifiers)")]},
     "custom": {"label": "Eigen API", "test": test_custom, "fields": [
         f("base_url", "Basis-URL"), f("test_path", "Testpad (optioneel)", required=False),
         f("header_name", "Headernaam", default="Authorization", required=False), f("api_key", "Sleutel/token", secret=True, required=False)]},

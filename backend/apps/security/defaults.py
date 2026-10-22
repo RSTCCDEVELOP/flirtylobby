@@ -74,6 +74,8 @@ DEFAULTS = {
                    "sms_body": "Your confirmation code is {code}. Valid {minutes} min."},
         },
     },
+    "passkeys": {"enabled": True, "login": True, "add": True, "verification": "preferred", "max_per_user": 10},  # passkeys (WebAuthn): may people log in with one, may they add one in the profile, must the device check the person (PIN, fingerprint, face)
+    "social": {"google": True, "apple": True},  # show "Inloggen met Google / Apple" on the login page (when the keys are filled in at Admin -> API keys)
     "email_verify": {"enabled": False},  # make every user confirm the e-mail address with a code at login
     "twofa": {
         "enabled": True, "required_for": "none", "allow_email": True, "allow_sms": False, "allow_app": True, "app_issuer": "",
@@ -144,6 +146,8 @@ SPEC = {
         }.items()
     },
     "words": {"enabled": "bool"},
+    "passkeys": {"enabled": "bool", "login": "bool", "add": "bool", "verification": ("choice", ["preferred", "required"]), "max_per_user": ("int", 1, 50)},
+    "social": {"google": "bool", "apple": "bool"},
     "email_verify": {"enabled": "bool"},
     "registration": {"enabled": "bool", "verify_email": "bool", "require_phone": "bool", "require_birth_date": "bool", "code_minutes": ("int", 1, 60)},
     "twofa": {

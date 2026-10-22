@@ -1,0 +1,67 @@
+"""Standaard instellingen: de instellingen van deze site (beveiliging, vormgeving, community, talen, dashboard en de vernieuwsnelheid) vastgelegd als de standaard.
+
+`capture()` schrijft ze naar backend/apps/core/site_defaults.json (dat bestand hoort bij de code: neem het mee in git, dan is het de standaard voor elke nieuwe installatie).
+`apply()` zet ze terug: bij een nieuwe installatie (eerste start), na "Systeem resetten", of met de knop. Geen sleutels, wachtwoorden, adressen, IP-lijsten of teksten van de site."""
+import json
+import logging
+from pathlib import Path
+
+from django.conf import settings
+from django.utils import timezone
+
+from . import settings_backup, system
+
+logger = logging.getLogger(__name__)
+
+SECTIONS = ["theme", "security", "community", "languages", "dashboard"]  # of the settings backup (see Admin -> Instellingen back-up)
+SYSTEM_KEYS = ["refresh_seconds", "signal_seconds", "max_image_mb", "max_video_mb", "max_photo_mb", "show_credit", "timezone"]  # of the system settings: no names, addresses or contact data
+PATH = Path(settings.BASE_DIR) / "apps" / "core" / "site_defaults.json"
+
+
+def info():
+    if not PATH.is_file():
+        return {"exists": False, "captured_at": None, "sections": []}
+    try:
+        data = json.loads(PATH.read_text(encoding="utf-8"))
+        return {"exists": True, "captured_at": data.get("captured_at"), "sections": sorted(data.get("bundle", {}).get("sections", {})), "system": sorted(data.get("system", {}))}
+    except (OSError, ValueError):
+        return {"exists": False, "captured_at": None, "sections": []}
+
+
+def _clean(bundle):
+    """Nothing personal in the defaults: no list of IP addresses."""
+    sec = (bundle["sections"].get("security") or {}).get("data")
+    if isinstance(sec, dict):
+        for part in (sec.get("settings") or sec).values() if isinstance(sec.get("settings") or sec, dict) else []:
+            if isinstance(part, dict) and "always_allow_ips" in part:
+                part["always_allow_ips"] = []
+    return bundle
+
+
+def capture():
+    """Save the settings of this site as the defaults. Returns info()."""
+    bundle = _clean(settings_backup.export(SECTIONS, include_secrets=False, include_files=False))
+    cur = system.get()
+    data = {"format": "site-defaults", "version": 1, "captured_at": timezone.now().isoformat(timespec="seconds"), "bundle": bundle, "system": {k: cur[k] for k in SYSTEM_KEYS if k in cur}}
+    PATH.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    logger.warning("Site defaults saved (%s parts)", len(bundle["sections"]))
+    return info()
+
+
+def apply():
+    """Put the saved defaults back. Returns [{key, ok, message}] (empty when nothing was saved)."""
+    if not PATH.is_file():
+        return []
+    data = json.loads(PATH.read_text(encoding="utf-8"))
+    results = settings_backup.load(data["bundle"], SECTIONS)
+    try:  # the look of a new or reset site is always the Easy2edit theme (the saved defaults hold the other settings, not another house style)
+        from . import themepacks
+
+        themepacks.use("easy2edit", True)
+    except Exception:  # noqa: BLE001
+        logger.exception("Default theme easy2edit could not be set")
+    out = {k: str(v) if not isinstance(v, bool) else v for k, v in (data.get("system") or {}).items() if k in SYSTEM_KEYS}
+    if out:
+        system.save(out)
+        results.append({"key": "system", "label": "Vernieuwen en limieten", "ok": True, "message": "Geladen."})
+    return results

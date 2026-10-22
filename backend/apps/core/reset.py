@@ -166,6 +166,13 @@ def perform(keep=None):
     except Exception:  # noqa: BLE001
         logger.exception("Reset: the choice of the standard installation could not be cleared")
 
+    try:  # a clean system starts with the default settings that were saved (when there are any)
+        from apps.core import site_defaults
+
+        site_defaults.apply()
+    except Exception:  # noqa: BLE001
+        logger.exception("Reset: the default settings could not be applied")
+
     pages_service.ensure_defaults()
     modules.invalidate()
     for name in dict.fromkeys(files):

@@ -19,6 +19,7 @@ import { GENDER_LABELS, useGenders } from "../../../lib/genders";
 import { confirmDialog, promptDialog } from "../../../lib/dialog";
 import { useAutoSave } from "../../../lib/autosave";
 import SaveStatus from "../../../components/SaveStatus";
+import PasskeysProfile from "../../../components/PasskeysProfile";
 
 export default function Profile() {
   const notifyOn = useModule("notifications");
@@ -150,12 +151,13 @@ export default function Profile() {
         <form className="form" onSubmit={changePassword}>
           <strong style={{ fontSize: ".9rem" }}>{tx("Wachtwoord wijzigen")}</strong>
           <div className="grid2">
-            <label>{tx("Huidig wachtwoord")}<input type="password" value={pw.old_password} onChange={(e) => setPw({ ...pw, old_password: e.target.value })} required autoComplete="current-password" /></label>
+            <label>{tx("Huidig wachtwoord")}<input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} /><input type="password" name="current-password" value={pw.old_password} onChange={(e) => setPw({ ...pw, old_password: e.target.value })} required autoComplete="current-password" /></label>
             <label>{tx("Nieuw wachtwoord")}<input type="password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} required autoComplete="new-password" /></label>
           </div>
           {pwMsg && <div className={pwMsg.ok ? "alert ok" : "alert"}>{pwMsg.text}</div>}
           <div><button className="btn">{tx("Wachtwoord wijzigen")}</button></div>
         </form>
+        <PasskeysProfile />
         <TwoFactorProfile />
         <div className="danger-zone">
           <strong style={{ fontSize: ".9rem" }}>{tx("Account verwijderen")}</strong>

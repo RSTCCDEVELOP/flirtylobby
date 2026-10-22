@@ -108,9 +108,13 @@ def _room(token):
 
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated, module_required("directconnect")])
+@permission_classes([IsAuthenticated])
 def rooms(request):
     """List my open invitations / create a new one."""
+    from apps.core import modules
+
+    if not modules.enabled("directconnect"):  # switched off: the list is empty (a page that still asks gets no error every few seconds); creating one is not allowed
+        return Response([]) if request.method == "GET" else bad("Deze module is uitgeschakeld.", status.HTTP_403_FORBIDDEN)
     if request.method == "POST":
         if not _enabled():
             return bad("Directe verbinding staat uit.", status.HTTP_403_FORBIDDEN)

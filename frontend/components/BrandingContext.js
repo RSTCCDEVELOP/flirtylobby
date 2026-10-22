@@ -15,7 +15,7 @@ export function BrandingProvider({ value, logoSet, siteName, children }) {
   const active = preview !== undefined ? preview : logoSet;
   const ctx = useMemo(() => {
     const base = value || { assets: {}, photos: [] };
-    const set = LOGO_SETS[active];
+    const set = LOGO_SETS[active] || (base.assets?.logo ? null : LOGO_SETS.easy2edit);  // no own logo and no known set: the logo of the default theme (Easy2edit)
     return { ...base, assets: set ? { ...base.assets, ...set.assets } : base.assets, alt: siteName || set?.alt, previewLogoSet: (v) => setPreview(v === null ? undefined : v) };
   }, [value, active, siteName]);
   return <BrandingContext.Provider value={ctx}>{children}</BrandingContext.Provider>;
@@ -25,7 +25,7 @@ export const useBranding = () => useContext(BrandingContext);
 export function Logo({ className = "", alt }) {
   const { assets, alt: setAlt } = useBranding();
   alt = alt || setAlt || "Studio2";
-  const light = assets.logo ? assetUrl(assets.logo) : "/logo-rstcc.png";
+  const light = assets.logo ? assetUrl(assets.logo) : "/logos/easy2edit/logo.png";
   const dark = assets.logo_dark ? assetUrl(assets.logo_dark) : null;
   return (
     <>

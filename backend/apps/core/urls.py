@@ -8,6 +8,8 @@ urlpatterns = [
     path("system/reset/", views.system_reset),
     path("system/info/", views.system_info),
     path("system/demo/", views.demo_data),
+    path("system/refresh/", views.refresh_settings),
+    path("system/site-defaults/", views.site_defaults_view),
     path("system/presets/", views.presets_list),
     path("system/presets/admin/", views.presets_admin),
     path("system/presets/<slug:key>/page/", views.presets_page),

@@ -7,5 +7,6 @@ cd /app/backend
 
 python manage.py migrate --noinput
 python manage.py ensure_admin
+python manage.py site_defaults apply --if-new
 python manage.py collectstatic --noinput
 exec "$@"

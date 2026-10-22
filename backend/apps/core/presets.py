@@ -58,6 +58,22 @@ def _wanted_modules(preset):
     return want
 
 
+def ensure_home_logo():
+    """The home page of a clean site starts with a hero with the logo of the theme in use (the block "home.hero" shows the logo of the theme by itself). A home page that was built before stays as it is."""
+    from apps.pages import layout as page_layout
+    from apps.pages.models import PageLayout
+
+    lay = PageLayout.objects.filter(key="home").first()
+    rows = (lay.data or {}).get("rows") if lay else None
+    if rows and not (lay.data or {}).get("auto"):
+        return False
+    hero = {"id": "a1f0c3d2", "cols": 1, "width": "100", "gap": "lg", "title": "Hero", "screen": True, "top": "touch", "h_mode": "pct", "h": 50, "v": "top", "padding": {"t": 0}, "bg": {},
+            "cells": [{"id": "b2e1d4c3", "width": "auto", "halign": "center", "valign": "center", "items": [{"id": "c3d2e5b4", "type": "image", "ref": "home.hero"}]}]}
+    data = page_layout.clean({"rows": [hero], "bg": {}})
+    PageLayout.objects.update_or_create(key="home", defaults={"data": data})
+    return True
+
+
 def _demo_parts(key):
     """What the demo data of this installation makes (see apps/core/demo.py)."""
     try:
@@ -337,6 +353,16 @@ def apply(key):
         pages_service.ensure_defaults()
     except Exception:  # noqa: BLE001
         pass
+    try:
+        ensure_home_logo()
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: the logo in the home design could not be set", key)
+    try:  # the logos of the theme in use also go into the media library
+        from . import themepacks
+
+        themepacks.logos_to_library()
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: logos could not be put in the media library", key)
     try:
         _apply_saved_pages(key)  # the pages that were saved in this installation come back as they were
     except Exception:  # noqa: BLE001

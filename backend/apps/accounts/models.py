@@ -161,3 +161,32 @@ class Invitation(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class PasskeyCredential(models.Model):
+    """A passkey (WebAuthn) of a user: the public key of a device (phone, laptop, security key). The secret never leaves the device."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="passkeys")
+    credential_id = models.CharField(max_length=512, unique=True)  # base64url
+    public_key = models.BinaryField()  # the COSE key as the device made it
+    sign_count = models.PositiveBigIntegerField(default=0)
+    name = models.CharField(max_length=80, blank=True)
+    transports = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class SocialIdentity(models.Model):
+    """The account of a user at Google or Apple (the subject of the identity token): later logins find the user by it."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="social_identities")
+    provider = models.CharField(max_length=20)  # google | apple
+    subject = models.CharField(max_length=255)
+    email = models.CharField(max_length=254, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["provider", "subject"], name="uniq_social_identity")]

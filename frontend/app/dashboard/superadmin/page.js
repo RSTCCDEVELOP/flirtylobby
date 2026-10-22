@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
 import LicenseAdmin from "../../../components/LicenseAdmin";
+import SaveDefaults from "../../../components/SaveDefaults";
 import PresetPicker from "../../../components/PresetPicker";
 import ProfileThemeSwitches from "../../../components/ProfileThemeSwitches";
 import SettingsBackup from "../../../components/SettingsBackup";
@@ -27,6 +28,7 @@ export default function SuperAdminHome() {
             <strong style={{ fontSize: "1.25rem" }}>{tx("Verversing en oproepsignalen")}</strong>
             <small>{tx("Hoe vaak de pagina's bij de server vragen (seconden)")}</small>
           </Link>
+          <SaveDefaults />
         </div>
       </Collapsible>
       <Collapsible id="super-license" title={tx("Licentie")}>

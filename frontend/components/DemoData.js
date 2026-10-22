@@ -13,7 +13,7 @@ const LABELS = {
 };
 
 // One button: make the demo data (after asking how many pictures and users), or remove it when it exists. Super admin only.
-export default function DemoData({ preset = "", shop = false, parts = null }) {  // shop: the installation has the webshop: ask which example shop  // preset: only the demo of this standard installation (its modules and plugins)
+export default function DemoData({ preset = "", shop = false, parts = null, active = true }) {  // active: the installation is set and in use (demo data can only be made then)  // shop: the installation has the webshop: ask which example shop  // preset: only the demo of this standard installation (its modules and plugins)
   const [state, setState] = useState(null); // {exists, counts, presets: [installations that have demo data]}
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ shops: "clothing", media: 16, heroes: 6, users: 8, content: true, objects: true, orders: true });
@@ -81,6 +81,7 @@ export default function DemoData({ preset = "", shop = false, parts = null }) { 
           <small className="muted">{tx("De webshop maakt vier voorbeeldwinkels: kleding, meubels, supermarkt en standaard producten, met groepen, foto's, varianten en staffelprijzen.")}</small>
         </div>
       )}
+      {!active && !some && <small className="muted">{tx("Stel eerst deze installatie in; daarna kun je demo-gegevens maken.")}</small>}
       <RunPopup run={run} onClose={() => setRun(null)} />
       {info && (
         <div className="overlay" onClick={() => setInfo(false)}>
@@ -100,7 +101,7 @@ export default function DemoData({ preset = "", shop = false, parts = null }) { 
           </>
         ) : (
           <>
-            <button type="button" className="btn primary" disabled={!!busy || (made && !shop)} onClick={() => setOpen(true)}>{made && shop ? tx("Nog een demowinkel toevoegen") : some ? tx("Maak ontbrekende demo-gegevens") : tx("Maak demo-gegevens")}</button>
+            <button type="button" className="btn primary" disabled={!!busy || !active || (made && !shop)} title={active ? undefined : tx("Stel eerst deze installatie in")} onClick={() => setOpen(true)}>{made && shop ? tx("Nog een demowinkel toevoegen") : some ? tx("Maak ontbrekende demo-gegevens") : tx("Maak demo-gegevens")}</button>
             <button type="button" className="btn danger" disabled={!!busy || !some} onClick={remove}>{tx("Verwijder demo-gegevens")}</button>
             <button type="button" className="btn" onClick={() => setInfo(true)}>{tx("Inhoud bekijken")}</button>
           </>

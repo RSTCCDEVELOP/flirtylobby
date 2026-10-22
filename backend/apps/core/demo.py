@@ -295,6 +295,12 @@ def finish(preset, parts):
     reg = registry()
     reg[preset or "_all"] = list(parts)
     _set_registry(reg)
+    try:
+        from . import themepacks
+
+        themepacks.logos_to_library()  # also after the demo data (the library of a clean site then has the logos too)
+    except Exception:  # noqa: BLE001
+        logger.exception("Logos could not be put in the media library")
     if preset:
         try:
             from . import presets

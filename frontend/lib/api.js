@@ -44,6 +44,8 @@ export async function api(path, { method = "GET", body } = {}) {
   });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (res.status === 402 && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("payment-required", { detail: data?.detail }));  // a subscription is needed: see PaymentRequired
+  // the login is not valid any more (the account was removed, or logged out elsewhere): log out here too. Only when it is still the token this call used: a call that started before logging in must not log the new login out again
+  if (res.status === 401 && token && /token/i.test(data?.detail || "") && getToken() === token) clearToken();
   if (!res.ok) throw new ApiError(res.status, data);
   return translateTree(data);
 }

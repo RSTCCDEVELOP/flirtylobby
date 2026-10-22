@@ -5,9 +5,11 @@ import { usePresets } from "./PresetPicker";
 import ProgressBar from "./ProgressBar";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
+import { useAuth } from "./AuthContext";
 
 // Back to a clean system: first a back-up (settings, themes and plugins) if wanted, then a confirmation with the password; then everything of the site goes.
 export default function SystemReset() {
+  const { user } = useAuth();
   const [step, setStep] = useState(0); // 0 closed · 1 back-up? · 2 confirm · 3 done
   const [info, setInfo] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -82,7 +84,7 @@ export default function SystemReset() {
               </>
             )}
             {step === 2 && info && (
-              <>
+              <form onSubmit={(e) => e.preventDefault()} style={{ display: "contents" }}>
                 <h2 style={{ margin: 0 }}>{tx("Weet je het zeker?")}</h2>
                 <div className="alert">
                   {tx("Dit verwijdert voorgoed:")}
@@ -104,14 +106,14 @@ export default function SystemReset() {
                   </label>
                 )}
                 <label>{tx("Typ RESET om te bevestigen")}<input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" /></label>
-                <label>{tx("Je wachtwoord")}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" /></label>
+                <label>{tx("Je wachtwoord")}<input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} /><input type="password" name="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" /></label>
                 {msg && <div className="alert">{msg.text}</div>}
                 <ProgressBar running={job === "reset"} done={finished} label={tx("Het systeem wordt schoongemaakt…")} />
                 <div className="row" style={{ justifyContent: "flex-end" }}>
                   <button type="button" className="btn" disabled={busy} onClick={close}>{tx("Annuleren")}</button>
                   <button type="button" className="btn danger" disabled={busy || word !== "RESET" || !pw} onClick={reset}>{busy ? tx("Bezig…") : tx("Alles verwijderen")}</button>
                 </div>
-              </>
+              </form>
             )}
             {step === 3 && (
               <>

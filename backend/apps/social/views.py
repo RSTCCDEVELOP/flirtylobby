@@ -678,8 +678,12 @@ def chat_signal(request):
 
 
 @api_view(["GET"])
-@permission_classes(CHAT)
+@permission_classes([IsAuthenticated])
 def chat_signals(request):
+    from apps.core import modules
+
+    if not modules.enabled("chat"):  # a page that still asks (an old tab, a chat that was switched off): nothing to report, no error every second
+        return Response([])
     me = request.user
     service.touch(me)
     ChatSignal.objects.filter(created_at__lt=timezone.now() - timedelta(minutes=5)).delete()

@@ -185,6 +185,7 @@ def use(key, with_files=False):
     new.update({k: old[k] for k in KEEP if k in old} | {k: old[k] for k in old if k.startswith("chat_")})
     cur.theme = {k: v for k, v in new.items() if v != theme.DEFAULTS[k]}
     cur.save()
+    with_files = with_files or key == "easy2edit"  # the default theme always brings its own logos: the logo of another site must not stay
     files = apply_files(key) if with_files and (key not in BUILTIN_KEYS() or man.get("customized")) else (0, 0)
     return files
 
@@ -560,3 +561,18 @@ def seed_brand_logos():
                 n += 1
         done[key] = n
     return done
+
+
+def logos_to_library():
+    """The logos of the theme in use (the house style, by its brand_logo: easy2edit, rstcc, studio2) go into the media library, once, tagged with the theme. Returns how many are in."""
+    brand = current_values().get("brand_logo") or "easy2edit"
+    base = settings.BASE_DIR.parent / "frontend" / "public" / "logos" / brand
+    n = 0
+    if not base.is_dir():
+        return 0
+    for slot in ("logo", "logo_dark", "favicon", "icon"):
+        f = base / f"{slot}.png"
+        if f.is_file():
+            _to_library(brand, slot.replace("_", "-"), f.read_bytes(), "png", ["logo" if slot.startswith("logo") else slot])
+            n += 1
+    return n

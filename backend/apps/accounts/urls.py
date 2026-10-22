@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import fakeusers, invitations, registration, views
+from . import fakeusers, invitations, registration, sso, views
 
 router = DefaultRouter()
 router.register("users", views.UserViewSet, basename="users")
@@ -12,6 +12,15 @@ urlpatterns = [
     path("users/fake/", fakeusers.fake_users),
     path("profile/me/fill-test/", fakeusers.fill_own_profile),
     path("auth/login/", views.login),
+    path("auth/sso/config/", sso.config),
+    path("auth/google/", sso.google_login),
+    path("auth/apple/", sso.apple_login),
+    path("auth/passkey/login/options/", sso.passkey_login_options),
+    path("auth/passkey/login/", sso.passkey_login),
+    path("auth/passkey/register/options/", sso.passkey_register_options),
+    path("auth/passkey/register/", sso.passkey_register),
+    path("auth/passkeys/", sso.passkeys),
+    path("auth/passkeys/<int:pk>/", sso.passkey_remove),
     path("auth/login/verify/", views.login_verify),
     path("auth/login/resend/", views.login_resend),
     path("auth/register/config/", registration.config),

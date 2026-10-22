@@ -2819,3 +2819,16 @@ body.has-blocknav .edit-save-preset-btn { right: 16.2rem; }
 .site-back { top: 5.6rem; left: 1.5rem; }
 .site-back .back-btn { padding: .6rem 1.1rem; }
 @media (max-width: 760px) { .site-back { top: 5.2rem; left: .8rem; } .back-btn { padding: .55rem .95rem; } .back-row { margin-bottom: 1.2rem; } }
+
+/* inloggen met een passkey, Google of Apple */
+.sso-box { display: grid; gap: .6rem; margin-top: .2rem; }
+.sso-or { display: flex; align-items: center; gap: .7rem; color: var(--muted); font-size: .85rem; }
+.sso-or::before, .sso-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.sso-btn { width: 100%; justify-content: center; }
+.sso-google { display: flex; justify-content: center; min-height: 44px; }
+
+/* terugknop: een duidelijke kleur uit het thema (de primaire kleur, zoals de knoppen met "primary") */
+.back-btn, .site-back .back-btn { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; box-shadow: 0 2px 8px color-mix(in srgb, var(--blue) 35%, transparent); }
+.back-btn:hover, .site-back .back-btn:hover { background: color-mix(in srgb, var(--blue) 85%, #000); border-color: color-mix(in srgb, var(--blue) 85%, #000); color: #fff; }
+/* het thema in gebruik: een groene rand */
+.preset.pack.active { border: 2px solid var(--green, #2e9b5f); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green, #2e9b5f) 22%, transparent); }

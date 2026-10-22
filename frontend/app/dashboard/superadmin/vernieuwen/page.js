@@ -9,14 +9,14 @@ export default function RefreshSettings() {
   const [form, setForm] = useState(null);
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { api("/system/").then((d) => setForm({ refresh_seconds: Number(d.settings.refresh_seconds) || 0, signal_seconds: Number(d.settings.signal_seconds) || 0 })).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
+  useEffect(() => { api("/system/refresh/").then((d) => setForm({ refresh_seconds: Number(d.refresh_seconds) || 0, signal_seconds: Number(d.signal_seconds) || 0 })).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
   if (!form) return msg ? <div className="alert">{msg.text}</div> : null;
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const save = async (e) => {
     e.preventDefault(); setBusy(true); setMsg(null);
     try {
-      const d = await api("/system/", { method: "PUT", body: { refresh_seconds: Number(form.refresh_seconds) || 0, signal_seconds: Number(form.signal_seconds) || 0 } });
-      setForm({ refresh_seconds: Number(d.settings.refresh_seconds) || 0, signal_seconds: Number(d.settings.signal_seconds) || 0 });
+      const d = await api("/system/refresh/", { method: "POST", body: { refresh_seconds: Number(form.refresh_seconds) || 0, signal_seconds: Number(form.signal_seconds) || 0 } });
+      setForm({ refresh_seconds: Number(d.refresh_seconds) || 0, signal_seconds: Number(d.signal_seconds) || 0 });
       setMsg({ ok: true, text: tx("Opgeslagen. De pagina's gebruiken de nieuwe waarden bij de volgende keer laden.") });
     } catch (err) { setMsg({ ok: false, text: errorText(err) }); }
     setBusy(false);

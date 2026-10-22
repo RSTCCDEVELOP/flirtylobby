@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { api, setToken, errorText } from "../../lib/api";
 import { EditableText } from "../../components/EditMode";
 import CodeInput from "../../components/CodeInput";
+import SsoButtons from "../../components/SsoButtons";
 
 
 export default function Login() {
@@ -100,6 +101,7 @@ export default function Login() {
         <label className="check"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /> {tx("Toon wachtwoord")}</label>
         {error && <div className="alert">{error}</div>}
         <button className="btn primary" disabled={busy || !hydrated}>{busy ? tx("Bezig…") : tx("Inloggen")}</button>
+        <SsoButtons onLogin={(r) => { setToken(r.token); router.push("/dashboard"); }} onError={setError} />
         {canRegister && <Link href="/registreren" className="center">{tx("Nog geen account? Aanmelden")}</Link>}
         <Link href="/" className="muted center">{tx("← Terug naar website")}</Link>
       </form>

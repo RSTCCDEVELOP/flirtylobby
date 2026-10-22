@@ -159,7 +159,7 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 if DEBUG:
     # development only: also reachable from phones / other computers on the local network (10.x, 192.168.x, 172.16-31.x)
     ALLOWED_HOSTS = ["*"]
-    CORS_ALLOWED_ORIGIN_REGEXES = [r"^http://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+):5173$"]
+    CORS_ALLOWED_ORIGIN_REGEXES = [r"^https?://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|localhost|127\.0\.0\.1|([a-z0-9-]+\.)+easy2edit\.com):5173$"]  # also https (./dev-certs.sh) and a local test domain such as siten.easy2edit.com
 else:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -169,6 +169,8 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {"std": {"format": "%(asctime)s %(levelname)s %(name)s: %(message)s"}},
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "std"}},
+    "filters": {"quiet_polls": {"()": "config.logfilters.QuietPolls"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "std", "filters": ["quiet_polls"]}},
+    "loggers": {"django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False}},  # with the filter that leaves out the polling addresses (and without Django's own second line)
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
 }

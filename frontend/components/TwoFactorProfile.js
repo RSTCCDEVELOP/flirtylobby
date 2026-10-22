@@ -109,7 +109,8 @@ export default function TwoFactorProfile() {
         <form className="form" onSubmit={disable}>
           <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
             <label style={{ flex: 1, maxWidth: 320 }}>{tx("Wachtwoord")}
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus autoComplete="current-password" />
+              <input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} />
+              <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus autoComplete="current-password" />
             </label>
             <button className="btn danger" disabled={busy || !password}>{tx("Uitschakelen")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Annuleren")}</button>

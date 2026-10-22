@@ -5,6 +5,7 @@ import { tx } from "../lib/t";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
+import { useModule } from "./Modules";
 import { confirmDialog } from "../lib/dialog";
 import { money, ORDER_STATUS } from "../lib/format";
 import { canAdmin, lvl } from "../lib/perms";
@@ -193,13 +194,16 @@ function SandboxBlock() {
 // Who is connected through a direct (WebRTC) invitation right now
 function DirectBlock() {
   const [rooms, setRooms] = useState(null);
+  const on = useModule("directconnect");  // no calls while the module is off
   useEffect(() => {
+    if (!on) return undefined;
     let stop = false;
-    const load = () => api("/direct/rooms/").then((r) => !stop && setRooms(r)).catch(() => !stop && setRooms([]));
+    let denied = 0;  // "no" from the server: ask again after a few minutes
+    const load = () => (Date.now() < denied ? null : api("/direct/rooms/").then((r) => !stop && setRooms(r)).catch((e) => { if ([401, 403, 404].includes(e?.status)) denied = Date.now() + 5 * 60 * 1000; if (!stop) setRooms([]); }));
     load();
     const t = setInterval(load, refreshMs(4000));
     return () => { stop = true; clearInterval(t); };
-  }, []);
+  }, [on]);
   if (!rooms) return <Busy />;
   const connected = rooms.filter((r) => r.guest_online);
   return (

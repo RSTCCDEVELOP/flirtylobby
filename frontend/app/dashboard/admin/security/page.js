@@ -345,6 +345,32 @@ export default function Security() {
       </Collapsible>
       )}
 
+      {on("security_basic") && data.passkeys && (
+      <Collapsible id="sec-passkeys" title={tx("Passkeys en inloggen met Google of Apple")}>
+        <Toggle label={tx("Passkeys ingeschakeld")} hint={tx("inloggen zonder wachtwoord met je vingerafdruk, gezicht of pincode")} checked={data.passkeys.enabled} onChange={(v) => set("passkeys")("enabled", v)} />
+        {data.passkeys.enabled && (
+          <>
+            <Toggle label={tx("Inloggen met een passkey toestaan")} hint={tx("knop op de inlogpagina")} checked={data.passkeys.login} onChange={(v) => set("passkeys")("login", v)} />
+            <Toggle label={tx("Gebruikers mogen zelf een passkey toevoegen")} hint={tx("in het eigen profiel")} checked={data.passkeys.add} onChange={(v) => set("passkeys")("add", v)} />
+            <div className="grid2">
+              <label>{tx("Controle van de persoon")}
+                <select value={data.passkeys.verification} onChange={(e) => set("passkeys")("verification", e.target.value)}>
+                  <option value="preferred">{tx("Aanbevolen (het apparaat bepaalt)")}</option>
+                  <option value="required">{tx("Verplicht (pincode, vingerafdruk of gezicht)")}</option>
+                </select>
+              </label>
+              <Num label={tx("Passkeys per gebruiker")} min={1} max={50} value={data.passkeys.max_per_user} onChange={(v) => set("passkeys")("max_per_user", v)} />
+            </div>
+            <p className="muted" style={{ margin: 0 }}>{tx("Een passkey werkt alleen op een beveiligd adres (https, of localhost) en hoort bij de domeinnaam van de website.")}</p>
+          </>
+        )}
+        <h3 style={{ margin: ".8rem 0 0" }}>{tx("Sociaal inloggen")}</h3>
+        <Toggle label={tx("Inloggen met Google tonen")} hint={tx("vul eerst het Client-ID in bij API keys → Inloggen met Google")} checked={data.social.google} onChange={(v) => set("social")("google", v)} />
+        <Toggle label={tx("Inloggen met Apple tonen")} hint={tx("vul eerst de Services-ID in bij API keys → Inloggen met Apple")} checked={data.social.apple} onChange={(v) => set("social")("apple", v)} />
+        <p className="muted" style={{ margin: 0 }}>{tx("Een nieuw account wordt alleen aangemaakt als aanmelden aan staat (Aanmelden). Bij een bestaand e-mailadres wordt het account gekoppeld. De 2-stapscode wordt bij deze manieren niet gevraagd: Google, Apple of de passkey doen die controle zelf.")}</p>
+      </Collapsible>
+      )}
+
       {on("security_basic") && avail.email && (
       <Collapsible id="sec-email-verify" title={tx("E-mailverificatie")}>
         <Toggle label={tx("E-mailverificatie verplicht")}
