@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import RunPopup from "./RunPopup";
+import PriceBlock from "./PriceBlock";
+import Tabs from "./Tabs";
 import { runDemo } from "../lib/demoRun";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
@@ -13,12 +15,13 @@ const LABELS = {
 };
 
 // One button: make the demo data (after asking how many pictures and users), or remove it when it exists. Super admin only.
-export default function DemoData({ preset = "", shop = false, parts = null, active = true }) {  // active: the installation is set and in use (demo data can only be made then)  // shop: the installation has the webshop: ask which example shop  // preset: only the demo of this standard installation (its modules and plugins)
+export default function DemoData({ preset = "", shop = false, parts = null, active = true, price = null, contents = null, showPurchase = true }) {  // active: the installation is set and in use (demo data can only be made then)  // shop: the installation has the webshop: ask which example shop  // preset: only the demo of this standard installation (its modules and plugins)
   const [state, setState] = useState(null); // {exists, counts, presets: [installations that have demo data]}
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ shops: "clothing", media: 16, heroes: 6, users: 8, content: true, objects: true, orders: true });
   const [busy, setBusy] = useState("");
   const [run, setRun] = useState(null); // the status pop-up with the progress
+  const [itab, setItab] = useState("pages");
   const [info, setInfo] = useState(false); // the pop-up with what the demo data is and what is there
   const [msg, setMsg] = useState(null);
   const load = useCallback(() => api("/system/demo/").then(setState).catch(() => setState({ exists: false, counts: {}, presets: [], incomplete: [] })), []);
@@ -85,10 +88,21 @@ export default function DemoData({ preset = "", shop = false, parts = null, acti
       <RunPopup run={run} onClose={() => setRun(null)} />
       {info && (
         <div className="overlay" onClick={() => setInfo(false)}>
-          <div className="card modal" role="dialog" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>{tx("Demo-gegevens")}</h2>
-            <p>{made_ ? `${tx("De demo-gegevens van deze installatie")}: ${made_.map((x) => tx(x)).join(", ")}.` : tx("Alles wat je nodig hebt om het systeem te testen: voorbeeldplaatjes, gebruikers, inhoud, systeemobjecten van alle plugins, verzendmethoden en bestellingen.")}{notIn.length > 0 && ` ${tx("Niet inbegrepen")}: ${notIn.map((x) => tx(x)).join(", ")}.`}</p>
-            <p style={{ margin: 0 }}><strong>{tx("Aanwezig")}:</strong> {list(state.counts) || tx("nog niets")}</p>
+          <div className="card modal" role="dialog" style={{ maxWidth: 760, maxHeight: "90vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0 }}>{tx("Inhoud en prijs")}</h2>
+            <Tabs value={itab} onChange={setItab} tabs={[["pages", `${tx("Pagina's")}${contents ? ` (${contents.pages.length})` : ""}`], ["modules", `${tx("Modules")}${contents ? ` (${contents.modules.length})` : ""}`], ["plugins", `${tx("Plugins")}${contents ? ` (${contents.plugins.length})` : ""}`], ["price", tx("Prijzen")], ["demo", tx("Demo-gegevens")]]} />
+            <div style={{ marginTop: "1rem", display: "grid", gap: ".4rem" }}>
+              {itab === "pages" && (contents?.pages.length ? <ul className="ct-list">{contents.pages.map((g) => <li key={g.key}><strong>{g.title}</strong></li>)}</ul> : <p className="muted">{tx("Geen pagina's.")}</p>)}
+              {itab === "modules" && (contents?.modules.length ? <ul className="ct-list">{contents.modules.map((m) => <li key={m.key}><strong>{tx(m.label)}</strong></li>)}</ul> : <p className="muted">{tx("Geen modules.")}</p>)}
+              {itab === "plugins" && (contents?.plugins.length ? <ul className="ct-list">{contents.plugins.map((g) => <li key={g.name}><strong>{g.title}</strong><small className="muted">{g.name}</small></li>)}</ul> : <p className="muted">{tx("Deze installatie heeft geen plugins.")}</p>)}
+              {itab === "price" && (price ? <PriceBlock price={price} purchase={showPurchase} /> : <p className="muted">{tx("Geen prijs beschikbaar.")}</p>)}
+              {itab === "demo" && (
+                <>
+                  <p style={{ margin: 0 }}>{made_ ? `${tx("De demo-gegevens van deze installatie")}: ${made_.map((x) => tx(x)).join(", ")}.` : tx("Alles wat je nodig hebt om het systeem te testen: voorbeeldplaatjes, gebruikers, inhoud, systeemobjecten van alle plugins, verzendmethoden en bestellingen.")}{notIn.length > 0 && ` ${tx("Niet inbegrepen")}: ${notIn.map((x) => tx(x)).join(", ")}.`}</p>
+                  <p style={{ margin: 0 }}><strong>{tx("Aanwezig")}:</strong> {list(state.counts) || tx("nog niets")}</p>
+                </>
+              )}
+            </div>
             <div className="row" style={{ marginTop: "1rem" }}><button type="button" className="btn primary" onClick={() => setInfo(false)}>{tx("Sluiten")}</button></div>
           </div>
         </div>

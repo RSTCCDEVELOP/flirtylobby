@@ -9,8 +9,25 @@ from .models import ComponentPrice, License
 TWO = Decimal("0.01")
 
 
+def config_base():
+    """The base price per month incl. VAT, from apps/core/pricing.json (the price list that goes to every site)."""
+    from . import pricing
+
+    cfg = pricing.load()
+    return (Decimal(str(cfg["base_price"])) * (100 + Decimal(str(cfg["vat_rate"]))) / 100).quantize(TWO)
+
+
 def _prices():
-    return {(p.kind, p.key): p.price for p in ComponentPrice.objects.all()}
+    """Price per component incl. VAT: everything comes from pricing.json (the DB rows are only a fallback for what the file does not know)."""
+    from . import pricing
+
+    out = {(p.kind, p.key): p.price for p in ComponentPrice.objects.all()}
+    cfg = pricing.load()
+    vat = (100 + Decimal(str(cfg["vat_rate"]))) / 100
+    for k, v in cfg["items"].items():
+        kind, _, key = k.partition(":")
+        out[(kind, key)] = (Decimal(str(v)) * vat).quantize(TWO)
+    return out
 
 
 def catalog():
@@ -60,7 +77,7 @@ def backup_cost(lic):
 def monthly(lic=None):
     """The price per month: base + everything in use (modules, plugins, games, backups)."""
     lic = lic or License.objects.filter(pk=1).first()
-    base = lic.base_price if lic else Decimal(0)
+    base = config_base()
     return (base + sum((c["price"] for c in catalog() if c["active"]), Decimal(0))).quantize(TWO)
 
 

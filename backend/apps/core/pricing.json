@@ -1,0 +1,312 @@
+{
+  "version": 1,
+  "currency": "EUR",
+  "vat_rate": 21,
+  "note": "Prijzen per maand, exclusief btw. Een langere periode is goedkoper (korting op de maandprijs). Marktvergelijking (okt 2026): websitebouwers 4-29 USD per maand bij jaarbetaling, Ghost(Pro) 15 USD, Strapi Cloud 29-35 USD; deze prijzen zitten aan de onderkant. Alle prijzen zijn inclusief domeinnaam. Hosting kies je apart (shared of eigen VPS).",
+  "base_price": 12.0,
+  "periods": {
+    "month": {
+      "label": "Per maand",
+      "months": 1,
+      "discount": 0.0
+    },
+    "quarter": {
+      "label": "Per kwartaal",
+      "months": 3,
+      "discount": 10.0
+    },
+    "year": {
+      "label": "Per jaar",
+      "months": 12,
+      "discount": 20
+    }
+  },
+  "items": {
+    "module:seo": 2,
+    "module:faq": 1,
+    "module:siteimport": 2,
+    "module:integrations": 2,
+    "module:word_filter": 1,
+    "module:twofa": 1,
+    "package:community": 9,
+    "package:age": 3,
+    "package:commerce": 12,
+    "plugin:webshop": 8,
+    "plugin:agenda": 4,
+    "plugin:marketplace": 6,
+    "plugin:games": 5,
+    "plugin:orders": 0,
+    "plugin:payments": 0
+  },
+  "wizard": [
+    {
+      "key": "seo",
+      "label": "Wil je goed gevonden worden in Google?",
+      "help": "SEO-hulp: titels, beschrijvingen, sitemap en structured data.",
+      "modules": [
+        "seo"
+      ]
+    },
+    {
+      "key": "faq",
+      "label": "Wil je een pagina met veelgestelde vragen (FAQ)?",
+      "modules": [
+        "faq"
+      ]
+    },
+    {
+      "key": "import",
+      "label": "Heb je al een website die je wilt overnemen?",
+      "help": "Thema, pagina's en afbeeldingen van een andere site inlezen.",
+      "modules": [
+        "siteimport"
+      ]
+    },
+    {
+      "key": "members",
+      "label": "Moeten bezoekers een profiel hebben en elkaar kunnen vinden?",
+      "help": "Profielen, zoeken en matchen.",
+      "modules": [
+        "profiles",
+        "discover"
+      ]
+    },
+    {
+      "key": "messages",
+      "label": "Moeten leden elkaar berichten kunnen sturen?",
+      "requires": [
+        "members"
+      ],
+      "modules": [
+        "messages"
+      ]
+    },
+    {
+      "key": "chat",
+      "label": "Wil je chat en videobellen tussen leden?",
+      "requires": [
+        "members"
+      ],
+      "modules": [
+        "chat",
+        "directconnect"
+      ]
+    },
+    {
+      "key": "shop",
+      "label": "Wil je producten verkopen (webwinkel)?",
+      "help": "Producten, winkelwagen, bestellingen en online betalen.",
+      "modules": [
+        "orders",
+        "payments"
+      ],
+      "plugins": [
+        "webshop",
+        "orders",
+        "payments"
+      ]
+    },
+    {
+      "key": "subscriptions",
+      "label": "Wil je abonnementen aanbieden?",
+      "modules": [
+        "subscriptions"
+      ]
+    },
+    {
+      "key": "donations",
+      "label": "Wil je donaties ophalen?",
+      "modules": [
+        "donations"
+      ]
+    },
+    {
+      "key": "agenda",
+      "label": "Wil je een agenda met evenementen of afspraken?",
+      "plugins": [
+        "agenda"
+      ]
+    },
+    {
+      "key": "marketplace",
+      "label": "Wil je dat leden zelf producten of diensten aanbieden (marktplaats)?",
+      "requires": [
+        "members"
+      ],
+      "modules": [
+        "orders"
+      ],
+      "plugins": [
+        "marketplace",
+        "orders"
+      ]
+    },
+    {
+      "key": "games",
+      "label": "Wil je spelletjes op de site?",
+      "plugins": [
+        "games"
+      ]
+    },
+    {
+      "key": "age",
+      "label": "Is de site alleen voor volwassenen (leeftijdscontrole 18+)?",
+      "modules": [
+        "age_gate"
+      ]
+    },
+    {
+      "key": "geo",
+      "label": "Moet de site alleen in bepaalde landen bereikbaar zijn?",
+      "modules": [
+        "geo"
+      ]
+    },
+    {
+      "key": "api",
+      "label": "Wil je koppelen met externe diensten (e-mail, betalen, AI)?",
+      "modules": [
+        "integrations"
+      ]
+    },
+    {
+      "key": "security",
+      "label": "Wil je een extra beveiliging: verboden woorden en 2-stapsverificatie?",
+      "modules": [
+        "word_filter",
+        "twofa"
+      ]
+    },
+    {
+      "key": "hosting",
+      "type": "choice",
+      "label": "Welke hosting wil je?",
+      "help": "Shared is het goedkoopst. Een eigen VPS geeft meer snelheid en ruimte.",
+      "choices": [
+        "shared",
+        "vps-s",
+        "vps-m",
+        "vps-l"
+      ]
+    }
+  ],
+  "base_modules": [
+    "pages",
+    "edit_mode",
+    "media",
+    "branding",
+    "theme",
+    "languages",
+    "sysobjects",
+    "privacy_pages",
+    "cookies",
+    "communication",
+    "registration",
+    "notifications",
+    "help",
+    "system",
+    "plugins",
+    "storage",
+    "backups",
+    "roles",
+    "users",
+    "dashboard",
+    "security_basic",
+    "modules"
+  ],
+  "includes": "domeinnaam; hosting naar keuze (standaard shared)",
+  "implementation": {
+    "note": "Inschatting van de eenmalige kosten voor ontwerp (design) en implementatie, ex btw: uren x uurtarief. Alleen een inschatting.",
+    "hourly_rate": 75,
+    "design_hours": 8,
+    "setup_hours": 4,
+    "items": {
+      "package:community": 12,
+      "package:commerce": 10,
+      "package:age": 3,
+      "plugin:webshop": 14,
+      "plugin:agenda": 5,
+      "plugin:marketplace": 12,
+      "plugin:games": 6,
+      "module:seo": 3,
+      "module:faq": 1,
+      "module:siteimport": 4,
+      "module:integrations": 3,
+      "module:word_filter": 1,
+      "module:twofa": 1
+    }
+  },
+  "rst_share": 35,
+  "hosting": {
+    "note": "Hosting per maand ex btw. Shared is een vaste prijs; een VPS is de prijs van DigitalOcean (USD, okt 2026) x wisselkoers + opslag, afgerond op .95. Maximaal 35 per maand.",
+    "usd_eur": 0.92,
+    "markup": 35,
+    "default": "shared",
+    "options": [
+      {
+        "key": "shared",
+        "label": "Shared hosting",
+        "desc": "Gedeelde server, onderhoud inbegrepen. Voor een gewone website.",
+        "price": 9.95,
+        "cost": 5.0
+      },
+      {
+        "key": "vps-s",
+        "label": "VPS Klein",
+        "desc": "Eigen server: 2 GB geheugen, 1 vCPU, 50 GB schijf. Voor een kleine webshop of community.",
+        "do_usd": 12
+      },
+      {
+        "key": "vps-m",
+        "label": "VPS Middel",
+        "desc": "Eigen server: 4 GB geheugen, 2 vCPU, 80 GB schijf. Voor veel bezoekers of meerdere plugins.",
+        "do_usd": 24
+      },
+      {
+        "key": "vps-l",
+        "label": "VPS Groot (NVMe)",
+        "desc": "Eigen server: 4 GB geheugen, 2 vCPU, snelle NVMe-schijf. Voor drukke sites.",
+        "do_usd": 26
+      }
+    ]
+  },
+  "email": {
+    "note": "E-mail op een eigen domein: per adres per maand, ex btw. Hoe meer adressen, hoe lager de prijs per adres (trappen).",
+    "default": 0,
+    "max": 200,
+    "step": 1,
+    "tiers": [
+      {
+        "from": 1,
+        "price": 1.5
+      },
+      {
+        "from": 10,
+        "price": 1.25
+      },
+      {
+        "from": 25,
+        "price": 1.0
+      },
+      {
+        "from": 100,
+        "price": 0.8
+      }
+    ]
+  },
+  "reseller": {
+    "company": "Studio2",
+    "first_name": "Ronald",
+    "last_name": "Stolk",
+    "email": "info@studio2.nl",
+    "phone": "085 201 77 85",
+    "mobile": "",
+    "street": "Ambachtsweg 46",
+    "postal_code": "3542 DH",
+    "city": "Utrecht",
+    "country": "Nederland",
+    "website": "https://www.studio2.nl",
+    "kvk": "",
+    "vat_id": ""
+  }
+}

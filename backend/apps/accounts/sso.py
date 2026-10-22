@@ -17,9 +17,10 @@ from django.conf import settings
 from django.core import signing
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 
 from apps.core import modules
 from apps.security import service as security
@@ -27,6 +28,12 @@ from apps.security import service as security
 from .models import PasskeyCredential, SocialIdentity, User
 
 logger = logging.getLogger(__name__)
+
+
+class SsoThrottle(AnonRateThrottle):
+    """The login routes of Google, Apple and passkeys: a limit per address (they call outside services and check signatures)."""
+    rate = "30/min"
+    scope = "sso"
 SALT = "passkey"
 STATE_MAX_AGE = 300
 
@@ -171,6 +178,8 @@ def _user_for(provider, subject, email, name):
     if not email:
         return None, _bad("Er is geen e-mailadres gedeeld. Deel je e-mailadres om in te loggen.")
     user = User.objects.filter(email__iexact=email).first()
+    if user and (user.is_staff or user.is_superuser or user.otp_active):  # an administrator or an account with 2-step verification is never taken over by e-mail address alone: log in with the password first (then link in the profile)
+        return None, _bad("Dit account is beveiligd. Log in met je wachtwoord.", status.HTTP_403_FORBIDDEN)
     if not user:
         if not security.get()["registration"]["enabled"]:
             return None, _bad("Er bestaat geen account met dit e-mailadres en aanmelden staat uit.", status.HTTP_403_FORBIDDEN)
@@ -226,6 +235,7 @@ def verify_apple(id_token, client_id, keys=None):
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([SsoThrottle])
 def google_login(request):
     cfg = _integration("google_login") if security.get()["social"]["google"] else None
     if not cfg:
@@ -242,6 +252,7 @@ def google_login(request):
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([SsoThrottle])
 def apple_login(request):
     cfg = _integration("apple_login") if security.get()["social"]["apple"] else None
     if not cfg:
@@ -282,6 +293,7 @@ def _client_data(resp, st, typ):
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([SsoThrottle])
 def passkey_login_options(request):
     pk = security.get()["passkeys"]
     if not (pk["enabled"] and pk["login"]):
@@ -298,6 +310,7 @@ def passkey_login_options(request):
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([SsoThrottle])
 def passkey_login(request):
     pk = security.get()["passkeys"]
     if not (pk["enabled"] and pk["login"]):

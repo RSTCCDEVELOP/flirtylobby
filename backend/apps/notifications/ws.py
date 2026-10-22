@@ -1,6 +1,6 @@
 """WebSocket for notifications: the browser keeps one connection open and the server says when there is news ("notify"), so the bell does not have to ask every few seconds.
 
-Plain ASGI (no extra packages): /ws/notifications/?token=<login token>. The server looks at the user's notifications every two seconds (one small query) and only sends a message when
+Plain ASGI (no extra packages): /ws/notifications/ (the login token is sent as the first message). The server looks at the user's notifications every two seconds (one small query) and only sends a message when
 something changed, which also works with several worker processes (no shared memory or Redis needed). The browser then loads the list itself with its normal API call."""
 import asyncio
 import json
@@ -55,12 +55,21 @@ async def notifications_socket(scope, receive, send):
     headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
     if (await receive())["type"] != "websocket.connect":
         return
-    token = (parse_qs(scope.get("query_string", b"").decode()).get("token") or [""])[0]
-    user_id = await sync_to_async(_user_of, thread_sensitive=False)(token) if token and _origin_ok(headers.get("origin")) else None
+    if not _origin_ok(headers.get("origin")):
+        await send({"type": "websocket.close", "code": 4403})
+        return
+    await send({"type": "websocket.accept"})
+    # the login token is not in the address (addresses end up in logs): the first message is {"auth": token}
+    token, user_id = "", None
+    try:
+        first = await asyncio.wait_for(receive(), 5)
+        token = str((json.loads(first.get("text") or "{}")).get("auth") or "") if first["type"] == "websocket.receive" else ""
+        user_id = await sync_to_async(_user_of, thread_sensitive=False)(token) if token else None
+    except Exception:  # noqa: BLE001
+        user_id = None
     if not user_id:
         await send({"type": "websocket.close", "code": 4401})
         return
-    await send({"type": "websocket.accept"})
     closed = asyncio.Event()
 
     async def reader():

@@ -443,6 +443,112 @@ def site_defaults_view(request):
     return Response(site_defaults.info())
 
 
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def pricing_view(request):
+    """The price list (superadmins): GET = config + everything with a price; POST {base_price, vat_rate, periods:{k:{discount}}, items:{key: price}} = save (pricing.json) and put it in the licence."""
+    from . import pricing
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "POST":
+        try:
+            pricing.save(request.data if isinstance(request.data, dict) else {})
+            pricing.apply_to_license()
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    cfg = pricing.load()
+    return Response({"config": {k: cfg.get(k) for k in ("currency", "vat_rate", "rst_share", "note", "base_price", "periods", "includes", "implementation")}, "hosting": {"config": cfg.get("hosting"), "options": pricing.hosting_options()}, "email": pricing.email_config(), "catalog": pricing.catalog()})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def pricing_ai(request):
+    """AI calculation (superadmins). {answers:{position, audience, margin, notes}} = a proposal; {accept: {key: value}} = put these values in pricing.json (all sites get them through git) and in the licence."""
+    from apps.integrations import ai
+
+    from . import pricing
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    d = request.data if isinstance(request.data, dict) else {}
+    if isinstance(d.get("accept"), dict):
+        new, n = pricing.apply_values(pricing.load(), d["accept"])
+        pricing.PATH.write_text(__import__("json").dumps(new, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        pricing.apply_to_license()
+        return Response({"changed": n})
+    if not ai.available():
+        return Response({"detail": "Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        return Response(pricing.ai_proposal(d.get("answers") or {}))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def wizard_pdf(request):
+    """The quotation as a PDF (superadmins): {answers, name, site_name, period, lang, mode: "download"|"mail", email}."""
+    from django.http import HttpResponse
+
+    from apps.communication import sending
+
+    from . import pricing, pricing_pdf
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    d = request.data if isinstance(request.data, dict) else {}
+    lang = d.get("lang") if d.get("lang") in pricing_pdf.T else "nl"
+    plan = pricing.plan({k: (v if k in ("hosting", "email") else bool(v)) for k, v in (d.get("answers") or {}).items()})
+    name, site = str((d.get("customer") or {}).get("company") or d.get("name") or "").strip()[:200] or "-", str(d.get("site_name") or "").strip()[:100] or "-"
+    period = d.get("period") if d.get("period") in ("month", "quarter", "year") else "year"
+    pdf = pricing_pdf.build(plan, name, site, period, lang, reseller=pricing.reseller_of(d))
+    fname = f"easy2edit-{pricing_pdf.T[lang]['title'].lower()}-{__import__('re').sub(r'[^a-z0-9]+', '-', '-'.join(dict.fromkeys(x for x in (name, site) if x and x != '-')).lower()).strip('-') or 'website'}.pdf"
+    if d.get("mode") == "mail":
+        to = str(d.get("email") or "").strip()
+        if not __import__("re").fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", to):
+            return Response({"detail": "Vul een geldig e-mailadres in."}, status=status.HTTP_400_BAD_REQUEST)
+        t = pricing_pdf.T[lang]
+        try:
+            sending.send_email(to, f"{t['title']} Easy2edit – {site}", f"{t['title']}: {site}\n\n{t['total']}: {pricing_pdf.eur(plan['monthly'])}\n\n{t['contact']}", attachments=[(fname, pdf, "application/pdf")])
+        except sending.DeliveryError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({"sent": to})
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="{fname}"'
+    return resp
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def wizard_view(request):
+    """The installation wizard (superadmins). GET = the questions. POST {answers, plan: true} = what is needed and what it costs; {answers, apply: true, name, site_name, period} = do it."""
+    from . import pricing, presets, system
+    from .models import License
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    cfg = pricing.load()
+    if request.method == "GET":
+        return Response({"email": pricing.email_config(), "default_email": 0, "hosting": pricing.hosting_options(), "default_hosting": (cfg.get("hosting") or {}).get("default", "shared"), "questions": [{k: q.get(k) for k in ("key", "label", "help", "requires", "type") } for q in cfg["wizard"] if q.get("type") != "choice"], "periods": cfg["periods"], "vat_rate": cfg["vat_rate"], "reseller": pricing.reseller_of({}), "settings": {"site_name": system.get().get("site_name", ""), "client": License.objects.filter(pk=1).values_list("client", flat=True).first() or ""}})
+    d = request.data if isinstance(request.data, dict) else {}
+    plan = pricing.plan({k: (v if k in ("hosting", "email") else bool(v)) for k, v in (d.get("answers") or {}).items()})
+    if d.get("config"):  # only the document, to download
+        return Response(pricing.build_config(d))
+    if not d.get("apply"):
+        return Response(plan)
+    cu = d.get("customer") if isinstance(d.get("customer"), dict) else {}
+    name, site = str(cu.get("company") or d.get("name") or "").strip()[:200], str(d.get("site_name") or "").strip()[:100]
+    if not name or not site:
+        return Response({"detail": "Vul de naam van het bedrijf en van de website in."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        cfg_doc = pricing.build_config(d)
+        result = pricing.apply_config(cfg_doc)
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"applied": True, "plan": plan, "result": result, "config": cfg_doc}, status=status.HTTP_201_CREATED)
+
+
 def _preset_access(user):
     """Superadmins may use every standard installation; administrators (system: manage) only those the superadmin released."""
     return "all" if user.is_staff else ("admin" if access_level(user, "system") >= 3 else None)
@@ -883,7 +989,7 @@ def _license_out():
 
     return {"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "", "issued_at": lic.issued_at if lic else None,
             "valid_until": lic.valid_until.isoformat() if lic and lic.valid_until else None, "expired": system.license_info()["expired"],
-            "price": str(license_price.refresh()), "base_price": str(lic.base_price) if lic else "0.00", "renew_months": lic.renew_months if lic else 12, "has": system.license_info()["has"],
+            "price": str(license_price.refresh()), "base_price": str(license_price.config_base()), "renew_months": lic.renew_months if lic else 12, "has": system.license_info()["has"],
             "monthly": str(license_price.monthly(lic)), "quarterly": str(license_price.for_period(3, lic)), "yearly": str(license_price.for_period(12, lic)),
             "backup_included": lic.backup_included if lic else 5, "backup_slot_price": str(lic.backup_slot_price) if lic else "0.00", "backup_slots": license_price.backup_slots(),
             "reseller": {"name": lic.reseller_name, "email": lic.reseller_email, "url": lic.reseller_url} if lic else {"name": "", "email": "", "url": ""},
@@ -1054,7 +1160,7 @@ def license_prices(request):
     price = license_price.refresh()
     items = [{**c, "price": str(c["price"])} for c in license_price.catalog()]
     month = license_price.monthly(lic)
-    return Response({"items": items, "base_price": str(lic.base_price), "total": str(price), "in_use": str(month - lic.base_price), "months": lic.renew_months, "monthly": str(month),
+    return Response({"from_file": True, "items": items, "base_price": str(license_price.config_base()), "total": str(price), "in_use": str(month - license_price.config_base()), "months": lic.renew_months, "monthly": str(month),
                      "quarterly": str(license_price.for_period(3, lic)), "yearly": str(license_price.for_period(12, lic))})
 
 

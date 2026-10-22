@@ -2832,3 +2832,85 @@ body.has-blocknav .edit-save-preset-btn { right: 16.2rem; }
 .back-btn:hover, .site-back .back-btn:hover { background: color-mix(in srgb, var(--blue) 85%, #000); border-color: color-mix(in srgb, var(--blue) 85%, #000); color: #fff; }
 /* het thema in gebruik: een groene rand */
 .preset.pack.active { border: 2px solid var(--green, #2e9b5f); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green, #2e9b5f) 22%, transparent); }
+
+/* wizard: installatie en licentie */
+.wz-steps { list-style: none; display: flex; gap: .4rem; margin: 0 0 1.4rem; padding: 0; flex-wrap: wrap; }
+.wz-steps li button { display: flex; align-items: center; gap: .55rem; padding: .5rem .9rem .5rem .5rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font-weight: 600; cursor: pointer; }
+.wz-steps li button:disabled { cursor: default; opacity: .6; }
+.wz-steps .wz-n { width: 1.7rem; height: 1.7rem; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--text) 14%, transparent); font-size: .85rem; }
+.wz-steps li.on button { color: var(--text); border-color: var(--blue); } .wz-steps li.on .wz-n { background: var(--blue); color: #fff; }
+.wz-steps li.done .wz-n { background: var(--green, #2e9b5f); color: #fff; } .wz-steps li.done button { color: var(--text); }
+.wz-card { display: grid; gap: 1rem; padding: 1.6rem; }
+.wz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: .7rem; }
+.wz-q { display: flex; gap: .9rem; align-items: flex-start; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--card); cursor: pointer; transition: border-color .15s, background .15s; }
+.wz-q:hover { border-color: color-mix(in srgb, var(--blue) 55%, var(--line)); }
+.wz-q.on { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 9%, var(--card)); }
+.wz-q .switch { flex: none; margin-top: .15rem; } .wz-q .wz-text { display: grid; gap: .2rem; } .wz-q .wz-text small { font-size: .85rem; line-height: 1.35; }
+
+/* prijsblok (wizard en "Inhoud en prijs") */
+.pr-block { display: grid; gap: .9rem; }
+.pr-periods { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; }
+.pr-card { position: relative; display: grid; gap: .3rem; align-content: start; text-align: left; padding: 1.3rem 1.2rem 1.1rem; border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--text); font: inherit; }
+.pr-card.pick { cursor: pointer; transition: border-color .15s, transform .15s; } .pr-card.pick:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--blue) 55%, var(--line)); }
+.pr-card.on { border: 2px solid var(--blue); background: color-mix(in srgb, var(--blue) 8%, var(--card)); }
+.pr-label { font-weight: 700; color: var(--muted); font-size: .9rem; text-transform: uppercase; letter-spacing: .04em; }
+.pr-amount { font-size: 2rem; font-weight: 800; line-height: 1.1; margin: .2rem 0; }
+.pr-sub { font-size: .9rem; color: var(--muted); } .pr-save { color: var(--green, #2e9b5f); }
+.pr-vat { font-size: .8rem; color: var(--muted); margin-top: .3rem; padding-top: .4rem; border-top: 1px dashed var(--line); }
+.pr-badge { position: absolute; top: -.6rem; right: 1rem; padding: .15rem .6rem; border-radius: 999px; background: var(--green, #2e9b5f); color: #fff; font-size: .72rem; font-weight: 700; }
+.pr-impl { padding: 1.1rem 1.2rem; border: 1px solid var(--line); border-radius: 14px; background: var(--card); display: grid; gap: .5rem; }
+.pr-impl-head { display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap; } .pr-impl-head > div { display: grid; gap: .15rem; }
+.pr-impl-price { text-align: right; } .pr-impl-price span { font-size: 1.6rem; font-weight: 800; }
+.pr-impl summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+.pr-lines { display: grid; gap: .15rem; margin-top: .5rem; }
+.pr-lines > div { display: flex; justify-content: space-between; gap: 1rem; padding: .4rem 0; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); font-size: .92rem; }
+.pr-lines.big > div { font-size: 1rem; padding: .6rem 0; } .pr-lines .total { border-bottom: 0; border-top: 2px solid var(--line); font-weight: 800; font-size: 1.15rem; padding-top: .8rem; margin-top: .3rem; }
+/* wizard en prijsblok: meer ruimte tussen de onderdelen */
+.stack.wz-stack, .wz-page { display: grid; gap: 2rem; }
+.pr-block { gap: 1.6rem; }
+.pr-periods { gap: 1.2rem; }
+.pr-impl { margin-top: .4rem; padding: 1.4rem 1.5rem; gap: .9rem; }
+.pr-block > small { margin-top: .2rem; }
+.wz-card { gap: 1.4rem; padding: 2rem; }
+.wz-card .pr-lines { margin-top: .8rem; }
+.wz-grid { gap: 1.1rem; }
+.wz-q { padding: 1.2rem 1.3rem; gap: 1.1rem; }
+.wz-steps { margin-bottom: 2.2rem; gap: .7rem; }
+/* inkoop-tegel in het prijsblok */
+.pr-buy { padding: 1.2rem 1.4rem; border: 1px dashed color-mix(in srgb, var(--blue) 50%, var(--line)); border-radius: 14px; background: color-mix(in srgb, var(--blue) 5%, var(--card)); display: grid; gap: .9rem; }
+.pr-buy-head { display: grid; gap: .15rem; }
+.pr-buy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+.pr-buy-grid > div { display: grid; gap: .15rem; } .pr-buy-grid strong { font-size: 1.3rem; }
+/* lijsten in meerdere kolommen met opsommingstekens (Inhoud en prijs) */
+.ct-list { margin: 0; padding: 0 0 0 1.2rem; columns: 2 240px; column-gap: 2rem; }
+.ct-list li { break-inside: avoid; padding: .3rem 0; display: list-item; line-height: 1.35; }
+.ct-list li::marker { color: var(--blue); }
+.ct-list small { display: block; }
+.tabs-pro { flex-wrap: wrap; }
+/* prijseneditor: volle breedte, kolommen */
+.pe-table { padding: 0; overflow: hidden; }
+.pe-row { display: grid; grid-template-columns: minmax(0, 1fr) 140px 140px; gap: 1.2rem; align-items: center; padding: .6rem 1.4rem; border-bottom: 1px solid var(--line); }
+.pe-row:last-child { border-bottom: 0; } .pe-row:not(.head):hover { background: color-mix(in srgb, var(--blue) 5%, transparent); }
+.pe-row.head { background: color-mix(in srgb, var(--text) 5%, transparent); color: var(--muted); font-size: .85rem; } .pe-row.head strong { color: var(--text); font-size: 1rem; }
+.pe-row input { width: 100%; margin: 0; } .pe-name small { margin-left: .5rem; }
+.pe-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; }
+@media (max-width: 640px) { .pe-row { grid-template-columns: 1fr 90px 90px; gap: .5rem; padding: .6rem .8rem; } }
+/* schuif voor het aantal e-mailadressen */
+.wz-slider { display: grid; gap: 1rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.wz-slider-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+.wz-count { font-size: 2.4rem; font-weight: 800; line-height: 1; } .wz-slider-price strong { font-size: 1.4rem; }
+.wz-slider input[type=range] { accent-color: var(--blue); height: 1.6rem; cursor: pointer; }
+/* prijseneditor en wizard: ruimte (marges) tussen kopjes, velden en blokken */
+.card.stack { padding: 1.6rem 1.8rem; gap: 1.4rem; }
+.card.stack > strong { font-size: 1.1rem; display: block; margin-bottom: .2rem; }
+.pe-cols { gap: 1.4rem 1.6rem; margin-bottom: .6rem; }
+.pe-cols label, .card.stack label { display: grid; gap: .5rem; }
+.pe-table { margin-top: .4rem; }
+.card.stack > .pe-table { margin: .6rem 0 .4rem; }
+.card.stack > small { margin-top: .4rem; line-height: 1.5; }
+.pe-row { padding: .8rem 1.6rem; }
+.pe-row input { padding: .65rem .8rem; }
+.tabs-pro { margin-bottom: 1.4rem; }
+.wz-slider { padding: 1.8rem 2rem; gap: 1.4rem; margin: .4rem 0 1rem; }
+.wz-grid { margin-bottom: 1rem; }
+.wz-card h2, .stack h2 { margin-bottom: .4rem; }

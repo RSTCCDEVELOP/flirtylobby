@@ -28,6 +28,16 @@ export default function SuperAdminHome() {
             <strong style={{ fontSize: "1.25rem" }}>{tx("Verversing en oproepsignalen")}</strong>
             <small>{tx("Hoe vaak de pagina's bij de server vragen (seconden)")}</small>
           </Link>
+          <Link href="/dashboard/superadmin/wizard" className="card stat link-card">
+            <span>{tx("Installatie")}</span>
+            <strong style={{ fontSize: "1.25rem" }}>{tx("Wizard: installatie en licentie")}</strong>
+            <small>{tx("Naam, vragen, modules, plugins en prijs")}</small>
+          </Link>
+          <Link href="/dashboard/superadmin/prijzen" className="card stat link-card">
+            <span>{tx("Prijzen")}</span>
+            <strong style={{ fontSize: "1.25rem" }}>{tx("Prijslijst bewerken")}</strong>
+            <small>{tx("Per maand, kwartaal en jaar, ex btw")}</small>
+          </Link>
           <SaveDefaults />
         </div>
       </Collapsible>

@@ -40,14 +40,14 @@ def email_integration():
     return None
 
 
-def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None, code=None):
+def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None, code=None, attachments=None):
     """Send an e-mail (plain text or HTML, see Communicatie -> E-mailopmaak). Sender and reply-to come from the communication page (fallback: the integration's own sender)."""
     from apps.sandbox import service as sandbox
 
     from .service import sender
 
     if sandbox.active("email"):  # sandbox: capture instead of sending
-        sandbox.capture("email", to, subject, body, sender=from_addr or sender("email_from", purpose) or "")
+        sandbox.capture("email", to, subject, body + (f"\n\n[bijlage: {', '.join(a[0] for a in attachments)}]" if attachments else ""), sender=from_addr or sender("email_from", purpose) or "")
         return "sandbox"
     obj = email_integration()
     if not obj:
@@ -73,6 +73,10 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
                 payload["Attachments"] = [{"Name": f"{cid}.{mime.split('/')[-1]}", "Content": base64.b64encode(data).decode(), "ContentType": mime, "ContentID": f"cid:{cid}"} for cid, data, mime in inline]
         if reply:
             payload["ReplyTo"] = reply
+        if attachments:
+            import base64 as _b64
+
+            payload["Attachments"] = payload.get("Attachments", []) + [{"Name": n, "Content": _b64.b64encode(d).decode(), "ContentType": m} for n, d, m in attachments]
         return post_json("https://api.postmarkapp.com/email", {"X-Postmark-Server-Token": c["server_token"]}, payload)
     msg = EmailMessage()
     msg["From"], msg["To"], msg["Subject"] = frm, to, subject
@@ -83,6 +87,8 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
         msg.add_alternative(html_body, subtype="html")
         for cid, data, mime in inline:  # the logo travels inside the message
             msg.get_payload()[-1].add_related(data, *mime.split("/"), cid=f"<{cid}>")
+    for n, d, m in attachments or []:
+        msg.add_attachment(d, maintype=m.split("/")[0], subtype=m.split("/")[1], filename=n)
     try:
         security = c.get("security", "starttls")
         port = int(c.get("port") or (465 if security == "ssl" else 587))

@@ -74,6 +74,39 @@ def ensure_home_logo():
     return True
 
 
+def _contents(p):
+    """What an installation holds: its pages, modules and plugins (for the pop-up Inhoud en prijs)."""
+    try:
+        from apps.pages.models import Page
+        from apps.plugins.models import Plugin
+
+        want, plugs = _wanted_modules(p), plugins_for(p)
+        titles = {x.name: x.title or x.name for x in Plugin.objects.all()}
+        pages = []
+        for pg in Page.objects.filter(scope="public", kind__in=("system", "content")).exclude(source="demo").order_by("order", "id"):
+            mods = [m for m in (pg.module or "").split("|") if m]
+            if mods and not any((m in want) if not m.startswith("plugin:") else (m[7:] in plugs) for m in mods):
+                continue
+            pages.append({"key": pg.key, "title": (pg.title or {}).get("nl") or (pg.title or {}).get("en") or pg.key, "url": pg.url or f"/p/{pg.key}"})
+        core = {m["key"] for m in modules.MODULES if m.get("core")}
+        mods_out = [{"key": m["key"], "label": m["label"], "desc": m.get("desc", "")} for m in modules.MODULES if m["key"] in want and m["key"] not in core]
+        return {"pages": pages, "modules": mods_out, "plugins": [{"name": n, "title": titles.get(n, n)} for n in plugs]}
+    except Exception:  # noqa: BLE001
+        logger.exception("contents of a preset")
+        return None
+
+
+def _price(p):
+    """Price (per month, quarter, year) and the estimate for design and implementation of this installation."""
+    try:
+        from . import pricing
+
+        return pricing.plan_of(_wanted_modules(p), plugins_for(p))
+    except Exception:  # noqa: BLE001
+        logger.exception("price of a preset")
+        return None
+
+
 def _demo_parts(key):
     """What the demo data of this installation makes (see apps/core/demo.py)."""
     try:
@@ -94,7 +127,7 @@ def listing():
     out = []
     for p in PRESETS:
         want = _wanted_modules(p)
-        out.append({"demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -301,15 +334,15 @@ def unapply(key):
     return {"preset": key, "removed": True}
 
 
-def apply(key):
-    """Switch everything for this standard installation. Returns what happened."""
+def apply(key, preset=None):
+    """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened."""
     from apps.plugins import runtime
     from apps.plugins.models import Plugin
     from apps.social import service as social, themes
 
     from .models import ModuleState
 
-    preset = BY_KEY.get(key)
+    preset = preset or BY_KEY.get(key)
     if not preset:
         raise KeyError(key)
     want = _wanted_modules(preset)

@@ -31,6 +31,10 @@ def env_list(name, default=""):
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "insecure-dev-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
+if not DEBUG and (SECRET_KEY in ("insecure-dev-key", "change-me") or len(SECRET_KEY) < 32):  # production: the secret signs logins, files and passkey sessions
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY is not set or too weak (min. 32 characters). Set a long random value in the environment.")
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 
 INSTALLED_APPS = [

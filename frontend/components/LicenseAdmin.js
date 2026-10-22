@@ -41,7 +41,7 @@ function ComponentPrices({ onTotal }) {
                     <span>{tx(i.label)} <small className="muted">{i.active ? tx("in gebruik") : tx("uit")}</small></span>
                     {i.computed
                       ? <span style={{ width: 110, textAlign: "right" }} title={tx("Berekend uit de backup-limieten: stel de prijs per backup hiernaast bij Verlengen in")}>{eur(i.price)}</span>
-                      : <input type="number" min="0" step="0.01" value={i.price} onChange={(e) => set(i, e.target.value)} style={{ width: 110 }} />}
+                      : <input type="number" step="0.01" value={i.price} readOnly title={tx("Komt uit de prijslijst (Super admin → Prijzen)")} style={{ width: 110, opacity: .8 }} />}
                   </label>
                 ))}
               </div>
@@ -175,7 +175,7 @@ export default function LicenseAdmin() {
         <section className="lic-col">
           <h3 style={{ marginTop: ".6rem" }}>{tx("Licentieprijs")}</h3>
           <div className="grid2">
-            <label>{tx("Basisprijs per maand (incl. btw)")}<input type="number" min="0" step="0.01" value={lic.base_price ?? 0} onChange={(e) => field("base_price", e.target.value)} /></label>
+            <label>{tx("Basisprijs per maand (incl. btw)")}<input type="number" value={lic.base_price ?? 0} readOnly title={tx("Komt uit de prijslijst (Super admin → Prijzen)")} /><small className="muted">{tx("Uit de prijslijst (pricing.json). Pas aan bij Super admin → Prijzen.")}</small></label>
             <label>{tx("Betaalperiode")}
               <select value={lic.renew_months ?? 12} onChange={(e) => field("renew_months", e.target.value)}>
                 <option value={1}>{tx("Per maand")}</option><option value={3}>{tx("Per kwartaal")}</option><option value={12}>{tx("Per jaar")}</option>

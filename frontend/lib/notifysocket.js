@@ -6,14 +6,14 @@ const subs = new Set();
 let ws = null, open = false, retry = 0, retryTimer = null, pingTimer = null;
 
 const emit = (m) => subs.forEach((f) => { try { f(m); } catch {} });
-const url = () => `${apiBase().replace(/^http/, "ws")}/ws/notifications/?token=${encodeURIComponent(getToken() || "")}`;
+const url = () => `${apiBase().replace(/^http/, "ws")}/ws/notifications/`;  // the token goes in the first message, not in the address (logs)
 
 function connect() {
   if (ws || !subs.size || !getToken() || typeof WebSocket === "undefined") return;
   let sock;
   try { sock = new WebSocket(url()); } catch { return; }
   ws = sock;
-  sock.onopen = () => { open = true; retry = 0; clearInterval(pingTimer); pingTimer = setInterval(() => { try { sock.send("ping"); } catch {} }, 25000); };
+  sock.onopen = () => { try { sock.send(JSON.stringify({ auth: getToken() })); } catch {} open = true; retry = 0; clearInterval(pingTimer); pingTimer = setInterval(() => { try { sock.send("ping"); } catch {} }, 25000); };
   sock.onmessage = (e) => { try { const m = JSON.parse(e.data); if (m && (m.type === "notify" || m.type === "hello")) emit(m); } catch {} };
   sock.onclose = (ev) => {
     open = false; ws = null; clearInterval(pingTimer);
