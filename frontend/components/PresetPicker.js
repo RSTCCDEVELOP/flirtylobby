@@ -5,40 +5,116 @@ import { useRouter } from "next/navigation";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
+import DemoData from "./DemoData";
+import RunPopup from "./RunPopup";
+import { runDemo } from "../lib/demoRun";
 import { PresetIcon } from "./Icons";
 
 // Standard installations: a kind of business with its modules, plugins and community theme. One click switches everything (Super admin).
-export function usePresets() {
+export function usePresets(adminOnly = false) {  // adminOnly: only the ones the superadmin released for the admin (also for a superadmin)
   const [list, setList] = useState(null);
-  useEffect(() => { api("/system/presets/").then(setList).catch(() => setList([])); }, []);
+  const [n, setN] = useState(0);
+  useEffect(() => { const f = () => setN((v) => v + 1); window.addEventListener("presets-changed", f); return () => window.removeEventListener("presets-changed", f); }, []);
+  useEffect(() => { api("/system/presets/").then((l) => setList(adminOnly ? l.filter((x) => x.admin) : l)).catch(() => setList([])); }, [adminOnly, n]);
   return list;
 }
 
-export default function PresetPicker() {
-  const list = usePresets();
+export default function PresetPicker({ manage = false, adminOnly = false, demo = manage }) {  // demo: the buttons for demo data (superadmins)  // manage: the superadmin; administrators only see the released ones
+  const fetched = usePresets(adminOnly);
+  const [released, setReleased] = useState({});
+  const list = fetched && fetched.map((p) => ({ ...p, admin: released[p.key] ?? p.admin }));
   const router = useRouter();
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
+  useEffect(() => { try { const m = sessionStorage.getItem("preset-msg"); if (m) { sessionStorage.removeItem("preset-msg"); setMsg(JSON.parse(m)); } } catch {} }, []);
+  // the menus and modules come from the server when the page loads: after a change the whole page is loaded again (the message is kept for it)
+  const reloadWith = (m) => { try { sessionStorage.setItem("preset-msg", JSON.stringify(m)); } catch {} window.location.reload(); };
   const [open, setOpen] = useState("");
-  if (!list) return null;
+  const [run, setRun] = useState(null); // the status pop-up with the progress
+  const [ask, setAsk] = useState(null); // {p, needs, demo}: the question before an installation is set
+  if (!list || (!manage && !list.length)) return null;
+  const release = async (p, on) => {
+    const next = { ...Object.fromEntries(list.map((x) => [x.key, x.admin])), [p.key]: on };
+    setReleased(next);
+    try { await api("/system/presets/admin/", { method: "POST", body: { keys: Object.keys(next).filter((k) => next[k]) } }); } catch (e) { setReleased({ ...next, [p.key]: !on }); setMsg({ ok: false, text: errorText(e) }); }
+  };
+  // setting an installation: one question with the option to make the demo data right away (superadmins, when it is not all there yet)
   const apply = async (p) => {
-    if (!(await confirmDialog(tx("De installatie \"{0}\" instellen? Alle modules, plugins en het community-thema worden zoals bij deze installatie aan of uit gezet. Je gegevens blijven bestaan.", p.name), { okLabel: tx("Instellen"), cancelLabel: tx("Annuleren") }))) return;
-    setBusy(p.key); setMsg(null);
+    let needs = false;
+    if (demo) {
+      try { const d = await api("/system/demo/"); needs = !(d.presets || []).includes(p.key) || (d.incomplete || []).includes(p.key); } catch {}
+    }
+    setAsk({ p, needs, demo: needs, shops: "clothing" });
+  };
+  const doApply = async () => {
+    const { p, demo: withDemo, shops } = ask;
+    setAsk(null); setMsg(null);
+    setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false });
     try {
       const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: {} });
-      setMsg({ ok: true, text: tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.plugins_missing.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "") });
-      router.refresh();
-    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
-    setBusy("");
+      let note = tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.plugins_missing.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "");
+      setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_apply" ? { ...st, status: "ok" } : st)) }));
+      let ok = true;
+      if (withDemo) {
+        ok = await runDemo(p.key, { shops: (p.plugins || []).some((x) => x.name === "webshop") ? (shops === "all" ? [] : [shops]) : undefined }, setRun);
+        if (ok) note += ` ${tx("De demo-gegevens zijn gemaakt.")}`;
+      }
+      setRun((x) => ({ ...x, done: ok, note }));
+    } catch (e) { setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.status === "busy" ? { ...st, status: "error" } : st)), error: errorText(e) })); }
+  };
+  const unapply = async (p) => {
+    if (!(await confirmDialog(tx("De installatie \"{0}\" verwijderen? De modules en plugins van deze installatie gaan uit en de pagina's van de webshop e.d. verdwijnen uit het menu. Je gegevens (teksten, gebruikers, producten, bestellingen) blijven bestaan.", p.name), { okLabel: tx("Installatie verwijderen"), cancelLabel: tx("Annuleren"), danger: true }))) return;
+    setMsg(null);
+    setRun({ title: tx("Installatie \"{0}\" verwijderen", p.name), steps: [{ key: "_rm", label: tx("Modules en plugins uitzetten"), status: "busy" }], error: "", done: false });
+    try {
+      await api(`/system/presets/${p.key}/remove/`, { method: "POST", body: {} });
+      setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "ok" })), done: true, note: tx("De installatie {0} is verwijderd.", p.name) }));
+    } catch (e) { setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "error" })), error: errorText(e) })); }
   };
   return (
     <div style={{ display: "grid", gap: ".7rem" }}>
-      <p className="muted" style={{ margin: 0 }}>{tx("Kies een standaard installatie en alles wordt voor je ingesteld: welke modules en plugins aan staan en het thema van de community. Teksten, gebruikers en andere gegevens blijven zoals ze zijn.")}</p>
+      <p className="muted" style={{ margin: 0 }}>{tx("Kies een standaard installatie en alles wordt voor je ingesteld: welke modules en plugins aan staan en het thema van de community. Teksten, gebruikers en andere gegevens blijven zoals ze zijn.")}{manage && ` ${tx("Met de schakelaar bepaal je welke installaties ook voor beheerders (admin) zichtbaar zijn.")}`}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
+      <RunPopup run={run} onClose={() => { setRun(null); window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
+      {ask && (
+        <div className="overlay" onClick={() => setAsk(null)}>
+          <div className="card modal" role="dialog" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0 }}>{tx("Bevestigen")}</h2>
+            <p style={{ marginTop: 0 }}>{tx("De installatie \"{0}\" instellen? Alle modules, plugins en het community-thema worden zoals bij deze installatie aan of uit gezet. Je gegevens blijven bestaan.", ask.p.name)}</p>
+            {demo && (
+              <label className="check sec-toggle">
+                <span className="switch"><input type="checkbox" checked={ask.demo} onChange={(e) => setAsk({ ...ask, demo: e.target.checked })} /><span /></span>
+                <span>{tx("Demo-gegevens direct installeren")} <small className="muted">{tx("Voorbeeldplaatjes, gebruikers, inhoud, systeemobjecten en bestellingen om alles te testen. Wat al aanwezig is, wordt niet dubbel gemaakt.")}{!ask.needs && <> {tx("De demo-gegevens van deze installatie zijn al aanwezig: je kunt hier nog een andere demowinkel toevoegen.")}</>}</small></span>
+              </label>
+            )}
+            {demo && ask.demo && (ask.p.plugins || []).some((x) => x.name === "webshop") && (
+              <label style={{ marginTop: ".6rem" }}>{tx("Welke shopindeling wil je als demo?")}
+                <select value={ask.shops} onChange={(e) => setAsk({ ...ask, shops: e.target.value })}>
+                  <option value="clothing">{tx("Kleding (dames, heren, kinderen)")}</option>
+                  <option value="furniture">{tx("Meubels (woonkamer, slaapkamer, kantoor)")}</option>
+                  <option value="grocery">{tx("Supermarkt (boodschappen)")}</option>
+                  <option value="standard">{tx("Standaard producten")}</option>
+                  <option value="all">{tx("Alle vier de winkels")}</option>
+                </select>
+              </label>
+            )}
+            <div className="row" style={{ marginTop: "1rem", gap: ".5rem" }}>
+              <button type="button" className="btn" onClick={() => setAsk(null)}>{tx("Annuleren")}</button>
+              <button type="button" className="btn primary" onClick={doApply}>{tx("Instellen")}</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="preset-grid">
         {list.map((p) => (
-          <div key={p.key} className="card preset-card">
-            <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong></div>
+          <div key={p.key} className={`card preset-card${p.active ? " preset-active" : ""}`}>
+            <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong>{p.active && <span className="badge ok preset-used">{tx("In gebruik")}</span>}</div>
+            {manage && (
+              <label className="check sec-toggle">
+                <span className="switch"><input type="checkbox" checked={!!p.admin} onChange={(e) => release(p, e.target.checked)} /><span /></span>
+                <span>{tx("Zichtbaar in de admin")}</span>
+              </label>
+            )}
             <p className="muted" style={{ margin: 0 }}>{tx(p.desc)}</p>
             <div className="chips">
               {p.plugins.map((x) => <span key={x.name} className={`badge ${x.installed ? "ok" : "off"}`} title={x.installed ? "" : tx("Niet geïnstalleerd")}>{x.title}</span>)}
@@ -47,7 +123,10 @@ export default function PresetPicker() {
             </div>
             <button type="button" className="btn-link" onClick={() => setOpen(open === p.key ? "" : p.key)}>{open === p.key ? tx("Verberg modules") : tx("Toon modules")}</button>
             {open === p.key && <small className="muted">{p.modules.map((m) => tx(m)).join(", ")}</small>}
-            <button type="button" className="btn primary" disabled={!!busy} onClick={() => apply(p)}>{busy === p.key ? tx("Bezig…") : tx("Deze installatie instellen")}</button>
+            {demo && <div className="preset-demo"><strong>{tx("Demo-gegevens")}</strong><DemoData preset={p.key} parts={p.demo_parts} shop={(p.plugins || []).some((x) => x.name === "webshop")} /></div>}
+            {p.active
+              ? <button type="button" className="btn danger" disabled={!!busy} onClick={() => unapply(p)}>{busy === p.key ? tx("Bezig…") : tx("Installatie verwijderen")}</button>
+              : <button type="button" className="btn primary" disabled={!!busy} onClick={() => apply(p)}>{busy === p.key ? tx("Bezig…") : tx("Deze installatie instellen")}</button>}
           </div>
         ))}
       </div>

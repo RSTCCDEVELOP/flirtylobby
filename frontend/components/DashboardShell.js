@@ -23,9 +23,11 @@ import { api } from "../lib/api";
 import { PinButton, useAccordion } from "./Collapsible";
 import { useShortcuts } from "../lib/shortcuts";
 import { useNavMode } from "../lib/navmode";
+import { useSession } from "./Session";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
 import { IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
+import { refreshMs } from "../lib/refresh";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
@@ -88,6 +90,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/backups", label: "Backup", icon: <IconArchive />, perm: "backups.manage" },
   { href: "/dashboard/admin/license", label: "Licentie", icon: <IconKey />, perm: "system.manage" },
   { href: "/dashboard/admin/sandbox", label: "Sandbox", icon: <IconFlask /> },
+  { href: "/dashboard/admin/installaties", label: "Standaard installaties", icon: <IconGrid /> },
   { href: "/dashboard/admin/plugins", label: "Plugins", icon: <IconGrid /> },
   { href: "/dashboard/admin/theme", label: "Thema", icon: <IconPalette />, perm: "theme.manage" },
 ];
@@ -109,7 +112,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };
 
 export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };
@@ -195,7 +198,7 @@ export default function DashboardShell({ children }) {
     if (!communityOn) return;
     const load = () => api("/community/summary/").then(setSummary).catch(() => {});
     load();
-    const t = setInterval(load, 20000);
+    const t = setInterval(load, refreshMs(20000));
     return () => clearInterval(t);
   }, [communityOn, pathname]);
   // plugins with a page of their own (switched on, and for this user)
@@ -247,6 +250,7 @@ export default function DashboardShell({ children }) {
   const withBadge = (n) => ({ ...n, badgeCount: n.badge === "direct_active" ? (chat?.directActive?.length || 0) : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) || 0 : 0 });
   const isActive = (n) => (n.href === "/dashboard/community" || n.href === "/dashboard/admin" ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/"));
   const [navMode, setNavMode] = useNavMode();
+  const { editing } = useSession();  // the switch Menu | Tegels is a tool of the edit mode
   // where "back" goes when there is no earlier page: the main menu of this area (tiles mode: the tile page of the group)
   const backFallback = (() => {
     if (pathname.startsWith("/dashboard/admin/groep/") || pathname === "/dashboard/admin") return "/dashboard";
@@ -322,7 +326,7 @@ export default function DashboardShell({ children }) {
         className={`sidebar ${open ? "open" : ""}`}
         onMouseLeave={() => auto === "on_leave" && window.innerWidth > 860 && setCollapsed(true)}
       >
-        <NavModeSwitch mode={navMode} set={setNavMode} />
+        {editing && <NavModeSwitch mode={navMode} set={setNavMode} />}
         {inSuper ? (
           <>
             <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>

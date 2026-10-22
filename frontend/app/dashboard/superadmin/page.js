@@ -22,6 +22,11 @@ export default function SuperAdminHome() {
             <strong style={{ fontSize: "1.25rem" }}>{tx("Aan en uit zetten")}</strong>
             <small>{tx("En bepaal wie ze mag gebruiken")}</small>
           </Link>
+          <Link href="/dashboard/superadmin/vernieuwen" className="card stat link-card">
+            <span>{tx("Vernieuwen")}</span>
+            <strong style={{ fontSize: "1.25rem" }}>{tx("Verversing en oproepsignalen")}</strong>
+            <small>{tx("Hoe vaak de pagina's bij de server vragen (seconden)")}</small>
+          </Link>
         </div>
       </Collapsible>
       <Collapsible id="super-license" title={tx("Licentie")}>
@@ -34,7 +39,7 @@ export default function SuperAdminHome() {
         <SettingsBackup />
       </Collapsible>
       <Collapsible id="super-presets" title={tx("Standaard installaties")}>
-        <PresetPicker />
+        <PresetPicker manage />
       </Collapsible>
       <Collapsible id="super-reset" title={tx("Systeem resetten")}>
         <SystemReset />

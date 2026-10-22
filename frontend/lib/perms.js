@@ -17,6 +17,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/community", modules: ["profiles", "discover", "messages", "chat", "directconnect"] },
   { href: "/dashboard/admin/seo", module: "seo" },
   { href: "/dashboard/admin/sandbox", module: "sandbox" },
+  { href: "/dashboard/admin/installaties", module: "system", always: true },
   { href: "/dashboard/admin/pages", module: "pages" },
   { href: "/dashboard/admin/siteimport", module: "siteimport" },
   { href: "/dashboard/admin/sysobjects", module: "sysobjects" },
@@ -37,6 +38,7 @@ export const ADMIN_PAGES = [
 
 export const pageAllowed = (user, page, mods = {}) => {
   if (page.superadmin) return !!user?.is_staff;
+  if (page.always) return !!user?.is_staff || lvl(user, "system") >= 1;  // not tied to a module that an installation can switch off (the page that sets the installations)
   const keys = page.modules || [page.module];
   return keys.some((m) => mods[m] !== false && lvl(user, m) >= 1);
 };

@@ -12,6 +12,7 @@ import { IconBag, IconChat, IconGrid, IconGroup, IconKey, IconMail, IconSearch, 
 import { BarChart, Donut } from "./Charts";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
 import AgendaTile from "./AgendaTile";
+import { refreshMs } from "../lib/refresh";
 
 /* Dashboard blocks. A block only exists while its module is on and the user has the access it needs (see `available`).
    To add one: write a component, add an entry to WIDGETS. */
@@ -196,7 +197,7 @@ function DirectBlock() {
     let stop = false;
     const load = () => api("/direct/rooms/").then((r) => !stop && setRooms(r)).catch(() => !stop && setRooms([]));
     load();
-    const t = setInterval(load, 4000);
+    const t = setInterval(load, refreshMs(4000));
     return () => { stop = true; clearInterval(t); };
   }, []);
   if (!rooms) return <Busy />;

@@ -6,7 +6,7 @@ import { useSession } from "./Session";
 
 // Personal settings (open blocks, tiles or list, menu or tiles, light or dark, language, ...) live in the database per user, so they are the same on every computer.
 // The browser keeps a copy (localStorage) so nothing flickers; every change is sent to the server a moment later, and after logging in the server's version wins.
-const PREFIX = /^(collapse|collapse-pin|navg|navg-pin|view|plg):/;
+const PREFIX = /^(collapse|collapse-pin|navg|navg-pin|view|plg|find):/;
 const NAMES = new Set(["navmode", "sidebar", "lastBackendUrl", "theme", "lang", "editMode", "directSize", "directPos", "directView"]);
 const KEEP_AT_LOGOUT = new Set(["theme", "lang"]); // choices of the device itself stay for the next visitor
 const synced = (k) => PREFIX.test(k) || NAMES.has(k);

@@ -7,11 +7,13 @@ import { api } from "../../../lib/api";
 import { lvl } from "../../../lib/perms";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
+import PresetPicker, { usePresets } from "../../../components/PresetPicker";
 
 // Admin dashboard: only the modules this user has access to (with their access level)
 export default function AdminHome() {
   const { user } = useAuth();
   const canSet = lvl(user, "system") >= 3;
+  const presets = usePresets(true);  // only the installations the superadmin released
   const [credit, setCredit] = useState(null); // show "© Easy2edit <year>" at the bottom of every page
   useEffect(() => { if (canSet) api("/system/").then((d) => setCredit(d.settings.show_credit !== false)).catch(() => {}); }, [canSet]);
   async function toggle(on) {
@@ -25,6 +27,12 @@ export default function AdminHome() {
       <Collapsible id="admin-overview" title={tx("Mijn beheeronderdelen")}>
         <AdminTiles />
       </Collapsible>
+
+      {canSet && presets && presets.length > 0 && (
+        <Collapsible id="admin-presets" title={tx("Standaard installaties")}>
+          <PresetPicker adminOnly demo={!!user?.is_staff} />
+        </Collapsible>
+      )}
 
       <Collapsible id="admin-about" title={tx("Over Easy2edit")}>
         <div className="about-logo">

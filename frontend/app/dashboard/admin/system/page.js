@@ -50,7 +50,7 @@ export default function SystemPage() {
 
   async function save(e) {
     e?.preventDefault?.();
-    try { load(await api("/system/", { method: "PUT", body: { ...form, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean), aliases: String(form.aliases || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg(null); }
+    try { load(await api("/system/", { method: "PUT", body: { ...form, refresh_seconds: undefined, signal_seconds: undefined, extra_origins: String(form.extra_origins || "").split(",").map((x) => x.trim()).filter(Boolean), aliases: String(form.aliases || "").split(",").map((x) => x.trim()).filter(Boolean) } })); setMsg(null); }
     catch (err) { setMsg({ ok: false, text: errorText(err) }); return false; }
   }
 

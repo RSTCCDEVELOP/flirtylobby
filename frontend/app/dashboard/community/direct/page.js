@@ -10,6 +10,7 @@ import { useChat } from "../../../../components/Chat";
 import { useModule } from "../../../../components/Modules";
 import { DirectSlot, useDirectHost } from "../../../../components/DirectHost";
 import { api, errorText } from "../../../../lib/api";
+import { refreshMs } from "../../../../lib/refresh";
 
 // The guest asks to chat: accept (the chat opens) or decline
 function ChatRequest({ room, onAnswer }) {
@@ -80,7 +81,7 @@ export default function Direct() {
   useEffect(() => { try { setView(localStorage.getItem("directView") === "page" ? "page" : "popup"); } catch {} }, []);
   const pickView = (v) => { setView(v); try { localStorage.setItem("directView", v); } catch {} };
   const load = useCallback(() => api("/direct/rooms/").then(setRooms).catch((e) => setError(errorText(e))), []);
-  useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t); }, [load]);
+  useEffect(() => { load(); const t = setInterval(load, refreshMs(4000)); return () => clearInterval(t); }, [load]);
 
   const answer = async (r, yes) => {
     try { await api(`/direct/rooms/${r.token}/chat-request/`, { method: "POST", body: { accept: yes } }); if (yes) toggle(r, view); load(); }

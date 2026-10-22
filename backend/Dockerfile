@@ -16,5 +16,5 @@ EXPOSE 8000
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-# Default development command; production Compose can override CMD
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Default development command (ASGI: the WebSocket for notifications needs it); production Compose can override CMD
+CMD ["python", "-m", "uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--reload"]

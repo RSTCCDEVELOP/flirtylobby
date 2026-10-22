@@ -2761,3 +2761,61 @@ body.has-blocknav .edit-help-btn { right: 10.1rem; } body.has-blocknav .edit-und
 .pb-itembar .pb-x.pb-trash { background: var(--card); border: 1px solid var(--line); color: var(--danger, #dc2626); } .pb-itembar .pb-x.pb-trash:hover { background: var(--danger, #dc2626); color: #fff; }
 .item-trash { top: -1.3rem !important; right: -3.4rem !important; display: grid !important; }
 @media (max-width: 720px) { .item-trash { right: 0 !important; top: -2.8rem !important; } }
+/* edit mode: a picture sits where it sits on the live page (the item fills the column there, so follow the alignment of the column) */
+.pb-cell.edit .pb-imgstyle:not(.has-w) { justify-content: var(--ha, flex-start); }
+.pb-cell.edit .pb-imgstyle > .ei-wrap, .pb-cell.edit .pb-imgstyle .img-edit { max-width: 100%; }
+
+/* tegels van een menugroep (Admin → Systeem enz.): groter, met meer ruimte voor de tekst */
+.cards:has(> .group-tile) { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+.group-tile { min-height: 190px; padding: 1.4rem; gap: .5rem; }
+.group-tile-ico { width: 56px; height: 56px; border-radius: 16px; margin-bottom: .4rem; }
+.group-tile-ico svg { width: 28px; height: 28px; }
+.group-tile strong { font-size: 1.3rem !important; }
+.group-tile small { font-size: .95rem; }
+
+/* demo-gegevens in een installatietegel */
+.preset-demo { display: grid; gap: .5rem; padding-top: .7rem; margin-top: .2rem; border-top: 1px dashed var(--line); font-size: .9rem; }
+.preset-demo .grid2 { grid-template-columns: 1fr; }
+.preset-demo .row { display: grid; grid-template-columns: 1fr; gap: .5rem; }
+.preset-demo .row .btn { width: 100%; padding: .7rem 1rem; text-align: center; justify-content: center; }
+.preset-card .preset-demo .btn { margin-top: 0; }
+/* de drie knoppen onderaan de tegel, bij alle tegels op dezelfde hoogte: demo maken, demo verwijderen, installatie instellen */
+.preset-card .preset-demo { margin-top: auto; }
+.preset-card .preset-demo ~ .btn { margin-top: 0; }
+
+/* bewerkmodus (superadmin): pagina opslaan in een standaard installatie, naast de knop ongedaan maken */
+.edit-save-preset-btn { position: fixed; top: 4.75rem; right: 13.15rem; z-index: 1010; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; box-shadow: var(--shadow); }
+.edit-save-preset-btn:hover:not(:disabled) { background: var(--blue); border-color: var(--blue); color: #fff; } .edit-save-preset-btn:disabled { opacity: .45; cursor: default; }
+body.has-blocknav .edit-save-preset-btn { right: 16.2rem; }
+.edit-save-preset-msg { position: fixed; top: 8rem; right: 1rem; z-index: 1011; max-width: min(360px, 90vw); padding: .7rem 1rem; border-radius: 12px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); cursor: pointer; }
+.edit-save-preset-msg.ok { border-color: var(--green, #2e8b57); } .edit-save-preset-msg.err { border-color: #c0392b; }
+/* de installatie die is ingesteld: een groene rand */
+.preset-card.preset-active { border: 2px solid var(--green, #2e9b5f); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green, #2e9b5f) 22%, transparent); }
+.preset-used { margin-left: auto; }
+.preset-card, .preset-demo { min-width: 0; }
+.preset-demo .row .btn, .preset-card > .btn { white-space: normal; overflow-wrap: anywhere; }
+/* alle tekst en knoppen blijven binnen de tegel */
+.preset-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.preset-card { overflow: hidden; overflow-wrap: anywhere; }
+.preset-card .btn, .preset-card label, .preset-card p, .preset-card small { max-width: 100%; box-sizing: border-box; }
+.preset-demo .row .btn { min-width: 0; line-height: 1.25; }
+
+/* statusvenster met voortgang (installatie instellen, demo-gegevens maken) */
+.run-bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--text) 14%, transparent); overflow: hidden; }
+.run-bar span { display: block; height: 100%; border-radius: 999px; background: var(--blue); transition: width .35s ease; }
+.run-bar span.err { background: #c0392b; }
+.run-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; max-height: 46vh; overflow: auto; }
+.run-steps li { display: flex; gap: .6rem; align-items: baseline; font-size: .95rem; color: var(--muted); }
+.run-steps .run-ico { width: 1.2rem; text-align: center; font-weight: 800; }
+.run-steps .run-busy { color: var(--text); font-weight: 700; } .run-steps .run-ok { color: var(--text); } .run-steps .run-ok .run-ico { color: #2e9b5f; } .run-steps .run-error { color: #c0392b; font-weight: 700; }
+/* paneel dat boven de pagina zweeft (portal): niet afgesneden door een rij en altijd bovenop */
+.float-panel { position: fixed; z-index: 5000; overflow: auto; width: max-content; min-width: min(360px, 90vw); max-width: min(560px, 92vw); border-radius: 12px; box-shadow: 0 16px 44px rgba(0, 0, 0, .5); }
+.float-panel > .img-style-panel { position: static; margin: 0; width: auto; max-width: none; min-width: 0; box-shadow: none; }
+.media-picker-overlay { z-index: 6000 !important; }
+
+/* terugknop: meer ruimte rondom, overal (website en dashboard) */
+.back-btn { gap: .55rem; padding: .6rem 1.1rem; border-radius: 10px; line-height: 1.2; }
+.back-row { margin: .4rem 0 1.5rem; padding-top: .3rem; }
+.site-back { top: 5.6rem; left: 1.5rem; }
+.site-back .back-btn { padding: .6rem 1.1rem; }
+@media (max-width: 760px) { .site-back { top: 5.2rem; left: .8rem; } .back-btn { padding: .55rem .95rem; } .back-row { margin-bottom: 1.2rem; } }

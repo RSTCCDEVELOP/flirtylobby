@@ -177,6 +177,41 @@ def _scene_png(name, sky, ground, kind, size, shift=0):
     return buf.getvalue()
 
 
+SCENE_CATEGORY = {"Zonsondergang": "lucht", "Bergen": "natuur", "Strand": "water", "Bos": "natuur", "Stad": "stad", "Sterrennacht": "lucht", "Heuvels": "natuur", "Zee": "water", "Herfst": "natuur",
+                  "Ochtend": "lucht", "IJsvlakte": "winter", "Woestijn": "natuur", "Haven": "stad", "Lente": "natuur", "Regenbui": "weer", "Wintermorgen": "winter"}
+
+
+def _scene_tags(name, size, extra=()):
+    """Tags that make an example picture easy to find again: what it shows, its kind of scene and its shape."""
+    w, h = size
+    shape = "vierkant" if abs(w - h) < w * .15 else ("liggend" if w > h else "staand")
+    return list(dict.fromkeys(["demo", "voorbeeld", slugify(name), SCENE_CATEGORY.get(name, "natuur"), shape, *extra]))[:15]
+
+
+def demo_heroes(count=6):
+    """Wide background pictures for a hero (1920 x 800), tagged hero and achtergrond. Found again by their source "media-demo" and their name "Hero …". Returns their ids."""
+    from django.core.files.base import ContentFile
+
+    from . import areas
+
+    have = {i.name: i.id for i in MediaItem.objects.filter(source="media-demo", name__startswith="Hero ")}
+    ids = []
+    for n in range(max(0, min(24, count))):
+        name, sky, ground, kind, _size = SCENES[n % len(SCENES)]
+        rnd = n // len(SCENES)
+        label = f"Hero {name}" + (f" {rnd + 1}" if rnd else "")
+        fname = f"{label}.jpg"
+        if fname in have:
+            ids.append(have[fname])
+            continue
+        key = default_storage.save(areas.site_path("library", f"media-demo/{slugify(label)}.jpg"), ContentFile(_scene_png(name, sky, ground, kind, (1920, 800), shift=rnd * 53)))
+        item = MediaItem.objects.get(key=key)
+        item.name, item.source, item.tags = fname, "media-demo", _scene_tags(name, (1920, 800), ("hero", "achtergrond", "breed"))
+        item.save(update_fields=["name", "source", "tags"])
+        ids.append(item.id)
+    return ids
+
+
 def demo_images(count=16):
     """The example pictures (16 scenes, portrait, landscape and wide): made once, found again by their source "media-demo". Returns their ids."""
     from django.core.files.base import ContentFile
@@ -191,11 +226,12 @@ def demo_images(count=16):
         label = name if not rnd else f"{name} {rnd + 1}"
         fname = f"{label}.jpg"
         if fname in have:
+            MediaItem.objects.filter(pk=have[fname]).update(tags=_scene_tags(name, size))  # pictures of an older demo get the tags too
             ids.append(have[fname])
             continue
         key = default_storage.save(areas.site_path("library", f"media-demo/{slugify(label)}.jpg"), ContentFile(_scene_png(label, sky, ground, kind, size, shift=rnd * 53)))
         item = MediaItem.objects.get(key=key)
-        item.name, item.source, item.tags = fname, "media-demo", ["demo", "voorbeeld"]
+        item.name, item.source, item.tags = fname, "media-demo", _scene_tags(name, size)
         item.save(update_fields=["name", "source", "tags"])
         ids.append(item.id)
     return ids

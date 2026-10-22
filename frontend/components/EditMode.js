@@ -11,6 +11,7 @@ import { useModule } from "./Modules";
 import RichEditor, { plainToHtml, toDisplay, toStored } from "./RichEditor";
 import RichHtml from "./SysObjects";
 import { PlaceControls, placeStyle } from "./ImagePlace";
+import FloatPanel from "./FloatPanel";
 import { pushUndo } from "../lib/undo";
 import { lorem } from "../lib/lorem";
 import { GripContext } from "./Movable";
@@ -315,6 +316,7 @@ export function EditableImage({ id, fallback = null, alt = "", className = "", r
   const placement = blocks[`${id}.pl`]?.[defaultLang]; // how it sits: "align:size", chosen with every picture (stored with the page texts)
   const st = parseSt(blocks[`${id}.st`]?.[defaultLang]); // own settings: {align, w, opacity, radius}
   const [panel, setPanel] = useState(false);
+  const anchorRef = useRef(null);
   const grip = useContext(GripContext);
   const save = async (key, v) => {
     const prev = blocks[key]?.[defaultLang];
@@ -332,7 +334,7 @@ export function EditableImage({ id, fallback = null, alt = "", className = "", r
   const hasSt = Object.keys(st).length > 0;
   if (removable && gone) return null;
   return (
-    <div className={`ei-wrap${st.align ? ` al al-${st.align}` : ""}${st.w ? " sized" : ""}`}>
+    <div ref={anchorRef} className={`ei-wrap${st.align ? ` al al-${st.align}` : ""}${st.w ? " sized" : ""}`}>
       <div className={`ei-inner${st.w ? " sized" : ""}`} style={hasSt ? css.inner : undefined}>
         <ImageEdit target={`block:${id}`} placement={placement} onPlace={url ? place : undefined} removable={!!url}
           extra={editing && <>{grip}{removable && <Trash onClick={() => setGone("1", tx("Onderdeel verwijderd"))} />}<button type="button" className={`img-edit-btn img-set-btn${panel ? " on" : ""}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPanel(!panel); }} title={tx("Afbeeldingsinstellingen")} aria-label={tx("Afbeeldingsinstellingen")} aria-expanded={panel}>
@@ -340,7 +342,7 @@ export function EditableImage({ id, fallback = null, alt = "", className = "", r
           </button></>}>
           {url ? hoverWrap(st.hover, /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} style={{ ...(placement && !st.w ? placeStyle(placement) : {}), ...(hasSt ? { width: "100%", height: "auto", opacity: st.opacity !== undefined ? st.opacity / 100 : undefined, borderRadius: st.radius !== undefined ? `${st.radius}px` : undefined } : {}) }} />) : fallback}
         </ImageEdit>
-        {editing && panel && <ImageStylePanel st={st} onChange={change} />}
+        {editing && panel && <FloatPanel anchor={anchorRef}><ImageStylePanel st={st} onChange={change} /></FloatPanel>}
       </div>
     </div>
   );

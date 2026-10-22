@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
     expose:
       - "8000"
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: gunicorn config.asgi:application -k uvicorn_worker.UvicornWorker --bind 0.0.0.0:8000 --workers 3  # ASGI: needed for the WebSocket of the notifications
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in Coolify}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}

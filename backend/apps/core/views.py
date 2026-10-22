@@ -401,28 +401,121 @@ def system_reset(request):
     return Response({"removed": removed, "applied": applied})
 
 
+def _preset_access(user):
+    """Superadmins may use every standard installation; administrators (system: manage) only those the superadmin released."""
+    return "all" if user.is_staff else ("admin" if access_level(user, "system") >= 3 else None)
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def presets_list(request):
-    """The standard installations (superadmins)."""
+    """The standard installations: all for superadmins, the released ones for administrators."""
     from . import presets
 
-    if not request.user.is_staff:
-        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
-    return Response(presets.listing())
+    who = _preset_access(request.user)
+    if not who:
+        return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
+    rows = presets.listing()
+    return Response(rows if who == "all" else [r for r in rows if r["admin"]])
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def presets_apply(request, key):
-    """Switch everything for a standard installation: modules, plugins and the community theme. Superadmins only; no data is removed."""
+    """Switch everything for a standard installation: modules, plugins and the community theme. No data is removed."""
+    from . import presets
+
+    who = _preset_access(request.user)
+    if not who:
+        return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    if who == "admin" and key not in presets.admin_allowed():
+        return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
+    return Response(presets.apply(key))
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def demo_data(request):
+    """Demo-gegevens (superadmins): GET = what exists; POST {media, users, content, objects, orders} = make; POST {remove: true} = remove it all."""
+    from . import demo
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "GET":
+        c = demo.counts()
+        return Response({"exists": demo.exists(), "counts": c, "presets": sorted(demo.registry()), "incomplete": demo.incomplete()})
+    d = request.data if isinstance(request.data, dict) else {}
+    from . import presets as presets_mod
+
+    preset = d.get("preset") if d.get("preset") in presets_mod.BY_KEY else None
+    try:
+        opts = dict(content=bool(d.get("content", True)), objects=bool(d.get("objects", True)), orders=bool(d.get("orders", True)), media=d.get("media", 16), heroes=d.get("heroes", 6), users=d.get("users", 8))
+        shops_ = [x for x in (d.get("shops") or []) if x in ("clothing", "furniture", "grocery", "standard")] or None
+        if d.get("plan"):  # the steps, so the screen can show the progress
+            return Response({"steps": demo.plan(preset, shops=shops_, **opts)})
+        if d.get("step"):  # one step
+            return Response({"made": demo.create_part(str(d["step"]), media=opts["media"], users=opts["users"], objects=opts["objects"], orders=opts["orders"], heroes=opts["heroes"], shops=shops_)})
+        if d.get("finish"):
+            demo.finish(preset, demo.parts_for(preset, opts["content"], opts["objects"], opts["orders"], 1, 1, 1))
+            return Response({"counts": demo.counts(), "presets": sorted(demo.registry()), "incomplete": demo.incomplete()})
+        if d.get("remove"):
+            return Response({"removed": demo.remove(preset), "counts": demo.counts(), "presets": sorted(demo.registry())})
+        made = demo.create(media=d.get("media", 16), heroes=d.get("heroes", 6), users=d.get("users", 8), content=bool(d.get("content", True)), objects=bool(d.get("objects", True)), orders=bool(d.get("orders", True)), preset=preset, shops=[x for x in (d.get("shops") or []) if x in ("clothing", "furniture", "grocery", "standard")] or None)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Demo-gegevens mislukt")
+        return Response({"detail": f"Het lukte niet: {str(e)[:200]}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({"made": made, "counts": demo.counts(), "presets": sorted(demo.registry()), "incomplete": demo.incomplete()}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_remove(request, key):
+    """Take the installation in use away (modules and plugins off, no data removed). Same rights as setting one."""
+    from . import presets
+
+    who = _preset_access(request.user)
+    if not who:
+        return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    if who == "admin" and key not in presets.admin_allowed():
+        return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
+    if presets.active() != key:
+        return Response({"detail": "Deze installatie is niet in gebruik."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(presets.unapply(key))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_page(request, key):
+    """Edit mode (superadmins): save the page as it is now in a standard installation: {page: "home"}."""
+    from apps.pages.layout import KEY_RE
+
     from . import presets
 
     if not request.user.is_staff:
         return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
-    if key not in presets.BY_KEY:
-        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
-    return Response(presets.apply(key))
+    page = str(request.data.get("page") or "")
+    if key not in presets.BY_KEY or not KEY_RE.match(page):
+        return Response({"detail": "Onbekende installatie of pagina."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        return Response({"saved_pages": presets.save_page(key, page)})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_admin(request):
+    """The superadmin chooses which standard installations administrators may set: {keys: [...]}."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    keys = request.data.get("keys")
+    return Response({"keys": presets.set_admin_allowed(keys if isinstance(keys, list) else [])})
 
 
 @api_view(["POST"])

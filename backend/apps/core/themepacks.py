@@ -460,6 +460,25 @@ def capture(key):
     _save_doc(key, doc)
 
 
+def _to_library(key, label, raw, ext, tags):
+    """A picture of a theme also goes into the media library (tagged with the theme), once: found again by name and source."""
+    from django.core.files.base import ContentFile
+    from django.core.files.storage import default_storage
+
+    from apps.medialib import areas
+    from apps.medialib.models import MediaItem
+
+    name, source = f"{key}-{label}.{ext}", f"theme:{key}"
+    item = MediaItem.objects.filter(source=source, name=name).first()
+    if item:
+        return item
+    stored = default_storage.save(areas.site_path("library", f"themes/{key}/{label}.{ext}"), ContentFile(raw))
+    item = MediaItem.objects.get(key=stored)
+    item.name, item.source, item.tags = name, source, list(dict.fromkeys(["thema", key, *tags]))[:15]
+    item.save(update_fields=["name", "source", "tags"])
+    return item
+
+
 def apply_files(key):
     """Use the logos and home photos of the package for the site (they replace the current ones). Returns (slots, photos)."""
     from django.core.files.base import ContentFile
@@ -475,9 +494,14 @@ def apply_files(key):
             continue
         a = SiteAsset.objects.filter(slot=slot).first() or SiteAsset(slot=slot)
         old = a.image.name if a.pk else ""
-        a.image.save(f"{key}-{f.name}", ContentFile(f.read_bytes()))
+        raw = f.read_bytes()
+        a.image.save(f"{key}-{f.name}", ContentFile(raw))
         if old:
             service.release(old)
+        try:
+            _to_library(key, slot.replace("_", "-"), raw, f.suffix[1:].lower(), ["logo" if slot.startswith("logo") else slot.replace("_", "-")])  # also in the media library, to find it again
+        except Exception:  # noqa: BLE001 - the media library is a bonus; the logo itself is set
+            pass
         n += 1
     photos = [h for h in doc.get("home", []) if (d / h["file"]).is_file()]
     m = 0
@@ -488,7 +512,12 @@ def apply_files(key):
             service.release(name)
         for i, h in enumerate(photos):
             p = HomePhoto(caption=h["caption"], order=i)
-            p.image.save(f"{key}-{_base(h['file'])}", ContentFile((d / h["file"]).read_bytes()))
+            raw = (d / h["file"]).read_bytes()
+            p.image.save(f"{key}-{_base(h['file'])}", ContentFile(raw))
+            try:
+                _to_library(key, f"home-{i + 1:02d}", raw, h["file"].rsplit(".", 1)[-1].lower(), ["home"])
+            except Exception:  # noqa: BLE001
+                pass
             m += 1
     return n, m
 
@@ -513,3 +542,21 @@ def write_files_b64(key, files):
         (d / name).parent.mkdir(exist_ok=True)
         (d / name).write_bytes(raw)
     scan()
+
+
+BRAND_LOGOS = (("easy2edit", "easy2edit"), ("standaard", "rstcc"), ("studio2", "studio2"))  # (theme, folder in frontend/public/logos): the house styles
+
+
+def seed_brand_logos():
+    """The logos of the house styles (frontend/public/logos/<brand>/) become the files of their theme package: choosing the theme then sets them and puts them in the media library."""
+    done = {}
+    base = settings.BASE_DIR.parent / "frontend" / "public" / "logos"
+    for key, folder in BRAND_LOGOS:
+        n = 0
+        for slot in ("logo", "logo_dark", "favicon", "icon"):
+            f = base / folder / f"{slot}.png"
+            if f.is_file():
+                set_slot(key, slot, f.read_bytes())
+                n += 1
+        done[key] = n
+    return done

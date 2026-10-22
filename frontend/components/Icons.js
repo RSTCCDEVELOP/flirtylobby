@@ -62,6 +62,7 @@ export const IconInfo = () => <svg {...p}><circle cx="12" cy="12" r="9" /><path 
 
 // One-colour line icons of the standard installations (Super admin): they follow the colour of the theme through currentColor
 export const PRESET_ICONS = {
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z" /></>,
   cart: <><path d="M3 4h2.5l2 11h10l2-8H7" /><circle cx="9" cy="19.5" r="1.2" /><circle cx="17" cy="19.5" r="1.2" /></>,
   building: <><path d="M5 21V4a1 1 0 011-1h8a1 1 0 011 1v17M15 9h3a1 1 0 011 1v11M3 21h18M9 7h2M9 11h2M9 15h2" /></>,
   handshake: <><path d="M2.5 11l4-4 4 1.5 3-1.5 4 3 3-1.5v6l-3 1.5-2.5 2.5a2 2 0 01-3 0l-.5-.5-1.5 1a2 2 0 01-2.8-.5L4.5 14zM10.5 8.5L14 12" /></>,

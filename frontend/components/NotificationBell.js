@@ -8,6 +8,7 @@ import { IconBell, IconHeart, IconMail } from "./Icons";
 import { useModule } from "./Modules";
 import { useSession } from "./Session";
 import NotificationFeed from "./NotificationFeed";
+import { refreshMs } from "../lib/refresh";
 
 const LINK = { like: "/dashboard/community/discover?tab=likedme", match: "/dashboard/community/discover?tab=matches", message: "/dashboard/community/messages", dchat: "/dashboard/community/direct" };
 
@@ -38,7 +39,7 @@ function LegacyBell() {
   useEffect(() => {
     if (!user || !on) return;
     load();
-    const t = setInterval(load, 30000);
+    const t = setInterval(load, refreshMs(30000));
     return () => clearInterval(t);
   }, [user, on, load]);
   useEffect(() => {

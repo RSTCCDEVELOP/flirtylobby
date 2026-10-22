@@ -56,10 +56,8 @@ function MediaObjects({ canEdit, canManage, setMsg }) {
       <p className="muted" style={{ margin: "0 0 1rem" }}>{tx("Blokken met foto's uit je bibliotheek die je in de bewerkmodus op een pagina zet: een fotoboek, een beeldcarrousel, een fotomuur of een diavoorstelling, elk met eigen effecten en instellingen.")}</p>
       {canEdit && <div className="row" style={{ marginBottom: "1rem" }}>
         <button className="btn primary" onClick={() => setEdit(null)}>{tx("+ Nieuw media-onderdeel")}</button>
-        <button className="btn" onClick={() => setMake({ count: 16 })} disabled={!!busy}>{busy ? tx("Bezig…") : tx("4 voorbeelden maken")}</button>
-        {(views.some((v) => v.slug.startsWith("demo-")) || hasDemoImages) && <button className="btn danger" onClick={removeDemo} disabled={!!busy}>{tx("Voorbeelden verwijderen")}</button>}
       </div>}
-      {!views.length && <p className="muted">{tx("Nog geen media-onderdelen. Maak er een, of klik op \"4 voorbeelden maken\".")}</p>}
+      {!views.length && <p className="muted">{tx("Nog geen media-onderdelen. Maak er een, of maak demo-gegevens bij Standaard installaties.")}</p>}
       <div className="int-list">
         {views.map((v) => (
           <div className="card int-item" key={v.id}>

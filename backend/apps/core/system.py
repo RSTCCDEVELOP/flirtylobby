@@ -20,13 +20,16 @@ DEFAULTS = {
     "timezone": "Europe/Amsterdam",
     "maintenance": False, "maintenance_message": "", "maintenance_messages": {},  # the notice per language: {code: text}
     "max_image_mb": "20", "max_video_mb": "300", "max_photo_mb": "5",
+    "signal_seconds": "0",  # how often the browser asks for call signals (video and chat calls): 0 = 1.5 seconds
+    "refresh_seconds": "0",  # how often the pages ask the server for news (messages, notifications, chat): 0 = every part at its own pace
+
     "footer_text": "",
     "show_credit": True,  # "© Easy2edit <year>" with a link at the bottom of every page
     "social_facebook": "", "social_instagram": "", "social_x": "", "social_linkedin": "", "social_youtube": "", "social_tiktok": "",
 }
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
-INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50)}
+INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30)}
 ENVIRONMENTS = ["production", "staging", "development"]
 URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -255,4 +258,4 @@ def public():
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
             "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"],
-            "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}}
+            "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0)}

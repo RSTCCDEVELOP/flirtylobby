@@ -6,6 +6,8 @@ import Gates from "../components/Gates";
 import { ContentProvider, EditBanner } from "../components/EditMode";
 import { SessionProvider } from "../components/Session";
 import PrefsSync from "../components/PrefsSync";
+import SearchMemory from "../components/SearchMemory";
+import RefreshConfig from "../components/RefreshConfig";
 import SlugSync from "../components/SlugSync";
 import { ModulesProvider } from "../components/Modules";
 import { UiProvider } from "../components/Ui";
@@ -17,6 +19,7 @@ import { MenuProvider } from "../components/SiteMenu";
 import { getBackgrounds, getMenu } from "../lib/pages-server";
 import PageBackdrop from "../components/PageBackdrop";
 import UndoButton from "../components/UndoButton";
+import SavePresetButton from "../components/SavePresetButton";
 import EditHelp from "../components/EditHelp";
 import PageSettingsButton from "../components/PageSettingsButton";
 import { DirectHostProvider } from "../components/DirectHost";
@@ -143,7 +146,9 @@ export default async function RootLayout({ children }) {
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>
         <SessionProvider>
+        <RefreshConfig seconds={site?.refresh_seconds} signals={site?.signal_seconds} />
         <PrefsSync />
+        <SearchMemory />
         <SlugSync />
         <ChatProvider>
         <MenuProvider value={menu}>
@@ -159,6 +164,7 @@ export default async function RootLayout({ children }) {
               <PageSettingsButton />
               <EditHelp />
               <UndoButton />
+              <SavePresetButton />
               </DirectHostProvider>
             </ContentProvider>
             <Gates cfg={security} />

@@ -7,6 +7,8 @@ import { api } from "../lib/api";
 import { tx } from "../lib/t";
 import { IconBell, IconCheck, IconX } from "./Icons";
 import { useSession } from "./Session";
+import { refreshMs } from "../lib/refresh";
+import { notifySocketOpen, subscribeNotify } from "../lib/notifysocket";
 
 export const KIND_LABEL = { system: "Bericht van de beheerder", message: "Nieuw bericht", chat: "Nieuw chatbericht", like: "Nieuwe like", match: "Nieuwe match", request: "Verzoek", direct: "Verzoek om te chatten", donation: "Donatie", subscription: "Abonnement", order: "Bestelling", security: "Beveiliging", plugin: "Plugin" };
 
@@ -44,11 +46,18 @@ export default function NotificationFeed() {
       setData(d);
     } catch {}
   }, []);
+  // news comes in through the WebSocket; only when it is closed the list is asked for now and then (and rarely as a safety net when it is open)
   useEffect(() => {
-    if (!user) return;
+    if (!user) return undefined;
     load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+    let t = null;
+    const poll = (ms) => { clearInterval(t); t = setInterval(load, ms); };
+    const stop = subscribeNotify((m) => {
+      if (m.type === "notify" || m.type === "hello") { load(); poll(300000); }
+      if (m.type === "closed") poll(refreshMs(30000));
+    });
+    poll(notifySocketOpen() ? 300000 : refreshMs(30000));
+    return () => { stop(); clearInterval(t); };
   }, [user, load]);
   useEffect(() => {
     const away = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false); };

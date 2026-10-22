@@ -11,6 +11,7 @@ import { ADMIN_GROUP_OF, ADMIN_GROUPS, ADMIN_NAV, ADMIN_SECTION_GROUP, COMMUNITY
 import { IconGrid } from "./Icons";
 import { useChat } from "./Chat";
 import { useModules } from "./Modules";
+import { refreshMs } from "../lib/refresh";
 
 // The page of one menu group as tiles (the other way to work than the menu on the left): Admin -> Gebruikers, Website, … or the groups of the member menu.
 export default function GroupTiles({ id }) {
@@ -25,7 +26,7 @@ export default function GroupTiles({ id }) {
     if (admin) return undefined;
     const load = () => api("/community/summary/").then(setSummary).catch(() => {});
     load();
-    const t = setInterval(load, 20000);
+    const t = setInterval(load, refreshMs(20000));
     return () => clearInterval(t);
   }, [admin]);
   const countOf = (n) => (n.badge === "direct_active" ? chat?.directActive?.length || 0 : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) || 0 : 0);

@@ -3,6 +3,7 @@
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../../../../lib/api";
+import { refreshMs } from "../../../../lib/refresh";
 
 const Av = ({ u }) => (u.photo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={u.photo.startsWith("http") ? u.photo : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${u.photo}`} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{u.name[0]}</span>);
 
@@ -19,8 +20,8 @@ export default function Messages() {
 
   const loadConvs = useCallback(() => api("/messages/conversations/").then(setConvs).catch((e) => setErr(errorText(e))), []);
   const loadThread = useCallback((id) => api(`/messages/with/${id}/`).then((d) => { setThread(d); loadConvs(); }).catch(() => setThread(null)), [loadConvs]);
-  useEffect(() => { loadConvs(); const t = setInterval(loadConvs, 15000); return () => clearInterval(t); }, [loadConvs]);
-  useEffect(() => { if (active) { loadThread(active.id); const t = setInterval(() => loadThread(active.id), 8000); return () => clearInterval(t); } }, [active, loadThread]);
+  useEffect(() => { loadConvs(); const t = setInterval(loadConvs, refreshMs(15000)); return () => clearInterval(t); }, [loadConvs]);
+  useEffect(() => { if (active) { loadThread(active.id); const t = setInterval(() => loadThread(active.id), refreshMs(8000)); return () => clearInterval(t); } }, [active, loadThread]);
   useEffect(() => { box.current?.scrollTo(0, box.current.scrollHeight); }, [thread]);
   useEffect(() => { if (q.trim()) api(`/people/?q=${encodeURIComponent(q)}`).then(setPeople).catch(() => {}); else setPeople([]); }, [q]);
 

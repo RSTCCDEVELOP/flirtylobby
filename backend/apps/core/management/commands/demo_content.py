@@ -145,7 +145,7 @@ def money_demo(stdout):
         if DonationCampaign.objects.filter(slug=slug).exists():
             continue
         key = default_storage.save(f"library/demo/{uuid.uuid4().hex[:8]}-{slug}.jpg", ContentFile(picture(name, pal[(i + 2) % len(pal)])))
-        m, _ = MediaItem.objects.update_or_create(key=key, defaults=dict(name=f"{name}.jpg", kind="image", mime="image/jpeg", size=default_storage.size(key), source=SOURCE))
+        m, _ = MediaItem.objects.update_or_create(key=key, defaults=dict(name=f"{name}.jpg", kind="image", mime="image/jpeg", size=default_storage.size(key), source=SOURCE, tags=["demo", "donatie", "actie"]))
         DonationCampaign.objects.create(slug=slug, name=name, description=d_nl, recipient="de makers", min_amount=lo, max_amount=hi, step=1, default_amount=dflt, goal=goal, names={"nl": name, "en": name}, descriptions={"nl": d_nl, "en": d_en}, recipients={"nl": "de makers", "en": "the creators"},
                                        button={"as_button": True, "labels": {"nl": "Doneer", "en": "Donate"}, "icon": "heart", "variant": "primary", "size": "md", "radius": "default", "color": ""}, system_object=True,
                                        info={"titles": {"nl": name, "en": name}, "texts": {"nl": d_nl2, "en": d_en}, "media": m.id, "placement": "center:m"}, order=i + 1)

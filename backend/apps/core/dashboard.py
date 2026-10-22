@@ -106,7 +106,7 @@ def shortcuts(request):
     return Response({"items": row.items if row else []})
 
 
-PREF_KEY = re.compile(r"^(?:(?:collapse|collapse-pin|navg|navg-pin|view):[A-Za-z0-9_.\-]{1,80}|navmode|sidebar|lastBackendUrl|theme|lang|editMode|directSize|directPos|directView)$")
+PREF_KEY = re.compile(r"^(?:(?:collapse|collapse-pin|navg|navg-pin|view|find):[A-Za-z0-9_.\-]{1,80}|navmode|sidebar|lastBackendUrl|theme|lang|editMode|directSize|directPos|directView)$")
 
 
 @api_view(["GET", "PUT"])

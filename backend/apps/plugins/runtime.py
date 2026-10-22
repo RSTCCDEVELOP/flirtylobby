@@ -258,6 +258,15 @@ def provider(what):
     return None
 
 
+def providers(what):
+    """Everything that switched-on plugins offer under this name, as [(plugin name, object)] (more than one plugin can offer `demo`)."""
+    try:
+        ensure_loaded()
+    except Exception:  # noqa: BLE001
+        return []
+    return [(name, lp.provides[what]) for name, lp in list(LOADED.items()) if what in lp.provides]
+
+
 def unload(name):
     _unload(name)
 

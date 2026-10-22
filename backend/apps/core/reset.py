@@ -90,6 +90,12 @@ def perform(keep=None):
     from apps.plugins.models import Plugin
 
     removed = dict(summary())
+    try:  # the demo data first, the careful way (also its pictures and the rows of plugins)
+        from apps.core import demo
+
+        removed["demo"] = sum(v for v in demo.remove().values() if isinstance(v, int))
+    except Exception:  # noqa: BLE001 - the reset below clears everything anyway
+        logger.exception("Reset: demo data could not be removed one by one")
     files = _files_of_removed()
     gone_users = list(User.objects.filter(is_staff=False).values_list("pk", flat=True))
 
@@ -149,6 +155,16 @@ def perform(keep=None):
         shutil.rmtree(media / sub, ignore_errors=True)
     for uid in gone_users:
         shutil.rmtree(media / "users" / str(uid), ignore_errors=True)
+
+    try:  # no standard installation is in use any more and there is no demo data: forget both (the pages saved in installations and which ones administrators see stay)
+        from apps.core.models import SystemSettings
+
+        row = SystemSettings.objects.filter(pk=1).first()
+        if row:
+            row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids")}
+            row.save()
+    except Exception:  # noqa: BLE001
+        logger.exception("Reset: the choice of the standard installation could not be cleared")
 
     pages_service.ensure_defaults()
     modules.invalidate()

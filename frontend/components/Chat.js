@@ -12,6 +12,7 @@ import { useModule } from "./Modules";
 import { useSession } from "./Session";
 import { useUi } from "./Ui";
 import { DirectSlot, useDirectHost } from "./DirectHost";
+import { refreshMs, signalMs } from "../lib/refresh";
 
 const ChatContext = createContext(null);
 export const useChat = () => useContext(ChatContext);
@@ -78,7 +79,7 @@ export function ChatProvider({ children }) {
       } catch {}
     };
     check();
-    const t = setInterval(check, 5000);
+    const t = setInterval(check, refreshMs(5000));
     return () => { stop = true; clearInterval(t); };
   }, [user, directOn, router]);
 
@@ -88,7 +89,7 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     if (!cfg) return;
     loadConvs();
-    const t = setInterval(loadConvs, 5000);
+    const t = setInterval(loadConvs, refreshMs(5000));
     return () => clearInterval(t);
   }, [cfg, loadConvs]);
 
@@ -184,7 +185,7 @@ export function ChatProvider({ children }) {
         const list = await api(`/chat/signals/?after=${lastSignal.current}`);
         for (const s of list) { lastSignal.current = Math.max(lastSignal.current, s.id); await handleSignal(s); }
       } catch {}
-    }, 1500);
+    }, signalMs(1500));
     return () => clearInterval(t);
   }, [needSignaling, handleSignal]);
 

@@ -8,7 +8,13 @@ logger = logging.getLogger(__name__)
 
 BASE = ["pages", "edit_mode", "media", "branding", "theme", "languages", "privacy_pages", "cookies", "communication", "registration", "notifications", "help"]
 
+# the parts of the admin itself (system settings, licence, plugins, storage, back-ups, and with them the page Standaard installaties): never switched off by an installation
+ALWAYS_ON = ["system", "plugins", "storage", "backups"]
+
 PRESETS = [
+    {"key": "standaard-website", "name": "Standaard website", "icon": "globe", "theme": "normal", "plugins": [],
+     "desc": "Alleen een website: pagina's en menu, media en systeemobjecten, FAQ en SEO. Zonder community, abonnementen, donaties of webshop. Met demo-gegevens heb je meteen een complete site.",
+     "modules": BASE + ["seo", "faq", "sysobjects", "siteimport", "integrations"]},
     {"key": "webshop", "name": "Webwinkel", "icon": "cart", "theme": "webshop", "plugins": ["webshop"],
      "desc": "Producten verkopen met winkelwagen, bestellingen en online betalen. Klantaccounts, e-mailmeldingen en een FAQ.",
      "modules": BASE + ["seo", "faq", "orders", "subscriptions", "integrations", "sysobjects"]},
@@ -39,7 +45,7 @@ BY_KEY = {p["key"]: p for p in PRESETS}
 
 def _wanted_modules(preset):
     """The modules of the preset plus the ones they need (and the always-on core)."""
-    want = {m["key"] for m in modules.MODULES if m.get("core")} | set(preset["modules"])
+    want = {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON) | set(preset["modules"])
     changed = True
     while changed:
         changed = False
@@ -52,18 +58,231 @@ def _wanted_modules(preset):
     return want
 
 
+def _demo_parts(key):
+    """What the demo data of this installation makes (see apps/core/demo.py)."""
+    try:
+        from . import demo
+
+        return demo.parts_for(key)
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def listing():
     from apps.plugins.models import Plugin
 
     have = {p.name: p.title or p.name for p in Plugin.objects.all()}
     labels = {m["key"]: m["label"] for m in modules.MODULES}
+    allowed = admin_allowed()
+    act = active()
     out = []
     for p in PRESETS:
         want = _wanted_modules(p)
-        out.append({"key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
-                    "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")}],
+        out.append({"demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+                    "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
+
+
+def admin_allowed():
+    """The keys of the standard installations that administrators (not only superadmins) may set; chosen by the superadmin."""
+    from .models import SystemSettings
+
+    data = SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
+    return [k for k in (data.get("admin_presets") or []) if k in BY_KEY]
+
+
+def set_admin_allowed(keys):
+    from .models import SystemSettings
+
+    obj, _ = SystemSettings.objects.get_or_create(pk=1)
+    obj.data = {**(obj.data or {}), "admin_presets": [k for k in dict.fromkeys(keys) if k in BY_KEY]}
+    obj.save()
+    return admin_allowed()
+
+
+def plugins_for(preset):
+    """The plugins of a standard installation and the plugins those need (the webshop needs Orders and Payments): all of them must be on."""
+    from apps.plugins.models import Plugin
+
+    out, todo = [], list(preset["plugins"])
+    while todo:
+        n = todo.pop(0)
+        if n in out:
+            continue
+        out.append(n)
+        row = Plugin.objects.filter(name=n).first()
+        todo += [r for r in ((row.manifest or {}).get("requires") or []) if r not in out] if row else []
+    return out
+
+
+def _data():
+    from .models import SystemSettings
+
+    return dict(SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {})
+
+
+def _save_data(data):
+    from .models import SystemSettings
+
+    obj, _ = SystemSettings.objects.get_or_create(pk=1)
+    obj.data = data
+    obj.save()
+
+
+def active():
+    """The standard installation that was set last (or None)."""
+    k = _data().get("active_preset")
+    return k if k in BY_KEY else None
+
+
+def saved_pages(key):
+    return dict((_data().get("preset_pages") or {}).get(key) or {})
+
+
+def save_page(key, page_key):
+    """Keep the page as it is now (blocks and their texts) in this standard installation: setting the installation puts it back."""
+    from apps.core.models import ContentBlock
+    from apps.pages.models import PageLayout
+
+    lay = PageLayout.objects.filter(key=page_key).first()
+    if not lay:
+        raise ValueError("Deze pagina heeft nog geen blokken om op te slaan.")
+    keys = set()
+    for r in (lay.data or {}).get("rows", []):
+        for c in r.get("cells", []):
+            for it in c.get("items", []):
+                if it.get("type") != "object":
+                    keys.add(it.get("ref") or f"layout.{page_key}.{it.get('id')}")
+    blocks = {}
+    for b in ContentBlock.objects.filter(key__in=keys):
+        blocks.setdefault(b.key, {})[b.lang] = b.text
+    data = _data()
+    pages = dict(data.get("preset_pages") or {})
+    mine = dict(pages.get(key) or {})
+    mine[page_key] = {"layout": lay.data, "blocks": blocks, "media": _media_names(lay.data)}
+    pages[key] = mine
+    data["preset_pages"] = pages
+    _save_data(data)
+    return sorted(mine)
+
+
+def _media_ids(layout):
+    """The pictures a layout uses: the backgrounds of its rows (and their mouse-over)."""
+    ids = set()
+    for r in (layout or {}).get("rows", []):
+        for bg in (r.get("bg") or {}, (r.get("bg") or {}).get("hover") or {}):
+            if isinstance(bg, dict) and bg.get("media"):
+                ids.add(int(bg["media"]))
+    return ids
+
+
+def _media_names(layout):
+    """{id: {name, source}}: a picture is found again by its name (the id differs per installation)."""
+    from apps.medialib.models import MediaItem
+
+    return {str(m.id): {"name": m.name, "source": m.source} for m in MediaItem.objects.filter(pk__in=_media_ids(layout))}
+
+
+def _find_media(info):
+    from apps.medialib.models import MediaItem
+
+    qs = MediaItem.objects.filter(name=info.get("name"))
+    return qs.filter(source=info.get("source")).first() or qs.first()
+
+
+def _link_media(layout, names, only_missing=False):
+    """Put the pictures of a saved layout (found by name) back in its rows; a picture that cannot be found leaves the background empty (it comes when the demo data is made)."""
+    from apps.medialib.models import MediaItem
+
+    for r in (layout or {}).get("rows", []):
+        bg = r.get("bg")
+        if not isinstance(bg, dict) or not bg.get("media"):
+            continue
+        info = names.get(str(bg["media"]))
+        if info:
+            item = _find_media(info)
+            if item:
+                bg["media"] = item.id
+            else:
+                r["bg"] = {}
+        elif not MediaItem.objects.filter(pk=bg["media"]).exists():
+            r["bg"] = {}
+    return layout
+
+
+def relink_saved_pages(key):
+    """After demo data was made: the backgrounds that could not be linked when the installation was set are linked now (by the name of the picture)."""
+    from apps.pages.models import PageLayout
+
+    for page_key, row in saved_pages(key).items():
+        names, saved = row.get("media") or {}, row.get("layout") or {}
+        lay = PageLayout.objects.filter(key=page_key).first()
+        if not lay or not names:
+            continue
+        data = dict(lay.data or {})
+        by_id = {r.get("id"): r for r in saved.get("rows", [])}
+        changed = False
+        for r in data.get("rows", []):
+            was = (by_id.get(r.get("id")) or {}).get("bg") or {}
+            if was.get("media") and not (r.get("bg") or {}).get("media"):
+                item = _find_media(names.get(str(was["media"])) or {})
+                if item:
+                    r["bg"] = {**was, "media": item.id}
+                    changed = True
+        if changed:
+            PageLayout.objects.filter(pk=lay.pk).update(data=data)
+
+
+def _apply_saved_pages(key):
+    from apps.core.models import ContentBlock, Language
+    from apps.pages.models import PageLayout
+
+    have = set(Language.objects.values_list("code", flat=True))
+    for page_key, row in saved_pages(key).items():
+        import copy
+
+        PageLayout.objects.update_or_create(key=page_key, defaults={"data": _link_media(copy.deepcopy(row.get("layout") or {}), row.get("media") or {})})
+        for bk, texts in (row.get("blocks") or {}).items():
+            for lang, text in texts.items():
+                if lang in have:
+                    ContentBlock.objects.update_or_create(key=bk, lang=lang, defaults={"text": text})
+
+
+def unapply(key):
+    """Take the installation away: its modules and plugins go off (what the always-on core needs stays), its pages of plugins leave the menu, and it is no longer the installation in use. No data is removed."""
+    from apps.plugins import runtime
+    from apps.plugins.models import Plugin
+
+    from .models import ModuleState
+
+    preset = BY_KEY.get(key)
+    if not preset:
+        raise KeyError(key)
+    keep = {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)
+    for m in modules.MODULES:
+        if not m.get("core"):
+            ModuleState.objects.update_or_create(key=m["key"], defaults={"enabled": m["key"] in keep})
+    modules.invalidate()
+    Plugin.objects.filter(enabled=True).update(enabled=False)
+    runtime.ensure_loaded(True)
+    try:
+        from apps.pages.models import Page
+
+        Page.objects.filter(module__startswith="plugin:").update(enabled=False, in_menu=False)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: pages of plugins could not be switched off", key)
+    data = _data()
+    data.pop("active_preset", None)
+    _save_data(data)
+    try:
+        from apps.sysobjects import service as so
+
+        so.sync()
+    except Exception:  # noqa: BLE001
+        pass
+    logger.warning("Standard installation %s removed", key)
+    return {"preset": key, "removed": True}
 
 
 def apply(key):
@@ -82,12 +301,13 @@ def apply(key):
         if not m.get("core"):
             ModuleState.objects.update_or_create(key=m["key"], defaults={"enabled": m["key"] in want})
     modules.invalidate()
+    need = plugins_for(preset)
     missing = []
     for p in Plugin.objects.all():
-        on = p.name in preset["plugins"]
+        on = p.name in need
         if p.enabled != on or (on and p.error):
             Plugin.objects.filter(pk=p.pk).update(enabled=on, **({"error": ""} if on else {}))
-    missing = [n for n in preset["plugins"] if not Plugin.objects.filter(name=n).exists()]
+    missing = [n for n in need if not Plugin.objects.filter(name=n).exists()]
     runtime.ensure_loaded(True)
     theme = preset["theme"]
     try:
@@ -100,6 +320,17 @@ def apply(key):
             page_defaults.apply_theme(theme)
     except Exception:  # noqa: BLE001 - the modules and plugins are done; the theme can be set by hand
         logger.exception("Preset %s: community theme could not be set", key)
+    try:  # the pages of a plugin (Producten, Winkelwagen ...) belong to the installations that use that plugin: the others do not have them in the menu
+        from apps.pages.models import Page
+
+        for pg in Page.objects.filter(module__startswith="plugin:"):
+            on = pg.module[7:] in need
+            if on and not pg.enabled:
+                Page.objects.filter(pk=pg.pk).update(enabled=True, in_menu=pg.key == "products" or pg.in_menu)
+            elif not on and (pg.enabled or pg.in_menu):
+                Page.objects.filter(pk=pg.pk).update(enabled=False, in_menu=False)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: pages of plugins could not be switched", key)
     try:
         from apps.pages import service as pages_service
 
@@ -107,10 +338,17 @@ def apply(key):
     except Exception:  # noqa: BLE001
         pass
     try:
+        _apply_saved_pages(key)  # the pages that were saved in this installation come back as they were
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: saved pages could not be put back", key)
+    data = _data()
+    data["active_preset"] = key
+    _save_data(data)
+    try:
         from apps.sysobjects import service as so
 
         so.sync()
     except Exception:  # noqa: BLE001
         pass
     logger.warning("Standard installation %s applied", key)
-    return {"preset": key, "modules_on": sorted(want), "plugins_on": [n for n in preset["plugins"] if n not in missing], "plugins_missing": missing, "theme": theme if "profiles" in want else None}
+    return {"preset": key, "modules_on": sorted(want), "plugins_on": [n for n in need if n not in missing], "plugins_missing": missing, "theme": theme if "profiles" in want else None}
