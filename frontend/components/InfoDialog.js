@@ -42,8 +42,8 @@ function Popup({ onClose }) {
               )}
               {tab === "about" && (
                 <ul className="info-plugins">
-                  <li><span>{tx("Product van")}</span><span className="info-ver"><strong>Studio2 Communications BV</strong> · <a href="https://www.studio2.nl" target="_blank" rel="noreferrer">www.studio2.nl</a></span></li>
-                  <li><span>{tx("Architectuur & intellectueel eigendom")}</span><span className="info-ver"><strong>RST Coaching en Consultancy BV</strong></span></li>
+                  <li><span>{tx("Reseller")}</span><span className="info-ver"><strong>Studio2 Communications BV</strong> · <a href="https://www.studio2.nl" target="_blank" rel="noreferrer">www.studio2.nl</a></span></li>
+                  <li><span>{tx("Intellectueel eigendom")}</span><span className="info-ver" style={{ display: "grid", justifyItems: "end", gap: ".15rem" }}><strong>RST Coaching en Consultancy BV</strong><small>Ambachtsweg 46</small><small>3542 DH Utrecht</small></span></li>
                   <li><span>{tx("Ontwerp en architectuur")}</span><span className="info-ver"><strong>Ronald Stolk</strong></span></li>
                 </ul>
               )}
