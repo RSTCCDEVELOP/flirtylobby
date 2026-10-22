@@ -3,7 +3,7 @@
 GOES:   every user except the superadmins (with photos, profiles, messages, chats, orders ...), the media library and its files, pages and their blocks,
         the texts edited on the website, the data of the plugins (the plugins stay installed, switched off), theme packages of the site, imported sites, system objects, products/orders,
         subscriptions and donations, notifications, dashboards, logos and home photos.
-STAYS:  the superadmins, the languages, the settings of the installation (names, addresses, security, mail, API keys, roles) and the built-in themes.
+STAYS:  the standard superadmin (ADMIN_EMAIL / ADMIN_PASSWORD from the environment; it is made again with that password and every other superadmin goes; without those settings all superadmins stay), the languages, the settings of the installation (names, addresses, security, mail, API keys, roles) and the built-in themes.
 THEN:   all modules off (only the core ones stay: users, dashboard, security, module management), all plugins off, the theme becomes Easy2edit and the licence is emptied.
 """
 import logging
@@ -45,7 +45,7 @@ def summary():
     from apps.pages.models import Page
     from apps.plugins.models import Plugin
 
-    return {"users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "media": MediaItem.objects.count(),
+    return {"users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": (__import__("os").getenv("ADMIN_EMAIL") or "").strip().lower() if __import__("os").getenv("ADMIN_PASSWORD") else "", "media": MediaItem.objects.count(),
             "pages": Page.objects.exclude(kind="system").count(), "plugins": Plugin.objects.count(), "themes": ThemePack.objects.count()}
 
 
@@ -77,6 +77,23 @@ def clear_license():
 
     License.objects.filter(pk=1).update(number="", client="", client_address="", valid_until=None, price=0, payment_ref="", issued_at=None)
     system.license_changed()
+
+
+def standard_admin():
+    """Make the standard superadmin of the installation (ADMIN_EMAIL / ADMIN_PASSWORD) with that password and remove every other superadmin. Returns the e-mail address, or "" when it is not set."""
+    import os
+
+    from apps.accounts.models import User
+
+    email, password = (os.getenv("ADMIN_EMAIL") or "").strip().lower(), os.getenv("ADMIN_PASSWORD") or ""
+    if not email or not password:
+        return ""
+    user = User.objects.filter(email__iexact=email).first() or User(username=email, email=email)
+    user.is_staff = user.is_superuser = user.is_active = True
+    user.set_password(password)
+    user.save()
+    User.objects.filter(is_staff=True).exclude(pk=user.pk).delete()
+    return email
 
 
 def perform(keep=None):
@@ -114,6 +131,7 @@ def perform(keep=None):
                 mdl.objects.all().delete()
         # users of the site go (their photos, profiles, messages ... follow); the superadmins stay
         User.objects.filter(is_staff=False).delete()
+        removed["admin"] = standard_admin()  # the standard superadmin, the other superadmins go
         # pages and blocks; the built-in pages come back as they were
         PageLayout.objects.all().delete()
         Page.objects.all().delete()

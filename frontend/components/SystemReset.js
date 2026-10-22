@@ -12,6 +12,7 @@ export default function SystemReset() {
   const { user } = useAuth();
   const [step, setStep] = useState(0); // 0 closed · 1 back-up? · 2 confirm · 3 done
   const [info, setInfo] = useState(null);
+  const [adminMail, setAdminMail] = useState("");
   const [busy, setBusy] = useState(false);
   const [job, setJob] = useState(""); // what the progress bar says: "backup" | "reset" | ""
   const [finished, setFinished] = useState(false);
@@ -51,7 +52,8 @@ export default function SystemReset() {
   async function reset() {
     setBusy(true); setMsg(null); setFinished(false); setJob("reset");
     try {
-      await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset } });
+      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset } });
+      setAdminMail(r?.admin || "");
       setFinished(true);
       await new Promise((r) => setTimeout(r, 700)); // the bar shows 100% for a moment
       setStep(3);
@@ -96,7 +98,7 @@ export default function SystemReset() {
                     <li>{tx("Bestellingen, abonnementen, donaties, chats en alle andere gegevens van de modules")}</li>
                   </ul>
                 </div>
-                <small className="muted">{tx("Blijft: {0} superadmin(s), de talen, de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema Easy2edit.", info.superadmins)}</small>
+                <small className="muted">{info.standard_admin ? tx("Blijft: de superadmin {0} (met het standaardwachtwoord opnieuw gemaakt; alle andere superadmins worden verwijderd), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema Easy2edit.")}</small>
                 {presets?.length > 0 && (
                   <label>{tx("Daarna meteen instellen als")}
                     <select value={preset} onChange={(e) => setPreset(e.target.value)}>
@@ -119,6 +121,7 @@ export default function SystemReset() {
               <>
                 <h2 style={{ margin: 0 }}>{tx("Het systeem is schoon")}</h2>
                 <p style={{ margin: 0 }}>{tx("Alle gegevens van de site zijn verwijderd, alle modules en plugins staan uit en het thema is Easy2edit. Zet bij Super admin → Modules en Plugins aan wat je nodig hebt.")}</p>
+                {adminMail && <p style={{ margin: 0 }}>{tx("De standaard superadmin is {0}. Andere superadmins zijn verwijderd; log opnieuw in met het standaardwachtwoord.", adminMail)}</p>}
                 <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" onClick={close}>{tx("Sluiten")}</button></div>
               </>
             )}

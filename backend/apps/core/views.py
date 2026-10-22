@@ -398,7 +398,7 @@ def system_reset(request):
 
         if request.data["preset"] in presets.BY_KEY:
             applied = presets.apply(request.data["preset"])
-    return Response({"removed": removed, "applied": applied})
+    return Response({"removed": removed, "applied": applied, "admin": removed.get("admin", "")})
 
 
 @api_view(["GET", "POST"])
