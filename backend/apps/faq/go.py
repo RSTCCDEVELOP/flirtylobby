@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Where the GO button of a help item leads: the page, the tab(s) and the foldable block that hold the setting.
 id -> (page address, [tabs, outer one first], [foldable blocks to open]).  A tab or block id that a page does not have is simply ignored, so a page that was changed
 never breaks a link. Items about the edit mode open the home page in edit mode (?edit=1)."""

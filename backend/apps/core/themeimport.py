@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """A theme made from a website address. The site is read like in Site importeren (colours, fonts, shapes, logo, favicon, share picture, hero pictures);
 when Claude is linked and switched on (Admin -> API keys) it designs a complete theme from that. The result is a draft: the user checks it with examples
 and only then saves it as a theme package (themepacks.save_draft)."""

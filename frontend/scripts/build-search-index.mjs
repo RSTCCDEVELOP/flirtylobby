@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // Builds public/search-index.json for the dashboard search: every Dutch UI text (tx("…")) on the dashboard pages, with the page it
 // lives on and its translations in all other languages (public/locales/*.json), so a search finds a setting in any language.
 // Runs before dev and build (npm predev / prebuild).

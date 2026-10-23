@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // UI translations. The Dutch text itself is the key: t("Opslaan") -> "Save" when the language is English.
 // Dictionaries live in public/locales/<code>.json ({ "Dutch text": "translation" }) or, when installed as a language package, in the API; a missing entry falls back to the Dutch text.
 // Keys with {0}, {1} … are templates: t("Maximaal {0} foto's", 10). Messages from the API (already filled in) are matched against those templates too.

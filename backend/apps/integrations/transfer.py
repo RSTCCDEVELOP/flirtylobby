@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Move all API links (with their keys) to another installation, e.g. from the test machine to the live site.
 The file holds secrets, so it is always locked with a password (PBKDF2 + Fernet): without the password it is unreadable."""
 import base64
@@ -8,7 +15,6 @@ import os
 from cryptography.fernet import Fernet, InvalidToken
 
 FORMAT = "easy2edit-api-keys"
-OLD_FORMATS = ("flirtylobby-api-keys",)  # files made before the rename still load
 ROUNDS = 390_000
 
 
@@ -22,7 +28,7 @@ def pack(rows, password):
 
 
 def unpack(bundle, password):
-    if not isinstance(bundle, dict) or bundle.get("format") not in (FORMAT, *OLD_FORMATS):
+    if not isinstance(bundle, dict) or bundle.get("format") != FORMAT:
         raise ValueError("Dit is geen exportbestand van API-koppelingen.")
     try:
         return json.loads(_fernet(password, base64.b64decode(bundle["salt"])).decrypt(bundle["data"].encode()))

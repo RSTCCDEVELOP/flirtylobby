@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """
 File encryption: AES-256-GCM in chunks, one random data key per scope (a user, or a whole area).
 
@@ -32,7 +39,11 @@ def _normalise(raw):
 
 
 def _derived():
-    # the old product name is part of the key on purpose: renaming it would make files that are already encrypted unreadable
+    return hashlib.sha256(b"easy2edit-file-key:" + settings.SECRET_KEY.encode()).digest()
+
+
+def _derived_before_rename():
+    # keys that were wrapped before the product got its name Easy2edit: only used to READ them (rewrap_all wraps them again with the current master)
     return hashlib.sha256(b"flirtylobby-file-key:" + settings.SECRET_KEY.encode()).digest()
 
 
@@ -59,6 +70,7 @@ def masters():
     if _stored_key():
         out.append(("database", _normalise(_stored_key())))
     out.append(("derived", _derived()))
+    out.append(("derived-old", _derived_before_rename()))
     return out
 
 

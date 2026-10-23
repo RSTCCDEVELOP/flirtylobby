@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 import { api } from "./api";
 
 // The css of a theme made for the whole page, limited to a block (class .draft-scope) so examples can show a theme that is not in use.

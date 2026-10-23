@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Plugins at work: loading a plugin's Python code, the events it listens to, the routes it adds.
 
 A plugin is trusted code (a superadmin uploads and switches it on): it runs inside the system, so it may import and use everything

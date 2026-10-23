@@ -1,9 +1,16 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import RunPopup from "./RunPopup";
 import PresetContent from "./PresetContent";
-import { runDemo } from "../lib/demoRun";
+import { runDemo, resumeDemo } from "../lib/demoRun";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
@@ -84,7 +91,7 @@ export default function DemoData({ preset = "", name = "", shop = false, parts =
         </div>
       )}
       {!active && !some && <small className="muted">{tx("Stel eerst deze installatie in; daarna kun je demo-gegevens maken.")}</small>}
-      <RunPopup run={run} onClose={() => setRun(null)} />
+      <RunPopup run={run} onClose={() => setRun(null)} onFix={() => resumeDemo(run, setRun, () => { load(); window.dispatchEvent(new Event("demo-changed")); })} />
       {info && <PresetContent preset={preset} name={name} contents={contents} price={price} showPurchase={showPurchase} editable={editable} demo={state} parts={parts} onClose={() => setInfo(false)} />}
       <div className="row" style={{ gap: ".5rem", flexWrap: "wrap" }}>
         {open && (!made || shop) ? (

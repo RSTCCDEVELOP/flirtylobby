@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Statistics of a plugin: what the plugin records itself (system.stats.record), what it offers (system.provide("stats", provider) with widgets(days)),
 and, for every plugin, what stands in its own tables (plg_<name>_…): how many rows, and how many were made per day."""
 import re

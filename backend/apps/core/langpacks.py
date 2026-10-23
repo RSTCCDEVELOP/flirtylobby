@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Language packages: a language is a folder <THEMES_DIR>/language/<code>/ with one file, language.json:
 
     {"code": "fr", "name": "Frans", "native_name": "Français", "rtl": false, "version": "1.0.0", "ui": {"Nederlandse tekst": "Texte français", …}}

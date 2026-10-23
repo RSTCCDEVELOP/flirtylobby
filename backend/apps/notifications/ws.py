@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """WebSocket for notifications: the browser keeps one connection open and the server says when there is news ("notify"), so the bell does not have to ask every few seconds.
 
 Plain ASGI (no extra packages): /ws/notifications/ (the login token is sent as the first message). The server looks at the user's notifications every two seconds (one small query) and only sends a message when

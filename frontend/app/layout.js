@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 import SiteBack from "../components/SiteBack";
 import SiteCredit from "../components/SiteCredit";
 import "./globals.css";
@@ -36,6 +43,7 @@ import { getBuildId } from "../lib/version-server";
 import AdminBar from "../components/AdminBar";
 import DeviceGate from "../components/DeviceGate";
 import SiteGate from "../components/SiteGate";
+import ClosedGate from "../components/ClosedGate";
 import PaymentRequired from "../components/PaymentRequired";
 import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
@@ -170,6 +178,7 @@ export default async function RootLayout({ children }) {
             </ContentProvider>
             <Gates cfg={security} />
             <SiteGate />
+            <ClosedGate closed={security?.basic?.closed_site} />
             <MaintenanceGate site={site} />
             <LicenseNotice site={site} />
             <LicensePrompt site={site} />

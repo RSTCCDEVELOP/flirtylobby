@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Prijzen en installatiewizard. De prijzen staan in apps/core/pricing.json (gaat mee met elke implementatie, per maand ex btw); de prijseneditor schrijft dat bestand.
 
 `apply_to_license()` zet de prijzen ook in de licentie (btw erbij). De wizard bepaalt uit antwoorden welke modules en plugins nodig zijn en wat dat kost per maand, kwartaal en jaar."""

@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // Default privacy policy (AVG/GDPR). Editable in edit mode; replace the [bracketed] parts with your own details.
 // Stored/rendered as rich text, hence the "html:" prefix.
 export const PRIVACY_TITLE = { nl: "Privacybeleid", en: "Privacy policy" };

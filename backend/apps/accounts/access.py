@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """
 Module access levels: 0 none, 1 gebruik (use), 2 bewerken (edit), 3 beheer (manage: add/delete items).
 A user's level per module = the highest of: superadmin (3 everywhere), the permission keys of their roles,

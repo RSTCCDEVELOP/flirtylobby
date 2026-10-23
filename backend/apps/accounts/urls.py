@@ -1,7 +1,14 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import fakeusers, invitations, registration, sso, views
+from . import fakeusers, invitations, pwreset, registration, sso, views
 
 router = DefaultRouter()
 router.register("users", views.UserViewSet, basename="users")
@@ -21,6 +28,8 @@ urlpatterns = [
     path("auth/passkey/register/", sso.passkey_register),
     path("auth/passkeys/", sso.passkeys),
     path("auth/passkeys/<int:pk>/", sso.passkey_remove),
+    path("auth/password-reset/request/", pwreset.request_code),
+    path("auth/password-reset/confirm/", pwreset.confirm),
     path("auth/login/verify/", views.login_verify),
     path("auth/login/resend/", views.login_resend),
     path("auth/register/config/", registration.config),

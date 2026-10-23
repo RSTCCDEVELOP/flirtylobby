@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // Access helpers. Levels per module: 0 geen, 1 gebruik, 2 bewerken, 3 beheer (superadmin = 3 everywhere).
 // Module access is given by roles (backend/apps/accounts/perms.py) and by grants (Admin -> Modules -> poppetje).
 export const lvl = (user, module) => (!user ? 0 : user.is_staff ? 3 : user.module_levels?.[module] || 0);

@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """FAQ / help of Easy2edit in three layers: user (a logged-in member), admin (not a super admin) and super admin. The Dutch source texts; every other language is made from these
 (manage.py faq_translate -> data/faq.json). Items only show when their module or plugin is on and the person has the rights.
 need: "all", "member" (logged in), "staff" (super admin), "<module>:<level>" (module on and this level or more; level 0 = every logged-in person),

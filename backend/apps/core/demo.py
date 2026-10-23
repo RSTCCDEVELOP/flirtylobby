@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Demo-gegevens: alles wat nodig is om het systeem te testen, in één keer te maken en weer weg te halen (Super admin).
 
 Media (voorbeeldplaatjes en media-systeemobjecten), gebruikers met profiel, inhoud (abonnementen, donatie-acties, FAQ, pagina's), systeemobjecten en wat de plugins zelf
@@ -160,6 +167,10 @@ def make_users(n):
     from apps.plugins import facade
     from .management.commands import demo_content as dc
 
+    from . import demo_intranet
+
+    if demo_intranet.active():  # the Intranet has colleagues with a function and department instead of the example community
+        return demo_intranet.make_people(n)
     Profile, ProfilePhoto = facade.models("community", "Profile", "ProfilePhoto")  # (the plugin Community: without it the people are made without a profile)
 
     User, pal, made = get_user_model(), dc.palette(), 0
@@ -215,12 +226,17 @@ def make_content(parts=("plans", "money", "faq", "pages")):
     new = set(DonationCampaign.objects.values_list("pk", flat=True)) - had
     _remember("campaigns", new)
     made["campaigns"] = len(new)
+    from . import demo_intranet
+
+    intranet = demo_intranet.active()
     if "faq" in parts and not _ids("faq"):
-        rows = [FaqEntry.objects.create(question={"nl": qn, "en": qe}, answer={"nl": an, "en": ae}, order=900 + i) for i, (qn, an, qe, ae) in enumerate(FAQ)]
+        rows = demo_intranet.make_faq() if intranet else [FaqEntry.objects.create(question={"nl": qn, "en": qe}, answer={"nl": an, "en": ae}, order=900 + i) for i, (qn, an, qe, ae) in enumerate(FAQ)]
         _remember("faq", [r.pk for r in rows])
         made["faq"] = len(rows)
     n = 0
-    for i, (key, nl, en) in enumerate(PAGES if "pages" in parts else []):
+    if "pages" in parts and intranet:
+        n = demo_intranet.make_pages()
+    for i, (key, nl, en) in enumerate(PAGES if "pages" in parts and not intranet else []):
         if not Page.objects.filter(key=key).exists():
             Page.objects.create(key=key, kind="content", title={"nl": nl, "en": en}, enabled=True, in_menu=False, order=900 + i, source="demo")
             n += 1
@@ -408,6 +424,9 @@ def remove_parts(parts):
     if "pages" in parts:
         done["pages"] = Page.objects.filter(source="demo").count()
         Page.objects.filter(source="demo").delete()
+        from . import demo_intranet
+
+        demo_intranet.remove_pages()
     if "users" in parts:
         users = _users_qs()
         done["users"] = done.get("users", 0) + users.count()
@@ -438,6 +457,9 @@ def remove_parts(parts):
         except Exception:  # noqa: BLE001
             logger.exception("Detaching orders from demo users failed")
         users.delete()
+        from . import demo_intranet
+
+        demo_intranet.remove_people()
     if "views" in parts:
         done["views"] = mediaviews.remove_demo(["views"]).get("views", 0)
     for part, q in (("heroes", MediaItem.objects.filter(source="media-demo", name__startswith="Hero ")), ("media", MediaItem.objects.filter(source="media-demo").exclude(name__startswith="Hero "))):

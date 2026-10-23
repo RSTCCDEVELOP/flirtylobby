@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 import logging
 
 from django.db import connection
@@ -639,6 +646,31 @@ def presets_list(request):
         return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
     rows = presets.listing()
     return Response(rows if who == "all" else [r for r in rows if r["admin"]])
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_default(request):
+    """The superadmin ticks the standard installations that are offered when nothing is installed yet: {key, on}. At least one stays ticked."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        return Response({"keys": presets.set_default(str(request.data.get("key") or ""), request.data.get("on", True) is not False)})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def presets_setup(request):
+    """After logging in: is no standard installation set yet? Then a superadmin is asked which of the offered ones to install (one). {needed, presets: [{key, name, desc}]}."""
+    from . import presets
+
+    if not request.user.is_staff or presets.active():
+        return Response({"needed": False})
+    return Response({"needed": True, "presets": [{"key": k, "name": presets.get(k)["name"], "desc": presets.get(k).get("desc", "")} for k in presets.default_keys()]})
 
 
 @api_view(["POST"])

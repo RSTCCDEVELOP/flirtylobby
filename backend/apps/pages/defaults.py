@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """The standard pages of the website for every part of the admin (games, community, webshop and payment, subscriptions and donations):
 public pages and private pages (in the dashboard), with their addresses, texts in every language, the link to the Pages module (a page is only there while its module is on)
 and a layout that differs per community theme (normal, dating, business, sporters, webshop). Nothing that an administrator changed is ever overwritten."""

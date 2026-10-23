@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // How often the pages ask the server for news (messages, notifications, chat ...). Set by the administrator (Admin -> Systeem -> Vernieuwen, in seconds):
 // 0 = every part keeps its own pace. Real-time parts (a video call) are not changed.
 let seconds = 0;

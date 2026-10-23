@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Marketing system objects of Easy2edit: one tile per module that opens a pop-up with a marketing text, examples with made-up data and the flags of the active languages.
 Built-in texts: Dutch and English (marketing_content.py). Other languages (and improvements) are made with the AI and kept in the database (MarketingText).
 Super admin → Prijzen → Marketing: all tiles on/off, and each tile on/off. A tile is a system object (kind "marketing", ref_key = the module)."""

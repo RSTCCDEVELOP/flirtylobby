@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """What every module shows on its own tab of Statistieken. A collector gets the number of days and returns widgets:
 number {title, value, sub} · series {title, points | series: [{name, points}]} · bars {title, rows: [{label, value}]} · table {title, columns, rows}.
 They read the tables of the module itself (what is there) and the counters that modules and plugins record (what happened)."""

@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +14,7 @@ import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 import DemoData from "./DemoData";
 import RunPopup from "./RunPopup";
-import { runDemo } from "../lib/demoRun";
+import { runDemo, resumeDemo } from "../lib/demoRun";
 import { PresetIcon } from "./Icons";
 
 // Standard installations: a kind of business with its modules, plugins and community theme. One click switches everything (Super admin).
@@ -33,6 +40,11 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   const [run, setRun] = useState(null); // the status pop-up with the progress
   const [ask, setAsk] = useState(null); // {p, needs, demo}: the question before an installation is set
   if (!list || (!manage && !list.length)) return null;
+  // several can be ticked as "offered when nothing is installed yet" (at least one stays ticked); the question after logging in picks one of them
+  const makeDefault = async (p, on) => {
+    try { await api("/system/presets/default/", { method: "POST", body: { key: p.key, on } }); window.dispatchEvent(new Event("presets-changed")); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+  };
   const release = async (p, on) => {
     const next = { ...Object.fromEntries(list.map((x) => [x.key, x.admin])), [p.key]: on };
     setReleased(next);
@@ -75,7 +87,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
     <div style={{ display: "grid", gap: ".7rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("Kies een standaard installatie en alles wordt voor je ingesteld: welke modules en plugins aan staan en het thema van de community. Teksten, gebruikers en andere gegevens blijven zoals ze zijn.")}{manage && ` ${tx("Met de schakelaar bepaal je welke installaties ook voor beheerders (admin) zichtbaar zijn.")}`}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-      <RunPopup run={run} onClose={() => { setRun(null); window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
+      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onClose={() => { setRun(null); window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
       {ask && (
         <div className="overlay" onClick={() => setAsk(null)}>
           <div className="card modal" role="dialog" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
@@ -113,6 +125,12 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
               <label className="check sec-toggle">
                 <span className="switch"><input type="checkbox" checked={!!p.admin} onChange={(e) => release(p, e.target.checked)} /><span /></span>
                 <span>{tx("Zichtbaar in de admin")}</span>
+              </label>
+            )}
+            {manage && !adminOnly && (
+              <label className="check" title={tx("Vink aan welke installaties worden aangeboden als er nog niets is geïnstalleerd. Er is er altijd minstens één.")}>
+                <input type="checkbox" checked={!!p.default} onChange={(e) => makeDefault(p, e.target.checked)} />
+                <span>{tx("Aanbieden bij eerste installatie")}</span>
               </label>
             )}
             <p className="muted" style={{ margin: 0 }}>{tx(p.desc)}</p>

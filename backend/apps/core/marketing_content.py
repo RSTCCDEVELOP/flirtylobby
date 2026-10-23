@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Marketing texts for every module of Easy2edit, in Dutch and English: a tagline, a short introduction, three advantages and an example with made-up data (shown in the theme of the site).
 Per module: (English name, Dutch version, English version); a version is (tagline, introduction, [advantage "title|text" x3], title of the example, [row "name|detail|badge" x3], [number "value|label" x3]).
 Other languages are made with the AI button (Super admin -> Prijzen -> Marketing) and kept in the database."""

@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // Colour themes for a member's profile page. Each sets the accent colours (--blue, --orange) and a gradient (--pt-grad) of the page.
 // "key" matches PROFILE_DESIGNS in backend/apps/social/themes.py; the CSS for [data-pt="key"] is in app/globals.css.
 export const DESIGNS = [

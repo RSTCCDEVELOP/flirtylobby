@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Standard installations: ready-made sets of modules, plugins and the community theme for a kind of business. Choosing one switches everything for you
 (Super admin → Systeem resetten, or right after a reset). The website texts, users and other data are never touched: only what is on or off, and the theme."""
 import logging
@@ -24,6 +31,10 @@ PRESETS = [
     {"key": "zakelijk-netwerk", "name": "Zakelijk netwerk", "icon": "handshake", "theme": "business", "plugins": ["community", "profile-themes", "agenda", "marketplace", "documents"],
      "desc": "Een besloten netwerk voor ondernemers: profielen, zoeken, berichten en chat, een agenda voor afspraken, een marktplaats voor diensten en documentbeheer.",
      "modules": BASE + ["seo", "faq", "roles", "sysobjects"]},
+    {"key": "intranet", "name": "Intranet", "icon": "lock", "theme": "business", "plugins": ["community", "profile-themes", "documents", "agenda"], "closed": True,
+     "exclude_modules": ["discover", "directconnect"],
+     "desc": "Een volledig besloten intranet voor je organisatie: zonder inloggen is er niets te zien. Eén startpagina, een smoelenboek van collega's, een documentensysteem (DMS) en een agenda, met berichten en chat, een interne kennisbank (FAQ), rollen en rechten, meldingen en twee-staps verificatie.",
+     "modules": ["pages", "edit_mode", "media", "branding", "theme", "languages", "communication", "notifications", "help", "faq", "roles", "twofa", "word_filter", "sysobjects", "stats", "integrations"]},
     {"key": "datingplatform", "name": "Datingplatform", "icon": "heart", "theme": "dating", "plugins": ["community", "profile-themes", "subscriptions", "agenda", "games"],
      "desc": "Leden vinden elkaar met zoeken en swipen, chatten en videobellen. Met leeftijdscontrole, abonnementen en een agenda voor dates en spelletjes.",
      "modules": BASE + ["faq", "age_gate", "word_filter", "twofa", "geo", "sysobjects"]},
@@ -189,7 +200,7 @@ def _wanted_modules(preset):
                     if r not in want:
                         want.add(r)
                         changed = True
-    return want
+    return want - set(preset.get("exclude_modules") or [])  # parts of a plugin this installation does not use (an intranet has no matching or direct connection)
 
 
 def ensure_home_logo():
@@ -277,11 +288,12 @@ def listing():
     labels = {m["key"]: m["label"] for m in modules.MODULES}
     allowed = admin_allowed()
     act = active()
+    dflt = set(default_keys())
     out = []
     for base in PRESETS:
         p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -332,6 +344,26 @@ def _save_data(data):
     obj, _ = SystemSettings.objects.get_or_create(pk=1)
     obj.data = data
     obj.save()
+
+
+def default_keys():
+    """The standard installations that are offered when nothing is installed yet (several can be ticked; the first one until the superadmin chooses)."""
+    d = _data()
+    keys = [k for k in dict.fromkeys(d.get("default_presets") or ([d["default_preset"]] if d.get("default_preset") else [])) if k in BY_KEY]
+    return keys or [PRESETS[0]["key"]]
+
+
+def set_default(key, on=True):
+    """Tick or untick one installation as offered. At least one always stays ticked."""
+    if key not in BY_KEY:
+        raise ValueError("Onbekende installatie.")
+    keys = default_keys()
+    keys = [k for k in PRESETS_ORDER if k in set(keys) | {key}] if on else [k for k in keys if k != key] or keys
+    _save_data({**_data(), "default_presets": keys})
+    return keys
+
+
+PRESETS_ORDER = [p["key"] for p in PRESETS]
 
 
 def active():
@@ -463,6 +495,8 @@ def unapply(key):
     preset = BY_KEY.get(key)
     if not preset:
         raise KeyError(key)
+    if preset.get("closed"):
+        set_closed(False)  # without the installation the website is open again
     keep = {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)
     for m in modules.MODULES:
         if not m.get("core"):
@@ -487,6 +521,22 @@ def unapply(key):
         pass
     logger.warning("Standard installation %s removed", key)
     return {"preset": key, "removed": True}
+
+
+def set_closed(on):
+    """Closed website on/off (Beveiliging -> Algemeen). Self sign-up goes off with it: in a closed website people are invited."""
+    from apps.security import service
+
+    from apps.security.models import SecuritySettings
+
+    obj, _ = SecuritySettings.objects.get_or_create(pk=1)
+    data = dict(obj.data or {})
+    data["basic"] = {**(data.get("basic") or {}), "closed_site": bool(on)}
+    if on:
+        data["registration"] = {**(data.get("registration") or {}), "enabled": False}
+    obj.data = data
+    obj.save()
+    service.invalidate()
 
 
 def apply(key, preset=None):
@@ -565,6 +615,10 @@ def apply(key, preset=None):
         Page.objects.filter(key__in=pe["remove"]).update(enabled=False, in_menu=False)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: the edited pages could not be set", key)
+    try:  # an installation can be closed (an intranet): nothing is shown or answered without logging in; the others are open again
+        set_closed(bool(preset.get("closed")))
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: the closed website setting could not be set", key)
     data = _data()
     data["active_preset"] = key
     _save_data(data)

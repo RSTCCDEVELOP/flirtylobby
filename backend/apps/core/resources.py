@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """The library: the zips that come with the product in the folder resource/ (in git): resource/plugins, resource/themas and resource/languages. Only the latest version of each is kept.
 
 From here a superadmin (or, for what is ticked in resource/allowed.json, anybody who may manage that part) can add a plugin, theme or language without uploading a file, and update

@@ -1,4 +1,11 @@
 #!/bin/bash
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 # Maakt een certificaat voor lokaal testen met https (localhost, 127.0.0.1 en het adres van dit netwerk) in .certs/.
 # Met mkcert (brew install mkcert && mkcert -install) is het certificaat vertrouwd door je browser: nodig voor passkeys en inloggen met Google of Apple.
 # Zonder mkcert maakt dit script een zelfondertekend certificaat (de browser waarschuwt; passkeys werken dan niet).

@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 "use client";
 
 import { tx } from "../lib/t";
@@ -72,7 +79,7 @@ export default function TwoFactorProfile() {
       {fixed && <p className="muted" style={{ margin: 0 }}>{tx("Twee-staps verificatie is verplicht voor jouw account.")}</p>}
 
       {panel === "enable" && !sentTo && !app && (
-        <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
+        <div className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
           {tf.available.includes("sms") && (
             <label style={{ flex: 1, maxWidth: 260 }}>{tx("Telefoon (met landcode)")}
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+31612345678" />
@@ -99,7 +106,7 @@ export default function TwoFactorProfile() {
               </div>
             </div>
           </div>
-          <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
+          <div className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
             <div className="code-field" style={{ flex: 1 }}><span>{tx("Code uit de app")}</span><CodeInput value={code} onChange={setCode} autoFocus /></div>
             <button className="btn primary" disabled={busy || code.length < 6}>{tx("Bevestigen")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Annuleren")}</button>
@@ -109,7 +116,7 @@ export default function TwoFactorProfile() {
       {panel === "enable" && sentTo && (
         <form className="form" onSubmit={confirm}>
           <p className="muted" style={{ margin: 0 }}>{tx("We hebben een code gestuurd naar")} {sentTo}.</p>
-          <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
+          <div className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
             <div className="code-field" style={{ flex: 1 }}><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus /></div>
             <button className="btn primary" disabled={busy || code.length < 6}>{tx("Bevestigen")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Annuleren")}</button>
@@ -118,7 +125,7 @@ export default function TwoFactorProfile() {
       )}
       {panel === "disable" && (
         <form className="form" onSubmit={disable}>
-          <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
+          <div className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
             <label style={{ flex: 1, maxWidth: 320 }}>{tx("Wachtwoord")}
               <input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} />
               <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus autoComplete="current-password" />

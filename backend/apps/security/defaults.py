@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Defaults + validation spec for the security settings. Edit here to add settings."""
 
 COMMON_GATE = {
@@ -13,6 +20,7 @@ DEFAULTS = {
     "basic": {
         "login_max_attempts": 5, "lockout_minutes": 15, "token_lifetime_hours": 168,
         "password_min_length": 8, "password_complexity": False, "security_headers": True, "hsts": True,
+        "closed_site": False,  # intranet: nothing is shown or answered without logging in
     },
     "geo": {
         "enabled": False, "mode": "block", "countries": [], "always_allow_ips": [], "admin_bypass": True,
@@ -126,7 +134,7 @@ TEXT_KEYS = {
 SPEC = {
     "basic": {
         "login_max_attempts": ("int", 1, 20), "lockout_minutes": ("int", 1, 1440), "token_lifetime_hours": ("int", 0, 8760),
-        "password_min_length": ("int", 6, 64), "password_complexity": "bool", "security_headers": "bool", "hsts": "bool",
+        "password_min_length": ("int", 6, 64), "password_complexity": "bool", "security_headers": "bool", "hsts": "bool", "closed_site": "bool",
     },
     "geo": {
         "enabled": "bool", "mode": ("choice", ["block", "allow"]), "countries": "countries", "always_allow_ips": "ips",

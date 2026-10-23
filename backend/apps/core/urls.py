@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 from django.urls import path
 
 from . import backup_views, dashboard, marketing, resource_views, sales, views
@@ -40,6 +47,8 @@ urlpatterns = [
     path("system/site-defaults/", views.site_defaults_view),
     path("system/presets/", views.presets_list),
     path("system/presets/admin/", views.presets_admin),
+    path("system/presets/default/", views.presets_default),
+    path("system/presets/setup/", views.presets_setup),
     path("system/presets/<slug:key>/page/", views.presets_page),
     path("system/presets/<slug:key>/edit/", views.presets_edit),
     path("system/presets/<slug:key>/remove/", views.presets_remove),

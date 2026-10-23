@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -191,3 +198,13 @@ class SocialIdentity(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["provider", "subject"], name="uniq_social_identity")]
+
+
+class PasswordReset(models.Model):
+    """A request to set a new password: a code that went to the e-mail address of the account (see pwreset.py). The code itself is never stored, only a hash."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="password_reset")
+    code_hash = models.CharField(max_length=64)
+    expires = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    sent_at = models.DateTimeField()

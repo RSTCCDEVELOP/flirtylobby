@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """File browser for the S3 link (Admin -> API keys -> S3 -> Bladeren): look around, upload, make folders, delete.
 Works inside the 'map in de bucket' of the link; files that the media library uses can only be removed from the library."""
 import logging

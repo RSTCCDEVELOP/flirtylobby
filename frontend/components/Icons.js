@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 const p = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" };
 export const IconHome = () => <svg {...p}><path d="M3 11l9-8 9 8M5 10v10h14V10" /></svg>;
 export const IconUsers = () => <svg {...p}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 010 7M18 14.3c2.2.6 3.5 2.5 3.5 5.2" /></svg>;
@@ -70,6 +77,7 @@ export const PRESET_ICONS = {
   medal: <><circle cx="12" cy="15" r="5" /><path d="M8.5 10.7L6 3h4l2 4 2-4h4l-2.5 7.7M12 12.5v5" /></>,
   ribbon: <><path d="M12 14a5.5 5.5 0 10-5.5-5.5c0 2 1.5 3.7 3 5.2L8 21l4-2.5 4 2.5-2.5-7.3c1.5-1.5 3-3.2 3-5.2" /></>,
   tag: <><path d="M3 12V4a1 1 0 011-1h8l9 9-9 9z" /><circle cx="8" cy="8" r="1.3" /></>,
+  lock: <><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 018 0v3M12 15v2" /></>,
   gamepad: <><rect x="2.5" y="7" width="19" height="11" rx="5" /><path d="M7.5 10.5v4M5.5 12.5h4M15.5 11.5h.01M18 13.5h.01" /></>,
 };
 export const PresetIcon = ({ name, size = 26 }) => PRESET_ICONS[name] ? <svg {...p} width={size} height={size}>{PRESET_ICONS[name]}</svg> : null;

@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 "use client";
 
 import { Busy } from "../../../../components/PageLoader";
@@ -228,6 +235,7 @@ export default function Security() {
         </div>
         <Toggle label={tx("Sterk wachtwoord verplicht")} hint={tx("hoofdletter, kleine letter, cijfer en leesteken")} checked={basic.password_complexity} onChange={(v) => set("basic")("password_complexity", v)} />
         <Toggle label={tx("Beveiligingsheaders op de website")} hint={tx("X-Frame-Options, nosniff, referrer-policy")} checked={basic.security_headers} onChange={(v) => set("basic")("security_headers", v)} />
+        <Toggle label={tx("Afgesloten website (intranet)")} hint={tx("zonder inloggen is er niets te zien: alle pagina's en gegevens vragen om een login")} checked={!!basic.closed_site} onChange={(v) => set("basic")("closed_site", v)} />
         <Toggle label={tx("HSTS (alleen via https)")} checked={basic.hsts} onChange={(v) => set("basic")("hsts", v)} />
       </Collapsible>
 

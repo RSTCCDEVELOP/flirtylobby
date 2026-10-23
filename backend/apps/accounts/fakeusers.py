@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Fake members for testing (admins with the users right, when Claude is linked or the sandbox simulates it):
 AI invents the people (names, profile fields from the community settings), and a few illustrative avatars are drawn as their photos.
 They are recognisable (username fake_…, e-mail …@example.com) and can all be removed at once."""

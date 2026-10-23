@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 "use client";
 
 import { tx } from "../lib/t";
@@ -194,7 +201,7 @@ export default function SettingsBackup() {
           )}
           {zipPw && !useLogin && !(saved && useSaved) && (
             <>
-              <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap" }}>
+              <div className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap" }}>
                 <label style={{ flex: 1, maxWidth: 260 }}>{tx("Wachtwoord")}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" /></label>
                 <label style={{ flex: 1, maxWidth: 260 }}>{tx("Herhaal wachtwoord")}<input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" /></label>
               </div>
@@ -217,7 +224,7 @@ export default function SettingsBackup() {
             <input ref={file} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => { choose(e.target.files[0]); e.target.value = ""; }} />
           </div>
           {pending && (
-            <form className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }} onSubmit={(e) => { e.preventDefault(); open(pending, openPw); }}>
+            <form className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }} onSubmit={(e) => { e.preventDefault(); open(pending, openPw); }}>
               <label style={{ flex: 1, maxWidth: 320 }}>{tx("Wachtwoord van de zip")} <small className="muted">{tx("(of het inlogwachtwoord waarmee de zip is gemaakt)")}</small>
                 <input type="password" value={openPw} onChange={(e) => setOpenPw(e.target.value)} autoFocus autoComplete="off" />
               </label>

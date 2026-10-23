@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 import copy
 import ipaddress
 import re
@@ -174,7 +181,7 @@ def public():
         k: s[name][k] for k in ("enabled", "frequency", "days", "show_on", "exclude_paths", "version", "texts", *extra)
     }
     return {
-        "basic": {"security_headers": s["basic"]["security_headers"], "hsts": s["basic"]["hsts"]},
+        "basic": {"security_headers": s["basic"]["security_headers"], "hsts": s["basic"]["hsts"], "closed_site": bool(s["basic"].get("closed_site"))},
         "geo": {"enabled": s["geo"]["enabled"], "admin_bypass": s["geo"]["admin_bypass"], "texts": s["geo"]["texts"]},
         "age": gate("age", ("min_age", "deny_url")),
         "gambling": gate("gambling", ("min_age", "deny_url", "require_confirm")),

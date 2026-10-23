@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Export and import of own pages (pages that were designed with blocks) as zips, to use them in another easy2edit.
 
     <key>/page.json     the page: name, audience, menu, background, the blocks (layout), ALL linked content (texts per language, picture settings),

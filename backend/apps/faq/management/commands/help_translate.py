@@ -1,3 +1,10 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
 """Translate the help texts of the edit mode (the "?" icon) into every language: reads /tmp/help_nl.json (key -> Dutch text), writes frontend/lib/help-i18n.json.
 Small parts (a few texts x a few languages) in parallel, with a new try when an answer cannot be read; what is done is saved as it goes. Run again to fill the gaps."""
 import json

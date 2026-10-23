@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // "GO" in the help: go to a page and open the right tab and block there. The help sets the wish here, the page that opens picks it up:
 // <Tabs> switches to the tab and <Collapsible> opens the block (and scrolls to it). It counts for a few seconds, so a pop-up opened later is left alone.
 let wish = null;

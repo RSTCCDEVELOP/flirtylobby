@@ -1,3 +1,10 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
 // The setup of one page (Admin -> Pagina's -> Instellingen -> Pagina-opzet): header and footer on or off and its own theme. What the page does not set follows the theme in use.
 export async function getPageSetup(key) {
   const fallback = { header: true, footer: true, theme: null, css: "", fonts_url: "" };

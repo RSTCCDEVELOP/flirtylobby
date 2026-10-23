@@ -1,18 +1,33 @@
 {
  "format": "site-defaults",
  "version": 1,
- "captured_at": "2026-10-22T11:05:09+00:00",
+ "captured_at": "2026-10-23T18:32:14+00:00",
  "bundle": {
   "format": "easy2edit-settings",
   "version": 1,
-  "exported_at": "2026-10-22T11:05:09+00:00",
+  "exported_at": "2026-10-23T18:32:14+00:00",
   "secrets_included": false,
   "files_included": false,
   "sections": {
    "theme": {
     "v": 1,
     "label": "Vormgeving",
-    "data": {}
+    "data": {
+     "light_page": "#fff7f0",
+     "light_bg": "#fdece0",
+     "light_card": "#fffaf5",
+     "light_hover": "#fff1e6",
+     "light_line": "#f0d9c5",
+     "light_text": "#3a2a1f",
+     "light_muted": "#8a6a52",
+     "dark_page": "#1f140d",
+     "dark_bg": "#170f09",
+     "dark_card": "#2a1b10",
+     "dark_hover": "#342315",
+     "dark_line": "#4a3220",
+     "dark_text": "#f5e6d8",
+     "dark_muted": "#c9a888"
+    }
    },
    "security": {
     "v": 1,
