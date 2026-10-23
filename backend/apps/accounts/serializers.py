@@ -12,7 +12,7 @@ WORD_KWARGS = {f: {"validators": [validate_no_forbidden_words]} for f in WORD_FI
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Full user, used by the (staff only) users module."""
+    """Full user, used by the (staff only) users module. """
 
     password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
     roles = serializers.PrimaryKeyRelatedField(many=True, queryset=Role.objects.all(), required=False)
