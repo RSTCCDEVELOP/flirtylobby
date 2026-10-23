@@ -2,6 +2,7 @@
 # copy a developer's generated files or local environment into the build context.
 node_modules
 .next
+.next-build
 .env
 .env.*
 npm-debug.log*
