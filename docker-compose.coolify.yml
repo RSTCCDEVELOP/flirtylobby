@@ -53,10 +53,13 @@ services:
     build:
       context: ./frontend
       target: prod
+      # Next.js embeds NEXT_PUBLIC_* variables in the browser bundle during build.
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in Coolify}
     expose:
       - "5173"
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Server-side requests stay on the Docker network.
       API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000}
     depends_on:
       - backend
