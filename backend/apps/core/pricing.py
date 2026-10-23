@@ -288,6 +288,10 @@ def editable(cfg):
     """The numbers the AI may change: {key: value}."""
     out = {"base_price": cfg["base_price"], "discount_quarter": cfg["periods"]["quarter"]["discount"], "discount_year": cfg["periods"]["year"]["discount"], "hourly_rate": cfg["implementation"]["hourly_rate"], "hosting_markup": cfg["hosting"]["markup"]}
     out.update({k: v for k, v in cfg["items"].items()})
+    try:  # everything that can have a price (also the modules and plugins that have none yet): the AI prices them all
+        out.update({r["key"]: r["price"] for r in catalog()})
+    except Exception:  # noqa: BLE001
+        pass
     out.update({f"email_tier_{t['from']}": t["price"] for t in cfg["email"]["tiers"]})
     out.update({f"hosting_{o['key']}": o["price"] for o in cfg["hosting"]["options"] if "price" in o})
     return out
@@ -318,7 +322,7 @@ def apply_values(cfg, values):
             put(new["implementation"], "hourly_rate", v)
         elif k == "hosting_markup":
             put(new["hosting"], "markup", v)
-        elif k in new["items"]:
+        elif k in new["items"] or (k.startswith(("module:", "plugin:", "package:")) and k in {r["key"] for r in catalog()}):
             put(new["items"], k, v)
         elif k.startswith("email_tier_"):
             for t in new["email"]["tiers"]:
@@ -331,30 +335,202 @@ def apply_values(cfg, values):
     return new, n
 
 
-def ai_proposal(answers):
-    """Ask Claude for a price proposal given the position in the market. Returns {values, reasons, summary, market}."""
+def _lenient_json(text):
+    """The JSON object in an answer; when the whole is broken (a quote in a text), the parts that are still readable: values, reasons, summary, market."""
+    m = re.search(r"\{.*\}", text, re.S)
+    if m:
+        try:
+            return json.loads(m.group(0))
+        except ValueError:
+            pass
+    out = {}
+    for key in ("values", "reasons"):
+        mm = re.search(r'"%s"\s*:\s*(\{[^{}]*\})' % key, text, re.S)
+        if mm:
+            try:
+                out[key] = json.loads(mm.group(1))
+            except ValueError:  # one bad line: take the lines that are fine
+                out[key] = {}
+                for k, v in re.findall(r'"([a-z_]+(?::[a-z0-9_-]+)?)"\s*:\s*("(?:[^"\\]|\\.)*"|-?[0-9.]+)', mm.group(1)):
+                    try:
+                        out[key][k] = json.loads(v)
+                    except ValueError:
+                        pass
+    ms = re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)"', text)
+    if ms:
+        out["summary"] = ms.group(1)
+    return out
+
+
+def plugin_info():
+    """One line per plugin (name and what it does) so the AI can compare it with similar products."""
+    from apps.plugins.models import Plugin
+
+    return "\n".join(f"- plugin:{p.name} ({p.title}): {((p.manifest or {}).get('description') or '')[:220]}" for p in Plugin.objects.order_by("name"))
+
+
+def _ask_json(system, prompt, note, max_tokens, web=False, label=""):
+    """One small question to the AI: the JSON object in the answer ({} when it gave nothing usable). Shows what happens through note()."""
     from apps.integrations import ai
 
+    seen = {"n": 0, "f": 0}
+
+    def event(kind, what):
+        if kind == "search":
+            seen["n"] += 1
+            note(f"{label}Zoekt op internet ({seen['n']}): {what}" if what else f"{label}Zoekt op internet ({seen['n']})")
+        elif kind == "think":
+            note(f"{label}Denkt na")
+        elif kind == "found":
+            seen["f"] += 1
+            note(f"{label}Zoekresultaat {seen['f']} van {seen['n']} gelezen")
+        elif kind == "write":
+            note(f"{label}Schrijft het antwoord")
+
+    for attempt in (1, 2):
+        try:
+            text = ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=300, web=web, on_event=event)
+            data = _lenient_json(text)
+            if data:
+                return data
+            note(f"{label}Geen bruikbaar antwoord, opnieuw proberen")
+        except ValueError as e:
+            note(f"{label}Mislukt ({e})" + ("; opnieuw proberen" if attempt == 1 else ""))
+            if web and attempt == 2:
+                web = False  # (searching did not work: the AI uses what it knows)
+    return {}
+
+
+RESEARCH = [
+    ("Marktonderzoek websites, hosting en e-mail", "websitebouwers en CMS-hosting (Wix, Squarespace, Shopify, WordPress.com, Webflow), shared hosting en VPS in Nederland (TransIP, Hostnet, Antagonist, DigitalOcean) en zakelijke e-mail per postvak"),
+    ("Marktonderzoek webshop, community en abonnementen", "plugins/SaaS voor een webshop, community/ledenplatform (BuddyBoss, Circle), abonnementen en donaties (MemberPress, Stripe billing), marktplaats (Dokan, Sharetribe) en facturatie (Moneybird)"),
+    ("Marktonderzoek agenda, documenten en spelletjes", "boekings/agenda-plugins (Bookly), documentbeheer (WP Download Manager, Dropbox Business), spelletjes/gamification (GamiPress) en profiel/leeftijdscontrole-modules"),
+]
+KEY_NAMES = {"base_price": "Basisprijs", "discount_quarter": "Korting per kwartaal (%)", "discount_year": "Korting per jaar (%)", "hourly_rate": "Uurtarief ontwerp en implementatie", "hosting_markup": "Opslag op hosting (%)"}
+RUN_KEY = "price_ai_run"
+
+
+def load_run():
+    """The last AI calculation (kept, so a next time can go on where it stopped): {answers, facts, market, researched, values, reasons, done, finished, at}."""
+    from .models import SystemSettings
+
+    d = ((SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(RUN_KEY))
+    return d if isinstance(d, dict) else None
+
+
+def save_run(run):
+    from .models import SystemSettings
+
+    row, _ = SystemSettings.objects.get_or_create(pk=1)
+    row.data = {**(row.data or {}), RUN_KEY: run}
+    row.save()
+
+
+def run_info():
+    """What the screen needs to ask "go on or start again": {exists, done, total, finished, at}."""
+    run, total = load_run(), len(editable(load()))
+    if not run:
+        return {"exists": False}
+    return {"exists": True, "done": len([k for k in run.get("done", []) if k]), "total": total, "finished": bool(run.get("finished")), "at": run.get("at", ""), "answers": run.get("answers", {}), "researched": bool(run.get("researched"))}
+
+
+def _result(run, cur):
+    values = {k: v for k, v in run.get("values", {}).items() if k in cur}
+    labels = {r["key"]: r["label"] for r in catalog()}
+    labels.update(KEY_NAMES)
+    return {"summary": str(run.get("summary") or "")[:1500], "market": run.get("market", [])[:12], "labels": {k: labels.get(k, k) for k in values}, "values": values,
+            "reasons": {k: v for k, v in run.get("reasons", {}).items() if k in values}, "current": {k: cur[k] for k in values}}
+
+
+def ai_run(answers, progress=None, partial=None, resume=False):
+    """A price proposal in small steps, each saved at once: first short market researches on the internet, then every price on its own (a tiny question to the AI, four at a time).
+    resume=True goes on with what the last calculation had done. `partial(result)` is called after every price. Returns {values, reasons, summary, market, labels, current}."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    from datetime import datetime
+
+    note = progress or (lambda *_a: None)
     cfg = load()
     cur = editable(cfg)
+    old = load_run() if resume else None
+    run = old if old and not old.get("finished") else {"answers": answers, "facts": [], "market": [], "researched": False, "values": {}, "reasons": {}, "done": [], "finished": False, "summary": ""}
+    if old and not old.get("finished"):
+        note(f"Verder gaan: {len(run['done'])} van {len(cur)} prijzen waren al klaar")
+        answers = run.get("answers") or answers
+    run["answers"], run["at"] = answers, datetime.now().strftime("%Y-%m-%d %H:%M")
     pos = POSITIONS.get(answers.get("position"), POSITIONS["market"])
-    system = ("Je bent een prijsadviseur voor een Nederlandse aanbieder van websites (CMS) met hosting en e-mail. Antwoord ALLEEN met geldige JSON: "
-              '{"summary": "korte uitleg in het Nederlands", "market": [{"name": "...", "price": "...", "note": "..."}], "values": {"<sleutel>": <getal>}, "reasons": {"<sleutel>": "waarom"}}. '
-              "Gebruik alleen sleutels uit de lijst met huidige waarden. Alle bedragen per maand in euro ex btw (kortingen en opslag in procenten). Verzin geen bronnen: noem de concurrenten die je kent (zoals Wix, Squarespace, Shopify, WordPress.com, Webflow, Ghost, Strapi Cloud, Transip, Hostnet, Antagonist, DigitalOcean) met hun ongeveer prijzen en zeg dat het een inschatting is.")
-    prompt = (f"Gewenste positie: {pos}.\nDoelgroep: {answers.get('audience') or 'midden- en kleinbedrijf'}.\nGewenste winstmarge op hosting en inkoop: minimaal {answers.get('margin') or 25}%.\n"
-              f"Inkoop: {cfg.get('rst_share', 0)}% van de softwareprijs gaat naar RST; hosting-inkoop is DigitalOcean (USD x {cfg['hosting']['usd_eur']}).\n"
-              f"Opmerkingen: {answers.get('notes') or '-'}\n\nHuidige waarden:\n{json.dumps(cur, ensure_ascii=False)}\n\nStel nieuwe waarden voor voor wat anders moet, en laat de rest weg.")
-    text = ai.claude(system, prompt, max_tokens=3000)
-    m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        raise ValueError("De AI gaf geen bruikbaar antwoord. Probeer het nog eens.")
+    lock = threading.Lock()
+    # 1. the market: small researches, each a short list of found prices (once)
+    if not run.get("researched"):
+        rs = ("Je zoekt actuele prijzen op het internet voor een Nederlandse aanbieder van een modulair websitesysteem. Antwoord ALLEEN met korte, geldige JSON: "
+              '{"found": [{"name": "aanbieder en product", "price": "bedrag per maand in euro ex btw als tekst", "note": "max 8 woorden"}]}. Maximaal 8 items, geen lange teksten, geen aanhalingstekens in de tekst.')
+        for title, what in RESEARCH:
+            note(title)
+            got = _ask_json(rs, f"Zoek de prijzen per maand van: {what}.", note, 4000, web=True, label=f"{title}: ")
+            for f in (got.get("found") or [])[:8]:
+                if isinstance(f, dict):
+                    item = {k: str(f.get(k, ""))[:120] for k in ("name", "price", "note")}
+                    run["market"].append(item)
+                    run["facts"].append(f"{item['name']}: {item['price']} ({item['note']})")
+            save_run(run)
+        run["researched"] = True
+        if not run["facts"]:
+            note("Geen marktprijzen gevonden: de AI gebruikt zijn eigen kennis")
+        save_run(run)
+    # 2. every price on its own, saved at once
+    labels = {r["key"]: r["label"] for r in catalog()}
+    labels.update(KEY_NAMES)
+    info = {}
     try:
-        data = json.loads(m.group(0))
-    except ValueError:
+        from apps.plugins.models import Plugin
+
+        info = {f"plugin:{p.name}": _first_sentence_text((p.manifest or {}).get("description"), 160) for p in Plugin.objects.all()}
+    except Exception:  # noqa: BLE001
+        pass
+    facts = chr(10).join(run["facts"])[:2500] or "(geen: gebruik je eigen kennis)"
+    ps = ("Je bent een prijsadviseur voor een Nederlandse aanbieder van websites (CMS) met hosting en e-mail. Antwoord ALLEEN met geldige JSON: "
+          '{"price": <getal>, "reason": "max 10 woorden, zonder aanhalingstekens"}. Bedragen per maand in euro ex btw (kortingen en opslag in procenten). Geef een marktconforme waarde, ook als de huidige al goed lijkt. '
+          "Orders, Financieel en Profielthema's mogen laag of gratis zijn als dat marktconform is.")
+    pending = [k for k in cur if k not in run["done"]]
+    total, counter = len(cur), {"n": len(run["done"])}
+
+    def one(k):
+        prompt = (f"Gewenste positie: {pos}. Doelgroep: {answers.get('audience') or 'midden- en kleinbedrijf'}. Minimale winstmarge op hosting en inkoop: {answers.get('margin') or 25}%. "
+                  f"Inkoop: {cfg.get('rst_share', 0)}% van de softwareprijs gaat naar RST; hosting-inkoop is DigitalOcean (USD x {cfg['hosting']['usd_eur']}). Opmerkingen: {answers.get('notes') or '-'}\n\n"
+                  f"Gevonden marktprijzen:\n{facts}\n\nOnderdeel: {labels.get(k, k)} ({k}){': ' + info[k] if info.get(k) else ''}\nHuidige waarde: {cur[k]}")
+        got = _ask_json(ps, prompt, lambda *_a: None, 2500, web=False)
+        v = got.get("price")
+        with lock:
+            counter["n"] += 1
+            if isinstance(v, (int, float)) and v >= 0:
+                run["values"][k] = v
+                run["reasons"][k] = str(got.get("reason") or "")[:200]
+                note(f"Prijs {counter['n']} van {total}: {labels.get(k, k)}: {cur[k]} → {v}")
+            else:
+                note(f"Prijs {counter['n']} van {total}: {labels.get(k, k)}: geen antwoord, wordt overgeslagen")
+            run["done"].append(k)
+            save_run(run)
+            if partial:
+                partial(_result(run, cur))
+
+    with ThreadPoolExecutor(4) as pool:
+        list(pool.map(one, pending))
+    run["finished"] = True
+    run["summary"] = f"{len(run['values'])} van {total} prijzen vergeleken met de markt ({pos})."
+    save_run(run)
+    note("Voorstel samenstellen")
+    if not run["values"]:
         raise ValueError("De AI gaf geen bruikbaar antwoord. Probeer het nog eens.")
-    values = {k: v for k, v in (data.get("values") or {}).items() if k in cur and isinstance(v, (int, float)) and v >= 0}
-    return {"summary": str(data.get("summary") or "")[:1500], "market": [{k: str(x.get(k, ""))[:120] for k in ("name", "price", "note")} for x in (data.get("market") or []) if isinstance(x, dict)][:12],
-            "values": values, "reasons": {k: str(v)[:200] for k, v in (data.get("reasons") or {}).items() if k in values}, "current": {k: cur[k] for k in values}}
+    return _result(run, cur)
+
+
+def _first_sentence_text(text, n):
+    t = " ".join(str(text or "").split()).split(". ")[0]
+    return t if len(t) <= n else t[: n - 1] + "…"
+
+
+def ai_proposal(answers, progress=None):
+    return ai_run(answers, progress)
 
 
 # ── installatieconfiguratie ───────────────────────────────────────────────────────────────────────────────────────────

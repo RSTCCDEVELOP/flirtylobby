@@ -26,7 +26,7 @@ const blank = { names: {}, descriptions: {}, recipients: {}, button: BTN, system
 const PAGES = [{ key: "donations", title: "Doneren", path: "/doneren", description: "Waar bezoekers een bedrag kiezen: openingstekst, uitleg en de donatie-acties." }];
 const LINKS = [
   { href: "/dashboard/mijn-donaties", title: "Mijn donaties (voor leden)", description: "De pagina waar een lid zijn eigen donaties ziet." },
-  { href: "/dashboard/admin/plugins/orders", title: "Orders", description: "Bestellingen en betalingen." },
+  { href: "/dashboard/admin/plugin/orders", title: "Orders", description: "Bestellingen en betalingen." },
 ];
 
 export default function DonationsAdmin() {

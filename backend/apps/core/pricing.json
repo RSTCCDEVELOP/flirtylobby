@@ -28,16 +28,16 @@
     "module:integrations": 2,
     "module:word_filter": 1,
     "module:twofa": 1,
-    "package:community": 9,
-    "package:age": 3,
-    "package:commerce": 12,
-    "plugin:webshop": 8,
-    "plugin:agenda": 4,
-    "plugin:marketplace": 6,
-    "plugin:games": 5,
+    "package:community": 15,
+    "package:age": 4,
+    "package:commerce": 18,
+    "plugin:webshop": 12,
+    "plugin:agenda": 5,
+    "plugin:marketplace": 10,
+    "plugin:games": 6,
     "plugin:orders": 0,
-    "plugin:payments": 0,
-    "plugin:documents": 4
+    "plugin:finance": 0,
+    "plugin:documents": 6
   },
   "wizard": [
     {
@@ -70,6 +70,10 @@
       "modules": [
         "profiles",
         "discover"
+      ],
+      "plugins": [
+        "community",
+        "profile-themes"
       ]
     },
     {
@@ -104,7 +108,7 @@
       "plugins": [
         "webshop",
         "orders",
-        "payments"
+        "finance"
       ]
     },
     {

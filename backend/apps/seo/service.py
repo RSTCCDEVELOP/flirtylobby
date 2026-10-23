@@ -147,7 +147,8 @@ def sitemap_urls():
 
         out += catalog.sitemap()
     if modules.enabled("profiles"):
-        from apps.social.models import Profile
+        from apps.plugins import facade
+        Profile = facade.models("community", "Profile")  # (the plugin Community)
 
         out += [(f"/leden/{slug}", name or slug) for slug, name in
                 Profile.objects.filter(enabled=True, visibility="public", searchable_public=True, user__is_active=True).values_list("slug", "headline")]

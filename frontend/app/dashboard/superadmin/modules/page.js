@@ -189,16 +189,18 @@ export default function ModulesPage() {
           <div className="module-grid" style={{ marginTop: ".6rem" }}>
             {pk.map((p) => {
               const onCount = p.modules.filter((m) => m.enabled).length, all = onCount === p.modules.length;
+              const plugins = [...new Set(p.modules.map((m) => m.plugin).filter(Boolean))]; // parts that are plugins: switched on and off at Plugins
               return (
                 <div key={p.key} className={`card module-tile ${onCount ? "" : "off"}`}>
                   <div className="module-top">
                     <strong>{tx(p.label)}</strong>
                     <label className="switch" title={all ? tx("Het hele pakket uitzetten") : tx("Het hele pakket aanzetten")}>
-                      <input type="checkbox" checked={onCount > 0} disabled={!!busy} onChange={() => togglePackage(p, onCount === 0)} /><span />
+                      <input type="checkbox" checked={onCount > 0} disabled={!!busy || plugins.length > 0} onChange={() => togglePackage(p, onCount === 0)} /><span />
                     </label>
                   </div>
                   <p className="muted">{tx(p.desc)}</p>
                   <small className="muted">{p.modules.map((m) => `${m.label} ${m.enabled ? "✓" : "–"}`).join(" · ")}</small>
+                  {plugins.length > 0 && <small className="muted">{tx("Dit pakket zet je aan of uit bij Plugins")}: {plugins.join(", ")}</small>}
                   <span className={`badge ${onCount ? "ok" : "off"}`}>{onCount}/{p.modules.length} {tx("aan")}{Number(p.price) > 0 ? ` · ${new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(p.price))} ${tx("per maand")}` : ""}</span>
                 </div>
               );

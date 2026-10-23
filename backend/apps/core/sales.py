@@ -434,3 +434,60 @@ def admin_test_check(request):
     except signing.BadSignature:
         return Response({"ok": False, "detail": "De code is verlopen. Vraag een nieuwe aan."})
     return Response({"ok": ch.get("e") == email and hmac.compare_digest(ch.get("h", ""), _digest(email, code))})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@throttle_classes([CalcThrottle])
+def pricelist(request):
+    """The price list (public: it is also a system object on a page)."""
+    from . import pricelist as pl
+
+    return Response(pl.matrix())
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@throttle_classes([CalcThrottle])
+def pricelist_pdf(request):
+    from django.http import HttpResponse
+
+    from . import pricelist as pl
+
+    lang = request.query_params.get("lang") or "nl"
+    r = HttpResponse(pl.pdf(lang if lang in pl.T else "nl"), content_type="application/pdf")
+    r["Content-Disposition"] = 'attachment; filename="easy2edit-prijslijst.pdf"'
+    return r
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def pricelist_object(request):
+    """Superadmin: make (or remove) the system object of the price list ({on}) or the ones of the standard installations ({on, installations: true})."""
+    from apps.sysobjects.models import SystemObject
+
+    from . import pricelist as pl
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    on = bool(request.data.get("on"))
+    if request.data.get("installations"):
+        if on:
+            for p in presets.PRESETS:
+                SystemObject.objects.get_or_create(kind="installation", ref_id=1, ref_key=p["key"], defaults={"slug": f"installatie-{p['key']}"[:80]})
+        else:
+            SystemObject.objects.filter(kind="installation").delete()
+    elif on:
+        SystemObject.objects.get_or_create(kind="pricelist", ref_id=1, ref_key="", defaults={"slug": pl.SLUG})
+    else:
+        SystemObject.objects.filter(kind="pricelist").delete()
+    return Response({"on": SystemObject.objects.filter(kind="pricelist").exists(), "installations": SystemObject.objects.filter(kind="installation").exists()})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def pricelist_object_state(request):
+    from apps.sysobjects.models import SystemObject
+
+    return Response({"on": SystemObject.objects.filter(kind="pricelist").exists(), "installations": SystemObject.objects.filter(kind="installation").exists()})

@@ -102,7 +102,7 @@ def public_page(request, key):
     p = Page.objects.filter(key=key, kind="content").first()
     if not p or not modules.enabled("pages") or not service.available(p) or (p.scope == "private" and not request.user.is_authenticated) or not service.can_see(request.user, p):
         return Response(status=status.HTTP_404_NOT_FOUND)
-    from apps.subscriptions import service as subs
+    from apps.plugins.facade import subs
 
     return Response({"key": p.key, "scope": p.scope, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key)})
 

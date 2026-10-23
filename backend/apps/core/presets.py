@@ -15,31 +15,32 @@ PRESETS = [
     {"key": "standaard-website", "name": "Standaard website", "icon": "globe", "theme": "normal", "plugins": ["documents"],
      "desc": "Alleen een website: pagina's en menu, media en systeemobjecten, FAQ en SEO, en documentbeheer. Zonder community, abonnementen, donaties of webshop. Met demo-gegevens heb je meteen een complete site.",
      "modules": BASE + ["seo", "faq", "sysobjects", "siteimport", "integrations"]},
-    {"key": "webshop", "name": "Webwinkel", "icon": "cart", "theme": "webshop", "plugins": ["webshop"],
+    {"key": "webshop", "name": "Webwinkel", "icon": "cart", "theme": "webshop", "plugins": ["webshop", "subscriptions"],
      "desc": "Producten verkopen met winkelwagen, bestellingen en online betalen. Klantaccounts, e-mailmeldingen en een FAQ.",
-     "modules": BASE + ["seo", "faq", "orders", "subscriptions", "integrations", "sysobjects"]},
+     "modules": BASE + ["seo", "faq", "integrations", "sysobjects"]},
     {"key": "bedrijfswebsite", "name": "Bedrijfswebsite", "icon": "building", "theme": "normal", "plugins": ["documents"],
      "desc": "Een gewone website voor je bedrijf: pagina's, menu, bewerkmodus, SEO, FAQ en contact. Zonder community of webshop.",
      "modules": ["pages", "edit_mode", "media", "branding", "theme", "languages", "seo", "faq", "privacy_pages", "cookies", "communication", "help", "sysobjects"]},
-    {"key": "zakelijk-netwerk", "name": "Zakelijk netwerk", "icon": "handshake", "theme": "business", "plugins": ["agenda", "marketplace", "documents"],
+    {"key": "zakelijk-netwerk", "name": "Zakelijk netwerk", "icon": "handshake", "theme": "business", "plugins": ["community", "profile-themes", "agenda", "marketplace", "documents"],
      "desc": "Een besloten netwerk voor ondernemers: profielen, zoeken, berichten en chat, een agenda voor afspraken, een marktplaats voor diensten en documentbeheer.",
-     "modules": BASE + ["seo", "faq", "profiles", "discover", "messages", "chat", "roles", "sysobjects"]},
-    {"key": "datingplatform", "name": "Datingplatform", "icon": "heart", "theme": "dating", "plugins": ["agenda", "games"],
+     "modules": BASE + ["seo", "faq", "roles", "sysobjects"]},
+    {"key": "datingplatform", "name": "Datingplatform", "icon": "heart", "theme": "dating", "plugins": ["community", "profile-themes", "subscriptions", "agenda", "games"],
      "desc": "Leden vinden elkaar met zoeken en swipen, chatten en videobellen. Met leeftijdscontrole, abonnementen en een agenda voor dates en spelletjes.",
-     "modules": BASE + ["faq", "profiles", "discover", "messages", "chat", "directconnect", "subscriptions", "donations", "age_gate", "word_filter", "twofa", "geo", "sysobjects"]},
-    {"key": "sportclub", "name": "Sportclub of vereniging", "icon": "medal", "theme": "sporters", "plugins": ["agenda", "games", "documents"],
+     "modules": BASE + ["faq", "age_gate", "word_filter", "twofa", "geo", "sysobjects"]},
+    {"key": "sportclub", "name": "Sportclub of vereniging", "icon": "medal", "theme": "sporters", "plugins": ["community", "profile-themes", "subscriptions", "agenda", "games", "documents"],
      "desc": "Een club met ledenprofielen, trainingsmaatjes zoeken, chat, een clubagenda met evenementen, lidmaatschappen en donaties.",
-     "modules": BASE + ["seo", "faq", "profiles", "discover", "messages", "chat", "subscriptions", "donations", "sysobjects"]},
-    {"key": "stichting", "name": "Stichting of goed doel", "icon": "ribbon", "theme": "normal", "plugins": ["agenda", "documents"],
+     "modules": BASE + ["seo", "faq", "sysobjects"]},
+    {"key": "stichting", "name": "Stichting of goed doel", "icon": "ribbon", "theme": "normal", "plugins": ["subscriptions", "agenda", "documents"],
      "desc": "Donaties en vrienden-abonnementen, een agenda met evenementen op de website, nieuws, FAQ en meldingen aan leden.",
-     "modules": BASE + ["seo", "faq", "donations", "subscriptions", "integrations", "sysobjects"]},
-    {"key": "marktplaats", "name": "Marktplaats", "icon": "tag", "theme": "webshop", "plugins": ["marketplace", "agenda"],
+     "modules": BASE + ["seo", "faq", "integrations", "sysobjects"]},
+    {"key": "marktplaats", "name": "Marktplaats", "icon": "tag", "theme": "webshop", "plugins": ["community", "profile-themes", "marketplace", "agenda", "orders"],
      "desc": "Leden zetten producten en diensten te koop, bieden of boeken een afspraak. Met berichten, zoeken en een agenda.",
-     "modules": BASE + ["seo", "faq", "profiles", "discover", "messages", "orders", "integrations", "sysobjects"]},
-    {"key": "spelletjessite", "name": "Spelletjessite", "icon": "gamepad", "theme": "normal", "plugins": ["games"],
+     "modules": BASE + ["seo", "faq", "integrations", "sysobjects"]},
+    {"key": "spelletjessite", "name": "Spelletjessite", "icon": "gamepad", "theme": "normal", "plugins": ["community", "profile-themes", "subscriptions", "games"],
      "desc": "Een community rond spelletjes: speel alleen of samen, met profielen, chat, ranglijsten en een abonnement voor extra spellen.",
-     "modules": BASE + ["faq", "profiles", "messages", "chat", "subscriptions", "donations", "sysobjects"]},
+     "modules": BASE + ["faq", "sysobjects"]},
 ]
+# (the parts that are plugins - Community, Abonnementen, Orders, Webshop, Financieel - are in the plugin list of an installation; plugins_for adds what they need, and _wanted_modules the modules that belong to them)
 BY_KEY = {p["key"]: p for p in PRESETS}
 DEMO_PARTS = {"media": "Voorbeeldplaatjes", "heroes": "Hero-achtergronden", "users": "Gebruikers met profiel", "plans": "Abonnementen", "money": "Donatie-acties met giften", "faq": "FAQ-vragen", "pages": "Pagina's",
               "views": "Media-systeemobjecten"}
@@ -91,7 +92,7 @@ def edit_options(key):
             for r in m.get("requires", []):
                 needs.setdefault(r, []).append(m["label"])
     mods = [{"key": m["key"], "label": m["label"], "group": m.get("group", ""), "desc": m.get("desc", ""), "on": m["key"] in chosen, "auto": m["key"] in want and m["key"] not in chosen, "base": m["key"] in base["modules"],
-             "needed_by": needs.get(m["key"], []), "always": m["key"] in core} for m in modules.MODULES if m["key"] not in core]
+             "needed_by": needs.get(m["key"], []), "always": m["key"] in core} for m in modules.MODULES if m["key"] not in core and not m.get("hidden")]
     plugs_on = set(cur["plugins"])
     plugs = [{"name": p.name, "title": p.title or p.name, "enabled": p.enabled, "on": p.name in plugs_on, "base": p.name in base["plugins"], "requires": (p.manifest or {}).get("requires") or []} for p in Plugin.objects.order_by("name")]
     contents = _contents(cur) or {}
@@ -174,6 +175,11 @@ def reset_edits(key):
 def _wanted_modules(preset):
     """The modules of the preset plus the ones they need (and the always-on core)."""
     want = {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON) | set(preset["modules"])
+    try:
+        plugs = set(plugins_for(preset)) if (preset.get("plugins") or preset.get("modules")) else set()
+    except Exception:  # noqa: BLE001 - database not ready
+        plugs = set(preset.get("plugins") or [])
+    want |= {m["key"] for m in modules.MODULES if m.get("plugin") in plugs}  # the modules that belong to the plugins of the installation (Community: profiles, matching, messages, chat ...)
     changed = True
     while changed:
         changed = False
@@ -302,7 +308,8 @@ def plugins_for(preset):
     """The plugins of a standard installation and the plugins those need (the webshop needs Orders and Payments): all of them must be on."""
     from apps.plugins.models import Plugin
 
-    out, todo = [], list(preset["plugins"])
+    out, todo = [], list(preset.get("plugins") or [])
+    todo += [m["plugin"] for m in modules.MODULES if m.get("plugin") and m["key"] in (preset.get("modules") or [])]  # (a set from the wizard that names a module that is a plugin now)
     while todo:
         n = todo.pop(0)
         if n in out:
@@ -486,7 +493,6 @@ def apply(key, preset=None):
     """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened."""
     from apps.plugins import runtime
     from apps.plugins.models import Plugin
-    from apps.social import service as social, themes
 
     from .models import ModuleState
 
@@ -507,8 +513,11 @@ def apply(key, preset=None):
     missing = [n for n in need if not Plugin.objects.filter(name=n).exists()]
     runtime.ensure_loaded(True)
     theme = preset["theme"]
+    from apps.plugins import facade
+
+    social, themes = facade.mod("community", "service"), facade.mod("community", "themes")  # (the plugin Community)
     try:
-        if "profiles" in want:  # the community theme: switched on for this website, with its fields and the layout of the standard pages
+        if "profiles" in want and social and themes:  # the community theme: switched on for this website, with its fields and the layout of the standard pages
             on = set(themes.enabled()) | {theme}
             themes.set_enabled(sorted(on))
             social.save({"profiles": themes.theme_payload(theme)}, ["profiles"])

@@ -22,7 +22,7 @@ const blank = { system_object: false, button: {}, name: "", description: "", pri
 const PAGES = [{ key: "subscriptions", title: "Abonnementen", path: "/abonnementen", description: "Waar bezoekers een abonnement kiezen: openingstekst, uitleg en de abonnementen." }];
 const LINKS = [
   { href: "/dashboard/subscriptions", title: "Mijn abonnementen (voor leden)", description: "Het dashboard van een lid: lopende abonnementen, verlengen en opzeggen." },
-  { href: "/dashboard/admin/plugins/orders", title: "Orders", description: "De orders die bij abonnementen horen." },
+  { href: "/dashboard/admin/plugin/orders", title: "Orders", description: "De orders die bij abonnementen horen." },
 ];
 
 export default function SubscriptionsAdmin() {
@@ -35,6 +35,7 @@ export default function SubscriptionsAdmin() {
   const [cfg, setCfg] = useState(null);
   const [stats, setStats] = useState(null);
   const [modal, setModal] = useState(null);
+  const [vat, setVat] = useState({ tariffs: [], default: "" }); // the VAT tariffs of the system (Admin → Btw)
   const [filter, setFilter] = useState({ status: "", q: "" });
   const [msg, setMsg] = useState(null);
   const sysOn = useModule("sysobjects");
@@ -43,7 +44,7 @@ export default function SubscriptionsAdmin() {
   const loadPlans = useCallback(() => api("/subscriptions/admin/plans/").then(setPlans).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   const loadMembers = useCallback(() => api(`/subscriptions/admin/members/?status=${filter.status}&q=${encodeURIComponent(filter.q)}`).then(setMembers).catch((e) => setMsg({ ok: false, text: errorText(e) })), [filter]);
   const loadStats = () => api("/subscriptions/admin/stats/").then(setStats).catch(() => {});
-  useEffect(() => { loadPlans(); loadStats(); api("/subscriptions/admin/options/").then(setOpts); api("/subscriptions/admin/settings/").then(setCfg); }, [loadPlans]);
+  useEffect(() => { api("/plugins/run/finance/vat/rates").then(setVat).catch(() => {}); loadPlans(); loadStats(); api("/subscriptions/admin/options/").then(setOpts); api("/subscriptions/admin/settings/").then(setCfg); }, [loadPlans]);
   useEffect(() => { if (tab === "members") loadMembers(); }, [tab, loadMembers]);
 
   async function savePlan(e) {
@@ -198,7 +199,12 @@ export default function SubscriptionsAdmin() {
             <div className="form-grid">
               <label>{tx("Naam")}<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required maxLength={120} /></label>
               <label>{tx("Prijs per periode (incl. btw)")}<input type="number" step="0.01" min="0" value={modal.price} onChange={(e) => setModal({ ...modal, price: e.target.value })} required /></label>
-              <label>{tx("Btw-percentage")}<input type="number" step="0.5" min="0" max="50" value={modal.vat_rate} onChange={(e) => setModal({ ...modal, vat_rate: e.target.value })} /></label>
+              <label>{tx("Btw-tarief")}
+                <select value={String(Number(modal.vat_rate))} onChange={(e) => setModal({ ...modal, vat_rate: e.target.value })}>
+                  {vat.tariffs.map((x) => <option key={x.key} value={String(Number(x.rate))}>{x.name} ({x.rate}%)</option>)}
+                  {!vat.tariffs.some((x) => Number(x.rate) === Number(modal.vat_rate)) && <option value={String(Number(modal.vat_rate))}>{modal.vat_rate}% ({tx("eigen percentage")})</option>}
+                </select>
+              </label>
               <label>{tx("Herhaling")}
                 <select value={modal.interval} onChange={(e) => setModal({ ...modal, interval: e.target.value })}>{opts.intervals.map((i) => <option key={i.value} value={i.value}>{tx(i.label)}</option>)}</select>
               </label>

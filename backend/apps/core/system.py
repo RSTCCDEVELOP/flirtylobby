@@ -15,6 +15,7 @@ DEFAULTS = {
     "site_name": "", "tab_title": "", "tagline": "", "company_name": "", "environment": "production",
     "frontend_url": "", "backend_url": "", "extra_origins": [],
     "contact_email": "", "support_email": "", "admin_email": "", "phone": "", "kvk": "", "vat_id": "", "address": "",
+    "street": "", "house_number": "", "postal_code": "", "city": "", "country": "",  # the address always in parts; "address" is made from them (one line) for what reads it as text
     "aliases": [],  # extra domain names of the website (www.x.nl, x.nl): visitors can be sent on to the main address
     "redirect_aliases": False,
     "timezone": "Europe/Amsterdam",
@@ -35,9 +36,28 @@ URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
+ADDRESS_PARTS = ("street", "house_number", "postal_code", "city", "country")
+ADDRESS_RE = re.compile(r"^\s*(?P<street>.+?)\s+(?P<nr>\d+\s?[A-Za-z]?(?:[-/ ]?\d+[A-Za-z]?)?)\s*[,\n]?\s*(?P<zip>\d{4}\s?[A-Za-z]{2})\s+(?P<city>.+?)\s*$", re.S)
+
+
+def compose_address(d):
+    """The address as one line: 'Straat 12, 1234 AB Plaats' (and the country when it is not the Netherlands)."""
+    line1 = " ".join(x for x in (d.get("street"), d.get("house_number")) if x)
+    line2 = " ".join(x for x in (d.get("postal_code"), d.get("city")) if x)
+    country = (d.get("country") or "").strip()
+    return ", ".join(x for x in (line1, line2, country if country.lower() not in ("", "nl", "nederland", "netherlands") else "") if x)
+
+
 def get():
     stored = SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
-    return {**DEFAULTS, **{k: v for k, v in stored.items() if k in DEFAULTS}}
+    d = {**DEFAULTS, **{k: v for k, v in stored.items() if k in DEFAULTS}}
+    if d["address"] and not any(d[k] for k in ADDRESS_PARTS):  # an address that was typed as one text: split it (once it is saved again, it is saved in parts)
+        m = ADDRESS_RE.match(d["address"])
+        if m:
+            d.update(street=m["street"].strip(), house_number=m["nr"].strip(), postal_code=m["zip"].strip().upper(), city=m["city"].strip())
+    elif any(d[k] for k in ADDRESS_PARTS):
+        d["address"] = compose_address(d)
+    return d
 
 
 def origin(url):
@@ -52,6 +72,12 @@ def clean(incoming):
         if k not in incoming:
             continue
         v = incoming[k]
+        if k in ADDRESS_PARTS:
+            v = " ".join(str(v or "").split())[:12 if k == "house_number" else 80]
+            out[k] = v.upper() if k == "postal_code" else v
+            continue
+        if k == "address" and any(x in incoming for x in ADDRESS_PARTS):
+            continue  # made from the parts below
         if k == "extra_origins":
             items = [str(x).strip().rstrip("/") for x in (v if isinstance(v, list) else str(v).split(",")) if str(x).strip()]
             bad = [x for x in items if not URL_RE.match(x)]
@@ -103,6 +129,9 @@ def clean(incoming):
             out[k] = str(v or "").strip()[:500]
         else:
             out[k] = str(v or "").strip()[:200]
+    if any(k in out for k in ADDRESS_PARTS):  # the one-line address follows the parts
+        cur = get()
+        out["address"] = compose_address({k: out.get(k, cur[k]) for k in ADDRESS_PARTS})
     return out, errors
 
 
@@ -257,5 +286,5 @@ def public():
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
             "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "show_credit": s["show_credit"],
-            "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"],
+            "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0)}

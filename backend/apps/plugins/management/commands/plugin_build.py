@@ -9,7 +9,7 @@ from .plugin_translate import fill
 
 
 class Command(BaseCommand):
-    help = "Build a plugin for this version of the system: sets system_version, checks the languages, signs it with the developer key and makes the zip (plugins/.dist/)."
+    help = "Build a plugin for this version of the system: sets system_version, checks the languages, signs it with the developer key and makes the zip in resource/plugins/ (only the latest version of a plugin stays)."
 
     def add_arguments(self, parser):
         parser.add_argument("name", nargs="?")
@@ -40,9 +40,12 @@ class Command(BaseCommand):
         if short and not allow_missing:
             raise CommandError(f"{name}: niet in alle talen vertaald (ontbrekend per taal: {short}). Draai plugin_translate of vul lang/<code>.json aan.")
         signing.sign(folder)
-        dist = installer.root() / ".dist"
-        dist.mkdir(exist_ok=True)
+        dist = settings.RESOURCE_DIR / "plugins"
+        dist.mkdir(parents=True, exist_ok=True)
         zpath = dist / f"{name}-{man['version']}.zip"
+        for old in dist.glob(f"{name}-*.zip"):  # only the latest version of a plugin in the library
+            if old != zpath and old.name[len(name) + 1:-4].replace(".", "").isdigit():
+                old.unlink()
         with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
             for rel in signing.files(folder) + [signing.SIG_FILE]:
                 z.write(folder / rel, rel)

@@ -1,5 +1,6 @@
 "use client";
 
+import { ResourceButtons } from "../../../../components/ResourceLibrary";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -49,7 +50,7 @@ export default function Languages() {
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   }
-  async function exportDist() { // superadmin: <project>/themes/.dist/languages/<code>.zip per language + all_languages.zip
+  async function exportDist() { // superadmin: <project>/resource/languages/<code>.zip per language + all_languages.zip
     setBusy(true); setMsg(null);
     try {
       const r = await api("/languages/export/", { method: "POST", body: {} });
@@ -115,11 +116,12 @@ export default function Languages() {
         <Collapsible id="languages-packages" title={tx("Taalpakketten")}>
           <p className="muted" style={{ margin: 0 }}>{tx("Een taal is een pakket: een zipbestand met een map per taal, en daarin language.json met de naam en alle vertalingen van de interface. Importeer één taal of alle talen tegelijk; een bestaande taal wordt vervangen, een nieuwe taal komt uit.")}</p>
           <div className="row" style={{ marginTop: ".5rem" }}>
-            <button type="button" className="btn primary" disabled={busy} onClick={() => fileIn.current?.click()}>{tx("Taal importeren (.zip)")}</button>
+            <ResourceButtons kind="languages" onChanged={() => window.location.reload()} />
+            <button type="button" className="btn" disabled={busy} onClick={() => fileIn.current?.click()}>{tx("Taal importeren (.zip)")}</button>
             <input ref={fileIn} type="file" accept=".zip,application/zip" hidden onChange={(e) => { importPack(e.target.files[0]); e.target.value = ""; }} />
             {user?.is_staff && L >= 3 && (
               <>
-                <button type="button" className="btn" disabled={busy} onClick={exportDist}>{tx("Exporteer alle talen (themes/.dist/languages)")}</button>
+                <button type="button" className="btn" disabled={busy} onClick={exportDist}>{tx("Exporteer alle talen (resource/languages)")}</button>
                 <button type="button" className="btn" disabled={busy} onClick={downloadAll}>{tx("Download all_languages.zip")}</button>
               </>
             )}

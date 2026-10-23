@@ -30,6 +30,11 @@ def payments():
     return _p("payments")
 
 
+def finance():
+    """Payment options and terms, company data and the layout of the documents: the plugin Financieel."""
+    return _p("finance")
+
+
 def need_orders():
     o = orders()
     if o is None:

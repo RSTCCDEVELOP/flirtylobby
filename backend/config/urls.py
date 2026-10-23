@@ -1,7 +1,9 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+
+from apps.plugins import mount as plugin_mount
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -15,16 +17,15 @@ urlpatterns = [
     path("api/", include("apps.communication.urls")),
     path("api/", include("apps.seo.urls")),
     path("api/", include("apps.sandbox.urls")),
-    path("api/", include("apps.social.urls")),
     path("api/", include("apps.plugins.urls")),
     path("api/", include("apps.pages.urls")),
     path("api/", include("apps.siteimport.urls")),
-    path("api/", include("apps.subscriptions.urls")),
     path("api/", include("apps.sysobjects.urls")),
     path("api/", include("apps.faq.urls")),
     path("api/", include("apps.stats.urls")),
     path("api/", include("apps.notifications.urls")),
     path("api/", include("apps.backups.urls")),
+    re_path(r"^api/(?P<rest>.+)$", plugin_mount.dispatch),  # the routes of plugins that bring a part of the system (Community, Abonnementen): last, so the system itself wins
 ]
 
 if settings.DEBUG:

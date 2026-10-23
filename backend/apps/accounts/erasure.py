@@ -33,7 +33,8 @@ def _remove_item(item):
 def erase_user(user):
     from apps.medialib import areas, filecrypt
     from apps.medialib.models import MediaItem
-    from apps.social.models import ChatMessage, ProfilePhoto
+    from apps.plugins import facade
+    ChatMessage, ProfilePhoto = facade.models("community", "ChatMessage", "ProfilePhoto")  # (the plugin Community)
 
     uid, folder = user.pk, areas.config()["users"]["folder"]
     keys = set()

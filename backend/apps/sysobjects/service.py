@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 def sources():
     """kind -> queryset of the items that ticked 'System Object'."""
-    from apps.subscriptions.models import DonationCampaign, Plan
+    from apps.plugins import facade
+
+    DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")
 
     from apps.plugins import installer
     from apps.plugins.models import Plugin
@@ -37,14 +39,16 @@ def sync():
             else:
                 obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=src.pk, defaults={"slug": f"{kind}-{getattr(src, 'slug', None) or src.name}"[:80]})
             keep.add(obj.pk)
-    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
+    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
     SystemObject.objects.exclude(pk__in=keep).delete()
 
 
 def source_of(obj):
-    from apps.subscriptions.models import DonationCampaign, Plan
+    from apps.plugins import facade
 
-    if obj.kind in ("calculator", "marketing"):
+    DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")
+
+    if obj.kind in ("calculator", "marketing", "pricelist", "installation"):
         return obj
     if obj.kind == "media":
         from apps.medialib.models import MediaView

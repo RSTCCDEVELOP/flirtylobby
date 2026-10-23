@@ -13,17 +13,30 @@ ADMIN = [has_level_for("sysobjects", {"GET": "use"}, default="edit"), module_req
 
 
 def _row(o, public=False):
-    from apps.subscriptions import views as sv
+    from apps.plugins import facade
+
+    sv = facade.mod("subscriptions", "views")
 
     src = service.source_of(o)
     if not src:
         return None
     if o.kind == "calculator":
         data, names, button = {"title": "Prijsberekening", "enabled": True}, {"": "Prijsberekening"}, {}
+    elif o.kind == "installation":
+        from apps.core import pricelist as pl
+
+        data = pl.installation(o.ref_key)
+        if not data:
+            return None
+        names, button = {"": data["name"]}, {}
+    elif o.kind == "pricelist":
+        data, names, button = {"title": "Prijslijst", "enabled": True}, {"": "Prijslijst"}, {}
     elif o.kind == "marketing":
         from apps.core import modules as mods
 
-        mod = mods.BY_KEY.get(o.ref_key)
+        from apps.core import marketing as mk
+
+        mod = mk._mod(o.ref_key)
         if not mod:
             return None
         data, names, button = {"module": o.ref_key, "label": mod["label"], "title": "Marketing: " + mod["label"], "enabled": True}, {"": "Marketing: " + mod["label"]}, {}
@@ -54,7 +67,7 @@ def _row(o, public=False):
     row = {"id": o.id, "slug": o.slug, "kind": o.kind, "enabled": o.enabled, "names": names, "button": button, "data": data}
     if not public:
         row.update(kind_label=dict(SystemObject.KINDS)[o.kind], used_on=service.usage(o.slug), source_id=o.ref_id,
-                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
+                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen", "pricelist": "/dashboard/superadmin/prijzen", "installation": "/dashboard/superadmin/prijzen"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
     return row
 
 
@@ -84,7 +97,7 @@ def public_list(request):
 
     out = []
     for o in SystemObject.objects.filter(enabled=True):
-        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins", "media": "media", "calculator": "sysobjects", "marketing": "sysobjects"}[o.kind]):
+        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins", "media": "media", "calculator": "sysobjects", "marketing": "sysobjects", "pricelist": "sysobjects", "installation": "sysobjects"}[o.kind]):
             continue
         r = _row(o, public=True)
         if r and o.kind in ("plugin", "plugin_item", "plugin_part") and not r["data"]["enabled"]:

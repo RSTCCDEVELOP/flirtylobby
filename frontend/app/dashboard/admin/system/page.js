@@ -126,7 +126,13 @@ export default function SystemPage() {
             <label>{tx("Support e-mail")}<input type="email" value={form.support_email} onChange={set("support_email")} /></label>
             <label>{tx("Beheer e-mail (meldingen van het systeem)")}<input type="email" value={form.admin_email} onChange={set("admin_email")} /></label>
             <label>{tx("Telefoon")}<input value={form.phone} onChange={set("phone")} /></label>
-            <label>{tx("Adres")}<input value={form.address} onChange={set("address")} /></label>
+            <div className="addr-grid" style={{ gridColumn: "1 / -1" }}>
+              <label className="a-street">{tx("Straat")}<input value={form.street || ""} onChange={set("street")} autoComplete="address-line1" /></label>
+              <label className="a-nr">{tx("Huisnummer")}<input value={form.house_number || ""} onChange={set("house_number")} maxLength={12} /></label>
+              <label className="a-zip">{tx("Postcode")}<input value={form.postal_code || ""} onChange={set("postal_code")} maxLength={10} autoComplete="postal-code" /></label>
+              <label className="a-city">{tx("Plaats")}<input value={form.city || ""} onChange={set("city")} autoComplete="address-level2" /></label>
+              <label className="a-country">{tx("Land")}<input value={form.country || ""} onChange={set("country")} placeholder="Nederland" /></label>
+            </div>
             <label>{tx("KvK-nummer")}<input value={form.kvk} onChange={set("kvk")} /></label>
             <label>{tx("BTW-nummer")}<input value={form.vat_id} onChange={set("vat_id")} /></label>
           </div>

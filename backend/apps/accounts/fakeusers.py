@@ -33,8 +33,11 @@ HUE = {"m": 0.60, "f": 0.92, "x": 0.13}  # blue, rose, yellow: the gender colour
 
 
 def _fields():
-    from apps.social import service as social
+    from apps.plugins import facade
 
+    social = facade.mod("community", "service")
+    if not social:
+        return []
     cfg = social.get()["profiles"]
     return [f for f in cfg.get("fields", []) if f.get("type") in ("text", "textarea", "number", "select", "multiselect", "checkbox", "url", "date")]
 
@@ -139,8 +142,10 @@ def _clean_value(f, v):
 
 
 def _create(person, fields, photos):
-    from apps.social import service as social
-    from apps.social.models import ProfilePhoto
+    from apps.plugins import facade
+
+    social = facade.community
+    ProfilePhoto = facade.models("community", "ProfilePhoto")  # (the plugin Community)
 
     gender = person.get("gender") if person.get("gender") in ("m", "f", "x") else random.choice("mfx")
     first, last = str(person.get("first_name") or "Test")[:60], str(person.get("last_name") or "Gebruiker")[:60]
@@ -218,9 +223,12 @@ def fill_own_profile(request):
     """Test tool (sandbox only): AI fills in the whole profile of the logged-in member (profile fields, interests, aim, design, and two avatars when there are no photos)."""
     from apps.integrations import ai
     from apps.sandbox import service as sandbox
-    from apps.social import service as social
-    from apps.social import themes
-    from apps.social.models import ProfilePhoto
+    from apps.plugins import facade
+
+    social, themes = facade.community, facade.mod("community", "themes")
+    ProfilePhoto = facade.models("community", "ProfilePhoto")  # (the plugin Community)
+    if not social:
+        return bad("De plugin Community staat uit.")
 
     ok = sandbox.active() and (ai.available() or sandbox.active("integrations"))
     if request.method == "GET":

@@ -53,7 +53,7 @@ def parse(raw):
     return out
 
 
-PROVIDES = ("catalog", "parts", "orders", "payments", "demo", "stats")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda); demo = example data for "Demo-gegevens" (counts, create, remove)
+PROVIDES = ("catalog", "parts", "orders", "payments", "finance", "community", "subscriptions", "profilethemes", "demo", "stats")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda); demo = example data for "Demo-gegevens" (counts, create, remove)
 
 
 def _public_pages(v):
@@ -71,7 +71,7 @@ def _public_pages(v):
 
 def _admin_entries(v):
     """Own places in the admin menu and on the tile page of the plugin's section: [{"label": "Producten", "tab": "products"}] opens the admin page of the plugin at that tab;
-    [{"label": "Bestellingen", "href": "/dashboard/admin/plugins/orders"}] opens another admin page."""
+    [{"label": "Bestellingen", "href": "/dashboard/admin/plugin/orders"}] opens another admin page."""
     out = []
     for x in v or []:
         if not isinstance(x, dict) or not str(x.get("label") or "").strip():

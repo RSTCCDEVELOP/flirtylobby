@@ -1,5 +1,6 @@
 "use client";
 
+import { ResourceButtons } from "./ResourceLibrary";
 import { Busy } from "./PageLoader";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -144,9 +145,16 @@ export default function ThemePacksAdmin() {
           <p className="muted" style={{ margin: 0 }}>{tx("Alle thema's in één zipbestand, met hun logo's en afbeeldingen. Importeer het in een andere website met Pakket uploaden hieronder. Ook van elk thema los staat een zip in de map {0}; die map hoort niet bij de repository.", d.dist)}</p>
           <div className="row">
             <button type="button" className="btn primary" style={{ whiteSpace: "nowrap" }} onClick={downloadAll}>{tx("Alle thema's downloaden (zip)")}</button>
-            {user?.is_staff && L >= 2 && <button type="button" className="btn" style={{ whiteSpace: "nowrap" }} disabled={busy} onClick={buildDist}>{tx("Exporteer alle thema's (themes/.dist/themes)")}</button>}
+            {user?.is_staff && L >= 2 && <button type="button" className="btn" style={{ whiteSpace: "nowrap" }} disabled={busy} onClick={buildDist}>{tx("Exporteer alle thema's (resource/themas)")}</button>}
           </div>
         </div>
+      </Collapsible>
+
+      <Collapsible id="theme-pack-library" title={tx("Thema toevoegen of updaten uit de bibliotheek")}>
+        <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", flexWrap: "wrap" }}>
+          <ResourceButtons kind="themas" onChanged={() => window.location.reload()} />
+        </div>
+        <p className="muted" style={{ margin: ".5rem 0 0" }}>{tx("De map resource/themas van het product bevat de thema's (alleen de nieuwste versie): je hoeft niets te uploaden.")}</p>
       </Collapsible>
 
       <Collapsible id="theme-pack-upload" title={tx("Pakket uploaden")}>

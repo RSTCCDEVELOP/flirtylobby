@@ -1,0 +1,245 @@
+{
+ "key": "sporters",
+ "label": "Sporters",
+ "desc": "Sport, niveau, doelen en trainingsmaatjes.",
+ "version": "1.0.0",
+ "builtin": {
+  "headline": true,
+  "bio": true,
+  "gender": true,
+  "birth_date": true,
+  "city": true,
+  "interests": false,
+  "aim": false
+ },
+ "fields": [
+  {
+   "key": "sports",
+   "label": "Sporten",
+   "type": "multiselect",
+   "options": [
+    "Hardlopen",
+    "Wielrennen",
+    "Zwemmen",
+    "Triathlon",
+    "Fitness",
+    "Krachttraining",
+    "Voetbal",
+    "Tennis",
+    "Padel",
+    "Yoga",
+    "Wandelen",
+    "Klimmen",
+    "Skaten",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Sport"
+  },
+  {
+   "key": "level",
+   "label": "Niveau",
+   "type": "select",
+   "options": [
+    "Beginner",
+    "Gemiddeld",
+    "Gevorderd",
+    "Wedstrijd",
+    "Elite"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Sport"
+  },
+  {
+   "key": "goals",
+   "label": "Doelen",
+   "type": "multiselect",
+   "options": [
+    "Gezond blijven",
+    "Afvallen",
+    "Sterker worden",
+    "Wedstrijd",
+    "Plezier",
+    "Trainingsmaatje vinden"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Sport"
+  },
+  {
+   "key": "days",
+   "label": "Trainingsdagen",
+   "type": "multiselect",
+   "options": [
+    "Ma",
+    "Di",
+    "Wo",
+    "Do",
+    "Vr",
+    "Za",
+    "Zo"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Training"
+  },
+  {
+   "key": "time",
+   "label": "Favoriete tijd",
+   "type": "select",
+   "options": [
+    "Ochtend",
+    "Middag",
+    "Avond",
+    "Wisselend"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Training"
+  },
+  {
+   "key": "hours",
+   "label": "Trainingsuren per week",
+   "type": "number",
+   "options": [],
+   "unit": "uur",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Training"
+  },
+  {
+   "key": "club",
+   "label": "Club of team",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Sport"
+  },
+  {
+   "key": "pb",
+   "label": "Beste prestatie",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Sport"
+  },
+  {
+   "key": "events",
+   "label": "Evenementen of wedstrijden",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Sport"
+  },
+  {
+   "key": "travel",
+   "label": "Reisbereid voor trainen",
+   "type": "select",
+   "options": [
+    "Alleen in de buurt",
+    "Tot 25 km",
+    "Tot 50 km",
+    "Overal"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Training"
+  },
+  {
+   "key": "buddy",
+   "label": "Ik zoek een trainingsmaatje",
+   "type": "checkbox",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Training"
+  },
+  {
+   "key": "pace",
+   "label": "Tempo of vermogen",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Sport"
+  },
+  {
+   "key": "coach",
+   "label": "Ik ben coach of trainer",
+   "type": "checkbox",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Sport"
+  },
+  {
+   "key": "injury",
+   "label": "Blessurehistorie of beperkingen",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "friends",
+   "card": false,
+   "filter": false,
+   "group": "Training"
+  }
+ ],
+ "search": {
+  "title": "Trainingsmaatjes zoeken",
+  "filters": [
+   "q",
+   "gender",
+   "age",
+   "city",
+   "distance",
+   "interest",
+   "sort",
+   "online"
+  ],
+  "swipe": false
+ }
+}

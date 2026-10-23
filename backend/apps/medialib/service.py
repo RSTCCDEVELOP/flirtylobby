@@ -35,7 +35,8 @@ def usage_map():
 
     for sp in SeoPage.objects.exclude(og_media=None).select_related("og_media"):
         add(sp.og_media.key, f"SEO-afbeelding: {sp.path}")
-    from apps.social.models import ProfilePhoto
+    from apps.plugins import facade
+    ProfilePhoto = facade.models("community", "ProfilePhoto")  # (the plugin Community)
 
     for ph in ProfilePhoto.objects.all():
         add(ph.image.name, "Profielfoto")

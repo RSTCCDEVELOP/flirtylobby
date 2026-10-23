@@ -1,10 +1,12 @@
 "use client";
 
+import { ResourceButtons } from "../../../../components/ResourceLibrary";
 import { Busy } from "../../../../components/PageLoader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
 import { IconGrid, IconRefresh, IconSettings } from "../../../../components/Icons";
+import PluginFrame from "../../../../components/PluginFrame";
 import SaveStatus from "../../../../components/SaveStatus";
 import Tabs from "../../../../components/Tabs";
 import { api, apiBase, downloadFile, errorText, getToken } from "../../../../lib/api";
@@ -89,6 +91,7 @@ export default function PluginsPage() {
       {tab === "installed" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
           <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem" }}>
+            <ResourceButtons kind="plugins" onChanged={load} />
             <button type="button" className="btn" disabled={busy} onClick={scan}>{tx("Map op de server scannen")}</button>
             <small className="muted"><code>{d.folder}</code></small>
           </div>
@@ -100,9 +103,11 @@ export default function PluginsPage() {
                 <span className="muted">{tx("Plugin")} {p.version} · {tx("voor systeem")} {p.built_for} · {tx(SECTION_LABEL[p.section] || p.section)}</span>
               </div>
               {(p.requires?.length > 0 || p.required_by?.length > 0) && <p className="muted" style={{ margin: ".4rem 0 0", fontSize: ".85rem" }}>{p.requires?.length > 0 && <>{tx("Heeft nodig:")} {p.requires.join(", ")}. </>}{p.required_by?.length > 0 && <>{tx("Nodig voor:")} {p.required_by.join(", ")}.</>}{(p.requires_missing || []).length > 0 ? ` ${tx("Nog niet geïnstalleerd:")} ${p.requires_missing.join(", ")}.` : (p.requires_off || []).length > 0 && !p.enabled ? ` ${tx("Staan nog uit:")} ${p.requires_off.map((x) => x.title).join(", ")}.` : ""}</p>}
-              <PluginTabs p={p} onSaved={upd} />
+              <PluginTabs p={p} onSaved={upd} extra={p.settings_web && p.enabled ? [["shopsettings", "Instellingen", <IconSettings key="ss" />]] : []}>
+                {(tab) => tab === "shopsettings" && p.settings_web && p.enabled && <PluginFrame name={p.name} file={p.settings_web} title={`${p.title} – ${tx("instellingen")}`} bare />}
+              </PluginTabs>
               <div className="row" style={{ justifyContent: "flex-start" }}>
-                <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Beheerpagina")}</a>
+                <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Instellingen")}</a>
                 {p.enabled && p.has_web && p.menu && <a className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</a>}
                 {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg({ ok: false, text: errorText(e) }))}>{tx("Downloaden (zip)")}</button>}
                 <button type="button" className="btn danger" onClick={() => remove(p)}>{tx("Verwijderen")}</button>

@@ -19,18 +19,18 @@ from .models import DashboardLayout, UserShortcuts
 def _theme():
     """The community theme chosen in the setup (normal, dating, sporters, business, webshop): the dashboard layout follows it."""
     try:
-        from apps.social import service as social
+        from apps.plugins import facade
 
-        return social.get()["profiles"].get("theme") or "normal"
+        return facade.community.get()["profiles"].get("theme") or "normal"
     except Exception:
         return "normal"
 
 
 def _swipe():
     try:
-        from apps.social.views import swipe_on
+        from apps.plugins import facade
 
-        return bool(swipe_on())
+        return bool(facade.mod("community", "views").swipe_on())
     except Exception:
         return False
 
@@ -171,8 +171,11 @@ def stats(request):
     if kind == "visits_daily":
         if not modules.enabled("profiles") or not modules.enabled("discover"):
             return deny
-        from apps.social.models import ProfileVisit
+        from apps.plugins import facade
 
+        ProfileVisit = facade.model("community", "ProfileVisit")
+        if ProfileVisit is None:
+            return deny
         rows = {r["d"]: r["n"] for r in ProfileVisit.objects.filter(profile__user=me, visited_at__gte=since).annotate(d=TruncDate("visited_at")).values("d").annotate(n=Count("id"))}
         pts = [{"label": d.strftime("%d/%m"), "value": rows.get(d, 0)} for d in _days(30)]
         return Response({"points": pts, "total": sum(p["value"] for p in pts)})

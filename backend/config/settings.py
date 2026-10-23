@@ -57,11 +57,9 @@ INSTALLED_APPS = [
     "apps.communication",
     "apps.seo",
     "apps.sandbox",
-    "apps.social",
     "apps.plugins",
     "apps.pages",
     "apps.siteimport",
-    "apps.subscriptions",
     "apps.sysobjects",
     "apps.faq",
     "apps.stats",
@@ -148,7 +146,8 @@ _BUILD_FILE = BASE_DIR / "BUILD"  # the build number: goes up by one with every 
 SYSTEM_BUILD = int(_BUILD_FILE.read_text().strip() or 0) if _BUILD_FILE.is_file() and _BUILD_FILE.read_text().strip().isdigit() else 0
 PLUGINS_DIR = Path(os.getenv("PLUGINS_DIR") or _site_path("plugins", PROJECT_ROOT / "plugins"))  # the plugins of this site: developed or uploaded here (not in the system repository)
 THEMES_DIR = Path(os.getenv("THEMES_DIR") or _site_path("themes", PROJECT_ROOT / "themes"))  # the theme packages of this site: one folder per theme with a theme.json
-THEMES_DIST_DIR = Path(os.getenv("THEMES_DIST_DIR") or PROJECT_ROOT / "themes" / ".dist")  # the exported zips of themes (<dir>/themes) and languages (<dir>/languages), in the project folder (git-ignored)
+RESOURCE_DIR = Path(os.getenv("RESOURCE_DIR") or PROJECT_ROOT / "resource")  # the library of zips that comes with the product (in git): resource/plugins, resource/themas, resource/languages: only the latest version of each
+THEMES_DIST_DIR = RESOURCE_DIR  # (old name)  # the exported zips of themes (<dir>/themes) and languages (<dir>/languages), in the project folder (git-ignored)
 BACKUPS_DIR = Path(os.getenv("BACKUPS_DIR") or PROJECT_ROOT / "backups")  # the backup files (Admin -> Backup); not part of the repository
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

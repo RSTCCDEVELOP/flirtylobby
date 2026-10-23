@@ -1,0 +1,118 @@
+{
+ "key": "normal",
+ "label": "Normaal",
+ "desc": "Een eenvoudig ledenprofiel: kopregel, over mij, plaats en interesses.",
+ "version": "1.0.0",
+ "builtin": {
+  "headline": true,
+  "bio": true,
+  "gender": true,
+  "birth_date": true,
+  "city": true,
+  "interests": true,
+  "aim": false
+ },
+ "fields": [
+  {
+   "key": "occupation",
+   "label": "Beroep of bezigheid",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Over mij"
+  },
+  {
+   "key": "languages",
+   "label": "Talen",
+   "type": "multiselect",
+   "options": [
+    "Nederlands",
+    "Engels",
+    "Duits",
+    "Frans",
+    "Spaans",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Over mij"
+  },
+  {
+   "key": "education",
+   "label": "Opleiding",
+   "type": "select",
+   "options": [
+    "MBO",
+    "HBO",
+    "WO",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Over mij"
+  },
+  {
+   "key": "hobbies",
+   "label": "Hobby's",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Over mij"
+  },
+  {
+   "key": "website",
+   "label": "Website",
+   "type": "url",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Links"
+  },
+  {
+   "key": "instagram",
+   "label": "Instagram",
+   "type": "url",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Links"
+  }
+ ],
+ "search": {
+  "title": "Leden zoeken",
+  "filters": [
+   "q",
+   "gender",
+   "age",
+   "city",
+   "country",
+   "interest",
+   "distance",
+   "sort",
+   "online",
+   "photo"
+  ],
+  "swipe": false
+ },
+ "layout": "default"
+}

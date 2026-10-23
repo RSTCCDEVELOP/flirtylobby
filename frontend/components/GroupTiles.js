@@ -40,8 +40,8 @@ export default function GroupTiles({ id }) {
   let items;
   if (admin) {
     const own = ADMIN_NAV.filter((n) => ADMIN_GROUP_OF[n.href] === id && (() => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); })());
-    const fromPlugins = plugins.filter((x) => (ADMIN_SECTION_GROUP[x.section] || "a-system") === id).flatMap((x) => [{ href: `/dashboard/admin/plugins/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true },
-      ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugins/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, plugin: true }))]);
+    const fromPlugins = plugins.filter((x) => x.has_admin && (ADMIN_SECTION_GROUP[x.section] || "a-system") === id).flatMap((x) => [{ href: `/dashboard/admin/plugin/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true },
+      ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugin/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, plugin: true }))]);
     items = [...own, ...fromPlugins];
   } else {
     const own = COMMUNITY.filter((n) => COMMUNITY_GROUP_OF[n.href] === id && (n.module === "any" ? ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false) : mods[n.module] !== false));

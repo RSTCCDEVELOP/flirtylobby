@@ -45,3 +45,15 @@ def sitemap():
     """[(path, name)] of the product pages for sitemap.xml."""
     p = _p()
     return p.sitemap() if p else []
+
+
+def carriers():
+    """[{slug, name}] of the transporters of the webshop (empty without the plugin)."""
+    p = _p()
+    return p.carriers() if p and hasattr(p, "carriers") else []
+
+
+def carrier_of(method_name):
+    """{slug, name} of the transporter that delivers with this shipping method (None when unknown)."""
+    p = _p()
+    return p.carrier_of_method(method_name) if p and hasattr(p, "carrier_of_method") else None

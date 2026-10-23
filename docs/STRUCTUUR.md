@@ -17,6 +17,21 @@ easy2edit/                   ← SYSTEEM  (git: RSTCCDEVELOP/easy2edit)
     └── content/             exports, imports, logo's en losse bestanden
 ```
 
+## De bibliotheek: `resource/`
+`resource/` hoort bij het product en gaat mee in git. Hierin staan de zips die je zonder uploaden kunt toevoegen:
+
+```
+resource/
+├── plugins/      <naam>-<versie>.zip   (ondertekend met plugin_build; alleen de nieuwste versie)
+├── themas/       <thema>-<versie>.zip  en alle-themas.zip   (theme_build / Admin → Thema → exporteren)
+├── languages/    <code>.zip  en all_languages.zip           (Admin → Talen → exporteren)
+└── allowed.json  welke plugins, thema's en talen gebruikers zonder uploaden mogen installeren
+```
+- Bouwen: `python manage.py plugin_build --all` zet de zips in `resource/plugins` en ruimt oudere versies op; thema's en talen worden vanuit Admin geëxporteerd naar `resource/themas` en `resource/languages`. Niets komt meer in `.dist`.
+- Gebruiken: Admin → Plugins / Thema / Talen hebben de knoppen **Toevoegen uit de bibliotheek** en **Updaten** (alleen wat nieuwer is dan wat is geïnstalleerd).
+- Rechten: een superadmin installeert alles; wie het onderdeel mag beheren maar geen superadmin is, installeert alleen wat is aangevinkt in Super admin → Bibliotheek (opgeslagen in `resource/allowed.json`).
+- In Docker/Coolify wordt `./resource` gemount op `/app/resource` (`RESOURCE_DIR`).
+
 ## Regels
 - **Systeem** = `backend/`, `frontend/`, `deploy/`. Hier staat niets van één site. Wijzig je hier iets, dan geldt het voor alle sites na een update.
 - **Site** = alles in `site/`. Een update van het systeem raakt deze map nooit.

@@ -207,7 +207,8 @@ def privacy_pages(days):
 
 
 def subscriptions(days):
-    from apps.subscriptions.models import Plan, Subscription
+    from apps.plugins import facade
+    Plan, Subscription = facade.models("subscriptions", "Plan", "Subscription")  # (the plugin Abonnementen)
 
     qs = Subscription.objects.all()
     act = qs.filter(status="active")
@@ -217,7 +218,8 @@ def subscriptions(days):
 
 
 def donations(days):
-    from apps.subscriptions.models import Donation, DonationCampaign
+    from apps.plugins import facade
+    Donation, DonationCampaign = facade.models("subscriptions", "Donation", "DonationCampaign")  # (the plugin Abonnementen)
 
     paid = Donation.objects.filter(status="paid")
     tot = paid.aggregate(n=Sum("amount"))["n"] or 0
@@ -227,7 +229,8 @@ def donations(days):
 
 
 def profiles(days):
-    from apps.social.models import Block, Profile, ProfileVisit
+    from apps.plugins import facade
+    Block, Profile, ProfileVisit = facade.models("community", "Block", "Profile", "ProfileVisit")  # (the plugin Community)
 
     qs = Profile.objects.all()
     return [num("Profielen", qs.count()), num("Zichtbaar", qs.filter(enabled=True).count()), num("Geblokkeerd (paren)", Block.objects.count()), line("Profielbezoeken per dag", per_day(ProfileVisit.objects.all(), "visited_at", days)),
@@ -235,28 +238,32 @@ def profiles(days):
 
 
 def discover(days):
-    from apps.social.models import Connection, Favorite, Like, Pass
+    from apps.plugins import facade
+    Connection, Favorite, Like, Pass = facade.models("community", "Connection", "Favorite", "Like", "Pass")  # (the plugin Community)
 
     return [num("Likes", Like.objects.count()), num("Favorieten", Favorite.objects.count()), num("Weggeswiped", Pass.objects.count()), num("Verbindingen", Connection.objects.count()),
             lines("Likes en passes per dag", [("Likes", per_day(Like.objects.all(), "created_at", days)), ("Passes", per_day(Pass.objects.all(), "created_at", days))]), bars("Verbindingen", counts(Connection.objects.all(), "status"))]
 
 
 def messages(days):
-    from apps.social.models import DirectMessage
+    from apps.plugins import facade
+    DirectMessage = facade.models("community", "DirectMessage")  # (the plugin Community)
 
     qs = DirectMessage.objects.all()
     return [num("Berichten", qs.count()), num("Ongelezen", qs.filter(read_at=None).count()), line("Berichten per dag", per_day(qs, "created_at", days))]
 
 
 def chat(days):
-    from apps.social.models import ChatMessage
+    from apps.plugins import facade
+    ChatMessage = facade.models("community", "ChatMessage")  # (the plugin Community)
 
     qs = ChatMessage.objects.all()
     return [num("Chatberichten", qs.count()), num("Met bijlage", qs.exclude(attachment="").count()), line("Chatberichten per dag", per_day(qs, "created_at", days)), bars("Bijlagen", counts(qs.exclude(attachment_kind=""), "attachment_kind"))]
 
 
 def directconnect(days):
-    from apps.social.models import DirectRoom
+    from apps.plugins import facade
+    DirectRoom = facade.models("community", "DirectRoom")  # (the plugin Community)
 
     qs = DirectRoom.objects.all()
     return [num("Verbindingen", qs.count()), num("Gesloten", qs.filter(closed=True).count()), line("Verbindingen per dag", per_day(qs, "created_at", days))]
@@ -395,7 +402,8 @@ def general(days):
     from apps.medialib.models import MediaItem
     from apps.pages.models import Page
     from apps.plugins.models import Plugin
-    from apps.social.models import ChatMessage, DirectMessage
+    from apps.plugins import facade
+    ChatMessage, DirectMessage = facade.models("community", "ChatMessage", "DirectMessage")  # (the plugin Community)
 
     now = timezone.now()
     return [

@@ -215,7 +215,9 @@ def start(request):
         errors["first_name"] = ["Voornaam is verplicht."]
     if bad := find_forbidden(" ".join([first, last, display])):
         errors["first_name"] = [f"Bevat niet toegestane woorden: {', '.join(bad)}."]
-    if gender not in ("", *__import__("apps.social.service", fromlist=["genders"]).genders()):
+    from apps.plugins import facade
+
+    if gender not in ("", *(facade.mod("community", "service").genders() if facade.mod("community", "service") else ("m", "f", "x"))):
         errors["gender"] = ["Ongeldig geslacht."]
     try:
         validate_password(password, User(email=email, first_name=first, last_name=last))

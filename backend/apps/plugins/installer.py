@@ -114,9 +114,28 @@ def install_zip(data):
     return register(man)
 
 
+# parts that used to be built into the system and are plugins now: a website that had them on keeps them on (the first time the plugin is found)
+ADOPT = {"community": ("profiles", "discover", "messages", "chat", "directconnect"), "subscriptions": ("subscriptions", "donations")}
+MERGED = {"payments": "finance"}  # a plugin that is part of another one now: its row goes
+
+
+def _adopt(name):
+    from apps.core.models import ModuleState
+
+    if name in ADOPT:
+        return ModuleState.objects.filter(key__in=ADOPT[name], enabled=True).exists()
+    if name == "profile-themes":  # a website with profiles had its profile themes before: they stay
+        return ModuleState.objects.filter(key="profiles", enabled=True).exists()
+    if name == "finance":  # everything that handles money needs it
+        return Plugin.objects.filter(name__in=("orders", "payments", "webshop"), enabled=True).exists()
+    return False
+
+
 def register(man):
     """Create or update the database row of a plugin folder."""
     p, created = Plugin.objects.get_or_create(name=man["name"], defaults={"title": man["title"]})
+    if created and _adopt(man["name"]):
+        p.enabled = True
     cfg = dict(p.config or {})
     for c in man["config"]:  # new settings get their default
         cfg.setdefault(c["key"], c["default"])
@@ -143,6 +162,9 @@ def scan():
             problems.append({"folder": d.name, "problem": str(e) if not isinstance(e, OSError) else "plugin.json ontbreekt"})
     gone = Plugin.objects.exclude(name__in=[d.name for d in root().iterdir() if d.is_dir()])
     for p in gone:
+        if p.name in MERGED and Plugin.objects.filter(name=MERGED[p.name]).exists():
+            p.delete()
+            continue
         p.enabled, p.error = False, "De map van deze plugin ontbreekt."
         p.save(update_fields=["enabled", "error"])
     return done, problems

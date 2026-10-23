@@ -137,9 +137,10 @@ class ProfileSerializer(serializers.ModelSerializer):
         return value
 
     def validate_gender(self, value):
-        from apps.social import service as social
+        from apps.plugins import facade
 
-        if value not in ("", *social.genders()) and value != getattr(self.instance, "gender", None):
+        genders = facade.mod("community", "service").genders() if facade.mod("community", "service") else ("m", "f", "x")
+        if value not in ("", *genders) and value != getattr(self.instance, "gender", None):
             raise serializers.ValidationError("Ongeldig geslacht.")
         return value
 
@@ -161,11 +162,13 @@ class ProfileSerializer(serializers.ModelSerializer):
             prof.gender, prof.birth_date = user.gender, user.birth_date
             prof.save(update_fields=["gender", "birth_date"])
         if prof and ("city" in validated or "country" in validated) and (prof.city, prof.country) != (user.city, user.country):
-            from apps.social import geocode
+            from apps.plugins import facade
+
+            geocode = facade.mod("community", "geocode")
 
             prof.city, prof.country = user.city, user.country  # the community profile uses the same place (distance search)
             try:
-                c = geocode.geocode(prof.city, prof.country)
+                c = geocode.geocode(prof.city, prof.country) if geocode else None
             except Exception:  # noqa: BLE001 - never fail a profile save on a lookup
                 c = None
             prof.lat, prof.lon = c if c else (None, None)

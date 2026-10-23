@@ -28,6 +28,7 @@ TTL = 5
 class Loaded:
     def __init__(self, stamp):
         self.stamp, self.hooks, self.routes, self.module, self.provides = stamp, {}, [], None, {}
+        self.urlpatterns = []  # ordinary Django routes of a plugin (System.mount)
 
     def match(self, method, path):
         """(fn, public, params) for a path like "listing/3", or None. Exact paths win over paths with <parts>."""
@@ -106,7 +107,7 @@ class System:
         from rest_framework import status
         from rest_framework.response import Response
 
-        from apps.subscriptions import service as subs
+        from apps.plugins.facade import subs
 
         if subs.can(user, key):
             return None
@@ -121,6 +122,10 @@ class System:
             cap = next((i["players_cap"] for i in installer.content_items(row) or [] if i["name"] == slug), {"min": 1, "max": 1}) if row else {"min": 1, "max": 1}
             out["players"] = installer.effective_players(cap, (st or {}).get("players"))
         return out
+
+    def mount(self, urlpatterns):
+        """Offer ordinary Django/DRF routes (urlpatterns, also routers) at the same addresses as the system's own (/api/...): see apps.plugins.mount. For plugins that bring a whole part of the system."""
+        self._loaded.urlpatterns = list(urlpatterns)
 
     def provide(self, what, obj):
         """Offer something to the system (see manifest.PROVIDES): the system asks for it through runtime.provider(what)."""
@@ -289,6 +294,12 @@ def ensure_loaded(force=False):
     if not force and time.time() - _checked["t"] < TTL:
         return
     _checked["t"] = time.time()
+    if not _checked.get("scanned"):  # once per process: find the plugin folders (also the parts that used to be built in: Community, Abonnementen, Financieel keep a website that had them on running)
+        _checked["scanned"] = True
+        try:
+            installer.scan()
+        except Exception:  # noqa: BLE001 - never stop the system for this
+            logger.exception("Plugin scan at start failed")
     try:
         on = {p.name: p for p in Plugin.objects.filter(enabled=True)}
     except Exception:  # noqa: BLE001 - database not ready (migrations)

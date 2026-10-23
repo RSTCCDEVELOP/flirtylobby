@@ -3099,3 +3099,24 @@ body.has-blocknav .edit-save-preset-btn { right: 16.2rem; }
 .stw-scroll { overflow-x: auto; } .stw-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
 .stw-table th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: .45rem .7rem; border-bottom: 1px solid var(--line); }
 .stw-table td { padding: .65rem .7rem; border-bottom: 1px solid var(--line); }
+
+/* an address in parts: street, house number, postcode, city, country */
+.addr-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; } .addr-grid .a-street { grid-column: span 4; } .addr-grid .a-nr { grid-column: span 2; } .addr-grid .a-zip { grid-column: span 2; } .addr-grid .a-city { grid-column: span 2; } .addr-grid .a-country { grid-column: span 2; }
+@media (max-width: 700px) { .addr-grid { grid-template-columns: 1fr 1fr; } .addr-grid .a-street, .addr-grid .a-city, .addr-grid .a-country { grid-column: 1 / -1; } .addr-grid .a-nr, .addr-grid .a-zip { grid-column: auto; } }
+
+/* btw-tarieven */
+.vat-table { display: grid; gap: .5rem; } .vat-row { display: grid; grid-template-columns: minmax(0, 2fr) 110px 90px 110px 40px; gap: .7rem; align-items: center; } .vat-head { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+.vat-pct { position: relative; display: block; } .vat-pct input { padding-right: 1.6rem; } .vat-pct i { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); font-style: normal; color: var(--muted); }
+.vat-radio { display: grid; place-items: center; } @media (max-width: 640px) { .vat-row { grid-template-columns: 1fr 90px 60px 60px 32px; } }
+
+/* bibliotheek (resource/) */
+.res-modal { max-height: 86vh; display: grid; gap: .8rem; grid-template-rows: auto auto auto auto minmax(0, 1fr); }
+.res-list { display: grid; gap: .45rem; overflow: auto; align-content: start; }
+.res-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: .8rem; align-items: center; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 12px; }
+.res-item.res-head { border: 0; padding-bottom: 0; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+.res-main { display: grid; gap: .1rem; min-width: 0; } .res-main small { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) { .res-item { grid-template-columns: 1fr auto; } }
+
+/* a turning icon while something is being worked on (single colour: follows the theme) */
+@keyframes e2spin { to { transform: rotate(360deg); } }
+.spin svg { width: 100%; height: 100%; animation: e2spin 1.1s linear infinite; color: var(--blue); }

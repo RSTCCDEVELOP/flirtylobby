@@ -7,6 +7,8 @@ import Tabs from "../../../../components/Tabs";
 import MarketingTile from "../../../../components/MarketingTile";
 import SalesTest from "../../../../components/SalesTest";
 import { useAuth } from "../../../../components/AuthContext";
+import Collapsible from "../../../../components/Collapsible";
+import PriceList from "../../../../components/PriceList";
 import PriceAI from "../../../../components/PriceAI";
 
 // The price list (apps/core/pricing.json, goes with every installation): base price, discounts per period and the price of every package, module and plugin, per month ex VAT.
@@ -25,6 +27,9 @@ export default function PriceEditor() {
   useEffect(() => { api("/system/sales/").then(setSales).catch(() => {}); }, []);
   const { user } = useAuth();
   const [test, setTest] = useState(""); // the method being tried
+  const [plObj, setPlObj] = useState(false);
+  const [instObj, setInstObj] = useState(false); // the standard installations as system objects // the price list as a system object
+  useEffect(() => { api("/system/pricelist/object/state/").then((r) => { setPlObj(r.on); setInstObj(!!r.installations); }).catch(() => {}); }, []);
   const [mk, setMk] = useState(null); // the marketing tiles
   useEffect(() => { if (tab === "marketing" && !mk) api("/system/marketing/").then(setMk).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
   const mkSave = async (body) => { try { setMk(await api("/system/marketing/", { method: "POST", body })); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
@@ -48,7 +53,7 @@ export default function PriceEditor() {
     setBusy(false);
   };
   const groups = [...new Set(data.catalog.map((c) => c.group))];
-  const TABS = [["basis", tx("Basis en korting")], ["impl", tx("Ontwerp en implementatie")], ["host", tx("Hosting en inkoop")], ["mail", tx("E-mail")], ...groups.map((g) => [g, tx(g)]), ["sales", tx("Sales")], ["marketing", tx("Marketing")]];
+  const TABS = [["basis", tx("Basis en korting")], ["impl", tx("Ontwerp en implementatie")], ["host", tx("Hosting en inkoop")], ["mail", tx("E-mail")], ...groups.map((g) => [g, tx(g)]), ["pricelist", tx("Prijslijst")], ["sales", tx("Sales")], ["marketing", tx("Marketing")]];
   return (
     <>
       <div className="row between" style={{ alignItems: "center" }}><h1 style={{ margin: 0 }}>{tx("Prijzen")}</h1><PriceAI onDone={() => api("/system/pricing/").then(load)} /></div>
@@ -119,6 +124,13 @@ export default function PriceEditor() {
           ))}
         </div>
       ))}
+      {tab === "pricelist" && (
+        <div className="card stack" style={{ gap: ".9rem" }}>
+          <PriceList />
+          <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={plObj} onChange={async (e) => { const on = e.target.checked; try { const r = await api("/system/pricelist/object/", { method: "POST", body: { on } }); setPlObj(r.on); setMsg({ ok: true, text: r.on ? tx("Het systeemobject Prijslijst is gemaakt. Je vindt het in de bewerkmodus bij Systeemobjecten.") : tx("Het systeemobject Prijslijst is verwijderd.") }); } catch (er) { setMsg({ ok: false, text: errorText(er) }); } }} /><span /></span><span>{tx("Prijslijst als systeemobject op pagina's kunnen zetten")}</span></label>
+          <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={instObj} onChange={async (e) => { const on = e.target.checked; try { const r = await api("/system/pricelist/object/", { method: "POST", body: { on, installations: true } }); setInstObj(!!r.installations); setMsg({ ok: true, text: r.installations ? tx("De standaardinstallaties zijn systeemobjecten geworden. Je vindt ze in de bewerkmodus bij Systeemobjecten.") : tx("De systeemobjecten van de standaardinstallaties zijn verwijderd.") }); } catch (er) { setMsg({ ok: false, text: errorText(er) }); } }} /><span /></span><span>{tx("Standaardinstallaties als systeemobjecten (met wat erin zit en de prijs per maand)")}</span></label>
+        </div>
+      )}
       {tab === "sales" && (
         <div className="stack" style={{ gap: "1.2rem" }}>
           <div className="card stack" style={{ gap: "1rem" }}>
@@ -206,15 +218,14 @@ export default function PriceEditor() {
             </label>
           </div>
           {mk.enabled && [...new Set(mk.items.map((i) => i.group))].map((g) => (
-            <div key={g} className="stack" style={{ gap: ".8rem" }}>
-              <h3 style={{ margin: ".3rem 0 0" }}>{tx(g)}</h3>
+            <Collapsible key={g} id={`mk-${g}`} title={`${tx(g)} (${mk.items.filter((i) => i.group === g).length})`}>
               <div className="mk-grid">{mk.items.filter((i) => i.group === g).map((i) => <MarketingTile key={i.key} module={i.key} title={i.label} tagline={i.tagline} admin on={i.on} onToggle={(v) => mkSave({ modules: { [i.key]: v } })} />)}</div>
-            </div>
+            </Collapsible>
           ))}
         </div>
       )}
       {test && <SalesTest method={test} email={user?.email || ""} onClose={() => setTest("")} />}
-      {tab !== "sales" && tab !== "marketing" && <div className="save-bar"><button type="button" className="btn primary" disabled={busy} onClick={save}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>}
+      {tab !== "sales" && tab !== "marketing" && tab !== "pricelist" && <div className="save-bar"><button type="button" className="btn primary" disabled={busy} onClick={save}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>}
     </>
   );
 }

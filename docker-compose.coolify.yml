@@ -42,9 +42,11 @@ services:
       # They must match the mounted volumes for collectstatic to persist them.
       MEDIA_ROOT: /data/media
       STATIC_ROOT: /data/static
+      RESOURCE_DIR: /app/resource
     volumes:
       - media:/data/media
       - static:/data/static
+      - ./resource:/app/resource:ro  # the library of zips (plugins, themes, languages) that comes with the product (in git)
     depends_on:
       db:
         condition: service_healthy

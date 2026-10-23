@@ -15,6 +15,7 @@ PERMISSIONS = [
     ("community.manage", "Community beheren (profielen, berichten, chat)", "Community"),
     ("products.manage", "Producten beheren", "Webshop"),
     ("orders.manage", "Orders beheren", "Webshop"),
+    ("orders.documents", "Documenten van orders verwijderen (pakbon, factuur, retourbon, creditfactuur)", "Webshop"),
     ("sandbox.manage", "Sandbox beheren", "Beheer"),
     ("integrations.manage", "API keys beheren", "Beheer"),
     ("communication.manage", "Communicatie beheren", "Beheer"),

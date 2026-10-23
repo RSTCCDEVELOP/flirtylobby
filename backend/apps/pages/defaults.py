@@ -141,10 +141,10 @@ def _seed_blocks(page, theme):
 
 
 def _theme():
-    from apps.social import service as social
+    from apps.plugins import facade
 
     try:
-        return social.get()["profiles"]["theme"]
+        return facade.community.get()["profiles"]["theme"]
     except Exception:  # noqa: BLE001
         return "normal"
 

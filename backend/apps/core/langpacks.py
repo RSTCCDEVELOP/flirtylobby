@@ -4,7 +4,7 @@
 
 `ui` is the dictionary of the interface (the Dutch text is the key, see frontend/lib/t.js). The languages that come with the system have their
 dictionary in frontend/public/locales/<code>.json; an installed package takes its place, so a language can be added or replaced without an update.
-A package holds data only (texts), so it cannot run code. Export: <project>/themes/.dist/languages/<code>.zip per language and all_languages.zip."""
+A package holds data only (texts), so it cannot run code. Export: <project>/resource/languages/<code>.zip per language and all_languages.zip."""
 import io
 import json
 import re
@@ -34,7 +34,7 @@ def root():
 
 
 def dist_dir():
-    d = settings.THEMES_DIST_DIR / "languages"
+    d = settings.RESOURCE_DIR / "languages"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -148,7 +148,7 @@ def as_zip_all():
 
 
 def build_dist():
-    """Write <project>/themes/.dist/languages/<code>.zip for every language and all_languages.zip. Returns the names."""
+    """Write <project>/resource/languages/<code>.zip for every language and all_languages.zip. Returns the names."""
     out = []
     for code in Language.objects.values_list("code", flat=True):
         (dist_dir() / f"{code}.zip").write_bytes(as_zip(code))

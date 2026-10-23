@@ -5,8 +5,8 @@ import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import Flag from "./Flag";
 import ProgressBar from "./ProgressBar";
-import { IconX } from "./Icons";
-import MarketingMock, { EMOJI, HUE } from "./MarketingMock";
+import { IconBolt, IconX } from "./Icons";
+import MarketingMock, { HUE } from "./MarketingMock";
 
 const siteLang = () => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } };
 
@@ -43,7 +43,7 @@ export default function MarketingPopup({ module, lang: start, onClose }) {
         {c && (
           <>
             <header className="mk-hero" style={{ background: `linear-gradient(135deg, ${(HUE[d.group] || HUE.Systeem)[0]}, ${(HUE[d.group] || HUE.Systeem)[1]})` }}>
-              <span className="mk-bigico" aria-hidden="true">{EMOJI[module] || "✨"}</span>
+              <span className="mk-bigico" aria-hidden="true"><IconBolt /></span>
               <div className="mk-herotext"><small>{tx(d.group || "Easy2edit")}</small><h2>{c.title}</h2><p>{c.tagline}</p></div>
               {d.languages.length > 1 && (
                 <span className="mk-flags" role="group" aria-label={tx("Taal")}>

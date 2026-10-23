@@ -2,7 +2,7 @@
 
 import { Busy } from "../../../../../components/PageLoader";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../../components/AuthContext";
 import { IconEye, IconSettings } from "../../../../../components/Icons";
@@ -18,8 +18,7 @@ import { confirmDialog } from "../../../../../lib/dialog";
 // The admin page of one plugin: its settings and, when the plugin brings one, its own admin page (e.g. moderation).
 export default function PluginAdminPage() {
   const { name } = useParams();
-  const wanted = useSearchParams().get("tab") || ""; // ?tab=products: the menu entry of a plugin opens its admin page at that part
-  const { user } = useAuth();
+    const { user } = useAuth();
   const [p, setP] = useState(null);
   const [msg, setMsg] = useState(null);
   const load = useCallback(() => api("/plugins/").then((d) => setP(d.plugins.find((x) => x.name === name) || false)).catch((e) => setMsg(errorText(e))), [name]);
@@ -38,7 +37,6 @@ export default function PluginAdminPage() {
 
   const hasPages = (p.public_pages || []).some((x) => x.page) || !!p.blocks_page || !!p.admin_links?.length;
   const tabs = [
-    ...(p.admin_web && p.enabled ? [["manage", p.admin_label || "Beheer", <IconEye key="m" />]] : []),
     ...(hasPages ? [["pages", "Pagina's", <IconEdit key="pg" />]] : []),
     ...(p.settings_web && p.enabled ? [["shopsettings", "Instellingen", <IconSettings key="ss" />]] : []),
     ...((p.provides || []).includes("parts") ? [["objects", "Systeemobjecten", <IconEdit key="so" />]] : []),
@@ -59,10 +57,9 @@ export default function PluginAdminPage() {
         {(p.requires?.length > 0 || p.required_by?.length > 0) && <p className="muted" style={{ margin: ".4rem 0 0", fontSize: ".85rem" }}>{p.requires?.length > 0 && <>{tx("Heeft nodig:")} {p.requires.join(", ")}. </>}{p.required_by?.length > 0 && <>{tx("Nodig voor:")} {p.required_by.join(", ")}.</>}{(p.requires_missing || []).length > 0 ? ` ${tx("Nog niet geïnstalleerd:")} ${p.requires_missing.join(", ")}.` : (p.requires_off || []).length > 0 && !p.enabled ? ` ${tx("Staan nog uit:")} ${p.requires_off.map((x) => x.title).join(", ")}.` : ""}</p>}
       </div>
       {msg && <div className="alert" style={{ marginBottom: "1rem" }}>{msg}</div>}
-      <PluginTabs p={p} onSaved={setP} first={p.admin_web && p.enabled ? "manage" : "overview"} extra={tabs}>
+      <PluginTabs p={p} onSaved={setP} first="overview" extra={tabs}>
         {(tab) => (
           <>
-            {tab === "manage" && p.admin_web && p.enabled && <PluginFrame key={wanted} name={name} file={p.admin_web} title={`${p.title} – ${tx("beheer")}`} route={wanted ? { params: {}, query: { tab: wanted } } : null} />}
             {tab === "pages" && <PluginPages p={p} />}
             {tab === "objects" && <PluginObjects p={p} />}
             {tab === "about" && <PluginAbout p={p} />}
@@ -71,6 +68,7 @@ export default function PluginAdminPage() {
         )}
       </PluginTabs>
       <p className="row" style={{ justifyContent: "flex-start" }}>
+        {p.enabled && p.admin_web && <Link className="btn" href={`/dashboard/admin/plugin/${p.name}`}>{tx("Open {0}", p.admin_label || p.title)}</Link>}
         {p.enabled && p.has_web && p.menu && <Link className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</Link>}
         {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg(errorText(e)))}>{tx("Downloaden (zip)")}</button>}
       </p>

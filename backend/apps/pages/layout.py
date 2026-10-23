@@ -323,9 +323,12 @@ def preset(request, key):
         return Response({"detail": "Onbekende opmaak."}, status=status.HTTP_400_BAD_REQUEST)
     if name == "auto":  # the layout of the community theme (the standard pages have one)
         from . import defaults
-        from apps.social import service as social
+        from apps.plugins import facade
 
-        theme = social.get()["profiles"]["theme"]
+        try:
+            theme = facade.community.get()["profiles"]["theme"]
+        except Exception:  # noqa: BLE001 - without the plugin Community: the normal theme
+            theme = "normal"
         if key in defaults.SHOP_PAGES:
             data = defaults.shop_layout(key, theme)
         elif key in {k for k, *_ in defaults.CONTENT} | set(defaults.SCREEN_BLOCKS):
@@ -358,7 +361,7 @@ def layout(request, key):
         PageLayout.objects.update_or_create(key=key, defaults={"data": data})
         return Response(with_urls(data))
     obj = PageLayout.objects.filter(key=key).first()
-    from apps.social import service as social
+    from apps.plugins import facade
 
     from . import service as page_service
     from .models import Page
@@ -367,7 +370,7 @@ def layout(request, key):
     if pg and not page_service.can_see(request.user, pg):
         obj = None  # a page for chosen users / groups: the blocks stay on the server
     try:
-        theme = social.get()["profiles"]["theme"]
+        theme = facade.community.get()["profiles"]["theme"]
     except Exception:  # noqa: BLE001
         theme = "normal"
     return Response({**(with_urls(obj.data) if obj else {"rows": [], "bg": {}}), "theme": theme})

@@ -53,8 +53,11 @@ LAYERS = ("user", "admin", "super")
 
 
 def _social():
-    from apps.social import service, themes
+    from apps.plugins import facade
 
+    service, themes = facade.mod("community", "service"), facade.mod("community", "themes")  # (the plugin Community)
+    if not service:  # without it nothing about the community applies
+        return {"profiles": {"theme": "", "requests_enabled": False}, "discover": {"swipe": "off", "pass_days": 0}}, "", None
     cfg = service.get()
     return cfg, cfg["profiles"]["theme"], themes
 
@@ -62,13 +65,14 @@ def _social():
 def _swipe():
     cfg, theme, themes = _social()
     sw = cfg["discover"]["swipe"]
-    return sw == "on" or (sw == "auto" and themes.search_config(theme)["swipe"])
+    return sw == "on" or (sw == "auto" and themes is not None and themes.search_config(theme)["swipe"])
 
 
 def _available():
-    from apps.social import availability
+    from apps.plugins import facade
 
-    return bool(availability.groups())
+    availability = facade.mod("community", "availability")
+    return bool(availability and availability.groups())
 
 
 # items that only apply when a setting is in use: nothing is shown about what is not on (e.g. dating when the profile theme is not Dating)

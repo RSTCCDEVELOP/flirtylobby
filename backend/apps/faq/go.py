@@ -41,7 +41,7 @@ GO = {
     # ── admin: the rest ──
     "media": ("/dashboard/admin/media", [], []),
     "seo": ("/dashboard/admin/seo", [], ["seo-site"]),
-    "shop": ("/dashboard/admin/plugins/webshop", [], []), "orders": ("/dashboard/admin/plugins/orders", [], []),
+    "shop": ("/dashboard/admin/plugin/webshop", [], []), "orders": ("/dashboard/admin/plugin/orders", [], []),
     "subs": ("/dashboard/admin/subscriptions", ["plans"], []), "donate": ("/dashboard/admin/donations", ["campaigns"], []), "actions": ("/dashboard/admin/actions", [], []),
     "comm": ("/dashboard/admin/community", ["settings", "how"], ["comm-general"]),
     "games": (f"{PLUGINS}/games", [], []), "gamemanage": (f"{PLUGINS}/games", [], []), "gameupload": (f"{PLUGINS}/games", ["content"], []), "gameset": (f"{PLUGINS}/games", [], []),

@@ -288,11 +288,54 @@ function Webshop({ c }) {
   );
 }
 
+// ── layouts the superadmin can choose per theme (plugin Profielthema's): the fields with "Op de kaart" are the key facts ──
+function Generic({ c, kind }) {
+  const { p, i, setI } = c;
+  const key = (p.fields || []).filter((f) => f.card);
+  const facts = key.length ? key : (p.fields || []).slice(0, 4);
+  const rest = without(p.fields, facts.map((f) => f.key));
+  const about = (p.headline || p.bio) && (
+    <section className="card"><h2>{tx("Over mij")}</h2>{p.headline && <p style={{ fontSize: "1.05rem", fontWeight: 600 }}>{p.headline}</p>}{p.bio && <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{p.bio}</p>}</section>
+  );
+  const labels = <span className="chips">{facts.map((f) => <span key={f.key} className="chip" style={{ cursor: "default" }}>{f.label}: {fieldText(f)}</span>)}</span>;
+  const meta = <>{p.city && <p className="muted" style={{ margin: ".2rem 0" }}><IconPin /> {p.city}</p>}{p.interests?.length > 0 && <Chips items={p.interests} />}</>;
+  if (kind === "cover") return (
+    <div className="pf-biz">
+      <div className="pf-cover" />
+      <div className="pf-biz-head"><Avatar p={p} size={112} /><div className="pf-biz-id"><Name p={p} />{meta}{facts.length > 0 && labels}</div></div>
+      <Locked p={p} />
+      <div className="pf-cols"><div className="pf-body">{about}<FieldList fields={rest} /></div><aside className="pf-side">{p.photos.length > 0 && <Gallery p={p} i={i} setI={setI} ratio="4 / 3" />}<Actions c={c} /></aside></div>
+    </div>
+  );
+  if (kind === "tiles") return (
+    <div>
+      <div className="pf-biz-head" style={{ alignItems: "center" }}><Avatar p={p} size={96} /><div className="pf-biz-id"><Name p={p} />{meta}</div></div>
+      <Locked p={p} />
+      {facts.length > 0 && <div className="pf-tiles">{facts.map((f) => <div key={f.key} className="pf-tile"><small>{f.label}</small><strong>{fieldText(f)}</strong></div>)}</div>}
+      <div className="pf-cols"><div className="pf-body">{about}<FieldList fields={rest} /></div><aside className="pf-side"><Gallery p={p} i={i} setI={setI} ratio="1 / 1" /><Actions c={c} /></aside></div>
+    </div>
+  );
+  if (kind === "single") return (
+    <div style={{ maxWidth: 720, margin: "0 auto", display: "grid", gap: "1rem" }}>
+      <Gallery p={p} i={i} setI={setI} ratio="4 / 3" />
+      <div><Name p={p} />{meta}{facts.length > 0 && labels}</div>
+      <Locked p={p} /><Actions c={c} />{about}<FieldList fields={rest} />
+    </div>
+  );
+  return ( // split: photo beside the content
+    <div className="profile-hero">
+      <Gallery p={p} i={i} setI={setI} ratio="4 / 5" />
+      <div><Name p={p} />{meta}{facts.length > 0 && labels}<Locked p={p} />{p.headline && <p style={{ fontSize: "1.1rem" }}>{p.headline}</p>}{p.bio && <p style={{ whiteSpace: "pre-wrap" }}>{p.bio}</p>}<FieldList fields={rest} /><Actions c={c} /></div>
+    </div>
+  );
+}
+
 const LAYOUTS = { normal: Normal, dating: Dating, sporters: Sporters, business: Business, webshop: Webshop };
 
 // The public profile page follows the community theme chosen in Admin -> Community -> Profielthema
 export default function ProfileLayout({ c }) {
   const Layout = LAYOUTS[c.p.theme] || Normal;
+  const own = c.p.layout && c.p.layout !== "default" ? c.p.layout : null; // a layout the superadmin chose for the theme
   // the member's own colour theme (Wijzig profiel → Design) for his page
-  return <div className={`pf pf-theme-${LAYOUTS[c.p.theme] ? c.p.theme : "normal"} ${c.p.design ? "pt-wrap" : ""}`} data-pt={c.p.design || undefined}><Layout c={c} />{c.p.available?.length > 0 && !c.p.locked && <section className="card" style={{ marginTop: "1rem" }}><h2>{tx("Beschikbaar voor")}</h2><AvailChips items={c.p.available} max={50} /></section>}</div>;
+  return <div className={`pf pf-theme-${LAYOUTS[c.p.theme] ? c.p.theme : "normal"} ${c.p.design ? "pt-wrap" : ""}`} data-pt={c.p.design || undefined}>{own ? <Generic c={c} kind={own} /> : <Layout c={c} />}{c.p.available?.length > 0 && !c.p.locked && <section className="card" style={{ marginTop: "1rem" }}><h2>{tx("Beschikbaar voor")}</h2><AvailChips items={c.p.available} max={50} /></section>}</div>;
 }

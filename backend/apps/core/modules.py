@@ -39,26 +39,26 @@ MODULES = [
     {"key": "privacy_pages", "group": "Content", "label": "Privacy- en cookiepagina",
      "desc": "De publieke pagina's /privacy en /cookies met links in de footer."},
     # ── Webshop ──
-    {"key": "subscriptions", "group": "Subscription", "label": "Abonnementen",
+    {"key": "subscriptions", "group": "Subscription", "label": "Abonnementen", "plugin": "subscriptions", "hidden": True,
      "desc": "Abonnementen die toegang geven (site, pagina's, content, chat, video, likes, diensten), eenmalig of herhaald, met een order per periode.",
      "default": False, "requires": ["orders"]},
-    {"key": "donations", "group": "Subscription", "label": "Donaties",
+    {"key": "donations", "group": "Subscription", "label": "Donaties", "plugin": "subscriptions", "hidden": True,
      "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest. Werkt zonder de webshop, maar heeft de plugins Orders en Betalen nodig.",
      "default": False, "requires": ["orders", "payments"]},
-    {"key": "orders", "group": "Subscription", "label": "Orders", "plugin": "orders",
+    {"key": "orders", "group": "Subscription", "label": "Orders", "plugin": "orders", "hidden": True,
      "desc": "Orderbeheer, btw en de bestelstatus voor de webshop, abonnementen en donaties. Is de plugin Orders: aan of uit zet je bij Plugins; hier stel je alleen in wie erbij mag."},
-    {"key": "payments", "group": "Subscription", "label": "Betalen", "plugin": "payments",
+    {"key": "payments", "group": "Subscription", "label": "Betalen", "plugin": "finance", "hidden": True,
      "desc": "Online betalen voor bestellingen, abonnementen en donaties. Is de plugin Betalen (heeft Orders nodig): aan of uit zet je bij Plugins; hier stel je alleen in wie erbij mag."},
     # ── Community ──
-    {"key": "profiles", "group": "Community", "label": "Profielen & blokkeren",
+    {"key": "profiles", "group": "Community", "label": "Profielen & blokkeren", "plugin": "community", "hidden": True,
      "desc": "Eigen profielpagina met meerdere foto's, zichtbaarheid per taal en groep, ledenzoeker en het blokkeren van andere users."},
-    {"key": "discover", "group": "Community", "label": "Zoeken & matchen",
+    {"key": "discover", "group": "Community", "label": "Zoeken & matchen", "plugin": "community", "hidden": True,
      "desc": "Andere users zoeken en ontmoeten zoals bij een datingsite: filters, aanbevelingen, leuk vinden, matches, favorieten en bezoekers."},
-    {"key": "messages", "group": "Community", "label": "Berichten",
+    {"key": "messages", "group": "Community", "label": "Berichten", "plugin": "community", "hidden": True,
      "desc": "Berichtensysteem tussen users (postvak)."},
-    {"key": "chat", "group": "Community", "label": "Chat",
+    {"key": "chat", "group": "Community", "label": "Chat", "plugin": "community", "hidden": True,
      "desc": "Chat in een popup of scherm, via de portal of rechtstreeks (WebRTC), met foto's, video's en videochat."},
-    {"key": "directconnect", "group": "Community", "label": "Directe verbinding",
+    {"key": "directconnect", "group": "Community", "label": "Directe verbinding", "plugin": "community", "hidden": True,
      "desc": "Een rechtstreekse verbinding tussen twee mensen (WebRTC) via een code, link of QR-code, ook zonder account: chat, foto's, video's en videochat. Pagina's /directconnect en /direct."},
     # ── Beveiliging ──
     {"key": "geo", "group": "Beveiliging", "label": "Landcontrole",
@@ -152,6 +152,13 @@ def plugin_on(name):
     now = time.time()
     if now - _pl["t"] > TTL:
         from apps.plugins.models import Plugin
+
+        try:  # the plugin folders are found (and the plugins that are on are loaded) before we say what is on
+            from apps.plugins import runtime
+
+            runtime.ensure_loaded()
+        except Exception:  # noqa: BLE001
+            pass
 
         try:
             _pl.update(t=now, v=set(Plugin.objects.filter(enabled=True).values_list("name", flat=True)))

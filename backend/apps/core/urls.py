@@ -1,8 +1,12 @@
 from django.urls import path
 
-from . import backup_views, dashboard, marketing, sales, views
+from . import backup_views, dashboard, marketing, resource_views, sales, views
 
 urlpatterns = [
+    path("resource/", resource_views.library),
+    path("resource/allowed/", resource_views.allowed),
+    path("resource/install/", resource_views.install),
+    path("resource/update/", resource_views.update),
     path("health/", views.health, name="health"),
     path("system/", views.system_settings),
     path("system/reset/", views.system_reset),
@@ -14,6 +18,10 @@ urlpatterns = [
     path("system/marketing/", marketing.admin),
     path("system/marketing/<slug:module>/ai/", marketing.ai),
     path("marketing/<slug:module>/", marketing.public),
+    path("sales/pricelist/", sales.pricelist),
+    path("sales/pricelist/pdf/", sales.pricelist_pdf),
+    path("system/pricelist/object/", sales.pricelist_object),
+    path("system/pricelist/object/state/", sales.pricelist_object_state),
     path("sales/calculator/", sales.calc_config),
     path("sales/calculator/plan/", sales.calc_plan),
     path("sales/calculator/quote/", sales.calc_quote),

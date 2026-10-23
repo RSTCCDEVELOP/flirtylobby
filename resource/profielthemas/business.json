@@ -1,0 +1,388 @@
+{
+ "key": "business",
+ "label": "Business",
+ "desc": "Netwerken: bedrijf, branche, expertise en wat je zoekt of biedt.",
+ "version": "1.0.0",
+ "builtin": {
+  "headline": true,
+  "bio": true,
+  "gender": false,
+  "birth_date": false,
+  "city": true,
+  "interests": false,
+  "aim": false
+ },
+ "fields": [
+  {
+   "key": "company",
+   "label": "Bedrijf",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Bedrijf"
+  },
+  {
+   "key": "title",
+   "label": "Functie",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Bedrijf"
+  },
+  {
+   "key": "industry",
+   "label": "Branche",
+   "type": "select",
+   "options": [
+    "IT & software",
+    "Zorg",
+    "Financieel",
+    "Bouw",
+    "Handel",
+    "Onderwijs",
+    "Overheid",
+    "Marketing & media",
+    "Industrie",
+    "Dienstverlening",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Bedrijf"
+  },
+  {
+   "key": "size",
+   "label": "Bedrijfsgrootte",
+   "type": "select",
+   "options": [
+    "ZZP",
+    "2-10",
+    "11-50",
+    "51-250",
+    "250+"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Bedrijf"
+  },
+  {
+   "key": "expertise",
+   "label": "Expertise",
+   "type": "multiselect",
+   "options": [
+    "Strategie",
+    "Verkoop",
+    "Marketing",
+    "Finance",
+    "Techniek",
+    "HR",
+    "Juridisch",
+    "Operations",
+    "Design"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Netwerk"
+  },
+  {
+   "key": "looking",
+   "label": "Ik zoek",
+   "type": "multiselect",
+   "options": [
+    "Klanten",
+    "Partners",
+    "Investeerders",
+    "Talent",
+    "Mentor",
+    "Opdrachten",
+    "Baan"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Netwerk"
+  },
+  {
+   "key": "offer",
+   "label": "Ik bied",
+   "type": "textarea",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Netwerk"
+  },
+  {
+   "key": "open_to_work",
+   "label": "Open voor een baan of opdracht",
+   "type": "checkbox",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "wanted_role",
+   "label": "Gezochte functie",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "employment",
+   "label": "Soort werk",
+   "type": "multiselect",
+   "options": [
+    "Vast",
+    "Tijdelijk",
+    "Freelance / ZZP",
+    "Stage",
+    "Bijbaan"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "work_mode",
+   "label": "Werkplek",
+   "type": "select",
+   "options": [
+    "Op kantoor",
+    "Hybride",
+    "Remote"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "experience",
+   "label": "Werkervaring",
+   "type": "number",
+   "options": [],
+   "unit": "jaar",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "hiring",
+   "label": "Ik heb vacatures",
+   "type": "checkbox",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "website",
+   "label": "Website",
+   "type": "url",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Contact"
+  },
+  {
+   "key": "linkedin",
+   "label": "LinkedIn",
+   "type": "url",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Contact"
+  },
+  {
+   "key": "available",
+   "label": "Open voor netwerkgesprekken",
+   "type": "checkbox",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Netwerk"
+  },
+  {
+   "key": "seniority",
+   "label": "Niveau",
+   "type": "select",
+   "options": [
+    "Student",
+    "Junior",
+    "Medior",
+    "Senior",
+    "Management",
+    "Directie"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Bedrijf"
+  },
+  {
+   "key": "skills",
+   "label": "Vaardigheden",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Netwerk"
+  },
+  {
+   "key": "languages",
+   "label": "Talen",
+   "type": "multiselect",
+   "options": [
+    "Nederlands",
+    "Engels",
+    "Duits",
+    "Frans",
+    "Spaans",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Netwerk"
+  },
+  {
+   "key": "mentor",
+   "label": "Ik wil mentor zijn",
+   "type": "checkbox",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Netwerk"
+  },
+  {
+   "key": "speaker",
+   "label": "Beschikbaar als spreker of trainer",
+   "type": "checkbox",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Netwerk"
+  },
+  {
+   "key": "salary",
+   "label": "Salarisindicatie",
+   "type": "select",
+   "options": [
+    "Tot 2.500",
+    "2.500 - 3.500",
+    "3.500 - 5.000",
+    "5.000+",
+    "In overleg"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "notice",
+   "label": "Beschikbaar per",
+   "type": "select",
+   "options": [
+    "Direct",
+    "Binnen 1 maand",
+    "Binnen 3 maanden",
+    "Later"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Werk zoeken"
+  },
+  {
+   "key": "job_offer",
+   "label": "Mijn vacature (titel en korte tekst)",
+   "type": "textarea",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Werk zoeken"
+  }
+ ],
+ "search": {
+  "title": "Netwerk, functies en banen zoeken",
+  "filters": [
+   "q",
+   "city",
+   "country",
+   "distance",
+   "sort",
+   "online"
+  ],
+  "swipe": false
+ }
+}

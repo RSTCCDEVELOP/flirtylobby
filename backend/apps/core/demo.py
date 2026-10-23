@@ -34,7 +34,9 @@ def _ids(kind):
     if not ids:
         return []
     from apps.faq.models import FaqEntry
-    from apps.subscriptions.models import DonationCampaign, Plan
+    from apps.plugins import facade
+
+    DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")  # (the plugin Abonnementen; without it these are empty)
 
     model = {"plans": Plan, "campaigns": DonationCampaign, "faq": FaqEntry}.get(kind)
     return list(model.objects.filter(pk__in=ids).values_list("pk", flat=True)) if model else ids
@@ -155,8 +157,10 @@ def present(part):
 
 def make_users(n):
     """n people with a profile and a photo. The first eight have the names of the example community (and get a subscription and gifts with the content)."""
-    from apps.social.models import Profile, ProfilePhoto
+    from apps.plugins import facade
     from .management.commands import demo_content as dc
+
+    Profile, ProfilePhoto = facade.models("community", "Profile", "ProfilePhoto")  # (the plugin Community: without it the people are made without a profile)
 
     User, pal, made = get_user_model(), dc.palette(), 0
     for k in range(n):
@@ -170,6 +174,9 @@ def make_users(n):
                  address=f"Demostraat {k + 1}", postal_code=f"{1000 + k % 9000} AB", city=city, country=cc)
         u.set_unusable_password()
         u.save()
+        if Profile is facade._NullModel:  # (no Community: the person is there without a profile)
+            made += 1
+            continue
         try:
             pr = Profile.objects.create(user=u, slug=f"{label.lower()}-demo", enabled=True, visibility="members", headline=f"Hoi, ik ben {label}!", bio=bio, discover=True, gender=g, birth_date=u.birth_date, city=city, country=cc, interests=interests, aim=aim,
                                         accept_messages=True, accept_chat=True, searchable_local=True, available=[], looking_for_genders=[])
@@ -190,7 +197,9 @@ def make_content(parts=("plans", "money", "faq", "pages")):
     """Subscriptions, donation campaigns with gifts, subscribers, FAQ and pages (only the `parts` asked for)."""
     from apps.faq.models import FaqEntry
     from apps.pages.models import Page
-    from apps.subscriptions.models import DonationCampaign, Plan
+    from apps.plugins import facade
+
+    DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")  # (the plugin Abonnementen; without it these are empty)
     from .management.commands import demo_content as dc
 
     made = {}
@@ -351,7 +360,9 @@ def remove_parts(parts):
     from apps.medialib import mediaviews
     from apps.medialib.models import MediaItem
     from apps.pages.models import Page
-    from apps.subscriptions.models import Donation, DonationCampaign, Plan, Subscription
+    from apps.plugins import facade
+
+    Donation, DonationCampaign, Plan, Subscription = facade.models("subscriptions", "Donation", "DonationCampaign", "Plan", "Subscription")
     from apps.sysobjects import service as so
     from .management.commands import demo_content as dc
 
@@ -376,7 +387,7 @@ def remove_parts(parts):
                 pass
             m.delete()
     if "plans" in parts:
-        Plan.objects.filter(pk__in=_ids("plans")).exclude(subscriptions__isnull=False).delete()  # a plan with real subscribers stays
+        Plan.objects.filter(pk__in=_ids("plans")).exclude(pk__in=Subscription.objects.values("plan_id")).delete()  # a plan with real subscribers stays
         _forget("plans")
     if "faq" in parts:
         FaqEntry.objects.filter(pk__in=_ids("faq")).delete()
@@ -388,8 +399,9 @@ def remove_parts(parts):
         users = _users_qs()
         done["users"] = done.get("users", 0) + users.count()
         try:
-            from apps.social.models import ProfilePhoto
+            from apps.plugins import facade
 
+            ProfilePhoto = facade.models("community", "ProfilePhoto")
             for ph in ProfilePhoto.objects.filter(profile__user__in=users):
                 try:
                     ph.image.delete(save=False)

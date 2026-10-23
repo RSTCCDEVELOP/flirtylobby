@@ -16,6 +16,7 @@ services:
       - ./themes:/app/themes
       - ./site:/app/site
       - ./backups:/app/backups
+      - ./resource:/app/resource  # the library of zips (plugins, themes, languages) that comes with the product
 
   frontend:
     build:

@@ -408,7 +408,7 @@ def menu(request):
     if request.query_params.get("scope") == "admin":
         if not request.user.is_staff:
             return Response([])
-        return Response([{"name": p.name, "label": p.title, "title": p.title, "section": installer.admin_section(p), "has_admin": bool(p.manifest.get("admin_web")), "entries": p.manifest.get("admin_entries", [])} for p in Plugin.objects.filter(enabled=True)])
+        return Response([{"name": p.name, "label": p.title, "title": p.title, "section": installer.admin_section(p), "has_admin": bool(p.manifest.get("admin_web")), "admin_web": p.manifest.get("admin_web", ""), "entries": p.manifest.get("admin_entries", [])} for p in Plugin.objects.filter(enabled=True)])
     for p in Plugin.objects.filter(enabled=True):
         m, web = p.manifest.get("menu"), p.manifest.get("web")
         if m and web and (m["access"] == "members" or request.user.is_staff):  # the page of the plugin in the menu
@@ -548,6 +548,7 @@ def web(request, name, path):
         r = FileResponse(open(f, "rb"), content_type=ctype)
     r["Content-Security-Policy"] = f"sandbox allow-scripts allow-forms allow-popups allow-downloads; frame-ancestors {frame_ancestors(request)}"  # the page cannot reach the login or storage of the system
     r["X-Content-Type-Options"] = "nosniff"
+    r["Cache-Control"] = "no-cache"  # always ask again (a changed page, script or style of a plugin shows at once; the browser keeps it when nothing changed)
     return r
 
 

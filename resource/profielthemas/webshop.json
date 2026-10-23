@@ -1,0 +1,150 @@
+{
+ "key": "webshop",
+ "label": "Webshop",
+ "desc": "Verkopers en winkels: winkelnaam, categorie, levering en betaling.",
+ "version": "1.0.0",
+ "builtin": {
+  "headline": true,
+  "bio": true,
+  "gender": false,
+  "birth_date": false,
+  "city": true,
+  "interests": false,
+  "aim": false
+ },
+ "fields": [
+  {
+   "key": "shop",
+   "label": "Winkelnaam",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": true,
+   "visibility": "public",
+   "card": true,
+   "filter": false,
+   "group": "Winkel"
+  },
+  {
+   "key": "category",
+   "label": "Categorie",
+   "type": "select",
+   "options": [
+    "Mode",
+    "Sport",
+    "Wonen",
+    "Elektronica",
+    "Eten & drinken",
+    "Gezondheid",
+    "Hobby",
+    "Kinderen",
+    "Overig"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": true,
+   "filter": true,
+   "group": "Winkel"
+  },
+  {
+   "key": "website",
+   "label": "Website",
+   "type": "url",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Winkel"
+  },
+  {
+   "key": "delivery",
+   "label": "Levertijd",
+   "type": "select",
+   "options": [
+    "Dezelfde dag",
+    "1-2 dagen",
+    "3-5 dagen",
+    "Langer"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Levering"
+  },
+  {
+   "key": "region",
+   "label": "Levert in",
+   "type": "multiselect",
+   "options": [
+    "Nederland",
+    "België",
+    "Duitsland",
+    "Europa",
+    "Wereldwijd"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": true,
+   "group": "Levering"
+  },
+  {
+   "key": "payment",
+   "label": "Betaalmethoden",
+   "type": "multiselect",
+   "options": [
+    "iDEAL",
+    "Creditcard",
+    "PayPal",
+    "Achteraf",
+    "Bankoverschrijving"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Betaling"
+  },
+  {
+   "key": "returns",
+   "label": "Retourbeleid",
+   "type": "textarea",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "public",
+   "card": false,
+   "filter": false,
+   "group": "Levering"
+  },
+  {
+   "key": "kvk",
+   "label": "KvK-nummer",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Winkel"
+  }
+ ],
+ "search": {
+  "title": "Winkels en verkopers zoeken",
+  "filters": [
+   "q",
+   "city",
+   "country",
+   "sort"
+  ],
+  "swipe": false
+ }
+}

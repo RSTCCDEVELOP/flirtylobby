@@ -268,20 +268,23 @@ def as_zip_all():
 
 
 def dist_dir():
-    """<project>/themes/.dist/themes: a zip of every theme (and of all themes together) to import elsewhere. The themes folder is not part of the repository, so neither is this."""
-    d = settings.THEMES_DIST_DIR / "themes"
+    """<project>/resource/themas: a zip of every theme (and of all themes together): the library that comes with the product (see apps/core/resources.py).s this."""
+    d = settings.RESOURCE_DIR / "themas"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
 def build_dist():
-    """Write <project>/themes/.dist/themes/<key>-<version>.zip for every theme and alle-themas.zip. Old versions of a zip stay. Returns the names."""
+    """Write <project>/resource/themas/<key>-<version>.zip for every theme and alle-themas.zip. Only the latest version of a theme stays. Returns the names."""
     out = []
     for key in all_keys():
         man = manifest_of(key)
         raw = as_zip(key)
         if raw and man:
             name = f"{key}-{man['version']}.zip"
+            for old in dist_dir().glob(f"{key}-*.zip"):  # only the latest version
+                if old.name != name and re.fullmatch(re.escape(key) + r"-\d+\.\d+\.\d+\.zip", old.name):
+                    old.unlink()
             (dist_dir() / name).write_bytes(raw)
             out.append(name)
     (dist_dir() / "alle-themas.zip").write_bytes(as_zip_all())

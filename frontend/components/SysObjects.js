@@ -14,6 +14,8 @@ import { usePageRoute } from "./PageRoute";
 import PluginFrame from "./PluginFrame";
 import SysButton from "./SysButton";
 import MediaView from "./MediaViews";
+import PriceList from "./PriceList";
+import InstallationCard from "./InstallationCard";
 import PriceCalculator from "./PriceCalculator";
 import MarketingTile from "./MarketingTile";
 
@@ -31,6 +33,8 @@ function Widget({ obj, layout = "1" }) {
   const d = obj.data;
   const route = usePageRoute();
   if (obj.kind === "calculator") return <PriceCalculator layout={layout} />;
+  if (obj.kind === "pricelist") return <PriceList />;
+  if (obj.kind === "installation") return <InstallationCard d={d} />;
   if (obj.kind === "marketing") return <MarketingTile module={d.module} layout={layout} />;
   if (obj.kind === "media") return <MediaView type={d.type} settings={d.settings} items={d.items} />;
   if (obj.kind === "plugin_part") return d.enabled === false ? null : <PluginFrame name={d.name} file={d.file} title={d.title} route={{ path: "/", params: {}, ...(route || {}), query: { ...((route || {}).query || {}), ...(d.query || {}) } }} bare />;  // a block of a plugin page (the product overview, the cart ...), movable on the page
@@ -71,7 +75,7 @@ export function SysObjectBySlug({ slug, layout = "1" }) {
   const [objs, setObjs] = useState([]);
   useEffect(() => { if (on) load().then(setObjs); }, [on]);
   const o = objs.find((x) => x.slug === slug);
-  const own = o && (o.kind === "marketing" || o.kind === "calculator");
+  const own = o && (o.kind === "marketing" || o.kind === "calculator" || o.kind === "pricelist" || o.kind === "installation");
   const n = ["1", "2", "3", "4"].includes(String(layout)) ? String(layout) : "1";
   return on && o ? <div className={`so so-${own ? "own" : n}`} data-layout={n}><Widget obj={o} layout={n} /></div> : null;
 }

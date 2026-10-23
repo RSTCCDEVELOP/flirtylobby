@@ -89,7 +89,8 @@ def community(stdout):
 
     from django.contrib.auth import get_user_model
 
-    from apps.social.models import AvailabilityOption, Connection, DirectMessage, Like, Profile, ProfilePhoto, ProfileVisit
+    from apps.plugins import facade
+    AvailabilityOption, Connection, DirectMessage, Like, Profile, ProfilePhoto, ProfileVisit = facade.models("community", "AvailabilityOption", "Connection", "DirectMessage", "Like", "Profile", "ProfilePhoto", "ProfileVisit")  # (the plugin Community)
 
     User = get_user_model()
     me = User.objects.filter(is_staff=True).order_by("id").first()
@@ -138,7 +139,8 @@ def money_demo(stdout):
     from django.utils import timezone
 
     from apps.medialib.models import MediaItem
-    from apps.subscriptions.models import Donation, DonationCampaign, Plan, Subscription
+    from apps.plugins import facade
+    Donation, DonationCampaign, Plan, Subscription = facade.models("subscriptions", "Donation", "DonationCampaign", "Plan", "Subscription")  # (the plugin Abonnementen)
 
     pal = palette()
     for i, (slug, name, d_nl, d_nl2, d_en, lo, hi, dflt, goal) in enumerate(CAMPAIGNS):
@@ -207,13 +209,15 @@ class Command(BaseCommand):
     def handle(self, *a, **o):
         from apps.medialib.models import MediaItem
         from apps.plugins import runtime
-        from apps.subscriptions.models import Plan
+        from apps.plugins import facade
+        Plan = facade.models("subscriptions", "Plan")  # (the plugin Abonnementen)
 
         runtime.ensure_loaded(True)
 
         if o["remove"]:
             remove_community()
-            from apps.subscriptions.models import Donation, DonationCampaign, Subscription
+            from apps.plugins import facade
+            Donation, DonationCampaign, Subscription = facade.models("subscriptions", "Donation", "DonationCampaign", "Subscription")  # (the plugin Abonnementen)
 
             Donation.objects.filter(email__startswith="demo-").delete()
             Subscription.objects.filter(user__email__startswith="demo-").delete()

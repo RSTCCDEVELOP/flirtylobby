@@ -647,11 +647,10 @@ def apply_theme(imp):
     obj.theme = cur
     obj.save()
     prof = imp.theme.get("profile")
-    if prof and "profile" not in imp.theme_backup:
-        from apps.social import service as social
-        from apps.social import themes as ST
-        from apps.social.models import SocialSettings
+    from apps.plugins import facade
 
+    social, ST, SocialSettings = facade.mod("community", "service"), facade.mod("community", "themes"), facade.model("community", "SocialSettings")  # (the plugin Community)
+    if prof and "profile" not in imp.theme_backup and social and SocialSettings:
         so, _ = SocialSettings.objects.get_or_create(pk=1)
         imp.theme_backup["profile"] = {"had": "profiles" in (so.data or {}), "data": (so.data or {}).get("profiles")}
         social.save({"profiles": ST.theme_payload(prof)}, ["profiles"])
@@ -674,9 +673,10 @@ def revert_theme(imp):
     obj.theme = cur
     obj.save()
     prev = (imp.theme_backup or {}).get("profile")
-    if prev:
-        from apps.social.models import SocialSettings
+    from apps.plugins import facade
 
+    SocialSettings = facade.model("community", "SocialSettings")
+    if prev and SocialSettings:
         so, _ = SocialSettings.objects.get_or_create(pk=1)
         data = dict(so.data or {})
         if prev["had"]:

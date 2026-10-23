@@ -109,11 +109,11 @@ const ADMIN_GROUPS = [
 ];
 const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
-  "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-site", "/dashboard/admin/theme": "a-site", "/dashboard/admin/themes": "a-site", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-site", "/dashboard/admin/seo": "a-site",
+  "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-system", "/dashboard/admin/theme": "a-system", "/dashboard/admin/themes": "a-system", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-system", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/btw": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };
 
 export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };
@@ -231,8 +231,9 @@ export default function DashboardShell({ children }) {
   const pluginUser = pluginMenu.map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section, group: x.group }));
   const pluginUserGroup = Object.fromEntries(pluginUser.filter((n) => n.group === "mine" || n.group === "contact").map((n) => [n.href, n.group === "mine" ? "c-mine" : "c-contact"]));
   // a plugin has its own page and (plugin.json admin_entries) own places in the menu: the products and the orders of the webshop
-  const pluginAdminItems = pluginAdmin.flatMap((x) => [{ href: `/dashboard/admin/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section },
-    ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugins/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, section: x.section }))]);
+  // (the settings of a plugin are only under Plugins; here only the plugins that have a working page of their own: orders, products, moderation)
+  const pluginAdminItems = pluginAdmin.filter((x) => x.has_admin).flatMap((x) => [{ href: `/dashboard/admin/plugin/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section },
+    ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugin/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, section: x.section }))]);
   const pluginAdminGroup = Object.fromEntries(pluginAdminItems.map((n) => [n.href, ADMIN_SECTION_GROUP[n.section] || "a-system"]));
   const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false));
   const inSuper = pathname.startsWith("/dashboard/superadmin");

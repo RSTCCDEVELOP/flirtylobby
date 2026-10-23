@@ -1,5 +1,6 @@
 "use client";
 
+import { ResourceAdmin } from "../../../components/ResourceLibrary";
 import { tx } from "../../../lib/t";
 import Link from "next/link";
 import AdminTiles from "../../../components/AdminTiles";
@@ -40,6 +41,9 @@ export default function SuperAdminHome() {
           </Link>
           <SaveDefaults />
         </div>
+      </Collapsible>
+      <Collapsible id="super-resource" title={tx("Bibliotheek: plugins, thema's en talen")}>
+        <ResourceAdmin />
       </Collapsible>
       <Collapsible id="super-license" title={tx("Licentie")}>
         <LicenseAdmin />

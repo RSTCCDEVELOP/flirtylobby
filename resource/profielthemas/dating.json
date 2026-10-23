@@ -1,0 +1,387 @@
+{
+ "key": "dating",
+ "label": "Dating",
+ "desc": "Uiterlijk, leefstijl en relatiewensen voor een datingsite.",
+ "version": "1.0.0",
+ "builtin": {
+  "headline": true,
+  "bio": true,
+  "gender": true,
+  "birth_date": true,
+  "city": true,
+  "interests": true,
+  "aim": true
+ },
+ "fields": [
+  {
+   "key": "height",
+   "label": "Lengte",
+   "type": "number",
+   "options": [],
+   "unit": "cm",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Uiterlijk"
+  },
+  {
+   "key": "body",
+   "label": "Postuur",
+   "type": "select",
+   "options": [
+    "Slank",
+    "Sportief",
+    "Gemiddeld",
+    "Extra kilo's",
+    "Fors"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Uiterlijk"
+  },
+  {
+   "key": "smoking",
+   "label": "Roken",
+   "type": "select",
+   "options": [
+    "Nee",
+    "Soms",
+    "Ja"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "drinking",
+   "label": "Alcohol",
+   "type": "select",
+   "options": [
+    "Nooit",
+    "Soms",
+    "Regelmatig"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "children",
+   "label": "Kinderen",
+   "type": "select",
+   "options": [
+    "Geen",
+    "Thuiswonend",
+    "Uitwonend"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "wants_children",
+   "label": "Kinderwens",
+   "type": "select",
+   "options": [
+    "Nee",
+    "Misschien",
+    "Ja"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "status",
+   "label": "Relatiestatus",
+   "type": "select",
+   "options": [
+    "Single",
+    "Gescheiden",
+    "Weduwe/weduwnaar",
+    "Liever niet zeggen"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Over mij"
+  },
+  {
+   "key": "education",
+   "label": "Opleiding",
+   "type": "select",
+   "options": [
+    "MBO",
+    "HBO",
+    "WO",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Over mij"
+  },
+  {
+   "key": "job",
+   "label": "Beroep",
+   "type": "text",
+   "options": [],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Over mij"
+  },
+  {
+   "key": "languages",
+   "label": "Talen",
+   "type": "multiselect",
+   "options": [
+    "Nederlands",
+    "Engels",
+    "Duits",
+    "Frans",
+    "Spaans",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Over mij"
+  },
+  {
+   "key": "pets",
+   "label": "Huisdieren",
+   "type": "select",
+   "options": [
+    "Geen",
+    "Hond",
+    "Kat",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "living",
+   "label": "Woonsituatie",
+   "type": "select",
+   "options": [
+    "Alleen",
+    "Samenwonend",
+    "Bij ouders",
+    "Woongroep"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "diet",
+   "label": "Eetstijl",
+   "type": "select",
+   "options": [
+    "Alles",
+    "Vegetarisch",
+    "Veganistisch",
+    "Halal",
+    "Koosjer",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "exercise",
+   "label": "Sporten",
+   "type": "select",
+   "options": [
+    "Nooit",
+    "Soms",
+    "Wekelijks",
+    "Dagelijks"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Leefstijl"
+  },
+  {
+   "key": "music",
+   "label": "Muziek",
+   "type": "multiselect",
+   "options": [
+    "Pop",
+    "Rock",
+    "Hiphop",
+    "Dance",
+    "Jazz",
+    "Klassiek",
+    "Latin",
+    "Metal",
+    "Nederlandstalig"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Interesses"
+  },
+  {
+   "key": "weekend",
+   "label": "Een perfect weekend",
+   "type": "multiselect",
+   "options": [
+    "Uitgaan",
+    "Thuis chillen",
+    "Wandelen",
+    "Reizen",
+    "Sporten",
+    "Cultuur",
+    "Vrienden zien"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Interesses"
+  },
+  {
+   "key": "zodiac",
+   "label": "Sterrenbeeld",
+   "type": "select",
+   "options": [
+    "Ram",
+    "Stier",
+    "Tweelingen",
+    "Kreeft",
+    "Leeuw",
+    "Maagd",
+    "Weegschaal",
+    "Schorpioen",
+    "Boogschutter",
+    "Steenbok",
+    "Waterman",
+    "Vissen"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": false,
+   "group": "Over mij"
+  },
+  {
+   "key": "first_date",
+   "label": "Ideale eerste date",
+   "type": "select",
+   "options": [
+    "Koffie of thee",
+    "Wandeling",
+    "Diner",
+    "Drankje",
+    "Activiteit",
+    "Online"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Daten"
+  },
+  {
+   "key": "orientation",
+   "label": "Seksuele geaardheid",
+   "type": "select",
+   "options": [
+    "Heteroseksueel",
+    "Homoseksueel",
+    "Biseksueel",
+    "Panseksueel",
+    "Anders",
+    "Liever niet zeggen"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "members",
+   "card": false,
+   "filter": true,
+   "group": "Over mij"
+  },
+  {
+   "key": "religion",
+   "label": "Geloof",
+   "type": "select",
+   "options": [
+    "Geen",
+    "Christelijk",
+    "Islamitisch",
+    "Joods",
+    "Boeddhistisch",
+    "Anders"
+   ],
+   "unit": "",
+   "required": false,
+   "visibility": "friends",
+   "card": false,
+   "filter": false,
+   "group": "Over mij"
+  }
+ ],
+ "search": {
+  "title": "Zoeken & swipen",
+  "filters": [
+   "q",
+   "gender",
+   "age",
+   "city",
+   "distance",
+   "aim",
+   "interest",
+   "sort",
+   "online",
+   "photo"
+  ],
+  "swipe": true
+ },
+ "layout": "default"
+}

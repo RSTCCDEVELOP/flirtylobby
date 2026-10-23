@@ -14,14 +14,73 @@ from .marketing_content import C
 from .marketing_extra import X
 
 
+INST = "installation-"  # the marketing blocks of the standard installations use this prefix in front of the key of the installation
+
+
+def _installations():
+    from . import presets
+
+    return {INST + p["key"]: {"key": INST + p["key"], "label": p["name"], "group": "Standaardinstallaties"} for p in presets.PRESETS}
+
+
+def _mod(key):
+    """A module of the system, or a standard installation (a block about a ready-made set)."""
+    return modules.BY_KEY.get(key) or _installations().get(key)
+
+
+def _first_sentence(text, n):
+    t = " ".join(str(text or "").split())
+    cut = t.split(". ")[0].rstrip(".")
+    return (cut if len(cut) <= n else cut[: n - 1].rstrip() + "…")
+
+
+def _installation_text(module, lang):
+    """The built-in text of a standard installation, made from what is in it (nl and en)."""
+    from apps.plugins.models import Plugin
+
+    from . import pricelist
+
+    d = pricelist.installation(module[len(INST):])
+    if not d:
+        return None
+    nl = lang == "nl"
+    inc = {sec["key"]: [r for r in sec["rows"] if r["in"]] for sec in d["sections"]}
+    desc = {p["label"]: p["desc"] for p in modules.PACKAGES}
+    desc.update({(p.title or p.name): _first_sentence((p.manifest or {}).get("description"), 90) for p in Plugin.objects.all()})
+    cands = [(r["label"], _first_sentence(desc.get(r["label"]), 90)) for r in inc.get("pkg", []) + inc.get("plug", [])]
+    base = [("Pagina's en bewerkmodus", "Je hele website in één overzicht, bewerk waar je hem ziet.") if nl else ("Pages and edit mode", "Your whole site in one overview, edit it where you see it."),
+            ("Thema's, talen en media", "Een site die klopt met jouw merk, in elke taal.") if nl else ("Themes, languages and media", "A site that fits your brand, in every language."),
+            ("Beveiliging en back-ups", "Veilig inloggen en automatische back-ups.") if nl else ("Security and backups", "Safe sign-in and automatic backups.")]
+    pts = (cands + base)[:3]
+    n_plug = len(inc.get("plug", []))
+    n_mod = len([r for r in inc.get("mod", [])])
+    price = "€ " + f"{float(d['price']):.2f}".replace(".", ",")
+    items = (inc.get("pkg", []) + inc.get("plug", []) + inc.get("mod", []))[:3] or [{"label": "Basis"}]
+    rows = [{"a": r["label"], "b": "Inbegrepen" if nl else "Included", "badge": "Aan" if nl else "On"} for r in items]
+    while len(rows) < 3:
+        rows.append({"a": base[len(rows) % 3][0], "b": "Inbegrepen" if nl else "Included", "badge": "Aan" if nl else "On"})
+    tag = _first_sentence(d["desc"], 80) if nl else _first_sentence(f"Ready-made set: {d['name']}, switched on with one click.", 80)
+    return {"title": d["name"], "tagline": tag, "intro": d["desc"][:250] if nl else f"{d['name']} switches on the right modules and plugins for you, with the profile theme and standard pages that go with it.",
+            "points": [{"t": t[:30], "d": x[:90]} for t, x in pts],
+            "story": d["desc"][:450] if nl else f"Choose {d['name']} and the system switches on exactly what this kind of website needs. Texts, users and other data are never touched.",
+            "steps": [{"t": "Kies de installatie" if nl else "Choose the set", "d": "Eén klik zet de juiste modules en plugins aan." if nl else "One click switches on the right modules and plugins."},
+                      {"t": "Laad voorbeeldgegevens" if nl else "Load example data", "d": "Meteen een complete site om te bekijken." if nl else "A complete site to look at right away."},
+                      {"t": "Pas aan en publiceer" if nl else "Adjust and publish", "d": "Maak het van jou, in je eigen stijl." if nl else "Make it yours, in your own style."}],
+            "usecase": "Handig voor: " + d["name"].lower() if nl else "Handy for: " + d["name"].lower(),
+            "demo": {"title": ("Voorbeeld: " if nl else "Example: ") + d["name"], "rows": rows,
+                     "stats": [{"v": price, "l": "per maand" if nl else "per month"}, {"v": str(n_plug), "l": "plugins"}, {"v": str(n_mod), "l": "modules" if nl else "modules"}]}}
+
+
 def _built_in(module, lang):
+    if module.startswith(INST):
+        return _installation_text(module, lang) if lang in ("nl", "en") else None
     item = C.get(module)
     if not item or lang not in ("nl", "en"):
         return None
     en, nl, e = item
     tag, intro, points, demo_title, rows, stats = nl if lang == "nl" else e
     split = lambda s, n: (s.split("|", n - 1) + [""] * n)[:n]  # noqa: E731
-    mod = modules.BY_KEY.get(module) or {}
+    mod = _mod(module) or {}
     story, steps, use = X[module][0 if lang == "nl" else 1] if module in X else ("", [], "")
     return {"title": mod.get("label", module) if lang == "nl" else en, "tagline": tag, "intro": intro, "points": [dict(zip(("t", "d"), split(p, 2))) for p in points],
             "story": story, "steps": [dict(zip(("t", "d"), split(p, 2))) for p in steps], "usecase": use,
@@ -74,7 +133,7 @@ def set_master(on):
     from apps.sysobjects.models import SystemObject
 
     if on:
-        for m in modules.MODULES:
+        for m in list(modules.MODULES) + list(_installations().values()):
             SystemObject.objects.get_or_create(kind="marketing", ref_id=1, ref_key=m["key"], defaults={"slug": f"marketing-{m['key']}".replace("_", "-")})
     else:
         SystemObject.objects.filter(kind="marketing").delete()
@@ -96,7 +155,7 @@ def admin(request):
             if not _objects():
                 set_master(True)
             for key, on in d["modules"].items():
-                if key in modules.BY_KEY:
+                if _mod(key):
                     SystemObject.objects.filter(kind="marketing", ref_key=key).update(enabled=bool(on))
     objs = _objects()
     from .models import MarketingText
@@ -105,7 +164,7 @@ def admin(request):
     for mod, lang in MarketingText.objects.values_list("module", "lang"):
         have.setdefault(mod, []).append(lang)
     items = []
-    for m in modules.MODULES:
+    for m in list(modules.MODULES) + list(_installations().values()):
         o = objs.get(m["key"])
         text = _built_in(m["key"], "nl")
         items.append({"key": m["key"], "label": m["label"], "group": m.get("group", ""), "tagline": text["tagline"] if text else "", "slug": o.slug if o else "", "exists": bool(o), "on": bool(o and o.enabled), "ai_langs": sorted(have.get(m["key"], []))})
@@ -116,7 +175,7 @@ def admin(request):
 @permission_classes([AllowAny])
 def public(request, module):
     """The marketing text for the pop-up: ?lang=. Visitors only get it while the object of this module is on; super admins can always look."""
-    if module not in modules.BY_KEY:
+    if not _mod(module):
         return Response({"detail": "Onbekende module."}, status=status.HTTP_404_NOT_FOUND)
     staff = bool(request.user and request.user.is_authenticated and request.user.is_staff)
     o = _objects().get(module)
@@ -127,7 +186,7 @@ def public(request, module):
     if lang not in {l["code"] for l in langs}:
         lang = next((l["code"] for l in langs if l["default"]), "nl")
     text, source = content(module, lang)
-    return Response({"module": module, "group": (modules.BY_KEY.get(module) or {}).get("group", ""), "lang": lang, "source": source, "content": text, "languages": langs, "can_edit": staff})
+    return Response({"module": module, "group": (_mod(module) or {}).get("group", ""), "lang": lang, "source": source, "content": text, "languages": langs, "can_edit": staff})
 
 
 def _json_object(raw):
@@ -159,7 +218,7 @@ def ai(request, module):
 
     if not request.user.is_staff:
         return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
-    if module not in modules.BY_KEY:
+    if not _mod(module):
         return Response({"detail": "Onbekende module."}, status=status.HTTP_404_NOT_FOUND)
     d = request.data if isinstance(request.data, dict) else {}
     action = d.get("action")

@@ -202,7 +202,7 @@ def _superadmin(request):
 @api_view(["POST"])
 @permission_classes([has_level("languages", "manage"), module_required("languages")])
 def language_export(request):
-    """Superadmins: write a zip per language and all_languages.zip into <project>/themes/.dist/languages."""
+    """Superadmins: write a zip per language and all_languages.zip into <project>/resource/languages."""
     from . import langpacks
 
     if not _superadmin(request):
@@ -254,7 +254,7 @@ def content_public(request):
 
     from apps.medialib.models import MediaItem
 
-    from apps.subscriptions import service as subs
+    from apps.plugins.facade import subs
 
     items = {i.id: i for i in MediaItem.objects.all()}
     hidden = {k for k in subs.locked_pages() if not subs.page_ok(request.user, k)}
@@ -325,7 +325,7 @@ def _module_payload():
     # a module that needs other modules (e.g. subscriptions need orders): which of those are off
     return [{**m, "enabled": st[m["key"]], "core": bool(m.get("core")), "acl": m.get("acl", True), "grants": counts.get(m["key"], 0),
              "requires": [{"key": r, "label": label.get(r, r), "enabled": st.get(r, True)} for r in m.get("requires", [])]}
-            for m in modules.MODULES]
+            for m in modules.MODULES if not m.get("hidden")]  # (parts that are plugins are switched on and off at Plugins, not here)
 
 
 @api_view(["GET"])
@@ -461,7 +461,24 @@ def pricing_view(request):
     return Response({"config": {k: cfg.get(k) for k in ("currency", "vat_rate", "rst_share", "note", "base_price", "periods", "includes", "implementation")}, "hosting": {"config": cfg.get("hosting"), "options": pricing.hosting_options()}, "email": pricing.email_config(), "catalog": pricing.catalog()})
 
 
-@api_view(["POST"])
+def _ai_job_file(job):
+    import re
+    import tempfile
+    from pathlib import Path
+
+    return Path(tempfile.gettempdir()) / f"e2e_priceai_{re.sub('[^a-f0-9]', '', job)[:32]}.json"
+
+
+def _ai_job_write(job, data):
+    import json
+
+    f = _ai_job_file(job)
+    tmp = f.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(f)
+
+
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def pricing_ai(request):
     """AI calculation (superadmins). {answers:{position, audience, margin, notes}} = a proposal; {accept: {key: value}} = put these values in pricing.json (all sites get them through git) and in the licence."""
@@ -471,7 +488,54 @@ def pricing_ai(request):
 
     if not request.user.is_staff:
         return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "GET" and request.query_params.get("last"):  # what the last calculation had done (to ask: go on or start again)
+        return Response(pricing.run_info())
+    if request.method == "GET":  # the progress of a running calculation: {steps: [{t, at}], done, result, error}
+        import json
+        import time
+
+        f = _ai_job_file(str(request.query_params.get("job") or ""))
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return Response({"detail": "Onbekende berekening."}, status=status.HTTP_404_NOT_FOUND)
+        data["now"] = time.time()
+        return Response(data)
     d = request.data if isinstance(request.data, dict) else {}
+    if d.get("start") and isinstance(d.get("answers"), dict):  # start it in the background and answer with a job to follow
+        import threading
+        import time
+        import uuid
+
+        if not ai.available():
+            return Response({"detail": "Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan."}, status=status.HTTP_400_BAD_REQUEST)
+        job = uuid.uuid4().hex
+        state = {"steps": [], "done": False, "result": None, "error": None}
+
+        def note(text):
+            state["steps"].append({"t": text, "at": time.time()})
+            _ai_job_write(job, state)
+
+        def run():
+            try:
+                def partial(res):
+                    state["partial"] = res
+                    _ai_job_write(job, state)
+
+                state["result"] = pricing.ai_run(d["answers"], progress=note, partial=partial, resume=bool(d.get("resume")))
+            except ValueError as e:
+                state["error"] = str(e)
+            except Exception as e:  # noqa: BLE001
+                state["error"] = f"De berekening mislukte: {e}"
+            state["done"] = True
+            note("Klaar" if not state["error"] else "Mislukt")
+            from django.db import connection
+
+            connection.close()
+
+        note("Gestart")
+        threading.Thread(target=run, daemon=True).start()
+        return Response({"job": job})
     if isinstance(d.get("accept"), dict):
         new, n = pricing.apply_values(pricing.load(), d["accept"])
         pricing.PATH.write_text(__import__("json").dumps(new, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -783,7 +847,7 @@ def theme_pack_download_all(request):
 @api_view(["POST"])
 @permission_classes([has_level("theme", "edit"), module_required("theme")])
 def theme_pack_dist(request):
-    """Superadmins: write the zips of all themes into <project>/themes/.dist/themes."""
+    """Superadmins: write the zips of all themes into <project>/resource/themas."""
     if not _superadmin(request):
         return Response({"detail": "Alleen een superadmin kan thema's exporteren."}, status=status.HTTP_403_FORBIDDEN)
     names = themepacks.build_dist()
@@ -1330,7 +1394,7 @@ def module_packages(request):
     on = modules.states()
     prices = {c["key"]: c["price"] for c in license_price.catalog() if c["kind"] == "package"}
     label = {m["key"]: m["label"] for m in modules.MODULES}
-    return Response([{**{k: p[k] for k in ("key", "label", "desc")}, "modules": [{"key": k, "label": label[k], "enabled": bool(on.get(k, True))} for k in p["modules"]], "price": str(prices.get(p["key"], 0))}
+    return Response([{**{k: p[k] for k in ("key", "label", "desc")}, "modules": [{"key": k, "label": label[k], "enabled": bool(on.get(k, True)), "plugin": modules.BY_KEY[k].get("plugin") or ""} for k in p["modules"]], "price": str(prices.get(p["key"], 0))}
                      for p in modules.PACKAGES])
 
 
