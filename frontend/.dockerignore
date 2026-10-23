@@ -1,0 +1,13 @@
+# The production image builds its own dependencies and Next.js output. Never
+# copy a developer's generated files or local environment into the build context.
+node_modules
+.next
+.next-build
+.env
+.env.*
+npm-debug.log*
+
+# Keep the Docker build context small and free of local tooling metadata.
+.git
+.DS_Store
+coverage

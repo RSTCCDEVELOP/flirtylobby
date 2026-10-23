@@ -55,6 +55,9 @@ services:
     build:
       context: ./frontend
       target: prod
+      # A deployment must always create a bundle from the checked-out commit.
+      # This prevents a remote builder from reusing an outdated Next.js layer.
+      no_cache: true
       # Next.js embeds NEXT_PUBLIC_* variables in the browser bundle during build.
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?Set NEXT_PUBLIC_API_URL in Coolify}
@@ -63,6 +66,9 @@ services:
     environment:
       # Server-side requests stay on the Docker network.
       API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000}
+      # Coolify supplies this at runtime. /build-id exposes it so the live
+      # frontend can be matched directly to the commit shown in Deployments.
+      APP_VERSION: ${SOURCE_COMMIT:-unknown}
     depends_on:
       - backend
 
