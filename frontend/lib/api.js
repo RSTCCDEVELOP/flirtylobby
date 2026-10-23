@@ -62,6 +62,20 @@ export async function downloadFile(path, filename) {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+// Download a file the API makes from a POST (with a body): returns the response headers. The file is made in memory by the server, nothing stays there.
+export async function downloadPost(path, body, filename) {
+  const token = getToken();
+  const res = await fetch(`${getBase()}/api${path}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Token ${token}` } : {}) }, body: JSON.stringify(body) });
+  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
+  const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") || "")?.[1] || filename;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(await res.blob());
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  return res.headers;
+}
+
 // Flatten DRF field errors into one readable string
 export function errorText(err) {
   if (!(err instanceof ApiError) || !err.data) return tx(err.message || "Er ging iets mis.");

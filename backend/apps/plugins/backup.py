@@ -72,4 +72,9 @@ def _apply(data, ctx):
     return f"{done} plugin(s) geladen." + (" " + "; ".join(notes) if notes else "")
 
 
-register("plugins", "Plugins", _export, _apply, description="Welke plugins, hun instellingen, aan/uit, plaatsing en de ondertekende plugin zelf (zonder hun gegevens).", order=90)
+def _add(data, ctx):
+    have = set(Plugin.objects.values_list("name", flat=True))
+    return _apply({**(data or {}), "plugins": [it for it in (data or {}).get("plugins", []) if it.get("name") not in have]}, ctx)
+
+
+register("plugins", "Plugins", _export, _apply, description="Welke plugins, hun instellingen, aan/uit, plaatsing en de ondertekende plugin zelf (zonder hun gegevens).", order=90, add=_add)

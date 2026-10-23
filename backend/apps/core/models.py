@@ -73,6 +73,13 @@ class UserPrefs(models.Model):
     data = models.JSONField(default=dict)
 
 
+class BackupPassword(models.Model):
+    """The password of the back-up zip that this person chose to remember. Encrypted at rest, never sent back to the browser."""
+
+    user = models.OneToOneField("accounts.User", on_delete=models.CASCADE, related_name="backup_password")
+    secret = models.TextField()  # integrations.crypto: {"password": "..."}
+
+
 class ModuleState(models.Model):
     """Switch for a module (see apps/core/modules.py). No row = default (on)."""
 

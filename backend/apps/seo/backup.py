@@ -29,4 +29,13 @@ def _apply(data, ctx):
     return f"SEO geladen, {n} pagina-instelling(en)" + (f"; {lost} afbeelding(en) niet gevonden in de mediabibliotheek." if lost else ".")
 
 
-register("seo", "SEO", _export, _apply, description="Zoekmachine-instellingen van de site en per pagina.", order=45)
+def _add(data, ctx):
+    have = set(SeoPage.objects.values_list("path", "lang"))
+    return _apply({"pages": [p for p in (data or {}).get("pages", []) if (p.get("path"), p.get("lang")) not in have]}, ctx)
+
+
+def _clear():
+    SeoPage.objects.all().delete()
+
+
+register("seo", "SEO", _export, _apply, description="Zoekmachine-instellingen van de site en per pagina.", order=45, add=_add, clear=_clear)

@@ -45,4 +45,9 @@ def _apply(data, ctx):
     return f"{created} koppeling(en) nieuw, {updated} bijgewerkt. Sleutels ontbreken? Vul ze in bij API keys."
 
 
-register("integrations", "API-koppelingen", _export, _apply, description="Welke systemen gekoppeld zijn. Sleutels alleen als je dat aanvinkt.", sensitive=True, order=70)
+def _add(data, ctx):
+    have = set(Integration.objects.values_list("slug", flat=True))
+    return _apply([r for r in data or [] if r.get("slug") not in have], ctx)
+
+
+register("integrations", "API-koppelingen", _export, _apply, description="Welke systemen gekoppeld zijn. Sleutels alleen als je dat aanvinkt.", sensitive=True, order=70, add=_add)

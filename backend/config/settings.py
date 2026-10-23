@@ -138,6 +138,8 @@ STORAGES = {
     "default": {"BACKEND": "apps.medialib.storage.LibraryStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
+# a settings backup with logos, pictures and plugins inside is a JSON body of many MB (nginx allows 320 MB, see deploy/nginx)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 320 * 1024 * 1024
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("MEDIA_ROOT") or _site_path("media", BASE_DIR / "media"))
 _VERSION_FILE = next((f for f in (BASE_DIR / "VERSION", PROJECT_ROOT / "VERSION") if f.is_file()), None)  # backend/VERSION: it is inside the Docker image too

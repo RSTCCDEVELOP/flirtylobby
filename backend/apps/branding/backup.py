@@ -35,4 +35,13 @@ def _apply(data, ctx):
     return f"{n} logo's/afbeeldingen en {m} homepagefoto's geladen." if (n or m) else "Geen bestanden in dit onderdeel."
 
 
-register("branding", "Logo's en huisstijlafbeeldingen", _export, _apply, description="Logo, donkere logo, favicon, app-icoon, deelafbeelding en homepagefoto's (de bestanden zelf).", order=5)
+def _add(data, ctx):
+    have = set(SiteAsset.objects.values_list("slot", flat=True))
+    return _apply({**(data or {}), "assets": [a for a in (data or {}).get("assets", []) if a.get("slot") not in have]}, ctx)
+
+
+def _clear():
+    HomePhoto.objects.all().delete()
+
+
+register("branding", "Logo's en huisstijlafbeeldingen", _export, _apply, description="Logo, donkere logo, favicon, app-icoon, deelafbeelding en homepagefoto's (de bestanden zelf).", order=5, add=_add, clear=_clear)

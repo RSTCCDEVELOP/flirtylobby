@@ -23,4 +23,13 @@ def _apply(data, ctx):
     return f"E-mailopmaak geladen, {n} adres(sen)/nummer(s)."
 
 
-register("communication", "Communicatie", _export, _apply, description="E-mailopmaak en de adressen en nummers voor berichten.", order=60)
+def _add(data, ctx):
+    have = set(CommAddress.objects.values_list("kind", "value"))
+    return _apply({"addresses": [a for a in (data or {}).get("addresses", []) if (a.get("kind"), a.get("value")) not in have]}, ctx)
+
+
+def _clear():
+    CommAddress.objects.all().delete()
+
+
+register("communication", "Communicatie", _export, _apply, description="E-mailopmaak en de adressen en nummers voor berichten.", order=60, add=_add, clear=_clear)

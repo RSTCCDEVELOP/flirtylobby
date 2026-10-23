@@ -1,11 +1,11 @@
 "use client";
 
 import { tx } from "../lib/t";
-import Link from "next/link";
 import { useState } from "react";
 import QRCode from "qrcode";
 import { api, errorText } from "../lib/api";
 import { useAuth } from "./AuthContext";
+import { enableWithDialog } from "../lib/enable";
 import CodeInput from "../components/CodeInput";
 
 
@@ -23,6 +23,7 @@ export default function TwoFactorProfile() {
   const [copied, setCopied] = useState(false);
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [switched, setSwitched] = useState(false); // system setting switched on here: the button is gone
 
   const available = tf.enabled_system && (tf.available || []).length > 0;
   const locked = !tf.active && !available;      // cannot be switched on (system off or nothing to send with)
@@ -48,6 +49,16 @@ export default function TwoFactorProfile() {
   const confirm = (e) => { e.preventDefault(); run(async () => { setUser(await api("/auth/2fa/confirm/", { method: "POST", body: { code } })); reset(); setMsg({ ok: true, text: tx("Twee-staps verificatie staat aan.") }); }); };
   const disable = (e) => { e.preventDefault(); run(async () => { setUser(await api("/auth/2fa/disable/", { method: "POST", body: { password } })); reset(); setMsg({ ok: true, text: tx("Twee-staps verificatie staat uit.") }); }); };
 
+  // superadmin: switch the system setting on right here, no trip to the Security page
+  const enableSystem = () => run(async () => {
+    const done = await enableWithDialog({ title: tx("Twee-staps verificatie"), message: tx("Wil je twee-staps verificatie aanzetten voor de hele website?"), related: "twofa" }, async () => {
+      // the module itself must be on too, otherwise the setting counts as off
+      await api("/modules/twofa/", { method: "PATCH", body: { enabled: true } });
+      await api("/security/settings/", { method: "PUT", body: { twofa: { enabled: true } } });
+    });
+    if (done) { const u = await api("/auth/me/"); setUser(u); setSwitched(!!u.twofa?.enabled_system); }
+  });
+
   const on = tf.active || panel === "enable";
   return (
     <div className="form">
@@ -57,7 +68,7 @@ export default function TwoFactorProfile() {
           <small className="muted"> {tf.active ? (tf.method === "app" ? tx("Authenticator-app") : `${tf.method === "sms" ? "sms" : tx("e-mail")} → ${tf.destination}`) : `${tx("na je wachtwoord vragen we om een code")}${(tf.available || []).length ? ` (${tf.available.map((m) => (m === "sms" ? "sms" : m === "app" ? tx("authenticator-app") : tx("e-mail"))).join(", ")})` : ""}`}</small>
         </span>
       </label>
-      {locked && <p className="muted" style={{ margin: 0 }}>{!tf.enabled_system ? <>{tx("Twee-staps verificatie is uitgeschakeld door de beheerder.")} {user.is_staff && <Link href="/dashboard/admin/security" style={{ color: "var(--blue)" }}>{tx("Zet het aan bij Beveiliging")}</Link>}</> : tx("Nog niet beschikbaar: er is geen e-mail- of sms-koppeling actief.")}</p>}
+      {locked && <p className="muted" style={{ margin: 0 }}>{!tf.enabled_system ? <>{tx("Twee-staps verificatie is uitgeschakeld door de beheerder.")} {user.is_staff && !switched && <button type="button" className="btn sm" disabled={busy} onClick={enableSystem}>{tx("Nu aanzetten")}</button>}</> : tx("Nog niet beschikbaar: er is geen e-mail- of sms-koppeling actief.")}</p>}
       {fixed && <p className="muted" style={{ margin: 0 }}>{tx("Twee-staps verificatie is verplicht voor jouw account.")}</p>}
 
       {panel === "enable" && !sentTo && !app && (

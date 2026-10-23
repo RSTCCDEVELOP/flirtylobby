@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useChat } from "../../../../components/Chat";
 import { useModules } from "../../../../components/Modules";
+import ModuleOff from "../../../../components/ModuleOff";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 
@@ -91,7 +92,7 @@ export default function Discover() {
   }, [tab, f]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
 
-  if (mods.discover === false) return <p className="muted">{tx("Zoeken & matchen staat uit.")}</p>;
+  if (mods.discover === false) return <ModuleOff plugin="community" label={tx("Zoeken & matchen")}>{tx("Zoeken & matchen staat uit.")}</ModuleOff>;
   const on = (b) => pcfg?.builtin?.[b] !== false;
   const show = (id) => !search?.filters || search.filters.includes(id); // filters that belong to this profile type
   const cnt = (keys) => { const n = keys.filter((k) => f[k] && f[k] !== "0").length; return n || null; }; // how many filters of a tab are filled in

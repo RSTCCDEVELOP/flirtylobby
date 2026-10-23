@@ -2,10 +2,11 @@
 
 import { tx } from "../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, errorText } from "../lib/api";
-import { confirmDialog } from "../lib/dialog";
+import { api, downloadPost, errorText, ApiError } from "../lib/api";
 import { IconFolder, IconGrid, IconLock, IconPalette, IconSliders, IconUsers } from "./Icons";
 import Tabs from "./Tabs";
+import { useAuth } from "./AuthContext";
+import BackupLoadPopup from "./BackupLoadPopup";
 
 // Super admin: export all settings to one file (complete backup) and load such a file again.
 // The list of parts comes from the server, so new applications show up here by themselves and removed ones disappear.
@@ -28,6 +29,7 @@ const GROUPS = [
 ];
 
 export default function SettingsBackup() {
+  const { user } = useAuth();
   const [tab, setTab] = useState("export");
   const [sections, setSections] = useState([]);
   const [pick, setPick] = useState([]);
@@ -40,56 +42,68 @@ export default function SettingsBackup() {
   const [files, setFiles] = useState(true); // logos and pictures inside the file
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [bundle, setBundle] = useState(null); // file chosen for loading
+  const [token, setToken] = useState(""); // the restore on the server (temporary files, removed when it is finished)
+  const [zipPw, setZipPw] = useState(false); // protect the zip with a password
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [useLogin, setUseLogin] = useState(false); // the zip password is the login password of the logged-in person
+  const [loginPw, setLoginPw] = useState("");
+  const [remember, setRemember] = useState(false); // keep the password for my account (encrypted on the server)
+  const [saved, setSaved] = useState(false); // a password is remembered for my account
+  const [useSaved, setUseSaved] = useState(true);
+  const [pending, setPending] = useState(null); // zip that asks for a password
+  const [openPw, setOpenPw] = useState("");
   const [info, setInfo] = useState(null); // inspect result
   const [load, setLoad] = useState([]); // parts to load
   const [results, setResults] = useState(null);
   const [over, setOver] = useState(false);
+  const [popup, setPopup] = useState(false); // the load popup
   const file = useRef(null);
 
   useEffect(() => { api("/settings-backup/sections/").then((d) => { setSections(d.sections); setPick(d.sections.map((s) => s.key)); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
+
+  useEffect(() => { api("/settings-backup/password/").then((d) => setSaved(!!d.saved)).catch(() => {}); }, []);
 
   useEffect(() => { api("/plugins/").then((d) => { setPlugins(d.plugins); setPlugPick(d.plugins.map((x) => x.name)); }).catch(() => {}); }, []);
 
   useEffect(() => { api("/theme/packs/").then((d) => { const t = d.packs.filter((x) => !x.builtin); setThemes(t); setThemePick(t.map((x) => x.key)); }).catch(() => {}); }, []);
 
   const exportNow = async () => {
+    const fromSaved = zipPw && !useLogin && saved && useSaved;
+    if (zipPw && useLogin && !loginPw) return setMsg({ ok: false, text: tx("Vul je inlogwachtwoord in.") });
+    if (zipPw && !useLogin && !fromSaved && (pw.length < 6 || pw !== pw2)) return setMsg({ ok: false, text: pw.length < 6 ? tx("Kies een wachtwoord van minstens 6 tekens.") : tx("De twee wachtwoorden zijn niet gelijk.") });
     setBusy(true); setMsg(null);
     try {
-      const b = await api("/settings-backup/export/", { method: "POST", body: { sections: pick, include_secrets: secrets, include_files: files, plugins: plugPick, themes: themePick } });
-      const blob = new Blob([JSON.stringify(b, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      const d = new Date(), p = (n) => String(n).padStart(2, "0");
-      a.href = URL.createObjectURL(blob);
-      a.download = `easy2edit-instellingen-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      const failed = Object.keys(b.errors || {});
-      setMsg({ ok: !failed.length, text: failed.length ? tx("Back-up gemaakt, maar niet alles lukte: {0}", failed.join(", ")) : tx("Back-up gedownload ({0} onderdelen).", Object.keys(b.sections).length) });
+      const h = await downloadPost("/settings-backup/export-zip/", { sections: pick, include_secrets: secrets, include_files: files, plugins: plugPick, themes: themePick, password: zipPw && !fromSaved && !useLogin ? pw : "", login_password: zipPw && useLogin ? loginPw : "", use_saved: fromSaved, remember: zipPw && !fromSaved && !useLogin && remember }, "easy2edit-instellingen.zip");
+      if (zipPw && !fromSaved && !useLogin && remember) { setSaved(true); setUseSaved(true); setPw(""); setPw2(""); }
+      const failed = (h.get("X-Backup-Errors") || "").split(",").filter(Boolean);
+      setMsg({ ok: !failed.length, text: failed.length ? tx("Back-up gemaakt, maar niet alles lukte: {0}", failed.join(", ")) : zipPw ? tx("Back-up gedownload als zip met wachtwoord.") : tx("Back-up gedownload als zip.") });
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
 
-  const choose = useCallback(async (f) => {
-    setMsg(null); setResults(null); setInfo(null); setBundle(null);
+  const tokenRef = useRef("");
+  tokenRef.current = token;
+  useEffect(() => () => { if (tokenRef.current) api("/settings-backup/restore/close/", { method: "POST", body: { token: tokenRef.current } }).catch(() => {}); }, []); // leaving the screen: the temporary files go too
+  const endRestore = useCallback((t) => { if (t) api("/settings-backup/restore/close/", { method: "POST", body: { token: t } }).catch(() => {}); }, []);
+  // the zip goes to the server, which reads it (asking for the password when it is protected) and keeps the parts as temporary files
+  const open = async (f, password = "") => {
+    setMsg(null); setResults(null); setInfo(null);
+    if (token) { endRestore(token); setToken(""); }
     if (!f) return;
+    setBusy(true);
     try {
-      const parsed = JSON.parse(await f.text());
-      const i = await api("/settings-backup/inspect/", { method: "POST", body: { bundle: parsed } });
-      setBundle(parsed); setInfo(i); setLoad(i.known.map((k) => k.key));
-    } catch (e) { setMsg({ ok: false, text: e instanceof SyntaxError ? tx("Dit bestand is geen geldig instellingenbestand.") : errorText(e) }); }
-  }, []);
-
-  const loadNow = async () => {
-    if (!(await confirmDialog(tx("{0} onderdelen laden? De huidige instellingen van die onderdelen worden vervangen.", load.length), { danger: true, title: tx("Instellingen laden"), okLabel: tx("Laden") }))) return;
-    setBusy(true); setMsg(null);
-    try {
-      const r = await api("/settings-backup/load/", { method: "POST", body: { bundle, sections: load } });
-      setResults(r.results);
-      setMsg({ ok: r.results.every((x) => x.ok), text: tx("Klaar. Ververs de pagina om alles te zien.") });
-    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+      const fd = new FormData(); fd.append("file", f); if (password) fd.append("password", password);
+      const i = await api("/settings-backup/restore/open/", { method: "POST", body: fd });
+      setToken(i.token); setInfo(i); setLoad(i.known.map((k) => k.key)); setPending(null); setOpenPw("");
+    } catch (e) {
+      if (e instanceof ApiError && e.data?.code === "password_required") { setPending(f); setMsg(null); }
+      else if (e instanceof ApiError && e.data?.code === "wrong_password") { setPending(f); setMsg({ ok: false, text: tx("Het wachtwoord klopt niet.") }); }
+      else { setPending(null); setMsg({ ok: false, text: errorText(e) }); }
+    }
     setBusy(false);
   };
+  const choose = (f) => { setOpenPw(""); open(f); };
 
   const toggle = (list, setList, k) => setList(list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
   const Check = ({ s, list, setList }) => (
@@ -99,8 +113,10 @@ export default function SettingsBackup() {
 
   return (
     <div className="form">
-      <Tabs value={tab} onChange={setTab} tabs={[["export", "Exporteren", <IconFolder key="e" />], ["load", "Laden", <IconSliders key="l" />]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["export", "Back-up", <IconFolder key="e" />], ["load", "Restore", <IconSliders key="l" />]]} />
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
+
+      {popup && <BackupLoadPopup token={token} keys={load} labels={Object.fromEntries((info?.known || []).map((k) => [k.key, k.label]))} onClose={() => { setPopup(false); endRestore(token); setToken(""); setInfo(null); }} />}
 
       {tab === "export" && (
         <>
@@ -154,6 +170,37 @@ export default function SettingsBackup() {
               </>
             );
           })()}
+          <label className="check sec-toggle">
+            <span className="switch"><input type="checkbox" checked={zipPw} onChange={(e) => { setZipPw(e.target.checked); setPw(""); setPw2(""); }} /><span /></span>
+            <span>{tx("Zip beveiligen met een wachtwoord")} <small className="muted">{tx("De zip wordt versleuteld (AES-256). Bij het terugzetten wordt het wachtwoord gevraagd. Bewaar het goed: zonder wachtwoord is de back-up niet te openen.")}</small></span>
+          </label>
+          {zipPw && (
+            <label className="check sec-toggle">
+              <span className="switch"><input type="checkbox" checked={useLogin} onChange={(e) => { setUseLogin(e.target.checked); setLoginPw(""); }} /><span /></span>
+              <span>{tx("Mijn inlogwachtwoord gebruiken")} <small className="muted">{tx("Het wachtwoord van de ingelogde gebruiker wordt het wachtwoord van de zip. Je vult het hier eenmalig in; het wordt gecontroleerd en niet bewaard.")}</small></span>
+            </label>
+          )}
+          {zipPw && useLogin && (
+            <label style={{ maxWidth: 320 }}>{tx("Je inlogwachtwoord")}
+              <input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} />
+              <input type="password" value={loginPw} onChange={(e) => setLoginPw(e.target.value)} autoComplete="current-password" />
+            </label>
+          )}
+          {zipPw && !useLogin && saved && (
+            <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
+              <label className="check"><input type="checkbox" checked={useSaved} onChange={(e) => setUseSaved(e.target.checked)} /><span>{tx("Het opgeslagen wachtwoord van mijn account gebruiken")}</span></label>
+              <button type="button" className="btn sm" onClick={async () => { await api("/settings-backup/password/", { method: "DELETE" }).catch(() => {}); setSaved(false); setUseSaved(true); }}>{tx("Wachtwoord vergeten")}</button>
+            </div>
+          )}
+          {zipPw && !useLogin && !(saved && useSaved) && (
+            <>
+              <div className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap" }}>
+                <label style={{ flex: 1, maxWidth: 260 }}>{tx("Wachtwoord")}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" /></label>
+                <label style={{ flex: 1, maxWidth: 260 }}>{tx("Herhaal wachtwoord")}<input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" /></label>
+              </div>
+              <label className="check"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /><span>{tx("Wachtwoord onthouden voor mijn account")} <small className="muted">{tx("Versleuteld bewaard op de server. Bij het terugzetten wordt het automatisch geprobeerd.")}</small></span></label>
+            </>
+          )}
           <div className="row" style={{ justifyContent: "flex-start" }}>
             <button className="btn primary" disabled={busy || !pick.length} onClick={exportNow}>{busy ? tx("Bezig…") : tx("Back-up downloaden")}</button>
             <button className="btn" onClick={() => setPick(pick.length === sections.length ? [] : sections.map((s) => s.key))}>{pick.length === sections.length ? tx("Niets selecteren") : tx("Alles selecteren")}</button>
@@ -166,9 +213,18 @@ export default function SettingsBackup() {
           <p className="muted" style={{ margin: 0 }}>{tx("Kies een eerder gemaakt instellingenbestand. Onderdelen die dit systeem niet kent worden overgeslagen, onderdelen die niet in het bestand staan blijven zoals ze zijn.")}</p>
           <div className={`dropzone ${over ? "over" : ""}`} role="button" tabIndex={0} onClick={() => file.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && file.current.click()}
             onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={(e) => { e.preventDefault(); setOver(false); choose(e.dataTransfer.files[0]); }}>
-            <span>{tx("Sleep het instellingenbestand (.json) hierheen of klik om te kiezen")}</span>
-            <input ref={file} type="file" accept=".json,application/json" hidden onChange={(e) => { choose(e.target.files[0]); e.target.value = ""; }} />
+            <span>{tx("Sleep het back-upbestand (.zip) hierheen of klik om te kiezen")}</span>
+            <input ref={file} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => { choose(e.target.files[0]); e.target.value = ""; }} />
           </div>
+          {pending && (
+            <form className="row" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }} onSubmit={(e) => { e.preventDefault(); open(pending, openPw); }}>
+              <label style={{ flex: 1, maxWidth: 320 }}>{tx("Wachtwoord van de zip")} <small className="muted">{tx("(of het inlogwachtwoord waarmee de zip is gemaakt)")}</small>
+                <input type="password" value={openPw} onChange={(e) => setOpenPw(e.target.value)} autoFocus autoComplete="off" />
+              </label>
+              <button className="btn primary" disabled={busy || !openPw}>{tx("Openen")}</button>
+              <button type="button" className="btn" onClick={() => { setPending(null); setOpenPw(""); }}>{tx("Annuleren")}</button>
+            </form>
+          )}
           {info && (
             <>
               <small className="muted">{tx("Gemaakt op")} {info.exported_at ? new Date(info.exported_at).toLocaleString() : "?"}{info.secrets_included ? ` · ${tx("bevat API-sleutels")}` : ""}{info.files_included ? ` · ${tx("bevat logo's en afbeeldingen")}` : ""}</small>
@@ -180,7 +236,7 @@ export default function SettingsBackup() {
               {info.unknown.length > 0 && <div className="alert">{tx("Niet bekend in dit systeem (wordt overgeslagen)")}: {info.unknown.map((u) => u.label).join(", ")}</div>}
               {info.missing.length > 0 && <small className="muted">{tx("Niet in het bestand (blijft ongewijzigd)")}: {info.missing.join(", ")}</small>}
               <div className="row" style={{ justifyContent: "flex-start" }}>
-                <button className="btn primary" disabled={busy || !load.length} onClick={loadNow}>{busy ? tx("Bezig…") : tx("Geselecteerde instellingen laden")}</button>
+                <button className="btn primary" disabled={busy || !load.length} onClick={() => setPopup(true)}>{tx("Geselecteerde instellingen laden")}</button>
               </div>
             </>
           )}

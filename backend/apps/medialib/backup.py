@@ -41,4 +41,4 @@ def _apply(data, ctx):
 
 
 # order 6: before the pages and SEO (order 25/45) so those can find their pictures
-register("media_files", "Afbeeldingen van pagina's en SEO", _export, _apply, description="Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.", order=6)
+register("media_files", "Afbeeldingen van pagina's en SEO", _export, _apply, description="Achtergronden en deelafbeeldingen uit de mediabibliotheek die pagina's en SEO gebruiken.", order=6, add=_apply)

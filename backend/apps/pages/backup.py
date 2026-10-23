@@ -36,4 +36,13 @@ def _apply(data, ctx):
     return f"{n} pagina(s) geladen."
 
 
-register("pages", "Pagina's en menu", _export, _apply, description="Alle pagina's, het menu, zichtbaarheid en achtergronden.", order=25)
+def _add(data, ctx):
+    have = set(Page.objects.values_list("key", flat=True))
+    return _apply([r for r in data or [] if r.get("key") not in have], ctx)
+
+
+def _clear():
+    Page.objects.filter(kind__in=("content", "link")).delete()  # the system pages stay (the file updates them)
+
+
+register("pages", "Pagina's en menu", _export, _apply, description="Alle pagina's, het menu, zichtbaarheid en achtergronden.", order=25, add=_add, clear=_clear)

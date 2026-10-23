@@ -90,9 +90,28 @@ def _dash_apply(data, ctx):
 
 
 register("theme", "Vormgeving", _theme_export, _theme_apply, description="Kleuren, lettertypen, popups, tabbladen en standaardinstellingen.", order=10)
-register("modules", "Modules", _modules_export, _modules_apply, description="Welke modules aan of uit staan.", order=20)
-register("languages", "Talen", _lang_export, _lang_apply, description="Welke talen aan staan, de standaardtaal en de taalkeuze.", order=30)
-register("content", "Teksten van de website", _content_export, _content_apply, description="Alle teksten die in de bewerkmodus zijn aangepast.", order=40)
+def _modules_add(data, ctx):
+    have = set(ModuleState.objects.values_list("key", flat=True))
+    return _modules_apply({k: v for k, v in (data or {}).items() if k not in have}, ctx)
+
+
+def _lang_add(data, ctx):
+    have = set(Language.objects.values_list("code", flat=True))
+    return _lang_apply({"languages": [r for r in (data or {}).get("languages", []) if r.get("code") not in have and not r.get("is_default")]}, ctx)
+
+
+def _content_add(data, ctx):
+    have = set(ContentBlock.objects.values_list("key", "lang"))
+    return _content_apply([b for b in data or [] if (b.get("key"), b.get("lang")) not in have], ctx)
+
+
+def _content_clear():
+    ContentBlock.objects.all().delete()
+
+
+register("modules", "Modules", _modules_export, _modules_apply, description="Welke modules aan of uit staan.", order=20, add=_modules_add)
+register("languages", "Talen", _lang_export, _lang_apply, description="Welke talen aan staan, de standaardtaal en de taalkeuze.", order=30, add=_lang_add)
+register("content", "Teksten van de website", _content_export, _content_apply, description="Alle teksten die in de bewerkmodus zijn aangepast.", order=40, add=_content_add, clear=_content_clear)
 register("dashboard", "Standaard dashboard", _dash_export, _dash_apply, description="De standaardindeling van het dashboard voor iedereen.", order=90)
 
 
@@ -151,4 +170,11 @@ def _packs_apply(data, ctx):
     return f"{done} themapakket(ten) geladen." + (" " + "; ".join(notes) if notes else "")
 
 
-register("themepacks", "Themapakketten", _packs_export, _packs_apply, description="De thema's uit de themamap en welke aan staan.", order=11)
+def _packs_add(data, ctx):
+    from .models import ThemePack
+
+    have = set(ThemePack.objects.values_list("key", flat=True))
+    return _packs_apply({"themes": [t for t in (data or {}).get("themes", []) if (t.get("manifest") or {}).get("key") not in have]}, ctx)
+
+
+register("themepacks", "Themapakketten", _packs_export, _packs_apply, description="De thema's uit de themamap en welke aan staan.", order=11, add=_packs_add)

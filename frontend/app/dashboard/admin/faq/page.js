@@ -4,6 +4,7 @@ import { Busy } from "../../../../components/PageLoader";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import { useModules } from "../../../../components/Modules";
+import ModuleOff from "../../../../components/ModuleOff";
 import Link from "next/link";
 import FaqPage from "../../../../components/FaqPage";
 import Tabs from "../../../../components/Tabs";
@@ -64,7 +65,7 @@ function WebsiteFaq() {
   }
   async function remove(e) { if (await confirmDialog(tx("Deze vraag verwijderen?"), { danger: true })) { try { await api(`/faq/admin/${e.id}/`, { method: "DELETE" }); await load(); } catch (err) { setMsg({ ok: false, text: errorText(err) }); } } }
 
-  if (mods.faq === false) return <p className="muted">{tx("Deze module staat uit. Een superadmin zet hem aan bij Super admin → Modules.")}</p>;
+  if (mods.faq === false) return <ModuleOff module="faq" label={tx("de FAQ")}>{tx("Deze module staat uit.")}</ModuleOff>;
   if (!items) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
   return (
     <>

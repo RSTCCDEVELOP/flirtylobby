@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
 import { useChat } from "../../../../components/Chat";
 import { useModule } from "../../../../components/Modules";
+import ModuleOff from "../../../../components/ModuleOff";
 import { DirectSlot, useDirectHost } from "../../../../components/DirectHost";
 import { api, errorText } from "../../../../lib/api";
 import { refreshMs } from "../../../../lib/refresh";
@@ -122,7 +123,7 @@ export default function Direct() {
     try { setOpen({ token: r.token, mode, info: await api(`/direct/${r.token}/`) }); host.setMini(false); } catch (e) { setError(errorText(e)); }
   };
 
-  if (!directOn) return <p className="muted">{tx("Directe verbinding staat uit. Een superadmin kan dit aanzetten bij Admin → Modules.")}</p>;
+  if (!directOn) return <ModuleOff plugin="community" label={tx("Directe verbinding")}>{tx("Directe verbinding staat uit.")}</ModuleOff>;
   return (
     <>
       <div className="page-head">
