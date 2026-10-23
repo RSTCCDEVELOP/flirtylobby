@@ -136,6 +136,12 @@ def plugin(request, name):
                     Plugin.objects.filter(pk=p.pk).update(error=err, enabled=False)
                     return bad(f"De plugin kon niet worden gestart: {err}")
                 Plugin.objects.filter(pk=p.pk).update(enabled=True, error="")
+                try:  # the price list of the licence follows the plugins in use
+                    from apps.core import pricing
+
+                    pricing.apply_to_license()
+                except Exception:  # noqa: BLE001
+                    pass  # (the licence prices follow the next time they are saved)
             else:
                 runtime.unload(p.name)
                 Plugin.objects.filter(pk=p.pk).update(enabled=False)

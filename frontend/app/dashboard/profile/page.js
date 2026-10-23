@@ -1,6 +1,7 @@
 "use client";
 
 import { tx } from "../../../lib/t";
+import SmallEditor from "../../../components/SmallEditor";
 import Link from "next/link";
 import { useState } from "react";
 import VerifyBadge from "../../../components/VerifyBadge";
@@ -134,7 +135,7 @@ export default function Profile() {
           <label>{tx("Link")}<input value={form.link} onChange={set("link")} maxLength={255} /></label>
         </div>
         <label className="check"><input type="checkbox" checked={form.link_external} onChange={set("link_external")} /> {tx("Link opent extern")}</label>
-        <label>{tx("Omschrijving")}<textarea rows={5} value={form.description} onChange={set("description")} /></label>
+        <div className="field"><strong style={{ fontSize: ".85rem" }}>{tx("Omschrijving")}</strong><SmallEditor value={form.description} onChange={(v) => setForm({ ...form, description: v })} minHeight={120} /></div>
       </ProfileBlock>
       <div className="profile-save">
         <SaveStatus auto={auto} />

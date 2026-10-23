@@ -24,9 +24,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "is_fake", "email", "role", "roles", "user_groups", "is_active", "is_staff", "last_login", "date_joined", "password", "otp_active", "twofa_method", "image", "show_public", "verification"] + PROFILE_FIELDS
+        fields = ["id", "is_fake", "email", "role", "roles", "user_groups", "is_active", "is_staff", "last_login", "date_joined", "password", "otp_active", "twofa_method", "twofa_required", "image", "show_public", "verification"] + PROFILE_FIELDS
         read_only_fields = ["is_fake", "last_login", "date_joined", "otp_active", "twofa_method", "image"]
         extra_kwargs = {"email": {"required": True}, **WORD_KWARGS}
+
+    def validate_description(self, value):  # the small editor: a few safe tags only
+        from apps.core.richtext import clean_small
+
+        return clean_small(value)
 
     def validate_email(self, value):
         value = value.lower()

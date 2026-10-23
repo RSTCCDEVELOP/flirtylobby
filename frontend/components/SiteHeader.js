@@ -11,6 +11,7 @@ import { ShopLinks } from "./Cart";
 import SiteMenu from "./SiteMenu";
 import { ChatButton, DirectIndicator } from "./Chat";
 import NotificationBell from "./NotificationBell";
+import SandboxPill from "./SandboxPill";
 
 export default function SiteHeader() {
   return (
@@ -22,6 +23,7 @@ export default function SiteHeader() {
       </ImageEdit>
       <SiteMenu />
       <div className="site-actions">
+        <SandboxPill />
         <ShopLinks />
         <DirectIndicator />
           <NotificationBell />

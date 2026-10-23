@@ -1,6 +1,7 @@
 "use client";
 
 import { Busy } from "../../../../components/PageLoader";
+import SmallEditor from "../../../../components/SmallEditor";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -193,9 +194,9 @@ export default function DonationsAdmin() {
               <label>{tx("Voor wie (bv. de makers)")}<input value={modal.recipients[lang] || ""} onChange={(e) => setText("recipients", e.target.value)} maxLength={120} placeholder={tx("de makers")} /></label>
               <label>{tx("Knoptekst")}<input value={modal.button.labels?.[lang] || ""} onChange={(e) => setBtn({ labels: { ...modal.button.labels, [lang]: e.target.value } })} maxLength={40} placeholder={tx("Doneer")} /></label>
             </div>
-            <label>{tx("Omschrijving")}
-              <textarea rows={3} value={modal.descriptions[lang] || ""} onChange={(e) => setText("descriptions", e.target.value)} placeholder={tx("Beschrijf de actie: waar is het voor en wat wil je bereiken? Dit is ook de prompt voor de AI.")} />
-            </label>
+            <div className="field"><strong style={{ fontSize: ".85rem" }}>{tx("Omschrijving")}</strong>
+              <SmallEditor value={modal.descriptions[lang] || ""} onChange={(v) => setText("descriptions", v)} placeholder={tx("Beschrijf de actie: waar is het voor en wat wil je bereiken? Dit is ook de prompt voor de AI.")} />
+            </div>
             <div className="ai-row">
               <button type="button" className="btn primary" onClick={generate} disabled={ai}>{ai ? tx("Bezig met genereren…") : `✨ ${tx("Genereer met AI")}`}</button>
               <span className="muted" style={{ fontSize: ".82rem" }}>{tx("De omschrijving is de prompt. Claude vult alle velden in alle talen in; jij past daarna aan.")}</span>

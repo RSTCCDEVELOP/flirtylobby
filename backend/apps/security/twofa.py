@@ -81,7 +81,7 @@ def needs_setup(user):
     cfg = service.get()["twofa"]
     if not cfg["enabled"] or user.otp_active or not allowed_methods():
         return False
-    return cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user))
+    return bool(user.twofa_required) or cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user))
 
 
 def email_verify_required(user):
@@ -93,7 +93,7 @@ def required_for(user):
     if exempt(user):
         return False
     cfg = service.get()["twofa"]
-    return cfg["enabled"] and (cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user)))
+    return cfg["enabled"] and (bool(user.twofa_required) or cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user)))
 
 
 def state(user):

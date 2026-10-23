@@ -15,6 +15,7 @@ import { Logo } from "./BrandingContext";
 import UserMenu from "./UserMenu";
 import { ChatButton, DirectIndicator, useChat } from "./Chat";
 import NotificationBell from "./NotificationBell";
+import SandboxPill from "./SandboxPill";
 import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import { menuLabel } from "./SiteMenu";
@@ -312,6 +313,7 @@ export default function DashboardShell({ children }) {
           })()}
         </nav>
         <div className="topbar-user">
+          <SandboxPill />
           <ShortcutStar title={pageTitle(pathname)} pathname={pathname} />
           <DirectIndicator />
           <NotificationBell />

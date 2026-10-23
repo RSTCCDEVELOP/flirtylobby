@@ -5,6 +5,7 @@ import { tx } from "../lib/t";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api, getToken, clearToken, setToken } from "../lib/api";
+import TwoFactorGate from "./TwoFactorGate";
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -46,5 +47,5 @@ export function AuthProvider({ children }) {
   const replaceToken = (t) => setToken(t);
 
   if (loading || !user) return <Busy full />;
-  return <AuthContext.Provider value={{ user, setUser, logout, replaceToken }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, setUser, logout, replaceToken }}>{user.twofa?.setup_required ? <TwoFactorGate /> : children}</AuthContext.Provider>;
 }

@@ -268,6 +268,14 @@ def plan(preset=None, content=True, objects=True, orders=True, media=16, heroes=
     return [x for x in parts_for(preset, content, objects, orders, media, heroes, users) if not present(x) or (x.startswith("plugin:") and (shops or x))]
 
 
+class NeedsPlugin(Exception):
+    """A step of the demo data needs a plugin that is off: the screen asks to switch it on."""
+
+    def __init__(self, name):
+        super().__init__(name)
+        self.name = name
+
+
 def create_part(part, media=16, users=8, objects=True, orders=True, heroes=6, shops=None):
     """Make one part of the demo data. Returns what was made."""
     from apps.medialib import mediaviews
@@ -281,6 +289,11 @@ def create_part(part, media=16, users=8, objects=True, orders=True, heroes=6, sh
     elif part == "users":
         made["users"] = make_users(users)
     elif part in ("plans", "money", "faq", "pages"):
+        if part in ("plans", "money"):
+            from apps.plugins import facade
+
+            if facade.provider("subscriptions") is None:
+                raise NeedsPlugin("subscriptions")
         if not present(part):
             made.update(make_content((part,)))
     elif part == "views":

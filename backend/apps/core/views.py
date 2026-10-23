@@ -700,7 +700,14 @@ def demo_data(request):
         if d.get("plan"):  # the steps, so the screen can show the progress
             return Response({"steps": demo.plan(preset, shops=shops_, **opts)})
         if d.get("step"):  # one step
-            return Response({"made": demo.create_part(str(d["step"]), media=opts["media"], users=opts["users"], objects=opts["objects"], orders=opts["orders"], heroes=opts["heroes"], shops=shops_)})
+            try:
+                made_ = demo.create_part(str(d["step"]), media=opts["media"], users=opts["users"], objects=opts["objects"], orders=opts["orders"], heroes=opts["heroes"], shops=shops_)
+            except demo.NeedsPlugin as need:  # the plugin is off: the screen asks to switch it on (and says what that costs per month)
+                from . import pricing
+
+                info = pricing.extra_for_plugin(need.name)
+                return Response({"detail": f"De plugin {info['title']} staat uit.", "needs_plugin": need.name, **info}, status=status.HTTP_409_CONFLICT)
+            return Response({"made": made_})
         if d.get("finish"):
             demo.finish(preset, demo.parts_for(preset, opts["content"], opts["objects"], opts["orders"], 1, 1, 1))
             return Response({"counts": demo.counts(), "presets": sorted(demo.registry()), "incomplete": demo.incomplete()})
@@ -1440,3 +1447,153 @@ def license_stripe_webhook(request):
     except (license_stripe.StripeError, ValueError) as e:
         return HttpResponse(str(e), status=400)
     return JsonResponse({"result": license_stripe.handle(event)})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def standard_admin_view(request):
+    """Superadmins: set the standard superadmin (name, e-mail, password). It overwrites the standard superadmin of the installation and is the one a reset makes again.
+    POST {name, email, password, password2, confirm_password}: the own password of the person who does this is the check; a mail goes to the addresses that were active."""
+    import re
+
+    from django.contrib.auth.password_validation import validate_password
+    from django.contrib.auth.hashers import make_password
+    from django.core.exceptions import ValidationError
+
+    from apps.accounts.models import User
+    from apps.communication import sending
+
+    from . import reset
+    from .models import SystemSettings
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    cur = reset.standard_email()
+    if request.method == "GET":
+        u = User.objects.filter(email__iexact=cur).first() if cur else None
+        return Response({"email": cur, "name": (u.display_name or f"{u.first_name} {u.last_name}".strip()) if u else "", "stored": bool(reset.stored_admin()), "you": request.user.email})
+    d = request.data if isinstance(request.data, dict) else {}
+    if d.get("code") is not None:  # step 2: the code from the mail of the old address
+        import time
+
+        from django.contrib.auth.hashers import check_password
+
+        row = SystemSettings.objects.filter(pk=1).first()
+        pend = ((row.data or {}).get("standard_admin_pending") if row else None)
+        if not pend or pend.get("by") != request.user.pk or time.time() > pend.get("expires", 0):
+            return Response({"detail": "Er is geen openstaande wijziging, of de code is verlopen. Begin opnieuw."}, status=status.HTTP_400_BAD_REQUEST)
+        if pend.get("attempts", 0) >= 5:
+            return Response({"detail": "Te vaak een verkeerde code. Begin opnieuw."}, status=status.HTTP_400_BAD_REQUEST)
+        if not check_password(str(d.get("code") or "").strip(), pend["code_hash"]):
+            row.data = {**row.data, "standard_admin_pending": {**pend, "attempts": pend.get("attempts", 0) + 1}}
+            row.save()
+            return Response({"detail": "De code klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(_apply_standard_admin(request, pend))
+    name, email = str(d.get("name") or "").strip()[:80], str(d.get("email") or "").strip().lower()
+    password, again = str(d.get("password") or ""), str(d.get("password2") or "")
+    if not name:
+        return Response({"detail": "Vul een naam in."}, status=status.HTTP_400_BAD_REQUEST)
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        return Response({"detail": "Vul een geldig e-mailadres in."}, status=status.HTTP_400_BAD_REQUEST)
+    if password != again:
+        return Response({"detail": "De twee wachtwoorden zijn niet gelijk."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        validate_password(password)
+    except ValidationError as e:
+        return Response({"detail": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+    if not request.user.check_password(str(d.get("confirm_password") or "")):
+        return Response({"detail": "Het controle-wachtwoord (dat van jezelf) klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
+    old = User.objects.filter(email__iexact=cur).first() if cur else None
+    other = User.objects.filter(email__iexact=email).exclude(pk=old.pk if old else None).first()
+    if other and not other.is_staff:
+        return Response({"detail": "Dit e-mailadres is al van een gewone gebruiker."}, status=status.HTTP_400_BAD_REQUEST)
+    # the address of the old standard superadmin must approve it first: a code goes there (without a standard superadmin: to the one who asks)
+    import secrets
+    import time
+
+    to = cur or request.user.email
+    code = f"{secrets.randbelow(10**6):06d}"
+    row, _c = SystemSettings.objects.get_or_create(pk=1)
+    prev = (row.data or {}).get("standard_admin_pending")
+    if prev and prev.get("by") == request.user.pk and time.time() - prev.get("sent_at", 0) < 30:  # (sending again: not more often than once per 30 seconds)
+        return Response({"detail": "Wacht even voordat je de mail opnieuw laat sturen.", "wait": int(30 - (time.time() - prev.get("sent_at", 0)))}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    row.data = {**(row.data or {}), "standard_admin_pending": {"sent_at": time.time(), "email": email, "name": name, "password_hash": make_password(password), "code_hash": make_password(code), "expires": time.time() + 15 * 60, "attempts": 0, "to": to, "by": request.user.pk}}
+    row.save()
+    try:
+        sending.send_email(to, "Bevestig de nieuwe standaard superadmin", f"{request.user.email} wil de standaard superadmin van deze website wijzigen naar {name} ({email}).\n\nJe bevestigingscode is: {code}\n\nDe code is 15 minuten geldig. Was jij dit niet? Geef de code dan niet door; de wijziging gaat niet door zonder deze code.", purpose="security", code=code)
+    except Exception:  # noqa: BLE001
+        logger.exception("Verification mail for the standard superadmin could not be sent to %s", to)
+        return Response({"detail": "De bevestigingsmail kon niet worden verstuurd. Controleer de e-mailkoppeling (Admin → Communicatie)."}, status=status.HTTP_502_BAD_GATEWAY)
+    masked = to[:2] + "***" + to[to.index("@"):] if "@" in to else to
+    from apps.sandbox import service as sandbox
+
+    # sandbox on: the mail is not really sent (it is kept in Admin → Sandbox), so the code is given right away to fill in
+    return Response({"sent_to": masked, **({"sandbox_code": code} if sandbox.active("email") else {})})
+
+
+def _apply_standard_admin(request, pend):
+    """The change has been approved by the old address: make it."""
+    from django.contrib.auth.models import Group  # noqa: F401
+
+    from apps.accounts.models import User
+    from apps.communication import sending
+
+    from . import reset
+    from .models import SystemSettings
+
+    cur, email, name = reset.standard_email(), pend["email"], pend["name"]
+    old = User.objects.filter(email__iexact=cur).first() if cur else None
+    other = User.objects.filter(email__iexact=email).exclude(pk=old.pk if old else None).first()
+    target = old or other or User(username=email, email=email)
+    if old and other and other.pk != old.pk:  # the new address already belongs to another superadmin: that one becomes the standard one
+        target = other
+    target.username = target.email = email
+    target.is_staff = target.is_superuser = target.is_active = True
+    target.display_name = name
+    target.first_name, _s, target.last_name = name.partition(" ")
+    target.password = pend["password_hash"]
+    target.twofa_method, target.totp_secret, target.totp_last_step = "", "", 0
+    target.save()
+    row, _c = SystemSettings.objects.get_or_create(pk=1)
+    data = {**(row.data or {}), "standard_admin": {"email": email, "name": name, "password_hash": target.password}}
+    data.pop("standard_admin_pending", None)
+    row.data = data
+    row.save()
+    notify = []
+    for addr in dict.fromkeys(x for x in (cur, pend.get("to"), request.user.email, email) if x and "@" in x):
+        try:
+            sending.send_email(addr, "De standaard superadmin is gewijzigd", f"De standaard superadmin van deze website is zojuist ingesteld (bevestigd via {pend.get('to')}).\n\nNaam: {name}\nE-mailadres: {email}\n\nHet wachtwoord staat niet in dit bericht. Was jij dit niet? Neem direct contact op met de beheerder van de website.", purpose="security")
+            notify.append(addr)
+        except Exception:  # noqa: BLE001 - the change is made; the mail is a message about it
+            logger.exception("Mail about the standard superadmin could not be sent to %s", addr)
+    return {"email": email, "name": name, "mailed": notify, "same_user": target.pk == request.user.pk}
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def standard_admin_file(request):
+    """Superadmins. {action: "export", password}: the encrypted config file of the standard superadmin (locked with the password of that account).
+    {action: "import", file, password, confirm_password}: load such a file here: the standard superadmin of this website becomes the one in the file."""
+    from django.core.cache import cache
+
+    from . import reset
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    d = request.data if isinstance(request.data, dict) else {}
+    pw = str(d.get("password") or "")
+    key = f"stdadmin-file:{request.user.pk}"
+    if cache.get(key, 0) >= 8:
+        return Response({"detail": "Te veel pogingen. Probeer het over een kwartier opnieuw."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    cache.set(key, cache.get(key, 0) + 1, 900)
+    try:
+        if d.get("action") == "export":
+            return Response({"file": reset.export_file(pw)})
+        if d.get("action") == "import":
+            if not request.user.check_password(str(d.get("confirm_password") or "")):
+                return Response({"detail": "Het controle-wachtwoord (dat van jezelf) klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
+            st = reset.read_file(d.get("file") if isinstance(d.get("file"), dict) else {}, pw)
+            return Response(_apply_standard_admin(request, {"email": st["email"], "name": st.get("name") or st["email"], "password_hash": st["password_hash"], "to": "een configuratiebestand"}))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"detail": "Onbekende actie."}, status=status.HTTP_400_BAD_REQUEST)

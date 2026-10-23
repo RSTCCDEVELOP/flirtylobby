@@ -11,6 +11,7 @@ import PresetPicker from "../../../components/PresetPicker";
 import ProfileThemeSwitches from "../../../components/ProfileThemeSwitches";
 import SettingsBackup from "../../../components/SettingsBackup";
 import SystemReset from "../../../components/SystemReset";
+import StandardAdmin from "../../../components/StandardAdmin";
 
 export default function SuperAdminHome() {
   return (
@@ -58,7 +59,7 @@ export default function SuperAdminHome() {
         <PresetPicker manage />
       </Collapsible>
       <Collapsible id="super-reset" title={tx("Systeem resetten")}>
-        <SystemReset />
+        <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "flex-start" }}><SystemReset /><StandardAdmin /></div>
       </Collapsible>
       <Collapsible id="super-all" title={tx("Alle beheeronderdelen")}>
         <AdminTiles all />

@@ -227,6 +227,12 @@ def _plain_links(text, accent):
     return "".join(out)
 
 
+def grouped(code):
+    """A verification code of 6 digits is shown as 512-417 (a dash between the two groups of three), easier to read and to type."""
+    c = str(code or "")
+    return f"{c[:3]}-{c[3:]}" if c.isdigit() and len(c) == 6 else c
+
+
 def to_html(subject, body, base_url=None, api_base=None, s=None, code=None, inline=None):
     """The HTML of a message. code: a verification code, shown big in its own box. inline: a list that gets (cid, bytes, mime) for images sent inside the message."""
     s = s or get()
@@ -242,20 +248,21 @@ def to_html(subject, body, base_url=None, api_base=None, s=None, code=None, inli
     blocks = []
 
     def code_box():
-        style, c, acc, rad = s.get("code_style", "card"), html.escape(str(code)), p["accent"], p["radius"]
+        style, c, acc, rad = s.get("code_style", "card"), html.escape(grouped(code)), p["accent"], p["radius"]
         mono = "Menlo,Consolas,'Courier New',monospace"
         if style == "boxes":  # a box per digit, like the code screen of the website
-            cells = "".join(f'<td bgcolor="{_tint(acc)}" align="center" width="46" style="width:46px;height:56px;background:{_tint(acc)};border:1px solid {acc}55;border-radius:{min(rad, 10)}px;'
-                            f'font-family:{mono};font-size:28px;font-weight:700;color:{acc};text-align:center">{ch}</td><td width="8" style="width:8px;font-size:0">&nbsp;</td>' for ch in c)
+            cells = "".join((f'<td align="center" width="22" style="width:22px;font-family:{mono};font-size:28px;font-weight:700;color:{acc};text-align:center">&ndash;</td>' if ch == "-" else
+                             f'<td bgcolor="{_tint(acc)}" align="center" width="46" style="width:46px;height:56px;background:{_tint(acc)};border:1px solid {acc}55;border-radius:{min(rad, 10)}px;'
+                             f'font-family:{mono};font-size:28px;font-weight:700;color:{acc};text-align:center">{ch}</td><td width="8" style="width:8px;font-size:0">&nbsp;</td>') for ch in c)
             return f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:22px auto"><tr>{cells}</tr></table>'
         if style == "plain":
-            return f'<p style="margin:22px 0;text-align:center;font-family:{mono};font-size:40px;font-weight:700;letter-spacing:12px;color:{acc}">{c}</p>'
+            return f'<p style="margin:22px 0;text-align:center;font-family:{mono};font-size:40px;font-weight:700;letter-spacing:8px;color:{acc}">{c}</p>'
         if style == "band":
             return (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0"><tr><td bgcolor="{acc}" align="center" style="background:{acc};border-radius:{rad}px;'
                     f'padding:18px;font-family:{mono};font-size:34px;font-weight:700;letter-spacing:12px;color:#ffffff;text-align:center">{c}</td></tr></table>')
         return (f'<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:22px auto"><tr><td bgcolor="{_tint(acc)}" align="center" '
                 f'style="background:{_tint(acc)};border:1px solid {acc}33;border-radius:{rad}px;padding:16px 34px;font-family:{mono};'
-                f'font-size:34px;font-weight:700;letter-spacing:10px;color:{acc};text-align:center">{c}</td></tr></table>')
+                f'font-size:34px;font-weight:700;letter-spacing:8px;color:{acc};text-align:center">{c}</td></tr></table>')
     for para in re.split(r"\n{2,}", (body or "").strip()):
         if not para.strip():
             continue
@@ -323,7 +330,8 @@ def to_html(subject, body, base_url=None, api_base=None, s=None, code=None, inli
 def build_full(subject, body, base_url=None, api_base=None, s=None, code=None):
     """(text, html_or_None, inline_images) for an outgoing message, following the settings."""
     s = s or get()
-    text = body if not s["footer"] else f"{body}\n\n--\n{s['footer']}"
+    shown = body.replace(str(code), grouped(code)) if code and str(code) in (body or "") else body  # (the text version shows the code in groups too; the HTML one gets its own box)
+    text = shown if not s["footer"] else f"{shown}\n\n--\n{s['footer']}"
     inline = []
     if s["format"] == "html":
         return text, to_html(subject, body, base_url, api_base, s, code, inline), inline

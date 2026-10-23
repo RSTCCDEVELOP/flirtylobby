@@ -12,6 +12,14 @@ class Command(BaseCommand):
         parser.add_argument("--reset-password", action="store_true", help="Overwrite the password of an existing admin.")
 
     def handle(self, *args, **options):
+        from apps.core import reset
+
+        if reset.stored_admin():  # the standard superadmin was set in Super admin: that one counts (it is made again when it is gone)
+            email = reset.stored_admin()["email"]
+            if not User.objects.filter(email__iexact=email).exists():
+                reset.standard_admin()
+                self.stdout.write(f"ensure_admin: {email} made from the settings.")
+            return
         email = (os.getenv("ADMIN_EMAIL") or "").strip().lower()
         password = os.getenv("ADMIN_PASSWORD") or ""
         if not email or not password:

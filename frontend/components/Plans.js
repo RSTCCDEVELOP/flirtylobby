@@ -1,6 +1,7 @@
 "use client";
 
 import { tx } from "../lib/t";
+import { RichText } from "./SmallEditor";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
@@ -42,7 +43,7 @@ export default function Plans() {
             {p.highlight && <span className="plan-ribbon">{tx("Populair")}</span>}
             <h2>{p.name}</h2>
             <div className="plan-price">{money(p.price, data.currency)} <small>{tx(PER[p.interval])}</small></div>
-            {p.description && <p className="muted">{p.description}</p>}
+            {p.description && <RichText value={p.description} className="muted" />}
             <ul className="plan-grants">{p.grants.map((g, i) => <li key={i}>{tx(g.label)}</li>)}</ul>
             {p.trial_days > 0 && <p className="muted" style={{ fontSize: ".85rem" }}>{p.trial_days} {tx("dagen gratis proberen")}</p>}
             {!user && ready ? <Link className="btn primary" href="/login?next=/abonnementen">{tx("Inloggen om te kiezen")}</Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
@@ -99,8 +99,9 @@ export default function VerifyEmail({ email: start = "", method = "code", onVeri
             ) : <p className="muted" style={{ margin: 0, textAlign: "center" }}>{tx("De code is gemaild naar {0}. Hij is 10 minuten geldig.", email)}</p>}
             <div className="verify-code" onPaste={(e) => { e.preventDefault(); put(0, e.clipboardData.getData("text")); }}>
               {chars.map((c, i) => (
-                <input key={i} ref={(el) => { boxes.current[i] = el; }} value={c} inputMode="text" autoCapitalize="characters" autoComplete={i === 0 ? "one-time-code" : "off"} maxLength={LEN} aria-label={`${tx("Teken")} ${i + 1}`}
-                  onChange={(e) => put(i, e.target.value)} onKeyDown={(e) => key(i, e)} onFocus={(e) => e.target.select()} />
+                <Fragment key={i}>{i === 3 && LEN === 6 && <span className="code-dash" aria-hidden="true">–</span>}
+                <input ref={(el) => { boxes.current[i] = el; }} value={c} inputMode="text" autoCapitalize="characters" autoComplete={i === 0 ? "one-time-code" : "off"} maxLength={LEN} aria-label={`${tx("Teken")} ${i + 1}`}
+                  onChange={(e) => put(i, e.target.value)} onKeyDown={(e) => key(i, e)} onFocus={(e) => e.target.select()} /></Fragment>
               ))}
             </div>
             {err && <div className="alert">{err}</div>}

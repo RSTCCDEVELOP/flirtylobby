@@ -48,6 +48,7 @@ export default function Sandbox() {
     setS(next);
     try {
       const d = await api("/sandbox/settings/", { method: "PUT", body: next });
+      window.dispatchEvent(new Event("sandbox-changed")); // the label in the header follows at once
       setS(d.settings);
       setMails((d.settings.override_emails || []).join(", "));
       setMsg({ ok: true, text: tx("Sandbox-instellingen opgeslagen.") });

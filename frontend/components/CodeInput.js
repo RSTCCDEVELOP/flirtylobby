@@ -23,7 +23,8 @@ export default function CodeInput({ value, onChange, length = 6, autoFocus = fal
   return (
     <div className="code-boxes" role="group" aria-label={label || tx("Code")}>
       {chars.map((c, i) => (
-        <input key={i} ref={(el) => (refs.current[i] = el)} className={`code-box ${c ? "filled" : ""} ${invalid ? "bad" : ""}`} value={c} disabled={disabled}
+        <span key={i} className="code-cell">
+        <input ref={(el) => (refs.current[i] = el)} className={`code-box ${c ? "filled" : ""} ${invalid ? "bad" : ""}`} value={c} disabled={disabled}
           inputMode="numeric" pattern="[0-9]*" autoFocus={autoFocus && i === 0} autoComplete={i === 0 ? "one-time-code" : "off"} aria-label={`${label || tx("Code")} ${i + 1}`}
           onFocus={(e) => e.target.select()}
           onChange={(e) => put(i, e.target.value)}
@@ -36,6 +37,8 @@ export default function CodeInput({ value, onChange, length = 6, autoFocus = fal
             } else if (e.key === "ArrowLeft") { e.preventDefault(); focus(i - 1); }
             else if (e.key === "ArrowRight") { e.preventDefault(); focus(i + 1); }
           }} />
+        {length === 6 && i === 2 && <span className="code-dash" aria-hidden="true">–</span>}
+        </span>
       ))}
     </div>
   );

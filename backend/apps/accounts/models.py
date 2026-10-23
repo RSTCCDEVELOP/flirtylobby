@@ -77,6 +77,7 @@ class User(AbstractUser):
     otp_token = models.CharField(max_length=255, blank=True)
     otp_active = models.BooleanField(default=False)  # two-step verification switched on
     twofa_method = models.CharField(max_length=10, blank=True)  # "email" | "sms" | "app"
+    twofa_required = models.BooleanField(default=False)  # a superadmin requires two-step verification for this person: it has to be set up after the first login
     totp_secret = models.TextField(blank=True)  # authenticator-app secret, encrypted (pending until confirmed)
     totp_last_step = models.BigIntegerField(default=0)  # last accepted 30 s step: a code works only once
     email_verified = models.BooleanField(default=False)  # confirmed with a code sent to the address

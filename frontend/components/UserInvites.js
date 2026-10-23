@@ -5,6 +5,7 @@ import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 import Collapsible from "./Collapsible";
+import Tabs from "./Tabs";
 
 const VALID = [[1, "1 uur"], [24, "1 dag"], [72, "3 dagen"], [168, "7 dagen"], [336, "14 dagen"], [720, "30 dagen"]];
 const LEVELS = [[0, "Geen"], [1, "Gebruik"], [2, "Bewerken"], [3, "Beheer"]];
@@ -48,12 +49,7 @@ export default function UserInvites({ roles, groups }) {
   const resend = async (i) => { try { await api(`/invitations/${i.id}/resend/`, { method: "POST", body: { valid_hours: 168 } }); setInfo(tx("Nieuwe uitnodiging verstuurd naar {0}.", i.email)); load(); } catch (er) { setError(errorText(er)); } };
   const del = async (i) => { if (await confirmDialog(tx("Uitnodiging voor {0} intrekken?", i.email), { danger: true })) { try { await api(`/invitations/${i.id}/`, { method: "DELETE" }); load(); } catch (er) { setError(errorText(er)); } } };
   const toggle = (k, id) => setModal({ ...modal, [k]: modal[k].includes(id) ? modal[k].filter((x) => x !== id) : [...modal[k], id] });
-  const sec = (key, title, body) => (
-    <div className="info-acc">
-      <button type="button" className="info-acc-head" aria-expanded={open === key} onClick={() => setOpen(open === key ? "" : key)}><span>{tx(title)}</span><span className="info-chev" data-open={open === key}>▾</span></button>
-      {open === key && <div style={{ padding: ".6rem .2rem", display: "grid", gap: ".7rem" }}>{body}</div>}
-    </div>
-  );
+  const sec = (key, title, body) => (open === key ? <div style={{ display: "grid", gap: ".8rem", minHeight: 150, alignContent: "start" }}>{body}</div> : null); // one tab at a time
 
   return (
     <>
@@ -83,6 +79,7 @@ export default function UserInvites({ roles, groups }) {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={send}>
             <h2>{tx("Gebruiker uitnodigen")}</h2>
+            <Tabs className="tabs-one-row" value={open} onChange={setOpen} tabs={[["user", "Gebruiker"], ["security", "Voorwaarden en verificatie"], ["rights", "Rollen en rechten"], ...(data.can_grants ? [["modules", "Toegang per module"]] : []), ["valid", "Geldigheid van de link"]]} />
             {sec("user", "Gebruiker", <>
               <div className="grid2">
                 <label>{tx("Voornaam")}<input value={modal.first_name} onChange={(e) => setModal({ ...modal, first_name: e.target.value })} required /></label>
@@ -98,12 +95,12 @@ export default function UserInvites({ roles, groups }) {
             {sec("rights", "Rollen en rechten", <>
               <strong style={{ fontSize: ".85rem" }}>{tx("Rollen")}</strong>
               <div className="perm-list">
-                {roles.map((r) => <label className="check" key={r.id}><input type="checkbox" checked={modal.roles.includes(r.id)} onChange={() => toggle("roles", r.id)} /> {r.name} <small className="muted">{r.description}</small></label>)}
+                {roles.map((r) => <label className="check sec-toggle" key={r.id}><span className="switch"><input type="checkbox" checked={modal.roles.includes(r.id)} onChange={() => toggle("roles", r.id)} /><span /></span> <span>{r.name} <small className="muted">{r.description}</small></span></label>)}
                 {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
               </div>
               <strong style={{ fontSize: ".85rem" }}>{tx("User groups")}</strong>
               <div className="perm-list">
-                {groups.map((g) => <label className="check" key={g.id}><input type="checkbox" checked={modal.groups.includes(g.id)} onChange={() => toggle("groups", g.id)} /> {g.name}</label>)}
+                {groups.map((g) => <label className="check sec-toggle" key={g.id}><span className="switch"><input type="checkbox" checked={modal.groups.includes(g.id)} onChange={() => toggle("groups", g.id)} /><span /></span><span>{g.name}</span></label>)}
                 {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
               </div>
             </>)}

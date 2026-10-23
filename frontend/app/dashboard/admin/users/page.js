@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../components/AuthContext";
 import VerifyBadge, { VERIFY } from "../../../../components/VerifyBadge";
 import Collapsible from "../../../../components/Collapsible";
+import SmallEditor from "../../../../components/SmallEditor";
 import Tabs from "../../../../components/Tabs";
 import UserInvites from "../../../../components/UserInvites";
 import ViewBar from "../../../../components/ViewBar";
@@ -17,7 +18,7 @@ import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { lvl } from "../../../../lib/perms";
 
-const EMPTY = { user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
+const EMPTY = { twofa_required: false, user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
 const initials = (u) => (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
 
 export default function Users() {
@@ -53,6 +54,7 @@ export default function Users() {
     if (id && !body.password) delete body.password;
     try {
       const saved = await (id ? api(`/users/${id}/`, { method: "PATCH", body }) : api("/users/", { method: "POST", body }));
+      if (id && body.is_active === false) await api(`/users/${id}/block/`, { method: "POST" }).catch(() => {}); // (also ends the sessions of this account)
       if (file) { // photo chosen while creating
         const fd = new FormData();
         fd.append("image", file);
@@ -184,8 +186,9 @@ export default function Users() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save} onInvalidCapture={() => setTab("account")}>
             <h2>{modal.id ? tx("Gebruiker wijzigen") : tx("Nieuwe gebruiker")}</h2>
-            <Tabs value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["rights", "Rechten"]]} />
-            <div className="grid2" hidden={tab !== "account"}>
+            <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["media", "Media"], ["rights", "Rechten"]]} />
+            {tab === "account" && (
+            <div className="grid2">
               <label>{tx("Voornaam")}<input value={modal.first_name} onChange={set("first_name")} /></label>
               <label>{tx("Achternaam")}<input value={modal.last_name} onChange={set("last_name")} /></label>
               <label>{tx("E-mailadres")}<input type="email" value={modal.email} onChange={set("email")} required /></label>
@@ -197,53 +200,74 @@ export default function Users() {
                   {Object.entries(VERIFY).map(([k, v]) => <option key={k} value={k}>{tx(v.label)}: {tx(v.hint)}</option>)}
                 </select>
               </label>
+              {modal.id && L >= 2 && (
+                <label className="check sec-toggle" style={{ alignSelf: "end" }} title={modal.id === me.id ? tx("Je kunt je eigen account niet uitschakelen") : undefined}>
+                  <span className="switch"><input type="checkbox" checked={modal.is_active !== false} disabled={modal.id === me.id} onChange={(e) => setModal({ ...modal, is_active: e.target.checked })} /><span /></span>
+                  <span>{modal.is_active !== false ? tx("Account actief") : tx("Account niet actief (kan niet inloggen)")}</span>
+                </label>
+              )}
             </div>
-            <div className="grid2" hidden={tab !== "profile"}>
+            )}
+            {tab === "profile" && (
+              <>
+            <div className="grid2">
               <label>{tx("Functie")}<input value={modal.function} onChange={set("function")} /></label>
               <label>{tx("Korte tekst")}<input value={modal.short} onChange={set("short")} maxLength={255} /></label>
             </div>
-            <label hidden={tab !== "profile"}>{tx("Omschrijving / biografie")}<textarea rows={4} value={modal.description} onChange={set("description")} /></label>
-            <div className="grid2" hidden={tab !== "profile"}>
+            <div className="field"><strong style={{ fontSize: ".85rem" }}>{tx("Omschrijving / biografie")}</strong><SmallEditor value={modal.description} onChange={(v) => setModal({ ...modal, description: v })} /></div>
+            <div className="grid2">
               <label>{tx("Link")}<input value={modal.link} onChange={set("link")} maxLength={255} placeholder="https://…" /></label>
-              <label className="check" style={{ alignSelf: "end" }}><input type="checkbox" checked={modal.link_external} onChange={set("link_external")} /> {tx("Link opent extern")}</label>
+              <label className="check sec-toggle" style={{ alignSelf: "end" }}><span className="switch"><input type="checkbox" checked={modal.link_external} onChange={set("link_external")} /><span /></span><span>{tx("Link opent extern")}</span></label>
             </div>
-            <div className="photo-row" hidden={tab !== "profile"}>
+            <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={modal.show_public} onChange={set("show_public")} /><span /></span><span>{tx("Tonen op de website als member (foto, functie en omschrijving)")}</span></label>
+              </>
+            )}
+            {tab === "media" && (
+            <div className="photo-row">
               {modal.preview || modal.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={modal.preview || mediaUrl(modal.image)} alt="" className="photo-preview" /> : <span className="avatar photo-preview">{initials(modal)}</span>}
               <span className="row" style={{ justifyContent: "flex-start" }}>
                 <MediaField onFiles={(fs) => photo(fs[0])} />
                 {(modal.image || modal.preview) && <button type="button" className="btn sm danger" onClick={() => photo(null)}>{tx("Foto verwijderen")}</button>}
               </span>
             </div>
-            <label className="check" hidden={tab !== "profile"}><input type="checkbox" checked={modal.show_public} onChange={set("show_public")} /> {tx("Tonen op de website als member (foto, functie en omschrijving)")}</label>
-            <div hidden={tab !== "rights"}>
+            )}
+            {tab === "rights" && (
+              <>
+            <div>
               <strong style={{ fontSize: ".85rem" }}>{tx("Rollen")}</strong>
               <div className="perm-list">
                 {roles.map((r) => (
-                  <label className="check" key={r.id}>
-                    <input type="checkbox" checked={modal.roles.includes(r.id)}
-                      onChange={() => setModal({ ...modal, roles: modal.roles.includes(r.id) ? modal.roles.filter((x) => x !== r.id) : [...modal.roles, r.id] })} />
-                    {r.name} <small className="muted">{r.description}</small>
+                  <label className="check sec-toggle" key={r.id}>
+                    <span className="switch"><input type="checkbox" checked={modal.roles.includes(r.id)}
+                      onChange={() => setModal({ ...modal, roles: modal.roles.includes(r.id) ? modal.roles.filter((x) => x !== r.id) : [...modal.roles, r.id] })} /><span /></span>
+                    <span>{r.name} <small className="muted">{r.description}</small></span>
                   </label>
                 ))}
                 {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
               </div>
             </div>
-            <div hidden={tab !== "rights"}>
+            <div>
               <strong style={{ fontSize: ".85rem" }}>{tx("User groups")}</strong>
               <div className="perm-list">
                 {groups.map((g) => (
-                  <label className="check" key={g.id}>
-                    <input type="checkbox" checked={modal.user_groups.includes(g.id)}
-                      onChange={() => setModal({ ...modal, user_groups: modal.user_groups.includes(g.id) ? modal.user_groups.filter((x) => x !== g.id) : [...modal.user_groups, g.id] })} />
-                    {g.name} <small className="muted">{g.description}</small>
+                  <label className="check sec-toggle" key={g.id}>
+                    <span className="switch"><input type="checkbox" checked={modal.user_groups.includes(g.id)}
+                      onChange={() => setModal({ ...modal, user_groups: modal.user_groups.includes(g.id) ? modal.user_groups.filter((x) => x !== g.id) : [...modal.user_groups, g.id] })} /><span /></span>
+                    <span>{g.name} <small className="muted">{g.description}</small></span>
                   </label>
                 ))}
                 {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
               </div>
             </div>
-            {me.is_staff && <label className="check" hidden={tab !== "rights"}>
-              <input type="checkbox" checked={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} /> {tx("Superadmin (alle rechten, beheert ook admins en superadmins)")}
+            {me.is_staff && <label className="check sec-toggle">
+              <span className="switch"><input type="checkbox" checked={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} /><span /></span><span>{tx("Superadmin (alle rechten, beheert ook admins en superadmins)")}</span>
             </label>}
+                <label className="check sec-toggle" title={tx("Staat tweestapsverificatie bij Admin → Beveiliging uit, dan kan niemand het instellen.")}>
+                  <span className="switch"><input type="checkbox" checked={!!modal.twofa_required} onChange={set("twofa_required")} disabled={L < 2} /><span /></span>
+                  <span>{tx("Tweestapsverificatie verplicht (instellen direct na de eerste keer inloggen)")}</span>
+                </label>
+              </>
+            )}
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>

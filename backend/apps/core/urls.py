@@ -10,6 +10,8 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("system/", views.system_settings),
     path("system/reset/", views.system_reset),
+    path("system/standard-admin/", views.standard_admin_view),
+    path("system/standard-admin/file/", views.standard_admin_file),
     path("system/info/", views.system_info),
     path("system/demo/", views.demo_data),
     path("system/pricing/", views.pricing_view),

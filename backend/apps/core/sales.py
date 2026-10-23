@@ -287,7 +287,7 @@ def calc_verify(request):
             sending.send_email(email, "Bevestig je e-mailadres", f"Open deze link om je e-mailadres te bevestigen:\n\n{link}\n\nDe link is 30 minuten geldig. Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren.")
             return Response({"method": "link", "nonce": nonce})
         code = "".join(secrets.choice(CODE_CHARS) for _ in range(6))
-        sending.send_email(email, "Je bevestigingscode", f"Je code om je e-mailadres te bevestigen: {code}\n\nDe code is 10 minuten geldig. Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren.")
+        sending.send_email(email, "Je bevestigingscode", f"Je code om je e-mailadres te bevestigen: {code}\n\nDe code is 10 minuten geldig. Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren.", purpose="security", code=code)
     except sending.DeliveryError as e:
         return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
     return Response({"method": "code", "challenge": signing.dumps({"e": email, "h": _digest(email, code)}, salt=SALT_CHALLENGE)})
@@ -411,7 +411,7 @@ def admin_test(request):
             sending.send_email(email, "Test: bevestig je e-mailadres", f"Dit is een test van de bevestiging met een link. Open deze link:\n\n{link}")
             return Response({"method": "link", "nonce": nonce, "sent_to": email})
         code = _random_code()
-        sending.send_email(email, "Test: je bevestigingscode", f"Dit is een test van de bevestiging met een code. Je code is: {code}")
+        sending.send_email(email, "Test: je bevestigingscode", f"Dit is een test van de bevestiging met een code. Je code is: {code}", purpose="security", code=code)
     except sending.DeliveryError as e:
         return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
     return Response({"method": "code", "sent_to": email, "challenge": signing.dumps({"e": email, "h": _digest(email, code)}, salt=SALT_CHALLENGE)})

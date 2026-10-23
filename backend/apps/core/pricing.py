@@ -280,6 +280,24 @@ def apply_to_license():
             ComponentPrice.objects.filter(kind=kind, key=key).delete()
 
 
+def extra_for_plugin(name):
+    """What switching on a plugin (and the plugins it needs) adds to the price per month, ex VAT: {title, plugins: [titles], extra}."""
+    from apps.plugins import runtime
+    from apps.plugins.models import Plugin
+
+    p = Plugin.objects.filter(name=name).first()
+    if not p:
+        return {"title": name, "plugins": [name], "extra": "0.00"}
+    chain = [p] + list(runtime.requirement_chain(p)[0])
+    names = {x.name for x in chain}
+    cur_mods = {k for k, v in modules.states().items() if v and not modules.BY_KEY.get(k, {}).get("core")}
+    cur_plugs = set(Plugin.objects.filter(enabled=True).values_list("name", flat=True))
+    new_mods = cur_mods | {m["key"] for m in modules.MODULES if m.get("plugin") in names}
+    before, _l = price_of(cur_mods, cur_plugs)
+    after, _l2 = price_of(new_mods, cur_plugs | names)
+    return {"title": p.title or p.name, "plugins": [x.title or x.name for x in chain], "extra": str(q2(after - before))}
+
+
 # ── AI-calculatie ──────────────────────────────────────────────────────────────────────────────────────────────────
 POSITIONS = {"budget": "goedkoop: scherp onder de markt", "market": "marktconform: gelijk aan de markt", "premium": "premium: duurder dan de markt, met extra service en kwaliteit"}
 

@@ -45,7 +45,7 @@ def summary():
     from apps.pages.models import Page
     from apps.plugins.models import Plugin
 
-    return {"users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": (__import__("os").getenv("ADMIN_EMAIL") or "").strip().lower() if __import__("os").getenv("ADMIN_PASSWORD") else "", "media": MediaItem.objects.count(),
+    return {"users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
             "pages": Page.objects.exclude(kind="system").count(), "plugins": Plugin.objects.count(), "themes": ThemePack.objects.count()}
 
 
@@ -79,21 +79,45 @@ def clear_license():
     system.license_changed()
 
 
+def stored_admin():
+    """The standard superadmin set in Super admin (kept with the system settings): {email, name, password_hash}, or None (then ADMIN_EMAIL / ADMIN_PASSWORD of the environment count)."""
+    from .models import SystemSettings
+
+    d = (SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get("standard_admin")
+    return d if isinstance(d, dict) and d.get("email") and d.get("password_hash") else None
+
+
+def standard_email():
+    st = stored_admin()
+    if st:
+        return st["email"]
+    import os
+
+    return (os.getenv("ADMIN_EMAIL") or "").strip().lower() if os.getenv("ADMIN_PASSWORD") else ""
+
+
 def standard_admin():
     """Make the standard superadmin of the installation (ADMIN_EMAIL / ADMIN_PASSWORD) with that password and remove every other superadmin. Returns the e-mail address, or "" when it is not set."""
     import os
 
     from apps.accounts.models import User
 
-    email, password = (os.getenv("ADMIN_EMAIL") or "").strip().lower(), os.getenv("ADMIN_PASSWORD") or ""
-    if not email or not password:
+    st = stored_admin()
+    email, password = (st["email"], "") if st else ((os.getenv("ADMIN_EMAIL") or "").strip().lower(), os.getenv("ADMIN_PASSWORD") or "")
+    if not email or not (password or st):
         return ""
     user = User.objects.filter(email__iexact=email).first() or User(username=email, email=email)
     user.is_staff = user.is_superuser = user.is_active = True
-    user.set_password(password)
+    if st:  # the standard superadmin that was set in Super admin: the stored password (a hash) and name
+        user.password = st["password_hash"]
+        if st.get("name"):
+            user.display_name = st["name"]
+            user.first_name, _s, user.last_name = st["name"].partition(" ")
+    else:
+        user.set_password(password)
     user.twofa_method, user.totp_secret, user.totp_last_step = "", "", 0  # the standard admin can always log in with the password
     user.save()
-    User.objects.filter(is_staff=True).exclude(pk=user.pk).delete()
+    User.objects.filter(is_staff=True).exclude(pk=user.pk).update(is_active=False)  # the other superadmins are switched off: they can no longer log in (they can be switched on again by the standard superadmin)
     from django.core.cache import cache
     from rest_framework.authtoken.models import Token
 
@@ -206,3 +230,55 @@ def perform(keep=None):
             pass
     logger.warning("System reset: %s", removed)
     return removed
+
+
+# ── the standard superadmin as an encrypted file ──────────────────────────────────────────────────────────────────────
+FILE_FORMAT, FILE_ITER = "easy2edit-config", 600_000
+
+
+def _key(password, salt, iterations):
+    import base64
+
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+    return base64.urlsafe_b64encode(PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=iterations).derive(password.encode()))
+
+
+def export_file(password):
+    """The standard superadmin (name, e-mail, password hash) as an encrypted config file, locked with the password of that account: a dict that goes into a .json file."""
+    import base64
+    import json
+    import os
+
+    from cryptography.fernet import Fernet
+    from django.contrib.auth.hashers import check_password
+
+    st = stored_admin()
+    if not st or not check_password(password, st["password_hash"]):
+        raise ValueError("Het wachtwoord van de standaard superadmin klopt niet.")
+    salt = os.urandom(16)
+    token = Fernet(_key(password, salt, FILE_ITER)).encrypt(json.dumps({"standard_admin": st}).encode())
+    return {"format": FILE_FORMAT, "version": 1, "kdf": "pbkdf2-sha256", "iterations": FILE_ITER, "salt": base64.b64encode(salt).decode(), "data": token.decode()}
+
+
+def read_file(doc, password):
+    """The settings in an encrypted config file ({standard_admin: {...}}), opened with the password of that account. Raises ValueError for a wrong file or password."""
+    import base64
+    import json
+
+    from cryptography.fernet import Fernet, InvalidToken
+
+    try:
+        if doc.get("format") != FILE_FORMAT or int(doc.get("iterations", 0)) < 100_000:
+            raise ValueError
+        key = _key(password, base64.b64decode(doc["salt"]), int(doc["iterations"]))
+        data = json.loads(Fernet(key).decrypt(str(doc["data"]).encode()))
+    except InvalidToken:
+        raise ValueError("Het wachtwoord past niet bij dit bestand.")
+    except (ValueError, KeyError, TypeError, AttributeError):
+        raise ValueError("Dit is geen geldig configuratiebestand van Easy2edit.")
+    st = data.get("standard_admin") if isinstance(data, dict) else None
+    if not isinstance(st, dict) or not st.get("email") or not st.get("password_hash"):
+        raise ValueError("Het bestand bevat geen standaard superadmin.")
+    return st

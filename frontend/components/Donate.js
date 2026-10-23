@@ -1,6 +1,7 @@
 "use client";
 
 import { tx } from "../lib/t";
+import { RichText } from "./SmallEditor";
 import { useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { money } from "../lib/format";
@@ -36,7 +37,7 @@ export function Campaign({ c, currency, user, onClose }) {
           {c.infoView.text && <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{c.infoView.text}</p>}
         </div>
       )}
-      <p className="muted" style={{ margin: 0 }}>{tx("Voor")} {c.recipient}{c.description ? ` · ${c.description}` : ""}</p>
+      <div className="muted"><p style={{ margin: 0 }}>{tx("Voor")} {c.recipient}</p>{c.description && <RichText value={c.description} />}</div>
       {c.goal && <><div className="don-bar"><i style={{ width: `${pct}%` }} /></div><small className="muted">{money(c.raised, currency)} {tx("van")} {money(c.goal, currency)} · {c.count} {tx("donaties")}</small></>}
       <div className="don-amount">{money(amount, currency)}</div>
       <input type="range" className="don-slider" min={Number(c.min)} max={Number(c.max)} step={Number(c.step)} value={amount} onChange={(e) => setAmount(Number(e.target.value))} aria-label={tx("Bedrag")} />

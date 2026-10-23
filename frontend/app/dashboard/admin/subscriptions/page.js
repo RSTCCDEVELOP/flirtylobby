@@ -1,6 +1,7 @@
 "use client";
 
 import { Busy } from "../../../../components/PageLoader";
+import SmallEditor from "../../../../components/SmallEditor";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
@@ -213,7 +214,7 @@ export default function SubscriptionsAdmin() {
                 : <label>{tx("Dagen gratis proef")}<input type="number" min="0" value={modal.trial_days} onChange={(e) => setModal({ ...modal, trial_days: e.target.value })} /></label>}
               <label>{tx("Volgorde")}<input type="number" min="0" value={modal.order} onChange={(e) => setModal({ ...modal, order: e.target.value })} /></label>
             </div>
-            <label>{tx("Omschrijving")}<textarea rows={2} value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} /></label>
+            <div className="field"><strong style={{ fontSize: ".85rem" }}>{tx("Omschrijving")}</strong><SmallEditor value={modal.description} onChange={(v) => setModal({ ...modal, description: v })} minHeight={70} /></div>
             <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{modal.interval === "once" ? tx("Eenmalig: er wordt één order gemaakt.") : tx("Herhaald: bij elke nieuwe periode wordt automatisch een nieuwe order gemaakt tot het lid opzegt.")}</p>
             <strong style={{ fontSize: ".9rem" }}>{tx("Wat geeft dit abonnement?")}</strong>
             <div className="act-links">
