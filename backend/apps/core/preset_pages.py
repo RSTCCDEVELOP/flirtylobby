@@ -22,15 +22,93 @@ def _id(*parts):
     return hashlib.md5(":".join(parts).encode()).hexdigest()[:8]
 
 
+LOREM_STYLE = True  # the texts of the pages are filler text (lorem ipsum) of different lengths, so the pages can be filled in by hand; False = the real texts of preset_content.py
+LOREM_WORDS = ("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi "
+               "aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia "
+               "deserunt mollit anim id est laborum curabitur pretium tincidunt lacus nunc pulvinar sapien ligula vitae egestas turpis mauris vehicula felis eget tellus integer posuere erat fermentum").split()
+
+
+def _lorem(seed, words):
+    """Filler text, always the same for the same seed: `words` words in sentences."""
+    import random
+
+    rnd = random.Random(seed)
+    out, left = [], words
+    while left > 0:
+        n = min(left, rnd.randint(7, 15))
+        sent = [rnd.choice(LOREM_WORDS) for _ in range(n)]
+        sent[0] = sent[0].capitalize()
+        out.append(" ".join(sent) + ".")
+        left -= n
+    return " ".join(out)
+
+
+def lorem_heading(seed):
+    import random
+
+    rnd = random.Random(seed)
+    words = [rnd.choice(LOREM_WORDS) for _ in range(rnd.choice([2, 3, 3, 4, 5]))]
+    return " ".join(words).capitalize()
+
+
+def lorem_text(seed):
+    """A short, medium or long text: the long ones are formatted text of two or three paragraphs."""
+    import hashlib
+
+    n = int(hashlib.md5(seed.encode()).hexdigest()[:4], 16) % 6
+    words = [16, 26, 40, 60, 95, 150][n]
+    if words < 90:
+        return _lorem(seed, words)
+    paras = 2 if words < 120 else 3
+    return "<html>" + "".join(f"<p>{_lorem(f'{seed}{i}', words // paras)}</p>" for i in range(paras))
+
+
+# the sizes of the titles, from large to small, so the difference is clear (rem; the theme's own text styles stay for everything else)
+SIZES = {"h1": ("3.4", "800"), "cta": ("2.6", "800"), "h2": ("2.2", "700"), "stat": ("3", "800"), "h3": ("1.9", "700"), "card": ("1.4", "700")}
+
+
+def apply_styles(b):
+    """Give the titles and texts of the page their look: a large title in the banner, a medium one above a section, a smaller one on a card; leading texts a bit larger."""
+    for row, name in zip(b.rows, b.row_names):
+        hero = str(row.get("title", "")).startswith("Hero")
+        on_image = hero and row.get("hero") == "custom"
+        for cell in row["cells"]:
+            texts = [i for i in cell["items"] if i["type"] == "text"]
+            for it in cell["items"]:
+                if it["type"] == "heading":
+                    kind = "h1" if name == "hero" else "cta" if name == "cta" else "h2" if name.endswith("-title") else "stat" if name == "numbers" else "h3" if (name in ("split", "chat", "safe") or row["cols"] <= 2) else "card"
+                    size, weight = SIZES[kind]
+                    it["style"] = {"size": size, "weight": weight, **({"color": "#ffffff"} if on_image else {})}
+                elif it["type"] == "text":
+                    lead = name in ("hero", "cta") or name.endswith("-title")
+                    first = texts and texts[0] is it
+                    st = {"size": "1.3" if name == "hero" and first else "1.15" if lead else "0.95" if name == "numbers" else ""}
+                    if on_image:
+                        st["color"] = "#ffffff"
+                    st = {k: v for k, v in st.items() if v}
+                    if st:
+                        it["style"] = st
+
+
 class Builder:
     """Collects the rows and texts of one page."""
 
     def __init__(self, prefix, page):
-        self.prefix, self.page, self.rows, self.texts, self.images = prefix, page, [], {}, {}
+        self.prefix, self.page, self.rows, self.texts, self.images, self.row_names = prefix, page, [], {}, {}, []
 
-    def t(self, name, nl, en):
+    def t(self, name, nl, en, real=False):
+        """A text of the page. With LOREM_STYLE the words are filler text (a title or a text of a varying length); `real=True` keeps the given words (names, numbers)."""
         key = f"{self.prefix}.{self.page}.{name}"
-        self.texts[key] = {"nl": nl, "en": en}
+        if LOREM_STYLE and not real:
+            from . import richtext
+
+            heading = name.endswith(".t") or name.endswith("title") or name == "title"
+            text = lorem_heading(key) if heading else lorem_text(key)
+            if text.startswith("<html>"):
+                text = richtext.PREFIX + richtext.clean(text[6:])
+            self.texts[key] = {"nl": text, "en": text}
+        else:
+            self.texts[key] = {"nl": nl, "en": en}
         return key
 
     def rich(self, name, nl, en):
@@ -53,6 +131,7 @@ class Builder:
 
     def row(self, name, cells, gap="md", **extra):
         self.rows.append({"id": _id(self.page, name, "row"), "cols": len(cells), "width": "default", "gap": gap, "cells": cells, "bg": {}, **extra})
+        self.row_names.append(name)
 
     def hero(self, name, heading, text, extra_text=None, h=70, hero="dating"):
         items = [("heading", heading), ("text", text)] + ([("text", extra_text)] if extra_text else [])
@@ -79,15 +158,15 @@ def dating():
     b.hero("hero", b.t("hero.title", "Vind liefde, vriendschap of gewoon een leuk gesprek", "Find love, friendship or just a nice conversation"),
            b.t("hero.intro", "Echte mensen, echte gesprekken. Maak gratis een profiel, ontdek wie er bij jou in de buurt woont en begin vandaag nog een gesprek.", "Real people, real conversations. Create a free profile, discover who lives near you and start a conversation today."),
            b.rich("hero.cta", '<p><a href="/registreren"><strong>Gratis aanmelden</strong></a> &nbsp;·&nbsp; <a href="/login">Inloggen</a></p>', '<p><a href="/registreren"><strong>Sign up for free</strong></a> &nbsp;·&nbsp; <a href="/login">Log in</a></p>'), h=85, hero="custom")
-    b.row("numbers", [b.cell("n1", [("heading", b.t("n1.t", "24.000+", "24,000+")), ("text", b.t("n1.x", "leden uit Nederland en België", "members from the Netherlands and Belgium"))], "center"),
-                      b.cell("n2", [("heading", b.t("n2.t", "1.250", "1,250")), ("text", b.t("n2.x", "nieuwe matches per week", "new matches per week"))], "center"),
-                      b.cell("n3", [("heading", b.t("n3.t", "4,6 / 5", "4.6 / 5")), ("text", b.t("n3.x", "waardering van onze leden", "rating by our members"))], "center")], gap="lg")
+    b.row("numbers", [b.cell("n1", [("heading", b.t("n1.t", "24.000+", "24,000+", real=True)), ("text", b.t("n1.x", "leden uit Nederland en België", "members from the Netherlands and Belgium"))], "center"),
+                      b.cell("n2", [("heading", b.t("n2.t", "1.250", "1,250", real=True)), ("text", b.t("n2.x", "nieuwe matches per week", "new matches per week"))], "center"),
+                      b.cell("n3", [("heading", b.t("n3.t", "4,6 / 5", "4.6 / 5", real=True)), ("text", b.t("n3.x", "waardering van onze leden", "rating by our members"))], "center")], gap="lg")
     b.row("near-title", [b.cell("near-title", [("heading", b.t("near.title", "Leden in jouw buurt", "Members near you")), ("text", b.t("near.intro", "Een greep uit de leden die vandaag online zijn. Meld je aan om ze allemaal te zien.", "A selection of members who are online today. Sign up to see them all."))], "center")], mt=30)
     import datetime as _dt
 
     year = _dt.date.today().year
     people = [("Sophie", 1996, "Utrecht", "Koffie, boeken en een lange wandeling"), ("Daan", 1992, "Amsterdam", "Festivals en een goede bak koffie"), ("Lotte", 1999, "Rotterdam", "Yoga, sushi en zonsondergangen"), ("Milan", 1989, "Den Haag", "Ondernemer, hardloper en hobbykok")]
-    b.row("near", [b.cell(f"near{i}", [("image", b.img(f"near{i}", f"Dating Lid {n}")), ("heading", b.t(f"near{i}.t", f"{n}, {year - y}", f"{n}, {year - y}")), ("text", b.t(f"near{i}.x", f"{city} · {line}", f"{city} · {line}"))], "center") for i, (n, y, city, line) in enumerate(people)], gap="md")
+    b.row("near", [b.cell(f"near{i}", [("image", b.img(f"near{i}", f"Dating Lid {n}")), ("heading", b.t(f"near{i}.t", f"{n}, {year - y}", f"{n}, {year - y}", real=True)), ("text", b.t(f"near{i}.x", f"{city} · {line}", f"{city} · {line}", real=True))], "center") for i, (n, y, city, line) in enumerate(people)], gap="md")
     b.row("how-title", [b.cell("how-title", [("heading", b.t("how.title", "Zo werkt het", "How it works"))], "center")], mt=30)
     b.columns("how", [(b.t("how1.t", "1. Maak je profiel", "1. Create your profile"), b.t("how1.x", "Vertel wie je bent, kies je mooiste foto's en geef aan wat je zoekt: daten, een relatie, vriendschap of een praatje.", "Tell who you are, choose your best photos and say what you are looking for: dating, a relationship, friendship or a chat."), "Dating Profiel"),
                        (b.t("how2.t", "2. Ontdek en like", "2. Discover and like"), b.t("how2.x", "Zoek op leeftijd, afstand en interesses, of swipe door de aanbevelingen. Likes zijn anoniem tot jullie allebei ja zeggen.", "Search by age, distance and interests, or swipe through the recommendations. Likes stay anonymous until you both say yes."), "Dating Zoeken"),
@@ -203,6 +282,7 @@ HOME_FIXED = ["home.hero", "home.title", "home.text", "home.photos"]  # the fixe
 def _layout_dict(b, page_key=""):
     from apps.pages import layout as page_layout
 
+    apply_styles(b)
     return page_layout.clean({"rows": b.rows, "bg": {}, **({"moved": HOME_FIXED} if page_key == "home" else {})})
 
 

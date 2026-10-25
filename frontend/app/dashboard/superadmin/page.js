@@ -65,11 +65,11 @@ export default function SuperAdminHome() {
       <Collapsible id="super-presets" title={tx("Standaard installaties")}>
         <PresetPicker manage />
       </Collapsible>
-      <Collapsible id="super-reset" title={tx("Systeem resetten")}>
-        <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "flex-start" }}><SystemReset /><StandardAdmin /></div>
-      </Collapsible>
       <Collapsible id="super-all" title={tx("Alle beheeronderdelen")}>
         <AdminTiles all />
+      </Collapsible>
+      <Collapsible id="super-reset" title={tx("Systeem resetten")}>
+        <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "flex-start" }}><SystemReset /><StandardAdmin /></div>
       </Collapsible>
     </>
   );

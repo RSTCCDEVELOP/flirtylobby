@@ -22,7 +22,7 @@ export default function Home() {
     <div className="site">
       <SiteHeader />
       <main className="uc">
-        <Movable page="home" id="home.hero" type="image"><EditableImage id="home.hero" fallback={<Logo />} /></Movable>
+        <Movable page="home" id="home.hero" type="image"><EditableImage id="home.hero" fallback={<Logo className="home-logo" />} /></Movable>
         <Movable page="home" id="home.title" type="text"><EditableText id="home.title" as="h1" fallback="Onze website is in aanbouw" /></Movable>
         <Movable page="home" id="home.text" type="text"><EditableText id="home.text" as="p" rich fallback="We werken hard aan een nieuwe website. Binnenkort vind je hier meer informatie." /></Movable>
         <HomePhotos />

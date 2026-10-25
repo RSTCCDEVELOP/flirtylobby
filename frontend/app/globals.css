@@ -74,6 +74,7 @@ body {
 }
 
 .uc img { width: min(240px, 60vw); height: auto; }
+.uc img.home-logo { width: min(200px, 52vw); } /* the logo of the theme on a clean start page: small, the title is what counts */
 .uc h1 { margin: 1rem 0 0; font-size: clamp(1.5rem, 4vw, 2.25rem); color: var(--blue); }
 .uc p { margin: 0; max-width: 32rem; line-height: 1.6; color: var(--muted); }
 

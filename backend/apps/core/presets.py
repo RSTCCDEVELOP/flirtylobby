@@ -204,19 +204,19 @@ def _wanted_modules(preset):
 
 
 def ensure_home_logo():
-    """The home page of a clean site starts with a hero with the logo of the theme in use (the block "home.hero" shows the logo of the theme by itself). A home page that was built before stays as it is."""
-    from apps.pages import layout as page_layout
+    """A clean site has the standard start page (the title and text "Onze website is in aanbouw", the logo is in the header): a start page that only holds the big logo of an older
+    version is taken away. A start page that was designed (by hand or by an installation) stays. Returns True when something was removed."""
     from apps.pages.models import PageLayout
 
     lay = PageLayout.objects.filter(key="home").first()
-    rows = (lay.data or {}).get("rows") if lay else None
-    if rows and not (lay.data or {}).get("auto"):
+    if not lay:
         return False
-    hero = {"id": "a1f0c3d2", "cols": 1, "width": "100", "gap": "lg", "title": "Hero", "screen": True, "top": "touch", "h_mode": "pct", "h": 50, "v": "top", "padding": {"t": 0}, "bg": {},
-            "cells": [{"id": "b2e1d4c3", "width": "auto", "halign": "center", "valign": "center", "items": [{"id": "c3d2e5b4", "type": "image", "ref": "home.hero"}]}]}
-    data = page_layout.clean({"rows": [hero], "bg": {}})
-    PageLayout.objects.update_or_create(key="home", defaults={"data": data})
-    return True
+    data = lay.data or {}
+    items = [i for r in data.get("rows", []) for c in r.get("cells", []) for i in c.get("items", [])]
+    if data.get("auto") or (len(items) == 1 and items[0].get("type") == "image" and items[0].get("ref") == "home.hero"):
+        lay.delete()
+        return True
+    return False
 
 
 def _module_pages(p):
