@@ -510,6 +510,12 @@ def unapply(key):
         Page.objects.filter(module__startswith="plugin:").update(enabled=False, in_menu=False)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: pages of plugins could not be switched off", key)
+    try:
+        from . import preset_pages
+
+        preset_pages.remove(key)  # the designed pages of this installation go with it
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: its pages could not be removed", key)
     data = _data()
     data.pop("active_preset", None)
     _save_data(data)
@@ -603,6 +609,12 @@ def apply(key, preset=None):
         themepacks.logos_to_library()
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: logos could not be put in the media library", key)
+    try:  # the designed pages of this installation (start page, community pages) go in; those of another installation go out
+        from . import preset_pages
+
+        preset_pages.install(key)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: its pages could not be installed", key)
     try:
         _apply_saved_pages(key)  # the pages that were saved in this installation come back as they were
     except Exception:  # noqa: BLE001

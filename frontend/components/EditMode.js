@@ -12,7 +12,7 @@ import { IconEdit, IconTrash } from "./Icons";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { api, errorText, mediaUrl } from "../lib/api";
+import { api, apiBase, errorText, mediaUrl } from "../lib/api";
 import MediaPicker from "./MediaPicker";
 import { useModule } from "./Modules";
 import RichEditor, { plainToHtml, toDisplay, toStored } from "./RichEditor";
@@ -30,6 +30,13 @@ const ContentContext = createContext({ blocks: {}, setBlock: () => {}, defaultLa
 export function ContentProvider({ initial, defaultLang, languages, children }) {
   const [blocks, setBlocks] = useState(initial || {});
   useEffect(() => setBlocks(initial || {}), [initial]); // after router.refresh()
+  // the server of Next could not ask for the texts (for instance an untrusted https certificate between Next and the backend): then every text would be empty. Ask from the browser instead.
+  useEffect(() => {
+    if (initial && Object.keys(initial).length) return undefined;
+    let alive = true;
+    fetch(`${apiBase()}/api/content/`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((d) => { if (alive && d && Object.keys(d).length) setBlocks(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, [initial]);
   const setBlock = (key, lang, text) => setBlocks((b) => ({ ...b, [key]: { ...b[key], [lang]: text } }));
   return <ContentContext.Provider value={{ blocks, setBlock, defaultLang, languages }}>{children}</ContentContext.Provider>;
 }

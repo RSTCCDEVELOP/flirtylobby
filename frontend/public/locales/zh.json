@@ -3119,5 +3119,6 @@
   "Afgesloten website (intranet)": "封闭网站（内网）",
   "zonder inloggen is er niets te zien: alle pagina's en gegevens vragen om een login": "未登录时看不到任何内容：所有页面和数据都需要登录",
   "Intranet": "内网",
-  "Een volledig besloten intranet voor je organisatie: zonder inloggen is er niets te zien. Eén startpagina, een smoelenboek van collega's, een documentensysteem (DMS) en een agenda, met berichten en chat, een interne kennisbank (FAQ), rollen en rechten, meldingen en twee-staps verificatie.": "为你的组织提供完全封闭的内网：未登录时看不到任何内容。一个首页、同事通讯录、文档系统(DMS)和日程，含消息和聊天、内部知识库(FAQ)、角色与权限、通知和两步验证。"
+  "Een volledig besloten intranet voor je organisatie: zonder inloggen is er niets te zien. Eén startpagina, een smoelenboek van collega's, een documentensysteem (DMS) en een agenda, met berichten en chat, een interne kennisbank (FAQ), rollen en rechten, meldingen en twee-staps verificatie.": "为你的组织提供完全封闭的内网：未登录时看不到任何内容。一个首页、同事通讯录、文档系统(DMS)和日程，含消息和聊天、内部知识库(FAQ)、角色与权限、通知和两步验证。",
+  "De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.": "当前首页将被此安装的首页替换（不会合并）。如果删除该安装，你原来的首页会恢复。"
 }

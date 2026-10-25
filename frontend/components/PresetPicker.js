@@ -93,6 +93,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
           <div className="card modal" role="dialog" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ marginTop: 0 }}>{tx("Bevestigen")}</h2>
             <p style={{ marginTop: 0 }}>{tx("De installatie \"{0}\" instellen? Alle modules, plugins en het community-thema worden zoals bij deze installatie aan of uit gezet. Je gegevens blijven bestaan.", ask.p.name)}</p>
+            <p className="muted" style={{ marginTop: 0 }}>{tx("De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.")}</p>
             {demo && (
               <label className="check sec-toggle">
                 <span className="switch"><input type="checkbox" checked={ask.demo} onChange={(e) => setAsk({ ...ask, demo: e.target.checked })} /><span /></span>

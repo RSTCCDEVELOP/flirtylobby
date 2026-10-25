@@ -66,6 +66,7 @@ export default function DefaultInstallPrompt() {
               <span className="switch"><input type="checkbox" checked={demo} onChange={(e) => setDemo(e.target.checked)} /><span /></span>
               <span>{tx("Demo-gegevens direct installeren")} <small className="muted">{tx("Voorbeeldplaatjes, gebruikers, inhoud, systeemobjecten en bestellingen om alles te testen. Wat al aanwezig is, wordt niet dubbel gemaakt.")}</small></span>
             </label>
+            <small className="muted">{tx("De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.")}</small>
             <small className="muted">{tx("Een andere installatie kiezen kan bij Super admin → Standaard installaties.")}</small>
             {error && <div className="alert">{error}</div>}
             <div className="row">

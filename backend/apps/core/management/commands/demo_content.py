@@ -174,6 +174,21 @@ def money_demo(stdout):
             if u and not Subscription.objects.filter(user=u).exists():
                 pl = plans[min(pi, len(plans) - 1)]
                 Subscription.objects.create(user=u, plan=pl, status=st, started_at=now - datetime.timedelta(days=40 - n), period_start=now - datetime.timedelta(days=10), period_end=now + datetime.timedelta(days=20), periods=1 + n % 3, price=pl.price, cancel_at_period_end=st == "canceled")
+    try:  # an order (and an invoice) for every paid gift and every active subscription: the plugin Orders is there when the site takes payments
+        from apps import commerce
+
+        orders = commerce.orders()
+        if orders and not orders.Order.objects.filter(demo=True, kind__in=("donation", "subscription")).exists():
+            for n, d in enumerate(Donation.objects.filter(email__startswith="demo-", status="paid").order_by("id")[:8]):
+                o = orders.create_simple(None, "donation", d.id, f"Gift: {d.campaign.name}", d.amount, 0, contact={"name": d.name, "email": d.email})
+                orders.mark_demo(o, "paid", 3 * n + 1)
+            for n, sub in enumerate(Subscription.objects.filter(user__email__startswith="demo-", status__in=("active", "trial", "past_due", "canceled")).select_related("plan", "user")[:8]):
+                o = orders.create_simple(sub.user, "subscription", sub.id, f"Abonnement: {sub.plan.name}", sub.price, 21)
+                orders.mark_demo(o, "paid" if sub.status != "past_due" else "pending_payment", 5 + n)
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger(__name__).exception("Demo orders of the gifts and subscriptions failed")
     stdout.write(f"Donatie-acties: {DonationCampaign.objects.count()}, donaties: {Donation.objects.count()}, abonnees: {Subscription.objects.count()}")
 
 

@@ -152,18 +152,6 @@ def make_pages():
     for key, (nl, en) in HOME.items():
         ContentBlock.objects.update_or_create(key=key, lang="nl", defaults={"text": nl})
         ContentBlock.objects.update_or_create(key=key, lang="en", defaults={"text": en})
-    lay = PageLayout.objects.filter(key="home").first()
-    designed = bool(lay and (lay.data or {}).get("rows") and not (lay.data or {}).get("auto"))
-    if not designed or _home_is_demo():
-        def col(title, text):
-            return {"id": "", "width": "auto", "halign": "left", "valign": "top",
-                    "items": [{"type": "heading", "ref": title}, {"type": "text", "ref": text}]}
-        rows = [
-            {"cols": 1, "width": "100", "gap": "md", "cells": [{"width": "auto", "halign": "left", "valign": "top", "items": [{"type": "heading", "ref": "demo.intranet.home.title"}, {"type": "text", "ref": "demo.intranet.home.intro"}]}]},
-            {"cols": 3, "width": "100", "gap": "lg", "cells": [col("demo.intranet.home.news.title", "demo.intranet.home.news"), col("demo.intranet.home.links.title", "demo.intranet.home.links"), col("demo.intranet.home.help.title", "demo.intranet.home.help")]},
-        ]
-        PageLayout.objects.update_or_create(key="home", defaults={"data": page_layout.clean({"rows": rows, "bg": {}})})
-        _mark_home()
     return n
 
 

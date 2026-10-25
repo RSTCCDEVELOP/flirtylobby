@@ -171,6 +171,12 @@ def make_users(n):
 
     if demo_intranet.active():  # the Intranet has colleagues with a function and department instead of the example community
         return demo_intranet.make_people(n)
+    from . import demo_dating, demo_people
+
+    if demo_dating.active():  # the Datingplatform has 24 members with full profiles and what happens between them
+        return demo_dating.make_people(n)
+    if demo_people.active_key():  # the other installations: twelve people with a picture (and a profile where there is a community)
+        return demo_people.make_people(demo_people.active_key(), n)
     Profile, ProfilePhoto = facade.models("community", "Profile", "ProfilePhoto")  # (the plugin Community: without it the people are made without a profile)
 
     User, pal, made = get_user_model(), dc.palette(), 0
@@ -230,7 +236,13 @@ def make_content(parts=("plans", "money", "faq", "pages")):
 
     intranet = demo_intranet.active()
     if "faq" in parts and not _ids("faq"):
-        rows = demo_intranet.make_faq() if intranet else [FaqEntry.objects.create(question={"nl": qn, "en": qe}, answer={"nl": an, "en": ae}, order=900 + i) for i, (qn, an, qe, ae) in enumerate(FAQ)]
+        from . import demo_dating
+
+        from . import presets as _p
+        from .preset_content import SPECS
+
+        spec_faq = (SPECS.get(_p.active() or "") or {}).get("faq")
+        rows = demo_intranet.make_faq() if intranet else demo_dating.make_faq() if demo_dating.active() else [FaqEntry.objects.create(question={"nl": qn, "en": qe}, answer={"nl": an, "en": ae}, order=900 + i) for i, (qn, an, qe, ae) in enumerate(spec_faq)] if spec_faq else [FaqEntry.objects.create(question={"nl": qn, "en": qe}, answer={"nl": an, "en": ae}, order=900 + i) for i, (qn, an, qe, ae) in enumerate(FAQ)]
         _remember("faq", [r.pk for r in rows])
         made["faq"] = len(rows)
     n = 0
@@ -300,8 +312,20 @@ def create_part(part, media=16, users=8, objects=True, orders=True, heroes=6, sh
     made = {}
     if part == "media":
         made["images"] = len(mediaviews.demo_images(media))
+        from . import demo_art, demo_dating, presets
+
+        if demo_dating.active():
+            made["images"] += len(demo_dating.make_images())  # the pictures of the dating pages: steps, safety, couples
+        elif presets.active() in demo_art.ART:
+            made["images"] += len(demo_art.make_images(presets.active()))  # the pictures of the pages of this installation
     elif part == "heroes":
         made["heroes"] = len(mediaviews.demo_heroes(heroes))
+        from . import demo_art, demo_dating, presets
+
+        if demo_dating.active():
+            made["heroes"] += len(demo_dating.make_heroes())  # the fake banners of the dating start page
+        elif presets.active() in demo_art.ART:
+            made["heroes"] += len(demo_art.make_heroes(presets.active()))  # the fake banners of this installation
     elif part == "users":
         made["users"] = make_users(users)
     elif part in ("plans", "money", "faq", "pages"):
@@ -343,10 +367,24 @@ def finish(preset, parts):
     except Exception:  # noqa: BLE001
         logger.exception("Logos could not be put in the media library")
     if preset:
+        try:  # the pictures of the pages of this installation (banners, illustrations, portraits): also when the general demo pictures were there before
+            from . import demo_art, demo_dating
+
+            if preset == "datingplatform":
+                demo_dating.make_heroes()
+                demo_dating.make_images()
+            elif preset in demo_art.ART:
+                demo_art.make_heroes(preset)
+                demo_art.make_images(preset)
+        except Exception:  # noqa: BLE001
+            logger.exception("The pictures of the pages of %s could not be made", preset)
         try:
             from . import presets
 
             presets.relink_saved_pages(preset)  # a page saved in this installation gets its pictures from the demo data
+            from . import preset_pages
+
+            preset_pages.link_media(preset)  # and the banners of the designed pages
         except Exception:  # noqa: BLE001
             logger.exception("Linking pictures of saved pages failed")
     try:
@@ -383,6 +421,47 @@ def _release_media(ids):
                     cur.execute('UPDATE "%s" SET "%s" = NULL WHERE "%s" IN (%s)' % (table, col, col, ",".join("%s" for _ in ids)), ids)
 
 
+def _release_users(ids):
+    """The tables of plugins (also of plugins that are off now: then their models are not there) may still point at these people: let go of them before the people are deleted.
+    A column that may be empty is emptied; a row that needs the person goes, with the rows of other plugin tables that need that row (a photo of a profile, an order line of a subscription ...)."""
+    from django.db import connection
+
+    ids = list(ids)
+    if not ids:
+        return
+    marks = ",".join("%s" for _ in ids)
+    with connection.cursor() as cur:
+        intro = connection.introspection
+        tables = [t for t in intro.table_names() if t.startswith("plg_")]
+        fks = {}  # table -> [(column, referenced table, may be empty)]
+        for t in tables:
+            nullable = {c.name: c.null_ok for c in intro.get_table_description(cur, t)}
+            fks[t] = [(col, ref_table, bool(nullable.get(col))) for col, (_ref, ref_table) in intro.get_relations(cur, t).items()]
+
+        def drop(table, where, depth=0):
+            """Delete the rows of `table` that match `where` (it holds the placeholders of the ids), the rows that need them first."""
+            if depth > 6:
+                return
+            for child in tables:
+                for col, ref, null in fks[child]:
+                    if ref != table:
+                        continue
+                    sub = f'"{col}" IN (SELECT "id" FROM "{table}" WHERE {where})'
+                    if null:
+                        cur.execute(f'UPDATE "{child}" SET "{col}" = NULL WHERE {sub}', ids)
+                    else:
+                        drop(child, sub, depth + 1)
+            cur.execute(f'DELETE FROM "{table}" WHERE {where}', ids)
+
+        for t in tables:
+            for col, ref, null in fks[t]:
+                if ref == "accounts_user":
+                    if null:
+                        cur.execute(f'UPDATE "{t}" SET "{col}" = NULL WHERE "{col}" IN ({marks})', ids)
+                    else:
+                        drop(t, f'"{col}" IN ({marks})')
+
+
 def remove_parts(parts):
     """Take away these parts of the demo data in the safe order: plugins (orders first), the money, the content, the people, the media."""
     from apps.faq.models import FaqEntry
@@ -404,6 +483,13 @@ def remove_parts(parts):
             except Exception:  # noqa: BLE001
                 logger.exception("Removing demo data of a plugin failed")
     if "money" in parts:
+        try:  # the orders and invoices of the example gifts and subscriptions
+            from apps import commerce
+
+            if commerce.orders():
+                commerce.orders().remove_demo(kinds=["donation", "subscription"])
+        except Exception:  # noqa: BLE001
+            logger.exception("Removing the demo orders of gifts and subscriptions failed")
         Donation.objects.filter(email__startswith="demo-").delete()
         Subscription.objects.filter(user__email__startswith="demo-", user__email__endswith="@example.com").delete()
         DonationCampaign.objects.filter(pk__in=_ids("campaigns")).delete()
@@ -456,9 +542,11 @@ def remove_parts(parts):
                         cur.execute("UPDATE plg_orders_order SET user_id = NULL WHERE user_id IN (%s)" % ",".join("%s" for _ in ids), ids)
         except Exception:  # noqa: BLE001
             logger.exception("Detaching orders from demo users failed")
-        users.delete()
-        from . import demo_intranet
+        from . import demo_dating, demo_intranet
 
+        demo_dating.remove_people()  # the likes, messages ... between the members (and with the superadmin) go first
+        _release_users(list(users.values_list("id", flat=True)))  # whatever else of plugins points at them (also when the plugin is off)
+        users.delete()
         demo_intranet.remove_people()
     if "views" in parts:
         done["views"] = mediaviews.remove_demo(["views"]).get("views", 0)

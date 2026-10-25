@@ -7,7 +7,8 @@
 
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { movedFor, subscribeMoved } from "../lib/moved";
 import { mediaUrl } from "../lib/api";
 import { LOGO_SETS } from "../lib/logos";
 import { ImageEdit } from "./EditMode";
@@ -46,7 +47,9 @@ export function Logo({ className = "", alt }) {
 
 export function HomePhotos() {
   const { photos } = useBranding();
-  if (!photos.length) return null;
+  const [, tick] = useState(0);
+  useEffect(() => subscribeMoved(() => tick((n) => n + 1)), []);
+  if (!photos.length || movedFor("home")?.has("home.photos")) return null; // a designed start page (a standard installation) replaces the home photos
   return (
     <div className={`home-photos n${Math.min(photos.length, 4)}`}>
       {photos.map((p) => (
