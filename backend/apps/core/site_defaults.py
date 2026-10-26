@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 SECTIONS = ["theme", "security", "community", "languages", "dashboard"]  # of the settings backup (see Admin -> Instellingen back-up)
 SYSTEM_KEYS = ["refresh_seconds", "signal_seconds", "max_image_mb", "max_video_mb", "max_photo_mb", "show_credit", "timezone"]  # of the system settings: no names, addresses or contact data
+PRESET_KEYS = ["default_presets", "admin_presets", "preset_edits"]  # of the system settings: which standard installations are offered at the first installation, which ones administrators see, and what was changed in them
 PATH = Path(settings.BASE_DIR) / "apps" / "core" / "site_defaults.json"
 
 
@@ -30,7 +31,7 @@ def info():
         return {"exists": False, "captured_at": None, "sections": []}
     try:
         data = json.loads(PATH.read_text(encoding="utf-8"))
-        return {"exists": True, "captured_at": data.get("captured_at"), "sections": sorted(data.get("bundle", {}).get("sections", {})), "system": sorted(data.get("system", {}))}
+        return {"exists": True, "captured_at": data.get("captured_at"), "sections": sorted(data.get("bundle", {}).get("sections", {})), "system": sorted(data.get("system", {})), "installations": sorted(data.get("installations", {}))}
     except (OSError, ValueError):
         return {"exists": False, "captured_at": None, "sections": []}
 
@@ -45,11 +46,19 @@ def _clean(bundle):
     return bundle
 
 
+def _installations():
+    """The choices about the standard installations (Standaard installaties): offered at the first installation, visible for administrators, and the changes made in them."""
+    from . import presets
+
+    d = presets._data()
+    return {k: d[k] for k in PRESET_KEYS if k in d}
+
+
 def capture():
     """Save the settings of this site as the defaults. Returns info()."""
     bundle = _clean(settings_backup.export(SECTIONS, include_secrets=False, include_files=False))
     cur = system.get()
-    data = {"format": "site-defaults", "version": 1, "captured_at": timezone.now().isoformat(timespec="seconds"), "bundle": bundle, "system": {k: cur[k] for k in SYSTEM_KEYS if k in cur}}
+    data = {"format": "site-defaults", "version": 1, "captured_at": timezone.now().isoformat(timespec="seconds"), "bundle": bundle, "system": {k: cur[k] for k in SYSTEM_KEYS if k in cur}, "installations": _installations()}
     PATH.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     logger.warning("Site defaults saved (%s parts)", len(bundle["sections"]))
     return info()
@@ -70,6 +79,12 @@ def apply():
             themepacks.use("easy2edit", True)
     except Exception:  # noqa: BLE001
         logger.exception("Default theme easy2edit could not be set")
+    inst = {k: v for k, v in (data.get("installations") or {}).items() if k in PRESET_KEYS}
+    if inst:  # which installations are offered when nothing is installed yet (and the rest of the choices about them); what is installed now stays as it is
+        from . import presets
+
+        presets._save_data({**presets._data(), **inst})
+        results.append({"key": "installations", "label": "Standaard installaties", "ok": True, "message": "Geladen."})
     out = {k: str(v) if not isinstance(v, bool) else v for k, v in (data.get("system") or {}).items() if k in SYSTEM_KEYS}
     if out:
         system.save(out)

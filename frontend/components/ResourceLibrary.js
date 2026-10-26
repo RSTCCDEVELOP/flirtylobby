@@ -25,7 +25,9 @@ export function ResourceButtons({ kind, onChanged }) {
   const load = useCallback(() => api("/resource/").then(setLib).catch(() => setLib(false)), []);
   useEffect(() => { load(); }, [load]);
   const rows = lib?.kinds?.[kind];
-  if (!rows) return null; // no rights for this part
+  if (lib === null) return null; // still loading
+  if (!rows) return <small className="muted">{tx("De bibliotheek is niet te lezen (geen rechten, of de map resource ontbreekt op de server).")}</small>;
+  if (!rows.length) return <small className="muted">{tx("De bibliotheek is leeg: zet de ondertekende zips in")} <code>{lib?.folder ? `${lib.folder}/${kind}` : `resource/${kind}`}</code></small>;
   const updates = rows.filter((r) => r.state === "update").length;
   const done = (text) => { setMsg({ ok: true, text }); load(); onChanged?.(); };
   const add = async (r) => {

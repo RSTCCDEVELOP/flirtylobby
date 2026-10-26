@@ -135,6 +135,7 @@ export default function PluginsPage() {
           </div>
           <small className="muted">{tx("Maximaal {0} MB. Het zipbestand moet een plugin.json bevatten.", d.max_zip_mb)}</small>
           <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem", borderTop: "1px solid var(--line)", paddingTop: ".8rem" }}>
+            <ResourceButtons kind="plugins" onChanged={load} />
             <button type="button" className="btn" disabled={busy} onClick={scan}>{busy ? tx("Bezig…") : tx("Map op de server scannen")}</button>
             <small className="muted">{tx("Zoekt plugins in")} <code>{d.folder}</code></small>
           </div>

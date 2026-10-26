@@ -1,11 +1,11 @@
 {
  "format": "site-defaults",
  "version": 1,
- "captured_at": "2026-10-26T08:44:51+00:00",
+ "captured_at": "2026-10-26T12:45:28+00:00",
  "bundle": {
   "format": "easy2edit-settings",
   "version": 1,
-  "exported_at": "2026-10-26T08:44:51+00:00",
+  "exported_at": "2026-10-26T12:45:28+00:00",
   "secrets_included": false,
   "files_included": false,
   "sections": {
@@ -40,7 +40,8 @@
       "password_min_length": 8,
       "password_complexity": false,
       "security_headers": true,
-      "hsts": true
+      "hsts": true,
+      "closed_site": false
      },
      "geo": {
       "enabled": false,

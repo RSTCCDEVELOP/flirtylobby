@@ -482,7 +482,12 @@ def _apply_saved_pages(key):
     for page_key, row in saved_pages(key).items():
         import copy
 
-        PageLayout.objects.update_or_create(key=page_key, defaults={"data": _link_media(copy.deepcopy(row.get("layout") or {}), row.get("media") or {})})
+        layout = _link_media(copy.deepcopy(row.get("layout") or {}), row.get("media") or {})
+        if page_key == "home":  # the start page of an installation is its own design: the standard logo, title and text ("Onze website is in aanbouw") are taken away first, then the design comes
+            from . import preset_pages
+
+            layout["moved"] = sorted({*(layout.get("moved") or []), *preset_pages.HOME_FIXED})
+        PageLayout.objects.update_or_create(key=page_key, defaults={"data": layout})
         for bk, texts in (row.get("blocks") or {}).items():
             for lang, text in texts.items():
                 if lang in have:
