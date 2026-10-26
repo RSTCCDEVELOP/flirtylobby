@@ -185,6 +185,26 @@ def install(kind, name, user):
         raise ResourceError(str(e))
 
 
+def remove(kind, name, user):
+    """Take an installed plugin away (its folder and its settings; the data of the plugin stays in the database). For superadmins and for administrators who manage plugins."""
+    from apps.plugins import installer, runtime
+    from apps.plugins.models import Plugin
+
+    if kind != "plugins":
+        raise ResourceError("Verwijderen kan alleen bij plugins.")
+    if not can_use(user, kind):
+        raise ResourceError("Je hebt hier geen rechten voor.")
+    p = Plugin.objects.filter(name=name).first()
+    if not p:
+        raise ResourceError("Deze plugin is niet geïnstalleerd.")
+    need = runtime.dependents(p.name)
+    if need:
+        raise ResourceError("Eerst deze plugins uitzetten of verwijderen: " + ", ".join(need) + ". Zij hebben deze plugin nodig.")
+    runtime.unload(p.name)
+    installer.remove(p)
+    return [name]
+
+
 def update_all(kind, user):
     """Update everything of this kind that is installed and has a newer version in the library. Returns the names."""
     done = []

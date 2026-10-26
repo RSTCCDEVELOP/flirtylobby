@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Tabs from "./Tabs";
 import { api, errorText } from "../lib/api";
+import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 
 const NAME = { plugins: "plugin", themas: "thema", languages: "taal" };
@@ -36,6 +37,13 @@ export function ResourceButtons({ kind, onChanged }) {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy("");
   };
+  const remove = async (r) => {
+    if (!(await confirmDialog(tx("De plugin \"{0}\" verwijderen? De map van de plugin gaat weg; je kunt hem later weer uit de bibliotheek installeren.", r.title), { okLabel: tx("Verwijderen"), cancelLabel: tx("Annuleren"), danger: true }))) return;
+    setBusy(r.name); setMsg(null);
+    try { const d = await api("/resource/remove/", { method: "POST", body: { kind, name: r.name } }); done(tx("{0} is verwijderd.", d.removed.join(", "))); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy("");
+  };
   const update = async () => {
     setBusy("*"); setMsg(null);
     try { const d = await api("/resource/update/", { method: "POST", body: { kind } }); done(d.updated.length ? tx("Bijgewerkt: {0}.", d.updated.join(", ")) : tx("Alles is al actueel.")); }
@@ -50,7 +58,7 @@ export function ResourceButtons({ kind, onChanged }) {
       {msg && !open && <span className={msg.ok ? "muted" : "error"} style={{ alignSelf: "center" }}>{msg.text}</span>}
       {open && (
         <div className="overlay" onClick={() => setOpen(false)}>
-          <div className="card modal wide res-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="card modal wide res-modal" style={{ width: "min(1180px, 94vw)", maxWidth: "94vw" }} onClick={(e) => e.stopPropagation()}>
             <div className="row between"><h2 style={{ margin: 0 }}>{tx("Toevoegen uit de bibliotheek")}</h2><button type="button" className="btn sm" onClick={() => setOpen(false)}>{tx("Sluiten")}</button></div>
             <p className="muted" style={{ margin: 0 }}>{tx("Dit komt uit de map resource van het product: je hoeft geen bestand te uploaden. Alleen de nieuwste versie staat erin.")}</p>
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoeken…")} />
@@ -66,6 +74,7 @@ export function ResourceButtons({ kind, onChanged }) {
                   <button type="button" className={`btn sm ${r.state === "new" || r.state === "update" ? "primary" : ""}`} disabled={!!busy} onClick={() => add(r)}>
                     {busy === r.name ? "…" : r.state === "update" ? tx("Updaten") : r.state === "current" ? tx("Opnieuw") : tx("Installeren")}
                   </button>
+                  {kind === "plugins" && !r.bundle ? <button type="button" className="btn sm danger" disabled={!!busy || !r.installed} onClick={() => remove(r)}>{tx("Verwijderen")}</button> : <span />}
                 </div>
               ))}
               {!shown.length && <p className="muted">{tx("Niets gevonden in de bibliotheek.")}</p>}

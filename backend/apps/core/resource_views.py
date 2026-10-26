@@ -50,6 +50,19 @@ def install(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+def remove(request):
+    d = request.data if isinstance(request.data, dict) else {}
+    if d.get("kind") not in resources.KINDS:
+        return _bad("Onbekend onderdeel.")
+    try:
+        done = resources.remove(d["kind"], str(d.get("name") or ""), request.user)
+    except resources.ResourceError as e:
+        return _bad(str(e))
+    return Response({"removed": done, "library": resources.overview(request.user)[d["kind"]]})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def update(request):
     d = request.data if isinstance(request.data, dict) else {}
     if d.get("kind") not in resources.KINDS:
