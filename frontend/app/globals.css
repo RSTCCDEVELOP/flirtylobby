@@ -3122,8 +3122,8 @@ body.has-blocknav .edit-save-preset-btn { right: 16.2rem; }
 .vat-radio { display: grid; place-items: center; } @media (max-width: 640px) { .vat-row { grid-template-columns: 1fr 90px 60px 60px 32px; } }
 
 /* bibliotheek (resource/) */
-.res-modal { max-height: 86vh; display: grid; gap: .8rem; grid-template-rows: auto auto auto auto minmax(0, 1fr); }
-.res-list { display: grid; gap: .45rem; overflow: auto; align-content: start; }
+.res-modal { max-height: 86vh; display: flex; flex-direction: column; gap: .8rem; }
+.res-list { display: grid; gap: .45rem; overflow: auto; align-content: start; flex: 1 1 auto; min-height: 0; }
 .res-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: .8rem; align-items: center; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 12px; }
 .res-item.res-head { border: 0; padding-bottom: 0; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
 .res-main { display: grid; gap: .1rem; min-width: 0; } .res-main small { overflow: hidden; text-overflow: ellipsis; }

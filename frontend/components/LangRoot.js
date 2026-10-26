@@ -8,12 +8,18 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { api } from "../lib/api";
 import { loadDictionary, setLanguage } from "../lib/t";
 
 // Keeps the UI language (visitor choice -> site default) and re-renders everything when it changes.
 // The switcher (LanguageSwitcher) only has to dispatch a "langchange" event.
-export default function LangRoot({ children, languages, defaultLanguage }) {
+export default function LangRoot({ children, languages: given, defaultLanguage: givenDefault }) {
   const [lang, setLang] = useState("nl");
+  // the server could not ask for the languages (the backend was not reachable for the server of Next, for instance with an untrusted https certificate): then ask from the browser instead
+  const [asked, setAsked] = useState(null);
+  useEffect(() => { if (!given || !given.length) api("/languages/").then((d) => d && setAsked(d)).catch(() => {}); }, [given]);
+  const languages = given && given.length ? given : asked?.languages || [];
+  const defaultLanguage = given && given.length ? givenDefault : asked?.default || givenDefault;
 
   useEffect(() => {
     let alive = true;

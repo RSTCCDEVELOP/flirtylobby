@@ -54,8 +54,12 @@ def remove(request):
     d = request.data if isinstance(request.data, dict) else {}
     if d.get("kind") not in resources.KINDS:
         return _bad("Onbekend onderdeel.")
+    if d.get("check"):  # what would be lost: the demo data of the plugins
+        if not resources.can_use(request.user, d["kind"]):
+            return _bad("Je hebt hier geen rechten voor.", status.HTTP_403_FORBIDDEN)
+        return Response({"demo": {str(n): resources.demo_of(str(n)) for n in (d.get("names") or [])}})
     try:
-        done = resources.remove(d["kind"], str(d.get("name") or ""), request.user)
+        done = resources.remove(d["kind"], str(d.get("name") or ""), request.user, with_demo=bool(d.get("with_demo")))
     except resources.ResourceError as e:
         return _bad(str(e))
     return Response({"removed": done, "library": resources.overview(request.user)[d["kind"]]})

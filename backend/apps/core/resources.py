@@ -185,7 +185,28 @@ def install(kind, name, user):
         raise ResourceError(str(e))
 
 
-def remove(kind, name, user):
+# the demo data of the system itself that belongs to a plugin (the parts of demo.remove_parts): the FAQ questions, the plans and the donation campaigns
+DEMO_PARTS_OF = {"faq": ["faq"], "subscriptions": ["plans", "money"]}
+
+
+def demo_of(name):
+    """How much demo data this plugin holds (its own, and what the system made for it). 0 = none."""
+    from . import demo
+
+    n = 0
+    try:
+        for pname, p in demo._plugins_named({name}):
+            n += sum(int(v) for v in (p.counts() or {}).values())
+        if name == "faq":
+            n += len(demo._ids("faq"))
+        if name == "subscriptions":
+            n += len(demo._ids("plans")) + len(demo._ids("campaigns"))
+    except Exception:  # noqa: BLE001 - a check must never stop a removal
+        pass
+    return n
+
+
+def remove(kind, name, user, with_demo=False):
     """Take an installed plugin away (its folder and its settings; the data of the plugin stays in the database). For superadmins and for administrators who manage plugins."""
     from apps.plugins import installer, runtime
     from apps.plugins.models import Plugin
@@ -200,6 +221,13 @@ def remove(kind, name, user):
     need = runtime.dependents(p.name)
     if need:
         raise ResourceError("Eerst deze plugins uitzetten of verwijderen: " + ", ".join(need) + ". Zij hebben deze plugin nodig.")
+    if with_demo:  # the demo data of this plugin goes first (while the plugin is still on)
+        from . import demo
+
+        try:
+            demo.remove_parts([f"plugin:{name}", *DEMO_PARTS_OF.get(name, [])])
+        except Exception:  # noqa: BLE001
+            raise ResourceError("De demo-gegevens van deze plugin konden niet worden verwijderd.")
     runtime.unload(p.name)
     installer.remove(p)
     return [name]

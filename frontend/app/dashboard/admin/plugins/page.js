@@ -87,9 +87,6 @@ export default function PluginsPage() {
           <p className="muted" style={{ margin: 0 }}>{tx("Losse programma's die je los van het systeem uploadt en die er wel mee samenwerken: eigen pagina's, routes, instellingen en reacties op gebeurtenissen.")}</p>
         </div>
       </div>
-      <div className="alert" style={{ background: "#fef3c7", color: "#78350f", marginBottom: "1rem" }}>
-        <strong>{tx("Systeemversie {0}.", d.system_version)}</strong> <strong>{tx("Let op:")}</strong> {tx("een plugin draait als vertrouwde code binnen het systeem en kan alle gegevens en functies gebruiken. Alleen plugins die onze ontwikkelaar heeft ondertekend en gebouwd voor deze versie van het systeem draaien hier.")}
-      </div>
       {outdated.length > 0 && <div className="alert" style={{ background: "#fef3c7", color: "#78350f", marginBottom: "1rem" }}><strong>{tx("Plugins bijwerken:")}</strong> {outdated.map((p) => `${p.title} ${p.version}`).join(", ")} {tx("zijn niet meer up-to-date voor systeemversie {0}.", d.system_version)}
       </div>}
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
