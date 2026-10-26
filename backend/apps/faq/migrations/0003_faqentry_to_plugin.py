@@ -5,8 +5,17 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-from django.apps import AppConfig
+
+# The website FAQ (FaqEntry) is the plugin FAQ now: the table is not dropped (the plugin renames it and keeps the questions), only Django forgets the model.
+from django.db import migrations
 
 
-class StatsConfig(AppConfig):
-    name = "apps.stats"
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("faq", "0002_helptip"),
+    ]
+
+    operations = [
+        migrations.SeparateDatabaseAndState(state_operations=[migrations.DeleteModel(name="FaqEntry")]),
+    ]

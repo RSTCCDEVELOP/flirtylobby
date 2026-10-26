@@ -31,6 +31,6 @@ def validate_no_forbidden_words(value):
     found = find_forbidden(value)
     if found:
         for w in found:
-            __import__("apps.stats.service", fromlist=["record"]).record("word_filter", "blocked", w)
+            __import__("apps.plugins.facade", fromlist=["stats"]).stats.record("word_filter", "blocked", w)
         raise serializers.ValidationError(f"Bevat niet toegestane woorden: {', '.join(found)}.")
     return value

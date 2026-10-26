@@ -121,7 +121,9 @@ def run(page, code, seo=True):
             Page.objects.filter(pk=page.pk).update(title={**(page.title or {}), code: title})
             out["title"] = True
     if seo and page.path and page.path.startswith("/") and "<" not in page.path:
-        from apps.seo.models import SeoPage
+        from apps.plugins import facade
+
+        SeoPage = facade.models("seo", "SeoPage")  # (the plugin SEO)
 
         seo_blocks = blocks if code == src else [(k, ContentBlock.objects.filter(key=k, lang=code).values_list("text", flat=True).first() or t) for k, t in blocks]
         t, desc = make_seo(page, seo_blocks, code, lang.name, title)

@@ -61,10 +61,13 @@ def apply():
         return []
     data = json.loads(PATH.read_text(encoding="utf-8"))
     results = settings_backup.load(data["bundle"], SECTIONS)
-    try:  # the look of a new or reset site is always the Easy2edit theme (the saved defaults hold the other settings, not another house style)
+    try:  # the logos of a new or reset site are always those of Easy2edit; the colours come from the saved look, and without a saved look the whole Easy2edit theme is used
         from . import themepacks
 
-        themepacks.use("easy2edit", True)
+        if "theme" in (data["bundle"].get("sections") or {}):
+            themepacks.apply_files("easy2edit")
+        else:
+            themepacks.use("easy2edit", True)
     except Exception:  # noqa: BLE001
         logger.exception("Default theme easy2edit could not be set")
     out = {k: str(v) if not isinstance(v, bool) else v for k, v in (data.get("system") or {}).items() if k in SYSTEM_KEYS}

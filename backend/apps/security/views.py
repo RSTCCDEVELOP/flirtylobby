@@ -18,7 +18,7 @@ from rest_framework.response import Response
 
 from apps.core.models import Language
 
-from . import geo, service
+from . import service
 from . import twofa
 from .countries import COUNTRY_CODES
 from .words import find_forbidden
@@ -43,7 +43,9 @@ def public_settings(request):
 @permission_classes([AllowAny])
 def check_visitor(request):
     """Called by the frontend middleware with the visitor's IP."""
-    allowed, country = geo.check(request.query_params.get("ip", ""), request.query_params.get("country"))
+    from apps.plugins import facade
+
+    allowed, country = facade.gates.check_visitor(request.query_params.get("ip", ""), request.query_params.get("country"))  # (the plugin Leeftijd, land & gokken; without it everybody is allowed)
     if not allowed:
         logger.info("Visitor blocked (country=%s)", country)
     return Response({"allowed": allowed, "country": country})

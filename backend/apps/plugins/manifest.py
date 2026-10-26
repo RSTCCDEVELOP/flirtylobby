@@ -60,7 +60,7 @@ def parse(raw):
     return out
 
 
-PROVIDES = ("catalog", "parts", "orders", "payments", "finance", "community", "subscriptions", "profilethemes", "demo", "stats")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda); demo = example data for "Demo-gegevens" (counts, create, remove)
+PROVIDES = ("catalog", "parts", "orders", "payments", "finance", "community", "subscriptions", "profilethemes", "demo", "stats", "age-gates", "statistics", "siteimport", "faq", "seo")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda); demo = example data for "Demo-gegevens" (counts, create, remove)
 
 
 def _public_pages(v):

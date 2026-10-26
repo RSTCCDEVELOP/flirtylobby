@@ -429,7 +429,9 @@ def make_images():
 
 
 def make_faq():
-    from apps.faq.models import FaqEntry
+    from apps.plugins import facade
+
+    FaqEntry = facade.models("faq", "FaqEntry")  # (the plugin FAQ: the rows are only made while it is on)
 
     rows = [("Is aanmelden gratis?", "Ja. Aanmelden, een profiel maken en rondkijken is gratis. Met een abonnement kun je onbeperkt berichten sturen en zie je wie jou leuk vindt.", "Is signing up free?", "Yes. Signing up, creating a profile and looking around is free. With a subscription you can send unlimited messages and see who likes you."),
             ("Wie kan mijn foto's zien?", "Jij bepaalt het per foto: openbaar, alleen leden, privé of onzichtbaar. Bij privé-foto's zien anderen een wazige versie tot je toegang geeft.", "Who can see my photos?", "You decide per photo: public, members only, private or invisible. With private photos others see a blurred version until you give access."),

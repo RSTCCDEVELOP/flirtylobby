@@ -116,7 +116,7 @@ def _counted(fn):
 
     @functools.wraps(fn)
     def run(*a, **k):
-        from apps.stats import service as stats
+        from apps.plugins.facade import stats
 
         try:
             r = fn(*a, **k)

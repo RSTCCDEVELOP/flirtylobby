@@ -153,8 +153,11 @@ def save(cleaned):
 
 def _sync_seo(old, new):
     """The website address is also what the sitemap and canonical links use. (The name is applied by apps.seo.service on the fly.)"""
-    from apps.seo import service as seo
+    from apps.plugins import facade
 
+    seo = facade.mod("seo", "service")  # (the plugin SEO; without it there is no sitemap to keep in step)
+    if seo is None:
+        return
     cur = seo.raw()["site"]
     if new["frontend_url"] and cur["site_url"] in ("", old["frontend_url"]):
         seo.save({"site": {"site_url": new["frontend_url"]}})

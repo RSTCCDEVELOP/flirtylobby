@@ -133,7 +133,9 @@ def collect_site():
         content.append({"key": b.key, "lang": b.lang, "text": b.text})
         used |= _ids_in_text(b.text)
     try:
-        from apps.seo.models import SeoPage
+        from apps.plugins import facade
+
+        SeoPage = facade.models("seo", "SeoPage")  # (the plugin SEO)
 
         used |= {i for i in SeoPage.objects.exclude(og_media=None).values_list("og_media_id", flat=True) if i}
     except Exception:  # noqa: BLE001

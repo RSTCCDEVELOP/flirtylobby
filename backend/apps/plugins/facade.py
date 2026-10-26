@@ -58,6 +58,36 @@ community = _Proxy("community", "service", {
 })
 
 
+class _Gates:
+    """The plugin Leeftijd, land & gokken: without it nobody is blocked and nobody is asked for his age."""
+
+    @staticmethod
+    def check_visitor(ip, header_country=None):
+        p = provider("age-gates")
+        return p.check_visitor(ip, header_country) if p is not None else (True, None)
+
+    @staticmethod
+    def underage_message(birth_date):
+        p = provider("age-gates")
+        return p.underage_message(birth_date) if p is not None else None
+
+
+gates = _Gates()
+
+
+class _Stats:
+    """The plugin Statistieken: modules and plugins count things through this; without the plugin nothing is counted (and nothing breaks)."""
+
+    def __getattr__(self, name):
+        if name not in ("record", "record_file", "record_hit", "record_bot"):
+            raise AttributeError(name)
+        p = provider("statistics")
+        return getattr(p, name) if p is not None else (lambda *a, **k: None)
+
+
+stats = _Stats()
+
+
 class _NullQS:
     """What a query on the model of a plugin that is off gives: nothing."""
     def __iter__(self):

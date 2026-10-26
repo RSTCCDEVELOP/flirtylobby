@@ -22,16 +22,19 @@ from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
+# tables of parts that became plugins (the plugin renames them to plg_<name>_* when it starts): a reset empties them too
+LEGACY_TABLES = ("social_", "subscriptions_", "shop_", "stats_", "seo_", "siteimport_", "faq_faqentry")
+
 # models (app_label.Model) of which every row goes
 WIPE = [
     "core.ContentBlock", "core.DashboardLayout", "core.ThemeImportJob", "core.UserShortcuts", "core.UserPrefs",
     "accounts.PendingRegistration", "accounts.Invitation", "notifications.Notification", "notifications.NotificationPref", "accounts.UserGroup", "accounts.ModuleGrant",
-    "branding.SiteAsset", "branding.HomePhoto", "seo.SeoPage",
+    "branding.SiteAsset", "branding.HomePhoto", "plugin_seo.SeoPage",
     "sandbox.SandboxMessage", "sandbox.SandboxPayment", "plugin_orders.OrderItem", "plugin_orders.Order",
     "social.DirectMessage", "social.ChatMessage", "social.ChatSignal", "social.Like", "social.Favorite", "social.ProfileVisit", "social.Connection",
     "social.DirectRoom", "social.DirectSignal", "social.Pass", "social.ProfileAllow", "social.Block", "social.Notification",
     "subscriptions.Subscription", "subscriptions.Plan", "subscriptions.Donation", "subscriptions.DonationCampaign", "subscriptions.DonorAction", "subscriptions.ActionItem",
-    "sysobjects.SystemObject", "siteimport.SiteImport", "security.LoginThrottle",
+    "sysobjects.SystemObject", "plugin_siteimport.SiteImport", "security.LoginThrottle",
 ]
 
 
@@ -162,6 +165,13 @@ def perform(keep=None):
                 prefix = "plg_" + pl.name.replace("-", "_") + "_"
                 for tb in [x for x in connection.introspection.table_names() if x.startswith(prefix)]:
                     cur.execute(f'DELETE FROM "{tb}"')
+            # the tables of parts that were built into the system before and are plugins now (social_*, subscriptions_*, shop_*, stats_*, seo_*, siteimport_*, faq_faqentry): the plugin renames them
+            # (plg_<name>_*) only when it starts, so for a plugin that never ran they are still there, with their data
+            from django.apps import apps as django_apps
+
+            live = {m._meta.db_table for m in django_apps.get_models()}
+            for tb in [x for x in connection.introspection.table_names() if x.startswith(LEGACY_TABLES) and x not in live]:
+                cur.execute(f'DELETE FROM "{tb}"')
         for label in WIPE:
             mdl = _model(label)
             if mdl:

@@ -43,7 +43,10 @@ def catalog():
     from apps.plugins.models import Plugin
 
     pr, on, out = _prices(), modules.states(), []
+    in_pkg = {k for p in modules.PACKAGES for k in p["modules"]}
     for m in modules.MODULES:
+        if m.get("plugin") and m["key"] not in in_pkg:  # (a part that is a plugin is priced as that plugin)
+            continue
         out.append({"kind": "module", "key": m["key"], "label": m["label"], "group": m["group"], "price": pr.get(("module", m["key"]), Decimal(0)), "active": bool(on.get(m["key"], True))})
     for pk in modules.PACKAGES:  # the add-on packages: a package is in use while one of its modules is on
         out.append({"kind": "package", "key": pk["key"], "label": "Pakket: " + pk["label"], "group": "Pakketten", "price": pr.get(("package", pk["key"]), Decimal(0)),

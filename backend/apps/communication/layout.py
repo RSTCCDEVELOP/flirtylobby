@@ -117,10 +117,10 @@ def merge_preview(incoming):
 
 
 def _site_url(base_url=None):
-    from apps.seo import service as seo
+    from apps.plugins import facade
 
     try:
-        url = seo.get()["site"]["site_url"]
+        url = facade.mod("seo", "service").get()["site"]["site_url"]  # (the plugin SEO; without it the address comes from the settings)
     except Exception:  # noqa: BLE001
         url = ""
     return (url or getattr(dj_settings, "PUBLIC_SITE_URL", "") or base_url or "").rstrip("/")

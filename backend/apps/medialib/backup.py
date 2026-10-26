@@ -16,7 +16,9 @@ from .models import MediaItem, kind_of
 
 def _used_ids():
     from apps.pages.models import Page
-    from apps.seo.models import SeoPage
+    from apps.plugins import facade
+
+    SeoPage = facade.models("seo", "SeoPage")  # (the plugin SEO)
 
     ids = {(p.background or {}).get("media") for p in Page.objects.exclude(background={})}
     ids |= set(SeoPage.objects.exclude(og_media=None).values_list("og_media_id", flat=True))

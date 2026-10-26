@@ -40,7 +40,9 @@ def _ids(kind):
     ids = list(((_store().data or {}).get("demo_ids") or {}).get(kind, []))
     if not ids:
         return []
-    from apps.faq.models import FaqEntry
+    from apps.plugins import facade
+
+    FaqEntry = facade.models("faq", "FaqEntry")  # (the plugin FAQ: the rows are only made while it is on)
     from apps.plugins import facade
 
     DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")  # (the plugin Abonnementen; without it these are empty)
@@ -212,7 +214,9 @@ class _Out:
 
 def make_content(parts=("plans", "money", "faq", "pages")):
     """Subscriptions, donation campaigns with gifts, subscribers, FAQ and pages (only the `parts` asked for)."""
-    from apps.faq.models import FaqEntry
+    from apps.plugins import facade
+
+    FaqEntry = facade.models("faq", "FaqEntry")  # (the plugin FAQ: the rows are only made while it is on)
     from apps.pages.models import Page
     from apps.plugins import facade
 
@@ -235,7 +239,7 @@ def make_content(parts=("plans", "money", "faq", "pages")):
     from . import demo_intranet
 
     intranet = demo_intranet.active()
-    if "faq" in parts and not _ids("faq"):
+    if "faq" in parts and not _ids("faq") and facade.provider("faq") is not None:  # (without the plugin FAQ there is no table to fill)
         from . import demo_dating
 
         from . import presets as _p
@@ -329,11 +333,16 @@ def create_part(part, media=16, users=8, objects=True, orders=True, heroes=6, sh
     elif part == "users":
         made["users"] = make_users(users)
     elif part in ("plans", "money", "faq", "pages"):
-        if part in ("plans", "money"):
+        needs = {"plans": "subscriptions", "money": "subscriptions", "faq": "faq"}.get(part)  # the plugin whose tables this part fills
+        if needs:
             from apps.plugins import facade
 
-            if facade.provider("subscriptions") is None:
-                raise NeedsPlugin("subscriptions")
+            if facade.provider(needs) is None:
+                from apps.plugins import runtime
+
+                runtime.ensure_loaded(force=True)  # the plugin was just switched on, maybe by another process: follow the database now, not after the check interval
+                if facade.provider(needs) is None:
+                    raise NeedsPlugin(needs)
         if not present(part):
             made.update(make_content((part,)))
     elif part == "views":
@@ -464,7 +473,9 @@ def _release_users(ids):
 
 def remove_parts(parts):
     """Take away these parts of the demo data in the safe order: plugins (orders first), the money, the content, the people, the media."""
-    from apps.faq.models import FaqEntry
+    from apps.plugins import facade
+
+    FaqEntry = facade.models("faq", "FaqEntry")  # (the plugin FAQ: the rows are only made while it is on)
     from apps.medialib import mediaviews
     from apps.medialib.models import MediaItem
     from apps.pages.models import Page

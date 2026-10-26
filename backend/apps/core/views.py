@@ -1030,7 +1030,7 @@ def _job(request, pk):
 @api_view(["POST"])
 @permission_classes(PACKS)
 def theme_import_start(request):
-    from apps.siteimport.importer import ImportError_
+    from apps.core.webtoolkit import ImportError_
 
     try:
         job = themeimport.start(request.user, str(request.data.get("url") or ""))

@@ -132,7 +132,9 @@ def make_messages():
 
 
 def make_faq():
-    from apps.faq.models import FaqEntry
+    from apps.plugins import facade
+
+    FaqEntry = facade.models("faq", "FaqEntry")  # (the plugin FAQ: the rows are only made while it is on)
 
     return [FaqEntry.objects.create(question={"nl": qn, "en": qe}, answer={"nl": an, "en": ae}, order=900 + i) for i, (qn, an, qe, ae) in enumerate(FAQ)]
 

@@ -87,10 +87,11 @@ async function getBranding() {
 }
 
 export async function generateMetadata() {
-  const [branding, theme, seo] = await Promise.all([getBranding(), getTheme(), getSeo()]);
+  const [branding, theme, seo, siteInfo] = await Promise.all([getBranding(), getTheme(), getSeo(), getSite()]);
   const set = LOGO_SETS[theme?.values?.brand_logo];
   const a = { ...(branding?.assets || {}), ...(set?.assets || {}) };
-  const site = seo?.site || {};
+  // without the plugin SEO there are no SEO settings: the titles come from the name of the website
+  const site = seo?.site || (siteInfo?.site_name ? { default_title: siteInfo.site_name, title_template: `%s | ${siteInfo.site_name}`, name: siteInfo.site_name } : {});
   const name = site.default_title || set?.alt || "Studio2";
   const verify = seo?.verification || {};
   const og = absolute(site.default_og_image || branding?.assets?.og_image);

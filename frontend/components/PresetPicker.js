@@ -61,7 +61,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   const doApply = async () => {
     const { p, demo: withDemo, shops } = ask;
     setAsk(null); setMsg(null);
-    setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false });
+    setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false, undo: p.key });
     try {
       const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: {} });
       let note = tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.plugins_missing.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "");
@@ -73,6 +73,17 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       }
       setRun((x) => ({ ...x, done: ok, note }));
     } catch (e) { setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.status === "busy" ? { ...st, status: "error" } : st)), error: errorText(e) })); }
+  };
+  // an installation that did not go well: take the demo data made so far and the installation away again, so nothing half-finished stays behind
+  const undoRun = async () => {
+    const key = run?.undo, p = list.find((x) => x.key === key);
+    if (!p) return;
+    setRun((x) => ({ ...x, undoing: true, error: "", fix: undefined }));
+    try {
+      await api("/system/demo/", { method: "POST", body: { remove: true, preset: key } });
+      await api(`/system/presets/${key}/remove/`, { method: "POST", body: {} });
+      setRun((x) => ({ ...x, undoing: false, undo: undefined, done: true, note: tx("De installatie {0} is ongedaan gemaakt.", p.name) }));
+    } catch (e) { setRun((x) => ({ ...x, undoing: false, error: errorText(e) })); }
   };
   const unapply = async (p) => {
     if (!(await confirmDialog(tx("De installatie \"{0}\" verwijderen? De modules en plugins van deze installatie gaan uit en de pagina's van de webshop e.d. verdwijnen uit het menu. Je gegevens (teksten, gebruikers, producten, bestellingen) blijven bestaan.", p.name), { okLabel: tx("Installatie verwijderen"), cancelLabel: tx("Annuleren"), danger: true }))) return;
@@ -87,7 +98,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
     <div style={{ display: "grid", gap: ".7rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("Kies een standaard installatie en alles wordt voor je ingesteld: welke modules en plugins aan staan en het thema van de community. Teksten, gebruikers en andere gegevens blijven zoals ze zijn.")}{manage && ` ${tx("Met de schakelaar bepaal je welke installaties ook voor beheerders (admin) zichtbaar zijn.")}`}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onClose={() => { setRun(null); window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
+      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onUndo={run?.undo ? undoRun : null} onClose={() => { setRun(null); window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
       {ask && (
         <div className="overlay" onClick={() => setAsk(null)}>
           <div className="card modal" role="dialog" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>

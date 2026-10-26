@@ -38,7 +38,9 @@ def usage_map():
         item = MediaItem.objects.filter(pk=(pg.background or {}).get("media")).first()
         if item:
             add(item.key, f"Pagina-achtergrond: {pg.key}")
-    from apps.seo.models import SeoPage
+    from apps.plugins import facade
+
+    SeoPage = facade.models("seo", "SeoPage")  # (the plugin SEO)
 
     for sp in SeoPage.objects.exclude(og_media=None).select_related("og_media"):
         add(sp.og_media.key, f"SEO-afbeelding: {sp.path}")

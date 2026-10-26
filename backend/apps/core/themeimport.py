@@ -24,7 +24,7 @@ from django import db
 from django.utils import timezone
 
 from apps.integrations import ai
-from apps.siteimport import importer as si
+from apps.core import webtoolkit as si
 
 from . import theme as T
 from . import themepacks

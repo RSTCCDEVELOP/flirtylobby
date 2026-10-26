@@ -47,17 +47,10 @@ def get():
 
 
 def underage_message(birth_date):
-    """Text when the birth date is below the site's age limit (18+ gate), else None."""
-    from datetime import date
+    """Text when the birth date is below the site's age limit (18+ gate), else None (the plugin Leeftijd, land & gokken; without it there is no limit)."""
+    from apps.plugins import facade
 
-    cfg = get()["age"]
-    if not birth_date or not cfg.get("enabled"):
-        return None
-    t = date.today()
-    age = t.year - birth_date.year - ((t.month, t.day) < (birth_date.month, birth_date.day))
-    if age < cfg["min_age"]:
-        return f"Deze website is alleen voor bezoekers van {cfg['min_age']} jaar en ouder. Met deze geboortedatum kun je geen gegevens opslaan."
-    return None
+    return facade.gates.underage_message(birth_date)
 
 
 def invalidate():

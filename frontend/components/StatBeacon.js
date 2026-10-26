@@ -10,6 +10,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { apiBase } from "../lib/api";
+import { useModules } from "./Modules";
 import { useSession } from "./Session";
 
 // Counts a page view for the statistics: the page, where the visitor came from (only on the first page of a visit) and the language.
@@ -17,9 +18,10 @@ import { useSession } from "./Session";
 export default function StatBeacon() {
   const path = usePathname();
   const { user, ready } = useSession();
+  const mods = useModules();
   const last = useRef("");
   useEffect(() => {
-    if (!ready || !path || path === last.current) return;
+    if (!ready || !path || path === last.current || mods.stats === false) return;  // (the plugin Statistieken is off: nothing is counted, no call)
     if (path.startsWith("/dashboard") || path.startsWith("/login") || user?.is_staff) return;
     last.current = path;
     try {
@@ -28,6 +30,6 @@ export default function StatBeacon() {
       const lang = document.documentElement.lang || "";
       fetch(`${apiBase()}/api/stats/hit/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path, referrer: ref, lang }), keepalive: true }).catch(() => {});
     } catch {}
-  }, [path, ready, user]);
+  }, [path, ready, user, mods.stats]);
   return null;
 }

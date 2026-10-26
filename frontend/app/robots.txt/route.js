@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const origin = await siteOrigin();
   const res = await fetch(`${process.env.API_URL_INTERNAL || "http://localhost:8000"}/api/seo/robots.txt?base=${encodeURIComponent(origin)}`, { cache: "no-store" });
-  if (!res.ok) return new Response("Not found", { status: 404 });
-  return new Response(await res.text(), { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=300" } });
+  // without the plugin SEO: the standard rules (everything open, except the dashboard and the login)
+  const text = res.ok ? await res.text() : "User-agent: *\nDisallow: /dashboard\nDisallow: /login\n";
+  return new Response(text, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=300" } });
 }

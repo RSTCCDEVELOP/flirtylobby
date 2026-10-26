@@ -26,7 +26,7 @@ MODULES = [
      "desc": "Teksten, uitgebreide opmaak en afbeeldingen op de website zelf bewerken (schakelaar in de header)."},
     {"key": "media", "group": "Content", "label": "Mediabibliotheek",
      "desc": "Alle afbeeldingen en video's beheren, lokaal of op S3."},
-    {"key": "siteimport", "group": "Content", "label": "Site importeren",
+    {"key": "siteimport", "group": "Content", "plugin": "siteimport", "hidden": True, "label": "Site importeren",
      "desc": "Een andere website (adres, map of ZIP) inlezen: thema, pagina's, startpagina, iconen en plaatjes. Te verwijderen met alles wat erbij hoort."},
     {"key": "sysobjects", "group": "Content", "label": "Systeemobjecten",
      "desc": "Onderdelen van andere modules (donatieknoppen, abonnementen, …) die je in de bewerkmodus op een pagina kunt zetten. Overzicht en aan/uit per object.",
@@ -37,11 +37,11 @@ MODULES = [
      "desc": "Kleuren, lettertypen, thema's en popup-stijl. Uit = de standaardstijl."},
     {"key": "languages", "group": "Content", "label": "Talen",
      "desc": "Meertaligheid en taalkeuze. Uit = alleen de standaardtaal."},
-    {"key": "seo", "group": "Content", "label": "SEO",
+    {"key": "seo", "group": "Content", "plugin": "seo", "hidden": True, "label": "SEO",
      "desc": "Zoekmachines, bots en AI-agents: robots.txt, sitemap, llms.txt, paginatitels, omschrijvingen en structured data."},
     {"key": "help", "group": "Content", "label": "Easy2edit-help",
      "desc": "De uitleg van Easy2edit zelf (het systeem), alleen in het dashboard, in alle talen. Gebruikers zien alleen de uitleg over onderdelen waar ze rechten voor hebben."},
-    {"key": "faq", "group": "Content", "label": "FAQ van je website",
+    {"key": "faq", "group": "Content", "plugin": "faq", "hidden": True, "label": "FAQ van je website",
      "desc": "Je eigen veelgestelde vragen, zelf te maken en te vertalen, op de pagina /faq. Zet de pagina in het menu bij Pagina's."},
     {"key": "privacy_pages", "group": "Content", "label": "Privacy- en cookiepagina",
      "desc": "De publieke pagina's /privacy en /cookies met links in de footer."},
@@ -68,11 +68,11 @@ MODULES = [
     {"key": "directconnect", "group": "Community", "label": "Directe verbinding", "plugin": "community", "hidden": True,
      "desc": "Een rechtstreekse verbinding tussen twee mensen (WebRTC) via een code, link of QR-code, ook zonder account: chat, foto's, video's en videochat. Pagina's /directconnect en /direct."},
     # ── Beveiliging ──
-    {"key": "geo", "group": "Beveiliging", "label": "Landcontrole",
+    {"key": "geo", "group": "Beveiliging", "plugin": "age-gates", "hidden": True, "label": "Landcontrole",
      "desc": "Website blokkeren of toestaan per land via IP-controle."},
-    {"key": "age_gate", "group": "Beveiliging", "label": "Leeftijdscontrole",
+    {"key": "age_gate", "group": "Beveiliging", "plugin": "age-gates", "hidden": True, "label": "Leeftijdscontrole",
      "desc": "18+ popup voor bezoekers."},
-    {"key": "gambling", "group": "Beveiliging", "label": "Gokken-popup",
+    {"key": "gambling", "group": "Beveiliging", "plugin": "age-gates", "hidden": True, "label": "Gokken-popup",
      "desc": "Leeftijds- en waarschuwingspopup voor gokken."},
     {"key": "cookies", "group": "Beveiliging", "label": "Cookies",
      "desc": "Cookiebanner, voorkeuren en cookiebeleid-popup."},
@@ -98,7 +98,7 @@ MODULES = [
      "desc": "Naam en adressen van de website (frontend en API), contactgegevens en een controlelijst plus kant-en-klare instellingen voor de deployment."},
     {"key": "storage", "group": "Systeem", "label": "Mappenstructuur",
      "desc": "Waar bestanden staan (gebruikers, website, overig): map, lokaal of S3, en versleuteling per gebruiker."},
-    {"key": "stats", "group": "Systeem", "label": "Statistieken",
+    {"key": "stats", "group": "Systeem", "plugin": "statistics", "hidden": True, "label": "Statistieken",
      "desc": "Grafieken en cijfers over de hele website: bezoekers, SEO, bots en AI-aanroepen, en per module en plugin een eigen tabblad. Modules en plugins schrijven hun cijfers hierheen."},
     {"key": "backups", "group": "Systeem", "label": "Backup",
      "desc": "Backups van de website per dag, week of maand (pagina's, menu's, teksten, afbeeldingen, thema en instellingen van modules en plugins), terugzetten en downloaden. De standaardgegevens van easy2edit zitten er niet in."},
@@ -181,6 +181,9 @@ def module_required(*keys):
         message = "Deze module is uitgeschakeld."
 
         def has_permission(self, request, view):
-            return all(enabled(k) for k in keys)
+            off = next((k for k in keys if not enabled(k)), None)
+            if off:
+                self.message = {"detail": "Deze module is uitgeschakeld.", "module": off}  # the screen of a superadmin offers a button to switch it on
+            return off is None
 
     return _ModuleOn

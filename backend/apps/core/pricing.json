@@ -22,9 +22,9 @@
     }
   },
   "items": {
-    "module:seo": 2,
-    "module:faq": 1,
-    "module:siteimport": 2,
+    "plugin:seo": 2,
+    "plugin:faq": 1,
+    "plugin:siteimport": 2,
     "module:integrations": 2,
     "module:word_filter": 1,
     "module:twofa": 1,
@@ -46,12 +46,18 @@
       "help": "SEO-hulp: titels, beschrijvingen, sitemap en structured data.",
       "modules": [
         "seo"
+      ],
+      "plugins": [
+        "seo"
       ]
     },
     {
       "key": "faq",
       "label": "Wil je een pagina met veelgestelde vragen (FAQ)?",
       "modules": [
+        "faq"
+      ],
+      "plugins": [
         "faq"
       ]
     },
@@ -60,6 +66,9 @@
       "label": "Heb je al een website die je wilt overnemen?",
       "help": "Thema, pagina's en afbeeldingen van een andere site inlezen.",
       "modules": [
+        "siteimport"
+      ],
+      "plugins": [
         "siteimport"
       ]
     },
@@ -241,9 +250,9 @@
       "plugin:agenda": 5,
       "plugin:marketplace": 12,
       "plugin:games": 6,
-      "module:seo": 3,
-      "module:faq": 1,
-      "module:siteimport": 4,
+      "plugin:seo": 3,
+      "plugin:faq": 1,
+      "plugin:siteimport": 4,
       "module:integrations": 3,
       "module:word_filter": 1,
       "module:twofa": 1,

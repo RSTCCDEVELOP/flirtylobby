@@ -40,7 +40,7 @@ def claude(system, prompt, max_tokens=2500, timeout=90, web=False):
         payload["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}]
     body = json.dumps(payload).encode()
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={"x-api-key": obj.config["api_key"], "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    from apps.stats import service as stats
+    from apps.plugins.facade import stats
 
     purpose = " ".join(str(system or "").split()[:6])[:60]
     try:
@@ -71,7 +71,7 @@ def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_ev
         payload["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}]
     body = json.dumps(payload).encode()
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={"x-api-key": obj.config["api_key"], "anthropic-version": "2023-06-01", "content-type": "application/json"})
-    from apps.stats import service as stats
+    from apps.plugins.facade import stats
 
     emit = on_event or (lambda *_a: None)
     text, kinds, partial, usage = [], {}, {}, {}

@@ -11,7 +11,7 @@ import { tx } from "../lib/t";
 
 // A status pop-up with a progress bar and the steps of a job (setting an installation, making demo data).
 // run: {title, steps: [{key, label, status}], error, done}. The pop-up cannot be closed while the job runs.
-export default function RunPopup({ run, onClose, onFix }) {
+export default function RunPopup({ run, onClose, onFix, onUndo }) {
   if (!run) return null;
   const total = run.steps.length || 1, ok = run.steps.filter((s) => s.status === "ok").length;
   const busy = !run.done && !run.error;
@@ -30,7 +30,8 @@ export default function RunPopup({ run, onClose, onFix }) {
         {run.note && !run.error && <div className="alert ok">{run.note}</div>}
         <div className="row" style={{ marginTop: "1rem" }}>
           {run.fix && onFix && <button type="button" className="btn primary" disabled={run.fixing} onClick={onFix}>{run.fixing ? tx("Bezig…") : tx("Aanzetten en verder gaan")}</button>}
-          <button type="button" className={`btn ${run.fix && onFix ? "" : "primary"}`} disabled={busy || run.fixing} onClick={onClose}>{busy ? tx("Bezig…") : tx("Sluiten")}</button>
+          {run.error && onUndo && <button type="button" className="btn danger" disabled={run.fixing || run.undoing} onClick={onUndo}>{run.undoing ? tx("Bezig…") : tx("Installatie ongedaan maken")}</button>}
+          <button type="button" className={`btn ${run.fix && onFix ? "" : "primary"}`} disabled={busy || run.fixing || run.undoing} onClick={onClose}>{busy ? tx("Bezig…") : tx("Sluiten")}</button>
         </div>
       </div>
     </div>

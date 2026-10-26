@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
 import { IconGrid, IconRefresh, IconSettings } from "../../../../components/Icons";
+import ModuleOffAlert from "../../../../components/ModuleOffAlert";
 import PluginFrame from "../../../../components/PluginFrame";
 import SaveStatus from "../../../../components/SaveStatus";
 import Tabs from "../../../../components/Tabs";
@@ -30,7 +31,7 @@ export default function PluginsPage() {
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
   const input = useRef(null);
-  const load = useCallback(() => api("/plugins/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
+  const load = useCallback(() => api("/plugins/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e), module: e?.data?.module })), []);
   useEffect(() => { load(); }, [load]);
   const upd = (p) => setD((x) => ({ ...x, plugins: x.plugins.map((o) => (o.name === p.name ? p : o)) }));
 
@@ -76,7 +77,7 @@ export default function PluginsPage() {
 
   const outdated = d?.plugins.filter((p) => ["outdated", "incompatible", "newer"].includes(p.compat)) || [];
   if (!user?.is_staff) return <p className="muted">{tx("Alleen superadmins beheren plugins.")}</p>;
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
+  if (!d) return msg ? <ModuleOffAlert msg={msg} /> : <Busy />;
 
   return (
     <>

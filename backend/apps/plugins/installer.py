@@ -122,13 +122,19 @@ def install_zip(data):
 
 
 # parts that used to be built into the system and are plugins now: a website that had them on keeps them on (the first time the plugin is found)
-ADOPT = {"community": ("profiles", "discover", "messages", "chat", "directconnect"), "subscriptions": ("subscriptions", "donations")}
+ADOPT = {"community": ("profiles", "discover", "messages", "chat", "directconnect"), "subscriptions": ("subscriptions", "donations"), "age-gates": ("age_gate", "geo", "gambling"), "statistics": ("stats",), "siteimport": ("siteimport",), "faq": ("faq",), "seo": ("seo",)}
+DEFAULT_ON = {"age-gates", "statistics", "siteimport", "faq", "seo"}  # (the parts that were on by default: SEO, FAQ, Statistieken ...)
 MERGED = {"payments": "finance"}  # a plugin that is part of another one now: its row goes
 
 
 def _adopt(name):
     from apps.core.models import ModuleState
 
+    if name in DEFAULT_ON:  # these parts were on in a website that never switched them (no stored choice = the default of the module)
+        from apps.core import modules
+
+        rows = dict(ModuleState.objects.filter(key__in=ADOPT[name]).values_list("key", "enabled"))
+        return any(rows.get(k, modules.BY_KEY[k].get("default", True)) for k in ADOPT[name])
     if name in ADOPT:
         return ModuleState.objects.filter(key__in=ADOPT[name], enabled=True).exists()
     if name == "profile-themes":  # a website with profiles had its profile themes before: they stay
@@ -136,6 +142,30 @@ def _adopt(name):
     if name == "finance":  # everything that handles money needs it
         return Plugin.objects.filter(name__in=("orders", "payments", "webshop"), enabled=True).exists()
     return False
+
+
+def install_from_library(name):
+    """Install a plugin from the library (resource/plugins) when its folder is not here yet. Returns True when it was installed."""
+    from apps.core import resources
+
+    if plugin_dir(name).is_dir():
+        return False
+    try:
+        entry = next((e for e in resources.catalog("plugins") if e["name"] == name), None)
+        if not entry:
+            return False
+        install_zip(resources._zip_bytes("plugins", entry))
+        return True
+    except Exception:  # noqa: BLE001 - a library that cannot be read or a plugin that does not install: the plugin is simply not there
+        logging.getLogger(__name__).exception("Plugin %s could not be installed from the library", name)
+        return False
+
+
+def adopt_from_library():
+    """A part that used to be built into the system is a plugin now: a website that had it switched on gets the plugin from the library (once) and keeps it on."""
+    for name in ADOPT:
+        if not plugin_dir(name).is_dir() and _adopt(name):
+            install_from_library(name)
 
 
 def register(man):

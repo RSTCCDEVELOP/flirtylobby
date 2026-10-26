@@ -35,7 +35,7 @@ PRESETS = [
      "exclude_modules": ["discover", "directconnect"],
      "desc": "Een volledig besloten intranet voor je organisatie: zonder inloggen is er niets te zien. Eén startpagina, een smoelenboek van collega's, een documentensysteem (DMS) en een agenda, met berichten en chat, een interne kennisbank (FAQ), rollen en rechten, meldingen en twee-staps verificatie.",
      "modules": ["pages", "edit_mode", "media", "branding", "theme", "languages", "communication", "notifications", "help", "faq", "roles", "twofa", "word_filter", "sysobjects", "stats", "integrations"]},
-    {"key": "datingplatform", "name": "Datingplatform", "icon": "heart", "theme": "dating", "plugins": ["community", "profile-themes", "subscriptions", "agenda", "games"],
+    {"key": "datingplatform", "name": "Datingplatform", "icon": "heart", "theme": "dating", "plugins": ["community", "profile-themes", "subscriptions", "agenda", "games", "age-gates"],
      "desc": "Leden vinden elkaar met zoeken en swipen, chatten en videobellen. Met leeftijdscontrole, abonnementen en een agenda voor dates en spelletjes.",
      "modules": BASE + ["faq", "age_gate", "word_filter", "twofa", "geo", "sysobjects"]},
     {"key": "sportclub", "name": "Sportclub of vereniging", "icon": "medal", "theme": "sporters", "plugins": ["community", "profile-themes", "subscriptions", "agenda", "games", "documents"],
@@ -52,6 +52,10 @@ PRESETS = [
      "modules": BASE + ["faq", "sysobjects"]},
 ]
 # (the parts that are plugins - Community, Abonnementen, Orders, Webshop, Financieel - are in the plugin list of an installation; plugins_for adds what they need, and _wanted_modules the modules that belong to them)
+for _p in PRESETS:  # a part that became a plugin (SEO, FAQ, Statistieken, Site importeren, Leeftijd/land/gokken) is named in the modules above: it goes to the plugin list, where the screens show it
+    _own = {m["key"]: m["plugin"] for m in modules.MODULES if m.get("plugin")}
+    _p["plugins"] = list(dict.fromkeys([*_p.get("plugins", []), *[_own[k] for k in _p["modules"] if k in _own]]))
+    _p["modules"] = [k for k in _p["modules"] if k not in _own]
 BY_KEY = {p["key"]: p for p in PRESETS}
 DEMO_PARTS = {"media": "Voorbeeldplaatjes", "heroes": "Hero-achtergronden", "users": "Gebruikers met profiel", "plans": "Abonnementen", "money": "Donatie-acties met giften", "faq": "FAQ-vragen", "pages": "Pagina's",
               "views": "Media-systeemobjecten"}
@@ -566,6 +570,13 @@ def apply(key, preset=None):
         on = p.name in need
         if p.enabled != on or (on and p.error):
             Plugin.objects.filter(pk=p.pk).update(enabled=on, **({"error": ""} if on else {}))
+    from apps.plugins import installer
+
+    for n in need:  # a plugin of the installation that is in the library but not installed yet (SEO, FAQ ...): installed now
+        if not Plugin.objects.filter(name=n).exists():
+            installer.install_from_library(n)
+    for p in Plugin.objects.filter(name__in=need, enabled=False):  # (just installed: switch on, the loop above ran before)
+        Plugin.objects.filter(pk=p.pk).update(enabled=True, error="")
     missing = [n for n in need if not Plugin.objects.filter(name=n).exists()]
     runtime.ensure_loaded(True)
     theme = preset["theme"]

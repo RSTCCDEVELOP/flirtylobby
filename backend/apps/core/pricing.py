@@ -147,7 +147,7 @@ def catalog():
     items = load()["items"]
     out = [{"key": f"package:{p['key']}", "label": p["label"], "group": "Pakketten", "price": items.get(f"package:{p['key']}", 0)} for p in modules.PACKAGES]
     in_pkg = {k for p in modules.PACKAGES for k in p["modules"]}
-    out += [{"key": f"module:{m['key']}", "label": m["label"], "group": "Modules", "price": items.get(f"module:{m['key']}", 0)} for m in modules.MODULES if m["key"] not in in_pkg and not m.get("core")]
+    out += [{"key": f"module:{m['key']}", "label": m["label"], "group": "Modules", "price": items.get(f"module:{m['key']}", 0)} for m in modules.MODULES if m["key"] not in in_pkg and not m.get("core") and not m.get("plugin")]  # (a part that is a plugin is priced as that plugin)
     out += [{"key": f"plugin:{p.name}", "label": p.title or p.name, "group": "Plugins", "price": items.get(f"plugin:{p.name}", 0)} for p in Plugin.objects.order_by("name")]
     return out
 
@@ -285,6 +285,8 @@ def apply_to_license():
             ComponentPrice.objects.update_or_create(kind=kind, key=key, defaults={"price": price})
         else:
             ComponentPrice.objects.filter(kind=kind, key=key).delete()
+    in_pkg = {k for p in modules.PACKAGES for k in p["modules"]}
+    ComponentPrice.objects.filter(kind="module", key__in=[m["key"] for m in modules.MODULES if m.get("plugin") and m["key"] not in in_pkg]).delete()  # (parts that became a plugin: the old module price is gone, the plugin has its own)
 
 
 def extra_for_plugin(name):

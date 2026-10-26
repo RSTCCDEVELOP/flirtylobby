@@ -77,7 +77,7 @@ class System:
     @property
     def stats(self):
         """Statistieken: system.stats.record("download", key="contract.pdf", n=1). Counted per day under this plugin's own tab."""
-        from apps.stats import service as stats
+        from apps.plugins.facade import stats
 
         name = self.name
 
@@ -303,6 +303,10 @@ def ensure_loaded(force=False):
     _checked["t"] = time.time()
     if not _checked.get("scanned"):  # once per process: find the plugin folders (also the parts that used to be built in: Community, Abonnementen, Financieel keep a website that had them on running)
         _checked["scanned"] = True
+        try:
+            installer.adopt_from_library()  # a part that used to be built in (SEO, FAQ ...) and that this website had on: its plugin comes from the library
+        except Exception:  # noqa: BLE001 - never stop the system for this
+            logger.exception("Plugins of the parts that used to be built in could not be installed")
         try:
             installer.scan()
         except Exception:  # noqa: BLE001 - never stop the system for this
