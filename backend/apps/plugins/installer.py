@@ -154,7 +154,9 @@ def install_from_library(name):
         entry = next((e for e in resources.catalog("plugins") if e["name"] == name), None)
         if not entry:
             return False
-        install_zip(resources._zip_bytes("plugins", entry))
+        p = install_zip(resources._zip_bytes("plugins", entry))
+        for need in (p.manifest or {}).get("requires") or []:  # the plugins this one needs come with it (Abonnementen needs Orders and Financieel)
+            install_from_library(need)
         return True
     except Exception:  # noqa: BLE001 - a library that cannot be read or a plugin that does not install: the plugin is simply not there
         logging.getLogger(__name__).exception("Plugin %s could not be installed from the library", name)

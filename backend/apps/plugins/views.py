@@ -97,6 +97,9 @@ def plugin(request, name):
     if not request.user.is_staff:
         return STAFF
     p = Plugin.objects.filter(name=name).first()
+    if not p and request.method == "PATCH" and request.data.get("enabled"):  # switching on a plugin that is not installed yet: it comes from the library of the product (resource/plugins)
+        installer.install_from_library(name)
+        p = Plugin.objects.filter(name=name).first()
     if not p:
         return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
     if request.method == "DELETE":

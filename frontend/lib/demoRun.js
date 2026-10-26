@@ -60,19 +60,15 @@ export async function runDemo(preset, body, set, resume = null) {
   }
 }
 
-// "Aanzetten en verder gaan": switch the missing plugin on (looking for it first when it is not registered yet) and carry on with the step where it stopped.
+// "Aanzetten en verder gaan": switch the missing plugin on (looking for it first when it is not registered yet, then installing it from the library) and carry on with the step where it stopped.
 export async function resumeDemo(run, set, onDone) {
   const fix = run?.fix;
   if (!fix) return;
   const update = (fn) => set((r) => (r ? fn(JSON.parse(JSON.stringify(r))) : r));
   update((r) => { r.fixing = true; return r; });
   try {
-    let have = ((await api("/plugins/")).plugins || []).some((p) => p.name === fix.plugin);
-    if (!have) { // the plugin is in the plugins folder but not known yet
-      await api("/plugins/scan/", { method: "POST" });
-      have = ((await api("/plugins/")).plugins || []).some((p) => p.name === fix.plugin);
-    }
-    if (!have) throw new Error(tx("De plugin {0} is niet geïnstalleerd. Installeer hem eerst bij Admin → Plugins.", fix.title));
+    if (!((await api("/plugins/")).plugins || []).some((p) => p.name === fix.plugin)) await api("/plugins/scan/", { method: "POST" }); // the plugin is in the plugins folder but not known yet
+    // (a plugin that is not installed yet comes from the library of the product, with the plugins it needs: the server does that when it is switched on)
     await api(`/plugins/${fix.plugin}/`, { method: "PATCH", body: { enabled: true, with_requires: true } });
     if (typeof window !== "undefined") window.dispatchEvent(new Event("plugins-changed"));
   } catch (e) {
