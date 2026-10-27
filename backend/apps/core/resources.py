@@ -27,9 +27,12 @@ class ResourceError(ValueError):
 
 def root():
     d = Path(settings.RESOURCE_DIR)
-    d.mkdir(parents=True, exist_ok=True)
-    for k in KINDS:
-        (d / k).mkdir(exist_ok=True)
+    for p in [d, *[d / k for k in KINDS]]:  # (a library on a read-only mount, as in Coolify, cannot be written to: only make what is missing, and do not stop when that is not possible)
+        if not p.is_dir():
+            try:
+                p.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                pass
     return d
 
 
