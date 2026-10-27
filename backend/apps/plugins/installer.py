@@ -298,9 +298,29 @@ def scan():
         if p.name in MERGED and Plugin.objects.filter(name=MERGED[p.name]).exists():
             p.delete()
             continue
+        lost = "ontbreekt" in (p.error or "")  # switched off by an earlier start because its folder was gone
+        if in_library(p.name) and install_from_library(p.name):  # the folder is gone (a new container after an update): the plugin comes back from the library, as it was (on or off)
+            if lost:
+                try:
+                    from apps.core import presets
+
+                    if p.name in presets.wanted_plugins():  # a plugin of the active installation that was only switched off by the loss of its folder: on again
+                        Plugin.objects.filter(pk=p.pk).update(enabled=True, error="")
+                except Exception:  # noqa: BLE001
+                    pass
+            continue
         p.enabled, p.error = False, "De map van deze plugin ontbreekt."
         p.save(update_fields=["enabled", "error"])
     return done, problems
+
+
+def in_library(name):
+    from apps.core import resources
+
+    try:
+        return any(e["name"] == name for e in resources.catalog("plugins"))
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def languages():

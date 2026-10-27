@@ -1672,3 +1672,19 @@ def system_update(request):
     if request.method == "GET":
         return Response(sysupdate.status(request.user))
     return Response(sysupdate.run(str(request.data.get("step") or ""), request.user))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_update(request, key):
+    """Check an installation that is in use and switch on what was switched off (modules, plugins). No content is changed."""
+    from . import presets
+
+    who = _preset_access(request.user)
+    if not who:
+        return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    if presets.active() != key:
+        return Response({"detail": "Deze installatie is niet in gebruik."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(presets.update_installation(key))

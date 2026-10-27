@@ -67,6 +67,18 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       return await confirmDialog(tx("Deze pagina's hebben al inhoud: {0}. Overschrijven met de standaard van deze installatie? Kies \"Nee, behouden\" om je pagina's en teksten te laten zoals ze zijn.", c.conflicts.map((x) => x.title).join(", ")), { danger: true, okLabel: tx("Ja, overschrijven"), cancelLabel: tx("Nee, behouden") });
     } catch { return false; }
   };
+  // an installation in use: its modules and plugins are checked and everything that was switched off goes on (pages and texts are not touched)
+  const updateActive = async (p) => {
+    setRun({ title: tx("Installatie \"{0}\" bijwerken", p.name), steps: [{ key: "_u", label: tx("Modules en plugins controleren en aanzetten"), status: "busy" }], error: "", done: false });
+    try {
+      const r = await api(`/system/presets/${p.key}/update/`, { method: "POST", body: {} });
+      const parts = [];
+      if (r.installed?.length) parts.push(tx("Opnieuw geïnstalleerd: {0}.", r.installed.join(", ")));
+      if (r.plugins_on?.length) parts.push(tx("Plugins aangezet: {0}.", r.plugins_on.join(", ")));
+      if (r.modules_on?.length) parts.push(tx("Modules aangezet: {0}.", r.modules_on.length));
+      setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "ok" })), done: true, note: parts.length ? parts.join(" ") : tx("Alles stond al aan en werkt. Er is niets veranderd."), notes: [tx("Je pagina's en teksten zijn niet gewijzigd.")] }));
+    } catch (e) { setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "error" })), error: errorText(e) })); }
+  };
   const doApply = async () => {
     const { p, demo: withDemo, shops } = ask;
     setAsk(null); setMsg(null);
@@ -172,7 +184,10 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
             {open === p.key && <small className="muted">{p.modules.map((m) => tx(m)).join(", ")}</small>}
             {demo && <div className="preset-demo"><strong>{tx("Demo-gegevens")}</strong><DemoData preset={p.key} name={p.name} editable={manage && !adminOnly} demoCfg={p.demo_cfg} price={p.price} contents={p.contents} showPurchase={!adminOnly} active={!!p.active} parts={p.demo_parts} shop={(p.plugins || []).some((x) => x.name === "webshop")} /></div>}
             {p.active
-              ? <button type="button" className="btn danger" disabled={!!busy} onClick={() => unapply(p)}>{busy === p.key ? tx("Bezig…") : tx("Installatie verwijderen")}</button>
+              ? <>
+                <button type="button" className="btn primary" disabled={!!busy} onClick={() => updateActive(p)} title={tx("Controleert de modules en plugins van deze installatie en zet aan wat uit staat. Je pagina's en teksten blijven zoals ze zijn.")}>{tx("Update")}</button>
+                <button type="button" className="btn danger" disabled={!!busy} onClick={() => unapply(p)}>{busy === p.key ? tx("Bezig…") : tx("Installatie verwijderen")}</button>
+              </>
               : <button type="button" className="btn primary" disabled={!!busy} onClick={() => apply(p)}>{busy === p.key ? tx("Bezig…") : tx("Deze installatie instellen")}</button>}
           </div>
         ))}

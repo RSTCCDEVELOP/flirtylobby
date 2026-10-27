@@ -82,6 +82,11 @@ def run(step, user):
             if step == "plugins":
                 from apps.plugins import runtime
 
+                from . import presets
+
+                back = presets.repair_active()  # the plugins of the active installation that were lost come back
+                if back:
+                    r["message"] += " Teruggezet voor de installatie: " + ", ".join(back) + "."
                 runtime.ensure_loaded(True)  # (the plugins that were updated run again)
             return r
         if step == "pages":

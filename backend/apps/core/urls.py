@@ -52,6 +52,7 @@ urlpatterns = [
     path("system/presets/default/", views.presets_default),
     path("system/presets/setup/", views.presets_setup),
     path("system/presets/<slug:key>/page/", views.presets_page),
+    path("system/presets/<slug:key>/update/", views.presets_update),
     path("system/presets/<slug:key>/edit/", views.presets_edit),
     path("system/presets/<slug:key>/remove/", views.presets_remove),
     path("system/presets/<slug:key>/apply/", views.presets_apply),

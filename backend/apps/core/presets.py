@@ -432,6 +432,103 @@ def active():
     return k if k in BY_KEY else None
 
 
+def update_installation(key):
+    """Check the active installation and switch on what was switched off, so everything keeps working: the plugins of the installation (installed from the library when they are gone),
+    its modules and the pages of its plugins. Nothing is switched off and no content, page or text is changed. Returns what was done."""
+    from apps.plugins import installer, runtime
+    from apps.plugins.models import Plugin
+
+    from .models import ModuleState
+
+    preset = get(key)
+    if not preset:
+        raise KeyError(key)
+    installed, plugins_on, modules_on = [], [], []
+    for n in plugins_for(preset):
+        if installer.needs_install(n) and installer.install_from_library(n):
+            installed.append(n)
+    need = plugins_for(preset)  # (what the plugins that were just installed need themselves)
+    for n in need:
+        if installer.needs_install(n):
+            installer.install_from_library(n)
+    for p in Plugin.objects.filter(name__in=need):
+        if not p.enabled:
+            plugins_on.append(p.name)
+        if not p.enabled or p.error:
+            Plugin.objects.filter(pk=p.pk).update(enabled=True, error="")
+    runtime.ensure_loaded(True)
+    want = _wanted_modules(preset)
+    for m in modules.MODULES:
+        if m.get("core") or m["key"] not in want:
+            continue
+        st = ModuleState.objects.filter(key=m["key"]).first()
+        if st is None or not st.enabled:
+            ModuleState.objects.update_or_create(key=m["key"], defaults={"enabled": True})
+            modules_on.append(m["key"])
+    modules.invalidate()
+    try:
+        from apps.pages.models import Page
+
+        for pg in Page.objects.filter(module__startswith="plugin:", enabled=False):
+            if pg.module[7:] in need:
+                Page.objects.filter(pk=pg.pk).update(enabled=True)
+    except Exception:  # noqa: BLE001
+        logger.exception("Installation %s: pages of plugins could not be switched on", key)
+    try:
+        ensure_objects(preset)
+        from apps.sysobjects import service as so
+
+        so.sync()
+    except Exception:  # noqa: BLE001
+        logger.exception("Installation %s: system objects could not be checked", key)
+    return {"installed": installed, "plugins_on": plugins_on, "modules_on": modules_on}
+
+
+def wanted_plugins():
+    """The plugins of the installation that is active (empty when there is none)."""
+    key = active()
+    return set(plugins_for(get(key))) if key and get(key) else set()
+
+
+def repair_active():
+    """The standard installation that is active keeps existing, with its plugins: after an update (a new container: the plugin folders are gone and their rows were switched off)
+    the plugins of the installation come back from the library and are switched on again. Only when there is no active installation (it was removed) the standard settings apply.
+    A plugin that somebody switched off by hand (its folder is there) stays off. Returns the plugins that were repaired."""
+    from apps.plugins import installer, runtime
+    from apps.plugins.models import Plugin
+
+    key = active()
+    preset = get(key) if key else None
+    if not preset:
+        return []
+    fixed = []
+    for n in plugins_for(preset):
+        row = Plugin.objects.filter(name=n).first()
+        new = row is None
+        if new or installer.needs_install(n):
+            installer.install_from_library(n)
+            row = Plugin.objects.filter(name=n).first()
+        if row is None:
+            continue
+        if not row.enabled and (new or "ontbreekt" in (row.error or "")):
+            Plugin.objects.filter(pk=row.pk).update(enabled=True, error="")
+            fixed.append(n)
+    from .models import ModuleState
+
+    if not ModuleState.objects.filter(enabled=True).exists():  # every module is off (the settings were reset by an update): the modules of the installation come back
+        want = _wanted_modules(preset)
+        for m in modules.MODULES:
+            if not m.get("core"):
+                ModuleState.objects.update_or_create(key=m["key"], defaults={"enabled": m["key"] in want})
+        modules.invalidate()
+        fixed.append("modules")
+    if fixed:
+        runtime.ensure_loaded(True)
+        modules.invalidate()
+        logger.warning("Installation %s: plugins put back: %s", key, ", ".join(fixed))
+    return fixed
+
+
 def saved_pages(key):
     return dict((_data().get("preset_pages") or {}).get(key) or {})
 

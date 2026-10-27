@@ -315,6 +315,12 @@ def ensure_loaded(force=False):
             installer.scan()
         except Exception:  # noqa: BLE001 - never stop the system for this
             logger.exception("Plugin scan at start failed")
+        try:
+            from apps.core import presets
+
+            presets.repair_active()  # the plugins of the active standard installation stay (after an update they come back from the library)
+        except Exception:  # noqa: BLE001
+            logger.exception("Plugins of the active installation could not be repaired")
     try:
         on = {p.name: p for p in Plugin.objects.filter(enabled=True)}
     except Exception:  # noqa: BLE001 - database not ready (migrations)
