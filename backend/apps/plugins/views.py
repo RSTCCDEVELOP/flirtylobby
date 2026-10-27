@@ -127,6 +127,8 @@ def plugin(request, name):
         if "enabled" in request.data:
             want = bool(request.data["enabled"])
             if want:
+                installer.repair_chain(p)
+                p = Plugin.objects.get(pk=p.pk)
                 todo, absent = runtime.requirement_chain(p)
                 if absent:
                     return bad("Deze plugin heeft nog niet geïnstalleerde plugins nodig: " + ", ".join(absent) + ". Installeer die eerst.")

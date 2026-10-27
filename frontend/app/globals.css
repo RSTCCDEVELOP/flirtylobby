@@ -1845,7 +1845,7 @@ html[data-blocks="elevated"] .site .card { border-color: transparent; box-shadow
 .has-bg, .games-hero.has-bg { position: relative; overflow: hidden; isolation: isolate; border-radius: var(--radius); padding: 1.6rem; color: #fff; }
 .has-bg .pb-row, .has-bg .pb-rowbar { position: relative; z-index: 1; }
 .sec-bg { position: absolute; inset: 0; z-index: -1; display: block; }
-.sec-bg img, .sec-bg video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sec-bg img, .sec-bg video { width: 100%; height: 100%; object-fit: cover; object-position: var(--bg-pos, center); display: block; }
 .sec-bg-shade { position: absolute; inset: 0; background: #000; }
 .sec-bg-controls { display: inline-flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
 .sec-bg-controls label { display: inline-flex; gap: .3rem; align-items: center; font-size: .8rem; }
@@ -3227,3 +3227,62 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-insert:hover, .pb-insert.open, .pb-insert:focus-within { opacity: 1; }
 .pb-insline { flex: 1; height: 0; border-top: 1px dashed var(--line); }
 .pb-insmenu { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
+
+/* the background of a block: where the picture is held (top, middle, bottom) */
+.sec-bg-pos { display: inline-flex; align-items: center; gap: .5rem; font-size: .82rem; font-weight: 600; }
+
+/* hero: the glow effect (the glow under the block and the round shapes) switched off */
+.pb-rowwrap[data-glow="off"] { box-shadow: none !important; }
+.pb-rowwrap[data-glow="off"]::before, .pb-rowwrap[data-glow="off"]::after { display: none !important; }
+
+/* hero / block size: the height (choice, slider and value) on one line over the full width of the panel */
+.pb-hlabel { grid-column: 1 / -1; }
+.pb-hrow { display: flex; align-items: center; gap: .9rem; }
+.pb-hrow select { flex: 0 0 15rem; max-width: 50%; }
+.pb-hrow input[type="range"] { flex: 1 1 auto; min-width: 6rem; width: auto !important; }
+.pb-hrow small { flex: 0 0 4.5rem; text-align: right; white-space: nowrap; }
+
+/* the pop-up "+ Toevoegen": parts in groups, with icon and explanation */
+.pb-addpanel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; width: min(560px, calc(100vw - 2rem)); background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: .7rem; text-align: left; }
+.pb-addsearch { width: 100%; margin-bottom: .6rem; }
+.pb-addscroll { max-height: min(60vh, 460px); overflow: auto; display: flex; flex-direction: column; gap: .8rem; padding-right: .2rem; }
+.pb-addscroll h4 { margin: 0 0 .35rem; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pb-addgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; }
+.pb-addtile { display: flex; align-items: center; gap: .65rem; text-align: left; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); cursor: pointer; font: inherit; }
+.pb-addtile:hover, .pb-addtile:focus-visible { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 8%, var(--card)); outline: none; }
+.pb-addico { flex: none; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 9px; background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--blue); }
+.pb-addtext { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.pb-addtext strong { font-size: .88rem; }
+.pb-addtext small { font-size: .74rem; color: var(--muted); }
+.pb-addcols { display: flex; gap: .35rem; align-items: center; }
+.pb-addcols button { width: 2.2rem; padding: .35rem 0; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); cursor: pointer; font: inherit; font-weight: 600; }
+.pb-addcols button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+@media (max-width: 560px) { .pb-addgrid { grid-template-columns: 1fr; } }
+
+/* ready-made parts */
+.pb-w { width: 100%; }
+.pb-widget-empty { padding: .8rem; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: .85rem; text-align: center; }
+.pb-widget-empty:empty { display: none; }
+.pb-w-contact { display: flex; flex-direction: column; gap: .15rem; font-style: normal; }
+.pb-w-contact strong { color: var(--text); }
+.pb-w-social { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pb-w-map { border: 0; border-radius: var(--radius, 12px); }
+.pb-w-video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius, 12px); overflow: hidden; }
+.pb-w-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.pb-w-quote { margin: 0; padding: 1rem 1.2rem; border-left: 4px solid var(--blue); background: color-mix(in srgb, var(--blue) 6%, transparent); border-radius: 0 var(--radius, 12px) var(--radius, 12px) 0; }
+.pb-w-quote blockquote { margin: 0; font-size: 1.15rem; font-style: italic; color: var(--text); }
+.pb-w-quote figcaption { margin-top: .5rem; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.pb-w-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; text-align: center; }
+.pb-w-stats strong { display: block; font-size: 2rem; line-height: 1.1; color: var(--blue); }
+.pb-w-stats span { font-size: .85rem; color: var(--muted); }
+.pb-w-logo img { width: var(--wl-w, 160px); max-width: 100%; height: auto; }
+.pb-w-hours { margin: 0; display: grid; gap: .3rem; }
+.pb-w-hours div { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dashed var(--line); padding-bottom: .25rem; }
+.pb-w-hours dt { font-weight: 600; color: var(--text); } .pb-w-hours dd { margin: 0; color: var(--muted); }
+
+/* the tabs of the pop-up "+ Toevoegen": a fixed height so the pop-up does not jump between tabs */
+.pb-addtabs { margin-bottom: .6rem; }
+.pb-addtabs .tab-pro { padding: .5rem .8rem; }
+.pb-addpanel .pb-addscroll { height: 17rem; max-height: 60vh; }
+.pb-addcols-wrap { margin-top: .9rem; }
+.pb-addcols-wrap h4 { margin: 0 0 .35rem; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }

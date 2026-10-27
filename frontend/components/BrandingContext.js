@@ -24,7 +24,8 @@ export function BrandingProvider({ value, logoSet, siteName, children }) {
   const ctx = useMemo(() => {
     const base = value || { assets: {}, photos: [] };
     const set = LOGO_SETS[active] || (base.assets?.logo ? null : LOGO_SETS.easy2edit);  // no own logo and no known set: the logo of the default theme (Easy2edit)
-    return { ...base, assets: set ? { ...base.assets, ...set.assets } : base.assets, alt: siteName || set?.alt, previewLogoSet: (v) => setPreview(v === null ? undefined : v) };
+    return { ...base, assets: set ? (preview !== undefined ? { ...base.assets, ...set.assets } : { ...set.assets, ...base.assets }) : base.assets, // a logo that was uploaded (Logo's & beeld) wins over the logo set of the theme; the set only fills in what is missing, and in the preview of Vormgeving it wins
+    alt: siteName || set?.alt, previewLogoSet: (v) => setPreview(v === null ? undefined : v) };
   }, [value, active, siteName]);
   return <BrandingContext.Provider value={ctx}>{children}</BrandingContext.Provider>;
 }

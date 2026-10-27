@@ -21,7 +21,7 @@ from .models import PageLayout
 
 ID_RE = re.compile(r"^[a-z0-9]{4,16}$")
 KEY_RE = re.compile(r"^[a-z0-9_-]{1,80}$")
-HALIGN, VALIGN, GAPS, TYPES = ("left", "center", "right"), ("top", "center", "bottom"), ("sm", "md", "lg"), ("text", "image", "object", "heading", "spacer", "line")
+HALIGN, VALIGN, GAPS, TYPES = ("left", "center", "right"), ("top", "center", "bottom"), ("sm", "md", "lg"), ("text", "image", "object", "heading", "spacer", "line", "button", "widget")
 MAX_ROWS, MAX_ITEMS = 40, 300
 
 
@@ -48,6 +48,8 @@ def clean_bg(bg):
     except (TypeError, ValueError):
         overlay = 0.35
     out = {"type": bg["type"], "media": item.id, "overlay": round(overlay, 2)}
+    if bg.get("pos") in ("top", "bottom"):  # where the picture is held when the block is smaller than the picture (centre is the default)
+        out["pos"] = bg["pos"]
     hv = bg.get("hover")
     if isinstance(hv, dict) and hv.get("mode") in ("opacity", "swap"):
         try:
@@ -174,6 +176,82 @@ def _item_style(st):
     return out
 
 
+WIDGETS = ("contact", "social", "map", "video", "quote", "stats", "logo", "hours")
+
+
+def _widget(raw):
+    """A ready-made part for a page (contact data, social media, map, video, quote, figures, logo, opening hours): which one, and what it needs. {} = unknown."""
+    if not isinstance(raw, dict) or raw.get("widget") not in WIDGETS:
+        return {}
+    kind, d = raw["widget"], raw.get("data") if isinstance(raw.get("data"), dict) else {}
+    s = lambda k, n=300: str(d.get(k) or "").strip()[:n]  # noqa: E731
+    data = {}
+    if kind == "video":
+        url = s("url", 300)
+        if re.fullmatch(r"https://(www\.|m\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com|player\.vimeo\.com)/[^\s<>\"']+", url):
+            data["url"] = url
+    elif kind == "map":
+        data["query"] = s("query", 200)
+        try:
+            data["height"] = int(min(max(float(d.get("height") or 320), 150), 800))
+        except (TypeError, ValueError):
+            data["height"] = 320
+    elif kind == "quote":
+        data["text"], data["author"] = s("text", 500), s("author", 80)
+    elif kind == "stats":
+        data["items"] = [{"value": str(i.get("value") or "").strip()[:12], "label": str(i.get("label") or "").strip()[:40]} for i in (d.get("items") or [])[:4] if isinstance(i, dict) and (i.get("value") or i.get("label"))]
+    elif kind == "contact":
+        data = {k: d.get(k) is not False for k in ("address", "phone", "email")}
+    elif kind == "logo":
+        try:
+            data["width"] = int(min(max(float(d.get("width") or 160), 40), 400))
+        except (TypeError, ValueError):
+            data["width"] = 160
+    elif kind == "hours":
+        data["lines"] = [{"day": str(i.get("day") or "").strip()[:30], "time": str(i.get("time") or "").strip()[:30]} for i in (d.get("lines") or [])[:10] if isinstance(i, dict) and (i.get("day") or i.get("time"))]
+    return {"widget": kind, "data": data}
+
+
+BTN_STYLES, BTN_SIZES = ("primary", "outline", "ghost"), ("sm", "md", "lg")
+
+
+def _button(raw):
+    """A button on a page: its text per language, where it goes (a page of the website or a link), its look. {} = nothing set yet."""
+    from .models import Page
+
+    if not isinstance(raw, dict):
+        return {}
+    out = {}
+    labels = {}
+    for code, text in (raw.get("labels") or {}).items() if isinstance(raw.get("labels"), dict) else []:
+        if re.fullmatch(r"[a-z]{2,3}(-[A-Za-z0-9]{2,8})?", str(code)) and str(text).strip():
+            labels[str(code)] = str(text).strip()[:80]
+        if len(labels) >= 80:
+            break
+    if labels:
+        out["labels"] = labels
+    page = Page.objects.filter(key=str(raw.get("page") or "")).first()
+    if page:  # a page of the website: its address in every language
+        from apps.pages import service
+
+        out["page"] = page.key
+        out["url"] = page.path
+        out["urls"] = {code: page.path_in(code) for code in service.lang_codes()}
+    else:
+        url = str(raw.get("url") or "").strip()
+        if re.fullmatch(r"(https?://|mailto:|tel:|/)[^\s<>\"']{0,500}", url):
+            out["url"] = url
+    if raw.get("new_tab"):
+        out["new_tab"] = True
+    if raw.get("style") in BTN_STYLES and raw["style"] != "primary":
+        out["style"] = raw["style"]
+    if raw.get("size") in BTN_SIZES and raw["size"] != "md":
+        out["size"] = raw["size"]
+    if raw.get("full"):
+        out["full"] = True
+    return out
+
+
 def _row_extra(r):
     """Extra settings of a row: a hero (a banner: its name or "custom"), the height of a hero (px, % of the screen or the full screen) and the space (padding) above and below."""
     out = {}
@@ -215,6 +293,8 @@ def _row_extra(r):
     anchor = re.sub(r"[^a-z0-9-]+", "-", str(r.get("anchor") or "").lower()).strip("-")[:40]
     if anchor:
         out["anchor"] = anchor  # the block can be opened with page-address#anchor
+    if r.get("glow") is False:
+        out["glow"] = False  # a hero without the glow under it (and without the round shapes)
     if r.get("sq_mobile"):
         out["sq_mobile"] = True  # no rounded corners on a phone (the corners are square there)
     if r.get("v") in ("top", "center", "bottom"):
@@ -270,7 +350,7 @@ def clean(data):
                 if t not in TYPES:
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
-                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading", "spacer", "line") and _item_style(it.get("style")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
+                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading", "spacer", "line", "button") and _item_style(it.get("style")) else {}), **({"widget": _widget(it)["widget"], "data": _widget(it)["data"]} if t == "widget" and _widget(it) else {}), **({"btn": _button(it.get("btn"))} if t == "button" and _button(it.get("btn")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
             cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})

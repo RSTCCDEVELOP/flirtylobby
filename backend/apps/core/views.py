@@ -960,7 +960,7 @@ def theme_pack_create(request):
     if not name:
         return _bad("Geef het thema een naam.")
     try:
-        key = themepacks.create(name, bool(request.data.get("from_current")))
+        key = themepacks.create(name, bool(request.data.get("from_current")), str(request.data.get("copy_of") or ""))
     except themepacks.ThemeError as e:
         return _bad(str(e))
     return Response({"key": key, "packs": themepacks.listing()}, status=status.HTTP_201_CREATED)

@@ -7,6 +7,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { tx } from "../lib/t";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
@@ -21,6 +22,10 @@ import { SysObjectBySlug } from "./SysObjects";
 import LayoutPresets from "./LayoutPresets";
 import { BgControls, BgLayer } from "./SectionBg";
 import Tabs from "./Tabs";
+import PageButtonPopup from "./PageButtonPopup";
+import PageAddMenu from "./PageAddMenu";
+import { PbWidget, WidgetPopup, WIDGET_DEFAULTS, WIDGET_NAMES } from "./PageWidget";
+import { getLanguage } from "../lib/t";
 import PluginFrame from "./PluginFrame";
 import MediaViewEditor from "./MediaViewEditor";
 import BlockNav from "./BlockNav";
@@ -77,6 +82,25 @@ const AL_V = { top: "flex-start", center: "center", bottom: "flex-end" };
 const padOf = (p) => ({ t: p?.t ?? 10, r: p?.r ?? 10, b: p?.b ?? 10, l: p?.l ?? 10 });
 const padCss = (p) => { const v = padOf(p); return `${v.t}px ${v.r}px ${v.b}px ${v.l}px`; };
 
+// A button on a page: the text in the language of the visitor, a link to a page or to any address
+function PbButton({ it, c, editing }) {
+  const b = it.btn || {};
+  const lang = getLanguage();
+  const text = b.labels?.[lang] || b.labels?.nl || Object.values(b.labels || {})[0] || "";
+  const url = b.urls?.[lang] || b.url || "";
+  const cls = `btn pb-btn ${b.style === "outline" ? "" : b.style === "ghost" ? "ghost" : "primary"} ${b.size === "sm" ? "sm" : b.size === "lg" ? "lg" : ""}`.trim();
+  const wrap = { display: "flex", justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[c.halign] || "flex-start", padding: padCss(it.style?.pad) };
+  const external = /^(https?:|mailto:|tel:)/.test(url);
+  const look = { ...(b.full ? { width: "100%", justifyContent: "center" } : {}) };
+  return (
+    <div className="pb-btnrow" style={wrap}>
+      {editing || !url ? <span className={cls} style={look} role={editing ? "button" : undefined}>{text || tx("Knop")}</span>
+        : external ? <a className={cls} style={look} href={url} {...(b.new_tab ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{text}</a>
+          : <Link className={cls} style={look} href={url} {...(b.new_tab ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{text}</Link>}
+    </div>
+  );
+}
+
 export default function PageBlocks({ pageKey, title = "" }) {
   const { editing } = useSession();
   const objOn = useModule("sysobjects");
@@ -90,6 +114,10 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const [over, setOver] = useState(null); // where a dragged item would land: {id, pos: before | after}
   const [dragOn, setDragOn] = useState(null); // the item whose handle is held: only then it can be dragged (text stays selectable)
   const drag = useRef(null);
+  const [widgetEdit, setWidgetEdit] = useState(null); // the ready-made part whose settings are open
+  const setWidgetData = (iid, data) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) x.data = data; }))); return l; });
+  const [btnEdit, setBtnEdit] = useState(null); // the item whose button settings are open
+  const setBtn = (iid, btn) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) x.btn = btn; }))); return l; });
   const [insAt, setInsAt] = useState(); // where the menu "new block" is open between two blocks
   const [padLock, setPadLock] = useState({}); // texts whose four paddings are changed together (the default while all four are equal)
   const padLocked = (it) => padLock[it.id] ?? (() => { const v = padOf(it.style?.pad); return v.t === v.r && v.r === v.b && v.b === v.l; })();
@@ -239,7 +267,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const delRow = (rid) => change((l) => { l.rows = l.rows.filter((x) => x.id !== rid); return l; });
   const setAllCells = (rid, patch) => change((l) => { const row = l.rows.find((x) => x.id === rid); if (row) row.cells.forEach((c) => Object.assign(c, patch)); return l; });
   const setCell = (cid, patch) => change((l) => { Object.assign(l.rows.flatMap((r) => r.cells).find((c) => c.id === cid), patch); return l; });
-  const addItem = (cid, type, ref = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref, ...(type === "heading" ? { style: { tag: "k2" } } : type === "spacer" ? { style: { h: 40 } } : type === "line" ? { style: { lw: 100, th: 1 } } : {}) }); return l; }); };
+  const addItem = (cid, type, ref = "", widget = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref, ...(type === "widget" ? { widget, data: JSON.parse(JSON.stringify(WIDGET_DEFAULTS[widget] || {})) } : {}), ...(type === "heading" ? { style: { tag: "k2" } } : type === "button" ? { btn: { labels: { nl: "Knop" } } } : type === "spacer" ? { style: { h: 40 } } : type === "line" ? { style: { lw: 100, th: 1 } } : {}) }); return l; }); };
   const setObjLayout = (iid, n) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { if (n === "1") delete x.layout; else x.layout = n; } }))); return l; });
   const setItem = (iid, patch) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { x.style = { ...(x.style || {}), ...patch }; Object.keys(x.style).forEach((k) => { if (x.style[k] === "" || x.style[k] == null) delete x.style[k]; }); if (!Object.keys(x.style).length) delete x.style; } }))); return l; });
   const dropFixed = (cid, before) => { // a fixed element of the page (logo, title, intro) is dropped in a cell
@@ -266,12 +294,14 @@ export default function PageBlocks({ pageKey, title = "" }) {
     const key = it.ref && it.type !== "object" ? it.ref : `layout.${pageKey}.${it.id}`; // a fixed element that was dragged in keeps its own content key
     const body = it.type === "text" ? <div className={`pb-tstyle${it.style?.tag ? ` ts-${it.style.tag}` : ""}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}`} style={{ padding: padCss(it.style?.pad), ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}) }}><EditableText id={key} removable={false} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" /></div>
       : it.type === "heading" ? <div className={`pb-tstyle ts-${it.style?.tag || "k2"}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}${it.style?.weight ? " ts-weight" : ""}`} style={{ padding: padCss(it.style?.pad), ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}), ...(it.style?.weight ? { "--ti-weight": it.style.weight } : {}), textAlign: it.style?.align || c.halign, ...(it.style?.mb !== undefined ? { marginBottom: `${it.style.mb}rem` } : {}) }}><EditableText id={key} removable={false} as={{ k1: "h2", k2: "h3", k3: "h4", k4: "h5" }[it.style?.tag || "k2"] || "h3"} fallback={editing ? tx("Klik om een kop te typen") : ""} className="pb-text pb-heading" /></div>
+      : it.type === "button" ? <PbButton it={it} c={c} editing={editing} />
+      : it.type === "widget" ? <PbWidget it={it} editing={editing} />
       : it.type === "spacer" ? <div className="pb-spacer" style={{ height: it.style?.h ?? 40 }} aria-hidden="true">{editing && <small className="muted">{it.style?.h ?? 40} px</small>}</div>
       : it.type === "line" ? <div className="pb-line" style={{ padding: padCss(it.style?.pad), justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[c.halign] || "flex-start" }}><hr style={{ width: `${it.style?.lw ?? 100}%`, borderTopWidth: it.style?.th ?? 1, ...(it.style?.color ? { borderColor: colorOf(it.style.color) } : {}) }} /></div>
       : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} removable={false} className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : editing ? <div className="pb-ph">{tx("Klik om een afbeelding te kiezen")}</div> : null} /></div>
       : <SysObjectBySlug slug={it.ref} layout={it.layout} />;
     if (!editing) return <div className={`pb-item${it.type === "object" ? " obj" : ""}`} key={it.id} style={{ textAlign: c.halign }}>{body}</div>;
-    const label = it.type === "spacer" ? tx("Tussenruimte") : it.type === "line" ? tx("Lijn") : it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
+    const label = it.type === "widget" ? tx(WIDGET_NAMES[it.widget] || "Onderdeel") : it.type === "button" ? tx("Knop") : it.type === "spacer" ? tx("Tussenruimte") : it.type === "line" ? tx("Lijn") : it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
     const shown = over?.id === it.id ? ` drop-${over.pos}` : "";
     const hover = (e) => { // above the middle of the item = before it, below = after it
       if ((!drag.current && !dragFixed()) || drag.current === it.id) return;
@@ -297,7 +327,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <span className="pb-grip" title={tx("Sleep om te verplaatsen")} draggable
             onDragStart={(e) => { drag.current = it.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", it.id); const box = e.currentTarget.closest(".pb-item"); if (box) e.dataTransfer.setDragImage(box, 16, 16); setTimeout(() => { setDragOn(it.id); setDragging(true); }, 0); }}
             onDragEnd={() => { drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>⋮⋮ <small>{label}</small></span>
-          {(it.type === "text" || it.type === "heading" || it.type === "spacer" || it.type === "line") && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => setItemOpen((m) => ({ ...m, [it.id]: !m[it.id] }))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
+          {(it.type === "text" || it.type === "heading" || it.type === "spacer" || it.type === "line" || it.type === "button" || it.type === "widget") && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => (it.type === "button" ? setBtnEdit(it.id) : it.type === "widget" ? setWidgetEdit(it.id) : setItemOpen((m) => ({ ...m, [it.id]: !m[it.id] })))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
           </button>}
           {it.type === "object" && (() => { // a system object (product overview, donation, subscription ...): its settings, in a popup (a donation or subscription: its own admin page)
@@ -416,6 +446,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
 
   return (
     <section ref={root} data-pad={layout.pad || undefined} data-t={layout.auto || heroTheme || undefined} className={`pb${editing ? " editing" : ""}${dragging ? " is-dragging" : ""}`}>
+      {editing && widgetEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === widgetEdit); return it ? <WidgetPopup widget={it.widget} data={it.data || {}} onChange={(d) => setWidgetData(it.id, d)} onClose={() => setWidgetEdit(null)} /> : null; })()}
+      {editing && btnEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === btnEdit); return it ? <PageButtonPopup btn={it.btn || {}} onChange={(b) => setBtn(it.id, b)} onClose={() => setBtnEdit(null)} /> : null; })()}
       {editing && (
         <button type="button" className={`pb-pagegear${pageOpen ? " on" : ""}`} onClick={() => setPageOpen(!pageOpen)} aria-expanded={pageOpen} title={pageOpen ? tx("Pagina-instellingen verbergen") : tx("Pagina-instellingen tonen")} aria-label={tx("Pagina-instellingen")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="var(--card)" /><circle cx="15" cy="12" r="2" fill="var(--card)" /><circle cx="8" cy="18" r="2" fill="var(--card)" /></svg>
@@ -444,7 +476,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
         <div id={rowNavId(r, ri)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color ? " tcolor" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOverRow((o) => (o?.id === r.id ? null : o)); }}
           onDrop={(e) => { if (!rowDrag.current) return; e.preventDefault(); e.stopPropagation(); const pos = overRow?.id === r.id ? overRow.pos : "before"; dropRow(r.id, pos); rowDrag.current = null; setOverRow(null); setDragging(false); }}
-          data-sqm={r.sq_mobile ? "1" : undefined} data-pad={r.pad || undefined} data-fx={r.fx || undefined} data-v={r.v || undefined} data-touch={r.top === "touch" ? "1" : undefined} data-prev={r.top === "prev" ? "1" : undefined} style={{ ...styleCss(r.style), ...(r.mt !== undefined && r.mt !== null && r.top !== "touch" ? { marginTop: `calc(${r.mt}px - var(--pbg, 1.2rem))` } : {}), ...(r.padding ? { ...(r.padding.t != null ? { paddingTop: `${r.padding.t}px` } : {}), ...(r.padding.r != null ? { paddingRight: `${r.padding.r}px` } : {}), ...(r.padding.b != null ? { paddingBottom: `${r.padding.b}px` } : {}), ...(r.padding.l != null ? { paddingLeft: `${r.padding.l}px` } : {}) } : {}), ...(r.screen ? { width: `${r.width && r.width !== "default" ? r.width : 100}vw`, maxWidth: "none", marginLeft: "calc(50% - 50vw)", marginRight: "calc(50% - 50vw)", paddingLeft: 0, paddingRight: 0 } : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>
+          data-sqm={r.sq_mobile ? "1" : undefined} data-glow={r.glow === false ? "off" : undefined} data-pad={r.pad || undefined} data-fx={r.fx || undefined} data-v={r.v || undefined} data-touch={r.top === "touch" ? "1" : undefined} data-prev={r.top === "prev" ? "1" : undefined} style={{ ...styleCss(r.style), ...(r.mt !== undefined && r.mt !== null && r.top !== "touch" ? { marginTop: `calc(${r.mt}px - var(--pbg, 1.2rem))` } : {}), ...(r.padding ? { ...(r.padding.t != null ? { paddingTop: `${r.padding.t}px` } : {}), ...(r.padding.r != null ? { paddingRight: `${r.padding.r}px` } : {}), ...(r.padding.b != null ? { paddingBottom: `${r.padding.b}px` } : {}), ...(r.padding.l != null ? { paddingLeft: `${r.padding.l}px` } : {}) } : {}), ...(r.screen ? { width: `${r.width && r.width !== "default" ? r.width : 100}vw`, maxWidth: "none", marginLeft: "calc(50% - 50vw)", marginRight: "calc(50% - 50vw)", paddingLeft: 0, paddingRight: 0 } : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>
           <BgLayer bg={r.bg} />
           {editing && (
             <div className="pb-corner">
@@ -532,12 +564,14 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <label>{tx("Breedte is een deel van")}<select value={r.screen ? "screen" : "page"} onChange={(e) => setRow(r.id, { screen: e.target.value === "screen", width: e.target.value === "screen" && (!r.width || r.width === "default") ? "100" : r.width })}><option value="page">{tx("De pagina")}</option><option value="screen">{tx("De hele browser (volle breedte)")}</option></select></label>
               <label>{tx("Breedte")}<select value={r.width || "default"} onChange={(e) => setRow(r.id, { width: e.target.value })}>{ROW_WIDTHS.map((w) => <option key={w} value={w}>{w === "default" ? tx("Standaard") : w === "100" ? (r.screen ? "100% (hele browser)" : tx("100% (paginabreed)")) : `${w}%`}</option>)}</select></label>
               {true && (
-                <label>{tx("Hoogte")}
+                <label className="pb-hlabel">{tx("Hoogte")}
+                  <span className="pb-hrow">
                   <select value={r.h_mode || "auto"} onChange={(e) => { const m = e.target.value; setRow(r.id, m === "auto" ? { h_mode: "", h: 0 } : { h_mode: m, h: m === "px" ? 400 : m === "pct" ? 50 : 100 }); }}>
                     <option value="auto">{tx("Automatisch")}</option><option value="px">{tx("Pixels")}</option><option value="pct">{tx("Procent van het scherm")}</option><option value="full">{tx("Volledig scherm")}</option>
                   </select>
-                  {(r.h_mode === "px" || r.h_mode === "pct") && <input type="number" min={r.h_mode === "pct" ? 10 : 80} max={r.h_mode === "pct" ? 100 : 1600} value={r.h || ""} onChange={(e) => e.target.value !== "" && setRow(r.id, { h: Number(e.target.value) })} style={{ width: "5rem" }} aria-label={tx("Hoogte")} />}
-                  {(r.h_mode === "px" || r.h_mode === "pct") && <small className="muted">{r.h_mode === "px" ? "px" : "%"}</small>}
+                  {(r.h_mode === "px" || r.h_mode === "pct") && <input type="range" min={r.h_mode === "pct" ? 10 : 80} max={r.h_mode === "pct" ? 100 : 1600} step={r.h_mode === "pct" ? 1 : 10} value={r.h || (r.h_mode === "pct" ? 50 : 400)} onChange={(e) => setRow(r.id, { h: Number(e.target.value) })} style={{ width: 180 }} aria-label={tx("Hoogte")} />}
+                  {(r.h_mode === "px" || r.h_mode === "pct") && <small className="muted">{r.h || (r.h_mode === "pct" ? 50 : 400)} {r.h_mode === "px" ? "px" : "%"}</small>}
+                  </span>
                 </label>
               )}
               <label>{tx("Ruimte boven en onder")}<select value={r.pad || ""} onChange={(e) => setRow(r.id, { pad: e.target.value })}><option value="">{tx("Pagina")}</option>{PAD_OPTS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
@@ -615,6 +649,11 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 <div className="pb-stylerow pb-mobradius"><span>{tx("Ronde hoeken op mobiel")}</span>
                   <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!r.sq_mobile} onChange={(e) => setRow(r.id, { sq_mobile: !e.target.checked })} /><span /></span><span>{r.sq_mobile ? tx("Uit: op een telefoon zijn de hoeken recht") : tx("Aan: ook op een telefoon")}</span></label>
                 </div>
+                {(r.hero || r.h_mode) && (
+                  <div className="pb-stylerow"><span>{tx("Glow-effect")}</span>
+                    <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={r.glow !== false} onChange={(e) => setRow(r.id, { glow: e.target.checked })} /><span /></span><span>{r.glow === false ? tx("Uit: geen gloed onder het blok en geen ronde vlakken") : tx("Aan: gloed onder het blok")}</span></label>
+                  </div>
+                )}
                 <div className="pb-stylerow"><span>{tx("Lettertype")}</span>
                   <select value={r.style?.font || ""} onChange={(e) => setRow(r.id, { style: { ...(r.style || {}), font: e.target.value } })}>
                     <option value="">{tx("Zoals het thema")}</option><option value="body">{tx("Lettertype van de tekst")}</option><option value="heading">{tx("Lettertype van de koppen")}</option><option value="serif">Serif</option><option value="mono">Monospace</option>
@@ -659,16 +698,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
                     <span className="pb-add">
                       <button type="button" className="btn sm primary" onClick={() => setMenu(menu === c.id ? null : c.id)}>+ {tx("Toevoegen")}</button>
                       {menu === c.id && (
-                        <div className="pb-menu">
-                          <button type="button" onClick={() => addItem(c.id, "heading")}>{tx("Kop")}</button>
-                          <button type="button" onClick={() => addItem(c.id, "text")}>{tx("Tekst")}</button>
-                          <button type="button" onClick={() => addItem(c.id, "image")}>{tx("Afbeelding")}</button>
-                          <button type="button" onClick={() => addItem(c.id, "spacer")}>{tx("Tussenruimte")}</button>
-                          <button type="button" onClick={() => addItem(c.id, "line")}>{tx("Lijn")}</button>
-                          <div className="pb-menu-h">{tx("Raster in dit blok")}</div>
-                          <span className="pb-menu-cols">{[1, 2, 3, 4].map((n) => <button type="button" key={n} className={r.cols === n ? "on" : ""} onClick={() => { setMenu(null); setRow(r.id, { cols: n }); }} title={n === 1 ? tx("Eén kolom") : `${n} ${tx("kolommen")}`}>{n}</button>)}<small className="muted">{tx("kolommen")}</small></span>
-                          {objOn && <button type="button" onClick={() => { setMenu(null); setObjQ(""); setObjPop({ cell: c.id, row: r.id }); }}>{tx("Systeemobjecten")}… <small className="muted">{objects.length}</small></button>}
-                        </div>
+                        <PageAddMenu cols={r.cols} objectCount={objOn ? objects.length : undefined} onAdd={(type, widget) => addItem(c.id, type, "", widget)} onCols={(n) => { setMenu(null); setRow(r.id, { cols: n }); }} onObjects={() => { setMenu(null); setObjQ(""); setObjPop({ cell: c.id, row: r.id }); }} onClose={() => setMenu(null)} />
                       )}
                     </span>
                   </div>

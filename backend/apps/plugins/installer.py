@@ -219,6 +219,23 @@ def install_from_library(name):
         return False
 
 
+def repair_chain(p, seen=None):
+    """Before a plugin is switched on: its folder, and the folders of the plugins it needs, are put back from the library when they are missing, half there or not signed right (a plugin that was removed by mistake or by a failed installation)."""
+    seen = seen if seen is not None else set()
+    if p.name in seen:
+        return
+    seen.add(p.name)
+    if needs_install(p.name):
+        install_from_library(p.name)
+    p.refresh_from_db()
+    for n in (p.manifest or {}).get("requires") or []:
+        dep = Plugin.objects.filter(name=n).first()
+        if dep:
+            repair_chain(dep, seen)
+        elif needs_install(n):
+            install_from_library(n)
+
+
 def library_diff(name):
     """The files of an installed plugin that differ from the zip in the library (changed, extra or missing): the reason when its signature does not match. At most 6 names, or an empty list."""
     import hashlib

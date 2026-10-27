@@ -417,8 +417,10 @@ def data_urls(key):
     return {"slots": slots, "home": home, "values": theme.merged(doc["values"])}
 
 
-def create(name, from_current=False):
+def create(name, from_current=False, copy_of=""):
     """A new package (empty, or with the colours, fonts, logos and home photos of the site as they are now)."""
+    if copy_of and not manifest_of(copy_of):
+        raise ThemeError("Het thema om te kopiëren bestaat niet.")
     key = re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", name.lower())).strip("-")[:38] or "thema"
     if len(key) < 3:
         key += "-thema"
@@ -430,9 +432,27 @@ def create(name, from_current=False):
     (root() / key / "theme.json").write_text(json.dumps({"key": key, "name": name.strip()[:60] or key, "description": "", "version": "1.0.0", "system_version": settings.SYSTEM_VERSION, "mode": None,
                                                          "values": {"primary": theme.DEFAULTS["primary"]}, "home": []}, indent=2, ensure_ascii=False) + "\n")
     scan()
-    if from_current:
+    if copy_of:
+        copy_from(copy_of, key)
+    elif from_current:
         capture(key)
     return key
+
+
+def copy_from(source, key):
+    """Put the settings of another theme (a package or a built-in one) into the new package `key`: all values, the description's origin, and the logos and home photos when it has them."""
+    man = manifest_of(source)
+    if not man:
+        raise ThemeError("Het thema om te kopiëren bestaat niet.")
+    doc = _doc(key)
+    doc["values"] = dict(man["values"])
+    doc["mode"] = man.get("mode")
+    doc["description"] = f"Eigen thema, gebaseerd op {man['name']}"[:300]
+    doc["home"] = list(man.get("home") or [])
+    _save_doc(key, doc)
+    if source not in BUILTIN_KEYS() or man.get("customized"):  # (a built-in theme that was not changed has no files of its own)
+        write_files_b64(key, files_b64(source))
+    scan()
 
 
 def capture(key):

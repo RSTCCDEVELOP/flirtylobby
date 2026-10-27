@@ -32,6 +32,7 @@ export default function ThemePacksAdmin() {
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState(null);
   const [chooser, setChooser] = useState(false); // "new theme package": empty, from this website, or from a website address
+  const [copySrc, setCopySrc] = useState("");
   const [importing, setImporting] = useState(false);
   const [name, setName] = useState("");
   const input = useRef(null);
@@ -85,9 +86,9 @@ export default function ThemePacksAdmin() {
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   }
-  async function create(from_current) {
+  async function create(from_current, copy_of = "") {
     if (!name.trim()) return setMsg({ ok: false, text: tx("Geef het thema een naam.") });
-    try { const r = await api("/theme/packs/create/", { method: "POST", body: { name, from_current } }); set(r); setChooser(false); setName(""); setEdit(r.key); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    try { const r = await api("/theme/packs/create/", { method: "POST", body: { name, from_current, copy_of } }); set(r); setChooser(false); setName(""); setEdit(r.key); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   }
   async function scan() { setBusy(true); await load(); setBusy(false); setMsg({ ok: true, text: tx("Map gescand.") }); }
 
@@ -192,6 +193,12 @@ export default function ThemePacksAdmin() {
             <div className="stack-sm">
               <button type="button" className="btn" onClick={() => create(false)}>{tx("Leeg pakket")}</button>
               <small className="muted" style={{ marginTop: "-.5rem" }}>{tx("Begin met een leeg pakket en vul het zelf met logo's en afbeeldingen.")}</small>
+              <label>{tx("Kopie van een thema")}
+                <select value={copySrc || d.packs.find((p) => p.active)?.key || d.packs[0]?.key} onChange={(e) => setCopySrc(e.target.value)}>
+                  {d.packs.map((p) => <option key={p.key} value={p.key}>{p.name}{p.active ? ` (${tx("in gebruik")})` : ""}</option>)}
+                </select></label>
+              <button type="button" className="btn primary" onClick={() => create(false, copySrc || d.packs.find((p) => p.active)?.key || d.packs[0]?.key)}>{tx("Eigen thema maken van dit thema")}</button>
+              <small className="muted" style={{ marginTop: "-.5rem" }}>{tx("Een nieuw thema met jouw naam: alle instellingen, logo's en foto's van het gekozen thema worden overgenomen. Daarna pas je alles aan.")}</small>
               <button type="button" className="btn" onClick={() => create(true)}>{tx("Van deze website")}</button>
               <small className="muted" style={{ marginTop: "-.5rem" }}>{tx("Neem de vormgeving, logo's, favicon en homepagefoto's van deze website over.")}</small>
               <button type="button" className="btn primary" onClick={() => { setChooser(false); setImporting(true); }}>{tx("Importeren van een website…")}</button>

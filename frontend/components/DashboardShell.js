@@ -300,7 +300,7 @@ export default function DashboardShell({ children }) {
           <IconMenu />
         </button>
         <Link href="/dashboard" className="brand">
-          <Logo />
+          <Logo header />
         </Link>
         <nav className="topnav">
           {(() => {
