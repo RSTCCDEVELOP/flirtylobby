@@ -3296,3 +3296,19 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-dockseg button { padding: .15rem .5rem; font-size: .75rem; }
 .pb-rowbar.pop.pb-center .pb-panelhead { flex-wrap: wrap; }
 @media (max-width: 720px) { .pb-dockseg { display: none; } .pb-dockwrap { left: 0 !important; right: 0 !important; width: auto; align-items: flex-end; } }
+
+/* the docked window starts under the toolbar with the icons (save, undo, help, list, settings) at the top right and under the header, so it covers none of them */
+.pb-dockwrap { top: 5.2rem; }
+.pb-dockwrap.dock-right { top: 8rem; }
+.pb-dockwrap .pb-rowbar.pop.pb-center.docked { max-height: calc(100vh - 9rem); }
+.pb-dockwrap.dock-left .pb-rowbar.pop.pb-center.docked { max-height: calc(100vh - 6.2rem); }
+@media (max-width: 720px) { .pb-dockwrap, .pb-dockwrap.dock-right { top: auto; bottom: 0; } .pb-dockwrap .pb-rowbar.pop.pb-center.docked { max-height: 70vh; } }
+
+/* the window of a block opens at the gear that was clicked */
+.pb-dockwrap.dock-anchor { right: auto; bottom: auto; width: min(430px, 94vw); height: auto; padding: 0; }
+.pb-dockwrap.dock-anchor .pb-rowbar.pop.pb-center.docked { max-height: inherit; }
+@media (max-width: 720px) { .pb-dockwrap.dock-anchor { left: 0 !important; top: auto !important; bottom: 0; width: auto; right: 0; } }
+
+/* pop-ups of the editor at the button that was clicked: no dark layer, a clear layer behind them that closes them on a click outside */
+.pb-anchorback, .pb-objback.anchored { position: fixed; inset: 0; z-index: 950; display: block; background: transparent; padding: 0; }
+.pb-anchorback .card.modal, .pb-objback.anchored .pb-objpop { box-shadow: 0 16px 44px rgba(0, 0, 0, .5); }

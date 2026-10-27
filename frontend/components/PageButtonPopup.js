@@ -11,12 +11,13 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
+import { anchorStyle } from "../lib/anchor";
 import { translateName } from "../lib/translate-name";
 import Tabs from "./Tabs";
 
 // The settings of a button on a page (edit mode): its text per language (with Claude translating it into the installed languages), where it goes
 // (a page of the website or any link) and its look. `btn` is what the item holds; onChange(btn) after every change.
-export default function PageButtonPopup({ btn = {}, onChange, onClose }) {
+export default function PageButtonPopup({ btn = {}, onChange, onClose, anchor }) {
   const [tab, setTab] = useState("text");
   const [langs, setLangs] = useState([]);
   const [def, setDef] = useState("nl");
@@ -45,8 +46,8 @@ export default function PageButtonPopup({ btn = {}, onChange, onClose }) {
   }
   const titleOf = (p) => p.title?.[def] || p.title?.nl || Object.values(p.title || {})[0] || p.key;
   const body = (
-    <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="card modal form" role="dialog" aria-label={tx("Knop")} style={{ maxWidth: 620 }} onMouseDown={(e) => e.stopPropagation()}>
+    <div className={anchor ? "pb-anchorback" : "overlay"} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="card modal form" role="dialog" aria-label={tx("Knop")} style={{ maxWidth: 620, ...anchorStyle(anchor, 620) }} onMouseDown={(e) => e.stopPropagation()}>
         <h2>{tx("Knop")}</h2>
         <Tabs tabs={[["text", "Tekst"], ["link", "Link"], ["look", "Uiterlijk"]]} value={tab} onChange={setTab} />
         {err && <div className="alert">{err}</div>}

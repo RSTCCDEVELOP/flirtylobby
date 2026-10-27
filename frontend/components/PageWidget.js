@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { tx } from "../lib/t";
+import { anchorStyle } from "../lib/anchor";
 import { Logo } from "./BrandingContext";
 
 // Ready-made parts for a page: contact data, social media, map, video, quote, figures, logo and opening hours.
@@ -76,15 +77,15 @@ export function PbWidget({ it, editing }) {
 }
 
 // The settings of a ready-made part (edit mode). data = what the item holds; onChange(data) after every change.
-export function WidgetPopup({ widget, data = {}, onChange, onClose }) {
+export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor }) {
   const set = (patch) => onChange({ ...data, ...patch });
   const rows = widget === "stats" ? data.items || [] : data.lines || [];
   const setRow = (i, patch) => set(widget === "stats" ? { items: rows.map((r, n) => (n === i ? { ...r, ...patch } : r)) } : { lines: rows.map((r, n) => (n === i ? { ...r, ...patch } : r)) });
   const addRow = () => set(widget === "stats" ? { items: [...rows, { value: "", label: "" }] } : { lines: [...rows, { day: "", time: "" }] });
   const delRow = (i) => set(widget === "stats" ? { items: rows.filter((_, n) => n !== i) } : { lines: rows.filter((_, n) => n !== i) });
   const body = (
-    <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="card modal form" role="dialog" aria-label={tx(WIDGET_NAMES[widget] || "")} style={{ maxWidth: 560 }} onMouseDown={(e) => e.stopPropagation()}>
+    <div className={anchor ? "pb-anchorback" : "overlay"} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="card modal form" role="dialog" aria-label={tx(WIDGET_NAMES[widget] || "")} style={{ maxWidth: 560, ...anchorStyle(anchor, 560) }} onMouseDown={(e) => e.stopPropagation()}>
         <h2>{tx(WIDGET_NAMES[widget] || "")}</h2>
         {widget === "contact" && ["address", "phone", "email"].map((k) => (
           <label key={k} className="check"><span className="switch"><input type="checkbox" checked={data[k] !== false} onChange={(e) => set({ [k]: e.target.checked })} /><span /></span><span>{tx({ address: "Adres tonen", phone: "Telefoon tonen", email: "E-mailadres tonen" }[k])}</span></label>

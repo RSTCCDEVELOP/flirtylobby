@@ -24,6 +24,7 @@ import { BgControls, BgLayer } from "./SectionBg";
 import Tabs from "./Tabs";
 import PageButtonPopup from "./PageButtonPopup";
 import PageAddMenu from "./PageAddMenu";
+import { anchorFromEvent, anchorStyle } from "../lib/anchor";
 import { PbWidget, WidgetPopup, WIDGET_DEFAULTS, WIDGET_NAMES } from "./PageWidget";
 import { getLanguage } from "../lib/t";
 import PluginFrame from "./PluginFrame";
@@ -144,9 +145,22 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const closeObjEdit = () => { setObjEdit(null); if (objDirty.current) { objDirty.current = false; window.location.reload(); } }; // something changed: the page shows the new version
   const [panelTab, setPanelTab] = useState({}); // the tab of the settings panel per row
   const [barOpen, setBarOpen] = useState({}); // rows whose settings panel is open (the gear in the corner): {rowId: true}
-  const [dock, setDock] = useState("right"); // where the settings window of a block stands: in the space at the left or right (the page stays visible, so changes show at once) or in the middle
-  useEffect(() => { try { const d = localStorage.getItem("pb-dock"); if (["left", "right", "center"].includes(d)) setDock(d); } catch {} }, []);
+  const [anchor, setAnchor] = useState(null); // the button that was clicked last: every pop-up of the editor opens there
+  useEffect(() => {
+    if (!editing) return undefined;
+    const on = (e) => { if (e.target?.closest?.(".pb-anchored, .pb-objpop, .pb-dockwrap, .pb-addpanel, [role='dialog']")) return; const a = anchorFromEvent(e); if (a) setAnchor(a); };
+    document.addEventListener("click", on, true);
+    return () => document.removeEventListener("click", on, true);
+  }, [editing]);
+  const [dock, setDock] = useState("anchor"); // where the settings window of a block stands: in the space at the left or right (the page stays visible, so changes show at once) or in the middle
+  useEffect(() => { try { const d = localStorage.getItem("pb-dock"); if (["anchor", "left", "right", "center"].includes(d)) setDock(d); } catch {} }, []);
   const chooseDock = (k) => { setDock(k); try { localStorage.setItem("pb-dock", k); } catch {} };
+  const [barPos, setBarPos] = useState({}); // where the gear of a block was (the window opens there in the mode "at the gear")
+  const gearClick = (id, e) => {
+    const b = e?.currentTarget?.getBoundingClientRect?.();
+    if (b && typeof window !== "undefined") setBarPos((m) => ({ ...m, [id]: { top: Math.max(8, Math.min(b.bottom + 8, window.innerHeight - 340)), left: Math.max(8, Math.min(b.left, window.innerWidth - 440)) } }));
+    toggleBar(id);
+  };
   const toggleBar = (id) => setBarOpen((m) => ({ ...m, [id]: !m[id] }));
   const rowDrag = useRef(null); // a whole row (block, hero) that is being dragged
   const [overRow, setOverRow] = useState(null); // {id, pos: before | after}
@@ -449,8 +463,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
 
   return (
     <section ref={root} data-pad={layout.pad || undefined} data-t={layout.auto || heroTheme || undefined} className={`pb${editing ? " editing" : ""}${dragging ? " is-dragging" : ""}`}>
-      {editing && widgetEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === widgetEdit); return it ? <WidgetPopup widget={it.widget} data={it.data || {}} onChange={(d) => setWidgetData(it.id, d)} onClose={() => setWidgetEdit(null)} /> : null; })()}
-      {editing && btnEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === btnEdit); return it ? <PageButtonPopup btn={it.btn || {}} onChange={(b) => setBtn(it.id, b)} onClose={() => setBtnEdit(null)} /> : null; })()}
+      {editing && widgetEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === widgetEdit); return it ? <WidgetPopup anchor={anchor} widget={it.widget} data={it.data || {}} onChange={(d) => setWidgetData(it.id, d)} onClose={() => setWidgetEdit(null)} /> : null; })()}
+      {editing && btnEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === btnEdit); return it ? <PageButtonPopup anchor={anchor} btn={it.btn || {}} onChange={(b) => setBtn(it.id, b)} onClose={() => setBtnEdit(null)} /> : null; })()}
       {editing && (
         <button type="button" className={`pb-pagegear${pageOpen ? " on" : ""}`} onClick={() => setPageOpen(!pageOpen)} aria-expanded={pageOpen} title={pageOpen ? tx("Pagina-instellingen verbergen") : tx("Pagina-instellingen tonen")} aria-label={tx("Pagina-instellingen")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="var(--card)" /><circle cx="15" cy="12" r="2" fill="var(--card)" /><circle cx="8" cy="18" r="2" fill="var(--card)" /></svg>
@@ -488,22 +502,22 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 onDragEnd={() => { rowDrag.current = null; setOverRow(null); setDragging(false); }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.7" /><circle cx="15" cy="6" r="1.7" /><circle cx="9" cy="12" r="1.7" /><circle cx="15" cy="12" r="1.7" /><circle cx="9" cy="18" r="1.7" /><circle cx="15" cy="18" r="1.7" /></svg>
               </span>
-              <button type="button" className={`pb-gear${barOpen[r.id] ? " on" : ""}`} onClick={() => toggleBar(r.id)} aria-expanded={!!barOpen[r.id]} title={tx("Instellingen")} aria-label={tx("Instellingen")}>
+              <button type="button" className={`pb-gear${barOpen[r.id] ? " on" : ""}`} onClick={(e) => gearClick(r.id, e)} aria-expanded={!!barOpen[r.id]} title={tx("Instellingen")} aria-label={tx("Instellingen")}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
               </button>
             </div>
           )}
           {editing && mediaEdit && r === layout.rows[0] && <MediaViewEditor view={mediaEdit} onClose={() => setMediaEdit(null)} onSaved={() => window.location.reload()} />}
           {editing && objEdit && typeof document !== "undefined" && r === layout.rows[0] && createPortal(
-            <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) closeObjEdit(); }}>
-              <div className="pb-objpop" role="dialog" aria-label={tx("Systeemobject bewerken")} style={{ width: "min(860px, 100%)" }}>
+            <div className={`pb-objback${anchor ? " anchored" : ""}`} onMouseDown={(e) => { if (e.target === e.currentTarget) closeObjEdit(); }}>
+              <div className="pb-objpop" role="dialog" aria-label={tx("Systeemobject bewerken")} style={anchor ? anchorStyle(anchor, 860) : { width: "min(860px, 100%)" }}>
                 <div className="pb-objhead"><strong>{objEdit.data?.title || objEdit.names?.[""] || objEdit.slug}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={closeObjEdit} aria-label={tx("Sluiten")}>×</button></div>
                 <PluginFrame name={objEdit.data.name} file={objEdit.data.admin_web} bare route={{ params: {}, query: { popup: "1", ...(objEdit.data.query?.design ? { tab: "designs", edit: objEdit.data.query.design } : {}) } }} onWrite={() => { objDirty.current = true; }} />
               </div>
             </div>, document.body)}
           {editing && objPop && objPop.row === r.id && typeof document !== "undefined" && createPortal(
-            <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) setObjPop(null); }}>
-              <div className="pb-objpop" role="dialog" aria-label={tx("Systeemobjecten")}>
+            <div className={`pb-objback${anchor ? " anchored" : ""}`} onMouseDown={(e) => { if (e.target === e.currentTarget) setObjPop(null); }}>
+              <div className="pb-objpop" role="dialog" aria-label={tx("Systeemobjecten")} style={anchor ? anchorStyle(anchor, 640) : undefined}>
                 <div className="pb-objhead"><strong>{tx("Systeemobjecten")}</strong>
                   <input type="search" value={objQ} onChange={(e) => setObjQ(e.target.value)} placeholder={tx("Zoeken")} autoFocus />
                   <button type="button" className="pb-panelx" onClick={() => setObjPop(null)} aria-label={tx("Sluiten")}>×</button></div>
@@ -527,11 +541,11 @@ export default function PageBlocks({ pageKey, title = "" }) {
             </div>, document.body)}
           {editing && (anchorOf(r) || titleOf(r)) && <span className="pb-rowtag" title={tx("Het adres van dit blok")}>{titleOf(r)}{anchorOf(r) && <b> #{anchorOf(r)}</b>}</span>}
           {editing && barOpen[r.id] && typeof document !== "undefined" && createPortal(
-            <div className={dock === "center" ? "pb-popback" : `pb-dockwrap dock-${dock}`} onMouseDown={(e) => { if (dock === "center" && e.target === e.currentTarget) toggleBar(r.id); }}>
+            <div className={dock === "center" ? "pb-popback" : `pb-dockwrap dock-${dock}`} style={dock === "anchor" && barPos[r.id] ? { top: barPos[r.id].top, left: barPos[r.id].left, maxHeight: `calc(100vh - ${barPos[r.id].top}px - .8rem)` } : undefined} onMouseDown={(e) => { if (dock === "center" && e.target === e.currentTarget) toggleBar(r.id); }}>
             <div className={`pb-rowbar pop pb-center${dock !== "center" ? " docked" : ""}`} role="dialog" aria-label={tx("Instellingen")} onMouseDown={(e) => e.stopPropagation()}>
               <div className="pb-panelhead"><strong>{r.hero === "plain" ? tx("Raster") : r.hero ? tx("Hero") : tx("Rij")}</strong>
                 <button type="button" className="icon-btn pb-panelx" onClick={() => toggleBar(r.id)} aria-label={tx("Sluiten")} title={tx("Sluiten")}>✕</button>
-                <span className="pb-seg pb-dockseg" role="group" aria-label={tx("Plaats van dit venster")} title={tx("Plaats van dit venster: aan de zijkant zie je de pagina terwijl je aanpast")}>{[["left", "Links"], ["center", "Midden"], ["right", "Rechts"]].map(([k, l]) => <button type="button" key={k} className={dock === k ? "on" : ""} aria-pressed={dock === k} onClick={() => chooseDock(k)}>{tx(l)}</button>)}</span>
+                <span className="pb-seg pb-dockseg" role="group" aria-label={tx("Plaats van dit venster")} title={tx("Plaats van dit venster: aan de zijkant zie je de pagina terwijl je aanpast")}>{[["anchor", "Bij het tandwiel"], ["left", "Links"], ["right", "Rechts"], ["center", "Midden"]].map(([k, l]) => <button type="button" key={k} className={dock === k ? "on" : ""} aria-pressed={dock === k} onClick={() => chooseDock(k)}>{tx(l)}</button>)}</span>
                 <Tabs className="pb-paneltabs" value={panelTab[r.id] || "layout"} onChange={(v) => setPanelTab((t) => ({ ...t, [r.id]: v }))} tabs={[["layout", "Indeling"], ["size", "Afmetingen"], ["align", "Uitlijning"], ["pad", "Ruimte"], ["style", "Opmaak"], ["bg", "Achtergrond"]]} />
               </div>
               {(panelTab[r.id] || "layout") === "layout" && (
