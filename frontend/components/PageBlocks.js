@@ -144,6 +144,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const closeObjEdit = () => { setObjEdit(null); if (objDirty.current) { objDirty.current = false; window.location.reload(); } }; // something changed: the page shows the new version
   const [panelTab, setPanelTab] = useState({}); // the tab of the settings panel per row
   const [barOpen, setBarOpen] = useState({}); // rows whose settings panel is open (the gear in the corner): {rowId: true}
+  const [dock, setDock] = useState("right"); // where the settings window of a block stands: in the space at the left or right (the page stays visible, so changes show at once) or in the middle
+  useEffect(() => { try { const d = localStorage.getItem("pb-dock"); if (["left", "right", "center"].includes(d)) setDock(d); } catch {} }, []);
+  const chooseDock = (k) => { setDock(k); try { localStorage.setItem("pb-dock", k); } catch {} };
   const toggleBar = (id) => setBarOpen((m) => ({ ...m, [id]: !m[id] }));
   const rowDrag = useRef(null); // a whole row (block, hero) that is being dragged
   const [overRow, setOverRow] = useState(null); // {id, pos: before | after}
@@ -524,10 +527,11 @@ export default function PageBlocks({ pageKey, title = "" }) {
             </div>, document.body)}
           {editing && (anchorOf(r) || titleOf(r)) && <span className="pb-rowtag" title={tx("Het adres van dit blok")}>{titleOf(r)}{anchorOf(r) && <b> #{anchorOf(r)}</b>}</span>}
           {editing && barOpen[r.id] && typeof document !== "undefined" && createPortal(
-            <div className="pb-popback" onMouseDown={(e) => { if (e.target === e.currentTarget) toggleBar(r.id); }}>
-            <div className="pb-rowbar pop pb-center" role="dialog" aria-label={tx("Instellingen")} onMouseDown={(e) => e.stopPropagation()}>
+            <div className={dock === "center" ? "pb-popback" : `pb-dockwrap dock-${dock}`} onMouseDown={(e) => { if (dock === "center" && e.target === e.currentTarget) toggleBar(r.id); }}>
+            <div className={`pb-rowbar pop pb-center${dock !== "center" ? " docked" : ""}`} role="dialog" aria-label={tx("Instellingen")} onMouseDown={(e) => e.stopPropagation()}>
               <div className="pb-panelhead"><strong>{r.hero === "plain" ? tx("Raster") : r.hero ? tx("Hero") : tx("Rij")}</strong>
                 <button type="button" className="icon-btn pb-panelx" onClick={() => toggleBar(r.id)} aria-label={tx("Sluiten")} title={tx("Sluiten")}>✕</button>
+                <span className="pb-seg pb-dockseg" role="group" aria-label={tx("Plaats van dit venster")} title={tx("Plaats van dit venster: aan de zijkant zie je de pagina terwijl je aanpast")}>{[["left", "Links"], ["center", "Midden"], ["right", "Rechts"]].map(([k, l]) => <button type="button" key={k} className={dock === k ? "on" : ""} aria-pressed={dock === k} onClick={() => chooseDock(k)}>{tx(l)}</button>)}</span>
                 <Tabs className="pb-paneltabs" value={panelTab[r.id] || "layout"} onChange={(v) => setPanelTab((t) => ({ ...t, [r.id]: v }))} tabs={[["layout", "Indeling"], ["size", "Afmetingen"], ["align", "Uitlijning"], ["pad", "Ruimte"], ["style", "Opmaak"], ["bg", "Achtergrond"]]} />
               </div>
               {(panelTab[r.id] || "layout") === "layout" && (

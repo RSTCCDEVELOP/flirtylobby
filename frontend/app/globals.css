@@ -3286,3 +3286,13 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-addpanel .pb-addscroll { height: 17rem; max-height: 60vh; }
 .pb-addcols-wrap { margin-top: .9rem; }
 .pb-addcols-wrap h4 { margin: 0 0 .35rem; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* the settings window of a block docked at the left or right of the screen: the page stays visible and changes show at once */
+.pb-dockwrap { position: fixed; top: 0; bottom: 0; z-index: 900; width: min(400px, 94vw); pointer-events: none; padding: .6rem; display: flex; align-items: flex-start; }
+.pb-dockwrap.dock-left { left: 0; } .pb-dockwrap.dock-right { right: 0; }
+.pb-dockwrap .pb-rowbar.pop.pb-center.docked { pointer-events: auto; width: 100%; max-height: calc(100vh - 1.2rem); box-shadow: 0 16px 44px rgba(0, 0, 0, .5); }
+.pb-dockwrap .pb-rowbar.pop .pb-panelbody { grid-template-columns: 1fr; }
+.pb-dockseg { margin-left: auto; }
+.pb-dockseg button { padding: .15rem .5rem; font-size: .75rem; }
+.pb-rowbar.pop.pb-center .pb-panelhead { flex-wrap: wrap; }
+@media (max-width: 720px) { .pb-dockseg { display: none; } .pb-dockwrap { left: 0 !important; right: 0 !important; width: auto; align-items: flex-end; } }
