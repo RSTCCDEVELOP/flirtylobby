@@ -586,8 +586,7 @@ def remove(preset=None):
     if preset and preset in reg:
         mine = set(reg.pop(preset))
         keep = {x for v in reg.values() for x in v}
-        if any(x == "money" or x.startswith("plugin:") for x in keep):
-            keep.add("users")  # their subscriptions, gifts and orders belong to these people
+        keep.discard("users")  # the demo people go with the demo data when it is taken away (their orders stay, without the person); another installation with demo data keeps its own content
         if "money" in keep:
             keep.add("plans")
         done = remove_parts(mine - keep)

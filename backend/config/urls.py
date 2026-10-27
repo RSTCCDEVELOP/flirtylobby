@@ -6,7 +6,6 @@
 # website https://rstcc.net
 
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
 
@@ -32,5 +31,8 @@ urlpatterns = [
     re_path(r"^api/(?P<rest>.+)$", plugin_mount.dispatch),  # the routes of plugins that bring a part of the system (Community, Abonnementen): last, so the system itself wins
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# The files of the library (/media/...). A server that has nothing in front of the backend (Coolify) must hand them out itself, otherwise every picture is a dead link; with nginx in front
+# (deploy/nginx) the request never gets here. The library is public by design (the pictures of the website); private files are encrypted and go through /api/files/<token>/.
+from django.views.static import serve as serve_media  # noqa: E402
+
+urlpatterns += [re_path(r"^media/(?P<path>.+)$", serve_media, {"document_root": settings.MEDIA_ROOT})]

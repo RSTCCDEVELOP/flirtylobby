@@ -433,7 +433,7 @@ def save_page(key, page_key):
     data = _data()
     pages = dict(data.get("preset_pages") or {})
     mine = dict(pages.get(key) or {})
-    mine[page_key] = {"layout": lay.data, "blocks": blocks, "media": _media_names(lay.data)}
+    mine[page_key] = {"layout": lay.data, "blocks": blocks, "media": _media_names(lay.data), "block_media": _block_media(blocks)}
     pages[key] = mine
     data["preset_pages"] = pages
     _save_data(data)
@@ -455,6 +455,20 @@ def _media_names(layout):
     from apps.medialib.models import MediaItem
 
     return {str(m.id): {"name": m.name, "source": m.source} for m in MediaItem.objects.filter(pk__in=_media_ids(layout))}
+
+
+def _block_media(blocks):
+    """{block key: {name, source}} for the pictures that stand in blocks of the page (an image item holds "media:<id>"): the id differs per installation, the name does not."""
+    from apps.medialib.models import MediaItem
+
+    out = {}
+    for bk, texts in blocks.items():
+        for text in texts.values():
+            if isinstance(text, str) and text.startswith("media:") and text[6:].isdigit():
+                m = MediaItem.objects.filter(pk=int(text[6:])).first()
+                if m:
+                    out[bk] = {"name": m.name, "source": m.source}
+    return out
 
 
 def _find_media(info):
@@ -505,6 +519,20 @@ def relink_saved_pages(key):
                     changed = True
         if changed:
             PageLayout.objects.filter(pk=lay.pk).update(data=data)
+    from apps.core.models import ContentBlock
+
+    for page_key, row in saved_pages(key).items():  # the pictures in the blocks of the saved pages
+        for bk, info in (row.get("block_media") or {}).items():
+            item = _find_media(info)
+            if not item:
+                continue
+            for lang in (row.get("blocks") or {}).get(bk, {}):
+                cur = ContentBlock.objects.filter(key=bk, lang=lang).first()
+                now = cur.text[6:] if cur and cur.text.startswith("media:") else ""
+                from apps.medialib.models import MediaItem
+
+                if not (now.isdigit() and MediaItem.objects.filter(pk=int(now)).exists()):
+                    ContentBlock.objects.update_or_create(key=bk, lang=lang, defaults={"text": f"media:{item.id}"})
 
 
 def _apply_saved_pages(key):
@@ -521,8 +549,16 @@ def _apply_saved_pages(key):
 
             layout["moved"] = sorted({*(layout.get("moved") or []), *preset_pages.HOME_FIXED})
         PageLayout.objects.update_or_create(key=page_key, defaults={"data": layout})
+        from apps.medialib.models import MediaItem
+
         for bk, texts in (row.get("blocks") or {}).items():
             for lang, text in texts.items():
+                if isinstance(text, str) and text.startswith("media:"):  # a picture in a block: found by its name here (the id of another installation is not ours); not there yet = empty until the demo pictures are made
+                    info = (row.get("block_media") or {}).get(bk)
+                    item = _find_media(info) if info else (MediaItem.objects.filter(pk=int(text[6:])).first() if text[6:].isdigit() else None)
+                    if not item:
+                        continue
+                    text = f"media:{item.id}"
                 if lang in have:
                     ContentBlock.objects.update_or_create(key=bk, lang=lang, defaults={"text": text})
 

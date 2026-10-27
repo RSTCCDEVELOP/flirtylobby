@@ -89,8 +89,14 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   const unapply = async (p) => {
     if (!(await confirmDialog(tx("De installatie \"{0}\" verwijderen? De modules en plugins van deze installatie gaan uit en de pagina's van de webshop e.d. verdwijnen uit het menu. Je gegevens (teksten, gebruikers, producten, bestellingen) blijven bestaan.", p.name), { okLabel: tx("Installatie verwijderen"), cancelLabel: tx("Annuleren"), danger: true }))) return;
     setMsg(null);
-    setRun({ title: tx("Installatie \"{0}\" verwijderen", p.name), steps: [{ key: "_rm", label: tx("Modules en plugins uitzetten"), status: "busy" }], error: "", done: false });
+    let withDemo = false;  // demo data of this installation (with the demo users): asked, because "Installatie verwijderen" itself leaves the data
+    try { const d = await api("/system/demo/"); if ((d.presets || []).includes(p.key)) withDemo = await confirmDialog(tx("Er zijn demo-gegevens van deze installatie (ook de demo-gebruikers). Die ook verwijderen?"), { okLabel: tx("Demo-gegevens ook verwijderen"), cancelLabel: tx("Behouden"), danger: true }); } catch {}
+    setRun({ title: tx("Installatie \"{0}\" verwijderen", p.name), steps: [...(withDemo ? [{ key: "_demo", label: tx("Demo-gegevens en demo-gebruikers verwijderen"), status: "busy" }] : []), { key: "_rm", label: tx("Modules en plugins uitzetten"), status: withDemo ? "wait" : "busy" }], error: "", done: false });
     try {
+      if (withDemo) {
+        await api("/system/demo/", { method: "POST", body: { remove: true, preset: p.key } });
+        setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_demo" ? { ...st, status: "ok" } : st.key === "_rm" ? { ...st, status: "busy" } : st)) }));
+      }
       await api(`/system/presets/${p.key}/remove/`, { method: "POST", body: {} });
       setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "ok" })), done: true, note: tx("De installatie {0} is verwijderd.", p.name) }));
     } catch (e) { setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "error" })), error: errorText(e) })); }
