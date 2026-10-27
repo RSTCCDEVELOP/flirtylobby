@@ -690,4 +690,4 @@ def apply(key, preset=None):
     except Exception:  # noqa: BLE001
         pass
     logger.warning("Standard installation %s applied", key)
-    return {"preset": key, "modules_on": sorted(want), "plugins_on": [n for n in need if n not in missing], "plugins_missing": missing, "plugins_installed": installed, "theme": theme if "profiles" in want else None}
+    return {"preset": key, "modules_on": sorted(want), "plugins_on": [n for n in need if n not in missing], "plugins_missing": missing, "plugins_installed": installed, "payments_warning": __import__("apps.core.payments_notice", fromlist=["x"]).notice_for(need), "theme": theme if "profiles" in want else None}

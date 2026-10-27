@@ -36,6 +36,7 @@ export function PluginWarnings({ p }) {
   if (p.compat === "outdated") items.push(["warn", tx("Niet meer up-to-date: deze plugin is gemaakt voor systeemversie {0}, het systeem is nu {1}. Werk de plugin bij.", p.built_for, p.system_version)]);
   else if (p.compat === "incompatible") items.push(["bad", tx("Deze plugin is gemaakt voor systeemversie {0} en werkt niet met versie {1}. Werk de plugin bij.", p.built_for, p.system_version)]);
   else if (p.compat === "newer") items.push(["warn", tx("Deze plugin is gemaakt voor een nieuwere systeemversie ({0}); het systeem is {1}. Werk het systeem bij.", p.built_for, p.system_version)]);
+  if (p.payments_notice) items.push(["warn", tx(p.payments_notice)]);
   if (p.languages?.missing?.length) items.push(["warn", tx("Niet in alle talen vertaald. Ontbreekt: {0}.", p.languages.missing.join(", "))]);
   return items.map(([k, text], i) => <div key={i} className={k === "bad" ? "alert" : k === "info" ? "alert ok" : "alert"} style={k === "warn" ? { background: "#fef3c7", color: "#78350f" } : undefined}>{text}</div>);
 }

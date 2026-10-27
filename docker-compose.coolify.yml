@@ -24,7 +24,9 @@ services:
       start_period: 10s
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     expose:
       - "8000"
@@ -53,7 +55,6 @@ services:
     volumes:
       - media:/data/media
       - static:/data/static
-      - ./resource:/app/resource:ro  # the library of zips (plugins, themes, languages) that comes with the product (in git)
     depends_on:
       db:
         condition: service_healthy

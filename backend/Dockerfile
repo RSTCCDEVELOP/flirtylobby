@@ -11,11 +11,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
 WORKDIR /app/backend
 
-COPY requirements.txt .
+# The build context is the project folder (not backend/): the library of plugins, themes and languages (resource/) is part of the image,
+# so a server does not depend on a folder that is mounted next to it (Coolify mounts an empty folder there).
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY . .
+COPY backend/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY backend/ .
+COPY resource /app/resource
+ENV RESOURCE_DIR=/app/resource
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

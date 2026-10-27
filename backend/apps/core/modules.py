@@ -48,7 +48,7 @@ MODULES = [
     # ── Webshop ──
     {"key": "subscriptions", "group": "Subscription", "label": "Abonnementen", "plugin": "subscriptions", "hidden": True,
      "desc": "Abonnementen die toegang geven (site, pagina's, content, chat, video, likes, diensten), eenmalig of herhaald, met een order per periode.",
-     "default": False, "requires": ["orders"]},
+     "default": False, "requires": ["orders", "payments"]},
     {"key": "donations", "group": "Subscription", "label": "Donaties", "plugin": "subscriptions", "hidden": True,
      "desc": "Eenmalige giften aan de makers met een bedrag dat je met een schuifbalk kiest. Werkt zonder de webshop, maar heeft de plugins Orders en Betalen nodig.",
      "default": False, "requires": ["orders", "payments"]},
@@ -119,7 +119,7 @@ PACKAGES = [
      "modules": ["profiles", "discover", "messages", "chat", "directconnect"]},
     {"key": "age", "label": "Leeftijd, land & gokken", "desc": "Leeftijdscontrole (18+), landcontrole en de gokken-popup (24+): alleen voor doelgroepen waar dat verplicht of gewenst is.",
      "modules": ["age_gate", "geo", "gambling"]},
-    {"key": "commerce", "label": "Webshop, abonnementen & donaties", "desc": "Bestellingen en betalen, abonnementen en donaties: voor wie online iets verkoopt of geld ophaalt.",
+    {"key": "commerce", "label": "Betalen: webshop, abonnementen & donaties", "desc": "Bestellingen en betalen, abonnementen en donaties: voor wie online iets verkoopt of geld ophaalt. Betalen (Financieel) is er altijd bij nodig, met een betaalprovider zoals Stripe of Mollie.",
      "modules": ["orders", "payments", "subscriptions", "donations"]},
 ]
 PACKAGE_OF = {k: p["key"] for p in PACKAGES for k in p["modules"]}

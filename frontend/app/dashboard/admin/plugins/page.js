@@ -51,7 +51,7 @@ export default function PluginsPage() {
     setMsg(null);
     const off = on ? p.requires_off || [] : [];
     if (off.length && !(await confirmDialog(tx("{0} heeft ook {1} nodig. Die staan nog uit. Ook aanzetten?", p.title, off.map((x) => x.title).join(", ")), { title: tx("Plugins aanzetten"), okLabel: tx("Alles aanzetten") }))) return;
-    try { upd(await api(`/plugins/${p.name}/`, { method: "PATCH", body: { enabled: on, with_requires: off.length > 0 } })); window.dispatchEvent(new Event("plugins-changed")); if (off.length) load(); }
+    try { const r = await api(`/plugins/${p.name}/`, { method: "PATCH", body: { enabled: on, with_requires: off.length > 0 } }); upd(r); window.dispatchEvent(new Event("plugins-changed")); if (off.length) load(); if (on && r.payments_notice) setMsg({ ok: false, text: tx(r.payments_notice) }); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); load(); }
   }
   async function remove(p) {

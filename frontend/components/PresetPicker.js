@@ -65,7 +65,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
     setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false, undo: p.key });
     try {
       const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: {} });
-      let note = tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.plugins_installed?.length ? ` ${tx("Uit de bibliotheek geïnstalleerd:")} ${r.plugins_installed.join(", ")}.` : "") + (r.plugins_missing.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "");
+      let note = tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.payments_warning ? ` ${tx(r.payments_warning)}` : "") + (r.plugins_installed?.length ? ` ${tx("Uit de bibliotheek geïnstalleerd:")} ${r.plugins_installed.join(", ")}.` : "") + (r.plugins_missing.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "");
       setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_apply" ? { ...st, status: "ok" } : st)) }));
       let ok = true;
       if (withDemo) {
