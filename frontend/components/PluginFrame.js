@@ -63,7 +63,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
         try { const fd = new FormData(); fd.append("file", d.file, d.file.name || "bestand"); Object.entries(d.fields || {}).forEach(([k, v]) => fd.append(k, String(v))); reply({ ok: true, data: await api(d.path, { method: "POST", body: fd }) }); }
         catch (err) { reply({ ok: false, error: text(errorText(err)) }); }
       }
-      else if (d.plugin === "go" && typeof d.path === "string") { if (d.path.startsWith("/") && !d.path.startsWith("//")) router.push(d.path); else if (/^https?:\/\//.test(d.path)) window.location.href = d.path; }
+      else if (d.plugin === "go" && typeof d.path === "string") { if (d.path.startsWith("/") && !d.path.startsWith("//")) { window.dispatchEvent(new Event("nav-start")); router.push(d.path); } else if (/^https?:\/\//.test(d.path)) window.location.href = d.path; }
       else if (d.plugin === "openadmin" && site?.editing && typeof d.file === "string" && /^web\/[A-Za-z0-9_.-]+\.html$/.test(d.file)) setAdminPop({ anchor: (() => { const f = frame.current?.getBoundingClientRect(); const r = d.rect; return f && r && Number.isFinite(r.left) ? { left: f.left + r.left, top: f.top + r.bottom + 8 } : null; })(), file: d.file, query: { popup: "1", ...(d.query || {}) } });
       else if (d.plugin === "media") setAsk({ type: "media", id: d.id });
       else if (d.plugin === "html") setAsk({ type: "html", id: d.id, html: String(d.html || ""), title: d.opts?.title });

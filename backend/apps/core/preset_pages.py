@@ -288,19 +288,22 @@ def _layout_dict(b, page_key=""):
     return page_layout.clean({"rows": b.rows, "bg": {}, **({"moved": HOME_FIXED} if page_key == "home" else {})})
 
 
-def install(key):
-    """Put the pages of this installation in place. Returns the page keys that are ours now."""
+def install(key, skip=()):
+    """Put the pages of this installation in place. Returns the page keys that are ours now. `skip`: pages that already have content: they stay as they are (nothing is replaced or removed)."""
     from apps.core.models import ContentBlock
     from apps.pages.models import Page, PageLayout
 
     build = BUILDERS.get(key)
     if not build:
         return []
-    remove_all(except_key=key)
+    if not skip:
+        remove_all(except_key=key)  # (only on a site where nothing would be lost: pages of another installation stay when pages are protected)
     spec = build()
     before = _owned().get(key) or {}
     mine = {"layouts": [], "pages": [], "backup": dict(before.get("backup") or {}), "images": {}}
     for page_key, b in spec["layouts"].items():
+        if page_key in skip:
+            continue
         lay = PageLayout.objects.filter(key=page_key).first()
         designed = bool(lay and (lay.data or {}).get("rows") and not (lay.data or {}).get("auto") and page_key not in before.get("layouts", []))
         if designed:
@@ -321,6 +324,12 @@ def install(key):
     _save_owned(owned)
     link_media(key)
     return mine["layouts"]
+
+
+def layout_keys(key):
+    """The pages (layout keys) that this installation designs."""
+    build = BUILDERS.get(key)
+    return list(build()["layouts"]) if build else []
 
 
 def remove(key):

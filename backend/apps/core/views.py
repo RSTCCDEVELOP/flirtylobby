@@ -706,7 +706,9 @@ def presets_apply(request, key):
         return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
     if who == "admin" and key not in presets.admin_allowed():
         return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
-    return Response(presets.apply(key))
+    if request.data.get("check"):  # which pages would be replaced and already have content: the screen asks before it overwrites
+        return Response({"conflicts": presets.conflicts(key)})
+    return Response(presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages"))))
 
 
 @api_view(["GET", "PUT", "DELETE"])

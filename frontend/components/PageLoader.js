@@ -78,8 +78,10 @@ export default function PageLoader() {
       since.current = Date.now(); setShow(true);
       clearTimeout(timer.current); timer.current = setTimeout(() => setShow(false), 8000); // never stuck
     };
+    const start = () => { since.current = Date.now(); setShow(true); clearTimeout(timer.current); timer.current = setTimeout(() => setShow(false), 8000); }; // a page of a plugin (the shop) that goes to another page of the site by itself
     document.addEventListener("click", click, true);
-    return () => document.removeEventListener("click", click, true);
+    window.addEventListener("nav-start", start);
+    return () => { document.removeEventListener("click", click, true); window.removeEventListener("nav-start", start); };
   }, [on, always]);
   useEffect(() => { if (on && always && loaded.current) hideSoon(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!on || !show) return null;

@@ -624,12 +624,42 @@ def relink_saved_pages(key):
                     ContentBlock.objects.update_or_create(key=bk, lang=lang, defaults={"text": f"media:{item.id}"})
 
 
-def _apply_saved_pages(key):
+def page_has_content(page_key):
+    """Has this page content of its own (a design with parts on it, or texts in its blocks)? Then an installation does not replace it."""
+    from apps.core.models import ContentBlock
+    from apps.pages.models import PageLayout
+
+    lay = PageLayout.objects.filter(key=page_key).first()
+    d = (lay.data if lay else {}) or {}
+    if not d.get("auto") and any(c.get("items") for r in d.get("rows") or [] for c in r.get("cells") or []):
+        return True
+    return ContentBlock.objects.filter(key__startswith=f"layout.{page_key}.").exclude(text="").exists()
+
+
+def conflicts(key):
+    """The pages that applying this installation would replace and that already have content: [{key, title}]. Empty = nothing to lose."""
+    from apps.pages.models import Page
+
+    from . import preset_pages
+
+    keys = sorted(set(saved_pages(key)) | set(preset_pages.layout_keys(key)))
+    out = []
+    for k in keys:
+        if page_has_content(k):
+            pg = Page.objects.filter(key=k).first()
+            title = (pg.title.get("nl") or next(iter(pg.title.values()), k)) if pg and isinstance(pg.title, dict) and pg.title else k
+            out.append({"key": k, "title": title})
+    return out
+
+
+def _apply_saved_pages(key, skip=()):
     from apps.core.models import ContentBlock, Language
     from apps.pages.models import PageLayout
 
     have = set(Language.objects.values_list("code", flat=True))
     for page_key, row in saved_pages(key).items():
+        if page_key in skip:
+            continue  # a page with content of its own stays
         import copy
 
         layout = _link_media(copy.deepcopy(row.get("layout") or {}), row.get("media") or {})
@@ -713,8 +743,9 @@ def set_closed(on):
     service.invalidate()
 
 
-def apply(key, preset=None):
-    """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened."""
+def apply(key, preset=None, overwrite_pages=False):
+    """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened.
+    Pages that already have content are NOT replaced (overwrite_pages=True replaces them: only when the person said so, or on a site that is reset)."""
     from apps.plugins import runtime
     from apps.plugins.models import Plugin
 
@@ -723,6 +754,7 @@ def apply(key, preset=None):
     preset = preset or get(key)
     if not preset:
         raise KeyError(key)
+    protected = set() if overwrite_pages else {c["key"] for c in conflicts(key)}
     want = _wanted_modules(preset)
     for m in modules.MODULES:
         if not m.get("core"):
@@ -779,7 +811,8 @@ def apply(key, preset=None):
     except Exception:  # noqa: BLE001
         pass
     try:
-        ensure_home_logo()
+        if "home" not in protected:
+            ensure_home_logo()
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: the logo in the home design could not be set", key)
     try:  # the logos of the theme in use also go into the media library
@@ -791,11 +824,11 @@ def apply(key, preset=None):
     try:  # the designed pages of this installation (start page, community pages) go in; those of another installation go out
         from . import preset_pages
 
-        preset_pages.install(key)
+        preset_pages.install(key, skip=protected)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: its pages could not be installed", key)
     try:
-        _apply_saved_pages(key)  # the pages that were saved in this installation come back as they were
+        _apply_saved_pages(key, skip=protected)  # the pages that were saved in this installation come back as they were (except pages that have content of their own)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: saved pages could not be put back", key)
     try:  # pages the superadmin added to or took out of this installation: on or off (they must exist; they need not be active now)
