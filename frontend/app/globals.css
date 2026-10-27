@@ -3312,3 +3312,10 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 /* pop-ups of the editor at the button that was clicked: no dark layer, a clear layer behind them that closes them on a click outside */
 .pb-anchorback, .pb-objback.anchored { position: fixed; inset: 0; z-index: 950; display: block; background: transparent; padding: 0; }
 .pb-anchorback .card.modal, .pb-objback.anchored .pb-objpop { box-shadow: 0 16px 44px rgba(0, 0, 0, .5); }
+
+/* the window of a block is wide enough for all its tabs (Indeling ... Achtergrond); too little room: the tabs go to a second row */
+.pb-dockwrap.dock-anchor { width: min(600px, 94vw); }
+.pb-dockwrap.dock-left, .pb-dockwrap.dock-right { width: min(520px, 94vw); }
+.pb-rowbar.pop.pb-center .pb-paneltabs { flex-wrap: wrap; }
+.pb-rowbar.pop.pb-center.docked .pb-panelbody { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.pb-dockwrap.dock-left .pb-rowbar.pop .pb-panelbody, .pb-dockwrap.dock-right .pb-rowbar.pop .pb-panelbody { grid-template-columns: 1fr; }

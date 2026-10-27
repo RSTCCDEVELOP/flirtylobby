@@ -158,7 +158,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const [barPos, setBarPos] = useState({}); // where the gear of a block was (the window opens there in the mode "at the gear")
   const gearClick = (id, e) => {
     const b = e?.currentTarget?.getBoundingClientRect?.();
-    if (b && typeof window !== "undefined") setBarPos((m) => ({ ...m, [id]: { top: Math.max(8, Math.min(b.bottom + 8, window.innerHeight - 340)), left: Math.max(8, Math.min(b.left, window.innerWidth - 440)) } }));
+    if (b && typeof window !== "undefined") setBarPos((m) => ({ ...m, [id]: { top: Math.max(8, Math.min(b.bottom + 8, window.innerHeight - 340)), left: Math.max(8, Math.min(b.left, window.innerWidth - 620)) } }));
     toggleBar(id);
   };
   const toggleBar = (id) => setBarOpen((m) => ({ ...m, [id]: !m[id] }));
