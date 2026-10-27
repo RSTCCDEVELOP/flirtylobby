@@ -46,6 +46,7 @@ urlpatterns = [
     path("system/pricing/ai/", views.pricing_ai),
     path("system/refresh/", views.refresh_settings),
     path("system/site-defaults/", views.site_defaults_view),
+    path("system/installations-config/", views.installations_config_view),
     path("system/presets/", views.presets_list),
     path("system/presets/admin/", views.presets_admin),
     path("system/presets/default/", views.presets_default),

@@ -16,6 +16,7 @@ import DemoData from "./DemoData";
 import RunPopup from "./RunPopup";
 import { runDemo, resumeDemo } from "../lib/demoRun";
 import { PresetIcon } from "./Icons";
+import InstallationsBase from "./InstallationsBase";
 
 // Standard installations: a kind of business with its modules, plugins and community theme. One click switches everything (Super admin).
 export function usePresets(adminOnly = false) {  // adminOnly: only the ones the superadmin released for the admin (also for a superadmin)
@@ -97,6 +98,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   return (
     <div style={{ display: "grid", gap: ".7rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("Kies een standaard installatie en alles wordt voor je ingesteld: welke modules en plugins aan staan en het thema van de community. Teksten, gebruikers en andere gegevens blijven zoals ze zijn.")}{manage && ` ${tx("Met de schakelaar bepaal je welke installaties ook voor beheerders (admin) zichtbaar zijn.")}`}</p>
+      {manage && <InstallationsBase />}
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onUndo={run?.undo ? undoRun : null} onClose={() => { setRun(null); window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
       {ask && (

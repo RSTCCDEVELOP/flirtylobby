@@ -452,6 +452,26 @@ def site_defaults_view(request):
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
+def installations_config_view(request):
+    """The basis of the standard installations (superadmins). GET: what is saved. POST {action: "capture" | "apply"}."""
+    from . import installations_config
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "POST":
+        action = request.data.get("action")
+        if action == "capture":
+            return Response(installations_config.capture())
+        if action == "apply":
+            if not installations_config.info()["exists"]:
+                return Response({"detail": "Er is nog geen basis opgeslagen."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"result": installations_config.apply(force=True), **installations_config.info()})
+        return Response({"detail": "Onbekende actie."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(installations_config.info())
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
 def pricing_view(request):
     """The price list (superadmins): GET = config + everything with a price; POST {base_price, vat_rate, periods:{k:{discount}}, items:{key: price}} = save (pricing.json) and put it in the licence."""
     from . import pricing
