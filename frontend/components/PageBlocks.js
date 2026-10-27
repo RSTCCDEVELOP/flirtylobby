@@ -8,7 +8,7 @@
 "use client";
 
 import { tx } from "../lib/t";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 import { EditableImage, EditableText } from "./EditMode";
@@ -90,6 +90,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const [over, setOver] = useState(null); // where a dragged item would land: {id, pos: before | after}
   const [dragOn, setDragOn] = useState(null); // the item whose handle is held: only then it can be dragged (text stays selectable)
   const drag = useRef(null);
+  const [insAt, setInsAt] = useState(); // where the menu "new block" is open between two blocks
   const [padLock, setPadLock] = useState({}); // texts whose four paddings are changed together (the default while all four are equal)
   const padLocked = (it) => padLock[it.id] ?? (() => { const v = padOf(it.style?.pad); return v.t === v.r && v.r === v.b && v.b === v.l; })();
   const setPad = (it, k, n) => setItem(it.id, { pad: padLocked(it) ? { t: n, r: n, b: n, l: n } : { ...padOf(it.style?.pad), [k]: n } });
@@ -184,6 +185,20 @@ export default function PageBlocks({ pageKey, title = "" }) {
     cell.items.splice(at < 0 ? cell.items.length : at, 0, item);
     return l;
   });
+  // a new block between two others (after the block with id `after`; null = at the top)
+  const addRowAt = (cols, after) => { setInsAt(undefined); change((l) => { const at = after ? l.rows.findIndex((x) => x.id === after) + 1 : 0; l.rows.splice(at, 0, { id: uid(), cols, gap: "md", cells: Array.from({ length: cols }, newCell) }); return l; }); };
+  const insertBar = (after) => (
+    <div className={`pb-insert${insAt === (after || "top") ? " open" : ""}`} key={`ins-${after || "top"}`} onMouseDown={(e) => e.stopPropagation()}>
+      <span className="pb-insline" aria-hidden="true" />
+      <button type="button" className="btn sm pb-insbtn" aria-expanded={insAt === (after || "top")} title={tx("Hier een nieuw blok toevoegen")} onClick={() => setInsAt(insAt === (after || "top") ? undefined : (after || "top"))}>+ {tx("Nieuw blok")}</button>
+      {insAt === (after || "top") && (
+        <span className="pb-insmenu">
+          {[1, 2, 3, 4].map((n) => <button type="button" key={n} className="btn sm" onClick={() => addRowAt(n, after)}>{n === 1 ? tx("Blok") : `${n} ${tx("kolommen")}`}</button>)}
+        </span>
+      )}
+      <span className="pb-insline" aria-hidden="true" />
+    </div>
+  );
   const addRow = (cols) => change((l) => { l.rows.push({ id: uid(), cols, gap: "md", cells: Array.from({ length: cols }, newCell) }); return l; });
   const addHero = () => change((l) => { l.rows.push({ id: uid(), cols: 1, gap: "md", hero: "custom", h_mode: "pct", h: 50, cells: [{ ...newCell(), halign: "center", valign: "center", items: [{ id: uid(), type: "text", ref: "" }] }] }); return l; });
   const addGrid = () => change((l) => { l.rows.push({ id: uid(), cols: 3, gap: "md", hero: "plain", h_mode: "pct", h: 50, cells: Array.from({ length: 3 }, newCell) }); return l; });
@@ -423,7 +438,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
         const shown = layout.rows.filter((r) => !(heroOff && own(r)) && (editing || r.hero || r.bg?.url || r.cells.some((c) => c.items.length)));
         return <BlockNav items={shown.map((r) => ({ id: layout.rows.filter((x) => !(heroOff && own(x))).indexOf(r) >= 0 ? rowNavId(r, layout.rows.filter((x) => !(heroOff && own(x))).indexOf(r)) : "", title: titleOf(r) || `${tx("Blok")} ${layout.rows.filter((x) => !(heroOff && own(x))).indexOf(r) + 1}` })).filter((i) => i.id)} />;
       })()}
+      {editing && insertBar(null)}
       {layout.rows.filter((r) => !(heroOff && own(r))).map((r, ri) => (
+        <Fragment key={r.id}>
         <div id={rowNavId(r, ri)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color ? " tcolor" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOverRow((o) => (o?.id === r.id ? null : o)); }}
           onDrop={(e) => { if (!rowDrag.current) return; e.preventDefault(); e.stopPropagation(); const pos = overRow?.id === r.id ? overRow.pos : "before"; dropRow(r.id, pos); rowDrag.current = null; setOverRow(null); setDragging(false); }}
@@ -662,6 +679,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
             ))}
           </div>
         </div>
+        {editing && insertBar(r.id)}
+        </Fragment>
       ))}
       {editing && (
         <div className="pb-addrow">

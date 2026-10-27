@@ -3221,3 +3221,9 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb.editing .pb-spacer { background: repeating-linear-gradient(45deg, transparent 0 8px, color-mix(in srgb, var(--line) 60%, transparent) 8px 9px); border-radius: 6px; }
 .pb-line { display: flex; width: 100%; }
 .pb-line hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+/* between two blocks (edit mode): a line with "+ Nieuw blok" that opens the choice of a block or grid */
+.pb-insert { display: flex; align-items: center; gap: .6rem; min-height: 1.6rem; margin: .1rem auto; max-width: var(--content-w, 1100px); width: 100%; opacity: .35; transition: opacity .15s; }
+.pb-insert:hover, .pb-insert.open, .pb-insert:focus-within { opacity: 1; }
+.pb-insline { flex: 1; height: 0; border-top: 1px dashed var(--line); }
+.pb-insmenu { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
