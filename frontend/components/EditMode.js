@@ -316,7 +316,7 @@ const hoverWrap = (hv, img) => {
   if (!hv?.mode) return img;
   if (hv.mode === "opacity") return <span className="ei-hov h-opacity" style={{ "--hov-o": (hv.opacity ?? 60) / 100 }}>{img}</span>;
   if (!hv.url) return img;
-  return <span className="ei-hov">{img}{hv.kind === "video"
+  return <span className="ei-hov h-swap">{img}{hv.kind === "video"
     ? <video className="ei-over" src={mediaUrl(hv.url)} muted loop playsInline autoPlay />
     : /* eslint-disable-next-line @next/next/no-img-element */ <img className="ei-over" src={mediaUrl(hv.url)} alt="" />}</span>;
 };

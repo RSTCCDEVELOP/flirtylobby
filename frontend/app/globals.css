@@ -2657,6 +2657,7 @@ html[data-ft="dark"] .site-footer .foot-brand .foot-name, html[data-ft="brand"] 
 .ei-hov > .ei-over { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; pointer-events: none; }
 .ei-hov:hover > .ei-over { opacity: 1; }
 .ei-hov.h-opacity:hover > img:first-child { opacity: var(--hov-o) !important; }
+.ei-hov.h-swap:hover > img:first-child { opacity: 0 !important; }  /* the other picture replaces the original: no double picture where the new one is see-through */
 .ei-hov > img:first-child { transition: opacity .3s; }
 .img-style-panel .pb-tabs { display: flex; gap: .3rem; margin: .4rem 0; }
 .img-style-panel .pb-tabs button { padding: .25rem .7rem; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer; }
@@ -2672,6 +2673,9 @@ html[data-ft="dark"] .site-footer .foot-brand .foot-name, html[data-ft="brand"] 
 .sec-bg > video, .sec-bg > img { transition: opacity .35s; }
 .sec-bg > .sec-bg-over { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s; }
 :hover > .sec-bg.hv-swap > .sec-bg-over { opacity: 1; }
+.sec-bg > .sec-bg-shade { transition: opacity .35s; }
+:hover > .sec-bg.hv-opacity > .sec-bg-shade, :hover > .sec-bg.hv-swap > .sec-bg-shade { opacity: 0 !important; }  /* the mouse-over starts from 100%: the darkness of the normal state is not added to it */
+:hover > .sec-bg.hv-swap > video:not(.sec-bg-over), :hover > .sec-bg.hv-swap > img:not(.sec-bg-over) { opacity: 0; }  /* the original goes away while the other picture shows */
 :hover > .sec-bg.hv-opacity > video:not(.sec-bg-over), :hover > .sec-bg.hv-opacity > img:not(.sec-bg-over) { opacity: var(--hov-o); }
 .sec-bg-hover { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; width: 100%; }
 
