@@ -760,6 +760,8 @@ def demo_data(request):
                 # a plugin that the installation in use needs, for someone who may set that installation (superadmin, or an administrator when it is released): installed from the library and switched on right away, without asking
                 if preset and (_preset_access(request.user) == "all" or (_preset_access(request.user) == "admin" and preset in presets_mod.admin_allowed())) and need.name in presets_mod.plugins_for(presets_mod.get(preset)):
                     did = presets_mod.ensure_plugin(need.name)
+                    if did.get("problem"):  # it could not be installed or started: say why (the screen shows it)
+                        return Response({"detail": did["problem"]}, status=status.HTTP_409_CONFLICT)
                     made_ = demo.create_part(str(d["step"]), media=opts["media"], users=opts["users"], objects=opts["objects"], orders=opts["orders"], heroes=opts["heroes"], shops=shops_)
                     return Response({"made": made_, "plugins_installed": did["installed"], "plugins_enabled": did["enabled"]})
 

@@ -144,21 +144,28 @@ def _adopt(name):
     return False
 
 
+LAST_ERROR = {"text": ""}  # why the last installation from the library did not work (for the message on the screen)
+
+
 def install_from_library(name):
     """Install a plugin from the library (resource/plugins) when its folder is not here yet. Returns True when it was installed."""
     from apps.core import resources
 
+    LAST_ERROR["text"] = ""
     if plugin_dir(name).is_dir():
+        LAST_ERROR["text"] = f"de map van de plugin staat al in {root()}, maar hij is niet bekend (scan de map)"
         return False
     try:
         entry = next((e for e in resources.catalog("plugins") if e["name"] == name), None)
         if not entry:
+            LAST_ERROR["text"] = f"{name} staat niet in de bibliotheek ({resources.root()}/plugins)"
             return False
         p = install_zip(resources._zip_bytes("plugins", entry))
         for need in (p.manifest or {}).get("requires") or []:  # the plugins this one needs come with it (Abonnementen needs Orders and Financieel)
             install_from_library(need)
         return True
-    except Exception:  # noqa: BLE001 - a library that cannot be read or a plugin that does not install: the plugin is simply not there
+    except Exception as e:  # noqa: BLE001 - a library that cannot be read or a plugin that does not install: the plugin is simply not there
+        LAST_ERROR["text"] = str(e)[:200]
         logging.getLogger(__name__).exception("Plugin %s could not be installed from the library", name)
         return False
 

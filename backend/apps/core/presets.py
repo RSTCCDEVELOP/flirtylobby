@@ -327,12 +327,14 @@ def ensure_plugin(name):
 
     from . import modules as modules_mod
 
-    done = {"installed": [], "enabled": []}
+    done = {"installed": [], "enabled": [], "problem": ""}
     before = set(Plugin.objects.values_list("name", flat=True))
     if name not in before:
         installer.install_from_library(name)
     p = Plugin.objects.filter(name=name).first()
     if not p:
+
+        done["problem"] = f"De plugin {name} kon niet worden geïnstalleerd uit de bibliotheek: {installer.LAST_ERROR['text'] or 'onbekende reden'}."
         return done
     for need in runtime.requirement_chain(p)[1]:  # (needed plugins that are not installed yet)
         installer.install_from_library(need)
@@ -344,6 +346,10 @@ def ensure_plugin(name):
             done["enabled"].append(q.name)
     runtime.ensure_loaded(True)
     modules_mod.invalidate()
+    for q in Plugin.objects.filter(name__in=[name, *[x.name for x in todo]]):  # what did not start: the reason (the plugin is switched off again by the system)
+        if q.error or not q.enabled:
+            done["problem"] = f"De plugin {q.title or q.name} kon niet worden gestart: {q.error or 'hij staat uit'}"
+            break
     return done
 
 
@@ -596,21 +602,19 @@ def apply(key, preset=None):
         if not m.get("core"):
             ModuleState.objects.update_or_create(key=m["key"], defaults={"enabled": m["key"] in want})
     modules.invalidate()
-    need = plugins_for(preset)
-    missing = []
-    for p in Plugin.objects.all():
-        on = p.name in need
-        if p.enabled != on or (on and p.error):
-            Plugin.objects.filter(pk=p.pk).update(enabled=on, **({"error": ""} if on else {}))
     from apps.plugins import installer
 
+    need = plugins_for(preset)
     before = set(Plugin.objects.values_list("name", flat=True))
     for n in need:  # a plugin of the installation that is in the library but not installed yet (SEO, FAQ ...): installed now, without asking
         if not Plugin.objects.filter(name=n).exists():
             installer.install_from_library(n)
     installed = sorted(set(Plugin.objects.values_list("name", flat=True)) - before)  # (with the plugins they needed)
-    for p in Plugin.objects.filter(name__in=need, enabled=False):  # (just installed: switch on, the loop above ran before)
-        Plugin.objects.filter(pk=p.pk).update(enabled=True, error="")
+    need = plugins_for(preset)  # again: what the plugins that were just installed need themselves (Abonnementen needs Orders and Financieel) is known now
+    for p in Plugin.objects.all():
+        on = p.name in need
+        if p.enabled != on or (on and p.error):
+            Plugin.objects.filter(pk=p.pk).update(enabled=on, **({"error": ""} if on else {}))
     missing = [n for n in need if not Plugin.objects.filter(name=n).exists()]
     runtime.ensure_loaded(True)
     theme = preset["theme"]
