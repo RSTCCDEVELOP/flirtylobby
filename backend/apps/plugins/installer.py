@@ -170,6 +170,27 @@ def install_from_library(name):
         return False
 
 
+def library_diff(name):
+    """The files of an installed plugin that differ from the zip in the library (changed, extra or missing): the reason when its signature does not match. At most 6 names, or an empty list."""
+    import hashlib
+
+    from apps.core import resources
+
+    try:
+        entry = next((e for e in resources.catalog("plugins") if e["name"] == name), None)
+        if not entry:
+            return []
+        zf = zipfile.ZipFile(io.BytesIO(resources._zip_bytes("plugins", entry)))
+        want = {n: hashlib.sha256(zf.read(n)).hexdigest() for n in zf.namelist() if not n.endswith("/") and n != signing.SIG_FILE}
+        d = plugin_dir(name)
+        have = {rel: hashlib.sha256((d / rel).read_bytes()).hexdigest() for rel in signing.files(d)}
+        sig_zip, sig_dir = zf.read(signing.SIG_FILE).decode().strip(), (d / signing.SIG_FILE).read_text().strip() if (d / signing.SIG_FILE).is_file() else ""
+        out = sorted({k for k in want if have.get(k) != want[k]} | {k for k in have if k not in want})
+        return out[:6] + (["plugin.sig"] if sig_zip != sig_dir else [])
+    except Exception:  # noqa: BLE001 - only an aid for the message
+        return []
+
+
 def adopt_from_library():
     """A part that used to be built into the system is a plugin now: a website that had it switched on gets the plugin from the library (once) and keeps it on."""
     for name in ADOPT:

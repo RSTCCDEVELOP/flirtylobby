@@ -186,6 +186,9 @@ def load(p):
     """(Re)load one plugin. Returns an error text, or None."""
     _unload(p.name)
     problem = start_problem(p)
+    if problem and "ondertekening" in problem:  # (another process may be unpacking this plugin just now: the folder is there a moment later)
+        time.sleep(1.5)
+        problem = start_problem(p)
     if problem:
         return problem
     entry = p.manifest.get("python")
@@ -263,7 +266,8 @@ def start_problem(p):
     """Why a plugin may not run (text), or None: it is not signed by our developer, or it is for a different generation of the system."""
     sig = signing.verify(installer.plugin_dir(p.name))
     if sig == "invalid" or (sig == "missing" and not signing.dev_mode_allowed()):
-        return "De ondertekening van deze plugin ontbreekt of klopt niet: alleen plugins van onze ontwikkelaar draaien hier."
+        diff = installer.library_diff(p.name)
+        return f"De ondertekening van deze plugin ontbreekt of klopt niet ({sig}{': afwijkend ' + ', '.join(diff) if diff else ''}): alleen plugins van onze ontwikkelaar draaien hier."
     built, now = p.manifest.get("system_version", "0.0.0"), __import__("django.conf", fromlist=["settings"]).settings.SYSTEM_VERSION
     state = mf.compatibility(built, now)
     if state == "incompatible" or (state == "newer" and mf.ver(built)[0] != mf.ver(now)[0]):

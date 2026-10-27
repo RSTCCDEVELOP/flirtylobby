@@ -141,6 +141,41 @@ def _system_apply(data, ctx):
 register("system", "Basisgegevens", _system_export, _system_apply, description="Naam, bedrijf en contactgegevens van de website.", order=5)
 
 
+# the setup of the standard installations (Standaard installaties): which one is in use, which are offered, what was changed in them, their saved pages, and which demo data was made
+INSTALLATION_KEYS = ["active_preset", "default_presets", "default_preset", "admin_presets", "preset_edits", "preset_pages", "preset_owned", "demo_presets", "demo_ids"]
+
+
+def _inst_export(opts):
+    from . import presets
+
+    d = presets._data()
+    return {k: d[k] for k in INSTALLATION_KEYS if k in d}
+
+
+def _inst_apply(data, ctx):
+    from . import presets
+
+    d = presets._data()
+    data = data or {}
+    for k in INSTALLATION_KEYS:
+        if k in data:
+            d[k] = data[k]
+        elif ctx.get("mode") != "add":
+            d.pop(k, None)
+    presets._save_data(d)
+    return "Standaard installaties geladen" + (f" (in gebruik: {data['active_preset']})." if data.get("active_preset") else ".")
+
+
+def _inst_add(data, ctx):
+    from . import presets
+
+    have = presets._data()
+    return _inst_apply({k: v for k, v in (data or {}).items() if k not in have}, {**ctx, "mode": "add"})
+
+
+register("installations", "Standaard installaties", _inst_export, _inst_apply, description="De installatie die in gebruik is, welke installaties worden aangeboden, wat erin is aangepast, hun opgeslagen pagina's en welke demo-gegevens zijn gemaakt.", order=12, add=_inst_add)
+
+
 def _packs_export(opts):
     """The theme packages (the files of the themes folder) with their on/off state. opts["themes"]: only these keys (None = all)."""
     from . import themepacks

@@ -161,7 +161,9 @@ def collect_site():
 
 # ── create ──────────────────────────────────────────────────────────────────
 def parts_of(bundle_sections, site):
-    parts = [{"key": "site", "label": "Pagina's, menu's, indelingen, teksten en afbeeldingen"}]
+    parts = [{"key": "data", "label": "Alle gegevens van het systeem: gebruikers, rollen en groepen, mediabibliotheek, licentie, instellingen"},
+             {"key": "files", "label": "Alle bestanden: afbeeldingen, video's, foto's van gebruikers en logo's"},
+             {"key": "site", "label": "Pagina's, menu's, indelingen, teksten en afbeeldingen"}]
     parts += [{"key": f"settings:{k}", "label": v.get("label") or k} for k, v in bundle_sections.items()]
     return parts
 
@@ -172,8 +174,13 @@ def create(frequency, user=None, note=""):
     keys = [s["key"] for s in sb.listing() if s["key"] not in SKIP_SECTIONS]
     bundle = sb.export(keys, cfg.include_secrets, True)
     site, files, skipped = collect_site()
+    from . import full
+
+    data_raw = full.dump(cfg.include_secrets)
+    all_files, unread = full.files()
+    skipped = list(skipped) + unread
     parts = parts_of(bundle["sections"], site)
-    stats = {"pages": len(site["pages"]), "layouts": len(site["layouts"]), "texts": len(site["content"]), "files": len(files), "skipped": skipped, "errors": bundle.get("errors") or {},
+    stats = {"pages": len(site["pages"]), "layouts": len(site["layouts"]), "texts": len(site["content"]), "files": len(all_files), "rows": data_raw.count('"model"'), "skipped": skipped, "errors": bundle.get("errors") or {},
              "secrets": cfg.include_secrets}
     now = timezone.now()
     base, n = f"backup-{timezone.localtime(now):%Y%m%d-%H%M%S}-{frequency}", 1
@@ -189,7 +196,10 @@ def create(frequency, user=None, note=""):
         z.writestr("backup.json", json.dumps(manifest, indent=1, ensure_ascii=False))
         z.writestr("settings.json", json.dumps(bundle, ensure_ascii=False))
         z.writestr("site.json", json.dumps(site, ensure_ascii=False))
+        z.writestr("data.json", data_raw)
         for path, raw in files.items():
+            z.writestr(path, raw)
+        for path, raw in all_files.items():
             z.writestr(path, raw)
     tmp.replace(target)
     row = Backup.objects.create(frequency=frequency, file=name, size=target.stat().st_size, created_by=user if getattr(user, "pk", None) else None, note=note[:200], parts=parts, stats=stats,
@@ -300,6 +310,22 @@ def restore(b, parts=None, user=None):
     results = []
     try:
         want = set(parts) if parts else None
+        from . import full
+
+        names = set(zf.namelist())
+        if (want is None or "files" in want) and any(n.startswith(full.FILES) for n in names):  # first the files: the rows of the library point at them
+            try:
+                results.append({"key": "files", "label": "Alle bestanden", "ok": True, "message": f"{full.restore_files(zf)} bestand(en) teruggezet."})
+            except Exception as e:  # noqa: BLE001
+                logger.exception("restore of the files failed")
+                results.append({"key": "files", "label": "Alle bestanden", "ok": False, "message": f"Niet teruggezet: {e}"})
+        if (want is None or "data" in want) and "data.json" in names:
+            try:
+                n = full.load(zf.read("data.json").decode("utf-8"))
+                results.append({"key": "data", "label": "Alle gegevens van het systeem", "ok": True, "message": f"{n} rij(en) teruggezet (gebruikers, bibliotheek, licentie, instellingen). Iedereen moet opnieuw inloggen."})
+            except Exception as e:  # noqa: BLE001
+                logger.exception("restore of the data failed")
+                results.append({"key": "data", "label": "Alle gegevens van het systeem", "ok": False, "message": f"Niet teruggezet: {e}"})
         if want is None or "site" in want:
             try:
                 with transaction.atomic():

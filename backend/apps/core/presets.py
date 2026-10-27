@@ -347,7 +347,20 @@ def ensure_plugin(name):
             done["enabled"].append(q.name)
     runtime.ensure_loaded(True)
     modules_mod.invalidate()
-    for q in Plugin.objects.filter(name__in=[name, *[x.name for x in todo]]):  # what did not start: the reason (the plugin is switched off again by the system)
+    import time
+
+    for q in Plugin.objects.filter(name__in=[name, *[x.name for x in todo]]):  # what did not start: tried again (another process of the server may have found the folder half unpacked), else the reason
+        for attempt in range(3):
+            q.refresh_from_db()
+            if not (q.error or not q.enabled):
+                break
+            Plugin.objects.filter(pk=q.pk).update(enabled=True, error="")
+            q.refresh_from_db()
+            err = runtime.load(q)
+            if err:
+                Plugin.objects.filter(pk=q.pk).update(enabled=False, error=err)
+                time.sleep(1)
+        q.refresh_from_db()
         if q.error or not q.enabled:
             done["problem"] = f"De plugin {q.title or q.name} kon niet worden gestart: {q.error or 'hij staat uit'}"
             break
