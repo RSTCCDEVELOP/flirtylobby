@@ -304,6 +304,8 @@ def _row_extra(r):
     anchor = re.sub(r"[^a-z0-9-]+", "-", str(r.get("anchor") or "").lower()).strip("-")[:40]
     if anchor:
         out["anchor"] = anchor  # the block can be opened with page-address#anchor
+    if r.get("balign") in ("left", "center", "right"):
+        out["balign"] = r["balign"]  # where the block stands on the page when it is narrower than the page (centre is the default)
     if r.get("glow") is False:
         out["glow"] = False  # a hero without the glow under it (and without the round shapes)
     if r.get("sq_mobile"):

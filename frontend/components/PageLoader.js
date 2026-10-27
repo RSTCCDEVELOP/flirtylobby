@@ -131,17 +131,32 @@ export function ScrollFx() {
     root.style.setProperty("--srd", `${ui.scroll_reveal_ms ?? 600}ms`);
     const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("sr-in"); e.target.classList.remove("sr-pre"); io.unobserve(e.target); } }), { threshold: 0.08 });
     const seen = new WeakSet();
+    const play = (el) => { // show the effect now: from the start position to the normal one (a block that is in view already, or one whose effect was just chosen)
+      el.classList.remove("sr-in"); el.classList.add("sr-pre");
+      void el.offsetWidth; // the start position counts before the movement begins
+      requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add("sr-in"); el.classList.remove("sr-pre"); }));
+    };
+    const apply = (el, changed) => {
+      const m = el.dataset.fx || mode;
+      io.unobserve(el);
+      el.classList.remove("sr-pre", "sr-in");
+      if (!m || m === "none") { delete el.dataset.srm; return; }
+      el.dataset.srm = m;
+      const below = el.getBoundingClientRect().top > window.innerHeight * 0.95;
+      if (below) { el.classList.add("sr-pre"); io.observe(el); }
+      else if (el.dataset.fx || changed) play(el); // a block with an effect of its own also moves in when it is in view already
+    };
     const scan = () => document.querySelectorAll(`${REVEAL}, [data-fx]`).forEach((el) => {
       if (seen.has(el)) return;
       seen.add(el);
-      const m = el.dataset.fx || mode;
-      if (!m || m === "none") return;
-      el.dataset.srm = m;
-      if (el.getBoundingClientRect().top > window.innerHeight * 0.95) { el.classList.add("sr-pre"); io.observe(el); }
+      apply(el, false);
     });
     scan();
-    const mo = new MutationObserver(scan);
-    mo.observe(document.body, { childList: true, subtree: true });
+    const mo = new MutationObserver((list) => {
+      list.forEach((r) => { if (r.type === "attributes" && r.target.nodeType === 1) apply(r.target, true); }); // the effect of a block was changed (edit mode): show it at once
+      scan();
+    });
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-fx"] });
     return () => { mo.disconnect(); io.disconnect(); document.querySelectorAll(".sr-pre").forEach((el) => el.classList.remove("sr-pre")); };
   }, [mode, ui.scroll_reveal_ms]);
   useEffect(() => {

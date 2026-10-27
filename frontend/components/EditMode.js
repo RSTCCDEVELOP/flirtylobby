@@ -331,6 +331,7 @@ export function EditableImage({ id, fallback = null, alt = "", className = "", r
   const st = parseSt(blocks[`${id}.st`]?.[defaultLang]); // own settings: {align, w, opacity, radius}
   const [panel, setPanel] = useState(false);
   const anchorRef = useRef(null);
+  const gearRef = useRef(null); // the gear of the image: its settings open under it
   const grip = useContext(GripContext);
   const save = async (key, v) => {
     const prev = blocks[key]?.[defaultLang];
@@ -351,12 +352,12 @@ export function EditableImage({ id, fallback = null, alt = "", className = "", r
     <div ref={anchorRef} className={`ei-wrap${st.align ? ` al al-${st.align}` : ""}${st.w ? " sized" : ""}`}>
       <div className={`ei-inner${st.w ? " sized" : ""}`} style={hasSt ? css.inner : undefined}>
         <ImageEdit target={`block:${id}`} placement={placement} onPlace={url ? place : undefined} removable={!!url}
-          extra={editing && <>{grip}{removable && <Trash onClick={() => setGone("1", tx("Onderdeel verwijderd"))} />}<button type="button" className={`img-edit-btn img-set-btn${panel ? " on" : ""}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPanel(!panel); }} title={tx("Afbeeldingsinstellingen")} aria-label={tx("Afbeeldingsinstellingen")} aria-expanded={panel}>
+          extra={editing && <>{grip}{removable && <Trash onClick={() => setGone("1", tx("Onderdeel verwijderd"))} />}<button type="button" ref={gearRef} className={`img-edit-btn img-set-btn${panel ? " on" : ""}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPanel(!panel); }} title={tx("Afbeeldingsinstellingen")} aria-label={tx("Afbeeldingsinstellingen")} aria-expanded={panel}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
           </button></>}>
           {url ? hoverWrap(st.hover, /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} style={{ ...(placement && !st.w ? placeStyle(placement) : {}), ...(hasSt ? { width: "100%", height: "auto", opacity: st.opacity !== undefined ? st.opacity / 100 : undefined, borderRadius: st.radius !== undefined ? `${st.radius}px` : undefined } : {}) }} />) : fallback}
         </ImageEdit>
-        {editing && panel && <FloatPanel anchor={anchorRef}><ImageStylePanel st={st} onChange={change} /></FloatPanel>}
+        {editing && panel && <FloatPanel anchor={gearRef}><ImageStylePanel st={st} onChange={change} /></FloatPanel>}
       </div>
     </div>
   );

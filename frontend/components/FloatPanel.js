@@ -21,7 +21,7 @@ export default function FloatPanel({ anchor, children, className = "" }) {
     const w = box.current?.offsetWidth || 360, h = box.current?.offsetHeight || 300;
     const vw = window.innerWidth, vh = window.innerHeight;
     let top = a.bottom + 8;
-    if (top + h > vh - 12 && a.top - 8 - h > 12) top = a.top - 8 - h;  // not enough room below: above the element when that fits
+    // always below the element (the gear): too little room = the panel scrolls
     top = Math.max(12, Math.min(top, vh - 80));
     const left = Math.max(12, Math.min(a.left, vw - w - 12));
     setPos({ top, left, maxH: vh - top - 12 });

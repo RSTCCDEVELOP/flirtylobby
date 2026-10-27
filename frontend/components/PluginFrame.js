@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, apiBase, errorText } from "../lib/api";
+import { anchorStyle } from "../lib/anchor";
 import { confirmDialog } from "../lib/dialog";
 import { getLanguage, tx } from "../lib/t";
 import { makeTranslator } from "../lib/plugin-i18n";
@@ -63,7 +64,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
         catch (err) { reply({ ok: false, error: text(errorText(err)) }); }
       }
       else if (d.plugin === "go" && typeof d.path === "string") { if (d.path.startsWith("/") && !d.path.startsWith("//")) router.push(d.path); else if (/^https?:\/\//.test(d.path)) window.location.href = d.path; }
-      else if (d.plugin === "openadmin" && site?.editing && typeof d.file === "string" && /^web\/[A-Za-z0-9_.-]+\.html$/.test(d.file)) setAdminPop({ file: d.file, query: { popup: "1", ...(d.query || {}) } });
+      else if (d.plugin === "openadmin" && site?.editing && typeof d.file === "string" && /^web\/[A-Za-z0-9_.-]+\.html$/.test(d.file)) setAdminPop({ anchor: (() => { const f = frame.current?.getBoundingClientRect(); const r = d.rect; return f && r && Number.isFinite(r.left) ? { left: f.left + r.left, top: f.top + r.bottom + 8 } : null; })(), file: d.file, query: { popup: "1", ...(d.query || {}) } });
       else if (d.plugin === "media") setAsk({ type: "media", id: d.id });
       else if (d.plugin === "html") setAsk({ type: "html", id: d.id, html: String(d.html || ""), title: d.opts?.title });
       else if (d.plugin === "resize") setHeight(Math.max(120, Math.min(30000, Number(d.height) || 640)));
@@ -87,8 +88,8 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
     <>
       <iframe ref={frame} scrolling="no" title={title || name} src={`${apiBase()}/api/plugins/web/${name}/${file}`} sandbox="allow-scripts allow-forms allow-popups allow-downloads" allow="fullscreen" allowFullScreen style={{ width: "100%", height, border: bare ? 0 : "1px solid var(--line)", borderRadius: bare ? 0 : 12, background: bare ? "transparent" : "var(--card)" }} />
       {adminPop && typeof document !== "undefined" && createPortal(
-        <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) closeAdmin(); }}>
-          <div className="pb-objpop" role="dialog" style={{ width: "min(900px, 100%)" }}>
+        <div className={`pb-objback${adminPop.anchor ? " anchored" : ""}`} onMouseDown={(e) => { if (e.target === e.currentTarget) closeAdmin(); }}>
+          <div className="pb-objpop" role="dialog" style={adminPop.anchor ? anchorStyle(adminPop.anchor, 900) : { width: "min(900px, 100%)" }}>
             <div className="pb-objhead"><strong>{title || name}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={closeAdmin} aria-label={tx("Sluiten")}>×</button></div>
             <PluginFrame name={name} file={adminPop.file} bare route={{ params: {}, query: adminPop.query }} onWrite={() => { dirty.current = true; }} />
           </div>

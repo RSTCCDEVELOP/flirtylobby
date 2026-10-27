@@ -461,6 +461,8 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
    system.t("Nederlandse tekst {0}", x): the text in the language of the visitor; the system supplies the translations (lang/<code>.json of the plugin, then its own texts).
    system.ready: resolves with {user, apiBase} when the page is connected. The colours of the site arrive as CSS variables (--bg, --card, --text, --muted, --line, --blue …). */
 (function () {
+  var last = null;  /* the button that was clicked last: a pop-up of the site opens at it */
+  document.addEventListener("click", function (e) { var b = e.target && e.target.closest && e.target.closest("button, a, [role=button]"); if (b) { var r = b.getBoundingClientRect(); last = { left: r.left, top: r.top, bottom: r.bottom }; } }, true);
   var pending = {}, n = 0, strings = {}, resolveReady, ready = new Promise(function (r) { resolveReady = r; });
   window.addEventListener("message", function (e) {
     var d = e.data || {};
@@ -484,7 +486,7 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
       remove: function (k) { return call("store", { op: "remove", key: k }); }
     },
     upload: function (path, file, fields) { return call("upload", { path: path, file: file, fields: fields || {} }); },  /* send a file (multipart) to the system API as the member: resolves the answer */
-    openAdmin: function (file, query) { parent.postMessage({ plugin: "openadmin", file: file, query: query || {} }, "*"); },  /* the admin screen of this plugin in a popup of the site (edit mode only) */
+    openAdmin: function (file, query) { parent.postMessage({ plugin: "openadmin", file: file, query: query || {}, rect: last }, "*"); },  /* the admin screen of this plugin in a popup of the site (edit mode only) */
     go: function (path) { parent.postMessage({ plugin: "go", path: path }, "*"); },  /* open an address of the website (or a full link) */
     pickMedia: function () { return call("media", {}); },  /* the media library of the system: resolves {id, url} or null */
     editHtml: function (html, opts) { return call("html", { html: html || "", opts: opts || {} }); },  /* the system's text editor: resolves the new html, or null */

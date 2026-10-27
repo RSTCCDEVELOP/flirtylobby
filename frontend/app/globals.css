@@ -3319,3 +3319,11 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-rowbar.pop.pb-center .pb-paneltabs { flex-wrap: wrap; }
 .pb-rowbar.pop.pb-center.docked .pb-panelbody { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
 .pb-dockwrap.dock-left .pb-rowbar.pop .pb-panelbody, .pb-dockwrap.dock-right .pb-rowbar.pop .pb-panelbody { grid-template-columns: 1fr; }
+
+/* a plugin object (the product overview "Nieuw binnen") in the compact layout: no blue edge at the left and no coloured plane behind it */
+.so-4:has(iframe) { border-left: 0; background: none; padding: 0; border-radius: 0; font-size: inherit; }
+
+/* where a block that is narrower than the page stands: centred (the default), left or right */
+.pb-rowwrap[data-balign="center"] { margin-left: auto !important; margin-right: auto !important; }
+.pb-rowwrap[data-balign="left"] { margin-left: 0 !important; margin-right: auto !important; }
+.pb-rowwrap[data-balign="right"] { margin-left: auto !important; margin-right: 0 !important; }
