@@ -24,6 +24,15 @@ export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // only on your own computer (localhost): "@" in the e-mail field fills in the login of DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD (backend/.env); the backend gives it only to localhost in DEBUG
+  const devFill = async (value) => {
+    if (value !== "@" || typeof window === "undefined" || !["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
+    try {
+      const d = await api("/auth/dev-login/");
+      if (d?.configured) { setEmail(d.email); setPassword(d.password); setError(""); }
+      else setError(tx("Zet DEV_LOGIN_EMAIL en DEV_LOGIN_PASSWORD in backend/.env om met @ in te vullen."));
+    } catch {}
+  };
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
@@ -169,7 +178,7 @@ export default function Login() {
         <EditableText id="login.title" as="h1" fallbacks={{ nl: "Inloggen", en: "Log in", de: "Anmelden", fr: "Connexion", es: "Iniciar sesión", pt: "Entrar", zh: "登录", ar: "تسجيل الدخول" }} fallback="Inloggen" />
         <EditableText id="login.intro" as="p" fallback="" className="muted" />
         <label>{tx("E-mailadres")}
-          <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} onInput={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" autoCapitalize="none" autoCorrect="off" />
+          <input type="email" name="email" value={email} onChange={(e) => { setEmail(e.target.value); devFill(e.target.value); }} onInput={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" autoCapitalize="none" autoCorrect="off" />
         </label>
         <label>{tx("Wachtwoord")}
           <input type={show ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} onInput={(e) => setPassword(e.target.value)} required autoComplete="current-password" />

@@ -42,6 +42,26 @@ def client_ip(request):
     return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
 
 
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def dev_login(request):
+    """Only for testing on your own computer: the e-mail address and password of DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD (backend/.env), for the login screen ("@" in the e-mail field).
+    It is there only while the backend runs in DEBUG, for a request that comes from this computer itself, for localhost: on a real site this does not exist (404)."""
+    import os
+
+    from django.conf import settings
+    from django.http import Http404
+
+    from_here = request.META.get("REMOTE_ADDR", "") in ("127.0.0.1", "::1") and not request.META.get("HTTP_X_FORWARDED_FOR")
+    if not (settings.DEBUG and from_here and request.get_host().split(":")[0] in ("localhost", "127.0.0.1")):
+        raise Http404
+    email, password = os.getenv("DEV_LOGIN_EMAIL", ""), os.getenv("DEV_LOGIN_PASSWORD", "")
+    if not (email and password):
+        return Response({"configured": False})
+    return Response({"configured": True, "email": email, "password": password})
+
+
 @api_view(["POST"])
 @authentication_classes([])  # a stale token in the browser must not block logging in
 @permission_classes([AllowAny])

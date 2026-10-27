@@ -19,6 +19,7 @@ urlpatterns = [
     path("users/fake/", fakeusers.fake_users),
     path("profile/me/fill-test/", fakeusers.fill_own_profile),
     path("auth/login/", views.login),
+    path("auth/dev-login/", views.dev_login),
     path("auth/sso/config/", sso.config),
     path("auth/google/", sso.google_login),
     path("auth/apple/", sso.apple_login),

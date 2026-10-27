@@ -10,7 +10,7 @@
 
 `capture()` schrijft die keuzes naar backend/apps/core/installations.json (dat bestand hoort bij de code: neem het mee in git, dan hebben alle Easy2edit-sites dezelfde basis).
 `apply()` zet ze op een site: bij het starten van de server (entrypoint) en met de knop. Een site krijgt de basis opnieuw zodra het bestand veranderd is (een nieuwe versie uit git); wat op de site zelf is ingesteld blijft tot dat moment staan.
-De installatie die nu actief is, de gemaakte demo-gegevens en de opgeslagen pagina's (die verwijzen naar de afbeeldingen van een site) horen er niet bij."""
+De installatie die nu actief is en de gemaakte demo-gegevens horen er niet bij. De pagina's die in een installatie zijn opgeslagen wel: hun afbeeldingen en objecten worden op de andere site op naam teruggevonden."""
 import hashlib
 import json
 import logging
@@ -21,7 +21,7 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-KEYS = ["default_presets", "admin_presets", "preset_edits"]  # of the system settings
+KEYS = ["default_presets", "admin_presets", "preset_edits", "preset_pages"]  # of the system settings (preset_pages: the pages saved in an installation; their pictures are found by name on the other site)
 PATH = Path(settings.BASE_DIR) / "apps" / "core" / "installations.json"
 
 
@@ -35,6 +35,28 @@ def current():
 
     d = presets._data()
     return {k: d[k] for k in KEYS if k in d}
+
+
+def autosave_on():
+    """On your own computer (INSTALLATIONS_AUTOSAVE=True in backend/.env, with DEBUG) every change to the standard installations is written to installations.json at once, so it goes into git with the next push."""
+    import os
+
+    return bool(settings.DEBUG) and os.getenv("INSTALLATIONS_AUTOSAVE", "").lower() in ("1", "true", "yes")
+
+
+def sync_file():
+    """Write installations.json when the choices of this site differ from the file (and autosave is on). Called after every save of the system settings."""
+    if not autosave_on():
+        return False
+    cur = current()
+    try:
+        same = json.loads(PATH.read_text(encoding="utf-8")).get("settings") == cur if PATH.is_file() else False
+    except (OSError, ValueError):
+        same = False
+    if same:
+        return False
+    capture()
+    return True
 
 
 def info():

@@ -317,6 +317,7 @@ def set_admin_allowed(keys):
     obj, _ = SystemSettings.objects.get_or_create(pk=1)
     obj.data = {**(obj.data or {}), "admin_presets": [k for k in dict.fromkeys(keys) if k in BY_KEY]}
     obj.save()
+    _save_data(dict(obj.data))  # (also writes installations.json on your own computer)
     return admin_allowed()
 
 
@@ -381,6 +382,12 @@ def _save_data(data):
     obj, _ = SystemSettings.objects.get_or_create(pk=1)
     obj.data = data
     obj.save()
+    try:  # on your own computer the basis of the standard installations (installations.json) follows every change, so it goes into git
+        from . import installations_config
+
+        installations_config.sync_file()
+    except Exception:  # noqa: BLE001 - never stop a save for this
+        logger.exception("installations.json could not be updated")
 
 
 def default_keys():
@@ -433,7 +440,7 @@ def save_page(key, page_key):
     data = _data()
     pages = dict(data.get("preset_pages") or {})
     mine = dict(pages.get(key) or {})
-    mine[page_key] = {"layout": lay.data, "blocks": blocks, "media": _media_names(lay.data), "block_media": _block_media(blocks)}
+    mine[page_key] = {"layout": lay.data, "blocks": blocks, "media": _media_names(lay.data), "block_media": _block_media(blocks), "objects": _object_defs(lay.data)}
     pages[key] = mine
     data["preset_pages"] = pages
     _save_data(data)
@@ -455,6 +462,54 @@ def _media_names(layout):
     from apps.medialib.models import MediaItem
 
     return {str(m.id): {"name": m.name, "source": m.source} for m in MediaItem.objects.filter(pk__in=_media_ids(layout))}
+
+
+def _plugin_model(label, name):
+    """A model of a plugin that is on (found by its app label), else None."""
+    from django.apps import apps
+
+    return apps.all_models.get(label, {}).get(name.lower())  # (the models of a plugin are registered here, not as an app)
+
+
+def _object_refs(layout):
+    for r in (layout or {}).get("rows", []):
+        for c in r.get("cells", []):
+            for it in c.get("items", []):
+                if it.get("type") == "object" and it.get("ref"):
+                    yield str(it["ref"])
+
+
+def _object_defs(layout):
+    """The settings of the system objects on a page (a product overview, a picture view): they belong to the page. {ref: {kind, slug, fields}}; the pictures a view shows (ids of this site) stay out."""
+    from apps.medialib.models import MediaView
+
+    Design = _plugin_model("plugin_webshop", "Design")
+    out = {}
+    for ref in _object_refs(layout):
+        if ref.startswith("plugin-webshop-producten-") and Design is not None:
+            d = Design.objects.filter(slug=ref[len("plugin-webshop-producten-"):]).first()
+            if d:
+                out[ref] = {"kind": "webshop.design", "slug": d.slug, "fields": {"name": d.name, "data": d.data, "active": d.active, "order": d.order}}
+        elif ref.startswith("media-"):
+            v = MediaView.objects.filter(slug=ref[6:]).first()
+            if v:
+                out[ref] = {"kind": "media.view", "slug": v.slug, "fields": {"name": v.name, "type": v.type, "settings": v.settings}}
+    return out
+
+
+def _apply_object_defs(row):
+    """Put the settings of the objects of a saved page on the objects that exist here (the demo data makes them; this is done again when it is made)."""
+    from apps.medialib.models import MediaView
+
+    Design = _plugin_model("plugin_webshop", "Design")
+    for d in (row.get("objects") or {}).values():
+        try:
+            if d.get("kind") == "webshop.design" and Design is not None:
+                Design.objects.filter(slug=d["slug"]).update(**d["fields"])
+            elif d.get("kind") == "media.view":
+                MediaView.objects.filter(slug=d["slug"]).update(**d["fields"])
+        except Exception:  # noqa: BLE001 - one object that cannot be set must not stop the installation
+            logger.exception("The settings of object %s could not be put back", d.get("slug"))
 
 
 def _block_media(blocks):
@@ -521,6 +576,8 @@ def relink_saved_pages(key):
             PageLayout.objects.filter(pk=lay.pk).update(data=data)
     from apps.core.models import ContentBlock
 
+    for page_key, row in saved_pages(key).items():  # the settings of the objects (product overview, picture views) that the demo data has made now
+        _apply_object_defs(row)
     for page_key, row in saved_pages(key).items():  # the pictures in the blocks of the saved pages
         for bk, info in (row.get("block_media") or {}).items():
             item = _find_media(info)
@@ -551,6 +608,7 @@ def _apply_saved_pages(key):
         PageLayout.objects.update_or_create(key=page_key, defaults={"data": layout})
         from apps.medialib.models import MediaItem
 
+        _apply_object_defs(row)
         for bk, texts in (row.get("blocks") or {}).items():
             for lang, text in texts.items():
                 if isinstance(text, str) and text.startswith("media:"):  # a picture in a block: found by its name here (the id of another installation is not ours); not there yet = empty until the demo pictures are made
