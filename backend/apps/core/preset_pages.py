@@ -232,6 +232,8 @@ def generic(key):
     (ht, hi, hc) = spec["hero"]
     b.hero("hero", b.t("hero.title", *ht), b.t("hero.intro", *hi), b.t("hero.cta", *hc), h=75, hero="custom")  # (on the start page a banner is a block like any other: "custom"; the other pages use the banner of the page itself)
     b.columns("features", [(b.t(f"f{i}.t", *t), b.t(f"f{i}.x", *x), pic(p)) for i, (t, x, p) in enumerate(spec["features"])], gap="lg")
+    if "webshop" in presets.BY_KEY[key].get("plugins", []):  # a shop shows what is new: the overview "Nieuw binnen" (3 newest products), a system object of the installation
+        b.row("newin", [b.cell("newin", [("object", "plugin-webshop-producten-" + presets.NEW_IN_SLUG)], "center")], gap="lg")
     st, sx, sp = spec["split"]
     b.row("split", [b.cell("split-pic", [("image", b.img("split", pic(sp)))], "center", "center"), b.cell("split-text", [("heading", b.t("split.t", *st)), ("text", b.t("split.x", *sx))], "left", "center")], gap="lg")
     b.columns("steps", [(b.t(f"s{i}.t", *t), b.t(f"s{i}.x", *x)) for i, (t, x) in enumerate(spec["steps"])], gap="lg")

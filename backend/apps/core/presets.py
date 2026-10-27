@@ -480,6 +480,21 @@ def _media_names(layout):
     return {str(m.id): {"name": m.name, "source": m.source} for m in MediaItem.objects.filter(pk__in=_media_ids(layout))}
 
 
+# the system objects that belong to the installation itself (not to the demo data): made when the installation is set, so its start page can show them from the first moment
+NEW_IN_SLUG = "nieuw-binnen"  # webshop: the overview "Nieuw binnen" with the 3 newest products
+NEW_IN = {"layout": "grid", "size": "lg", "ratio": "1/1", "style": "outline", "align": "center", "title": "Nieuw binnen", "sort": "new", "limit": 3, "search": False, "chips": False, "pager": False, "switch": False}
+
+
+def ensure_objects(preset):
+    """Make the system objects of the installation when they are not there yet (an object that is there stays as the administrator set it). Returns the names of what was made."""
+    made = []
+    Design = _plugin_model("plugin_webshop", "Design")
+    if Design is not None and "webshop" in plugins_for(preset) and not Design.objects.filter(slug=NEW_IN_SLUG).exists():
+        Design.objects.create(slug=NEW_IN_SLUG, name="Nieuw binnen", data=dict(NEW_IN), active=True, order=0, demo=False)
+        made.append("webshop: Nieuw binnen")
+    return made
+
+
 def _plugin_model(label, name):
     """A model of a plugin that is on (found by its app label), else None."""
     from django.apps import apps
@@ -521,7 +536,8 @@ def _apply_object_defs(row):
     for d in (row.get("objects") or {}).values():
         try:
             if d.get("kind") == "webshop.design" and Design is not None:
-                Design.objects.filter(slug=d["slug"]).update(**d["fields"])
+                if Design.objects.filter(slug=d["slug"]).update(**d["fields"]) == 0:  # not there yet: made now (the start page shows it from the first moment, also without demo data); it stays with the installation
+                    Design.objects.create(slug=d["slug"], demo=False, **d["fields"])
             elif d.get("kind") == "media.view":
                 MediaView.objects.filter(slug=d["slug"]).update(**d["fields"])
         except Exception:  # noqa: BLE001 - one object that cannot be set must not stop the installation
@@ -727,6 +743,10 @@ def apply(key, preset=None):
             Plugin.objects.filter(pk=p.pk).update(enabled=on, **({"error": ""} if on else {}))
     missing = [n for n in need if not Plugin.objects.filter(name=n).exists()]
     runtime.ensure_loaded(True)
+    try:
+        ensure_objects(preset)  # (the system objects of this installation, e.g. "Nieuw binnen" of the webshop)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: its system objects could not be made", key)
     theme = preset["theme"]
     from apps.plugins import facade
 

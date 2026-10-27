@@ -32,6 +32,14 @@ def sources():
             "plugin_part": [(p, x) for p in Plugin.objects.all() for x in installer.all_parts(p)]}  # parts of a plugin (product overview, cart ...) to move around on a page
 
 
+def _get_or_make(**ident_and_defaults):
+    """The object of this source; its slug may still be in use by an object of an earlier source (a plugin that was removed and installed again has a new id): that old one goes."""
+    slug = ident_and_defaults["defaults"]["slug"]
+    ident = {k: v for k, v in ident_and_defaults.items() if k != "defaults"}
+    SystemObject.objects.filter(slug=slug).exclude(**ident).delete()
+    return SystemObject.objects.get_or_create(**ident, defaults=ident_and_defaults["defaults"])
+
+
 def sync():
     """Create objects for ticked items, remove those that are no longer ticked (or whose source is gone). Cheap; called on every save."""
     keep = set()
@@ -39,12 +47,12 @@ def sync():
         for src in qs:
             if kind == "plugin_part":  # a block of a plugin page: (plugin, part)
                 plug, part = src
-                obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=plug.pk, ref_key=part["key"], defaults={"slug": f"plugin-{plug.name}-{part['key']}"[:80]})
+                obj, _ = _get_or_make(kind=kind, ref_id=plug.pk, ref_key=part["key"], defaults={"slug": f"plugin-{plug.name}-{part['key']}"[:80]})
             elif kind == "plugin_item":  # a part of a plugin: (plugin, item)
                 plug, item = src
-                obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=plug.pk, ref_key=item["name"], defaults={"slug": f"plugin-{plug.name}-{item['name']}"[:80]})
+                obj, _ = _get_or_make(kind=kind, ref_id=plug.pk, ref_key=item["name"], defaults={"slug": f"plugin-{plug.name}-{item['name']}"[:80]})
             else:
-                obj, _ = SystemObject.objects.get_or_create(kind=kind, ref_id=src.pk, defaults={"slug": f"{kind}-{getattr(src, 'slug', None) or src.name}"[:80]})
+                obj, _ = _get_or_make(kind=kind, ref_id=src.pk, defaults={"slug": f"{kind}-{getattr(src, 'slug', None) or src.name}"[:80]})
             keep.add(obj.pk)
     keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
     SystemObject.objects.exclude(pk__in=keep).delete()

@@ -26,6 +26,15 @@ export default function SystemReset() {
   const [msg, setMsg] = useState(null);
   const [word, setWord] = useState("");
   const [pw, setPw] = useState("");
+  // only on your own computer (localhost): "@" as password fills in DEV_LOGIN_PASSWORD (backend/.env), like at the login; the backend gives it only to localhost in DEBUG
+  const devFill = async (value) => {
+    setPw(value);
+    if (value !== "@" || typeof window === "undefined" || !["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
+    try {
+      const d = await api("/auth/dev-login/");
+      if (d?.configured) setPw(d.password);
+    } catch {}
+  };
   const [saved, setSaved] = useState(false);
   const presets = usePresets();
   const [preset, setPreset] = useState(""); // set up as this standard installation right after the reset
@@ -115,7 +124,7 @@ export default function SystemReset() {
                   </label>
                 )}
                 <label>{tx("Typ RESET om te bevestigen")}<input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" /></label>
-                <label>{tx("Je wachtwoord")}<input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} /><input type="password" name="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" /></label>
+                <label>{tx("Je wachtwoord")}<input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} /><input type="password" name="password" value={pw} onChange={(e) => devFill(e.target.value)} autoComplete="current-password" /></label>
                 {msg && <div className="alert">{msg.text}</div>}
                 <ProgressBar running={job === "reset"} done={finished} label={tx("Het systeem wordt schoongemaakt…")} />
                 <div className="row" style={{ justifyContent: "flex-end" }}>
