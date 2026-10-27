@@ -31,7 +31,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button className="icon-btn" onClick={toggle} aria-label={theme === "dark" ? tx("Lichte modus") : tx("Donkere modus")} title={theme === "dark" ? tx("Lichte modus") : tx("Donkere modus")}>
+    <button className="icon-btn theme-toggle" onClick={toggle} aria-label={theme === "dark" ? tx("Lichte modus") : tx("Donkere modus")} title={theme === "dark" ? tx("Lichte modus") : tx("Donkere modus")}>
       {theme === "dark" ? sun : moon}
     </button>
   );

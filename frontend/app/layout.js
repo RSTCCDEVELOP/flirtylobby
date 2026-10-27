@@ -64,7 +64,8 @@ export async function generateViewport() {
 }
 
 // Runs before first paint: saved choice, else the OS preference (prevents a light flash)
-const themeScript = (mode) => `try{var t=localStorage.getItem("theme");if(!t){var d="${mode}";t=d==="light"||d==="dark"?d:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){}`;
+// mode_switch "hide": nobody can choose (website, dashboard and login), everything starts in the default
+const themeScript = (mode, forced) => `try{var t=${forced ? "null" : 'localStorage.getItem("theme")'};if(!t){var d="${mode}";t=d==="light"||d==="dark"?d:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){}`;
 
 // Design settings ("Vormgeving") are validated server-side, so the CSS is safe to inline
 async function getTheme() {
@@ -147,9 +148,9 @@ export default async function RootLayout({ children }) {
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
-    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} data-hl={theme?.values?.header_layout || "classic"} data-hstyle={theme?.values?.header_style || "solid"} data-hsticky={theme?.values?.header_sticky || "yes"} data-menu={theme?.values?.menu_style || "text"} data-fl={theme?.values?.footer_layout || "simple"} data-ft={theme?.values?.footer_tone || "page"} data-fbrand={theme?.values?.footer_brand || "none"} data-fsocial={theme?.values?.footer_social || "show"} data-fmeta={theme?.values?.footer_meta || "show"} data-fsize={theme?.values?.footer_size || "normal"} data-blocks={theme?.values?.block_style || "card"} suppressHydrationWarning>
+    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} data-hl={theme?.values?.header_layout || "classic"} data-hstyle={theme?.values?.header_style || "solid"} data-hsticky={theme?.values?.header_sticky || "yes"} data-menu={theme?.values?.menu_style || "text"} data-modesw={theme?.values?.mode_switch === "hide" ? "hide" : "show"} data-fl={theme?.values?.footer_layout || "brand"} data-ft={theme?.values?.footer_tone || "card"} data-fbrand={theme?.values?.footer_brand || "logo"} data-fsocial={theme?.values?.footer_social || "show"} data-fmeta={theme?.values?.footer_meta || "show"} data-fsize={theme?.values?.footer_size || "normal"} data-blocks={theme?.values?.block_style || "card"} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript(theme?.values?.default_mode) }} />
+        <script dangerouslySetInnerHTML={{ __html: themeScript(theme?.values?.default_mode, theme?.values?.mode_switch === "hide") }} />
         {theme?.fonts_url && <link rel="stylesheet" href={theme.fonts_url} />}
         {theme?.css && <style id="theme-live" dangerouslySetInnerHTML={{ __html: theme.css }} />}
       </head>

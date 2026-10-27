@@ -21,7 +21,7 @@ from .models import PageLayout
 
 ID_RE = re.compile(r"^[a-z0-9]{4,16}$")
 KEY_RE = re.compile(r"^[a-z0-9_-]{1,80}$")
-HALIGN, VALIGN, GAPS, TYPES = ("left", "center", "right"), ("top", "center", "bottom"), ("sm", "md", "lg"), ("text", "image", "object", "heading")
+HALIGN, VALIGN, GAPS, TYPES = ("left", "center", "right"), ("top", "center", "bottom"), ("sm", "md", "lg"), ("text", "image", "object", "heading", "spacer", "line")
 MAX_ROWS, MAX_ITEMS = 40, 300
 
 
@@ -153,9 +153,19 @@ def _item_style(st):
             out["mb"] = round(min(max(float(st["mb"]), 0), 6), 2)  # a heading: space below it (rem)
     except (TypeError, ValueError):
         pass
+    if isinstance(st.get("pad"), dict):  # a text: the space inside it per side (px; the default is 10 on every side)
+        pad = {}
+        for side in ("t", "r", "b", "l"):
+            try:
+                if st["pad"].get(side) not in (None, ""):
+                    pad[side] = int(min(max(float(st["pad"][side]), 0), 100))
+            except (TypeError, ValueError):
+                pass
+        if pad:
+            out["pad"] = pad
     if re.fullmatch(r"[1-9][0-9]{0,3}(px|%)", str(st.get("w") or "")):
         out["w"] = str(st["w"])
-    for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 200)):
+    for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 200), ("h", 0, 1000), ("th", 1, 20), ("lw", 5, 100)):  # h: height of a spacer (px), th: thickness and lw: width (%) of a line
         if st.get(key) not in (None, ""):
             try:
                 out[key] = min(max(int(st[key]), lo), hi)
@@ -260,7 +270,7 @@ def clean(data):
                 if t not in TYPES:
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
-                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading") and _item_style(it.get("style")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
+                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading", "spacer", "line") and _item_style(it.get("style")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
             cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})

@@ -242,14 +242,15 @@ SCHEMA = [
         choice("header_style", "Header: uiterlijk", "solid", None, HEADER_STYLES),
         choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, YESNO),
         choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
-        choice("footer_layout", "Footer: indeling", "simple", None, FOOTER_LAYOUTS),
-        choice("footer_tone", "Footer: kleur", "page", None, FOOTER_TONES),
-        choice("footer_brand", "Footer: logo en naam", "none", None, FOOTER_BRANDS),
+        choice("footer_layout", "Footer: indeling", "brand", None, FOOTER_LAYOUTS),
+        choice("footer_tone", "Footer: kleur", "card", None, FOOTER_TONES),
+        choice("footer_brand", "Footer: logo en naam", "logo", None, FOOTER_BRANDS),
         choice("footer_social", "Footer: sociale media", "show", None, SHOWHIDE),
         choice("footer_meta", "Footer: bedrijfsgegevens", "show", None, SHOWHIDE),
         choice("footer_size", "Footer: ruimte", "normal", None, FOOTER_SIZES),
         choice("page_header", "Header op pagina's (standaard)", "show", None, SHOWHIDE),
         choice("page_footer", "Footer op pagina's (standaard)", "show", None, SHOWHIDE),
+        choice("mode_switch", "Schakelaar licht/donker op de website", "show", None, SHOWHIDE),
         choice("block_style", "Blokken en kaarten op de website", "card", None, BLOCK_STYLES),
         number("block_gap", "Ruimte tussen blokken", 1.25, "--block-gap", "rem", 0.5, 3, 0.25),
         number("content_w", "Breedte van de inhoud van pagina's", 1100, "--content-w", "px", 720, 1600, 20),
@@ -461,7 +462,7 @@ PRESET_DEFS.append(_explicit(
     ("#ffffff", "#f6f6f6", "#ffffff", "#fafafa", "#e6e6e6", "#373736", "#7c7d80"),
     ("#1c1c1d", "#141414", "#242425", "#2d2d2e", "#3a3a3b", "#f1f1f1", "#a0a1a4"),
     "#dc2626", "#16a34a", font_body="Montserrat", font_heading="Montserrat", radius=6, btn_radius=6,
-    shadow="soft", heading_weight="600", brand_logo="studio2", header_layout="classic", header_style="solid", menu_style="underline", footer_layout="columns", footer_tone="card", block_style="card"))
+    shadow="soft", heading_weight="600", brand_logo="studio2", header_layout="classic", header_style="solid", menu_style="underline", footer_layout="brand", footer_tone="card", footer_brand="logo", block_style="card"))
 
 
 def presets():

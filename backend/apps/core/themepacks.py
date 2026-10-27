@@ -107,7 +107,7 @@ def enabled_defs():
     return [{"key": r.key, "name": r.manifest["name"], "description": r.manifest["description"], "mode": r.manifest.get("mode"), "overrides": r.manifest["values"], "assets": len(r.manifest.get("assets", {})) + len(r.manifest.get("home", []))} for r in rows]
 
 
-COMPLETE_KEYS = ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "footer_brand", "footer_social", "footer_meta", "footer_size", "page_header", "page_footer", "block_style", "block_gap", "content_w", "tab_style", "system_popup", *[f"ts_{k}_{f}" for k in ("k1", "k2", "k3", "k4", "p") for f in ("size", "weight", "color", "font", "lh", "track")])  # a theme always holds these
+COMPLETE_KEYS = ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "footer_brand", "footer_social", "footer_meta", "footer_size", "page_header", "page_footer", "mode_switch", "default_mode", "block_style", "block_gap", "content_w", "tab_style", "system_popup", *[f"ts_{k}_{f}" for k in ("k1", "k2", "k3", "k4", "p") for f in ("size", "weight", "color", "font", "lh", "track")])  # a theme always holds these
 
 
 def BUILTIN_KEYS():
@@ -444,7 +444,7 @@ def capture(key):
     d, doc = _dir(key), _doc(key)
     cur = theme.merged(SiteSettings.load().theme)
     values = dict(SiteSettings.load().theme) or {"primary": theme.DEFAULTS["primary"]}
-    for k in ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "footer_brand", "footer_social", "footer_meta", "footer_size", "page_header", "page_footer", "block_style", "block_gap", "content_w", "tab_style", "system_popup"):
+    for k in ("header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "footer_brand", "footer_social", "footer_meta", "footer_size", "page_header", "page_footer", "mode_switch", "default_mode", "block_style", "block_gap", "content_w", "tab_style", "system_popup"):
         values[k] = cur[k]  # a package always holds the complete page templates
     for slot in SLOTS:
         clear_slot(key, slot)

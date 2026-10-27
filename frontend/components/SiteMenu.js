@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { tx } from "../lib/t";
 import { IconMenu, IconX } from "./Icons";
 import { getLanguage } from "../lib/t";
@@ -160,10 +160,36 @@ export default function SiteMenu() {
     if (form === "bottom") document.documentElement.setAttribute("data-bottomnav", "1"); else document.documentElement.removeAttribute("data-bottomnav");
     return () => document.documentElement.removeAttribute("data-bottomnav");
   }, [form]);
+  // A bar that does not fit (window made smaller than the menu needs) turns into the hamburger by itself, and back when there is room again
+  const wrapRef = useRef(null);
+  const [fitAt, setFitAt] = useState(0); // the window width at which the bar did not fit (0 = it fits)
+  useEffect(() => {
+    if (form !== "bar") return undefined;
+    const check = () => {
+      const wrap = wrapRef.current, head = wrap?.closest(".site-header"), nav = wrap?.querySelector(".hmenu.f-bar");
+      if (!head || !nav) return;
+      const first = nav.firstElementChild;
+      const wrapped = first && nav.offsetHeight > first.offsetHeight * 1.6;
+      const over = head.scrollWidth > head.clientWidth + 1;
+      if (wrapped || over) setFitAt(window.innerWidth);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [form, items, user]);
+  useEffect(() => { // wider than where it failed (with some room to spare): try the bar again
+    if (!fitAt) return undefined;
+    const on = () => { if (window.innerWidth > fitAt + 40) setFitAt(0); };
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, [fitAt]);
+  const dev = device || "desktop";
+  const squeezed = form === "bar" && fitAt > 0 && !!device;
+  const useCfg = squeezed ? { ...cfg, forms: { ...cfg.forms, [dev]: "hamburger" } } : cfg;
   return (
-    <div className={`hmenu-wrap tp-${cfg.toggle_pos?.[device || "desktop"] || "right"}`} style={{ visibility: device ? "visible" : "hidden" }}>
+    <div ref={wrapRef} className={`hmenu-wrap tp-${cfg.toggle_pos?.[dev] || "right"}`} style={{ visibility: device ? "visible" : "hidden" }}>
       <MenuStyle cfg={cfg} />
-      <MenuView items={items} cfg={cfg} device={device || "desktop"} pathname={pathname} user={user} />
+      <MenuView items={items} cfg={useCfg} device={dev} pathname={pathname} user={user} />
     </div>
   );
 }

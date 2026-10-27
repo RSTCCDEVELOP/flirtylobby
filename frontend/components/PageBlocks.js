@@ -24,7 +24,7 @@ import Tabs from "./Tabs";
 import PluginFrame from "./PluginFrame";
 import MediaViewEditor from "./MediaViewEditor";
 import BlockNav from "./BlockNav";
-import { IconEdit, IconTrash } from "./Icons";
+import { IconEdit, IconLock, IconTrash, IconUnlock } from "./Icons";
 import { createPortal } from "react-dom";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
@@ -73,6 +73,10 @@ const AL_V = { top: "flex-start", center: "center", bottom: "flex-end" };
 
 // Blocks of a page: rows (a grid of 1-4 columns) with text, pictures and system objects in the cells.
 // In edit mode: add rows, drag items between cells, set how items sit in a cell (left/centre/right, top/centre/bottom).
+// the space inside a text: {t, r, b, l} in px (10 on every side when nothing was set)
+const padOf = (p) => ({ t: p?.t ?? 10, r: p?.r ?? 10, b: p?.b ?? 10, l: p?.l ?? 10 });
+const padCss = (p) => { const v = padOf(p); return `${v.t}px ${v.r}px ${v.b}px ${v.l}px`; };
+
 export default function PageBlocks({ pageKey, title = "" }) {
   const { editing } = useSession();
   const objOn = useModule("sysobjects");
@@ -86,6 +90,20 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const [over, setOver] = useState(null); // where a dragged item would land: {id, pos: before | after}
   const [dragOn, setDragOn] = useState(null); // the item whose handle is held: only then it can be dragged (text stays selectable)
   const drag = useRef(null);
+  const [padLock, setPadLock] = useState({}); // texts whose four paddings are changed together (the default while all four are equal)
+  const padLocked = (it) => padLock[it.id] ?? (() => { const v = padOf(it.style?.pad); return v.t === v.r && v.r === v.b && v.b === v.l; })();
+  const setPad = (it, k, n) => setItem(it.id, { pad: padLocked(it) ? { t: n, r: n, b: n, l: n } : { ...padOf(it.style?.pad), [k]: n } });
+  const padControls = (it) => (
+    <div className="pb-padbox">
+              <div className="pb-stylerow"><span>{tx("Ruimte binnen (padding)")}</span>
+                <button type="button" className={`btn sm pb-padlock${padLocked(it) ? " on" : ""}`} aria-pressed={padLocked(it)} title={padLocked(it) ? tx("Vergrendeld: alle vier de kanten samen") : tx("Ontgrendeld: elke kant apart")} onClick={() => setPadLock((s) => ({ ...s, [it.id]: !padLocked(it) }))}>{padLocked(it) ? <IconLock /> : <IconUnlock />}<span>{padLocked(it) ? tx("Alle kanten samen") : tx("Elke kant apart")}</span></button></div>
+              {[["t", "Boven"], ["r", "Rechts"], ["b", "Onder"], ["l", "Links"]].map(([k, l]) => (
+                <div className="pb-stylerow" key={k}><span>{tx(l)}</span>
+                  <input type="range" min={0} max={100} step={2} value={padOf(it.style?.pad)[k]} aria-label={tx(l)} onChange={(e) => setPad(it, k, Number(e.target.value))} style={{ width: 160 }} /><small className="muted">{padOf(it.style?.pad)[k]} px</small></div>
+              ))}
+            </div>
+  );
+  const [itemTab, setItemTab] = useState({}); // the tab of the settings of a text (text, colour, space)
   const [itemOpen, setItemOpen] = useState({}); // texts whose settings (text style, size, colour, font) are open
   const [pageOpen, setPageOpen] = useState(false); // the page settings (space, items per page, width, hero, layout) are folded away until the gear is clicked
   const [objPop, setObjPop] = useState(null); // {cell: id} while the system objects popup is open
@@ -206,7 +224,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const delRow = (rid) => change((l) => { l.rows = l.rows.filter((x) => x.id !== rid); return l; });
   const setAllCells = (rid, patch) => change((l) => { const row = l.rows.find((x) => x.id === rid); if (row) row.cells.forEach((c) => Object.assign(c, patch)); return l; });
   const setCell = (cid, patch) => change((l) => { Object.assign(l.rows.flatMap((r) => r.cells).find((c) => c.id === cid), patch); return l; });
-  const addItem = (cid, type, ref = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref, ...(type === "heading" ? { style: { tag: "k2" } } : {}) }); return l; }); };
+  const addItem = (cid, type, ref = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref, ...(type === "heading" ? { style: { tag: "k2" } } : type === "spacer" ? { style: { h: 40 } } : type === "line" ? { style: { lw: 100, th: 1 } } : {}) }); return l; }); };
   const setObjLayout = (iid, n) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { if (n === "1") delete x.layout; else x.layout = n; } }))); return l; });
   const setItem = (iid, patch) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { x.style = { ...(x.style || {}), ...patch }; Object.keys(x.style).forEach((k) => { if (x.style[k] === "" || x.style[k] == null) delete x.style[k]; }); if (!Object.keys(x.style).length) delete x.style; } }))); return l; });
   const dropFixed = (cid, before) => { // a fixed element of the page (logo, title, intro) is dropped in a cell
@@ -231,12 +249,14 @@ export default function PageBlocks({ pageKey, title = "" }) {
 
   const renderItem = (c, it) => {
     const key = it.ref && it.type !== "object" ? it.ref : `layout.${pageKey}.${it.id}`; // a fixed element that was dragged in keeps its own content key
-    const body = it.type === "text" ? <div className={`pb-tstyle${it.style?.tag ? ` ts-${it.style.tag}` : ""}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}`} style={{ ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}) }}><EditableText id={key} removable={false} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" /></div>
-      : it.type === "heading" ? <div className={`pb-tstyle ts-${it.style?.tag || "k2"}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}${it.style?.weight ? " ts-weight" : ""}`} style={{ ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}), ...(it.style?.weight ? { "--ti-weight": it.style.weight } : {}), textAlign: it.style?.align || c.halign, ...(it.style?.mb !== undefined ? { marginBottom: `${it.style.mb}rem` } : {}) }}><EditableText id={key} removable={false} as={{ k1: "h2", k2: "h3", k3: "h4", k4: "h5" }[it.style?.tag || "k2"] || "h3"} fallback={editing ? tx("Klik om een kop te typen") : ""} className="pb-text pb-heading" /></div>
+    const body = it.type === "text" ? <div className={`pb-tstyle${it.style?.tag ? ` ts-${it.style.tag}` : ""}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}`} style={{ padding: padCss(it.style?.pad), ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}) }}><EditableText id={key} removable={false} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" /></div>
+      : it.type === "heading" ? <div className={`pb-tstyle ts-${it.style?.tag || "k2"}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}${it.style?.weight ? " ts-weight" : ""}`} style={{ padding: padCss(it.style?.pad), ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}), ...(it.style?.weight ? { "--ti-weight": it.style.weight } : {}), textAlign: it.style?.align || c.halign, ...(it.style?.mb !== undefined ? { marginBottom: `${it.style.mb}rem` } : {}) }}><EditableText id={key} removable={false} as={{ k1: "h2", k2: "h3", k3: "h4", k4: "h5" }[it.style?.tag || "k2"] || "h3"} fallback={editing ? tx("Klik om een kop te typen") : ""} className="pb-text pb-heading" /></div>
+      : it.type === "spacer" ? <div className="pb-spacer" style={{ height: it.style?.h ?? 40 }} aria-hidden="true">{editing && <small className="muted">{it.style?.h ?? 40} px</small>}</div>
+      : it.type === "line" ? <div className="pb-line" style={{ padding: padCss(it.style?.pad), justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[c.halign] || "flex-start" }}><hr style={{ width: `${it.style?.lw ?? 100}%`, borderTopWidth: it.style?.th ?? 1, ...(it.style?.color ? { borderColor: colorOf(it.style.color) } : {}) }} /></div>
       : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} removable={false} className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : editing ? <div className="pb-ph">{tx("Klik om een afbeelding te kiezen")}</div> : null} /></div>
       : <SysObjectBySlug slug={it.ref} layout={it.layout} />;
     if (!editing) return <div className={`pb-item${it.type === "object" ? " obj" : ""}`} key={it.id} style={{ textAlign: c.halign }}>{body}</div>;
-    const label = it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
+    const label = it.type === "spacer" ? tx("Tussenruimte") : it.type === "line" ? tx("Lijn") : it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
     const shown = over?.id === it.id ? ` drop-${over.pos}` : "";
     const hover = (e) => { // above the middle of the item = before it, below = after it
       if ((!drag.current && !dragFixed()) || drag.current === it.id) return;
@@ -262,7 +282,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <span className="pb-grip" title={tx("Sleep om te verplaatsen")} draggable
             onDragStart={(e) => { drag.current = it.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", it.id); const box = e.currentTarget.closest(".pb-item"); if (box) e.dataTransfer.setDragImage(box, 16, 16); setTimeout(() => { setDragOn(it.id); setDragging(true); }, 0); }}
             onDragEnd={() => { drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>⋮⋮ <small>{label}</small></span>
-          {(it.type === "text" || it.type === "heading") && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => setItemOpen((m) => ({ ...m, [it.id]: !m[it.id] }))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
+          {(it.type === "text" || it.type === "heading" || it.type === "spacer" || it.type === "line") && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => setItemOpen((m) => ({ ...m, [it.id]: !m[it.id] }))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
           </button>}
           {it.type === "object" && (() => { // a system object (product overview, donation, subscription ...): its settings, in a popup (a donation or subscription: its own admin page)
@@ -293,32 +313,73 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <button type="button" className="btn sm" disabled={!it.style} onClick={() => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === it.id) delete x.style; }))); return l; })}>{tx("Terug naar standaard")}</button></div>
           </div>
         )}
+        {it.type === "spacer" && itemOpen[it.id] && (
+          <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
+            <strong>{tx("Tussenruimte")}</strong>
+            <div className="pb-stylerow"><span>{tx("Hoogte")}</span>
+              <input type="range" min={0} max={400} step={4} value={it.style?.h ?? 40} onChange={(e) => setItem(it.id, { h: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Hoogte")} />
+              <input type="number" min={0} max={1000} value={it.style?.h ?? 40} onChange={(e) => setItem(it.id, { h: Math.min(1000, Math.max(0, Number(e.target.value) || 0)) })} style={{ width: "5.5rem" }} /><small className="muted">px</small></div>
+          </div>
+        )}
+        {it.type === "line" && itemOpen[it.id] && (
+          <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
+            <strong>{tx("Lijn")}</strong>
+            <Tabs tabs={[["line", "Lijn"], ["space", "Ruimte"]]} value={itemTab[it.id] || "line"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
+            {(itemTab[it.id] || "line") === "line" && (
+              <div className="pb-cols">
+                <div className="pb-stylerow"><span>{tx("Breedte")}</span>
+                  <input type="range" min={5} max={100} step={5} value={it.style?.lw ?? 100} onChange={(e) => setItem(it.id, { lw: Number(e.target.value) })} style={{ width: 160 }} aria-label={tx("Breedte")} /><small className="muted">{it.style?.lw ?? 100} %</small></div>
+                <div className="pb-stylerow"><span>{tx("Dikte")}</span>
+                  <input type="range" min={1} max={20} step={1} value={it.style?.th ?? 1} onChange={(e) => setItem(it.id, { th: Number(e.target.value) })} style={{ width: 160 }} aria-label={tx("Dikte")} /><small className="muted">{it.style?.th ?? 1} px</small></div>
+                <div className="pb-stylerow"><span>{tx("Kleur")}</span><ColorPick value={it.style?.color || ""} onChange={(v) => setItem(it.id, { color: v })} /></div>
+              </div>
+            )}
+            {itemTab[it.id] === "space" && <div className="pb-cols">{padControls(it)}</div>}
+          </div>
+        )}
         {(it.type === "text" || it.type === "heading") && itemOpen[it.id] && (
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             <strong>{it.type === "heading" ? tx("Titel setup") : tx("Tekstinstellingen")}</strong>
+            <Tabs tabs={[["text", "Tekst"], ["color", "Kleur"], ["space", "Ruimte"]]} value={itemTab[it.id] || "text"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
+            {(itemTab[it.id] || "text") === "text" && (
+              <div className="pb-cols">
             <div className="pb-stylerow"><span>{it.type === "heading" ? tx("Niveau") : tx("Opmaak")}</span>
               <select value={it.type === "heading" ? it.style?.tag || "k2" : it.style?.tag || ""} onChange={(e) => setItem(it.id, { tag: e.target.value })}>
                 {it.type !== "heading" && <option value="">{tx("Zoals in de tekst")}</option>}<option value="k1">{tx("Kop 1")}</option><option value="k2">{tx("Kop 2")}</option><option value="k3">{tx("Kop 3")}</option><option value="k4">{tx("Kop 4")}</option>{it.type !== "heading" && <option value="p">{tx("Alinea")}</option>}
               </select></div>
             {it.type === "heading" && (
-              <>
+              <div className="pb-cols">
                 <div className="pb-stylerow"><span>{tx("Uitlijnen")}</span>
                   <span className="pb-seg">{[["", "Zoals de kolom"], ["left", "Links"], ["center", "Midden"], ["right", "Rechts"]].map(([k, l]) => <button type="button" key={k || "col"} className={(it.style?.align || "") === k ? "on" : ""} onClick={() => setItem(it.id, { align: k })}>{tx(l)}</button>)}</span></div>
                 <div className="pb-stylerow"><span>{tx("Dikte")}</span>
                   <select value={it.style?.weight || ""} onChange={(e) => setItem(it.id, { weight: e.target.value })}>
                     <option value="">{tx("Zoals het thema")}</option><option value="400">{tx("Normaal")}</option><option value="500">{tx("Medium")}</option><option value="600">{tx("Halfvet")}</option><option value="700">{tx("Vet")}</option><option value="800">{tx("Extra vet")}</option>
                   </select></div>
-                <div className="pb-stylerow"><span>{tx("Ruimte eronder")}</span>
-                  <input type="range" min={0} max={4} step={0.25} value={it.style?.mb ?? 0.5} onChange={(e) => setItem(it.id, { mb: Number(e.target.value) })} style={{ width: 160 }} /><small className="muted">{it.style?.mb ?? 0.5} rem</small></div>
-              </>
+              </div>
             )}
             <div className="pb-stylerow"><span>{tx("Lettergrootte")}</span>
               <input type="number" min={0.6} max={6} step={0.1} value={it.style?.size || ""} placeholder={tx("Thema")} onChange={(e) => setItem(it.id, { size: e.target.value === "" ? "" : Number(e.target.value) })} style={{ width: "6rem" }} /><small className="muted">rem</small></div>
-            <div className="pb-stylerow"><span>{tx("Kleur")}</span><ColorPick value={it.style?.color || ""} onChange={(v) => setItem(it.id, { color: v })} /></div>
             <div className="pb-stylerow"><span>{tx("Lettertype")}</span>
               <select value={it.style?.font || ""} onChange={(e) => setItem(it.id, { font: e.target.value })}>
                 <option value="">{tx("Zoals het thema")}</option><option value="body">{tx("Lettertype van de tekst")}</option><option value="heading">{tx("Lettertype van de koppen")}</option><option value="serif">Serif</option><option value="mono">Monospace</option>
-              </select>
+              </select></div>
+              </div>
+            )}
+            {itemTab[it.id] === "color" && (
+              <div className="pb-cols">
+            <div className="pb-stylerow"><span>{tx("Kleur")}</span><ColorPick value={it.style?.color || ""} onChange={(v) => setItem(it.id, { color: v })} /></div>
+              </div>
+            )}
+            {itemTab[it.id] === "space" && (
+              <div className="pb-cols">
+            {padControls(it)}
+                {it.type === "heading" && (
+                <div className="pb-stylerow"><span>{tx("Ruimte eronder")}</span>
+                  <input type="range" min={0} max={4} step={0.25} value={it.style?.mb ?? 0.5} onChange={(e) => setItem(it.id, { mb: Number(e.target.value) })} style={{ width: 160 }} /><small className="muted">{it.style?.mb ?? 0.5} rem</small></div>
+                )}
+              </div>
+            )}
+            <div className="pb-stylerow">
               <button type="button" className="btn sm" disabled={!it.style} onClick={() => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === it.id) delete x.style; }))); return l; })}>{tx("Terug naar thema")}</button></div>
           </div>
         )}
@@ -585,6 +646,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
                           <button type="button" onClick={() => addItem(c.id, "heading")}>{tx("Kop")}</button>
                           <button type="button" onClick={() => addItem(c.id, "text")}>{tx("Tekst")}</button>
                           <button type="button" onClick={() => addItem(c.id, "image")}>{tx("Afbeelding")}</button>
+                          <button type="button" onClick={() => addItem(c.id, "spacer")}>{tx("Tussenruimte")}</button>
+                          <button type="button" onClick={() => addItem(c.id, "line")}>{tx("Lijn")}</button>
                           <div className="pb-menu-h">{tx("Raster in dit blok")}</div>
                           <span className="pb-menu-cols">{[1, 2, 3, 4].map((n) => <button type="button" key={n} className={r.cols === n ? "on" : ""} onClick={() => { setMenu(null); setRow(r.id, { cols: n }); }} title={n === 1 ? tx("Eén kolom") : `${n} ${tx("kolommen")}`}>{n}</button>)}<small className="muted">{tx("kolommen")}</small></span>
                           {objOn && <button type="button" onClick={() => { setMenu(null); setObjQ(""); setObjPop({ cell: c.id, row: r.id }); }}>{tx("Systeemobjecten")}… <small className="muted">{objects.length}</small></button>}

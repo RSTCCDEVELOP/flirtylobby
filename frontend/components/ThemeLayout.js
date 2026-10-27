@@ -71,7 +71,7 @@ function PopupMock({ p }) {
 
 function PageMock({ type, logo, v = {}, scroll = false }) { // scroll: the page is shown scrolled down (does the header stay at the top?)
   const Logo = () => (logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="lay-logo-img" /> : <i className="lay-logo" />);
-  const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mfl": v.footer_layout || "simple", "data-mft": v.footer_tone || "page", "data-mfbrand": v.footer_brand || "none", "data-mfsocial": v.footer_social || "show", "data-mfmeta": v.footer_meta || "show", "data-mfsize": v.footer_size || "normal", "data-mblocks": v.block_style || "card" };
+  const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mfl": v.footer_layout || "brand", "data-mft": v.footer_tone || "card", "data-mfbrand": v.footer_brand || "logo", "data-mfsocial": v.footer_social || "show", "data-mfmeta": v.footer_meta || "show", "data-mfsize": v.footer_size || "normal", "data-mblocks": v.block_style || "card" };
   if (type === "site") {
     const noHead = v.page_header === "hide", noFoot = v.page_footer === "hide";
     const top = <div className="lay-top"><Logo /><span className="lay-menu"><b /><b /><b /></span><span className="lay-burger"><b /><b /><b /></span><span className="lay-actions"><i /><i /></span></div>;
@@ -122,7 +122,7 @@ function PageMock({ type, logo, v = {}, scroll = false }) { // scroll: the page 
 // A switch: on this page-wide default (a page can set its own at Pagina-instellingen -> Pagina-opzet)
 function DefaultSwitch({ on, onChange, disabled, label, hint }) {
   return (
-    <label className="packlay-row packlay-card" style={{ opacity: disabled ? .6 : 1 }}>
+    <label className="default-switch" style={{ opacity: disabled ? .6 : 1 }}>
       <span className="switch"><input type="checkbox" checked={on} disabled={disabled} onChange={(e) => onChange(e.target.checked)} /><span /></span>
       <span className="packlay-text"><strong>{label}</strong><small className="muted">{hint}</small></span>
       <span className="packlay-state muted">{on ? tx("Aan") : tx("Uit")}</span>
@@ -216,7 +216,19 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
       {!draft && look && sec === "header" && (
         <>
           <h2 style={{ margin: "1rem 0 0" }}>{tx("Header van de website")}</h2>
+          <div className="default-switches">
           <DefaultSwitch on={(look.values.page_header || "show") !== "hide"} disabled={L < 2} onChange={(v) => pick("page_header", v ? "show" : "hide")} label={tx("Header standaard tonen")} hint={tx("Voor alle pagina's van dit thema. Per pagina zet je hem aan of uit bij Pagina-instellingen → Pagina-opzet.")} />
+          <DefaultSwitch on={(look.values.mode_switch || "show") !== "hide"} disabled={L < 2} onChange={(v) => pick("mode_switch", v ? "show" : "hide")} label={tx("Schakelaar licht/donker tonen")} hint={tx("Bezoekers kiezen zelf licht of donker. Uit: de website start altijd in de standaard hieronder.")} />
+          </div>
+          {(look.values.mode_switch || "show") === "hide" && (
+            <div className="stack-sm" style={{ gap: ".4rem" }}>
+              <strong>{tx("Standaard weergave")}</strong>
+              <small className="muted">{tx("De schakelaar staat uit: de website, het dashboard en de inlog starten altijd in deze weergave.")}</small>
+              <div className="preset-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
+                {[["light", "Licht"], ["dark", "Donker"], ["system", "Volgt het apparaat van de bezoeker"]].map(([v, l]) => <button key={v} type="button" disabled={L < 2} className={`preset opt ${(look.values.default_mode || "system") === v ? "active" : ""}`} onClick={() => pick("default_mode", v)}><strong style={{ fontSize: ".85rem" }}>{tx(l)}</strong></button>)}
+              </div>
+            </div>
+          )}
           {[["Indeling", ["header_layout"]], ["Uiterlijk", ["header_style"]], ["Gedrag bij scrollen", ["header_sticky"]], ["Menu", ["menu_style"]]].map(([title, keys]) => (
             <div key={title} className="stack-sm">
               <strong>{tx(title)}</strong>

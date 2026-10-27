@@ -25,7 +25,7 @@ export default function SiteHeader() {
     <header className="site-header">
       <ImageEdit target="asset:logo">
         <Link href="/" className="brand">
-          <Logo />
+          <Logo header />
         </Link>
       </ImageEdit>
       <SiteMenu />

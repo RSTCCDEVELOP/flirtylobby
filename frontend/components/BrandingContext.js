@@ -30,11 +30,14 @@ export function BrandingProvider({ value, logoSet, siteName, children }) {
 }
 export const useBranding = () => useContext(BrandingContext);
 
-export function Logo({ className = "", alt }) {
+// header: the logo of the site header (own light and dark version, else the normal logo)
+export function Logo({ className = "", alt, header = false }) {
   const { assets, alt: setAlt } = useBranding();
   alt = alt || setAlt || "Studio2";
-  const light = assets.logo ? assetUrl(assets.logo) : "/logos/easy2edit/logo.png";
-  const dark = assets.logo_dark ? assetUrl(assets.logo_dark) : null;
+  const lightSrc = (header && assets.header_logo) || assets.logo;
+  const darkSrc = (header && assets.header_logo_dark) || assets.logo_dark;
+  const light = lightSrc ? assetUrl(lightSrc) : "/logos/easy2edit/logo.png";
+  const dark = darkSrc ? assetUrl(darkSrc) : null;
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}

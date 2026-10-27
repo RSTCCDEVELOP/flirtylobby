@@ -37,7 +37,7 @@ function AssetCard({ slot, info, url, onChange, onError, L }) {
 
   return (
     <div className="asset">
-      <div className={`asset-preview ${slot === "logo_dark" ? "on-dark" : ""}`}>
+      <div className={`asset-preview ${slot.endsWith("_dark") ? "on-dark" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {url ? <img src={mediaUrl(url)} alt={info.label} /> : <span className="muted">{tx("Geen afbeelding")}</span>}
       </div>

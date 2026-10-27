@@ -11,6 +11,8 @@ from django.db import models
 SLOTS = {
     "logo": ("Logo", "Voor lichte achtergrond. PNG/WebP met transparante achtergrond."),
     "logo_dark": ("Logo (donkere modus)", "Optioneel: logo voor donkere achtergrond."),
+    "header_logo": ("Header-logo", "Optioneel: eigen logo in de header van de website (lichte modus). Zonder upload geldt het logo."),
+    "header_logo_dark": ("Header-logo (donkere modus)", "Optioneel: header-logo voor de donkere modus. Zonder upload geldt het logo (donkere modus)."),
     "favicon": ("Favicon", "Icoon in het browsertabblad. Vierkant, 64×64 of groter (PNG/ICO)."),
     "icon": ("App-icoon", "Voor iPhone/Android-startscherm. Vierkant PNG, 512×512."),
     "og_image": ("Deelafbeelding", "Getoond bij delen op social media. 1200×630."),

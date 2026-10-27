@@ -12,6 +12,7 @@ import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
 import CookieSettingsButton from "./CookieSettingsButton";
 import { getSite } from "../lib/site-server";
+import { getMenu } from "../lib/pages-server";
 import { Logo } from "./BrandingContext";
 import FooterEdit from "./FooterEdit";
 
@@ -19,9 +20,16 @@ const SOCIAL = { facebook: "Facebook", instagram: "Instagram", x: "X", linkedin:
 const PRIVACY = { nl: "Privacybeleid", en: "Privacy policy" };
 
 export default async function SiteFooter() {
-  const [cfg, mods, site] = await Promise.all([getSecurity(), getModules(), getSite()]);
+  const [cfg, mods, site, menu] = await Promise.all([getSecurity(), getModules(), getSite(), getMenu()]);
   const lang = detectLang((await headers()).get("accept-language"), cfg?.languages, cfg?.default_language);
   const t = (k) => pick(cfg?.cookies?.texts, lang, cfg?.default_language, k);
+  // the pages of the menu as links (what is for everybody: the items with an address, and under a menu heading its pages)
+  const label = (it) => it.titles?.[lang] || it.titles?.nl || it.titles?.en || Object.values(it.titles || {})[0] || "";
+  const href = (it) => it.urls?.[lang] || it.url || "";
+  const navLinks = (menu?.items || []).filter((i) => i.audience === "all" && i.devices?.desktop !== false).flatMap((i) => [i, ...(i.children || []).filter((c) => c.audience === "all")]).filter((i) => href(i) && label(i) && !i.cta).slice(0, 10);
+  const place = site ? [site.postal_code, site.city].filter(Boolean).join(" ") : "";
+  const street = site ? [site.street, site.house_number].filter(Boolean).join(" ") : "";
+  const hasContact = !!(site && (street || place || site.phone || site.contact_email));
   return (
     <footer className="site-footer">
       <FooterEdit />
@@ -30,6 +38,20 @@ export default async function SiteFooter() {
         <strong className="foot-name">{site?.site_name || site?.company_name || ""}</strong>
         {site?.footer_text && <span className="foot-text">{site.footer_text}</span>}
       </div>
+      {navLinks.length > 0 && (
+        <nav className="foot-nav" aria-label="Menu">
+          {navLinks.map((i) => /^(https?:|mailto:|tel:)/.test(href(i)) ? <a key={i.id} href={href(i)}>{label(i)}</a> : <Link key={i.id} href={href(i)}>{label(i)}</Link>)}
+        </nav>
+      )}
+      {hasContact && (
+        <address className="foot-contact">
+          {site.company_name && <strong>{site.company_name}</strong>}
+          {street && <span>{street}</span>}
+          {place && <span>{place}{site.country && site.country !== "Nederland" ? `, ${site.country}` : ""}</span>}
+          {site.phone && <a href={`tel:${site.phone.replace(/\s/g, "")}`}>{site.phone}</a>}
+          {site.contact_email && <a href={`mailto:${site.contact_email}`}>{site.contact_email}</a>}
+        </address>
+      )}
       <div className="foot-links">
         {mods.privacy_pages !== false && <Link href="/privacy">{PRIVACY[lang] || PRIVACY[cfg?.default_language] || PRIVACY.nl}</Link>}
         {cfg?.cookies?.enabled && <CookieSettingsButton label={t("policy_link")} event="open-cookie-policy" />}
@@ -43,7 +65,7 @@ export default async function SiteFooter() {
           <span>© {new Date().getFullYear()} {site.company_name || site.site_name}</span>
           {site.kvk && <span>KvK {site.kvk}</span>}
           {site.vat_id && <span>BTW {site.vat_id}</span>}
-          {site.contact_email && <a href={`mailto:${site.contact_email}`}>{site.contact_email}</a>}
+          {site.contact_email && !hasContact && <a href={`mailto:${site.contact_email}`}>{site.contact_email}</a>}
           {site.footer_text && <span>{site.footer_text}</span>}
         </div>
       )}

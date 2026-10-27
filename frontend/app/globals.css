@@ -3170,3 +3170,54 @@ body:has(.topbar) .sandbox-badge, body:has(.site) .sandbox-badge { display: none
   .upq-row .grow { white-space: normal; }
   .progress-top { gap: .5rem; }
 }
+
+/* the fixed bars at the bottom (Beheer and the licence notice) must not cover the footer: room under it while they are there */
+body:has(.admin-bar) .site-footer, body:has(.license-note) .site-footer { padding-bottom: 4.6rem !important; }
+
+/* footer: the pages as links and the contact data (address, phone, e-mail) */
+.site-footer .foot-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem 1.25rem; width: 100%; }
+.site-footer .foot-nav a { color: var(--text); font-weight: 600; }
+.site-footer .foot-contact { display: flex; flex-wrap: wrap; justify-content: center; gap: .2rem 1rem; width: 100%; font-style: normal; }
+.site-footer .foot-contact strong { color: var(--text); flex: 0 0 100%; }
+@media (min-width: 721px) {
+  html[data-fl="columns"] .site-footer .foot-nav, html[data-fl="columns"] .site-footer .foot-contact, html[data-fl="brand"] .site-footer .foot-nav, html[data-fl="brand"] .site-footer .foot-contact, html[data-fl="bar"] .site-footer .foot-nav, html[data-fl="bar"] .site-footer .foot-contact, html[data-fl="mega"] .site-footer .foot-nav, html[data-fl="mega"] .site-footer .foot-contact { flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; max-width: none; margin: 0; }
+  html[data-fl="split"] .site-footer .foot-nav, html[data-fl="split"] .site-footer .foot-contact { justify-content: flex-start; }
+}
+html[data-fl="minimal"] .site-footer .foot-contact strong, html[data-fl="minimal"] .site-footer .foot-nav { display: none; }
+html[data-fl="minimal"] .site-footer .foot-contact { width: auto; }
+
+/* switch light/dark off (Thema -> Layout -> Header): the button is nowhere (website, dashboard, login) */
+html[data-modesw="hide"] .theme-toggle { display: none; }
+
+/* the on/off switches of Thema -> Layout: in a row, text on the left, the switch and its state on the right */
+.default-switches { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: .8rem; }
+.default-switch { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3rem 1.2rem; padding: 1rem 1.2rem; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--card) 70%, transparent); cursor: pointer; text-align: left; }
+.default-switch .packlay-text { grid-column: 1; grid-row: 1 / span 2; text-align: left; align-items: flex-start; }
+.default-switch .switch { grid-column: 2; grid-row: 1; justify-self: end; }
+.default-switch .packlay-state { grid-column: 2; grid-row: 2; justify-self: end; text-align: right; }
+
+/* the copyright line (© year name) is centred under the columns, over the full width */
+@media (min-width: 721px) {
+  html[data-fl="columns"] .site-footer .foot-meta, html[data-fl="brand"] .site-footer .foot-meta, html[data-fl="mega"] .site-footer .foot-meta { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; justify-content: center !important; text-align: center !important; align-items: center; padding-top: 1rem; margin-top: .5rem; border-top: 1px solid var(--line); }
+  html[data-fl="bar"] .site-footer .foot-meta { justify-content: center !important; text-align: center !important; }
+}
+
+/* padding of a text: the lock button and the four sides under each other */
+.pb-padbox { display: flex; flex-direction: column; gap: .5rem; }
+.pb-padlock { display: inline-flex; align-items: center; gap: .4rem; }
+.pb-padlock.on { border-color: var(--blue); color: var(--blue); }
+.pb-padlock svg { width: 1.1em; height: 1.1em; }
+
+/* the settings of a text: the rows next to each other in columns where there is room */
+.pb-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem 1.5rem; align-items: center; }
+.pb-cols > .pb-stylerow > span:first-child { min-width: 6.5rem; }
+@media (max-width: 520px) { .pb-cols { grid-template-columns: 1fr; } }
+.pb-cols > .pb-stylerow { margin: 0; min-width: 0; }
+.pb-padbox { display: contents; }
+.pb-padbox > .pb-stylerow:first-child { grid-column: 1 / -1; }
+
+/* spacer and line between the parts of a page */
+.pb-spacer { width: 100%; display: flex; align-items: center; justify-content: center; }
+.pb.editing .pb-spacer { background: repeating-linear-gradient(45deg, transparent 0 8px, color-mix(in srgb, var(--line) 60%, transparent) 8px 9px); border-radius: 6px; }
+.pb-line { display: flex; width: 100%; }
+.pb-line hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
