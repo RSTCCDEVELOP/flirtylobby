@@ -22,7 +22,7 @@ PRESETS = [
     {"key": "standaard-website", "name": "Standaard website", "icon": "globe", "theme": "normal", "plugins": ["documents"],
      "desc": "Alleen een website: pagina's en menu, media en systeemobjecten, FAQ en SEO, en documentbeheer. Zonder community, abonnementen, donaties of webshop. Met demo-gegevens heb je meteen een complete site.",
      "modules": BASE + ["seo", "faq", "sysobjects", "siteimport", "integrations"]},
-    {"key": "webshop", "name": "Webwinkel", "icon": "cart", "theme": "webshop", "plugins": ["webshop", "subscriptions"],
+    {"key": "webshop", "name": "Webwinkel", "icon": "cart", "theme": "webshop", "plugins": ["webshop", "orders", "finance"],
      "desc": "Producten verkopen met winkelwagen, bestellingen en online betalen. Klantaccounts, e-mailmeldingen en een FAQ.",
      "modules": BASE + ["seo", "faq", "integrations", "sysobjects"]},
     {"key": "bedrijfswebsite", "name": "Bedrijfswebsite", "icon": "building", "theme": "normal", "plugins": ["documents"],
