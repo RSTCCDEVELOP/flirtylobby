@@ -31,7 +31,11 @@ export async function runDemo(preset, body, set, resume = null) {
     for (let i = 0; i < keys.length; i++) {
       const k = keys[i];
       mark(k, "busy");
-      try { await api("/system/demo/", { method: "POST", body: { ...base, step: k } }); }
+      try {
+        const made = await api("/system/demo/", { method: "POST", body: { ...base, step: k } });
+        const did = [...(made?.plugins_installed || []).map((n) => tx("Plugin {0} uit de bibliotheek geïnstalleerd.", n)), ...(made?.plugins_enabled || []).map((n) => tx("Plugin {0} aangezet.", n))];
+        if (did.length) update((r) => { r.notes = [...(r.notes || []), ...did]; return r; });  // done without asking: the pop-up says so
+      }
       catch (e) {
         if (e?.status === 409 && e.data?.needs_plugin) {
           // a plugin that is needed is off: stop here, the pop-up has a button to switch it on and go on (this changes the price per month)

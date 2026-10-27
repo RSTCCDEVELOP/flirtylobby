@@ -734,8 +734,14 @@ def demo_data(request):
         if d.get("step"):  # one step
             try:
                 made_ = demo.create_part(str(d["step"]), media=opts["media"], users=opts["users"], objects=opts["objects"], orders=opts["orders"], heroes=opts["heroes"], shops=shops_)
-            except demo.NeedsPlugin as need:  # the plugin is off: the screen asks to switch it on (and says what that costs per month)
+            except demo.NeedsPlugin as need:  # the plugin is off
                 from . import pricing
+
+                # a plugin that the installation in use needs, for someone who may set that installation (superadmin, or an administrator when it is released): installed from the library and switched on right away, without asking
+                if preset and (_preset_access(request.user) == "all" or (_preset_access(request.user) == "admin" and preset in presets_mod.admin_allowed())) and need.name in presets_mod.plugins_for(presets_mod.get(preset)):
+                    did = presets_mod.ensure_plugin(need.name)
+                    made_ = demo.create_part(str(d["step"]), media=opts["media"], users=opts["users"], objects=opts["objects"], orders=opts["orders"], heroes=opts["heroes"], shops=shops_)
+                    return Response({"made": made_, "plugins_installed": did["installed"], "plugins_enabled": did["enabled"]})
 
                 info = pricing.extra_for_plugin(need.name)
                 return Response({"detail": f"De plugin {info['title']} staat uit.", "needs_plugin": need.name, **info}, status=status.HTTP_409_CONFLICT)

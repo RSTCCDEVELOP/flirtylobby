@@ -320,6 +320,33 @@ def set_admin_allowed(keys):
     return admin_allowed()
 
 
+def ensure_plugin(name):
+    """A plugin that the installation in use needs: installed from the library when it is not here yet, and switched on with the plugins it needs. Returns {"installed": [...], "enabled": [...]} (what was done)."""
+    from apps.plugins import installer, runtime
+    from apps.plugins.models import Plugin
+
+    from . import modules as modules_mod
+
+    done = {"installed": [], "enabled": []}
+    before = set(Plugin.objects.values_list("name", flat=True))
+    if name not in before:
+        installer.install_from_library(name)
+    p = Plugin.objects.filter(name=name).first()
+    if not p:
+        return done
+    for need in runtime.requirement_chain(p)[1]:  # (needed plugins that are not installed yet)
+        installer.install_from_library(need)
+    done["installed"] = sorted(set(Plugin.objects.values_list("name", flat=True)) - before)
+    todo, absent = runtime.requirement_chain(p)
+    for q in [*todo, p]:
+        if not q.enabled or q.error:
+            Plugin.objects.filter(pk=q.pk).update(enabled=True, error="")
+            done["enabled"].append(q.name)
+    runtime.ensure_loaded(True)
+    modules_mod.invalidate()
+    return done
+
+
 def plugins_for(preset):
     """The plugins of a standard installation and the plugins those need (the webshop needs Orders and Payments): all of them must be on."""
     from apps.plugins.models import Plugin
@@ -577,9 +604,11 @@ def apply(key, preset=None):
             Plugin.objects.filter(pk=p.pk).update(enabled=on, **({"error": ""} if on else {}))
     from apps.plugins import installer
 
-    for n in need:  # a plugin of the installation that is in the library but not installed yet (SEO, FAQ ...): installed now
+    before = set(Plugin.objects.values_list("name", flat=True))
+    for n in need:  # a plugin of the installation that is in the library but not installed yet (SEO, FAQ ...): installed now, without asking
         if not Plugin.objects.filter(name=n).exists():
             installer.install_from_library(n)
+    installed = sorted(set(Plugin.objects.values_list("name", flat=True)) - before)  # (with the plugins they needed)
     for p in Plugin.objects.filter(name__in=need, enabled=False):  # (just installed: switch on, the loop above ran before)
         Plugin.objects.filter(pk=p.pk).update(enabled=True, error="")
     missing = [n for n in need if not Plugin.objects.filter(name=n).exists()]
@@ -657,4 +686,4 @@ def apply(key, preset=None):
     except Exception:  # noqa: BLE001
         pass
     logger.warning("Standard installation %s applied", key)
-    return {"preset": key, "modules_on": sorted(want), "plugins_on": [n for n in need if n not in missing], "plugins_missing": missing, "theme": theme if "profiles" in want else None}
+    return {"preset": key, "modules_on": sorted(want), "plugins_on": [n for n in need if n not in missing], "plugins_missing": missing, "plugins_installed": installed, "theme": theme if "profiles" in want else None}

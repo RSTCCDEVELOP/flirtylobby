@@ -28,6 +28,7 @@ export default function RunPopup({ run, onClose, onFix, onUndo }) {
         </ul>
         {run.error && <div className="alert">{run.error}</div>}
         {run.note && !run.error && <div className="alert ok">{run.note}</div>}
+        {(run.notes || []).length > 0 && <div className="alert ok">{run.notes.join(" ")}</div>}
         <div className="row" style={{ marginTop: "1rem" }}>
           {run.fix && onFix && <button type="button" className="btn primary" disabled={run.fixing} onClick={onFix}>{run.fixing ? tx("Bezig…") : tx("Aanzetten en verder gaan")}</button>}
           {run.error && onUndo && <button type="button" className="btn danger" disabled={run.fixing || run.undoing} onClick={onUndo}>{run.undoing ? tx("Bezig…") : tx("Installatie ongedaan maken")}</button>}
