@@ -330,7 +330,7 @@ def ensure_plugin(name):
 
     done = {"installed": [], "enabled": [], "problem": ""}
     before = set(Plugin.objects.values_list("name", flat=True))
-    if name not in before:
+    if installer.needs_install(name):
         installer.install_from_library(name)
     p = Plugin.objects.filter(name=name).first()
     if not p:
@@ -339,6 +339,9 @@ def ensure_plugin(name):
         return done
     for need in runtime.requirement_chain(p)[1]:  # (needed plugins that are not installed yet)
         installer.install_from_library(need)
+    for q in [p, *runtime.requirement_chain(p)[0]]:  # (and the ones whose folder is broken)
+        if installer.needs_install(q.name):
+            installer.install_from_library(q.name)
     done["installed"] = sorted(set(Plugin.objects.values_list("name", flat=True)) - before)
     todo, absent = runtime.requirement_chain(p)
     for q in [*todo, p]:
@@ -713,8 +716,8 @@ def apply(key, preset=None):
 
     need = plugins_for(preset)
     before = set(Plugin.objects.values_list("name", flat=True))
-    for n in need:  # a plugin of the installation that is in the library but not installed yet (SEO, FAQ ...): installed now, without asking
-        if not Plugin.objects.filter(name=n).exists():
+    for n in need:  # a plugin of the installation that is in the library but not installed yet (SEO, FAQ ...), or whose folder is broken: installed now, without asking
+        if installer.needs_install(n):
             installer.install_from_library(n)
     installed = sorted(set(Plugin.objects.values_list("name", flat=True)) - before)  # (with the plugins they needed)
     need = plugins_for(preset)  # again: what the plugins that were just installed need themselves (Abonnementen needs Orders and Financieel) is known now

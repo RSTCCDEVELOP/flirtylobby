@@ -6,12 +6,15 @@
 # website https://rstcc.net
 
 """Putting plugins on the system: safe unzip of an upload into <PLUGINS_DIR>/<name>/, scanning the folder, config, removal."""
+import contextlib
 import io
 import re
 import logging
 import os
 import shutil
 import stat
+import tempfile
+import threading
 import zipfile
 from pathlib import Path
 
@@ -35,6 +38,41 @@ def root():
 
 def plugin_dir(name):
     return root() / name
+
+
+_held = threading.local()
+
+
+@contextlib.contextmanager
+def install_lock():
+    """Only one process installs plugins at a time. The workers of a server all start the same installation at the same moment (a part that used to be built in comes from the library): without this
+    they unpack into each other's folders and leave half a plugin behind. Re-entrant (the same thread may take it again)."""
+    if getattr(_held, "n", 0):
+        _held.n += 1
+        try:
+            yield
+        finally:
+            _held.n -= 1
+        return
+    fh = open(root() / ".install.lock", "a+")
+    try:
+        try:
+            import fcntl
+
+            fcntl.flock(fh, fcntl.LOCK_EX)
+        except ImportError:  # (no file locks on this system)
+            pass
+        _held.n = 1
+        yield
+    finally:
+        _held.n = 0
+        try:
+            import fcntl
+
+            fcntl.flock(fh, fcntl.LOCK_UN)
+        except ImportError:
+            pass
+        fh.close()
 
 
 def data_dir(name):
@@ -87,37 +125,38 @@ def install_zip(data):
         man = mf.parse(zf.read(prefix + "plugin.json"))
     except mf.ManifestError as e:
         raise InstallError(str(e))
-    target = plugin_dir(man["name"])
-    tmp = root() / f".{man['name']}.tmp"
-    shutil.rmtree(tmp, ignore_errors=True)
-    for info, name in infos:
-        if not name.startswith(prefix) or name == prefix:
-            continue
-        dest = (tmp / name[len(prefix):]).resolve()
-        if tmp.resolve() not in dest.parents and dest != tmp.resolve():
-            raise InstallError(f"Onveilig pad: {name}")
-        if name.endswith("/"):
-            dest.mkdir(parents=True, exist_ok=True)
-        else:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            with zf.open(info) as src, open(dest, "wb") as out:
-                shutil.copyfileobj(src, out)
-    if signing.verify(tmp) != "valid":  # only plugins made by our developer
-        shutil.rmtree(tmp, ignore_errors=True)
-        raise InstallError("Deze plugin is niet door onze ontwikkelaar ondertekend (of is na het ondertekenen gewijzigd). Alleen ondertekende plugins kunnen worden geïnstalleerd.")
-    for need in (man["python"], man["web"]):
-        if need and not (tmp / need).is_file():
+    with install_lock():
+        target = plugin_dir(man["name"])
+        tmp = Path(tempfile.mkdtemp(prefix=f".{man['name']}.", suffix=".tmp", dir=root()))  # (own folder: nobody else unpacks into it)
+        for info, name in infos:
+            if not name.startswith(prefix) or name == prefix:
+                continue
+            dest = (tmp / name[len(prefix):]).resolve()
+            if tmp.resolve() not in dest.parents and dest != tmp.resolve():
+                shutil.rmtree(tmp, ignore_errors=True)
+                raise InstallError(f"Onveilig pad: {name}")
+            if name.endswith("/"):
+                dest.mkdir(parents=True, exist_ok=True)
+            else:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(info) as src, open(dest, "wb") as out:
+                    shutil.copyfileobj(src, out)
+        if signing.verify(tmp) != "valid":  # only plugins made by our developer
             shutil.rmtree(tmp, ignore_errors=True)
-            raise InstallError(f"In plugin.json staat {need}, maar dat bestand zit niet in de plugin.")
-    for d in signing.content_dirs(target) if target.is_dir() else ():  # content added later (games) survives an update of the plugin
-        old = target / d
-        if old.is_dir():
-            (tmp / d).mkdir(exist_ok=True)
-            for item in old.iterdir():
-                if not (tmp / d / item.name).exists():
-                    shutil.move(str(item), str(tmp / d / item.name))
-    shutil.rmtree(target, ignore_errors=True)
-    os.replace(tmp, target)
+            raise InstallError("Deze plugin is niet door onze ontwikkelaar ondertekend (of is na het ondertekenen gewijzigd). Alleen ondertekende plugins kunnen worden geïnstalleerd.")
+        for need in (man["python"], man["web"]):
+            if need and not (tmp / need).is_file():
+                shutil.rmtree(tmp, ignore_errors=True)
+                raise InstallError(f"In plugin.json staat {need}, maar dat bestand zit niet in de plugin.")
+        for d in signing.content_dirs(target) if target.is_dir() else ():  # content added later (games) survives an update of the plugin
+            old = target / d
+            if old.is_dir():
+                (tmp / d).mkdir(exist_ok=True)
+                for item in old.iterdir():
+                    if not (tmp / d / item.name).exists():
+                        shutil.move(str(item), str(tmp / d / item.name))
+        shutil.rmtree(target, ignore_errors=True)
+        os.replace(tmp, target)
     return register(man)
 
 
@@ -147,23 +186,33 @@ def _adopt(name):
 LAST_ERROR = {"text": ""}  # why the last installation from the library did not work (for the message on the screen)
 
 
+def needs_install(name):
+    """Is this plugin missing, or is its folder half there or not signed right (an earlier installation that went wrong)?"""
+    d = plugin_dir(name)
+    return not (Plugin.objects.filter(name=name).exists() and (d / "plugin.json").is_file() and signing.verify(d) == "valid")
+
+
 def install_from_library(name):
     """Install a plugin from the library (resource/plugins) when its folder is not here yet. Returns True when it was installed."""
     from apps.core import resources
 
     LAST_ERROR["text"] = ""
-    if plugin_dir(name).is_dir():
-        LAST_ERROR["text"] = f"de map van de plugin staat al in {root()}, maar hij is niet bekend (scan de map)"
-        return False
     try:
-        entry = next((e for e in resources.catalog("plugins") if e["name"] == name), None)
-        if not entry:
-            LAST_ERROR["text"] = f"{name} staat niet in de bibliotheek ({resources.root()}/plugins)"
-            return False
-        p = install_zip(resources._zip_bytes("plugins", entry))
-        for need in (p.manifest or {}).get("requires") or []:  # the plugins this one needs come with it (Abonnementen needs Orders and Financieel)
-            install_from_library(need)
-        return True
+        with install_lock():  # (the workers of a server do this at the same moment: one at a time, and what the other one did is not done again)
+            d = plugin_dir(name)
+            if (d / "plugin.json").is_file() and signing.verify(d) == "valid":
+                if not Plugin.objects.filter(name=name).exists():
+                    scan()
+                LAST_ERROR["text"] = "al geïnstalleerd"
+                return False
+            entry = next((e for e in resources.catalog("plugins") if e["name"] == name), None)
+            if not entry:
+                LAST_ERROR["text"] = f"{name} staat niet in de bibliotheek ({resources.root()}/plugins)"
+                return False
+            p = install_zip(resources._zip_bytes("plugins", entry))  # (also replaces a folder that is half there)
+            for need in (p.manifest or {}).get("requires") or []:  # the plugins this one needs come with it (Abonnementen needs Orders and Financieel)
+                install_from_library(need)
+            return True
     except Exception as e:  # noqa: BLE001 - a library that cannot be read or a plugin that does not install: the plugin is simply not there
         LAST_ERROR["text"] = str(e)[:200]
         logging.getLogger(__name__).exception("Plugin %s could not be installed from the library", name)
