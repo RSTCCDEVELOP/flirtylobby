@@ -48,6 +48,12 @@ def clean_bg(bg):
     except (TypeError, ValueError):
         overlay = 0.35
     out = {"type": bg["type"], "media": item.id, "overlay": round(overlay, 2)}
+    try:
+        zoom = int(min(max(float(bg.get("zoom", 100)), 30), 250))
+    except (TypeError, ValueError):
+        zoom = 100
+    if zoom != 100:
+        out["zoom"] = zoom  # the picture smaller or bigger than the block (percent)
     if bg.get("pos") in ("top", "bottom"):  # where the picture is held when the block is smaller than the picture (centre is the default)
         out["pos"] = bg["pos"]
     hv = bg.get("hover")

@@ -1845,7 +1845,7 @@ html[data-blocks="elevated"] .site .card { border-color: transparent; box-shadow
 .has-bg, .games-hero.has-bg { position: relative; overflow: hidden; isolation: isolate; border-radius: var(--radius); padding: 1.6rem; color: #fff; }
 .has-bg .pb-row, .has-bg .pb-rowbar { position: relative; z-index: 1; }
 .sec-bg { position: absolute; inset: 0; z-index: -1; display: block; }
-.sec-bg img, .sec-bg video { width: 100%; height: 100%; object-fit: cover; object-position: var(--bg-pos, center); display: block; }
+.sec-bg img, .sec-bg video { width: 100%; height: 100%; object-fit: cover; object-position: var(--bg-pos, center); scale: var(--bg-zoom, 1); transform-origin: var(--bg-pos, center); display: block; }
 .sec-bg-shade { position: absolute; inset: 0; background: #000; }
 .sec-bg-controls { display: inline-flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
 .sec-bg-controls label { display: inline-flex; gap: .3rem; align-items: center; font-size: .8rem; }

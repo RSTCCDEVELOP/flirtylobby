@@ -17,7 +17,7 @@ export function BgLayer({ bg }) {
   if (!bg?.url) return null;
   const hv = bg.hover?.mode ? bg.hover : null; // mouse-over: the block gets more transparent, or another picture / video shows
   return (
-    <span className={`sec-bg${hv ? ` hv-${hv.mode}` : ""}`} style={{ ...(hv?.mode === "opacity" ? { "--hov-o": (hv.opacity ?? 60) / 100 } : {}), ...(bg.pos && bg.pos !== "center" ? { "--bg-pos": `center ${bg.pos}` } : {}) }} aria-hidden="true">
+    <span className={`sec-bg${hv ? ` hv-${hv.mode}` : ""}`} style={{ ...(hv?.mode === "opacity" ? { "--hov-o": (hv.opacity ?? 60) / 100 } : {}), ...(bg.pos && bg.pos !== "center" ? { "--bg-pos": `center ${bg.pos}` } : {}), ...(bg.zoom && bg.zoom !== 100 ? { "--bg-zoom": bg.zoom / 100 } : {}) }} aria-hidden="true">
       {bg.type === "video" ? <video src={mediaUrl(bg.url)} autoPlay muted loop playsInline /> : /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(bg.url)} alt="" />}
       {hv?.mode === "swap" && hv.url && (hv.type === "video" ? <video className="sec-bg-over" src={mediaUrl(hv.url)} autoPlay muted loop playsInline /> : /* eslint-disable-next-line @next/next/no-img-element */ <img className="sec-bg-over" src={mediaUrl(hv.url)} alt="" />)}
       <span className="sec-bg-shade" style={{ opacity: bg.overlay ?? 0.35 }} />
@@ -31,7 +31,7 @@ export function BgControls({ bg, onChange }) {
   const [tab, setTab] = useState("bg");
   const has = !!bg?.media;
   const hv = bg?.hover || {};
-  const base = { type: bg?.type, media: bg?.media, url: bg?.url, overlay: bg?.overlay, pos: bg?.pos };
+  const base = { type: bg?.type, media: bg?.media, url: bg?.url, overlay: bg?.overlay, pos: bg?.pos, zoom: bg?.zoom };
   const setHv = (patch) => onChange({ ...base, hover: patch === null ? undefined : { ...hv, ...patch } });
   return (
     <span className="sec-bg-controls">
@@ -57,6 +57,11 @@ export function BgControls({ bg, onChange }) {
             <input type="range" min={0} max={90} step={5} value={Math.round((bg.overlay ?? 0.35) * 100)} onChange={(e) => onChange({ ...base, hover: bg.hover, overlay: Number(e.target.value) / 100 })} aria-label={tx("Donkerte")} />
             <small className="muted">{Math.round((bg.overlay ?? 0.35) * 100)}%</small>
           </label>
+          <label className="sec-bg-dark">{tx("Grootte")}
+            <input type="range" min={30} max={250} step={5} value={bg.zoom ?? 100} onChange={(e) => onChange({ ...base, hover: bg.hover, zoom: Number(e.target.value) })} aria-label={tx("Grootte van de achtergrond")} />
+            <small className="muted">{bg.zoom ?? 100}%</small>
+            {(bg.zoom ?? 100) !== 100 && <button type="button" className="btn sm" onClick={() => onChange({ ...base, hover: bg.hover, zoom: 100 })}>{tx("Herstel")}</button>}
+          </label>
           <span className="sec-bg-pos">{tx("Uitlijnen")}
             <span className="pb-seg">{[["top", "Boven"], ["center", "Midden"], ["bottom", "Onder"]].map(([k, l]) => <button type="button" key={k} className={(bg.pos || "center") === k ? "on" : ""} aria-pressed={(bg.pos || "center") === k} onClick={() => onChange({ ...base, hover: bg.hover, pos: k })}>{tx(l)}</button>)}</span>
           </span>
@@ -65,7 +70,7 @@ export function BgControls({ bg, onChange }) {
       )}
       {pick && <MediaPicker kind={pick.replace("hover-", "")} onClose={() => setPick(null)} onPick={(item) => {
         if (pick.startsWith("hover-")) setHv({ type: pick.slice(6), media: item.id, url: item.url });
-        else onChange({ type: pick, media: item.id, url: item.url, overlay: bg?.overlay ?? 0.35, hover: bg?.hover, pos: bg?.pos });
+        else onChange({ type: pick, media: item.id, url: item.url, overlay: bg?.overlay ?? 0.35, hover: bg?.hover, pos: bg?.pos, zoom: bg?.zoom });
         setPick(null);
       }} />}
     </span>
