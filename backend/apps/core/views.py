@@ -1659,3 +1659,16 @@ def standard_admin_file(request):
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"detail": "Onbekende actie."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def system_update(request):
+    """After an update of Easy2edit: GET = does this site have to be checked, and which steps; POST {step} = do one step (see apps/core/sysupdate.py). Administrators and superadmins."""
+    from . import sysupdate
+
+    if not (request.user.is_staff or level(request.user, "system") >= 2):
+        return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "GET":
+        return Response(sysupdate.status(request.user))
+    return Response(sysupdate.run(str(request.data.get("step") or ""), request.user))

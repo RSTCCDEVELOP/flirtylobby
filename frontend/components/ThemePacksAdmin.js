@@ -33,6 +33,9 @@ export default function ThemePacksAdmin() {
   const [edit, setEdit] = useState(null);
   const [chooser, setChooser] = useState(false); // "new theme package": empty, from this website, or from a website address
   const [copySrc, setCopySrc] = useState("");
+  const [onlyActive, setOnlyActive] = useState(false); // show only the theme that is in use
+  useEffect(() => { try { setOnlyActive(localStorage.getItem("themes-only-active") === "1"); } catch {} }, []);
+  const chooseOnly = (v) => { setOnlyActive(v); try { localStorage.setItem("themes-only-active", v ? "1" : "0"); } catch {} };
   const [importing, setImporting] = useState(false);
   const [name, setName] = useState("");
   const input = useRef(null);
@@ -93,7 +96,7 @@ export default function ThemePacksAdmin() {
   async function scan() { setBusy(true); await load(); setBusy(false); setMsg({ ok: true, text: tx("Map gescand.") }); }
 
   if (!d) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
-  const packs = d.packs.filter((p) => !q || `${p.name} ${p.description}`.toLowerCase().includes(q.toLowerCase()));
+  const packs = d.packs.filter((p) => (!onlyActive || p.active) && (!q || `${p.name} ${p.description}`.toLowerCase().includes(q.toLowerCase())));
 
   return (
     <>
@@ -104,6 +107,7 @@ export default function ThemePacksAdmin() {
         <div>
           <div className="row" style={{ justifyContent: "space-between", marginBottom: "1rem" }}>
             <input type="search" style={{ maxWidth: 300 }} placeholder={tx("Zoek een thema…")} value={q} onChange={(e) => setQ(e.target.value)} />
+            <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={onlyActive} onChange={(e) => chooseOnly(e.target.checked)} /><span /></span><span>{tx("Alleen het actieve thema tonen")}</span></label>
             {L >= 2 && <button className="btn primary" onClick={() => setChooser(true)}>{tx("+ Nieuw themapakket")}</button>}
           </div>
           <div className="preset-grid pack-grid">

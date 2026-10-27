@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import FaqDrawer from "./FaqDrawer";
 import DefaultInstallPrompt from "./DefaultInstallPrompt";
+import SystemUpdatePrompt from "./SystemUpdatePrompt";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
 import ThemeToggle from "./ThemeToggle";
@@ -375,6 +376,7 @@ export default function DashboardShell({ children }) {
       <main className="content">
         <FindOnPage />
         {user?.is_staff && <DefaultInstallPrompt />}
+        {user && <SystemUpdatePrompt />}
         {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} /></div>}
         {children}
       </main>

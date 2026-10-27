@@ -28,6 +28,13 @@ class CoreConfig(AppConfig):
 
         check_request_enabled.connect(allow_configured)
 
+        try:  # the content of the website is kept as a file in the site folder (a moment after every change)
+            from . import sitecontent
+
+            sitecontent.connect()
+        except Exception:  # noqa: BLE001
+            pass
+
         from apps.sandbox import service as sandbox
 
         from . import views

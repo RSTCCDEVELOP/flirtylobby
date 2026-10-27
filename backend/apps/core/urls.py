@@ -66,6 +66,7 @@ urlpatterns = [
     path("system/license/stripe-webhook/", views.license_stripe_webhook),
     path("system/license/invoice-paid/", views.license_invoice_paid),
     path("system/maintenance-translate/", views.maintenance_translate),
+    path("system/update/", views.system_update),
     path("site/", views.site_public),
     path("languages/", views.languages_public),
     path("languages/all/", views.languages_all),
