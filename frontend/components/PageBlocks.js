@@ -89,10 +89,11 @@ function PbButton({ it, c, editing }) {
   const lang = getLanguage();
   const text = b.labels?.[lang] || b.labels?.nl || Object.values(b.labels || {})[0] || "";
   const url = b.urls?.[lang] || b.url || "";
-  const cls = `btn pb-btn ${b.style === "outline" ? "" : b.style === "ghost" ? "ghost" : "primary"} ${b.size === "sm" ? "sm" : b.size === "lg" ? "lg" : ""}`.trim();
+  const cls = `btn pb-btn ${b.style === "outline" ? "" : b.style === "ghost" ? "ghost" : "primary"}`.trim();
+  const scale = b.scale ?? (b.size === "sm" ? 80 : b.size === "lg" ? 140 : 100); // percent; an older button had small / large
   const wrap = { display: "flex", justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[c.halign] || "flex-start", padding: padCss(it.style?.pad) };
   const external = /^(https?:|mailto:|tel:)/.test(url);
-  const look = { ...(b.full ? { width: "100%", justifyContent: "center" } : {}) };
+  const look = { fontSize: `${scale / 100 * 0.92}rem`, padding: ".6em 1.25em", ...(b.full ? { width: "100%", justifyContent: "center" } : {}) };
   return (
     <div className="pb-btnrow" style={wrap}>
       {editing || !url ? <span className={cls} style={look} role={editing ? "button" : undefined}>{text || tx("Knop")}</span>

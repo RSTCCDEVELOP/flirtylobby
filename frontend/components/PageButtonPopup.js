@@ -85,7 +85,9 @@ export default function PageButtonPopup({ btn = {}, onChange, onClose, anchor })
             <div className="pb-stylerow"><span>{tx("Stijl")}</span>
               <span className="pb-seg">{[["primary", "Gevuld"], ["outline", "Omlijnd"], ["ghost", "Tekst"]].map(([k, l]) => <button type="button" key={k} className={(btn.style || "primary") === k ? "on" : ""} onClick={() => set({ style: k })}>{tx(l)}</button>)}</span></div>
             <div className="pb-stylerow"><span>{tx("Grootte")}</span>
-              <span className="pb-seg">{[["sm", "Klein"], ["md", "Middel"], ["lg", "Groot"]].map(([k, l]) => <button type="button" key={k} className={(btn.size || "md") === k ? "on" : ""} onClick={() => set({ size: k })}>{tx(l)}</button>)}</span></div>
+              <input type="range" min={50} max={300} step={5} value={btn.scale ?? 100} onChange={(e) => set({ scale: Number(e.target.value) })} style={{ width: 220 }} aria-label={tx("Grootte van de knop")} />
+              <small className="muted">{btn.scale ?? 100}%</small>
+              {(btn.scale ?? 100) !== 100 && <button type="button" className="btn sm" onClick={() => set({ scale: 100 })}>{tx("Herstel")}</button>}</div>
             <label className="check"><span className="switch"><input type="checkbox" checked={!!btn.full} onChange={(e) => set({ full: e.target.checked })} /><span /></span><span>{tx("Over de volle breedte")}</span></label>
           </div>
         )}

@@ -251,8 +251,13 @@ def _button(raw):
         out["new_tab"] = True
     if raw.get("style") in BTN_STYLES and raw["style"] != "primary":
         out["style"] = raw["style"]
-    if raw.get("size") in BTN_SIZES and raw["size"] != "md":
-        out["size"] = raw["size"]
+    try:
+        scale = int(min(max(float(raw.get("scale")), 50), 300))  # the size of the button in percent (100 = normal)
+        if scale != 100:
+            out["scale"] = scale
+    except (TypeError, ValueError):
+        if raw.get("size") in BTN_SIZES and raw["size"] != "md":
+            out["scale"] = 80 if raw["size"] == "sm" else 140  # an older button with small or large
     if raw.get("full"):
         out["full"] = True
     return out
