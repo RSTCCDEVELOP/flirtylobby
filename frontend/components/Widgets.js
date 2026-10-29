@@ -81,7 +81,7 @@ function Notice({ ctx }) {
     <>
       {html ? <div className="rich-text" dangerouslySetInnerHTML={{ __html: toDisplay(html) }} /> : <p className="muted">{tx("Hier kan een mededeling voor alle gebruikers staan.")}</p>}
       {canEdit && <button className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setEdit(true)}>{tx("Mededeling bewerken")}</button>}
-      {edit && <RichEditor title={tx("Mededeling")} initialHtml={html} onSave={(h) => save({ html: true, text: h })} onPlain={(t) => save({ text: t })} onClose={() => setEdit(false)} />}
+      {edit && <RichEditor title={tx("Mededeling")} initialHtml={html} onSave={(h) => save({ html: true, text: h })} onPlain={(t) => save({ text: t })} lang={lang} onSaveOther={(code, h) => api("/content/save/", { method: "PUT", body: { key: KEY, lang: code, html: true, text: h } })} onClose={() => setEdit(false)} />}
     </>
   );
 }

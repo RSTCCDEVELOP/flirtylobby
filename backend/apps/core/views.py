@@ -307,6 +307,72 @@ def content_save(request):
     return Response({"ok": True, "text": text})
 
 
+@api_view(["POST"])
+@permission_classes([has_level("edit_mode", "edit"), module_required("edit_mode")])
+def content_copy(request):
+    """Copy the texts (all languages) and image choices of content keys to new keys: {"pairs": [{"from": key, "to": key}]} (a duplicated or pasted part of a page)."""
+    pairs = request.data.get("pairs")
+    if not isinstance(pairs, list) or len(pairs) > 300:
+        return Response({"detail": "Ongeldige lijst."}, status=status.HTTP_400_BAD_REQUEST)
+    done = 0
+    for p in pairs:
+        src, dst = str((p or {}).get("from", "")), str((p or {}).get("to", ""))
+        if not (re.fullmatch(r"[a-z0-9._-]{1,100}", src) and re.fullmatch(r"[a-z0-9._-]{1,100}", dst)) or src == dst:
+            continue
+        for b in ContentBlock.objects.filter(key=src):
+            ContentBlock.objects.update_or_create(key=dst, lang=b.lang, defaults={"text": b.text})
+            done += 1
+    return Response({"copied": done})
+
+
+@api_view(["GET"])
+@permission_classes([has_level("edit_mode", "edit"), module_required("edit_mode")])
+def content_ai(request):
+    """Can the text editor write with Claude, and in which languages (the ones that are switched on; default first)."""
+    from apps.integrations import ai
+
+    langs = list(Language.objects.filter(enabled=True).order_by("-is_default", "order").values("code", "name", "is_default"))
+    return Response({"available": ai.available(), "languages": langs})
+
+
+@api_view(["POST"])
+@permission_classes([has_level("edit_mode", "edit"), module_required("edit_mode")])
+def content_ai_write(request):
+    """Claude writes a text from what the editor typed (the prompt), in the given languages at once: {"texts": {code: html}}."""
+    import json
+
+    from apps.integrations import ai
+
+    from . import themeimport
+
+    prompt = str(request.data.get("prompt") or "").strip()[:4000]
+    if not prompt:
+        return Response({"detail": "Schrijf eerst in het tekstveld wat Claude moet maken."}, status=status.HTTP_400_BAD_REQUEST)
+    if not ai.available():
+        return Response({"detail": "Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan."}, status=status.HTTP_400_BAD_REQUEST)
+    active = {l.code: l.name for l in Language.objects.filter(enabled=True)}
+    asked = request.data.get("langs")
+    codes = [c for c in (asked if isinstance(asked, list) else [request.data.get("lang")]) if c in active] or ([request.data.get("lang")] if request.data.get("lang") else [])
+    if not codes:
+        return Response({"detail": "Onbekende taal."}, status=status.HTTP_400_BAD_REQUEST)
+    system = ("You write texts for a website. The user gives a draft, notes or an instruction; write the finished text from it, in a natural, friendly and clear tone, without inventing facts "
+              "(prices, names, dates) that were not given. Use only these HTML tags: p, h2, h3, h4, ul, ol, li, strong, em, br, a. Answer with ONE JSON object only, no text around it: "
+              "{code: html} with an entry for every requested language code. Every language gets the same content, written natively in that language.")
+    payload = json.dumps({"input": prompt, "languages": [{"code": c, "name": active.get(c, c)} for c in codes]}, ensure_ascii=False)
+    try:
+        out = themeimport._parse_json(ai.claude(system, payload, max_tokens=6000, timeout=150), need=tuple(codes))
+    except (ValueError, KeyError) as e:
+        return Response({"detail": f"Claude gaf geen bruikbaar antwoord ({e})."}, status=status.HTTP_502_BAD_GATEWAY)
+    texts = {}
+    for c in codes:
+        html = richtext.clean(str(out.get(c) or "")[: richtext.MAX])
+        if html.strip() and not find_forbidden(richtext.plain(html)):
+            texts[c] = html
+    if not texts:
+        return Response({"detail": "Claude gaf geen bruikbare tekst. Probeer het nog eens."}, status=status.HTTP_502_BAD_GATEWAY)
+    return Response({"texts": texts})
+
+
 # ── Modules ─────────────────────────────────────────────────────────────────
 from rest_framework.permissions import IsAdminUser  # noqa: E402
 

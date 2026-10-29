@@ -30,12 +30,13 @@ def body_model(body):
         return ""
 
 
-def claude(system, prompt, max_tokens=2500, timeout=90, web=False):
-    """The text Claude answers. Raises ValueError with a readable message."""
+def claude(system, prompt, max_tokens=2500, timeout=90, web=False, images=None):
+    """The text Claude answers. images = [(media_type, base64 data)] are sent along with the prompt. Raises ValueError with a readable message."""
     obj = link()
     if not obj:
         raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
-    payload = {"model": obj.config.get("model") or "claude-sonnet-5-5", "max_tokens": max_tokens, "system": system, "messages": [{"role": "user", "content": prompt}]}
+    content = ([{"type": "image", "source": {"type": "base64", "media_type": mt, "data": data}} for mt, data in images] + [{"type": "text", "text": prompt}]) if images else prompt
+    payload = {"model": obj.config.get("model") or "claude-sonnet-5-5", "max_tokens": max_tokens, "system": system, "messages": [{"role": "user", "content": content}]}
     if web:  # Claude searches the internet itself (the web search tool of Anthropic)
         payload["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}]
     body = json.dumps(payload).encode()

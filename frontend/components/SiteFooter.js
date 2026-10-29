@@ -34,7 +34,9 @@ export default async function SiteFooter() {
     <footer className="site-footer">
       <FooterEdit />
       <div className="foot-brand"> {/* shown by the footer layout (Thema → Footer): logo and/or name, with the footer text */}
-        <span className="foot-logo"><Logo /></span>
+        <span className="foot-logo" style={site?.footer_logo_height ? { "--foot-logo-h": `${site.footer_logo_height}px` } : undefined}>
+          {site?.footer_logo_link ? (/^https?:/.test(site.footer_logo_link) ? <a href={site.footer_logo_link} aria-label={site?.site_name || "Logo"}><Logo /></a> : <Link href={site.footer_logo_link} aria-label={site?.site_name || "Logo"}><Logo /></Link>) : <Logo />}
+        </span>
         <strong className="foot-name">{site?.site_name || site?.company_name || ""}</strong>
         {site?.footer_text && <span className="foot-text">{site.footer_text}</span>}
       </div>

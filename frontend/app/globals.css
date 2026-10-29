@@ -2524,7 +2524,7 @@ html.fixed-dragging .pb-cell.edit { outline: 2px dashed color-mix(in srgb, var(-
 .site-footer .foot-brand { display: none; }
 html[data-fbrand="name"] .site-footer .foot-brand, html[data-fbrand="logo"] .site-footer .foot-brand, html[data-fbrand="both"] .site-footer .foot-brand,
 html[data-fl="brand"] .site-footer .foot-brand, html[data-fl="stack"] .site-footer .foot-brand, html[data-fl="mega"] .site-footer .foot-brand { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .3rem .7rem; width: 100%; }
-.site-footer .foot-brand .foot-logo { display: inline-flex; max-height: 36px; } .site-footer .foot-brand .foot-logo img { max-height: 36px; width: auto; }
+.site-footer .foot-brand .foot-logo { display: inline-flex; max-height: var(--foot-logo-h, 36px); } .site-footer .foot-brand .foot-logo a { display: inline-flex; } .site-footer .foot-brand .foot-logo img { max-height: var(--foot-logo-h, 36px); width: auto; }
 .site-footer .foot-brand .foot-name { color: var(--text); font-size: 1rem; } .site-footer .foot-brand .foot-text { flex: 0 0 100%; font-size: .85rem; }
 html[data-fbrand="name"] .site-footer .foot-brand .foot-logo { display: none; } html[data-fbrand="logo"] .site-footer .foot-brand .foot-name { display: none; }
 html[data-fl="brand"][data-fbrand="none"] .site-footer .foot-brand .foot-logo, html[data-fl="stack"][data-fbrand="none"] .site-footer .foot-brand .foot-logo, html[data-fl="mega"][data-fbrand="none"] .site-footer .foot-brand .foot-logo { display: none; }
@@ -3226,6 +3226,7 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-insert { display: flex; align-items: center; gap: .6rem; min-height: 1.6rem; margin: .1rem auto; max-width: var(--content-w, 1100px); width: 100%; opacity: .35; transition: opacity .15s; }
 .pb-insert:hover, .pb-insert.open, .pb-insert:focus-within { opacity: 1; }
 .pb-insline { flex: 1; height: 0; border-top: 1px dashed var(--line); }
+.pb-note { position: fixed; left: 50%; bottom: 4.5rem; transform: translateX(-50%); z-index: 9000; padding: .6rem 1rem; border-radius: 10px; background: var(--blue, #2c6fbb); color: #fff; font-weight: 600; font-size: .88rem; box-shadow: 0 6px 24px rgba(0, 0, 0, .35); pointer-events: none; }
 .pb-insmenu { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
 
 /* the background of a block: where the picture is held (top, middle, bottom) */

@@ -202,6 +202,8 @@ export function EditableText({ id, as: Tag = "p", fallback = "", fallbacks, clas
           initialHtml={isHtml ? text.slice(5) : plainToHtml(text)}
           onSave={(html) => put({ html: true, text: html }).catch((e) => { throw new Error(errorText(e)); })}
           onPlain={(t) => put({ text: t }).catch((e) => { throw new Error(errorText(e)); })}
+          lang={lang}
+          onSaveOther={async (code, html) => { const r = await api("/content/save/", { method: "PUT", body: { key: id, lang: code, html: true, text: html } }); setBlock(id, code, "html:" + r.text); }}
           onClose={() => setPopup(false)}
         />
       )}

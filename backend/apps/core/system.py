@@ -32,12 +32,14 @@ DEFAULTS = {
     "refresh_seconds": "0",  # how often the pages ask the server for news (messages, notifications, chat): 0 = every part at its own pace
 
     "footer_text": "",
+    "footer_logo_height": "0",  # height of the logo in the footer in px (0 = the standard, 36)
+    "footer_logo_link": "",  # where a click on the logo in the footer goes (empty = nowhere)
     "show_credit": True,  # "© Easy2edit <year>" with a link at the bottom of every page
     "social_facebook": "", "social_instagram": "", "social_x": "", "social_linkedin": "", "social_youtube": "", "social_tiktok": "",
 }
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
-INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30)}
+INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200)}
 ENVIRONMENTS = ["production", "staging", "development"]
 URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -125,6 +127,11 @@ def clean(incoming):
                 out[k] = str(max(lo, min(hi, int(v))))
             except (TypeError, ValueError):
                 errors[k] = "Geef een geheel getal op."
+        elif k == "footer_logo_link":
+            v = str(v or "").strip()
+            if v and not re.match(r"^(https?://[^\s]{3,200}|/[^\s/][^\s]{0,199}|/)$", v):
+                errors[k] = "Gebruik een volledig adres (https://…) of een pagina van de website (bijvoorbeeld /contact)."
+            out[k] = v
         elif k.startswith("social_"):
             v = str(v or "").strip()
             if v and not re.match(r"^https?://[^\s]{3,200}$", v):
@@ -295,6 +302,6 @@ def public():
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
-            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "show_credit": s["show_credit"],
+            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0)}

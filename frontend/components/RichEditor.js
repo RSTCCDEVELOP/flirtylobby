@@ -8,12 +8,12 @@
 "use client";
 
 import { tx } from "../lib/t";
-import { confirmDialog } from "../lib/dialog";
+import { alertDialog, confirmDialog } from "../lib/dialog";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { mediaUrl } from "../lib/api";
 import MediaPicker from "./MediaPicker";
-import { api } from "../lib/api";
+import { api, errorText } from "../lib/api";
 import { useModule } from "./Modules";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -25,7 +25,8 @@ const escapeHtml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace
 export const plainToHtml = (t) => t.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("");
 
 // WYSIWYG editor in a popup. onSave(html) must return a promise; onPlain(text) saves as plain text.
-function RichEditorInner({ initialHtml, title = tx("Tekst bewerken"), onSave, onPlain, onClose }) {
+// onSaveOther(code, html): saves the text for another language (needed to let Claude write all active languages at once); lang = the language being edited
+function RichEditorInner({ initialHtml, title = tx("Tekst bewerken"), onSave, onPlain, onClose, lang, onSaveOther }) {
   const area = useRef(null);
   const saved = useRef(null);
   const [link, setLink] = useState(null); // null | url string while the link field is open
@@ -35,6 +36,30 @@ function RichEditorInner({ initialHtml, title = tx("Tekst bewerken"), onSave, on
   const [error, setError] = useState("");
   const objOn = useModule("sysobjects");
   const [objects, setObjects] = useState(null); // null = picker closed
+  const [ai, setAi] = useState(null); // null = unknown / off; {languages: [{code, name, is_default}]} when Claude is linked
+  const [writing, setWriting] = useState(false);
+  const others = useRef({}); // texts Claude wrote for the other languages: saved together with this one
+  const cur = lang || (() => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } })();
+
+  useEffect(() => { api("/content/ai/").then((r) => setAi(r.available ? r : null)).catch(() => setAi(null)); }, []);
+
+  async function writeWithAi() {
+    const prompt = area.current.innerText.trim();
+    if (!prompt) { await alertDialog(tx("Schrijf eerst in het tekstveld wat Claude moet maken, bijvoorbeeld een paar steekwoorden of een opdracht.")); return; }
+    const more = onSaveOther ? (ai.languages || []).filter((l) => l.code !== cur) : [];
+    let langs = [cur];
+    if (more.length && await confirmDialog(tx("Er zijn {0} actieve talen. De tekst ook direct maken in alle andere actieve talen ({1})? Bij Annuleren wordt alleen deze taal gemaakt.", more.length + 1, more.map((l) => l.name).join(", ")), { okLabel: tx("In alle talen") })) langs = [cur, ...more.map((l) => l.code)];
+    setWriting(true);
+    setError("");
+    try {
+      const r = await api("/content/ai/write/", { method: "POST", body: { prompt, lang: cur, langs } });
+      const texts = r.texts || {};
+      if (!texts[cur]) throw new Error(tx("Claude gaf geen tekst voor deze taal. Probeer het nog eens."));
+      area.current.innerHTML = toDisplay(texts[cur]);
+      others.current = Object.fromEntries(Object.entries(texts).filter(([c]) => c !== cur));
+    } catch (e) { setError(errorText(e)); }
+    setWriting(false);
+  }
 
   async function openObjects() {
     saveSel();
@@ -82,6 +107,7 @@ function RichEditorInner({ initialHtml, title = tx("Tekst bewerken"), onSave, on
     try {
       if (plain) await onPlain(area.current.innerText.trim());
       else await onSave(toStored(area.current.innerHTML));
+      if (onSaveOther) for (const [c, html] of Object.entries(others.current)) await onSaveOther(c, html);
       onClose();
     } catch (e) {
       setError(e.message || tx("Opslaan mislukt."));
@@ -118,6 +144,7 @@ function RichEditorInner({ initialHtml, title = tx("Tekst bewerken"), onSave, on
           <span className="rt-sep" />
           <B c="undo" label="↶" title={tx("Ongedaan maken")} /><B c="redo" label="↷" title={tx("Opnieuw")} />
           <B c="removeFormat" label={tx("Opmaak wissen")} />
+          {ai && (<><span className="rt-sep" /><button type="button" className="rt-btn" onMouseDown={keep} onClick={writeWithAi} disabled={writing || busy} title={tx("Claude maakt de tekst van wat je hebt getypt")}>{writing ? tx("Claude schrijft…") : tx("Vul aan met AI")}</button></>)}
         </div>
         {link !== null && (
           <div className="rt-link">

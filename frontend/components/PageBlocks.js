@@ -240,7 +240,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
       <button type="button" className="btn sm pb-insbtn" aria-expanded={insAt === (after || "top")} title={tx("Hier een nieuw blok toevoegen")} onClick={() => setInsAt(insAt === (after || "top") ? undefined : (after || "top"))}>+ {tx("Nieuw blok")}</button>
       {insAt === (after || "top") && (
         <span className="pb-insmenu">
-          {[1, 2, 3, 4].map((n) => <button type="button" key={n} className="btn sm" onClick={() => addRowAt(n, after)}>{n === 1 ? tx("Blok") : `${n} ${tx("kolommen")}`}</button>)}
+          {[1, 2, 3, 4].map((n) => <button type="button" key={n} className="btn sm" onClick={() => { setInsAt(undefined); addRowAt(n, after); }}>{n === 1 ? tx("Blok") : `${n} ${tx("kolommen")}`}</button>)}
+          {clip?.kind === "row" && <button type="button" className="btn sm primary" onClick={() => { setInsAt(undefined); pasteRow(after || "top"); }}>{PasteIcon} {tx("Blok plakken")}</button>}
         </span>
       )}
       <span className="pb-insline" aria-hidden="true" />
@@ -306,6 +307,54 @@ export default function PageBlocks({ pageKey, title = "" }) {
   };
   const delItem = (iid) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => { const gone = c.items.find((x) => x.id === iid); if (gone?.ref && gone.type !== "object") l.moved = (l.moved || []).filter((k) => k !== gone.ref); c.items = c.items.filter((x) => x.id !== iid); })); if (!(l.moved || []).length) delete l.moved; return l; });
 
+  // copy, duplicate and paste of a part of the page (an item or a whole block): the copy goes to the clipboard (and is remembered here, so Paste shows up on other places and pages)
+  const CLIP = "e2e-page-clip";
+  const readClip = () => { try { const c = JSON.parse(localStorage.getItem(CLIP) || "null"); return c && c.e2e === 1 && (c.kind === "item" || c.kind === "row") ? c : null; } catch { return null; } };
+  const [clip, setClip] = useState(readClip);
+  const [note, setNote] = useState("");
+  useEffect(() => { const f = () => setClip(readClip()); window.addEventListener("storage", f); return () => window.removeEventListener("storage", f); }, []);
+  const tell = (m) => { setNote(m); setTimeout(() => setNote((n) => (n === m ? "" : n)), 2500); };
+  const storeClip = (kind, data) => {
+    const c = { e2e: 1, kind, page: pageKey, data };
+    try { localStorage.setItem(CLIP, JSON.stringify(c)); } catch { /* private window: it still works until the page is closed */ }
+    setClip(c);
+    try { navigator.clipboard?.writeText(JSON.stringify(c)).catch(() => {}); } catch { /* no clipboard right: the copy stays in the editor */ }
+  };
+  const COPYTYPES = ["text", "heading", "image"];
+  // a copy of an item with a new id; its texts and image choice move to the new content key (pairs)
+  const cloneItem = (it, srcPage, pairs) => {
+    const n = JSON.parse(JSON.stringify(it)); n.id = uid();
+    if (COPYTYPES.includes(it.type)) { pairs.push({ from: it.ref && it.type !== "object" ? it.ref : `layout.${srcPage}.${it.id}`, to: `layout.${pageKey}.${n.id}` }); delete n.ref; }
+    return n;
+  };
+  const cloneRow = (r, srcPage, pairs) => {
+    const n = JSON.parse(JSON.stringify(r)); n.id = uid(); delete n.anchor; delete n.title;
+    n.cells = r.cells.map((c) => ({ ...JSON.parse(JSON.stringify(c)), id: uid(), items: c.items.map((x) => cloneItem(x, srcPage, pairs)) }));
+    return n;
+  };
+  const sendPairs = async (pairs) => { if (pairs.length) { try { await api("/content/copy/", { method: "POST", body: { pairs } }); } catch (e) { alertDialog(errorText(e)); } } };
+  const copyItem = (it) => { storeClip("item", it); tell(tx("Gekopieerd naar het klembord. Je kunt het op een andere plek plakken.")); };
+  const copyRow = (r) => { storeClip("row", r); tell(tx("Blok gekopieerd naar het klembord. Je kunt het op een andere plek plakken.")); };
+  const putItem = async (it, srcPage, cid, afterId) => {
+    const pairs = [], n = cloneItem(it, srcPage, pairs);
+    await sendPairs(pairs);
+    change((l) => { const cell = l.rows.flatMap((r) => r.cells).find((c) => c.id === cid); if (!cell) return l; const at = afterId ? cell.items.findIndex((x) => x.id === afterId) + 1 : cell.items.length; cell.items.splice(at, 0, n); return l; });
+    if (pairs.length) setTimeout(() => window.location.reload(), 700); // the texts of the new part are read when the page loads
+  };
+  const putRow = async (r, srcPage, afterId) => {
+    const pairs = [], n = cloneRow(r, srcPage, pairs);
+    await sendPairs(pairs);
+    change((l) => { const at = afterId === "top" ? 0 : afterId ? l.rows.findIndex((x) => x.id === afterId) + 1 : l.rows.length; l.rows.splice(at, 0, n); return l; });
+    if (pairs.length) setTimeout(() => window.location.reload(), 700);
+  };
+  const dupItem = (it, cid) => putItem(it, pageKey, cid, it.id).then(() => tell(tx("Gedupliceerd.")));
+  const dupRow = (r) => putRow(r, pageKey, r.id).then(() => tell(tx("Blok gedupliceerd.")));
+  const pasteItem = (cid, afterId) => { if (clip?.kind === "item") { putItem(clip.data, clip.page, cid, afterId); tell(tx("Geplakt.")); } };
+  const pasteRow = (afterId) => { if (clip?.kind === "row") { putRow(clip.data, clip.page, afterId); tell(tx("Blok geplakt.")); } };
+  const CopyIcon = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></svg>;
+  const DupIcon = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2" /><path d="M21 8v11a2 2 0 01-2 2H8M10 10v4M8 12h4" /></svg>;
+  const PasteIcon = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 11h6M9 15h6" /></svg>;
+
   if (!layout) return null;
   if (!editing && !layout.rows.some((r) => r.cells.some((c) => c.items.length))) return null;
 
@@ -358,6 +407,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
             if (plug && o.data?.admin_web) return <button type="button" className="btn sm pb-edit" title={tx("Dit systeemobject bewerken")} aria-label={tx("Dit systeemobject bewerken")} onClick={() => setObjEdit(o)}><IconEdit width={13} height={13} /></button>;
             return href ? <a className="btn sm pb-edit" href={href} target="_blank" rel="noreferrer" title={tx("Dit systeemobject bewerken")} aria-label={tx("Dit systeemobject bewerken")}><IconEdit width={13} height={13} /></a> : null;
           })()}
+          <button type="button" className="btn sm pb-edit" title={tx("Kopiëren naar het klembord")} aria-label={tx("Kopiëren naar het klembord")} onClick={() => copyItem(it)}>{CopyIcon}</button>
+          <button type="button" className="btn sm pb-edit" title={tx("Dupliceren")} aria-label={tx("Dupliceren")} onClick={() => dupItem(it, c.id)}>{DupIcon}</button>
           </span>
           <button type="button" className="btn sm danger pb-x pb-trash" title={tx("Dit onderdeel van de pagina verwijderen")} aria-label={tx("Dit onderdeel van de pagina verwijderen")} onClick={() => delItem(it.id)}><IconTrash width={22} height={22} /></button>
         </div>
@@ -507,6 +558,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <button type="button" className={`pb-gear${barOpen[r.id] ? " on" : ""}`} onClick={(e) => gearClick(r.id, e)} aria-expanded={!!barOpen[r.id]} title={tx("Instellingen")} aria-label={tx("Instellingen")}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
               </button>
+              {!own(r) && <button type="button" className="pb-gear" title={tx("Dit blok kopiëren naar het klembord")} aria-label={tx("Dit blok kopiëren naar het klembord")} onClick={() => copyRow(r)}>{CopyIcon}</button>}
+              {!own(r) && <button type="button" className="pb-gear" title={tx("Dit blok dupliceren")} aria-label={tx("Dit blok dupliceren")} onClick={() => dupRow(r)}>{DupIcon}</button>}
             </div>
           )}
           {editing && mediaEdit && r === layout.rows[0] && <MediaViewEditor view={mediaEdit} onClose={() => setMediaEdit(null)} onSaved={() => window.location.reload()} />}
@@ -724,6 +777,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
                     <label className="pb-w" title={tx("Breedte van deze kolom")}>{tx("Kolom")}<select value={c.width || "auto"} onChange={(e) => setCell(c.id, { width: e.target.value })}>{CELL_WIDTHS.map((w) => <option key={w} value={w}>{w === "auto" ? tx("Gelijk") : `${w}%`}</option>)}</select></label>
                     {r.cells[0] === c && <button type="button" className="btn sm danger pb-trash" onClick={() => removeRow(r)} title={r.hero === "plain" ? tx("Raster verwijderen") : r.hero ? tx("Hero verwijderen") : tx("Rij verwijderen")} aria-label={tx("Rij verwijderen")}><IconTrash width={22} height={22} /></button>}
                     <span className="pb-add">
+                      {clip?.kind === "item" && <button type="button" className="btn sm" title={tx("Het gekopieerde onderdeel hier plakken")} onClick={() => pasteItem(c.id, null)}>{PasteIcon} {tx("Plakken")}</button>}
                       <button type="button" className="btn sm primary" onClick={() => setMenu(menu === c.id ? null : c.id)}>+ {tx("Toevoegen")}</button>
                       {menu === c.id && (
                         <PageAddMenu cols={r.cols} objectCount={objOn ? objects.length : undefined} onAdd={(type, widget) => addItem(c.id, type, "", widget)} onCols={(n) => { setMenu(null); setRow(r.id, { cols: n }); }} onObjects={() => { setMenu(null); setObjQ(""); setObjPop({ cell: c.id, row: r.id }); }} onClose={() => setMenu(null)} />
@@ -747,6 +801,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <button type="button" className="btn sm primary" onClick={addHero}>{tx("Hero")}</button>
           <button type="button" className="btn sm primary plain-btn" onClick={addGrid} title={tx("Een raster met een eigen hoogte, zonder hero")}>{tx("Raster")}</button>
           {saving && <span className="muted">{saving === "saving" ? tx("Opslaan…") : tx("Opgeslagen")}</span>}
+          {note && <div className="pb-note" role="status">{note}</div>}
         </div>
       )}
     </section>

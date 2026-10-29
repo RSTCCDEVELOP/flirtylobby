@@ -50,7 +50,7 @@ export default function FooterEdit() {
         <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
           <div className="pb-objpop" role="dialog" aria-label={tx("Footer bewerken")} style={{ width: "min(720px, 100%)" }}>
             <div className="pb-objhead"><strong>{tx("Footer bewerken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={close} aria-label={tx("Sluiten")}>×</button></div>
-            <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ...(sys ? [["text", "Teksten en links"]] : [])]} />
+            <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ...(sys ? [["logo", "Logo"], ["text", "Teksten en links"]] : [])]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
             {tab === "look" && (!theme ? <p className="muted">{tx("Laden…")}</p> : (
               <div className="stack-sm">
@@ -63,6 +63,15 @@ export default function FooterEdit() {
                 <small className="muted">{tx("Zien hoe de varianten eruitzien kan bij Admin → Thema → Layout → Footer.")}</small>
               </div>
             ))}
+            {tab === "logo" && sys && (
+              <div className="stack-sm">
+                <label>{tx("Hoogte van het logo")}: <strong>{Number(sys.footer_logo_height) || 36} px</strong>{!Number(sys.footer_logo_height) && <small className="muted"> ({tx("standaard")})</small>}
+                  <input type="range" min={16} max={200} step={2} value={Number(sys.footer_logo_height) || 36} onChange={(e) => setSys({ ...sys, footer_logo_height: String(e.target.value) })} /></label>
+                <label>{tx("Link van het logo (leeg = geen link)")}<input value={sys.footer_logo_link || ""} maxLength={200} onChange={(e) => setSys({ ...sys, footer_logo_link: e.target.value })} placeholder={tx("https://… of /pagina")} /></label>
+                <small className="muted">{tx("Het logo zelf kies je bij Admin → Thema. Het logo staat alleen in de footer als de indeling het toont (tabblad Uiterlijk: Logo en naam).")}</small>
+                <div className="row"><button type="button" className="btn primary" onClick={saveSys}>{tx("Opslaan")}</button> {Number(sys.footer_logo_height) > 0 && <button type="button" className="btn" onClick={() => setSys({ ...sys, footer_logo_height: "0" })}>{tx("Standaardgrootte")}</button>}</div>
+              </div>
+            )}
             {tab === "text" && sys && (
               <div className="stack-sm">
                 <label>{tx("Tekst in de voettekst")}<input value={sys.footer_text || ""} maxLength={500} onChange={(e) => setSys({ ...sys, footer_text: e.target.value })} /></label>
