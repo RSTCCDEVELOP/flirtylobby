@@ -28,5 +28,6 @@ export function holdLoader(maxMs = 8000) {
 export function loaderBusy() {
   if (pending > 0) return true;
   if (typeof document === "undefined") return false;
-  return Array.from(document.images).some((i) => !i.complete && i.getBoundingClientRect().top < window.innerHeight && i.getBoundingClientRect().width > 0);
+  const inView = (el) => { const r = el.getBoundingClientRect(); return r.top < window.innerHeight && r.width > 0; };
+  return Array.from(document.images).some((i) => !i.complete && inView(i)) || Array.from(document.querySelectorAll("video")).some((v) => v.preload !== "none" && v.readyState < 2 && !v.error && inView(v)); // a video in view (the hero) counts as well: until its first picture is there
 }

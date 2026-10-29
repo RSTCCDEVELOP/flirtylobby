@@ -485,10 +485,26 @@ def update_installation(key):
     try:
         from . import preset_pages
 
-        pages = preset_pages.outdated(key)  # not changed here: the person is asked first
+        refresh_pristine_pages(key)  # a page nobody changed follows the standard by itself
+        pages = preset_pages.outdated(key)  # what is left (changed by hand, or gone): the person is asked first
     except Exception:  # noqa: BLE001
         logger.exception("Installation %s: pages could not be compared with the standard", key)
     return {"installed": installed, "plugins_on": plugins_on, "modules_on": modules_on, "pages": pages}
+
+
+def refresh_pristine_pages(key):
+    """Pages of the installation that nobody changed but that do not follow the standard (a older version of it) are put right at once, without asking. Returns their keys."""
+    from . import preset_pages
+
+    try:
+        wrong = preset_pages.pristine_wrong(key)
+        if wrong:
+            update_pages(key, wrong)
+            logger.warning("Installation %s: pages put back as the standard has them: %s", key, ", ".join(wrong))
+        return wrong
+    except Exception:  # noqa: BLE001 - never stop the system for this
+        logger.exception("Installation %s: pages could not be refreshed", key)
+        return []
 
 
 def update_pages(key, page_keys):
@@ -549,6 +565,7 @@ def repair_active():
         runtime.ensure_loaded(True)
         modules.invalidate()
         logger.warning("Installation %s: plugins put back: %s", key, ", ".join(fixed))
+    refresh_pristine_pages(key)  # pages nobody changed follow the standard of this version
     return fixed
 
 

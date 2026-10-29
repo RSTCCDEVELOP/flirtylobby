@@ -7,6 +7,7 @@
 
 "use client";
 
+import { softRefresh } from "../lib/softrefresh";
 import { holdLoader } from "../lib/loading";
 import Link from "next/link";
 import { tx } from "../lib/t";
@@ -144,7 +145,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const [mediaEdit, setMediaEdit] = useState(null); // a media system object (photo book, carousel ...) being edited in a popup
   const [objEdit, setObjEdit] = useState(null); // the system object that is being edited in a popup
   const objDirty = useRef(false);
-  const closeObjEdit = () => { setObjEdit(null); if (objDirty.current) { objDirty.current = false; window.location.reload(); } }; // something changed: the page shows the new version
+  const closeObjEdit = () => { setObjEdit(null); if (objDirty.current) { objDirty.current = false; softRefresh(); } }; // something changed: the page shows the new version
   const [panelTab, setPanelTab] = useState({}); // the tab of the settings panel per row
   const [barOpen, setBarOpen] = useState({}); // rows whose settings panel is open (the gear in the corner): {rowId: true}
   const [anchor, setAnchor] = useState(null); // the button that was clicked last: every pop-up of the editor opens there
@@ -339,13 +340,13 @@ export default function PageBlocks({ pageKey, title = "" }) {
     const pairs = [], n = cloneItem(it, srcPage, pairs);
     await sendPairs(pairs);
     change((l) => { const cell = l.rows.flatMap((r) => r.cells).find((c) => c.id === cid); if (!cell) return l; const at = afterId ? cell.items.findIndex((x) => x.id === afterId) + 1 : cell.items.length; cell.items.splice(at, 0, n); return l; });
-    if (pairs.length) setTimeout(() => window.location.reload(), 700); // the texts of the new part are read when the page loads
+    if (pairs.length) softRefresh(); // the texts of the new part are asked again, the page stays
   };
   const putRow = async (r, srcPage, afterId) => {
     const pairs = [], n = cloneRow(r, srcPage, pairs);
     await sendPairs(pairs);
     change((l) => { const at = afterId === "top" ? 0 : afterId ? l.rows.findIndex((x) => x.id === afterId) + 1 : l.rows.length; l.rows.splice(at, 0, n); return l; });
-    if (pairs.length) setTimeout(() => window.location.reload(), 700);
+    if (pairs.length) softRefresh();
   };
   const dupItem = (it, cid) => putItem(it, pageKey, cid, it.id).then(() => tell(tx("Gedupliceerd.")));
   const dupRow = (r) => putRow(r, pageKey, r.id).then(() => tell(tx("Blok gedupliceerd.")));

@@ -38,6 +38,12 @@ export function ContentProvider({ initial, defaultLang, languages, children }) {
     return () => { alive = false; };
   }, [initial]);
   const setBlock = (key, lang, text) => setBlocks((b) => ({ ...b, [key]: { ...b[key], [lang]: text } }));
+  // soft refresh (softRefresh()): the texts are asked again, the page itself stays
+  useEffect(() => {
+    const again = () => fetch(`${apiBase()}/api/content/`, { cache: "no-store", credentials: "include" }).then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) setBlocks(d); }).catch(() => {});
+    window.addEventListener("soft-refresh", again);
+    return () => window.removeEventListener("soft-refresh", again);
+  }, []);
   return <ContentContext.Provider value={{ blocks, setBlock, defaultLang, languages }}>{children}</ContentContext.Provider>;
 }
 
@@ -270,9 +276,19 @@ export function ImageEdit({ target, children, className = "", placement, onPlace
 
 // settings of one picture (alignment, size in px or %, transparency, rounded corners): a gear on the picture, saved with the page texts
 const parseSt = (raw) => { try { const d = JSON.parse(raw || "{}"); return d && typeof d === "object" ? d : {}; } catch { return {}; } };
+// the shadow behind a picture: {x, y, blur, spread, color, opacity} -> CSS box-shadow
+export const shadowCss = (sh) => {
+  if (!sh || typeof sh !== "object") return undefined;
+  const hex = /^#[0-9a-fA-F]{6}$/.test(sh.color || "") ? sh.color : "#000000";
+  const n = (v, lo, hi, d) => Math.min(hi, Math.max(lo, Number.isFinite(Number(v)) ? Number(v) : d));
+  const a = n(sh.opacity, 0, 100, 35) / 100;
+  const rgba = `rgba(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)}, ${a})`;
+  return `${n(sh.x, -200, 200, 0)}px ${n(sh.y, -200, 200, 12)}px ${n(sh.blur, 0, 300, 30)}px ${n(sh.spread, -100, 200, 0)}px ${rgba}`;
+};
+const SHADOWS = [["Zacht", { x: 0, y: 8, blur: 24, spread: 0, color: "#000000", opacity: 25 }], ["Sterk", { x: 0, y: 16, blur: 40, spread: 0, color: "#000000", opacity: 55 }], ["Schuin", { x: 18, y: 18, blur: 0, spread: 0, color: "#000000", opacity: 30 }], ["Gloed", { x: 0, y: 0, blur: 48, spread: 4, color: "#f2823f", opacity: 60 }]];
 export const imgStyleCss = (st) => ({
   wrap: { display: "flex", width: "100%", justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[st.align] || undefined },
-  inner: { ...(st.w ? { width: st.w, maxWidth: "100%" } : {}), ...(st.opacity !== undefined ? { opacity: st.opacity / 100 } : {}), ...(st.radius !== undefined && st.radius !== "" ? { borderRadius: `${st.radius}px`, overflow: "hidden" } : {}) },
+  inner: { ...(st.w ? { width: st.w, maxWidth: "100%" } : {}), ...(st.opacity !== undefined ? { opacity: st.opacity / 100 } : {}), ...(st.radius !== undefined && st.radius !== "" ? { borderRadius: `${st.radius}px`, overflow: "hidden" } : {}), ...(st.shadow ? { boxShadow: shadowCss(st.shadow) } : {}), ...(st.zoom > 100 ? { overflow: "hidden" } : {}) },
 });
 
 function ImageStylePanel({ st, onChange }) {
@@ -284,7 +300,7 @@ function ImageStylePanel({ st, onChange }) {
   return (
     <div className="pb-stylebox img-style-panel" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
       <strong>{tx("Afbeeldingsinstellingen")}</strong>
-      <div className="pb-tabs" role="tablist">{[["look", "Weergave"], ["layout", "Layout"], ["hover", "Mouse-over"]].map(([k, l]) => <button type="button" role="tab" aria-selected={tab === k} key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{tx(l)}</button>)}</div>
+      <div className="pb-tabs" role="tablist">{[["look", "Weergave"], ["layout", "Layout"], ["effect", "Effect"], ["hover", "Mouse-over"]].map(([k, l]) => <button type="button" role="tab" aria-selected={tab === k} key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{tx(l)}</button>)}</div>
       {tab === "hover" && <>
         <div className="pb-stylerow"><span>{tx("Effect")}</span>
           <span className="pb-seg">{[["", "Geen"], ["opacity", "Doorzichtigheid"], ["swap", "Andere afbeelding of video"]].map(([k, l]) => <button type="button" key={k} className={(hv.mode || "") === k ? "on" : ""} onClick={() => setHv(k ? { mode: k } : null)}>{tx(l)}</button>)}</span></div>
@@ -308,6 +324,24 @@ function ImageStylePanel({ st, onChange }) {
       <div className="pb-stylerow"><span />
         <button type="button" className="btn sm" disabled={!Object.keys(st).length} onClick={() => onChange(null)}>{tx("Terug naar standaard")}</button></div>
       </>}
+      {tab === "effect" && (() => {
+        const sh = st.shadow && typeof st.shadow === "object" ? st.shadow : null, set = (patch) => onChange({ shadow: { x: 0, y: 12, blur: 30, spread: 0, color: "#000000", opacity: 35, ...(sh || {}), ...patch } });
+        const sl = (k, label, lo, hi, unit = "px") => <div className="pb-stylerow" key={k}><span>{tx(label)}</span><input type="range" min={lo} max={hi} step={1} value={sh?.[k] ?? 0} onChange={(e) => set({ [k]: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx(label)} /><small className="muted">{sh?.[k] ?? 0} {unit}</small></div>;
+        return <>
+          <div className="pb-stylerow"><span>{tx("Schaduw")}</span>
+            <label className="switch"><input type="checkbox" checked={!!sh} onChange={(e) => onChange({ shadow: e.target.checked ? { x: 0, y: 12, blur: 30, spread: 0, color: "#000000", opacity: 35 } : "" })} /><span /></label>
+            {SHADOWS.map(([l, v]) => <button type="button" className="btn sm" key={l} onClick={() => onChange({ shadow: v })}>{tx(l)}</button>)}</div>
+          {sh && <>
+            {sl("x", "Positie links / rechts", -100, 100)}
+            {sl("y", "Positie boven / onder", -100, 100)}
+            {sl("blur", "Vervaging", 0, 150)}
+            {sl("spread", "Grootte", -50, 100)}
+            {sl("opacity", "Sterkte", 0, 100, "%")}
+            <div className="pb-stylerow"><span>{tx("Kleur")}</span><input type="color" value={/^#[0-9a-fA-F]{6}$/.test(sh.color || "") ? sh.color : "#000000"} onChange={(e) => set({ color: e.target.value })} aria-label={tx("Kleur van de schaduw")} /></div>
+            <div className="img-shadow-preview" aria-hidden="true"><span style={{ boxShadow: shadowCss(sh), borderRadius: st.radius === undefined || st.radius === "" ? "var(--radius, 12px)" : `${Math.min(st.radius, 999)}px` }} /></div>
+          </>}
+        </>;
+      })()}
       {tab === "layout" && <>
         <div className="pb-stylerow"><span>{tx("Ronde hoeken")}</span>
           <input type="range" min={0} max={120} step={1} value={Math.min(120, Number(st.radius) || 0)} onChange={(e) => onChange({ radius: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Hoe groot de hoek is")} />
@@ -315,6 +349,16 @@ function ImageStylePanel({ st, onChange }) {
         <div className="pb-stylerow"><span>{tx("Snel kiezen")}</span>
           {[[0, "Scherp"], [8, "Zacht"], [20, "Rond"], [999, "Heel rond (cirkel)"]].map(([v, l]) => <button type="button" className={`btn sm${st.radius === v ? " primary" : ""}`} key={v} onClick={() => onChange({ radius: v })}>{tx(l)}</button>)}
           <button type="button" className="btn sm" disabled={st.radius === undefined || st.radius === ""} onClick={() => onChange({ radius: "" })}>{tx("Zoals het thema")}</button></div>
+        <div className="pb-stylerow"><span>{tx("Vergroten in het kader")}</span>
+          <input type="range" min={100} max={300} step={5} value={Number(st.zoom) || 100} onChange={(e) => onChange({ zoom: Number(e.target.value) <= 100 ? "" : Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Vergroten in het kader")} /><small className="muted">{Number(st.zoom) || 100}%</small></div>
+        {st.zoom > 100 && <>
+          <div className="pb-stylerow"><span>{tx("Zichtpunt links / rechts")}</span>
+            <input type="range" min={0} max={100} step={1} value={st.fx ?? 50} onChange={(e) => onChange({ fx: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Zichtpunt links / rechts")} /><small className="muted">{st.fx ?? 50}%</small></div>
+          <div className="pb-stylerow"><span>{tx("Zichtpunt boven / onder")}</span>
+            <input type="range" min={0} max={100} step={1} value={st.fy ?? 50} onChange={(e) => onChange({ fy: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Zichtpunt boven / onder")} /><small className="muted">{st.fy ?? 50}%</small></div>
+        </>}
+        <div className="pb-stylerow"><span>{tx("Snel vergroten")}</span>
+          {[[100, "Normaal"], [125, "125%"], [150, "150%"], [200, "200%"]].map(([v, l]) => <button type="button" className={`btn sm${(Number(st.zoom) || 100) === v ? " primary" : ""}`} key={v} onClick={() => onChange({ zoom: v === 100 ? "" : v })}>{typeof l === "string" && l.endsWith("%") ? l : tx(l)}</button>)}</div>
         <div className="img-radius-preview" aria-hidden="true"><span style={{ borderRadius: st.radius === undefined || st.radius === "" ? "var(--radius, 12px)" : `${Math.min(st.radius, 999)}px` }} /></div>
       </>}
     </div>
@@ -365,7 +409,7 @@ export function EditableImage({ id, fallback = null, alt = "", className = "", r
           extra={editing && <>{grip}{removable && <Trash onClick={() => setGone("1", tx("Onderdeel verwijderd"))} />}<button type="button" ref={gearRef} className={`img-edit-btn img-set-btn${panel ? " on" : ""}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPanel(!panel); }} title={tx("Afbeeldingsinstellingen")} aria-label={tx("Afbeeldingsinstellingen")} aria-expanded={panel}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
           </button></>}>
-          {url ? hoverWrap(st.hover, /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} style={{ ...(placement && !st.w ? placeStyle(placement) : {}), ...(hasSt ? { width: "100%", height: "auto", opacity: st.opacity !== undefined ? st.opacity / 100 : undefined, borderRadius: st.radius !== undefined ? `${st.radius}px` : undefined } : {}) }} />) : fallback}
+          {url ? hoverWrap(st.hover, /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} style={{ ...(placement && !st.w ? placeStyle(placement) : {}), ...(hasSt ? { width: "100%", height: "auto", opacity: st.opacity !== undefined ? st.opacity / 100 : undefined, borderRadius: st.radius !== undefined ? `${st.radius}px` : undefined, ...(st.zoom > 100 ? { transform: `scale(${Math.min(400, st.zoom) / 100})`, transformOrigin: `${st.fx ?? 50}% ${st.fy ?? 50}%` } : {}) } : {}) }} />) : fallback}
         </ImageEdit>
         {editing && panel && <FloatPanel anchor={gearRef}><ImageStylePanel st={st} onChange={change} /></FloatPanel>}
       </div>

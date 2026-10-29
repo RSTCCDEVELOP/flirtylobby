@@ -349,6 +349,50 @@ def standard_layouts(key):
     return out
 
 
+def _full(layout):
+    """The whole design of a page (without the bits that are not part of the standard), to see whether it is exactly the standard."""
+    import json
+
+    d = dict(layout or {})
+    for k in ("auto", "bg", "updated"):
+        d.pop(k, None)
+    d["rows"] = [{k: v for k, v in r.items() if k != "bg"} for r in d.get("rows") or []]  # (the picture behind a block is linked afterwards)
+    return json.dumps(d, sort_keys=True, ensure_ascii=False)
+
+
+def _hero_shape(layout):
+    """How the banners and grids of a page are laid out (size, columns, widths): what makes a page look wrong when an older version of the standard is still there."""
+    return [[r.get("hero") or "", r.get("cols"), r.get("h_mode"), r.get("h"), [(c.get("width"), c.get("halign"), c.get("valign")) for c in r.get("cells") or []]] for r in (layout or {}).get("rows") or []]
+
+
+def pristine_wrong(key):
+    """The pages of this installation that nobody changed (their texts are still the standard texts) but whose design is not the standard: [page key].
+    That is what an older version of the standard left behind: those pages are put right by themselves (a page that was changed by hand is never touched)."""
+    from apps.core.models import ContentBlock
+    from apps.pages.models import PageLayout
+
+    build = BUILDERS.get(key)
+    if not build:
+        return []
+    out = []
+    for page_key, b in build()["layouts"].items():
+        lay = PageLayout.objects.filter(key=page_key).first()
+        if lay is None or not (lay.data or {}).get("rows"):
+            continue  # a page that is gone is asked about (outdated), not made again by itself
+        if not b.texts:
+            continue
+        have = {c.key: c.text for c in ContentBlock.objects.filter(key__in=list(b.texts), lang="nl")}
+        if any(have.get(ck) != texts.get("nl", "") for ck, texts in b.texts.items()):
+            continue  # a text was changed (or is not there): this page is somebody's work
+        known = set(b.texts) | set(b.images)
+        if ContentBlock.objects.filter(key__startswith=f"layout.{page_key}.").exclude(key__in=known).exists():
+            continue  # something was added or set on this page by hand
+        want = _layout_dict(b, page_key)
+        if _sig(lay.data) != _sig(want) or _hero_shape(lay.data) != _hero_shape(want):  # not the standard structure (an older version of it)
+            out.append(page_key)
+    return out
+
+
 def outdated(key):
     """The pages of this installation that no longer match the standard: [{key, title, missing}]. missing = the page or its design is gone."""
     from apps.pages.models import Page, PageLayout

@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { api, apiBase, errorText } from "../lib/api";
 import { anchorStyle } from "../lib/anchor";
 import { holdLoader } from "../lib/loading";
+import { softRefresh } from "../lib/softrefresh";
 import { confirmDialog } from "../lib/dialog";
 import { getLanguage, tx } from "../lib/t";
 import { makeTranslator } from "../lib/plugin-i18n";
@@ -40,6 +41,8 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
   const dirty = useRef(false);
   const ready = useRef(null);
   const settle = useRef(null);
+  const [bust, setBust] = useState(0); // a soft refresh: only this frame loads again
+  useEffect(() => { const f = () => { ready.current = holdLoader(4000); setBust((n) => n + 1); }; window.addEventListener("soft-refresh", f); return () => window.removeEventListener("soft-refresh", f); }, []);
   // the loader over the page waits until the plugin page says it is complete (system.loaded()); a plugin that does not say so is let go when its size has been still for a moment
   useEffect(() => { ready.current = holdLoader(); return () => { clearTimeout(settle.current); ready.current?.(); }; }, []);
   const [ask, setAsk] = useState(null); // {type: "media" | "html", id, html, title}: the system shows its own picker / editor for the plugin
@@ -87,12 +90,12 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
     return () => { window.removeEventListener("message", onMessage); window.removeEventListener("themechange", onTheme); };
   }, [name, user, router, onWrite]);
   useEffect(() => { frame.current?.contentWindow?.postMessage({ plugin: "attrs", attrs: { editing: site?.editing ? "1" : "0" } }, "*"); }, [site?.editing]);
-  const closeAdmin = () => { setAdminPop(null); if (dirty.current) { dirty.current = false; window.location.reload(); } };
+  const closeAdmin = () => { setAdminPop(null); if (dirty.current) { dirty.current = false; softRefresh(); } };
   const answer = (id, data) => { frame.current?.contentWindow?.postMessage({ plugin: "reply", id, ok: true, data }, "*"); setAsk(null); };
 
   return (
     <>
-      <iframe ref={frame} scrolling="no" title={title || name} src={`${apiBase()}/api/plugins/web/${name}/${file}`} sandbox="allow-scripts allow-forms allow-popups allow-downloads" allow="fullscreen" allowFullScreen style={{ width: "100%", height, border: bare ? 0 : "1px solid var(--line)", borderRadius: bare ? 0 : 12, background: bare ? "transparent" : "var(--card)" }} />
+      <iframe ref={frame} scrolling="no" title={title || name} src={`${apiBase()}/api/plugins/web/${name}/${file}${bust ? `${file.includes("?") ? "&" : "?"}r=${bust}` : ""}`} sandbox="allow-scripts allow-forms allow-popups allow-downloads" allow="fullscreen" allowFullScreen style={{ width: "100%", height, border: bare ? 0 : "1px solid var(--line)", borderRadius: bare ? 0 : 12, background: bare ? "transparent" : "var(--card)" }} />
       {adminPop && typeof document !== "undefined" && createPortal(
         <div className={`pb-objback${adminPop.anchor ? " anchored" : ""}`} onMouseDown={(e) => { if (e.target === e.currentTarget) closeAdmin(); }}>
           <div className="pb-objpop" role="dialog" style={adminPop.anchor ? anchorStyle(adminPop.anchor, 900) : { width: "min(900px, 100%)" }}>
