@@ -12,6 +12,7 @@ import { mediaUrl } from "../lib/api";
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "./BrandingContext";
 import { useUi } from "./Ui";
+import { loaderBusy } from "../lib/loading";
 
 // Page loaders in the style of the theme (colours, rounding and logo come from the theme): the pictures are CSS only
 export const LOADER_STYLES = ["ring", "dots", "bar", "pulse", "orbit", "squares", "wave", "skeleton", "logo", "image"];
@@ -54,7 +55,8 @@ export default function PageLoader() {
   const loaded = useRef(false); // the first load is done
   const since = useRef(Date.now());
   const timer = useRef(null);
-  const hideSoon = () => { clearTimeout(timer.current); timer.current = setTimeout(() => { loaded.current = true; setShow(false); }, Math.max(0, min - (Date.now() - since.current))); };
+  // gone when the minimum time is over and nothing is being built any more (design of the page, frames of plugins, pictures in view): checked again until then
+  const hideSoon = () => { clearTimeout(timer.current); timer.current = setTimeout(() => { if (loaderBusy()) { hideSoon(); return; } loaded.current = true; setShow(false); }, Math.max(250, min - (Date.now() - since.current))); };
 
   // the first load: gone when the page is complete (and it was visible for the minimum time)
   useEffect(() => {

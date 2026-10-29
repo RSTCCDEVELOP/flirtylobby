@@ -7,6 +7,7 @@
 
 "use client";
 
+import { holdLoader } from "../lib/loading";
 import Link from "next/link";
 import { tx } from "../lib/t";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
@@ -93,7 +94,7 @@ function PbButton({ it, c, editing }) {
   const scale = b.scale ?? (b.size === "sm" ? 80 : b.size === "lg" ? 140 : 100); // percent; an older button had small / large
   const wrap = { display: "flex", justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[c.halign] || "flex-start", padding: padCss(it.style?.pad) };
   const external = /^(https?:|mailto:|tel:)/.test(url);
-  const look = { fontSize: `${scale / 100 * 0.92}rem`, padding: ".6em 1.25em", ...(b.full ? { width: "100%", justifyContent: "center" } : {}) };
+  const look = { fontSize: `${scale / 100 * 0.92}rem`, padding: ".6em 1.25em", ...(b.radius != null ? { borderRadius: `${b.radius}px` } : {}), ...(b.full ? { width: "100%", justifyContent: "center" } : {}) };
   return (
     <div className="pb-btnrow" style={wrap}>
       {editing || !url ? <span className={cls} style={look} role={editing ? "button" : undefined}>{text || tx("Knop")}</span>
@@ -167,7 +168,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const [overRow, setOverRow] = useState(null); // {id, pos: before | after}
   const timer = useRef(null);
 
-  useEffect(() => { api(`/pages/layout/${encodeURIComponent(pageKey)}/`).then(setLayout).catch(() => setLayout({ rows: [] })); }, [pageKey]);
+  useEffect(() => { const ready = holdLoader(); api(`/pages/layout/${encodeURIComponent(pageKey)}/`).then(setLayout).catch(() => setLayout({ rows: [] })).finally(() => setTimeout(ready, 0)); return ready; }, [pageKey]); // the loader over the page waits for the design of the page
   const pageWide = layout?.page_width === "full";
   const pageSize = ["5", "10", "25", "100"].includes(String(layout?.page_size)) ? String(layout.page_size) : "all";
   const listView = layout?.list?.view === "rows" ? "rows" : "grid", listCenter = !!layout?.list?.center;
