@@ -67,7 +67,8 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       return await confirmDialog(tx("Deze pagina's hebben al inhoud: {0}. Overschrijven met de standaard van deze installatie? Kies \"Nee, behouden\" om je pagina's en teksten te laten zoals ze zijn.", c.conflicts.map((x) => x.title).join(", ")), { danger: true, okLabel: tx("Ja, overschrijven"), cancelLabel: tx("Nee, behouden") });
     } catch { return false; }
   };
-  // an installation in use: its modules and plugins are checked and everything that was switched off goes on (pages and texts are not touched)
+  // an installation in use: its modules and plugins are checked and everything that was switched off goes on; then the pages and the demo data are compared with the standard
+  // and the person is asked before anything is put back (pages and texts are never changed without asking)
   const updateActive = async (p) => {
     setRun({ title: tx("Installatie \"{0}\" bijwerken", p.name), steps: [{ key: "_u", label: tx("Modules en plugins controleren en aanzetten"), status: "busy" }], error: "", done: false });
     try {
@@ -76,8 +77,28 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       if (r.installed?.length) parts.push(tx("Opnieuw geïnstalleerd: {0}.", r.installed.join(", ")));
       if (r.plugins_on?.length) parts.push(tx("Plugins aangezet: {0}.", r.plugins_on.join(", ")));
       if (r.modules_on?.length) parts.push(tx("Modules aangezet: {0}.", r.modules_on.length));
-      setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "ok" })), done: true, note: parts.length ? parts.join(" ") : tx("Alles stond al aan en werkt. Er is niets veranderd."), notes: [tx("Je pagina's en teksten zijn niet gewijzigd.")] }));
-    } catch (e) { setRun((x) => ({ ...x, steps: x.steps.map((st) => ({ ...st, status: "error" })), error: errorText(e) })); }
+      const notes = [];
+      let pagesNote = tx("Je pagina's en teksten zijn niet gewijzigd.");
+      const pages = r.pages || [];
+      let demoMissing = false;
+      if (demo) {
+        try { const d = await api("/system/demo/"); demoMissing = (d.incomplete || []).includes(p.key); } catch {}
+      }
+      setRun((x) => ({ ...x, steps: [...x.steps.map((st) => ({ ...st, status: "ok" })), { key: "_pages", label: tx("Pagina's vergelijken met de standaard"), status: "ok" }, ...(demo ? [{ key: "_demo", label: tx("Demo-gegevens controleren"), status: "ok" }] : [])], notes: [] }));
+      if (pages.length && await confirmDialog(tx("Deze pagina's kloppen niet meer met de standaard van deze installatie: {0}. Aanpassen aan de nieuwe standaard? Wat je zelf op deze pagina's hebt gemaakt, wordt dan vervangen.", pages.map((x) => x.title + (x.missing ? ` (${tx("ontbreekt")})` : "")).join(", ")), { danger: true, okLabel: tx("Ja, aanpassen"), cancelLabel: tx("Nee, behouden") })) {
+        setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_pages" ? { ...st, status: "busy" } : st)) }));
+        const u = await api(`/system/presets/${p.key}/update/`, { method: "POST", body: { pages: pages.map((x) => x.key) } });
+        setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_pages" ? { ...st, status: "ok" } : st)) }));
+        pagesNote = tx("Pagina's aangepast aan de standaard: {0}.", u.pages.length);
+      }
+      notes.push(pagesNote);
+      let ok = true;
+      if (demoMissing && await confirmDialog(tx("De demo-gegevens van deze installatie zijn niet meer (helemaal) aanwezig. Opnieuw toevoegen? Wat er nog is, wordt niet dubbel gemaakt."), { okLabel: tx("Ja, toevoegen"), cancelLabel: tx("Nee") })) {
+        ok = await runDemo(p.key, { shops: (p.plugins || []).some((x) => x.name === "webshop") ? ["clothing"] : undefined }, setRun);
+        if (ok) notes.push(tx("De demo-gegevens zijn opnieuw toegevoegd."));
+      }
+      setRun((x) => ({ ...x, done: ok, note: parts.length ? parts.join(" ") : tx("Alles stond al aan en werkt."), notes: [...(x.notes || []), ...notes] }));
+    } catch (e) { setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.status === "busy" ? { ...st, status: "error" } : st)), error: errorText(e) })); }
   };
   const doApply = async () => {
     const { p, demo: withDemo, shops } = ask;

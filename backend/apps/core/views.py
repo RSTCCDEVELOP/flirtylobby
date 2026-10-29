@@ -1687,4 +1687,6 @@ def presets_update(request, key):
         return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
     if presets.active() != key:
         return Response({"detail": "Deze installatie is niet in gebruik."}, status=status.HTTP_400_BAD_REQUEST)
+    if isinstance(request.data.get("pages"), list):  # the pages the person agreed to put back as the standard has them
+        return Response(presets.update_pages(key, [str(k) for k in request.data["pages"]]))
     return Response(presets.update_installation(key))

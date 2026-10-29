@@ -301,6 +301,10 @@ def install(key, skip=()):
     spec = build()
     before = _owned().get(key) or {}
     mine = {"layouts": [], "pages": [], "backup": dict(before.get("backup") or {}), "images": {}}
+    if skip:  # some pages stay as they are: what this installation already owned stays ours (a later removal still knows it)
+        mine["layouts"] = [k for k in before.get("layouts", []) if k in skip]
+        mine["pages"] = list(before.get("pages", []))
+        mine["images"] = dict(before.get("images") or {})
     for page_key, b in spec["layouts"].items():
         if page_key in skip:
             continue
@@ -324,6 +328,49 @@ def install(key, skip=()):
     _save_owned(owned)
     link_media(key)
     return mine["layouts"]
+
+
+def _sig(layout):
+    """The structure of a page design: per row its kind and columns, per cell the parts on it. Pictures, texts and looks are left out, so a page does not count as changed because of those."""
+    return [[r.get("hero") or "", r.get("cols") or 1, [[(it.get("type"), it.get("id")) for it in c.get("items") or []] for c in r.get("cells") or []]] for r in (layout or {}).get("rows") or []]
+
+
+def standard_layouts(key):
+    """{page key: layout} of the pages of this installation as they should be: the ones saved in the installation file win over the designed ones."""
+    from . import presets
+
+    out = {}
+    build = BUILDERS.get(key)
+    if build:
+        for page_key, b in build()["layouts"].items():
+            out[page_key] = _layout_dict(b, page_key)
+    for page_key, row in presets.saved_pages(key).items():
+        out[page_key] = row.get("layout") or {}
+    return out
+
+
+def outdated(key):
+    """The pages of this installation that no longer match the standard: [{key, title, missing}]. missing = the page or its design is gone."""
+    from apps.pages.models import Page, PageLayout
+
+    out = []
+    standard = standard_layouts(key)
+    build = BUILDERS.get(key)
+    page_specs = {p["key"]: p for p in (build()["pages"] if build else [])}
+    for page_key, want in standard.items():
+        page = Page.objects.filter(key=page_key).first()
+        lay = PageLayout.objects.filter(key=page_key).first()
+        have = (lay.data if lay else {}) or {}
+        missing = (page is None and page_key in page_specs) or not have.get("rows")
+        if missing or _sig(have) != _sig(want):
+            title = page_key
+            if page and isinstance(page.title, dict) and page.title:
+                title = page.title.get("nl") or next(iter(page.title.values()), page_key)
+            elif page_key in page_specs:
+                t = page_specs[page_key]["title"]
+                title = (t.get("nl") if isinstance(t, dict) else t) or page_key
+            out.append({"key": page_key, "title": title, "missing": bool(missing)})
+    return out
 
 
 def layout_keys(key):

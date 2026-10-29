@@ -481,7 +481,30 @@ def update_installation(key):
         so.sync()
     except Exception:  # noqa: BLE001
         logger.exception("Installation %s: system objects could not be checked", key)
-    return {"installed": installed, "plugins_on": plugins_on, "modules_on": modules_on}
+    pages = []
+    try:
+        from . import preset_pages
+
+        pages = preset_pages.outdated(key)  # not changed here: the person is asked first
+    except Exception:  # noqa: BLE001
+        logger.exception("Installation %s: pages could not be compared with the standard", key)
+    return {"installed": installed, "plugins_on": plugins_on, "modules_on": modules_on, "pages": pages}
+
+
+def update_pages(key, page_keys):
+    """Put the chosen pages of this installation back as the standard has them (the designed pages and the pages saved in the installation file). Other pages stay as they are."""
+    from . import preset_pages
+
+    preset = get(key)
+    if not preset:
+        raise KeyError(key)
+    chosen = {k for k in page_keys if k in preset_pages.standard_layouts(key)}
+    keep = set(preset_pages.standard_layouts(key)) - chosen
+    done = sorted(chosen)
+    if chosen:
+        preset_pages.install(key, skip=keep or {""})  # (a skip that is not empty keeps pages of another installation and the pages that are not chosen)
+        _apply_saved_pages(key, skip=keep | {k for k in chosen if k not in saved_pages(key)})
+    return {"pages": done}
 
 
 def wanted_plugins():
