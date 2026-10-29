@@ -19,6 +19,7 @@ import SiteMenu from "./SiteMenu";
 import { ChatButton, DirectIndicator } from "./Chat";
 import NotificationBell from "./NotificationBell";
 import SandboxPill from "./SandboxPill";
+import HeaderEdit from "./HeaderEdit";
 
 export default function SiteHeader() {
   return (
@@ -35,6 +36,7 @@ export default function SiteHeader() {
         <DirectIndicator />
           <NotificationBell />
           <ChatButton />
+        <HeaderEdit />
         <EditModeSwitch />
         <LanguageSwitcher />
         <FaqDrawer />
