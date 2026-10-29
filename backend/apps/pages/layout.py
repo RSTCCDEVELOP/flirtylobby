@@ -127,7 +127,7 @@ def _style(st):
         out["font"] = st["font"]
     if st.get("radius") not in (None, ""):
         try:
-            out["radius"] = min(max(int(st["radius"]), 0), 200)
+            out["radius"] = min(max(int(st["radius"]), 0), 999)
         except (TypeError, ValueError):
             pass
     return out
@@ -173,7 +173,7 @@ def _item_style(st):
             out["pad"] = pad
     if re.fullmatch(r"[1-9][0-9]{0,3}(px|%)", str(st.get("w") or "")):
         out["w"] = str(st["w"])
-    for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 200), ("h", 0, 1000), ("th", 1, 20), ("lw", 5, 100)):  # h: height of a spacer (px), th: thickness and lw: width (%) of a line
+    for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 999), ("h", 0, 1000), ("th", 1, 20), ("lw", 5, 100)):  # h: height of a spacer (px), th: thickness and lw: width (%) of a line
         if st.get(key) not in (None, ""):
             try:
                 out[key] = min(max(int(st[key]), lo), hi)

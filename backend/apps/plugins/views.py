@@ -490,7 +490,8 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     go: function (path) { parent.postMessage({ plugin: "go", path: path }, "*"); },  /* open an address of the website (or a full link) */
     pickMedia: function () { return call("media", {}); },  /* the media library of the system: resolves {id, url} or null */
     editHtml: function (html, opts) { return call("html", { html: html || "", opts: opts || {} }); },  /* the system's text editor: resolves the new html, or null */
-    resize: function (h) { parent.postMessage({ plugin: "resize", height: h }, "*"); }
+    resize: function (h) { parent.postMessage({ plugin: "resize", height: h }, "*"); },
+    loaded: function () { parent.postMessage({ plugin: "loaded" }, "*"); },  /* the page of the plugin is complete (data and pictures): the loader over the website can go */
   };
   /* the page always fits its frame: no scrollbar inside the frame, the frame grows and shrinks with the content */
   var st = document.createElement("style"); st.textContent = "html{overflow-y:hidden}"; (document.head || document.documentElement).appendChild(st);

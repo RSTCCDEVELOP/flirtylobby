@@ -3345,3 +3345,5 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-rowwrap.hero .pb-tstyle > .text-edit > .pb-text { text-align: inherit !important; }
 
 .site-actions .header-edit { position: static; flex: none; }
+
+.img-radius-preview { display: flex; justify-content: center; padding: .3rem 0 .1rem; } .img-radius-preview span { display: block; width: 120px; height: 80px; background: color-mix(in srgb, var(--blue) 30%, var(--line)); border: 2px solid var(--blue); }

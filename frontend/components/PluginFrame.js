@@ -39,7 +39,9 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
   const [adminPop, setAdminPop] = useState(null); // {file, query}: the admin screen of this plugin in a popup (the Edit button on an item in edit mode)
   const dirty = useRef(false);
   const ready = useRef(null);
-  useEffect(() => { ready.current = holdLoader(); return () => ready.current?.(); }, []); // the loader over the page waits until the plugin page has drawn itself (its first resize)
+  const settle = useRef(null);
+  // the loader over the page waits until the plugin page says it is complete (system.loaded()); a plugin that does not say so is let go when its size has been still for a moment
+  useEffect(() => { ready.current = holdLoader(); return () => { clearTimeout(settle.current); ready.current?.(); }; }, []);
   const [ask, setAsk] = useState(null); // {type: "media" | "html", id, html, title}: the system shows its own picker / editor for the plugin
 
   useEffect(() => {
@@ -70,7 +72,8 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
       else if (d.plugin === "openadmin" && site?.editing && typeof d.file === "string" && /^web\/[A-Za-z0-9_.-]+\.html$/.test(d.file)) setAdminPop({ anchor: (() => { const f = frame.current?.getBoundingClientRect(); const r = d.rect; return f && r && Number.isFinite(r.left) ? { left: f.left + r.left, top: f.top + r.bottom + 8 } : null; })(), file: d.file, query: { popup: "1", ...(d.query || {}) } });
       else if (d.plugin === "media") setAsk({ type: "media", id: d.id });
       else if (d.plugin === "html") setAsk({ type: "html", id: d.id, html: String(d.html || ""), title: d.opts?.title });
-      else if (d.plugin === "resize") { ready.current?.(); setHeight(Math.max(120, Math.min(30000, Number(d.height) || 640))); }
+      else if (d.plugin === "loaded") { clearTimeout(settle.current); ready.current?.(); }
+      else if (d.plugin === "resize") { clearTimeout(settle.current); settle.current = setTimeout(() => ready.current?.(), 1800); setHeight(Math.max(120, Math.min(30000, Number(d.height) || 640))); }
       else if (d.plugin === "api" && typeof d.path === "string" && d.path.startsWith("/")) {
         if (onWrite && (d.opts?.method || "GET").toUpperCase() !== "GET") onWrite();  // the page of the plugin changed something
         try { reply({ ok: true, data: await api(d.path, { method: (d.opts?.method || "GET").toUpperCase(), body: d.opts?.body }) }); }

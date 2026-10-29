@@ -284,7 +284,7 @@ function ImageStylePanel({ st, onChange }) {
   return (
     <div className="pb-stylebox img-style-panel" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
       <strong>{tx("Afbeeldingsinstellingen")}</strong>
-      <div className="pb-tabs" role="tablist">{[["look", "Weergave"], ["hover", "Mouse-over"]].map(([k, l]) => <button type="button" role="tab" aria-selected={tab === k} key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{tx(l)}</button>)}</div>
+      <div className="pb-tabs" role="tablist">{[["look", "Weergave"], ["layout", "Layout"], ["hover", "Mouse-over"]].map(([k, l]) => <button type="button" role="tab" aria-selected={tab === k} key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{tx(l)}</button>)}</div>
       {tab === "hover" && <>
         <div className="pb-stylerow"><span>{tx("Effect")}</span>
           <span className="pb-seg">{[["", "Geen"], ["opacity", "Doorzichtigheid"], ["swap", "Andere afbeelding of video"]].map(([k, l]) => <button type="button" key={k} className={(hv.mode || "") === k ? "on" : ""} onClick={() => setHv(k ? { mode: k } : null)}>{tx(l)}</button>)}</span></div>
@@ -305,9 +305,17 @@ function ImageStylePanel({ st, onChange }) {
         {[["25%", "Klein"], ["50%", "Middel"], ["75%", "Groot"], ["100%", "Volledig"]].map(([v, l]) => <button type="button" className={`btn sm${st.w === v ? " primary" : ""}`} key={v} onClick={() => onChange({ w: v })}>{tx(l)}</button>)}</div>
       <div className="pb-stylerow"><span>{tx("Doorzichtigheid")}</span>
         <input type="range" min={0} max={100} step={5} value={st.opacity ?? 100} onChange={(e) => onChange({ opacity: Number(e.target.value) })} style={{ width: 160 }} /><small className="muted">{st.opacity ?? 100}% {tx("zichtbaar")}</small></div>
-      <div className="pb-stylerow"><span>{tx("Ronde hoeken")}</span>
-        <input type="number" min={0} max={200} step={2} value={st.radius ?? ""} placeholder={tx("Thema")} onChange={(e) => onChange({ radius: e.target.value === "" ? "" : Number(e.target.value) })} style={{ width: "6rem" }} /><small className="muted">px</small>
+      <div className="pb-stylerow"><span />
         <button type="button" className="btn sm" disabled={!Object.keys(st).length} onClick={() => onChange(null)}>{tx("Terug naar standaard")}</button></div>
+      </>}
+      {tab === "layout" && <>
+        <div className="pb-stylerow"><span>{tx("Ronde hoeken")}</span>
+          <input type="range" min={0} max={120} step={1} value={Math.min(120, Number(st.radius) || 0)} onChange={(e) => onChange({ radius: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Hoe groot de hoek is")} />
+          <input type="number" min={0} max={999} step={1} value={st.radius ?? ""} placeholder={tx("Thema")} onChange={(e) => onChange({ radius: e.target.value === "" ? "" : Math.min(999, Math.max(0, Number(e.target.value))) })} style={{ width: "5.5rem" }} /><small className="muted">px</small></div>
+        <div className="pb-stylerow"><span>{tx("Snel kiezen")}</span>
+          {[[0, "Scherp"], [8, "Zacht"], [20, "Rond"], [999, "Heel rond (cirkel)"]].map(([v, l]) => <button type="button" className={`btn sm${st.radius === v ? " primary" : ""}`} key={v} onClick={() => onChange({ radius: v })}>{tx(l)}</button>)}
+          <button type="button" className="btn sm" disabled={st.radius === undefined || st.radius === ""} onClick={() => onChange({ radius: "" })}>{tx("Zoals het thema")}</button></div>
+        <div className="img-radius-preview" aria-hidden="true"><span style={{ borderRadius: st.radius === undefined || st.radius === "" ? "var(--radius, 12px)" : `${Math.min(st.radius, 999)}px` }} /></div>
       </>}
     </div>
   );
