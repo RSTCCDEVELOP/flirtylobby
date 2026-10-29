@@ -3334,3 +3334,8 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-rowwrap[data-balign="center"] { margin-left: auto !important; margin-right: auto !important; }
 .pb-rowwrap[data-balign="left"] { margin-left: 0 !important; margin-right: auto !important; }
 .pb-rowwrap[data-balign="right"] { margin-left: auto !important; margin-right: 0 !important; }
+
+/* icon-only buttons (pencil, copy, duplicate, gear, trash): the picture sits exactly in the middle, whatever the rules for buttons with text say */
+.pb-edit, .footer-edit, .pb-gear, .pb-gear.sm, .pb-trash, .item-trash { display: inline-flex; align-items: center; justify-content: center; line-height: 0; text-align: center; box-sizing: border-box; }
+.pb-edit svg, .footer-edit svg, .pb-gear svg, .pb-trash svg, .item-trash svg { display: block; margin: 0 !important; flex: none; vertical-align: baseline !important; position: static; }
+.footer-edit { padding: 0 !important; min-width: 1.9rem; min-height: 1.9rem; }

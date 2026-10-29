@@ -27,6 +27,7 @@ export default function FooterEdit() {
   const [sys, setSys] = useState(null);
   const [msg, setMsg] = useState(null);
   const [dirty, setDirty] = useState(false);
+  const [logoTouched, setLogoTouched] = useState(false); // the logo size was changed with the slider
   useEffect(() => {
     if (!open) return;
     api("/theme/").then(setTheme).catch((e) => setMsg({ ok: false, text: errorText(e) }));
@@ -40,9 +41,11 @@ export default function FooterEdit() {
     try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
   const saveSys = async () => {
-    try { setSys(await api("/system/", { method: "PUT", body: sys })); setDirty(true); setMsg({ ok: true, text: tx("Opgeslagen.") }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    try { setSys(await api("/system/", { method: "PUT", body: sys })); setDirty(true); setLogoTouched(false); setMsg({ ok: true, text: tx("Opgeslagen.") }); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
-  const close = () => { setOpen(false); if (dirty) { setDirty(false); window.location.reload(); } };
+  // the logo follows the slider at once, in the footer itself (saved with the button; closing without saving puts it back)
+  const liveLogo = (px) => document.querySelectorAll(".site-footer .foot-logo").forEach((el) => el.style.setProperty("--foot-logo-h", `${px}px`));
+  const close = () => { setOpen(false); if (logoTouched && !dirty) { setLogoTouched(false); window.location.reload(); return; } if (dirty) { setDirty(false); window.location.reload(); } };
   return (
     <>
       <button type="button" className="btn sm footer-edit" onClick={() => setOpen(true)} title={tx("De footer bewerken")} aria-label={tx("De footer bewerken")}><IconEdit width={13} height={13} /></button>
@@ -66,10 +69,10 @@ export default function FooterEdit() {
             {tab === "logo" && sys && (
               <div className="stack-sm">
                 <label>{tx("Hoogte van het logo")}: <strong>{Number(sys.footer_logo_height) || 36} px</strong>{!Number(sys.footer_logo_height) && <small className="muted"> ({tx("standaard")})</small>}
-                  <input type="range" min={16} max={200} step={2} value={Number(sys.footer_logo_height) || 36} onChange={(e) => setSys({ ...sys, footer_logo_height: String(e.target.value) })} /></label>
+                  <input type="range" min={16} max={200} step={2} value={Number(sys.footer_logo_height) || 36} onChange={(e) => { setSys({ ...sys, footer_logo_height: String(e.target.value) }); setLogoTouched(true); liveLogo(e.target.value); }} /></label>
                 <label>{tx("Link van het logo (leeg = geen link)")}<input value={sys.footer_logo_link || ""} maxLength={200} onChange={(e) => setSys({ ...sys, footer_logo_link: e.target.value })} placeholder={tx("https://… of /pagina")} /></label>
                 <small className="muted">{tx("Het logo zelf kies je bij Admin → Thema. Het logo staat alleen in de footer als de indeling het toont (tabblad Uiterlijk: Logo en naam).")}</small>
-                <div className="row"><button type="button" className="btn primary" onClick={saveSys}>{tx("Opslaan")}</button> {Number(sys.footer_logo_height) > 0 && <button type="button" className="btn" onClick={() => setSys({ ...sys, footer_logo_height: "0" })}>{tx("Standaardgrootte")}</button>}</div>
+                <div className="row"><button type="button" className="btn primary" onClick={saveSys}>{tx("Opslaan")}</button> {Number(sys.footer_logo_height) > 0 && <button type="button" className="btn" onClick={() => { setSys({ ...sys, footer_logo_height: "0" }); setLogoTouched(true); liveLogo(36); }}>{tx("Standaardgrootte")}</button>}</div>
               </div>
             )}
             {tab === "text" && sys && (
