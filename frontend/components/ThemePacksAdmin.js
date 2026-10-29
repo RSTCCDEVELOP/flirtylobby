@@ -7,7 +7,7 @@
 
 "use client";
 
-import { ResourceButtons } from "./ResourceLibrary";
+import { ResourceButtons, ThemeGallery } from "./ResourceLibrary";
 import { Busy } from "./PageLoader";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -167,6 +167,7 @@ export default function ThemePacksAdmin() {
           <ResourceButtons kind="themas" onChanged={() => window.location.reload()} />
         </div>
         <p className="muted" style={{ margin: ".5rem 0 0" }}>{tx("De map resource/themas van het product bevat de thema's (alleen de nieuwste versie): je hoeft niets te uploaden.")}</p>
+        <ThemeGallery onChanged={() => window.location.reload()} canManage={!!user?.is_staff} />
       </Collapsible>
 
       <Collapsible id="theme-pack-upload" title={tx("Pakket uploaden")}>

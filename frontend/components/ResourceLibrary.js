@@ -16,6 +16,98 @@ import { tx } from "../lib/t";
 const NAME = { plugins: "plugin", themas: "thema", languages: "taal" };
 const STATE = { new: ["Nieuw", ""], update: ["Update beschikbaar", "warn"], current: ["Geïnstalleerd", "ok"], bundle: ["Bundel", ""] };
 
+// a small picture of a theme (library): the colours, the font and the corners, in the light and the dark stand
+function ThemePreview({ p }) {
+  const one = (m, c) => (
+    <span className="res-tp" style={{ background: c.page, borderColor: c.line, color: c.text, borderRadius: Math.min(14, Number(p.radius) || 8) }}>
+      <span className="res-tp-bar" style={{ background: c.card, borderColor: c.line }}><i style={{ background: p.primary }} /><i style={{ background: c.line }} /><i style={{ background: c.line }} /></span>
+      <span className="res-tp-body">
+        <strong style={{ fontFamily: p.font ? `"${p.font}", system-ui, sans-serif` : undefined }}>{p.font || "Aa"}</strong>
+        <span className="res-tp-line" style={{ background: c.muted }} />
+        <span className="res-tp-row"><span className="res-tp-btn" style={{ background: p.primary, borderRadius: Math.min(10, Number(p.radius) || 8) }} /><span className="res-tp-dot" style={{ background: p.secondary }} /></span>
+        <span className="res-tp-card" style={{ background: c.card, borderColor: c.line, borderRadius: Math.min(10, Number(p.radius) || 8) }} />
+      </span>
+    </span>
+  );
+  return <span className="res-tprev" aria-hidden="true">{p.mode !== "dark" && one("light", p.light)}{p.mode !== "light" && one("dark", p.dark)}</span>;
+}
+
+// The themes of the library shown right on the page, each with its picture: choose what to add (or update) with one click
+export function ThemeGallery({ onChanged, canManage = false }) {
+  const [rows, setRows] = useState(null);
+  const [busy, setBusy] = useState("");
+  const [msg, setMsg] = useState(null);
+  const [q, setQ] = useState("");
+  const [ai, setAi] = useState(false); // Claude is linked: themes can be made from a description
+  const [mk, setMk] = useState(null); // the pop-up "make a theme": {prompt, mode, busy, err}
+  const load = useCallback(() => api("/resource/").then((d) => setRows(d?.kinds?.themas || [])).catch(() => setRows([])), []);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (canManage) api("/content/ai/").then((r) => setAi(!!r.available)).catch(() => setAi(false)); }, [canManage]);
+  if (!rows) return <p className="muted">{tx("Laden…")}</p>;
+  const list = rows.filter((r) => !r.bundle && (!q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase())))
+    .sort((a, b) => ["update", "new", "current"].indexOf(a.state) - ["update", "new", "current"].indexOf(b.state) || a.title.localeCompare(b.title));
+  if (!rows.some((r) => !r.bundle)) return null;
+  const add = async (r) => {
+    setBusy(r.name); setMsg(null);
+    try { const d = await api("/resource/install/", { method: "POST", body: { kind: "themas", name: r.name } }); setMsg({ ok: true, text: tx("{0} is geïnstalleerd.", d.installed.join(", ")) }); await load(); onChanged?.(); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy("");
+  };
+  const remove = async (r) => {
+    if (!(await confirmDialog(tx("Het thema {0} uit de bibliotheek verwijderen? Een thema dat al is geïnstalleerd blijft staan.", r.title), { danger: true }))) return;
+    setBusy(r.name); setMsg(null);
+    try { await api("/resource/theme-delete/", { method: "POST", body: { name: r.name } }); setMsg({ ok: true, text: tx("{0} is uit de bibliotheek verwijderd.", r.title) }); await load(); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy("");
+  };
+  const make = async () => {
+    setMk((m) => ({ ...m, busy: true, err: "" }));
+    try { const d = await api("/resource/theme-ai/", { method: "POST", body: { prompt: mk.prompt, mode: mk.mode } }); setMk(null); setMsg({ ok: true, text: tx("Het thema {0} staat in de bibliotheek. Kies Installeren om het te gebruiken.", d.name) }); await load(); }
+    catch (e) { setMk((m) => ({ ...m, busy: false, err: errorText(e) })); }
+  };
+  return (
+    <div className="stack-sm" style={{ marginTop: ".8rem" }}>
+      <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", flexWrap: "wrap" }}>
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoeken…")} style={{ maxWidth: "20rem" }} />
+        {canManage && ai && <button type="button" className="btn" onClick={() => setMk({ prompt: "", mode: "", busy: false, err: "" })}>{tx("Thema maken met AI")}</button>}
+      </div>
+      {mk && (
+        <div className="overlay" onClick={() => !mk.busy && setMk(null)}>
+          <div className="card modal" style={{ width: "min(560px, 94vw)" }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: 0 }}>{tx("Thema maken met AI")}</h2>
+            <p className="muted" style={{ margin: 0 }}>{tx("Beschrijf de sfeer, de branche of de kleuren. Claude maakt er een thema van (kleuren in licht en donker, lettertype, hoeken, header en footer) en zet het in de bibliotheek.")}</p>
+            <textarea rows={5} maxLength={1500} autoFocus value={mk.prompt} disabled={mk.busy} onChange={(e) => setMk({ ...mk, prompt: e.target.value })} placeholder={tx("Bijvoorbeeld: een warm en rustig thema voor een bloemenwinkel, zachte roze en groene tinten, met een elegant serif-lettertype")} />
+            <label>{tx("Voor welke stand")}<select value={mk.mode} disabled={mk.busy} onChange={(e) => setMk({ ...mk, mode: e.target.value })}><option value="">{tx("Licht en donker")}</option><option value="light">{tx("Alleen licht")}</option><option value="dark">{tx("Alleen donker")}</option></select></label>
+            {mk.err && <div className="alert">{mk.err}</div>}
+            <div className="row" style={{ justifyContent: "flex-end" }}>
+              <button type="button" className="btn" disabled={mk.busy} onClick={() => setMk(null)}>{tx("Annuleren")}</button>
+              <button type="button" className="btn primary" disabled={mk.busy || mk.prompt.trim().length < 3} onClick={make}>{mk.busy ? tx("Claude ontwerpt…") : tx("Maken")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {msg && <div className={`alert ${msg.ok ? "ok" : ""}`}>{msg.text}</div>}
+      <div className="res-gallery">
+        {list.map((r) => (
+          <div key={r.file} className="res-gcard">
+            {r.preview && <ThemePreview p={r.preview} />}
+            <strong>{r.title}</strong>
+            {r.description && <small className="muted">{r.description}</small>}
+            <div className="row" style={{ justifyContent: "space-between", gap: ".4rem" }}>
+              <span className={`badge ${STATE[r.state][1]}`}>{tx(STATE[r.state][0])}</span>
+              <span className="row" style={{ gap: ".4rem" }}>
+                {canManage && <button type="button" className="btn sm danger" disabled={!!busy} onClick={() => remove(r)} title={tx("Uit de bibliotheek verwijderen")}>{tx("Verwijderen")}</button>}
+                <button type="button" className={`btn sm ${r.state === "new" || r.state === "update" ? "primary" : ""}`} disabled={!!busy} onClick={() => add(r)}>{busy === r.name ? "…" : r.state === "update" ? tx("Updaten") : r.state === "current" ? tx("Opnieuw") : tx("Installeren")}</button>
+              </span>
+            </div>
+          </div>
+        ))}
+        {!list.length && <p className="muted">{tx("Niets gevonden in de bibliotheek.")}</p>}
+      </div>
+    </div>
+  );
+}
+
 // The library (folder resource/ in the product): add a plugin, theme or language without uploading a file, and update what is installed from there.
 export function ResourceButtons({ kind, onChanged }) {
   const [lib, setLib] = useState(null);
@@ -127,6 +219,7 @@ export function ResourceButtons({ kind, onChanged }) {
                   <div className="res-main">
                     <strong>{r.title}</strong> <small className="muted">{r.name !== r.title ? r.name + " · " : ""}{tx("versie")} {r.version}{r.installed_version ? ` (${tx("nu")} ${r.installed_version})` : ""}</small>
                     {r.description && <small className="muted">{r.description}</small>}
+                    {r.preview && <ThemePreview p={r.preview} />}
                   </div>
                   <span className={`badge ${STATE[r.state][1]}`}>{tx(STATE[r.state][0])}</span>
                   <button type="button" className={`btn sm ${r.state === "new" || r.state === "update" ? "primary" : ""}`} disabled={!!busy} onClick={() => add(r)}>

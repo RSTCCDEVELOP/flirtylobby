@@ -76,3 +76,27 @@ def update(request):
     except resources.ResourceError as e:
         return _bad(str(e))
     return Response({"updated": done, "library": resources.overview(request.user)[d["kind"]]})
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def theme_ai(request):
+    """A theme made by Claude from a description, saved in the library."""
+    d = request.data if isinstance(request.data, dict) else {}
+    try:
+        man = resources.make_theme(d.get("prompt"), str(d.get("mode") or ""))
+    except resources.ResourceError as e:
+        return _bad(str(e))
+    return Response({"theme": man["key"], "name": man["name"]}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def theme_delete(request):
+    """A theme out of the library (its zip)."""
+    d = request.data if isinstance(request.data, dict) else {}
+    try:
+        key = resources.delete_theme(d.get("name"))
+    except resources.ResourceError as e:
+        return _bad(str(e))
+    return Response({"removed": key})

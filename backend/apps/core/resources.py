@@ -11,6 +11,7 @@ From here a superadmin (or, for what is ticked in resource/allowed.json, anybody
 what is installed. `resource/allowed.json` says which ones may be installed by others: {"plugins": [...], "themas": [...], "languages": [...]} (names: plugin name, theme key, language code)."""
 import io
 import json
+import re
 import zipfile
 from pathlib import Path
 
@@ -64,8 +65,16 @@ def _read(path, kind):
             name, title = d.get("key"), d.get("name")
         else:
             name, title = d.get("code"), d.get("native_name") or d.get("name")
+        preview = None
+        if kind == "themas" and isinstance(d.get("values"), dict):  # the colours and fonts, so the library can show what the theme looks like
+            v = d["values"]
+            g = lambda k, dflt: str(v.get(k) or dflt) if re.fullmatch(r"#[0-9a-fA-F]{3,8}", str(v.get(k) or dflt)) else dflt  # noqa: E731
+            preview = {"primary": g("primary", "#f2823f"), "secondary": g("secondary", "#939497"), "mode": d.get("mode") if d.get("mode") in ("light", "dark") else None,
+                       "light": {"page": g("light_page", "#ffffff"), "card": g("light_card", "#ffffff"), "line": g("light_line", "#e6e6e6"), "text": g("light_text", "#222222"), "muted": g("light_muted", "#777777")},
+                       "dark": {"page": g("dark_page", "#1c1c1d"), "card": g("dark_card", "#242425"), "line": g("dark_line", "#3a3a3b"), "text": g("dark_text", "#f1f1f1"), "muted": g("dark_muted", "#a0a1a4")},
+                       "font": str(v.get("font_heading") or v.get("font_body") or "")[:40], "radius": v.get("radius") if isinstance(v.get("radius"), (int, float)) else 8}
         if name:
-            out.append({"name": str(name), "title": str(title or name), "version": str(d.get("version") or "1.0.0"), "description": str(d.get("description") or "")[:300], "author": str(d.get("author") or ""),
+            out.append({"preview": preview, "name": str(name), "title": str(title or name), "version": str(d.get("version") or "1.0.0"), "description": str(d.get("description") or "")[:300], "author": str(d.get("author") or ""),
                         "built_for": str(d.get("system_version") or "")})
     return out
 
@@ -244,3 +253,84 @@ def update_all(kind, user):
             install(kind, row["name"], user)
             done.append(row["name"])
     return done
+
+
+# ── making and removing themes of the library ────────────────────────────────
+THEME_KEYS = ["primary", "secondary", "light_page", "light_bg", "light_card", "light_hover", "light_line", "light_text", "light_muted",
+              "dark_page", "dark_bg", "dark_card", "dark_hover", "dark_line", "dark_text", "dark_muted", "font_body", "font_heading", "radius", "btn_radius", "shadow",
+              "header_layout", "header_style", "header_sticky", "menu_style", "footer_layout", "footer_tone", "footer_brand", "block_style", "block_gap", "content_w", "heading_weight", "tab_style", "system_popup"]
+
+
+def _slug(name):
+    import re as _re
+    import unicodedata
+
+    s = unicodedata.normalize("NFKD", str(name or "")).encode("ascii", "ignore").decode().lower()
+    s = _re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:30].strip("-")
+    return s if len(s) >= 3 else "thema"
+
+
+def make_theme(prompt, mode=""):
+    """Claude designs a theme from the description; it is checked like any theme package and put in the library as <key>-1.0.0.zip. Returns the manifest."""
+    from apps.integrations import ai
+
+    from . import theme, themeimport, themepacks
+
+    prompt = str(prompt or "").strip()[:1500]
+    if len(prompt) < 3:
+        raise ResourceError("Beschrijf eerst het thema dat je wilt, bijvoorbeeld: een warm, rustig thema voor een bloemenwinkel.")
+    if not ai.available():
+        raise ResourceError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
+    spec = []
+    for k in THEME_KEYS:
+        f = theme.FIELDS.get(k)
+        if not f:
+            continue
+        spec.append(f"{k}: " + ("hex colour #rrggbb" if f["type"] == "color" else f"number {f['min']}-{f['max']}" if f["type"] == "number" else "one of " + " | ".join(c["value"] for c in f["choices"])))
+    system = ("You design a visual theme for a website (colours, fonts, shapes) from the description of the user. Answer with ONE JSON object only, no text around it: "
+              '{"name": short name (1-3 words, in the language of the description), "description": one short sentence in the same language, "mode": "light" | "dark" | null, "values": {setting: value}}. '
+              "Give a value for every setting below, only with the allowed values. The light_* colours are for the light stand, the dark_* colours for the dark stand: both must be complete, readable "
+              "(strong contrast between text and page) and fit together; primary is the colour of buttons and links, secondary an accent. mode is null when both stands are fine, 'light' or 'dark' when the theme is meant for one stand only.\n"
+              "Settings:\n" + "\n".join(spec))
+    ask = prompt + (f"\n(The theme is meant for the {mode} stand only.)" if mode in ("light", "dark") else "")
+    try:
+        out = themeimport._parse_json(ai.claude(system, ask, max_tokens=3500, timeout=120), need=("values",))
+    except ValueError as e:
+        raise ResourceError(f"Claude gaf geen bruikbaar thema ({e}). Probeer het nog eens.")
+    clean, _errors = theme.validate({k: v for k, v in (out.get("values") or {}).items() if k in THEME_KEYS})  # what is not allowed is left out
+    if "primary" not in clean:
+        raise ResourceError("Claude gaf geen bruikbaar thema (de hoofdkleur ontbreekt). Probeer het nog eens.")
+    name = str(out.get("name") or "Nieuw thema").strip()[:60] or "Nieuw thema"
+    taken = {e["name"] for e in catalog("themas")} | themepacks.BUILTIN_KEYS()
+    key, n = _slug(name), 2
+    while key in taken or key in {r["key"] for r in themepacks.builtin_manifests()}:
+        key = f"{_slug(name)[:27]}-{n}"
+        n += 1
+    man = {"key": key, "name": name, "description": str(out.get("description") or "")[:300], "version": "1.0.0", "system_version": str(settings.SYSTEM_VERSION),
+           "mode": out.get("mode") if out.get("mode") in ("light", "dark") else None, "values": clean}
+    raw = json.dumps(man, indent=2, ensure_ascii=False) + "\n"
+    themepacks.parse(raw)  # the same check as an uploaded package
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr(f"{key}/theme.json", raw)
+    try:
+        (root() / "themas" / f"{key}-1.0.0.zip").write_bytes(buf.getvalue())
+    except OSError:
+        raise ResourceError("De bibliotheek is niet te beschrijven (alleen-lezen map op deze server).")
+    return man
+
+
+def delete_theme(key):
+    """Remove a theme from the library (its zip). An installed theme stays installed."""
+    import re as _re
+
+    key = str(key or "")
+    files = [f for f in (root() / "themas").glob(f"{key}-*.zip") if _re.fullmatch(_re.escape(key) + r"-\d+\.\d+\.\d+\.zip", f.name)] if _re.fullmatch(r"[a-z0-9-]{3,40}", key) else []
+    if not files:
+        raise ResourceError("Dit thema staat niet (als los pakket) in de bibliotheek.")
+    try:
+        for f in files:
+            f.unlink()
+    except OSError:
+        raise ResourceError("De bibliotheek is niet te beschrijven (alleen-lezen map op deze server).")
+    return key

@@ -15,6 +15,8 @@ urlpatterns = [
     path("resource/install/", resource_views.install),
     path("resource/update/", resource_views.update),
     path("resource/remove/", resource_views.remove),
+    path("resource/theme-ai/", resource_views.theme_ai),
+    path("resource/theme-delete/", resource_views.theme_delete),
     path("health/", views.health, name="health"),
     path("system/", views.system_settings),
     path("system/reset/", views.system_reset),

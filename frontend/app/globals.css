@@ -3226,6 +3226,12 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-insert { display: flex; align-items: center; gap: .6rem; min-height: 1.6rem; margin: .1rem auto; max-width: var(--content-w, 1100px); width: 100%; opacity: .35; transition: opacity .15s; }
 .pb-insert:hover, .pb-insert.open, .pb-insert:focus-within { opacity: 1; }
 .pb-insline { flex: 1; height: 0; border-top: 1px dashed var(--line); }
+.res-tprev { display: flex; gap: .5rem; margin-top: .35rem; } .res-tp { display: flex; flex-direction: column; width: 150px; height: 84px; border: 1px solid; overflow: hidden; font-size: .7rem; }
+.res-tp-bar { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-bottom: 1px solid; } .res-tp-bar i { display: block; width: 14px; height: 5px; border-radius: 3px; } .res-tp-bar i:first-child { width: 22px; height: 7px; }
+.res-tp-body { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; min-height: 0; } .res-tp-body strong { font-size: .8rem; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-tp-line { display: block; height: 3px; width: 70%; border-radius: 2px; opacity: .6; } .res-tp-row { display: flex; align-items: center; gap: 6px; } .res-tp-btn { display: block; width: 34px; height: 10px; } .res-tp-dot { display: block; width: 10px; height: 10px; border-radius: 50%; }
+.res-tp-card { display: block; height: 14px; border: 1px solid; }
+.res-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: .8rem; } .res-gcard { display: flex; flex-direction: column; gap: .35rem; padding: .8rem; border: 1px solid var(--line); border-radius: var(--radius, 10px); background: var(--card); } .res-gcard .res-tprev { margin: 0 0 .2rem; }
 .pb-note { position: fixed; left: 50%; bottom: 4.5rem; transform: translateX(-50%); z-index: 9000; padding: .6rem 1rem; border-radius: 10px; background: var(--blue, #2c6fbb); color: #fff; font-weight: 600; font-size: .88rem; box-shadow: 0 6px 24px rgba(0, 0, 0, .35); pointer-events: none; }
 .pb-insmenu { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
 
