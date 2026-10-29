@@ -3340,8 +3340,8 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-edit svg, .footer-edit svg, .pb-gear svg, .pb-trash svg, .item-trash svg { display: block; margin: 0 !important; flex: none; vertical-align: baseline !important; position: static; }
 .footer-edit { padding: 0 !important; min-width: 1.9rem; min-height: 1.9rem; }
 
-/* the text of a page follows the alignment of its column (the buttons Links / Midden / Rechts) in edit mode exactly as on the live page */
-.pb-tstyle > .text-edit > .pb-text, .pb-tstyle > .text-edit > .pb-text :is(p, h2, h3, h4, h5, li) { text-align: inherit !important; }
-.pb-tstyle > .pb-text :is(p, h2, h3, h4, h5, li) { text-align: inherit; }
+/* the text of a page is aligned as in the text editor (left, unless the text itself says otherwise with Links / Midden / Rechts), in edit mode and live; only in a hero it follows its column */
+.pb-rowwrap:not(.hero) .pb-tstyle > .pb-text, .pb-rowwrap:not(.hero) .pb-tstyle > .text-edit > .pb-text { text-align: left !important; }
+.pb-rowwrap.hero .pb-tstyle > .text-edit > .pb-text { text-align: inherit !important; }
 
 .site-actions .header-edit { position: static; flex: none; }

@@ -43,8 +43,16 @@ export default function HeaderEdit() {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(values), 400);
   };
+  const setHeight = (px) => {
+    const values = { ...theme.values, site_header_h: px };
+    setTheme({ ...theme, values });
+    document.documentElement.style.setProperty("--site-header-h", `${px}px`);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => save(values), 400);
+  };
   const close = () => { setOpen(false); if (dirty) { setDirty(false); window.location.reload(); } };
   const logoField = fields.find((f) => f.key === "site_logo_h");
+  const heightField = fields.find((f) => f.key === "site_header_h");
   return (
     <>
       <button type="button" className="btn sm footer-edit header-edit" onClick={() => setOpen(true)} title={tx("De header bewerken")} aria-label={tx("De header bewerken")}><IconEdit width={13} height={13} /></button>
@@ -62,6 +70,8 @@ export default function HeaderEdit() {
                     <label key={k}>{tx(l)}<select value={theme.values[k]} onChange={(e) => setLook(k, e.target.value)}>{f.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label>
                   ) : null; })}
                 </div>
+                {heightField && <label>{tx("Hoogte van de header")}: <strong>{Number(theme.values.site_header_h) || 72} px</strong>
+                  <input type="range" min={heightField.min} max={heightField.max} step={2} value={Number(theme.values.site_header_h) || 72} onChange={(e) => setHeight(Number(e.target.value))} /></label>}
                 <small className="muted">{tx("Zien hoe de varianten eruitzien kan bij Admin → Thema → Layout → Header.")}</small>
               </div>
             ))}

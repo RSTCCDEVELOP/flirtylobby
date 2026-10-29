@@ -348,6 +348,7 @@ SCHEMA = [
         number("site_header_h", "Hoogte website-header", 72, "--site-header-h", "px", 56, 110),
         number("logo_h", "Logohoogte beheer-header", 46, "--logo-h", "px", 24, 80),
         number("site_logo_h", "Logohoogte website-header", 52, "--site-logo-h", "px", 24, 90),
+        number("site_header_h", "Hoogte van de website-header", 72, "--site-header-h", "px", 48, 160, 2),
     ]},
 ]
 
