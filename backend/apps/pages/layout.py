@@ -258,6 +258,10 @@ def _button(raw):
     except (TypeError, ValueError):
         if raw.get("size") in BTN_SIZES and raw["size"] != "md":
             out["scale"] = 80 if raw["size"] == "sm" else 140  # an older button with small or large
+    try:
+        out["radius"] = int(min(max(float(raw["radius"]), 0), 60))  # the roundness of the corners in px; without it the button follows the theme
+    except (KeyError, TypeError, ValueError):
+        pass
     if raw.get("full"):
         out["full"] = True
     return out
