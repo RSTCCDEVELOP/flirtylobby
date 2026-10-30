@@ -471,6 +471,7 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     if (d.plugin === "init" && d.attrs) { Object.keys(d.attrs).forEach(function (k) { document.documentElement.setAttribute("data-" + k, d.attrs[k]); }); }  /* the layout choices of the theme (block style) */
     if (d.plugin === "init") { strings = d.strings || {}; document.documentElement.lang = d.lang || "nl"; resolveReady({ user: d.user, name: d.name, apiBase: d.apiBase, lang: d.lang, route: d.route || {}, siteOrigin: d.siteOrigin || "" }); }
     if (d.plugin === "attrs" && d.attrs) { Object.keys(d.attrs).forEach(function (k) { document.documentElement.setAttribute("data-" + k, d.attrs[k]); }); }  /* a choice of the site changed (edit mode on/off) */
+    if (d.plugin === "viewport") { document.documentElement.style.setProperty("--vh", d.h + "px"); document.documentElement.style.setProperty("--vw", d.w + "px"); }  /* the size of the screen under the header: a page can fill it */
     if (d.plugin === "rehello") { parent.postMessage({ plugin: "hello" }, "*"); }  /* the page loaded before the site was ready to answer (server-rendered page): ask again */
     if (d.plugin === "reply" && pending[d.id]) { var p = pending[d.id]; delete pending[d.id]; d.ok ? p.resolve(d.data) : p.reject(new Error(d.error || "Mislukt")); }
   });
@@ -491,6 +492,7 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     pickMedia: function () { return call("media", {}); },  /* the media library of the system: resolves {id, url} or null */
     editHtml: function (html, opts) { return call("html", { html: html || "", opts: opts || {} }); },  /* the system's text editor: resolves the new html, or null */
     resize: function (h) { parent.postMessage({ plugin: "resize", height: h }, "*"); },
+    bleed: function (on) { parent.postMessage({ plugin: "bleed", on: !!on }, "*"); },  /* the frame runs from edge to edge of the screen (true) or is as wide as its column (false) */
     loaded: function () { parent.postMessage({ plugin: "loaded" }, "*"); },  /* the page of the plugin is complete (data and pictures): the loader over the website can go */
   };
   /* the page always fits its frame: no scrollbar inside the frame, the frame grows and shrinks with the content */

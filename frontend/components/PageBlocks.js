@@ -165,6 +165,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
     toggleBar(id);
   };
   const toggleBar = (id) => setBarOpen((m) => ({ ...m, [id]: !m[id] }));
+  const shopTimer = useRef(null); // the page behind the webshop settings loads again a moment after the last change
   const rowDrag = useRef(null); // a whole row (block, hero) that is being dragged
   const [overRow, setOverRow] = useState(null); // {id, pos: before | after}
   const timer = useRef(null);
@@ -531,7 +532,12 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <span className="muted">{tx("Items zoals spelletjes en producten")}:</span>
           <span className="pb-seg">{[["grid", "Raster"], ["rows", "Rijen"]].map(([k, l]) => <button type="button" key={k} className={listView === k ? "on" : ""} onClick={() => change((x) => { x.list = { view: k, center: !!x.list?.center }; return x; })}>{tx(l)}</button>)}</span>
           <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={listCenter} onChange={(e) => change((x) => { x.list = { view: x.list?.view || "grid", center: e.target.checked }; return x; })} /><span /></span><span>{tx("Centreren")}</span></label></div>
-          <label className="check sec-toggle" style={{ marginBottom: ".6rem" }}><span className="switch"><input type="checkbox" checked={!layout.hero_off} disabled={NO_HERO.includes(pageKey)} onChange={(e) => change((l) => { if (e.target.checked) delete l.hero_off; else l.hero_off = true; return l; })} /><span /></span><span>{tx("Hero tonen")} <small className="muted">{tx("De banner met de titel bovenaan de pagina.")}</small></span></label><LayoutPresets pageKey={pageKey} current={layout.preset || (layout.auto ? "auto" : "")} standard={!!layout.auto || ["community", "search", "payment", "members", "products", "product", "cart", "checkout", "subscriptions", "donations", "games"].includes(pageKey)} onApplied={(d) => setLayout(d)} /></div>
+          <label className="check sec-toggle" style={{ marginBottom: ".6rem" }}><span className="switch"><input type="checkbox" checked={!layout.hero_off} disabled={NO_HERO.includes(pageKey)} onChange={(e) => change((l) => { if (e.target.checked) delete l.hero_off; else l.hero_off = true; return l; })} /><span /></span><span>{tx("Hero tonen")} <small className="muted">{tx("De banner met de titel bovenaan de pagina.")}</small></span></label><LayoutPresets pageKey={pageKey} current={layout.preset || (layout.auto ? "auto" : "")} standard={!!layout.auto || ["community", "search", "payment", "members", "products", "product", "cart", "checkout", "subscriptions", "donations", "games"].includes(pageKey)} onApplied={(d) => setLayout(d)} />
+          {["product", "products"].includes(pageKey) && ( // the layout of the webshop for this page: the same options as Webshop > Layout, here at the page
+            <div className="pb-shoplayout"><strong>{pageKey === "product" ? tx("Webshop: productpagina") : tx("Webshop: productoverzicht")}</strong>
+              <PluginFrame name="webshop" file="web/admin.html" bare keep route={{ params: {}, query: { layout: pageKey === "product" ? "page" : "list" } }} onWrite={() => { clearTimeout(shopTimer.current); shopTimer.current = setTimeout(softRefresh, 700); }} />
+            </div>
+          )}</div>
       )}
       {heroTheme && !heroRow && (title || h1) && (
         <div className="pb-rowwrap hero" data-t={heroTheme}><h1 className="pb-hero-title">{title || h1}</h1></div>

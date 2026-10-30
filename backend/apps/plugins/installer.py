@@ -842,7 +842,7 @@ def save_config(p, incoming):
                 continue
             v = crypto.encrypt({"v": str(v)[:500]})
         else:
-            v = str(v or "")[:4000]
+            v = str(v or "")[: 20000 if t == "textarea" else 4000]
         cfg[c["key"]] = v
     p.config = cfg
     p.save(update_fields=["config", "updated_at"])

@@ -3349,3 +3349,19 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .img-radius-preview { display: flex; justify-content: center; padding: .3rem 0 .1rem; } .img-radius-preview span { display: block; width: 120px; height: 80px; background: color-mix(in srgb, var(--blue) 30%, var(--line)); border: 2px solid var(--blue); }
 
 .img-shadow-preview { display: flex; justify-content: center; padding: 1rem 0 .6rem; } .img-shadow-preview span { display: block; width: 120px; height: 80px; background: color-mix(in srgb, var(--blue) 30%, var(--line)); }
+
+/* header "Editorial": menuknop links, logo in het midden, knoppen rechts; het zijmenu met grote letters en een schuifbeweging */
+html[data-hl="editorial"] .site-header { display: grid; grid-template-columns: 1fr auto 1fr; padding-top: 0; padding-bottom: 0; }
+html[data-hl="editorial"] .site-header .hmenu-wrap { order: 1; margin: 0; justify-self: start; }
+html[data-hl="editorial"] .site-header .brand { order: 2; justify-self: center; }
+html[data-hl="editorial"] .site-header .site-actions { order: 3; justify-self: end; margin: 0; }
+html[data-hl="editorial"] .site-header .site-nav { display: none; }
+html[data-hl="editorial"] .hmenu-backdrop { animation: ed-fade .25s ease-out; background: rgba(0, 0, 0, .45); }
+html[data-hl="editorial"] .p-drawer-left { width: min(460px, 92vw); padding: 4.5rem 2rem 2rem; background: var(--bg); border: 0; animation: ed-slide .3s ease-out; }
+html[data-hl="editorial"] .p-drawer-left .hmenu { gap: .1rem; }
+html[data-hl="editorial"] .p-drawer-left .hmenu > a, html[data-hl="editorial"] .p-drawer-left .hmenu > .hm-label, html[data-hl="editorial"] .p-drawer-left .hmenu > .hm-drop > .hm-label, html[data-hl="editorial"] .p-drawer-left .hmenu > .hm-drop > .hm-split > a { padding: .45rem 0; font-size: 1.55rem; font-weight: 600; color: var(--text); background: none; border: 0; border-radius: 0; }
+html[data-hl="editorial"] .p-drawer-left .hm-sub a { padding: .3rem 0 .3rem 1rem; font-size: 1rem; font-weight: 500; color: var(--muted); }
+html[data-hl="editorial"] .p-drawer-left .hmenu a:hover, html[data-hl="editorial"] .p-drawer-left .hmenu a.active { color: var(--text); background: none; text-decoration: underline; text-underline-offset: 6px; }
+@keyframes ed-slide { from { transform: translateX(-100%); } to { transform: none; } } @keyframes ed-fade { from { opacity: 0; } to { opacity: 1; } }
+.lay-page[data-mhl="editorial"] .lay-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; } .lay-page[data-mhl="editorial"] .lay-top > :first-child { order: 2; } .lay-page[data-mhl="editorial"] .lay-menu { display: none; } .lay-page[data-mhl="editorial"] .lay-burger { display: flex; order: 1; justify-self: start; } .lay-page[data-mhl="editorial"] .lay-actions { order: 3; justify-self: end; margin-left: 0; }
+.pb-shoplayout { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); } .pb-shoplayout > strong { display: block; margin-bottom: .6rem; }

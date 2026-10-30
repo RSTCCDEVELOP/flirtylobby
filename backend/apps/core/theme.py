@@ -118,6 +118,7 @@ HEADER_LAYOUTS = [
     {"value": "centered", "label": "Gecentreerd: logo in het midden, menu eronder", "css": ""},
     {"value": "split", "label": "Verdeeld: menu links, logo midden, knoppen rechts", "css": ""},
     {"value": "minimal", "label": "Minimaal: logo en een menuknop", "css": ""},
+    {"value": "editorial", "label": "Editorial: menuknop links (zijmenu), logo midden, knoppen rechts", "css": ""},
 ]
 HEADER_STYLES = [
     {"value": "solid", "label": "Vlak met lijn eronder", "css": ""},

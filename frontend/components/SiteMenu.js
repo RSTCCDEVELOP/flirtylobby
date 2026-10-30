@@ -155,7 +155,14 @@ export default function SiteMenu() {
   const { user } = useSession();
   const pathname = usePathname();
   const device = useDevice(cfg.breakpoints);
-  const form = cfg.forms[device || "desktop"];
+  const [edHead, setEdHead] = useState(false); // the header layout "editorial": the menu is a button on the left that opens a side menu, on every device
+  useEffect(() => {
+    const root = document.documentElement, on = () => setEdHead(root.getAttribute("data-hl") === "editorial");
+    on();
+    const mo = new MutationObserver(on); mo.observe(root, { attributes: true, attributeFilter: ["data-hl"] });
+    return () => mo.disconnect();
+  }, []);
+  const form = edHead ? "drawer-left" : cfg.forms[device || "desktop"];
   useEffect(() => { // the bottom bar needs room at the bottom of the page
     if (form === "bottom") document.documentElement.setAttribute("data-bottomnav", "1"); else document.documentElement.removeAttribute("data-bottomnav");
     return () => document.documentElement.removeAttribute("data-bottomnav");
@@ -185,7 +192,7 @@ export default function SiteMenu() {
   }, [fitAt]);
   const dev = device || "desktop";
   const squeezed = form === "bar" && fitAt > 0 && !!device;
-  const useCfg = squeezed ? { ...cfg, forms: { ...cfg.forms, [dev]: "hamburger" } } : cfg;
+  const useCfg = edHead ? { ...cfg, forms: { desktop: "drawer-left", tablet: "drawer-left", mobile: "drawer-left" }, overlay: true } : squeezed ? { ...cfg, forms: { ...cfg.forms, [dev]: "hamburger" } } : cfg;
   return (
     <div ref={wrapRef} className={`hmenu-wrap tp-${cfg.toggle_pos?.[dev] || "right"}`} style={{ visibility: device ? "visible" : "hidden" }}>
       <MenuStyle cfg={cfg} />

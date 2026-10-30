@@ -28,7 +28,7 @@ const siteVars = () => { const cs = getComputedStyle(document.documentElement); 
 
 // A page of a plugin (file: "" = its own page, or e.g. "web/admin.html"), inside the dashboard. It runs in a sandboxed frame: it never sees the login of the member;
 // it asks this host (postMessage) to call the system's API for it, as the logged-in member, and gets its texts in the language of the visitor.
-export default function PluginFrame({ name, file = "", title, route = null, bare = false, onWrite = null }) {
+export default function PluginFrame({ name, file = "", title, route = null, bare = false, onWrite = null, keep = false }) {  // keep: this frame does not load again on a soft refresh (a settings panel that sits beside the page it changes)
   const dash = useAuth(), site = useSession(); // in the dashboard the AuthContext, on the public site the Session
   const user = dash?.user ?? site?.user ?? null;
   const frame = useRef(null);
@@ -41,10 +41,16 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
   const dirty = useRef(false);
   const ready = useRef(null);
   const settle = useRef(null);
+  const [bleed, setBleed] = useState(false); // the page asks to run from edge to edge of the screen (system.bleed)
   const [bust, setBust] = useState(0); // a soft refresh: only this frame loads again
-  useEffect(() => { const f = () => { ready.current = holdLoader(4000); setBust((n) => n + 1); }; window.addEventListener("soft-refresh", f); return () => window.removeEventListener("soft-refresh", f); }, []);
+  useEffect(() => { if (keep) return undefined; const f = () => { ready.current = holdLoader(4000); setBust((n) => n + 1); }; window.addEventListener("soft-refresh", f); return () => window.removeEventListener("soft-refresh", f); }, []);
   // the loader over the page waits until the plugin page says it is complete (system.loaded()); a plugin that does not say so is let go when its size has been still for a moment
   useEffect(() => { ready.current = holdLoader(); return () => { clearTimeout(settle.current); ready.current?.(); }; }, []);
+  const sendView = () => { // the visible screen under the header: a page can make a photo as high as the screen
+    const hd = document.querySelector(".site-header"), top = hd ? Math.max(0, Math.round(hd.getBoundingClientRect().bottom)) : 0;
+    frame.current?.contentWindow?.postMessage({ plugin: "viewport", w: window.innerWidth, h: Math.max(300, window.innerHeight - top) }, "*");
+  };
+  useEffect(() => { window.addEventListener("resize", sendView); return () => window.removeEventListener("resize", sendView); }, []);
   const [ask, setAsk] = useState(null); // {type: "media" | "html", id, html, title}: the system shows its own picker / editor for the plugin
 
   useEffect(() => {
@@ -58,6 +64,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
         try { const r = await fetch(`${apiBase()}/api/plugins/lang/${name}/?lang=${lang}`); if (r.ok) dict.current = await r.json(); } catch {}
         const strings = Object.fromEntries(dict.current.keys.map((k) => [k, makeTranslator(dict.current.dict, tx)(k)]));
         frame.current.contentWindow.postMessage({ plugin: "init", name, lang, strings, apiBase: apiBase(), route: routeRef.current || {}, siteOrigin: window.location.origin, vars: siteVars(), attrs: { editing: site?.editing ? "1" : "0", blocks: document.documentElement.dataset.blocks || "card", hero: document.documentElement.dataset.hero || "0", list: document.documentElement.dataset.list || "grid", center: document.documentElement.dataset.center || "0", pagesize: document.documentElement.dataset.pagesize || "all" }, scheme: scheme(), user: { id: user?.id, name: user?.first_name || user?.email, email: user?.email, is_staff: !!user?.is_staff } }, "*");
+        sendView();
       } else if (d.plugin === "confirm") reply({ ok: true, data: await confirmDialog(String(d.message || ""), { title: d.opts?.title, okLabel: d.opts?.okLabel, danger: !!d.opts?.danger }) });
       else if (d.plugin === "store") {  // the page has no storage of its own: keep it per plugin in this browser
         const k = `plg:${name}:${String(d.key || "").slice(0, 60)}`;
@@ -75,6 +82,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
       else if (d.plugin === "openadmin" && site?.editing && typeof d.file === "string" && /^web\/[A-Za-z0-9_.-]+\.html$/.test(d.file)) setAdminPop({ anchor: (() => { const f = frame.current?.getBoundingClientRect(); const r = d.rect; return f && r && Number.isFinite(r.left) ? { left: f.left + r.left, top: f.top + r.bottom + 8 } : null; })(), file: d.file, query: { popup: "1", ...(d.query || {}) } });
       else if (d.plugin === "media") setAsk({ type: "media", id: d.id });
       else if (d.plugin === "html") setAsk({ type: "html", id: d.id, html: String(d.html || ""), title: d.opts?.title });
+      else if (d.plugin === "bleed") { setBleed(!!d.on); sendView(); }
       else if (d.plugin === "loaded") { clearTimeout(settle.current); ready.current?.(); }
       else if (d.plugin === "resize") { clearTimeout(settle.current); settle.current = setTimeout(() => ready.current?.(), 1800); setHeight(Math.max(120, Math.min(30000, Number(d.height) || 640))); }
       else if (d.plugin === "api" && typeof d.path === "string" && d.path.startsWith("/")) {
@@ -95,7 +103,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
 
   return (
     <>
-      <iframe ref={frame} scrolling="no" title={title || name} src={`${apiBase()}/api/plugins/web/${name}/${file}${bust ? `${file.includes("?") ? "&" : "?"}r=${bust}` : ""}`} sandbox="allow-scripts allow-forms allow-popups allow-downloads" allow="fullscreen" allowFullScreen style={{ width: "100%", height, border: bare ? 0 : "1px solid var(--line)", borderRadius: bare ? 0 : 12, background: bare ? "transparent" : "var(--card)" }} />
+      <iframe ref={frame} scrolling="no" title={title || name} src={`${apiBase()}/api/plugins/web/${name}/${file}${bust ? `${file.includes("?") ? "&" : "?"}r=${bust}` : ""}`} sandbox="allow-scripts allow-forms allow-popups allow-downloads" allow="fullscreen" allowFullScreen style={{ width: bleed ? "100vw" : "100%", maxWidth: bleed ? "none" : undefined, marginLeft: bleed ? "calc(50% - 50vw)" : undefined, display: bleed ? "block" : undefined, height, border: bare || bleed ? 0 : "1px solid var(--line)", borderRadius: bare || bleed ? 0 : 12, background: bare ? "transparent" : "var(--card)" }} />
       {adminPop && typeof document !== "undefined" && createPortal(
         <div className={`pb-objback${adminPop.anchor ? " anchored" : ""}`} onMouseDown={(e) => { if (e.target === e.currentTarget) closeAdmin(); }}>
           <div className="pb-objpop" role="dialog" style={adminPop.anchor ? anchorStyle(adminPop.anchor, 900) : { width: "min(900px, 100%)" }}>
