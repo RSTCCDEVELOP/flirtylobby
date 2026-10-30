@@ -3376,3 +3376,4 @@ html[data-hl="editorial"] .p-drawer-left .hmenu a:hover, html[data-hl="editorial
 .pb-rowwrap.inner { padding-left: max(1.25rem, calc((100vw - var(--content-w, 1100px)) / 2)) !important; padding-right: max(1.25rem, calc((100vw - var(--content-w, 1100px)) / 2)) !important; }
 .floating-user { position: fixed; top: .8rem; right: .8rem; z-index: 90; display: flex; align-items: center; gap: .4rem; padding: .3rem .4rem; border-radius: 999px; background: color-mix(in srgb, var(--card) 88%, transparent); border: 1px solid var(--line); box-shadow: 0 6px 22px rgba(0, 0, 0, .28); backdrop-filter: blur(8px); }
 .floating-user .user-trigger .who { display: none; }
+.pb-cell.card { box-sizing: border-box; min-width: 0; }

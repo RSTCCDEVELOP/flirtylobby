@@ -133,6 +133,25 @@ def _style(st):
     return out
 
 
+def _cell_style(st):
+    """A cell as a card: background colour, rounded corners, space inside, a line around it and a shadow."""
+    if not isinstance(st, dict):
+        return {}
+    out = {}
+    for k in ("bg", "border"):
+        if HEX.fullmatch(str(st.get(k) or "")):
+            out[k] = st[k]
+    for k, hi in (("radius", 60), ("pad", 80)):
+        try:
+            if st.get(k) not in (None, ""):
+                out[k] = int(min(max(float(st[k]), 0), hi))
+        except (TypeError, ValueError):
+            pass
+    if st.get("shadow"):
+        out["shadow"] = True
+    return out
+
+
 TAGS = ("k1", "k2", "k3", "k4", "p")
 
 
@@ -150,6 +169,8 @@ def _item_style(st):
         pass
     if _col(st.get("color")):
         out["color"] = _col(st["color"])
+    if HEX.fullmatch(str(st.get("bg") or "")):
+        out["bg"] = st["bg"]  # a text with a background (a label in a pill)
     if st.get("font") in FONTS:
         out["font"] = st["font"]
     if st.get("align") in ("left", "center", "right"):
@@ -374,7 +395,7 @@ def clean(data):
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
                 items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading", "spacer", "line", "button") and _item_style(it.get("style")) else {}), **({"widget": _widget(it)["widget"], "data": _widget(it)["data"]} if t == "widget" and _widget(it) else {}), **({"btn": _button(it.get("btn"))} if t == "button" and _button(it.get("btn")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
-            cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items})
+            cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items, **({"style": _cell_style(c.get("style"))} if _cell_style(c.get("style")) else {})})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})
         out.append({"bg": clean_bg(r.get("bg")), "id": uid(r.get("id")), "cols": cols, "width": _pct(r.get("width"), 30, 100, "default"), "gap": r.get("gap") if r.get("gap") in GAPS else "md", "cells": cells, **_row_extra(r)})
