@@ -183,6 +183,12 @@ export default function PageBlocks({ pageKey, title = "" }) {
   }, [layout, listView, listCenter, pageWide, pageSize]);
   const NO_HERO = ["home", "hero-games"];
   useEffect(() => { if (layout) setMoved(pageKey, layout.moved || []); }, [layout, pageKey]);
+  useEffect(() => { // a setting of the webshop (Hero tonen) changed the banner of this page: only that flag is read again
+    if (!["product", "products"].includes(pageKey)) return undefined;
+    const f = () => api(`/pages/layout/${encodeURIComponent(pageKey)}/`).then((l) => setLayout((cur) => (cur ? { ...cur, hero_off: l.hero_off } : cur))).catch(() => {});
+    window.addEventListener("soft-refresh", f);
+    return () => window.removeEventListener("soft-refresh", f);
+  }, [pageKey]);
   const heroOff = !!layout?.hero_off || NO_HERO.includes(pageKey);
   const own = (r) => r.hero && r.hero !== "custom" && r.hero !== "plain"; // the banner of the page itself; "custom" (a hero) and "plain" (a grid with a height, without the hero look) are blocks like any other
   const heroRow = layout?.rows?.find(own); // the banner of the page itself; extra heroes ("custom") are blocks like any other
