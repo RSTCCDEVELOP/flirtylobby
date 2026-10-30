@@ -262,6 +262,10 @@ def _button(raw):
         out["radius"] = int(min(max(float(raw["radius"]), 0), 60))  # the roundness of the corners in px; without it the button follows the theme
     except (KeyError, TypeError, ValueError):
         pass
+    for k in ("bg", "color", "border"):  # own colours of the button (a hex colour, or "transparent" for the background)
+        v = str(raw.get(k) or "")
+        if HEX.fullmatch(v) or (v == "transparent" and k == "bg"):
+            out[k] = v
     if raw.get("full"):
         out["full"] = True
     return out
@@ -293,6 +297,8 @@ def _row_extra(r):
         out["pad"] = r["pad"]
     if r.get("fx") in ("none", "fade", "up", "down", "zoom", "left", "right", "blur"):
         out["fx"] = r["fx"]  # the scroll effect of this block ("" = what the theme says)
+    if r.get("inner"):
+        out["inner"] = True  # a block that runs edge to edge: its content stands in the width of the page content (theme: content width)
     if r.get("screen"):
         out["screen"] = True  # the width is a share of the whole browser window, not of the page column
     if r.get("top") in ("touch", "prev"):

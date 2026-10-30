@@ -24,11 +24,11 @@ const ROLES = [["logo", "Logo"], ["logo_dark", "Logo (donker)"], ["favicon", "Fa
 const ROLE_NAME = { logo: "Logo", favicon: "Favicon", icon: "Icoon", og_image: "Deelafbeelding", image: "Afbeelding" };
 
 // Two columns: the pages of the file on the left, the pages of the website on the right. Drag one onto the other (either way) or click one and then the other to link them.
-function PageMapper({ sources, targets, map, onChange, freeLabel }) {
+function PageMapper({ sources, targets, map, onChange, freeLabel, multi = false, freeSub }) {
   const [pick, setPick] = useState(null); // {kind: "src" | "tgt", key}: the first click of a pair
   const [over, setOver] = useState("");
   const link = (src, tgt) => {
-    const next = Object.fromEntries(Object.entries(map).filter(([k, v]) => k !== src && (!tgt || v !== tgt))); // a page goes to one place and a place takes one page
+    const next = Object.fromEntries(Object.entries(map).filter(([k, v]) => k !== src && (multi || !tgt || v !== tgt))); // a page goes to one place and a place takes one page
     if (tgt) next[src] = tgt;
     onChange(next);
   };
@@ -59,6 +59,7 @@ function PageMapper({ sources, targets, map, onChange, freeLabel }) {
     );
   };
   const srcOf = (t) => Object.keys(map).find((k) => map[k] === t);
+  const srcAll = (t) => Object.keys(map).filter((k) => map[k] === t);
   return (
     <div>
       <p className="muted" style={{ margin: "0 0 .6rem" }}>{tx("Sleep een pagina uit het bestand (links) op een pagina van je website (rechts), of andersom. Je kunt ook eerst op de ene en dan op de andere klikken. Wat nog niet gekoppeld is, wordt een eigen pagina.")}</p>
@@ -69,8 +70,8 @@ function PageMapper({ sources, targets, map, onChange, freeLabel }) {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: ".45rem", maxHeight: "52vh", overflowY: "auto", paddingRight: ".2rem" }}>
           <strong>{tx("Pagina's van je website")}</strong>
-          {item({ kind: "tgt", key: "" }, freeLabel || tx("Eigen pagina maken"), tx("Zet een pagina hierop om hem los te koppelen"), "", false, null)}
-          {targets.map((t) => { const sk = srcOf(t.key); const src = sources.find((x) => x.key === sk); return item({ kind: "tgt", key: t.key }, t.title, t.std ? tx("Standaardpagina van het systeem") : tx("Eigen pagina"), src ? `← ${src.title}` : "", !!src, sk ? () => link(sk, "") : null); })}
+          {item({ kind: "tgt", key: "" }, freeLabel || tx("Eigen pagina maken"), freeSub || tx("Zet een pagina hierop om hem los te koppelen"), "", false, null)}
+          {targets.map((t) => { const all = srcAll(t.key); const sk = all[0]; const src = sources.find((x) => x.key === sk); return item({ kind: "tgt", key: t.key }, t.title, multi ? t.key : t.std ? tx("Standaardpagina van het systeem") : tx("Eigen pagina"), all.length > 1 ? `← ${all.length}` : src ? `← ${src.title}` : "", all.length > 0, !multi && sk ? () => link(sk, "") : null); })}
         </div>
       </div>
     </div>
@@ -126,6 +127,17 @@ function DevicePopup({ title, sub, link, onClose, scrollHere = false, children }
   );
 }
 
+// Where an import stands, in words: waiting for the approval, approved but the content not processed yet (in treatment), or active (the content is on the website).
+function StatusBadge({ imp }) {
+  const a = imp.apply || {};
+  const [cls, label, hint] = a.state === "running" ? ["badge off", `${tx("Bezig met toepassen")} ${Math.round(a.percent || 0)} %`, tx("De pagina's worden nu opgebouwd.")]
+    : a.state === "error" ? ["badge off", tx("Mislukt"), tx("Het toepassen is niet gelukt. Probeer het opnieuw.")]
+    : a.state === "done" ? ["badge ok", tx("Actief"), tx("De inhoud is verwerkt en staat op je website.")]
+    : a.pending ? ["badge off", tx("In behandeling"), tx("Nog niet verwerkt: kies hieronder waar de pagina's komen en klik op Toepassen.")]
+    : ["badge", tx("Ingelezen"), ""];
+  return <><span className={cls} title={hint}>{label}</span>{hint && <small className="muted" style={{ marginLeft: ".5rem" }}>{hint}</small>}</>;
+}
+
 function Swatches({ colors }) {
   return <span className="si-swatches">{(colors || []).map((c) => <i key={c} style={{ background: c }} title={c} />)}</span>;
 }
@@ -137,7 +149,12 @@ function Detail({ imp, onChanged, onApply, busy }) {
   const [info, setInfo] = useState(null); // the files of this import, where they are, the pages they can go to and the languages
   const [map, setMap] = useState({});
   const [opts, setOpts] = useState({ prompt: "", mode: "clear", translate: false, render: "design" });
-  useEffect(() => { if (imp.apply?.pending) api(`/siteimport/${imp.id}/apply/?info=1`).then((i) => { setInfo(i); setMap(Object.fromEntries(i.sources.filter((x) => !x.own && x.dest).map((x) => [x.key, x.dest]))); setOpts((o) => ({ ...o, prompt: o.prompt || i.prompt || "", translate: i.languages.length > 0 })); }).catch(() => setInfo(null)); else setInfo(null); }, [imp.id, imp.apply?.pending, imp.apply?.state]);
+  const [atab, setAtab] = useState("pages");
+  const [linkMap, setLinkMap] = useState({});
+  const [hdrOn, setHdrOn] = useState(true);
+  const [footOn, setFootOn] = useState(true);
+  const [thm, setThm] = useState({});
+  useEffect(() => { if (imp.apply?.pending) api(`/siteimport/${imp.id}/apply/?info=1`).then((i) => { setInfo(i); setMap(Object.fromEntries(i.sources.filter((x) => !x.own && x.dest).map((x) => [x.key, x.dest]))); setOpts((o) => ({ ...o, prompt: o.prompt || i.prompt || "", translate: i.languages.length > 0 })); setLinkMap({ ...Object.fromEntries((i.links || []).filter((l) => l.suggest).map((l) => [l.key, l.suggest])), ...(i.link_map || {}) }); setHdrOn(i.options?.header !== false); setFootOn(i.options?.site_footer !== false); setThm(i.theme || {}); }).catch(() => setInfo(null)); else setInfo(null); }, [imp.id, imp.apply?.pending, imp.apply?.state]);
   useEffect(() => { api(`/siteimport/${imp.id}/`).then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, [imp.id, imp.pages, imp.images]);
   const use = async (a) => {
     try { await api(`/siteimport/${imp.id}/asset/`, { method: "POST", body: { media: a.media, role: pick[a.media] || (ROLE_NAME[a.role] && a.role !== "image" ? a.role : "logo") } }); setMsg({ ok: true, text: tx("Ingesteld. Zie Logo's & beeld.") }); onChanged(); }
@@ -153,13 +170,47 @@ function Detail({ imp, onChanged, onApply, busy }) {
         const rowsOf = (k) => info.targets.find((t) => t.key === k) || {};
         const needMode = info.sources.some((x) => (rowsOf(dest(x)).rows || 0) > 0);
         const canReplace = info.sources.some((x) => (rowsOf(dest(x)).own_rows || 0) > 0);
+        const L = info.links || [];
+        const pick = (f) => L.filter(f).map((l) => ({ key: l.key, title: l.label, sub: l.href }));
+        const parts = { header: pick((l) => l.where === "header"), footer: pick((l) => l.where === "footer"), links: pick((l) => l.where === "page" && l.kind === "link"), buttons: pick((l) => l.where === "page" && l.kind === "button") };
+        const n = (k) => parts[k].filter((l) => linkMap[l.key]).length;
+        const linkTab = (k, intro) => (<div>
+          <p className="muted" style={{ margin: "0 0 .6rem" }}>{intro}</p>
+          {parts[k].length ? <PageMapper multi sources={parts[k]} targets={info.link_targets} map={linkMap} onChange={(m) => setLinkMap((o) => ({ ...Object.fromEntries(Object.entries(o).filter(([key]) => !parts[k].some((l) => l.key === key))), ...m }))} freeLabel={tx("Niet koppelen (het adres blijft zoals het was)")} freeSub={tx("Zet een link hierop om hem los te koppelen")} />
+            : <p className="muted">{tx("Geen gevonden in de bestanden.")}</p>}
+        </div>);
+        const tabsDef = [["pages", "Pagina's"], ["links", "Links", null, n("links")], ["buttons", "Knoppen", null, n("buttons")], ["header", "Header", null, hdrOn ? 1 : 0], ["footer", "Footer", null, n("footer")], ["theme", "Thema"]];
+        const set = (k, v) => setThm((o) => ({ ...o, [k]: v }));
         return (
           <div className="card" id={`si-map-${imp.id}`} style={{ borderColor: "var(--blue)" }}>
             <strong>{imp.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Pagina's koppelen en toepassen")}</strong>
-            <p className="muted" style={{ margin: ".3rem 0 .8rem" }}>{tx("Koppel elke pagina aan een pagina van je website, of laat hem een eigen pagina. De originele html is bewaard: je kunt dit zo vaak herhalen, ook met een nieuwe opdracht voor Claude. Claude bouwt de pagina blok voor blok op met blokken die je in de bewerkmodus kunt aanpassen; het duurt even.")}</p>
-            <PageMapper sources={info.sources.map((x) => ({ key: x.key, title: x.title, sub: x.path }))} targets={info.targets} map={map} onChange={setMap} freeLabel={tx("Eigen pagina van de import")} />
-            <ApplyOptions opts={opts} setOpts={setOpts} needMode={needMode} canReplace={canReplace} languages={info.languages} />
-            <div className="row" style={{ justifyContent: "flex-start", marginTop: ".8rem" }}><button className="btn primary" disabled={busy} onClick={() => onApply(imp, Object.fromEntries(info.sources.map((x) => [x.key, map[x.key] || ""])), opts)}>{imp.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Toepassen")}</button></div>
+            <p className="muted" style={{ margin: ".3rem 0 .8rem" }}>{tx("De originele html is bewaard: je kunt dit zo vaak herhalen, ook met een nieuwe opdracht voor Claude. Kies per tabblad wat er gebeurt en klik onderaan op Toepassen.")}</p>
+            <Tabs value={atab} onChange={setAtab} tabs={tabsDef} />
+            {atab === "pages" && (<div>
+              <PageMapper sources={info.sources.map((x) => ({ key: x.key, title: x.title, sub: x.path }))} targets={info.targets} map={map} onChange={setMap} freeLabel={tx("Eigen pagina van de import")} />
+              <ApplyOptions opts={opts} setOpts={setOpts} needMode={needMode} canReplace={canReplace} languages={info.languages} />
+            </div>)}
+            {atab === "links" && linkTab("links", tx("Links in de tekst van de pagina's. Koppel ze aan een pagina of onderdeel van je website; sleep een link op een onderdeel rechts, of andersom."))}
+            {atab === "buttons" && linkTab("buttons", tx("Knoppen op de pagina's (zoals Start uw BV). Koppel ze aan een pagina of onderdeel van je website."))}
+            {atab === "header" && (<div className="form">
+              <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={hdrOn} onChange={(e) => setHdrOn(e.target.checked)} /><span /></span><span>{tx("De header van het systeem aanpassen aan die van het bestand")} <small className="muted">{tx("Kleuren, hoogte en grotere knoppen. De links en knoppen van de header worden menu-items. Alleen bij Bewerkbaar; bij Exact heeft de pagina zijn eigen header.")}</small></span></label>
+              {linkTab("header", tx("Links en knoppen in de header van het bestand: kies waar ze naartoe gaan in je website."))}
+            </div>)}
+            {atab === "footer" && (<div className="form">
+              <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={footOn} onChange={(e) => setFootOn(e.target.checked)} /><span /></span><span>{tx("De footer van het systeem tonen onder de pagina's")} <small className="muted">{tx("Alleen bij Bewerkbaar.")}</small></span></label>
+              {linkTab("footer", tx("Links in de footer van het bestand: kies waar ze naartoe gaan in je website."))}
+            </div>)}
+            {atab === "theme" && (<div className="form">
+              <p className="muted" style={{ margin: 0 }}>{tx("De instellingen van het thema dat uit het bestand is gemaakt, zoals bij Thema. Wat je hier wijzigt, geldt voor het thema van deze import.")}</p>
+              <div className="grid2">
+                {[["primary", "Hoofdkleur"], ["secondary", "Tweede kleur"]].map(([k, l]) => <label key={k}>{tx(l)}<input type="color" value={thm[k] || "#7b2ce0"} onChange={(e) => set(k, e.target.value)} /></label>)}
+                <label>{tx("Standaard weergave")}<select value={thm.default_mode || "system"} onChange={(e) => set("default_mode", e.target.value)}><option value="system">{tx("Volgt het apparaat")}</option><option value="light">{tx("Licht")}</option><option value="dark">{tx("Donker")}</option></select></label>
+                <label>{tx("Breedte van de inhoud")} (px)<input type="number" min="720" max="1600" step="20" value={thm.content_w || 1100} onChange={(e) => set("content_w", Number(e.target.value))} /></label>
+                <label>{tx("Ronde hoeken")} (px)<input type="number" min="0" max="40" value={thm.radius ?? 12} onChange={(e) => set("radius", Number(e.target.value))} /></label>
+                <label>{tx("Ronde hoeken van knoppen")} (px)<input type="number" min="0" max="40" value={thm.btn_radius ?? 10} onChange={(e) => set("btn_radius", Number(e.target.value))} /></label>
+              </div>
+            </div>)}
+            <div className="row" style={{ justifyContent: "flex-start", marginTop: ".8rem" }}><button className="btn primary" disabled={busy} onClick={() => onApply(imp, Object.fromEntries(info.sources.map((x) => [x.key, map[x.key] || ""])), { ...opts, options: { links: Object.fromEntries(Object.entries(linkMap).filter(([, v]) => v)), header: hdrOn, site_footer: footOn, theme: thm } })}>{imp.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Toepassen")}</button></div>
           </div>
         );
       })()}
@@ -369,7 +420,7 @@ export default function SiteImport() {
   const runApply = async (i, map, opts = {}) => {
     setProg({ name: i.name, percent: 1, step: tx("Starten…"), error: "", built: [] });
     try {
-      let st = await api(`/siteimport/${i.id}/apply/`, { method: "POST", body: { ...(map ? { map } : {}), mode: opts.mode || "clear", prompt: opts.prompt || "", translate: !!opts.translate, render: opts.render || "design" } });
+      let st = await api(`/siteimport/${i.id}/apply/`, { method: "POST", body: { ...(map ? { map } : {}), mode: opts.mode || "clear", prompt: opts.prompt || "", translate: !!opts.translate, render: opts.render || "design", options: opts.options || {} } });
       setProg((p) => ({ ...p, ...st }));
       while (st.state === "running" && !st.stale) {
         await new Promise((r) => setTimeout(r, 1500));
@@ -393,7 +444,7 @@ export default function SiteImport() {
   const toggle = (i, what, on) => run(what + i.id, () => api(`/siteimport/${i.id}/${what}/`, { method: "POST", body: { apply: on } }), () => (on ? tx("Gebruikt.") : tx("Teruggezet.")));
   const remove = async (i) => {
     if (!(await confirmDialog(tx("\"{0}\" verwijderen? De {1} pagina's en de {2} afbeeldingen die hiervan zijn ingelezen worden ook verwijderd. Het profieltype en de startpagina gaan terug naar hoe ze waren.", i.name, i.pages, i.images), { danger: true, title: tx("Import verwijderen"), okLabel: tx("Verwijderen") }))) return;
-    await run("del" + i.id, () => api(`/siteimport/${i.id}/`, { method: "DELETE" }), () => tx("Verwijderd, met alles wat ervan was ingelezen."));
+    await run("del" + i.id, () => api(`/siteimport/${i.id}/`, { method: "DELETE" }), (r) => [tx("Verwijderd, met alles wat ervan was ingelezen."), ...(r?.done || []).map((x) => tx(x)), ...(r?.leftovers || []).map((x) => tx(x)), ...(r?.problems || []).map((x) => tx(x)), r?.advice ? tx(r.advice) : ""].filter(Boolean).join(" "));
     if (open === i.id) setOpen(null);
   };
 
@@ -495,7 +546,7 @@ export default function SiteImport() {
           <div key={i.id} className="card si-card">
             <div className="si-head">
               <div className="grow">
-                <strong style={{ fontSize: "1.05rem" }}>{i.name}</strong> <span className="badge">{tx(i.kind === "url" ? "Website" : i.kind === "zip" ? "ZIP" : i.kind === "html" ? "HTML" : "Map")}</span>
+                <strong style={{ fontSize: "1.05rem" }}>{i.name}</strong> <span className="badge">{tx(i.kind === "url" ? "Website" : i.kind === "zip" ? "ZIP" : i.kind === "html" ? "HTML" : "Map")}</span> <StatusBadge imp={i} />
                 <br /><small className="muted">{i.source} · {tx("map")} <code>{i.folder}</code> · {new Date(i.created_at).toLocaleString()}</small>
               </div>
               <Swatches colors={[i.theme.primary, i.theme.secondary, ...(i.theme.palette || []).slice(0, 4)].filter((c, k, a) => c && a.indexOf(c) === k)} />

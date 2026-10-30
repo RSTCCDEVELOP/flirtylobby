@@ -251,6 +251,8 @@ def clean_menu_settings(d):
             pass
     bg = str(d.get("bg") or "")
     out["bg"] = bg if re.fullmatch(r"#[0-9a-fA-F]{6}", bg) else ""
+    fg = str(d.get("fg") or "")
+    out["fg"] = fg if re.fullmatch(r"#[0-9a-fA-F]{6}", fg) else ""  # the colour of the menu texts on that background
     for key, lo, hi, cast in (("bg_opacity", 0, 1, float), ("blur", 0, 30, int), ("float_after", 10, 600, int)):
         try:
             out[key] = round(min(max(cast(d.get(key, out[key])), lo), hi), 2) if cast is float else min(max(cast(d.get(key, out[key])), lo), hi)

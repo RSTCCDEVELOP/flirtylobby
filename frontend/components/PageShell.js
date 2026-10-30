@@ -5,6 +5,7 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 
+import FloatingUser from "./FloatingUser";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
 
@@ -14,7 +15,7 @@ export default function PageShell({ setup, children }) {
     <div className={`site${setup?.theme ? " page-scope" : ""}`}>
       {setup?.fonts_url && <link rel="stylesheet" href={setup.fonts_url} />}
       {setup?.css && <style dangerouslySetInnerHTML={{ __html: setup.css }} />}
-      {setup?.header !== false && <SiteHeader />}
+      {setup?.header !== false ? <SiteHeader /> : <FloatingUser />}
       {children}
       {setup?.footer !== false && <SiteFooter />}
     </div>
