@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import BackButton from "./BackButton";
 
@@ -14,6 +15,18 @@ import BackButton from "./BackButton";
 // (The dashboard has its own, in its menu bar.)
 export default function SiteBack() {
   const pathname = usePathname();
+  useEffect(() => { // the button hangs just under the header, whatever its height (the menu can wrap onto a second row), with a little space
+    const set = () => {
+      const h = document.querySelector(".site-header");
+      document.documentElement.style.setProperty("--site-back-top", `${Math.max(0, Math.round(h ? h.getBoundingClientRect().bottom : 0)) + 12}px`);
+    };
+    set();
+    const h = document.querySelector(".site-header");
+    const ro = h && typeof ResizeObserver !== "undefined" ? new ResizeObserver(set) : null;
+    if (ro) ro.observe(h);
+    window.addEventListener("resize", set); window.addEventListener("scroll", set, { passive: true });
+    return () => { ro?.disconnect(); window.removeEventListener("resize", set); window.removeEventListener("scroll", set); };
+  }, [pathname]);
   if (!pathname || pathname === "/" || pathname.startsWith("/dashboard")) return null;
   return <div className="site-back"><BackButton pathname={pathname} fallback="/" /></div>;
 }

@@ -2724,7 +2724,7 @@ html[data-ft="dark"] .site-footer .foot-brand .foot-name, html[data-ft="brand"] 
 /* voortgangsbalk (lopend als de duur niet bekend is) */
 .prog-wrap { margin: .8rem 0; } .prog-label { font-size: .85rem; margin-bottom: .3rem; color: var(--muted); } .prog { height: 8px; border-radius: 4px; background: rgba(128, 128, 128, .25); overflow: hidden; } .prog .bar { height: 100%; border-radius: 4px; background: var(--blue); transition: width .3s; } .prog.ind .bar { width: 35%; animation: progslide 1.1s ease-in-out infinite; } @keyframes progslide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
 /* the back button of the website: always at hand, under the header */
-.site-back { position: fixed; top: 4.7rem; left: 1rem; z-index: 45; } .site-back .back-btn { background: var(--card); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .25); }
+.site-back { position: fixed; top: var(--site-back-top, 4.7rem); left: 1rem; z-index: 45; } .site-back .back-btn { background: var(--card); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .25); }
 @media (max-width: 760px) { .site-back { top: 4.2rem; left: .5rem; } }
 /* the list of blocks of a page: an icon among the icons at the top right, with a floating list */
 .block-nav { position: fixed; top: 4.75rem; z-index: 1010; } .block-nav-btn { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; } .block-nav-btn:hover, .block-nav-btn.on { background: var(--blue); border-color: var(--blue); color: #fff; }
@@ -2833,7 +2833,7 @@ body.has-blocknav .edit-save-preset-btn { right: 16.2rem; }
 .back-row { margin: .4rem 0 1.5rem; padding-top: .3rem; }
 .site-back { top: 5.6rem; left: 1.5rem; }
 .site-back .back-btn { padding: .6rem 1.1rem; }
-@media (max-width: 760px) { .site-back { top: 5.2rem; left: .8rem; } .back-btn { padding: .55rem .95rem; } .back-row { margin-bottom: 1.2rem; } }
+@media (max-width: 760px) { .site-back { left: .8rem; } .back-btn { padding: .55rem .95rem; } .back-row { margin-bottom: 1.2rem; } }
 
 /* inloggen met een passkey, Google of Apple */
 .sso-box { display: grid; gap: .6rem; margin-top: .2rem; }
