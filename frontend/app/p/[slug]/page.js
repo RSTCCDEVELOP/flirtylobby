@@ -10,6 +10,7 @@ import { EditableText } from "../../../components/EditMode";
 import PageBlocks from "../../../components/PageBlocks";
 import Paywall from "../../../components/Paywall";
 import PageShell from "../../../components/PageShell";
+import DesignFrame from "../../../components/DesignFrame";
 import { getOwnPage } from "../../../lib/pages-server";
 import { getPageSetup } from "../../../lib/page-setup-server";
 import { pageMetadata } from "../../../lib/seo";
@@ -29,6 +30,13 @@ export default async function OwnPage({ params }) {
   const p = await getOwnPage(slug);
   if (!p) notFound();
   const setup = await getPageSetup(slug);
+  if (p.design) { // taken over 1 to 1 from an html file: the page is its own design
+    return (
+      <PageShell setup={setup}>
+        <DesignFrame html={p.design} title={p.title.nl || Object.values(p.title)[0]} />
+      </PageShell>
+    );
+  }
   return (
     <PageShell setup={setup}>
       <main className="doc">

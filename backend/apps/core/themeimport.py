@@ -479,15 +479,15 @@ def _parse_json(raw, need=("values", "name")):
     raise ValueError("geen bruikbaar antwoord")
 
 
-def _ai_json(system, prompt, max_tokens, timeout):
+def _ai_json(system, prompt, max_tokens, timeout, need=("values", "name")):
     """Ask Claude for a JSON answer; one more try when the answer cannot be read."""
     try:
-        return _parse_json(ai.claude(system, prompt, max_tokens=max_tokens, timeout=timeout))
+        return _parse_json(ai.claude(system, prompt, max_tokens=max_tokens, timeout=timeout), need)
     except ValueError as e:
         if "bruikbaar" not in str(e):
             raise
         retry = system + " Your previous answer could not be read. Answer again with valid JSON only: double quotes for every key and text, no comments, no trailing commas, no text before or after the object."
-        return _parse_json(ai.claude(retry, prompt, max_tokens=max_tokens, timeout=timeout))
+        return _parse_json(ai.claude(retry, prompt, max_tokens=max_tokens, timeout=timeout), need)
 
 
 def _run(job_id):

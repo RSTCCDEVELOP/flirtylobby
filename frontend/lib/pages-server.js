@@ -45,6 +45,16 @@ export async function requirePage(key) {
   if (!(await pageOn(key))) notFound();
 }
 
+// The html design of a page (a page that was taken over from an html file, also the start page); "" when it has none.
+export async function getDesign(key) {
+  try {
+    const res = await fetch(`${base()}/api/pages/design/${encodeURIComponent(key)}/`, { cache: "no-store" });
+    return res.ok ? (await res.json()).design || "" : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function getOwnPage(key) {
   try {
     const res = await fetch(`${base()}/api/pages/public/${encodeURIComponent(key)}/`, { cache: "no-store" });

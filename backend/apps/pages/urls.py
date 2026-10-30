@@ -20,6 +20,7 @@ urlpatterns = [
     path("pages/backgrounds/", views.backgrounds),
     path("pages/public/<slug:key>/", views.public_page),
     path("pages/by-url/", views.by_url),
+    path("pages/design/<str:key>/", views.design_of),
     path("pages/setup/<str:key>/", views.page_setup),
     path("pages/aliases/", views.aliases),
     path("pages/order/", views.menu_order),

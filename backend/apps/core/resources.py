@@ -300,14 +300,21 @@ def make_theme(prompt, mode=""):
     clean, _errors = theme.validate({k: v for k, v in (out.get("values") or {}).items() if k in THEME_KEYS})  # what is not allowed is left out
     if "primary" not in clean:
         raise ResourceError("Claude gaf geen bruikbaar thema (de hoofdkleur ontbreekt). Probeer het nog eens.")
-    name = str(out.get("name") or "Nieuw thema").strip()[:60] or "Nieuw thema"
+    return save_theme(out.get("name"), out.get("description"), out.get("mode"), clean)
+
+
+def save_theme(name, description, mode, values, install=False):
+    """A theme (checked values) as a package in the library, <key>-1.0.0.zip; with install it is also put on the list of themes in use. Returns the manifest."""
+    from . import themepacks
+
+    name = str(name or "Nieuw thema").strip()[:60] or "Nieuw thema"
     taken = {e["name"] for e in catalog("themas")} | themepacks.BUILTIN_KEYS()
     key, n = _slug(name), 2
     while key in taken or key in {r["key"] for r in themepacks.builtin_manifests()}:
         key = f"{_slug(name)[:27]}-{n}"
         n += 1
-    man = {"key": key, "name": name, "description": str(out.get("description") or "")[:300], "version": "1.0.0", "system_version": str(settings.SYSTEM_VERSION),
-           "mode": out.get("mode") if out.get("mode") in ("light", "dark") else None, "values": clean}
+    man = {"key": key, "name": name, "description": str(description or "")[:300], "version": "1.0.0", "system_version": str(settings.SYSTEM_VERSION),
+           "mode": mode if mode in ("light", "dark") else None, "values": values}
     raw = json.dumps(man, indent=2, ensure_ascii=False) + "\n"
     themepacks.parse(raw)  # the same check as an uploaded package
     buf = io.BytesIO()
@@ -317,6 +324,11 @@ def make_theme(prompt, mode=""):
         (root() / "themas" / f"{key}-1.0.0.zip").write_bytes(buf.getvalue())
     except OSError:
         raise ResourceError("De bibliotheek is niet te beschrijven (alleen-lezen map op deze server).")
+    if install:
+        try:
+            themepacks.install_zip(buf.getvalue())
+        except themepacks.ThemeError as e:
+            raise ResourceError(f"Het thema staat in de bibliotheek maar kon niet worden geïnstalleerd: {e}")
     return man
 
 

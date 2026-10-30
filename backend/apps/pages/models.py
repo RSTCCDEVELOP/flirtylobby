@@ -35,6 +35,7 @@ class Page(models.Model):
     order = models.PositiveIntegerField(default=0)
     source = models.CharField(max_length=40, blank=True, db_index=True)  # "import:<id>" for pages that come from a site import
     background = models.JSONField(default=dict, blank=True)  # {"type": "image"|"video", "media": MediaItem id, "overlay": 0-0.9}
+    design = models.TextField(blank=True, default="")  # a page that was taken over 1 to 1 from an html file: the whole html (shown in a sandboxed frame, __MEDIA__/ = the media address); empty = a normal page
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

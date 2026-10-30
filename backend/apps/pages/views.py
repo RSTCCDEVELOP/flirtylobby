@@ -111,7 +111,17 @@ def public_page(request, key):
         return Response(status=status.HTTP_404_NOT_FOUND)
     from apps.plugins.facade import subs
 
-    return Response({"key": p.key, "scope": p.scope, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key)})
+    return Response({"key": p.key, "scope": p.scope, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key), "design": p.design or ""})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def design_of(request, key):
+    """Public: the html design of a page that was taken over from an html file (also the start page); empty when it has none."""
+    p = Page.objects.filter(key=key, kind__in=("content", "system"), scope="public").first()
+    if not p or not p.design or not modules.enabled("pages") or not service.available(p) or not service.can_see(request.user, p):
+        return Response({"design": ""})
+    return Response({"design": p.design})
 
 
 @api_view(["GET"])

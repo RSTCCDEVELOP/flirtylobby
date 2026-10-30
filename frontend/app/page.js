@@ -12,12 +12,24 @@ import { Logo, HomePhotos } from "../components/BrandingContext";
 
 import Movable from "../components/Movable";
 import PageBlocks from "../components/PageBlocks";
+import PageShell from "../components/PageShell";
+import DesignFrame from "../components/DesignFrame";
+import { getDesign } from "../lib/pages-server";
+import { getPageSetup } from "../lib/page-setup-server";
 import { pageMetadata } from "../lib/seo";
 
 export const dynamic = "force-dynamic";
 export const generateMetadata = () => pageMetadata("/", { absolute: true });
 
-export default function Home() {
+export default async function Home() {
+  const design = await getDesign("home"); // the start page can be an html design (Site importeren)
+  if (design) {
+    return (
+      <PageShell setup={await getPageSetup("home")}>
+        <DesignFrame html={design} title="Home" />
+      </PageShell>
+    );
+  }
   return (
     <div className="site">
       <SiteHeader />
