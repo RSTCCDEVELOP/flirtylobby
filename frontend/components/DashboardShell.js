@@ -204,6 +204,17 @@ export default function DashboardShell({ children }) {
 
   useEffect(() => {
     try { setCollapsed(localStorage.getItem("sidebar") !== "open"); } catch {}
+    // a new start of the site (an installation was set, or the system was reset): the left menu begins open again, with the groups as they are by default
+    api("/sandbox/status/").then((s) => {
+      const epoch = String(s?.epoch || 0);
+      try {
+        if (localStorage.getItem("ui-epoch") === epoch) return;
+        localStorage.setItem("ui-epoch", epoch);
+        localStorage.setItem("sidebar", "open");
+        Object.keys(localStorage).filter((k) => k.startsWith("navg:") || k.startsWith("navg-pin:")).forEach((k) => localStorage.removeItem(k));
+        setCollapsed(false);
+      } catch {}
+    }).catch(() => {});
   }, []);
 
   function toggleCollapsed() {

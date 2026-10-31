@@ -15,17 +15,18 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const out = join(here, "..", "html", "en", "images");
+let out = "";
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n), opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
 const base = opt("--base", "https://localhost:5173"), lang = opt("--lang", "en"), token = process.env.E2E_TOKEN || "", refresh = flag("--refresh");
 const only = (opt("--only", "") || "").split(",").filter(Boolean);
 if (!token) { console.error("Set E2E_TOKEN (the token of a superadmin)."); process.exit(1); }
 const shots = JSON.parse(readFileSync(join(here, "shots.json"), "utf8")).filter((s) => !only.length || only.includes(s.id));
+out = join(here, "..", "html", lang, "images");  // the pictures of the English manual are in English, those of the Dutch manual in Dutch
 mkdirSync(out, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const CHROME = process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const port = 9333, profile = "/tmp/e2e-manual-shots";
+const port = 9400 + Math.floor(Math.random() * 500), profile = `/tmp/e2e-manual-shots-${port}`;  // an own port and profile every time: a Chrome of the run before that is still closing must not be used
 rmSync(profile, { recursive: true, force: true });
 const chrome = spawn(CHROME, ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "--ignore-certificate-errors", "--hide-scrollbars", "--window-size=1440,900", "--disable-gpu", "--no-first-run", "about:blank"], { stdio: "ignore" });
 const stop = () => { try { chrome.kill(); } catch {} };

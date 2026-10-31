@@ -12,17 +12,22 @@ import { api } from "./api";
 let state = null; // {local, asked, enabled}
 let loading = false;
 const subs = new Set();
+let licenseOpen = false; // the question about the licence (it comes first) is open: the other questions wait until it is answered (also when the answer is "Later")
+const licSubs = new Set();
+export const setLicenseOpen = (v) => { licenseOpen = !!v; licSubs.forEach((f) => f(licenseOpen)); };
 const set = (v) => { state = v; subs.forEach((f) => f(v)); };
 
 export function useSandboxFirst(enabled = true) {
   const [st, setSt] = useState(state);
+  const [lic, setLic] = useState(licenseOpen);
   useEffect(() => {
-    subs.add(setSt);
+    subs.add(setSt); licSubs.add(setLic); setLic(licenseOpen);
     if (enabled && state === null && !loading) { loading = true; api("/system/sandbox-first/").then(set).catch(() => set({ local: false, asked: true, manual_asked: true, enabled: false })).finally(() => { loading = false; }); }
-    return () => subs.delete(setSt);
+    return () => { subs.delete(setSt); licSubs.delete(setLic); };
   }, [enabled]);
-  const sandboxPending = !!(st && st.local && !st.asked), manualPending = !!(st && !st.manual_asked);
-  return { sandboxPending, manualPending, pending: sandboxPending || manualPending, known: st !== null, st };
+  const rawSandbox = !!(st && st.local && !st.asked), rawManual = !!(st && !st.manual_asked);
+  // one after the other: licence, sandbox, manual; then the rest (installation, AI)
+  return { sandboxPending: !lic && rawSandbox, manualPending: !lic && !rawSandbox && rawManual, pending: lic || rawSandbox || rawManual, known: st !== null, st };
 }
 
 export const answerSandbox = async (on) => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { on } })); } catch { set({ ...(state || { local: true }), asked: true }); } };

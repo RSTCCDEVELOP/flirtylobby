@@ -1,0 +1,170 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Media, thema, talen en branding - easy2edit handleiding</title><style>
+:root{--bg:#fff;--fg:#1f1f24;--mut:#6b6b76;--acc:#d9631a;--acc2:#fff3ea;--line:#e6e6ea;--side:#f7f7f9;--card:#fff;--shadow:0 1px 2px rgba(20,20,30,.06),0 8px 24px rgba(20,20,30,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#14111a;--fg:#eceaf2;--mut:#a09cad;--acc:#ff9a55;--acc2:#2a1f1a;--line:#2b2635;--side:#1a1621;--card:#1c1823;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:3px}
+.top{position:sticky;top:0;z-index:20;height:60px;display:flex;align-items:center;gap:1rem;padding:0 1.25rem;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:800;font-size:1.2rem;letter-spacing:-.01em;color:var(--fg)}.top .brand b{color:var(--acc)}
+.top .ver{color:var(--mut);font-size:.85rem;border-left:1px solid var(--line);padding-left:1rem}
+.top .sp{flex:1}.top input{width:min(280px,34vw);padding:.5rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--side);color:var(--fg);font:inherit;font-size:.9rem}
+.top input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .95rem;border-radius:999px;background:var(--acc);color:#fff;font-weight:600;font-size:.88rem;text-decoration:none!important}
+.btn:hover{filter:brightness(1.07)}.menu{display:none;background:none;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:.4rem .6rem;font-size:1rem;cursor:pointer}
+.wrap{display:grid;grid-template-columns:272px minmax(0,1fr) 220px;max-width:1380px;margin:0 auto}
+nav.side{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:1.25rem .9rem 2rem;border-right:1px solid var(--line)}
+nav.side h4{margin:.4rem .6rem .5rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+nav.side a{display:flex;gap:.6rem;align-items:baseline;padding:.5rem .65rem;border-radius:9px;color:var(--fg);font-size:.93rem;line-height:1.35}
+nav.side a span{color:var(--mut);font-variant-numeric:tabular-nums;min-width:1.4em}nav.side a:hover{background:var(--side);text-decoration:none}
+nav.side a.on{background:var(--acc2);color:var(--acc);font-weight:600}nav.side a.on span{color:var(--acc)}nav.side a.hide{display:none}
+main{padding:2.4rem clamp(1.2rem,4vw,3.2rem) 4rem;min-width:0}article{max-width:760px}
+.crumb{color:var(--mut);font-size:.85rem;margin-bottom:.6rem}.crumb a{color:var(--mut)}
+h1{font-size:clamp(1.9rem,3.2vw,2.5rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 1.2rem}
+h2{font-size:1.35rem;line-height:1.3;margin:2.4rem 0 .7rem;padding-top:1.2rem;border-top:1px solid var(--line);letter-spacing:-.01em}h2 a{color:inherit}h2 a:hover{text-decoration:none}h2 .anc{opacity:0;margin-left:.4rem;color:var(--acc);font-weight:400}h2:hover .anc{opacity:1}
+p{margin:.8rem 0}p.lead{font-size:1.15rem;line-height:1.65;color:var(--mut)}ul,ol{padding-left:1.5rem;margin:.8rem 0}li{margin:.4rem 0}li::marker{color:var(--acc)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:3.5rem}.pager a{display:block;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg)}
+.pager a:hover{border-color:var(--acc);text-decoration:none}.pager small{display:block;color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}.pager .nx{text-align:right}.pager strong{color:var(--acc)}
+aside.toc{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:2.6rem 1rem 2rem 0;font-size:.85rem}aside.toc h4{margin:0 0 .6rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid var(--line);color:var(--mut);line-height:1.35}aside.toc a:hover{color:var(--acc);border-color:var(--acc);text-decoration:none}
+.hero{padding:1rem 0 2rem}.hero p{font-size:1.2rem;color:var(--mut);max-width:620px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1.6rem}
+.card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
+.card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+.video{margin:1.6rem 0}.video video{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#000;box-shadow:var(--shadow)}.video p{margin:.55rem 0 0;color:var(--mut);font-size:.88rem;text-align:center}.video p span{opacity:.85}.langsw{display:inline-flex;gap:.1rem;border:1px solid var(--line);border-radius:999px;padding:.15rem;font-size:.78rem;font-weight:700}.langsw b,.langsw a{padding:.28rem .6rem;border-radius:999px}.langsw b{background:var(--acc);color:#fff}.langsw a{color:var(--mut)}.langsw a:hover{text-decoration:none;color:var(--fg)}
+.tabs{display:flex;gap:.25rem;margin-left:.5rem}.tabs a{padding:.4rem .9rem;border-radius:999px;color:var(--mut);font-weight:600;font-size:.92rem;text-decoration:none}.tabs a:hover{color:var(--fg)}.tabs a.on{background:var(--acc);color:#fff}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.4rem;margin-top:1.4rem}.vcard{border:1px solid var(--line);border-radius:14px;padding:.9rem;background:var(--side)}.vcard.hide{display:none}.vcard .video{margin:0}.vcard h3{margin:.8rem 0 .2rem;font-size:1.05rem}.vcard .go{font-size:.88rem}.vnone{display:none;color:var(--mut);margin-top:1.4rem}.vnone.show{display:block}
+figure{margin:1.6rem 0;padding:0}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);background:var(--side)}figcaption{margin-top:.55rem;color:var(--mut);font-size:.85rem;text-align:center}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
+@media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
+@media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
+@media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Handleiding</a><a href="videos.html" class="">Video's</a></nav><span class="ver">Handleiding &middot; versie 1.0.0 build 73</span><span class="sp"></span><input id="q" type="search" placeholder="Zoek in hoofdstukken" aria-label="Zoek in hoofdstukken"><span class="langsw"><b>NL</b><a href="../en/chapter-5.html" hreflang="en" title="English">EN</a></span><a class="btn" id="pdf" href="../../pdf/manual_nl.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Handleiding</h4><a href="index.html" data-t="inhoud" class=""><span>&#9776;</span>Inhoud</a><a href="chapter-1.html" data-t="inleiding easy2edit is een eenvoudig, modulair beheersysteem (cms) voor portals, websites, webshops en communities. in plaats van een vaste lay-out of een tool met één specifiek doel, geeft easy2edit je bouwstenen die je combineert om precies het soort site te maken dat je nodig hebt: een standaardwebsite, een webshop, een bedrijfssite, een zakelijk netwerk, een intranet, een datingplatform, een sportclubsi" class=""><span>1</span>Inleiding</a><a href="chapter-2.html" data-t="aan de slag ## voor de eerste keer inloggen
+
+de eerste keer dat je easy2edit opent, log je in met het superadmin-account. dit account heeft volledige toegang tot elke module en instelling, zodat je de eerste installatie kunt voltooien.
+
+## de sandbox-vraag (alleen bij localhost)
+
+als de site op je eigen computer draait (localhost), vraagt easy2edit je als eerste of je de sandbox wilt aanzetten. met de sandbox" class=""><span>2</span>Aan de slag</a><a href="chapter-3.html" data-t="pagina&#x27;s, menu en bewerkmodus dit hoofdstuk legt uit hoe pagina&#x27;s en het menu zijn georganiseerd in easy2edit, en hoe je met de bewerkmodus pagina&#x27;s direct op het scherm kunt bouwen en aanpassen.
+
+## overzicht van pagina&#x27;s en menu
+
+alle pagina&#x27;s en menu-items beheer je onder admin &gt; pagina&#x27;s. hier vind je drie soorten items:
+
+- systeempagina&#x27;s: ingebouwde pagina&#x27;s zoals home en producten.
+- eigen pagina&#x27;s: tekstpagina&#x27;s die te" class=""><span>3</span>Pagina&#x27;s, menu en bewerkmodus</a><a href="chapter-4.html" data-t="een website importeren (site import) ## wat is site import
+
+met site import breng je een bestaande website naar easy2edit. je geeft het systeem een of meer html-bestanden, een webadres, een map of een zip-bestand, en een ai leest de inhoud en stelt een voorstel op voor hoe je deze binnen easy2edit opnieuw opbouwt. dit omvat een passend thema, de pagina&#x27;s en hun inhoud, iconen en afbeeldingen, en eventuele modules die nodig zijn om de" class=""><span>4</span>Een website importeren (Site import)</a><a href="chapter-5.html" data-t="media, thema, talen en branding ## mediabibliotheek
+
+in de mediabibliotheek (admin &gt; media) beheer je alle afbeeldingen en video&#x27;s die op je website worden gebruikt. bestanden kunnen lokaal op je server of op s3 worden opgeslagen, afhankelijk van hoe je site is geconfigureerd.
+
+elke afbeelding of video die je uploadt kan je voorzien van tags, waardoor het makkelijker wordt om je bestanden te zoeken en organiseren naarmate je bib" class="on"><span>5</span>Media, thema, talen en branding</a><a href="chapter-6.html" data-t="gebruikers, rollen en beveiliging ## gebruikers en profielen
+
+easy2edit houdt een overzicht bij van iedereen die kan inloggen op je website of adminomgeving. je beheert deze gegevens onder admin &gt; gebruikers (users).
+
+voor elke gebruiker kun je instellen:
+
+- een account met een gebruikersnaam en wachtwoord
+- een profielfoto
+- een openbaar profiel dat getoond kan worden op de website
+- een geblokkeerde of actieve status
+
+een accoun" class=""><span>6</span>Gebruikers, rollen en beveiliging</a><a href="chapter-7.html" data-t="webwinkel, bestellingen, betalingen, abonnementen en donaties hoofdstuk 7: webwinkel, bestellingen, betalingen, abonnementen en donaties
+
+easy2edit biedt een set plugins die samenwerken om producten te verkopen, bestellingen te beheren, betalingen te verwerken en abonnementen of donatiecampagnes te runnen. afhankelijk van wat je op je site wilt aanbieden, combineer je de plugins webwinkel, bestellingen, financieel en abonnementen. als je begrijpt hoe deze pl" class=""><span>7</span>Webwinkel, bestellingen, betalingen, abonnementen en donaties</a><a href="chapter-8.html" data-t="community, marktplaats, agenda, documenten en spelletjes easy2edit biedt een set plugins die van je site een volwaardig community platform maken. leden kunnen een profiel opbouwen, andere leden ontmoeten, handelen op een marktplaats, afspraken plannen, documenten delen en spelletjes spelen. dit hoofdstuk legt uit wat elk onderdeel doet en hoe ze samenwerken.
+
+## community overzicht
+
+de community plugin brengt alles samen wat nodig is voor een community-" class=""><span>8</span>Community, marktplaats, agenda, documenten en spelletjes</a><a href="chapter-9.html" data-t="seo, faq en statistieken ## seo
+
+easy2edit helpt je om je website makkelijk vindbaar te maken, niet alleen voor traditionele zoekmachines maar ook voor bots en ai-agents die webcontent lezen en samenvatten. de seo-tools in easy2edit zorgen zowel voor de technische basis als voor de inhoudelijke details waar zoekmachines en ai-systemen naar op zoek zijn.
+
+standaard regelt easy2edit:
+
+- robots.txt, dat zoekmachines en ander" class=""><span>9</span>SEO, FAQ en statistieken</a><a href="chapter-10.html" data-t="ai en ai-tegoed easy2edit gebruikt kunstmatige intelligentie (claude, van anthropic) door het hele systeem heen om te helpen bij taken zoals het vertalen van content, het schrijven van paginateksten, het importeren van websites, het opzoeken van prijzen en meer. elke aanroep naar de ai wordt tot in detail gelogd, zodat gebruik en kosten volledig transparant en controleerbaar blijven.
+
+## wat wordt bijgehouden
+
+vo" class=""><span>10</span>AI en AI-tegoed</a><a href="chapter-11.html" data-t="plugins, back-ups, licentie en implementatie dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je je site veilig houdt met back-ups, hoe licenties en prijzen werken, en wat er achter de schermen gebeurt wanneer het systeem wordt uitgerold.
+
+## plugins
+
+plugins zijn ondertekende pakketten die in de /plugins map staan. je beheert ze vanuit admin &gt; plugins.
+
+een plugin kan alles meebrengen wat nodig is om te werken:
+- eig" class=""><span>11</span>Plugins, back-ups, licentie en implementatie</a></nav><main><article><div class="crumb"><a href="index.html">Handleiding</a> / Hoofdstuk 5</div><h1>5. Media, thema, talen en branding</h1>
+
+<div class="video"><video controls preload="metadata" poster="../../video/nl/theme-media-languages.jpg" width="1280" height="800"><source src="../../video/nl/theme-media-languages.mp4" type="video/mp4"></video><p>Video: Thema, media en talen <span>(Nederlandse voice-over ook in <a href="../../video/en/theme-media-languages.mp4" target="_blank" rel="noopener">English</a>)</span></p></div>
+<figure><a href="images/theme.jpg" target="_blank" rel="noopener"><img src="images/theme.jpg" alt="Admin &gt; Thema: kleuren, lettertypen, afrondingen en themapakketten." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 1. Admin &gt; Thema: kleuren, lettertypen, afrondingen en themapakketten.</figcaption></figure>
+<h2 id="mediabibliotheek">Mediabibliotheek<a class="anc" href="#mediabibliotheek" aria-label="Link to this section">#</a></h2>
+<p>In de mediabibliotheek (Admin &gt; Media) beheer je alle afbeeldingen en video&#x27;s die op je website worden gebruikt. Bestanden kunnen lokaal op je server of op S3 worden opgeslagen, afhankelijk van hoe je site is geconfigureerd.</p>
+<p>Elke afbeelding of video die je uploadt kan je voorzien van tags, waardoor het makkelijker wordt om je bestanden te zoeken en organiseren naarmate je bibliotheek groeit. Eenmaal geüpload, kun je afbeeldingen vanuit de mediabibliotheek selecteren in elke pop-up binnen easy2edit, zodat je een afbeelding maar één keer hoeft te uploaden en deze daarna overal kunt hergebruiken.</p>
+<p>Typische toepassingen van de mediabibliotheek zijn:</p>
+<ul>
+<li>Productfoto&#x27;s, banners of achtergrondafbeeldingen uploaden</li>
+<li>Videobestanden beheren voor gebruik op pagina&#x27;s</li>
+<li>Bestanden taggen op onderwerp, campagne of pagina zodat ze later makkelijk terug te vinden zijn</li>
+<li>Bestaande afbeeldingen hergebruiken in plaats van duplicaten te uploaden</li>
+</ul>
+<figure><a href="images/media.jpg" target="_blank" rel="noopener"><img src="images/media.jpg" alt="De mediabibliotheek met alle afbeeldingen en video&#x27;s." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 2. De mediabibliotheek met alle afbeeldingen en video&#x27;s.</figcaption></figure>
+<h2 id="logo-s-afbeeldingen">Logo&#x27;s &amp; afbeeldingen<a class="anc" href="#logo-s-afbeeldingen" aria-label="Link to this section">#</a></h2>
+<p>In het onderdeel Logo&#x27;s &amp; afbeeldingen (branding) beheer je de visuele identiteit van je website. Hier kun je het volgende instellen:</p>
+<ul>
+<li>Het logo, inclusief aparte versies voor lichte en donkere modus</li>
+<li>De favicon, die te zien is in browsertabbladen</li>
+<li>Het app-icoon, gebruikt wanneer je website als app op een apparaat wordt opgeslagen</li>
+<li>De foto&#x27;s die op de homepage worden getoond</li>
+</ul>
+<p>Door deze elementen up-to-date te houden, zorg je ervoor dat je website er op alle apparaten en browsers consistent en professioneel uitziet.</p>
+<figure><a href="images/languages.jpg" target="_blank" rel="noopener"><img src="images/languages.jpg" alt="Admin &gt; Talen: de talen van de website." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 3. Admin &gt; Talen: de talen van de website.</figcaption></figure>
+<h2 id="thema-en-vormgeving">Thema en vormgeving<a class="anc" href="#thema-en-vormgeving" aria-label="Link to this section">#</a></h2>
+<p>Het onderdeel Vormgeving (thema), te vinden bij Admin &gt; Thema, bepaalt de algehele look-and-feel van je website. Wanneer dit is uitgeschakeld, gebruikt de website de standaardstijl. Wanneer het is ingeschakeld, krijg je toegang tot een breed scala aan ontwerpopties.</p>
+<p>Met de thema-instellingen kun je het volgende aanpassen:</p>
+<ul>
+<li>Kleuren voor zowel lichte als donkere modus</li>
+<li>Lettertypen die op de hele website worden gebruikt</li>
+<li>Afrondingen, zoals de hoeken van knoppen en vakken</li>
+<li>Breedte van de inhoud, die bepaalt hoe breed het hoofdinhoudsgebied wordt getoond</li>
+<li>Header-indeling, inclusief een redactionele indeling met een zijmenu</li>
+<li>Pop-upstijl, die bepaalt hoe pop-upvensters worden weergegeven</li>
+</ul>
+<p>easy2edit biedt ook themapakketten, dit zijn kant-en-klare combinaties van deze instellingen. Je kunt met één klik wisselen tussen themapakketten, waardoor je eenvoudig verschillende looks kunt uitproberen of snel een nieuwe stijl op de hele site kunt toepassen.</p>
+<p>Als je een ontwerp hebt gemaakt dat je wilt hergebruiken, of een thema naar een andere website wilt verplaatsen, kun je je thema-instellingen exporteren. Thema&#x27;s kunnen ook worden geïmporteerd, wat handig is om een opgeslagen ontwerp toe te passen of een thema tussen projecten te delen.</p>
+<p>Stappen om een themapakket toe te passen:</p>
+<ol start="1">
+<li>Ga naar Admin &gt; Thema.</li>
+<li>Zorg ervoor dat het onderdeel Thema is ingeschakeld, want als je het uitschakelt, keert de website terug naar de standaardstijl.</li>
+<li>Blader door de beschikbare themapakketten.</li>
+<li>Selecteer degene die je wilt toepassen.</li>
+<li>Controleer je website om te bevestigen dat de nieuwe look zoals verwacht is toegepast.</li>
+</ol>
+<h2 id="talen">Talen<a class="anc" href="#talen" aria-label="Link to this section">#</a></h2>
+<p>Het onderdeel Talen beheert de meertalige ondersteuning van je website. Wanneer deze functie is uitgeschakeld, gebruikt de website alleen de standaardtaal. Wanneer deze is ingeschakeld, kun je je website in meerdere talen aanbieden.</p>
+<p>In dit onderdeel kun je:</p>
+<ul>
+<li>Kiezen welke talen je website aan bezoekers aanbiedt</li>
+<li>De standaardtaal voor de site instellen</li>
+<li>Teksten vertalen met de ingebouwde AI-vertaaltool</li>
+</ul>
+<p>Hierdoor kun je een breder publiek bereiken zonder elke pagina handmatig in een andere taal te herschrijven.</p>
+<p>Het is goed om te weten dat de teksten van het easy2edit-systeem zelf, zoals labels en interface-elementen, al in 44 talen beschikbaar zijn. Dit betekent dat de beheeromgeving en ingebouwde systeemteksten zich kunnen aanpassen aan veel talen, los van de inhoudvertalingen die je zelf beheert.</p>
+<p>Stappen om meerdere talen in te schakelen:</p>
+<ol start="1">
+<li>Ga naar Admin &gt; Talen.</li>
+<li>Schakel meertalige ondersteuning in.</li>
+<li>Selecteer de talen die je op je website wilt aanbieden.</li>
+<li>Stel je gewenste standaardtaal in.</li>
+<li>Gebruik de AI-vertaaltool om je inhoud naar de geselecteerde talen te vertalen.</li>
+<li>Controleer de vertaalde teksten om te zorgen dat ze natuurlijk lezen voordat je ze publiceert.</li>
+</ol>
+<h2 id="alles-samengevat">Alles samengevat<a class="anc" href="#alles-samengevat" aria-label="Link to this section">#</a></h2>
+<p>Media, branding, thema en taalinstellingen werken samen om te bepalen hoe je website eruitziet en aanvoelt voor bezoekers. De mediabibliotheek houdt je afbeeldingen en video&#x27;s georganiseerd en klaar voor gebruik. De branding-instellingen zorgen ervoor dat je logo en iconen overal consistent zijn waar ze verschijnen. Met de thema-instellingen kun je het ontwerp verfijnen of volledig transformeren, waarbij themapakketten snelle, kant-en-klare stijlen bieden. Tot slot zorgen de taalinstellingen ervoor dat je website bezoekers kan aanspreken in hun voorkeurstaal, terwijl de systeeminterface zelf al in 44 talen gebruikt kan worden.</p>
+<p>Door de tijd te nemen om deze onderdelen zorgvuldig in te stellen, zelfs voordat je je richt op individuele pagina&#x27;s, geef je je website een sterke, professionele en toegankelijke basis.</p><div class="pager"><a href="chapter-4.html"><small>Vorige</small><strong>&larr; Een website importeren (Site import)</strong></a><a class="nx" href="chapter-6.html"><small>Volgende</small><strong>Gebruikers, rollen en beveiliging &rarr;</strong></a></div><footer>easy2edit handleiding &middot; versie 1.0.0 build 73 &middot; Nederlands</footer></article></main><aside class="toc"><h4>Op deze pagina</h4><a href="#mediabibliotheek">Mediabibliotheek</a><a href="#logo-s-afbeeldingen">Logo&#x27;s &amp; afbeeldingen</a><a href="#thema-en-vormgeving">Thema en vormgeving</a><a href="#talen">Talen</a><a href="#alles-samengevat">Alles samengevat</a></aside></div><script>
+(function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
+var cards=[].slice.call(document.querySelectorAll('.vcard[data-t]')),none=document.getElementById('vnone');
+if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=0;links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)});cards.forEach(function(c){var h=!!v&&c.getAttribute('data-t').indexOf(v)<0;c.classList.toggle('hide',h);if(!h)n++});if(none)none.classList.toggle('show',cards.length>0&&n===0)});
+var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
+try{if(window.self!==window.top){var ls=document.querySelector('.langsw');if(ls)ls.style.display='none';}}catch(e){}
+var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/nl/':'../../pdf/manual_nl.pdf');
+var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
+</script></body></html>

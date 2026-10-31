@@ -1,4 +1,4 @@
-# Writes the English manual of Easy2edit with the AI (chapter by chapter, from facts of the system) and makes manuals/pdf/manual_en.pdf and manuals/html/en/.
+# Writes the manual of Easy2edit (MANUAL_LANG=en or nl) with the AI (chapter by chapter, from facts of the system) and makes manuals/pdf/manual_en.pdf and manuals/html/en/.
 #   cd backend && python manage.py shell -c "exec(open('../manuals/tools/make_manual.py').read())"          (MANUAL_REUSE=1: use the texts of manuals/src/chapters_en.json, no AI)
 # The screenshots (manuals/html/en/images, made by manuals/tools/screenshots.mjs from manuals/tools/shots.json) are placed in the chapters, spread over the sections.
 import io, json, os, re, sys
@@ -11,13 +11,37 @@ from apps.core import modules
 from apps.integrations import ai
 
 ROOT = Path(settings.BASE_DIR).parent
-IMG = ROOT / "manuals" / "html" / "en" / "images"
+LANG = os.environ.get("MANUAL_LANG", "en")
+OTHER = "nl" if LANG == "en" else "en"
+UI = {
+    "en": {"manual": "Manual", "title": "Easy2edit manual", "contents": "Contents", "version": "Version", "build": "build", "figure": "Figure", "on_page": "On this page", "prev": "Previous", "next": "Next", "search": "Search chapters",
+           "chapter": "Chapter", "lang_name": "English", "hero": "Everything you need to build, manage and grow your website, shop or community with Easy2edit. Pick a chapter, or use the search above.", "video": "Video",
+           "voice": "English voice-over", "also": "also in", "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], "permalink": "Link to this section"},
+    "nl": {"manual": "Handleiding", "title": "Easy2edit handleiding", "contents": "Inhoud", "version": "Versie", "build": "build", "figure": "Afbeelding", "on_page": "Op deze pagina", "prev": "Vorige", "next": "Volgende", "search": "Zoek in hoofdstukken",
+           "chapter": "Hoofdstuk", "lang_name": "Nederlands", "hero": "Alles wat je nodig hebt om je website, webwinkel of community met Easy2edit te bouwen, te beheren en te laten groeien. Kies een hoofdstuk, of gebruik de zoekbalk hierboven.", "video": "Video",
+           "voice": "Nederlandse voice-over", "also": "ook in", "months": ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"], "permalink": "Link naar dit onderdeel"},
+}[LANG]
+IMG = ROOT / "manuals" / "html" / LANG / "images"
 SHOTS = json.loads((ROOT / "manuals" / "tools" / "shots.json").read_text())
+CAPN = ROOT / "manuals" / "src" / "captions_nl.json"
+CAPS_NL = json.loads(CAPN.read_text()) if CAPN.is_file() else {}
 
 
 def chapter_shots(n):
     """The screenshots of chapter n that exist, in the order of shots.json: [(file, caption)]."""
-    return [(s["file"], s["caption"]) for s in SHOTS if s.get("chapter") == n and (IMG / f"{s['file']}.jpg").is_file()]
+    return [(s["file"], (CAPS_NL.get(s["id"]) or s["caption"]) if LANG == "nl" else s["caption"]) for s in SHOTS if s.get("chapter") == n and (IMG / f"{s['file']}.jpg").is_file()]
+
+
+_UI_EN = ({"videos": "Videos", "vsearch": "Search the manual and the videos", "vhero": "Short instruction videos with voice-over. Search by title or by what is said in the video.", "vnone": "No video found.", "tochapter": "Read chapter"})
+_UI_NL = ({"videos": "Video's", "vsearch": "Zoek in handleiding en video's", "vhero": "Korte instructievideo's met voice-over. Zoek op titel of op wat er in de video wordt gezegd.", "vnone": "Geen video gevonden.", "tochapter": "Lees hoofdstuk"})
+UI.update(_UI_NL if LANG == "nl" else _UI_EN)
+VIDEOS = json.loads((ROOT / "manuals" / "tools" / "video" / "videos.json").read_text()) if (ROOT / "manuals" / "tools" / "video" / "videos.json").is_file() else []
+VID = ROOT / "manuals" / "video"
+
+
+def chapter_videos(n):
+    """The instruction videos of chapter n that have been made: [(id, title in English, title in Dutch, has Dutch)]."""
+    return [(v["id"], v["title"]["en"], v["title"]["nl"], (VID / "nl" / f"{v['id']}.mp4").is_file()) for v in VIDEOS if v.get("chapter") == n and (VID / "en" / f"{v['id']}.mp4").is_file()]
 
 
 def split_sections(text):
@@ -104,9 +128,44 @@ def clean(t):
     t = re.sub(r"(?m)^# .*[\r\n]+", "", t)  # a chapter title that the AI repeated
     return t.encode("latin-1", "replace").decode("latin-1")
 
-SRC = ROOT / "manuals" / "src" / "chapters_en.json"
+SRC = ROOT / "manuals" / "src" / f"chapters_{LANG}.json"
+EN_SRC = ROOT / "manuals" / "src" / "chapters_en.json"
+
+def glossary(text):
+    """The names of the screens and buttons in the Dutch interface, for the words that stand in this English text (so the Dutch manual uses the real names)."""
+    en = json.loads((ROOT / "frontend" / "public" / "locales" / "en.json").read_text(encoding="utf-8"))
+    pairs = {}
+    for nl_text, en_text in en.items():
+        if 3 <= len(en_text) <= 40 and en_text != nl_text and re.search(r"\b" + re.escape(en_text) + r"\b", text) and not re.search(r"[{}]", nl_text):
+            pairs[en_text] = nl_text
+    return dict(sorted(pairs.items(), key=lambda kv: -len(kv[0]))[:140])
+
+def translate(title, text, n):
+    sysmsg = ("You translate a chapter of the user manual of Easy2edit from English to Dutch (natural, friendly, clear: je/jij form). Keep the structure EXACTLY: lines that start with '## ' (subheadings), '- ' (bullets), '1. ' (steps), blank lines between paragraphs. "
+              "Keep product names (Easy2edit, Claude, Stripe, Mollie, Postmark, ElevenLabs, PDF, HTML, CSS, API). Menu paths like 'Admin > Pages' use the names of the DUTCH interface: use the glossary (English name -> Dutch name) for every screen, button and tab it covers. "
+              "Answer in plain text, no JSON, no code fences: the first line is 'TITLE: <the Dutch chapter title>', then one blank line, then the translated chapter text.")
+    prompt = json.dumps({"chapter": n, "title": title, "text": text, "glossary": glossary(title + "\n" + text)}, ensure_ascii=False)
+    for attempt in range(3):
+        try:
+            r = ai.claude(sysmsg, prompt, max_tokens=7000, timeout=170).strip()
+            r = re.sub(r"^```\w*\s*|\s*```$", "", r)
+            m = re.match(r"TITLE:\s*(.+?)\s*\n+(.+)$", r, re.S)
+            if m and len(m.group(2)) > len(text) * 0.4:
+                return m.group(1).strip(), m.group(2).strip()
+        except Exception as e:
+            print("  retry", attempt + 1, e, flush=True)
+    raise SystemExit(f"translation of chapter {n} failed")
+
 if SRC.is_file() and os.environ.get("MANUAL_REUSE"):  # the texts of an earlier run (no AI call)
     out = [tuple(x) for x in json.loads(SRC.read_text())]
+elif LANG == "nl":  # the Dutch manual is the English one, translated by the AI
+    out = []
+    for i, (title, text) in enumerate(json.loads(EN_SRC.read_text()), 1):
+        print("translating", i, title, flush=True)
+        t, x = translate(title, text, i)
+        out.append((clean(t), clean(x)))
+    SRC.parent.mkdir(parents=True, exist_ok=True)
+    SRC.write_text(json.dumps(out, ensure_ascii=False, indent=1))
 else:
     out = []
     for i, (title, facts) in enumerate(CHAPTERS, 1):
@@ -114,6 +173,23 @@ else:
         out.append((title, clean(write(title, facts, i))))
     SRC.parent.mkdir(parents=True, exist_ok=True)
     SRC.write_text(json.dumps(out, ensure_ascii=False, indent=1))
+
+if LANG == "nl" and not CAPN.is_file():
+    from apps.core import themeimport
+    caps = {x["id"]: x["caption"] for x in SHOTS}
+    o = themeimport._parse_json(ai.claude("Translate these captions of screenshots of the Easy2edit manual from English to Dutch (je/jij form, short). Use the Dutch names of the interface: Pagina's, Gebruikers, Rollen, Beveiliging, Instellingen, Thema, Talen, Plugins, Back-ups, API keys, Tegoed. Keep the paths like 'Super admin > AI > Overview' but with the Dutch tab names (Overzicht, Waar, Gebruikers, Kosten, Tegoed, Blokken, Instellingen). Answer with ONE JSON object only: {\"captions\": {\"<id>\": \"<dutch caption>\"}}.", json.dumps(caps, ensure_ascii=False), max_tokens=5000, timeout=170), need=("captions",))
+    CAPS_NL = {k: clean(v) for k, v in o["captions"].items()}
+    CAPN.write_text(json.dumps(CAPS_NL, ensure_ascii=False, indent=1))
+
+# ---- the name of the product is always written in small letters: easy2edit
+def lc(o):
+    if isinstance(o, str): return re.sub(r"Easy2[Ee]dit", "easy2edit", o)
+    if isinstance(o, (list, tuple)): return type(o)(lc(x) for x in o)
+    if isinstance(o, dict): return {k: lc(v) for k, v in o.items()}
+    return o
+out = lc(out); UI = lc(UI); SHOTS = lc(SHOTS); VIDEOS = lc(VIDEOS)
+try: CAPS_NL = lc(CAPS_NL)
+except NameError: pass
 
 # ---- the PDF
 from reportlab.lib import colors
@@ -138,21 +214,21 @@ class Doc(BaseDocTemplate):
 
 CH = ParagraphStyle("chapter", parent=H1)
 buf = io.BytesIO()
-doc = Doc(buf, pagesize=A4, leftMargin=22*mm, rightMargin=22*mm, topMargin=20*mm, bottomMargin=22*mm, title="Easy2edit manual", author="Easy2edit")
+doc = Doc(buf, pagesize=A4, leftMargin=22*mm, rightMargin=22*mm, topMargin=20*mm, bottomMargin=22*mm, title=UI["title"], author="easy2edit")
 frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="f")
 def foot(canvas, d):
     canvas.saveState(); canvas.setFillColor(colors.HexColor(ORANGE)); canvas.rect(0, 0, A4[0], 4*mm, stroke=0, fill=1)
     canvas.setFont("Helvetica", 8); canvas.setFillColor(colors.HexColor(GREY))
-    canvas.drawString(22*mm, 10*mm, f"Easy2edit manual - version {VERSION} build {BUILD}"); canvas.drawRightString(A4[0]-22*mm, 10*mm, str(d.page)); canvas.restoreState()
+    canvas.drawString(22*mm, 10*mm, f"{UI['title']} - {UI['version'].lower()} {VERSION} {UI['build']} {BUILD}"); canvas.drawRightString(A4[0]-22*mm, 10*mm, str(d.page)); canvas.restoreState()
 doc.addPageTemplates([PageTemplate(id="p", frames=[frame], onPage=foot)])
 
 story = []
 logo = ROOT / "frontend" / "public" / "logos" / "easy2edit" / "logo.png"
 if logo.is_file(): story.append(Image(str(logo), width=70*mm, height=70*mm*162/461))
-story += [Spacer(1, 50*mm), Paragraph("Easy2edit", TITLE), Paragraph("Manual", st(fontSize=26, leading=32, textColor=colors.HexColor(ORANGE), font="Helvetica-Bold")), Spacer(1, 8*mm),
-          Paragraph(f"Version {VERSION}, build {BUILD}<br/>{date.today().strftime('%d %B %Y')}", st(fontSize=12, leading=18, textColor=colors.HexColor(GREY))), PageBreak()]
+story += [Spacer(1, 50*mm), Paragraph("easy2edit", TITLE), Paragraph(UI["manual"], st(fontSize=26, leading=32, textColor=colors.HexColor(ORANGE), font="Helvetica-Bold")), Spacer(1, 8*mm),
+          Paragraph(f"{UI['version']} {VERSION}, {UI['build']} {BUILD}<br/>{date.today().day} {UI['months'][date.today().month - 1]} {date.today().year}", st(fontSize=12, leading=18, textColor=colors.HexColor(GREY))), PageBreak()]
 toc = TableOfContents(); toc.levelStyles = [st(fontSize=11, leading=18, textColor=colors.HexColor(DARK))]
-story += [Paragraph("Contents", H1), toc, PageBreak()]
+story += [Paragraph(UI["contents"], H1), toc, PageBreak()]
 
 def flow(text):
     items, bullets, steps = [], [], []
@@ -186,7 +262,7 @@ def figure(file, caption):
     figno[0] += 1
     iw, ih = PILImage.open(path).size
     w = doc.width
-    return KeepTogether([Spacer(1, 3 * mm), Image(str(path), width=w, height=w * ih / iw), Spacer(1, 1.5 * mm), Paragraph(f"<i>Figure {figno[0]}. {escape(caption)}</i>", SMALL), Spacer(1, 4 * mm)])
+    return KeepTogether([Spacer(1, 3 * mm), Image(str(path), width=w, height=w * ih / iw), Spacer(1, 1.5 * mm), Paragraph(f"<i>{UI['figure']} {figno[0]}. {escape(caption)}</i>", SMALL), Spacer(1, 4 * mm)])
 
 for n, (title, text) in enumerate(out, 1):
     story.append(Paragraph(f"{n}. {escape(title)}", CH))
@@ -199,7 +275,7 @@ for n, (title, text) in enumerate(out, 1):
     if n < len(out): story.append(PageBreak())
 
 doc.multiBuild(story)
-dest = ROOT / "manuals" / "pdf" / "manual_en.pdf"
+dest = ROOT / "manuals" / "pdf" / f"manual_{LANG}.pdf"
 dest.parent.mkdir(parents=True, exist_ok=True)
 dest.write_bytes(buf.getvalue())
 print("manual written", dest, len(buf.getvalue()), "bytes")
@@ -207,7 +283,7 @@ print("manual written", dest, len(buf.getvalue()), "bytes")
 
 # ---- the HTML manual: manuals/html/en/ (one page per chapter; menu, search, "on this page", no external files)
 import html as _h
-HD = ROOT / "manuals" / "html" / "en"
+HD = ROOT / "manuals" / "html" / LANG
 HD.mkdir(parents=True, exist_ok=True)
 for old in HD.glob("*.html"):
     old.unlink()
@@ -245,6 +321,9 @@ aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid va
 .card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
 .card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
 .card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+.video{margin:1.6rem 0}.video video{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#000;box-shadow:var(--shadow)}.video p{margin:.55rem 0 0;color:var(--mut);font-size:.88rem;text-align:center}.video p span{opacity:.85}.langsw{display:inline-flex;gap:.1rem;border:1px solid var(--line);border-radius:999px;padding:.15rem;font-size:.78rem;font-weight:700}.langsw b,.langsw a{padding:.28rem .6rem;border-radius:999px}.langsw b{background:var(--acc);color:#fff}.langsw a{color:var(--mut)}.langsw a:hover{text-decoration:none;color:var(--fg)}
+.tabs{display:flex;gap:.25rem;margin-left:.5rem}.tabs a{padding:.4rem .9rem;border-radius:999px;color:var(--mut);font-weight:600;font-size:.92rem;text-decoration:none}.tabs a:hover{color:var(--fg)}.tabs a.on{background:var(--acc);color:#fff}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.4rem;margin-top:1.4rem}.vcard{border:1px solid var(--line);border-radius:14px;padding:.9rem;background:var(--side)}.vcard.hide{display:none}.vcard .video{margin:0}.vcard h3{margin:.8rem 0 .2rem;font-size:1.05rem}.vcard .go{font-size:.88rem}.vnone{display:none;color:var(--mut);margin-top:1.4rem}.vnone.show{display:block}
 figure{margin:1.6rem 0;padding:0}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);background:var(--side)}figcaption{margin-top:.55rem;color:var(--mut);font-size:.85rem;text-align:center}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
 @media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
@@ -254,11 +333,16 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color
 
 JS = """
 (function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
-if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim();links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)})});
+var cards=[].slice.call(document.querySelectorAll('.vcard[data-t]')),none=document.getElementById('vnone');
+if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=0;links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)});cards.forEach(function(c){var h=!!v&&c.getAttribute('data-t').indexOf(v)<0;c.classList.toggle('hide',h);if(!h)n++});if(none)none.classList.toggle('show',cards.length>0&&n===0)});
 var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
-var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/':'../../pdf/manual_en.pdf');
+try{if(window.self!==window.top){var ls=document.querySelector('.langsw');if(ls)ls.style.display='none';}}catch(e){}
+var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/__LANG__/':'../../pdf/manual___LANG__.pdf');
 var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
 """
+
+JS = JS.replace("__LANG__", LANG)
+
 
 def slug(t): return re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-") or "section"
 
@@ -292,25 +376,49 @@ def first_sentence(text, n=150):
     m = re.match(r"(.{40,%d}?[.!?])\s" % n, t + " ")
     return (m.group(1) if m else t[:n].rstrip() + "...")
 
+def vlist():
+    """The videos that have been made, with the words that are said in them (for the search)."""
+    res = []
+    for v in VIDEOS:
+        if not (VID / "en" / f"{v['id']}.mp4").is_file(): continue
+        said = " ".join(st["say"].get(LANG, st["say"].get("en", "")) for st in v.get("steps", []))
+        res.append((v, said))
+    return res
+
 def page(idx, title, inner, heads, prev, nxt):
-    nav = f'<h4>Manual</h4><a href="index.html" data-t="contents overview" class="{"on" if idx == 0 else ""}"><span>&#9776;</span>Contents</a>' + "".join(
+    if idx == -1:  # the page with the videos
+        nav = f'<h4>{UI["videos"]}</h4>' + "".join(
+            f'<a href="#v-{v["id"]}" data-t="{_h.escape((v["title"][LANG] + " " + said).lower(), quote=True)}"><span>&#9654;</span>{_h.escape(v["title"][LANG])}</a>' for v, said in vlist())
+    else:
+      nav = f'<h4>{UI["manual"]}</h4><a href="index.html" data-t="{UI["contents"].lower()}" class="{"on" if idx == 0 else ""}"><span>&#9776;</span>{UI["contents"]}</a>' + "".join(
         f'<a href="chapter-{n}.html" data-t="{_h.escape((t + " " + txt[:400]).lower(), quote=True)}" class="{"on" if n == idx else ""}"><span>{n}</span>{_h.escape(t)}</a>' for n, (t, txt) in enumerate(out, 1))
-    toc = ('<aside class="toc"><h4>On this page</h4>' + "".join(f'<a href="#{i}">{_h.escape(t)}</a>' for i, t in heads) + "</aside>") if heads else '<aside class="toc"></aside>'
-    pager = '<div class="pager">' + (f'<a href="chapter-{prev}.html"><small>Previous</small><strong>&larr; {_h.escape(out[prev-1][0])}</strong></a>' if prev else "<span></span>") + \
-            (f'<a class="nx" href="chapter-{nxt}.html"><small>Next</small><strong>{_h.escape(out[nxt-1][0])} &rarr;</strong></a>' if nxt else "<span></span>") + "</div>"
-    crumb = '<div class="crumb"><a href="index.html">Manual</a>' + (f" / Chapter {idx}" if idx else "") + "</div>"
-    return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">'
-            f'<title>{_h.escape(title)} - Easy2edit manual</title><style>{CSS}</style></head><body>'
-            f'<header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">Easy2<b>edit</b></a><span class="ver">Manual &middot; version {VERSION} build {BUILD}</span><span class="sp"></span>'
-            f'<input id="q" type="search" placeholder="Search chapters" aria-label="Search chapters"><a class="btn" id="pdf" href="../../pdf/manual_en.pdf" download>PDF</a></header>'
-            f'<div class="wrap"><nav class="side">{nav}</nav><main><article>{crumb}{inner}{pager}<footer>Easy2edit manual &middot; version {VERSION} build {BUILD} &middot; English</footer></article></main>{toc}</div><script>{JS}</script></body></html>')
+    toc = ('<aside class="toc"><h4>' + UI["on_page"] + '</h4>' + "".join(f'<a href="#{i}">{_h.escape(t)}</a>' for i, t in heads) + "</aside>") if heads else '<aside class="toc"></aside>'
+    pager = '<div class="pager">' + (f'<a href="chapter-{prev}.html"><small>{UI["prev"]}</small><strong>&larr; {_h.escape(out[prev-1][0])}</strong></a>' if prev else "<span></span>") + \
+            (f'<a class="nx" href="chapter-{nxt}.html"><small>{UI["next"]}</small><strong>{_h.escape(out[nxt-1][0])} &rarr;</strong></a>' if nxt else "<span></span>") + "</div>"
+    crumb = f'<div class="crumb"><a href="index.html">{UI["manual"]}</a>' + (f' / {UI["videos"]}' if idx == -1 else f' / {UI["chapter"]} {idx}' if idx else "") + "</div>"
+    return (f'<!doctype html><html lang="{LANG}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark">'
+            f'<title>{_h.escape(title)} - {UI["title"]}</title><style>{CSS}</style></head><body>'
+            f'<header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="{"on" if idx >= 0 else ""}">{UI["manual"]}</a><a href="videos.html" class="{"on" if idx == -1 else ""}">{UI["videos"]}</a></nav><span class="ver">{UI["manual"]} &middot; {UI["version"].lower()} {VERSION} {UI["build"]} {BUILD}</span><span class="sp"></span>'
+            f'<input id="q" type="search" placeholder="{UI["vsearch"] if idx == -1 else UI["search"]}" aria-label="{UI["search"]}"><span class="langsw"><b>{LANG.upper()}</b><a href="../{OTHER}/{"videos" if idx == -1 else "index" if idx == 0 else f"chapter-{idx}"}.html" hreflang="{OTHER}" title="{"Nederlands" if OTHER == "nl" else "English"}">{OTHER.upper()}</a></span><a class="btn" id="pdf" href="../../pdf/manual_{LANG}.pdf" download>PDF</a></header>'
+            f'<div class="wrap"><nav class="side">{nav}</nav><main><article>{crumb}{inner}{pager}<footer>{UI["title"]} &middot; {UI["version"].lower()} {VERSION} {UI["build"]} {BUILD} &middot; {UI["lang_name"]}</footer></article></main>{toc}</div><script>{JS}</script></body></html>')
 
 cards = "".join(f'<a class="card" href="chapter-{n}.html"><span class="n">{n}</span><h3>{_h.escape(t)}</h3><p>{_h.escape(first_sentence(txt))}</p></a>' for n, (t, txt) in enumerate(out, 1))
-home = (f'<div class="hero"><h1>Easy2edit manual</h1><p>Everything you need to build, manage and grow your website, shop or community with Easy2edit. Pick a chapter, or use the search above.</p></div><div class="cards">{cards}</div>')
-(HD / "index.html").write_text(page(0, "Contents", home, [], 0, 1 if out else 0), encoding="utf-8")
+home = (f'<div class="hero"><h1>{UI["title"]}</h1><p>{UI["hero"]}</p></div><div class="cards">{cards}</div>')
+(HD / "index.html").write_text(page(0, UI["contents"], home, [], 0, 1 if out else 0), encoding="utf-8")
 def fig_html(file, caption, no):
     c = _h.escape(caption, quote=True)
-    return f'<figure><a href="images/{file}.jpg" target="_blank" rel="noopener"><img src="images/{file}.jpg" alt="{c}" width="1440" height="900" loading="lazy"></a><figcaption>Figure {no}. {_h.escape(caption)}</figcaption></figure>'
+    return f'<figure><a href="images/{file}.jpg" target="_blank" rel="noopener"><img src="images/{file}.jpg" alt="{c}" width="1440" height="900" loading="lazy"></a><figcaption>{UI["figure"]} {no}. {_h.escape(caption)}</figcaption></figure>'
+
+def video_html(vid, title_en, title_nl, has_nl):
+    """The video in the language of this manual (English or Dutch voice-over); a link to the other language when that one exists."""
+    mine = LANG if (LANG == "en" or has_nl) else "en"
+    other = "nl" if mine == "en" else "en"
+    title = title_nl if mine == "nl" else title_en
+    olink = f' {UI["also"]} <a href="../../video/{other}/{vid}.mp4" target="_blank" rel="noopener">{"Nederlands" if other == "nl" else "English"}</a>' if (other == "en" or has_nl) else ""
+    voice = "Nederlandse voice-over" if mine == "nl" else "English voice-over"
+    return (f'<div class="video"><video controls preload="metadata" poster="../../video/{mine}/{vid}.jpg" width="1280" height="800"><source src="../../video/{mine}/{vid}.mp4" type="video/mp4"></video>'
+            f'<p>{UI["video"]}: {_h.escape(title)} <span>({voice}{olink})</span></p></div>')
+
 
 def chapter_html(n, txt):
     secs, imgs = split_sections(txt), chapter_shots(n)
@@ -319,6 +427,8 @@ def chapter_html(n, txt):
     for k, (head, body) in enumerate(secs):
         h, hs = body_html((f"## {head}\n\n" if head else "") + body)
         parts.append(h); heads += hs
+        if k == 0:
+            parts += [video_html(*v) for v in chapter_videos(n)]
         for (f, c), w in zip(imgs, where):
             if w == k:
                 no += 1; parts.append(fig_html(f, c, no))
@@ -327,4 +437,15 @@ def chapter_html(n, txt):
 for n, (t, txt) in enumerate(out, 1):
     inner, heads = chapter_html(n, txt)
     (HD / f"chapter-{n}.html").write_text(page(n, t, f"<h1>{n}. {_h.escape(t)}</h1>\n" + inner, heads, n - 1, n + 1 if n < len(out) else 0), encoding="utf-8")
+def videos_page():
+    cs = []
+    for v, said in vlist():
+        n = v.get("chapter")
+        mine = LANG if (LANG == "en" or (VID / "nl" / f"{v['id']}.mp4").is_file()) else "en"
+        link = f'<a class="go" href="chapter-{n}.html">{UI["tochapter"]} {n}: {_h.escape(out[n-1][0])} &rarr;</a>' if n and n <= len(out) else ""
+        blk = video_html(v["id"], v["title"]["en"], v["title"]["nl"], (VID / "nl" / f"{v['id']}.mp4").is_file())
+        cs.append(f'<section class="vcard" id="v-{v["id"]}" data-t="{_h.escape((v["title"][LANG] + " " + said).lower(), quote=True)}"><h3>{_h.escape(v["title"][mine if mine in v["title"] else "en"])}</h3>{blk}{link}</section>')
+    inner = f'<h1>{UI["videos"]}</h1><p class="lead">{UI["vhero"]}</p><div class="vgrid">{"".join(cs)}</div><p class="vnone" id="vnone">{UI["vnone"]}</p>'
+    (HD / "videos.html").write_text(page(-1, UI["videos"], inner, [], 0, 0), encoding="utf-8")
+videos_page()
 print("html manual written", HD, len(out) + 1, "pages")

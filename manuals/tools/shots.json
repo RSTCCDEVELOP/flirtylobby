@@ -55,7 +55,10 @@
   "caption": "Admin > Pages: the pages and the menu of the website.",
   "steps": [
    {
-    "clickText": "Expand all"
+    "clickText": [
+     "Expand all",
+     "Alles uitklappen"
+    ]
    }
   ]
  },
@@ -109,7 +112,10 @@
   "caption": "Admin > Roles: the rights of a role, including viewing the AI use of users.",
   "steps": [
    {
-    "clickText": "Roles",
+    "clickText": [
+     "Roles",
+     "Rollen"
+    ],
     "sel": "button,summary,[role=button]"
    }
   ]
@@ -122,7 +128,10 @@
   "caption": "Admin > Security: login lock, country control, age check, cookies and forbidden words.",
   "steps": [
    {
-    "clickText": "Expand all"
+    "clickText": [
+     "Expand all",
+     "Alles uitklappen"
+    ]
    }
   ]
  },
@@ -141,7 +150,10 @@
   "caption": "Admin > Community: profiles, messages and chat.",
   "steps": [
    {
-    "clickText": "Settings",
+    "clickText": [
+     "Settings",
+     "Instellingen"
+    ],
     "sel": "[role=tab],button"
    }
   ]
@@ -154,7 +166,10 @@
   "caption": "Admin > SEO: search engines, bots and AI agents.",
   "steps": [
    {
-    "clickText": "Expand all"
+    "clickText": [
+     "Expand all",
+     "Alles uitklappen"
+    ]
    }
   ]
  },

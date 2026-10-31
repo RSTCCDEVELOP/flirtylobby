@@ -1,0 +1,183 @@
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Plugins, back-ups, licentie en implementatie - easy2edit handleiding</title><style>
+:root{--bg:#fff;--fg:#1f1f24;--mut:#6b6b76;--acc:#d9631a;--acc2:#fff3ea;--line:#e6e6ea;--side:#f7f7f9;--card:#fff;--shadow:0 1px 2px rgba(20,20,30,.06),0 8px 24px rgba(20,20,30,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#14111a;--fg:#eceaf2;--mut:#a09cad;--acc:#ff9a55;--acc2:#2a1f1a;--line:#2b2635;--side:#1a1621;--card:#1c1823;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:3px}
+.top{position:sticky;top:0;z-index:20;height:60px;display:flex;align-items:center;gap:1rem;padding:0 1.25rem;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:800;font-size:1.2rem;letter-spacing:-.01em;color:var(--fg)}.top .brand b{color:var(--acc)}
+.top .ver{color:var(--mut);font-size:.85rem;border-left:1px solid var(--line);padding-left:1rem}
+.top .sp{flex:1}.top input{width:min(280px,34vw);padding:.5rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--side);color:var(--fg);font:inherit;font-size:.9rem}
+.top input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .95rem;border-radius:999px;background:var(--acc);color:#fff;font-weight:600;font-size:.88rem;text-decoration:none!important}
+.btn:hover{filter:brightness(1.07)}.menu{display:none;background:none;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:.4rem .6rem;font-size:1rem;cursor:pointer}
+.wrap{display:grid;grid-template-columns:272px minmax(0,1fr) 220px;max-width:1380px;margin:0 auto}
+nav.side{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:1.25rem .9rem 2rem;border-right:1px solid var(--line)}
+nav.side h4{margin:.4rem .6rem .5rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+nav.side a{display:flex;gap:.6rem;align-items:baseline;padding:.5rem .65rem;border-radius:9px;color:var(--fg);font-size:.93rem;line-height:1.35}
+nav.side a span{color:var(--mut);font-variant-numeric:tabular-nums;min-width:1.4em}nav.side a:hover{background:var(--side);text-decoration:none}
+nav.side a.on{background:var(--acc2);color:var(--acc);font-weight:600}nav.side a.on span{color:var(--acc)}nav.side a.hide{display:none}
+main{padding:2.4rem clamp(1.2rem,4vw,3.2rem) 4rem;min-width:0}article{max-width:760px}
+.crumb{color:var(--mut);font-size:.85rem;margin-bottom:.6rem}.crumb a{color:var(--mut)}
+h1{font-size:clamp(1.9rem,3.2vw,2.5rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 1.2rem}
+h2{font-size:1.35rem;line-height:1.3;margin:2.4rem 0 .7rem;padding-top:1.2rem;border-top:1px solid var(--line);letter-spacing:-.01em}h2 a{color:inherit}h2 a:hover{text-decoration:none}h2 .anc{opacity:0;margin-left:.4rem;color:var(--acc);font-weight:400}h2:hover .anc{opacity:1}
+p{margin:.8rem 0}p.lead{font-size:1.15rem;line-height:1.65;color:var(--mut)}ul,ol{padding-left:1.5rem;margin:.8rem 0}li{margin:.4rem 0}li::marker{color:var(--acc)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:3.5rem}.pager a{display:block;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg)}
+.pager a:hover{border-color:var(--acc);text-decoration:none}.pager small{display:block;color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}.pager .nx{text-align:right}.pager strong{color:var(--acc)}
+aside.toc{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:2.6rem 1rem 2rem 0;font-size:.85rem}aside.toc h4{margin:0 0 .6rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid var(--line);color:var(--mut);line-height:1.35}aside.toc a:hover{color:var(--acc);border-color:var(--acc);text-decoration:none}
+.hero{padding:1rem 0 2rem}.hero p{font-size:1.2rem;color:var(--mut);max-width:620px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1.6rem}
+.card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
+.card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+.video{margin:1.6rem 0}.video video{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#000;box-shadow:var(--shadow)}.video p{margin:.55rem 0 0;color:var(--mut);font-size:.88rem;text-align:center}.video p span{opacity:.85}.langsw{display:inline-flex;gap:.1rem;border:1px solid var(--line);border-radius:999px;padding:.15rem;font-size:.78rem;font-weight:700}.langsw b,.langsw a{padding:.28rem .6rem;border-radius:999px}.langsw b{background:var(--acc);color:#fff}.langsw a{color:var(--mut)}.langsw a:hover{text-decoration:none;color:var(--fg)}
+.tabs{display:flex;gap:.25rem;margin-left:.5rem}.tabs a{padding:.4rem .9rem;border-radius:999px;color:var(--mut);font-weight:600;font-size:.92rem;text-decoration:none}.tabs a:hover{color:var(--fg)}.tabs a.on{background:var(--acc);color:#fff}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.4rem;margin-top:1.4rem}.vcard{border:1px solid var(--line);border-radius:14px;padding:.9rem;background:var(--side)}.vcard.hide{display:none}.vcard .video{margin:0}.vcard h3{margin:.8rem 0 .2rem;font-size:1.05rem}.vcard .go{font-size:.88rem}.vnone{display:none;color:var(--mut);margin-top:1.4rem}.vnone.show{display:block}
+figure{margin:1.6rem 0;padding:0}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);background:var(--side)}figcaption{margin-top:.55rem;color:var(--mut);font-size:.85rem;text-align:center}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
+@media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
+@media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
+@media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Handleiding</a><a href="videos.html" class="">Video's</a></nav><span class="ver">Handleiding &middot; versie 1.0.0 build 73</span><span class="sp"></span><input id="q" type="search" placeholder="Zoek in hoofdstukken" aria-label="Zoek in hoofdstukken"><span class="langsw"><b>NL</b><a href="../en/chapter-11.html" hreflang="en" title="English">EN</a></span><a class="btn" id="pdf" href="../../pdf/manual_nl.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Handleiding</h4><a href="index.html" data-t="inhoud" class=""><span>&#9776;</span>Inhoud</a><a href="chapter-1.html" data-t="inleiding easy2edit is een eenvoudig, modulair beheersysteem (cms) voor portals, websites, webshops en communities. in plaats van een vaste lay-out of een tool met één specifiek doel, geeft easy2edit je bouwstenen die je combineert om precies het soort site te maken dat je nodig hebt: een standaardwebsite, een webshop, een bedrijfssite, een zakelijk netwerk, een intranet, een datingplatform, een sportclubsi" class=""><span>1</span>Inleiding</a><a href="chapter-2.html" data-t="aan de slag ## voor de eerste keer inloggen
+
+de eerste keer dat je easy2edit opent, log je in met het superadmin-account. dit account heeft volledige toegang tot elke module en instelling, zodat je de eerste installatie kunt voltooien.
+
+## de sandbox-vraag (alleen bij localhost)
+
+als de site op je eigen computer draait (localhost), vraagt easy2edit je als eerste of je de sandbox wilt aanzetten. met de sandbox" class=""><span>2</span>Aan de slag</a><a href="chapter-3.html" data-t="pagina&#x27;s, menu en bewerkmodus dit hoofdstuk legt uit hoe pagina&#x27;s en het menu zijn georganiseerd in easy2edit, en hoe je met de bewerkmodus pagina&#x27;s direct op het scherm kunt bouwen en aanpassen.
+
+## overzicht van pagina&#x27;s en menu
+
+alle pagina&#x27;s en menu-items beheer je onder admin &gt; pagina&#x27;s. hier vind je drie soorten items:
+
+- systeempagina&#x27;s: ingebouwde pagina&#x27;s zoals home en producten.
+- eigen pagina&#x27;s: tekstpagina&#x27;s die te" class=""><span>3</span>Pagina&#x27;s, menu en bewerkmodus</a><a href="chapter-4.html" data-t="een website importeren (site import) ## wat is site import
+
+met site import breng je een bestaande website naar easy2edit. je geeft het systeem een of meer html-bestanden, een webadres, een map of een zip-bestand, en een ai leest de inhoud en stelt een voorstel op voor hoe je deze binnen easy2edit opnieuw opbouwt. dit omvat een passend thema, de pagina&#x27;s en hun inhoud, iconen en afbeeldingen, en eventuele modules die nodig zijn om de" class=""><span>4</span>Een website importeren (Site import)</a><a href="chapter-5.html" data-t="media, thema, talen en branding ## mediabibliotheek
+
+in de mediabibliotheek (admin &gt; media) beheer je alle afbeeldingen en video&#x27;s die op je website worden gebruikt. bestanden kunnen lokaal op je server of op s3 worden opgeslagen, afhankelijk van hoe je site is geconfigureerd.
+
+elke afbeelding of video die je uploadt kan je voorzien van tags, waardoor het makkelijker wordt om je bestanden te zoeken en organiseren naarmate je bib" class=""><span>5</span>Media, thema, talen en branding</a><a href="chapter-6.html" data-t="gebruikers, rollen en beveiliging ## gebruikers en profielen
+
+easy2edit houdt een overzicht bij van iedereen die kan inloggen op je website of adminomgeving. je beheert deze gegevens onder admin &gt; gebruikers (users).
+
+voor elke gebruiker kun je instellen:
+
+- een account met een gebruikersnaam en wachtwoord
+- een profielfoto
+- een openbaar profiel dat getoond kan worden op de website
+- een geblokkeerde of actieve status
+
+een accoun" class=""><span>6</span>Gebruikers, rollen en beveiliging</a><a href="chapter-7.html" data-t="webwinkel, bestellingen, betalingen, abonnementen en donaties hoofdstuk 7: webwinkel, bestellingen, betalingen, abonnementen en donaties
+
+easy2edit biedt een set plugins die samenwerken om producten te verkopen, bestellingen te beheren, betalingen te verwerken en abonnementen of donatiecampagnes te runnen. afhankelijk van wat je op je site wilt aanbieden, combineer je de plugins webwinkel, bestellingen, financieel en abonnementen. als je begrijpt hoe deze pl" class=""><span>7</span>Webwinkel, bestellingen, betalingen, abonnementen en donaties</a><a href="chapter-8.html" data-t="community, marktplaats, agenda, documenten en spelletjes easy2edit biedt een set plugins die van je site een volwaardig community platform maken. leden kunnen een profiel opbouwen, andere leden ontmoeten, handelen op een marktplaats, afspraken plannen, documenten delen en spelletjes spelen. dit hoofdstuk legt uit wat elk onderdeel doet en hoe ze samenwerken.
+
+## community overzicht
+
+de community plugin brengt alles samen wat nodig is voor een community-" class=""><span>8</span>Community, marktplaats, agenda, documenten en spelletjes</a><a href="chapter-9.html" data-t="seo, faq en statistieken ## seo
+
+easy2edit helpt je om je website makkelijk vindbaar te maken, niet alleen voor traditionele zoekmachines maar ook voor bots en ai-agents die webcontent lezen en samenvatten. de seo-tools in easy2edit zorgen zowel voor de technische basis als voor de inhoudelijke details waar zoekmachines en ai-systemen naar op zoek zijn.
+
+standaard regelt easy2edit:
+
+- robots.txt, dat zoekmachines en ander" class=""><span>9</span>SEO, FAQ en statistieken</a><a href="chapter-10.html" data-t="ai en ai-tegoed easy2edit gebruikt kunstmatige intelligentie (claude, van anthropic) door het hele systeem heen om te helpen bij taken zoals het vertalen van content, het schrijven van paginateksten, het importeren van websites, het opzoeken van prijzen en meer. elke aanroep naar de ai wordt tot in detail gelogd, zodat gebruik en kosten volledig transparant en controleerbaar blijven.
+
+## wat wordt bijgehouden
+
+vo" class=""><span>10</span>AI en AI-tegoed</a><a href="chapter-11.html" data-t="plugins, back-ups, licentie en implementatie dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je je site veilig houdt met back-ups, hoe licenties en prijzen werken, en wat er achter de schermen gebeurt wanneer het systeem wordt uitgerold.
+
+## plugins
+
+plugins zijn ondertekende pakketten die in de /plugins map staan. je beheert ze vanuit admin &gt; plugins.
+
+een plugin kan alles meebrengen wat nodig is om te werken:
+- eig" class="on"><span>11</span>Plugins, back-ups, licentie en implementatie</a></nav><main><article><div class="crumb"><a href="index.html">Handleiding</a> / Hoofdstuk 11</div><h1>11. Plugins, back-ups, licentie en implementatie</h1>
+<p class="lead">Dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je je site veilig houdt met back-ups, hoe licenties en prijzen werken, en wat er achter de schermen gebeurt wanneer het systeem wordt uitgerold.</p>
+<div class="video"><video controls preload="metadata" poster="../../video/nl/backup-restore.jpg" width="1280" height="800"><source src="../../video/nl/backup-restore.mp4" type="video/mp4"></video><p>Video: Back-up en terugzetten <span>(Nederlandse voice-over ook in <a href="../../video/en/backup-restore.mp4" target="_blank" rel="noopener">English</a>)</span></p></div>
+<div class="video"><video controls preload="metadata" poster="../../video/nl/plugins-license.jpg" width="1280" height="800"><source src="../../video/nl/plugins-license.mp4" type="video/mp4"></video><p>Video: Plugins en licentie <span>(Nederlandse voice-over ook in <a href="../../video/en/plugins-license.mp4" target="_blank" rel="noopener">English</a>)</span></p></div>
+<figure><a href="images/integrations.jpg" target="_blank" rel="noopener"><img src="images/integrations.jpg" alt="Admin &gt; API keys: de koppelingen met externe systemen, met het label Superadmin." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 1. Admin &gt; API keys: de koppelingen met externe systemen, met het label Superadmin.</figcaption></figure>
+<h2 id="plugins">Plugins<a class="anc" href="#plugins" aria-label="Link to this section">#</a></h2>
+<p>Plugins zijn ondertekende pakketten die in de /plugins map staan. Je beheert ze vanuit Admin &gt; Plugins.</p>
+<ul>
+<li>eigen pagina&#x27;s</li>
+<li>een of meer modules</li>
+<li>vertalingen in tot wel 44 talen</li>
+<li>extra beheerschermen</li>
+</ul>
+<p>Een plugin kan alles meebrengen wat nodig is om te werken:</p>
+<p>Zo installeer je een plugin:</p>
+<ol start="1">
+<li>Ga naar Admin &gt; Plugins.</li>
+<li>Open de bibliotheek (resource/plugins) en kies de plugin die je wilt.</li>
+<li>Installeer deze. De pagina&#x27;s, modules, vertalingen en beheerschermen van de plugin worden automatisch toegevoegd.</li>
+<li>Zet de plugin naar wens aan of uit.</li>
+<li>Gebruik de update-optie zodra er een nieuwe versie van de plugin beschikbaar is.</li>
+</ol>
+<p>Als een plugin is uitgeschakeld, levert deze nergens meer data aan het systeem. Een uitgeschakelde plugin schrijft bijvoorbeeld geen cijfers naar Statistieken, omdat uitgeschakelde plugins niet worden meegeteld.</p>
+<figure><a href="images/plugins.jpg" target="_blank" rel="noopener"><img src="images/plugins.jpg" alt="Admin &gt; Plugins: plugins installeren, aanzetten en updaten." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 2. Admin &gt; Plugins: plugins installeren, aanzetten en updaten.</figcaption></figure>
+<h2 id="de-api-sleutels-module-en-superadmin-koppelingen">De API-sleutels-module en superadmin-koppelingen<a class="anc" href="#de-api-sleutels-module-en-superadmin-koppelingen" aria-label="Link to this section">#</a></h2>
+<p>Elke standaardinstallatie heeft de API-sleutels-module standaard actief. Deze module is altijd actief, ongeacht welke andere plugins of modules je in- of uitschakelt.</p>
+<p>Superadmin-koppelingen zijn een bijzonder geval. Dit zijn de koppelingen die de superadmin gebruikt voor diensten zoals AI, Stripe, mail en opslag. Wanneer een installatie wordt opgezet, worden deze koppelingen automatisch ingeschakeld, zodat deze verbindingen blijven werken. De geheime sleutels achter deze koppelingen worden echter om veiligheidsredenen nooit opgeslagen in het installatiebestand zelf.</p>
+<p>Een koppeling die als Superadmin-koppeling is gemarkeerd, kan alleen door superadmins worden bekeken en gewijzigd. Gewone beheerders hebben geen toegang tot deze instellingen.</p>
+<figure><a href="images/backups.jpg" target="_blank" rel="noopener"><img src="images/backups.jpg" alt="Admin &gt; Back-ups: de site back-uppen en herstellen." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 3. Admin &gt; Back-ups: de site back-uppen en herstellen.</figcaption></figure>
+<h2 id="het-systeem-resetten">Het systeem resetten<a class="anc" href="#het-systeem-resetten" aria-label="Link to this section">#</a></h2>
+<ul>
+<li>alle AI-aanroepen inclusief hun kosten</li>
+<li>de credithistorie en het resterende krediet van superadmins</li>
+</ul>
+<p>Superadmins kunnen het systeem resetten vanuit Super admin &gt; Systeem &gt; Reset. Tijdens een reset wordt je gevraagd of de AI-data in de database ook verwijderd moet worden. Dit omvat:</p>
+<p>De AI-instellingen zelf blijven behouden, ook als je ervoor kiest om deze data te verwijderen.</p>
+<p>Let op: het krediet van gewone gebruikers wordt tijdens een reset niet apart behandeld; dit verdwijnt automatisch zodra die gebruikers worden verwijderd.</p>
+<h2 id="back-ups">Back-ups<a class="anc" href="#back-ups" aria-label="Link to this section">#</a></h2>
+<ul>
+<li>pagina&#x27;s</li>
+<li>menu&#x27;s</li>
+<li>teksten</li>
+<li>afbeeldingen</li>
+<li>het thema</li>
+<li>de instellingen van modules en plugins</li>
+</ul>
+<p>Back-ups worden beheerd vanuit Admin &gt; Back-ups. Het systeem maakt dagelijks, wekelijks of maandelijks back-ups, die het volgende omvatten:</p>
+<ul>
+<li>een back-up terugzetten</li>
+<li>een back-up downloaden</li>
+</ul>
+<p>Vanuit hetzelfde scherm kun je:</p>
+<p>Regelmatige back-ups zijn een belangrijk vangnet, vooral voordat je grote wijzigingen doorvoert, zoals het installeren van nieuwe plugins, het importeren van een site of het uitvoeren van een systeemreset.</p>
+<h2 id="installaties-basis">Installaties basis<a class="anc" href="#installaties-basis" aria-label="Link to this section">#</a></h2>
+<p>De standaard installaties-basis (installations.json) maakt deel uit van het systeem zelf. Net als bij superadmin-koppelingen worden geheime sleutels nooit in dit bestand opgenomen. Zo blijven gevoelige gegevens gescheiden van de installatieconfiguratie, die mogelijk wordt gedeeld of verplaatst tussen omgevingen.</p>
+<h2 id="licentie">Licentie<a class="anc" href="#licentie" aria-label="Link to this section">#</a></h2>
+<ul>
+<li>de kosten van jouw licentie</li>
+<li>de betaalmethode, via Stripe of op factuur</li>
+</ul>
+<p>Licenties worden beheerd vanuit Admin &gt; Licentie. Hier vind je:</p>
+<p>De prijs van jouw licentie ligt niet vast: deze volgt rechtstreeks uit welke modules en plugins je hebt ingeschakeld. Hoe meer functionaliteit je activeert, hoe meer dit terugkomt in de prijs.</p>
+<h2 id="prijzen-superadmin">Prijzen (superadmin)<a class="anc" href="#prijzen-superadmin" aria-label="Link to this section">#</a></h2>
+<ul>
+<li>de volledige prijslijst, uitgesplitst per maand, per kwartaal en per jaar</li>
+<li>de mogelijkheid om offertes als PDF-documenten te genereren</li>
+<li>marketingtegels voor het presenteren van prijsopties</li>
+<li>verkoopberekeningen</li>
+</ul>
+<p>Superadmins hebben toegang tot een speciaal prijzengebied bij Super admin &gt; Prijzen. Dit omvat:</p>
+<p>Dit gebied is bedoeld voor superadmins die de commerciële aspecten van easy2edit-installaties beheren.</p>
+<h2 id="implementatie">Implementatie<a class="anc" href="#implementatie" aria-label="Link to this section">#</a></h2>
+<ul>
+<li>ontwikkeling</li>
+<li>productie</li>
+</ul>
+<p>easy2edit wordt uitgerold met behulp van Docker. Er zijn aparte compose-bestanden beschikbaar voor:</p>
+<p>Een reverse proxy regelt de routering en certificaten, zodat verkeer veilig bij de juiste containers terechtkomt.</p>
+<p>Wanneer de backend opstart, voert deze automatisch alle openstaande databasemigraties uit. Dit betekent dat na het uitrollen van een update de databasestructuur zonder handmatige stappen wordt bijgewerkt.</p>
+<h2 id="versie-informatie">Versie-informatie<a class="anc" href="#versie-informatie" aria-label="Link to this section">#</a></h2>
+<p>Elke installatie toont zijn versie in het formaat easy2edit version 1.0.0 build X. Deze versie-informatie komt uit één centrale locatie in het systeem: backend/BUILD. Zo is de getoonde versie altijd consistent en herleidbaar tot de exacte build die draait.</p><div class="pager"><a href="chapter-10.html"><small>Vorige</small><strong>&larr; AI en AI-tegoed</strong></a><span></span></div><footer>easy2edit handleiding &middot; versie 1.0.0 build 73 &middot; Nederlands</footer></article></main><aside class="toc"><h4>Op deze pagina</h4><a href="#plugins">Plugins</a><a href="#de-api-sleutels-module-en-superadmin-koppelingen">De API-sleutels-module en superadmin-koppelingen</a><a href="#het-systeem-resetten">Het systeem resetten</a><a href="#back-ups">Back-ups</a><a href="#installaties-basis">Installaties basis</a><a href="#licentie">Licentie</a><a href="#prijzen-superadmin">Prijzen (superadmin)</a><a href="#implementatie">Implementatie</a><a href="#versie-informatie">Versie-informatie</a></aside></div><script>
+(function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
+var cards=[].slice.call(document.querySelectorAll('.vcard[data-t]')),none=document.getElementById('vnone');
+if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=0;links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)});cards.forEach(function(c){var h=!!v&&c.getAttribute('data-t').indexOf(v)<0;c.classList.toggle('hide',h);if(!h)n++});if(none)none.classList.toggle('show',cards.length>0&&n===0)});
+var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
+try{if(window.self!==window.top){var ls=document.querySelector('.langsw');if(ls)ls.style.display='none';}}catch(e){}
+var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/nl/':'../../pdf/manual_nl.pdf');
+var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
+</script></body></html>

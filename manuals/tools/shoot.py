@@ -42,8 +42,9 @@ try:
     modules.invalidate()
     if en and not en.enabled:
         Language.objects.filter(pk=en.pk).update(enabled=True)
-    r = subprocess.run(["node", str(ROOT / "manuals" / "tools" / "screenshots.mjs"), *os.environ.get("SHOTS_ARGS", "").split()], env={**os.environ, "E2E_TOKEN": tok}, capture_output=True, text=True, timeout=1500)
-    print(r.stdout[-3000:], r.stderr[-1500:])
+    for lang in os.environ.get("SHOTS_LANGS", "en,nl").split(","):  # the pictures of the English manual are in English, those of the Dutch manual in Dutch
+        r = subprocess.run(["node", str(ROOT / "manuals" / "tools" / "screenshots.mjs"), "--lang", lang, *os.environ.get("SHOTS_ARGS", "").split()], env={**os.environ, "E2E_TOKEN": tok}, capture_output=True, text=True, timeout=1500)
+        print(lang, r.stdout[-2500:], r.stderr[-1200:])
 finally:
     ModuleState.objects.all().delete()
     ModuleState.objects.bulk_create([ModuleState(key=k, enabled=v) for k, v in prev_modules])

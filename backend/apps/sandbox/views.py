@@ -32,7 +32,10 @@ def _payment(p):
 def public_status(request):
     s = service.get()
     on = service.active()
-    return Response({"enabled": on, "banner": on and s["banner"]})
+    from apps.core.models import SystemSettings
+
+    epoch = int((SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get("ui_epoch") or 0)
+    return Response({"enabled": on, "banner": on and s["banner"], "epoch": epoch})
 
 
 @api_view(["GET", "PUT"])

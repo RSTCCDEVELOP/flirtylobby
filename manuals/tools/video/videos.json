@@ -1,0 +1,757 @@
+[
+ {
+  "id": "welcome",
+  "chapter": 1,
+  "title": {
+   "en": "Welcome to Easy2edit",
+   "nl": "Welkom bij Easy2edit"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin",
+    "say": {
+     "en": "Welcome to Easy2edit, a simple and modular system to build and manage your website. This is the Admin area: your starting point.",
+     "nl": "Welkom bij Easy2edit, een eenvoudig en modulair systeem om je website te bouwen en te beheren. Dit is het beheerscherm: je startpunt."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/installaties",
+    "say": {
+     "en": "A standard installation sets up a complete type of website in one click: the right modules, plugins and theme for a web shop, a company website or a community.",
+     "nl": "Een standaard installatie zet met één klik een complete soort website klaar: de juiste modules, plugins en het thema voor een webwinkel, een bedrijfswebsite of een community."
+    },
+    "actions": [
+     {
+      "at": 4,
+      "point": ".preset-grid"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/installaties",
+    "keep": true,
+    "say": {
+     "en": "Use the gear on a tile to open its settings: who sees the installation, the AI credit, the modules it brings and the demo data.",
+     "nl": "Met het tandwiel op een tegel open je de instellingen: wie de installatie ziet, het AI-tegoed, de modules die erbij horen en de demodata."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "click": ".preset-actions .btn.icon"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/superadmin/modules",
+    "say": {
+     "en": "Under Super admin, Modules, you switch parts of the system on or off and decide who may use them.",
+     "nl": "Bij Super admin, Modules, zet je onderdelen van het systeem aan of uit en bepaal je wie ze mag gebruiken."
+    },
+    "actions": [
+     {
+      "at": 4,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin",
+    "keep": true,
+    "say": {
+     "en": "Need help at any moment? Every admin page has a Help button. It opens this manual at the right chapter.",
+     "nl": "Hulp nodig? Elke beheerpagina heeft een Hulp-knop. Die opent de handleiding bij het juiste hoofdstuk."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "clickText": {
+       "en": [
+        "Help"
+       ],
+       "nl": [
+        "Hulp"
+       ]
+      }
+     }
+    ],
+    "settle": 3500
+   }
+  ]
+ },
+ {
+  "id": "ai-credit",
+  "chapter": 10,
+  "title": {
+   "en": "AI and AI credit",
+   "nl": "AI en AI-tegoed"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/superadmin/ai",
+    "say": {
+     "en": "Every call to the AI is monitored: who asked, from where, how many tokens, and what it cost. This is the overview.",
+     "nl": "Elke AI-aanroep wordt bijgehouden: wie vroeg het, waar vandaan, hoeveel tokens en wat het kost. Dit is het overzicht."
+    },
+    "actions": [
+     {
+      "at": 4,
+      "point": ".cards"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/superadmin/ai",
+    "say": {
+     "en": "The Credit tab sets the rules. Users and admins buy AI credit before they can use AI, and before every call the system checks that the credit is enough.",
+     "nl": "Op het tabblad Tegoed stel je de regels in. Gebruikers en admins kopen AI-tegoed voordat ze AI kunnen gebruiken, en vóór elke aanroep controleert het systeem of het tegoed genoeg is."
+    },
+    "actions": [
+     {
+      "at": 2,
+      "clickText": {
+       "en": [
+        "Credit"
+       ],
+       "nl": [
+        "Tegoed"
+       ]
+      },
+      "sel": "[role=tab],button"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/superadmin/ai",
+    "say": {
+     "en": "Under Settings you set the margins per group, the currencies and the rate. The tab Claude shows the models with the price per million tokens, and per token.",
+     "nl": "Bij Instellingen stel je de marges per groep, de munten en de koers in. Het tabblad Claude toont de modellen met de prijs per miljoen tokens, en per token."
+    },
+    "actions": [
+     {
+      "at": 2,
+      "clickText": {
+       "en": [
+        "Settings"
+       ],
+       "nl": [
+        "Instellingen"
+       ]
+      },
+      "sel": "[role=tab],button"
+     },
+     {
+      "at": 6,
+      "clickText": {
+       "en": [
+        "Claude"
+       ],
+       "nl": [
+        "Claude"
+       ]
+      },
+      "sel": "[role=tab],button"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/ai?buy=1",
+    "keep": true,
+    "say": {
+     "en": "When the credit runs low, a user gets this offer: a slider with a suggestion based on the use of the last thirty days. After paying, the credit is added at once.",
+     "nl": "Als het tegoed bijna op is, krijgt een gebruiker dit aanbod: een schuifbalk met een voorstel op basis van het gebruik van de laatste dertig dagen. Na het betalen staat het tegoed direct klaar."
+    },
+    "actions": []
+   }
+  ]
+ },
+ {
+  "id": "site-import",
+  "chapter": 4,
+  "title": {
+   "en": "Importing a website",
+   "nl": "Een website importeren"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/siteimport",
+    "say": {
+     "en": "With Site import you can take over an existing website. Drop one or more HTML files, or give an address, a folder or a ZIP file.",
+     "nl": "Met Site importeren neem je een bestaande website over. Sleep een of meer HTML-bestanden erin, of geef een adres, een map of een ZIP-bestand."
+    },
+    "actions": [
+     {
+      "at": 4,
+      "clickText": {
+       "en": [
+        "HTML file",
+        "HTML-bestand"
+       ],
+       "nl": [
+        "HTML-bestand"
+       ]
+      },
+      "sel": "button,[role=tab]"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/siteimport",
+    "say": {
+     "en": "The AI reads the files and makes a proposal: the theme, the pages, the content and the images. Nothing is created until you approve it.",
+     "nl": "De AI leest de bestanden en maakt een voorstel: het thema, de pagina's, de inhoud en de plaatjes. Er wordt niets gemaakt voordat jij akkoord geeft."
+    },
+    "actions": []
+   },
+   {
+    "path": "/dashboard/admin/siteimport",
+    "say": {
+     "en": "After approval you choose per page where it goes, and whether it is built exact, or with editable blocks. The original file is kept, so you can apply it again with a new instruction for the AI.",
+     "nl": "Na akkoord kies je per pagina waar die naartoe gaat, en of hij exact wordt overgenomen of met bewerkbare blokken wordt opgebouwd. Het originele bestand blijft bewaard, dus je kunt het opnieuw toepassen met een nieuwe opdracht voor de AI."
+    },
+    "actions": []
+   }
+  ]
+ },
+ {
+  "id": "standard-install",
+  "chapter": 2,
+  "title": {
+   "en": "Choose a standard installation",
+   "nl": "Een standaard installatie kiezen"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/installaties",
+    "say": {
+     "en": "A standard installation prepares a complete type of website in one click. Open Standard installations in the Admin area.",
+     "nl": "Een standaard installatie maakt met één klik een complete soort website klaar. Open Standaard installaties in het beheerscherm."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/installaties",
+    "say": {
+     "en": "Each tile is a ready-made set: the right modules, plugins, theme and pages. Pick the one that fits, for example a web shop, a company website or a community.",
+     "nl": "Elke tegel is een kant-en-klare set: de juiste modules, plugins, thema en pagina's. Kies wat past, bijvoorbeeld een webwinkel, een bedrijfswebsite of een community."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": ".card"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/installaties",
+    "say": {
+     "en": "Before anything changes you see what will be installed. After installing, you can fill the site with AI or change every part yourself.",
+     "nl": "Voordat er iets verandert, zie je wat er wordt geïnstalleerd. Na de installatie vul je de site met AI of pas je alles zelf aan."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "main"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "pages-edit",
+  "chapter": 3,
+  "title": {
+   "en": "Pages and edit mode",
+   "nl": "Pagina's en bewerkmodus"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/pages",
+    "say": {
+     "en": "Under Pages you manage the pages and the menu of your website: system pages, your own pages, links and menu items.",
+     "nl": "Onder Pagina's beheer je de pagina's en het menu van je website: systeempagina's, eigen pagina's, links en menu-items."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/pages",
+    "say": {
+     "en": "For each page you set the names per language, whether it is visible, and where it appears in the menu.",
+     "nl": "Per pagina stel je de namen per taal in, of de pagina zichtbaar is en waar hij in het menu staat."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "main"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/pages",
+    "say": {
+     "en": "To change the content, open the website and switch on the pencil in the header. Pages are built from rows with cells, and in each cell you place text, images, buttons or blocks.",
+     "nl": "Om de inhoud aan te passen open je de website en zet je het potlood in de header aan. Pagina's bestaan uit rijen met cellen, en in elke cel plaats je tekst, afbeeldingen, knoppen of blokken."
+    },
+    "actions": [
+     {
+      "at": 4,
+      "point": "main"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "theme-media-languages",
+  "chapter": 5,
+  "title": {
+   "en": "Theme, media and languages",
+   "nl": "Thema, media en talen"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/theme",
+    "say": {
+     "en": "In Theme you choose the colours for light and dark mode, the fonts and the roundings of your website.",
+     "nl": "Bij Thema kies je de kleuren voor lichte en donkere modus, de lettertypen en de afrondingen van je website."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/media",
+    "say": {
+     "en": "The media library holds all your images and videos, with tags, so you can pick them in every pop-up.",
+     "nl": "De mediabibliotheek bevat al je afbeeldingen en video's, met labels, zodat je ze in elke popup kunt kiezen."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/languages",
+    "say": {
+     "en": "Under Languages you switch on the languages of your website. Visitors choose their language in the header.",
+     "nl": "Bij Talen zet je de talen van je website aan. Bezoekers kiezen hun taal in de header."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "ai-fill-site",
+  "chapter": 4,
+  "title": {
+   "en": "Fill your website with AI",
+   "nl": "Je website vullen met AI"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/ai",
+    "say": {
+     "en": "With AI you can fill your website with texts and pages. First you need AI credit; this page shows your credit and your use.",
+     "nl": "Met AI vul je je website met teksten en pagina's. Eerst heb je AI-tegoed nodig; deze pagina toont je tegoed en je gebruik."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/siteimport",
+    "say": {
+     "en": "With Site import you bring in an existing website, and with the AI prompt you adapt the result to the original.",
+     "nl": "Met Site import haal je een bestaande website binnen, en met de AI-prompt pas je het resultaat aan het origineel aan."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/pages",
+    "say": {
+     "en": "Every AI call checks your credit first, so you are never charged more than the credit you bought.",
+     "nl": "Elke AI-aanroep controleert eerst je tegoed, dus je betaalt nooit meer dan het tegoed dat je kocht."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "main"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "users-roles-security",
+  "chapter": 6,
+  "title": {
+   "en": "Users, roles and security",
+   "nl": "Gebruikers, rollen en beveiliging"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/users",
+    "say": {
+     "en": "Under Users you see everyone who has an account. You can add users, change them and block them.",
+     "nl": "Onder Gebruikers zie je iedereen met een account. Je kunt gebruikers toevoegen, aanpassen en blokkeren."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/roles",
+    "say": {
+     "en": "Roles decide what a person may do: use, edit or manage each part of the system. Give a person a role instead of setting rights one by one.",
+     "nl": "Rollen bepalen wat iemand mag doen: gebruiken, bewerken of beheren per onderdeel van het systeem. Geef iemand een rol in plaats van rechten één voor één in te stellen."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/security",
+    "say": {
+     "en": "Under Security you protect the logins of your website, for example with extra verification.",
+     "nl": "Bij Beveiliging beveilig je de logins van je website, bijvoorbeeld met extra verificatie."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "backup-restore",
+  "chapter": 11,
+  "title": {
+   "en": "Backup and restore",
+   "nl": "Back-up en terugzetten"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/backups",
+    "say": {
+     "en": "Under Backups you save your whole website in one file: settings, theme, plugins and content.",
+     "nl": "Onder Back-ups bewaar je je hele website in één bestand: instellingen, thema, plugins en inhoud."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/backups",
+    "say": {
+     "en": "Make a backup before big changes. You can download it, keep it on the server, and import it again whenever you need to go back.",
+     "nl": "Maak een back-up voor grote wijzigingen. Je kunt hem downloaden, op de server bewaren en weer importeren wanneer je terug wilt."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "main"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "plugins-license",
+  "chapter": 11,
+  "title": {
+   "en": "Plugins and licence",
+   "nl": "Plugins en licentie"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/plugins",
+    "say": {
+     "en": "Plugins extend the system, for example with a web shop or a marketplace. Here you install, switch on and update them.",
+     "nl": "Plugins breiden het systeem uit, bijvoorbeeld met een webwinkel of een marktplaats. Hier installeer je, zet je aan en werk je ze bij."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/plugins",
+    "say": {
+     "en": "Plugins are signed, so you know they come from a trusted source.",
+     "nl": "Plugins zijn ondertekend, zodat je weet dat ze uit een betrouwbare bron komen."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "main"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/license",
+    "say": {
+     "en": "Under Licence you see the costs and choose how you pay, with Stripe or by invoice. The price follows the modules and plugins that you use.",
+     "nl": "Onder Licentie zie je de kosten en kies je hoe je betaalt, met Stripe of per factuur. De prijs volgt de modules en plugins die je gebruikt."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "reset-sandbox",
+  "chapter": 1,
+  "title": {
+   "en": "Reset and sandbox mode",
+   "nl": "Resetten en sandbox-modus"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/sandbox",
+    "say": {
+     "en": "Sandbox mode is for practising safely on your own computer. Payments are simulated and nothing real happens.",
+     "nl": "De sandbox-modus is om veilig te oefenen op je eigen computer. Betalingen worden gesimuleerd en er gebeurt niets echts."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/system",
+    "say": {
+     "en": "Under System you can reset the website to its starting point. You choose what to keep, and you are asked whether the AI data should also be removed.",
+     "nl": "Onder Systeem zet je de website terug naar de beginstand. Je kiest wat je bewaart, en er wordt gevraagd of ook de AI-gegevens verwijderd moeten worden."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "webshop-setup",
+  "chapter": 7,
+  "title": {
+   "en": "Set up your web shop",
+   "nl": "Je webwinkel inrichten"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/plugins/webshop",
+    "say": {
+     "en": "In the web shop plugin you manage products and groups, with variants such as colour and size, each with its own price.",
+     "nl": "In de webshop-plugin beheer je producten en groepen, met varianten zoals kleur en maat, elk met een eigen prijs."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/plugins/webshop",
+    "say": {
+     "en": "You also set the shipping methods and discount codes, and choose the layout of your shop.",
+     "nl": "Ook stel je de verzendmethoden en kortingscodes in, en kies je de opmaak van je winkel."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "main"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "orders-payments",
+  "chapter": 7,
+  "title": {
+   "en": "Orders and payments",
+   "nl": "Bestellingen en betalingen"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/plugins/orders",
+    "say": {
+     "en": "Here you see the orders of your customers and handle them one by one: paid, packed, shipped.",
+     "nl": "Hier zie je de bestellingen van je klanten en handel je ze één voor één af: betaald, ingepakt, verzonden."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/integrations",
+    "say": {
+     "en": "Payments run through a payment provider such as Stripe or Mollie. You connect it under API keys, and in sandbox mode the payments are only simulated.",
+     "nl": "Betalingen lopen via een betaalprovider zoals Stripe of Mollie. Je koppelt die onder API-sleutels, en in de sandbox-modus worden betalingen alleen gesimuleerd."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/subscriptions",
+    "say": {
+     "en": "Subscriptions and donations use the same payment connection.",
+     "nl": "Abonnementen en donaties gebruiken dezelfde betaalkoppeling."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "community-marketplace",
+  "chapter": 8,
+  "title": {
+   "en": "Community and marketplace",
+   "nl": "Community en marktplaats"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/community",
+    "say": {
+     "en": "Under Community you manage the social parts of your website, such as the agenda, documents, the marketplace and games.",
+     "nl": "Onder Community beheer je de sociale onderdelen van je website, zoals de agenda, documenten, de marktplaats en spelletjes."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/community",
+    "say": {
+     "en": "Switch on only the parts you need. Each part has its own rights, so you decide who may read, post or manage.",
+     "nl": "Zet alleen aan wat je nodig hebt. Elk onderdeel heeft eigen rechten, dus jij bepaalt wie mag lezen, plaatsen of beheren."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "main"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "seo-statistics",
+  "chapter": 9,
+  "title": {
+   "en": "SEO and statistics",
+   "nl": "SEO en statistieken"
+  },
+  "steps": [
+   {
+    "path": "/dashboard/admin/seo",
+    "say": {
+     "en": "Under SEO you set titles and descriptions so that search engines understand your pages.",
+     "nl": "Bij SEO stel je titels en beschrijvingen in zodat zoekmachines je pagina's begrijpen."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/faq",
+    "say": {
+     "en": "The FAQ answers the questions of your visitors, and helps them find things without asking you.",
+     "nl": "De FAQ beantwoordt de vragen van je bezoekers en helpt ze dingen te vinden zonder jou te vragen."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   },
+   {
+    "path": "/dashboard/admin/statistieken",
+    "say": {
+     "en": "Statistics show how many people visit your website and which pages they read.",
+     "nl": "Statistieken tonen hoeveel mensen je website bezoeken en welke pagina's ze lezen."
+    },
+    "actions": [
+     {
+      "at": 3,
+      "point": "h1"
+     }
+    ]
+   }
+  ]
+ }
+]

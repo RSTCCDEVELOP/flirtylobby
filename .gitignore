@@ -82,3 +82,5 @@ backend/imports/
 # ── backups of the website (Admin -> Backup) ──
 /backups/
 .certs/
+manuals/tools/video/.cache/
+manuals/tools/video/voice.json

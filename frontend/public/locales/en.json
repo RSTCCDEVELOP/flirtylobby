@@ -4997,5 +4997,9 @@
   "Wil je de handleiding bekijken? Daarin staat hoe je een website opbouwt, importeert, beheert en met AI vult. Je opent hem later altijd met de knop Hulp.": "Would you like to look at the manual? It explains how to build, import and manage a website and fill it with AI. You can always open it later with the Help button.",
   "De handleiding is in het Engels, met schermafbeeldingen.": "The manual is in English, with screenshots.",
   "Nee, niet nu": "No, not now",
-  "Ja, handleiding openen": "Yes, open the manual"
+  "Ja, handleiding openen": "Yes, open the manual",
+  "Lees de handleiding online (Engels of Nederlands)": "Read the manual online (English or Dutch)",
+  "Kies de taal van de handleiding": "Choose the language of the manual",
+  "Taal van de handleiding": "Language of the manual",
+  "Lees de handleiding online": "Read the manual online"
 }

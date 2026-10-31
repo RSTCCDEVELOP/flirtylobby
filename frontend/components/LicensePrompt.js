@@ -15,6 +15,7 @@ import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import { useSession } from "./Session";
+import { setLicenseOpen } from "../lib/firstRun";
 
 // Every time an administrator logs in and the website has no licence: ask to arrange it now (the payment page, or contact the reseller).
 const keyOf = () => `licprompt:${(localStorage.getItem("token") || "").slice(-10)}`;
@@ -26,11 +27,13 @@ export default function LicensePrompt({ site }) {
   const [lic, setLic] = useState(null);
   const admin = !!user && (user.is_staff || canAdmin(user, mods));
   useEffect(() => {
-    if (!ready || !admin || !site?.license_missing) return;
-    try { if (sessionStorage.getItem(keyOf())) return; } catch { return; }
-    api("/system/license/status/").then((s) => { if (!s.has) setLic(s); }).catch(() => {});
+    if (!ready || !admin || !site?.license_missing) return undefined;
+    try { if (sessionStorage.getItem(keyOf())) return undefined; } catch { return undefined; }
+    setLicenseOpen(true); // the other questions wait for this one, from the first moment
+    api("/system/license/status/").then((s) => { if (!s.has) setLic(s); else setLicenseOpen(false); }).catch(() => setLicenseOpen(false));
+    return () => setLicenseOpen(false);
   }, [ready, admin, site?.license_missing]);
-  const dismiss = () => { try { sessionStorage.setItem(keyOf(), "1"); } catch {} setLic(null); }; // asked once per login: the answer is remembered when the window is closed (the page can remount before that)
+  const dismiss = () => { try { sessionStorage.setItem(keyOf(), "1"); } catch {} setLic(null); setLicenseOpen(false); }; // asked once per login
   if (!lic) return null;
   const r = lic.reseller || {};
   return (

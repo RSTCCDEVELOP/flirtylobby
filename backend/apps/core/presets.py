@@ -941,6 +941,17 @@ def set_closed(on):
     service.invalidate()
 
 
+def bump_epoch():
+    """A new start of the site (an installation was set, or the system was reset): browsers begin again with the left menu open. The number is in the system settings."""
+    import time
+
+    from .models import SystemSettings
+
+    obj, _ = SystemSettings.objects.get_or_create(pk=1)
+    obj.data = {**(obj.data or {}), "ui_epoch": int(time.time())}
+    obj.save()
+
+
 def apply(key, preset=None, overwrite_pages=False):
     """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened.
     Pages that already have content are NOT replaced (overwrite_pages=True replaces them: only when the person said so, or on a site that is reset)."""
@@ -952,6 +963,10 @@ def apply(key, preset=None, overwrite_pages=False):
     preset = preset or get(key)
     if not preset:
         raise KeyError(key)
+    try:
+        bump_epoch()
+    except Exception:  # noqa: BLE001
+        logger.exception("ui_epoch could not be set")
     if key in BY_KEY:
         try:
             apply_ai(key)  # the AI of this installation: credit required or not, and the amounts of a top-up

@@ -3496,3 +3496,7 @@ html[data-hl="editorial"] .p-drawer-left .hmenu a:hover, html[data-hl="editorial
 .back-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
 .manual-help { display: inline-flex; align-items: center; gap: .35rem; margin-left: auto; }
 .manual-help svg { width: 16px; height: 16px; }
+
+.manual-lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: .15rem; }
+.manual-lang button { border: 0; background: transparent; color: var(--muted); font-weight: 700; font-size: .8rem; padding: .35rem .75rem; border-radius: 999px; cursor: pointer; }
+.manual-lang button.on { background: var(--blue); color: #fff; }

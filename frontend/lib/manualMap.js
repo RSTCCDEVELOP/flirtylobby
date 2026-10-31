@@ -20,6 +20,11 @@ const PAGES = [
   ["/dashboard/admin/installaties", 1], ["/dashboard/superadmin/modules", 2], ["/dashboard/superadmin/prijzen", 11], ["/dashboard/superadmin/wizard", 2],
 ];
 
+import { getLanguage } from "./t";
+
+// the manual exists in English and Dutch: the one of the language that is chosen on the website (Dutch for Dutch, English for every other language)
+export const manualLang = () => (getLanguage() === "nl" ? "nl" : "en");
+
 // the page of the manual (relative to /api/manual/html/) for this address of the dashboard; "" = no help icon here
 export function manualPage(pathname = "") {
   if (!pathname.startsWith("/dashboard/admin") && !pathname.startsWith("/dashboard/superadmin")) return "";

@@ -214,6 +214,9 @@ def perform(keep=None, ai=False):
                 ModuleState.objects.create(key=m["key"], enabled=m["key"] == "integrations")  # (the API keys module stays on: the links of the superadmin keep working)
         # look: the default (Easy2edit)
         SiteSettings.objects.update_or_create(pk=1, defaults={"theme": {}})
+        from apps.pages.models import MenuSettings
+
+        MenuSettings.objects.all().delete()  # the look of the header menu (colours, size, form) goes back to the default too: an imported site leaves its own header colours there
         clear_license()  # a clean system has no licence either
 
     # plugins: all switched off (they stay installed; their files of data are cleared) and the theme packages of the site (their folders)
@@ -260,6 +263,12 @@ def perform(keep=None, ai=False):
 
     pages_service.ensure_defaults()
     modules.invalidate()
+    try:
+        from .presets import bump_epoch
+
+        bump_epoch()  # a new start: the left menu is open again in every browser
+    except Exception:  # noqa: BLE001
+        logger.exception("Reset: ui_epoch could not be set")
     for name in dict.fromkeys(files):
         try:
             default_storage.delete(name)
