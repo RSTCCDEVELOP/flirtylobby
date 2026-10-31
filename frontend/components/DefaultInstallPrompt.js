@@ -12,7 +12,9 @@ import { tx } from "../lib/t";
 import { confirmDialog } from "../lib/dialog";
 import { api, errorText } from "../lib/api";
 import { runDemo, resumeDemo } from "../lib/demoRun";
+import Link from "next/link";
 import { useAuth } from "./AuthContext";
+import Tabs from "./Tabs";
 import RunPopup from "./RunPopup";
 
 // Superadmin, after logging in: nothing is installed yet? Then ask to install the default standard installation (marked at Standaard installaties).
@@ -26,10 +28,13 @@ export default function DefaultInstallPrompt() {
   const [demo, setDemo] = useState(false);
   const [run, setRun] = useState(null);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState("install");
+  const [aiOn, setAiOn] = useState(null); // is an AI link installed? (then the website can be filled with AI)
 
   useEffect(() => {
     if (!user?.is_staff) return;
     try { if (sessionStorage.getItem(KEY)) return; } catch {}
+    api("/ai/me/").then((i) => setAiOn(!!i.module)).catch(() => setAiOn(false));
     api("/system/presets/setup/").then((r) => { if (r.needed) { setAsk(r); setPick(r.presets[0]?.key || ""); } }).catch(() => {});
   }, [user?.is_staff]);
 
@@ -65,19 +70,33 @@ export default function DefaultInstallPrompt() {
         <div className="overlay" role="dialog" aria-modal="true" onClick={later}>
           <div className="card modal form" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ margin: 0 }}>{tx("Standaard installatie")}</h2>
-            <p style={{ margin: 0 }}>{ask.presets.length > 1 ? tx("Er is nog geen installatie ingesteld. Welke installatie wil je nu installeren? Je kunt er één kiezen.") : tx("Er is nog geen installatie ingesteld. Wil je de standaard installatie \"{0}\" nu installeren?", ask.presets[0].name)}</p>
-            {ask.presets.length > 1 ? ask.presets.map((p) => (
-              <label key={p.key} className="check">
-                <input type="radio" name="default-install" checked={pick === p.key} onChange={() => setPick(p.key)} />
-                <span><strong>{tx(p.name)}</strong>{p.desc && <><br /><small className="muted">{tx(p.desc)}</small></>}</span>
+            <Tabs value={tab} onChange={setTab} tabs={[["install", "Installatie"], ["ai", "Vullen met AI"]]} />
+            {tab === "install" && (<>
+              <p style={{ margin: 0 }}>{ask.presets.length > 1 ? tx("Er is nog geen installatie ingesteld. Welke installatie wil je nu installeren? Je kunt er één kiezen.") : tx("Er is nog geen installatie ingesteld. Wil je de standaard installatie \"{0}\" nu installeren?", ask.presets[0].name)}</p>
+              {ask.presets.length > 1 ? ask.presets.map((p) => (
+                <label key={p.key} className="check">
+                  <input type="radio" name="default-install" checked={pick === p.key} onChange={() => setPick(p.key)} />
+                  <span><strong>{tx(p.name)}</strong>{p.desc && <><br /><small className="muted">{tx(p.desc)}</small></>}</span>
+                </label>
+              )) : ask.presets[0].desc && <p className="muted" style={{ margin: 0 }}>{tx(ask.presets[0].desc)}</p>}
+              <label className="check sec-toggle">
+                <span className="switch"><input type="checkbox" checked={demo} onChange={(e) => setDemo(e.target.checked)} /><span /></span>
+                <span>{tx("Demo-gegevens direct installeren")} <small className="muted">{tx("Voorbeeldplaatjes, gebruikers, inhoud, systeemobjecten en bestellingen om alles te testen. Wat al aanwezig is, wordt niet dubbel gemaakt.")}</small></span>
               </label>
-            )) : ask.presets[0].desc && <p className="muted" style={{ margin: 0 }}>{tx(ask.presets[0].desc)}</p>}
-            <label className="check sec-toggle">
-              <span className="switch"><input type="checkbox" checked={demo} onChange={(e) => setDemo(e.target.checked)} /><span /></span>
-              <span>{tx("Demo-gegevens direct installeren")} <small className="muted">{tx("Voorbeeldplaatjes, gebruikers, inhoud, systeemobjecten en bestellingen om alles te testen. Wat al aanwezig is, wordt niet dubbel gemaakt.")}</small></span>
-            </label>
-            <small className="muted">{tx("De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.")}</small>
-            <small className="muted">{tx("Een andere installatie kiezen kan bij Super admin → Standaard installaties.")}</small>
+              <small className="muted">{tx("De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.")}</small>
+              <small className="muted">{tx("Een andere installatie kiezen kan bij Super admin → Standaard installaties.")}</small>
+            </>)}
+            {tab === "ai" && (<>
+              <p style={{ margin: 0 }}>{tx("Je hoeft de website niet zelf te vullen: dat kan met AI.")}</p>
+              <ul className="ai-howlist">
+                <li><strong>{tx("Een bestaande website of ontwerp overnemen")}:</strong> {tx("sleep een of meer HTML-bestanden in Admin > Site importeren. De AI maakt het thema, de pagina's, de inhoud en de plaatjes, zet de modules aan die nodig zijn (zoals FAQ) en bouwt de pagina's desgewenst met bewerkbare blokken na.")}</li>
+                <li><strong>{tx("Teksten schrijven en vertalen")}:</strong> {tx("paginanamen en teksten vertaal je met één klik naar alle talen van de website.")}</li>
+                <li><strong>{tx("Verbeteren met een opdracht")}:</strong> {tx("geef de AI een opdracht (bijvoorbeeld: maak de koppen groter) en laat een pagina opnieuw opbouwen uit het origineel.")}</li>
+              </ul>
+              <div className={aiOn ? "alert ok" : "alert"} style={{ margin: 0 }}>{aiOn ? tx("Er is een AI-koppeling: je kunt na de installatie meteen beginnen.") : tx("Er is nog geen AI-koppeling. Zet er een aan bij Admin > API keys (Anthropic), dan kun je de website met AI vullen.")}</div>
+              <small className="muted">{tx("Elke AI-opdracht wordt gemeten. Gebruikers en admins hebben AI-tegoed nodig; superadmins niet.")}</small>
+              {!aiOn && <div><Link className="btn" href="/dashboard/admin/integrations" onClick={later}>{tx("Naar API keys")}</Link></div>}
+            </>)}
             {error && <div className="alert">{error}</div>}
             <div className="row">
               <button type="button" className="btn" onClick={later}>{tx("Later")}</button>

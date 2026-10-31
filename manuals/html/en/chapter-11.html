@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Plugins, backups, licence and deployment - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
+@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
+nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
+nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
+nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
+main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
+p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
+@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="on">11. Plugins, backups, licence and deployment</a></nav><main><h1>11. Plugins, backups, licence and deployment</h1>
+<p>This chapter covers the parts of Easy2edit that keep your website running smoothly over time: plugins that extend what your site can do, backups that protect your work, the licence that determines what you pay, and the deployment setup that runs everything behind the scenes.</p>
+<h2>Plugins</h2>
+<p>Plugins are signed packages that add extra functionality to your website. You manage them in Admin &gt; Plugins.</p>
+<p>A plugin can bring its own pages, modules, translations (available in 44 languages) and admin screens. In other words, installing a plugin can add new building blocks to your site and new menu items to your admin area, all at once.</p>
+<p>To work with plugins:</p>
+<ol>
+<li>Go to Admin &gt; Plugins to see the plugins that are currently installed, stored in the /plugins folder.</li>
+<li>Open the library (resource/plugins) to browse available plugins and install new ones.</li>
+<li>Switch a plugin on or off as needed. Note that some features, such as statistics tracking, only work while the related plugin is switched on.</li>
+<li>Use the update option to bring an installed plugin to its latest version.</li>
+</ol>
+<p>Because plugins are signed packages, you can trust that what you install matches what the developer published.</p>
+<h2>Backups</h2>
+<p>Backups protect the content and configuration of your website. You manage them in Admin &gt; Backups.</p>
+<p>Easy2edit creates backups on a daily, weekly or monthly basis. Each backup includes:</p>
+<ul>
+<li>Pages</li>
+<li>Menus</li>
+<li>Texts</li>
+<li>Images</li>
+<li>Theme</li>
+<li>Settings of modules and plugins</li>
+</ul>
+<p>From the Backups screen you can restore a previous backup or download it for safekeeping elsewhere.</p>
+<p>The standard installation basis is recorded in installations.json, which is part of the system itself. This file never contains secret keys, so it is safe to keep alongside your installation without exposing sensitive credentials.</p>
+<h2>Licence</h2>
+<p>The licence determines the cost of running your Easy2edit website. You manage this in Admin &gt; Licence, where you can see the cost and choose a payment method: Stripe or invoice.</p>
+<p>The price of your licence follows directly from the modules and plugins you have switched on. The more functionality you use, the more your licence reflects that usage, so you only pay for what your site actually needs.</p>
+<p>For super admins, there is an additional area under Super Admin &gt; Prices, which includes:</p>
+<ul>
+<li>The price list per month, quarter and year</li>
+<li>Quotations that can be generated as PDF</li>
+<li>Marketing tiles for presenting pricing to customers</li>
+<li>Sales calculation tools</li>
+</ul>
+<p>This gives super admins full control over how pricing is presented and calculated across installations.</p>
+<h2>Deployment</h2>
+<p>Easy2edit is designed to run in Docker, with separate compose files for development and production environments. This separation lets you test changes safely before rolling them out to a live site.</p>
+<p>A typical deployment setup includes:</p>
+<ul>
+<li>A reverse proxy and certificates to handle secure traffic</li>
+<li>The Easy2edit backend, which automatically runs any necessary database migrations when it starts</li>
+</ul>
+<p>This means that when you update your installation, the backend takes care of bringing the database structure up to date without manual intervention.</p>
+<p>Every installation displays its version clearly, in the format Easy2edit version 1.0.0 build X. This information comes from a single, central source: backend/BUILD. Having one authoritative source for the version number makes it easy to confirm exactly which build is running on any given installation, which is especially useful when troubleshooting or coordinating updates across multiple sites.</p>
+<h2>How these pieces fit together</h2>
+<p>Plugins, backups, licensing and deployment are closely connected:</p>
+<ul>
+<li>Switching plugins on or off changes both your licence cost and what gets tracked in statistics.</li>
+<li>Backups capture not only your content but also the settings of whichever modules and plugins are active, so restoring a backup brings your site back to a consistent state.</li>
+<li>Deployment ensures that whatever combination of modules and plugins you run, the underlying infrastructure (database, proxy, certificates) stays in sync through automatic migrations.</li>
+</ul>
+<p>Together, these tools give administrators a clear, practical way to manage the technical and financial side of an Easy2edit website, from day-to-day plugin management to long-term version tracking and cost control.</p><div class="pager"><span><a href=chapter-10.html>&larr; AI and AI credit</a></span><span></span></div></main></body></html>

@@ -49,8 +49,7 @@ Database/db.sqlite3
 /themes
 
 # ── the website itself (Database, media, plugins, themes, content): not part of the system, see docs/STRUCTUUR.md ──
-/site/*
-!/site/manuals/
+/site/
 
 # ── content for design ────────────────────────────────────────────────────────────────
 CONTENT/

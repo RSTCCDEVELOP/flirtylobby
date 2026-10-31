@@ -1,0 +1,71 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Media, theme, languages and branding - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
+@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
+nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
+nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
+nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
+main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
+p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
+@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="on">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>5. Media, theme, languages and branding</h1>
+<p>This chapter covers the parts of Easy2edit that control how your website looks and feels, and how your media and content are made available to visitors in different languages.</p>
+<h2>Media library</h2>
+<p>The media library is where you manage all images and videos used throughout your website, whether they are stored locally or on an external storage service such as S3.</p>
+<p>Every image or video you upload can be given tags, which makes it much easier to find the right file later, especially once your library grows. Once a picture is in the library, it becomes available for selection in every pop-up throughout Easy2edit, so you only need to upload a file once and can reuse it wherever you need it.</p>
+<p>Practical tips for working with the media library:</p>
+<ul>
+<li>Upload images and videos in advance, before you start building a page, so you can simply pick them from the library while editing.</li>
+<li>Use clear, consistent tags (for example by subject, page, or campaign) so files stay easy to find.</li>
+<li>Reuse existing media instead of uploading duplicates, to keep your library tidy and save storage space.</li>
+</ul>
+<h2>Logos and images (branding)</h2>
+<p>The branding settings let you control the key visual elements that represent your organisation across the website. This includes:</p>
+<ul>
+<li>The logo, with separate versions for light and dark mode</li>
+<li>The favicon, shown in browser tabs</li>
+<li>The app icon, used when the site is saved to a home screen</li>
+<li>The photos displayed on the homepage</li>
+</ul>
+<p>Keeping these elements up to date ensures your website looks professional and consistent, and that your brand is recognisable in browser tabs, bookmarks, and on mobile home screens.</p>
+<h2>Theme (Admin &gt; Theme)</h2>
+<p>The theme settings determine the overall look and feel of your website. Here you can adjust:</p>
+<ul>
+<li>Colours for both light mode and dark mode</li>
+<li>Fonts used across the site</li>
+<li>Roundings (how sharp or soft corners and edges appear)</li>
+<li>Content width</li>
+<li>Header layout, including an editorial layout with a side menu</li>
+<li>Pop-up style</li>
+</ul>
+<p>If the theme feature is switched off, the website uses the standard style instead of your custom settings.</p>
+<p>Theme packs let you change the entire look of your website in one click. Rather than adjusting colours, fonts, and layout settings one by one, you can select a theme pack that applies a complete, coordinated style instantly. This is useful if you want to try out a different look quickly or want to keep a consistent style across multiple projects.</p>
+<p>Exporting and importing themes gives you additional flexibility:</p>
+<ul>
+<li>Export a theme to save your current style settings or to reuse them on another website.</li>
+<li>Import a theme to apply a previously saved style, which is helpful when managing several websites that should share the same look, or when restoring a style you created earlier.</li>
+</ul>
+<p>Steps to apply a theme pack:</p>
+<ol>
+<li>Go to Admin &gt; Theme.</li>
+<li>Browse the available theme packs.</li>
+<li>Select the theme pack you want to use.</li>
+<li>Review the result on your website, since colours, fonts and layout will update immediately.</li>
+</ol>
+<h2>Languages</h2>
+<p>The languages feature controls whether your website is available in multiple languages or only in a single, default language. If languages are switched off, visitors only see the website in the standard language.</p>
+<p>When languages are switched on, you can:</p>
+<ul>
+<li>Choose which languages your website offers to visitors</li>
+<li>Set the default language that visitors see first</li>
+<li>Translate texts using the built-in AI translation feature</li>
+</ul>
+<p>This makes it possible to reach a wider audience without manually rewriting every page in each language. The AI translation feature can give you a solid starting point, which you can then review and refine where needed.</p>
+<p>It is worth noting that the system itself, meaning menus, labels and other interface texts, is already available in 44 languages. This means administrators and editors can often work in their own language, regardless of which languages are offered to website visitors.</p>
+<h2>Putting it together</h2>
+<p>Media, branding, theme and language settings work together to shape the overall experience of your website:</p>
+<ul>
+<li>Use the media library to organise and reuse your visual content efficiently.</li>
+<li>Set up logos and images once, and update them whenever your branding changes.</li>
+<li>Use the theme settings, or a theme pack, to quickly establish a consistent visual style, and export or import themes when working across multiple sites.</li>
+<li>Decide whether your website needs multiple languages, and if so, configure them and use AI translation to speed up the process.</li>
+</ul>
+<p>Taking time to set these up carefully early on will save effort later, since changes here affect the entire website rather than individual pages.</p><div class="pager"><span><a href=chapter-4.html>&larr; Importing a website (Site import)</a></span><span><a href=chapter-6.html>Users, roles and security &rarr;</a></span></div></main></body></html>

@@ -1,0 +1,86 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shop, orders, payments, subscriptions and donations - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
+@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
+nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
+nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
+nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
+main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
+p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
+@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="on">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>7. Shop, orders, payments, subscriptions and donations</h1>
+<p>Easy2edit lets you sell products, collect donations and run subscriptions using a set of plugins that work together. This chapter explains how the pieces fit together and how to set each one up.</p>
+<h2>How the plugins work together</h2>
+<p>Selling anything on your site, whether it is a physical product, a subscription or a donation, involves several plugins that depend on each other:</p>
+<ul>
+<li>Webshop handles products, product groups, variants and shipping, and needs the Orders and Betalen (Payment) plugins to function.</li>
+<li>Orders manages bestellingen (orders) for the whole site: webshop orders, subscription orders and donations. It can also work on its own if you only accept payment by invoice. Orders needs the Betalen and Webshop plugins.</li>
+<li>Financieel (Finance) brings together payment methods, payment terms, the links to Stripe and Mollie, VAT rates, shipping options and the layout of invoices, quotes, packing slips and return slips. Orders, Webshop and Abonnementen (Subscriptions) all need this plugin.</li>
+<li>Abonnementen (Subscriptions) manages subscription plans and donation campaigns. It needs the Orders plugin.</li>
+</ul>
+<p>Because of these dependencies, activate the plugins in this order: Betalen, Orders, Financieel, and then Webshop and/or Abonnementen depending on what you want to offer.</p>
+<h2>Setting up the webshop</h2>
+<p>The Webshop plugin lets you build an online store with:</p>
+<ul>
+<li>Products and product groups to organise your catalogue.</li>
+<li>Variants such as colour or size, each with its own price.</li>
+<li>Staffelprijzen (tiered pricing), so the price can change depending on the quantity ordered.</li>
+<li>Shipping methods and discount codes.</li>
+<li>Several layouts, including a standard layout and an editorial layout with a filter side panel and a large product photo, plus a &#x27;shop the look&#x27; option, with their own styles and presets.</li>
+</ul>
+<p>The plugin comes with demo content, including ready-made pages for products, the shopping cart and checkout, so you can see a working shop immediately after activation and adjust it to your needs.</p>
+<p>To set up a product:</p>
+<ol>
+<li>Go to Admin &gt; Webshop and create a product group if you want to organise products into categories.</li>
+<li>Add a new product and fill in its details, price and description.</li>
+<li>Add any variants, such as colour or size, and set a price for each if needed.</li>
+<li>If relevant, set up staffelprijzen for quantity discounts.</li>
+<li>Choose or confirm the shipping method for the product.</li>
+</ol>
+<h2>Managing orders</h2>
+<p>The Orders plugin is the central place for everything related to orders across the whole site, whether they come from the webshop, a subscription or a donation. From Admin &gt; Orders you can:</p>
+<ul>
+<li>View and manage all bestellingen in one overview.</li>
+<li>Track and update the order status.</li>
+<li>Configure btw-instellingen (VAT settings) for orders.</li>
+<li>Edit the confirmation email that customers receive after placing an order.</li>
+</ul>
+<p>Orders also produces the documents customers and your administration need, such as the packing slip, invoice, return slip and credit invoice.</p>
+<p>If you do not want to use the webshop or online payments at all, Orders can still work on its own, allowing customers to pay per factuur (by invoice).</p>
+<h2>Payments and finance settings</h2>
+<p>The Financieel plugin is where you manage everything related to money:</p>
+<ul>
+<li>Payment methods and payment terms.</li>
+<li>The koppelingen (connections) to Stripe and Mollie for processing online payments.</li>
+<li>Btw-tarieven: by default a standard high and a low VAT rate, which you link to individual products.</li>
+<li>Shipping options.</li>
+<li>The layout of invoices, quotes, packing slips and return slips, along with your company data.</li>
+</ul>
+<p>Payments themselves are carried out through Stripe or Mollie. Both providers offer a sandbox mode, which lets you simulate payments safely while testing your shop or subscription setup, without processing real transactions.</p>
+<p>To connect a payment provider:</p>
+<ol>
+<li>Go to Admin &gt; Financieel.</li>
+<li>Enter your Stripe or Mollie account details to create the koppeling.</li>
+<li>Use the sandbox option while testing, and switch to live mode once you are ready to accept real payments.</li>
+<li>Review and set your btw-tarieven and link them to the relevant products.</li>
+<li>Check the layout of your invoices, quotes and other documents, and add your company details.</li>
+</ol>
+<h2>Subscriptions and donations</h2>
+<p>The Abonnementen plugin lets you offer paid access to parts of your site, such as pages, content, chat, video, likes or services. Plans can be:</p>
+<ul>
+<li>Eenmalig (one-off), billed once.</li>
+<li>Herhaald (recurring), with a new order generated automatically for each period.</li>
+</ul>
+<p>Abonnementen also supports donatie-acties (donation campaigns), where visitors choose an amount themselves using a slider, moving between a minimum and a maximum amount that you set.</p>
+<p>In addition, acties (promotions) within this plugin let you decide which parts of your site are free and which require payment, giving you flexibility to offer a mix of free and paid content.</p>
+<p>To set up a subscription plan:</p>
+<ol>
+<li>Go to Admin &gt; Abonnementen.</li>
+<li>Create a new plan and decide whether it is eenmalig or herhaald.</li>
+<li>Link the plan to the pages, content or services it should unlock.</li>
+<li>Set the price, and for recurring plans, the billing period.</li>
+</ol>
+<p>To set up a donation campaign:</p>
+<ol>
+<li>Create a new donatie-actie in Admin &gt; Abonnementen.</li>
+<li>Set the minimum and maximum amount for the slider.</li>
+<li>Publish the campaign on the relevant page so visitors can contribute.</li>
+</ol><div class="pager"><span><a href=chapter-6.html>&larr; Users, roles and security</a></span><span><a href=chapter-8.html>Community, marketplace, agenda, documents and games &rarr;</a></span></div></main></body></html>

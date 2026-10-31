@@ -1,0 +1,64 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Users, roles and security - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
+@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
+nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
+nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
+nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
+main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
+p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
+@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="on">6. Users, roles and security</a><a href="chapter-7.html" class="">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>6. Users, roles and security</h1>
+<p>This chapter explains how to manage who can access your website and your admin area, and how to protect both your visitors and your content with the built-in security tools.</p>
+<h2>Users</h2>
+<p>Every person who needs access to the admin area or who has a public profile on the website is set up as a user. In Admin &gt; Users you can:</p>
+<ul>
+<li>Create new accounts</li>
+<li>Add a profile photo</li>
+<li>Block an account temporarily</li>
+<li>Delete an account permanently</li>
+</ul>
+<p>A blocked account cannot log in, but its data and content remain in the system until you decide to delete it. Each user can also have a public profile, which is useful if visitors should be able to see who wrote an article or who moderates a section of the site.</p>
+<h2>User groups</h2>
+<p>If several users need the same access, you can organise them into user groups. A group combines a set of roles and module access, so you only need to configure permissions once and then add or remove users from the group as needed. This is the easiest way to manage access for teams, such as editors, moderators or support staff.</p>
+<h2>Roles</h2>
+<p>Roles (Admin &gt; Rollen) define exactly what a user or group is allowed to do. A role is a set of rights, for example:</p>
+<ul>
+<li>Content manager</li>
+<li>Moderator</li>
+<li>View AI use of users</li>
+</ul>
+<p>Each right unlocks a specific part of the admin area. You can assign one or more roles to a user or to a user group.</p>
+<p>If the Rollen module is switched off, only superadmins have any rights at all. Superadmins always have full access to every part of the system, regardless of the roles configured.</p>
+<p>Steps to assign a role:</p>
+<ol>
+<li>Go to Admin &gt; Rollen.</li>
+<li>Open or create the role you want to use.</li>
+<li>Add the rights that belong to this role.</li>
+<li>Assign the role to the relevant user or user group.</li>
+</ol>
+<h2>Module access per user or group</h2>
+<p>Besides roles, access to individual modules can also be granted directly to a specific user or group. This is managed in Super admin &gt; Modules, using the person icon next to a module. This gives you fine control in cases where someone needs access to one particular module without needing a full role.</p>
+<h2>Dashboard and your own profile</h2>
+<p>Once logged in, every user lands on their dashboard. From there, users can manage their own profile, including their photo and personal details. The dashboard is also the starting point for reaching the parts of the admin area that the user has rights for.</p>
+<h2>General security</h2>
+<p>The Algemene beveiliging module covers the core security settings for the admin area:</p>
+<ul>
+<li>Login lock: blocks further login attempts after repeated failures, to protect against brute-force attacks</li>
+<li>Session duration: controls how long a user stays logged in before needing to log in again</li>
+<li>Password rules: enforce minimum requirements for passwords created by your users</li>
+<li>Security headers: technical HTTP headers that help protect the website against common attacks</li>
+</ul>
+<p>Two-step verification is also available as an extra layer of login security, requiring a second confirmation step in addition to the password.</p>
+<p>It is recommended to review these settings when setting up a new site, and to keep password rules and session duration suited to how sensitive the content of your site is.</p>
+<h2>Country control</h2>
+<p>The Landcontrole module lets you block or allow access to your website per country, based on the visitor&#x27;s IP address. This is useful if your content or products are only relevant, or only legally allowed, in certain countries.</p>
+<h2>Age and gambling checks</h2>
+<p>Some websites are required to confirm the age of their visitors or to show responsible-use warnings:</p>
+<ul>
+<li>Leeftijdscontrole shows an 18+ popup to visitors before they can view the site</li>
+<li>Gokken-popup shows a combined age and warning popup specifically intended for gambling-related content</li>
+</ul>
+<p>Enable the module that matches your legal requirements; both can be configured without needing developer support.</p>
+<h2>Cookies</h2>
+<p>The Cookies module provides the cookiebanner that visitors see, lets them set their cookie preferences, and links to your cookie policy popup. This helps you meet legal requirements around informing visitors about cookie use and obtaining their consent where needed.</p>
+<h2>Word filter</h2>
+<p>The Woordfilter module automatically checks for forbidden words in texts, names and captions entered on your website. This is useful for keeping user-generated content, such as comments, profile names or captions, free of unwanted language without needing to review every entry manually.</p><div class="pager"><span><a href=chapter-5.html>&larr; Media, theme, languages and branding</a></span><span><a href=chapter-7.html>Shop, orders, payments, subscriptions and donations &rarr;</a></span></div></main></body></html>

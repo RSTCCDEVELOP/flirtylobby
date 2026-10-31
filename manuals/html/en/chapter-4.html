@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Importing a website (Site import) - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
+@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
+nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
+nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
+nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
+main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
+p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
+@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="on">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>4. Importing a website (Site import)</h1>
+<p>Easy2edit can import an existing website for you. Point it at one or more HTML files, a web address, a folder, or a ZIP file, and the built-in AI will study the content and prepare a proposal for your approval. Nothing is created on your site until you say so.</p>
+<p>You manage this feature from Admin &gt; Imported. Before you have imported anything, the button is labelled Site import. Once an import has taken place, the same button is called Imported.</p>
+<h2>Starting an import</h2>
+<ol>
+<li>Go to Admin &gt; Imported and choose Site import.</li>
+<li>Drop one or more HTML files, or provide an address, a folder, or a ZIP file.</li>
+<li>The AI reads the files and prepares a proposal. This includes:</li>
+</ol>
+<ol>
+<li>Review the proposal. Nothing is built or installed until you approve it.</li>
+</ol>
+<p>   - A theme: colours, fonts, corner roundings, and content width.    - The pages found in the source.    - The content of those pages.    - Icons and images, which are placed in the media library and tagged import.    - Any modules that seem necessary, for example the FAQ module when the source contains lists of questions and answers.</p>
+<h2>Approving the proposal</h2>
+<p>Once you approve, the proposed theme is installed and put into use straight away. After that, you move on to the Apply step, where a pop-up or panel appears with several tabs: Pages, Links, Buttons, Header, Footer, and Theme.</p>
+<h2>Pages tab</h2>
+<p>This tab shows two columns: pages from the imported file on the left, and the pages of your own website on the right. Drag a file from the left to a page on the right to link them, for example linking the imported home page to your existing Home page. If you leave a file unlinked, it becomes a new page of its own.</p>
+<p>For each linked or new page, choose a view:</p>
+<ul>
+<li>Exact: the page looks exactly like the original HTML file. You can still edit texts and buttons afterwards using the pencil in edit mode.</li>
+<li>Editable: the AI rebuilds the page using the blocks of the page builder. Cards, label pills, coloured bands, rows, and the hero section are recreated as blocks. Anything the blocks cannot reproduce, such as a progress bar, check lists, or preview cards, is placed in an HTML / CSS code block instead.</li>
+</ul>
+<p>You can also give the AI an optional instruction for how to handle the page, for example &quot;make the headings bigger.&quot;</p>
+<p>For pages that already have content, decide what should happen to it:</p>
+<ul>
+<li>Clear the existing content first.</li>
+<li>Replace only the blocks created by this import, leaving other content untouched.</li>
+<li>Add the imported content below what is already there.</li>
+</ul>
+<p>You can also choose whether the pages should be translated into your site&#x27;s other languages.</p>
+<h2>Links and Buttons tabs</h2>
+<p>In these tabs you connect the links and buttons found in the imported file to pages or sections of your own website, again using drag and drop.</p>
+<h2>Header and Footer tabs</h2>
+<p>The Header tab lets you switch your site&#x27;s header to the header from the imported file, which typically brings a larger menu including the links and buttons found there. The Footer tab lets you show the footer from the import underneath your pages.</p>
+<h2>Theme tab</h2>
+<p>Here you fine-tune the theme that was installed: colours, the default light or dark mode, content width, and corner roundings.</p>
+<h2>Running the import</h2>
+<p>Once everything is set in the Apply panel, start the process. Progress is shown in a pop-up with a percentage. When it finishes, a Go to page button appears so you can view the result straight away.</p>
+<p>The original HTML file is always kept, so you can run Apply again later with a new instruction if you want to adjust the result.</p>
+<h2>Managing imports afterwards</h2>
+<p>Each import has a status, either Pending or Active, visible in Admin &gt; Imported. The list of pages belonging to an import shows, per page: its name, whether it appears in the menu, whether it is visible, and which view (Exact or Editable) is used.</p>
+<p>For an individual imported page, go to Pages &gt; page settings. There you will find an Import tab where you can give the AI a specific instruction and use a button to rebuild just that one page from the original file, without affecting the rest of the import.</p>
+<h2>Removing an import</h2>
+<p>If you remove an import, Easy2edit restores the theme and content that was in place before the import, and removes everything the import created. In some cases, it will advise re-installing via the superadmin instead.</p>
+<p>Note that the standard home page, with its default logo, title, text, and photos, is always empty by default. An import always overwrites it, so the default content never shows behind an imported home page.</p><div class="pager"><span><a href=chapter-3.html>&larr; Pages, menu and edit mode</a></span><span><a href=chapter-5.html>Media, theme, languages and branding &rarr;</a></span></div></main></body></html>
