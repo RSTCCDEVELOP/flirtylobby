@@ -203,7 +203,7 @@ def _item_style(st):
     return out
 
 
-WIDGETS = ("contact", "social", "map", "video", "quote", "stats", "logo", "hours")
+WIDGETS = ("contact", "social", "map", "video", "quote", "stats", "logo", "hours", "code")
 
 
 def _widget(raw):
@@ -234,6 +234,8 @@ def _widget(raw):
             data["width"] = int(min(max(float(d.get("width") or 160), 40), 400))
         except (TypeError, ValueError):
             data["width"] = 160
+    elif kind == "code":  # own html and css; it runs in a frame without rights (see DesignFrame), so no cleaning of the code is needed here
+        data["html"], data["css"] = s("html", 60000), s("css", 30000)
     elif kind == "hours":
         data["lines"] = [{"day": str(i.get("day") or "").strip()[:30], "time": str(i.get("time") or "").strip()[:30]} for i in (d.get("lines") or [])[:10] if isinstance(i, dict) and (i.get("day") or i.get("time"))]
     return {"widget": kind, "data": data}

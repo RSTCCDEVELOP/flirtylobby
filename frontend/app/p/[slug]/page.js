@@ -33,7 +33,7 @@ export default async function OwnPage({ params }) {
   if (p.design) { // taken over 1 to 1 from an html file: the page is its own design
     return (
       <PageShell setup={setup}>
-        <DesignFrame html={p.design} title={p.title.nl || Object.values(p.title)[0]} />
+        <DesignFrame html={p.design} pageKey={slug} title={p.title.nl || Object.values(p.title)[0]} />
       </PageShell>
     );
   }

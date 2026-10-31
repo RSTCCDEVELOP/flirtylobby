@@ -10,6 +10,7 @@ const SEC = ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_f
 
 export const TILES = [
   { href: "/dashboard/admin/users", title: "Users", big: "Accounts en openbare profielen", small: "Aanmaken, blokkeren, foto en rollen", modules: ["users"] },
+  { href: "/dashboard/admin/ai", title: "AI", big: "AI-gebruik van je gebruikers", small: "Wat zij en jij gebruiken en wat het kost, met een rapport per gebruiker", modules: ["ai"] },
   { href: "/dashboard/admin/groups", title: "User groups", big: "Groepen van users", small: "Rollen en module-toegang per groep", modules: ["users"] },
   { href: "/dashboard/admin/roles", title: "Rollen", big: "Rechten per rol", small: "Content manager, moderator, …", modules: ["roles"] },
   { href: "/dashboard/admin/languages", title: "Talen", big: "Talen & standaardtaal", small: "Welke talen de website aanbiedt", modules: ["languages"] },

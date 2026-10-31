@@ -26,9 +26,18 @@ class IntegrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Integration
-        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "config",
+        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "config",
                   "last_test_ok", "last_test_at", "last_test_message"]
         read_only_fields = ["last_test_ok", "last_test_at", "last_test_message"]
+
+    def validate_superadmin_only(self, value):
+        """Only a superadmin may make a link a superadmin link (or take that off)."""
+        req = self.context.get("request")
+        if req is not None and not req.user.is_staff:
+            if self.instance is not None:
+                return self.instance.superadmin_only
+            return False
+        return value
 
     def get_provider_label(self, obj):
         return providers.PROVIDERS.get(obj.provider, {}).get("label", obj.provider)

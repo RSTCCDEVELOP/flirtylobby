@@ -18,10 +18,10 @@ def _secret_keys(provider):
 
 def _export(opts):
     rows = []
-    for i in Integration.objects.all():
+    for i in Integration.objects.filter(**({"superadmin_only": False} if opts.get("hide_superadmin") else {})):  # a link of the superadmins is not in an export that a non-superadmin makes
         sec = _secret_keys(i.provider)
         cfg = i.config
-        rows.append({"slug": i.slug, "name": i.name, "provider": i.provider, "enabled": i.enabled,
+        rows.append({"slug": i.slug, "name": i.name, "provider": i.provider, "enabled": i.enabled, "superadmin_only": i.superadmin_only,
                      "config": {k: v for k, v in cfg.items() if opts.get("include_secrets") or k not in sec}})
     return rows
 
@@ -38,6 +38,8 @@ def _apply(data, ctx):
             cfg = obj.config
             cfg.update({k: v for k, v in incoming.items() if k not in sec or v})  # an empty secret never wipes the current one
             obj.name, obj.provider = r.get("name", obj.name), r["provider"]
+            if "superadmin_only" in r:
+                obj.superadmin_only = bool(r["superadmin_only"])
             obj.config = cfg
             if all(k in cfg for k in sec):
                 obj.enabled = bool(r.get("enabled"))
@@ -47,6 +49,7 @@ def _apply(data, ctx):
             complete = all(incoming.get(k) for k in sec)
             obj = Integration(slug=r["slug"], name=r.get("name") or r["slug"], provider=r["provider"], enabled=bool(r.get("enabled")) and complete)
             obj.config = incoming
+            obj.superadmin_only = bool(r.get("superadmin_only"))
             obj.save()
             created += 1
     return f"{created} koppeling(en) nieuw, {updated} bijgewerkt. Sleutels ontbreken? Vul ze in bij API keys."

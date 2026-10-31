@@ -21,7 +21,7 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-KEYS = ["default_presets", "admin_presets", "preset_edits", "preset_pages"]  # of the system settings (preset_pages: the pages saved in an installation; their pictures are found by name on the other site)
+KEYS = ["default_presets", "admin_presets", "preset_edits", "preset_pages", "preset_ai"]  # of the system settings (preset_pages: the pages saved in an installation; their pictures are found by name on the other site)
 PATH = Path(settings.BASE_DIR) / "apps" / "core" / "installations.json"
 
 

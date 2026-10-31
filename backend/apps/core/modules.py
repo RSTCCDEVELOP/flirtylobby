@@ -109,6 +109,8 @@ MODULES = [
     {"key": "dashboard", "group": "Kern", "label": "Dashboard & profiel", "desc": "Inloggen, dashboard en eigen profiel.", "core": True, "acl": False},
     {"key": "security_basic", "group": "Kern", "label": "Algemene beveiliging",
      "desc": "Inlogslot, sessieduur, wachtwoordregels en beveiligingsheaders.", "core": True},
+    {"key": "ai", "group": "Kern", "label": "AI", "auto": "ai", "core": True, "acl": False,
+     "desc": "Alle AI-gebruik van het systeem (Claude): wie vraagt wat, waar, hoeveel tokens en wat het kost, met een marge per token. Staat altijd aan zodra er een AI-koppeling (API key) is; de superadmin ziet het dashboard."},
     {"key": "modules", "group": "Kern", "label": "Modulebeheer", "desc": "Deze pagina. Alleen voor superadmins.", "core": True, "acl": False},
 ]
 # ── Packages: what is sold apart from the core CMS ──
@@ -137,8 +139,18 @@ def states():
         from .models import ModuleState
 
         stored = dict(ModuleState.objects.values_list("key", "enabled"))
-        _cache.update(t=now, v={m["key"]: True if m.get("core") else plugin_on(m["plugin"]) if m.get("plugin") else stored.get(m["key"], m.get("default", True)) for m in MODULES})  # "plugin": on while that plugin is on
+        _cache.update(t=now, v={m["key"]: _ai_linked() if m.get("auto") == "ai" else True if m.get("core") else plugin_on(m["plugin"]) if m.get("plugin") else stored.get(m["key"], m.get("default", True)) for m in MODULES})  # "plugin": on while that plugin is on
     return _cache["v"]
+
+
+def _ai_linked():
+    """The module AI is on as soon as an AI connection (an API key) is installed and on: it cannot be switched on or off by hand."""
+    try:
+        from apps.integrations import ai
+
+        return ai.available()
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def invalidate():

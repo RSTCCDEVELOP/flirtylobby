@@ -31,6 +31,7 @@ PERMISSIONS = [
     ("theme.manage", "Vormgeving beheren", "Beheer"),
     ("pages.manage", "Pagina's en menu beheren", "Beheer"),
     ("security.manage", "Beveiliging beheren", "Beheer"),
+    ("ai.manage", "AI-gebruik van gebruikers inzien (zonder inkoopprijzen)", "Beheer"),
 ]
 KEYS = [p[0] for p in PERMISSIONS]
 # Permissions that give access to the admin area of the dashboard

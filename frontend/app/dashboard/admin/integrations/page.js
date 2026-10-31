@@ -174,7 +174,7 @@ export default function Integrations() {
             <div className="card api-card" key={i.id}>
               <div className="api-head">
                 <span className={`dot ${st}`} title={STATUS_TEXT[st]} />
-                <strong>{i.name}</strong>
+                <strong>{i.name}</strong>{i.superadmin_only && <span className="badge" style={{ marginLeft: ".4rem" }}>{tx("Superadmin")}</span>}
                 <label className="switch" title={i.enabled ? tx("Actief") : tx("Uit")}>
                   <input type="checkbox" checked={i.enabled} disabled={L < 2} onChange={() => toggle(i)} />
                   <span />
@@ -244,6 +244,10 @@ export default function Integrations() {
               <label>{tx("Sleutelnaam (slug)")}
                 <input value={modal.slug} onChange={(e) => setModal({ ...modal, slug: e.target.value.toLowerCase() })} pattern="[a-z0-9\-]+" required disabled={!!modal.id} placeholder={tx("bv. anthropic")} />
               </label>
+              {user?.is_staff && (
+                <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!modal.superadmin_only} onChange={(e) => setModal({ ...modal, superadmin_only: e.target.checked })} /><span /></span>
+                  <span>{tx("Superadmin-koppeling")}<small className="muted" style={{ display: "block" }}>{tx("Alleen superadmins zien en wijzigen deze koppeling, bijvoorbeeld de AI-koppeling die de reseller betaalt.")}</small></span></label>
+              )}
               {fields.map((f) => (
                 <label key={f.key}>{f.label}
                   {f.type === "select" ? (

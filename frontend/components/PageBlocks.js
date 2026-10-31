@@ -593,7 +593,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 {(() => { // one tab per module: donations, subscriptions and every plugin on its own
                   const nameOf = (o) => `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}`;
                   const tabOf = (o) => (o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part") ? `plugin:${o.data?.name || "plugin"}` : o.kind;
-                  const labelOf = (o) => o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin");
+                  const labelOf = (o) => o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "ai" ? "AI" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin");
                   const hits = objects.filter((o) => !objQ || nameOf(o).toLowerCase().includes(objQ.toLowerCase()));
                   const tabs = [];
                   for (const o of hits) if (!tabs.some((x) => x[0] === tabOf(o))) tabs.push([tabOf(o), labelOf(o), null, 0]);

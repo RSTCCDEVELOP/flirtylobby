@@ -29,6 +29,7 @@ const ICON = {
   stats: I(<><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>),
   logo: I(<><circle cx="12" cy="12" r="9" /><path d="M8.5 14.5c1 1.4 2.2 2 3.5 2s2.5-.6 3.5-2" /><circle cx="9" cy="10" r=".8" /><circle cx="15" cy="10" r=".8" /></>),
   hours: I(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
+  code: I(<><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16" /></>),
   object: I(<><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="8" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /><rect x="13" y="13" width="8" height="8" rx="1.5" /></>),
 };
 // [type, widget, label, description, icon] per tab
@@ -36,7 +37,7 @@ const GROUPS = [
   ["basis", "Basis", [["heading", "", "Kop", "Een titel of tussenkop", "heading"], ["text", "", "Tekst", "Een alinea met opmaak", "text"], ["image", "", "Afbeelding", "Een foto uit de bibliotheek", "image"], ["button", "", "Knop", "Naar een pagina of link, in alle talen", "button"], ["widget", "quote", "Citaat", "Een uitspraak met naam", "quote"]]],
   ["media", "Media", [["widget", "video", "Video", "YouTube of Vimeo", "video"], ["widget", "map", WIDGET_NAMES.map, "Waar je te vinden bent", "map"], ["widget", "logo", WIDGET_NAMES.logo, "Het logo van de website", "logo"]]],
   ["bedrijf", "Over het bedrijf", [["widget", "contact", WIDGET_NAMES.contact, "Adres, telefoon en e-mail", "contact"], ["widget", "hours", WIDGET_NAMES.hours, "Dagen en tijden", "hours"], ["widget", "social", WIDGET_NAMES.social, "Links naar je profielen", "social"], ["widget", "stats", WIDGET_NAMES.stats, "Tot vier opvallende getallen", "stats"]]],
-  ["opmaak", "Opmaak", [["spacer", "", "Tussenruimte", "Lege ruimte met een eigen hoogte", "spacer"], ["line", "", "Lijn", "Een scheidingslijn", "line"]]],
+  ["opmaak", "Opmaak", [["spacer", "", "Tussenruimte", "Lege ruimte met een eigen hoogte", "spacer"], ["line", "", "Lijn", "Een scheidingslijn", "line"], ["widget", "code", WIDGET_NAMES.code, "Eigen HTML en CSS voor een lastig onderdeel", "code"]]],
 ];
 
 // The pop-up of "+ Toevoegen" in a block (edit mode): tabs (basis, media, company, layout, system), each with parts with an icon and a line of explanation; search over all of them.

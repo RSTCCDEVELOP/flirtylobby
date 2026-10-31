@@ -15,7 +15,8 @@ import { tx } from "../lib/t";
 import DemoData from "./DemoData";
 import RunPopup from "./RunPopup";
 import { runDemo, resumeDemo } from "../lib/demoRun";
-import { PresetIcon } from "./Icons";
+import { PresetIcon, IconSettings } from "./Icons";
+import PresetSettings from "./PresetSettings";
 import InstallationsBase from "./InstallationsBase";
 
 // Standard installations: a kind of business with its modules, plugins and community theme. One click switches everything (Super admin).
@@ -38,6 +39,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   // the menus and modules come from the server when the page loads: after a change the whole page is loaded again (the message is kept for it)
   const reloadWith = (m) => { try { sessionStorage.setItem("preset-msg", JSON.stringify(m)); } catch {} window.location.reload(); };
   const [open, setOpen] = useState("");
+  const [cfgKey, setCfgKey] = useState(""); // the installation whose settings are open (pop-up with tabs)
   const [run, setRun] = useState(null); // the status pop-up with the progress
   const [ask, setAsk] = useState(null); // {p, needs, demo}: the question before an installation is set
   if (!list || (!manage && !list.length)) return null;
@@ -181,38 +183,26 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       )}
       <div className="preset-grid">
         {list.map((p) => (
-          <div key={p.key} className={`card preset-card${p.active ? " preset-active" : ""}`}>
-            <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong>{p.active && <span className="badge ok preset-used">{tx("In gebruik")}</span>}{manage && !adminOnly && p.edited && <span className="badge preset-used">{tx("Aangepast")}</span>}</div>
-            {manage && (
-              <label className="check sec-toggle">
-                <span className="switch"><input type="checkbox" checked={!!p.admin} onChange={(e) => release(p, e.target.checked)} /><span /></span>
-                <span>{tx("Zichtbaar in de admin")}</span>
-              </label>
-            )}
-            {manage && !adminOnly && (
-              <label className="check" title={tx("Vink aan welke installaties worden aangeboden als er nog niets is geïnstalleerd. Er is er altijd minstens één.")}>
-                <input type="checkbox" checked={!!p.default} onChange={(e) => makeDefault(p, e.target.checked)} />
-                <span>{tx("Aanbieden bij eerste installatie")}</span>
-              </label>
-            )}
-            <p className="muted" style={{ margin: 0 }}>{tx(p.desc)}</p>
+          <div key={p.key} className={`card preset-card preset-mini${p.active ? " preset-active" : ""}`}>
+            <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong></div>
+            {(p.active || (manage && !adminOnly && p.edited)) && <div className="preset-state">{p.active && <span className="badge ok">{tx("In gebruik")}</span>}{manage && !adminOnly && p.edited && <span className="badge">{tx("Aangepast")}</span>}</div>}
+            <p className="muted preset-desc">{tx(p.desc)}</p>
             <div className="chips">
-              {p.plugins.map((x) => <span key={x.name} className={`badge ${x.installed ? "ok" : "off"}`} title={x.installed ? "" : tx("Niet geïnstalleerd")}>{x.title}</span>)}
+              {manage && !adminOnly && p.system_api?.stripe && <span className="badge">{tx("Stripe (systeem)")}</span>}
+              {manage && !adminOnly && p.ai?.on && p.ai?.configured && <span className="badge">{p.ai.credit_required ? tx("AI met tegoed") : tx("AI")}</span>}
               <span className="badge">{tx("{0} modules", p.modules.length)}</span>
               {p.theme !== "normal" && <span className="badge">{tx("Thema")}: {p.theme}</span>}
             </div>
-            <button type="button" className="btn-link" onClick={() => setOpen(open === p.key ? "" : p.key)}>{open === p.key ? tx("Verberg modules") : tx("Toon modules")}</button>
-            {open === p.key && <small className="muted">{p.modules.map((m) => tx(m)).join(", ")}</small>}
-            {demo && <div className="preset-demo"><strong>{tx("Demo-gegevens")}</strong><DemoData preset={p.key} name={p.name} editable={manage && !adminOnly} demoCfg={p.demo_cfg} price={p.price} contents={p.contents} showPurchase={!adminOnly} active={!!p.active} parts={p.demo_parts} shop={(p.plugins || []).some((x) => x.name === "webshop")} /></div>}
-            {p.active
-              ? <>
-                <button type="button" className="btn primary" disabled={!!busy} onClick={() => updateActive(p)} title={tx("Controleert de modules en plugins van deze installatie en zet aan wat uit staat. Je pagina's en teksten blijven zoals ze zijn.")}>{tx("Update")}</button>
-                <button type="button" className="btn danger" disabled={!!busy} onClick={() => unapply(p)}>{busy === p.key ? tx("Bezig…") : tx("Installatie verwijderen")}</button>
-              </>
-              : <button type="button" className="btn primary" disabled={!!busy} onClick={() => apply(p)}>{busy === p.key ? tx("Bezig…") : tx("Deze installatie instellen")}</button>}
+            <div className="preset-actions">
+              {p.active
+                ? <button type="button" className="btn primary" disabled={!!busy} onClick={() => updateActive(p)} title={tx("Controleert de modules en plugins van deze installatie en zet aan wat uit staat. Je pagina's en teksten blijven zoals ze zijn.")}>{tx("Update")}</button>
+                : <button type="button" className="btn primary" disabled={!!busy} onClick={() => apply(p)}>{busy === p.key ? tx("Bezig…") : tx("Instellen")}</button>}
+              <button type="button" className="btn icon" onClick={() => setCfgKey(p.key)} title={tx("Instellingen")} aria-label={`${tx("Instellingen")}: ${tx(p.name)}`}><IconSettings /></button>
+            </div>
           </div>
         ))}
       </div>
+      {cfgKey && list.find((x) => x.key === cfgKey) && <PresetSettings p={list.find((x) => x.key === cfgKey)} manage={manage} adminOnly={adminOnly} demo={demo} onRelease={release} onDefault={makeDefault} onUnapply={unapply} busy={busy} onClose={() => setCfgKey("")} />}
     </div>
   );
 }

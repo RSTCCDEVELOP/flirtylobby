@@ -42,10 +42,12 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/theme", modules: ["theme", "branding"] },
   { href: "/dashboard/admin/themes", modules: ["theme", "branding"] },
   { href: "/dashboard/admin/plugins", module: "plugins" },
+  { href: "/dashboard/admin/ai", module: "ai", perm: "ai.manage" },
 ];
 
 export const pageAllowed = (user, page, mods = {}) => {
   if (page.superadmin) return !!user?.is_staff;
+  if (page.perm) return mods[page.module] !== false && (!!user?.is_staff || can(user, page.perm));  // a page that a right from a role opens (Rollen)
   if (page.always) return !!user?.is_staff || lvl(user, "system") >= 1;  // not tied to a module that an installation can switch off (the page that sets the installations)
   const keys = page.modules || [page.module];
   return keys.some((m) => mods[m] !== false && lvl(user, m) >= 1);

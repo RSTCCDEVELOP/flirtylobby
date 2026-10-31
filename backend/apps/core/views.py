@@ -731,7 +731,9 @@ def presets_list(request):
     if not who:
         return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
     rows = presets.listing()
-    return Response(rows if who == "all" else [r for r in rows if r["admin"]])
+    if who == "all":
+        return Response(rows)
+    return Response([{k: v for k, v in r.items() if k not in ("system_api", "ai", "price", "demo_cfg")} for r in rows if r["admin"]])  # what the system uses to bill and its own settings are not for an admin
 
 
 @api_view(["POST"])
@@ -744,6 +746,20 @@ def presets_default(request):
         return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
     try:
         return Response({"keys": presets.set_default(str(request.data.get("key") or ""), request.data.get("on", True) is not False)})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_ai(request, key):
+    """The superadmin sets the AI of a standard installation: {on, credit_required, topup_min, topup_max, topup_step}; it is set when that installation is set."""
+    from . import presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        return Response(presets.set_ai(key, request.data or {}))
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -293,11 +293,17 @@ def listing():
     allowed = admin_allowed()
     act = active()
     dflt = set(default_keys())
+    try:  # the system API (the Stripe account of the superadmin) belongs to every installation: setting an installation never touches it
+        from apps.integrations import aiusage
+
+        stripe_on = aiusage.pay_link() is not None
+    except Exception:  # noqa: BLE001
+        stripe_on = False
     out = []
     for base in PRESETS:
         p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -411,6 +417,44 @@ def default_keys():
     d = _data()
     keys = [k for k in dict.fromkeys(d.get("default_presets") or ([d["default_preset"]] if d.get("default_preset") else [])) if k in BY_KEY]
     return keys or [PRESETS[0]["key"]]
+
+
+AI_DEFAULT = {"on": True, "credit_required": True, "topup_min": 5, "topup_max": 100, "topup_step": 5}
+
+
+def ai_config(key):
+    """The AI of a standard installation: whether the AI is part of it, whether users must buy credit, and the smallest and the biggest amount of a top-up. {configured: False} until the superadmin saved it."""
+    saved = (_data().get("preset_ai") or {}).get(key)
+    return {**AI_DEFAULT, **(saved or {}), "configured": bool(saved)}
+
+
+def set_ai(key, cfg):
+    if key not in BY_KEY:
+        raise ValueError("Onbekende installatie.")
+    try:
+        lo, hi, step = float(cfg.get("topup_min", 5)), float(cfg.get("topup_max", 100)), float(cfg.get("topup_step", 5))
+    except (TypeError, ValueError):
+        raise ValueError("Controleer de bedragen.")
+    if not (0 < lo <= hi <= 100000) or not (0 < step <= hi):
+        raise ValueError("Controleer de bedragen: het grootste bedrag is minstens het kleinste, en de stap past erin.")
+    new = {"on": bool(cfg.get("on", True)), "credit_required": bool(cfg.get("credit_required")) and bool(cfg.get("on", True)), "topup_min": lo, "topup_max": hi, "topup_step": step}
+    data = _data()
+    _save_data({**data, "preset_ai": {**(data.get("preset_ai") or {}), key: new}})
+    return ai_config(key)
+
+
+def apply_ai(key):
+    """Setting an installation also sets its AI (credit and top-up amounts), when the superadmin saved those for it."""
+    cfg = ai_config(key)
+    if not cfg["configured"]:
+        return False
+    from apps.integrations.models import AiSettings
+
+    st = AiSettings.load()
+    st.credit_required = bool(cfg["on"] and cfg["credit_required"])
+    st.topup_min, st.topup_max, st.topup_step = cfg["topup_min"], cfg["topup_max"], cfg["topup_step"]
+    st.save()
+    return True
 
 
 def set_default(key, on=True):
@@ -891,6 +935,11 @@ def apply(key, preset=None, overwrite_pages=False):
     preset = preset or get(key)
     if not preset:
         raise KeyError(key)
+    if key in BY_KEY:
+        try:
+            apply_ai(key)  # the AI of this installation: credit required or not, and the amounts of a top-up
+        except Exception:  # noqa: BLE001
+            logger.exception("Preset %s: the AI settings could not be set", key)
     protected = set() if overwrite_pages else {c["key"] for c in conflicts(key)}
     want = _wanted_modules(preset)
     for m in modules.MODULES:

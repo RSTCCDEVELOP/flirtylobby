@@ -14,7 +14,7 @@ import Movable from "../components/Movable";
 import PageBlocks from "../components/PageBlocks";
 import PageShell from "../components/PageShell";
 import DesignFrame from "../components/DesignFrame";
-import { getDesign } from "../lib/pages-server";
+import { getDesign, getMoved } from "../lib/pages-server";
 import { getPageSetup } from "../lib/page-setup-server";
 import { pageMetadata } from "../lib/seo";
 
@@ -26,18 +26,19 @@ export default async function Home() {
   if (design) {
     return (
       <PageShell setup={await getPageSetup("home")}>
-        <DesignFrame html={design} title="Home" />
+        <DesignFrame html={design} title="Home" pageKey="home" />
       </PageShell>
     );
   }
+  const moved = new Set(await getMoved("home")); // what the blocks of the start page have taken over is not rendered at all
   return (
     <div className="site">
       <SiteHeader />
       <main className="uc">
-        <Movable page="home" id="home.hero" type="image"><EditableImage id="home.hero" fallback={<Logo className="home-logo" />} /></Movable>
-        <Movable page="home" id="home.title" type="text"><EditableText id="home.title" as="h1" fallback="Onze website is in aanbouw" /></Movable>
-        <Movable page="home" id="home.text" type="text"><EditableText id="home.text" as="p" rich fallback="We werken hard aan een nieuwe website. Binnenkort vind je hier meer informatie." /></Movable>
-        <HomePhotos />
+        {!moved.has("home.hero") && <Movable page="home" id="home.hero" type="image"><EditableImage id="home.hero" fallback={<Logo className="home-logo" />} /></Movable>}
+        {!moved.has("home.title") && <Movable page="home" id="home.title" type="text"><EditableText id="home.title" as="h1" fallback="Onze website is in aanbouw" /></Movable>}
+        {!moved.has("home.text") && <Movable page="home" id="home.text" type="text"><EditableText id="home.text" as="p" rich fallback="We werken hard aan een nieuwe website. Binnenkort vind je hier meer informatie." /></Movable>}
+        {!moved.has("home.photos") && <HomePhotos />}
         <PageBlocks pageKey="home" />
       </main>
       <SiteFooter />

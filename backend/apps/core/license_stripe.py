@@ -98,8 +98,8 @@ def _flat(data, prefix=""):
     return out
 
 
-def call(method, path, data=None, l=None):
-    key = config(l).get("secret_key")
+def call(method, path, data=None, l=None, key=None):
+    key = key or config(l).get("secret_key")
     if not key:
         raise StripeError("Er is nog geen Stripe-sleutel ingesteld voor de licentie.")
     body = urllib.parse.urlencode(_flat(data or {})).encode() if data and method != "GET" else None
@@ -161,6 +161,27 @@ def checkout(user, amount, months, subscribe=False, l=None):
     return call("POST", "checkout/sessions", data, l)["url"]
 
 
+def ai_checkout(user, amount, currency, ref, l=None, key=None):
+    """A Stripe Checkout page (the system Stripe account of the superadmin) for AI credit. Returns (address, session id)."""
+    c = config(l)
+    base = _site() or "http://localhost:5173"
+    data = {"mode": "payment", "line_items": [{"price_data": {"currency": (currency or "eur").lower(), "unit_amount": int((Decimal(str(amount)) * 100).quantize(Decimal("1"))), "product_data": {"name": "AI-tegoed"}}, "quantity": 1}],
+            "success_url": f"{base}/dashboard/ai?paid=1&ref={ref}", "cancel_url": f"{base}/dashboard/ai?cancelled=1", "client_reference_id": ref, "metadata": {"kind": "ai_credit", "ref": ref, "user": getattr(user, "pk", "")},
+            "customer_email": getattr(user, "email", "") or None, "locale": "auto"}
+    if c.get("payment_methods"):
+        data["payment_method_types"] = c["payment_methods"]
+    elif c.get("descriptor"):
+        data["payment_intent_data"] = {"statement_descriptor": c["descriptor"], "metadata": {"kind": "ai_credit", "ref": ref}}
+    s = call("POST", "checkout/sessions", data, l, key)
+    return s["url"], s["id"]
+
+
+def session_paid(session_id, l=None, key=None):
+    """Is this Checkout session paid? (asked when the customer comes back, so the credit also arrives where the webhook cannot reach, e.g. on your own computer)."""
+    s = call("GET", f"checkout/sessions/{session_id}", None, l, key)
+    return s.get("payment_status") in ("paid", "no_payment_required"), s
+
+
 def cancel_subscription(l=None):
     l = l or lic()
     if l.sub_ref.startswith("sub_") and active(l):
@@ -209,7 +230,12 @@ def handle(event, l=None):
         return "al verwerkt"
     obj = (event.get("data") or {}).get("object") or {}
     kind, out = event.get("type", ""), "genegeerd"
-    if kind == "checkout.session.completed" and (obj.get("metadata") or {}).get("kind") == "license" and obj.get("payment_status") in ("paid", "no_payment_required"):
+    if kind in ("checkout.session.completed", "checkout.session.async_payment_succeeded") and (obj.get("metadata") or {}).get("kind") == "ai_credit":  # AI credit that was bought
+        from apps.integrations import aiusage
+
+        paid = obj.get("payment_status") in ("paid", "no_payment_required")
+        out = "tegoed bijgeschreven" if paid and aiusage.settle_topup(str((obj.get("metadata") or {}).get("ref") or ""), True, "Stripe") else "tegoed niet bijgeschreven"
+    elif kind == "checkout.session.completed" and (obj.get("metadata") or {}).get("kind") == "license" and obj.get("payment_status") in ("paid", "no_payment_required"):
         if obj.get("mode") == "subscription":
             l.payment_method, l.sub_status, l.sub_provider, l.sub_ref, l.sub_amount = "auto", "active", "stripe", obj.get("subscription") or "", l.price
             l.sub_started_at = l.sub_started_at or __import__("django.utils.timezone", fromlist=["now"]).now()

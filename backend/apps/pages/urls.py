@@ -21,6 +21,7 @@ urlpatterns = [
     path("pages/public/<slug:key>/", views.public_page),
     path("pages/by-url/", views.by_url),
     path("pages/design/<str:key>/", views.design_of),
+    path("pages/design/<str:key>/save/", views.design_save),
     path("pages/setup/<str:key>/", views.page_setup),
     path("pages/aliases/", views.aliases),
     path("pages/order/", views.menu_order),

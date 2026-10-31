@@ -14,6 +14,7 @@ import { IconImage, IconSearch, IconSliders, IconUser } from "./Icons";
 import LayoutPresets from "./LayoutPresets";
 import MediaPicker from "./MediaPicker";
 import Tabs from "./Tabs";
+import PageImportTab from "./PageImportTab";
 import { translateName } from "../lib/translate-name";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 
@@ -25,6 +26,8 @@ const emptySeo = { title: "", description: "", og_media: null, og_image: null, n
 export default function PageSettingsModal({ ai, page, languages, defaultLang, onClose, onSaved, canSeo }) {
   const langs = languages.length ? languages : [{ code: "nl", native_name: "Nederlands" }];
   const [tab, setTab] = useState("general");
+  const [imp, setImp] = useState(null); // did this page come from Site importeren? (then it has a tab Import)
+  useEffect(() => { api(`/siteimport/page/${page.key}/`).then((i) => setImp(i?.imported ? i : null)).catch(() => {}); }, [page.key]);
   const [form, setForm] = useState({ slugs: { ...(page.slugs || {}) }, title: { ...page.title }, audience: page.audience, new_tab: !!page.new_tab, url: page.url || "" });
   const [setup, setSetup] = useState({ theme: page.setup?.theme || "", header: page.setup?.header || "", footer: page.setup?.footer || "" }); // this page only: its own theme, header and footer
   const [themes, setThemes] = useState([]);
@@ -137,7 +140,7 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
     } catch (err) { setError(errorText(err)); setBusy(false); }
   }
 
-  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
+  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ...(imp ? [["import", "Import", <IconSliders key="i" />]] : []), ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
   return (
     <div className="overlay" onClick={onClose}>
       <form className="card modal pgs form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
@@ -145,6 +148,7 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
         <Tabs tabs={tabs} value={tab} onChange={setTab} />
 
         <div className="pgs-body">
+          {tab === "import" && imp && <PageImportTab pageKey={page.key} path={page.key === "home" ? "/" : page.path || `/p/${page.key}`} info={imp} onInfo={setImp} />}
           {tab === "general" && (
             <>
               <strong style={{ fontSize: ".85rem" }}>{tx("Naam")}</strong>

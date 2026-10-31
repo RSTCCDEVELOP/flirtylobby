@@ -114,6 +114,21 @@ def public_page(request, key):
     return Response({"key": p.key, "scope": p.scope, "title": p.title, "audience": p.audience, "locked": p.key in subs.locked_pages(), "access": subs.page_ok(request.user, p.key), "design": p.design or ""})
 
 
+@api_view(["POST"])
+@permission_classes([has_level_for("pages", {"POST": "edit"}), module_required("pages")])
+def design_save(request, key):
+    """The html design of a page after someone changed a text or a link of it in edit mode."""
+    p = Page.objects.filter(key=key, kind__in=("content", "system"), scope="public").exclude(design="").first()
+    html = request.data.get("design")
+    if not p or not isinstance(html, str) or not html.strip():
+        return bad("Pagina niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if len(html) > 3_000_000:
+        return bad("De pagina is te groot.")
+    p.design = html
+    p.save(update_fields=["design", "updated_at"])
+    return Response({"ok": True})
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def design_of(request, key):

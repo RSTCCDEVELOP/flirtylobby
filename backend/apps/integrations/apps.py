@@ -10,3 +10,11 @@ from django.apps import AppConfig
 
 class IntegrationsConfig(AppConfig):
     name = "apps.integrations"
+
+    def ready(self):
+        from apps.sandbox import service as sandbox
+
+        from . import aiusage
+
+        if aiusage.payment_changed not in sandbox.HOOKS:
+            sandbox.HOOKS.append(aiusage.payment_changed)  # a paid purchase of AI credit is added to the credit

@@ -84,6 +84,7 @@ MIDDLEWARE = [
     "apps.core.middleware.SiteTimezoneMiddleware",
     "apps.core.middleware.MaintenanceMiddleware",
     "apps.core.middleware.ClosedSiteMiddleware",
+    "apps.integrations.middleware.AiActorMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

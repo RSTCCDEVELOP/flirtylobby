@@ -7,6 +7,7 @@
 
 "use client";
 
+import { markImported } from "../../../../lib/imported";
 import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -160,6 +161,9 @@ function Detail({ imp, onChanged, onApply, busy }) {
     try { await api(`/siteimport/${imp.id}/asset/`, { method: "POST", body: { media: a.media, role: pick[a.media] || (ROLE_NAME[a.role] && a.role !== "image" ? a.role : "logo") } }); setMsg({ ok: true, text: tx("Ingesteld. Zie Logo's & beeld.") }); onChanged(); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
+  const savePage = async (key, patch) => {
+    try { setD(await api(`/siteimport/${imp.id}/page/`, { method: "POST", body: { key, ...patch } })); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+  };
   if (!d) return <Busy />;
   return (
     <div className="si-detail">
@@ -216,7 +220,17 @@ function Detail({ imp, onChanged, onApply, busy }) {
       })()}
       <div>
         <strong>{tx("Pagina's")} ({d.page_list.length + (d.targets || []).length})</strong>
-        <ul className="si-pages">{(d.targets || []).map((t) => <li key={t.key}><a href={t.path} target="_blank" rel="noreferrer">{t.title}</a> <small className="muted">{t.path} · {tx("ontwerp op een bestaande pagina")}</small></li>)}{d.page_list.map((p) => <li key={p.id}><a href={p.path} target="_blank" rel="noreferrer">{p.title}</a> <small className="muted">{p.path}{p.in_menu ? ` · ${tx("in menu")}` : ""}</small></li>)}</ul>
+        <div className="si-pagerows">
+          {[...(d.targets || []).map((t) => ({ key: t.key, title: t.page_title || t.title, path: t.path, in_menu: t.in_menu, enabled: t.enabled !== false, note: tx("ontwerp op een bestaande pagina") })), ...d.page_list.map((p) => ({ key: p.key, title: p.title, path: p.path, in_menu: p.in_menu, enabled: p.enabled, note: p.design ? tx("1 op 1 uit het bestand") : tx("bewerkbare blokken") }))].map((p) => (
+            <div className="si-pagerow" key={p.key}>
+              <input defaultValue={p.title} aria-label={tx("Naam")} onBlur={(e) => { if (e.target.value.trim() && e.target.value.trim() !== p.title) savePage(p.key, { title: e.target.value }); }} />
+              <small className="muted">{p.path} · {p.note}</small>
+              <label className="check"><span className="switch"><input type="checkbox" checked={!!p.in_menu} onChange={(e) => savePage(p.key, { in_menu: e.target.checked })} /><span /></span><span>{tx("In menu")}</span></label>
+              <label className="check"><span className="switch"><input type="checkbox" checked={p.enabled !== false} onChange={(e) => savePage(p.key, { enabled: e.target.checked })} /><span /></span><span>{tx("Zichtbaar")}</span></label>
+              <a className="btn sm" href={p.path} target="_blank" rel="noreferrer">{tx("Bekijken")}</a>
+            </div>
+          ))}
+        </div>
         {!d.page_list.length && <p className="muted" style={{ margin: 0 }}>{tx("Geen aparte pagina's gevonden. De startpagina is wel ingelezen.")}</p>}
       </div>
       <div>
@@ -398,7 +412,7 @@ export default function SiteImport() {
   const zip = useRef(null);
   const htmlFile = useRef(null);
 
-  const load = useCallback(() => api("/siteimport/").then((d) => { setList(d.imports); setOpen((o) => o ?? (d.imports.find((x) => x.apply?.pending) || {}).id ?? null); setFolders(d.folders); setFolder((f) => f || d.folders[0] || ""); }).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
+  const load = useCallback(() => api("/siteimport/").then((d) => { markImported(d.imports.length > 0); setList(d.imports); setOpen((o) => o ?? (d.imports.find((x) => x.apply?.pending) || {}).id ?? null); setFolders(d.folders); setFolder((f) => f || d.folders[0] || ""); }).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
 
   const run = async (label, fn, okText) => {
@@ -513,7 +527,10 @@ export default function SiteImport() {
               {prog.error && <div className="alert">{prog.error}</div>}
               {prog.state === "done" && prog.warning && <div className="alert">{prog.warning}</div>}
               {prog.state === "done" && <div className="alert ok">{tx("Klaar. De pagina's zijn opgebouwd:")} {(prog.built || []).map((b) => <a key={b.path} href={b.path} target="_blank" rel="noreferrer" style={{ marginLeft: ".4rem" }}>{b.title}</a>)}</div>}
-              {prog.state !== "running" && <div className="row" style={{ justifyContent: "flex-start" }}><button className="btn primary" onClick={() => setProg(null)}>{tx("Sluiten")}</button></div>}
+              {prog.state !== "running" && <div className="row" style={{ justifyContent: "flex-start" }}>
+                {prog.state === "done" && !prog.error && (prog.built || []).map((b, n, all) => <a key={b.path} className={`btn${n === 0 ? " primary" : ""}`} href={b.path}>{all.length > 1 ? `${tx("Ga naar")} ${b.title}` : tx("Ga naar pagina")}</a>)}
+                <button className="btn" onClick={() => setProg(null)}>{tx("Sluiten")}</button>
+              </div>}
             </div>
           </div>
         </div>, document.body)}

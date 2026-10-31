@@ -15,11 +15,16 @@ import { lvl } from "../../../lib/perms";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
 import PresetPicker, { usePresets } from "../../../components/PresetPicker";
+import AdminAiBlock from "../../../components/AdminAiBlock";
+import { useModules } from "../../../components/Modules";
+import { can } from "../../../lib/perms";
 
 // Admin dashboard: only the modules this user has access to (with their access level)
 export default function AdminHome() {
   const { user } = useAuth();
   const canSet = lvl(user, "system") >= 3;
+  const mods = useModules();
+  const aiOn = mods.ai !== false && !!user && (user.is_staff || can(user, "ai.manage"));
   const presets = usePresets(true);  // only the installations the superadmin released
   const [credit, setCredit] = useState(null); // show "© Easy2edit <year>" at the bottom of every page
   useEffect(() => { if (canSet) api("/system/").then((d) => setCredit(d.settings.show_credit !== false)).catch(() => {}); }, [canSet]);
@@ -34,6 +39,12 @@ export default function AdminHome() {
       <Collapsible id="admin-overview" title={tx("Mijn beheeronderdelen")}>
         <AdminTiles />
       </Collapsible>
+
+      {aiOn && (
+        <Collapsible id="admin-ai" title={tx("AI-gebruik")}>
+          <AdminAiBlock />
+        </Collapsible>
+      )}
 
       {canSet && presets && presets.length > 0 && (
         <Collapsible id="admin-presets" title={tx("Standaard installaties")}>

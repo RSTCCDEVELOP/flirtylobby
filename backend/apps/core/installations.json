@@ -1,6 +1,6 @@
 {
  "format": "installations",
- "saved_at": "2026-10-29T10:50:53+00:00",
+ "saved_at": "2026-10-31T10:56:29+00:00",
  "settings": {
   "admin_presets": [
    "standaard-website",
@@ -14,6 +14,7 @@
    "bedrijfswebsite",
    "zakelijk-netwerk"
   ],
+  "preset_ai": {},
   "preset_pages": {
    "webshop": {
     "home": {

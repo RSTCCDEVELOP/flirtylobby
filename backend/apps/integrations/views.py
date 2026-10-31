@@ -44,6 +44,11 @@ class IntegrationViewSet(viewsets.ModelViewSet):
     serializer_class = IntegrationSerializer
     permission_classes = [has_level_for("integrations", {"list": "use", "retrieve": "use", "create": "manage", "destroy": "manage"}, default="edit"), module_required("integrations")]
 
+    def get_queryset(self):
+        """A link of the superadmins is only seen and changed by superadmins."""
+        qs = Integration.objects.all()
+        return qs if self.request.user.is_staff else qs.filter(superadmin_only=False)
+
     def destroy(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.provider == "s3":
@@ -76,7 +81,7 @@ def model_list(request):
     provider = str(request.data.get("provider") or "")
     cfg = {}
     if request.data.get("id"):
-        obj = Integration.objects.filter(pk=request.data["id"], provider=provider).first()
+        obj = Integration.objects.filter(pk=request.data["id"], provider=provider, **({} if request.user.is_staff else {"superadmin_only": False})).first()
         cfg = dict(obj.config) if obj else {}
     typed = str(request.data.get("api_key") or "")
     if typed and not typed.startswith("•"):
@@ -96,7 +101,7 @@ def export_all(request):
     pw = str(request.data.get("password") or "")
     if len(pw) < 8:
         return Response({"detail": "Kies een wachtwoord van minstens 8 tekens om het bestand te beveiligen."}, status=400)
-    rows = backup._export({"include_secrets": True})
+    rows = backup._export({"include_secrets": True, "hide_superadmin": not request.user.is_staff})
     logger.info("API links exported by %s (%s links)", request.user.email, len(rows))
     return Response(transfer.pack(rows, pw))
 
@@ -111,6 +116,9 @@ def import_all(request):
         rows = transfer.unpack(request.data.get("bundle"), str(request.data.get("password") or ""))
     except ValueError as e:
         return Response({"detail": str(e)}, status=400)
+    if not request.user.is_staff:  # a non-superadmin cannot touch the links of the superadmins
+        locked = set(Integration.objects.filter(superadmin_only=True).values_list("slug", flat=True))
+        rows = [{k: v for k, v in r.items() if k != "superadmin_only"} for r in rows if r.get("slug") not in locked]
     msg = backup._apply(rows, None)
     logger.info("API links imported by %s (%s links)", request.user.email, len(rows))
     return Response({"detail": msg, "count": len(rows)})

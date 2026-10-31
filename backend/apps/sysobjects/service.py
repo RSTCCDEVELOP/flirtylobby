@@ -54,7 +54,7 @@ def sync():
             else:
                 obj, _ = _get_or_make(kind=kind, ref_id=src.pk, defaults={"slug": f"{kind}-{getattr(src, 'slug', None) or src.name}"[:80]})
             keep.add(obj.pk)
-    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
+    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation", "ai")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
     SystemObject.objects.exclude(pk__in=keep).delete()
 
 
@@ -63,7 +63,7 @@ def source_of(obj):
 
     DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")
 
-    if obj.kind in ("calculator", "marketing", "pricelist", "installation"):
+    if obj.kind in ("calculator", "marketing", "pricelist", "installation", "ai"):
         return obj
     if obj.kind == "media":
         from apps.medialib.models import MediaView

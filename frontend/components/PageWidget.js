@@ -13,15 +13,17 @@ import { api } from "../lib/api";
 import { tx } from "../lib/t";
 import { anchorStyle } from "../lib/anchor";
 import { Logo } from "./BrandingContext";
+import DesignFrame from "./DesignFrame";
+import CodeEditor from "./CodeEditor";
 
 // Ready-made parts for a page: contact data, social media, map, video, quote, figures, logo and opening hours.
 // The data of the website itself (address, phone, social media) comes from Admin → Systeem → Basisgegevens.
-export const WIDGET_NAMES = { contact: "Contactgegevens", social: "Sociale media", map: "Kaart", video: "Video", quote: "Citaat", stats: "Cijfers", logo: "Logo", hours: "Openingstijden" };
+export const WIDGET_NAMES = { contact: "Contactgegevens", social: "Sociale media", map: "Kaart", video: "Video", quote: "Citaat", stats: "Cijfers", logo: "Logo", hours: "Openingstijden", code: "HTML / CSS-code" };
 export const WIDGET_DEFAULTS = {
   contact: { address: true, phone: true, email: true }, social: {}, map: { query: "", height: 320 }, video: { url: "" },
   quote: { text: "Een mooi citaat van een klant of van jezelf.", author: "Naam" },
   stats: { items: [{ value: "10+", label: "jaar ervaring" }, { value: "500", label: "klanten" }, { value: "24/7", label: "bereikbaar" }] },
-  logo: { width: 160 }, hours: { lines: [{ day: "Maandag - vrijdag", time: "09:00 - 17:30" }, { day: "Zaterdag", time: "10:00 - 16:00" }, { day: "Zondag", time: "Gesloten" }] },
+  code: { html: "", css: "" }, logo: { width: 160 }, hours: { lines: [{ day: "Maandag - vrijdag", time: "09:00 - 17:30" }, { day: "Zaterdag", time: "10:00 - 16:00" }, { day: "Zondag", time: "Gesloten" }] },
 };
 const SOCIAL = { facebook: "Facebook", instagram: "Instagram", x: "X", linkedin: "LinkedIn", youtube: "YouTube", tiktok: "TikTok" };
 
@@ -39,6 +41,8 @@ export function PbWidget({ it, editing }) {
   const w = it.widget, d = it.data || {};
   const [site, setSite] = useState(null);
   useEffect(() => { if (["contact", "social", "map"].includes(w)) api("/site/").then(setSite).catch(() => {}); }, [w]);
+  const [font, setFont] = useState("sans-serif");
+  useEffect(() => { if (w === "code") setFont(getComputedStyle(document.body).fontFamily.replace(/"/g, "'")); }, [w]); // the frame has its own page: it gets the font of this website
   const empty = (text) => <div className="pb-widget-empty">{editing ? text : null}</div>;
   if (w === "contact") {
     if (!site) return null;
@@ -72,12 +76,14 @@ export function PbWidget({ it, editing }) {
   if (w === "quote") return <figure className="pb-w pb-w-quote"><blockquote>{d.text}</blockquote>{d.author && <figcaption>{d.author}</figcaption>}</figure>;
   if (w === "stats") return <div className="pb-w pb-w-stats">{(d.items || []).map((s, i) => <div key={i}><strong>{s.value}</strong><span>{s.label}</span></div>)}</div>;
   if (w === "logo") return <div className="pb-w pb-w-logo" style={{ "--wl-w": `${d.width || 160}px` }}><Logo /></div>;
+  if (w === "code") return d.html || d.css ? <div className="pb-w pb-w-code"><DesignFrame title={tx("HTML / CSS-code")} html={`<!doctype html><meta charset="utf-8"><base target="_top"><style>body{margin:0;font-family:${font};line-height:1.5}${d.css || ""}</style>${d.html || ""}`} /></div> : empty(tx("Vul de HTML of CSS in bij de instellingen van dit blok."));
   if (w === "hours") return <dl className="pb-w pb-w-hours">{(d.lines || []).map((l, i) => <div key={i}><dt>{l.day}</dt><dd>{l.time}</dd></div>)}</dl>;
   return null;
 }
 
 // The settings of a ready-made part (edit mode). data = what the item holds; onChange(data) after every change.
 export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor }) {
+  if (widget === "code") return <CodeEditor data={data} onChange={onChange} onClose={onClose} />;
   const set = (patch) => onChange({ ...data, ...patch });
   const rows = widget === "stats" ? data.items || [] : data.lines || [];
   const setRow = (i, patch) => set(widget === "stats" ? { items: rows.map((r, n) => (n === i ? { ...r, ...patch } : r)) } : { lines: rows.map((r, n) => (n === i ? { ...r, ...patch } : r)) });
@@ -99,6 +105,11 @@ export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor }) {
         {widget === "quote" && (<>
           <label>{tx("Citaat")}<textarea rows={4} maxLength={500} value={data.text || ""} onChange={(e) => set({ text: e.target.value })} /></label>
           <label>{tx("Van wie")}<input maxLength={80} value={data.author || ""} onChange={(e) => set({ author: e.target.value })} /></label>
+        </>)}
+        {widget === "code" && (<>
+          <label>HTML<textarea rows={8} spellCheck={false} style={{ fontFamily: "monospace" }} maxLength={60000} value={data.html || ""} onChange={(e) => set({ html: e.target.value })} /></label>
+          <label>CSS<textarea rows={6} spellCheck={false} style={{ fontFamily: "monospace" }} maxLength={30000} value={data.css || ""} onChange={(e) => set({ css: e.target.value })} /></label>
+          <p className="muted">{tx("De code draait in een afgeschermd kader: geen toegang tot de inlog of de rest van de website.")}</p>
         </>)}
         {widget === "logo" && <label>{tx("Breedte")}: {data.width || 160} px<input type="range" min={40} max={400} step={10} value={data.width || 160} onChange={(e) => set({ width: Number(e.target.value) })} /></label>}
         {(widget === "stats" || widget === "hours") && (<>

@@ -63,3 +63,13 @@ export async function getOwnPage(key) {
     return null;
   }
 }
+
+// The fixed elements of a page that its blocks have taken over (the start page of an import: the standard logo, title, text and photos are then not shown, not even for a moment).
+export async function getMoved(key) {
+  try {
+    const res = await fetch(`${base()}/api/pages/layout/${encodeURIComponent(key)}/`, { cache: "no-store" });
+    return res.ok ? (await res.json()).moved || [] : [];
+  } catch {
+    return [];
+  }
+}
