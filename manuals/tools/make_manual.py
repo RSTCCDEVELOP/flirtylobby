@@ -338,6 +338,7 @@ if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=
 var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
 try{if(window.self!==window.top){var ls=document.querySelector('.langsw');if(ls)ls.style.display='none';}}catch(e){}
 var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/__LANG__/':'../../pdf/manual___LANG__.pdf');
+[].slice.call(document.querySelectorAll('.video video')).forEach(function(v){v.addEventListener('click',function(e){var r=v.getBoundingClientRect();if(e.clientY>r.bottom-48)return;e.preventDefault();if(v.paused){v.muted=false;v.volume=1;[].slice.call(document.querySelectorAll('.video video')).forEach(function(o){if(o!==v)o.pause()});v.play()}else v.pause()});v.style.cursor='pointer'});
 var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
 """
 

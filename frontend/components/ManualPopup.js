@@ -31,7 +31,7 @@ export default function ManualPopup({ page = "", lang: start, onClose }) {
             <button type="button" className="btn primary" onClick={onClose}>{lang === "nl" ? "Sluiten" : "Close"}</button>
           </div>
         </div>
-        <iframe key={lang} src={url} title={tx("Handleiding")} className="manual-frame" />
+        <iframe key={lang} src={url} title={tx("Handleiding")} className="manual-frame" allow="autoplay; fullscreen" allowFullScreen />
       </div>
     </div>, document.body);
 }
