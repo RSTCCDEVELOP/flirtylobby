@@ -22,7 +22,7 @@ export default function MyAi() {
   const [msg, setMsg] = useState(null);
   const [buy, setBuy] = useState(false);
   const sp = useSearchParams();
-  const paid = sp.get("paid"), ref = sp.get("ref");
+  const paid = sp.get("paid"), ref = sp.get("ref"), wantBuy = sp.get("buy");
   const load = useCallback(() => api("/ai/me/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { // back from Stripe: ask whether it is paid; the credit is added at once
@@ -30,6 +30,7 @@ export default function MyAi() {
     api("/ai/me/topup/confirm/", { method: "POST", body: { ref } }).then((r) => { if (r.status === "paid") { setMsg({ ok: true, text: tx("Bedankt! Je tegoed is bijgeschreven.") }); load(); } }).catch(() => {});
   }, [paid, ref, load]);
   useEffect(() => { if (paid) { setMsg({ ok: true, text: tx("Bedankt! Zodra de betaling binnen is, staat het tegoed hieronder.") }); const t = setTimeout(load, 2500); return () => clearTimeout(t); } return undefined; }, [paid, load]);
+  useEffect(() => { if (d && wantBuy) setBuy(true); }, [!!d, wantBuy]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
   const m = (n) => money(n, d.currency);
   return (

@@ -3480,3 +3480,19 @@ html[data-hl="editorial"] .p-drawer-left .hmenu a:hover, html[data-hl="editorial
 .preset-state .badge { font-size: .68rem; }
 
 .ai-req { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .6rem; }
+
+.manual-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin: .4rem 0 1.2rem; max-width: 760px; }
+.manual-btn-wrap { position: relative; display: flex; }
+.manual-btn { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; padding: 1.2rem 1.3rem; border-radius: calc(var(--radius) + 2px); border: 1px solid var(--line); background: var(--card, var(--bg)); color: inherit; text-decoration: none; cursor: pointer; text-align: left; font: inherit; transition: border-color .15s, transform .15s; }
+.manual-btn:hover { border-color: var(--blue); transform: translateY(-1px); }
+.manual-btn svg { color: var(--blue); }
+.manual-btn strong { font-size: 1.15rem; }
+.manual-btn small { color: var(--muted); }
+.manual-menu { position: absolute; z-index: 30; top: calc(100% + .4rem); left: 0; right: 0; display: grid; gap: .4rem; padding: .6rem; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.manual-menu .btn { justify-content: center; text-align: center; }
+.modal.manual-pop { width: min(1100px, 96vw); max-width: none; height: min(860px, 92vh); max-height: 92vh; display: flex; flex-direction: column; gap: .7rem; overflow: hidden; }
+.manual-frame { flex: 1; min-height: 0; width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+
+.back-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.manual-help { display: inline-flex; align-items: center; gap: .35rem; margin-left: auto; }
+.manual-help svg { width: 16px; height: 16px; }

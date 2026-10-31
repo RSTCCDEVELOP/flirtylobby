@@ -1,45 +1,174 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI and AI credit - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
-@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
-*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
-nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
-nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
-nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
-main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
-p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
-@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="on">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>10. AI and AI credit</h1>
-<p>Easy2edit uses artificial intelligence (Claude, from Anthropic) throughout the system. The AI helps with translating texts, writing page content, importing websites, researching prices and more. Every time the AI is called, Easy2edit records who asked for it (a user, admin, superadmin or the system itself), from which part of the system the call came, which model was used, how many tokens went in and out, how long it took, whether it succeeded, and what it cost.</p>
-<h2>The AI module</h2>
-<p>AI is a core module. It switches on automatically as soon as an AI link (an API key) is installed and enabled under Admin &gt; API keys.</p>
-<p>A link can be marked as a Superadmin link. When this is done, only superadmins can see or change it. This is used, for example, for the Easy2edit AI link and the Stripe link of the reseller. Unless an admin has set up his own AI and Stripe links (see below), AI calls made by users and admins always run on an Easy2edit link belonging to the superadmin.</p>
-<h2>The Super admin AI dashboard</h2>
-<p>Super admin &gt; AI gives superadmins a full view of AI use across the system, organised in tabs:</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>AI and AI credit - Easy2edit manual</title><style>
+:root{--bg:#fff;--fg:#1f1f24;--mut:#6b6b76;--acc:#d9631a;--acc2:#fff3ea;--line:#e6e6ea;--side:#f7f7f9;--card:#fff;--shadow:0 1px 2px rgba(20,20,30,.06),0 8px 24px rgba(20,20,30,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#14111a;--fg:#eceaf2;--mut:#a09cad;--acc:#ff9a55;--acc2:#2a1f1a;--line:#2b2635;--side:#1a1621;--card:#1c1823;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:3px}
+.top{position:sticky;top:0;z-index:20;height:60px;display:flex;align-items:center;gap:1rem;padding:0 1.25rem;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:800;font-size:1.2rem;letter-spacing:-.01em;color:var(--fg)}.top .brand b{color:var(--acc)}
+.top .ver{color:var(--mut);font-size:.85rem;border-left:1px solid var(--line);padding-left:1rem}
+.top .sp{flex:1}.top input{width:min(280px,34vw);padding:.5rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--side);color:var(--fg);font:inherit;font-size:.9rem}
+.top input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .95rem;border-radius:999px;background:var(--acc);color:#fff;font-weight:600;font-size:.88rem;text-decoration:none!important}
+.btn:hover{filter:brightness(1.07)}.menu{display:none;background:none;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:.4rem .6rem;font-size:1rem;cursor:pointer}
+.wrap{display:grid;grid-template-columns:272px minmax(0,1fr) 220px;max-width:1380px;margin:0 auto}
+nav.side{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:1.25rem .9rem 2rem;border-right:1px solid var(--line)}
+nav.side h4{margin:.4rem .6rem .5rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+nav.side a{display:flex;gap:.6rem;align-items:baseline;padding:.5rem .65rem;border-radius:9px;color:var(--fg);font-size:.93rem;line-height:1.35}
+nav.side a span{color:var(--mut);font-variant-numeric:tabular-nums;min-width:1.4em}nav.side a:hover{background:var(--side);text-decoration:none}
+nav.side a.on{background:var(--acc2);color:var(--acc);font-weight:600}nav.side a.on span{color:var(--acc)}nav.side a.hide{display:none}
+main{padding:2.4rem clamp(1.2rem,4vw,3.2rem) 4rem;min-width:0}article{max-width:760px}
+.crumb{color:var(--mut);font-size:.85rem;margin-bottom:.6rem}.crumb a{color:var(--mut)}
+h1{font-size:clamp(1.9rem,3.2vw,2.5rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 1.2rem}
+h2{font-size:1.35rem;line-height:1.3;margin:2.4rem 0 .7rem;padding-top:1.2rem;border-top:1px solid var(--line);letter-spacing:-.01em}h2 a{color:inherit}h2 a:hover{text-decoration:none}h2 .anc{opacity:0;margin-left:.4rem;color:var(--acc);font-weight:400}h2:hover .anc{opacity:1}
+p{margin:.8rem 0}p.lead{font-size:1.15rem;line-height:1.65;color:var(--mut)}ul,ol{padding-left:1.5rem;margin:.8rem 0}li{margin:.4rem 0}li::marker{color:var(--acc)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:3.5rem}.pager a{display:block;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg)}
+.pager a:hover{border-color:var(--acc);text-decoration:none}.pager small{display:block;color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}.pager .nx{text-align:right}.pager strong{color:var(--acc)}
+aside.toc{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:2.6rem 1rem 2rem 0;font-size:.85rem}aside.toc h4{margin:0 0 .6rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid var(--line);color:var(--mut);line-height:1.35}aside.toc a:hover{color:var(--acc);border-color:var(--acc);text-decoration:none}
+.hero{padding:1rem 0 2rem}.hero p{font-size:1.2rem;color:var(--mut);max-width:620px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1.6rem}
+.card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
+.card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
+@media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
+@media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
+@media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">Easy2<b>edit</b></a><span class="ver">Manual &middot; version 1.0.0 build 72</span><span class="sp"></span><input id="q" type="search" placeholder="Search chapters" aria-label="Search chapters"><a class="btn" id="pdf" href="../../pdf/manual_en.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Manual</h4><a href="index.html" data-t="contents overview" class=""><span>&#9776;</span>Contents</a><a href="chapter-1.html" data-t="introduction easy2edit is a simple, modular management system (cms) for portals, websites, webshops and communities. instead of a fixed layout or a single-purpose tool, easy2edit gives you building blocks that you combine to create exactly the kind of site you need: a standard website, a web shop, a company site, a business network, an intranet, a dating platform, a sports club site, a foundation site, a marke" class=""><span>1</span>Introduction</a><a href="chapter-2.html" data-t="getting started ## logging in for the first time
+
+the first time you open easy2edit, log in using the superadmin account. this account has full access to every module and setting, so you can complete the initial setup.
+
+## the sandbox question (localhost only)
+
+if the site is running on your own computer (localhost), the very first thing easy2edit asks is whether you want to switch the sandbox on. with the sandbo" class=""><span>2</span>Getting started</a><a href="chapter-3.html" data-t="pages, menu and edit mode this chapter explains how pages and the menu are organised in easy2edit, and how edit mode lets you build and change pages directly on the screen.
+
+## pages and menu overview
+
+all pages and menu items are managed under admin &gt; pages. you will find three kinds of entries here:
+
+- system pages: built-in pages such as home and products.
+- own pages: text pages that live at an address such as /p/&lt;key&gt;" class=""><span>3</span>Pages, menu and edit mode</a><a href="chapter-4.html" data-t="importing a website (site import) ## what is site import
+
+site import lets you bring an existing website into easy2edit. you give the system one or more html files, a web address, a folder, or a zip file, and an ai reads the content and prepares a proposal for how to rebuild it inside easy2edit. this includes a matching theme, the pages and their content, icons and images, and any modules that are needed to support the content (fo" class=""><span>4</span>Importing a website (Site import)</a><a href="chapter-5.html" data-t="media, theme, languages and branding ## media library
+
+the media library (admin &gt; media) is where you manage all the images and videos used on your website. files can be stored locally on your server or on s3, depending on how your site is configured.
+
+every picture or video you upload can be given tags, which makes it easier to search and organise your files as your library grows. once uploaded, pictures can be chosen from the media" class=""><span>5</span>Media, theme, languages and branding</a><a href="chapter-6.html" data-t="users, roles and security ## users and profiles
+
+easy2edit keeps a record of everyone who can log in to your website or admin area. you manage these records under admin &gt; users (users).
+
+for each user you can set up:
+
+- an account with a username and password
+- a profile photo
+- a public profile that can be shown on the website
+- a blocked or active status
+
+blocking an account is useful when someone leaves the organisation" class=""><span>6</span>Users, roles and security</a><a href="chapter-7.html" data-t="shop, orders, payments, subscriptions and donations chapter 7: shop, orders, payments, subscriptions and donations
+
+easy2edit offers a set of plugins that work together to sell products, manage orders, process payments and run subscriptions or donation campaigns. depending on what you want to offer on your site, you combine the webshop, orders, financieel and abonnementen plugins. understanding how these plugins depend on each other will help you s" class=""><span>7</span>Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" data-t="community, marketplace, agenda, documents and games easy2edit offers a set of plugins that turn your site into a full community platform. members can build a profile, meet other members, trade on a marketplace, plan appointments, share documents and play games. this chapter explains what each part does and how they fit together.
+
+## community overview
+
+the community plugin brings together everything needed for a community or dating site:
+
+- profile" class=""><span>8</span>Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" data-t="seo, faq and statistics ## seo
+
+easy2edit helps you make your website easy to find, not only for traditional search engines but also for bots and ai agents that read and summarise web content. the seo tools in easy2edit take care of the technical basics as well as the content details that search engines and ai systems look for.
+
+out of the box, easy2edit takes care of:
+
+- robots.txt, which tells search engines and other " class=""><span>9</span>SEO, FAQ and statistics</a><a href="chapter-10.html" data-t="ai and ai credit easy2edit uses artificial intelligence (claude, by anthropic) throughout the system to help with tasks such as translating content, writing page texts, importing websites, researching prices and more. every single call made to the ai is logged in detail, so that usage and costs stay fully transparent and controllable.
+
+## what gets monitored
+
+for every ai call, the system records:
+
+- who made the " class="on"><span>10</span>AI and AI credit</a><a href="chapter-11.html" data-t="plugins, backups, licence and deployment this chapter explains how to extend easy2edit with plugins, how to keep your site safe with backups, how licensing and pricing work, and what happens behind the scenes when the system is deployed.
+
+## plugins
+
+plugins are signed packages that live in the /plugins folder. you manage them from admin &gt; plugins.
+
+a plugin can bring along everything it needs to work:
+- its own pages
+- one or more modul" class=""><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 10</div><h1>10. AI and AI credit</h1>
+<p class="lead">Easy2edit uses artificial intelligence (Claude, by Anthropic) throughout the system to help with tasks such as translating content, writing page texts, importing websites, researching prices and more. Every single call made to the AI is logged in detail, so that usage and costs stay fully transparent and controllable.</p>
+<h2 id="what-gets-monitored">What gets monitored<a class="anc" href="#what-gets-monitored" aria-label="Link to this section">#</a></h2>
+<p>For every AI call, the system records:</p>
 <ul>
-<li>Overview: key figures, cost over time per group, share of use per group, and the last calls made.</li>
-<li>Where: where AI is used most, what costs the most, which tasks and models are involved, and the busiest hours and weekdays.</li>
-<li>Users: heavy users and highest costs, with a table per user and a PDF button on each row.</li>
-<li>Costs: costs per month or week, broken down by group and by user.</li>
-<li>Credit: management of user and admin AI credit.</li>
-<li>Blocks: AI dashboard parts that can be placed on pages.</li>
-<li>Settings: pricing, margins and related configuration.</li>
+<li>Who made the request (a user, an admin, a superadmin, or the system itself)</li>
+<li>From which part of the system the call came</li>
+<li>Which AI model was used</li>
+<li>The number of tokens sent and received</li>
+<li>How long the call took</li>
+<li>Whether it succeeded</li>
+<li>What it cost</li>
 </ul>
-<p>Filters are available for period, month (the current month plus the previous twelve) and group. The PDF button produces a summary, or, if &#x27;Detailed&#x27; is chosen, a complete list of every call including tokens in and out, duration and cost.</p>
-<h2>Costs, margins and pricing</h2>
-<p>Superadmins manage purchase prices per million tokens per model, organised in tabs for Claude, OpenAI and Gemini, showing the models currently active in the API. The &#x27;Refresh models&#x27; button also looks up current prices directly from the AI provider. Purchase prices are shown in the purchase currency (for example USD).</p>
-<p>Sale prices are shown in the selling currency (for example EUR), using an exchange rate that can be updated with a button that asks the AI for the current rate.</p>
-<p>Three separate margins can be set, in percent, for tokens in and tokens out separately: for users, for admins, and for the reseller or superadmin.</p>
-<p>A switch controls whether superadmin and system use is also charged to the customer. When this is on, that use is booked to a group named after the website, using the reseller margin. When it is off, that use is a cost to the reseller with no margin applied, and shown separately.</p>
-<p>Prices, exchange rate and margins are stored with each individual call, so later changes only affect new calls, not past ones. Only superadmins can change these AI settings.</p>
-<h2>AI credit</h2>
-<p>Users and admins normally need to buy AI credit before they can use AI; this requirement is switched on by default. Superadmins and the system itself never need credit.</p>
-<p>Before every AI call, Easy2edit estimates the cost and checks it against the available credit. If there is not enough credit, nothing is sent, and a message explains how much is needed. After the call completes, the actual cost is deducted.</p>
-<p>When a user&#x27;s credit runs low, a pop-up appears with a slider. The minimum step is set to 25, 50 or 100, based on that user&#x27;s use over the last 30 days, along with a suggested top-up amount.</p>
-<p>Payment always goes through Stripe, using an Easy2edit link belonging to the superadmin. It never uses the Stripe account of the website&#x27;s own shop. Credit is added once payment is confirmed as paid; this is checked when the customer returns from Stripe, and checked again when the AI screen is opened.</p>
-<p>Superadmins set the top-up amounts and can manually add or deduct credit for any user, under Super admin &gt; AI &gt; Credit.</p>
-<p>Every admin sees a welcome pop-up at first login, explaining how AI and AI credit work.</p>
-<p>Each standard installation has an AI tab showing whether AI belongs to that installation, whether credit is required, and the smallest and largest top-up amounts allowed.</p>
-<h2>AI use for admins</h2>
-<p>Admin &gt; AI shows the AI use of users and admins, without purchase prices, margins or reseller costs. The Admin start page also shows a block called &#x27;AI use&#x27;, with the admin&#x27;s own credit balance. There is a table per user and a PDF report per user, without purchase prices.</p>
-<p>Viewing this requires the right &#x27;View AI use of users&#x27;, assigned through Roles.</p>
-<p>An admin who has set up his own AI link (Anthropic) and his own Stripe link, neither marked as superadmin links, can switch on his own credit system for his users under Admin &gt; AI &gt; Credit for users. In that case, his users use his AI link, pay through his Stripe account, and the margin belongs to him. He sets his own credit rules, top-up amounts and margin, and can add credit per user.</p>
-<h2>AI blocks</h2>
-<p>Parts of the AI dashboard, such as key figures, costs over time, use per group, where AI is used, heavy users, highest costs, models, and busy hours, can be switched on as system objects under Super admin &gt; AI &gt; Blocks and placed on a page in edit mode. These figures are only visible to superadmins.</p><div class="pager"><span><a href=chapter-9.html>&larr; SEO, FAQ and statistics</a></span><span><a href=chapter-11.html>Plugins, backups, licence and deployment &rarr;</a></span></div></main></body></html>
+<p>This information feeds the AI dashboard, which gives superadmins full insight into usage patterns and spending.</p>
+<h2 id="the-ai-module-and-ai-links">The AI module and AI links<a class="anc" href="#the-ai-module-and-ai-links" aria-label="Link to this section">#</a></h2>
+<p>The AI module is a core module. It switches on automatically as soon as an AI link (an API key) is installed and enabled under Admin &gt; API keys.</p>
+<p>A link can be marked as a Superadmin link. When this is done, only superadmins can see or change it. This is used, for example, for the Easy2edit AI link and the Stripe link of the reseller.</p>
+<p>AI calls made by users and admins always run on an Easy2edit link belonging to the superadmin, whenever one is available.</p>
+<h2 id="the-super-admin-ai-dashboard">The Super admin AI dashboard<a class="anc" href="#the-super-admin-ai-dashboard" aria-label="Link to this section">#</a></h2>
+<p>Super admin &gt; AI gives superadmins a full dashboard with the following tabs:</p>
+<ul>
+<li>Overview: key figures, cost over time per group, share of cost per group, and the last calls made</li>
+<li>Where: where AI is used most, what costs most, which tasks and models are involved, and busy hours and weekdays</li>
+<li>Users: heavy users, highest costs, and a table per user with a PDF button on each row</li>
+<li>Costs: costs broken down per month or week, per group and per user</li>
+<li>Credit: management of AI credit</li>
+<li>Blocks: dashboard blocks that can be placed on pages</li>
+<li>Settings: pricing, margins and related configuration</li>
+</ul>
+<p>The dashboard can be filtered by period, by month (the current month plus the previous twelve), and by group. The PDF button produces a summary report, or, when &#x27;Detailed&#x27; is selected, a complete list of every call including tokens in and out, duration and costs.</p>
+<h2 id="costs-prices-and-margins">Costs, prices and margins<a class="anc" href="#costs-prices-and-margins" aria-label="Link to this section">#</a></h2>
+<p>Superadmins manage purchase prices per million tokens for each model, organised in tabs for Claude, OpenAI and Gemini, showing only the models currently active in the API. The &#x27;Refresh models&#x27; button also looks up current prices directly from the AI provider.</p>
+<p>Purchase prices are set in the purchase currency (for example USD), while sale prices are set in the selling currency (for example EUR), using an exchange rate that can be updated with a button that consults the AI.</p>
+<p>Three separate margins can be set, each expressed as a percentage, and each split into tokens in and tokens out:</p>
+<ul>
+<li>Users</li>
+<li>Admins</li>
+<li>Reseller/superadmin</li>
+</ul>
+<p>A switch determines whether usage by superadmins and the system is also charged to the customer. When switched on, this usage is booked to a group named after the website, using the reseller margin. When switched off, it is treated as a cost to the reseller with no margin applied, and shown separately.</p>
+<p>Prices, exchange rate and margins are stored with each individual call, so later changes to settings only affect new calls, never past ones.</p>
+<p>Only superadmins can change these system-wide AI settings.</p>
+<h2 id="ai-credit">AI credit<a class="anc" href="#ai-credit" aria-label="Link to this section">#</a></h2>
+<p>By default, users and admins must purchase AI credit before they can use AI features. This requirement is a switch that is on by default. Superadmins and the system itself never need credit.</p>
+<p>Before every AI call, the system estimates its cost and checks it against the available credit. If there is not enough credit, nothing is sent, and a message explains what is needed.</p>
+<p>After the call completes, the actual cost is deducted from the credit balance.</p>
+<p>When a user&#x27;s credit runs low, a pop-up appears with a slider. The minimum step is based on actual use over the last 30 days (25, 50 or 100), along with a suggested amount.</p>
+<p>Payment always goes through Stripe, using an Easy2edit link belonging to the superadmin. The website&#x27;s own Stripe shop is never used for this. Credit is added once payment is confirmed, which happens when the customer returns from the payment page and again when the AI screen is opened.</p>
+<p>Superadmins set the available top-up amounts and can manually add or deduct credit for any user, via Super admin &gt; AI &gt; Credit.</p>
+<p>Every admin sees a welcome pop-up at their first login, explaining how AI and AI credit work.</p>
+<p>On a computer where the sandbox mode is switched on, AI credit is never paid for with a real payment. Instead, a simulated payment page is used.</p>
+<p>Each standard installation has an AI tab showing:</p>
+<ul>
+<li>Whether AI is available for this installation</li>
+<li>Whether credit is required</li>
+<li>The smallest and largest top-up amounts allowed</li>
+</ul>
+<h2 id="what-admins-can-see-and-manage">What admins can see and manage<a class="anc" href="#what-admins-can-see-and-manage" aria-label="Link to this section">#</a></h2>
+<p>Admin &gt; AI shows usage by users and admins for that installation. It does not show purchase prices, margins, or reseller costs. The Admin start page also includes an &#x27;AI use&#x27; block showing the admin&#x27;s own credit balance.</p>
+<p>This area includes a table per user and a PDF report per user, without purchase prices.</p>
+<p>To see this information, an admin needs the right &#x27;View AI use of users&#x27;, assigned via Roles.</p>
+<h2 id="admins-with-their-own-ai-and-stripe-links">Admins with their own AI and Stripe links<a class="anc" href="#admins-with-their-own-ai-and-stripe-links" aria-label="Link to this section">#</a></h2>
+<p>An admin who has configured their own AI link (Anthropic) and their own Stripe link, neither marked as a superadmin link, can switch on their own credit system for their users via Admin &gt; AI &gt; Credit for users.</p>
+<p>In that case:</p>
+<ul>
+<li>Their users use the admin&#x27;s own AI link</li>
+<li>Payments go through the admin&#x27;s own Stripe account</li>
+<li>The margin belongs to the admin</li>
+</ul>
+<p>The admin sets the credit rules, the top-up amounts, and the margin, and can add credit to individual users as needed.</p>
+<h2 id="ai-blocks-on-pages">AI blocks on pages<a class="anc" href="#ai-blocks-on-pages" aria-label="Link to this section">#</a></h2>
+<p>Several parts of the AI dashboard can be turned into reusable blocks: key figures, cost over time, usage per group, where AI is used, heavy users, highest costs, models, and busy hours.</p>
+<p>These blocks are switched on as system objects via Super admin &gt; AI &gt; Blocks, and can then be placed on any page while in edit mode. Only superadmins can see the figures shown in these blocks.</p><div class="pager"><a href="chapter-9.html"><small>Previous</small><strong>&larr; SEO, FAQ and statistics</strong></a><a class="nx" href="chapter-11.html"><small>Next</small><strong>Plugins, backups, licence and deployment &rarr;</strong></a></div><footer>Easy2edit manual &middot; version 1.0.0 build 72 &middot; English</footer></article></main><aside class="toc"><h4>On this page</h4><a href="#what-gets-monitored">What gets monitored</a><a href="#the-ai-module-and-ai-links">The AI module and AI links</a><a href="#the-super-admin-ai-dashboard">The Super admin AI dashboard</a><a href="#costs-prices-and-margins">Costs, prices and margins</a><a href="#ai-credit">AI credit</a><a href="#what-admins-can-see-and-manage">What admins can see and manage</a><a href="#admins-with-their-own-ai-and-stripe-links">Admins with their own AI and Stripe links</a><a href="#ai-blocks-on-pages">AI blocks on pages</a></aside></div><script>
+(function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
+if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim();links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)})});
+var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
+var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/':'../../pdf/manual_en.pdf');
+var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
+</script></body></html>

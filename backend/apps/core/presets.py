@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 BASE = ["pages", "edit_mode", "media", "branding", "theme", "languages", "privacy_pages", "cookies", "communication", "registration", "notifications", "help"]
 
 # the parts of the admin itself (system settings, licence, plugins, storage, back-ups, and with them the page Standaard installaties): never switched off by an installation
-ALWAYS_ON = ["system", "plugins", "storage", "backups"]
+ALWAYS_ON = ["system", "plugins", "storage", "backups", "integrations"]  # "integrations" = the API links module: the links of the superadmin (AI, Stripe, mail, storage) must keep working in every installation
 
 PRESETS = [
     {"key": "standaard-website", "name": "Standaard website", "icon": "globe", "theme": "normal", "plugins": ["documents"],
@@ -205,6 +205,23 @@ def _wanted_modules(preset):
                         want.add(r)
                         changed = True
     return want - set(preset.get("exclude_modules") or [])  # parts of a plugin this installation does not use (an intranet has no matching or direct connection)
+
+
+def ensure_system_links():
+    """The links of the superadmin (the Easy2edit AI, Stripe, mail and storage links) go with every standard installation: the module API keys is on and those links are switched on (when they have a key), so they work."""
+    from apps.integrations.models import Integration
+
+    from .models import ModuleState
+
+    ModuleState.objects.update_or_create(key="integrations", defaults={"enabled": True})
+    modules.invalidate()
+    n = 0
+    for i in Integration.objects.filter(superadmin_only=True, enabled=False):
+        cfg = i.config or {}
+        if any(str(v).strip() for k, v in cfg.items() if k in ("api_key", "secret_key", "server_token", "access_key", "access_key_id", "secret_access_key", "token")):
+            Integration.objects.filter(pk=i.pk).update(enabled=True)
+            n += 1
+    return n
 
 
 def ensure_home_logo():
@@ -946,6 +963,10 @@ def apply(key, preset=None, overwrite_pages=False):
         if not m.get("core"):
             ModuleState.objects.update_or_create(key=m["key"], defaults={"enabled": m["key"] in want})
     modules.invalidate()
+    try:
+        ensure_system_links()  # the API module and the links of the superadmin work in every installation
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: the links of the superadmin could not be switched on", key)
     from apps.plugins import installer
 
     need = plugins_for(preset)

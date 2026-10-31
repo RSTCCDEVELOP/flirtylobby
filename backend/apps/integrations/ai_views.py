@@ -528,7 +528,10 @@ def topup(request):
         try:
             url, sid = license_stripe.ai_checkout(request.user, amount, st.currency, ref, key=link["key"])
         except license_stripe.StripeError as e:
-            return Response({"detail": f"Stripe: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+            msg = str(e)
+            if "cannot currently make live charges" in msg:
+                msg = "Het Stripe-account achter deze koppeling mag nog geen echte betalingen ontvangen. Rond de activering van het account in Stripe af, of gebruik tijdelijk een testsleutel (sk_test…) of de sandbox."
+            return Response({"detail": f"Stripe: {msg}"}, status=status.HTTP_400_BAD_REQUEST)
         AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, session_id=sid, via="stripe")
         return Response({"url": url, "ref": ref, "via": "stripe"})
     pay = commerce.payments()

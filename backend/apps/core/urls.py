@@ -8,6 +8,7 @@
 from django.urls import path
 
 from . import backup_views, dashboard, marketing, resource_views, sales, views
+from . import manual
 
 urlpatterns = [
     path("resource/", resource_views.library),
@@ -51,6 +52,10 @@ urlpatterns = [
     path("system/installations-config/", views.installations_config_view),
     path("system/presets/", views.presets_list),
     path("system/presets/admin/", views.presets_admin),
+    path("manual/pdf/", manual.pdf),
+    path("manual/html/", manual.html),
+    path("manual/html/<str:name>", manual.html),
+    path("system/sandbox-first/", views.sandbox_first),
     path("system/presets/default/", views.presets_default),
     path("system/presets/<str:key>/ai/", views.presets_ai),
     path("system/presets/setup/", views.presets_setup),

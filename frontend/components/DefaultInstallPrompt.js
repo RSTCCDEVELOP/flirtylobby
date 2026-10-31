@@ -15,6 +15,8 @@ import { runDemo, resumeDemo } from "../lib/demoRun";
 import Link from "next/link";
 import { useAuth } from "./AuthContext";
 import Tabs from "./Tabs";
+import { useSandboxFirst } from "../lib/firstRun";
+import AiFillAsk from "./AiFillAsk";
 import RunPopup from "./RunPopup";
 
 // Superadmin, after logging in: nothing is installed yet? Then ask to install the default standard installation (marked at Standaard installaties).
@@ -28,15 +30,17 @@ export default function DefaultInstallPrompt() {
   const [demo, setDemo] = useState(false);
   const [run, setRun] = useState(null);
   const [error, setError] = useState("");
+  const first = useSandboxFirst(!!user?.is_staff); // the question about the sandbox (on your own computer) comes first
   const [tab, setTab] = useState("install");
+  const [fillAsk, setFillAsk] = useState(false); // after the installation: fill the website with AI? (then straight to buying AI credit)
   const [aiOn, setAiOn] = useState(null); // is an AI link installed? (then the website can be filled with AI)
 
   useEffect(() => {
-    if (!user?.is_staff) return;
+    if (!user?.is_staff || !first.known || first.pending) return;
     try { if (sessionStorage.getItem(KEY)) return; } catch {}
     api("/ai/me/").then((i) => setAiOn(!!i.module)).catch(() => setAiOn(false));
     api("/system/presets/setup/").then((r) => { if (r.needed) { setAsk(r); setPick(r.presets[0]?.key || ""); } }).catch(() => {});
-  }, [user?.is_staff]);
+  }, [user?.is_staff, first.known, first.pending]);
 
   const later = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} setAsk(null); };
 
@@ -65,7 +69,8 @@ export default function DefaultInstallPrompt() {
 
   return (
     <>
-      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onClose={() => { setRun(null); window.location.reload(); }} />
+      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onClose={() => { const ok = run?.done && !run?.error; setRun(null); if (ok && aiOn !== false) setFillAsk(true); else window.location.reload(); }} />
+      {fillAsk && <AiFillAsk onNo={() => window.location.reload()} />}
       {ask && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={later}>
           <div className="card modal form" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>

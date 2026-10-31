@@ -38,6 +38,7 @@ export default function SystemReset() {
   const [saved, setSaved] = useState(false);
   const presets = usePresets();
   const [preset, setPreset] = useState(""); // set up as this standard installation right after the reset
+  const [aiToo, setAiToo] = useState(false); // also remove the AI data (calls, costs, credit and its history)?
 
   async function open() {
     setMsg(null); setSaved(false); setWord(""); setPw("");
@@ -68,7 +69,7 @@ export default function SystemReset() {
   async function reset() {
     setBusy(true); setMsg(null); setFinished(false); setJob("reset");
     try {
-      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset } });
+      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo } });
       setAdminMail(r?.admin || "");
       setFinished(true);
       await new Promise((r) => setTimeout(r, 700)); // the bar shows 100% for a moment
@@ -115,6 +116,13 @@ export default function SystemReset() {
                   </ul>
                 </div>
                 <small className="muted">{info.standard_admin ? tx("Blijft: de superadmin {0} (met het standaardwachtwoord opnieuw gemaakt; alle andere superadmins worden verwijderd), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema Easy2edit.")}</small>
+                {(info.ai_calls > 0 || info.ai_ledger > 0 || info.ai_credit > 0) && (
+                  <label className="check sec-toggle">
+                    <span className="switch"><input type="checkbox" checked={aiToo} onChange={(e) => setAiToo(e.target.checked)} /><span /></span>
+                    <span>{tx("Ook de AI-gegevens in de database verwijderen?")}
+                      <small className="muted" style={{ display: "block" }}>{tx("{0} AI-aanroepen met hun kosten, het tegoed (en de geschiedenis van {1} betalingen en boekingen) van de superadmins. De AI-instellingen (prijzen, marges, koppelingen) blijven. Het tegoed van gebruikers verdwijnt sowieso met de gebruikers.", info.ai_calls, info.ai_ledger)}{info.ai_credit > 0 ? ` ${tx("Let op: er staat nog {0} aan tegoed van gebruikers.", info.ai_credit.toFixed(2))}` : ""}</small></span>
+                  </label>
+                )}
                 {presets?.length > 0 && (
                   <label>{tx("Daarna meteen instellen als")}
                     <select value={preset} onChange={(e) => setPreset(e.target.value)}>

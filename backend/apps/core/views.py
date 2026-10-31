@@ -464,7 +464,7 @@ def system_reset(request):
         return Response({"detail": "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
     if not request.user.check_password(str(request.data.get("password", ""))):
         return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
-    removed = reset.perform(request.user)
+    removed = reset.perform(request.user, ai=bool(request.data.get("ai")))
     applied = None
     if request.data.get("preset"):  # start straight from a standard installation
         from . import presets
@@ -762,6 +762,33 @@ def presets_ai(request, key):
         return Response(presets.set_ai(key, request.data or {}))
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def sandbox_first(request):
+    """The first question for a superadmin who works on his own computer: switch the sandbox on? (payments, e-mail, sms and the tests of the API links are then simulated, nothing real happens).
+    GET = {local, asked, enabled}; POST {on} = the answer (on: the module and the sandbox are switched on)."""
+    from django.conf import settings as dj
+
+    from apps.sandbox import service as sandbox
+
+    from .models import ModuleState, SystemSettings
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    host = (request.get_host() or "").split(":")[0].lower().strip("[]")
+    obj, _ = SystemSettings.objects.get_or_create(pk=1)
+    if request.method == "POST":
+        if request.data.get("on"):
+            ModuleState.objects.update_or_create(key="sandbox", defaults={"enabled": True})
+            modules.invalidate()
+            sandbox.save({"enabled": True})
+        obj.data = {**(obj.data or {}), "sandbox_asked": True}
+        obj.save()
+    # "local": the address of this server is your own computer (not a real domain)
+    local = host in ("localhost", "127.0.0.1", "::1", "0.0.0.0") or host.endswith(".localhost") or host.endswith(".local")
+    return Response({"local": local, "asked": bool((obj.data or {}).get("sandbox_asked")), "enabled": sandbox.active()})
 
 
 @api_view(["GET"])

@@ -14,6 +14,7 @@ import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import Tabs from "./Tabs";
+import { useSandboxFirst } from "../lib/firstRun";
 import AiCreditPopup from "./AiCreditPopup";
 import { money } from "./AiCharts";
 
@@ -21,6 +22,7 @@ import { money } from "./AiCharts";
 export default function AiWelcome() {
   const { user } = useAuth();
   const mods = useModules();
+  const first = useSandboxFirst(!!user?.is_staff);
   const [me, setMe] = useState(null);
   const [cr, setCr] = useState(null);
   const [stripe, setStripe] = useState(null);
@@ -28,9 +30,9 @@ export default function AiWelcome() {
   const [buy, setBuy] = useState(false);
   const [msg, setMsg] = useState(null);
   useEffect(() => {
-    if (!user || mods.ai === false) return;
+    if (!user || mods.ai === false || (user.is_staff && (!first.known || first.pending))) return;
     api("/ai/me/").then((i) => { if (i.welcome) setMe(i); }).catch(() => {});
-  }, [user, mods.ai]);
+  }, [user, mods.ai, first.known, first.pending]);
   useEffect(() => {
     if (!me?.is_staff) return;
     api("/admin/ai/credit/").then(setCr).catch(() => {});

@@ -17,6 +17,7 @@ import RunPopup from "./RunPopup";
 import { runDemo, resumeDemo } from "../lib/demoRun";
 import { PresetIcon, IconSettings } from "./Icons";
 import PresetSettings from "./PresetSettings";
+import AiFillAsk from "./AiFillAsk";
 import InstallationsBase from "./InstallationsBase";
 
 // Standard installations: a kind of business with its modules, plugins and community theme. One click switches everything (Super admin).
@@ -39,6 +40,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   // the menus and modules come from the server when the page loads: after a change the whole page is loaded again (the message is kept for it)
   const reloadWith = (m) => { try { sessionStorage.setItem("preset-msg", JSON.stringify(m)); } catch {} window.location.reload(); };
   const [open, setOpen] = useState("");
+  const [fillAsk, setFillAsk] = useState(false); // after setting an installation: fill the website with AI?
   const [cfgKey, setCfgKey] = useState(""); // the installation whose settings are open (pop-up with tabs)
   const [run, setRun] = useState(null); // the status pop-up with the progress
   const [ask, setAsk] = useState(null); // {p, needs, demo}: the question before an installation is set
@@ -150,7 +152,8 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       <p className="muted" style={{ margin: 0 }}>{tx("Kies een standaard installatie en alles wordt voor je ingesteld: welke modules en plugins aan staan en het thema van de community. Teksten, gebruikers en andere gegevens blijven zoals ze zijn.")}{manage && ` ${tx("Met de schakelaar bepaal je welke installaties ook voor beheerders (admin) zichtbaar zijn.")}`}</p>
       {manage && <InstallationsBase />}
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onUndo={run?.undo ? undoRun : null} onClose={() => { setRun(null); window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
+      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onUndo={run?.undo ? undoRun : null} onClose={async () => { const ok = run?.undo && run?.done && !run?.error; setRun(null); let ai = false; if (ok) { try { ai = !!(await api("/ai/me/")).module; } catch {} } if (ai) setFillAsk(true); else window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
+      {fillAsk && <AiFillAsk onNo={() => window.location.reload()} />}
       {ask && (
         <div className="overlay" onClick={() => setAsk(null)}>
           <div className="card modal" role="dialog" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>

@@ -55,7 +55,16 @@ def summary():
     from apps.pages.models import Page
     from apps.plugins.models import Plugin
 
-    return {"users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
+    ai = {}
+    try:  # the AI data of the database: calls, credit (of the users who stay: the superadmins) and the history of the credit
+        from django.db.models import Sum
+
+        from apps.integrations.models import AiAccount, AiLedger, AiTopup, AiUsage
+
+        ai = {"ai_calls": AiUsage.objects.count(), "ai_ledger": AiLedger.objects.count() + AiTopup.objects.count(), "ai_credit": float(AiAccount.objects.filter(user__is_staff=False).aggregate(v=Sum("balance"))["v"] or 0)}
+    except Exception:  # noqa: BLE001
+        ai = {"ai_calls": 0, "ai_ledger": 0, "ai_credit": 0}
+    return {**ai, "users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
             "pages": Page.objects.exclude(kind="system").count(), "plugins": Plugin.objects.count(), "themes": ThemePack.objects.count()}
 
 
@@ -136,7 +145,7 @@ def standard_admin():
     return email
 
 
-def perform(keep=None):
+def perform(keep=None, ai=False):
     """Do the reset. Returns what was removed. keep = the superadmin who asks (stays in any case; all superadmins stay)."""
     from apps.accounts.models import User
     from apps.core import modules, themepacks
@@ -147,6 +156,17 @@ def perform(keep=None):
     from apps.plugins.models import Plugin
 
     removed = dict(summary())
+    if ai:  # asked: the AI data goes too (every call with its costs, the credit and its history); the settings (prices, margins, links) stay
+        try:
+            from apps.integrations.models import AiAccount, AiLedger, AiTopup, AiUsage
+
+            AiLedger.objects.all().delete()
+            AiTopup.objects.all().delete()
+            AiAccount.objects.all().delete()
+            AiUsage.objects.all().delete()
+            removed["ai_removed"] = True
+        except Exception:  # noqa: BLE001
+            logger.exception("Reset: the AI data could not be removed")
     try:  # the demo data first, the careful way (also its pictures and the rows of plugins)
         from apps.core import demo
 
@@ -191,7 +211,7 @@ def perform(keep=None):
         ModuleState.objects.all().delete()
         for m in modules.MODULES:
             if not m.get("core"):
-                ModuleState.objects.create(key=m["key"], enabled=False)
+                ModuleState.objects.create(key=m["key"], enabled=m["key"] == "integrations")  # (the API keys module stays on: the links of the superadmin keep working)
         # look: the default (Easy2edit)
         SiteSettings.objects.update_or_create(pk=1, defaults={"theme": {}})
         clear_license()  # a clean system has no licence either

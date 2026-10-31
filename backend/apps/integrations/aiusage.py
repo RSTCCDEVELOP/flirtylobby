@@ -147,6 +147,13 @@ def pay_link(user=None):
     is marked as a superadmin link, "license" = the Stripe account of the licence) or None."""
     from .models import Integration
 
+    try:  # in the sandbox payments are simulated: never a real payment (also not on your own computer with live keys)
+        from apps.sandbox import service as sandbox
+
+        if sandbox.active("payments"):
+            return None
+    except Exception:  # noqa: BLE001
+        pass
     if uses_tenant(user):  # the own system of an admin: paid through his own Stripe link
         _, s = tenant_links()
         k = (s.config.get("secret_key") or "").strip()

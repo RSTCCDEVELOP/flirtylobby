@@ -1,58 +1,151 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Introduction - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
-@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
-*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
-nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
-nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
-nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
-main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
-p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
-@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="on">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>1. Introduction</h1>
-<p>Easy2edit is a simple, modular management system (CMS) for building and running portals, websites, webshops and communities. It is designed so that you can start quickly with a ready-made setup, and then grow the site by switching modules and plugins on or off, without needing to touch any code.</p>
-<p>Behind the scenes, Easy2edit runs on a Django (REST) backend and a Next.js frontend. You do not need to know anything about these technologies to use the system. What matters for you as an administrator or website owner is that the site is built from blocks, and that features of the site can be turned on or off as modules and plugins.</p>
-<h2>How a site is built</h2>
-<p>Rather than writing pages from scratch, you build a website from blocks. These blocks are combined into pages, and pages are combined into a complete site. On top of that, you decide which parts of the system are active by switching modules and plugins on or off. This makes it possible to keep a site simple and light, or to expand it with more functionality as your needs grow.</p>
-<h2>Who uses Easy2edit</h2>
-<p>There are three kinds of people who work with an Easy2edit site:</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Introduction - Easy2edit manual</title><style>
+:root{--bg:#fff;--fg:#1f1f24;--mut:#6b6b76;--acc:#d9631a;--acc2:#fff3ea;--line:#e6e6ea;--side:#f7f7f9;--card:#fff;--shadow:0 1px 2px rgba(20,20,30,.06),0 8px 24px rgba(20,20,30,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#14111a;--fg:#eceaf2;--mut:#a09cad;--acc:#ff9a55;--acc2:#2a1f1a;--line:#2b2635;--side:#1a1621;--card:#1c1823;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:3px}
+.top{position:sticky;top:0;z-index:20;height:60px;display:flex;align-items:center;gap:1rem;padding:0 1.25rem;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:800;font-size:1.2rem;letter-spacing:-.01em;color:var(--fg)}.top .brand b{color:var(--acc)}
+.top .ver{color:var(--mut);font-size:.85rem;border-left:1px solid var(--line);padding-left:1rem}
+.top .sp{flex:1}.top input{width:min(280px,34vw);padding:.5rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--side);color:var(--fg);font:inherit;font-size:.9rem}
+.top input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .95rem;border-radius:999px;background:var(--acc);color:#fff;font-weight:600;font-size:.88rem;text-decoration:none!important}
+.btn:hover{filter:brightness(1.07)}.menu{display:none;background:none;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:.4rem .6rem;font-size:1rem;cursor:pointer}
+.wrap{display:grid;grid-template-columns:272px minmax(0,1fr) 220px;max-width:1380px;margin:0 auto}
+nav.side{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:1.25rem .9rem 2rem;border-right:1px solid var(--line)}
+nav.side h4{margin:.4rem .6rem .5rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+nav.side a{display:flex;gap:.6rem;align-items:baseline;padding:.5rem .65rem;border-radius:9px;color:var(--fg);font-size:.93rem;line-height:1.35}
+nav.side a span{color:var(--mut);font-variant-numeric:tabular-nums;min-width:1.4em}nav.side a:hover{background:var(--side);text-decoration:none}
+nav.side a.on{background:var(--acc2);color:var(--acc);font-weight:600}nav.side a.on span{color:var(--acc)}nav.side a.hide{display:none}
+main{padding:2.4rem clamp(1.2rem,4vw,3.2rem) 4rem;min-width:0}article{max-width:760px}
+.crumb{color:var(--mut);font-size:.85rem;margin-bottom:.6rem}.crumb a{color:var(--mut)}
+h1{font-size:clamp(1.9rem,3.2vw,2.5rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 1.2rem}
+h2{font-size:1.35rem;line-height:1.3;margin:2.4rem 0 .7rem;padding-top:1.2rem;border-top:1px solid var(--line);letter-spacing:-.01em}h2 a{color:inherit}h2 a:hover{text-decoration:none}h2 .anc{opacity:0;margin-left:.4rem;color:var(--acc);font-weight:400}h2:hover .anc{opacity:1}
+p{margin:.8rem 0}p.lead{font-size:1.15rem;line-height:1.65;color:var(--mut)}ul,ol{padding-left:1.5rem;margin:.8rem 0}li{margin:.4rem 0}li::marker{color:var(--acc)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:3.5rem}.pager a{display:block;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg)}
+.pager a:hover{border-color:var(--acc);text-decoration:none}.pager small{display:block;color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}.pager .nx{text-align:right}.pager strong{color:var(--acc)}
+aside.toc{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:2.6rem 1rem 2rem 0;font-size:.85rem}aside.toc h4{margin:0 0 .6rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid var(--line);color:var(--mut);line-height:1.35}aside.toc a:hover{color:var(--acc);border-color:var(--acc);text-decoration:none}
+.hero{padding:1rem 0 2rem}.hero p{font-size:1.2rem;color:var(--mut);max-width:620px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1.6rem}
+.card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
+.card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
+@media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
+@media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
+@media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">Easy2<b>edit</b></a><span class="ver">Manual &middot; version 1.0.0 build 72</span><span class="sp"></span><input id="q" type="search" placeholder="Search chapters" aria-label="Search chapters"><a class="btn" id="pdf" href="../../pdf/manual_en.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Manual</h4><a href="index.html" data-t="contents overview" class=""><span>&#9776;</span>Contents</a><a href="chapter-1.html" data-t="introduction easy2edit is a simple, modular management system (cms) for portals, websites, webshops and communities. instead of a fixed layout or a single-purpose tool, easy2edit gives you building blocks that you combine to create exactly the kind of site you need: a standard website, a web shop, a company site, a business network, an intranet, a dating platform, a sports club site, a foundation site, a marke" class="on"><span>1</span>Introduction</a><a href="chapter-2.html" data-t="getting started ## logging in for the first time
+
+the first time you open easy2edit, log in using the superadmin account. this account has full access to every module and setting, so you can complete the initial setup.
+
+## the sandbox question (localhost only)
+
+if the site is running on your own computer (localhost), the very first thing easy2edit asks is whether you want to switch the sandbox on. with the sandbo" class=""><span>2</span>Getting started</a><a href="chapter-3.html" data-t="pages, menu and edit mode this chapter explains how pages and the menu are organised in easy2edit, and how edit mode lets you build and change pages directly on the screen.
+
+## pages and menu overview
+
+all pages and menu items are managed under admin &gt; pages. you will find three kinds of entries here:
+
+- system pages: built-in pages such as home and products.
+- own pages: text pages that live at an address such as /p/&lt;key&gt;" class=""><span>3</span>Pages, menu and edit mode</a><a href="chapter-4.html" data-t="importing a website (site import) ## what is site import
+
+site import lets you bring an existing website into easy2edit. you give the system one or more html files, a web address, a folder, or a zip file, and an ai reads the content and prepares a proposal for how to rebuild it inside easy2edit. this includes a matching theme, the pages and their content, icons and images, and any modules that are needed to support the content (fo" class=""><span>4</span>Importing a website (Site import)</a><a href="chapter-5.html" data-t="media, theme, languages and branding ## media library
+
+the media library (admin &gt; media) is where you manage all the images and videos used on your website. files can be stored locally on your server or on s3, depending on how your site is configured.
+
+every picture or video you upload can be given tags, which makes it easier to search and organise your files as your library grows. once uploaded, pictures can be chosen from the media" class=""><span>5</span>Media, theme, languages and branding</a><a href="chapter-6.html" data-t="users, roles and security ## users and profiles
+
+easy2edit keeps a record of everyone who can log in to your website or admin area. you manage these records under admin &gt; users (users).
+
+for each user you can set up:
+
+- an account with a username and password
+- a profile photo
+- a public profile that can be shown on the website
+- a blocked or active status
+
+blocking an account is useful when someone leaves the organisation" class=""><span>6</span>Users, roles and security</a><a href="chapter-7.html" data-t="shop, orders, payments, subscriptions and donations chapter 7: shop, orders, payments, subscriptions and donations
+
+easy2edit offers a set of plugins that work together to sell products, manage orders, process payments and run subscriptions or donation campaigns. depending on what you want to offer on your site, you combine the webshop, orders, financieel and abonnementen plugins. understanding how these plugins depend on each other will help you s" class=""><span>7</span>Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" data-t="community, marketplace, agenda, documents and games easy2edit offers a set of plugins that turn your site into a full community platform. members can build a profile, meet other members, trade on a marketplace, plan appointments, share documents and play games. this chapter explains what each part does and how they fit together.
+
+## community overview
+
+the community plugin brings together everything needed for a community or dating site:
+
+- profile" class=""><span>8</span>Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" data-t="seo, faq and statistics ## seo
+
+easy2edit helps you make your website easy to find, not only for traditional search engines but also for bots and ai agents that read and summarise web content. the seo tools in easy2edit take care of the technical basics as well as the content details that search engines and ai systems look for.
+
+out of the box, easy2edit takes care of:
+
+- robots.txt, which tells search engines and other " class=""><span>9</span>SEO, FAQ and statistics</a><a href="chapter-10.html" data-t="ai and ai credit easy2edit uses artificial intelligence (claude, by anthropic) throughout the system to help with tasks such as translating content, writing page texts, importing websites, researching prices and more. every single call made to the ai is logged in detail, so that usage and costs stay fully transparent and controllable.
+
+## what gets monitored
+
+for every ai call, the system records:
+
+- who made the " class=""><span>10</span>AI and AI credit</a><a href="chapter-11.html" data-t="plugins, backups, licence and deployment this chapter explains how to extend easy2edit with plugins, how to keep your site safe with backups, how licensing and pricing work, and what happens behind the scenes when the system is deployed.
+
+## plugins
+
+plugins are signed packages that live in the /plugins folder. you manage them from admin &gt; plugins.
+
+a plugin can bring along everything it needs to work:
+- its own pages
+- one or more modul" class=""><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 1</div><h1>1. Introduction</h1>
+<p class="lead">Easy2edit is a simple, modular management system (CMS) for portals, websites, webshops and communities. Instead of a fixed layout or a single-purpose tool, Easy2edit gives you building blocks that you combine to create exactly the kind of site you need: a standard website, a web shop, a company site, a business network, an intranet, a dating platform, a sports club site, a foundation site, a marketplace or even a game hall.</p>
+<p>Under the hood, Easy2edit runs on a Django (REST) backend with a Next.js frontend. You do not need to know anything about these technologies to use Easy2edit; they simply make the system fast, reliable and flexible. What matters to you as an administrator is that the site is built from blocks, and that you can switch modules and plugins on or off depending on what your website needs.</p>
+<h2 id="blocks-modules-and-plugins">Blocks, modules and plugins<a class="anc" href="#blocks-modules-and-plugins" aria-label="Link to this section">#</a></h2>
+<p>A website in Easy2edit is built from blocks. You place and arrange these blocks to create pages, and together they form the structure and content of your site.</p>
+<p>Modules are parts of the system that can be switched on or off. They add functionality to your installation, such as specific features or tools. You manage modules in Super admin &gt; Modules.</p>
+<p>Plugins are signed extension packages. They bring their own pages and modules with them, so installing a plugin can add entirely new sections or capabilities to your site. You manage plugins in Admin &gt; Plugins.</p>
+<p>Because everything is modular, you only activate what you actually use. This keeps your site lean and makes it easier to manage.</p>
+<h2 id="standard-installations">Standard installations<a class="anc" href="#standard-installations" aria-label="Link to this section">#</a></h2>
+<p>If you do not want to build everything from scratch, Easy2edit offers standard installations. With one click, a standard installation sets up the modules, plugins and theme for a specific type of website, such as a standard website, a web shop, a company website, a business network, an intranet, a dating platform, a sports club, a foundation, a marketplace or a game hall.</p>
+<p>Each standard installation is represented by a small tile with a settings pop-up. This pop-up:</p>
 <ul>
-<li>Users: visitors who have created an account on the site. They can log in, manage their own profile and use the features that are available to them.</li>
-<li>Admins: people who manage parts of the site. What an admin is allowed to do depends on the roles assigned to them. One admin might only manage pages, while another might also manage plugins or users, depending on their role.</li>
-<li>Superadmins: the owner or reseller of the site. A superadmin can do everything, including changing system settings, switching modules and plugins on or off, managing prices and managing the licence.</li>
+<li>Is visible in the admin area.</li>
+<li>Is offered automatically the first time you install the system.</li>
+<li>Lets you configure AI credit settings.</li>
+<li>Lets you choose which modules to include.</li>
+<li>Lets you decide whether to add demo data.</li>
 </ul>
-<p>This structure means that you can safely delegate day to day management tasks to admins, while keeping full control over the system as a superadmin.</p>
-<h2>The dashboard</h2>
-<p>After logging in, you work from the dashboard. The dashboard is organised into three areas:</p>
+<p>This makes it quick to get started, while still leaving room to adjust the setup to your needs.</p>
+<h2 id="who-uses-easy2edit">Who uses Easy2edit<a class="anc" href="#who-uses-easy2edit" aria-label="Link to this section">#</a></h2>
+<p>Easy2edit distinguishes three kinds of people:</p>
 <ul>
-<li>Dashboard: this is your own personal area, where you manage your own profile, see your notifications and view your own AI credit.</li>
-<li>Admin: this is the management area, where admins manage the parts of the site they are responsible for.</li>
-<li>Super admin: this is the system area, reserved for superadmins, where system-wide settings are configured.</li>
+<li>Users are visitors who have an account on the site. They can use the features that are available to them as members or customers.</li>
+<li>Admins manage parts of the site. Their rights depend on the roles assigned to them, so one admin might manage only content, while another might manage users or orders, depending on what their role allows.</li>
+<li>Superadmins are the owner or reseller of the installation. They have access to everything, including system settings, modules, plugins, prices and the licence.</li>
 </ul>
-<p>Which of these areas you see, and what you can do inside them, depends on whether you are a user, an admin or a superadmin.</p>
-<h2>Modules and plugins</h2>
-<p>Easy2edit is modular, which means that functionality is organised into modules and plugins that can be switched on or off as needed.</p>
-<p>Modules are parts of the system that can be enabled or disabled. You manage them under Super admin &gt; Modules.</p>
-<p>Plugins are signed extension packages. They bring their own pages and their own modules with them, extending what the site can do. You manage plugins under Admin &gt; Plugins.</p>
-<p>Because modules and plugins can be switched on or off, you only need to activate the parts of the system that your site actually needs, keeping things clear and manageable.</p>
-<h2>Standard installations</h2>
-<p>To help you get started quickly, Easy2edit offers standard installations. A standard installation sets up the modules, plugins and theme for a particular type of website with a single click. Available types include:</p>
+<p>This structure means you can give people exactly the access they need, without giving everyone full control over the system.</p>
+<h2 id="finding-your-way-around">Finding your way around<a class="anc" href="#finding-your-way-around" aria-label="Link to this section">#</a></h2>
+<p>The dashboard is organised into three areas:</p>
 <ul>
-<li>Standard website</li>
-<li>Web shop</li>
-<li>Company website</li>
-<li>Business network</li>
-<li>Intranet</li>
-<li>Dating platform</li>
-<li>Sports club</li>
-<li>Foundation</li>
-<li>Marketplace</li>
-<li>Game hall</li>
+<li>Dashboard: your own profile, notifications and your own AI credit.</li>
+<li>Admin: management of the site, such as content, users and plugins.</li>
+<li>Super admin: system-level settings, including modules, pricing and licence.</li>
 </ul>
-<p>Each standard installation is shown as a small tile, visible in the admin area. The tile has a settings pop-up, which is offered the first time you install it. From this pop-up you can configure things such as AI credit settings, which modules are included, and whether demo data is added.</p>
-<h2>The header</h2>
-<p>At the top of the screen, the header gives you quick access to a few general controls:</p>
+<p>At the top of every page, the header gives you quick access to a few tools:</p>
 <ul>
-<li>The language switcher, to change the display language.</li>
-<li>The edit-mode switch (shown as a pencil icon), to turn editing of the site on or off.</li>
-<li>Light and dark mode, to switch the appearance of the interface.</li>
-<li>The user menu, where you can access your account options.</li>
+<li>A language switcher to change the interface language.</li>
+<li>An edit-mode switch, shown as a pencil icon, to turn editing on or off.</li>
+<li>A light/dark mode toggle for visual comfort.</li>
+<li>A user menu for account-related actions.</li>
 </ul>
-<p>These header controls are available wherever you are in the system, so you can always adjust your language, switch between viewing and editing the site, change the display mode, or access your user menu.</p><div class="pager"><span></span><span><a href=chapter-2.html>Getting started &rarr;</a></span></div></main></body></html>
+<h2 id="getting-help">Getting help<a class="anc" href="#getting-help" aria-label="Link to this section">#</a></h2>
+<p>Easy2edit includes built-in help wherever you need it. On every page of the Admin and Super admin areas, you will find a Help button, shown as a question mark icon next to the back button. Clicking it opens this manual in a pop-up, automatically scrolled to the chapter that matches the page you are on.</p>
+<p>If you prefer to read the manual on its own, go to the Admin start page. Under About Easy2edit, you will find two large buttons:</p>
+<ol start="1">
+<li>One opens the full HTML manual, either in a pop-up or in a new browser tab.</li>
+<li>The other lets you download the manual as a PDF file.</li>
+</ol>
+<p>The manual is written in English.</p>
+<p>With these tools, you should always be able to find guidance exactly where and when you need it, whether you are setting up your first standard installation or fine-tuning modules and plugins later on.</p><div class="pager"><span></span><a class="nx" href="chapter-2.html"><small>Next</small><strong>Getting started &rarr;</strong></a></div><footer>Easy2edit manual &middot; version 1.0.0 build 72 &middot; English</footer></article></main><aside class="toc"><h4>On this page</h4><a href="#blocks-modules-and-plugins">Blocks, modules and plugins</a><a href="#standard-installations">Standard installations</a><a href="#who-uses-easy2edit">Who uses Easy2edit</a><a href="#finding-your-way-around">Finding your way around</a><a href="#getting-help">Getting help</a></aside></div><script>
+(function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
+if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim();links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)})});
+var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
+var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/':'../../pdf/manual_en.pdf');
+var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
+</script></body></html>

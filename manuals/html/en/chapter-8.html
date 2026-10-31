@@ -1,64 +1,156 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Community, marketplace, agenda, documents and games - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
-@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
-*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
-nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
-nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
-nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
-main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
-p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
-@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="on">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>8. Community, marketplace, agenda, documents and games</h1>
-<p>Easy2edit offers a set of plugins that turn your site into a social platform. Together they let members build a profile, find and contact each other, trade items, manage appointments, share documents and play games. This chapter describes each of these building blocks and how they fit together.</p>
-<h2>Community overview</h2>
-<p>The Community plugin brings together everything you need for a community or dating site. Members get their own profile pages with photos, can search for other members, and can block users they do not want to interact with. They can search and match with others: liking profiles, keeping favorites and seeing who visited their page. Members can also exchange messages, use chat, and set up a direct connection (WebRTC) using a code, a link or a QR code.</p>
-<p>Community profiles use profile themes, profile fields and &quot;available for&quot; options, so you can tailor the experience to your audience. When parts of the community require a subscription or a donation, the Community plugin works together with the Subscriptions plugin.</p>
-<h2>Profile themes</h2>
-<p>Profile themes let you package a set of profile fields and settings for a specific type of community. Easy2edit comes with ready-made themes:</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Community, marketplace, agenda, documents and games - Easy2edit manual</title><style>
+:root{--bg:#fff;--fg:#1f1f24;--mut:#6b6b76;--acc:#d9631a;--acc2:#fff3ea;--line:#e6e6ea;--side:#f7f7f9;--card:#fff;--shadow:0 1px 2px rgba(20,20,30,.06),0 8px 24px rgba(20,20,30,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#14111a;--fg:#eceaf2;--mut:#a09cad;--acc:#ff9a55;--acc2:#2a1f1a;--line:#2b2635;--side:#1a1621;--card:#1c1823;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:3px}
+.top{position:sticky;top:0;z-index:20;height:60px;display:flex;align-items:center;gap:1rem;padding:0 1.25rem;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:800;font-size:1.2rem;letter-spacing:-.01em;color:var(--fg)}.top .brand b{color:var(--acc)}
+.top .ver{color:var(--mut);font-size:.85rem;border-left:1px solid var(--line);padding-left:1rem}
+.top .sp{flex:1}.top input{width:min(280px,34vw);padding:.5rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--side);color:var(--fg);font:inherit;font-size:.9rem}
+.top input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .95rem;border-radius:999px;background:var(--acc);color:#fff;font-weight:600;font-size:.88rem;text-decoration:none!important}
+.btn:hover{filter:brightness(1.07)}.menu{display:none;background:none;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:.4rem .6rem;font-size:1rem;cursor:pointer}
+.wrap{display:grid;grid-template-columns:272px minmax(0,1fr) 220px;max-width:1380px;margin:0 auto}
+nav.side{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:1.25rem .9rem 2rem;border-right:1px solid var(--line)}
+nav.side h4{margin:.4rem .6rem .5rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+nav.side a{display:flex;gap:.6rem;align-items:baseline;padding:.5rem .65rem;border-radius:9px;color:var(--fg);font-size:.93rem;line-height:1.35}
+nav.side a span{color:var(--mut);font-variant-numeric:tabular-nums;min-width:1.4em}nav.side a:hover{background:var(--side);text-decoration:none}
+nav.side a.on{background:var(--acc2);color:var(--acc);font-weight:600}nav.side a.on span{color:var(--acc)}nav.side a.hide{display:none}
+main{padding:2.4rem clamp(1.2rem,4vw,3.2rem) 4rem;min-width:0}article{max-width:760px}
+.crumb{color:var(--mut);font-size:.85rem;margin-bottom:.6rem}.crumb a{color:var(--mut)}
+h1{font-size:clamp(1.9rem,3.2vw,2.5rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 1.2rem}
+h2{font-size:1.35rem;line-height:1.3;margin:2.4rem 0 .7rem;padding-top:1.2rem;border-top:1px solid var(--line);letter-spacing:-.01em}h2 a{color:inherit}h2 a:hover{text-decoration:none}h2 .anc{opacity:0;margin-left:.4rem;color:var(--acc);font-weight:400}h2:hover .anc{opacity:1}
+p{margin:.8rem 0}p.lead{font-size:1.15rem;line-height:1.65;color:var(--mut)}ul,ol{padding-left:1.5rem;margin:.8rem 0}li{margin:.4rem 0}li::marker{color:var(--acc)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:3.5rem}.pager a{display:block;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg)}
+.pager a:hover{border-color:var(--acc);text-decoration:none}.pager small{display:block;color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}.pager .nx{text-align:right}.pager strong{color:var(--acc)}
+aside.toc{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:2.6rem 1rem 2rem 0;font-size:.85rem}aside.toc h4{margin:0 0 .6rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid var(--line);color:var(--mut);line-height:1.35}aside.toc a:hover{color:var(--acc);border-color:var(--acc);text-decoration:none}
+.hero{padding:1rem 0 2rem}.hero p{font-size:1.2rem;color:var(--mut);max-width:620px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1.6rem}
+.card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
+.card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
+@media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
+@media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
+@media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">Easy2<b>edit</b></a><span class="ver">Manual &middot; version 1.0.0 build 72</span><span class="sp"></span><input id="q" type="search" placeholder="Search chapters" aria-label="Search chapters"><a class="btn" id="pdf" href="../../pdf/manual_en.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Manual</h4><a href="index.html" data-t="contents overview" class=""><span>&#9776;</span>Contents</a><a href="chapter-1.html" data-t="introduction easy2edit is a simple, modular management system (cms) for portals, websites, webshops and communities. instead of a fixed layout or a single-purpose tool, easy2edit gives you building blocks that you combine to create exactly the kind of site you need: a standard website, a web shop, a company site, a business network, an intranet, a dating platform, a sports club site, a foundation site, a marke" class=""><span>1</span>Introduction</a><a href="chapter-2.html" data-t="getting started ## logging in for the first time
+
+the first time you open easy2edit, log in using the superadmin account. this account has full access to every module and setting, so you can complete the initial setup.
+
+## the sandbox question (localhost only)
+
+if the site is running on your own computer (localhost), the very first thing easy2edit asks is whether you want to switch the sandbox on. with the sandbo" class=""><span>2</span>Getting started</a><a href="chapter-3.html" data-t="pages, menu and edit mode this chapter explains how pages and the menu are organised in easy2edit, and how edit mode lets you build and change pages directly on the screen.
+
+## pages and menu overview
+
+all pages and menu items are managed under admin &gt; pages. you will find three kinds of entries here:
+
+- system pages: built-in pages such as home and products.
+- own pages: text pages that live at an address such as /p/&lt;key&gt;" class=""><span>3</span>Pages, menu and edit mode</a><a href="chapter-4.html" data-t="importing a website (site import) ## what is site import
+
+site import lets you bring an existing website into easy2edit. you give the system one or more html files, a web address, a folder, or a zip file, and an ai reads the content and prepares a proposal for how to rebuild it inside easy2edit. this includes a matching theme, the pages and their content, icons and images, and any modules that are needed to support the content (fo" class=""><span>4</span>Importing a website (Site import)</a><a href="chapter-5.html" data-t="media, theme, languages and branding ## media library
+
+the media library (admin &gt; media) is where you manage all the images and videos used on your website. files can be stored locally on your server or on s3, depending on how your site is configured.
+
+every picture or video you upload can be given tags, which makes it easier to search and organise your files as your library grows. once uploaded, pictures can be chosen from the media" class=""><span>5</span>Media, theme, languages and branding</a><a href="chapter-6.html" data-t="users, roles and security ## users and profiles
+
+easy2edit keeps a record of everyone who can log in to your website or admin area. you manage these records under admin &gt; users (users).
+
+for each user you can set up:
+
+- an account with a username and password
+- a profile photo
+- a public profile that can be shown on the website
+- a blocked or active status
+
+blocking an account is useful when someone leaves the organisation" class=""><span>6</span>Users, roles and security</a><a href="chapter-7.html" data-t="shop, orders, payments, subscriptions and donations chapter 7: shop, orders, payments, subscriptions and donations
+
+easy2edit offers a set of plugins that work together to sell products, manage orders, process payments and run subscriptions or donation campaigns. depending on what you want to offer on your site, you combine the webshop, orders, financieel and abonnementen plugins. understanding how these plugins depend on each other will help you s" class=""><span>7</span>Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" data-t="community, marketplace, agenda, documents and games easy2edit offers a set of plugins that turn your site into a full community platform. members can build a profile, meet other members, trade on a marketplace, plan appointments, share documents and play games. this chapter explains what each part does and how they fit together.
+
+## community overview
+
+the community plugin brings together everything needed for a community or dating site:
+
+- profile" class="on"><span>8</span>Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" data-t="seo, faq and statistics ## seo
+
+easy2edit helps you make your website easy to find, not only for traditional search engines but also for bots and ai agents that read and summarise web content. the seo tools in easy2edit take care of the technical basics as well as the content details that search engines and ai systems look for.
+
+out of the box, easy2edit takes care of:
+
+- robots.txt, which tells search engines and other " class=""><span>9</span>SEO, FAQ and statistics</a><a href="chapter-10.html" data-t="ai and ai credit easy2edit uses artificial intelligence (claude, by anthropic) throughout the system to help with tasks such as translating content, writing page texts, importing websites, researching prices and more. every single call made to the ai is logged in detail, so that usage and costs stay fully transparent and controllable.
+
+## what gets monitored
+
+for every ai call, the system records:
+
+- who made the " class=""><span>10</span>AI and AI credit</a><a href="chapter-11.html" data-t="plugins, backups, licence and deployment this chapter explains how to extend easy2edit with plugins, how to keep your site safe with backups, how licensing and pricing work, and what happens behind the scenes when the system is deployed.
+
+## plugins
+
+plugins are signed packages that live in the /plugins folder. you manage them from admin &gt; plugins.
+
+a plugin can bring along everything it needs to work:
+- its own pages
+- one or more modul" class=""><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 8</div><h1>8. Community, marketplace, agenda, documents and games</h1>
+<p class="lead">Easy2edit offers a set of plugins that turn your site into a full community platform. Members can build a profile, meet other members, trade on a marketplace, plan appointments, share documents and play games. This chapter explains what each part does and how they fit together.</p>
+<h2 id="community-overview">Community overview<a class="anc" href="#community-overview" aria-label="Link to this section">#</a></h2>
+<p>The Community plugin brings together everything needed for a community or dating site:</p>
+<ul>
+<li>Profile pages with photos</li>
+<li>A member finder, with the option to block other users</li>
+<li>Search and matching tools: liking, favorites and visitors</li>
+<li>Messages between members</li>
+<li>Chat and direct connections (WebRTC) using a code, link or QR code</li>
+</ul>
+<p>Profiles can use profile themes, custom profile fields and &quot;available for&quot; options, so you can tailor the community to your audience, whether that is a sports club, a dating site or a business network.</p>
+<p>When parts of the community require a subscription or a donation, the Community plugin works together with the Abonnementen (Subscriptions) plugin to handle access and payment.</p>
+<h2 id="profile-themes">Profile themes<a class="anc" href="#profile-themes" aria-label="Link to this section">#</a></h2>
+<p>Profile themes define which fields, visibility options and search filters appear on a profile. Easy2edit comes with ready-made theme packages:</p>
 <ul>
 <li>Sporters</li>
 <li>Dating</li>
 <li>Business</li>
 <li>Webshop</li>
 </ul>
-<p>You can install or remove these themes, or create your own with custom fields, visibility settings and search filters. As superadmin, you decide which themes administrators and users are allowed to choose. Themes can be exported and imported as JSON files, which makes it easy to reuse a theme on another site or share it with others.</p>
-<h2>Marketplace</h2>
-<p>The marketplace lets members offer products, services or other items for sale. Each listing can have its own theme and images. Sellers can choose how an item is offered:</p>
+<p>You can install or remove these themes, or create your own with custom fields, visibility settings and search filters. The superadmin decides which themes administrators and users are allowed to choose. Themes can be exported and imported as JSON files, which makes it easy to reuse or share a theme between sites.</p>
+<h2 id="profiles-and-blocking">Profiles and blocking<a class="anc" href="#profiles-and-blocking" aria-label="Link to this section">#</a></h2>
+<p>Each member gets a personal profile page that can show multiple photos. Visibility of the profile, and of individual fields, can be set per language and per group. The member finder lets users search for other members, and users can block other members if they do not want to be contacted.</p>
+<h2 id="search-and-matching">Search and matching<a class="anc" href="#search-and-matching" aria-label="Link to this section">#</a></h2>
+<p>The discover function works like a dating site: members can search with filters, see recommendations, like other members, build matches, save favorites and see who has visited their profile.</p>
+<h2 id="messages-and-chat">Messages and chat<a class="anc" href="#messages-and-chat" aria-label="Link to this section">#</a></h2>
+<p>Members can send each other private messages through the built-in messaging system (postvak).</p>
+<p>Chat can run in a popup or in a full screen, either through the portal or directly between members using WebRTC. Chat supports photos, videos and video calls.</p>
+<h2 id="direct-connection">Direct connection<a class="anc" href="#direct-connection" aria-label="Link to this section">#</a></h2>
+<p>Direct connect sets up a direct WebRTC connection between two people, even without an account. The connection is made with a code, a link or a QR code, and supports chat, photos, videos and video calls. The feature is available on the pages /directconnect and /direct.</p>
+<h2 id="marketplace">Marketplace<a class="anc" href="#marketplace" aria-label="Link to this section">#</a></h2>
+<p>On the marketplace, members can offer products, services or other items for sale. Each listing can use a theme and include images, and can be set up as:</p>
 <ul>
 <li>A fixed price</li>
 <li>Bidding, starting from a minimum price</li>
-<li>A booking, for example an appointment or registration for an event</li>
+<li>A booking, such as an appointment or registration for an event</li>
 </ul>
-<p>Bids are visible to all members, so the marketplace works in an open, transparent way, similar to an auction.</p>
-<h2>Agenda</h2>
-<p>The agenda gives users and groups a way to manage appointments and events. It supports several types of entries:</p>
+<p>Bids placed on an item are visible to all members, so the marketplace works in an open and transparent way.</p>
+<h2 id="agenda">Agenda<a class="anc" href="#agenda" aria-label="Link to this section">#</a></h2>
+<p>The agenda plugin gives both users and groups their own calendar. It supports:</p>
 <ul>
 <li>Personal appointments</li>
-<li>Appointments with other members, including invitations, confirmations or proposing an alternative time</li>
+<li>Appointments with other members, including invitations, confirmations or proposing a different time</li>
 <li>Group appointments</li>
 <li>Events created by administrators, which can be placed on pages as a system object</li>
 </ul>
-<p>The agenda includes reminders and notifications, and members can see upcoming items through a tile on the dashboard.</p>
-<h2>Document management</h2>
-<p>Document management allows you to upload documents into a folder structure, complete with tags, version history and access rights per user or per group. Files can be stored on the server or on S3, and can be encrypted for extra security. Blocks are available so you can display documents directly on pages.</p>
-<p>To set up document access for a specific audience:</p>
-<ol>
-<li>Create the folder structure that matches how your organization works.</li>
-<li>Upload documents and add tags to make them easy to find.</li>
-<li>Set rights per user or per group, so only the right people can view or edit each document.</li>
-<li>Place a document block on a page if you want visitors to see selected documents there.</li>
-</ol>
-<h2>Games</h2>
-<p>The games hall gives your members a place to play. Each game is its own package, delivered as a folder or a zip file containing a game.json file, placed in the games folder of the games plugin. Every game has its own configuration for management and its own settings per member.</p>
-<p>Games run in an isolated, protected environment and automatically save scores and progress. Ranked lists let members compare their results, and a sample game is included so you can see how a game package is structured before adding your own.</p>
-<h2>Age, country and gambling checks</h2>
-<p>Some community and marketplace features are only appropriate for certain audiences, so Easy2edit includes age verification (18+), country checks and a gambling popup (24+). These checks should only be enabled for the target groups where they are required or desired.</p>
-<p>The settings for these checks are found under Admin &gt; Beveiliging (Security). Keep in mind that the popups and the country check only work when the relevant plugin is switched on.</p>
-<h2>The building blocks behind Community</h2>
-<p>The Community plugin is built from several smaller plugins, which you can also find and manage individually:</p>
-<ul>
-<li>Profiles: the personal profile page with multiple photos, visibility per language and group, the member search and the option to block other users.</li>
-<li>Discover: searching for and meeting other users, similar to a dating site, with filters, recommendations, likes, matches, favorites and visitors.</li>
-<li>Messages: the messaging system between users, with its own inbox.</li>
-<li>Chat: chat in a popup or full screen, either through the portal or directly between members using WebRTC, including photos, videos and video chat.</li>
-<li>Direct connect: a direct WebRTC connection between two people using a code, a link or a QR code, available even without an account. This includes chat, photos, videos and video chat, accessible through the /directconnect and /direct pages.</li>
-</ul>
-<p>Because these are separate plugins underneath the Community umbrella, you can enable only the parts you need, or use them independently if you do not want a full community setup.</p><div class="pager"><span><a href=chapter-7.html>&larr; Shop, orders, payments, subscriptions and donations</a></span><span><a href=chapter-9.html>SEO, FAQ and statistics &rarr;</a></span></div></main></body></html>
+<p>The agenda includes reminders, notifications and a tile on the dashboard, so members stay informed about upcoming appointments and events.</p>
+<h2 id="document-management">Document management<a class="anc" href="#document-management" aria-label="Link to this section">#</a></h2>
+<p>Documents can be uploaded into a folder structure, with tags, version history and access rights per user or group. Files are stored on the server or on S3, and can be encrypted for extra protection. Blocks are available to display documents directly on pages.</p>
+<h2 id="games">Games<a class="anc" href="#games" aria-label="Link to this section">#</a></h2>
+<p>The games hall gives members access to a selection of games. Each game is its own package, either a folder or a zip file containing a game.json file, placed in the games folder of this plugin. Every game has its own configuration for administrators and its own settings per member. Games run in a protected environment and store scores and progress. Ranked leaderboards are supported, and an example game is included to show how the system works.</p>
+<h2 id="age-country-and-gambling-checks">Age, country and gambling checks<a class="anc" href="#age-country-and-gambling-checks" aria-label="Link to this section">#</a></h2>
+<p>For sites that need it, Easy2edit offers age verification (18+), country checks and a gambling popup (24+). These checks only apply to the target audiences where they are required or desired.</p>
+<p>The settings for these checks are found under Admin &gt; Security. Note that the popups and country check only work when this plugin is switched on.</p><div class="pager"><a href="chapter-7.html"><small>Previous</small><strong>&larr; Shop, orders, payments, subscriptions and donations</strong></a><a class="nx" href="chapter-9.html"><small>Next</small><strong>SEO, FAQ and statistics &rarr;</strong></a></div><footer>Easy2edit manual &middot; version 1.0.0 build 72 &middot; English</footer></article></main><aside class="toc"><h4>On this page</h4><a href="#community-overview">Community overview</a><a href="#profile-themes">Profile themes</a><a href="#profiles-and-blocking">Profiles and blocking</a><a href="#search-and-matching">Search and matching</a><a href="#messages-and-chat">Messages and chat</a><a href="#direct-connection">Direct connection</a><a href="#marketplace">Marketplace</a><a href="#agenda">Agenda</a><a href="#document-management">Document management</a><a href="#games">Games</a><a href="#age-country-and-gambling-checks">Age, country and gambling checks</a></aside></div><script>
+(function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
+if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim();links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)})});
+var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
+var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/':'../../pdf/manual_en.pdf');
+var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
+</script></body></html>

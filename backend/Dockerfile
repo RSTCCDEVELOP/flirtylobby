@@ -20,6 +20,7 @@ COPY backend/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY backend/ .
 COPY resource /app/resource
 ENV RESOURCE_DIR=/app/resource
+COPY manuals /app/manuals
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

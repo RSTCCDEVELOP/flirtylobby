@@ -30,6 +30,8 @@ import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import AiCreditGate from "./AiCreditGate";
 import AiWelcome from "./AiWelcome";
+import ManualHelp from "./ManualHelp";
+import SandboxFirstAsk from "./SandboxFirstAsk";
 import { menuLabel } from "./SiteMenu";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
@@ -381,11 +383,12 @@ export default function DashboardShell({ children }) {
 
       <main className="content">
         <FindOnPage />
+        {user?.is_staff && <SandboxFirstAsk />}
         {user?.is_staff && <DefaultInstallPrompt />}
         {user && <SystemUpdatePrompt />}
         {user && !user.is_staff && <AiCreditGate />}
         {user && <AiWelcome />}
-        {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} /></div>}
+        {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} />{(user?.is_staff || canAdmin(user, mods)) && <ManualHelp />}</div>}
         {children}
       </main>
     </div>

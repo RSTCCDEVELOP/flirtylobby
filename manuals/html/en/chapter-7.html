@@ -1,86 +1,167 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Shop, orders, payments, subscriptions and donations - Easy2edit manual</title><style>:root{--bg:#fff;--fg:#2b2b2d;--mut:#939497;--acc:#f2823f;--line:#e3e3e5;--side:#f6f6f7}
-@media (prefers-color-scheme:dark){:root{--bg:#17131c;--fg:#ece9f1;--mut:#a39fad;--line:#2d2837;--side:#1e1927}}
-*{box-sizing:border-box}body{margin:0;font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg);display:flex;min-height:100vh}
-nav{width:280px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:1.5rem 1rem;position:sticky;top:0;height:100vh;overflow:auto}
-nav .brand{font-weight:800;font-size:1.3rem;color:var(--acc);display:block;margin-bottom:.2rem;text-decoration:none}nav small{color:var(--mut);display:block;margin-bottom:1rem}
-nav a{display:block;padding:.45rem .6rem;border-radius:8px;color:var(--fg);text-decoration:none;font-size:.95rem}nav a:hover{background:var(--line)}nav a.on{background:var(--acc);color:#fff}
-main{flex:1;max-width:820px;padding:2.5rem 2rem 4rem;margin:0 auto}h1{font-size:2rem;line-height:1.2;margin:.2rem 0 1rem}h2{font-size:1.2rem;color:var(--acc);margin:2rem 0 .5rem}
-p{margin:.6rem 0}ul,ol{padding-left:1.4rem}li{margin:.25rem 0}.pager{display:flex;justify-content:space-between;gap:1rem;margin-top:3rem;border-top:1px solid var(--line);padding-top:1rem}.pager a{color:var(--acc);text-decoration:none;font-weight:600}
-@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:1.5rem 1rem 3rem}}</style></head><body><nav><a class="brand" href="index.html">Easy2edit</a><small>Manual - version 1.0.0 build 71</small><a href="index.html" class="">Contents</a><a href="chapter-1.html" class="">1. Introduction</a><a href="chapter-2.html" class="">2. Getting started</a><a href="chapter-3.html" class="">3. Pages, menu and edit mode</a><a href="chapter-4.html" class="">4. Importing a website (Site import)</a><a href="chapter-5.html" class="">5. Media, theme, languages and branding</a><a href="chapter-6.html" class="">6. Users, roles and security</a><a href="chapter-7.html" class="on">7. Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" class="">8. Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" class="">9. SEO, FAQ and statistics</a><a href="chapter-10.html" class="">10. AI and AI credit</a><a href="chapter-11.html" class="">11. Plugins, backups, licence and deployment</a></nav><main><h1>7. Shop, orders, payments, subscriptions and donations</h1>
-<p>Easy2edit lets you sell products, collect donations and run subscriptions using a set of plugins that work together. This chapter explains how the pieces fit together and how to set each one up.</p>
-<h2>How the plugins work together</h2>
-<p>Selling anything on your site, whether it is a physical product, a subscription or a donation, involves several plugins that depend on each other:</p>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Shop, orders, payments, subscriptions and donations - Easy2edit manual</title><style>
+:root{--bg:#fff;--fg:#1f1f24;--mut:#6b6b76;--acc:#d9631a;--acc2:#fff3ea;--line:#e6e6ea;--side:#f7f7f9;--card:#fff;--shadow:0 1px 2px rgba(20,20,30,.06),0 8px 24px rgba(20,20,30,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#14111a;--fg:#eceaf2;--mut:#a09cad;--acc:#ff9a55;--acc2:#2a1f1a;--line:#2b2635;--side:#1a1621;--card:#1c1823;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:3px}
+.top{position:sticky;top:0;z-index:20;height:60px;display:flex;align-items:center;gap:1rem;padding:0 1.25rem;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:800;font-size:1.2rem;letter-spacing:-.01em;color:var(--fg)}.top .brand b{color:var(--acc)}
+.top .ver{color:var(--mut);font-size:.85rem;border-left:1px solid var(--line);padding-left:1rem}
+.top .sp{flex:1}.top input{width:min(280px,34vw);padding:.5rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--side);color:var(--fg);font:inherit;font-size:.9rem}
+.top input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .95rem;border-radius:999px;background:var(--acc);color:#fff;font-weight:600;font-size:.88rem;text-decoration:none!important}
+.btn:hover{filter:brightness(1.07)}.menu{display:none;background:none;border:1px solid var(--line);border-radius:8px;color:var(--fg);padding:.4rem .6rem;font-size:1rem;cursor:pointer}
+.wrap{display:grid;grid-template-columns:272px minmax(0,1fr) 220px;max-width:1380px;margin:0 auto}
+nav.side{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:1.25rem .9rem 2rem;border-right:1px solid var(--line)}
+nav.side h4{margin:.4rem .6rem .5rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+nav.side a{display:flex;gap:.6rem;align-items:baseline;padding:.5rem .65rem;border-radius:9px;color:var(--fg);font-size:.93rem;line-height:1.35}
+nav.side a span{color:var(--mut);font-variant-numeric:tabular-nums;min-width:1.4em}nav.side a:hover{background:var(--side);text-decoration:none}
+nav.side a.on{background:var(--acc2);color:var(--acc);font-weight:600}nav.side a.on span{color:var(--acc)}nav.side a.hide{display:none}
+main{padding:2.4rem clamp(1.2rem,4vw,3.2rem) 4rem;min-width:0}article{max-width:760px}
+.crumb{color:var(--mut);font-size:.85rem;margin-bottom:.6rem}.crumb a{color:var(--mut)}
+h1{font-size:clamp(1.9rem,3.2vw,2.5rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 1.2rem}
+h2{font-size:1.35rem;line-height:1.3;margin:2.4rem 0 .7rem;padding-top:1.2rem;border-top:1px solid var(--line);letter-spacing:-.01em}h2 a{color:inherit}h2 a:hover{text-decoration:none}h2 .anc{opacity:0;margin-left:.4rem;color:var(--acc);font-weight:400}h2:hover .anc{opacity:1}
+p{margin:.8rem 0}p.lead{font-size:1.15rem;line-height:1.65;color:var(--mut)}ul,ol{padding-left:1.5rem;margin:.8rem 0}li{margin:.4rem 0}li::marker{color:var(--acc)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:3.5rem}.pager a{display:block;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--fg)}
+.pager a:hover{border-color:var(--acc);text-decoration:none}.pager small{display:block;color:var(--mut);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}.pager .nx{text-align:right}.pager strong{color:var(--acc)}
+aside.toc{position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;padding:2.6rem 1rem 2rem 0;font-size:.85rem}aside.toc h4{margin:0 0 .6rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid var(--line);color:var(--mut);line-height:1.35}aside.toc a:hover{color:var(--acc);border-color:var(--acc);text-decoration:none}
+.hero{padding:1rem 0 2rem}.hero p{font-size:1.2rem;color:var(--mut);max-width:620px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-top:1.6rem}
+.card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
+.card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
+@media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
+@media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
+@media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">Easy2<b>edit</b></a><span class="ver">Manual &middot; version 1.0.0 build 72</span><span class="sp"></span><input id="q" type="search" placeholder="Search chapters" aria-label="Search chapters"><a class="btn" id="pdf" href="../../pdf/manual_en.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Manual</h4><a href="index.html" data-t="contents overview" class=""><span>&#9776;</span>Contents</a><a href="chapter-1.html" data-t="introduction easy2edit is a simple, modular management system (cms) for portals, websites, webshops and communities. instead of a fixed layout or a single-purpose tool, easy2edit gives you building blocks that you combine to create exactly the kind of site you need: a standard website, a web shop, a company site, a business network, an intranet, a dating platform, a sports club site, a foundation site, a marke" class=""><span>1</span>Introduction</a><a href="chapter-2.html" data-t="getting started ## logging in for the first time
+
+the first time you open easy2edit, log in using the superadmin account. this account has full access to every module and setting, so you can complete the initial setup.
+
+## the sandbox question (localhost only)
+
+if the site is running on your own computer (localhost), the very first thing easy2edit asks is whether you want to switch the sandbox on. with the sandbo" class=""><span>2</span>Getting started</a><a href="chapter-3.html" data-t="pages, menu and edit mode this chapter explains how pages and the menu are organised in easy2edit, and how edit mode lets you build and change pages directly on the screen.
+
+## pages and menu overview
+
+all pages and menu items are managed under admin &gt; pages. you will find three kinds of entries here:
+
+- system pages: built-in pages such as home and products.
+- own pages: text pages that live at an address such as /p/&lt;key&gt;" class=""><span>3</span>Pages, menu and edit mode</a><a href="chapter-4.html" data-t="importing a website (site import) ## what is site import
+
+site import lets you bring an existing website into easy2edit. you give the system one or more html files, a web address, a folder, or a zip file, and an ai reads the content and prepares a proposal for how to rebuild it inside easy2edit. this includes a matching theme, the pages and their content, icons and images, and any modules that are needed to support the content (fo" class=""><span>4</span>Importing a website (Site import)</a><a href="chapter-5.html" data-t="media, theme, languages and branding ## media library
+
+the media library (admin &gt; media) is where you manage all the images and videos used on your website. files can be stored locally on your server or on s3, depending on how your site is configured.
+
+every picture or video you upload can be given tags, which makes it easier to search and organise your files as your library grows. once uploaded, pictures can be chosen from the media" class=""><span>5</span>Media, theme, languages and branding</a><a href="chapter-6.html" data-t="users, roles and security ## users and profiles
+
+easy2edit keeps a record of everyone who can log in to your website or admin area. you manage these records under admin &gt; users (users).
+
+for each user you can set up:
+
+- an account with a username and password
+- a profile photo
+- a public profile that can be shown on the website
+- a blocked or active status
+
+blocking an account is useful when someone leaves the organisation" class=""><span>6</span>Users, roles and security</a><a href="chapter-7.html" data-t="shop, orders, payments, subscriptions and donations chapter 7: shop, orders, payments, subscriptions and donations
+
+easy2edit offers a set of plugins that work together to sell products, manage orders, process payments and run subscriptions or donation campaigns. depending on what you want to offer on your site, you combine the webshop, orders, financieel and abonnementen plugins. understanding how these plugins depend on each other will help you s" class="on"><span>7</span>Shop, orders, payments, subscriptions and donations</a><a href="chapter-8.html" data-t="community, marketplace, agenda, documents and games easy2edit offers a set of plugins that turn your site into a full community platform. members can build a profile, meet other members, trade on a marketplace, plan appointments, share documents and play games. this chapter explains what each part does and how they fit together.
+
+## community overview
+
+the community plugin brings together everything needed for a community or dating site:
+
+- profile" class=""><span>8</span>Community, marketplace, agenda, documents and games</a><a href="chapter-9.html" data-t="seo, faq and statistics ## seo
+
+easy2edit helps you make your website easy to find, not only for traditional search engines but also for bots and ai agents that read and summarise web content. the seo tools in easy2edit take care of the technical basics as well as the content details that search engines and ai systems look for.
+
+out of the box, easy2edit takes care of:
+
+- robots.txt, which tells search engines and other " class=""><span>9</span>SEO, FAQ and statistics</a><a href="chapter-10.html" data-t="ai and ai credit easy2edit uses artificial intelligence (claude, by anthropic) throughout the system to help with tasks such as translating content, writing page texts, importing websites, researching prices and more. every single call made to the ai is logged in detail, so that usage and costs stay fully transparent and controllable.
+
+## what gets monitored
+
+for every ai call, the system records:
+
+- who made the " class=""><span>10</span>AI and AI credit</a><a href="chapter-11.html" data-t="plugins, backups, licence and deployment this chapter explains how to extend easy2edit with plugins, how to keep your site safe with backups, how licensing and pricing work, and what happens behind the scenes when the system is deployed.
+
+## plugins
+
+plugins are signed packages that live in the /plugins folder. you manage them from admin &gt; plugins.
+
+a plugin can bring along everything it needs to work:
+- its own pages
+- one or more modul" class=""><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 7</div><h1>7. Shop, orders, payments, subscriptions and donations</h1>
+<p class="lead">Chapter 7: Shop, orders, payments, subscriptions and donations</p>
+<p>Easy2edit offers a set of plugins that work together to sell products, manage orders, process payments and run subscriptions or donation campaigns. Depending on what you want to offer on your site, you combine the Webshop, Orders, Financieel and Abonnementen plugins. Understanding how these plugins depend on each other will help you set everything up correctly.</p>
+<h2 id="how-the-plugins-work-together">How the plugins work together<a class="anc" href="#how-the-plugins-work-together" aria-label="Link to this section">#</a></h2>
 <ul>
-<li>Webshop handles products, product groups, variants and shipping, and needs the Orders and Betalen (Payment) plugins to function.</li>
-<li>Orders manages bestellingen (orders) for the whole site: webshop orders, subscription orders and donations. It can also work on its own if you only accept payment by invoice. Orders needs the Betalen and Webshop plugins.</li>
-<li>Financieel (Finance) brings together payment methods, payment terms, the links to Stripe and Mollie, VAT rates, shipping options and the layout of invoices, quotes, packing slips and return slips. Orders, Webshop and Abonnementen (Subscriptions) all need this plugin.</li>
-<li>Abonnementen (Subscriptions) manages subscription plans and donation campaigns. It needs the Orders plugin.</li>
+<li>Webshop needs the Orders and Betalen (Payments) plugins to function.</li>
+<li>Orders can work on its own, for example if you only want to let customers pay by invoice. The Betalen and Webshop plugins both need Orders to work.</li>
+<li>Financieel brings together everything related to money: payment methods, VAT rates, shipping options and the layout of financial documents. Orders, Webshop and Abonnementen all need this plugin.</li>
+<li>Abonnementen needs the Orders plugin, since every subscription period or donation generates an order.</li>
 </ul>
-<p>Because of these dependencies, activate the plugins in this order: Betalen, Orders, Financieel, and then Webshop and/or Abonnementen depending on what you want to offer.</p>
-<h2>Setting up the webshop</h2>
-<p>The Webshop plugin lets you build an online store with:</p>
+<p>In short, Orders is the central plugin for anything that results in a transaction, Financieel handles the money side, and Webshop and Abonnementen are the two ways customers can place an order.</p>
+<h2 id="webshop">Webshop<a class="anc" href="#webshop" aria-label="Link to this section">#</a></h2>
+<p>The Webshop plugin lets you sell products online. You manage:</p>
 <ul>
-<li>Products and product groups to organise your catalogue.</li>
-<li>Variants such as colour or size, each with its own price.</li>
-<li>Staffelprijzen (tiered pricing), so the price can change depending on the quantity ordered.</li>
-<li>Shipping methods and discount codes.</li>
-<li>Several layouts, including a standard layout and an editorial layout with a filter side panel and a large product photo, plus a &#x27;shop the look&#x27; option, with their own styles and presets.</li>
+<li>Products and product groups</li>
+<li>Variants, such as colour or size, each with their own price</li>
+<li>Staggered pricing (staffelprijzen), where the price changes depending on the quantity ordered</li>
+<li>Shipping methods and discount codes</li>
 </ul>
-<p>The plugin comes with demo content, including ready-made pages for products, the shopping cart and checkout, so you can see a working shop immediately after activation and adjust it to your needs.</p>
-<p>To set up a product:</p>
-<ol>
-<li>Go to Admin &gt; Webshop and create a product group if you want to organise products into categories.</li>
-<li>Add a new product and fill in its details, price and description.</li>
-<li>Add any variants, such as colour or size, and set a price for each if needed.</li>
-<li>If relevant, set up staffelprijzen for quantity discounts.</li>
-<li>Choose or confirm the shipping method for the product.</li>
+<p>Easy2edit includes demo content with ready-made shop pages: a products page, a shopping cart page and a checkout page. You can use these as a starting point and adjust them to fit your site.</p>
+<p>To set up a basic webshop:</p>
+<ol start="1">
+<li>Go to Admin &gt; Plugins and activate Webshop, Orders and Betalen.</li>
+<li>Add your products and organise them into product groups.</li>
+<li>Create any variants your products need, such as size or colour, and set a price for each variant.</li>
+<li>Set up staggered pricing if you want to offer quantity discounts.</li>
+<li>Configure your shipping methods and, optionally, discount codes.</li>
+<li>Check the demo shop pages (products, shopping cart, checkout) and adjust them to match your site.</li>
 </ol>
-<h2>Managing orders</h2>
-<p>The Orders plugin is the central place for everything related to orders across the whole site, whether they come from the webshop, a subscription or a donation. From Admin &gt; Orders you can:</p>
+<h2 id="orders">Orders<a class="anc" href="#orders" aria-label="Link to this section">#</a></h2>
+<p>The Orders plugin manages orders for the entire site, not just the webshop. It handles orders coming from the webshop, from subscriptions and from donations in one place. Here you manage:</p>
 <ul>
-<li>View and manage all bestellingen in one overview.</li>
-<li>Track and update the order status.</li>
-<li>Configure btw-instellingen (VAT settings) for orders.</li>
-<li>Edit the confirmation email that customers receive after placing an order.</li>
+<li>Order status, so you can follow an order from placement to completion</li>
+<li>VAT settings</li>
+<li>The confirmation email sent to customers after an order is placed</li>
 </ul>
-<p>Orders also produces the documents customers and your administration need, such as the packing slip, invoice, return slip and credit invoice.</p>
-<p>If you do not want to use the webshop or online payments at all, Orders can still work on its own, allowing customers to pay per factuur (by invoice).</p>
-<h2>Payments and finance settings</h2>
-<p>The Financieel plugin is where you manage everything related to money:</p>
+<p>Orders can also work independently of the Webshop plugin. This is useful if you only want to accept orders paid by invoice, without running a full online shop.</p>
+<h2 id="financieel">Financieel<a class="anc" href="#financieel" aria-label="Link to this section">#</a></h2>
+<p>The Financieel plugin is where all money-related settings come together:</p>
 <ul>
-<li>Payment methods and payment terms.</li>
-<li>The koppelingen (connections) to Stripe and Mollie for processing online payments.</li>
-<li>Btw-tarieven: by default a standard high and a low VAT rate, which you link to individual products.</li>
-<li>Shipping options.</li>
-<li>The layout of invoices, quotes, packing slips and return slips, along with your company data.</li>
+<li>Payment methods and payment terms</li>
+<li>The connections to the payment providers Stripe and Mollie</li>
+<li>VAT rates, with a standard high and low rate that you link to your products</li>
+<li>Shipping options</li>
+<li>The layout of invoices, quotes, packing slips and return slips</li>
 </ul>
-<p>Payments themselves are carried out through Stripe or Mollie. Both providers offer a sandbox mode, which lets you simulate payments safely while testing your shop or subscription setup, without processing real transactions.</p>
-<p>To connect a payment provider:</p>
-<ol>
-<li>Go to Admin &gt; Financieel.</li>
-<li>Enter your Stripe or Mollie account details to create the koppeling.</li>
-<li>Use the sandbox option while testing, and switch to live mode once you are ready to accept real payments.</li>
-<li>Review and set your btw-tarieven and link them to the relevant products.</li>
-<li>Check the layout of your invoices, quotes and other documents, and add your company details.</li>
+<p>Since Orders, Webshop and Abonnementen all depend on Financieel, this plugin forms the financial backbone of any paid feature on your site.</p>
+<h2 id="abonnementen-subscriptions-and-donations">Abonnementen (Subscriptions and donations)<a class="anc" href="#abonnementen-subscriptions-and-donations" aria-label="Link to this section">#</a></h2>
+<p>The Abonnementen plugin lets you offer subscription plans and donation campaigns.</p>
+<p>Subscriptions give visitors access to parts of your site, such as pages, content, chat, video, likes or services. A subscription can be:</p>
+<ul>
+<li>A one-time purchase</li>
+<li>A recurring subscription, with a new order generated for each period</li>
+</ul>
+<p>Donation campaigns let visitors choose an amount to give using a slider, moving between a minimum and a maximum value you set.</p>
+<p>Actions determine what is free and what requires payment, so you can combine free and paid content on the same site using subscription plans.</p>
+<p>To set up a subscription or donation:</p>
+<ol start="1">
+<li>Activate the Abonnementen plugin, which requires Orders to be active.</li>
+<li>Create a subscription plan and decide whether it is a one-time purchase or a recurring subscription.</li>
+<li>Link the plan to the pages, content, chat, video, likes or services it should unlock.</li>
+<li>For donations, set up a donation action and define the minimum and maximum amount for the slider.</li>
+<li>Use actions to decide which parts of your site remain free and which require a subscription or donation.</li>
 </ol>
-<h2>Subscriptions and donations</h2>
-<p>The Abonnementen plugin lets you offer paid access to parts of your site, such as pages, content, chat, video, likes or services. Plans can be:</p>
-<ul>
-<li>Eenmalig (one-off), billed once.</li>
-<li>Herhaald (recurring), with a new order generated automatically for each period.</li>
-</ul>
-<p>Abonnementen also supports donatie-acties (donation campaigns), where visitors choose an amount themselves using a slider, moving between a minimum and a maximum amount that you set.</p>
-<p>In addition, acties (promotions) within this plugin let you decide which parts of your site are free and which require payment, giving you flexibility to offer a mix of free and paid content.</p>
-<p>To set up a subscription plan:</p>
-<ol>
-<li>Go to Admin &gt; Abonnementen.</li>
-<li>Create a new plan and decide whether it is eenmalig or herhaald.</li>
-<li>Link the plan to the pages, content or services it should unlock.</li>
-<li>Set the price, and for recurring plans, the billing period.</li>
-</ol>
-<p>To set up a donation campaign:</p>
-<ol>
-<li>Create a new donatie-actie in Admin &gt; Abonnementen.</li>
-<li>Set the minimum and maximum amount for the slider.</li>
-<li>Publish the campaign on the relevant page so visitors can contribute.</li>
-</ol><div class="pager"><span><a href=chapter-6.html>&larr; Users, roles and security</a></span><span><a href=chapter-8.html>Community, marketplace, agenda, documents and games &rarr;</a></span></div></main></body></html>
+<h2 id="payments-and-the-sandbox">Payments and the sandbox<a class="anc" href="#payments-and-the-sandbox" aria-label="Link to this section">#</a></h2>
+<p>Payments made through the Webshop, Orders or Abonnementen plugins are processed through Stripe or Mollie, both configured in the Financieel plugin. Before going live, you can use the sandbox to simulate payments. This lets you test the full order and payment flow, from checkout to confirmation, without processing any real transactions.</p><div class="pager"><a href="chapter-6.html"><small>Previous</small><strong>&larr; Users, roles and security</strong></a><a class="nx" href="chapter-8.html"><small>Next</small><strong>Community, marketplace, agenda, documents and games &rarr;</strong></a></div><footer>Easy2edit manual &middot; version 1.0.0 build 72 &middot; English</footer></article></main><aside class="toc"><h4>On this page</h4><a href="#how-the-plugins-work-together">How the plugins work together</a><a href="#webshop">Webshop</a><a href="#orders">Orders</a><a href="#financieel">Financieel</a><a href="#abonnementen-subscriptions-and-donations">Abonnementen (Subscriptions and donations)</a><a href="#payments-and-the-sandbox">Payments and the sandbox</a></aside></div><script>
+(function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
+if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim();links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)})});
+var m=document.getElementById('menu');if(m)m.addEventListener('click',function(){document.body.classList.toggle('open')});
+var pdf=document.getElementById('pdf');if(pdf)pdf.setAttribute('href',location.pathname.indexOf('/api/manual/')>=0?'/api/manual/pdf/':'../../pdf/manual_en.pdf');
+var on=document.querySelector('nav.side a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});})();
+</script></body></html>

@@ -16,6 +16,7 @@ import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
 import PresetPicker, { usePresets } from "../../../components/PresetPicker";
 import AdminAiBlock from "../../../components/AdminAiBlock";
+import ManualButtons from "../../../components/ManualButtons";
 import { useModules } from "../../../components/Modules";
 import { can } from "../../../lib/perms";
 
@@ -59,6 +60,7 @@ export default function AdminHome() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logos/easy2edit/logo_dark.png" alt="Easy2edit" className="logo-dark" />
         </div>
+        <ManualButtons />
         <div className="stack-sm" style={{ maxWidth: 760 }}>
           <p style={{ margin: 0 }}><strong>{tx("Easy2edit is een eenvoudig, modulair beheersysteem voor portals en data.")}</strong></p>
           <p style={{ margin: 0 }}>{tx("Je bouwt je website of portal uit blokken die je zelf aan- en uitzet: gebruikers en rollen, pagina's en menu, community, abonnementen, SEO en meer. Wat je niet nodig hebt, staat uit en komt niet in beeld.")}</p>

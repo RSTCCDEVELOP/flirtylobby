@@ -25,6 +25,7 @@ services:
       - ./themes:/app/themes
       - ./site:/app/site
       - ./backups:/app/backups
+      - ./manuals:/app/manuals  # the manual (PDF and HTML, English)
       - ./resource:/app/resource  # the library of zips (plugins, themes, languages) that comes with the product
 
   frontend:
