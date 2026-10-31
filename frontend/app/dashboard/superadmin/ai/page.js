@@ -174,8 +174,8 @@ export default function AiDashboard() {
             {[["topup_min", "Kleinste bedrag"], ["topup_max", "Grootste bedrag"], ["topup_step", "Stap van de schuifbalk"]].map(([k, l]) => (
               <label key={k}>{tx(l)} ({cr.currency})<input type="number" min="0" step="0.5" defaultValue={cr[k]} onBlur={(e) => { if (Number(e.target.value) !== cr[k]) crSave({ [k]: e.target.value }); }} /></label>))}
           </div>
-          <div className={stripe && stripe.via !== "sandbox" ? "alert ok" : "alert"} style={{ margin: 0 }}>
-            {tx("Betalen via")} <strong>Stripe</strong>: {stripe?.via === "link" ? `${tx("de Easy2edit-koppeling")} "${stripe.name}" (${stripe.mode}).` : stripe?.via === "license" ? tx("het Stripe-account van de licentie (er is geen Stripe-koppeling van de superadmin).") : tx("nog niet gekoppeld. Zet bij API keys een Stripe-koppeling aan en vink Superadmin-koppeling aan; zolang dat niet kan, kan er alleen via de sandbox worden betaald.")}
+          <div className={stripe && (stripe.simulated || stripe.via !== "sandbox") ? "alert ok" : "alert"} style={{ margin: 0 }}>
+            {tx("Betalen via")} <strong>Stripe</strong>: {stripe?.simulated ? tx("gesimuleerd: de sandbox staat aan, er wordt niets echt afgeschreven.") : stripe?.via === "link" ? `${tx("de Easy2edit-koppeling")} "${stripe.name}" (${stripe.mode}).` : stripe?.via === "license" ? tx("het Stripe-account van de licentie (er is geen Stripe-koppeling van de superadmin).") : tx("nog niet gekoppeld. Zet bij API keys een Stripe-koppeling aan en vink Superadmin-koppeling aan; zolang dat niet kan, kan er alleen via de sandbox worden betaald.")}
             <small className="muted" style={{ display: "block" }}>{tx("AI-tegoed wordt altijd betaald via een Easy2edit-koppeling van de superadmin, nooit via de eigen Stripe van de webshop.")}</small>
           </div>
           <small className="muted">{tx("De schuifbalk loopt van het kleinste bedrag tot 25, 50 of 100 (maximaal het grootste bedrag), afhankelijk van wat iemand de afgelopen 30 dagen gebruikte. Betalen gaat via de betaalkoppeling.")}</small>
@@ -264,7 +264,7 @@ export default function AiDashboard() {
               <div className="ai-prow head"><span>{tx("Model")}</span><span>{tx("Aanroepen (30 d)")}</span><span>{tx("Inkoop per miljoen tokens")} ({st.cost_currency})</span><span>{tx("Verkoop per miljoen tokens")} ({st.currency})</span><span /></div>
               {names.map((k) => {
                 const r = row(k), pin = Number(val(k, "in")), pout = Number(val(k, "out"));
-                const sin = pin * (1 + Number(st.margin_in) / 100) * rate, sout = pout * (1 + Number(st.margin_out) / 100) * rate;
+                const sin = pin * (1 + Number(st.margins?.user?.in ?? 0) / 100) * rate, sout = pout * (1 + Number(st.margins?.user?.out ?? 0) / 100) * rate;
                 return (
                   <div className="ai-prow" key={k}>
                     <span className="ai-model"><code>{k}</code><span className="ai-status">{r.api && <span className="badge ok">{tx("Actief in de API")}</span>}{r.in_use && <span className="badge">{tx("In gebruik")}</span>}{!r.api && pv.enabled && <span className="badge off">{tx("Niet in de API")}</span>}{!own[k] && r.source === "geen" && <span className="badge off">{tx("Prijs ontbreekt")}</span>}</span></span>

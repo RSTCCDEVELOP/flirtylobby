@@ -31,6 +31,7 @@ aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid va
 .card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
 .card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
 .card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+figure{margin:1.6rem 0;padding:0}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);background:var(--side)}figcaption{margin-top:.55rem;color:var(--mut);font-size:.85rem;text-align:center}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
 @media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
 @media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
@@ -95,6 +96,7 @@ a plugin can bring along everything it needs to work:
 - its own pages
 - one or more modul" class=""><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 10</div><h1>10. AI and AI credit</h1>
 <p class="lead">Easy2edit uses artificial intelligence (Claude, by Anthropic) throughout the system to help with tasks such as translating content, writing page texts, importing websites, researching prices and more. Every single call made to the AI is logged in detail, so that usage and costs stay fully transparent and controllable.</p>
+<figure><a href="images/ai-overview.jpg" target="_blank" rel="noopener"><img src="images/ai-overview.jpg" alt="Super admin &gt; AI &gt; Overview: key figures, costs over time per group, and the latest calls." width="1440" height="900" loading="lazy"></a><figcaption>Figure 1. Super admin &gt; AI &gt; Overview: key figures, costs over time per group, and the latest calls.</figcaption></figure>
 <h2 id="what-gets-monitored">What gets monitored<a class="anc" href="#what-gets-monitored" aria-label="Link to this section">#</a></h2>
 <p>For every AI call, the system records:</p>
 <ul>
@@ -107,10 +109,12 @@ a plugin can bring along everything it needs to work:
 <li>What it cost</li>
 </ul>
 <p>This information feeds the AI dashboard, which gives superadmins full insight into usage patterns and spending.</p>
+<figure><a href="images/ai-users.jpg" target="_blank" rel="noopener"><img src="images/ai-users.jpg" alt="AI &gt; Users: heavy users, highest costs and a PDF report per user." width="1440" height="900" loading="lazy"></a><figcaption>Figure 2. AI &gt; Users: heavy users, highest costs and a PDF report per user.</figcaption></figure>
 <h2 id="the-ai-module-and-ai-links">The AI module and AI links<a class="anc" href="#the-ai-module-and-ai-links" aria-label="Link to this section">#</a></h2>
 <p>The AI module is a core module. It switches on automatically as soon as an AI link (an API key) is installed and enabled under Admin &gt; API keys.</p>
 <p>A link can be marked as a Superadmin link. When this is done, only superadmins can see or change it. This is used, for example, for the Easy2edit AI link and the Stripe link of the reseller.</p>
 <p>AI calls made by users and admins always run on an Easy2edit link belonging to the superadmin, whenever one is available.</p>
+<figure><a href="images/ai-credit.jpg" target="_blank" rel="noopener"><img src="images/ai-credit.jpg" alt="AI &gt; Credit: the credit rules, the amounts of a top-up and the credit per user." width="1440" height="900" loading="lazy"></a><figcaption>Figure 3. AI &gt; Credit: the credit rules, the amounts of a top-up and the credit per user.</figcaption></figure>
 <h2 id="the-super-admin-ai-dashboard">The Super admin AI dashboard<a class="anc" href="#the-super-admin-ai-dashboard" aria-label="Link to this section">#</a></h2>
 <p>Super admin &gt; AI gives superadmins a full dashboard with the following tabs:</p>
 <ul>
@@ -123,6 +127,7 @@ a plugin can bring along everything it needs to work:
 <li>Settings: pricing, margins and related configuration</li>
 </ul>
 <p>The dashboard can be filtered by period, by month (the current month plus the previous twelve), and by group. The PDF button produces a summary report, or, when &#x27;Detailed&#x27; is selected, a complete list of every call including tokens in and out, duration and costs.</p>
+<figure><a href="images/ai-settings.jpg" target="_blank" rel="noopener"><img src="images/ai-settings.jpg" alt="AI &gt; Settings: margins per group, currencies and the rate." width="1440" height="900" loading="lazy"></a><figcaption>Figure 4. AI &gt; Settings: margins per group, currencies and the rate.</figcaption></figure>
 <h2 id="costs-prices-and-margins">Costs, prices and margins<a class="anc" href="#costs-prices-and-margins" aria-label="Link to this section">#</a></h2>
 <p>Superadmins manage purchase prices per million tokens for each model, organised in tabs for Claude, OpenAI and Gemini, showing only the models currently active in the API. The &#x27;Refresh models&#x27; button also looks up current prices directly from the AI provider.</p>
 <p>Purchase prices are set in the purchase currency (for example USD), while sale prices are set in the selling currency (for example EUR), using an exchange rate that can be updated with a button that consults the AI.</p>
@@ -135,6 +140,7 @@ a plugin can bring along everything it needs to work:
 <p>A switch determines whether usage by superadmins and the system is also charged to the customer. When switched on, this usage is booked to a group named after the website, using the reseller margin. When switched off, it is treated as a cost to the reseller with no margin applied, and shown separately.</p>
 <p>Prices, exchange rate and margins are stored with each individual call, so later changes to settings only affect new calls, never past ones.</p>
 <p>Only superadmins can change these system-wide AI settings.</p>
+<figure><a href="images/ai-models.jpg" target="_blank" rel="noopener"><img src="images/ai-models.jpg" alt="AI &gt; Settings &gt; Claude: the models that are active in the API, with the price per million tokens and per token." width="1440" height="900" loading="lazy"></a><figcaption>Figure 5. AI &gt; Settings &gt; Claude: the models that are active in the API, with the price per million tokens and per token.</figcaption></figure>
 <h2 id="ai-credit">AI credit<a class="anc" href="#ai-credit" aria-label="Link to this section">#</a></h2>
 <p>By default, users and admins must purchase AI credit before they can use AI features. This requirement is a switch that is on by default. Superadmins and the system itself never need credit.</p>
 <p>Before every AI call, the system estimates its cost and checks it against the available credit. If there is not enough credit, nothing is sent, and a message explains what is needed.</p>
@@ -150,10 +156,12 @@ a plugin can bring along everything it needs to work:
 <li>Whether credit is required</li>
 <li>The smallest and largest top-up amounts allowed</li>
 </ul>
+<figure><a href="images/ai-admin.jpg" target="_blank" rel="noopener"><img src="images/ai-admin.jpg" alt="Admin &gt; AI: the use of your users, without purchase prices." width="1440" height="900" loading="lazy"></a><figcaption>Figure 6. Admin &gt; AI: the use of your users, without purchase prices.</figcaption></figure>
 <h2 id="what-admins-can-see-and-manage">What admins can see and manage<a class="anc" href="#what-admins-can-see-and-manage" aria-label="Link to this section">#</a></h2>
 <p>Admin &gt; AI shows usage by users and admins for that installation. It does not show purchase prices, margins, or reseller costs. The Admin start page also includes an &#x27;AI use&#x27; block showing the admin&#x27;s own credit balance.</p>
 <p>This area includes a table per user and a PDF report per user, without purchase prices.</p>
 <p>To see this information, an admin needs the right &#x27;View AI use of users&#x27;, assigned via Roles.</p>
+<figure><a href="images/ai-buy.jpg" target="_blank" rel="noopener"><img src="images/ai-buy.jpg" alt="Buying AI credit: a slider with a suggestion based on your use." width="1440" height="900" loading="lazy"></a><figcaption>Figure 7. Buying AI credit: a slider with a suggestion based on your use.</figcaption></figure>
 <h2 id="admins-with-their-own-ai-and-stripe-links">Admins with their own AI and Stripe links<a class="anc" href="#admins-with-their-own-ai-and-stripe-links" aria-label="Link to this section">#</a></h2>
 <p>An admin who has configured their own AI link (Anthropic) and their own Stripe link, neither marked as a superadmin link, can switch on their own credit system for their users via Admin &gt; AI &gt; Credit for users.</p>
 <p>In that case:</p>

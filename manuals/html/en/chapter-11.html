@@ -31,6 +31,7 @@ aside.toc a{display:block;padding:.28rem 0 .28rem .8rem;border-left:2px solid va
 .card{display:block;padding:1.2rem 1.25rem;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--fg);transition:transform .15s,border-color .15s}
 .card:hover{transform:translateY(-2px);border-color:var(--acc);text-decoration:none}.card .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:700;font-size:.9rem;margin-bottom:.6rem}
 .card h3{margin:0 0 .35rem;font-size:1.05rem}.card p{margin:0;color:var(--mut);font-size:.9rem;line-height:1.5}
+figure{margin:1.6rem 0;padding:0}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);background:var(--side)}figcaption{margin-top:.55rem;color:var(--mut);font-size:.85rem;text-align:center}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--mut);font-size:.82rem}
 @media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
 @media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
@@ -95,6 +96,7 @@ a plugin can bring along everything it needs to work:
 - its own pages
 - one or more modul" class="on"><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 11</div><h1>11. Plugins, backups, licence and deployment</h1>
 <p class="lead">This chapter explains how to extend Easy2edit with plugins, how to keep your site safe with backups, how licensing and pricing work, and what happens behind the scenes when the system is deployed.</p>
+<figure><a href="images/integrations.jpg" target="_blank" rel="noopener"><img src="images/integrations.jpg" alt="Admin &gt; API keys: the links to external systems, with the Superadmin label." width="1440" height="900" loading="lazy"></a><figcaption>Figure 1. Admin &gt; API keys: the links to external systems, with the Superadmin label.</figcaption></figure>
 <h2 id="plugins">Plugins<a class="anc" href="#plugins" aria-label="Link to this section">#</a></h2>
 <p>Plugins are signed packages that live in the /plugins folder. You manage them from Admin &gt; Plugins.</p>
 <ul>
@@ -113,10 +115,12 @@ a plugin can bring along everything it needs to work:
 <li>Use the update option when a new version of the plugin is available.</li>
 </ol>
 <p>If a plugin is switched off, it stops contributing data anywhere in the system. For example, a plugin that is off does not write any numbers to Statistics, because turned-off plugins are not counted.</p>
+<figure><a href="images/plugins.jpg" target="_blank" rel="noopener"><img src="images/plugins.jpg" alt="Admin &gt; Plugins: install, switch on and update plugins." width="1440" height="900" loading="lazy"></a><figcaption>Figure 2. Admin &gt; Plugins: install, switch on and update plugins.</figcaption></figure>
 <h2 id="the-api-keys-module-and-superadmin-links">The API keys module and superadmin links<a class="anc" href="#the-api-keys-module-and-superadmin-links" aria-label="Link to this section">#</a></h2>
 <p>Every standard installation has the API keys module switched on by default. This module is always active, regardless of which other plugins or modules you enable or disable.</p>
 <p>Superadmin links are a special case. These are the links used by the superadmin for services such as AI, Stripe, mail and storage. When an installation is set up, these links are automatically switched on so that these connections keep working. However, the secret keys behind these links are never stored in the installations file itself, for security reasons.</p>
 <p>A link marked as a Superadmin link can only be seen and changed by superadmins. Regular administrators do not have access to these settings.</p>
+<figure><a href="images/backups.jpg" target="_blank" rel="noopener"><img src="images/backups.jpg" alt="Admin &gt; Backups: back up and restore the site." width="1440" height="900" loading="lazy"></a><figcaption>Figure 3. Admin &gt; Backups: back up and restore the site.</figcaption></figure>
 <h2 id="resetting-the-system">Resetting the system<a class="anc" href="#resetting-the-system" aria-label="Link to this section">#</a></h2>
 <ul>
 <li>all AI calls together with their costs</li>

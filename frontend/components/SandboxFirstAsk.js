@@ -15,7 +15,7 @@ import { answerSandbox, useSandboxFirst } from "../lib/firstRun";
 // Superadmin on his own computer, the first question: switch the sandbox on? Then payments, e-mail, sms and the tests of the API links are simulated, so nothing real happens.
 export default function SandboxFirstAsk() {
   const { user } = useAuth();
-  const { pending } = useSandboxFirst(!!user?.is_staff);
+  const { sandboxPending: pending } = useSandboxFirst(!!user?.is_staff);
   if (!user?.is_staff || !pending || typeof document === "undefined") return null;
   return createPortal(
     <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Sandbox-modus")}>

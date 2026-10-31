@@ -32,6 +32,7 @@ import AiCreditGate from "./AiCreditGate";
 import AiWelcome from "./AiWelcome";
 import ManualHelp from "./ManualHelp";
 import SandboxFirstAsk from "./SandboxFirstAsk";
+import ManualFirstAsk from "./ManualFirstAsk";
 import { menuLabel } from "./SiteMenu";
 import { useUi } from "./Ui";
 import { api } from "../lib/api";
@@ -384,6 +385,7 @@ export default function DashboardShell({ children }) {
       <main className="content">
         <FindOnPage />
         {user?.is_staff && <SandboxFirstAsk />}
+        {user?.is_staff && <ManualFirstAsk />}
         {user?.is_staff && <DefaultInstallPrompt />}
         {user && <SystemUpdatePrompt />}
         {user && !user.is_staff && <AiCreditGate />}

@@ -36,3 +36,15 @@ def html(request, name="index.html"):
     if not f.is_file():
         raise Http404()
     return FileResponse(open(f, "rb"), content_type="text/html; charset=utf-8")
+
+
+@xframe_options_exempt
+@require_GET
+def image(request, name):
+    """A screenshot of the manual (manuals/html/en/images/<name>.jpg)."""
+    if not re.fullmatch(r"[a-z0-9-]{1,60}\.jpg", name or ""):
+        raise Http404()
+    f = DIR / "html" / "en" / "images" / name
+    if not f.is_file():
+        raise Http404()
+    return FileResponse(open(f, "rb"), content_type="image/jpeg")

@@ -780,15 +780,18 @@ def sandbox_first(request):
     host = (request.get_host() or "").split(":")[0].lower().strip("[]")
     obj, _ = SystemSettings.objects.get_or_create(pk=1)
     if request.method == "POST":
-        if request.data.get("on"):
+        if "on" in request.data and request.data.get("on"):
             ModuleState.objects.update_or_create(key="sandbox", defaults={"enabled": True})
             modules.invalidate()
             sandbox.save({"enabled": True})
-        obj.data = {**(obj.data or {}), "sandbox_asked": True}
+        if "on" in request.data:
+            obj.data = {**(obj.data or {}), "sandbox_asked": True}
+        if request.data.get("manual"):  # the question whether to look at the manual (first start, or after the installation) was answered
+            obj.data = {**(obj.data or {}), "manual_asked": True}
         obj.save()
     # "local": the address of this server is your own computer (not a real domain)
     local = host in ("localhost", "127.0.0.1", "::1", "0.0.0.0") or host.endswith(".localhost") or host.endswith(".local")
-    return Response({"local": local, "asked": bool((obj.data or {}).get("sandbox_asked")), "enabled": sandbox.active()})
+    return Response({"local": local, "asked": bool((obj.data or {}).get("sandbox_asked")), "manual_asked": bool((obj.data or {}).get("manual_asked")), "enabled": sandbox.active()})
 
 
 @api_view(["GET"])

@@ -18,10 +18,14 @@ export function useSandboxFirst(enabled = true) {
   const [st, setSt] = useState(state);
   useEffect(() => {
     subs.add(setSt);
-    if (enabled && state === null && !loading) { loading = true; api("/system/sandbox-first/").then(set).catch(() => set({ local: false, asked: true, enabled: false })).finally(() => { loading = false; }); }
+    if (enabled && state === null && !loading) { loading = true; api("/system/sandbox-first/").then(set).catch(() => set({ local: false, asked: true, manual_asked: true, enabled: false })).finally(() => { loading = false; }); }
     return () => subs.delete(setSt);
   }, [enabled]);
-  return { pending: !!(st && st.local && !st.asked), known: st !== null, st };
+  const sandboxPending = !!(st && st.local && !st.asked), manualPending = !!(st && !st.manual_asked);
+  return { sandboxPending, manualPending, pending: sandboxPending || manualPending, known: st !== null, st };
 }
 
-export const answerSandbox = async (on) => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { on } })); } catch { set({ local: true, asked: true, enabled: false }); } };
+export const answerSandbox = async (on) => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { on } })); } catch { set({ ...(state || { local: true }), asked: true }); } };
+
+// the question "look at the manual?" was answered (yes or no)
+export const answerManual = async () => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { manual: true } })); } catch { set({ ...(state || {}), manual_asked: true }); } };

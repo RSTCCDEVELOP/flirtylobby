@@ -73,8 +73,8 @@ export default function AiWelcome() {
               {[["topup_min", "Kleinste bedrag"], ["topup_max", "Grootste bedrag"], ["topup_step", "Stap van de schuifbalk"]].map(([k, l]) => (
                 <label key={k}>{tx(l)} ({cr.currency})<input type="number" min="0" step="0.5" defaultValue={cr[k]} onBlur={(e) => { if (Number(e.target.value) !== cr[k]) save({ [k]: e.target.value }); }} /></label>))}
             </div>
-            <div className={stripe && stripe.via !== "sandbox" ? "alert ok" : "alert"} style={{ margin: 0 }}>
-              {tx("Betalen via")} <strong>Stripe</strong>: {stripe?.via === "link" ? `${tx("de Easy2edit-koppeling")} "${stripe.name}".` : stripe?.via === "license" ? tx("het Stripe-account van de licentie.") : tx("nog niet gekoppeld. Zet bij API keys een Stripe-koppeling aan en vink Superadmin-koppeling aan; anders kan er alleen via de sandbox worden betaald.")}
+            <div className={stripe && (stripe.simulated || stripe.via !== "sandbox") ? "alert ok" : "alert"} style={{ margin: 0 }}>
+              {tx("Betalen via")} <strong>Stripe</strong>: {stripe?.simulated ? tx("gesimuleerd: de sandbox staat aan.") : stripe?.via === "link" ? `${tx("de Easy2edit-koppeling")} "${stripe.name}".` : stripe?.via === "license" ? tx("het Stripe-account van de licentie.") : tx("nog niet gekoppeld. Zet bij API keys een Stripe-koppeling aan en vink Superadmin-koppeling aan; anders kan er alleen via de sandbox worden betaald.")}
             </div>
             {msg && <div className="alert">{msg.text}</div>}
             <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem" }}>

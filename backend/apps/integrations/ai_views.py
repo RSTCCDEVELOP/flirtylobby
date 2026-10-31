@@ -615,8 +615,10 @@ def credit(request):
 @permission_classes([IsAdminUser])
 def pay_status(request):
     """Superadmin: through which link AI credit is paid now."""
+    from apps.sandbox import service as sandbox
+
     link = aiusage.pay_link()
-    return Response({"via": link["via"] if link else "sandbox", "name": link["name"] if link else "", "mode": link["mode"] if link else ""})
+    return Response({"via": link["via"] if link else "sandbox", "name": link["name"] if link else "", "mode": link["mode"] if link else "", "simulated": bool(sandbox.active("payments"))})
 
 
 # ── the own credit system of an admin (his own AI link and his own Stripe link, not marked as superadmin links) ──

@@ -54,6 +54,7 @@ urlpatterns = [
     path("system/presets/admin/", views.presets_admin),
     path("manual/pdf/", manual.pdf),
     path("manual/html/", manual.html),
+    path("manual/html/images/<str:name>", manual.image),
     path("manual/html/<str:name>", manual.html),
     path("system/sandbox-first/", views.sandbox_first),
     path("system/presets/default/", views.presets_default),

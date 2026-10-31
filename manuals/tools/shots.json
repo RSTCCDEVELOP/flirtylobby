@@ -1,0 +1,298 @@
+[
+ {
+  "id": "dashboard",
+  "file": "dashboard",
+  "path": "/dashboard",
+  "chapter": 1,
+  "caption": "The dashboard of a user: profile, notifications and the left menu with Admin and Super admin."
+ },
+ {
+  "id": "admin-home",
+  "file": "admin-home",
+  "path": "/dashboard/admin",
+  "chapter": 1,
+  "caption": "The Admin start page with the blocks My admin parts, AI use, Standard installations and About Easy2edit."
+ },
+ {
+  "id": "installations",
+  "file": "installations",
+  "path": "/dashboard/admin/installaties",
+  "chapter": 1,
+  "caption": "Standard installations: one small tile per type of website, with Set and a gear for the settings."
+ },
+ {
+  "id": "installation-settings",
+  "file": "installation-settings",
+  "path": "/dashboard/admin/installaties",
+  "chapter": 2,
+  "keep": true,
+  "steps": [
+   {
+    "click": ".preset-actions .btn.icon"
+   }
+  ],
+  "caption": "The settings of a standard installation in a pop-up with tabs: General, AI, Modules and Demo data."
+ },
+ {
+  "id": "superadmin-home",
+  "file": "superadmin-home",
+  "path": "/dashboard/superadmin",
+  "chapter": 2,
+  "caption": "The Super admin start page: modules, plugins, prices, AI and the system tools."
+ },
+ {
+  "id": "modules",
+  "file": "modules",
+  "path": "/dashboard/superadmin/modules",
+  "chapter": 2,
+  "caption": "Super admin > Modules: switch modules on or off and give them to users and groups."
+ },
+ {
+  "id": "pages",
+  "file": "pages",
+  "path": "/dashboard/admin/pages",
+  "chapter": 3,
+  "caption": "Admin > Pages: the pages and the menu of the website.",
+  "steps": [
+   {
+    "clickText": "Expand all"
+   }
+  ]
+ },
+ {
+  "id": "sysobjects",
+  "file": "sysobjects",
+  "path": "/dashboard/admin/sysobjects",
+  "chapter": 3,
+  "caption": "System objects: parts of other modules that you can place on a page in edit mode."
+ },
+ {
+  "id": "siteimport",
+  "file": "siteimport",
+  "path": "/dashboard/admin/siteimport",
+  "chapter": 4,
+  "caption": "Site import: drop HTML files, check the proposal, then apply it to your pages."
+ },
+ {
+  "id": "theme",
+  "file": "theme",
+  "path": "/dashboard/admin/theme",
+  "chapter": 5,
+  "caption": "Admin > Theme: colours, fonts, roundings and theme packs."
+ },
+ {
+  "id": "media",
+  "file": "media",
+  "path": "/dashboard/admin/media",
+  "chapter": 5,
+  "caption": "The media library with all images and videos."
+ },
+ {
+  "id": "languages",
+  "file": "languages",
+  "path": "/dashboard/admin/languages",
+  "chapter": 5,
+  "caption": "Admin > Languages: the languages of the website."
+ },
+ {
+  "id": "users",
+  "file": "users",
+  "path": "/dashboard/admin/users",
+  "chapter": 6,
+  "caption": "Admin > Users: accounts, roles and blocking."
+ },
+ {
+  "id": "roles",
+  "file": "roles",
+  "path": "/dashboard/admin/roles",
+  "chapter": 6,
+  "caption": "Admin > Roles: the rights of a role, including viewing the AI use of users.",
+  "steps": [
+   {
+    "clickText": "Roles",
+    "sel": "button,summary,[role=button]"
+   }
+  ]
+ },
+ {
+  "id": "security",
+  "file": "security",
+  "path": "/dashboard/admin/security",
+  "chapter": 6,
+  "caption": "Admin > Security: login lock, country control, age check, cookies and forbidden words.",
+  "steps": [
+   {
+    "clickText": "Expand all"
+   }
+  ]
+ },
+ {
+  "id": "subscriptions",
+  "file": "subscriptions",
+  "path": "/dashboard/admin/subscriptions",
+  "chapter": 7,
+  "caption": "Subscriptions that give access to parts of the site."
+ },
+ {
+  "id": "community",
+  "file": "community",
+  "path": "/dashboard/admin/community",
+  "chapter": 8,
+  "caption": "Admin > Community: profiles, messages and chat.",
+  "steps": [
+   {
+    "clickText": "Settings",
+    "sel": "[role=tab],button"
+   }
+  ]
+ },
+ {
+  "id": "seo",
+  "file": "seo",
+  "path": "/dashboard/admin/seo",
+  "chapter": 9,
+  "caption": "Admin > SEO: search engines, bots and AI agents.",
+  "steps": [
+   {
+    "clickText": "Expand all"
+   }
+  ]
+ },
+ {
+  "id": "faq",
+  "file": "faq",
+  "path": "/dashboard/admin/faq",
+  "chapter": 9,
+  "caption": "Admin > FAQ: your own frequently asked questions."
+ },
+ {
+  "id": "ai-overview",
+  "file": "ai-overview",
+  "path": "/dashboard/superadmin/ai",
+  "chapter": 10,
+  "caption": "Super admin > AI > Overview: key figures, costs over time per group, and the latest calls."
+ },
+ {
+  "id": "ai-users",
+  "file": "ai-users",
+  "path": "/dashboard/superadmin/ai",
+  "chapter": 10,
+  "steps": [
+   {
+    "clickText": [
+     "Users",
+     "Gebruikers"
+    ],
+    "sel": "[role=tab],button"
+   }
+  ],
+  "caption": "AI > Users: heavy users, highest costs and a PDF report per user."
+ },
+ {
+  "id": "ai-credit",
+  "file": "ai-credit",
+  "path": "/dashboard/superadmin/ai",
+  "chapter": 10,
+  "steps": [
+   {
+    "clickText": [
+     "Credit",
+     "Balance",
+     "Tegoed"
+    ],
+    "sel": "[role=tab],button"
+   }
+  ],
+  "caption": "AI > Credit: the credit rules, the amounts of a top-up and the credit per user."
+ },
+ {
+  "id": "ai-settings",
+  "file": "ai-settings",
+  "path": "/dashboard/superadmin/ai",
+  "chapter": 10,
+  "steps": [
+   {
+    "clickText": [
+     "Settings",
+     "Instellingen"
+    ],
+    "sel": "[role=tab],button"
+   }
+  ],
+  "caption": "AI > Settings: margins per group, currencies and the rate."
+ },
+ {
+  "id": "ai-models",
+  "file": "ai-models",
+  "path": "/dashboard/superadmin/ai",
+  "chapter": 10,
+  "steps": [
+   {
+    "clickText": [
+     "Settings",
+     "Instellingen"
+    ],
+    "sel": "[role=tab],button"
+   },
+   {
+    "clickText": [
+     "Claude"
+    ],
+    "sel": "[role=tab],button"
+   }
+  ],
+  "caption": "AI > Settings > Claude: the models that are active in the API, with the price per million tokens and per token."
+ },
+ {
+  "id": "ai-admin",
+  "file": "ai-admin",
+  "path": "/dashboard/admin/ai",
+  "chapter": 10,
+  "caption": "Admin > AI: the use of your users, without purchase prices."
+ },
+ {
+  "id": "ai-buy",
+  "file": "ai-buy",
+  "path": "/dashboard/ai?buy=1",
+  "chapter": 10,
+  "keep": true,
+  "caption": "Buying AI credit: a slider with a suggestion based on your use."
+ },
+ {
+  "id": "integrations",
+  "file": "integrations",
+  "path": "/dashboard/admin/integrations",
+  "chapter": 11,
+  "caption": "Admin > API keys: the links to external systems, with the Superadmin label."
+ },
+ {
+  "id": "plugins",
+  "file": "plugins",
+  "path": "/dashboard/admin/plugins",
+  "chapter": 11,
+  "caption": "Admin > Plugins: install, switch on and update plugins."
+ },
+ {
+  "id": "backups",
+  "file": "backups",
+  "path": "/dashboard/admin/backups",
+  "chapter": 11,
+  "caption": "Admin > Backups: back up and restore the site."
+ },
+ {
+  "id": "webshop",
+  "file": "webshop",
+  "path": "/dashboard/admin/plugins/webshop",
+  "chapter": 7,
+  "settle": 8000,
+  "caption": "The web shop plugin: products, groups, shipping methods and discount codes."
+ },
+ {
+  "id": "orders",
+  "file": "orders",
+  "path": "/dashboard/admin/plugins/orders",
+  "chapter": 7,
+  "settle": 8000,
+  "caption": "Orders: all orders of the shop, subscriptions and donations."
+ }
+]
