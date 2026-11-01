@@ -16,6 +16,7 @@ import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
 import PresetPicker, { usePresets } from "../../../components/PresetPicker";
 import AdminAiBlock from "../../../components/AdminAiBlock";
+import SettingsBackup from "../../../components/SettingsBackup";
 import ManualButtons from "../../../components/ManualButtons";
 import { useModules } from "../../../components/Modules";
 import { can } from "../../../lib/perms";
@@ -50,6 +51,12 @@ export default function AdminHome() {
       {canSet && presets && presets.length > 0 && (
         <Collapsible id="admin-presets" title={tx("Standaard installaties")}>
           <PresetPicker adminOnly demo={!!user?.is_staff} />
+        </Collapsible>
+      )}
+
+      {user?.is_staff && (
+        <Collapsible id="admin-settings-backup" title={tx("Instellingen back-up")}>
+          <SettingsBackup />
         </Collapsible>
       )}
 

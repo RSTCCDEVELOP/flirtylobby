@@ -19,7 +19,7 @@ import { useSession } from "./Session";
 export const DEFAULT_MENU = {
   breakpoints: { tablet: 1024, mobile: 700 },
   forms: { desktop: "bar", tablet: "bar", mobile: "hamburger" },
-  align: { desktop: "left", tablet: "left", mobile: "left" }, toggle_pos: { desktop: "right", tablet: "right", mobile: "right" },
+  align: { desktop: "left", tablet: "left", mobile: "left" }, toggle_pos: { desktop: "left", tablet: "left", mobile: "left" },
   sub: { desktop: "dropdown", tablet: "dropdown", mobile: "accordion" },
   open_on: { desktop: "hover", tablet: "click", mobile: "click" },
   item_style: "theme", size: "md", uppercase: false, arrows: true, overlay: true, close_on_click: true, sticky_bottom: true,
@@ -179,7 +179,10 @@ export default function SiteMenu() {
       const first = nav.firstElementChild;
       const wrapped = first && nav.offsetHeight > first.offsetHeight * 1.6;
       const over = head.scrollWidth > head.clientWidth + 1;
-      if (wrapped || over) setFitAt(window.innerWidth);
+      const brand = head.querySelector(".brand"), actions = head.querySelector(".site-actions"); // the menu may not run into the logo or the icons
+      const nr = nav.getBoundingClientRect();
+      const clash = (brand && nr.right > brand.getBoundingClientRect().left - 8 && nr.left < brand.getBoundingClientRect().right) || (actions && nr.right > actions.getBoundingClientRect().left - 8 && nr.left < actions.getBoundingClientRect().right);
+      if (wrapped || over || clash) setFitAt(window.innerWidth);
     };
     check();
     window.addEventListener("resize", check);
@@ -195,7 +198,7 @@ export default function SiteMenu() {
   const squeezed = form === "bar" && fitAt > 0 && !!device;
   const useCfg = edHead ? { ...cfg, forms: { desktop: "drawer-left", tablet: "drawer-left", mobile: "drawer-left" }, overlay: true } : squeezed ? { ...cfg, forms: { ...cfg.forms, [dev]: "hamburger" } } : cfg;
   return (
-    <div ref={wrapRef} className={`hmenu-wrap tp-${cfg.toggle_pos?.[dev] || "right"}`} style={{ visibility: device ? "visible" : "hidden" }}>
+    <div ref={wrapRef} className={`hmenu-wrap tp-${cfg.toggle_pos?.[dev] || "left"}`} style={{ visibility: device ? "visible" : "hidden" }}>
       <MenuStyle cfg={cfg} />
       <MenuView items={items} cfg={useCfg} device={dev} pathname={pathname} user={user} />
     </div>

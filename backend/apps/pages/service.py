@@ -197,7 +197,7 @@ DEFAULT_MENU = {
     "breakpoints": {"tablet": 1024, "mobile": 700},
     "forms": {"desktop": "bar", "tablet": "bar", "mobile": "hamburger"},
     "align": {"desktop": "left", "tablet": "left", "mobile": "left"},  # left | center | right (of the header)
-    "toggle_pos": {"desktop": "right", "tablet": "right", "mobile": "right"},  # where the hamburger button sits in the header: left | center | right
+    "toggle_pos": {"desktop": "left", "tablet": "left", "mobile": "left"},  # where the hamburger button sits in the header: left | center | right
     "sub": {"desktop": "dropdown", "tablet": "dropdown", "mobile": "accordion"},  # dropdown | mega | accordion
     "open_on": {"desktop": "hover", "tablet": "click", "mobile": "click"},  # how a sub menu opens: hover | click
     "item_style": "theme",  # theme (follows the theme) | text | underline | pill | button | outline

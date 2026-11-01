@@ -1718,11 +1718,12 @@ html[data-hstyle="glass"] .site-header { background: color-mix(in srgb, var(--ca
 html[data-hstyle="plain"] .site-header { background: transparent; backdrop-filter: none; border-bottom: 0; box-shadow: none; }
 
 @media (min-width: 721px) {
-  html[data-hl="centered"] .site-header { height: auto; flex-wrap: wrap; justify-content: center; padding-top: .8rem; padding-bottom: .5rem; row-gap: .3rem; position: sticky; }
+  /* centered: the logo in the middle, the menu on the left and the icons (cart, bell, ...) on the right, all on ONE line; a menu that does not fit becomes the hamburger (SiteMenu) */
+  html[data-hl="centered"] .site-header, html[data-hl="split"] .site-header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  html[data-hl="centered"] .site-header .brand { order: 2; justify-self: center; }
+  html[data-hl="centered"] .hmenu-wrap, html[data-hl="centered"] .site-nav { order: 1; margin: 0; min-width: 0; }
+  html[data-hl="centered"] .site-actions { order: 3; justify-self: end; margin: 0; }
   html[data-hl="centered"][data-hsticky="no"] .site-header { position: relative; }
-  html[data-hl="centered"] .site-header .brand { order: 1; flex: 0 0 100%; display: flex; justify-content: center; }
-  html[data-hl="centered"] .site-nav { order: 2; margin: 0 auto; }
-  html[data-hl="centered"] .site-actions { position: absolute; right: clamp(1rem, 4vw, 3rem); top: .8rem; margin: 0; }
   html[data-hl="split"] .site-header { display: grid; grid-template-columns: 1fr auto 1fr; }
   html[data-hl="split"] .site-header .brand { order: 2; justify-self: center; }
   html[data-hl="split"] .site-nav { order: 1; margin: 0; }
@@ -2053,7 +2054,7 @@ main.doc, main.shop, .site > main { width: 100%; box-sizing: border-box; }
 /* ── the header menu (Admin → Pagina's → Menu → Instellingen): bar, hamburger, side panels, full screen, bottom bar ── */
 .hmenu-wrap { position: relative; margin-left: 1.5rem; display: flex; align-items: center; }
 @media (min-width: 721px) {
-  html[data-hl="centered"] .hmenu-wrap { order: 2; margin: 0 auto; }
+  html[data-hl="centered"] .hmenu-wrap { order: 1; margin: 0; }
   html[data-hl="split"] .hmenu-wrap { order: 1; margin: 0; }
 }
 .hmenu { display: flex; gap: .25rem; align-items: center; flex-wrap: wrap; }

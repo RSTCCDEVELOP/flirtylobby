@@ -30,7 +30,7 @@ export default function MenuPreview({ items, cfg, device = "desktop", scrolled =
       </div>
       <div className={`hm-prev-header m-${mode}${scrolled ? " scrolled" : ""}`} style={headStyle}>
         <span className="hm-prev-logo">easy<b>2</b>edit</span>
-        <div className={`hmenu-wrap hm-prev-menu al-${align} tp-${cfg.toggle_pos?.[device] || "right"}`}>
+        <div className={`hmenu-wrap hm-prev-menu al-${align} tp-${cfg.toggle_pos?.[device] || "left"}`}>
           <MenuView items={items} cfg={cfg} device={device} preview={{ draggable }} />
         </div>
         {form !== "bottom" && <span className="hm-prev-actions" aria-hidden="true"><i /><i /><i /></span>}

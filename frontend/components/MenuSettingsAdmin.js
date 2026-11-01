@@ -124,7 +124,7 @@ export default function MenuSettingsAdmin({ canEdit = true }) {
               <small className="muted">{tx("Links, midden of rechts in de header (bij een menubalk)")}</small>
             </label>
             <label>{tx("Positie van het hamburger-icoon")}
-              <select disabled={!canEdit || bars(cfg.forms[dev])} value={cfg.toggle_pos?.[dev] || "right"} onChange={(e) => setDev("toggle_pos", dev, e.target.value)}>{ALIGN.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
+              <select disabled={!canEdit || bars(cfg.forms[dev])} value={cfg.toggle_pos?.[dev] || "left"} onChange={(e) => setDev("toggle_pos", dev, e.target.value)}>{ALIGN.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
               {bars(cfg.forms[dev]) && <small className="muted">{tx("Alleen bij hamburger, zijpaneel of volledig scherm")}</small>}
             </label>
             </>)}

@@ -66,7 +66,11 @@ def parse(raw, builtin_ok=False):
         raise ThemeError("Ongeldige instellingen in het thema: " + ", ".join(sorted(errors)))
     ver = lambda v: str(v or "0.0.0") if re.fullmatch(r"\d{1,4}\.\d{1,4}\.\d{1,4}", str(v or "0.0.0")) else "0.0.0"  # noqa: E731
     home = [{"file": str(h.get("file")), "caption": str(h.get("caption") or "")[:255]} for h in (d.get("home") or []) if isinstance(h, dict) and re.fullmatch(r"home/[a-z0-9_-]{1,40}\.(%s)" % "|".join(IMG_EXT), str(h.get("file") or ""))][:MAX_HOME]
-    return {"key": key, "home": home, "name": str(d.get("name") or key)[:60], "description": str(d.get("description") or "")[:300], "version": ver(d.get("version")),
+    menu = None
+    if isinstance(d.get("menu"), dict):
+        from apps.pages import service as pages_service
+        menu = pages_service.clean_menu_settings(d["menu"])  # the settings of the header menu (form, position of the hamburger, colours, ...) belong to the look
+    return {"key": key, "menu": menu, "home": home, "name": str(d.get("name") or key)[:60], "description": str(d.get("description") or "")[:300], "version": ver(d.get("version")),
             "system_version": ver(d.get("system_version")), "mode": d.get("mode") if d.get("mode") in ("light", "dark") else None, "values": clean}
 
 
@@ -192,6 +196,10 @@ def use(key, with_files=False):
     new.update({k: old[k] for k in KEEP if k in old} | {k: old[k] for k in old if k.startswith("chat_")})
     cur.theme = {k: v for k, v in new.items() if v != theme.DEFAULTS[k]}
     cur.save()
+    if man.get("menu"):  # the settings of the menu come with the theme
+        from apps.pages import service as pages_service
+        from apps.pages.models import MenuSettings
+        MenuSettings.objects.update_or_create(pk=1, defaults={"data": pages_service.clean_menu_settings(man["menu"])})
     with_files = with_files or key == "easy2edit"  # the default theme always brings its own logos: the logo of another site must not stay
     files = apply_files(key) if with_files and (key not in BUILTIN_KEYS() or man.get("customized")) else (0, 0)
     return files
@@ -320,7 +328,7 @@ def _doc(key):
 
 
 def _save_doc(key, doc):
-    keep = ("key", "name", "description", "version", "system_version", "mode", "values", "home")
+    keep = ("key", "name", "description", "version", "system_version", "mode", "values", "home", "menu")
     (_dir(key) / "theme.json").write_text(json.dumps({k: doc[k] for k in keep if k in doc}, indent=2, ensure_ascii=False) + "\n")
     scan()
 
@@ -487,7 +495,8 @@ def capture(key):
             home.append({"file": name, "caption": p.caption})
         except Exception:  # noqa: BLE001
             continue
-    doc["values"], doc["home"] = values, home
+    from apps.pages import service as pages_service
+    doc["values"], doc["home"], doc["menu"] = values, home, pages_service.menu_settings()
     _save_doc(key, doc)
 
 
