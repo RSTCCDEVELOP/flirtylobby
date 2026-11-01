@@ -12,6 +12,8 @@ import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 import RunPopup from "./RunPopup";
+import { setBlock, useSandboxFirst } from "../lib/firstRun";
+import { lvl } from "../lib/perms";
 
 const KEY = "sysupdate-later";
 
@@ -19,16 +21,21 @@ const KEY = "sysupdate-later";
 // The window shows each step (copy of the content, database, plugins, themes, languages, pages) with a progress bar. Content is never removed.
 export default function SystemUpdatePrompt() {
   const { user } = useAuth() || {};
+  const adm = !!user && (user.is_staff || lvl(user, "system") >= 3);
+  const first = useSandboxFirst(adm); // after the licence, the sandbox and the manual; the installation and the AI wait for this one
   const [info, setInfo] = useState(null);
   const [run, setRun] = useState(null);
 
   useEffect(() => {
-    if (!user) return;
-    try { if (sessionStorage.getItem(KEY)) return; } catch {}
-    api("/system/update/").then((r) => { if (r?.needed) setInfo(r); }).catch(() => {});
-  }, [user]);
+    if (!user) return undefined;
+    if (adm && (!first.known || first.pendingBase)) { if (adm) setBlock("update", true); return undefined; } // still waiting for its turn
+    try { if (sessionStorage.getItem(KEY)) { setBlock("update", false); return undefined; } } catch {}
+    api("/system/update/").then((r) => { if (r?.needed) setInfo(r); else setBlock("update", false); }).catch(() => setBlock("update", false));
+    return undefined;
+  }, [user, adm, first.known, first.pendingBase]);
+  useEffect(() => () => setBlock("update", false), []);
 
-  const later = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} setInfo(null); };
+  const later = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} setInfo(null); setBlock("update", false); };
 
   async function start() {
     const steps = info.steps.map((s) => ({ ...s, status: "wait" }));
@@ -49,7 +56,7 @@ export default function SystemUpdatePrompt() {
 
   return (
     <>
-      <RunPopup run={run} onClose={() => { setRun(null); window.location.reload(); }} />
+      <RunPopup run={run} onClose={() => { setRun(null); setBlock("update", false); window.location.reload(); }} />
       {info && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={later}>
           <div className="card modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>

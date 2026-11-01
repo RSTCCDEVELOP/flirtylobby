@@ -7,6 +7,7 @@
 
 "use client";
 
+import { homeAfterLogin } from "../../lib/levelHome";
 import { tx } from "../../lib/t";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -58,7 +59,7 @@ export default function Login() {
       const r = await api("/auth/login/", { method: "POST", body: { email: String(f.get("email") || email).trim(), password: String(f.get("password") || password) } });
       if (r.twofa_required) { setChallenge(r); setBusy(false); return; }
       setToken(r.token);
-      router.push("/dashboard");
+      router.push(await homeAfterLogin());
     } catch (err) {
       setError(errorText(err));
       setFailed(err instanceof ApiError && err.status === 400);
@@ -97,7 +98,7 @@ export default function Login() {
     try {
       const { token } = await api("/auth/login/verify/", { method: "POST", body: { challenge: challenge.challenge, code } });
       setToken(token);
-      router.push("/dashboard");
+      router.push(await homeAfterLogin());
     } catch (err) {
       setError(errorText(err));
       setBusy(false);
@@ -188,7 +189,7 @@ export default function Login() {
         {info && <div className="alert ok">{info}</div>}
         {failed && email.trim() && <button type="button" className="btn" onClick={() => { setReset({ step: "ask" }); setError(""); setInfo(""); }}>{tx("Wachtwoord resetten")}</button>}
         <button className="btn primary" disabled={busy || !hydrated}>{busy ? tx("Bezig…") : tx("Inloggen")}</button>
-        <SsoButtons onLogin={(r) => { setToken(r.token); router.push("/dashboard"); }} onError={setError} />
+        <SsoButtons onLogin={async (r) => { setToken(r.token); router.push(await homeAfterLogin()); }} onError={setError} />
         {canRegister && <Link href="/registreren" className="center">{tx("Nog geen account? Aanmelden")}</Link>}
         <Link href="/" className="muted center">{tx("← Terug naar website")}</Link>
       </form>

@@ -12,22 +12,28 @@ import { api } from "./api";
 let state = null; // {local, asked, enabled}
 let loading = false;
 const subs = new Set();
-let licenseOpen = false; // the question about the licence (it comes first) is open: the other questions wait until it is answered (also when the answer is "Later")
+// The messages come one after the other: licence, terms and conditions, sandbox, manual, update of the system, installation, AI. "Later" (or closing) on one only lets the next one come.
+const blockers = new Set(); // "license", "update": messages that are open or still to be asked; the ones after them wait
 const licSubs = new Set();
-export const setLicenseOpen = (v) => { licenseOpen = !!v; licSubs.forEach((f) => f(licenseOpen)); };
+const code = () => `${blockers.has("license") ? 1 : 0}${blockers.size > 0 ? 1 : 0}${blockers.has("update") ? 1 : 0}${blockers.has("terms") ? 1 : 0}`; // "<licence><anything><update><terms>": which messages are open
+const tell = () => licSubs.forEach((f) => f(code()));
+export const setBlock = (name, v) => { if (v) blockers.add(name); else blockers.delete(name); tell(); };
+export const setLicenseOpen = (v) => setBlock("license", v);
 const set = (v) => { state = v; subs.forEach((f) => f(v)); };
 
 export function useSandboxFirst(enabled = true) {
   const [st, setSt] = useState(state);
-  const [lic, setLic] = useState(licenseOpen);
+  const [lic, setLic] = useState(code());
   useEffect(() => {
-    subs.add(setSt); licSubs.add(setLic); setLic(licenseOpen);
+    subs.add(setSt); licSubs.add(setLic); setLic(code());
     if (enabled && state === null && !loading) { loading = true; api("/system/sandbox-first/").then(set).catch(() => set({ local: false, asked: true, manual_asked: true, enabled: false })).finally(() => { loading = false; }); }
     return () => { subs.delete(setSt); licSubs.delete(setLic); };
   }, [enabled]);
   const rawSandbox = !!(st && st.local && !st.asked), rawManual = !!(st && !st.manual_asked);
   // one after the other: licence, sandbox, manual; then the rest (installation, AI)
-  return { sandboxPending: !lic && rawSandbox, manualPending: !lic && !rawSandbox && rawManual, pending: lic || rawSandbox || rawManual, known: st !== null, st };
+  const licOpen = lic[0] === "1", anyBlock = lic[1] === "1", updOpen = lic[2] === "1", termsOpen = lic[3] === "1";
+  const first = licOpen || termsOpen; // licence and terms come before sandbox, manual, update, installation and AI
+  return { licenseOpen: licOpen, sandboxPending: !first && rawSandbox, manualPending: !first && !rawSandbox && rawManual, pendingBase: first || rawSandbox || rawManual, pendingInstall: first || updOpen || rawSandbox || rawManual, pending: anyBlock || rawSandbox || rawManual, known: st !== null, st };
 }
 
 export const answerSandbox = async (on) => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { on } })); } catch { set({ ...(state || { local: true }), asked: true }); } };

@@ -15,7 +15,7 @@ import { runDemo, resumeDemo } from "../lib/demoRun";
 import Link from "next/link";
 import { useAuth } from "./AuthContext";
 import Tabs from "./Tabs";
-import { useSandboxFirst } from "../lib/firstRun";
+import { setBlock, useSandboxFirst } from "../lib/firstRun";
 import AiFillAsk from "./AiFillAsk";
 import RunPopup from "./RunPopup";
 
@@ -32,15 +32,24 @@ export default function DefaultInstallPrompt() {
   const [error, setError] = useState("");
   const first = useSandboxFirst(!!user?.is_staff); // the question about the sandbox (on your own computer) comes first
   const [tab, setTab] = useState("install");
+  const [checked, setChecked] = useState(false); // is it known whether an installation must be asked?
   const [fillAsk, setFillAsk] = useState(false); // after the installation: fill the website with AI? (then straight to buying AI credit)
   const [aiOn, setAiOn] = useState(null); // is an AI link installed? (then the website can be filled with AI)
 
   useEffect(() => {
-    if (!user?.is_staff || !first.known || first.pending) return;
+    if (!user?.is_staff || !first.known || first.pendingInstall) return;
     try { if (sessionStorage.getItem(KEY)) return; } catch {}
+    setBlock("install", true); // the AI message comes after this one
     api("/ai/me/").then((i) => setAiOn(!!i.module)).catch(() => setAiOn(false));
-    api("/system/presets/setup/").then((r) => { if (r.needed) { setAsk(r); setPick(r.presets[0]?.key || ""); } }).catch(() => {});
-  }, [user?.is_staff, first.known, first.pending]);
+    api("/system/presets/setup/").then((r) => { if (r.needed) { setAsk(r); setPick(r.presets[0]?.key || ""); } }).catch(() => {}).finally(() => setChecked(true));
+  }, [user?.is_staff, first.known, first.pendingInstall]);
+  useEffect(() => { // from the first moment: the AI message waits until it is known whether an installation must be asked, and it is answered
+    if (!user?.is_staff) return;
+    try { if (sessionStorage.getItem(KEY)) return; } catch {}
+    setBlock("install", true);
+  }, [user?.is_staff]);
+  useEffect(() => { if (checked && !ask && !run && !fillAsk) setBlock("install", false); }, [checked, ask, run, fillAsk]); // nothing of this message is open any more: the next one may come
+  useEffect(() => () => setBlock("install", false), []);
 
   const later = () => { try { sessionStorage.setItem(KEY, "1"); } catch {} setAsk(null); };
 

@@ -7,7 +7,7 @@
 
 from django.urls import path
 
-from . import backup_views, dashboard, marketing, resource_views, sales, views
+from . import backup_views, terms_views, dashboard, marketing, resource_views, sales, views
 from . import manual
 
 urlpatterns = [
@@ -21,6 +21,14 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("system/", views.system_settings),
     path("system/reset/", views.system_reset),
+    path("system/terms/", terms_views.text),
+    path("system/terms/status/", terms_views.status_view),
+    path("system/terms/code/", terms_views.code),
+    path("system/terms/sign/", terms_views.sign),
+    path("system/terms/admin/", terms_views.admin),
+    path("system/terms/admin/publish/", terms_views.publish),
+    path("system/terms/admin/reset/", terms_views.reset_text),
+    path("system/terms/admin/translate/", terms_views.translate),
     path("system/standard-admin/", views.standard_admin_view),
     path("system/standard-admin/file/", views.standard_admin_file),
     path("system/info/", views.system_info),

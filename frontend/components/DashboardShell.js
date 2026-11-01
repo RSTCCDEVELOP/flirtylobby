@@ -16,6 +16,7 @@ import { useAuth } from "./AuthContext";
 import FaqDrawer from "./FaqDrawer";
 import DefaultInstallPrompt from "./DefaultInstallPrompt";
 import SystemUpdatePrompt from "./SystemUpdatePrompt";
+import TermsGate from "./TermsGate";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
 import ThemeToggle from "./ThemeToggle";
@@ -396,6 +397,7 @@ export default function DashboardShell({ children }) {
 
       <main className="content">
         <FindOnPage />
+        {user && (user.is_staff || Object.values(user.module_levels || {}).some((v) => v >= 2)) && <TermsGate />}
         {user?.is_staff && <SandboxFirstAsk />}
         {user && (user.is_staff || lvl(user, "system") >= 3) && <ManualFirstAsk />}
         {user?.is_staff && <DefaultInstallPrompt />}

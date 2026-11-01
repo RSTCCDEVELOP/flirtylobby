@@ -17,6 +17,7 @@ import SaveDefaults from "../../../components/SaveDefaults";
 import PresetPicker from "../../../components/PresetPicker";
 import ProfileThemeSwitches from "../../../components/ProfileThemeSwitches";
 import SettingsBackup from "../../../components/SettingsBackup";
+import TermsAdmin from "../../../components/TermsAdmin";
 import SystemReset from "../../../components/SystemReset";
 import StandardAdmin from "../../../components/StandardAdmin";
 
@@ -63,6 +64,9 @@ export default function SuperAdminHome() {
       </Collapsible>
       <Collapsible id="super-themes" title={tx("Profielthema's (community)")}>
         <ProfileThemeSwitches />
+      </Collapsible>
+      <Collapsible id="super-terms" title={tx("Algemene voorwaarden")}>
+        <TermsAdmin />
       </Collapsible>
       <Collapsible id="super-backup" title={tx("Instellingen back-up")}>
         <SettingsBackup />

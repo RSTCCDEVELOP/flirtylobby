@@ -184,3 +184,41 @@ class ThemeImportJob(models.Model):
     error = models.TextField(blank=True)
     draft = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class TermsVersion(models.Model):
+    """A published version of the terms and conditions: the text in every language ({lang: {"title", "body"}}, body = "html:<clean html>"). Admins and superadmins sign a version."""
+
+    version = models.PositiveIntegerField(unique=True)
+    texts = models.JSONField(default=dict)
+    published_at = models.DateTimeField(auto_now_add=True)
+    published_by = models.CharField(max_length=254, blank=True)
+
+    class Meta:
+        ordering = ["-version"]
+
+
+class TermsSignature(models.Model):
+    """A signature: this person confirmed with a code from an e-mail that they accept this version."""
+
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="terms_signatures")
+    version = models.PositiveIntegerField()
+    role = models.CharField(max_length=20, blank=True)  # superadmin | admin
+    name = models.CharField(max_length=200, blank=True)
+    email = models.CharField(max_length=254, blank=True)
+    lang = models.CharField(max_length=10, blank=True)  # the language of the text that was shown
+    ip = models.CharField(max_length=60, blank=True)
+    signed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-signed_at"]
+
+
+class TermsCode(models.Model):
+    """The code from the e-mail (only a hash is stored): valid for 15 minutes, five tries."""
+
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="terms_codes")
+    code_hash = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    tries = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
