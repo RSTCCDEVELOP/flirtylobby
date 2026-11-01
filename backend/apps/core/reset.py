@@ -211,7 +211,7 @@ def perform(keep=None, ai=False):
         ModuleState.objects.all().delete()
         for m in modules.MODULES:
             if not m.get("core"):
-                ModuleState.objects.create(key=m["key"], enabled=m["key"] == "integrations")  # (the API keys module stays on: the links of the superadmin keep working)
+                ModuleState.objects.create(key=m["key"], enabled=m["key"] in modules.ALWAYS_ON)  # (the base stays on: system, plugins, storage, backups and the API keys, of which the links of the superadmin keep working)
         # look: the default (Easy2edit)
         SiteSettings.objects.update_or_create(pk=1, defaults={"theme": {}})
         from apps.pages.models import MenuSettings

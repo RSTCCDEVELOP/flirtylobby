@@ -5002,5 +5002,14 @@
   "Kies de taal van de handleiding": "Choose the language of the manual",
   "Taal van de handleiding": "Language of the manual",
   "Lees de handleiding online": "Read the manual online",
-  "Bewaar alle instellingen in één bestand en laad dat bestand later weer in.": "Save all settings in one file and load that file again later."
+  "Bewaar alle instellingen in één bestand en laad dat bestand later weer in.": "Save all settings in one file and load that file again later.",
+  "Dit thema is nog niet geïnstalleerd.": "This theme is not installed yet.",
+  "Zo ziet een kop eruit": "This is how a heading looks",
+  "Een kleinere kop": "A smaller heading",
+  "Dit is een voorbeeldtekst in het gekozen lettertype. Zo lezen bezoekers de tekst op je website, met de gekozen grootte en regelafstand. 0123456789": "This is a sample text in the chosen font. This is how visitors read the text on your website, with the chosen size and line height. 0123456789",
+  "Koppen": "Headings",
+  "Het thema is gewijzigd. Ook bijwerken in de bronmap (resource/themas), zodat nieuwe installaties de nieuwe versie krijgen?": "The theme was changed. Also update it in the source folder (resource/themas), so new installations get the new version?",
+  "Thema bijwerken in de bronmap": "Update theme in the source folder",
+  "Bijwerken in bronmap": "Update in source folder",
+  "Het thema is bijgewerkt in de bronmap.": "The theme has been updated in the source folder."
 }

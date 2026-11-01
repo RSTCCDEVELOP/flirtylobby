@@ -1036,7 +1036,10 @@ def theme_pack_dist(request):
     """Superadmins: write the zips of all themes into <project>/resource/themas."""
     if not _superadmin(request):
         return Response({"detail": "Alleen een superadmin kan thema's exporteren."}, status=status.HTTP_403_FORBIDDEN)
-    names = themepacks.build_dist()
+    only = str(request.data.get("key") or "")
+    if only and only not in themepacks.all_keys():
+        return _bad("Dit thema bestaat niet.", status.HTTP_404_NOT_FOUND)
+    names = themepacks.build_dist(only or None)
     return Response({"folder": str(themepacks.dist_dir()), "files": names})
 
 

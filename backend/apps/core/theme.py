@@ -18,9 +18,12 @@ COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 _SYSTEM = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
 
-def _font(name, google=True, serif=False):
-    fallback = "Georgia, serif" if serif else "system-ui, sans-serif"
-    return {"value": name, "label": name, "css": f'"{name}", {fallback}', "google": name if google else None}
+_W = "400;500;600;700;800"  # the weights that are loaded from Google Fonts; a font that does not have all of them lists its own
+
+
+def _font(name, google=True, serif=False, w=_W, mono=False):
+    fallback = "ui-monospace, monospace" if mono else "Georgia, serif" if serif else "system-ui, sans-serif"
+    return {"value": name, "label": name, "css": f'"{name}", {fallback}', "google": name if google else None, "wght": w}
 
 
 FONTS = [
@@ -29,8 +32,28 @@ FONTS = [
      "css": '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif'},
     {"value": "Segoe UI", "label": "Segoe UI (Windows)", "google": None,
      "css": '"Segoe UI Variable", "Segoe UI", system-ui, Roboto, sans-serif'},
-    _font("Inter"), _font("Poppins"), _font("Roboto"), _font("Open Sans"), _font("Montserrat"),
-    _font("Lato"), _font("Nunito"), _font("Playfair Display", serif=True), _font("Merriweather", serif=True),
+    {"value": "Arial", "label": "Arial", "google": None, "css": 'Arial, "Helvetica Neue", Helvetica, sans-serif'},
+    {"value": "Verdana", "label": "Verdana", "google": None, "css": 'Verdana, Geneva, Tahoma, sans-serif'},
+    {"value": "Sans-serif", "label": "Sans-serif (standaard)", "google": None, "css": "sans-serif"},
+    {"value": "Helvetica", "label": "Helvetica", "google": None, "css": '"Helvetica Neue", Helvetica, Arial, sans-serif'},
+    {"value": "Tahoma", "label": "Tahoma", "google": None, "css": 'Tahoma, Verdana, Geneva, sans-serif'},
+    {"value": "Trebuchet MS", "label": "Trebuchet MS", "google": None, "css": '"Trebuchet MS", Tahoma, sans-serif'},
+    {"value": "Times New Roman", "label": "Times New Roman", "google": None, "css": '"Times New Roman", Times, serif'},
+    {"value": "Georgia", "label": "Georgia", "google": None, "css": 'Georgia, "Times New Roman", serif'},
+    {"value": "Courier New", "label": "Courier New", "google": None, "css": '"Courier New", Courier, monospace'},
+        _font("Inter"), _font("Poppins"), _font("Roboto"), _font("Open Sans"), _font("Montserrat"),
+    _font("Lato", w="400;700"), _font("Nunito"), _font("Playfair Display", serif=True), _font("Merriweather", serif=True),
+    # more fonts: sans serif
+    _font("Raleway"), _font("Work Sans"), _font("DM Sans"), _font("Manrope"), _font("Outfit"), _font("Plus Jakarta Sans"), _font("Space Grotesk", w="400;500;600;700"),
+    _font("Rubik"), _font("Karla"), _font("Mulish"), _font("Source Sans 3"), _font("Noto Sans"), _font("Fira Sans"), _font("Josefin Sans", w="400;500;600;700"),
+    _font("Quicksand", w="400;500;600;700"), _font("Barlow"), _font("Archivo"), _font("Libre Franklin"), _font("Oswald", w="400;500;600;700"), _font("Montserrat Alternates"),
+    # serif
+    _font("Lora", serif=True, w="400;500;600;700"), _font("Crimson Pro", serif=True), _font("Source Serif 4", serif=True), _font("Noto Serif", serif=True), _font("Bitter", serif=True),
+    _font("Roboto Slab", serif=True), _font("Spectral", serif=True), _font("Fraunces", serif=True), _font("Cormorant Garamond", serif=True, w="400;500;600;700"),
+    _font("Libre Baskerville", serif=True, w="400;700"), _font("PT Serif", serif=True, w="400;700"), _font("DM Serif Display", serif=True, w="400"), _font("Abril Fatface", serif=True, w="400"),
+    # display, handwriting and monospace
+    _font("Bebas Neue", w="400"), _font("Pacifico", w="400"), _font("Dancing Script", w="400;500;600;700"), _font("Lobster", w="400"),
+    _font("JetBrains Mono", mono=True, w="400;500;600;700;800"), _font("IBM Plex Mono", mono=True, w="400;500;600;700"),
 ]
 
 SHADOWS = [
@@ -389,7 +412,7 @@ def validate(values):
 def build(values):
     """Return (css, fonts_url) for the given (merged) values."""
     root, light, dark = [], [], []
-    families = set()
+    families = {}  # Google font -> the weights that are loaded
     for key, f in FIELDS.items():
         v = values[key]
         if not f["css"]:
@@ -398,7 +421,7 @@ def build(values):
             c = next(c for c in f["choices"] if c["value"] == v)
             css_val, dark_val = c["css"], c.get("dark")
             if c.get("google"):
-                families.add(c["google"])
+                families[c["google"]] = c.get("wght", _W)
         elif f["type"] == "number":
             css_val, dark_val = f"{v}{f['unit']}", None
         else:
@@ -414,7 +437,7 @@ def build(values):
     )
     fonts_url = None
     if families:
-        fam = "&".join(f"family={n.replace(' ', '+')}:wght@400;500;600;700;800" for n in sorted(families))
+        fam = "&".join(f"family={n.replace(' ', '+')}:wght@{families[n]}" for n in sorted(families))
         fonts_url = f"https://fonts.googleapis.com/css2?{fam}&display=swap"
     return css, fonts_url
 

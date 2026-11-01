@@ -9,7 +9,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
-import { confirmDialog } from "../lib/dialog";
+import { alertDialog, confirmDialog } from "../lib/dialog";
+import { useAuth } from "./AuthContext";
 import { tx } from "../lib/t";
 import { IconGrid, IconImage, IconPalette, IconSettings } from "./Icons";
 const IconAi = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>;
@@ -30,7 +31,37 @@ const SLOTS = [
   ["og_image", "Deelafbeelding", "Getoond bij delen op social media. 1200×630."],
 ];
 
-export default function ThemePackEdit({ pack, onClose, onChanged }) {
+// A sample of the two chosen fonts, with the chosen sizes, line height and weight: the Google font is loaded when it is picked.
+function FontPreview({ vals, fonts }) {
+  const body = vals.font_body || "System", head = vals.font_heading || "System";
+  useEffect(() => {
+    const fams = [...new Set([body, head].filter((n) => n && n !== "System"))];
+    if (!fams.length) return;
+    const url = `https://fonts.googleapis.com/css2?${fams.map((n) => `family=${n.replace(/ /g, "+")}:wght@${fonts?.[n] || "400;500;600;700;800"}`).join("&")}&display=swap`;
+    if (!document.querySelector(`link[href="${url}"]`)) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = url; document.head.appendChild(l); }
+  }, [body, head, fonts]);
+  const fam = (n) => (n && n !== "System" ? `"${n}", system-ui, sans-serif` : "system-ui, sans-serif");
+  const base = Number(vals.font_size_base) || 16, h1 = Number(vals.font_size_h1) || 1.6, h2 = Number(vals.font_size_h2) || 1.05, lh = Number(vals.line_height) || 1.5;
+  return (
+    <div className="font-preview" style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "1rem 1.2rem", margin: ".2rem 0 1rem", background: "var(--card)" }}>
+      <div style={{ fontFamily: fam(head), fontWeight: vals.heading_weight || 700, fontSize: `${h1 * base}px`, lineHeight: 1.2 }}>{tx("Zo ziet een kop eruit")}</div>
+      <div style={{ fontFamily: fam(head), fontWeight: vals.heading_weight || 700, fontSize: `${h2 * base}px`, lineHeight: 1.25, margin: ".5rem 0" }}>{tx("Een kleinere kop")}</div>
+      <p style={{ fontFamily: fam(body), fontSize: `${base}px`, lineHeight: lh, margin: 0 }}>{tx("Dit is een voorbeeldtekst in het gekozen lettertype. Zo lezen bezoekers de tekst op je website, met de gekozen grootte en regelafstand. 0123456789")}</p>
+      <small className="muted" style={{ display: "block", marginTop: ".5rem" }}>{tx("Koppen")}: {head} · {tx("Tekst")}: {body}</small>
+    </div>
+  );
+}
+
+export default function ThemePackEdit({ pack, onClose: closeNow, onChanged: changedNow }) {
+  const { user } = useAuth();
+  const [changed, setChanged] = useState(false); // something in this theme was changed: on closing, ask whether the source folder (resource/themas) must be updated too
+  const onChanged = (packs) => { setChanged(true); changedNow(packs); };
+  const onClose = async () => {
+    if (changed && user?.is_staff && await confirmDialog(tx("Het thema is gewijzigd. Ook bijwerken in de bronmap (resource/themas), zodat nieuwe installaties de nieuwe versie krijgen?"), { title: tx("Thema bijwerken in de bronmap"), okLabel: tx("Bijwerken in bronmap"), cancelLabel: tx("Nee, niet nu") })) {
+      try { await api("/theme/packs/dist/", { method: "POST", body: { key: pack.key } }); await alertDialog(tx("Het thema is bijgewerkt in de bronmap.")); } catch (e) { await alertDialog(errorText(e)); }
+    }
+    closeNow();
+  };
   const [tab, setTab] = useState("info");
   const [meta, setMeta] = useState({ name: pack.name, description: pack.description, version: pack.version, mode: pack.mode || "" });
   const [files, setFiles] = useState(null);
@@ -152,6 +183,7 @@ export default function ThemePackEdit({ pack, onClose, onChanged }) {
               return (
                 <>
                   <Tabs value={cur.key} onChange={setSub} tabs={groups.map((g) => [g.key, g.label])} />
+                  {cur.key === "typography" && <FontPreview vals={vals} fonts={Object.fromEntries((cur.fields.find((f) => f.key === "font_body")?.choices || []).map((c) => [c.value, c.wght]))} />}
                   <div className="theme-grid">{cur.fields.map((f) => <Field key={f.key} f={{ ...f, label: tx(f.label), choices: f.choices?.map((c) => ({ ...c, label: tx(c.label) })) }} value={vals[f.key]} onChange={(v) => setVals((x) => ({ ...x, [f.key]: v }))} />)}</div>
                 </>
               );

@@ -289,10 +289,10 @@ def dist_dir():
     return d
 
 
-def build_dist():
-    """Write <project>/resource/themas/<key>-<version>.zip for every theme and alle-themas.zip. Only the latest version of a theme stays. Returns the names."""
+def build_dist(only=None):
+    """Write <project>/resource/themas/<key>-<version>.zip for every theme (or only the theme `only`) and alle-themas.zip. Only the latest version of a theme stays. Returns the names."""
     out = []
-    for key in all_keys():
+    for key in ([only] if only else all_keys()):
         man = manifest_of(key)
         raw = as_zip(key)
         if raw and man:
@@ -302,6 +302,8 @@ def build_dist():
                     old.unlink()
             (dist_dir() / name).write_bytes(raw)
             out.append(name)
+    if only:  # one theme: alle-themas.zip stays as it is (this installation may not have all the themes)
+        return out
     (dist_dir() / "alle-themas.zip").write_bytes(as_zip_all())
     return out + ["alle-themas.zip"]
 

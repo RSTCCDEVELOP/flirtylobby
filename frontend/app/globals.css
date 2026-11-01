@@ -3129,10 +3129,13 @@ body.has-blocknav .edit-save-preset-btn { right: 16.2rem; }
 /* bibliotheek (resource/) */
 .res-modal { max-height: 86vh; display: flex; flex-direction: column; gap: .8rem; }
 .res-list { display: grid; gap: .45rem; overflow: auto; align-content: start; flex: 1 1 auto; min-height: 0; }
-.res-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: .8rem; align-items: center; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 12px; }
+.res-item { display: grid; grid-template-columns: minmax(0, 1fr) 150px 120px 190px; gap: .8rem; align-items: center; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 12px; }
 .res-item.res-head { border: 0; padding-bottom: 0; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+.res-item > :nth-child(2), .res-item > :nth-child(3) { justify-self: center; text-align: center; }
+.res-item > :nth-child(4) { justify-self: end; }
+.res-actions { display: inline-flex; gap: .4rem; justify-content: flex-end; }
 .res-main { display: grid; gap: .1rem; min-width: 0; } .res-main small { overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 640px) { .res-item { grid-template-columns: 1fr auto; } }
+@media (max-width: 640px) { .res-item { grid-template-columns: 1fr auto; } .res-item > :nth-child(2), .res-item > :nth-child(3) { justify-self: start; } }
 
 /* a turning icon while something is being worked on (single colour: follows the theme) */
 @keyframes e2spin { to { transform: rotate(360deg); } }

@@ -9,9 +9,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Tabs from "./Tabs";
+import ThemePackEdit from "./ThemePackEdit";
 import { api, errorText } from "../lib/api";
-import { confirmDialog } from "../lib/dialog";
+import { alertDialog, confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
+
+// where an installed part is changed: the theme in Theme, a plugin in its own page, a language in Languages
+const EDIT = { themas: () => "/dashboard/admin/theme", plugins: (r) => `/dashboard/admin/plugins/${r.name}`, languages: () => "/dashboard/admin/languages" };
 
 const NAME = { plugins: "plugin", themas: "thema", languages: "taal" };
 const STATE = { new: ["Nieuw", ""], update: ["Update beschikbaar", "warn"], current: ["Geïnstalleerd", "ok"], bundle: ["Bundel", ""] };
@@ -244,6 +248,11 @@ export function ResourceAdmin() {
   const [ok, setOk] = useState(null); // {kind: Set(names)}
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
+  const [pack, setPack] = useState(null); // the theme that is changed in the pop-up (with the AI tab)
+  const change = async (r) => { // themes: a pop-up with all settings and the AI; plugins and languages: their own page
+    if (kind !== "themas") { window.location.href = EDIT[kind](r); return; }
+    try { const d = await api("/theme/packs/"); const p = (d.packs || []).find((x) => x.key === r.name); if (p) setPack(p); else await alertDialog(tx("Dit thema is nog niet geïnstalleerd.")); } catch (e) { await alertDialog(errorText(e)); }
+  };
   const load = useCallback(() => api("/resource/").then((d) => {
     setLib(d);
     setOk((cur) => cur || Object.fromEntries(Object.entries(d.kinds).map(([k, rows]) => [k, new Set(rows.filter((r) => r.allowed).map((r) => r.name))])));
@@ -277,13 +286,17 @@ export function ResourceAdmin() {
             <div className="res-main"><strong>{r.title}</strong> <small className="muted">{r.name !== r.title ? r.name + " · " : ""}{tx("versie")} {r.version}{r.installed_version ? ` (${tx("nu")} ${r.installed_version})` : ""}</small></div>
             <label className="switch" title={tx("Mag zonder uploaden worden geïnstalleerd")}><input type="checkbox" disabled={r.bundle} checked={!r.bundle && !!ok?.[kind]?.has(r.name)} onChange={() => flip(r.name)} /><span /></label>
             <span className={`badge ${STATE[r.state][1]}`}>{tx(STATE[r.state][0])}</span>
-            <button type="button" className="btn sm" disabled={!!busy} onClick={() => act("/resource/install/", { kind, name: r.name }, (d) => tx("{0} is geïnstalleerd.", d.installed.join(", ")))}>
-              {r.state === "update" ? tx("Updaten") : r.installed ? tx("Opnieuw") : tx("Installeren")}
-            </button>
+            <span className="res-actions">
+              {r.installed && <button type="button" className="btn sm" disabled={!!busy} onClick={() => change(r)}>{tx("Wijzigen")}</button>}
+              <button type="button" className="btn sm" disabled={!!busy} onClick={() => act("/resource/install/", { kind, name: r.name }, (d) => tx("{0} is geïnstalleerd.", d.installed.join(", ")))}>
+                {r.state === "update" ? tx("Updaten") : r.installed ? tx("Opnieuw") : tx("Installeren")}
+              </button>
+            </span>
           </div>
         ))}
         {!rows.length && <p className="muted">{tx("Er staat nog niets in resource/")}{kind}.</p>}
       </div>
+      {pack && <ThemePackEdit pack={pack} onClose={() => { setPack(null); load(); }} onChanged={(packs) => { const n = (packs || []).find((x) => x.key === pack.key); if (n) setPack(n); }} />}
       <div className="row" style={{ justifyContent: "space-between" }}>
         <button type="button" className="btn" disabled={!!busy || !updates} onClick={() => act("/resource/update/", { kind }, (d) => (d.updated.length ? tx("Bijgewerkt: {0}.", d.updated.join(", ")) : tx("Alles is al actueel.")))}>↻ {tx("Alles updaten")}{updates ? ` (${updates})` : ""}</button>
         <button type="button" className="btn primary" disabled={!!busy} onClick={save}>{tx("Opslaan")}</button>

@@ -131,6 +131,7 @@ BY_KEY = {m["key"]: m for m in MODULES}
 
 _cache = {"t": 0, "v": None}
 TTL = 10
+ALWAYS_ON = ("system", "plugins", "storage", "backups", "integrations", "theme")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible)
 
 
 def states():
@@ -139,6 +140,7 @@ def states():
         from .models import ModuleState
 
         stored = dict(ModuleState.objects.values_list("key", "enabled"))
+        stored.update({k: True for k in ALWAYS_ON})
         _cache.update(t=now, v={m["key"]: _ai_linked() if m.get("auto") == "ai" else True if m.get("core") else plugin_on(m["plugin"]) if m.get("plugin") else stored.get(m["key"], m.get("default", True)) for m in MODULES})  # "plugin": on while that plugin is on
     return _cache["v"]
 
