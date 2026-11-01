@@ -15,6 +15,7 @@ import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import Tabs from "./Tabs";
 import { useSandboxFirst } from "../lib/firstRun";
+import { lvl } from "../lib/perms";
 import AiCreditPopup from "./AiCreditPopup";
 import { money } from "./AiCharts";
 
@@ -22,7 +23,8 @@ import { money } from "./AiCharts";
 export default function AiWelcome() {
   const { user } = useAuth();
   const mods = useModules();
-  const first = useSandboxFirst(!!user?.is_staff);
+  const adm = !!user && (user.is_staff || lvl(user, "system") >= 3);
+  const first = useSandboxFirst(adm);
   const [me, setMe] = useState(null);
   const [cr, setCr] = useState(null);
   const [stripe, setStripe] = useState(null);
@@ -30,7 +32,7 @@ export default function AiWelcome() {
   const [buy, setBuy] = useState(false);
   const [msg, setMsg] = useState(null);
   useEffect(() => {
-    if (!user || mods.ai === false || (user.is_staff && (!first.known || first.pending))) return;
+    if (!user || mods.ai === false || (adm && (!first.known || first.pending))) return;
     api("/ai/me/").then((i) => { if (i.welcome) setMe(i); }).catch(() => {});
   }, [user, mods.ai, first.known, first.pending]);
   useEffect(() => {

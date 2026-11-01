@@ -775,22 +775,27 @@ def sandbox_first(request):
 
     from .models import ModuleState, SystemSettings
 
-    if not request.user.is_staff:
-        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    from apps.accounts import access
+
+    staff = request.user.is_staff
+    if not staff and access.level(request.user, "system") < 3:  # a superadmin, or an admin who manages the system
+        return Response({"detail": "Alleen beheerders."}, status=status.HTTP_403_FORBIDDEN)
     host = (request.get_host() or "").split(":")[0].lower().strip("[]")
     obj, _ = SystemSettings.objects.get_or_create(pk=1)
     if request.method == "POST":
-        if "on" in request.data and request.data.get("on"):
+        if staff and "on" in request.data and request.data.get("on"):
             ModuleState.objects.update_or_create(key="sandbox", defaults={"enabled": True})
             modules.invalidate()
             sandbox.save({"enabled": True})
-        if "on" in request.data:
+        if staff and "on" in request.data:
             obj.data = {**(obj.data or {}), "sandbox_asked": True}
         if request.data.get("manual"):  # the question whether to look at the manual (first start, or after the installation) was answered
             obj.data = {**(obj.data or {}), "manual_asked": True}
         obj.save()
     # "local": the address of this server is your own computer (not a real domain)
     local = host in ("localhost", "127.0.0.1", "::1", "0.0.0.0") or host.endswith(".localhost") or host.endswith(".local")
+    if not staff:  # the question about the sandbox on your own computer is for the superadmin
+        local = False
     return Response({"local": local, "asked": bool((obj.data or {}).get("sandbox_asked")), "manual_asked": bool((obj.data or {}).get("manual_asked")), "enabled": sandbox.active()})
 
 

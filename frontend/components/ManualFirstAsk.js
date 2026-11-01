@@ -12,14 +12,16 @@ import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 import { answerManual, useSandboxFirst } from "../lib/firstRun";
+import { lvl } from "../lib/perms";
 import ManualPopup from "./ManualPopup";
 
 // A superadmin who starts Easy2edit for the first time (or after the installation): do you want to look at the manual? Yes: the HTML manual opens in a pop-up.
 export default function ManualFirstAsk() {
   const { user } = useAuth();
-  const { sandboxPending, manualPending, known } = useSandboxFirst(!!user?.is_staff);
+  const isAdmin = !!user && (user.is_staff || lvl(user, "system") >= 3);
+  const { sandboxPending, manualPending, known } = useSandboxFirst(isAdmin);
   const [open, setOpen] = useState(false);
-  if (!user?.is_staff || !known || typeof document === "undefined") return null;
+  if (!isAdmin || !known || typeof document === "undefined") return null;
   if (open) return <ManualPopup page="index.html" onClose={() => setOpen(false)} />;
   if (sandboxPending || !manualPending) return null;
   const yes = async () => { await answerManual(); setOpen(true); };

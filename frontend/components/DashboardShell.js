@@ -26,7 +26,7 @@ import UserMenu from "./UserMenu";
 import { ChatButton, DirectIndicator, useChat } from "./Chat";
 import NotificationBell from "./NotificationBell";
 import SandboxPill from "./SandboxPill";
-import { ADMIN_PAGES, canAdmin, pageAllowed } from "../lib/perms";
+import { ADMIN_PAGES, canAdmin, lvl, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import AiCreditGate from "./AiCreditGate";
 import AiWelcome from "./AiWelcome";
@@ -397,7 +397,7 @@ export default function DashboardShell({ children }) {
       <main className="content">
         <FindOnPage />
         {user?.is_staff && <SandboxFirstAsk />}
-        {user?.is_staff && <ManualFirstAsk />}
+        {user && (user.is_staff || lvl(user, "system") >= 3) && <ManualFirstAsk />}
         {user?.is_staff && <DefaultInstallPrompt />}
         {user && <SystemUpdatePrompt />}
         {user && !user.is_staff && <AiCreditGate />}
