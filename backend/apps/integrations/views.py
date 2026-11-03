@@ -10,7 +10,7 @@ import logging
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 
 from apps.accounts.permissions import has_level, has_level_for
 from apps.core import modules
@@ -122,3 +122,27 @@ def import_all(request):
     msg = backup._apply(rows, None)
     logger.info("API links imported by %s (%s links)", request.user.email, len(rows))
     return Response({"detail": msg, "count": len(rows)})
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def syslinks_status(request):
+    """For a superadmin: is the locked file with the Easy2edit links there and are Stripe, Postmark and Claude still missing?"""
+    from apps.core import syslinks
+
+    return Response(syslinks.file_status())
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def syslinks_install(request):
+    """Install and switch on Stripe, Postmark and Claude from resource/api with the password; a wrong password installs nothing."""
+    from apps.core import syslinks
+
+    try:
+        done = syslinks.install_from_file(str(request.data.get("password") or ""))
+    except ValueError as e:
+        logger.warning("Easy2edit API links: install refused for %s", request.user.email)
+        return Response({"detail": str(e)}, status=400)
+    logger.info("Easy2edit API links installed by %s (%s)", request.user.email, ", ".join(done))
+    return Response({"installed": done, **syslinks.file_status()})

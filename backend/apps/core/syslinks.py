@@ -33,7 +33,13 @@ def ensure_from_env():
         cfg = {k: os.getenv(v, "").strip() for k, v in fields.items() if os.getenv(v, "").strip()}
         obj = Integration.objects.filter(provider=provider, superadmin_only=True).first()
         if obj:
-            if main and not obj.enabled and any(str(v).strip() for k, v in (obj.config or {}).items() if k in SECRETS):
+            have = obj.config or {}
+            if main and not any(str(v).strip() for k, v in have.items() if k in SECRETS):  # a link without a key (e.g. after a reinstall) gets the key of the environment
+                obj.config = {**have, **cfg}
+                obj.enabled = True
+                obj.save()
+                n += 1
+            elif not obj.enabled and any(str(v).strip() for k, v in have.items() if k in SECRETS):
                 Integration.objects.filter(pk=obj.pk).update(enabled=True)
                 n += 1
             continue
@@ -55,3 +61,54 @@ def missing():
         if not Integration.objects.filter(provider__in=provs, enabled=True).exists():
             out.append((key, label))
     return out
+
+
+FILE_NAME = "easy2edit-api-koppelingen.json"
+FILE_PROVIDERS = ("stripe", "postmark", "anthropic")
+
+
+def file_path():
+    from django.conf import settings
+
+    return settings.RESOURCE_DIR / "api" / FILE_NAME
+
+
+def _has_key(obj):
+    return any(str(v).strip() for k, v in (obj.config or {}).items() if k in SECRETS)
+
+
+def file_status():
+    """{"file": the password-locked file with the Easy2edit links is there, "missing": [providers without a link that is on and has a key], "needed": file there and something missing}."""
+    from apps.integrations.models import Integration
+
+    missing = [p for p in FILE_PROVIDERS if not any(i.enabled and _has_key(i) for i in Integration.objects.filter(provider=p, superadmin_only=True))]
+    there = file_path().is_file()
+    return {"file": there, "missing": missing, "needed": there and bool(missing)}
+
+
+def install_from_file(password):
+    """Load Stripe, Postmark and Claude from the locked file in resource/api, as links of the superadmin that are on. Raises ValueError (nothing is installed) when the password is wrong or the file is not usable."""
+    import json
+
+    from apps.integrations import backup, transfer
+    from apps.integrations.models import Integration
+
+    try:
+        bundle = json.loads(file_path().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise ValueError("Het bestand met de API-koppelingen is niet gevonden of beschadigd.")
+    rows = [{**r, "superadmin_only": True, "enabled": True} for r in transfer.unpack(bundle, password or "") if r.get("provider") in FILE_PROVIDERS]  # a wrong password raises here, before anything is changed
+    if not rows:
+        raise ValueError("Er zitten geen Stripe-, Postmark- of Claude-koppelingen in het bestand.")
+    backup._apply(rows, None)
+    for r in rows:
+        Integration.objects.filter(slug=r["slug"]).exclude(config_encrypted="").update(superadmin_only=True)
+        obj = Integration.objects.filter(slug=r["slug"]).first()
+        if obj and _has_key(obj) and not obj.enabled:
+            Integration.objects.filter(pk=obj.pk).update(enabled=True)
+    from . import modules
+    from .models import ModuleState
+
+    ModuleState.objects.update_or_create(key="integrations", defaults={"enabled": True})
+    modules.invalidate()
+    return sorted({r["provider"] for r in rows})

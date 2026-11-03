@@ -31,6 +31,7 @@ import { ADMIN_PAGES, canAdmin, lvl, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import AiCreditGate from "./AiCreditGate";
 import AiWelcome from "./AiWelcome";
+import ApiLinksInstall from "./ApiLinksInstall";
 import ManualHelp from "./ManualHelp";
 import SandboxFirstAsk from "./SandboxFirstAsk";
 import ManualFirstAsk from "./ManualFirstAsk";
@@ -403,6 +404,7 @@ export default function DashboardShell({ children }) {
         {user?.is_staff && <DefaultInstallPrompt />}
         {user && <SystemUpdatePrompt />}
         {user && !user.is_staff && <AiCreditGate />}
+        {user && <ApiLinksInstall />}
         {user && <AiWelcome />}
         {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} />{(user?.is_staff || canAdmin(user, mods)) && <ManualHelp />}</div>}
         {children}

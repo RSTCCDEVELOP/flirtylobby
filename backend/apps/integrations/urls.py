@@ -33,6 +33,8 @@ urlpatterns = [
     path("admin/ai/models/", ai_views.models),
     path("admin/ai/prices/", ai_views.prices),
     path("admin/integrations/models/", views.model_list),
+    path("admin/integrations/syslinks/", views.syslinks_status),
+    path("admin/integrations/syslinks/install/", views.syslinks_install),
     path("admin/integrations/export/", views.export_all),
     path("admin/integrations/import/", views.import_all),
     path("admin/integrations/<int:pk>/s3/list/", s3browser.listing),

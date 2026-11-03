@@ -92,6 +92,12 @@ def login(request):
         return Response({"detail": "Dit account is geblokkeerd."}, status=status.HTTP_403_FORBIDDEN)
 
     throttle.delete()
+    try:  # the e-mail, payment and AI links come from the environment of the server at the first login (also after a reinstall); the code mail below needs them
+        from apps.core import syslinks
+
+        syslinks.ensure_from_env()
+    except Exception:  # noqa: BLE001
+        logger.exception("System links could not be set at login")
     if (blocked := _maintenance_block(user)):
         return blocked
     if twofa.email_verify_required(user):
