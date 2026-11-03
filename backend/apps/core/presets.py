@@ -215,7 +215,9 @@ def ensure_system_links():
 
     ModuleState.objects.update_or_create(key="integrations", defaults={"enabled": True})
     modules.invalidate()
-    n = 0
+    from . import syslinks
+
+    n = syslinks.ensure_from_env()  # links that do not exist yet are made from the environment of the server (keys never are in git)
     for i in Integration.objects.filter(superadmin_only=True, enabled=False):
         cfg = i.config or {}
         if any(str(v).strip() for k, v in cfg.items() if k in ("api_key", "secret_key", "server_token", "access_key", "access_key_id", "secret_access_key", "token")):

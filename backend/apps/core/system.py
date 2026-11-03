@@ -214,6 +214,12 @@ def checks(request=None):
     shown = {"environment": "ingesteld in de omgeving", "database": "ingesteld bij API keys (S3)", "derived": "afgeleid van de geheime sleutel"}[src]
     rows.append(_row("FILE_ENCRYPTION_KEY", "Hoofdsleutel voor bestandsversleuteling", shown, "ok" if src != "derived" else "warn" if prod else "ok",
                      "" if src != "derived" else "Zet een eigen sleutel (omgeving of API keys → S3) zodat je de geheime sleutel kunt vernieuwen zonder bestanden kwijt te raken."))
+    from . import syslinks
+
+    gone = dict(syslinks.missing())
+    for key, label, tip in (("mail", "E-mailkoppeling van de superadmin", "Zonder e-mail kunnen geen codes, facturen en meldingen worden verstuurd. Zet EASY2EDIT_POSTMARK_TOKEN (en EASY2EDIT_POSTMARK_FROM) in de omgeving, of maak de koppeling bij API keys."),
+                            ("payment", "Betaalkoppeling van de superadmin", "Zonder betaalkoppeling kan er niet worden betaald (licentie, AI-tegoed). Zet EASY2EDIT_STRIPE_KEY in de omgeving, of maak de koppeling bij API keys.")):
+        rows.append(_row("EASY2EDIT_" + key.upper(), label, "ontbreekt of staat uit" if key in gone else "aanwezig en aan", "bad" if key in gone and prod else "warn" if key in gone else "ok", tip if key in gone else ""))
     rows.append(_row("ADMIN_EMAIL", "Eerste beheerder (bij opstarten)", os.getenv("ADMIN_EMAIL") or "niet ingesteld", "ok", "Alleen nodig om de eerste keer in te loggen."))
     for key, label, url in (("frontend_url", "Website-adres", s["frontend_url"]), ("backend_url", "API-adres", s["backend_url"])):
         if not url:

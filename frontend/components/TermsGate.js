@@ -44,7 +44,7 @@ export default function TermsGate() {
 
   const ask = async () => {
     setBusy(true); setMsg(null);
-    try { const r = await api("/system/terms/code/", { method: "POST", body: {} }); setSent(true); setDev(r.dev_code || ""); setMsg({ ok: true, text: r.sent ? tx("De code is naar {0} gestuurd.", st.email) : tx("De e-mail kon niet worden verstuurd; op deze lokale server staat de code hieronder.") }); }
+    try { const r = await api("/system/terms/code/", { method: "POST", body: {} }); setSent(true); setDev(r.dev_code || ""); setMsg({ ok: true, text: r.sent ? tx("De code is naar {0} gestuurd.", st.email) : tx("De e-mail kon niet worden verstuurd; de code staat hieronder.") }); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
@@ -85,7 +85,8 @@ export default function TermsGate() {
               <input value={code} onChange={(e) => onCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" aria-label={tx("Code")} style={{ width: "9rem", letterSpacing: ".25em", textAlign: "center" }} />
               <button type="button" className="btn primary" disabled={busy || code.length !== 6} onClick={sign}>{tx("Ondertekenen")}</button>
             </div>
-            {dev && <small className="muted">{tx("Lokaal testen (superadmin): typ @ in het veld om de code in te vullen. Code")}: <strong>{dev}</strong></small>}
+            {st.mail_ok === false && <div className="alert">{tx("Er is geen e-mailkoppeling ingesteld of ze staat uit. Zonder e-mail kunnen geen codes, facturen en meldingen worden verstuurd. Een superadmin zet de koppeling aan bij API keys (Postmark of SMTP); voor betalen is een Stripe-koppeling nodig.")}</div>}
+            {dev && <small className="muted">{tx("Superadmin zonder e-mail (lokaal of nieuwe installatie): typ @ in het veld om de code in te vullen. Code")}: <strong>{dev}</strong></small>}
             {msg && <div className={`alert ${msg.ok ? "ok" : ""}`}>{msg.text}</div>}
             <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
               <button type="button" className="btn" onClick={() => setTab("read")}>{tx("Terug naar de voorwaarden")}</button>

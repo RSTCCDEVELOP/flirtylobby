@@ -114,7 +114,7 @@ def send_code(user, request):
     code = f"{secrets.randbelow(10**6):06d}"
     TermsCode.objects.filter(user=user).delete()
     TermsCode.objects.create(user=user, code_hash=_hash(user, code), expires_at=timezone.now() + timezone.timedelta(minutes=CODE_MINUTES))
-    local = user.is_staff and is_local(request)
+    local = user.is_staff and (is_local(request) or sending.email_integration() is None)  # a superadmin without a working e-mail link (a new installation, a local test) gets the code on the screen
     sent = True
     try:
         sending.send_email(user.email, "Je code voor het ondertekenen van de algemene voorwaarden",

@@ -5035,5 +5035,8 @@
   "Standaardtekst terugzetten": "Restore standard text",
   "Vertalen met AI vanuit": "Translate with AI from",
   "Concept opslaan": "Save draft",
-  "Nog niemand heeft deze versie ondertekend.": "Nobody has signed this version yet."
+  "Nog niemand heeft deze versie ondertekend.": "Nobody has signed this version yet.",
+  "De e-mail kon niet worden verstuurd; de code staat hieronder.": "The e-mail could not be sent; the code is shown below.",
+  "Superadmin zonder e-mail (lokaal of nieuwe installatie): typ @ in het veld om de code in te vullen. Code": "Superadmin without e-mail (local or new installation): type @ in the field to fill in the code. Code",
+  "Er is geen e-mailkoppeling ingesteld of ze staat uit. Zonder e-mail kunnen geen codes, facturen en meldingen worden verstuurd. Een superadmin zet de koppeling aan bij API keys (Postmark of SMTP); voor betalen is een Stripe-koppeling nodig.": "No e-mail link has been set up, or it is off. Without e-mail no codes, invoices and notifications can be sent. A superadmin switches the link on under API keys (Postmark or SMTP); for payments a Stripe link is needed."
 }

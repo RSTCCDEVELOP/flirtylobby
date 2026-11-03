@@ -37,7 +37,10 @@ def text(request):
 def status_view(request):
     v = terms.current()
     need = terms.required(request.user)
-    return Response({"required": need, "version": v.version, "signed": terms.signed(request.user, v.version) if need else True, "local": bool(request.user.is_staff and terms.is_local(request)), "email": request.user.email})
+    from apps.communication import sending
+
+    mail = sending.email_integration() is not None
+    return Response({"required": need, "version": v.version, "signed": terms.signed(request.user, v.version) if need else True, "local": bool(request.user.is_staff and (terms.is_local(request) or not mail)), "mail_ok": mail, "email": request.user.email})
 
 
 @api_view(["POST"])

@@ -35,6 +35,21 @@ class CoreConfig(AppConfig):
         except Exception:  # noqa: BLE001
             pass
 
+        from django.db.models.signals import post_migrate
+
+        def system_links(sender, **kwargs):
+            """After every migration (every deployment): the e-mail, payment and AI links of the superadmin are there and on."""
+            if getattr(sender, "name", "") != "apps.core":
+                return
+            try:
+                from . import syslinks
+
+                syslinks.ensure_from_env()
+            except Exception:  # noqa: BLE001  e.g. the integrations tables do not exist yet
+                pass
+
+        post_migrate.connect(system_links, dispatch_uid="core.system_links")
+
         from apps.sandbox import service as sandbox
 
         from . import views
