@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
+import { confirmDialog } from "../lib/dialog";
 import { setBlock, useSandboxFirst } from "../lib/firstRun";
 import { getLanguage, tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
@@ -45,6 +46,22 @@ export default function TermsGate() {
   const ask = async () => {
     setBusy(true); setMsg(null);
     try { const r = await api("/system/terms/code/", { method: "POST", body: {} }); setSent(true); setDev(r.dev_code || ""); setMsg({ ok: true, text: r.sent ? tx("De code is naar {0} gestuurd.", st.email) : tx("De e-mail kon niet worden verstuurd; de code staat hieronder.") }); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
+  const enableMail = async () => { // a superadmin: switch the e-mail link on
+    setBusy(true); setMsg(null);
+    try {
+      const r = await api("/system/terms/enable-mail/", { method: "POST", body: {} });
+      if (r.mail_ok) { setSt({ ...st, mail_ok: true }); setDev(""); setMsg({ ok: true, text: tx("De e-mailkoppeling staat aan. Je kunt nu een code laten sturen.") }); }
+      else setMsg({ ok: false, text: r.detail });
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
+  const signSkip = async () => { // a superadmin: without the e-mail code (recorded as such)
+    if (!(await confirmDialog(tx("Zonder e-mailcode ondertekenen? Dit wordt zo vastgelegd. Alleen een superadmin kan dit."), { title: tx("Ondertekenen zonder code"), okLabel: tx("Ondertekenen") }))) return;
+    setBusy(true); setMsg(null);
+    try { await api("/system/terms/sign/", { method: "POST", body: { skip: true, lang: doc?.lang || lang } }); setDone(true); setBlock("terms", false); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
@@ -85,6 +102,12 @@ export default function TermsGate() {
               <input value={code} onChange={(e) => onCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" aria-label={tx("Code")} style={{ width: "9rem", letterSpacing: ".25em", textAlign: "center" }} />
               <button type="button" className="btn primary" disabled={busy || code.length !== 6} onClick={sign}>{tx("Ondertekenen")}</button>
             </div>
+            {user?.is_staff && (
+              <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap" }}>
+                {st.mail_ok === false && <button type="button" className="btn" disabled={busy} onClick={enableMail}>{tx("E-mailkoppeling aanzetten")}</button>}
+                <button type="button" className="btn" disabled={busy} onClick={signSkip}>{tx("Ondertekenen zonder e-mailcode (superadmin)")}</button>
+              </div>
+            )}
             {st.mail_ok === false && <div className="alert">{tx("Er is geen e-mailkoppeling ingesteld of ze staat uit. Zonder e-mail kunnen geen codes, facturen en meldingen worden verstuurd. Een superadmin zet de koppeling aan bij API keys (Postmark of SMTP); voor betalen is een Stripe-koppeling nodig.")}</div>}
             {dev && <small className="muted">{tx("Superadmin zonder e-mail (lokaal of nieuwe installatie): typ @ in het veld om de code in te vullen. Code")}: <strong>{dev}</strong></small>}
             {msg && <div className={`alert ${msg.ok ? "ok" : ""}`}>{msg.text}</div>}

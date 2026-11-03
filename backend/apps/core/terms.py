@@ -127,6 +127,39 @@ def send_code(user, request):
     return {"sent": sent, "dev_code": code if local else None}
 
 
+def _record(user, request, lang, method):
+    v = current()
+    ip = (request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", ""))[:60]
+    return TermsSignature.objects.create(user=user, version=v.version, role=role(user), name=(f"{user.first_name} {user.last_name}".strip() or user.email)[:200], email=user.email, lang=lang[:10], ip=ip, method=method)
+
+
+def sign_skip(user, request, lang=""):
+    """A superadmin may sign without the e-mail code (no e-mail link yet, a test, a new installation). It is recorded as such."""
+    if not user.is_staff:
+        raise TermsError("Alleen een superadmin kan zonder e-mailcode ondertekenen.")
+    return _record(user, request, lang, "skipped")
+
+
+def enable_mail():
+    """Switch the e-mail link (Postmark or SMTP) on: made from the environment when it does not exist yet; an existing link with settings is switched on. Returns True when mail works afterwards."""
+    from apps.communication import sending
+    from apps.integrations.models import Integration
+
+    from . import syslinks
+
+    syslinks.ensure_from_env()
+    if sending.email_integration() is None:
+        for obj in Integration.objects.filter(provider__in=("postmark", "smtp"), enabled=False):
+            cfg = obj.config or {}
+            if any(str(v).strip() for k, v in cfg.items() if k in syslinks.SECRETS or k == "host"):
+                Integration.objects.filter(pk=obj.pk).update(enabled=True)
+                break
+    from . import modules
+
+    modules.invalidate()
+    return sending.email_integration() is not None
+
+
 def sign(user, code, request, lang=""):
     tc = TermsCode.objects.filter(user=user).order_by("-created_at").first()
     if not tc or tc.expires_at < timezone.now():
@@ -138,6 +171,4 @@ def sign(user, code, request, lang=""):
     if not hmac.compare_digest(tc.code_hash, _hash(user, str(code or "").strip())):
         raise TermsError("De code klopt niet.")
     tc.delete()
-    v = current()
-    ip = (request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", ""))[:60]
-    return TermsSignature.objects.create(user=user, version=v.version, role=role(user), name=(f"{user.first_name} {user.last_name}".strip() or user.email)[:200], email=user.email, lang=lang[:10], ip=ip)
+    return _record(user, request, lang, "email")

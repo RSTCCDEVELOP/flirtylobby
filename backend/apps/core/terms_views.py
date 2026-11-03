@@ -60,11 +60,22 @@ def sign(request):
     if not terms.required(request.user):
         return _bad("Alleen beheerders ondertekenen de voorwaarden.", status.HTTP_403_FORBIDDEN)
     try:
-        s = terms.sign(request.user, request.data.get("code"), request, str(request.data.get("lang") or ""))
+        if request.data.get("skip"):  # a superadmin: without the e-mail code
+            s = terms.sign_skip(request.user, request, str(request.data.get("lang") or ""))
+        else:
+            s = terms.sign(request.user, request.data.get("code"), request, str(request.data.get("lang") or ""))
     except terms.TermsError as e:
         return _bad(str(e))
     logger.info("Terms version %s signed by %s (%s)", s.version, s.email, s.role)
     return Response({"signed": True, "version": s.version})
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def enable_mail(request):
+    """A superadmin switches the e-mail link on (made from the environment of the server when it does not exist)."""
+    ok = terms.enable_mail()
+    return Response({"mail_ok": ok, "detail": "" if ok else "Er is nog geen e-mailkoppeling met instellingen. Maak er een bij API keys (Postmark of SMTP), of zet EASY2EDIT_POSTMARK_TOKEN in de omgeving van de server."})
 
 
 def _admin_out():
@@ -72,7 +83,7 @@ def _admin_out():
     d = terms.draft()
     from .models import TermsSignature
 
-    sigs = list(TermsSignature.objects.filter(version=v.version).values("name", "email", "role", "signed_at")[:50])
+    sigs = list(TermsSignature.objects.filter(version=v.version).values("name", "email", "role", "signed_at", "method")[:50])
     return {"langs": terms.langs(), "version": v.version, "published_at": v.published_at, "published_by": v.published_by, "texts": d or v.texts, "has_draft": bool(d), "published_texts": v.texts, "signatures": sigs, "signed_count": TermsSignature.objects.filter(version=v.version).count()}
 
 

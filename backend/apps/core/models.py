@@ -207,6 +207,7 @@ class TermsSignature(models.Model):
     name = models.CharField(max_length=200, blank=True)
     email = models.CharField(max_length=254, blank=True)
     lang = models.CharField(max_length=10, blank=True)  # the language of the text that was shown
+    method = models.CharField(max_length=10, default="email")  # email (code from the e-mail) | skipped (a superadmin signed without the e-mail code)
     ip = models.CharField(max_length=60, blank=True)
     signed_at = models.DateTimeField(auto_now_add=True)
 
