@@ -10,6 +10,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
+import { OPEN_OPTIONS } from "../lib/linkopen";
 
 const I = (d) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
 const TOOLS = [
@@ -63,6 +64,7 @@ window.addEventListener("message",function(e){var m=e.data||{};if(m.tedit!==id)r
         {rich && <div className="code-tools">{TOOLS.map(([cmd, label, icon]) => <button key={cmd} type="button" className="btn sm" title={tx(label)} aria-label={tx(label)} onMouseDown={(e) => e.preventDefault()} onClick={() => run(cmd)}>{icon}</button>)}</div>}
         <iframe ref={ref} title={tx("Tekst aanpassen")} srcDoc={doc} sandbox="allow-scripts" className="code-frame" />
         {sel.link >= 0 && <label>{tx("Link van de knop of tekst")}<input value={sel.href} onChange={(e) => onChange({ ...sel, href: e.target.value })} /></label>}
+        {sel.link >= 0 && <label>{tx("Openen in")}<select value={sel.open || "self"} onChange={(e) => onChange({ ...sel, open: e.target.value })}>{OPEN_OPTIONS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>}
         {err && <div className="alert">{err}</div>}
         <small className="muted">{tx("Zo ziet de tekst er op de pagina uit. Klik erin en typ om te wijzigen.")}</small>
       </div>

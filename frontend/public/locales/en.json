@@ -5051,5 +5051,8 @@
   "Popup tonen aan gebruikers en bezoekers als er een nieuwe versie van de website online staat": "Show a popup to users and visitors when a new version of the website is online",
   "Nieuwe versie beschikbaar": "New version available",
   "Er staat een nieuwe versie van de website online. Ververs de pagina om de nieuwste versie te gebruiken.": "A new version of the website is online. Refresh the page to use the latest version.",
-  "Sla eerst op waar je mee bezig bent: bij verversen gaan niet-opgeslagen wijzigingen verloren.": "Save what you are working on first: unsaved changes are lost when you refresh."
+  "Sla eerst op waar je mee bezig bent: bij verversen gaan niet-opgeslagen wijzigingen verloren.": "Save what you are working on first: unsaved changes are lost when you refresh.",
+  "Openen in": "Open in",
+  "Zelfde venster": "Same window",
+  "Nieuw venster": "New window"
 }

@@ -33,6 +33,7 @@ import PluginFrame from "./PluginFrame";
 import MediaViewEditor from "./MediaViewEditor";
 import BlockNav from "./BlockNav";
 import { IconEdit, IconLock, IconTrash, IconUnlock } from "./Icons";
+import { linkProps } from "../lib/linkopen";
 import { createPortal } from "react-dom";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
@@ -99,8 +100,8 @@ function PbButton({ it, c, editing }) {
   return (
     <div className="pb-btnrow" style={wrap}>
       {editing || !url ? <span className={cls} style={look} role={editing ? "button" : undefined}>{text || tx("Knop")}</span>
-        : external ? <a className={cls} style={look} href={url} {...(b.new_tab ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{text}</a>
-          : <Link className={cls} style={look} href={url} {...(b.new_tab ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{text}</Link>}
+        : external ? <a className={cls} style={look} href={url} {...linkProps(b)}>{text}</a>
+          : <Link className={cls} style={look} href={url} {...linkProps(b)}>{text}</Link>}
     </div>
   );
 }

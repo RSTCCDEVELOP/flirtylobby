@@ -13,6 +13,7 @@ import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { anchorStyle } from "../lib/anchor";
 import { translateName } from "../lib/translate-name";
+import { OPEN_OPTIONS, openOf } from "../lib/linkopen";
 import Tabs from "./Tabs";
 
 // The settings of a button on a page (edit mode): its text per language (with Claude translating it into the installed languages), where it goes
@@ -77,7 +78,7 @@ export default function PageButtonPopup({ btn = {}, onChange, onClose, anchor })
             ) : (
               <label>{tx("Link")}<input value={btn.url || ""} placeholder="https://… / mailto:… / tel:… / /pad" onChange={(e) => set({ url: e.target.value, page: "" })} /></label>
             )}
-            <label className="check"><span className="switch"><input type="checkbox" checked={!!btn.new_tab} onChange={(e) => set({ new_tab: e.target.checked })} /><span /></span><span>{tx("Open in een nieuw tabblad")}</span></label>
+            <label>{tx("Openen in")}<select value={openOf(btn)} onChange={(e) => set({ open: e.target.value, new_tab: false })}>{OPEN_OPTIONS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
           </div>
         )}
         {tab === "look" && (

@@ -52,9 +52,9 @@ function at(x,y){var r=document.caretRangeFromPoint?document.caretRangeFromPoint
 function clear(){if(hot){hot.style.outline=hot.__o||"";hot.style.cursor=hot.__c||""}hot=null;hotNode=null;pen.style.display="none"}
 document.addEventListener("mousemove",function(e){var h=at(e.clientX,e.clientY);if(!h){clear();return}var el=h.el,r=document.createRange();r.selectNodeContents(el);var rb=r.getBoundingClientRect();if(hot!==el){clear();hot=el;el.__o=el.style.outline;el.__c=el.style.cursor;el.style.outline="2px dashed #7b2ce0";el.style.cursor="pointer"}hotNode=h;pen.style.display="flex";pen.style.left=(rb.right+window.scrollX-4)+"px";pen.style.top=(rb.top+window.scrollY-26)+"px"},true);
 document.addEventListener("mouseleave",clear);
-document.addEventListener("click",function(e){var h=hotNode||at(e.clientX,e.clientY);if(!h)return;e.preventDefault();e.stopPropagation();var el=h.el,a=el.closest("a[href]");var link=a?Array.prototype.indexOf.call(document.querySelectorAll("a[href]"),a):-1;var lk=look(el);clear();parent.postMessage({design:${JSON.stringify(id)},edit:{kind:h.rich?"el":"node",idx:h.i,path:h.rich?pathOf(el):null,tag:el.tagName,html:h.rich?el.innerHTML:"",text:h.n.nodeValue.trim(),href:a?a.getAttribute("href"):"",link:link,look:lk}},"*")},true);` : "";
+document.addEventListener("click",function(e){var h=hotNode||at(e.clientX,e.clientY);if(!h)return;e.preventDefault();e.stopPropagation();var el=h.el,a=el.closest("a[href]");var link=a?Array.prototype.indexOf.call(document.querySelectorAll("a[href]"),a):-1;var lk=look(el);clear();parent.postMessage({design:${JSON.stringify(id)},edit:{kind:h.rich?"el":"node",idx:h.i,path:h.rich?pathOf(el):null,tag:el.tagName,html:h.rich?el.innerHTML:"",text:h.n.nodeValue.trim(),href:a?a.getAttribute("href"):"",open:a?(a.getAttribute("data-open")||"self"):"self",link:link,look:lk}},"*")},true);` : "";
     const tail = `<style>html,body{overflow-y:hidden!important}</style><script>(function(){var id=${JSON.stringify(id)};function send(){var b=document.body,e=document.documentElement;parent.postMessage({design:id,h:Math.max(b?b.scrollHeight:0,e.scrollHeight)},"*")}
-document.querySelectorAll("a[href]").forEach(function(a){var h=a.getAttribute("href")||"";if(h&&h.charAt(0)!=="#"&&!/^javascript:/i.test(h))a.target="_top"});${edit}
+document.querySelectorAll("a[href]").forEach(function(a){var h=a.getAttribute("href")||"";if(h&&h.charAt(0)!=="#"&&!/^javascript:/i.test(h)){var o=a.getAttribute("data-open")||(a.getAttribute("target")==="_blank"?"tab":"self");a.setAttribute("data-open",o);a.target=o==="self"?"_top":"_blank";if(o==="window")a.addEventListener("click",function(e){if(e.defaultPrevented)return;e.preventDefault();window.open(a.href,"_blank","popup=yes,width=1100,height=750")})}});${edit}
 window.addEventListener("load",send);window.addEventListener("resize",send);if(window.ResizeObserver)new ResizeObserver(send).observe(document.body);setInterval(send,1500);})();<\/script>`;
     return /<\/body>/i.test(src) ? src.replace(/<\/body>/i, `${tail}</body>`) : src + tail;
   }, [cur, id, canEdit]);
@@ -86,7 +86,14 @@ window.addEventListener("load",send);window.addEventListener("resize",send);if(w
         const m = node.nodeValue.match(/^(\s*)[\s\S]*?(\s*)$/);
         node.nodeValue = `${m[1]}${sel.text.trim()}${m[2]}`;
       }
-      if (sel.link >= 0) d.querySelectorAll("a[href]")[sel.link]?.setAttribute("href", sel.href.trim());
+      if (sel.link >= 0) {
+        const a = d.querySelectorAll("a[href]")[sel.link];
+        if (a) {
+          a.setAttribute("href", sel.href.trim());
+          if (sel.open === "tab" || sel.open === "window") { a.setAttribute("data-open", sel.open); a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener noreferrer"); }
+          else { a.removeAttribute("data-open"); if (a.getAttribute("target") === "_blank") a.removeAttribute("target"); }
+        }
+      }
       const next = `<!doctype html>\n${d.documentElement.outerHTML}`;
       await api(`/pages/design/${pageKey}/save/`, { method: "POST", body: { design: next } });
       setCur(next); setSel(null);

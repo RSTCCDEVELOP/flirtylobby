@@ -270,7 +270,9 @@ def _button(raw):
         url = str(raw.get("url") or "").strip()
         if re.fullmatch(r"(https?://|mailto:|tel:|/)[^\s<>\"']{0,500}", url):
             out["url"] = url
-    if raw.get("new_tab"):
+    if raw.get("open") in ("tab", "window"):  # where the link opens: a new tab or a new window (empty = the same window)
+        out["open"] = raw["open"]
+    elif raw.get("new_tab") and raw.get("open") != "self":  # (an older button: yes/no new tab)
         out["new_tab"] = True
     if raw.get("style") in BTN_STYLES and raw["style"] != "primary":
         out["style"] = raw["style"]

@@ -7,13 +7,14 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { tx } from "../lib/t";
 import { IconLink } from "./Icons";
+import { OPEN_OPTIONS, WINDOW_FEATURES } from "../lib/linkopen";
 
 // The small editor for every description in a data popup (user, profile, plan, donation ...): bold, italic, underline, list and link.
 // Safe against copy-paste exploits: everything that goes in (typing, paste, drop) and everything that comes out is cleaned with a whitelist:
-// only a few tags, no attributes except the address of a link (http, https, mailto or tel), no scripts, styles, events or images.
+// only a few tags, no attributes except the address of a link (http, https, mailto or tel) and where it opens (data-open: self, tab or window), no scripts, styles, events or images.
 // The value is stored as "html:<clean html>" (plain text stays plain text until it is edited).
 export const PREFIX = "html:";
 const ALLOWED = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "UL", "OL", "LI", "A"]);
@@ -34,7 +35,10 @@ function clean(node, out) {
     if (tag === "A") {
       const href = (c.getAttribute("href") || "").trim().replace(/[\u0000-\u001f\u007f\s]+/g, "");
       if (!SAFE_URL.test(href)) { clean(c, out); return; } // no javascript:, data: ... : a link without a safe address is just its text
-      el.setAttribute("href", href); el.setAttribute("target", "_blank"); el.setAttribute("rel", "noopener noreferrer nofollow");
+      const open = ["self", "tab", "window"].includes(c.getAttribute("data-open")) ? c.getAttribute("data-open") : "tab"; // (a link without a choice opens in a new tab, as before)
+      el.setAttribute("href", href); el.setAttribute("rel", "noopener noreferrer nofollow");
+      if (open !== "tab") el.setAttribute("data-open", open);
+      if (open !== "self") el.setAttribute("target", "_blank");
     }
     clean(c, el);
     out.appendChild(el);
@@ -57,12 +61,15 @@ export const isEmpty = (html) => !String(html || "").replace(/<[^>]*>/g, "").tri
 export function RichText({ value, className = "", style }) {
   if (!value) return null;
   if (!String(value).startsWith(PREFIX)) return <p className={className} style={{ whiteSpace: "pre-wrap", margin: 0, ...style }}>{value}</p>;
-  return <div className={`rich-small ${className}`} style={style} dangerouslySetInnerHTML={{ __html: sanitizeHtml(String(value).slice(PREFIX.length)) }} />;
+  const onClick = (e) => { const a = e.target.closest?.('a[data-open="window"]'); if (a) { e.preventDefault(); window.open(a.href, "_blank", WINDOW_FEATURES); } }; // a link that opens in a new window
+  return <div className={`rich-small ${className}`} style={style} onClick={onClick} dangerouslySetInnerHTML={{ __html: sanitizeHtml(String(value).slice(PREFIX.length)) }} />;
 }
 
 export default function SmallEditor({ value, onChange, minHeight = 96, maxLength = 4000, disabled = false, placeholder = "" }) {
   const area = useRef(null);
   const last = useRef(null);
+  const range = useRef(null); // the selected text while the link panel is open
+  const [lk, setLk] = useState(null); // { url, open } while the link panel is open
   useEffect(() => { // from outside (opening another record): put it in, but never while the person is typing
     const html = toHtml(value);
     if (area.current && html !== last.current && document.activeElement !== area.current) { area.current.innerHTML = html; last.current = html; }
@@ -76,10 +83,24 @@ export default function SmallEditor({ value, onChange, minHeight = 96, maxLength
     onChange(isEmpty(html) ? "" : PREFIX + html);
   };
   const cmd = (name, arg) => { if (disabled) return; area.current.focus(); document.execCommand(name, false, arg); push(); };
-  const link = () => {
+  const anchorOf = (n) => (n?.nodeType === 1 ? n : n?.parentElement)?.closest?.("a");
+  const link = () => { // open the panel for the address and where the link opens (an existing link under the cursor is changed)
     if (disabled) return;
-    const u = window.prompt(tx("Adres van de link (https://…)"), "https://");
-    if (u && SAFE_URL.test(u.trim())) cmd("createLink", u.trim());
+    const sel = window.getSelection();
+    range.current = sel.rangeCount && area.current.contains(sel.anchorNode) ? sel.getRangeAt(0).cloneRange() : null;
+    const a = anchorOf(sel.anchorNode);
+    setLk({ url: a?.getAttribute("href") || "https://", open: a ? a.getAttribute("data-open") || "tab" : "tab" });
+  };
+  const applyLink = () => {
+    const u = (lk.url || "").trim();
+    setLk(null);
+    if (!SAFE_URL.test(u)) return;
+    area.current.focus();
+    if (range.current) { const s = window.getSelection(); s.removeAllRanges(); s.addRange(range.current); }
+    document.execCommand("createLink", false, u);
+    const a = anchorOf(window.getSelection().anchorNode) || anchorOf(window.getSelection().focusNode);
+    if (a) a.setAttribute("data-open", lk.open);
+    push();
   };
   const insert = (html) => { document.execCommand("insertHTML", false, html); push(); };
   const btn = { minWidth: "2rem", padding: ".2rem .5rem", fontWeight: 700 };
@@ -94,6 +115,13 @@ export default function SmallEditor({ value, onChange, minHeight = 96, maxLength
         <button type="button" className="btn sm" style={btn} onClick={link} aria-label={tx("Link")}><IconLink /></button>
         <button type="button" className="btn sm" style={btn} onClick={() => cmd("removeFormat")} aria-label={tx("Opmaak wissen")}>⌫</button>
       </div>
+      {lk && (
+        <div style={{ display: "flex", gap: ".4rem", padding: ".4rem .5rem", borderBottom: "1px solid var(--line)", flexWrap: "wrap", alignItems: "center" }}>
+          <input style={{ flex: "1 1 200px" }} value={lk.url} autoFocus aria-label={tx("Adres van de link (https://…)")} placeholder="https://…" onChange={(e) => setLk({ ...lk, url: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } if (e.key === "Escape") setLk(null); }} />
+          <select value={lk.open} aria-label={tx("Openen in")} onChange={(e) => setLk({ ...lk, open: e.target.value })}>{OPEN_OPTIONS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
+          <button type="button" className="btn sm primary" onClick={applyLink}>{tx("Toepassen")}</button>
+          <button type="button" className="btn sm" onClick={() => setLk(null)}>{tx("Annuleren")}</button>
+        </div>)}
       <div ref={area} className="rich-small" contentEditable={!disabled} suppressContentEditableWarning role="textbox" aria-multiline="true" data-placeholder={placeholder}
         style={{ minHeight, padding: ".6rem .8rem", outline: "none", overflow: "auto", maxHeight: 280 }}
         onInput={push} onBlur={push}

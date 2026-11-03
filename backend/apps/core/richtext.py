@@ -44,12 +44,17 @@ def resolve(html, url_for):
 SMALL_TAGS = {"p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li", "a"}
 
 
+def _small_attr(tag, attr, value):
+    """data-open (where a link opens) only with a known value."""
+    return value if attr != "data-open" or value in ("self", "tab", "window") else None
+
+
 def clean_small(value, limit=4000):
     """A description from a form: "html:<html>" is cleaned with the whitelist of the small editor (and cut to `limit` characters of text); plain text stays plain text."""
     value = str(value or "")
     if not value.startswith(PREFIX):
         return value[:limit]
-    body = nh3.clean(value[len(PREFIX):], tags=SMALL_TAGS, attributes={"a": {"href"}}, url_schemes={"http", "https", "mailto", "tel"}, link_rel="noopener noreferrer nofollow", strip_comments=True)
+    body = nh3.clean(value[len(PREFIX):], tags=SMALL_TAGS, attributes={"a": {"href", "data-open"}}, attribute_filter=_small_attr, url_schemes={"http", "https", "mailto", "tel"}, link_rel="noopener noreferrer nofollow", strip_comments=True)
     if len(plain(body)) > limit:
         body = body[: limit * 3]  # (too long: cut; the editor does not allow this anyway)
     return PREFIX + body if plain(body).strip() else ""
