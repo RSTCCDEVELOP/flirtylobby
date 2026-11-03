@@ -5046,5 +5046,7 @@
   "Ondertekenen zonder e-mailcode (superadmin)": "Sign without e-mail code (superadmin)",
   "zonder e-mailcode": "without e-mail code",
   "Er is nog geen AI-koppeling (Claude). Zet eerst de koppeling aan bij API keys; daarna kun je je AI-tegoed opwaarderen. Een superadmin kan de koppeling voor alle sites instellen.": "There is no AI link (Claude) yet. First switch the link on under API keys; after that you can top up your AI credit. A superadmin can set up the link for all sites.",
-  "Naar API keys: AI-koppeling instellen": "To API keys: set up the AI link"
+  "Naar API keys: AI-koppeling instellen": "To API keys: set up the AI link",
+  "Easy2edit API-koppelingen installeren": "Install Easy2edit API links",
+  "De koppelingen met Stripe, Postmark en Claude zijn nog niet geladen. Vul het wachtwoord van het bestand met de API-koppelingen in om ze te installeren en aan te zetten.": "The links with Stripe, Postmark and Claude have not been loaded yet. Enter the password of the API links file to install and enable them."
 }

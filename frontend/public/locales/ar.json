@@ -3120,5 +3120,7 @@
   "zonder inloggen is er niets te zien: alle pagina's en gegevens vragen om een login": "لا شيء يظهر دون تسجيل الدخول: كل الصفحات والبيانات تتطلب تسجيل دخول",
   "Intranet": "إنترانت",
   "Een volledig besloten intranet voor je organisatie: zonder inloggen is er niets te zien. Eén startpagina, een smoelenboek van collega's, een documentensysteem (DMS) en een agenda, met berichten en chat, een interne kennisbank (FAQ), rollen en rechten, meldingen en twee-staps verificatie.": "إنترانت مغلق بالكامل لمؤسستك: لا شيء يظهر دون تسجيل الدخول. صفحة بداية ودليل للزملاء ونظام مستندات (DMS) وأجندة، مع رسائل ودردشة وقاعدة معرفة داخلية وأدوار وصلاحيات وإشعارات وتحقق بخطوتين.",
-  "De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.": "يُستبدل الصفحة الرئيسية الحالية بصفحة هذا التثبيت (دون دمج). إذا أزلت التثبيت تعود صفحتك الرئيسية القديمة."
+  "De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.": "يُستبدل الصفحة الرئيسية الحالية بصفحة هذا التثبيت (دون دمج). إذا أزلت التثبيت تعود صفحتك الرئيسية القديمة.",
+  "Easy2edit API-koppelingen installeren": "تثبيت روابط API الخاصة بـ Easy2edit",
+  "De koppelingen met Stripe, Postmark en Claude zijn nog niet geladen. Vul het wachtwoord van het bestand met de API-koppelingen in om ze te installeren en aan te zetten.": "لم يتم تحميل الروابط مع Stripe وPostmark وClaude بعد. أدخل كلمة مرور ملف روابط API لتثبيتها وتفعيلها."
 }
