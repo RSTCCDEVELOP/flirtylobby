@@ -9,12 +9,13 @@
 
 import { tx } from "../lib/t";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { IconBolt } from "./Icons";
 import { useUi } from "./Ui";
 
 const EVERY = 60000; // check once a minute and when the tab becomes visible again
 
-// "A new version is available" bar for visitors of the live site. Admins switch it on/off at Vormgeving -> Standaardinstellingen.
+// "A new version is available" popup for everyone who has the site open (visitors and logged-in users): shown when a newer build is online. On by default; admins switch it off at Vormgeving -> Standaardinstellingen.
 export default function VersionNotice({ current }) {
   const { version_notice: on } = useUi();
   const [fresh, setFresh] = useState(false);
@@ -37,13 +38,17 @@ export default function VersionNotice({ current }) {
     return () => { alive = false; clearInterval(t); document.removeEventListener("visibilitychange", vis); };
   }, [on, current]);
 
-  if (!on || !fresh || hidden) return null;
-  return (
-    <div className="version-notice" role="status">
-      <IconBolt />
-      <span>{tx("Er is een nieuwe versie van de website beschikbaar.")}</span>
-      <button type="button" className="btn sm primary" onClick={() => window.location.reload()}>{tx("Nu verversen")}</button>
-      <button type="button" className="btn sm" onClick={() => setHidden(true)}>{tx("Later")}</button>
-    </div>
-  );
+  if (!on || !fresh || hidden || typeof document === "undefined") return null;
+  return createPortal(
+    <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Nieuwe versie beschikbaar")} onClick={() => setHidden(true)}>
+      <div className="card modal form" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: ".5rem" }}><IconBolt />{tx("Nieuwe versie beschikbaar")}</h2>
+        <p style={{ margin: 0 }}>{tx("Er staat een nieuwe versie van de website online. Ververs de pagina om de nieuwste versie te gebruiken.")}</p>
+        <small className="muted">{tx("Sla eerst op waar je mee bezig bent: bij verversen gaan niet-opgeslagen wijzigingen verloren.")}</small>
+        <div className="row" style={{ justifyContent: "flex-end", gap: ".5rem" }}>
+          <button type="button" className="btn" onClick={() => setHidden(true)}>{tx("Later")}</button>
+          <button type="button" className="btn primary" onClick={() => window.location.reload()}>{tx("Nu verversen")}</button>
+        </div>
+      </div>
+    </div>, document.body);
 }

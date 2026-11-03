@@ -1759,7 +1759,6 @@
   "Contact": "Contact",
   "Er is een nieuwe versie van de website beschikbaar.": "A new version of the website is available.",
   "Nu verversen": "Refresh now",
-  "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat": "Show visitors a notice when a new version of the website goes live",
   "Bijvoorbeeld je bedrijfsnaam en adres": "For example your company name and address",
   "E-mailadres voor de testmail": "E-mail address for the test e-mail",
   "E-mailopmaak": "E-mail layout",
@@ -5048,5 +5047,9 @@
   "Er is nog geen AI-koppeling (Claude). Zet eerst de koppeling aan bij API keys; daarna kun je je AI-tegoed opwaarderen. Een superadmin kan de koppeling voor alle sites instellen.": "There is no AI link (Claude) yet. First switch the link on under API keys; after that you can top up your AI credit. A superadmin can set up the link for all sites.",
   "Naar API keys: AI-koppeling instellen": "To API keys: set up the AI link",
   "Easy2edit API-koppelingen installeren": "Install Easy2edit API links",
-  "De koppelingen met Stripe, Postmark en Claude zijn nog niet geladen. Vul het wachtwoord van het bestand met de API-koppelingen in om ze te installeren en aan te zetten.": "The links with Stripe, Postmark and Claude have not been loaded yet. Enter the password of the API links file to install and enable them."
+  "De koppelingen met Stripe, Postmark en Claude zijn nog niet geladen. Vul het wachtwoord van het bestand met de API-koppelingen in om ze te installeren en aan te zetten.": "The links with Stripe, Postmark and Claude have not been loaded yet. Enter the password of the API links file to install and enable them.",
+  "Popup tonen aan gebruikers en bezoekers als er een nieuwe versie van de website online staat": "Show a popup to users and visitors when a new version of the website is online",
+  "Nieuwe versie beschikbaar": "New version available",
+  "Er staat een nieuwe versie van de website online. Ververs de pagina om de nieuwste versie te gebruiken.": "A new version of the website is online. Refresh the page to use the latest version.",
+  "Sla eerst op waar je mee bezig bent: bij verversen gaan niet-opgeslagen wijzigingen verloren.": "Save what you are working on first: unsaved changes are lost when you refresh."
 }

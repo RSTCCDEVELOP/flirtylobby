@@ -255,7 +255,7 @@ SCHEMA = [
         choice("remember_collapse", "Onthouden of blokken in- of uitgeklapt zijn (alle pagina's)", "yes", None, YESNO),
         choice("nav_default", "Hoe werkt het linker menu (standaard; iedereen kan zelf wisselen)", "tiles", None, NAV_DEFAULT),
         choice("sidebar_auto", "Linker menu automatisch inklappen", "never", None, SIDEBAR_AUTO),
-        choice("version_notice", "Melding tonen aan bezoekers als er een nieuwe versie van de website live staat", "yes", None, YESNO),
+        choice("version_notice", "Popup tonen aan gebruikers en bezoekers als er een nieuwe versie van de website online staat", "yes", None, YESNO),
     ]},
     {"key": "interface_look", "label": "Tabbladen en vensters", "fields": [  # part of a theme: edited in Thema -> Layout
         choice("system_popup", "Uiterlijk van systeem-popups, vensters en bijbehorende tabbladen", "clean", None, SYSTEM_POPUPS),
