@@ -15,7 +15,7 @@ import Tabs from "../../../../components/Tabs";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { SITE_KINDS } from "./aiPrompt";
-import { COLOR_ROLES, contrast, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DesignPromptPopup, DEVICES, DW_CSS, Field, FONT_NAMES, FONTS, LAST, MODES, ModulePicker, PAGE_EXTRA, PAGE_SUGGEST, pagesOf, previewHtml, STEPS, STYLE_TAGS, styleTile, THEME_DARK, THEME_MAP } from "./designKit";
+import { COLOR_ROLES, contrast, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DesignPromptPopup, DEVICES, QuickPrompt, DW_CSS, Field, FONT_NAMES, FONTS, LAST, MODES, ModulePicker, effOff, PAGE_EXTRA, PAGE_SUGGEST, pagesOf, previewHtml, STEPS, STYLE_TAGS, styleTile, THEME_DARK, THEME_MAP } from "./designKit";
 
 // The title and the explanation above every step.
 const META = [
@@ -124,7 +124,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
   const improve = b.mode === "improve";
   const pages = pagesOf(b);
   const setPages = (l) => upd({ pages: l.join(", ") });
-  const off = b.modules_off || [];
+  const off = effOff(catalog, b); // what the site does not use: switched off, or outside the standard installation and not added on purpose
   const htmlFiles = Object.keys(job.files || {}).filter((n) => n.endsWith(".html")).sort((a, c) => (a === "index.html" ? -1 : c === "index.html" ? 1 : a.localeCompare(c)));
   const realDesign = improve && htmlFiles.length > 0; // a design was read in: the preview shows that design itself
   const cur = htmlFiles.includes(ppage) ? ppage : htmlFiles[0];
@@ -170,7 +170,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
   };
   const apply = async () => { // the design is read in: make the pages and fill them with the content
     setBusy("apply"); setErr("");
-    try { await flush(); await onApply({ render, translate: (b.langs || []).length > 0, off: b.modules_off || [] }); }
+    try { await flush(); await onApply({ render, translate: (b.langs || []).length > 0, off: effOff(catalog, b) }); }
     catch (x) { setErr(errorText(x)); setBusy(""); }
   };
   const generate = async () => {
@@ -215,6 +215,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
           {err && <div className="alert">{err}</div>}
 
           {step === 0 && (<>
+            <QuickPrompt b={b} catalog={catalog} upd={upd} />
             <div className="dw-panel">
               <h3>{tx("Doelstellingen uit een document")}</h3>
               <p className="dw-hint">{tx("Heb je de doelstellingen van de website in een PDF- of Word-document? Plaats het hier: Easy2edit leest het en vult de instellingen van de stappen voor je in. Jij controleert ze daarna.")}</p>
@@ -393,7 +394,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
             </div>
           )}
 
-          {step === 4 && <ModulePicker catalog={catalog} off={off} objects={b.objects || []} onChange={(p) => upd({ modules_off: p.off, objects: p.objects })} />}
+          {step === 4 && <ModulePicker catalog={catalog} b={b} upd={upd} />}
 
           {step === 5 && (<>
             <div className="dw-drop" role="button" tabIndex={0} onClick={() => photoRef.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && photoRef.current.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addPhotos(e.dataTransfer.files); }}>

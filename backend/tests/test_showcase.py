@@ -133,3 +133,12 @@ def test_demo_button_of_the_plugin_page(showcase, admin):
     assert not r["exists"] and c.get(RUN + "items").json()["total"] == 0
     assert c.post(url, {"action": "nonsense"}, format="json").status_code == 400
     assert client().get(url).status_code in (401, 403)
+
+
+def test_effective_off_follows_the_installation(monkeypatch):
+    """Modules outside the standard installation are off unless added on purpose (modules_extra); what the user switched off stays off."""
+    from apps.core import sitecreator
+
+    items = [{"key": "faq", "in_installation": True}, {"key": "seo", "in_installation": True}, {"key": "webshop", "in_installation": False}, {"key": "plugin:games", "in_installation": False}]
+    assert sitecreator.effective_off({}, items) == {"webshop", "plugin:games"}
+    assert sitecreator.effective_off({"modules_off": ["seo"], "modules_extra": ["webshop"]}, items) == {"seo", "plugin:games"}

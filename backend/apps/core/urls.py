@@ -133,6 +133,7 @@ urlpatterns = [
     path("theme/packs/create/", views.theme_pack_create),
     path("sitecreator/", views.sitecreator_list),
     path("sitecreator/catalog/", views.sitecreator_catalog),
+    path("sitecreator/price/", views.sitecreator_price),
     path("sitecreator/<uuid:pk>/", views.sitecreator_job),
     path("sitecreator/<uuid:pk>/zip/", views.sitecreator_zip),
     path("sitecreator/<uuid:pk>/generate/", views.sitecreator_generate),

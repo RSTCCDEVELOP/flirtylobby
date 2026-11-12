@@ -179,6 +179,17 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const restore = () => act("restore", "restore").then((ok) => ok && reload(true));
   const improve = async (focus) => { if (await act("improve", "generate", { improve: true, focus })) setImproveOpen(false); };
   const wizard = job && (job.status === "draft" || job.status === "error" || again);
+  // Closing a design that is still a concept (in the steps): save it for later or throw it away. Escape or "Doorgaan" keeps the window open.
+  const requestClose = async () => {
+    if (!job || !wizard || running) { onClose(); return; }
+    const what = await confirmDialog(tx("Dit ontwerp is nog een concept. Wil je het bewaren om later verder te gaan, of verwijderen?"), {
+      title: tx("Ontwerp sluiten"), okLabel: tx("Sluiten"), cancelLabel: tx("Doorgaan met ontwerpen"),
+      choices: [{ value: "save", label: tx("Opslaan"), hint: tx("Je vindt het concept terug bij Mijn ontwerpen.") }, { value: "delete", label: tx("Verwijderen"), hint: tx("Wat je hebt ingevuld en de geüploade documenten gaan verloren.") }],
+    });
+    if (!what) return;
+    if (what === "delete") await api(`/sitecreator/${job.id}/`, { method: "DELETE" }).catch(() => {});
+    onClose();
+  };
   const pages = job?.pages || [];
   const width = DEVICES.find((d) => d[0] === dev)[2];
   const ready = job && Object.keys(job.files || {}).some((n) => n.endsWith(".html"));
@@ -194,9 +205,9 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
           {!wizard && ready && !running && (onApply
             ? <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => setCreateOpen(true)}><IconCheck /> {tx("Alles aanmaken")}</button>
             : <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => onImport(job)}>{tx("Importeren in Easy2edit")}</button>)}
-          <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
+          <button type="button" className="pb-panelx" onClick={requestClose} aria-label={tx("Sluiten")}>×</button></div>
         {improveOpen && <ImprovePopup onClose={() => setImproveOpen(false)} onStart={improve} busy={busy === "improve"} />}
-        {createOpen && job && <CreatePopup job={job} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.brief?.modules_off || [] }); }} />}
+        {createOpen && job && <CreatePopup job={job} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
         {!job && <p className="muted" style={{ padding: "1rem" }}>{err || tx("Laden…")}</p>}
         {wizard && <Wizard key={job.id + (again ? "a" : "")} job={job} onJob={merge} onReload={() => reload(true)} onApply={onApply ? (o) => onApply(job, o) : undefined} onImprove={() => setImproveOpen(true)} onWorkspace={ready && job.status !== "draft" ? () => setAgain(false) : undefined} onGenerate={(j) => { setAgain(false); merge(j); }} />}
         {job && !wizard && (

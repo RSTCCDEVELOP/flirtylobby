@@ -138,7 +138,75 @@ def module_items():
             continue
         desc = (p.description or p.manifest.get("description") or "")[:200]
         items.append({"key": "plugin:" + p.name, "label": p.title, "desc": desc, "how": GENERIC_HOW.format(label=p.title, desc=desc), "enabled": bool(p.enabled), "kind": "plugin", "auto": True})
+    allowed = _installation()
+    for it in items:  # a design may only use what the active standard installation has on (without an installation: no limit)
+        if allowed is None:
+            it["in_installation"] = True
+        else:
+            mods, plugs = allowed
+            own = (M.BY_KEY.get(it["key"]) or {}).get("plugin")
+            it["in_installation"] = (it["key"].split(":", 1)[1] in plugs) if it["kind"] == "plugin" else (it["key"] in mods or it["key"] in plugs or bool(own and own in plugs))
     return items
+
+
+def _installation():
+    """(module keys, plugin names) of the active standard installation as it is now (with the superadmin's changes), or None when no installation is active."""
+    try:
+        from . import presets
+
+        key = presets.active()
+        if not key:
+            return None
+        p = presets.get(key)
+        return set(presets._wanted_modules(p)), set(presets.plugins_for(p))
+    except Exception:  # noqa: BLE001 - never stop the design screen for this
+        logger.exception("sitecreator installation")
+        return None
+
+
+def price_with(extra_keys):
+    """The price per month (ex VAT) of the active standard installation, and with these extra modules/plugins (catalog keys outside the installation) switched on:
+    {"available", "base", "monthly", "extra", "lines": [{label, price}]}. Without an active installation there is no basis to compare with: available is False."""
+    from decimal import Decimal
+
+    from . import modules as M
+    from . import presets, pricing
+
+    key = presets.active()
+    if not key:
+        return {"available": False, "base": "0.00", "monthly": "0.00", "extra": "0.00", "lines": []}
+    base = presets.get(key)
+    items = {i["key"]: i for i in module_items()}
+    mods, plugs = list(base["modules"]), list(base["plugins"])
+    for k in extra_keys or []:
+        it = items.get(k)
+        if not it or it.get("in_installation") is not False:
+            continue
+        if it["kind"] == "plugin":
+            plugs.append(k.split(":", 1)[1])
+        else:
+            if k in M.BY_KEY:
+                mods.append(k)
+            own = (M.BY_KEY.get(k) or {}).get("plugin") or (k if k in {x.get("plugin") for x in M.MODULES} or k in {p.name for p in __import__("apps.plugins.models", fromlist=["Plugin"]).Plugin.objects.all()} else None)
+            if own:
+                plugs.append(own)
+
+    def monthly(m, pl):
+        pr = {**base, "modules": list(dict.fromkeys(m)), "plugins": list(dict.fromkeys(pl))}
+        total, lines = pricing.price_of(presets._wanted_modules(pr), presets.plugins_for(pr))
+        return total, lines
+
+    b_total, b_lines = monthly(base["modules"], base["plugins"])
+    t_total, t_lines = monthly(mods, plugs)
+    before = {(x["label"], x["price"]) for x in b_lines}
+    return {"available": True, "base": str(b_total), "monthly": str(t_total), "extra": str(t_total - b_total), "lines": [x for x in t_lines if (x["label"], x["price"]) not in before]}
+
+
+def effective_off(b, items=None):
+    """The catalog keys this website does NOT use: what the user switched off, and everything outside the active standard installation that the user did not add on purpose (modules_extra)."""
+    items = items if items is not None else module_items()
+    off, extra = set(b.get("modules_off") or []), set(b.get("modules_extra") or [])
+    return off | {i["key"] for i in items if i.get("in_installation") is False and i["key"] not in extra}
 
 
 def catalog():
@@ -148,6 +216,13 @@ def catalog():
     from apps.sysobjects.models import SystemObject
 
     mods = module_items()
+    for it in mods:  # what switching on one that is outside the standard installation adds per month (ex VAT): the warning in the screen
+        if it.get("in_installation") is False:
+            try:
+                it["extra_monthly"] = price_with([it["key"]])["extra"]
+            except Exception:  # noqa: BLE001
+                logger.exception("sitecreator extra price")
+                it["extra_monthly"] = "0.00"
     objs = []
     try:
         sos.sync()
@@ -158,6 +233,27 @@ def catalog():
             names = r.get("names") or {}
             name = (names.get("") or next(iter(names.values()), "") or (r.get("data") or {}).get("title") or o.slug)
             objs.append({"slug": o.slug, "kind": o.kind, "kind_label": dict(SystemObject.KINDS).get(o.kind, o.kind), "name": str(name)[:120]})
+        allowed = _installation()
+        if allowed is not None:  # the system objects of plugins and modules that the active standard installation does not have are not offered either
+            from apps.plugins.models import Plugin
+
+            mod_keys, plug_names = allowed
+            names_of = {p.pk: p.name for p in Plugin.objects.all()}
+            by_slug = {o.slug: o for o in SystemObject.objects.all()}
+
+            def fits(o):
+                src = by_slug.get(o["slug"])
+                if src is None:
+                    return True
+                if src.kind in ("plugin", "plugin_item", "plugin_part"):
+                    return names_of.get(src.ref_id) in plug_names
+                if src.kind in ("donation", "plan"):
+                    return "subscriptions" in plug_names
+                if src.kind == "energy":
+                    return "energy" in mod_keys
+                return True
+
+            objs = [o for o in objs if fits(o)]
     except Exception:  # noqa: BLE001
         logger.exception("sitecreator catalog")
     from .models import Language
@@ -287,6 +383,9 @@ def clean_brief(patch, old):
     if "modules_off" in p:  # the modules and plugins that the user does NOT want (all others are used, also the ones that are added later)
         known = {i["key"] for i in module_items()}
         b["modules_off"] = [k for k in (p["modules_off"] if isinstance(p["modules_off"], list) else []) if k in known][:80]
+    if "modules_extra" in p:  # modules and plugins outside the standard installation that the user switched on on purpose (they raise the price per month)
+        known = {i["key"] for i in module_items() if i.get("in_installation") is False}
+        b["modules_extra"] = [k for k in (p["modules_extra"] if isinstance(p["modules_extra"], list) else []) if k in known][:80]
     if "objects" in p:
         known = set(SystemObject.objects.values_list("slug", flat=True))
         b["objects"] = [x for x in (p["objects"] if isinstance(p["objects"], list) else []) if isinstance(x, str) and x in known][:40]
@@ -780,8 +879,7 @@ def _brief_text(b):
     ph = b.get("photos") or []
     if ph:
         lines.append("PHOTOS the user uploaded (use them: reference as img/<file> in <img> tags and url(img/<file>) in css, with fitting alt texts; use each where it fits, hero pictures first; do not output these files, they are added by the system):\n" + "\n".join(f"- {p['file']}: {p.get('note') or 'no description'}" for p in ph))
-    off = set(b.get("modules_off") or [])
-    mods = [i for i in module_items() if i["key"] not in off]
+    mods = [i for i in module_items() if i["key"] not in effective_off(b)]
     if mods:
         lines.append("MODULES and PLUGINS of the system that this website uses (build the pages so that they work with them; mention each where it fits, do not force a section for every one):\n" + "\n".join(f"- {i['label']}: {i['how']}" for i in mods))
     objs = b.get("objects") or []
@@ -978,6 +1076,6 @@ def _stale(job):
 def public(job, files=False):
     job = _stale(job)
     b = job.brief or {}
-    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b,
+    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
             "docs": [_doc_public(d) for d in job.docs or []]}

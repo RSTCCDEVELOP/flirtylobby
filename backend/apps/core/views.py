@@ -1857,6 +1857,16 @@ def sitecreator_catalog(request):
     return Response(sitecreator.catalog())
 
 
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_price(request):
+    """The price per month (ex VAT) of the standard installation and with the extra modules/plugins ({"extra": [catalog keys]}) that are outside it."""
+    from . import sitecreator
+
+    keys = request.data.get("extra") if isinstance(request.data, dict) else []
+    return Response(sitecreator.price_with([k for k in keys if isinstance(k, str)][:80] if isinstance(keys, list) else []))
+
+
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes(DESIGN_PERM)
 def sitecreator_job(request, pk):

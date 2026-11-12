@@ -7,11 +7,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconBolt, IconCheck, IconEdit, IconEye, IconFolder, IconGrid, IconImage, IconPalette, IconSliders } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
-import { mediaUrl } from "../../../../lib/api";
+import { api, mediaUrl } from "../../../../lib/api";
+import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { buildPrompt } from "./aiPrompt";
 
@@ -102,24 +103,101 @@ export function Field({ label, hint, children }) { return <label className="dw-f
 
 export const EN_TAGS = { modern: "modern", warm: "warm", zakelijk: "business-like", speels: "playful", minimalistisch: "minimalist", luxe: "luxurious", natuurlijk: "natural", technisch: "technical", creatief: "creative", klassiek: "classic" };
 
+// Which modules and plugins does the website use? What the standard installation has is on unless the user switched it off (modules_off); everything outside the installation is
+// off unless the user added it on purpose (modules_extra): that raises the price per month, so switching it on asks first.
+export const isUsed = (m, b) => (m.in_installation !== false ? !(b.modules_off || []).includes(m.key) : (b.modules_extra || []).includes(m.key));
+export const effOff = (catalog, b) => (catalog?.modules || []).filter((m) => !isUsed(m, b)).map((m) => m.key);
+const euro = (v) => `€ ${Number(v || 0).toFixed(2).replace(".", ",")}`;
+export async function flipModule(m, b, upd) {
+  if (m.in_installation !== false) { const off = b.modules_off || []; upd({ modules_off: off.includes(m.key) ? off.filter((x) => x !== m.key) : [...off, m.key] }); return; }
+  const extra = b.modules_extra || [];
+  if (extra.includes(m.key)) { upd({ modules_extra: extra.filter((x) => x !== m.key) }); return; }
+  const ok = await confirmDialog(tx("Let op: {0} hoort niet bij de standaard installatie. Je prijs per maand gaat omhoog met {1} (ex btw). Aanzetten?", tx(m.label), euro(m.extra_monthly)), { okLabel: tx("Toch aanzetten"), cancelLabel: tx("Annuleren") });
+  if (ok) upd({ modules_extra: [...extra, m.key] });
+}
+// The price per month of the standard installation, and with the extra modules and plugins that were added.
+export function MonthlyPrice({ catalog, b }) {
+  const extra = (catalog?.modules || []).filter((m) => m.in_installation === false && (b.modules_extra || []).includes(m.key)).map((m) => m.key);
+  const [pr, setPr] = useState(null);
+  const sig = extra.join(",");
+  useEffect(() => { if (catalog) api("/sitecreator/price/", { method: "POST", body: { extra } }).then(setPr).catch(() => setPr(null)); }, [catalog, sig]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!pr?.available) return null;
+  return (
+    <div className="alert ok" style={{ margin: ".8rem 0 0" }} role="status">
+      <b>{tx("Prijs per maand")}: {euro(pr.monthly)}</b> <small>({tx("ex btw")})</small>
+      {Number(pr.extra) > 0
+        ? <small style={{ display: "block" }}>{tx("Standaard installatie")} {euro(pr.base)} + {tx("extra")} {euro(pr.extra)}: {pr.lines.map((l) => `${tx(l.label)} ${euro(l.price)}`).join(", ")}</small>
+        : <small style={{ display: "block" }}>{tx("Dit is de prijs van de standaard installatie. Een module of plugin die daar niet bij hoort, kun je aanzetten; de prijs per maand gaat dan omhoog.")}</small>}
+    </div>
+  );
+}
+
+// The text of the prompt for an external AI, made from everything that was chosen (also used by the quick start on the first step).
+export function promptText(b, catalog) {
+  const photos = (b.photos || []).filter((p) => p.file);
+  return buildPrompt({
+    name: b.name, kind: b.kind, lang: b.lang, pages: b.pages, extra: b.extra,
+    style: [...(b.style_tags || []).map((t) => EN_TAGS[t] || t), b.style].filter(Boolean).join(", "),
+    modules: (catalog?.modules || []).filter((m) => isUsed(m, b)), objects: (catalog?.objects || []).filter((o) => (b.objects || []).includes(o.slug)),
+    palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
+    languages: { main: b.lang || "", mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", extra: (b.langs || []).map((c) => (catalog?.languages || []).find((l) => l.code === c)).filter(Boolean), switcher: b.lang_switch !== false }, font: FONTS[b.font || "sans"], radius: b.radius ?? null, theme: b.theme_name || "", photos, rules: catalog?.rules || null,
+  });
+}
+
+
+// The quick start on the first step: a short explanation, the switches of the modules and plugins that the site may use, and one button that makes the prompt and copies it.
+export function QuickPrompt({ b, catalog, upd }) {
+  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
+  const mods = catalog?.modules || [];
+  const extra = (b.langs || []).length;
+  const copy = async () => {
+    const text = promptText(b, catalog);
+    try { await navigator.clipboard.writeText(text); } catch {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove();
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 2500);
+  };
+  return (
+    <div className="dw-panel">
+      <style>{DW_CSS}</style>
+      <h3>{tx("Snel starten met een externe AI")}</h3>
+      <ol className="dw-hint" style={{ margin: "0 0 .6rem", paddingLeft: "1.2rem" }}>
+        <li>{tx("Zet hieronder aan welke modules en plugins de site mag gebruiken.")}</li>
+        <li>{tx("Kopieer de prompt en plak hem in je AI (Claude, ChatGPT, Gemini …). Die maakt een ZIP met de pagina's (html), style.css, de afbeeldingen in img/ en per extra taal een bestand vertalingen-<taal>.json.")}</li>
+        <li>{tx("Lees het ZIP-bestand hieronder in: Easy2edit importeert de pagina's, de afbeeldingen en de vertalingen, en zet de gekozen modules aan.")}</li>
+      </ol>
+      <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem", flexWrap: "wrap" }}>
+        <button type="button" className="btn primary" onClick={copy} disabled={!catalog}><IconBolt /> {copied ? tx("Gekopieerd naar het klembord") : tx("Kopieer AI-prompt")}</button>
+        <button type="button" className="btn" onClick={() => setOpen(!open)} aria-expanded={open}>{tx("Modules en plugins")} ({mods.filter((m) => isUsed(m, b)).length}/{mods.length})</button>
+        <small className="muted">{extra ? tx("Met {0} extra taal/talen: de prompt vraagt ook de vertaalbestanden.", extra) : tx("Kies bij de talen hieronder extra talen: dan vraagt de prompt ook de vertaalbestanden.")}</small>
+      </div>
+      <MonthlyPrice catalog={catalog} b={b} />
+      {open && (
+        <div className="dw-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", marginTop: ".8rem" }}>
+          {mods.map((m) => { const out = m.in_installation === false, on = isUsed(m, b); return (
+            <label key={m.key} className={`dw-mod ${on ? "on" : ""}`}>
+              <span className="switch"><input type="checkbox" checked={on} onChange={() => flipModule(m, b, upd)} /><span /></span>
+              <span className="dw-mod-t"><b>{tx(m.label)}</b><span className="dw-tags">{m.kind === "plugin" && <i>{tx("plugin")}</i>}{out && <i>{tx("buiten de installatie")}{Number(m.extra_monthly) > 0 ? ` · + ${euro(m.extra_monthly)} ${tx("p/m")}` : ""}</i>}</span></span>
+            </label>); })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // The prompt for an external AI (Claude, ChatGPT, Gemini...) made from everything that was chosen in the step plan: the AI makes the website as HTML pages in a ZIP that can be read back in here.
 export function DesignPromptPopup({ b, catalog, onClose }) {
   const [tab, setTab] = useState("prompt");
   const [copied, setCopied] = useState(false);
   const photos = (b.photos || []).filter((p) => p.file);
-  const text = buildPrompt({
-    name: b.name, kind: b.kind, lang: b.lang, pages: b.pages, extra: b.extra,
-    style: [...(b.style_tags || []).map((t) => EN_TAGS[t] || t), b.style].filter(Boolean).join(", "),
-    modules: (catalog?.modules || []).filter((m) => !(b.modules_off || []).includes(m.key)), objects: (catalog?.objects || []).filter((o) => (b.objects || []).includes(o.slug)),
-    palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
-    languages: { main: b.lang || "", mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", extra: (b.langs || []).map((c) => (catalog?.languages || []).find((l) => l.code === c)).filter(Boolean), switcher: b.lang_switch !== false }, font: FONTS[b.font || "sans"], radius: b.radius ?? null, theme: b.theme_name || "", photos, rules: catalog?.rules || null,
-  });
+  const text = promptText(b, catalog);
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); } catch { document.getElementById("si-dprompt")?.select(); document.execCommand("copy"); }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
   const download = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" })); a.download = `${(b.name || "website").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-prompt.txt`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
-  const chips = [[tx("Pagina's"), pagesOf(b).length], [tx("Modules"), (catalog?.modules || []).filter((m) => !(b.modules_off || []).includes(m.key)).length], [tx("Systeemobjecten"), (b.objects || []).length], [tx("Foto's"), photos.length]];
+  const chips = [[tx("Pagina's"), pagesOf(b).length], [tx("Modules"), (catalog?.modules || []).filter((m) => isUsed(m, b)).length], [tx("Systeemobjecten"), (b.objects || []).length], [tx("Foto's"), photos.length]];
   return createPortal(
     <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pb-objpop" role="dialog" aria-label={tx("AI-prompt voor een externe AI")} style={{ width: "min(900px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -153,29 +231,32 @@ export function DesignPromptPopup({ b, catalog, onClose }) {
 
 
 // The overview of ALL modules and plugins of the system that a website can use (also new ones that are added later: they are on by default) and its system objects (live blocks).
-export function ModulePicker({ catalog, off, objects, onChange }) {
+export function ModulePicker({ catalog, b, upd }) {
+  const objects = b.objects || [], off = b.modules_off || [];
+  const onChange = (p) => upd({ ...(p.off ? { modules_off: p.off } : {}), ...(p.extra ? { modules_extra: p.extra } : {}), objects: p.objects });
   const [q, setQ] = useState("");
   if (!catalog) return <div className="dw-panel"><span className="muted">{tx("Laden…")}</span></div>;
   const toggle = (list, k) => (list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
   const keys = catalog.modules.map((m) => m.key), shown = catalog.modules.filter((m) => !q.trim() || `${m.label} ${m.desc}`.toLowerCase().includes(q.trim().toLowerCase()));
-  const onCount = keys.filter((k) => !off.includes(k)).length, kinds = [...new Set(catalog.objects.map((o) => o.kind_label))];
+  const onCount = catalog.modules.filter((m) => isUsed(m, b)).length, kinds = [...new Set(catalog.objects.map((o) => o.kind_label))];
   return (
     <>
       <style>{DW_CSS}</style>
       <div className="dw-panel">
         <div className="dw-ph"><h3>{tx("Modules en plugins")} <span className="dw-count">{onCount} / {keys.length} {tx("aan")}</span></h3>
-          <span className="dw-tools"><input className="dw-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoeken…")} aria-label={tx("Zoeken…")} /><button type="button" className="btn sm" onClick={() => onChange({ off: [], objects })}>{tx("Alles aan")}</button><button type="button" className="btn sm" onClick={() => onChange({ off: keys, objects })}>{tx("Alles uit")}</button></span></div>
-        <p className="dw-hint">{tx("Alles wat je systeem kan staat standaard aan. De AI richt de pagina's er op in (de juiste knoppen, links en onderdelen) en bij het importeren worden ze aangezet. Zet uit wat je niet wilt; nieuwe modules en plugins komen hier vanzelf bij.")}</p>
+          <span className="dw-tools"><input className="dw-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoeken…")} aria-label={tx("Zoeken…")} /><button type="button" className="btn sm" onClick={() => onChange({ off: [], objects })} title={tx("Zet alles aan wat bij de standaard installatie hoort")}>{tx("Alles aan")}</button><button type="button" className="btn sm" onClick={() => onChange({ off: catalog.modules.filter((m) => m.in_installation !== false).map((m) => m.key), extra: [], objects })}>{tx("Alles uit")}</button></span></div>
+        <p className="dw-hint">{tx("Wat bij de standaard installatie hoort staat aan. De AI richt de pagina's er op in (de juiste knoppen, links en onderdelen) en bij het importeren worden ze aangezet. Zet uit wat je niet wilt. Een module of plugin die niet bij de installatie hoort kun je ook aanzetten; de prijs per maand gaat dan omhoog.")}</p>
         <div className="dw-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))" }}>
-          {shown.map((m) => { const on = !off.includes(m.key); return (
+          {shown.map((m) => { const out = m.in_installation === false, on = isUsed(m, b); return (
             <label key={m.key} className={`dw-mod ${on ? "on" : ""}`}>
-              <span className="switch"><input type="checkbox" checked={on} onChange={() => onChange({ off: toggle(off, m.key), objects })} /><span /></span>
+              <span className="switch"><input type="checkbox" checked={on} onChange={() => flipModule(m, b, upd)} /><span /></span>
               <span className="dw-mod-t"><b>{tx(m.label)}</b>
                 <small>{tx(m.desc) || "—"}</small>
-                <span className="dw-tags"><i className={m.enabled ? "ok" : ""}>{m.enabled ? tx("aan in het systeem") : tx("uit in het systeem")}</i>{m.kind === "plugin" && <i>{tx("plugin")}</i>}{m.auto && <i>{tx("automatisch")}</i>}</span></span>
+                <span className="dw-tags"><i className={m.enabled ? "ok" : ""}>{m.enabled ? tx("aan in het systeem") : tx("uit in het systeem")}</i>{m.kind === "plugin" && <i>{tx("plugin")}</i>}{m.auto && <i>{tx("automatisch")}</i>}{out && <i>{tx("buiten de installatie")}{Number(m.extra_monthly) > 0 ? ` · + ${euro(m.extra_monthly)} ${tx("p/m")}` : ""}</i>}</span></span>
             </label>); })}
           {!shown.length && <span className="muted">{tx("Niets gevonden.")}</span>}
         </div>
+        <MonthlyPrice catalog={catalog} b={b} />
       </div>
       <div className="dw-panel">
         <div className="dw-ph"><h3>{tx("Systeemobjecten")} <span className="dw-count">{objects.length} {tx("gekozen")}</span></h3>

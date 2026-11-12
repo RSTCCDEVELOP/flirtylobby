@@ -1,6 +1,6 @@
 {
  "format": "installations",
- "saved_at": "2026-11-12T14:46:16+00:00",
+ "saved_at": "2026-11-12T15:09:37+00:00",
  "settings": {
   "admin_presets": [
    "standaard-website",
@@ -17,6 +17,14 @@
   "preset_ai": {},
   "preset_edits": {
    "bedrijfswebsite": {
+    "plugins": {
+     "add": [
+      "showcase"
+     ],
+     "remove": []
+    }
+   },
+   "standaard-website": {
     "plugins": {
      "add": [
       "showcase"
