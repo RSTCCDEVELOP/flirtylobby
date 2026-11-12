@@ -11,10 +11,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconArchive, IconBolt, IconCheck, IconImage, IconPaperclip, IconTrash } from "../../../../components/Icons";
 import { api, downloadFile, errorText, mediaUrl } from "../../../../lib/api";
+import Tabs from "../../../../components/Tabs";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { SITE_KINDS } from "./aiPrompt";
-import { COLOR_ROLES, contrast, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DesignPromptPopup, DEVICES, DW_CSS, Field, FONT_NAMES, FONTS, LAST, MODES, ModulePicker, PAGE_EXTRA, PAGE_SUGGEST, pagesOf, STEPS, STYLE_TAGS, styleTile, THEME_DARK, THEME_MAP } from "./designKit";
+import { COLOR_ROLES, contrast, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DesignPromptPopup, DEVICES, DW_CSS, Field, FONT_NAMES, FONTS, LAST, MODES, ModulePicker, PAGE_EXTRA, PAGE_SUGGEST, pagesOf, previewHtml, STEPS, STYLE_TAGS, styleTile, THEME_DARK, THEME_MAP } from "./designKit";
 
 // The title and the explanation above every step.
 const META = [
@@ -45,6 +46,8 @@ export default function Wizard({ job, onJob, onGenerate }) {
   const [promptOpen, setPromptOpen] = useState(false);
   const [allLangs, setAllLangs] = useState(false);
   const [pmode, setPmode] = useState("light");
+  const [ppage, setPpage] = useState("index.html");
+  const [palNote, setPalNote] = useState("");
   const pend = useRef({}), timer = useRef(null), body = useRef(null);
   const zipRef = useRef(null), photoRef = useRef(null), docRef = useRef(null);
   const [docs, setDocs] = useState(job.docs || []);
@@ -108,6 +111,9 @@ export default function Wizard({ job, onJob, onGenerate }) {
   const pages = pagesOf(b);
   const setPages = (l) => upd({ pages: l.join(", ") });
   const off = b.modules_off || [];
+  const htmlFiles = Object.keys(job.files || {}).filter((n) => n.endsWith(".html")).sort((a, c) => (a === "index.html" ? -1 : c === "index.html" ? 1 : a.localeCompare(c)));
+  const realDesign = improve && htmlFiles.length > 0; // a design was read in: the preview shows that design itself
+  const cur = htmlFiles.includes(ppage) ? ppage : htmlFiles[0];
   const modCount = catalog ? catalog.modules.filter((m) => !off.includes(m.key)).length : 0;
   const done = [!!(b.name || "").trim(), !!(b.theme || (b.style_tags || []).length || b.style), !!Object.keys(b.colors || {}).length, pages.length > 0, step > 4 || off.length + (b.objects || []).length > 0, (b.photos || []).length > 0, false];
 
@@ -126,6 +132,14 @@ export default function Wizard({ job, onJob, onGenerate }) {
       if (r.notes?.length) setErr(r.notes.join(" "));
     } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
   };
+  const readPalette = async (quiet) => { // the colours, font and corners of the design that was read in (ZIP) become the settings
+    try {
+      await flush();
+      const r = await api(`/sitecreator/${job.id}/palette/`, { method: "POST" });
+      setB((o) => ({ ...o, ...r.brief, step: o.step })); setPalNote(r.note || ""); onJob(r);
+    } catch (x) { if (!quiet) setErr(errorText(x)); }
+  };
+  useEffect(() => { if (b.mode === "improve" && !b.palette_from_zip && Object.keys(job.files || {}).length) readPalette(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const addPhotos = async (files) => {
     const list = Array.from(files || []).filter((f) => f.type.startsWith("image/")); if (!list.length) return;
     setBusy("photo"); setErr("");
@@ -284,6 +298,13 @@ export default function Wizard({ job, onJob, onGenerate }) {
                 {MODES.map(([k, l, h]) => { const Ic = MODE_ICON[k]; return <button type="button" key={k} className={`dw-opt dw-mode ${cmode === k ? "on" : ""}`} aria-pressed={cmode === k} onClick={() => upd({ color_mode: k })}><Ic /><b>{tx(l)}</b><small>{tx(h)}</small></button>; })}
               </div>
             </div>
+            {improve && (
+              <div className="dw-zip">
+                <span><b>{tx("Kleuren uit je ontwerp")}</b>
+                  <small className="muted" style={{ display: "block" }}>{palNote || (b.palette_from_zip ? tx("De kleuren, het lettertype en de hoeken zijn gelezen uit het ontwerp dat je hebt ingelezen. Pas je ze aan, dan gebruikt Claude jouw kleuren; laat je ze staan, dan blijft het ontwerp zoals het is.") : tx("Lees de kleuren, het lettertype en de hoeken uit het ingelezen ontwerp."))}</small></span>
+                <button type="button" className="btn" onClick={() => readPalette(false)}>{tx("Opnieuw uit het ontwerp lezen")}</button>
+              </div>
+            )}
             <div className="dw-panel">
               <h3>{tx("Kleurenpalet")}</h3>
               <div className="dw-pal">{COLOR_ROLES.map(([k]) => <div key={k} title={colors[k]} style={{ background: colors[k] }} />)}</div>
@@ -389,9 +410,11 @@ export default function Wizard({ job, onJob, onGenerate }) {
                   {cmode === "both" && <span className="pb-seg">{[["light", "Licht"], ["dark", "Donker"]].map(([k, l]) => <button type="button" key={k} className={pmode === k ? "on" : ""} onClick={() => setPmode(k)}>{tx(l)}</button>)}</span>}
                   <span className="pb-seg">{DEVICES.map(([k, l]) => <button type="button" key={k} className={dev === k ? "on" : ""} onClick={() => setDev(k)}>{tx(l)}</button>)}</span>
                 </span></div>
+              {realDesign && <Tabs value={cur} onChange={setPpage} tabs={htmlFiles.map((f) => [f, (pages[htmlFiles.indexOf(f)] || f.replace(".html", ""))])} />}
+              {realDesign && <small className="muted">{tx("Dit is het ontwerp uit je ZIP-bestand, met je foto's. Claude verbetert het en houdt de kleuren aan.")}</small>}
               <div style={{ display: "flex", justifyContent: "center", background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 14, padding: "1rem", overflow: "hidden" }}>
                 <div style={{ width: DEVICES.find((d) => d[0] === dev)[2], maxWidth: "100%", background: "#fff", borderRadius: 10, overflow: "hidden", boxShadow: "0 12px 44px rgba(0,0,0,.3)" }}>
-                  <iframe title={tx("Voorbeeld")} sandbox="" srcDoc={styleTile(b, cmode === "both" ? pmode : cmode)} style={{ display: "block", width: "100%", height: dev === "mobile" ? 1500 : dev === "tablet" ? 1250 : 1000, border: 0 }} />
+                  <iframe title={tx("Voorbeeld")} sandbox="" srcDoc={realDesign ? previewHtml(job.files, cur, b.photos || [], cmode === "both" ? pmode : cmode === "dark" ? "dark" : "light") : styleTile(b, cmode === "both" ? pmode : cmode)} style={{ display: "block", width: "100%", height: dev === "mobile" ? 1500 : dev === "tablet" ? 1250 : 1000, border: 0 }} />
                 </div>
               </div>
             </div>

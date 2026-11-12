@@ -54,7 +54,16 @@ def sync():
             else:
                 obj, _ = _get_or_make(kind=kind, ref_id=src.pk, defaults={"slug": f"{kind}-{getattr(src, 'slug', None) or src.name}"[:80]})
             keep.add(obj.pk)
-    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation", "ai")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
+    from apps.energy.layouts import LAYOUTS
+    from apps.energy.models import EnergySettings
+
+    st = EnergySettings.load()
+    if not st.objects_seeded:  # the layouts of the module Energie exist from the start; once. After that Admin → Energie decides which are on
+        for key in LAYOUTS:
+            SystemObject.objects.get_or_create(kind="energy", ref_id=1, ref_key=key, defaults={"slug": f"energy-{key}"})
+        st.objects_seeded = True
+        st.save(update_fields=["objects_seeded"])
+    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation", "ai", "energy")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
     SystemObject.objects.exclude(pk__in=keep).delete()
 
 
@@ -63,7 +72,7 @@ def source_of(obj):
 
     DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")
 
-    if obj.kind in ("calculator", "marketing", "pricelist", "installation", "ai"):
+    if obj.kind in ("calculator", "marketing", "pricelist", "installation", "ai", "energy"):
         return obj
     if obj.kind == "media":
         from apps.medialib.models import MediaView

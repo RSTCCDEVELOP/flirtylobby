@@ -43,6 +43,11 @@ export default function SuperAdminHome() {
             <strong style={{ fontSize: "1.25rem" }}>{tx("Gebruik, kosten en marge")}</strong>
             <small>{tx("Alle AI-verkeer per gebruiker, groep en onderdeel")}</small>
           </Link>
+          <Link href="/dashboard/superadmin/energy" className="card stat link-card">
+            <span>{tx("Energie")}</span>
+            <strong style={{ fontSize: "1.25rem" }}>{tx("Totaalbeeld van alle websites")}</strong>
+            <small>{tx("Paginagewicht, verzoeken en uitstoot, verzameld via de API")}</small>
+          </Link>
           <Link href="/dashboard/superadmin/wizard" className="card stat link-card">
             <span>{tx("Installatie")}</span>
             <strong style={{ fontSize: "1.25rem" }}>{tx("Wizard: installatie en licentie")}</strong>

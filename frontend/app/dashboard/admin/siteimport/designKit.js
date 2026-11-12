@@ -46,8 +46,9 @@ export const esc = (t) => String(t || "").replace(/[&<>"]/g, (c) => ({ "&": "&am
 export const pagesOf = (b) => String(b.pages || "").split(",").map((p) => p.trim()).filter(Boolean);
 
 // The page as one html text for the preview: the stylesheet, the svg pictures and the uploaded photos are put into it (the frame has no access to the other files).
-export function previewHtml(files, name, photos = []) {
+export function previewHtml(files, name, photos = [], theme = "") {
   let h = files[name] || "";
+  if (theme) h = /<html\b[^>]*data-theme=/i.test(h) ? h.replace(/(<html\b[^>]*data-theme=)["'][^"']*["']/i, `$1"${theme}"`) : h.replace(/<html\b/i, `<html data-theme="${theme}"`); // the design in its light or its dark mode
   const css = files["style.css"] || "";
   h = h.replace(/<link\b[^>]*stylesheet[^>]*>/gi, () => `<style>${css}</style>`);
   const find = (p) => {

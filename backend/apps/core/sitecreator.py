@@ -367,6 +367,11 @@ def read_zip(job, upload, user):
     b.setdefault("name", job.name)
     SiteDesignJob.objects.filter(pk=job.pk).update(files=files, brief=b, updated_at=timezone.now())
     job.files, job.brief = files, b
+    try:  # the colours, font and corners of this design become the settings of the step plan
+        job, note = apply_palette(job)
+        notes.append(note)
+    except ValueError:
+        pass
     return job, notes
 
 
@@ -564,6 +569,112 @@ def document_file(job, doc_id):
     return d, default_storage.open(d["key"], "rb")
 
 
+# ── the colours, font and corners of a design that was read in (ZIP): so that the step plan and the preview show THAT design ──
+ROLE_WORDS = [  # (role, name pattern of a css variable), first match wins; the order matters
+    ("dark", r"night|inverse|footer|hero|charcoal|navy|deep|dark"),
+    ("secondary", r"secondary|accent-?2|second|highlight|[-_]alt|[-_]2$|[-_]two$"),
+    ("primary", r"primary|brand|accent|orange|cta|action|main|theme|blue|green|red|purple|pink|teal|yellow"),
+    ("card", r"card|surface|panel|tile|elev|paper-?2"),
+    ("text", r"^(ink|text|fg|foreground|body|copy|color|c-text)|text|ink"),
+    ("bg", r"bg|background|page|paper|cream|canvas|base|sand|ivory"),
+]
+
+
+def _css_of(files):
+    parts = [c for n, c in files.items() if n.endswith(".css")]
+    for n, c in files.items():
+        if n.endswith(".html"):
+            parts += re.findall(r"<style[^>]*>(.*?)</style>", c, re.S | re.I)
+    return "\n".join(parts)
+
+
+def palette_from_files(files):
+    """What the design looks like: colours (light and dark), font and corner radius, read from its css (also the <style> of the html files). Returns the changes for the brief and a note."""
+    from collections import Counter
+
+    from . import themeimport as TI
+    from . import webtoolkit as si
+
+    css = _css_of(files)
+    if not css.strip():
+        return {}, "Geen css gevonden in het ontwerp."
+    weight, body_bg, body_fg, fonts = si.analyse_css(css)
+    light, dark = {}, {}
+    for sel, body, in_dark in TI._blocks(css):
+        if not re.search(r":root|^html|^body|data-theme|\.dark|\.light|\[data-", sel):
+            continue
+        target = dark if (in_dark or re.search(r"dark|night", sel, re.I)) else light
+        for name, val in re.findall(r"--([\w-]+)\s*:\s*([^;]+);?", body):
+            cols = si.colors_in(val)
+            if not cols and "var(" in val:  # a variable that points to another one
+                ref = re.search(r"var\(--([\w-]+)", val)
+                cols = [target.get("_" + ref.group(1))] if ref and target.get("_" + ref.group(1)) else []
+            if cols:
+                target.setdefault("_" + name.lower(), cols[0])
+
+    def by_role(vars_):
+        out = {}
+        for name, col in vars_.items():
+            n = name[1:]
+            for role, rx in ROLE_WORDS:
+                if re.search(rx, n):
+                    out.setdefault(role, col)
+                    break
+        return out
+
+    lr = by_role(light)
+
+    def lightness(c):
+        return si._hls(c)[1]
+
+    def vivid(c):
+        h, l, s = si._hls(c)
+        return s >= 0.35 and 0.18 <= l <= 0.78
+
+    ranked = [c for c, _ in weight.most_common() if vivid(c)]
+    primary = lr.get("primary") if lr.get("primary") and vivid(lr["primary"]) else (ranked[0] if ranked else lr.get("primary") or "#2563eb")
+    secondary = lr.get("secondary") or next((c for c in ranked[1:] if abs(si._hls(c)[0] - si._hls(primary)[0]) * 360 >= 25), None) or "#f59e0b"
+    bg = lr.get("bg") or body_bg or next((c for c, _ in weight.most_common() if lightness(c) > 0.9), "#ffffff")
+    text = lr.get("text") or body_fg or next((c for c, _ in weight.most_common() if lightness(c) < 0.25), "#1f2937")
+    card = lr.get("card") or ("#ffffff" if lightness(bg) < 0.99 else bg)
+    darks = [c for c, _ in weight.most_common() if lightness(c) < 0.22 and c != text]
+    band = lr.get("dark") or (darks[0] if darks else text)
+    out = {"primary": primary, "secondary": secondary, "bg": bg, "card": card, "text": text, "dark": band}
+    # the dark mode of the design (when it has one): its own colours, else derived
+    dr = by_role(dark)
+    has_dark = bool(dark) or bool(re.search(r"data-theme=[\"']?dark|prefers-color-scheme:\s*dark|\.dark\b", css))
+    out["dbg"] = dr.get("bg") or band
+    out["dcard"] = dr.get("card") or TI._mix(out["dbg"], "#ffffff", 0.07)
+    out["dtext"] = dr.get("text") or next((c for c, _ in weight.most_common() if lightness(c) > 0.88), "#f5f5f5")
+    mode = "both" if has_dark else ("dark" if lightness(bg) < 0.3 else "light")
+    # font and corners
+    body_stack = re.search(r"(?:^|[}\s,])body\s*\{[^}]*?font-family\s*:\s*([^;}]+)", css, re.I) or re.search(r"font-family\s*:\s*([^;}]+)", css, re.I)
+    names = [x.strip(" \"'").lower() for x in (body_stack.group(1).split(",") if body_stack else [])] or [f.lower() for f in fonts[:1]]
+    head = " ".join(names[:2])
+    font = "serif" if re.search(r"georgia|times|playfair|merriweather|lora|garamond|cormorant|libre baskerville|source serif|^serif$", head) or (names and names[0] == "serif") else "round" if re.search(r"trebuchet|nunito|quicksand|poppins|comfortaa|baloo|fredoka", head) else "sans"
+    radii = [int(x) for x in re.findall(r"border-radius\s*:\s*(\d{1,2})px", css)]
+    radius = sorted(radii)[len(radii) // 2] if radii else None
+    patch = {"colors": out, "color_mode": mode, "font": font}
+    if radius is not None and 0 <= radius <= 40:
+        patch["radius"] = radius
+    note = "Kleuren, lettertype en hoeken zijn gelezen uit het ontwerp: " + ", ".join(f"{k} {v}" for k, v in out.items() if k in ("primary", "secondary", "bg", "text"))
+    return patch, note
+
+
+def apply_palette(job):
+    """Puts the look of the design that was read in (ZIP) into the step plan: colours, light/dark, font and corners."""
+    patch, note = palette_from_files(job.files or {})
+    if not patch:
+        raise ValueError(note)
+    b = dict(job.brief or {})
+    b.update({"colors": patch["colors"], "color_mode": patch["color_mode"], "font": patch["font"], "theme": "", "theme_name": "", "palette_from_zip": True, "zip_palette": patch["colors"]})
+    if "radius" in patch:
+        b["radius"] = patch["radius"]
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    job.brief = b
+    return job, note
+
+
 # ── generating ──
 def _brief_text(b):
     pages = pages_of(b)
@@ -577,7 +688,9 @@ def _brief_text(b):
     ]
     if b.get("theme_name"):
         lines.append(f"Based on the theme '{b['theme_name']}' of the system: follow its look and colours.")
-    if c:
+    if c and b.get("mode") == "improve" and b.get("palette_from_zip") and c == b.get("zip_palette"):
+        lines.append("Colours: KEEP the colours of the existing design exactly as they are in its css (keep its own colour variables and values; they were read from it: " + ", ".join(f"{k} {v}" for k, v in c.items() if k in COLOR_KEYS[:6]) + "). Do not replace them with other colours and do not rename its variables.")
+    elif c:
         lines.append("Colours (use EXACTLY these as the css variables on :root): " + ", ".join(f"--{ {'bg': 'bg', 'card': 'card', 'dark': 'dark-band'}.get(k, k) }: {v}" for k, v in c.items() if k in COLOR_KEYS[:6]) + ". --dark-band is the background of dark bands (hero/footer); derive --line and the text colour on dark bands from them.")
     else:
         lines.append("Colours: one strong primary colour, one secondary colour, light background, dark text.")

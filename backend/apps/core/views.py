@@ -1971,3 +1971,18 @@ def sitecreator_doc_apply(request, pk, doc_id):
         return Response(sitecreator.public(sitecreator.reapply_document(job, doc_id)))
     except ValueError as e:
         return _bad(str(e))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_palette(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        job, note = sitecreator.apply_palette(job)
+    except ValueError as e:
+        return _bad(str(e))
+    return Response({**sitecreator.public(job), "note": note})

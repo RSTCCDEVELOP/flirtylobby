@@ -49,6 +49,7 @@ import { getModules } from "../lib/modules-server";
 import { getSecurity } from "../lib/security-server";
 import { LOGO_SETS } from "../lib/logos";
 import StatBeacon from "../components/StatBeacon";
+import EnergyBeacon from "../components/EnergyBeacon";
 import ThemeFallback from "../components/ThemeFallback";
 import SandboxBadge from "../components/SandboxBadge";
 import { absoluteUrl, getSeo } from "../lib/seo";
@@ -188,6 +189,7 @@ export default async function RootLayout({ children }) {
             <DonateThanks />
             <NavProgress />
             <StatBeacon />
+            <EnergyBeacon />
             <ThemeFallback has={!!theme?.css} stamp={Date.now()} />
             <PageLoader />
             <LazyImages />

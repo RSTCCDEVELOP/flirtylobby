@@ -30,6 +30,7 @@ export const TILES = [
   { href: "/dashboard/admin/storage", title: "Mappenstructuur", big: "Waar bestanden staan", small: "Mappen, lokaal of S3 en versleuteling per gebruiker", modules: ["storage"] },
   { href: "/dashboard/admin/license", title: "Licentie", big: "Kosten en betaalmethode", small: "Wat is in gebruik, wat het kost en hoe je betaalt", modules: ["system"] },
   { href: "/dashboard/admin/statistieken", title: "Statistieken", big: "Bezoekers, SEO, bots en gebruik", small: "Grafieken per module en plugin", modules: ["stats"] },
+  { href: "/dashboard/admin/energy", title: "Energie & uitstoot", big: "Paginagewicht en CO2 per bezoek", small: "Meting, weergaven voor op een pagina en een API voor andere websites", modules: ["energy"] },
   { href: "/dashboard/admin/backups", title: "Backup", big: "Backups per dag, week of maand", small: "Maken, downloaden en terugzetten", modules: ["backups"] },
   { href: "/dashboard/admin/installaties", title: "Standaard installaties", big: "Alles in één keer instellen", small: "Modules, plugins en thema voor een soort website; de superadmin bepaalt welke je ziet", modules: ["system"] },
   { href: "/dashboard/admin/sandbox", title: "Sandbox", big: "Testomgeving", small: "Betalingen, e-mail en sms simuleren", modules: ["sandbox"] },

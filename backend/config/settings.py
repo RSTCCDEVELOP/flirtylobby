@@ -69,12 +69,14 @@ INSTALLED_APPS = [
     "apps.faq",
     "apps.notifications",
     "apps.backups",
+    "apps.energy",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "apps.energy.middleware.TimingAllowMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

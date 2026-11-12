@@ -135,6 +135,7 @@ urlpatterns = [
     path("sitecreator/<uuid:pk>/", views.sitecreator_job),
     path("sitecreator/<uuid:pk>/zip/", views.sitecreator_zip),
     path("sitecreator/<uuid:pk>/generate/", views.sitecreator_generate),
+    path("sitecreator/<uuid:pk>/palette/", views.sitecreator_palette),
     path("sitecreator/<uuid:pk>/document/", views.sitecreator_doc_add),
     path("sitecreator/<uuid:pk>/document/<str:doc_id>/", views.sitecreator_doc),
     path("sitecreator/<uuid:pk>/document/<str:doc_id>/apply/", views.sitecreator_doc_apply),

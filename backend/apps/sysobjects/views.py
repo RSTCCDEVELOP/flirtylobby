@@ -45,6 +45,14 @@ def _row(o, public=False):
         if not b:
             return None
         data, names, button = {"block": o.ref_key, "title": "AI: " + b["label"], "enabled": True}, {"": "AI: " + b["label"]}, {}
+    elif o.kind == "energy":
+        from apps.core import modules as mods
+        from apps.energy.layouts import LAYOUTS
+
+        lay = LAYOUTS.get(o.ref_key)
+        if not lay or (o.ref_key == "network" and not mods.enabled("energy_network")):
+            return None
+        data, names, button = {"layout": o.ref_key, "title": "Energie: " + lay["label"], "enabled": True}, {"": "Energie: " + lay["label"]}, {}
     elif o.kind == "marketing":
         from apps.core import modules as mods
 
@@ -81,7 +89,7 @@ def _row(o, public=False):
     row = {"id": o.id, "slug": o.slug, "kind": o.kind, "enabled": o.enabled, "names": names, "button": button, "data": data}
     if not public:
         row.update(kind_label=dict(SystemObject.KINDS)[o.kind], used_on=service.usage(o.slug), source_id=o.ref_id,
-                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen", "ai": "/dashboard/superadmin/ai", "pricelist": "/dashboard/superadmin/prijzen", "installation": "/dashboard/superadmin/prijzen"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
+                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen", "ai": "/dashboard/superadmin/ai", "pricelist": "/dashboard/superadmin/prijzen", "installation": "/dashboard/superadmin/prijzen", "energy": "/dashboard/admin/energy"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
     return row
 
 
@@ -111,7 +119,7 @@ def public_list(request):
 
     out = []
     for o in SystemObject.objects.filter(enabled=True):
-        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins", "media": "media", "calculator": "sysobjects", "marketing": "sysobjects", "pricelist": "sysobjects", "ai": "ai", "installation": "sysobjects"}[o.kind]):
+        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins", "media": "media", "calculator": "sysobjects", "marketing": "sysobjects", "pricelist": "sysobjects", "ai": "ai", "installation": "sysobjects", "energy": "energy"}[o.kind]):
             continue
         r = _row(o, public=True)
         if r and o.kind in ("plugin", "plugin_item", "plugin_part") and not r["data"]["enabled"]:
