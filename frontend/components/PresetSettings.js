@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import DemoData from "./DemoData";
+import PresetPlugins from "./PresetPlugins";
 import Tabs from "./Tabs";
 import { PresetIcon } from "./Icons";
 
@@ -28,7 +29,7 @@ export default function PresetSettings({ p, manage, adminOnly, demo, onRelease, 
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setSaving(false);
   };
-  const tabs = [["general", "Algemeen"], ...(manage ? [["ai", "AI"]] : []), ["modules", "Modules"], ...(demo ? [["demo", "Demo-gegevens"]] : [])];
+  const tabs = [["general", "Algemeen"], ...(manage ? [["ai", "AI"]] : []), ["modules", "Modules"], ["plugins", "Plugins"], ...(demo ? [["demo", "Demo-gegevens"]] : [])];
   const num = (k) => (e) => setAi({ ...ai, [k]: e.target.value });
   const body = (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -76,6 +77,14 @@ export default function PresetSettings({ p, manage, adminOnly, demo, onRelease, 
             {manage && !adminOnly && <div className="alert ok" style={{ margin: 0 }}>{tx("Easy2edit-koppeling: Stripe")} <small className="muted">{p.system_api?.stripe ? tx("Gekoppeld en aan (Superadmin-koppeling). Hoort bij elke installatie en blijft staan als je een installatie instelt of verwijdert.") : tx("Hoort bij elke installatie, maar is nog niet gekoppeld (API keys → Stripe → Superadmin-koppeling).")}</small></div>}
             <strong>{tx("{0} modules", p.modules.length)}</strong>
             <small className="muted">{p.modules.map((m) => tx(m)).join(", ")}</small>
+          </>)}
+          {tab === "plugins" && manage && !adminOnly && <PresetPlugins preset={p.key} />}
+          {tab === "plugins" && !(manage && !adminOnly) && (<>
+            <p className="muted" style={{ margin: 0 }}>{tx("Dit zijn de plugins en modules van deze installatie volgens de standaardconfiguratie. Een superadmin past ze aan.")}</p>
+            <h3 style={{ margin: ".2rem 0 0" }}>{tx("Plugins")} ({p.plugins.length})</h3>
+            {p.plugins.length ? <ul className="ct-list">{p.plugins.map((x) => <li key={x.name}><strong>{x.title}</strong><small className="muted">{x.name}</small><span className={`badge ${x.installed ? "ok" : "off"}`}>{x.installed ? tx("Geïnstalleerd") : tx("Niet geïnstalleerd")}</span></li>)}</ul> : <p className="muted">{tx("Deze installatie heeft geen plugins.")}</p>}
+            <h3 style={{ margin: ".6rem 0 0" }}>{tx("Modules")} ({p.modules.length})</h3>
+            {p.modules.length ? <ul className="ct-list">{p.modules.map((m) => <li key={m}><strong>{tx(m)}</strong></li>)}</ul> : <p className="muted">{tx("Geen modules.")}</p>}
           </>)}
           {tab === "demo" && demo && <div className="preset-demo"><DemoData preset={p.key} name={p.name} editable={manage && !adminOnly} demoCfg={p.demo_cfg} price={p.price} contents={p.contents} showPurchase={!adminOnly} active={!!p.active} parts={p.demo_parts} shop={(p.plugins || []).some((x) => x.name === "webshop")} /></div>}
         </div>

@@ -23,6 +23,7 @@ urlpatterns = [
     path("plugins/<slug:name>/items/upload/", v.item_upload),
     path("plugins/<slug:name>/items/<slug:item>/download/", v.item_download),
     path("plugins/<slug:name>/download/", v.plugin_download),
+    path("plugins/<slug:name>/demo/", v.plugin_demo),
     path("plugins/<slug:name>/items/<slug:item>/", v.item),
     path("plugins/<slug:name>/items/<slug:item>/preview/", v.item_preview),
     path("plugins/<slug:name>/items/<slug:item>/image/", v.item_image),

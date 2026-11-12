@@ -47,9 +47,16 @@ export function PluginConfig({ p, onSaved }) {
   const save = async () => { try { onSaved(await api(`/plugins/${p.name}/`, { method: "PATCH", body: { config: cfg } })); } catch { return false; } };
   const auto = useAutoSave(cfg, save, { delay: 1000 });
   if (!p.config_schema.length) return <p className="muted" style={{ margin: 0 }}>{tx("Deze plugin heeft geen instellingen.")}</p>;
+  const rows = [];  // consecutive switches (bool) form one block with columns; the other fields keep the full width
+  for (const c of p.config_schema) {
+    const last = rows[rows.length - 1];
+    if (c.type === "bool" && last?.bools) last.items.push(c); else rows.push({ bools: c.type === "bool", items: [c] });
+  }
   return (
     <div className="form">
-      {p.config_schema.map((c) => <Field key={c.key} c={c} value={cfg[c.key]} onChange={(v) => setCfg((x) => ({ ...x, [c.key]: v }))} />)}
+      {rows.map((r, n) => r.bools
+        ? <div key={n} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: ".6rem 1.5rem" }}>{r.items.map((c) => <Field key={c.key} c={c} value={cfg[c.key]} onChange={(v) => setCfg((x) => ({ ...x, [c.key]: v }))} />)}</div> // switches next to each other, in columns
+        : <Field key={r.items[0].key} c={r.items[0]} value={cfg[r.items[0].key]} onChange={(v) => setCfg((x) => ({ ...x, [r.items[0].key]: v }))} />)}
       <SaveStatus auto={auto} />
     </div>
   );
@@ -119,6 +126,30 @@ export function PluginOverview({ p }) {
       </div>
       <PluginWarnings p={p} />
       {p.error && <div className="alert">{p.error}</div>}
+      <PluginDemo p={p} />
+    </div>
+  );
+}
+
+// Demo content of a plugin (when it offers any): one button makes it, and when it is there the same button takes it away. Also removed by "Systeem resetten".
+function PluginDemo({ p }) {
+  const [st, setSt] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  useEffect(() => { if (p.enabled && (p.provides || []).includes("demo")) api(`/plugins/${p.name}/demo/`).then(setSt).catch(() => setSt(null)); }, [p.name, p.enabled, p.provides]);
+  if (!st?.available) return null;
+  const run = async () => {
+    if (st.exists && !(await confirmDialog(tx("Alle demo-inhoud van deze plugin verwijderen? Je eigen inhoud blijft staan."), { okLabel: tx("Verwijderen"), cancelLabel: tx("Annuleren"), danger: true }))) return;
+    setBusy(true); setMsg(null);
+    try { setSt(await api(`/plugins/${p.name}/demo/`, { method: "POST", body: { action: st.exists ? "remove" : "create" } })); setMsg({ ok: true, text: st.exists ? tx("Demo-inhoud is verwijderd.") : tx("Demo-inhoud is toegevoegd.") }); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
+  return (
+    <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: ".8rem" }}>
+      <span className="muted">{st.exists ? tx("Demo-inhoud is aanwezig.") : tx("Nog geen inhoud? Voeg voorbeeldinhoud toe.")}</span>
+      <button type="button" className={`btn ${st.exists ? "danger" : "primary"}`} disabled={busy} onClick={run}>{busy ? tx("Bezig…") : st.exists ? tx("Verwijder demo content") : tx("Maak demo content")}</button>
+      {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ flexBasis: "100%", margin: 0 }}>{msg.text}</div>}
     </div>
   );
 }

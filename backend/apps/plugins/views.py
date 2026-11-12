@@ -8,6 +8,7 @@
 """Plugins: admin (superadmin) endpoints, the menu, the files of a plugin's own pages, and the routes plugins add."""
 import io
 import json
+import logging
 import mimetypes
 import re
 import zipfile
@@ -27,6 +28,8 @@ from django.conf import settings
 
 from . import installer, manifest as mf, runtime, signing
 from .models import Plugin
+
+logger = logging.getLogger(__name__)
 
 MOD = module_required("plugins")
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
@@ -183,6 +186,41 @@ def plugin_download(request, name):
     if not p:
         return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
     return _zip_response(installer.zip_plugin(p), f"{p.name}-{p.manifest.get('version', '1.0.0')}.zip")
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated, MOD])
+def plugin_demo(request, name):
+    """The demo content of a plugin (the plugin offers it with system.provide("demo")), superadmins only. GET: is there any; POST {action: "create" | "remove"}: make it or take it away."""
+    if not request.user.is_staff:
+        return STAFF
+    p = Plugin.objects.filter(name=name).first()
+    if not p:
+        return bad("Plugin niet gevonden.", status.HTTP_404_NOT_FOUND)
+    offer = dict(runtime.providers("demo")).get(name) if p.enabled else None
+    if offer is None:
+        return Response({"available": False, "exists": False, "counts": {}})
+    state = lambda: (lambda c: {"available": True, "exists": any(int(v or 0) > 0 for v in c.values()), "counts": c})(offer.counts() or {})  # noqa: E731
+    if request.method == "GET":
+        return Response(state())
+    action = (request.data or {}).get("action")
+    try:
+        if action == "create":
+            made = offer.create()
+        elif action == "remove":
+            made = offer.remove()
+        else:
+            return bad("Onbekende actie.")
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Demo content of plugin %s failed", name)
+        return bad(f"Het lukte niet: {str(e)[:200]}", status.HTTP_500_INTERNAL_SERVER_ERROR)
+    try:  # new system objects (a presentation per demo design) are listed at once
+        from apps.sysobjects import service as so
+
+        so.sync()
+    except Exception:  # noqa: BLE001
+        pass
+    return Response({**state(), "result": made})
 
 
 @api_view(["GET"])

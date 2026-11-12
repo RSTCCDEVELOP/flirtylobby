@@ -730,6 +730,12 @@ def presets_list(request):
     who = _preset_access(request.user)
     if not who:
         return Response({"detail": "Geen toegang."}, status=status.HTTP_403_FORBIDDEN)
+    try:  # a new default configuration (installations.json from a site update) is on this site at once, not only after a restart; unchanged file = nothing happens
+        from . import installations_config
+
+        installations_config.apply()
+    except Exception:  # noqa: BLE001 - the list must always open
+        logger.exception("installations.json could not be applied")
     rows = presets.listing()
     if who == "all":
         return Response(rows)
