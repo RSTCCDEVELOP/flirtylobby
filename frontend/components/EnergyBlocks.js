@@ -189,7 +189,7 @@ function Network({ n }) {
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="table-wrap"><table>
           <thead><tr><th>{tx("Website")}</th><th>{tx("Paginagewicht")}</th><th>{tx("Verzoeken")}</th><th>{tx("Uitstoot per bezoek")}</th><th>{tx("Bezoeken")}</th><th>{tx("Label")}</th></tr></thead>
-          <tbody>{n.sites.map((s) => <tr key={s.name + (s.url || "")}><td><strong>{s.name}</strong>{s.own && <small className="muted"> · {tx("deze website")}</small>}{s.error && <small style={{ display: "block", color: "var(--danger)" }}>{s.error}</small>}</td>
+          <tbody>{n.sites.map((s) => <tr key={s.name + (s.url || "")}><td><strong>{s.name}</strong>{s.own && <small className="muted"> · {tx("deze website")}</small>}{s.self_site && <small className="muted"> · {tx("deze website zelf (telt niet dubbel)")}</small>}{s.error && <small style={{ display: "block", color: "var(--danger)" }}>{s.error}</small>}</td>
             <td>{s.ok ? fmtBytes(s.summary.avg_page_bytes || 0) : "—"}</td><td>{s.ok ? nf(s.summary.avg_requests || 0, 1) : "—"}</td><td>{s.ok ? fmtG(s.summary.avg_co2_g || 0) : "—"}</td><td>{s.ok ? fmtN(s.summary.views || 0) : "—"}</td><td>{s.ok && s.summary.rating ? <Rating r={s.summary.rating} size={26} /> : ""}</td></tr>)}</tbody>
         </table></div>
       </div>

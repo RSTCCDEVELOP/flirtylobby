@@ -11,7 +11,9 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
-import { IconInfo, IconX } from "./Icons";
+import { IconBolt, IconInfo, IconX } from "./Icons";
+import EnergyLive from "./EnergyLive";
+import { useModules } from "./Modules";
 import { Logo } from "./BrandingContext";
 import Tabs from "./Tabs";
 
@@ -21,6 +23,7 @@ function Popup({ onClose }) {
   const [err, setErr] = useState("");
   const [tab, setTab] = useState("info");
   const [openGroup, setOpenGroup] = useState(""); // only one section open at a time
+  const mods = useModules();
   useEffect(() => { api("/system/info/").then(setD).catch((e) => setErr(errorText(e))); }, []);
   useEffect(() => { const k = (e) => { if (e.key === "Escape") onClose(); }; document.addEventListener("keydown", k); return () => document.removeEventListener("keydown", k); }, [onClose]);
   return createPortal(
@@ -33,7 +36,7 @@ function Popup({ onClose }) {
         {d && (
           <>
             <h2 style={{ margin: ".4rem 0 0", textAlign: "center" }}>{d.name} <small className="muted">{tx("versie")} {d.version} {tx("build")} {d.build}</small></h2>
-            <Tabs value={tab} onChange={setTab} tabs={[["info", "Info"], ["plugins", "Plugins", null, d.plugins.length], ["modules", "Modules", null, d.modules.length], ["about", "Over"]]} />
+            <Tabs value={tab} onChange={setTab} tabs={[["info", "Info"], ["plugins", "Plugins", null, d.plugins.length], ["modules", "Modules", null, d.modules.length], ...(mods.energy !== false ? [["green", "Green", <IconBolt key="g" />]] : []), ["about", "Over"]]} />
             <div style={{ marginTop: ".8rem" }}>
               {tab === "info" && (
                 <ul className="info-plugins">
@@ -47,6 +50,7 @@ function Popup({ onClose }) {
                   <li><span>{tx("Modules")}</span><span className="info-ver">{d.modules.filter((m) => m.enabled).length} {tx("aan")} / {d.modules.length}</span></li>
                 </ul>
               )}
+              {tab === "green" && <EnergyLive />}
               {tab === "about" && (
                 <ul className="info-plugins">
                   <li><span>{tx("Reseller")}</span><span className="info-ver"><strong>Studio2 Communications BV</strong> · <a href="https://www.studio2.nl" target="_blank" rel="noreferrer">www.studio2.nl</a></span></li>

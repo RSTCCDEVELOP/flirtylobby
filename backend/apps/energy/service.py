@@ -22,7 +22,7 @@ from django.db.models import F, Max, Sum
 from django.db.models.functions import Greatest
 from django.utils import timezone
 
-from .models import EnergyDay, EnergyScan, EnergySettings, EnergySite
+from .models import EnergyBucket, EnergyDay, EnergyScan, EnergySettings, EnergySite
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,10 @@ def record(path, nbytes, nreq):
         return False
     row, _ = EnergyDay.objects.get_or_create(day=timezone.localdate(), path=path)
     EnergyDay.objects.filter(pk=row.pk).update(views=F("views") + 1, bytes_total=F("bytes_total") + nbytes, requests_total=F("requests_total") + nreq, bytes_max=Greatest(F("bytes_max"), nbytes))
+    now = timezone.now()
+    slot = now.replace(minute=now.minute - now.minute % 10, second=0, microsecond=0)
+    bucket, _ = EnergyBucket.objects.get_or_create(ts=slot)
+    EnergyBucket.objects.filter(pk=bucket.pk).update(views=F("views") + 1, bytes_total=F("bytes_total") + nbytes, requests_total=F("requests_total") + nreq)
     if random.random() < 0.002:
         prune()
     return True
@@ -83,6 +87,7 @@ def record(path, nbytes, nreq):
 def prune():
     st = EnergySettings.load()
     EnergyDay.objects.filter(day__lt=timezone.localdate() - timedelta(days=st.retention_days)).delete()
+    EnergyBucket.objects.filter(ts__lt=timezone.now() - timedelta(days=3)).delete()
     for p in set(EnergyScan.objects.values_list("path", flat=True)):  # per page only the latest 30 scans
         old = list(EnergyScan.objects.filter(path=p).values_list("pk", flat=True)[30:])
         if old:
@@ -139,7 +144,7 @@ def public_payload(days=30):
     from apps.core import system
 
     d = summary(days)
-    return {"site": {"name": own_name(), "url": system.get().get("frontend_url", "")}, "generated_at": timezone.now().isoformat(), "version": 1, **d}
+    return {"site": {"name": own_name(), "url": system.get().get("frontend_url", "")}, "instance": EnergySettings.load().instance_id, "generated_at": timezone.now().isoformat(), "version": 1, **d}
 
 
 # ── our own scan: all the files that a page loads ──
@@ -225,9 +230,12 @@ def scan_page(base, path):
     url = base.rstrip("/") + ("" if path == "/" else path)
     host = urlparse(base).netloc
     breakdown = {"html": 0, "script": 0, "style": 0, "image": 0, "font": 0, "other": 0}
+    plain = 0
     try:
         body, ctype, enc = _fetch(url, timeout=40)
         breakdown["html"] += len(body)
+        if not re.search(r"gzip|br|deflate|zstd", enc) and len(body) > 1500:
+            plain += len(body)
         html = _text(body, enc)
     except Exception as e:  # noqa: BLE001
         return EnergyScan.objects.create(path=path, ok=False, error=f"De pagina kon niet worden opgehaald: {str(e)[:200]}")
@@ -245,6 +253,8 @@ def scan_page(base, path):
         requests += 1
         k = _kind(u, ct)
         breakdown[k] += len(b)
+        if k in ("script", "style") and not re.search(r"gzip|br|deflate|zstd", en) and len(b) > 1500:
+            plain += len(b)  # a text file that came without compression
         if k == "style":  # the fonts and pictures that a stylesheet loads
             css = _text(b, en)
             for m in list(re.finditer(r"url\(\s*[\"']?([^)\"']+)", css))[:30]:
@@ -252,6 +262,7 @@ def scan_page(base, path):
                 if not ref.startswith("data:") and urlparse(ref).netloc == host and ref not in done and ref not in todo:
                     todo.append(ref)
     total = sum(breakdown.values())
+    breakdown["plain_text"] = plain  # how much of the text (html, scripts, styles) was sent without compression: the advice tab uses it
     return EnergyScan.objects.create(path=path, bytes=total, requests=requests, breakdown=breakdown)
 
 
@@ -272,24 +283,43 @@ def _api_url(url):
     return u if "/api/energy/" in u else u + "/api/energy/public/"
 
 
+def check_site_url(url):
+    """A website that the superadmin connects: http(s), no password in the address, and not the cloud metadata address. Local addresses (localhost:8000) are allowed: only a superadmin can add a site."""
+    import ipaddress
+    import socket
+
+    p = urlparse(url)
+    if p.scheme not in ("http", "https") or not p.hostname:
+        raise ValueError("Gebruik een adres als https://www.voorbeeld.nl of https://localhost:8000/api/energy/public/")
+    if p.username or p.password:
+        raise ValueError("Zet geen wachtwoord in het adres; gebruik het veld Sleutel.")
+    try:
+        for info in socket.getaddrinfo(p.hostname, p.port or (443 if p.scheme == "https" else 80), proto=socket.IPPROTO_TCP):
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_link_local or ip.is_unspecified or ip.is_multicast:
+                raise ValueError("Dit adres is niet toegestaan.")
+    except OSError:
+        raise ValueError("Het adres is niet gevonden.")
+
+
 def fetch_site(site, days=30):
     """Reads the API of a site and keeps the answer. Never raises: the result (ok or the reason) is saved with the site."""
-    from apps.core.webtoolkit import ImportError_, check_public
-
     site.last_fetched = timezone.now()
     try:
-        url = _api_url(site.url) + f"?days={days}"
-        check_public(url)
+        url = _api_url(site.url) + ("&" if "?" in _api_url(site.url) else "?") + f"days={days}"
+        check_site_url(url)
         req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "Easy2edit-Energy/1.0", **({"X-Energy-Key": site.api_key} if site.api_key else {})})
-        with urllib.request.urlopen(req, timeout=10) as res:
+        host = urlparse(url).hostname or ""
+        ctx = ssl._create_unverified_context() if host in ("localhost", "127.0.0.1", "::1") else None  # a local test site has its own certificate
+        with urllib.request.urlopen(req, timeout=10, context=ctx) as res:
             data = json.loads(res.read(3_000_000))
         if not isinstance(data, dict) or "summary" not in data:
             raise ValueError("Dit is niet het antwoord van de energie-API.")
-        site.data = {k: data.get(k) for k in ("site", "generated_at", "period_days", "source", "summary", "benchmark", "series", "pages", "scans", "model")}
+        site.data = {k: data.get(k) for k in ("site", "instance", "generated_at", "period_days", "source", "summary", "benchmark", "series", "pages", "scans", "model")}
         site.last_ok, site.last_error = True, ""
     except urllib.error.HTTPError as e:
         site.last_ok, site.last_error = False, {401: "De sleutel klopt niet.", 403: "De API van deze website staat uit of vraagt een sleutel.", 404: "Geen energie-API gevonden op dit adres."}.get(e.code, f"De website antwoordt met een fout (HTTP {e.code}).")
-    except ImportError_ as e:
+    except ValueError as e:
         site.last_ok, site.last_error = False, str(e)
     except Exception as e:  # noqa: BLE001
         site.last_ok, site.last_error = False, f"Geen verbinding of een onverwacht antwoord: {str(e)[:160]}"
@@ -312,13 +342,20 @@ def network(public=False):
 
     own = summary(30)
     rows = [(_site_row(own_name(), system.get().get("frontend_url", ""), own, own=True, ok=True, error="", fetched=timezone.now().isoformat()), own)]
+    me = EnergySettings.load().instance_id
     for s in EnergySite.objects.filter(enabled=True):
         ok = bool(s.last_ok and s.data)
-        row = _site_row(s.name, (s.data.get("site") or {}).get("url") or s.url, s.data if ok else {}, id=s.pk, ok=ok, error="" if public else s.last_error, fetched=s.last_fetched.isoformat() if s.last_fetched else None)
+        is_self = ok and (s.data or {}).get("instance") == me  # this website itself, read through its API: it is already in the list, so not counted twice
+        row = _site_row(s.name, (s.data.get("site") or {}).get("url") or s.url, s.data if ok and not is_self else {}, id=s.pk, ok=ok, error="" if public else s.last_error, fetched=s.last_fetched.isoformat() if s.last_fetched else None, self_site=bool(is_self))
+        if is_self:
+            row["ok"] = True
+            row["summary"] = {}
+            if public:
+                continue
         if public and not ok:
             continue
         rows.append((row, s.data if ok else {}))
-    used = [(r, d) for r, d in rows if r["ok"] and (r["summary"].get("avg_page_bytes") or 0) > 0]
+    used = [(r, d) for r, d in rows if r["ok"] and not r.get("self_site") and (r["summary"].get("avg_page_bytes") or 0) > 0]
     views = sum(r["summary"].get("views") or 0 for r, _ in used)
     w = lambda r: (r["summary"].get("views") or 0) if views else 1  # noqa: E731
     wsum = sum(w(r) for r, _ in used) or 1
@@ -343,3 +380,41 @@ def network(public=False):
         "benchmark": {"page_bytes": BENCH_BYTES, "requests": BENCH_REQUESTS, "co2_g": round(co2_g(BENCH_BYTES, st), 4), "vs_pct": round((avg_b / BENCH_BYTES - 1) * 100) if avg_b else 0},
         "sites": [r for r, _ in rows], "series": series,
     }
+
+
+# ── live: the estimated electricity of the page views of the last hours ──
+def live(hours=3, st=None):
+    """Points of the estimated power use (W) of the data that the visitors loaded: per 10 minutes (3 hours) or per hour (24 hours); gaps are zero so the line keeps moving."""
+    st = st or EnergySettings.load()
+    hours = 24 if hours == 24 else 3
+    step = 60 if hours == 24 else 10
+    now = timezone.now()
+    end = now.replace(minute=now.minute - now.minute % step if step == 10 else 0, second=0, microsecond=0)
+    n = hours * 60 // step
+    start = end - timedelta(minutes=step * (n - 1))
+    rows = {}
+    for b in EnergyBucket.objects.filter(ts__gte=start):
+        k = b.ts.replace(minute=0) if step == 60 else b.ts
+        a = rows.setdefault(k, [0, 0])
+        a[0] += b.views
+        a[1] += b.bytes_total
+    points = []
+    for i in range(n):
+        t = start + timedelta(minutes=step * i)
+        v, by = rows.get(t, [0, 0])
+        wh = kwh(by, st) * 1000
+        points.append({"t": timezone.localtime(t).isoformat(), "views": v, "bytes": by, "wh": round(wh, 4), "w": round(wh / (step / 60), 4)})
+    recent = points[-3:] if step == 10 else points[-1:]
+    span_h = len(recent) * step / 60
+    rw = sum(p["wh"] for p in recent) / span_h if span_h else 0
+    tot_b = sum(p["bytes"] for p in points)
+    return {"hours": hours, "step_minutes": step, "generated_at": now.isoformat(), "points": points, "model": model(st),
+            "now": {"w": round(rw, 4), "views": sum(p["views"] for p in points), "wh": round(sum(p["wh"] for p in points), 4), "co2_g": round(co2_g(tot_b, st), 4), "gb": round(tot_b / 1e9, 5)}}
+
+
+def api_url(request):
+    """The address that other websites (the main portal) use to read the figures of this website."""
+    from apps.core import system
+
+    be = (system.get().get("backend_url") or "").rstrip("/")
+    return (be or request.build_absolute_uri("/").rstrip("/")) + "/api/energy/public/"

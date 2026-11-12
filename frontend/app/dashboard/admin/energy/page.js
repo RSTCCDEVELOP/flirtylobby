@@ -10,6 +10,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Tabs from "../../../../components/Tabs";
 import EnergyBlock, { fmtBytes, fmtG, fmtN, resetEnergy } from "../../../../components/EnergyBlocks";
+import EnergyAdvice from "../../../../components/EnergyAdvice";
+import EnergySettingsPanel from "../../../../components/EnergySettings";
 import { IconBolt, IconCheck } from "../../../../components/Icons";
 import { api, errorText } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
@@ -31,8 +33,7 @@ export default function EnergyAdmin() {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
   const [stamp, setStamp] = useState(0);
-  const [form, setForm] = useState(null);
-  const load = useCallback(() => api(`/admin/energy/?days=${days}`).then((r) => { setD(r); setForm((f) => f || { ...r.settings, scan_paths: r.settings.scan_paths.join("\n") }); }).catch((e) => setMsg({ ok: false, text: errorText(e) })), [days]);
+  const load = useCallback(() => api(`/admin/energy/?days=${days}`).then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) })), [days]);
   useEffect(() => { load(); }, [load]);
   const refresh = () => { resetEnergy(); setStamp((x) => x + 1); return load(); };
 
@@ -42,7 +43,7 @@ export default function EnergyAdmin() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); } finally { setBusy(""); }
   };
   const patch = async (body, okText) => {
-    try { const r = await api("/admin/energy/settings/", { method: "PATCH", body }); setD((o) => ({ ...o, settings: r })); setForm({ ...r, scan_paths: r.scan_paths.join("\n") }); resetEnergy(); setMsg({ ok: true, text: okText || tx("Opgeslagen.") }); }
+    try { const r = await api("/admin/energy/settings/", { method: "PATCH", body }); setD((o) => ({ ...o, settings: r })); resetEnergy(); setMsg({ ok: true, text: okText || tx("Opgeslagen.") }); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
   const toggleLayout = async (l) => { try { const r = await api("/admin/energy/objects/", { method: "POST", body: { key: l.key, on: !l.on } }); setD((o) => ({ ...o, layouts: r })); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
@@ -57,7 +58,7 @@ export default function EnergyAdmin() {
       <div className="page-head"><div><h1>{tx("Energie & uitstoot")}</h1>
         <p className="muted" style={{ margin: 0 }}>{tx("Hoeveel data de pagina's versturen en wat dat aan energie en CO2 kost: gemeten bij bezoekers en met een scan, te tonen op je website en via een API te koppelen aan andere websites.")}</p></div></div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
-      <Tabs value={tab} onChange={setTab} tabs={[["overview", "Overzicht", <IconBolt key="o" />], ["api", "API"], ["layouts", "Weergaven", null, d.layouts.filter((l) => l.on).length], ["settings", "Instellingen"]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["overview", "Overzicht", <IconBolt key="o" />], ["advice", "Advies"], ["api", "API"], ["layouts", "Weergaven", null, d.layouts.filter((l) => l.on).length], ["settings", "Instellingen"]]} />
 
       {tab === "overview" && (
         <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
@@ -82,6 +83,8 @@ export default function EnergyAdmin() {
           )}
         </div>
       )}
+
+      {tab === "advice" && <EnergyAdvice measuring={busy === "scan"} onMeasure={scan} onChanged={() => { resetEnergy(); setStamp((x) => x + 1); }} />}
 
       {tab === "api" && (
         <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
@@ -130,18 +133,7 @@ export default function EnergyAdmin() {
         </div>
       )}
 
-      {tab === "settings" && form && (
-        <form className="card form" style={{ marginTop: "1rem", display: "grid", gap: "1rem", maxWidth: 760 }} onSubmit={(e) => { e.preventDefault(); patch({ kwh_per_gb: Number(form.kwh_per_gb), g_per_kwh: Number(form.g_per_kwh), retention_days: Number(form.retention_days), scan_paths: form.scan_paths }); }}>
-          <p className="muted" style={{ margin: 0 }}>{tx("De uitstoot is een schatting: het paginagewicht (data) wordt omgerekend naar energie voor de hele keten (servers, netwerk en apparaat) en daarna naar CO2. Het model heet Sustainable Web Design.")}</p>
-          <div className="grid2">
-            <label>{tx("Energie per GB data (kWh)")}<input type="number" step="0.01" min="0.05" max="5" value={form.kwh_per_gb} onChange={(e) => setForm({ ...form, kwh_per_gb: e.target.value })} /><small className="muted">{tx("Standaard 0,81")}</small></label>
-            <label>{tx("CO2 per kWh (gram)")}<input type="number" step="1" min="10" max="1500" value={form.g_per_kwh} onChange={(e) => setForm({ ...form, g_per_kwh: e.target.value })} /><small className="muted">{tx("Standaard 442 (wereldgemiddelde). Gebruik de waarde van het land van je hosting voor een nauwkeuriger cijfer.")}</small></label>
-          </div>
-          <label>{tx("Pagina's voor \"Meet nu\"")}<textarea rows={4} value={form.scan_paths} onChange={(e) => setForm({ ...form, scan_paths: e.target.value })} placeholder={"/\n/prijzen"} /><small className="muted">{tx("Eén pagina per regel, bijvoorbeeld /prijzen. Leeg is de startpagina.")}</small></label>
-          <label>{tx("Metingen bewaren (dagen)")}<input type="number" min="30" max="1100" value={form.retention_days} onChange={(e) => setForm({ ...form, retention_days: e.target.value })} style={{ maxWidth: 160 }} /></label>
-          <div className="row" style={{ justifyContent: "flex-start" }}><button className="btn primary">{tx("Opslaan")}</button></div>
-        </form>
-      )}
+      {tab === "settings" && <div style={{ marginTop: "1rem" }}><EnergySettingsPanel onSaved={() => { resetEnergy(); setStamp((x) => x + 1); load(); }} /></div>}
     </>
   );
 }

@@ -24,6 +24,18 @@ class EnergyDay(models.Model):
         ordering = ["-day", "path"]
 
 
+class EnergyBucket(models.Model):
+    """The same measurements per 10 minutes (for the live graph of the power use); kept for three days."""
+
+    ts = models.DateTimeField(unique=True)
+    views = models.PositiveIntegerField(default=0)
+    bytes_total = models.BigIntegerField(default=0)
+    requests_total = models.BigIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-ts"]
+
+
 class EnergyScan(models.Model):
     """A measurement made by the server itself (a scan of one page with all the files it loads): the page weight without having to wait for visitors."""
 
@@ -50,11 +62,19 @@ class EnergySettings(models.Model):
     network_title = models.CharField(max_length=120, blank=True)
     scan_paths = models.JSONField(default=list, blank=True)  # the pages that "Meet nu" scans; empty = the start page
     retention_days = models.PositiveSmallIntegerField(default=400)
+    instance_id = models.CharField(max_length=40, blank=True)  # a random id of this installation: the collector uses it to see that a connected site is this site itself (so it is not counted twice)
+    advice = models.JSONField(default=dict, blank=True)  # what the advice tab applied: {"applied": {"fonts": {"at", "before", "result"}, ...}}
     objects_seeded = models.BooleanField(default=False)  # the layouts (system objects) were made once; after that Admin → Energie decides which exist
 
     @classmethod
     def load(cls):
-        return cls.objects.get_or_create(pk=1)[0]
+        st = cls.objects.get_or_create(pk=1)[0]
+        if not st.instance_id:
+            import uuid
+
+            st.instance_id = uuid.uuid4().hex
+            st.save(update_fields=["instance_id"])
+        return st
 
 
 class EnergySite(models.Model):

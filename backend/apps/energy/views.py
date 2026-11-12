@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from apps.accounts.permissions import has_level
 from apps.core.modules import module_required
 
+from . import advice as advice_lib
 from . import service
 from .layouts import LAYOUTS
 from .models import EnergySettings, EnergySite
@@ -84,6 +85,18 @@ def view(request):
 
 @api_view(["GET"])
 @permission_classes([AllowAny, module_required("energy")])
+def live(request):
+    """For the Green tab (Info): the estimated power use of the last hours, and the address of the API to hand to the main portal."""
+    st = EnergySettings.load()
+    try:
+        hours = int(request.GET.get("hours", 3))
+    except ValueError:
+        hours = 3
+    return Response({**service.live(hours, st), "site": service.own_name(), "api": {"url": service.api_url(request), "enabled": st.api_public, "key_required": bool(st.api_key)}})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny, module_required("energy")])
 def public(request):
     """For other websites: the figures of this website. On by default; an API key can be required (Admin → Energie → API)."""
     st = EnergySettings.load()
@@ -103,13 +116,13 @@ def overview(request):
 
     st = EnergySettings.load()
     on = set(SystemObject.objects.filter(kind="energy").values_list("ref_key", flat=True))
-    base = request.build_absolute_uri("/api/energy/public/")
-    return Response({**service.public_payload(_days(request)), "settings": _settings(st), "endpoints": {"public": base, "network": request.build_absolute_uri("/api/energy/network/")},
+    base = service.api_url(request)
+    return Response({**service.public_payload(_days(request)), "settings": _settings(st, request), "endpoints": {"public": base, "network": request.build_absolute_uri("/api/energy/network/")},
                      "layouts": [{"key": k, "label": v["label"], "desc": v["desc"], "on": k in on, "slug": f"energy-{k}"} for k, v in LAYOUTS.items()]})
 
 
-def _settings(st):
-    return {"kwh_per_gb": float(st.kwh_per_gb), "g_per_kwh": float(st.g_per_kwh), "api_public": st.api_public, "api_key": st.api_key, "scan_paths": st.scan_paths or ["/"], "retention_days": st.retention_days,
+def _settings(st, request=None):
+    return {"api_url": service.api_url(request) if request else "", "kwh_per_gb": float(st.kwh_per_gb), "g_per_kwh": float(st.g_per_kwh), "api_public": st.api_public, "api_key": st.api_key, "scan_paths": st.scan_paths or ["/"], "retention_days": st.retention_days,
             "network_public": st.network_public, "network_title": st.network_title}
 
 
@@ -138,7 +151,7 @@ def settings(request):
             raw = d["scan_paths"] if isinstance(d["scan_paths"], list) else str(d["scan_paths"] or "").replace(",", "\n").split("\n")
             st.scan_paths = [service.clean_path(p) for p in raw if str(p).strip()][:20]
         st.save()
-    return Response(_settings(st))
+    return Response(_settings(st, request))
 
 
 @api_view(["POST"])
@@ -172,7 +185,10 @@ def objects(request):
 
 # ── the collector ──
 def _site(s):
-    return {"id": s.pk, "name": s.name, "url": s.url, "api_key": bool(s.api_key), "enabled": s.enabled, "order": s.order, "ok": s.last_ok, "error": s.last_error, "fetched": s.last_fetched.isoformat() if s.last_fetched else None,
+    from . import service as _svc
+
+    me = EnergySettings.load().instance_id
+    return {"self_site": bool(s.last_ok and (s.data or {}).get("instance") == me), "id": s.pk, "name": s.name, "url": s.url, "api_key": bool(s.api_key), "enabled": s.enabled, "order": s.order, "ok": s.last_ok, "error": s.last_error, "fetched": s.last_fetched.isoformat() if s.last_fetched else None,
             "summary": (s.data or {}).get("summary") or {}}
 
 
@@ -253,3 +269,33 @@ def network_refresh(request):
         service.refresh_all()
     st = EnergySettings.load()
     return Response({**service.network(), "sites_admin": [_site(s) for s in EnergySite.objects.all()], "settings": {"network_public": st.network_public, "network_title": st.network_title}})
+
+
+# ── the advice tab ──
+@api_view(["GET", "POST"])
+@permission_classes(MANAGE)
+def advice(request):
+    """GET: what makes the pages heavy and the score that is expected after the advice. POST {params}: the same with other picture settings (to see the effect before applying)."""
+    params = request.data.get("params") if request.method == "POST" and isinstance(request.data, dict) else None
+    return Response(advice_lib.analyse(params))
+
+
+@api_view(["POST"])
+@permission_classes(MANAGE)
+def advice_apply(request):
+    sel = request.data if isinstance(request.data, dict) else {}
+    try:
+        done = advice_lib.apply(sel)
+    except ValueError as e:
+        return bad(str(e))
+    return Response({"done": done, **advice_lib.analyse(sel.get("images") if isinstance(sel.get("images"), dict) else None)})
+
+
+@api_view(["POST"])
+@permission_classes(MANAGE)
+def advice_revert(request):
+    try:
+        out = advice_lib.revert(str(request.data.get("key") or ""))
+    except ValueError as e:
+        return bad(str(e))
+    return Response({"done": out, **advice_lib.analyse()})
