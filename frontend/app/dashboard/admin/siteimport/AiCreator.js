@@ -64,16 +64,20 @@ export function AiCreatorPopup({ jobId, onClose, onImport }) {
   const [again, setAgain] = useState(false); // back to the step plan of a finished design
   const chat = useRef(null);
 
-  const reload = useCallback(async () => { try { setJob(await api(`/sitecreator/${jobId}/`)); } catch (e) { setErr(errorText(e)); } }, [jobId]);
-  useEffect(() => { reload(); }, [reload]);
-  useEffect(() => { if (job?.status !== "running") return undefined; const t = setTimeout(reload, 2000); return () => clearTimeout(t); }, [job, reload]);
+  // The files of a design (html with css) can be several MB: only the full load asks for them; the answers of saving and polling are light and keep the files that are already here.
+  const merge = useCallback((r) => setJob((prev) => ({ ...r, files: r.files && Object.keys(r.files).length ? r.files : prev?.files || {} })), []);
+  const reload = useCallback(async (full = true) => { try { merge(await api(`/sitecreator/${jobId}/${full ? "?files=1" : ""}`)); } catch (e) { setErr(errorText(e)); } }, [jobId, merge]);
+  const was = useRef("");
+  useEffect(() => { reload(true); }, [reload]);
+  useEffect(() => { if (job?.status !== "running") return undefined; const t = setTimeout(() => reload(false), 2000); return () => clearTimeout(t); }, [job, reload]);
+  useEffect(() => { if (was.current === "running" && job?.status && job.status !== "running") reload(true); was.current = job?.status || ""; }, [job?.status, reload]); // ready: now fetch the files
   useEffect(() => { chat.current?.scrollTo({ top: 1e6 }); }, [job?.messages?.length, job?.status]);
 
   const send = async (e) => {
     e?.preventDefault();
     if (!text.trim() || sending || job?.status === "running") return;
     setSending(true); setErr("");
-    try { setJob(await api(`/sitecreator/${jobId}/revise/`, { method: "POST", body: { text, page } })); setText(""); }
+    try { merge(await api(`/sitecreator/${jobId}/revise/`, { method: "POST", body: { text, page } })); setText(""); }
     catch (x) { setErr(errorText(x)); }
     finally { setSending(false); }
   };
@@ -93,7 +97,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport }) {
           {!wizard && ready && !running && <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => onImport(job)}>{tx("Importeren in Easy2edit")}</button>}
           <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
         {!job && <p className="muted" style={{ padding: "1rem" }}>{err || tx("Laden…")}</p>}
-        {wizard && <Wizard key={job.id + (again ? "a" : "")} job={job} onJob={setJob} onGenerate={(j) => { setAgain(false); setJob(j); }} />}
+        {wizard && <Wizard key={job.id + (again ? "a" : "")} job={job} onJob={merge} onReload={() => reload(true)} onGenerate={(j) => { setAgain(false); merge(j); }} />}
         {job && !wizard && (
           <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(280px, 380px) 1fr" }}>
             <div style={{ display: "flex", flexDirection: "column", minHeight: 0, borderRight: "1px solid var(--line)" }}>

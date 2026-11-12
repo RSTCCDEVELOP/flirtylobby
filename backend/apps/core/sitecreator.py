@@ -320,11 +320,10 @@ def read_zip(job, upload, user):
 
     if job.status not in ("draft", "done", "error"):
         raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
-    data = upload.read(40 * 2**20 + 1)
-    if len(data) > 40 * 2**20:
+    if getattr(upload, "size", 0) > 40 * 2**20:
         raise ValueError("Het ZIP-bestand is te groot (maximaal 40 MB).")
     try:
-        z = zipfile.ZipFile(io.BytesIO(data))
+        z = zipfile.ZipFile(upload)  # read from the uploaded file itself: no second copy in memory
     except zipfile.BadZipFile:
         raise ValueError("Dit is geen geldig ZIP-bestand.")
     files, photos, taken = {}, list((job.brief or {}).get("photos") or []), {p["file"] for p in (job.brief or {}).get("photos") or []}
@@ -823,8 +822,8 @@ def _doc_public(d):
     return out
 
 
-def public(job):
+def public(job, files=False):
     b = job.brief or {}
-    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": job.files or {}, "messages": job.messages or [], "brief": b,
+    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "file_names": sorted(job.files or {}), "messages": job.messages or [], "brief": b,
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
             "docs": [_doc_public(d) for d in job.docs or []]}

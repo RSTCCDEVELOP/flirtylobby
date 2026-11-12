@@ -5533,5 +5533,7 @@
   "Je code voor het ondertekenen van de algemene voorwaarden": "Your code for signing the terms and conditions",
   "De code is 15 minuten geldig. Heb je dit niet zelf gevraagd, negeer dit bericht dan.": "The code is valid for 15 minutes. If you did not ask for this yourself, ignore this message.",
   "Superadmin: typ @ in het veld om de code automatisch in te vullen.": "Superadmin: type @ in the field to fill in the code automatically.",
-  "code automatisch ingevuld": "code filled in automatically"
+  "code automatisch ingevuld": "code filled in automatically",
+  "Het ZIP-bestand is te groot (maximaal 40 MB). Laat grote afbeeldingen weg: je kunt je foto's apart uploaden bij stap Foto's.": "The ZIP file is too big (maximum 40 MB). Leave out large images: you can upload your photos separately at the Photos step.",
+  "Geen verbinding met de server: er kwam geen antwoord. Controleer je internet en probeer het opnieuw. Bij een groot bestand: probeer een kleiner bestand.": "No connection to the server: there was no answer. Check your internet and try again. With a large file: try a smaller file."
 }

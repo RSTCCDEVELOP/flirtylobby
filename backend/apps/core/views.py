@@ -1867,7 +1867,7 @@ def sitecreator_job(request, pk):
             job = sitecreator.save(job, request.data)
         except ValueError as e:
             return _bad(str(e))
-    return Response(sitecreator.public(job))
+    return Response(sitecreator.public(job, files=request.GET.get("files") == "1"))  # the files (html with css) can be several MB: only when asked for
 
 
 @api_view(["POST"])

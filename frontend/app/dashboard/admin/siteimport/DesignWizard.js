@@ -34,7 +34,7 @@ const Both = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const MODE_ICON = { light: Sun, dark: Moon, both: Both };
 
 // The step plan. Every change is saved at once (a draft on the server), so you can stop and continue later.
-export default function Wizard({ job, onJob, onGenerate }) {
+export default function Wizard({ job, onJob, onGenerate, onReload }) {
   const [b, setB] = useState(job.brief || {});
   const [step, setStep] = useState(Math.min(LAST, job.brief?.step || 0));
   const [themes, setThemes] = useState([]);
@@ -123,12 +123,13 @@ export default function Wizard({ job, onJob, onGenerate }) {
   };
   const readZip = async (e) => {
     const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
+    if (f.size > 40 * 2 ** 20) { setErr(tx("Het ZIP-bestand is te groot (maximaal 40 MB). Laat grote afbeeldingen weg: je kunt je foto's apart uploaden bij stap Foto's.")); return; }
     setBusy("zip"); setErr("");
     try {
       await flush();
       const fd = new FormData(); fd.append("file", f);
       const r = await api(`/sitecreator/${job.id}/zip/`, { method: "POST", body: fd });
-      setB((o) => ({ ...o, ...r.brief })); onJob(r);
+      setB((o) => ({ ...o, ...r.brief })); onJob(r); onReload?.(); // the files of the design come in a separate (light) call
       if (r.notes?.length) setErr(r.notes.join(" "));
     } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
   };

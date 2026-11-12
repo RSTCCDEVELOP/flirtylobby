@@ -85,6 +85,8 @@ export async function downloadPost(path, body, filename) {
 
 // Flatten DRF field errors into one readable string
 export function errorText(err) {
+  // the browser says "Load failed" (Safari) or "Failed to fetch" (Chrome) when there was no answer at all: the connection broke, or the server did not answer in time
+  if (!(err instanceof ApiError) && /load failed|failed to fetch|networkerror|network request failed/i.test(err?.message || "")) return tx("Geen verbinding met de server: er kwam geen antwoord. Controleer je internet en probeer het opnieuw. Bij een groot bestand: probeer een kleiner bestand.");
   if (!(err instanceof ApiError) || !err.data) return tx(err.message || "Er ging iets mis.");
   if (err.data.detail) return tx(err.data.detail);
   return Object.entries(err.data)
