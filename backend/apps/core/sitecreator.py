@@ -423,6 +423,11 @@ def _doc_text(data, ext):
     return data.decode("utf-8", "replace"), 1
 
 
+def _doc_alive(pk, doc_id):
+    row = SiteDesignJob.objects.filter(pk=pk).first()
+    return bool(row and any(d.get("id") == doc_id for d in row.docs or []))
+
+
 def _doc_set(pk, doc_id, **kw):
     with transaction.atomic():
         job = SiteDesignJob.objects.select_for_update().filter(pk=pk).first()
@@ -476,21 +481,36 @@ def _read_document(pk, doc_id):
             "modules": [{"key": m["key"], "label": m["label"], "what": m["desc"]} for m in cat["modules"]],
             "languages": [{"code": l["code"], "name": l["native"]} for l in cat["languages"] if l["enabled"] or l["default"]],
         }, ensure_ascii=False)
-        _doc_set(pk, doc_id, percent=30, step="Claude leest de doelstellingen")
+        _doc_set(pk, doc_id, percent=30, step="Easy2edit leest de doelstellingen")
         seen = {"n": 0}
 
         def on_event(kind, _t=""):
             if kind == "write" and not seen["n"]:
                 seen["n"] = 1
-                _doc_set(pk, doc_id, percent=60, step="Claude bepaalt de instellingen")
+                _doc_set(pk, doc_id, percent=60, step="Easy2edit bepaalt de instellingen")
 
         from . import themeimport as TI
 
-        raw = ai.claude_stream(DOC_SYSTEM, f"SETTINGS THAT YOU CAN CHOOSE FROM:\n{context}\n\nDOCUMENT ({doc['name']}):\n{text[:DOC_TEXT]}", max_tokens=3000, timeout=240, on_event=on_event)
+        gone = {"t": 0.0, "v": False}
+
+        def cancel():  # the document was removed (Annuleren) while it is being read: stop at once
+            now = time.monotonic()
+            if now - gone["t"] > 0.8:
+                gone.update(t=now, v=not _doc_alive(pk, doc_id))
+            if gone["v"]:
+                raise Stopped("Geannuleerd")
+
+        if not _doc_alive(pk, doc_id):
+            return
+        raw = ai.claude_stream(DOC_SYSTEM, f"SETTINGS THAT YOU CAN CHOOSE FROM:\n{context}\n\nDOCUMENT ({doc['name']}):\n{text[:DOC_TEXT]}", max_tokens=3000, timeout=240, on_event=on_event, cancel=cancel)
         result = TI._parse_json(raw, need=("summary", "goals"))
+        if not _doc_alive(pk, doc_id):
+            return
         _doc_set(pk, doc_id, percent=82, step="De instellingen toepassen", result=result)
         applied = apply_result(pk, result)
         _doc_set(pk, doc_id, status="done", percent=100, step="Klaar", summary=str(result.get("summary") or "")[:800], goals=[str(g)[:200] for g in (result.get("goals") or [])[:8]], applied=applied, error="")
+    except Stopped:
+        return  # the document was removed while it was being read
     except Exception as e:  # noqa: BLE001
         logger.exception("sitecreator document")
         _doc_set(pk, doc_id, status="error", percent=100, step="Mislukt", error=str(e) if isinstance(e, ValueError) else "Het document kon niet worden gelezen. Probeer het nog eens.")

@@ -32,7 +32,7 @@ export function AiCreatorHome({ onOpen, refreshKey }) {
   const del = async (x) => { if (!(await confirmDialog(tx("Dit ontwerp verwijderen? Wat je hebt ingevuld en gemaakt gaat verloren, ook de geüploade documenten."), { danger: true, title: tx("Ontwerp verwijderen"), okLabel: tx("Verwijderen") }))) return; await api(`/sitecreator/${x.id}/`, { method: "DELETE" }).catch(() => {}); load(); };
   return (
     <div style={{ marginTop: ".75rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
-      <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een paar stappen: stijl, kleuren, pagina's en foto's. Daarna maakt Claude alle pagina's en importeer je ze als bewerkbare pagina's. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
+      <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een paar stappen: stijl, kleuren, pagina's en foto's. Daarna maakt Easy2edit alle pagina's en importeer je ze als bewerkbare pagina's. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
       {err && <div className="alert">{err}</div>}
       <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" disabled={busy || d?.ai === false} onClick={create}><IconBolt /> {tx("Nieuw ontwerp")}</button></div>
       {d?.ai === false && <div className="alert">{tx("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")}</div>}
@@ -76,13 +76,13 @@ function ImprovePopup({ onClose, onStart, busy }) {
                   {FOCUS.map(([k]) => { const on = pick.includes(k); return <button type="button" key={k} className={`dw-chip ${on ? "on" : ""}`} aria-pressed={on} onClick={() => setPick(on ? pick.filter((x) => x !== k) : [...pick, k])}>{on && <IconCheck />} {tx(k)}</button>; })}
                 </div></div>
               <label>{tx("Eigen opdracht")} <small className="muted">{tx("optioneel")}</small><textarea rows={3} maxLength={400} value={text} onChange={(e) => setText(e.target.value)} placeholder={tx("bv. maak de koppen rustiger en geef de knoppen meer ruimte")} /></label>
-              <small className="muted">{canGo ? tx("Claude past alleen aan wat je hier vraagt.") : tx("Kies een aandachtspunt of schrijf een opdracht: zonder opdracht verandert er niets.")}</small>
+              <small className="muted">{canGo ? tx("Easy2edit past alleen aan wat je hier vraagt.") : tx("Kies een aandachtspunt of schrijf een opdracht: zonder opdracht verandert er niets.")}</small>
               <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button><button type="button" className="btn primary" disabled={busy || !canGo} onClick={go}><IconBolt /> {busy ? tx("Starten…") : tx("Start verbeteren")}</button></div>
             </div>
           )}
           {tab === "how" && (
             <div className="muted" style={{ display: "grid", gap: ".6rem" }}>
-              <p style={{ margin: 0 }}>{tx("Claude verbetert alle pagina's na elkaar: de opmaak, de teksten en de structuur. Je ziet de voortgang met een percentage.")}</p>
+              <p style={{ margin: 0 }}>{tx("Easy2edit verbetert alle pagina's na elkaar: de opmaak, de teksten en de structuur. Je ziet de voortgang met een percentage.")}</p>
               <p style={{ margin: 0 }}>{tx("Je kunt het altijd stoppen. Wat al klaar was blijft bewaard; de rest blijft zoals het was.")}</p>
               <p style={{ margin: 0 }}>{tx("Na het verbeteren kun je de vorige versie terugzetten.")}</p>
             </div>
@@ -231,7 +231,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                   <div style={{ width, maxWidth: "100%", height: "100%", background: "#fff", boxShadow: dev === "web" ? "none" : "0 0 0 1px var(--line), 0 10px 40px rgba(0,0,0,.4)", opacity: running ? .6 : 1, transition: "opacity .3s" }}>
                     <iframe title={tx("Voorbeeld")} sandbox="" srcDoc={previewHtml(job.files, cur, job.brief?.photos)} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
                   </div>
-                ) : <p className="muted" style={{ alignSelf: "center" }}>{running ? tx("Claude ontwerpt je website… de eerste pagina verschijnt hier zodra hij klaar is.") : ""}</p>}
+                ) : <p className="muted" style={{ alignSelf: "center" }}>{running ? tx("Easy2edit ontwerpt je website… de eerste pagina verschijnt hier zodra hij klaar is.") : ""}</p>}
               </div>
             </div>
           </div>

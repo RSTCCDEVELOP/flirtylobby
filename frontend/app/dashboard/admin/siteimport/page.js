@@ -87,12 +87,12 @@ function ApplyOptions({ opts, setOpts, needMode, canReplace, languages }) {
   return (
     <div className="stack-sm" style={{ display: "flex", flexDirection: "column", gap: ".9rem", marginTop: "1rem" }}>
       <div><strong>{tx("Weergave")}</strong>
-        {[["design", tx("Exact: 1 op 1 zoals het bestand"), tx("De pagina ziet er precies uit als het html-bestand. Teksten pas je aan door het bestand opnieuw te importeren.")], ["blocks", tx("Bewerkbaar: opbouwen met blokken"), tx("Claude bouwt de pagina na met de blokken van het systeem, zodat je alles in de bewerkmodus kunt aanpassen. Dit is een benadering: kaarten, iconen en bijzondere vormen kunnen afwijken.")]].map(([k, l, h]) => (
+        {[["design", tx("Exact: 1 op 1 zoals het bestand"), tx("De pagina ziet er precies uit als het html-bestand. Teksten pas je aan door het bestand opnieuw te importeren.")], ["blocks", tx("Bewerkbaar: opbouwen met blokken"), tx("Easy2edit bouwt de pagina na met de blokken van het systeem, zodat je alles in de bewerkmodus kunt aanpassen. Dit is een benadering: kaarten, iconen en bijzondere vormen kunnen afwijken.")]].map(([k, l, h]) => (
           <label key={k} className="check" style={{ display: "flex", gap: ".5rem", marginTop: ".3rem" }}><input type="radio" name="si-render" checked={(opts.render || "design") === k} onChange={() => set({ render: k })} /><span>{l} <small className="muted">{h}</small></span></label>
         ))}
       </div>
-      {blocks && <label>{tx("Opdracht voor Claude (om de pagina te verbeteren)")} <small className="muted">{tx("Optioneel. Bijvoorbeeld: maak de koppen groter, meer ruimte tussen de blokken, de knoppen in het midden.")}</small>
-        <textarea rows={3} value={opts.prompt} maxLength={1500} onChange={(e) => set({ prompt: e.target.value })} placeholder={tx("Wat moet Claude anders doen?")} />
+      {blocks && <label>{tx("Opdracht voor Easy2edit (om de pagina te verbeteren)")} <small className="muted">{tx("Optioneel. Bijvoorbeeld: maak de koppen groter, meer ruimte tussen de blokken, de knoppen in het midden.")}</small>
+        <textarea rows={3} value={opts.prompt} maxLength={1500} onChange={(e) => set({ prompt: e.target.value })} placeholder={tx("Wat moet Easy2edit anders doen?")} />
       </label>}
       {blocks && needMode && (
         <div><strong>{tx("Er staat al inhoud op de gekozen pagina. Wat moet er gebeuren?")}</strong>
@@ -189,7 +189,7 @@ function Detail({ imp, onChanged, onApply, busy }) {
         return (
           <div className="card" id={`si-map-${imp.id}`} style={{ borderColor: "var(--blue)" }}>
             <strong>{imp.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Pagina's koppelen en toepassen")}</strong>
-            <p className="muted" style={{ margin: ".3rem 0 .8rem" }}>{tx("De originele html is bewaard: je kunt dit zo vaak herhalen, ook met een nieuwe opdracht voor Claude. Kies per tabblad wat er gebeurt en klik onderaan op Toepassen.")}</p>
+            <p className="muted" style={{ margin: ".3rem 0 .8rem" }}>{tx("De originele html is bewaard: je kunt dit zo vaak herhalen, ook met een nieuwe opdracht voor Easy2edit. Kies per tabblad wat er gebeurt en klik onderaan op Toepassen.")}</p>
             <Tabs value={atab} onChange={setAtab} tabs={tabsDef} />
             {atab === "pages" && (<div>
               <PageMapper sources={info.sources.map((x) => ({ key: x.key, title: x.title, sub: x.path }))} targets={info.targets} map={map} onChange={setMap} freeLabel={tx("Eigen pagina van de import")} />
@@ -299,7 +299,7 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
 
       {tab === "theme" && (
         <div className="form">
-          <p className="muted" style={{ margin: 0 }}>{tx("Claude heeft uit de kleuren, lettertypen en vormen van het bestand een thema gemaakt.")} {pr.theme.description}</p>
+          <p className="muted" style={{ margin: 0 }}>{tx("Easy2edit heeft uit de kleuren, lettertypen en vormen van het bestand een thema gemaakt.")} {pr.theme.description}</p>
           <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}><strong>{pr.theme.name}</strong><Swatches colors={[pr.theme.values?.primary, pr.theme.values?.secondary, ...(pr.theme.palette || []).slice(0, 5)].filter((c, k, a) => c && a.indexOf(c) === k)} /></div>
           <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={useTheme} onChange={(e) => setUseTheme(e.target.checked)} /><span /></span><span>{tx("Thema maken")} <small className="muted">{tx("Het thema komt in de themabibliotheek en kan hierna met één klik worden gebruikt.")}</small></span></label>
         </div>
@@ -369,7 +369,7 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
           onChange={(m) => setPages((l) => l.map((x) => ({ ...x, target: m[String(x.i)] || "" })))} freeLabel={tx("Nieuwe pagina maken")} />
         <ApplyOptions opts={opts} setOpts={setOpts} languages={pr.languages}
           needMode={pages.some((p) => p.include && p.target && ((pr.targets || []).find((t) => t.key === p.target) || {}).rows > 0)} canReplace={false} />
-        <label className="check sec-toggle" style={{ marginTop: "1rem" }}><span className="switch"><input type="checkbox" checked={direct} onChange={(e) => setDirect(e.target.checked)} /><span /></span><span>{tx("Direct na het importeren toepassen")} <small className="muted">{tx("Claude bouwt de pagina's dan meteen op met blokken die je kunt aanpassen. Uit: de pagina's staan eerst als ontwerp en je past ze later toe.")}</small></span></label>
+        <label className="check sec-toggle" style={{ marginTop: "1rem" }}><span className="switch"><input type="checkbox" checked={direct} onChange={(e) => setDirect(e.target.checked)} /><span /></span><span>{tx("Direct na het importeren toepassen")} <small className="muted">{tx("Easy2edit bouwt de pagina's dan meteen op met blokken die je kunt aanpassen. Uit: de pagina's staan eerst als ontwerp en je past ze later toe.")}</small></span></label>
         </div>
       )}
 
@@ -431,7 +431,7 @@ export default function SiteImport() {
   };
   const done = (r) => tx("\"{0}\" is ingelezen. Controleer hieronder het voorstel; pas na je akkoord wordt er iets aangemaakt.", r.name);
   const start = (body) => {
-    if (body instanceof FormData && body.get("kind") === "html") return startHtml(body); // the analysis by Claude runs in the background: with a progress bar
+    if (body instanceof FormData && body.get("kind") === "html") return startHtml(body); // the analysis by Easy2edit runs in the background: with a progress bar
     return run("import", () => api("/siteimport/", { method: "POST", body }), done).then((r) => { if (r) { setProposal(r); showProposal(); } });
   };
   // Waits until the analysis of an import is ready, and shows how far it is (the part from..to of the bar).
@@ -439,6 +439,7 @@ export default function SiteImport() {
     const t0 = Date.now();
     let fails = 0;
     for (;;) {
+      if (cancelRef.current.requested) throw new Error("Geannuleerd");
       let d = null;
       try { d = await api(`/siteimport/${id}/`); fails = 0; } catch (e) { if (++fails > 6) throw e; } // a broken connection for a moment is not the end
       if (d) {
@@ -453,23 +454,28 @@ export default function SiteImport() {
   };
   const startHtml = async (fd) => {
     setBusy(""); setMsg(null);
+    cancelRef.current = { requested: false, importId: null, phase: "upload", abort: null, drop: true };
     setProg({ title: tx("Inlezen"), name: String(fd.get("name") || "") || tx("Ontwerp"), percent: 0, step: tx("Uploaden…"), error: "", built: [], state: "running" });
     try {
-      const r = await apiUpload("/siteimport/", fd, (pct) => setProg((p) => ({ ...(p || {}), percent: pct * 0.08, step: `${tx("Uploaden…")} ${pct}%` })));
+      const r = await apiUpload("/siteimport/", fd, (pct) => setProg((p) => ({ ...(p || {}), percent: pct * 0.08, step: `${tx("Uploaden…")} ${pct}%` })), cancelRef.current);
+      cancelRef.current.importId = r.id; cancelRef.current.phase = "analyse";
       const d = await waitForProposal(r.id, 8, 100);
       setProg(null); await load(); setProposal(d); showProposal();
       setMsg({ ok: true, text: tx("\"{0}\" is ingelezen. Controleer hieronder het voorstel; pas na je akkoord wordt er iets aangemaakt.", d.name) });
-    } catch (e) { setProg((p) => ({ ...(p || {}), error: errorText(e), state: "error" })); await load(); }
+    } catch (e) { if (cancelRef.current.requested) return; setProg((p) => ({ ...(p || {}), error: errorText(e), state: "error" })); await load(); }
   };
   const importZip = (e) => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; const fd = new FormData(); fd.append("kind", "zip"); fd.append("file", f); fd.append("name", themeName); start(fd); };
   const importHtml = (e) => { const fl = Array.from(e.target.files || []); e.target.value = ""; if (!fl.length) return; const fd = new FormData(); fd.append("kind", "html"); fl.forEach((f) => fd.append("file", f)); fd.append("name", themeName); start(fd); };
   const showProposal = () => setTimeout(() => document.getElementById("si-proposal")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);  // the proposal stands above the list: bring it into view
+  const cancelRef = useRef({ requested: false, importId: null, phase: "", abort: null, drop: false }); // Annuleren: what is going on, so it can be stopped and (for a new import) removed again
   const [prog, setProg] = useState(null); // {name, percent, step, error, built}: the progress of an application (Toepassen)
   const applyImport = (i) => { // the columns to link the pages are in the details of the import
     setOpen(i.id);
     setTimeout(() => document.getElementById(`si-map-${i.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 250);
   };
   const runApply = async (i, map, opts = {}, range = [0, 100]) => { // range: the part of the bar that this step has (a design that is applied also has the reading and the proposal)
+    if (cancelRef.current.importId !== i.id) cancelRef.current = { requested: false, importId: i.id, phase: "apply", abort: null, drop: false }; // an application of an existing import: Annuleren only stops it
+    cancelRef.current.phase = "apply";
     const mix = (st) => (p) => ({ ...p, ...st, percent: range[0] + ((st.percent || 0) * (range[1] - range[0])) / 100 });
     setProg((p) => ({ title: p?.title, name: i.name, percent: range[0] + 1, step: tx("Starten…"), error: "", built: [], state: "running" }));
     try {
@@ -477,11 +483,13 @@ export default function SiteImport() {
       setProg(mix(st));
       while (st.state === "running" && !st.stale) {
         await new Promise((r) => setTimeout(r, 1500));
+        if (cancelRef.current.requested) return;
         st = await api(`/siteimport/${i.id}/apply/`);
+        if (cancelRef.current.requested) return;
         setProg(mix(st));
       }
       if (st.state === "running") setProg((p) => ({ ...p, error: tx("De server reageert niet meer. Probeer het straks nog eens.") }));
-    } catch (e) { setProg((p) => ({ ...p, error: errorText(e), state: "error" })); }
+    } catch (e) { if (cancelRef.current.requested) return; setProg((p) => ({ ...p, error: errorText(e), state: "error" })); }
     await load();
   };
   // The files of a design as the form of the html import: the pages, the css, the svg's and the photos that the pages use.
@@ -500,11 +508,13 @@ export default function SiteImport() {
     const wname = String(job.brief?.name || "").trim();
     if (!wname) { setDesignOpen(true); setMsg({ ok: false, text: tx("Geef de website een naam. De naam van de website is verplicht.") }); return; }
     setDesignOpen(false); setTab("html");
+    cancelRef.current = { requested: false, importId: null, phase: "upload", abort: null, drop: true };
     setProg({ title: tx("Toepassen"), name: wname, percent: 1, step: tx("Het ontwerp klaarzetten…"), error: "", built: [], state: "running" });
     try {
       const fd = await buildImportForm(job);
-      const r = await apiUpload("/siteimport/", fd, (pct) => setProg((p) => ({ ...(p || {}), percent: pct * 0.05, step: `${tx("Uploaden…")} ${pct}%` })));
-      const got = await waitForProposal(r.id, 5, 40); // Claude reads the design and makes the proposal: 5 - 40 %
+      const r = await apiUpload("/siteimport/", fd, (pct) => setProg((p) => ({ ...(p || {}), percent: pct * 0.05, step: `${tx("Uploaden…")} ${pct}%` })), cancelRef.current);
+      cancelRef.current.importId = r.id; cancelRef.current.phase = "analyse";
+      const got = await waitForProposal(r.id, 5, 40); // Easy2edit reads the design and makes the proposal: 5 - 40 %
       const pr = got.proposal;
       if (!pr) throw new Error(tx("Het ontwerp kon niet worden ingelezen."));
       setProg((p) => ({ ...p, percent: 42, step: tx("Pagina's, afbeeldingen en modules vastleggen…") }));
@@ -523,7 +533,26 @@ export default function SiteImport() {
       await load(); setOpen(ap.id);
       await runApply(ap, null, { render: o.render || "blocks", mode: "clear", prompt: "", translate: !!o.translate }, [45, 100]); // the pages are built: 45 - 100 %
       if (themeNote) setProg((p) => (p ? { ...p, themeNote } : p));
-    } catch (e) { setProg((p) => ({ ...(p || { name: job.name, percent: 0, built: [] }), error: errorText(e), state: "error" })); }
+    } catch (e) { if (cancelRef.current.requested) return; setProg((p) => ({ ...(p || { name: job.name, percent: 0, built: [] }), error: errorText(e), state: "error" })); }
+  };
+  // Annuleren: stops the reading or the building. Something that was made new by this run is taken away again (nothing stays behind); an application of an existing import only stops.
+  const cancelProg = async () => {
+    const c = cancelRef.current;
+    if (c.requested) return;
+    const drop = !!(c.drop && c.importId);
+    if (!(await confirmDialog(drop ? tx("Annuleren? Alles wat al is gemaakt wordt weer weggehaald.") : tx("Annuleren? Het toepassen stopt. Wat al gebouwd is blijft staan; je kunt het verwijderen of opnieuw toepassen."), { title: tx("Annuleren"), okLabel: tx("Ja, annuleren") }))) return;
+    c.requested = true;
+    setProg((p) => ({ ...(p || {}), step: tx("Bezig met annuleren…"), cancelling: true }));
+    try {
+      c.abort?.();
+      if (c.phase === "apply" && c.importId) {
+        await api(`/siteimport/${c.importId}/apply/`, { method: "POST", body: { cancel: true } });
+        for (let n = 0; n < 100; n += 1) { const st = await api(`/siteimport/${c.importId}/apply/`); if (st.state !== "running") break; await new Promise((r) => setTimeout(r, 1500)); }
+      }
+      if (drop) await api(`/siteimport/${c.importId}/`, { method: "DELETE" });
+      setMsg({ ok: true, text: drop ? tx("Geannuleerd. Er is niets achtergebleven.") : tx("Geannuleerd.") });
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setProg(null); setProposal(null); await load();
   };
   const [shown, setShown] = useState(null); // {title, path}: a page of the site in a window
   const [view, setView] = useState(null); // the design of one page, to look at
@@ -586,14 +615,14 @@ export default function SiteImport() {
             <div style={{ marginTop: ".75rem" }}>
               <div className="dropzone" role="button" tabIndex={0} onClick={() => htmlFile.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && htmlFile.current.click()}
                 onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); importHtml({ target: { files: e.dataTransfer.files, value: "" } }); }}>
-                <span>{busy === "import" ? tx("Claude leest de bestanden en maakt het voorstel… dit duurt even.") : tx("Sleep één of meer html-bestanden hierheen (met eventueel de css en de afbeeldingen) of klik om te kiezen")}</span>
+                <span>{busy === "import" ? tx("Easy2edit leest de bestanden en maakt het voorstel… dit duurt even.") : tx("Sleep één of meer html-bestanden hierheen (met eventueel de css en de afbeeldingen) of klik om te kiezen")}</span>
                 <input ref={htmlFile} type="file" multiple accept=".html,.htm,.css,image/*,text/html" hidden onChange={importHtml} />
               </div>
             </div>
           )}
           {tab === "ai" && <AiCreatorHome refreshKey={designOpen} onOpen={(id) => { setDesignId(id); setDesignOpen(true); }} />}
           <small className="muted" style={{ display: "block", marginTop: ".6rem" }}>
-            {tab === "ai" ? tx("Claude ontwerpt de pagina's met illustraties; foto's voeg je daarna zelf toe in de mediabibliotheek. Het ontwerpen kost AI-tegoed. Er is pas iets aangemaakt na je akkoord bij het importeren.") : tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. Claude maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
+            {tab === "ai" ? tx("Easy2edit ontwerpt de pagina's met illustraties; foto's voeg je daarna zelf toe in de mediabibliotheek. Het ontwerpen kost AI-tegoed. Er is pas iets aangemaakt na je akkoord bij het importeren.") : tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. Easy2edit maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
           </small>
         </Collapsible>
       )}
@@ -613,6 +642,7 @@ export default function SiteImport() {
               {prog.state === "done" && prog.warning && <div className="alert">{prog.warning}</div>}
               {prog.state === "done" && prog.themeNote && <div className="alert ok">{prog.themeNote}</div>}
               {prog.state === "done" && <div className="alert ok">{tx("Klaar. De pagina's zijn opgebouwd:")} {(prog.built || []).map((b) => <a key={b.path} href={b.path} target="_blank" rel="noreferrer" style={{ marginLeft: ".4rem" }}>{b.title}</a>)}</div>}
+              {prog.state === "running" && <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn danger" disabled={!!prog.cancelling} onClick={cancelProg}>{prog.cancelling ? tx("Bezig met annuleren…") : tx("Annuleren")}</button></div>}
               {prog.state !== "running" && <div className="row" style={{ justifyContent: "flex-start" }}>
                 {prog.state === "done" && !prog.error && (prog.built || []).map((b, n, all) => <a key={b.path} className={`btn${n === 0 ? " primary" : ""}`} href={b.path}>{all.length > 1 ? `${tx("Ga naar")} ${b.title}` : tx("Ga naar pagina")}</a>)}
                 <button className="btn" onClick={() => setProg(null)}>{tx("Sluiten")}</button>

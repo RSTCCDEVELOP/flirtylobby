@@ -58,13 +58,15 @@ export async function api(path, { method = "GET", body } = {}) {
 }
 
 // Sends a form with files and tells how far the upload is (onProgress(percent 0-100)); fetch cannot do that. Gives the answer like api() does.
-export function apiUpload(path, form, onProgress) {
+export function apiUpload(path, form, onProgress, ctl) { // ctl: an object that gets ctl.abort() to stop the upload (Annuleren)
   return new Promise((resolve, reject) => {
     const token = getToken();
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${getBase()}/api${path}`);
     if (token) xhr.setRequestHeader("Authorization", `Token ${token}`);
     xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.min(100, Math.round((e.loaded / e.total) * 100))); };
+    if (ctl) ctl.abort = () => xhr.abort();
+    xhr.onabort = () => reject(new Error("Geannuleerd"));
     xhr.onerror = () => reject(new TypeError("Failed to fetch"));
     xhr.ontimeout = () => reject(new TypeError("Failed to fetch"));
     xhr.onload = () => {

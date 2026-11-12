@@ -19,12 +19,12 @@ import { COLOR_ROLES, contrast, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, Design
 
 // The title and the explanation above every step.
 const META = [
-  ["Vertel over je website", "Naam, soort site en talen. Heb je al een ontwerp uit een AI-prompt? Lees het ZIP-bestand in, dan verbetert Claude dat met jouw keuzes."],
+  ["Vertel over je website", "Naam, soort site en talen. Heb je al een ontwerp uit een AI-prompt? Lees het ZIP-bestand in, dan verbetert Easy2edit dat met jouw keuzes."],
   ["Kies de stijl", "Begin bij een thema uit je systeem: de kleuren en hoeken worden overgenomen. Of kies je eigen stijl met een paar sfeerwoorden."],
   ["Kleuren en weergave", "Stel het kleurenpalet af, kies licht, donker of allebei, en bepaal het lettertype en de ronde hoeken."],
   ["Welke pagina's krijgt de website?", "De eerste pagina is de startpagina. Je past de namen en de volgorde van het menu aan."],
   ["Modules en plugins", "Alles wat je systeem kan, doet standaard mee. Zet uit wat je niet nodig hebt en kies de systeemobjecten die op de pagina's moeten komen."],
-  ["Foto's voor je ontwerp", "Upload je eigen foto's. Claude gebruikt ze op de plekken waar ze passen, op basis van jouw omschrijving."],
+  ["Foto's voor je ontwerp", "Upload je eigen foto's. Easy2edit gebruikt ze op de plekken waar ze passen, op basis van jouw omschrijving."],
   ["Controleer het ontwerp", "Zo ziet je website eruit met deze keuzes. Er is nog geen inhoud gemaakt: de teksten zijn voorbeelden."],
 ];
 
@@ -80,14 +80,14 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
   const upd = (patch) => { setB((o) => ({ ...o, ...patch })); pend.current = { ...pend.current, ...patch }; setSave("dirty"); clearTimeout(timer.current); timer.current = setTimeout(flush, 600); };
   useEffect(() => () => { flush(); }, [flush]);
   useEffect(() => { api("/sitecreator/").then((d) => setThemes(d.themes || [])).catch(() => {}); api("/sitecreator/catalog/").then(setCatalog).catch(() => {}); }, []);
-  useEffect(() => { // a document is being read: show the progress, and take over the settings that Claude made when it is ready
+  useEffect(() => { // a document is being read: show the progress, and take over the settings that Easy2edit made when it is ready
     if (!docs.some((d) => d.status === "reading")) return undefined;
     const t = setTimeout(async () => {
       try {
         const r = await api(`/sitecreator/${job.id}/`);
         const fin = r.docs.find((d) => d.status === "done" && docs.find((o) => o.id === d.id)?.status === "reading");
         setDocs(r.docs);
-        if (fin) { setB((o) => ({ ...r.brief, ...pend.current, step: o.step })); setDocNote(`${tx("Claude heeft de instellingen ingevuld uit")} ${fin.name}. ${tx("Controleer ze in de stappen.")}`); }
+        if (fin) { setB((o) => ({ ...r.brief, ...pend.current, step: o.step })); setDocNote(`${tx("Easy2edit heeft de instellingen ingevuld uit")} ${fin.name}. ${tx("Controleer ze in de stappen.")}`); }
       } catch { /* try again */ }
     }, 1400);
     return () => clearTimeout(t);
@@ -102,8 +102,8 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
       finally { setUp(null); }
     }
   };
-  const delDoc = async (d) => {
-    if (!(await confirmDialog(tx("Dit document verwijderen? De instellingen die Claude eruit heeft gehaald blijven staan."), { danger: true, title: tx("Document verwijderen"), okLabel: tx("Verwijderen") }))) return;
+  const delDoc = async (d, quiet = false) => {
+    if (!quiet && !(await confirmDialog(tx("Dit document verwijderen? De instellingen die Easy2edit eruit heeft gehaald blijven staan."), { danger: true, title: tx("Document verwijderen"), okLabel: tx("Verwijderen") }))) return;
     try { setDocs((await api(`/sitecreator/${job.id}/document/${d.id}/`, { method: "DELETE" })).docs); } catch (x) { setErr(errorText(x)); }
   };
   const reapply = async (d) => {
@@ -217,7 +217,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
           {step === 0 && (<>
             <div className="dw-panel">
               <h3>{tx("Doelstellingen uit een document")}</h3>
-              <p className="dw-hint">{tx("Heb je de doelstellingen van de website in een PDF- of Word-document? Plaats het hier: Claude leest het en vult de instellingen van de stappen voor je in. Jij controleert ze daarna.")}</p>
+              <p className="dw-hint">{tx("Heb je de doelstellingen van de website in een PDF- of Word-document? Plaats het hier: Easy2edit leest het en vult de instellingen van de stappen voor je in. Jij controleert ze daarna.")}</p>
               <div className="dw-drop" role="button" tabIndex={0} onClick={() => docRef.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && docRef.current.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addDocs(e.dataTransfer.files); }}>
                 <IconPaperclip /> <b>{tx("Sleep een PDF- of Word-document hierheen of klik om te kiezen")}</b>
                 <small style={{ display: "block", marginTop: ".3rem" }}>{tx("PDF, Word (.docx) of tekst · maximaal 10 MB. Het document wordt bewaard bij dit ontwerp, zodat je het later nog kunt controleren.")}</small>
@@ -234,7 +234,9 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
                     {d.status === "error" && <span className="badge off">{tx("Mislukt")}</span>}
                     <button type="button" className="btn sm" onClick={() => downloadFile(`/sitecreator/${job.id}/document/${d.id}/`, d.name).catch((x) => setErr(errorText(x)))}>{tx("Downloaden")}</button>
                     {d.status === "done" && <button type="button" className="btn sm" onClick={() => reapply(d)}>{tx("Opnieuw toepassen")}</button>}
-                    <button type="button" className="btn sm danger" disabled={d.status === "reading"} aria-label={tx("Verwijderen")} onClick={() => delDoc(d)}><IconTrash /></button>
+                    {d.status === "reading"
+                      ? <button type="button" className="btn sm danger" onClick={() => delDoc(d, true)}>{tx("Annuleren")}</button>
+                      : <button type="button" className="btn sm danger" aria-label={tx("Verwijderen")} onClick={() => delDoc(d)}><IconTrash /></button>}
                   </div>
                   {d.status === "reading" && (
                     <div>
@@ -247,7 +249,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
                     <div className="dw-doc-b">
                       {d.summary && <p style={{ margin: 0 }}>{d.summary}</p>}
                       {d.goals?.length > 0 && <div><small className="muted">{tx("Doelstellingen")}</small><ul>{d.goals.map((g, i) => <li key={i}>{g}</li>)}</ul></div>}
-                      {d.applied?.length > 0 && <div><small className="muted">{tx("Ingevuld door Claude")}</small><div className="dw-chips">{d.applied.map((a) => <span key={a} className="dw-tag"><IconCheck /> {tx(a)}</span>)}</div></div>}
+                      {d.applied?.length > 0 && <div><small className="muted">{tx("Ingevuld door Easy2edit")}</small><div className="dw-chips">{d.applied.map((a) => <span key={a} className="dw-tag"><IconCheck /> {tx(a)}</span>)}</div></div>}
                     </div>
                   )}
                 </div>
@@ -326,7 +328,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
             {improve && (
               <div className="dw-zip">
                 <span><b>{tx("Kleuren uit je ontwerp")}</b>
-                  <small className="muted" style={{ display: "block" }}>{palNote || (b.palette_from_zip ? tx("De kleuren, het lettertype en de hoeken zijn gelezen uit het ontwerp dat je hebt ingelezen. Pas je ze aan, dan gebruikt Claude jouw kleuren; laat je ze staan, dan blijft het ontwerp zoals het is.") : tx("Lees de kleuren, het lettertype en de hoeken uit het ingelezen ontwerp."))}</small></span>
+                  <small className="muted" style={{ display: "block" }}>{palNote || (b.palette_from_zip ? tx("De kleuren, het lettertype en de hoeken zijn gelezen uit het ontwerp dat je hebt ingelezen. Pas je ze aan, dan gebruikt Easy2edit jouw kleuren; laat je ze staan, dan blijft het ontwerp zoals het is.") : tx("Lees de kleuren, het lettertype en de hoeken uit het ingelezen ontwerp."))}</small></span>
                 <button type="button" className="btn" onClick={() => readPalette(false)}>{tx("Opnieuw uit het ontwerp lezen")}</button>
               </div>
             )}
@@ -396,7 +398,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
           {step === 5 && (<>
             <div className="dw-drop" role="button" tabIndex={0} onClick={() => photoRef.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && photoRef.current.click()} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addPhotos(e.dataTransfer.files); }}>
               <IconImage /> <b>{busy === "photo" ? tx("Bezig met uploaden…") : tx("Sleep foto's hierheen of klik om te kiezen")}</b>
-              <small style={{ display: "block", marginTop: ".3rem" }}>{tx("Ze komen ook in de mediabibliotheek (tag: design). Claude ziet de foto's niet: schrijf er kort bij wat erop staat.")}</small>
+              <small style={{ display: "block", marginTop: ".3rem" }}>{tx("Ze komen ook in de mediabibliotheek (tag: design). Easy2edit ziet de foto's niet: schrijf er kort bij wat erop staat.")}</small>
               <input ref={photoRef} type="file" accept="image/*" multiple hidden onChange={(e) => { addPhotos(e.target.files); e.target.value = ""; }} />
               {up?.what === "photo" && <div style={{ marginTop: ".7rem" }}><UploadBar pct={up.pct} label={tx("Foto's uploaden…")} /></div>}
             </div>
@@ -413,7 +415,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
                 </figure>
               ))}
             </div>}
-            {!(b.photos || []).length && <p className="muted" style={{ margin: 0 }}>{tx("Geen foto's? Dat is niet erg: Claude maakt illustraties en je voegt later foto's toe.")}</p>}
+            {!(b.photos || []).length && <p className="muted" style={{ margin: 0 }}>{tx("Geen foto's? Dat is niet erg: Easy2edit maakt illustraties en je voegt later foto's toe.")}</p>}
           </>)}
 
           {step === 6 && (<>
@@ -435,7 +437,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
                 [2, "Weergave en talen", tx((MODES.find((m) => m[0] === cmode) || [0, ""])[1]), `${tx("Hoofdtaal")}: ${b.lang || "—"}${(b.langs || []).length ? ` · ${tx("Andere talen")}: ${(b.langs || []).map((c) => (langList.find((l) => l.code === c) || { native: c }).native).join(", ")}${b.lang_switch === false ? "" : ` · ${tx("met taalkeuze")}`}` : ""}`],
                 [3, "Pagina's", `${pages.length} ${tx("pagina's")}`, pages.join(", ")],
                 [4, "Modules", `${modCount} ${tx("modules")} · ${(b.objects || []).length} ${tx("systeemobjecten")}`, off.length ? `${off.length} ${tx("uitgezet")}` : tx("Alles staat aan")],
-                [5, "Foto's", `${(b.photos || []).length} ${tx("foto's")}`, (b.photos || []).length ? "" : tx("Claude maakt illustraties")],
+                [5, "Foto's", `${(b.photos || []).length} ${tx("foto's")}`, (b.photos || []).length ? "" : tx("Easy2edit maakt illustraties")],
               ].map(([n, l, v, sub]) => (
                 <div key={l}><small>{tx(l)}</small><b style={{ overflowWrap: "anywhere" }}>{v}</b><small style={{ overflowWrap: "anywhere", flex: 1 }}>{sub}</small>
                   <button type="button" className="btn sm" style={{ alignSelf: "flex-start", marginTop: ".3rem" }} onClick={() => go(n)}>{tx("Wijzigen")}</button></div>
@@ -448,7 +450,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
                   <span className="pb-seg">{DEVICES.map(([k, l]) => <button type="button" key={k} className={dev === k ? "on" : ""} onClick={() => setDev(k)}>{tx(l)}</button>)}</span>
                 </span></div>
               {realDesign && <Tabs value={cur} onChange={setPpage} tabs={htmlFiles.map((f) => [f, (pages[htmlFiles.indexOf(f)] || f.replace(".html", ""))])} />}
-              {realDesign && <small className="muted">{tx("Dit is het ontwerp uit je ZIP-bestand, met je foto's. Claude verbetert het en houdt de kleuren aan.")}</small>}
+              {realDesign && <small className="muted">{tx("Dit is het ontwerp uit je ZIP-bestand, met je foto's. Easy2edit verbetert het en houdt de kleuren aan.")}</small>}
               <div style={{ display: "flex", justifyContent: "center", background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 14, padding: "1rem", overflow: "hidden" }}>
                 <div style={{ width: DEVICES.find((d) => d[0] === dev)[2], maxWidth: "100%", background: "#fff", borderRadius: 10, overflow: "hidden", boxShadow: "0 12px 44px rgba(0,0,0,.3)" }}>
                   <iframe title={tx("Voorbeeld")} sandbox="" srcDoc={realDesign ? previewHtml(job.files, cur, b.photos || [], cmode === "both" ? pmode : cmode === "dark" ? "dark" : "light") : styleTile(b, cmode === "both" ? pmode : cmode)} style={{ display: "block", width: "100%", height: dev === "mobile" ? 1500 : dev === "tablet" ? 1250 : 1000, border: 0 }} />
@@ -465,7 +467,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
             ? <button type="button" className="btn primary" onClick={() => go(step + 1)}>{tx("Volgende")}</button>
             : realDesign && onApply
               ? <span style={{ display: "flex", gap: ".6rem", flexWrap: "wrap" }}>
-                {onImprove && <button type="button" className="btn" disabled={!!busy} onClick={onImprove} title={tx("Claude verbetert het ontwerp alleen als je zegt wat er moet gebeuren")}><IconBolt /> {tx("Verbeteren met opdracht…")}</button>}
+                {onImprove && <button type="button" className="btn" disabled={!!busy} onClick={onImprove} title={tx("Easy2edit verbetert het ontwerp alleen als je zegt wat er moet gebeuren")}><IconBolt /> {tx("Verbeteren met opdracht…")}</button>}
                 <button type="button" className="btn primary" disabled={!!busy || !htmlFiles.length || !(b.name || "").trim()} onClick={apply}>{busy === "apply" ? tx("Bezig…") : <><IconCheck /> {tx("Toepassen")}</>}</button>
               </span>
               : <button type="button" className="btn primary" disabled={!!busy || !pages.length || !(b.name || "").trim()} onClick={generate}><IconBolt /> {busy === "gen" ? tx("Starten…") : improve ? tx("Ontwerp verbeteren") : tx("Pagina's maken met AI")}</button>}
