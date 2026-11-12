@@ -66,6 +66,8 @@ export default function EnergyAdmin() {
             <span className="pb-seg">{PERIODS.map((p) => <button type="button" key={p} className={days === p ? "on" : ""} onClick={() => setDays(p)}>{p} {tx("dagen")}</button>)}</span>
             <span style={{ display: "flex", alignItems: "center", gap: ".7rem", flexWrap: "wrap" }}>
               {busy === "scan" && <small className="muted">{tx("De pagina's worden gemeten… dit kan een halve minuut duren.")}</small>}
+              {busy !== "scan" && d.settings?.auto_scan && d.settings.next_run && <small className="muted">{tx("Automatisch meten")}: {({ hourly: "elk uur", "6h": "elke 6 uur", daily: "elke dag", weekly: "elke week" }[d.settings.scan_every] || "")} · {tx("volgende")}: {new Date(d.settings.next_run).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</small>}
+              {busy !== "scan" && d.settings && !d.settings.auto_scan && <small className="muted">{tx("Automatisch meten staat uit (tabblad Instellingen).")}</small>}
               <button type="button" className="btn primary" disabled={!!busy} onClick={scan}><IconBolt /> {busy === "scan" ? tx("Bezig met meten…") : tx("Meet nu")}</button>
             </span>
           </div>

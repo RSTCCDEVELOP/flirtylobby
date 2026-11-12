@@ -10,6 +10,7 @@ import hmac
 import secrets
 
 from django.core.cache import cache
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, BasePermission
@@ -19,6 +20,7 @@ from apps.accounts.permissions import has_level
 from apps.core.modules import module_required
 
 from . import advice as advice_lib
+from . import scheduler
 from . import service
 from .layouts import LAYOUTS
 from .models import EnergySettings, EnergySite
@@ -122,7 +124,10 @@ def overview(request):
 
 
 def _settings(st, request=None):
-    return {"api_url": service.api_url(request) if request else "", "kwh_per_gb": float(st.kwh_per_gb), "g_per_kwh": float(st.g_per_kwh), "api_public": st.api_public, "api_key": st.api_key, "scan_paths": st.scan_paths or ["/"], "retention_days": st.retention_days,
+    now = timezone.now()
+    return {"auto_scan": st.auto_scan, "scan_every": st.scan_every, "scan_hour": st.scan_hour, "scan_weekday": st.scan_weekday, "scan_sites": st.scan_sites,
+            "last_run_at": st.last_run_at.isoformat() if st.last_run_at else None, "last_status": st.last_status, "last_error": st.last_error, "next_run": scheduler.next_run(st, now).isoformat() if st.auto_scan else None,
+            "api_url": service.api_url(request) if request else "", "kwh_per_gb": float(st.kwh_per_gb), "g_per_kwh": float(st.g_per_kwh), "api_public": st.api_public, "api_key": st.api_key, "scan_paths": st.scan_paths or ["/"], "retention_days": st.retention_days, "prune_old": st.prune_old,
             "network_public": st.network_public, "network_title": st.network_title}
 
 
@@ -141,6 +146,21 @@ def settings(request):
                 st.retention_days = max(30, min(1100, int(d["retention_days"])))
         except (TypeError, ValueError):
             return bad("Vul een getal in.")
+        if "auto_scan" in d:
+            st.auto_scan = bool(d["auto_scan"])
+        if "scan_sites" in d:
+            st.scan_sites = bool(d["scan_sites"])
+        if d.get("scan_every") in scheduler.EVERY:
+            st.scan_every = d["scan_every"]
+        try:
+            if "scan_hour" in d:
+                st.scan_hour = max(0, min(23, int(d["scan_hour"])))
+            if "scan_weekday" in d:
+                st.scan_weekday = max(0, min(6, int(d["scan_weekday"])))
+        except (TypeError, ValueError):
+            return bad("Vul een getal in.")
+        if "prune_old" in d:
+            st.prune_old = bool(d["prune_old"])
         if "api_public" in d:
             st.api_public = bool(d["api_public"])
         if d.get("new_key"):
@@ -161,6 +181,12 @@ def scan_now(request):
     base = service.site_base(request.META.get("HTTP_ORIGIN", ""))
     if not base:
         return bad("Vul bij Admin → Basisgegevens het website-adres in, dan kan ik de pagina's meten.")
+    st = EnergySettings.load()
+    origin = request.META.get("HTTP_ORIGIN", "")
+    if origin and service._trusted_origin(origin) and st.scan_origin != origin.rstrip("/"):
+        st.scan_origin = origin.rstrip("/")  # the automatic measuring uses this address when Basisgegevens has none
+    st.last_run_at, st.last_status, st.last_error = timezone.now(), "ok", ""
+    st.save(update_fields=["scan_origin", "last_run_at", "last_status", "last_error"])
     scans = service.scan(base, request.data.get("paths") if isinstance(request.data, dict) else None)
     return Response({"scanned": len(scans), "failed": [{"path": s.path, "error": s.error} for s in scans if not s.ok], **service.public_payload(_days(request))})
 

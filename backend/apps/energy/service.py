@@ -85,13 +85,14 @@ def record(path, nbytes, nreq):
 
 
 def prune():
+    """Cleans up. The measurements per day and the scans are only removed when the setting 'oude metingen opruimen' is on (default: everything is kept, for the statistics);
+    the 10-minute figures of the live graph are always kept for three days only."""
     st = EnergySettings.load()
-    EnergyDay.objects.filter(day__lt=timezone.localdate() - timedelta(days=st.retention_days)).delete()
     EnergyBucket.objects.filter(ts__lt=timezone.now() - timedelta(days=3)).delete()
-    for p in set(EnergyScan.objects.values_list("path", flat=True)):  # per page only the latest 30 scans
-        old = list(EnergyScan.objects.filter(path=p).values_list("pk", flat=True)[30:])
-        if old:
-            EnergyScan.objects.filter(pk__in=old).delete()
+    if not st.prune_old:
+        return
+    EnergyDay.objects.filter(day__lt=timezone.localdate() - timedelta(days=st.retention_days)).delete()
+    EnergyScan.objects.filter(created_at__lt=timezone.now() - timedelta(days=st.retention_days)).delete()
 
 
 def latest_scans():

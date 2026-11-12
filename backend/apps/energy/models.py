@@ -62,6 +62,16 @@ class EnergySettings(models.Model):
     network_title = models.CharField(max_length=120, blank=True)
     scan_paths = models.JSONField(default=list, blank=True)  # the pages that "Meet nu" scans; empty = the start page
     retention_days = models.PositiveSmallIntegerField(default=400)
+    prune_old = models.BooleanField(default=False)  # off (default): all measurements are kept, for the statistics; on: measurements older than retention_days are removed
+    auto_scan = models.BooleanField(default=True)  # the measuring (scan of the pages) is done automatically
+    scan_every = models.CharField(max_length=10, default="daily")  # hourly | 6h | daily | weekly
+    scan_hour = models.PositiveSmallIntegerField(default=3)  # at which hour (daily and weekly)
+    scan_weekday = models.PositiveSmallIntegerField(default=0)  # on which day (weekly): 0 = Monday
+    scan_sites = models.BooleanField(default=True)  # the connected websites (collector) are read at the same time
+    scan_origin = models.CharField(max_length=200, blank=True)  # the website address that the last manual measuring used (when Basisgegevens has none)
+    last_run_at = models.DateTimeField(null=True, blank=True)  # when the automatic measuring was started (or measured by hand) for the last time
+    last_status = models.CharField(max_length=10, blank=True)  # ok | failed
+    last_error = models.CharField(max_length=300, blank=True)
     instance_id = models.CharField(max_length=40, blank=True)  # a random id of this installation: the collector uses it to see that a connected site is this site itself (so it is not counted twice)
     advice = models.JSONField(default=dict, blank=True)  # what the advice tab applied: {"applied": {"fonts": {"at", "before", "result"}, ...}}
     objects_seeded = models.BooleanField(default=False)  # the layouts (system objects) were made once; after that Admin → Energie decides which exist
