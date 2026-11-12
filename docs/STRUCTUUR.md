@@ -13,7 +13,9 @@ easy2edit/                   ← SYSTEEM  (git: RSTCCDEVELOP/easy2edit)
     ├── Database/            db.sqlite3 en back-ups
     ├── media/               geüploade afbeeldingen en video's
     ├── plugins/             plugins van deze site (games, webshop, marktplaats, eigen werk)
-    ├── themes/              themapakketten van deze site
+    ├── themes/              themapakketten van deze site (ook thema's die je in Admin maakt: <thema>-<versie>.zip)
+    ├── backups/             back-ups van deze site (Admin → Back-up)
+    ├── imports/             mappen die je op de server neerzet om als website te importeren
     └── content/             exports, imports, logo's en losse bestanden
 ```
 
@@ -32,6 +34,14 @@ resource/
 - Rechten: een superadmin installeert alles; wie het onderdeel mag beheren maar geen superadmin is, installeert alleen wat is aangevinkt in Super admin → Bibliotheek (opgeslagen in `resource/allowed.json`).
 - In Docker/Coolify wordt `./resource` gemount op `/app/resource` (`RESOURCE_DIR`).
 
+## Wat een implementatie maakt, gaat naar `site/`
+Alles wat tijdens het gebruik van één website ontstaat, staat in `site/` en nooit in het systeem of in `resource/`:
+- thema's die je in Admin maakt (met AI, uit een geïmporteerde site of met de hand): `site/themes/<thema>-1.0.0.zip` (en de geïnstalleerde map `site/themes/<thema>/`);
+- back-ups: `site/backups/`; mappen om te importeren: `site/imports/`; geïmporteerde bestanden en afbeeldingen: `site/media/`;
+- de inhoud van de website (`site/content/site-content.json`), pagina-exports (`site/pages/`, `public/`, `private/`) en de plugins van deze site (`site/plugins/`).
+`resource/` is de bibliotheek van het product (in git) en wordt door een site alleen **gelezen**. De themalijst in Admin toont eerst de pakketten van de site en daarna die van het product. Een thema dat bij een bepaalde klant hoort, hoort dus niet in `resource/themas/`.
+Bestaat `site/backups` of `site/imports` nog niet, maar de oude plek wel (`backups/`, `backend/imports/`), dan wordt de oude plek gebruikt; `manage.py site_init --move` verplaatst ze (stop eerst de servers).
+
 ## Regels
 - **Systeem** = `backend/`, `frontend/`, `deploy/`. Hier staat niets van één site. Wijzig je hier iets, dan geldt het voor alle sites na een update.
 - **Site** = alles in `site/`. Een update van het systeem raakt deze map nooit.
@@ -40,7 +50,7 @@ resource/
 
 ## Hoe het systeem de site vindt
 `backend/config/settings.py` kent `SITE_DIR` (standaard `<project>/site`, of de omgevingsvariabele `SITE_DIR`).
-Daaruit komen `DB_PATH`, `MEDIA_ROOT`, `PLUGINS_DIR` en `THEMES_DIR`; elk daarvan is ook los in te stellen.
+Daaruit komen `DB_PATH`, `MEDIA_ROOT`, `PLUGINS_DIR`, `THEMES_DIR`, `BACKUPS_DIR` en `SITE_IMPORT_DIR`; elk daarvan is ook los in te stellen.
 Een installatie van vóór deze indeling blijft werken: bestaat `site/<onderdeel>` nog niet, maar de oude plek wel, dan wordt de oude plek gebruikt.
 
 ## Een bestaande installatie omzetten

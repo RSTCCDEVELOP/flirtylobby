@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""Create (or complete) the folder of one website: <SITE_DIR>/{Database,media,plugins,themes,content,public,private}. Safe to run again; nothing is overwritten.
+"""Create (or complete) the folder of one website: <SITE_DIR>/{Database,media,plugins,themes,content,backups,imports,public,private}. Safe to run again; nothing is overwritten.
 With --move the existing data of an installation from before the split is moved into it (stop the servers first)."""
 import shutil
 from pathlib import Path
@@ -13,7 +13,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-PARTS = ("Database", "media", "plugins", "themes", "content", "public", "private")
+PARTS = ("Database", "media", "plugins", "themes", "content", "backups", "imports", "public", "private")
 
 
 class Command(BaseCommand):
@@ -31,7 +31,7 @@ class Command(BaseCommand):
         if not opts["move"]:
             return
         root = Path(settings.PROJECT_ROOT)
-        for name, old in (("Database", root / "Database"), ("plugins", root / "plugins"), ("themes", root / "themes"), ("media", Path(settings.BASE_DIR) / "media"), ("content", root / "CONTENT")):
+        for name, old in (("Database", root / "Database"), ("plugins", root / "plugins"), ("themes", root / "themes"), ("media", Path(settings.BASE_DIR) / "media"), ("content", root / "CONTENT"), ("backups", root / "backups"), ("imports", Path(settings.BASE_DIR) / "imports")):
             if not old.exists() or old.resolve() == (site / name).resolve():
                 continue
             for item in old.iterdir():
@@ -51,7 +51,9 @@ Alles wat bij DEZE website hoort staat hier. Een update van het systeem (backend
 - Database/   de database (sqlite) en de back-ups
 - media/      geüploade afbeeldingen en video's
 - plugins/    de plugins van deze site (ondertekend, uit plugins/.dist of ontwikkeld)
-- themes/     de themapakketten van deze site
+- themes/     de themapakketten van deze site (ook de pakketten die je zelf maakt: <thema>-<versie>.zip)
+- backups/    de back-ups van deze site (Admin > Back-up)
+- imports/    mappen die je op de server neerzet om als website te importeren
 - public/     exports van pagina's van de website (public/<pagina>/)
 - private/    exports van dashboardpagina's (private/<pagina>/)
 - content/    exports, imports en losse bestanden (logo's, instellingen-exports)

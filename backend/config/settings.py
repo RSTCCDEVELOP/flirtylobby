@@ -158,7 +158,8 @@ PLUGINS_DIR = Path(os.getenv("PLUGINS_DIR") or _site_path("plugins", PROJECT_ROO
 THEMES_DIR = Path(os.getenv("THEMES_DIR") or _site_path("themes", PROJECT_ROOT / "themes"))  # the theme packages of this site: one folder per theme with a theme.json
 RESOURCE_DIR = Path(os.getenv("RESOURCE_DIR") or PROJECT_ROOT / "resource")  # the library of zips that comes with the product (in git): resource/plugins, resource/themas, resource/languages: only the latest version of each
 THEMES_DIST_DIR = RESOURCE_DIR  # (old name)  # the exported zips of themes (<dir>/themes) and languages (<dir>/languages), in the project folder (git-ignored)
-BACKUPS_DIR = Path(os.getenv("BACKUPS_DIR") or PROJECT_ROOT / "backups")  # the backup files (Admin -> Backup); not part of the repository
+BACKUPS_DIR = Path(os.getenv("BACKUPS_DIR") or _site_path("backups", PROJECT_ROOT / "backups"))  # the backup files (Admin -> Backup): part of the site (site/backups), never of the system
+SITE_IMPORT_DIR = Path(os.getenv("SITE_IMPORT_DIR") or _site_path("imports", BASE_DIR / "imports"))  # folders that are imported as a website (Site import > folder on the server): part of the site (site/imports)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

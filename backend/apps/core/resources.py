@@ -37,6 +37,24 @@ def root():
     return d
 
 
+def site_dir(kind):
+    """The folder of THIS site where packages that were made here are kept (themes: site/themes/<key>-<version>.zip), or None. The library resource/ belongs to the product (in git) and is only read."""
+    if kind != "themas":
+        return None
+    d = Path(settings.THEMES_DIR)
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    return d
+
+
+def _folders(kind):
+    """[(origin, folder)] the packages of this kind are read from: first the site, then the library of the product."""
+    out = [("site", site_dir(kind))] if site_dir(kind) else []
+    return out + [("product", root() / kind)]
+
+
 def _ver(v):
     from apps.plugins import manifest as mf
 
@@ -84,15 +102,16 @@ def catalog(kind):
     if kind not in KINDS:
         raise ResourceError("Onbekend onderdeel.")
     best, bundles = {}, []
-    for f in sorted((root() / kind).glob("*.zip")):
-        items = _read(f, kind)
-        if len(items) > 1:  # all themes / all languages in one zip
-            bundles.append({"name": f.stem, "title": f"{TITLES[kind]}: {f.stem}", "version": max((i["version"] for i in items), key=_ver), "description": f"{len(items)} items in één zip", "author": "",
-                            "built_for": "", "file": f.name, "size": f.stat().st_size, "bundle": True, "items": [i["name"] for i in items]})
-        elif items:
-            e = {**items[0], "file": f.name, "size": f.stat().st_size, "bundle": False}
-            if e["name"] not in best or _ver(e["version"]) > _ver(best[e["name"]]["version"]):
-                best[e["name"]] = e
+    for origin, folder in _folders(kind):
+        for f in sorted(folder.glob("*.zip")):
+            items = _read(f, kind)
+            if len(items) > 1:  # all themes / all languages in one zip
+                bundles.append({"name": f.stem, "title": f"{TITLES[kind]}: {f.stem}", "version": max((i["version"] for i in items), key=_ver), "description": f"{len(items)} items in één zip", "author": "",
+                                "built_for": "", "file": f.name, "size": f.stat().st_size, "bundle": True, "items": [i["name"] for i in items], "origin": origin})
+            elif items:
+                e = {**items[0], "file": f.name, "size": f.stat().st_size, "bundle": False, "origin": origin}
+                if e["name"] not in best or _ver(e["version"]) > _ver(best[e["name"]]["version"]):  # (the site comes first: at an equal version its own package wins)
+                    best[e["name"]] = e
     return sorted(best.values(), key=lambda e: e["title"].lower()) + bundles
 
 
@@ -161,8 +180,9 @@ def can_use(user, kind):
 
 
 def _zip_bytes(kind, entry):
-    f = root() / kind / entry["file"]
-    if f.resolve().parent != (root() / kind).resolve():
+    folder = dict(_folders(kind)).get(entry.get("origin") or "product") or (root() / kind)
+    f = folder / entry["file"]
+    if f.resolve().parent != folder.resolve():
         raise ResourceError("Onveilig pad.")
     return f.read_bytes()
 
@@ -304,7 +324,7 @@ def make_theme(prompt, mode=""):
 
 
 def save_theme(name, description, mode, values, install=False):
-    """A theme (checked values) as a package in the library, <key>-1.0.0.zip; with install it is also put on the list of themes in use. Returns the manifest."""
+    """A theme (checked values) as a package of this site (site/themes/<key>-1.0.0.zip); with install it is also put on the list of themes in use. Returns the manifest."""
     from . import themepacks
 
     name = str(name or "Nieuw thema").strip()[:60] or "Nieuw thema"
@@ -320,10 +340,10 @@ def save_theme(name, description, mode, values, install=False):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(f"{key}/theme.json", raw)
-    try:
-        (root() / "themas" / f"{key}-1.0.0.zip").write_bytes(buf.getvalue())
+    try:  # a theme made on this site is a package of this site (site/themes), not of the product library (resource/themas)
+        (site_dir("themas") / f"{key}-1.0.0.zip").write_bytes(buf.getvalue())
     except OSError:
-        raise ResourceError("De bibliotheek is niet te beschrijven (alleen-lezen map op deze server).")
+        raise ResourceError("De themamap van deze site (site/themes) is niet te beschrijven.")
     if install:
         try:
             themepacks.install_zip(buf.getvalue())
@@ -333,16 +353,19 @@ def save_theme(name, description, mode, values, install=False):
 
 
 def delete_theme(key):
-    """Remove a theme from the library (its zip). An installed theme stays installed."""
+    """Remove a theme package (its zip, from this site or from the library). An installed theme stays installed."""
     import re as _re
 
     key = str(key or "")
-    files = [f for f in (root() / "themas").glob(f"{key}-*.zip") if _re.fullmatch(_re.escape(key) + r"-\d+\.\d+\.\d+\.zip", f.name)] if _re.fullmatch(r"[a-z0-9-]{3,40}", key) else []
+    files = []
+    if _re.fullmatch(r"[a-z0-9-]{3,40}", key):  # the packages of this site first; older ones that were made in the product library are removed from there too
+        for _origin, folder in _folders("themas"):
+            files += [f for f in folder.glob(f"{key}-*.zip") if _re.fullmatch(_re.escape(key) + r"-\d+\.\d+\.\d+\.zip", f.name)]
     if not files:
         raise ResourceError("Dit thema staat niet (als los pakket) in de bibliotheek.")
     try:
         for f in files:
             f.unlink()
     except OSError:
-        raise ResourceError("De bibliotheek is niet te beschrijven (alleen-lezen map op deze server).")
+        raise ResourceError("Het pakket is niet te verwijderen (alleen-lezen map).")
     return key
