@@ -112,7 +112,7 @@ export function DesignPromptPopup({ b, catalog, onClose }) {
     style: [...(b.style_tags || []).map((t) => EN_TAGS[t] || t), b.style].filter(Boolean).join(", "),
     modules: (catalog?.modules || []).filter((m) => !(b.modules_off || []).includes(m.key)), objects: (catalog?.objects || []).filter((o) => (b.objects || []).includes(o.slug)),
     palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
-    languages: { main: b.lang || "", extra: (b.langs || []).map((c) => (catalog?.languages || []).find((l) => l.code === c)).filter(Boolean), switcher: b.lang_switch !== false }, font: FONTS[b.font || "sans"], radius: b.radius ?? null, theme: b.theme_name || "", photos,
+    languages: { main: b.lang || "", mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", extra: (b.langs || []).map((c) => (catalog?.languages || []).find((l) => l.code === c)).filter(Boolean), switcher: b.lang_switch !== false }, font: FONTS[b.font || "sans"], radius: b.radius ?? null, theme: b.theme_name || "", photos, rules: catalog?.rules || null,
   });
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); } catch { document.getElementById("si-dprompt")?.select(); document.execCommand("copy"); }

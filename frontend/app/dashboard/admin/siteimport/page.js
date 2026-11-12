@@ -496,6 +496,7 @@ export default function SiteImport() {
   const buildImportForm = async (job) => {
     const fd = new FormData(); fd.append("kind", "html"); fd.append("name", job.name);
     Object.entries(job.files).forEach(([n, c]) => fd.append("file", new File([c], n.split("/").pop(), { type: n.endsWith(".svg") ? "image/svg+xml" : n.endsWith(".css") ? "text/css" : "text/html" })));
+    Object.entries(job.translation_files || {}).forEach(([code, d]) => fd.append("file", new File([JSON.stringify(d)], `vertalingen-${code}.json`, { type: "application/json" }))); // the supplied translations of the ZIP
     const all = Object.values(job.files).join("\n");
     for (const p of job.brief?.photos || []) { // only the photos that the pages use
       if (!all.includes(p.file)) continue;

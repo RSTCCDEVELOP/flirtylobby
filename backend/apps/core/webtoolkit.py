@@ -26,8 +26,9 @@ from apps.core import theme as T
 
 logger = logging.getLogger(__name__)
 UA = "Mozilla/5.0 (compatible; SiteImport/1.0)"
-MAX_HTML, MAX_CSS, MAX_IMG, MAX_TOTAL = 2 * 2**20, 600 * 1024, 4 * 2**20, 40 * 2**20
-MAX_PAGES, MAX_IMAGES, MAX_STYLESHEETS, DEADLINE = 12, 40, 5, 90
+from apps.core.importrules import MAX_HTML, MAX_CSS, MAX_IMAGE_BYTES as MAX_IMG, MAX_TOTAL, MAX_PAGES, MAX_IMAGES, MAX_STYLESHEETS  # noqa: E402 (one source of the limits)
+
+DEADLINE = 90
 VIRTUAL = "http://site.local/"  # base address used for folder / ZIP imports
 
 
@@ -121,6 +122,11 @@ class FolderFetcher:
 
     def same_site(self, url):
         return urlparse(url).hostname == urlparse(VIRTUAL).hostname
+
+    def html_files(self):
+        """The html files in the root of the folder (index.html first), as addresses."""
+        names = sorted((n for n in os.listdir(self.root) if n.lower().endswith((".html", ".htm")) and os.path.isfile(os.path.join(self.root, n))), key=lambda n: (n.lower() != "index.html", n.lower()))
+        return [VIRTUAL + n for n in names]
 
 
 # ── a tiny HTML tree ─────────────────────────────────────────────────────────

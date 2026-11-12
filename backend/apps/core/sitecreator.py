@@ -34,20 +34,22 @@ from apps.integrations import ai
 from apps.medialib import areas
 from apps.sysobjects.models import SystemObject
 
+from . import importrules as R
 from .models import Language, SiteDesignJob
 
 logger = logging.getLogger(__name__)
 FILE_MAX = 400_000  # characters per file
 FILES_MAX = 40
-NAME_RE = re.compile(r"^(?:img/)?[a-z0-9][a-z0-9._-]{0,60}\.(?:html|css|svg)$")
+NAME_RE = re.compile(r"^(?:img/)?[a-z0-9][a-z0-9_-]{0,%d}\.(?:html|css|svg)$" % (R.NAME_MAX - 1))
 MARK = re.compile(r"^=== FILE: (\S+) ===\s*$", re.M)
 FENCE = re.compile(r"^```[a-z]*\s*\n|\n```\s*$", re.I)
 
-RULES = """You are a senior web designer. You design complete, professional websites as plain static files that are imported into the website system Easy2edit.
+_RULES = """You are a senior web designer. You design complete, professional websites as plain static files that are imported into the website system Easy2edit.
 The importer reads the html and css and rebuilds every page with the blocks of the Easy2edit page editor, so a clean, predictable structure matters more than clever tricks.
 
 FILES
 - One html file per page (the start page is index.html), ONE shared style.css, and optional illustrations as svg files in img/ (img/hero.svg). No other file types, no JavaScript, no external fonts/scripts/frameworks, no data: urls, no photos or hotlinks.
+- File rules of the importer (they are checked, anything else is skipped): at most @MAX_PAGES@ html pages and at most @MAX_IMAGES@ pictures in total, each picture at most @MAX_IMAGE_MB@ MB; file names only a-z, 0-9, - and _ (at most @NAME_MAX@ characters before the extension); everything in the root of the ZIP plus the folder img/ (no other folders, so never en/index.html).
 - Every html file is a complete document (<!doctype html>, <html lang>, <meta charset>, <meta name=viewport>, <title>, <meta name=description>, <link rel="stylesheet" href="style.css">). Links between pages are relative (about.html); "#id" for places on the same page.
 - Pictures: svg illustrations in img/ (simple, single or two-colour flat shapes in the palette of the site) or inline <svg>, with <img src="img/x.svg" alt="..." width height>. Photos are added later by the user, so where a photo belongs make a tasteful svg illustration or a gradient shape instead.
 
@@ -95,6 +97,15 @@ CATALOG = [  # the modules that a website design can use: what they give, and wh
 IGNORE_MODULES = {"pages", "edit_mode", "media", "siteimport", "sysobjects", "branding", "theme", "help", "twofa", "word_filter", "stats", "orders", "payments", "integrations", "communication", "plugins", "notifications", "sandbox", "system", "storage", "backups", "roles", "users", "dashboard", "security_basic", "ai", "modules"}
 IGNORE_PLUGINS = {"siteimport", "statistics", "finance", "orders", "profile-themes"}
 GENERIC_HOW = "Offer '{label}' on the website ({desc}). Mention it where it fits: a short section or a menu item/button; use its system objects when they are selected; never build your own forms, pages or data for it."
+
+
+def rules():
+    """The system rules for the AI with the numbers of importrules.py filled in (the same numbers that the importer and the AI prompt of the screen use)."""
+    d = R.as_dict()
+    out = _RULES
+    for k, v in (("MAX_PAGES", d["max_pages"]), ("MAX_IMAGES", d["max_images"]), ("MAX_IMAGE_MB", f"{d['max_image_mb']:g}"), ("NAME_MAX", d["name_max"])):
+        out = out.replace(f"@{k}@", str(v))
+    return out
 
 
 def module_items():
@@ -152,7 +163,7 @@ def catalog():
     from .models import Language
 
     langs = [{"code": l.code, "name": l.name, "native": l.native_name, "rtl": l.rtl, "enabled": l.enabled, "default": l.is_default} for l in Language.objects.all()]
-    return {"modules": mods, "objects": objs, "languages": langs}
+    return {"modules": mods, "objects": objs, "languages": langs, "rules": R.as_dict()}
 
 
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
@@ -161,8 +172,8 @@ MODES = ("light", "dark", "both")
 FONTS = {"sans": 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', "serif": 'Georgia, "Times New Roman", serif', "round": '"Trebuchet MS", "Segoe UI", system-ui, sans-serif'}
 STYLE_TAGS = {"modern", "warm", "zakelijk", "speels", "minimalistisch", "luxe", "natuurlijk", "technisch", "creatief", "klassiek"}
 KINDS = {"company", "shop", "community", "agenda", "blog", "portfolio", "club"}
-IMG_OK = {"jpg", "jpeg", "png", "webp", "gif"}
-MAX_PHOTOS = 30
+IMG_OK = {e for e in R.IMAGE_EXT if e != "svg"}
+MAX_PHOTOS = R.MAX_IMAGES
 
 
 def slug(page, i):
@@ -214,7 +225,7 @@ def _clean_colors(c):
 
 def photo_file(name, taken):
     base, ext = os.path.splitext(get_valid_filename(str(name or "foto")).lower())
-    base = re.sub(r"[^a-z0-9._-]+", "-", base).strip("-.")[:40] or "foto"
+    base = re.sub(r"[^a-z0-9_-]+", "-", base).strip("-_")[:R.NAME_MAX] or "foto"
     ext = ext.lstrip(".") if ext.lstrip(".") in IMG_OK else "jpg"
     f, n = f"{base}.{ext}", 2
     while f in taken:
@@ -315,48 +326,41 @@ def listing(user):
 
 
 def read_zip(job, upload, user):
-    """A ZIP (made with the AI prompt): the html, css and svg files become the files of this design, the pictures go to the media library (tag design) and into the photo list."""
+    """A ZIP (made with the AI prompt): read with the rules of importrules.py (ziprules): the html, css and svg files become the files of this design, the raster pictures go to
+    the media library (tag design) and into the photo list, vertalingen-<taal>.json is kept for the import. Returns (job, notes)."""
     from apps.medialib.models import MediaItem
-    from apps.medialib import areas
+
+    from . import importrules as R
+    from . import ziprules
 
     if job.status not in ("draft", "done", "error"):
         raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
-    if getattr(upload, "size", 0) > 40 * 2**20:
-        raise ValueError("Het ZIP-bestand is te groot (maximaal 40 MB).")
+    if getattr(upload, "size", 0) > R.MAX_TOTAL:
+        raise ValueError(f"Het ZIP-bestand is te groot (maximaal {R.mb(R.MAX_TOTAL)} MB).")
     try:
         z = zipfile.ZipFile(upload)  # read from the uploaded file itself: no second copy in memory
     except zipfile.BadZipFile:
         raise ValueError("Dit is geen geldig ZIP-bestand.")
-    files, photos, taken = {}, list((job.brief or {}).get("photos") or []), {p["file"] for p in (job.brief or {}).get("photos") or []}
-    notes = []
-    for zi in z.infolist()[:400]:
-        if zi.is_dir() or zi.file_size > 6 * 2**20 or "__MACOSX" in zi.filename or os.path.basename(zi.filename).startswith("."):
-            continue
-        base = os.path.basename(zi.filename).lower()
-        ext = base.rsplit(".", 1)[-1] if "." in base else ""
-        raw = z.read(zi)
-        if ext in ("html", "htm", "css", "svg"):
-            name = get_valid_filename(base)
-            name = ("img/" + name) if ext == "svg" else name.replace(".htm", ".html") if ext == "htm" else name
-            if NAME_RE.match(name) and len(files) < FILES_MAX:
-                files[name] = raw.decode("utf-8", "replace")
-        elif ext in IMG_OK and len(photos) < MAX_PHOTOS and zi.file_size <= 5 * 2**20:
-            try:
-                from PIL import Image
-
-                Image.open(io.BytesIO(raw)).verify()
-            except Exception:  # noqa: BLE001
-                notes.append(f"{base} is geen geldige afbeelding.")
+    bundle = ziprules.validate_for_site(ziprules.read_zip(z))
+    notes = list(bundle.notes)
+    files, photos = {}, list((job.brief or {}).get("photos") or [])
+    taken = {p["file"] for p in photos}
+    for name, data in sorted(bundle.files.items()):
+        ext = name.rsplit(".", 1)[-1]
+        if ext in ("html", "css", "svg"):
+            files[name] = data.decode("utf-8", "replace")
+        elif ext in ("jpg", "jpeg", "png", "webp"):
+            if len(photos) >= R.MAX_IMAGES:
+                notes.append(f"{name} is overgeslagen: maximaal {R.MAX_IMAGES} afbeeldingen.")
                 continue
-            key = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{uuid.uuid4().hex[:8]}-{get_valid_filename(base)}"), ContentFile(raw))
+            base = name.split("/")[-1]
+            key = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{uuid.uuid4().hex[:8]}-{get_valid_filename(base)}"), ContentFile(data))
             item = MediaItem.objects.get(key=key)
             item.name, item.uploaded_by, item.tags = base[:255], user, ["design"]
             item.save(update_fields=["name", "uploaded_by", "tags"])
-            f = photo_file(base, taken)
+            f = photo_file(base, taken)  # (the name already follows the rule, so it stays as it is)
             taken.add(f)
             photos.append({"id": item.id, "file": f, "name": base[:120], "url": default_storage.url(item.key), "note": "uit het ZIP-bestand"})
-    if not any(n.endswith(".html") for n in files):
-        raise ValueError("Er staat geen html-bestand in het ZIP-bestand.")
     htmls = sorted((n for n in files if n.endswith(".html")), key=lambda n: (n != "index.html", n))
     pages = []
     for n in htmls:
@@ -370,15 +374,14 @@ def read_zip(job, upload, user):
         b["name"] = guess  # no title in the design: the name stays empty and is asked (it is required)
         if guess:
             SiteDesignJob.objects.filter(pk=job.pk).update(name=guess[:120])
-    SiteDesignJob.objects.filter(pk=job.pk).update(files=files, brief=b, updated_at=timezone.now())
-    job.files, job.brief = files, b
+    SiteDesignJob.objects.filter(pk=job.pk).update(files=files, brief=b, translations=bundle.translations, updated_at=timezone.now())
+    job.files, job.brief, job.translations = files, b, bundle.translations
     try:  # the colours, font and corners of this design become the settings of the step plan
         job, note = apply_palette(job)
         notes.append(note)
     except ValueError:
         pass
     return job, notes
-
 
 
 # ── documents with the goals of the website (pdf, word): Claude reads them and makes the settings of the step plan ──
@@ -866,7 +869,7 @@ def _generate(pk):
                       f"The menu on every page: {nav}\n\n{text}\n\nCURRENT style.css:\n{old.get('style.css', '(none)')}\n\nCURRENT {first}:\n{old.get(first, '')}")
         else:
             prompt = f"Design this website. Now output ONLY style.css (the complete shared stylesheet for ALL pages: also the classes that the other pages will need: cards, columns, faq, products, events, forms-free contact blocks), {first} and the svg illustrations (img/...) of that page.\nThe menu on every page: {nav}\n\n{text}"
-        files = parse(_ask(RULES, prompt, pk=pk))
+        files = parse(_ask(rules(), prompt, pk=pk))
         if "style.css" not in files or first not in files:
             raise ValueError("De AI gaf geen bruikbaar ontwerp terug. Probeer het nog eens.")
         if improve:
@@ -877,7 +880,7 @@ def _generate(pk):
             _set(pk, progress=30 + int(65 * n / max(1, len(rest))), step=f"Pagina '{title}' {'verbeteren' if improve else 'ontwerpen'}")
             ctx = f"style.css:\n{files['style.css']}\n\n{first} (copy its header and footer exactly, same menu):\n{files[first]}"
             cur = f"\n\nCURRENT {f} (improve this page, keep its content):\n{old.get(f, '')}" if improve else ""
-            new = parse(_ask(RULES, f"{'Improve' if improve else 'Design'} ONE more page of the same website, in exactly the same visual language. Output {f} (and img/ svg files that this page needs). Output style.css too ONLY when you had to add classes: then the complete extended file.\nThe menu on every page: {nav}\nThis page: {title} ({f})\n\n{text}\n\n{ctx}{cur}", pk=pk))
+            new = parse(_ask(rules(), f"{'Improve' if improve else 'Design'} ONE more page of the same website, in exactly the same visual language. Output {f} (and img/ svg files that this page needs). Output style.css too ONLY when you had to add classes: then the complete extended file.\nThe menu on every page: {nav}\nThis page: {title} ({f})\n\n{text}\n\n{ctx}{cur}", pk=pk))
             if f not in new:
                 raise ValueError(f"De pagina '{title}' kwam niet terug. Probeer het nog eens.")
             files = {**files, **new}
@@ -940,7 +943,7 @@ def _revise(pk, instruction, page):
         focus = f"The user is looking at the page {page}.\n" if page in files else ""
         photos = "\n".join(f"- {p['file']}: {p.get('note') or ''}" for p in (job.brief or {}).get("photos") or [])
         ph = f"Photos that can be used (img/<file>):\n{photos}\n" if photos else ""
-        new = parse(_ask(RULES, f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}", pk=pk))
+        new = parse(_ask(rules(), f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}", pk=pk))
         if not new:
             raise ValueError("De AI gaf geen aanpassing terug. Probeer het anders te zeggen.")
         _set(pk, status="done", progress=100, step="Klaar", files={**files, **new}, messages=list(job.messages) + [{"role": "ai", "text": "Aangepast: " + ", ".join(sorted(new)) + "."}])
@@ -975,6 +978,6 @@ def _stale(job):
 def public(job, files=False):
     job = _stale(job)
     b = job.brief or {}
-    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "messages": job.messages or [], "brief": b,
+    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b,
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
             "docs": [_doc_public(d) for d in job.docs or []]}

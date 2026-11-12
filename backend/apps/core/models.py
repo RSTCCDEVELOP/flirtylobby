@@ -201,6 +201,7 @@ class SiteDesignJob(models.Model):
     messages = models.JSONField(default=list, blank=True)  # [{"role": "user"|"ai", "text": "..."}]
     files_prev = models.JSONField(default=dict, blank=True)  # the files as they were before the last improvement: "put the previous version back"
     docs = models.JSONField(default=list, blank=True)  # the documents (pdf, word) with the goals of the website: [{"id", "name", "key", "status", "percent", "step", "summary", "goals", "applied", "result", ...}]
+    translations = models.JSONField(default=dict, blank=True)  # supplied translations from the ZIP: {"en": {"formaat": ..., "paginas": {...}}}
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
