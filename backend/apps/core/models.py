@@ -192,13 +192,14 @@ class SiteDesignJob(models.Model):
     id = models.UUIDField(primary_key=True, default=__import__("uuid").uuid4, editable=False)
     user = models.ForeignKey("accounts.User", null=True, on_delete=models.SET_NULL, related_name="+")
     name = models.CharField(max_length=120, blank=True)
-    status = models.CharField(max_length=10, default="running")  # running | done | error
+    status = models.CharField(max_length=10, default="running")  # draft | running | stopping (stop was asked) | done | error
     progress = models.PositiveSmallIntegerField(default=0)
     step = models.CharField(max_length=160, blank=True)
     error = models.TextField(blank=True)
     brief = models.JSONField(default=dict, blank=True)
     files = models.JSONField(default=dict, blank=True)  # {"index.html": "...", "style.css": "...", "img/hero.svg": "..."}
     messages = models.JSONField(default=list, blank=True)  # [{"role": "user"|"ai", "text": "..."}]
+    files_prev = models.JSONField(default=dict, blank=True)  # the files as they were before the last improvement: "put the previous version back"
     docs = models.JSONField(default=list, blank=True)  # the documents (pdf, word) with the goals of the website: [{"id", "name", "key", "status", "percent", "step", "summary", "goals", "applied", "result", ...}]
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

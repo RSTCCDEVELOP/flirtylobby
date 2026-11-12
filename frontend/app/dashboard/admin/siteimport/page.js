@@ -14,12 +14,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
 import { IconBolt, IconFolder, IconGlobe, IconImage } from "../../../../components/Icons";
-import { buildPrompt, SITE_KINDS } from "./aiPrompt";
-import { AiCreatorHome, AiCreatorPopup, ModulePicker } from "./AiCreator";
+import { AiCreatorHome, AiCreatorPopup } from "./AiCreator";
 import Tabs from "../../../../components/Tabs";
 import { createPortal } from "react-dom";
 import DesignFrame from "../../../../components/DesignFrame";
-import { api, errorText, mediaUrl } from "../../../../lib/api";
+import { api, apiUpload, errorText, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { lvl } from "../../../../lib/perms";
 
@@ -398,74 +397,6 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
   );
 }
 
-// A prompt for an AI (ChatGPT, Claude...) that makes pages, pictures and design in a form that this import can read and the page editor can use.
-function AiPromptPopup({ onClose }) {
-  const [tab, setTab] = useState("wishes");
-  const [f, setF] = useState({ name: "", kind: "company", lang: "Dutch", pages: "", style: "", colors: "", extra: "" });
-  const [catalog, setCatalog] = useState(null);
-  const [mode, setMode] = useState("light");
-  const [langs, setLangs] = useState("");
-  const [pick, setPick] = useState({ off: [], objects: [] });
-  useEffect(() => { api("/sitecreator/catalog/").then(setCatalog).catch(() => setCatalog({ modules: [], objects: [] })); }, []);
-  const [copied, setCopied] = useState(false);
-  const set = (k, v) => setF((o) => ({ ...o, [k]: v }));
-  const text = buildPrompt({ ...f, colorMode: mode, languages: langs.trim() ? { main: f.lang, extra: langs.split(/[,\n]/).map((x) => x.trim()).filter(Boolean).map((x) => ({ code: x.toLowerCase().slice(0, 5), native: x, rtl: /arabic|ara|hebr|farsi|persian|urdu|^ar$|^he$|^fa$|^ur$/i.test(x) })), switcher: true } : null, modules: (catalog?.modules || []).filter((m) => !pick.off.includes(m.key)), objects: (catalog?.objects || []).filter((o) => pick.objects.includes(o.slug)) });
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(text); } catch { const t = document.getElementById("si-prompt"); t?.select(); document.execCommand("copy"); }
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
-  };
-  return createPortal(
-    <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="pb-objpop" role="dialog" aria-label={tx("AI-prompt maken")} style={{ width: "min(860px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div className="pb-objhead"><strong>{tx("AI-prompt: inhoud maken om te importeren")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
-        <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
-          <Tabs value={tab} onChange={setTab} tabs={[["wishes", "Wensen"], ["modules", "Modules", null, (catalog?.modules || []).length - pick.off.length + pick.objects.length], ["prompt", "Prompt"], ["how", "Zo gebruik je het"]]} />
-          {tab === "wishes" && (
-            <div className="form">
-              <p className="muted" style={{ margin: 0 }}>{tx("Vul in wat voor site je wilt. Op het tabblad Prompt staat daarna de opdracht voor de AI, met alle regels voor pagina's, afbeeldingen en opmaak zodat het hier te importeren is en met de pagina-editor en de modules bewerkt kan worden.")}</p>
-              <div className="grid2">
-                <label>{tx("Naam van de website")}<input value={f.name} maxLength={120} onChange={(e) => set("name", e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
-                <label>{tx("Soort website")}<select value={f.kind} onChange={(e) => set("kind", e.target.value)}>{SITE_KINDS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
-                <label>{tx("Taal van de teksten")}<input value={f.lang} maxLength={40} onChange={(e) => set("lang", e.target.value)} /></label>
-                <label>{tx("Pagina's")} <small className="muted">{tx("gescheiden door komma's, de eerste is de startpagina")}</small><input value={f.pages} onChange={(e) => set("pages", e.target.value)} placeholder="Home, Over ons, Diensten, FAQ, Contact" /></label>
-                <label>{tx("Weergave")}<select value={mode} onChange={(e) => setMode(e.target.value)}><option value="light">{tx("Licht")}</option><option value="dark">{tx("Donker")}</option><option value="both">{tx("Licht en donker")}</option></select></label>
-                <label>{tx("Andere talen")} <small className="muted">{tx("bv. English, Deutsch")}</small><input value={langs} maxLength={200} onChange={(e) => setLangs(e.target.value)} /></label>
-                <label>{tx("Stijl")}<input value={f.style} maxLength={300} onChange={(e) => set("style", e.target.value)} placeholder={tx("bv. warm, speels, veel foto's")} /></label>
-                <label>{tx("Kleuren")}<input value={f.colors} maxLength={200} onChange={(e) => set("colors", e.target.value)} placeholder="bv. #e8590c en #1c1917" /></label>
-              </div>
-              <label>{tx("Extra wensen")} <small className="muted">{tx("Optioneel")}</small><textarea rows={3} maxLength={1500} value={f.extra} onChange={(e) => set("extra", e.target.value)} placeholder={tx("Wat moet de site vertellen? Wie is de doelgroep?")} /></label>
-              <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={() => setTab("modules")}>{tx("Volgende")}</button></div>
-            </div>
-          )}
-          {tab === "modules" && (
-            <div className="form">
-              <ModulePicker catalog={catalog} off={pick.off} objects={pick.objects} onChange={setPick} />
-              <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={() => setTab("prompt")}>{tx("Prompt bekijken")}</button></div>
-            </div>
-          )}
-          {tab === "prompt" && (
-            <div className="form">
-              <textarea id="si-prompt" readOnly rows={18} value={text} onFocus={(e) => e.target.select()} style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: ".82rem" }} />
-              <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
-                <button type="button" className="btn primary" onClick={copy}><IconBolt /> {copied ? tx("Gekopieerd") : tx("Prompt kopiëren")}</button>
-                <small className="muted">{text.length.toLocaleString()} {tx("tekens")}</small>
-              </div>
-            </div>
-          )}
-          {tab === "how" && (
-            <ol className="muted" style={{ margin: 0, paddingLeft: "1.2rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-              <li>{tx("Kopieer de prompt en plak hem in een AI die bestanden kan maken (Claude, ChatGPT, Gemini).")}</li>
-              <li>{tx("De AI levert één ZIP-bestand op met index.html, de andere pagina's, style.css en de afbeeldingen in de map img. Kan de AI geen ZIP maken, dan geeft hij alle bestanden volledig plus een script om de ZIP te maken.")}</li>
-              <li>{tx("Download de ZIP en sleep hem op het tabblad ZIP-bestand hierboven.")}</li>
-              <li>{tx("Klik op Analyseren. Je ziet eerst een voorstel met thema, pagina's, afbeeldingen en modules; pas na je akkoord wordt er iets aangemaakt.")}</li>
-              <li>{tx("Kies bij Koppelen en verbeteren de weergave Bewerkbaar: de pagina's worden dan opgebouwd met de blokken van de pagina-editor, zodat je alles kunt aanpassen.")}</li>
-            </ol>
-          )}
-        </div>
-      </div>
-    </div>, document.body);
-}
-
 export default function SiteImport() {
   const { user } = useAuth();
   const L = lvl(user, "siteimport");
@@ -479,7 +410,6 @@ export default function SiteImport() {
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
   const [open, setOpen] = useState(null);
-  const [aiOpen, setAiOpen] = useState(false);
   const [designId, setDesignId] = useState(""); // the website that the AI-creator is making or has made
   const [designOpen, setDesignOpen] = useState(false);
   const zip = useRef(null);
@@ -487,6 +417,11 @@ export default function SiteImport() {
 
   const load = useCallback(() => api("/siteimport/").then((d) => { markImported(d.imports.length > 0); setList(d.imports); setOpen((o) => o ?? (d.imports.find((x) => x.apply?.pending) || {}).id ?? null); setFolders(d.folders); setFolder((f) => f || d.folders[0] || ""); }).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { // an import that is being analysed in the background: the list refreshes by itself (also after a reload of the page)
+    if (!(list || []).some((i) => i.status === "analysing" && !i.analyse?.error)) return undefined;
+    const t = setInterval(load, 2500);
+    return () => clearInterval(t);
+  }, [list, load]);
 
   const run = async (label, fn, okText) => {
     setBusy(label); setMsg(null);
@@ -495,7 +430,37 @@ export default function SiteImport() {
     finally { setBusy(""); }
   };
   const done = (r) => tx("\"{0}\" is ingelezen. Controleer hieronder het voorstel; pas na je akkoord wordt er iets aangemaakt.", r.name);
-  const start = (body) => run("import", () => api("/siteimport/", { method: "POST", body }), done).then((r) => { if (r) { setProposal(r); showProposal(); } });
+  const start = (body) => {
+    if (body instanceof FormData && body.get("kind") === "html") return startHtml(body); // the analysis by Claude runs in the background: with a progress bar
+    return run("import", () => api("/siteimport/", { method: "POST", body }), done).then((r) => { if (r) { setProposal(r); showProposal(); } });
+  };
+  // Waits until the analysis of an import is ready, and shows how far it is (the part from..to of the bar).
+  const waitForProposal = async (id, from = 8, to = 100) => {
+    const t0 = Date.now();
+    let fails = 0;
+    for (;;) {
+      let d = null;
+      try { d = await api(`/siteimport/${id}/`); fails = 0; } catch (e) { if (++fails > 6) throw e; } // a broken connection for a moment is not the end
+      if (d) {
+        const a = d.analyse || {};
+        if (a.error) throw new Error(a.error);
+        if (d.status === "proposal" && d.proposal?.theme) return d;
+        setProg((p) => ({ ...(p || {}), percent: from + ((to - from) * (a.percent || 0)) / 100, step: a.step ? tx(a.step) : p?.step }));
+      }
+      if (Date.now() - t0 > 20 * 60 * 1000) throw new Error(tx("Het analyseren duurt te lang. Probeer het straks nog eens."));
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  };
+  const startHtml = async (fd) => {
+    setBusy(""); setMsg(null);
+    setProg({ title: tx("Inlezen"), name: String(fd.get("name") || "") || tx("Ontwerp"), percent: 0, step: tx("Uploaden…"), error: "", built: [], state: "running" });
+    try {
+      const r = await apiUpload("/siteimport/", fd, (pct) => setProg((p) => ({ ...(p || {}), percent: pct * 0.08, step: `${tx("Uploaden…")} ${pct}%` })));
+      const d = await waitForProposal(r.id, 8, 100);
+      setProg(null); await load(); setProposal(d); showProposal();
+      setMsg({ ok: true, text: tx("\"{0}\" is ingelezen. Controleer hieronder het voorstel; pas na je akkoord wordt er iets aangemaakt.", d.name) });
+    } catch (e) { setProg((p) => ({ ...(p || {}), error: errorText(e), state: "error" })); await load(); }
+  };
   const importZip = (e) => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; const fd = new FormData(); fd.append("kind", "zip"); fd.append("file", f); fd.append("name", themeName); start(fd); };
   const importHtml = (e) => { const fl = Array.from(e.target.files || []); e.target.value = ""; if (!fl.length) return; const fd = new FormData(); fd.append("kind", "html"); fl.forEach((f) => fd.append("file", f)); fd.append("name", themeName); start(fd); };
   const showProposal = () => setTimeout(() => document.getElementById("si-proposal")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);  // the proposal stands above the list: bring it into view
@@ -504,19 +469,61 @@ export default function SiteImport() {
     setOpen(i.id);
     setTimeout(() => document.getElementById(`si-map-${i.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 250);
   };
-  const runApply = async (i, map, opts = {}) => {
-    setProg({ name: i.name, percent: 1, step: tx("Starten…"), error: "", built: [] });
+  const runApply = async (i, map, opts = {}, range = [0, 100]) => { // range: the part of the bar that this step has (a design that is applied also has the reading and the proposal)
+    const mix = (st) => (p) => ({ ...p, ...st, percent: range[0] + ((st.percent || 0) * (range[1] - range[0])) / 100 });
+    setProg((p) => ({ title: p?.title, name: i.name, percent: range[0] + 1, step: tx("Starten…"), error: "", built: [], state: "running" }));
     try {
       let st = await api(`/siteimport/${i.id}/apply/`, { method: "POST", body: { ...(map ? { map } : {}), mode: opts.mode || "clear", prompt: opts.prompt || "", translate: !!opts.translate, render: opts.render || "design", options: opts.options || {} } });
-      setProg((p) => ({ ...p, ...st }));
+      setProg(mix(st));
       while (st.state === "running" && !st.stale) {
         await new Promise((r) => setTimeout(r, 1500));
         st = await api(`/siteimport/${i.id}/apply/`);
-        setProg((p) => ({ ...p, ...st }));
+        setProg(mix(st));
       }
       if (st.state === "running") setProg((p) => ({ ...p, error: tx("De server reageert niet meer. Probeer het straks nog eens.") }));
     } catch (e) { setProg((p) => ({ ...p, error: errorText(e), state: "error" })); }
     await load();
+  };
+  // The files of a design as the form of the html import: the pages, the css, the svg's and the photos that the pages use.
+  const buildImportForm = async (job) => {
+    const fd = new FormData(); fd.append("kind", "html"); fd.append("name", job.name);
+    Object.entries(job.files).forEach(([n, c]) => fd.append("file", new File([c], n.split("/").pop(), { type: n.endsWith(".svg") ? "image/svg+xml" : n.endsWith(".css") ? "text/css" : "text/html" })));
+    const all = Object.values(job.files).join("\n");
+    for (const p of job.brief?.photos || []) { // only the photos that the pages use
+      if (!all.includes(p.file)) continue;
+      try { const blob = await (await fetch(mediaUrl(p.url))).blob(); fd.append("file", new File([blob], p.file, { type: blob.type })); } catch { /* the photo stays in the media library */ }
+    }
+    return fd;
+  };
+  // Toepassen: the design becomes the pages of the website at once: read in, the proposal is approved as it was made, and the pages are built with their content (progress in the window).
+  const applyDesign = async (job, o = {}) => {
+    const wname = String(job.brief?.name || "").trim();
+    if (!wname) { setDesignOpen(true); setMsg({ ok: false, text: tx("Geef de website een naam. De naam van de website is verplicht.") }); return; }
+    setDesignOpen(false); setTab("html");
+    setProg({ title: tx("Toepassen"), name: wname, percent: 1, step: tx("Het ontwerp klaarzetten…"), error: "", built: [], state: "running" });
+    try {
+      const fd = await buildImportForm(job);
+      const r = await apiUpload("/siteimport/", fd, (pct) => setProg((p) => ({ ...(p || {}), percent: pct * 0.05, step: `${tx("Uploaden…")} ${pct}%` })));
+      const got = await waitForProposal(r.id, 5, 40); // Claude reads the design and makes the proposal: 5 - 40 %
+      const pr = got.proposal;
+      if (!pr) throw new Error(tx("Het ontwerp kon niet worden ingelezen."));
+      setProg((p) => ({ ...p, percent: 42, step: tx("Pagina's, afbeeldingen en modules vastleggen…") }));
+      const off = o.off || [];
+      const ap = await api(`/siteimport/${r.id}/approve/`, { method: "POST", body: {
+        name: wname, profile: pr.profile?.key || null,
+        pages: (pr.pages || []).map((p, i) => ({ i: p.i ?? i, include: true, title: p.title, in_menu: p.in_menu, target: p.suggest || "" })),
+        home: { include: !!pr.home?.title }, assets: (pr.assets || []).map((a) => ({ file: a.file, include: true, role: a.role })), theme: { include: false }, // (the theme of an own style is made from the choices of the step plan, below)
+        modules: (pr.modules || []).map((m) => ({ key: m.key, include: o.modules !== false && !!m.include && !off.includes(m.key) })) } });
+      let themeNote = "";
+      if (o.theme !== false && !job.brief?.theme) { // an own style: a theme with that style, named after the website
+        setProg((p) => ({ ...p, percent: 44, step: tx("Het thema met jouw stijl maken…") }));
+        try { const t = await api(`/sitecreator/${job.id}/theme/`, { method: "POST", body: { use: o.useTheme !== false } }); themeNote = `${tx("Thema gemaakt")}: ${t.name}${t.used ? ` (${tx("in gebruik")})` : ""}`; }
+        catch (e) { themeNote = `${tx("Het thema kon niet worden gemaakt")}: ${errorText(e)}`; }
+      }
+      await load(); setOpen(ap.id);
+      await runApply(ap, null, { render: o.render || "blocks", mode: "clear", prompt: "", translate: !!o.translate }, [45, 100]); // the pages are built: 45 - 100 %
+      if (themeNote) setProg((p) => (p ? { ...p, themeNote } : p));
+    } catch (e) { setProg((p) => ({ ...(p || { name: job.name, percent: 0, built: [] }), error: errorText(e), state: "error" })); }
   };
   const [shown, setShown] = useState(null); // {title, path}: a page of the site in a window
   const [view, setView] = useState(null); // the design of one page, to look at
@@ -585,33 +592,26 @@ export default function SiteImport() {
             </div>
           )}
           {tab === "ai" && <AiCreatorHome refreshKey={designOpen} onOpen={(id) => { setDesignId(id); setDesignOpen(true); }} />}
-          <div style={{ marginTop: ".8rem" }}><button type="button" className="btn" onClick={() => setAiOpen(true)}><IconBolt /> {tx("Maak AI-prompt: inhoud om te importeren")}</button></div>
           <small className="muted" style={{ display: "block", marginTop: ".6rem" }}>
             {tab === "ai" ? tx("Claude ontwerpt de pagina's met illustraties; foto's voeg je daarna zelf toe in de mediabibliotheek. Het ontwerpen kost AI-tegoed. Er is pas iets aangemaakt na je akkoord bij het importeren.") : tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. Claude maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
           </small>
         </Collapsible>
       )}
 
-      {designOpen && designId && typeof document !== "undefined" && <AiCreatorPopup jobId={designId} onClose={() => setDesignOpen(false)} onImport={async (job) => { // the files of the design (and the photos that it uses) go through the normal html import
-        const fd = new FormData(); fd.append("kind", "html"); fd.append("name", job.name);
-        Object.entries(job.files).forEach(([n, c]) => fd.append("file", new File([c], n.split("/").pop(), { type: n.endsWith(".svg") ? "image/svg+xml" : n.endsWith(".css") ? "text/css" : "text/html" })));
-        const all = Object.values(job.files).join("\n");
-        for (const p of job.brief?.photos || []) { // only the photos that the pages use
-          if (!all.includes(p.file)) continue;
-          try { const blob = await (await fetch(mediaUrl(p.url))).blob(); fd.append("file", new File([blob], p.file, { type: blob.type })); } catch { /* the photo stays in the media library */ }
-        }
+      {designOpen && designId && typeof document !== "undefined" && <AiCreatorPopup jobId={designId} onClose={() => setDesignOpen(false)} onImport={async (job) => { // the files of the design (and the photos that it uses) go through the normal html import: first a proposal that you check
+        const fd = await buildImportForm(job);
         setDesignOpen(false); setTab("html"); start(fd);
-      }} />}
-      {aiOpen && typeof document !== "undefined" && <AiPromptPopup onClose={() => setAiOpen(false)} />}
+      }} onApply={applyDesign} />}
       {prog && typeof document !== "undefined" && createPortal(
         <div className="pb-objback">
           <div className="pb-objpop" role="dialog" aria-label={tx("Toepassen")} style={{ width: "min(520px, 94vw)" }}>
-            <div className="pb-objhead"><strong>{tx("Toepassen")}: {prog.name}</strong><span style={{ flex: 1 }} />{prog.state !== "running" && <button type="button" className="pb-panelx" onClick={() => setProg(null)} aria-label={tx("Sluiten")}>×</button>}</div>
+            <div className="pb-objhead"><strong>{prog.title || tx("Toepassen")}: {prog.name}</strong><span style={{ flex: 1 }} />{prog.state !== "running" && <button type="button" className="pb-panelx" onClick={() => setProg(null)} aria-label={tx("Sluiten")}>×</button>}</div>
             <div style={{ padding: "1rem 1.2rem 1.4rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>{prog.error ? tx("Mislukt") : prog.step}</span><strong>{Math.round(prog.percent || 0)} %</strong></div>
               <div style={{ height: 10, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}><div style={{ width: `${Math.max(2, Math.min(100, prog.percent || 0))}%`, height: "100%", background: prog.error ? "var(--danger)" : "var(--blue)", transition: "width .4s" }} /></div>
               {prog.error && <div className="alert">{prog.error}</div>}
               {prog.state === "done" && prog.warning && <div className="alert">{prog.warning}</div>}
+              {prog.state === "done" && prog.themeNote && <div className="alert ok">{prog.themeNote}</div>}
               {prog.state === "done" && <div className="alert ok">{tx("Klaar. De pagina's zijn opgebouwd:")} {(prog.built || []).map((b) => <a key={b.path} href={b.path} target="_blank" rel="noreferrer" style={{ marginLeft: ".4rem" }}>{b.title}</a>)}</div>}
               {prog.state !== "running" && <div className="row" style={{ justifyContent: "flex-start" }}>
                 {prog.state === "done" && !prog.error && (prog.built || []).map((b, n, all) => <a key={b.path} className={`btn${n === 0 ? " primary" : ""}`} href={b.path}>{all.length > 1 ? `${tx("Ga naar")} ${b.title}` : tx("Ga naar pagina")}</a>)}
@@ -635,7 +635,14 @@ export default function SiteImport() {
         {list && !list.length && <p className="muted" style={{ margin: 0 }}>{tx("Nog niets geïmporteerd.")}</p>}
         {(list || []).filter((i) => i.status === "analysing").map((i) => (
           <div key={i.id} className="card si-card">
-            <div className="si-head"><div className="grow"><strong style={{ fontSize: "1.05rem" }}>{i.name}</strong> <span className="badge off">{tx("Bezig met analyseren…")}</span><br /><small className="muted">{i.source}</small></div></div>
+            <div className="si-head"><div className="grow"><strong style={{ fontSize: "1.05rem" }}>{i.name}</strong> <span className={i.analyse?.error ? "badge off" : "badge"}>{i.analyse?.error ? tx("Mislukt") : tx("Bezig met analyseren…")}</span><br /><small className="muted">{i.source}</small></div></div>
+            {i.analyse && !i.analyse.error && (
+              <div className="progress" role="progressbar" aria-valuenow={Math.round(i.analyse.percent || 0)} aria-valuemin={0} aria-valuemax={100}>
+                <div className="progress-top"><span>{tx(i.analyse.step || "Bezig…")}</span><strong>{Math.round(i.analyse.percent || 0)}%</strong></div>
+                <div className="progress-track"><i style={{ width: `${Math.max(2, i.analyse.percent || 0)}%` }} /></div>
+              </div>
+            )}
+            {i.analyse?.error && <div className="alert">{i.analyse.error}</div>}
             <div className="row" style={{ justifyContent: "flex-start" }}><button className="btn" onClick={load}>{tx("Verversen")}</button><button className="btn danger" onClick={() => cancelProposal(i)}>{tx("Weggooien")}</button></div>
           </div>
         ))}

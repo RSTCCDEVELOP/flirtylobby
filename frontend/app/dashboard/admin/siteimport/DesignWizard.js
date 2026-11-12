@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconArchive, IconBolt, IconCheck, IconImage, IconPaperclip, IconTrash } from "../../../../components/Icons";
-import { api, downloadFile, errorText, mediaUrl } from "../../../../lib/api";
+import { api, apiUpload, downloadFile, errorText, mediaUrl } from "../../../../lib/api";
 import Tabs from "../../../../components/Tabs";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
@@ -28,13 +28,21 @@ const META = [
   ["Controleer het ontwerp", "Zo ziet je website eruit met deze keuzes. Er is nog geen inhoud gemaakt: de teksten zijn voorbeelden."],
 ];
 
+// The bar of an upload with its percentage; at 100% the server is still working on it.
+const UploadBar = ({ pct, label }) => (
+  <div className="progress" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} style={{ width: "100%" }}>
+    <div className="progress-top"><span>{pct >= 100 ? tx("Verwerken…") : label}</span><strong>{pct}%</strong></div>
+    <div className="progress-track"><i style={{ width: `${Math.max(2, pct)}%` }} /></div>
+  </div>
+);
+
 const Sun = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4" /></svg>;
 const Moon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z" /></svg>;
 const Both = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><circle cx="12" cy="12" r="8" /><path d="M12 4v16" /><path d="M12 4a8 8 0 010 16z" fill="currentColor" /></svg>;
 const MODE_ICON = { light: Sun, dark: Moon, both: Both };
 
 // The step plan. Every change is saved at once (a draft on the server), so you can stop and continue later.
-export default function Wizard({ job, onJob, onGenerate, onReload }) {
+export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onImprove, onWorkspace }) {
   const [b, setB] = useState(job.brief || {});
   const [step, setStep] = useState(Math.min(LAST, job.brief?.step || 0));
   const [themes, setThemes] = useState([]);
@@ -48,6 +56,8 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
   const [pmode, setPmode] = useState("light");
   const [ppage, setPpage] = useState("index.html");
   const [palNote, setPalNote] = useState("");
+  const [up, setUp] = useState(null); // {what, pct}: an upload that is going on, with its percentage
+  const [render, setRender] = useState("blocks"); // Toepassen: editable blocks (the page editor) or exactly as the file
   const pend = useRef({}), timer = useRef(null), body = useRef(null);
   const zipRef = useRef(null), photoRef = useRef(null), docRef = useRef(null);
   const [docs, setDocs] = useState(job.docs || []);
@@ -87,8 +97,9 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
     setErr(""); setDocNote("");
     for (const f of list) {
       if (!/\.(pdf|docx|txt|md)$/i.test(f.name)) { setErr(tx("Kies een PDF-, Word- (.docx) of tekstbestand.")); continue; }
-      try { const fd = new FormData(); fd.append("file", f); const r = await api(`/sitecreator/${job.id}/document/`, { method: "POST", body: fd }); setDocs(r.docs); }
+      try { const fd = new FormData(); fd.append("file", f); setUp({ what: "doc", pct: 0 }); const r = await apiUpload(`/sitecreator/${job.id}/document/`, fd, (pct) => setUp({ what: "doc", pct })); setDocs(r.docs); }
       catch (x) { setErr(errorText(x)); }
+      finally { setUp(null); }
     }
   };
   const delDoc = async (d) => {
@@ -99,7 +110,10 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
     try { await flush(); const r = await api(`/sitecreator/${job.id}/document/${d.id}/apply/`, { method: "POST" }); setDocs(r.docs); setB((o) => ({ ...r.brief, step: o.step })); setDocNote(tx("De instellingen uit het document zijn opnieuw toegepast.")); }
     catch (x) { setErr(errorText(x)); }
   };
-  const go = (n) => { setStep(n); upd({ step: n }); body.current?.scrollTo({ top: 0 }); };
+  const go = (n) => {
+    if (n > 0 && !(b.name || "").trim()) { setStep(0); upd({ step: 0 }); setErr(tx("Geef de website een naam. De naam van de website is verplicht.")); body.current?.scrollTo({ top: 0 }); return; }
+    setErr(""); setStep(n); upd({ step: n }); body.current?.scrollTo({ top: 0 });
+  };
   useEffect(() => { if (!pagesOf(b).length && b.mode !== "improve") upd({ pages: (PAGE_SUGGEST[b.kind || "company"] || PAGE_SUGGEST.company).join(", ") }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (step === 2 && !Object.keys(b.colors || {}).length) upd({ colors: DEFAULT_COLORS }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -128,10 +142,11 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
     try {
       await flush();
       const fd = new FormData(); fd.append("file", f);
-      const r = await api(`/sitecreator/${job.id}/zip/`, { method: "POST", body: fd });
+      setUp({ what: "zip", pct: 0 });
+      const r = await apiUpload(`/sitecreator/${job.id}/zip/`, fd, (pct) => setUp({ what: "zip", pct }));
       setB((o) => ({ ...o, ...r.brief })); onJob(r); onReload?.(); // the files of the design come in a separate (light) call
       if (r.notes?.length) setErr(r.notes.join(" "));
-    } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
+    } catch (x) { setErr(errorText(x)); } finally { setBusy(""); setUp(null); }
   };
   const readPalette = async (quiet) => { // the colours, font and corners of the design that was read in (ZIP) become the settings
     try {
@@ -146,11 +161,17 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
     setBusy("photo"); setErr("");
     try {
       const fd = new FormData(); list.forEach((f) => fd.append("files", f)); fd.append("tags", "design");
-      const r = await api("/media/upload/", { method: "POST", body: fd });
+      setUp({ what: "photo", pct: 0 });
+      const r = await apiUpload("/media/upload/", fd, (pct) => setUp({ what: "photo", pct }));
       upd({ photos: [...(b.photos || []), ...r.items.map((i) => ({ id: i.id, note: "", url: i.url, file: "", name: i.name }))] });
       await flush();
       if (r.errors?.length) setErr(r.errors.join(" "));
-    } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
+    } catch (x) { setErr(errorText(x)); } finally { setBusy(""); setUp(null); }
+  };
+  const apply = async () => { // the design is read in: make the pages and fill them with the content
+    setBusy("apply"); setErr("");
+    try { await flush(); await onApply({ render, translate: (b.langs || []).length > 0, off: b.modules_off || [] }); }
+    catch (x) { setErr(errorText(x)); setBusy(""); }
   };
   const generate = async () => {
     setBusy("gen"); setErr("");
@@ -182,6 +203,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
         </ol>
         <div className="dw-side-foot">
           <span>{save === "saving" ? tx("Opslaan…") : save === "error" ? tx("Opslaan mislukt") : save === "dirty" ? "…" : tx("Alles is bewaard")}</span>
+          {onWorkspace && <button type="button" className="btn sm" onClick={onWorkspace}>← {tx("Terug naar het ontwerp")}</button>}
           <button type="button" className="btn sm" onClick={() => setPromptOpen(true)}><IconBolt /> {tx("AI-prompt voor een externe AI")}</button>
         </div>
       </aside>
@@ -201,6 +223,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
                 <small style={{ display: "block", marginTop: ".3rem" }}>{tx("PDF, Word (.docx) of tekst · maximaal 10 MB. Het document wordt bewaard bij dit ontwerp, zodat je het later nog kunt controleren.")}</small>
                 <input ref={docRef} type="file" accept=".pdf,.docx,.txt,.md,application/pdf" multiple hidden onChange={(e) => { addDocs(e.target.files); e.target.value = ""; }} />
               </div>
+              {up?.what === "doc" && <UploadBar pct={up.pct} label={tx("Document uploaden…")} />}
               {docNote && <div className="alert ok">{docNote}</div>}
               {docs.map((d) => (
                 <div key={d.id} className="dw-doc">
@@ -232,7 +255,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
             </div>
             <div className="dw-panel">
               <div className="dw-2">
-                <Field label="Naam van de website"><input value={b.name || ""} maxLength={120} onChange={(e) => upd({ name: e.target.value })} placeholder={tx("bv. Bakkerij De Zon")} /></Field>
+                <Field label="Naam van de website *" hint="verplicht, ook de naam van het thema"><input value={b.name || ""} maxLength={120} required aria-required="true" onChange={(e) => upd({ name: e.target.value })} placeholder={tx("bv. Bakkerij De Zon")} style={!(b.name || "").trim() && step === 0 && err ? { borderColor: "var(--danger)" } : undefined} /></Field>
                 <Field label="Soort website"><select value={b.kind || "company"} onChange={(e) => { upd({ kind: e.target.value }); if (!improve && !pages.length) upd({ pages: PAGE_SUGGEST[e.target.value].join(", ") }); }}>{SITE_KINDS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></Field>
               </div>
               <Field label="Wat moet de site vertellen?" hint="Optioneel: doelgroep, aanbod, bijzonderheden"><textarea rows={4} maxLength={1500} value={b.extra || ""} onChange={(e) => upd({ extra: e.target.value })} placeholder={tx("Wie is de doelgroep? Wat bied je aan? Wat maakt je anders?")} /></Field>
@@ -266,6 +289,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
               <button type="button" className="btn" disabled={!!busy} onClick={() => zipRef.current.click()}><IconArchive /> {busy === "zip" ? tx("Bezig met inlezen…") : improve ? tx("Ander ZIP-bestand inlezen") : tx("ZIP-bestand inlezen")}</button>
               {improve && <button type="button" className="btn" onClick={() => upd({ mode: "new" })}>{tx("Toch helemaal nieuw ontwerpen")}</button>}
               <input ref={zipRef} type="file" accept=".zip,application/zip" hidden onChange={readZip} />
+              {up?.what === "zip" && <UploadBar pct={up.pct} label={tx("ZIP-bestand uploaden…")} />}
             </div>
           </>)}
 
@@ -273,7 +297,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
             <div className="dw-panel">
               <h3>{tx("Thema")}</h3>
               <div className="dw-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
-                <button type="button" className={`dw-opt ${!b.theme ? "on" : ""}`} onClick={() => pickTheme(null)} style={{ justifyContent: "center", minHeight: 124 }}><b>{tx("Eigen stijl")}</b><small>{tx("Je kiest zelf de kleuren in de volgende stap.")}</small></button>
+                <button type="button" className={`dw-opt ${!b.theme ? "on" : ""}`} onClick={() => pickTheme(null)} style={{ justifyContent: "center", minHeight: 124 }}><b>{tx("Eigen stijl")}</b><small>{tx("Je kiest zelf de kleuren in de volgende stap. Bij het aanmaken wordt er een thema van gemaakt met de naam van je website.")}</small></button>
                 {themes.map((t) => (
                   <button type="button" key={t.key} className={`dw-opt ${b.theme === t.key ? "on" : ""}`} onClick={() => pickTheme(t)}>
                     <span className="dw-band">{Object.values(THEME_MAP).map((k, i) => <i key={i} style={{ background: t.colors[k] }} />)}</span>
@@ -374,6 +398,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
               <IconImage /> <b>{busy === "photo" ? tx("Bezig met uploaden…") : tx("Sleep foto's hierheen of klik om te kiezen")}</b>
               <small style={{ display: "block", marginTop: ".3rem" }}>{tx("Ze komen ook in de mediabibliotheek (tag: design). Claude ziet de foto's niet: schrijf er kort bij wat erop staat.")}</small>
               <input ref={photoRef} type="file" accept="image/*" multiple hidden onChange={(e) => { addPhotos(e.target.files); e.target.value = ""; }} />
+              {up?.what === "photo" && <div style={{ marginTop: ".7rem" }}><UploadBar pct={up.pct} label={tx("Foto's uploaden…")} /></div>}
             </div>
             {(b.photos || []).length > 0 && <div className="dw-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
               {(b.photos || []).map((p, i) => (
@@ -392,6 +417,17 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
           </>)}
 
           {step === 6 && (<>
+            {realDesign && (
+              <div className="dw-panel" style={{ borderColor: "var(--blue)" }}>
+                <h3>{tx("Het ontwerp is ingelezen")}</h3>
+                <p className="dw-hint">{`${htmlFiles.length} ${tx("pagina's")}, ${(b.photos || []).length} ${tx("afbeeldingen")}. ${tx("Klik op Toepassen: de pagina's worden gemaakt en gevuld met de inhoud van het ontwerp.")}`}</p>
+                <div className="dw-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+                  {[["blocks", "Bewerkbaar (blokken)", "Je kunt alles aanpassen met de pagina-editor, de modules en de systeemobjecten. Een benadering van het ontwerp."], ["design", "Exact (1 op 1)", "De pagina ziet er precies uit als het ontwerp. Teksten pas je aan door opnieuw toe te passen."]].map(([k, l, h]) => (
+                    <button type="button" key={k} className={`dw-opt ${render === k ? "on" : ""}`} aria-pressed={render === k} onClick={() => setRender(k)}><b>{tx(l)}</b><small>{tx(h)}</small></button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="dw-stat">
               {[
                 [0, "Website", b.name || "—", `${tx((SITE_KINDS.find((k) => k[0] === b.kind) || [0, ""])[1])}${improve ? ` · ${tx("verbeteren uit ZIP")}` : ""}`],
@@ -427,7 +463,12 @@ export default function Wizard({ job, onJob, onGenerate, onReload }) {
           <span className="dw-note">{step === LAST ? tx("Het maken van de pagina's kost AI-tegoed en duurt enkele minuten.") : `${tx("Stap")} ${step + 1} ${tx("van")} ${STEPS.length} · ${save === "saving" ? tx("Opslaan…") : tx("Alles is bewaard")}`}</span>
           {step < LAST
             ? <button type="button" className="btn primary" onClick={() => go(step + 1)}>{tx("Volgende")}</button>
-            : <button type="button" className="btn primary" disabled={!!busy || !(b.name || "").trim() || !pages.length} onClick={generate}><IconBolt /> {busy === "gen" ? tx("Starten…") : improve ? tx("Ontwerp verbeteren") : tx("Pagina's maken met AI")}</button>}
+            : realDesign && onApply
+              ? <span style={{ display: "flex", gap: ".6rem", flexWrap: "wrap" }}>
+                {onImprove && <button type="button" className="btn" disabled={!!busy} onClick={onImprove} title={tx("Claude verbetert het ontwerp alleen als je zegt wat er moet gebeuren")}><IconBolt /> {tx("Verbeteren met opdracht…")}</button>}
+                <button type="button" className="btn primary" disabled={!!busy || !htmlFiles.length || !(b.name || "").trim()} onClick={apply}>{busy === "apply" ? tx("Bezig…") : <><IconCheck /> {tx("Toepassen")}</>}</button>
+              </span>
+              : <button type="button" className="btn primary" disabled={!!busy || !pages.length || !(b.name || "").trim()} onClick={generate}><IconBolt /> {busy === "gen" ? tx("Starten…") : improve ? tx("Ontwerp verbeteren") : tx("Pagina's maken met AI")}</button>}
         </footer>
       </section>
     </div>

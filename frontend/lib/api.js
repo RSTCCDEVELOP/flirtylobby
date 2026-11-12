@@ -57,6 +57,26 @@ export async function api(path, { method = "GET", body } = {}) {
   return translateTree(data);
 }
 
+// Sends a form with files and tells how far the upload is (onProgress(percent 0-100)); fetch cannot do that. Gives the answer like api() does.
+export function apiUpload(path, form, onProgress) {
+  return new Promise((resolve, reject) => {
+    const token = getToken();
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${getBase()}/api${path}`);
+    if (token) xhr.setRequestHeader("Authorization", `Token ${token}`);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.min(100, Math.round((e.loaded / e.total) * 100))); };
+    xhr.onerror = () => reject(new TypeError("Failed to fetch"));
+    xhr.ontimeout = () => reject(new TypeError("Failed to fetch"));
+    xhr.onload = () => {
+      let data = null;
+      try { data = xhr.status === 204 ? null : JSON.parse(xhr.responseText); } catch { data = null; }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(translateTree(data));
+      else reject(new ApiError(xhr.status, data));
+    };
+    xhr.send(form);
+  });
+}
+
 // Download a file the API makes (with the login of the member): the browser saves it under `filename`
 export async function downloadFile(path, filename) {
   const token = getToken();

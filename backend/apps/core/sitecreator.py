@@ -17,6 +17,7 @@ import logging
 import os
 import re
 import threading
+import time
 import uuid
 import zipfile
 from datetime import date
@@ -363,7 +364,12 @@ def read_zip(job, upload, user):
         pages.append(re.sub(r"\s+", " ", (m.group(1) if m else n[:-5])).split("|")[0].split(" - ")[0].strip()[:60] or n[:-5])
     b = dict(job.brief or {})
     b.update({"mode": "improve", "photos": photos, "pages": ", ".join(pages), "from_zip": [n for n in files]})
-    b.setdefault("name", job.name)
+    if not (b.get("name") or "").strip() or b.get("name") == "Nieuw ontwerp":  # the name of the website: from the design itself (the title of the start page, without the slogan)
+        first = re.search(r"<title>(.*?)</title>", files.get("index.html") or files[htmls[0]], re.S | re.I)
+        guess = re.split(r"\s[|–—-]\s|\s[:·]\s", re.sub(r"\s+", " ", first.group(1) if first else "").strip())[0].strip()[:80]
+        b["name"] = guess  # no title in the design: the name stays empty and is asked (it is required)
+        if guess:
+            SiteDesignJob.objects.filter(pk=job.pk).update(name=guess[:120])
     SiteDesignJob.objects.filter(pk=job.pk).update(files=files, brief=b, updated_at=timezone.now())
     job.files, job.brief = files, b
     try:  # the colours, font and corners of this design become the settings of the step plan
@@ -674,6 +680,50 @@ def apply_palette(job):
     return job, note
 
 
+# ── a theme with the own style of the design (when no theme of the system was chosen): the name of the theme is the name of the website ──
+SYSTEM_FONT = {"sans": "System", "serif": "Georgia", "round": "Trebuchet MS"}
+
+
+def theme_values(b):
+    """The settings of a theme from the choices in the step plan: colours (light and dark), font, corners and the starting mode."""
+    from . import theme as T
+    from . import themeimport as TI
+
+    c = {**{"primary": "#2563eb", "secondary": "#f59e0b", "bg": "#f8fafc", "card": "#ffffff", "text": "#0f172a", "dark": "#0f172a", "dbg": "#0f172a", "dcard": "#1e293b", "dtext": "#e2e8f0"}, **(b.get("colors") or {})}
+    mix = TI._mix
+    r = int(b.get("radius") if b.get("radius") is not None else 14)
+    v = {
+        "primary": c["primary"], "secondary": c["secondary"],
+        "light_page": c["bg"], "light_bg": c["bg"], "light_card": c["card"], "light_hover": mix(c["bg"], c["card"], 0.5), "light_line": mix(c["text"], c["bg"], 0.86), "light_text": c["text"], "light_muted": mix(c["text"], c["bg"], 0.42),
+        "dark_page": c["dbg"], "dark_bg": c["dbg"], "dark_card": c["dcard"], "dark_hover": mix(c["dbg"], c["dcard"], 0.5), "dark_line": mix(c["dbg"], c["dtext"], 0.15), "dark_text": c["dtext"], "dark_muted": mix(c["dtext"], c["dbg"], 0.36),
+        "font_body": SYSTEM_FONT.get(b.get("font") or "sans", "System"), "font_heading": SYSTEM_FONT.get(b.get("font") or "sans", "System"),
+        "radius": r, "btn_radius": max(0, r - 4), "popup_radius": r,
+        "default_mode": {"light": "light", "dark": "dark", "both": "system"}.get(b.get("color_mode") or "light", "light"),
+    }
+    clean, _errors = T.validate(TI._complete(v))
+    return clean
+
+
+def make_theme(job, use=False):
+    """A theme package with the style of this design, named after the website; with use it is also made the look of the website."""
+    from . import resources, themepacks
+
+    b = job.brief or {}
+    name = (b.get("name") or "").strip()
+    if not name:
+        raise ValueError("Geef de website een naam (stap 1). De naam van de website is verplicht.")
+    if b.get("theme"):
+        raise ValueError("Voor dit ontwerp is een thema van het systeem gekozen: dat wordt gebruikt, er wordt geen nieuw thema gemaakt.")
+    mode = b.get("color_mode")
+    try:
+        man = resources.save_theme(name, f"De stijl van {name}, gemaakt met Website ontwerpen.", mode if mode in ("light", "dark") else None, theme_values(b), install=True)
+        if use:
+            themepacks.use(man["key"])
+    except (resources.ResourceError, themepacks.ThemeError) as e:
+        raise ValueError(str(e))
+    return {"key": man["key"], "name": man["name"], "used": bool(use)}
+
+
 # ── generating ──
 def _brief_text(b):
     pages = pages_of(b)
@@ -719,16 +769,40 @@ def _brief_text(b):
     return "\n".join(lines)
 
 
-def _ask(system, prompt, max_tokens=24000):
-    return ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=600)
+class Stopped(ValueError):
+    """The user pressed Stop: the work ends here (a ValueError, so the AI call is ended cleanly)."""
+
+
+_STOP = {}
+
+
+def _stop_requested(pk, fresh=False):
+    """Was Stop pressed? (asked from the database, at most about once per second while the answer streams in)"""
+    now = time.monotonic()
+    last = _STOP.get(pk)
+    if not fresh and last and now - last[0] < 0.8:
+        return last[1]
+    v = SiteDesignJob.objects.filter(pk=pk, status="stopping").exists()
+    _STOP[pk] = (now, v)
+    return v
+
+
+def _ask(system, prompt, max_tokens=24000, pk=None):
+    def cancel():
+        if pk and _stop_requested(pk):
+            raise Stopped("Gestopt.")
+
+    if pk and _stop_requested(pk, fresh=True):
+        raise Stopped("Gestopt.")
+    return ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=600, cancel=cancel if pk else None)
 
 
 def _set(pk, **kw):
     SiteDesignJob.objects.filter(pk=pk).update(updated_at=timezone.now(), **kw)
 
 
-def generate(job):
-    if job.status == "running":
+def generate(job, improve=False, focus=""):
+    if job.status in ("running", "stopping"):
         raise ValueError("Er wordt al gewerkt aan dit ontwerp.")
     if SiteDesignJob.objects.filter(user=job.user, status="running", updated_at__gte=timezone.now() - timezone.timedelta(minutes=12)).exists():
         raise ValueError("Er wordt al een website ontworpen. Wacht tot die klaar is.")
@@ -736,21 +810,34 @@ def generate(job):
         raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
     b = job.brief or {}
     if not (b.get("name") or "").strip():
-        raise ValueError("Geef de website een naam (stap 1).")
-    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=3, step="Starten", error="", messages=[], updated_at=timezone.now())
+        raise ValueError("Geef de website een naam (stap 1). De naam van de website is verplicht.")
+    if improve and not str(focus or "").strip():
+        raise ValueError("Schrijf eerst wat er verbeterd moet worden: zonder opdracht verandert er niets.")
+    if b.get("mode") == "improve" and not improve:
+        raise ValueError("Een ingelezen ontwerp verbeter je met een opdracht (knop Verbeteren). Wil je het zoals het is gebruiken, kies dan Toepassen.")
+    keep = list(job.messages or []) if improve else []
+    if improve:  # improve what is here now (the files of the design as they are), with the points that the user asked attention for
+        if not any(n.endswith(".html") for n in (job.files or {})):
+            raise ValueError("Er is nog geen ontwerp om te verbeteren.")
+        b = dict(b)
+        b["improve_now"], b["focus"] = True, str(focus or "").strip()[:500]
+        SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, files_prev=dict(job.files or {}))  # the way back
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=3, step="Starten", error="", messages=keep, updated_at=timezone.now())
     threading.Thread(target=_generate, args=(job.pk,), daemon=True).start()
 
 
 def _generate(pk):
     try:
         job = SiteDesignJob.objects.get(pk=pk)
-        improve = (job.brief or {}).get("mode") == "improve" and any(n.endswith(".html") for n in (job.files or {}))
+        improve = (((job.brief or {}).get("mode") == "improve") or bool((job.brief or {}).get("improve_now"))) and any(n.endswith(".html") for n in (job.files or {}))
         old = dict(job.files or {}) if improve else {}
         pages = pages_of(job.brief)
         if improve:  # the pages are the html files of the ZIP (in the order of the brief)
             have = sorted((n for n in old if n.endswith(".html")), key=lambda n: (n != "index.html", n))
             pages = [(f, pages_of(job.brief)[i][1] if i < len(pages_of(job.brief)) else f[:-5]) for i, f in enumerate(have)]
         text = _brief_text(job.brief)
+        if (job.brief or {}).get("focus"):
+            text += "\nFOCUS of this improvement (pay special attention to this): " + str(job.brief["focus"])
         nav = "; ".join(f"{t} -> {f}" for f, t in pages)
         first = pages[0][0]
         _set(pk, progress=6, step=f"De opmaak en de startpagina {'verbeteren' if improve else 'ontwerpen'} ({pages[0][1]})")
@@ -759,30 +846,63 @@ def _generate(pk):
                       f"The menu on every page: {nav}\n\n{text}\n\nCURRENT style.css:\n{old.get('style.css', '(none)')}\n\nCURRENT {first}:\n{old.get(first, '')}")
         else:
             prompt = f"Design this website. Now output ONLY style.css (the complete shared stylesheet for ALL pages: also the classes that the other pages will need: cards, columns, faq, products, events, forms-free contact blocks), {first} and the svg illustrations (img/...) of that page.\nThe menu on every page: {nav}\n\n{text}"
-        files = parse(_ask(RULES, prompt))
+        files = parse(_ask(RULES, prompt, pk=pk))
         if "style.css" not in files or first not in files:
             raise ValueError("De AI gaf geen bruikbaar ontwerp terug. Probeer het nog eens.")
+        if improve:
+            files = {**old, **files}  # what is not improved yet stays as it was: nothing is lost when a later page fails
         _set(pk, files=files, progress=30)
         rest = pages[1:]
         for n, (f, title) in enumerate(rest):
             _set(pk, progress=30 + int(65 * n / max(1, len(rest))), step=f"Pagina '{title}' {'verbeteren' if improve else 'ontwerpen'}")
             ctx = f"style.css:\n{files['style.css']}\n\n{first} (copy its header and footer exactly, same menu):\n{files[first]}"
             cur = f"\n\nCURRENT {f} (improve this page, keep its content):\n{old.get(f, '')}" if improve else ""
-            new = parse(_ask(RULES, f"{'Improve' if improve else 'Design'} ONE more page of the same website, in exactly the same visual language. Output {f} (and img/ svg files that this page needs). Output style.css too ONLY when you had to add classes: then the complete extended file.\nThe menu on every page: {nav}\nThis page: {title} ({f})\n\n{text}\n\n{ctx}{cur}"))
+            new = parse(_ask(RULES, f"{'Improve' if improve else 'Design'} ONE more page of the same website, in exactly the same visual language. Output {f} (and img/ svg files that this page needs). Output style.css too ONLY when you had to add classes: then the complete extended file.\nThe menu on every page: {nav}\nThis page: {title} ({f})\n\n{text}\n\n{ctx}{cur}", pk=pk))
             if f not in new:
                 raise ValueError(f"De pagina '{title}' kwam niet terug. Probeer het nog eens.")
             files = {**files, **new}
             _set(pk, files=files)
-        _set(pk, status="done", progress=100, step="Klaar", files=files, messages=[{"role": "ai", "text": "Je website is ontworpen. Bekijk de pagina's en zeg wat er anders moet. Daarna kun je hem importeren in Easy2edit."}])
+        b2 = {k: v for k, v in (job.brief or {}).items() if k not in ("improve_now", "focus")}
+        done_msg = "Het ontwerp is verbeterd. Bekijk de pagina's en zeg wat er anders moet. Is het goed, dan kun je alles aanmaken." if improve else "Je website is ontworpen. Bekijk de pagina's en zeg wat er anders moet. Daarna kun je alles aanmaken of eerst importeren om te controleren."
+        _set(pk, status="done", progress=100, step="Klaar", files=files, brief=b2, messages=list(SiteDesignJob.objects.get(pk=pk).messages or []) + [{"role": "ai", "text": done_msg}])
+    except Stopped:
+        _finish_stopped(pk, "Gestopt. Wat al klaar was is bewaard; de rest is zoals het was.")
     except Exception as e:  # noqa: BLE001
         logger.exception("sitecreator")
-        _set(pk, status="error", error=str(e) if isinstance(e, ValueError) else "Het ontwerpen is niet gelukt. Probeer het nog eens.")
+        row = SiteDesignJob.objects.filter(pk=pk).first()
+        _set(pk, status="error", error=str(e) if isinstance(e, ValueError) else "Het ontwerpen is niet gelukt. Probeer het nog eens.", **({"brief": {k: v for k, v in (row.brief or {}).items() if k not in ("improve_now", "focus")}} if row else {}))
     finally:
         db.connections.close_all()
 
 
+def stop(job):
+    """Stop was pressed: the work ends at the next moment (also the answer of Claude that is coming in)."""
+    SiteDesignJob.objects.filter(pk=job.pk, status="running").update(status="stopping", step="Bezig met stoppen…", updated_at=timezone.now())  # (the status is read from the database, not from this copy)
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def _finish_stopped(pk, text):
+    row = SiteDesignJob.objects.filter(pk=pk).first()
+    if not row:
+        return
+    has = any(n.endswith(".html") for n in (row.files or {}))
+    b = {k: v for k, v in (row.brief or {}).items() if k not in ("improve_now", "focus")}
+    _STOP.pop(pk, None)
+    SiteDesignJob.objects.filter(pk=pk).update(status="done" if has else "draft", progress=100, step="Gestopt", error="", brief=b, messages=list(row.messages or []) + [{"role": "ai", "text": text}], updated_at=timezone.now())
+
+
+def restore(job):
+    """Puts the files back as they were before the last improvement."""
+    if job.status in ("running", "stopping"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    if not job.files_prev:
+        raise ValueError("Er is geen vorige versie om terug te zetten.")
+    SiteDesignJob.objects.filter(pk=job.pk).update(files=job.files_prev, files_prev={}, messages=list(job.messages or []) + [{"role": "ai", "text": "Het ontwerp van vóór het verbeteren is teruggezet."}], updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
 def revise(job, instruction, page=""):
-    if job.status == "running":
+    if job.status in ("running", "stopping"):
         raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
     instruction = str(instruction or "").strip()[:2000]
     if not instruction:
@@ -800,10 +920,12 @@ def _revise(pk, instruction, page):
         focus = f"The user is looking at the page {page}.\n" if page in files else ""
         photos = "\n".join(f"- {p['file']}: {p.get('note') or ''}" for p in (job.brief or {}).get("photos") or [])
         ph = f"Photos that can be used (img/<file>):\n{photos}\n" if photos else ""
-        new = parse(_ask(RULES, f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}"))
+        new = parse(_ask(RULES, f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}", pk=pk))
         if not new:
             raise ValueError("De AI gaf geen aanpassing terug. Probeer het anders te zeggen.")
         _set(pk, status="done", progress=100, step="Klaar", files={**files, **new}, messages=list(job.messages) + [{"role": "ai", "text": "Aangepast: " + ", ".join(sorted(new)) + "."}])
+    except Stopped:
+        _finish_stopped(pk, "Gestopt: de aanpassing is niet doorgevoerd.")
     except Exception as e:  # noqa: BLE001
         logger.exception("sitecreator revise")
         _set(pk, status="done", progress=100, step="", error="", messages=list(SiteDesignJob.objects.get(pk=pk).messages) + [{"role": "ai", "text": "Dat is niet gelukt: " + (str(e) if isinstance(e, ValueError) else "onbekende fout") + " Het ontwerp is niet veranderd."}])
@@ -822,8 +944,17 @@ def _doc_public(d):
     return out
 
 
+def _stale(job):
+    """A job that says 'running' but has not moved for 15 minutes (the server was restarted): it is shown as stopped so it does not hang for ever."""
+    if job.status in ("running", "stopping") and timezone.now() - job.updated_at > timezone.timedelta(minutes=15):
+        SiteDesignJob.objects.filter(pk=job.pk, status=job.status).update(status="error", error="Het ontwerpen is afgebroken (de server is opnieuw gestart). Probeer het nog eens.")
+        job.refresh_from_db()
+    return job
+
+
 def public(job, files=False):
+    job = _stale(job)
     b = job.brief or {}
-    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "file_names": sorted(job.files or {}), "messages": job.messages or [], "brief": b,
+    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "messages": job.messages or [], "brief": b,
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
             "docs": [_doc_public(d) for d in job.docs or []]}

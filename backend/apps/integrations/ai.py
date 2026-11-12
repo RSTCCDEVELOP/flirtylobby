@@ -76,9 +76,10 @@ def claude(system, prompt, max_tokens=2500, timeout=90, web=False, images=None):
     return "".join(b.get("text", "") for b in data.get("content", []))
 
 
-def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_event=None):
+def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_event=None, cancel=None):
     """Like claude(), but streamed so the caller can show what happens: on_event(kind, text) with kind "search" (a web search: the query), "found" (results came in) and "write" (the answer is being written).
-    Returns the text. Raises ValueError with a readable message."""
+    Returns the text. Raises ValueError with a readable message.
+    cancel: a function that is called for every piece that comes in; when it raises (a ValueError), the answer is stopped at once: the connection is closed, so nothing more is written (and paid)."""
     obj = link()
     if not obj:
         raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
@@ -96,6 +97,8 @@ def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_ev
     try:
         with urllib.request.urlopen(req, timeout=timeout) as res:
             for raw in res:
+                if cancel:
+                    cancel()
                 line = raw.decode("utf-8", "replace").strip()
                 if not line.startswith("data:"):
                     continue

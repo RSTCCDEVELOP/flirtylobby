@@ -1898,7 +1898,8 @@ def sitecreator_generate(request, pk):
     if not job:
         return _gone()
     try:
-        sitecreator.generate(job)
+        d = request.data if isinstance(request.data, dict) else {}
+        sitecreator.generate(job, improve=bool(d.get("improve")), focus=str(d.get("focus") or ""))
     except ValueError as e:
         return _bad(str(e))
     job.refresh_from_db()
@@ -1986,3 +1987,47 @@ def sitecreator_palette(request, pk):
     except ValueError as e:
         return _bad(str(e))
     return Response({**sitecreator.public(job), "note": note})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_stop(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    return Response(sitecreator.public(sitecreator.stop(job)))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_restore(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        return Response(sitecreator.public(sitecreator.restore(job)))
+    except ValueError as e:
+        return _bad(str(e))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_theme(request, pk):
+    """A theme with the own style of the design (named after the website); {use: true} also switches it on for the website."""
+    from apps.accounts.access import level
+
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    if level(request.user, "theme") < 2:
+        return _bad("Je hebt geen rechten om een thema te maken.", status.HTTP_403_FORBIDDEN)
+    try:
+        return Response(sitecreator.make_theme(job, use=bool(request.data.get("use"))))
+    except ValueError as e:
+        return _bad(str(e))
