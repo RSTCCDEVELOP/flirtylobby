@@ -72,7 +72,7 @@ CHAPTERS = [
  ("Introduction", """Easy2edit is a simple, modular management system (CMS) for portals, websites, webshops and communities. A Django (REST) backend and a Next.js frontend. You build a website from blocks and switch modules and plugins on or off.
 Three kinds of people: users (visitors with an account), admins (manage parts of the site; their rights come from roles), and superadmins (the owner/reseller: everything, including system settings, modules, plugins, prices, licence).
 The dashboard has the areas Dashboard (own profile, notifications, own AI credit), Admin (management) and Super admin (system). Modules are parts of the system that can be switched on or off (Super admin > Modules); plugins are signed extension packages (Admin > Plugins) that bring their own pages and modules.
-Standard installations: one click sets the modules, plugins and theme for a type of website (standard website, web shop, company website, business network, intranet, dating platform, sports club, foundation, marketplace, game hall). Each installation has a small tile with a settings pop-up (visible in the admin, offered at first installation, AI credit settings, modules, demo data).
+Standard installations: one click sets the modules, plugins and theme for a type of website (standard website, web shop, company website, business network, intranet, dating platform, sports club, foundation, marketplace, game hall). Each installation has a small tile with a settings pop-up (visible in the admin, offered at first installation, AI credit settings, modules, demo data). The settings pop-up has the tabs General, AI, Modules, Plugins and Demo data. On the tab Plugins a superadmin has a switch for every plugin and every module of the installation; every change is saved at once as the standard for the next time the installation is set up and is written to the installations file that other sites receive with an update (backend/apps/core/installations.json). An administrator sees the same list read-only. The modules Energy & emissions and Energy: collector module are core modules: they are on at every site and cannot be switched off.
 The header shows the language switcher, the edit-mode switch (pencil), light/dark mode and the user menu.
 Help: on every page of the Admin and Super admin areas there is a Help button (question mark icon, next to the back button) that opens this manual in a pop-up at the chapter that belongs to the page. On the Admin start page, under About Easy2edit, two big buttons give the HTML manual (open it in a pop-up or in a new tab) and the PDF download. The manual is in English."""),
  ("Getting started", f"""First login: log in as superadmin. When the site runs on your own computer (localhost) the very first question is whether to switch the sandbox on (payments, e-mail, sms and the tests of the API links are then only simulated, so nothing real is sent or charged, even with live keys); the answer is remembered and the sandbox can be changed later at Admin > Sandbox. Then, if nothing is installed yet, a pop-up offers a standard installation with two tabs: Installation, and Filling with AI (explains that the website can be filled with AI: import a website, translate, improve with an instruction; shows whether an AI link exists). After an installation has been set, the system asks whether you want to use AI to fill the site; choosing yes goes straight to buying AI credit. A welcome pop-up explains the AI credit and lets the superadmin put the credit settings in place (see the AI chapter).
@@ -86,6 +86,8 @@ The part 'HTML / CSS code': a large pop-up with three tabs (Visual, HTML, CSS). 
 System objects (Admin > System objects, module must be on): donation buttons, subscriptions, media views, plugin parts and (superadmin) AI dashboard blocks; they can be placed in edit mode under + Add > System objects.
 Pages that were taken over 1 to 1 from an HTML file (see Site import) show a pencil at every text and button in edit mode: click, then change the text in an editor that shows it as on the page (with bold/italic/underline/link) and the link of a button; Save writes it in the page."""),
  ("Importing a website (Site import)", """Admin > Imported (the button is called 'Site import' until a site has been imported, then 'Imported'). Drop one or more HTML files (or give an address, folder or ZIP). The AI reads them and makes a proposal: theme (colours, fonts, radius, content width), pages, content, icons and images (put in the media library with tag 'import') and which modules are needed (for example the FAQ module for question lists). Nothing is created before you approve.
+Website design (Admin > Imported > tab AI creator, button New design): a wizard of 7 steps (Start, Style, Colours, Pages, Modules, Photos, Preview). A design is saved while you type. Closing the window of a design that is still a concept asks whether to save it (it stays under My designs) or delete it, or to continue. The first step has a block 'Quick start with an external AI': it explains three steps (choose the modules and plugins, copy the prompt and paste it in an AI such as Claude, ChatGPT or Gemini, then read the ZIP file in here), has the button 'Copy AI prompt' that builds the prompt from all choices and puts it on the clipboard, and a button 'Modules and plugins (n/m)' with a switch per module and plugin. The prompt contains the design guidelines of the page editor (bands, hero, cells, cards, blocks), the rules of the ZIP file and, for every extra language of the website, the format of a translation file. Modules and plugins that are part of the active standard installation are on; one that is not part of it can be switched on by the user, but then a warning says that the price per month goes up and by how much (ex VAT), and the price per month of the installation plus the extras is shown under the list. Only what is switched on is used by the prompt, by the AI and by the import.
+The ZIP file made with the prompt (tab ZIP file, or 'Read ZIP file' in the design wizard): at most 12 html pages (every html file becomes a page, also pages that are only linked in the footer), one style.css, and a folder img/ with at most 40 pictures (jpg, png, webp or svg, each at most 5 MB, file names with lowercase letters, digits, - and _ and at most 40 characters). Everything is in the top folder of the ZIP; other folders are skipped with a note. Backgrounds from the css (also through css variables) are taken along; svg files are cleaned. A name that does not follow the rule is renamed and every reference in the html and css is rewritten. Per extra language the ZIP can hold a file vertalingen-<code>.json (format easy2edit-vertalingen/1, with the source language, the target language and per page a list of items with the element, the source text and the translation). When the site is translated the texts from this file are used first; only what is missing is translated by the AI. The notes of the import say what was skipped and how many texts came from the file and how many from the AI.
 After approval the theme is installed and put to use. Then 'Apply': a pop-up/panel with tabs Pages, Links, Buttons, Header, Footer, Theme.
 Pages: drag and drop two columns (pages from the file on the left, pages of your website on the right) to link a file to an existing page (for example Home) or leave it as own page. Choose the view: 'Exact' (the page looks exactly like the HTML file; texts and buttons can still be edited with the pencil in edit mode) or 'Editable' (the AI rebuilds the page with the blocks of the page builder; cards, label pills, band colours, rows and hero are rebuilt; things the blocks cannot make (progress bar, check lists, preview cards) become an 'HTML / CSS code' block). Give an optional instruction for the AI (for example 'make the headings bigger'). Choose what happens with the content already on the page (clear first, replace the blocks of this import only, or add below) and whether the pages are translated to the other languages.
 Links and Buttons: link links and buttons of the file to pages or parts of your website (drag and drop). Header: switch the header of the system to the header of the file (bigger menu with the links and buttons of the file). Footer: show the footer of the system under the pages. Theme: adjust colours, default mode, content width and roundings.
@@ -98,8 +100,10 @@ Users: accounts, profile photo, blocking, roles. User groups: groups of users wi
 Security: login lock, session time, password rules, security headers, two-step verification, country control (IP), age check and gambling pop-up, cookie banner and policy, forbidden words."""),
  ("Shop, orders, payments, subscriptions and donations", f"""{plugs('webshop','orders','finance','subscriptions')}
 Webshop: products and groups, variants (colour, size) with own prices, shipping methods, discount codes, layouts (standard, editorial with filter side panel and large product photo, 'shop the look'), styles and presets. Orders: order management, VAT, order status, documents (packing slip, invoice, return slip, credit invoice). Finance: payment methods and terms, links to Stripe and Mollie, company data and document layout. Payments are made through Stripe or Mollie; the sandbox simulates them. Subscriptions give access to parts of the site (pages, content, chat, video, likes, services), once or repeated, with an order per period; donations are gifts with a slider from a minimum to a maximum."""),
- ("Community, marketplace, agenda, documents and games", f"""{plugs('community','profile-themes','marketplace','agenda','documents','games','age-gates')}
-{mod_lines(groups=['Community'])}"""),
+ ("Community, marketplace, agenda, documents and games", f"""{plugs('community','profile-themes','marketplace','agenda','documents','games','age-gates','showcase')}
+{mod_lines(groups=['Community'])}
+Showcase (plugin, Admin > Plugins > Showcase): shows projects. A project has a title, a short text, a description, a goal, a link, a duration, a budget, pictures and videos (YouTube, Vimeo or an mp4/webm link), a status (active, in development, offline), tags and groups. Every field can be switched off in the settings of the plugin (the switches are shown in columns). Tags are shared: the same tag can be on many projects. Groups can have subgroups; choosing a group also shows its subgroups. The admin page has the tabs Projects, Groups, Tags and Presentations; a project is edited in a pop-up with the tabs General, Content, Media and Translations. A presentation decides how a selection of projects is shown: grid, list, table, photo wall (masonry), scroller or slider; a project opens on its own page (/showcase/<name>), in a pop-up or in place; a presentation can have a search field and filters on tags, groups and status, and can show only certain fields, a group, tags, a status or only featured projects. Every active presentation is a system object that can be placed on a page in edit mode, and three standard ones always exist (search, scroller, list). The public pages are /showcase and /showcase/<name>. The demo content (9 projects, groups, tags and 6 presentations) is made and removed with one button on the plugin page.
+"""),
  ("SEO, FAQ and statistics", f"""{plugs('seo','faq','statistics')}
 SEO: robots.txt, sitemap, llms.txt, page titles, descriptions and structured data, also for AI agents. FAQ: own questions and answers in all languages on /faq; questions found in an imported site are put in this module. Statistics: visitors, SEO, bots, AI calls and per module and plugin a section; widgets with charts."""),
  ("AI and AI credit", """The AI (Claude, Anthropic) is used for translating, writing page texts, importing websites, price research and more. Every call to the AI is monitored: who asked (user, admin, superadmin or the system), from which part of the system, which model, tokens in and out, duration, whether it worked, and what it cost.
@@ -110,7 +114,7 @@ AI credit: users and admins must buy AI credit before they can use AI (the switc
 Admins: Admin > AI shows the use of users and admins (no purchase prices, no margin, no costs of the reseller), a block 'AI use' on the Admin start page with own credit, a table per user and a PDF per user (a report without purchase prices). An admin needs the right 'View AI use of users' (Roles). An admin who has his own AI link (Anthropic) and his own Stripe link, both not marked as superadmin links, can switch on his own credit system for his users (Admin > AI > Credit for users): his users then use his AI, pay through his Stripe and the margin is his; he sets the credit rules, the amounts and the margin and can add credit per user.
 AI blocks: parts of the AI dashboard (key figures, costs over time, use per group, where AI is used, heavy users, highest costs, models, busy hours) can be switched on as system objects (Super admin > AI > Blocks) and placed on a page in edit mode; only superadmins see the figures."""),
  ("Plugins, backups, licence and deployment", f"""{plugs('seo','siteimport','statistics')}
-Plugins (Admin > Plugins): signed packages in /plugins; install from the library (resource/plugins), switch on/off, update. A plugin brings its own pages, modules, translations (44 languages) and admin screens. The module API keys is always on in every standard installation, and the links of the superadmin (AI, Stripe, mail, storage) are switched on when an installation is set, so they keep working; the secret keys themselves are never put in the installations file. A link marked Superadmin link is only seen and changed by superadmins. Resetting the system (Super admin > System > Reset) asks whether the AI data in the database must be removed too (all AI calls with costs, and the credit history and credit of the superadmins; the AI settings stay); the credit of normal users disappears with the users anyway. Backups (Admin > Backups): backups per day, week or month of pages, menus, texts, images, theme and the settings of modules and plugins; restore and download. The standard installations basis (installations.json) is part of the system; secret keys are never put in it.
+Plugins (Admin > Plugins): signed packages in /plugins; install from the library (resource/plugins), switch on/off, update. A plugin brings its own pages, modules, translations (44 languages) and admin screens. A plugin that has demo content shows a button 'Make demo content' on its page in Admin > Plugins (tab Overview); when the demo content exists the same button says 'Remove demo content' and takes it away again. Resetting the system removes the demo content too. The module API keys is always on in every standard installation, and the links of the superadmin (AI, Stripe, mail, storage) are switched on when an installation is set, so they keep working; the secret keys themselves are never put in the installations file. A link marked Superadmin link is only seen and changed by superadmins. Resetting the system (Super admin > System > Reset) asks whether the AI data in the database must be removed too (all AI calls with costs, and the credit history and credit of the superadmins; the AI settings stay); the credit of normal users disappears with the users anyway. Backups (Admin > Backups): backups per day, week or month of pages, menus, texts, images, theme and the settings of modules and plugins; restore and download. The standard installations basis (installations.json) is part of the system; secret keys are never put in it.
 Licence (Admin > Licence): costs and payment method of the licence (Stripe or invoice); the price follows the modules and plugins that are on. Super admin > Prices: the price list per month, quarter and year, quotations as PDF, marketing tiles, sales calculation. Deployment: Docker (development and production compose files), reverse proxy and certificates; the backend runs migrations on start. Each installation shows 'Easy2edit version 1.0.0 build X' from one central place (backend/BUILD)."""),
 ]
 
@@ -120,7 +124,12 @@ SYS = ("You write chapters of the user manual of Easy2edit, a modular CMS/portal
 
 def write(title, facts, n):
     prompt = f"Chapter {n}: {title}\n\nFacts:\n{facts}\n\nWrite the chapter (about 500 to 900 words), organised with subheadings, short paragraphs and lists, with practical steps where it helps."
-    return ai.claude(SYS, prompt, max_tokens=3500, timeout=170)
+    for attempt in range(3):  # a dropped connection is tried again
+        try:
+            return ai.claude(SYS, prompt, max_tokens=3500, timeout=170)
+        except Exception as e:  # noqa: BLE001
+            print("  retry", attempt + 1, e, flush=True)
+    raise SystemExit(f"writing chapter {n} failed")
 
 def clean(t):
     t = t.replace("→", ">").replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"').replace("•", "-").replace(" ", " ")
@@ -141,17 +150,42 @@ def glossary(text):
     return dict(sorted(pairs.items(), key=lambda kv: -len(kv[0]))[:140])
 
 def translate(title, text, n):
+    """A long chapter is translated in blocks of whole sections (about 3000 characters): one long answer of the AI is cut off by the connection too easily."""
+    if len(text) <= 3500:
+        return _translate(title, text, n)
+    parts = re.split(r"(?m)^(?=## )", text)
+    blocks, cur = [], ""
+    for p in parts:
+        if cur and len(cur) + len(p) > 3000:
+            blocks.append(cur); cur = ""
+        cur += p
+        while len(cur) > 4500:  # one very long section: cut at a blank line
+            i = cur.rfind("\n\n", 0, 3500)
+            if i < 500:
+                break
+            blocks.append(cur[:i]); cur = cur[i + 2:]
+    if cur.strip():
+        blocks.append(cur)
+    t1, outs = None, []
+    for k, blk in enumerate(blocks):
+        t, x = _translate(title, blk.strip(), n)
+        t1 = t1 or t
+        outs.append(x.strip())
+    return t1, "\n\n".join(outs)
+
+def _translate(title, text, n):
     sysmsg = ("You translate a chapter of the user manual of Easy2edit from English to Dutch (natural, friendly, clear: je/jij form). Keep the structure EXACTLY: lines that start with '## ' (subheadings), '- ' (bullets), '1. ' (steps), blank lines between paragraphs. "
               "Keep product names (Easy2edit, Claude, Stripe, Mollie, Postmark, ElevenLabs, PDF, HTML, CSS, API). Menu paths like 'Admin > Pages' use the names of the DUTCH interface: use the glossary (English name -> Dutch name) for every screen, button and tab it covers. "
               "Answer in plain text, no JSON, no code fences: the first line is 'TITLE: <the Dutch chapter title>', then one blank line, then the translated chapter text.")
     prompt = json.dumps({"chapter": n, "title": title, "text": text, "glossary": glossary(title + "\n" + text)}, ensure_ascii=False)
-    for attempt in range(3):
+    for attempt in range(5):
         try:
-            r = ai.claude(sysmsg, prompt, max_tokens=7000, timeout=170).strip()
+            r = ai.claude(sysmsg, prompt, max_tokens=4500, timeout=170).strip()
             r = re.sub(r"^```\w*\s*|\s*```$", "", r)
             m = re.match(r"TITLE:\s*(.+?)\s*\n+(.+)$", r, re.S)
             if m and len(m.group(2)) > len(text) * 0.4:
                 return m.group(1).strip(), m.group(2).strip()
+            print("  unusable answer", attempt + 1, "title found:", bool(m), "length", len(r), "of", len(text), repr(r[:80]), flush=True)
         except Exception as e:
             print("  retry", attempt + 1, e, flush=True)
     raise SystemExit(f"translation of chapter {n} failed")
@@ -160,7 +194,11 @@ if SRC.is_file() and os.environ.get("MANUAL_REUSE"):  # the texts of an earlier 
     out = [tuple(x) for x in json.loads(SRC.read_text())]
 elif LANG == "nl":  # the Dutch manual is the English one, translated by the AI
     out = []
+    only = {int(x) for x in os.environ.get("MANUAL_CHAPTERS", "").split(",") if x.strip()}  # only these chapters again (the others keep their Dutch text)
+    prev = json.loads(SRC.read_text()) if only and SRC.is_file() else []
     for i, (title, text) in enumerate(json.loads(EN_SRC.read_text()), 1):
+        if only and i not in only and i <= len(prev):
+            out.append(tuple(prev[i - 1])); continue
         print("translating", i, title, flush=True)
         t, x = translate(title, text, i)
         out.append((clean(t), clean(x)))
@@ -168,7 +206,11 @@ elif LANG == "nl":  # the Dutch manual is the English one, translated by the AI
     SRC.write_text(json.dumps(out, ensure_ascii=False, indent=1))
 else:
     out = []
+    only = {int(x) for x in os.environ.get("MANUAL_CHAPTERS", "").split(",") if x.strip()}  # MANUAL_CHAPTERS=1,4: write only these chapters again, the others keep their text
+    prev = json.loads(SRC.read_text()) if only and SRC.is_file() else []
     for i, (title, facts) in enumerate(CHAPTERS, 1):
+        if only and i not in only and i <= len(prev):
+            out.append(tuple(prev[i - 1])); continue
         print("writing", i, title, flush=True)
         out.append((title, clean(write(title, facts, i))))
     SRC.parent.mkdir(parents=True, exist_ok=True)

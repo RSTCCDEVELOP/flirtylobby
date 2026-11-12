@@ -2,7 +2,7 @@
  "dashboard": "Het dashboard van een gebruiker: profiel, meldingen en het linkermenu met Admin en Super admin.",
  "admin-home": "De Admin startpagina met de blokken Mijn admin-onderdelen, AI-gebruik, Standaard installaties en Over Easy2edit.",
  "installations": "Standaard installaties: één kleine tegel per websitetype, met Instellen en een tandwiel voor de instellingen.",
- "installation-settings": "De instellingen van een standaard installatie in een pop-up met tabbladen: Algemeen, AI, Modules en Demogegevens.",
+ "installation-settings": "De instellingen van een standaard installatie in een popup met tabs: Algemeen, AI, Modules, Plugins en Demo-gegevens.",
  "superadmin-home": "De Super admin startpagina: modules, plugins, prijzen, AI en de systeemtools.",
  "modules": "Super admin > Modules: modules aan- of uitzetten en toekennen aan gebruikers en groepen.",
  "pages": "Admin > Pagina's: de pagina's en het menu van de website.",
@@ -29,5 +29,8 @@
  "plugins": "Admin > Plugins: plugins installeren, aanzetten en updaten.",
  "backups": "Admin > Back-ups: de site back-uppen en herstellen.",
  "webshop": "De webshop-plugin: producten, groepen, verzendmethoden en kortingscodes.",
- "orders": "Bestellingen: alle bestellingen van de shop, abonnementen en donaties."
+ "orders": "Bestellingen: alle bestellingen van de shop, abonnementen en donaties.",
+ "installation-plugins": "De tab Plugins van een standaard installatie: de plugins en modules van de installatie. Een superadmin heeft er een schakelaar bij; een wijziging wordt meteen bewaard als standaard voor de volgende installatie.",
+ "design-start": "De eerste stap van de wizard Website ontwerpen met de snelle start: kopieer de AI-prompt voor een externe AI, kies de modules en plugins en zie de prijs per maand.",
+ "showcase-admin": "De beheerpagina van de plugin Showcase: projecten met status en afbeeldingen, en de tabs Groepen, Tags en Presentaties."
 }

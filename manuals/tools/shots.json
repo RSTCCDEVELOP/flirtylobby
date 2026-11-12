@@ -31,7 +31,7 @@
     "click": ".preset-actions .btn.icon"
    }
   ],
-  "caption": "The settings of a standard installation in a pop-up with tabs: General, AI, Modules and Demo data."
+  "caption": "The settings of a standard installation in a pop-up with tabs: General, AI, Modules, Plugins and Demo data."
  },
  {
   "id": "superadmin-home",
@@ -309,5 +309,77 @@
   "chapter": 7,
   "settle": 8000,
   "caption": "Orders: all orders of the shop, subscriptions and donations."
+ },
+ {
+  "id": "installation-plugins",
+  "file": "installation-plugins",
+  "path": "/dashboard/admin/installaties",
+  "chapter": 2,
+  "keep": true,
+  "steps": [
+   {
+    "eval": "[...document.querySelectorAll('.overlay')].forEach(o=>{if(/Terms and conditions|Algemene voorwaarden|Welcome: AI|Welkom: AI|No license|Geen licentie/i.test(o.textContent))o.remove()})",
+    "wait": 500
+   },
+   {
+    "click": ".preset-actions .btn.icon",
+    "wait": 1500
+   },
+   {
+    "eval": "[...document.querySelectorAll('.overlay')].forEach(o=>{if(/Terms and conditions|Algemene voorwaarden|Welcome: AI|Welkom: AI|No license|Geen licentie/i.test(o.textContent))o.remove()})",
+    "wait": 300
+   },
+   {
+    "clickText": "Plugins",
+    "sel": "[role=tab],button",
+    "wait": 2500
+   },
+   {
+    "eval": "[...document.querySelectorAll('.overlay')].forEach(o=>{if(/Terms and conditions|Algemene voorwaarden|Welcome: AI|Welkom: AI|No license|Geen licentie/i.test(o.textContent))o.remove()})",
+    "wait": 300
+   }
+  ],
+  "caption": "The tab Plugins of a standard installation: the plugins and modules of the installation. A superadmin has a switch for each of them; a change is saved at once as the standard for the next installation.",
+  "settle": 5000
+ },
+ {
+  "id": "design-start",
+  "file": "design-start",
+  "path": "/dashboard/admin/siteimport",
+  "chapter": 4,
+  "keep": false,
+  "settle": 6000,
+  "steps": [
+   {
+    "eval": "[...document.querySelectorAll('.overlay')].forEach(o=>{if(/Terms and conditions|Algemene voorwaarden|Welcome: AI|Welkom: AI|No license|Geen licentie/i.test(o.textContent))o.remove()})",
+    "wait": 500
+   },
+   {
+    "clickText": [
+     "AI creator",
+     "AI-creator"
+    ],
+    "wait": 1500
+   },
+   {
+    "clickText": [
+     "New design"
+    ],
+    "wait": 3500
+   },
+   {
+    "eval": "[...document.querySelectorAll('.overlay')].forEach(o=>{if(/Terms and conditions|Algemene voorwaarden|Welcome: AI|Welkom: AI|No license|Geen licentie/i.test(o.textContent))o.remove()})",
+    "wait": 300
+   }
+  ],
+  "caption": "The first step of the website design wizard with the quick start: copy the AI prompt for an external AI, choose the modules and plugins, and see the price per month."
+ },
+ {
+  "id": "showcase-admin",
+  "file": "showcase-admin",
+  "path": "/dashboard/admin/plugin/showcase",
+  "chapter": 8,
+  "settle": 7000,
+  "caption": "The admin page of the Showcase plugin: projects with status and pictures, and the tabs Groups, Tags and Presentations."
  }
 ]

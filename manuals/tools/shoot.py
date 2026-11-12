@@ -42,10 +42,20 @@ try:
     modules.invalidate()
     if en and not en.enabled:
         Language.objects.filter(pk=en.pk).update(enabled=True)
+    showcase_demo = dict(runtime.providers("demo")).get("showcase")  # the Showcase pictures need projects: its demo content is made for a moment (only when there is none) and removed again
+    made_demo = bool(showcase_demo) and not any(showcase_demo.counts().values()) and bool(showcase_demo.create())
     for lang in os.environ.get("SHOTS_LANGS", "en,nl").split(","):  # the pictures of the English manual are in English, those of the Dutch manual in Dutch
         r = subprocess.run(["node", str(ROOT / "manuals" / "tools" / "screenshots.mjs"), "--lang", lang, *os.environ.get("SHOTS_ARGS", "").split()], env={**os.environ, "E2E_TOKEN": tok}, capture_output=True, text=True, timeout=1500)
         print(lang, r.stdout[-2500:], r.stderr[-1200:])
 finally:
+    try:
+        if made_demo:
+            showcase_demo.remove()
+    except NameError:
+        pass
+    from apps.core.models import SiteDesignJob
+
+    SiteDesignJob.objects.filter(user=u).delete()  # the design that the picture of the wizard started
     ModuleState.objects.all().delete()
     ModuleState.objects.bulk_create([ModuleState(key=k, enabled=v) for k, v in prev_modules])
     for pk, on in prev_plugins:
