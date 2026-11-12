@@ -10,7 +10,7 @@
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
 
-// After a standard installation has been set: do you want to fill the website with AI? Yes: straight to buying AI credit (then Site importeren and the AI tools are ready to use).
+// After a standard installation has been set: do you want to fill the website with AI? Yes: straight to buying AI credit (then Website ontwerpen and the AI tools are ready to use).
 export default function AiFillAsk({ onNo, linked = true }) {
   const yes = () => { window.location.href = linked ? "/dashboard/ai?buy=1" : "/dashboard/admin/integrations"; };
   const body = (

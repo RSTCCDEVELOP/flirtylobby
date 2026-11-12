@@ -186,6 +186,24 @@ class ThemeImportJob(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class SiteDesignJob(models.Model):
+    """A website designed by AI (Website ontwerpen -> AI-creator): runs in the background, holds the files (html, css, svg) and the chat with the AI to adjust them."""
+
+    id = models.UUIDField(primary_key=True, default=__import__("uuid").uuid4, editable=False)
+    user = models.ForeignKey("accounts.User", null=True, on_delete=models.SET_NULL, related_name="+")
+    name = models.CharField(max_length=120, blank=True)
+    status = models.CharField(max_length=10, default="running")  # running | done | error
+    progress = models.PositiveSmallIntegerField(default=0)
+    step = models.CharField(max_length=160, blank=True)
+    error = models.TextField(blank=True)
+    brief = models.JSONField(default=dict, blank=True)
+    files = models.JSONField(default=dict, blank=True)  # {"index.html": "...", "style.css": "...", "img/hero.svg": "..."}
+    messages = models.JSONField(default=list, blank=True)  # [{"role": "user"|"ai", "text": "..."}]
+    docs = models.JSONField(default=list, blank=True)  # the documents (pdf, word) with the goals of the website: [{"id", "name", "key", "status", "percent", "step", "summary", "goals", "applied", "result", ...}]
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class TermsVersion(models.Model):
     """A published version of the terms and conditions: the text in every language ({lang: {"title", "body"}}, body = "html:<clean html>"). Admins and superadmins sign a version."""
 
@@ -223,3 +241,18 @@ class TermsCode(models.Model):
     expires_at = models.DateTimeField()
     tries = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+def _remove_design_files(sender, instance, **kwargs):
+    """A design that is thrown away takes its uploaded documents with it."""
+    from django.core.files.storage import default_storage
+
+    for d in instance.docs or []:
+        try:
+            if d.get("key"):
+                default_storage.delete(d["key"])
+        except Exception:  # noqa: BLE001
+            pass
+
+
+models.signals.post_delete.connect(_remove_design_files, sender=SiteDesignJob, dispatch_uid="sitedesign_files")

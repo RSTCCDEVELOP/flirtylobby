@@ -26,7 +26,7 @@ MODULES = [
      "desc": "Teksten, uitgebreide opmaak en afbeeldingen op de website zelf bewerken (schakelaar in de header)."},
     {"key": "media", "group": "Content", "label": "Mediabibliotheek",
      "desc": "Alle afbeeldingen en video's beheren, lokaal of op S3."},
-    {"key": "siteimport", "group": "Content", "plugin": "siteimport", "hidden": True, "label": "Site importeren",
+    {"key": "siteimport", "group": "Content", "plugin": "siteimport", "hidden": True, "label": "Website ontwerpen",
      "desc": "Een andere website (adres, map of ZIP) inlezen: thema, pagina's, startpagina, iconen en plaatjes. Te verwijderen met alles wat erbij hoort."},
     {"key": "sysobjects", "group": "Content", "label": "Systeemobjecten",
      "desc": "Onderdelen van andere modules (donatieknoppen, abonnementen, …) die je in de bewerkmodus op een pagina kunt zetten. Overzicht en aan/uit per object.",

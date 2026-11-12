@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 export const generateMetadata = () => pageMetadata("/", { absolute: true });
 
 export default async function Home() {
-  const design = await getDesign("home"); // the start page can be an html design (Site importeren)
+  const design = await getDesign("home"); // the start page can be an html design (Website ontwerpen)
   if (design) {
     return (
       <PageShell setup={await getPageSetup("home")}>

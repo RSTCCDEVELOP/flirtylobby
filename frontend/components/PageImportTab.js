@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { tx } from "../lib/t";
 
-// Pagina-instellingen → Import (only for a page that came from Site importeren): an instruction for Claude, and a button that builds this one page again
+// Pagina-instellingen → Import (only for a page that came from Website ontwerpen): an instruction for Claude, and a button that builds this one page again
 // from the original html file, with that instruction. info = what the server told about the import of this page.
 export default function PageImportTab({ pageKey, path, info, onInfo }) {
   const [prompt, setPrompt] = useState(info.prompt || "");

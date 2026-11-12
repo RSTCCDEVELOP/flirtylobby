@@ -35,7 +35,7 @@ export const TILES = [
   { href: "/dashboard/admin/sandbox", title: "Sandbox", big: "Testomgeving", small: "Betalingen, e-mail en sms simuleren", modules: ["sandbox"] },
   { href: "/dashboard/admin/pages", title: "Pagina's", big: "Pagina's en header-menu", small: "Overzicht, menu-editor, eigen pagina's en links", modules: ["pages"] },
   { href: "/dashboard/admin/sysobjects", title: "Systeemobjecten", big: "Onderdelen voor op pagina's", small: "Donatieknoppen en abonnementen die je in bewerkmodus op een pagina zet", modules: ["sysobjects"] },
-  { href: "/dashboard/admin/siteimport", title: "Site importeren", big: "Een andere site inlezen", small: "Thema, pagina's, startpagina en afbeeldingen; weer te verwijderen", modules: ["siteimport"] },
+  { href: "/dashboard/admin/siteimport", title: "Website ontwerpen", big: "Ontwerpen of een andere site inlezen", small: "Thema, pagina's, startpagina en afbeeldingen; weer te verwijderen", modules: ["siteimport"] },
   { href: "/dashboard/admin/theme", title: "Thema", big: "Thema's, kleuren, logo's, e-mail", small: "De hele uitstraling van de website", modules: ["theme", "branding"] },
 ];
 

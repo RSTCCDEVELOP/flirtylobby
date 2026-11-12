@@ -13,7 +13,9 @@ import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
-import { IconFolder, IconGlobe, IconImage } from "../../../../components/Icons";
+import { IconBolt, IconFolder, IconGlobe, IconImage } from "../../../../components/Icons";
+import { buildPrompt, SITE_KINDS } from "./aiPrompt";
+import { AiCreatorHome, AiCreatorPopup, ModulePicker } from "./AiCreator";
 import Tabs from "../../../../components/Tabs";
 import { createPortal } from "react-dom";
 import DesignFrame from "../../../../components/DesignFrame";
@@ -396,6 +398,74 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
   );
 }
 
+// A prompt for an AI (ChatGPT, Claude...) that makes pages, pictures and design in a form that this import can read and the page editor can use.
+function AiPromptPopup({ onClose }) {
+  const [tab, setTab] = useState("wishes");
+  const [f, setF] = useState({ name: "", kind: "company", lang: "Dutch", pages: "", style: "", colors: "", extra: "" });
+  const [catalog, setCatalog] = useState(null);
+  const [mode, setMode] = useState("light");
+  const [langs, setLangs] = useState("");
+  const [pick, setPick] = useState({ off: [], objects: [] });
+  useEffect(() => { api("/sitecreator/catalog/").then(setCatalog).catch(() => setCatalog({ modules: [], objects: [] })); }, []);
+  const [copied, setCopied] = useState(false);
+  const set = (k, v) => setF((o) => ({ ...o, [k]: v }));
+  const text = buildPrompt({ ...f, colorMode: mode, languages: langs.trim() ? { main: f.lang, extra: langs.split(/[,\n]/).map((x) => x.trim()).filter(Boolean).map((x) => ({ code: x.toLowerCase().slice(0, 5), native: x, rtl: /arabic|ara|hebr|farsi|persian|urdu|^ar$|^he$|^fa$|^ur$/i.test(x) })), switcher: true } : null, modules: (catalog?.modules || []).filter((m) => !pick.off.includes(m.key)), objects: (catalog?.objects || []).filter((o) => pick.objects.includes(o.slug)) });
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(text); } catch { const t = document.getElementById("si-prompt"); t?.select(); document.execCommand("copy"); }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+  return createPortal(
+    <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="pb-objpop" role="dialog" aria-label={tx("AI-prompt maken")} style={{ width: "min(860px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="pb-objhead"><strong>{tx("AI-prompt: inhoud maken om te importeren")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
+        <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
+          <Tabs value={tab} onChange={setTab} tabs={[["wishes", "Wensen"], ["modules", "Modules", null, (catalog?.modules || []).length - pick.off.length + pick.objects.length], ["prompt", "Prompt"], ["how", "Zo gebruik je het"]]} />
+          {tab === "wishes" && (
+            <div className="form">
+              <p className="muted" style={{ margin: 0 }}>{tx("Vul in wat voor site je wilt. Op het tabblad Prompt staat daarna de opdracht voor de AI, met alle regels voor pagina's, afbeeldingen en opmaak zodat het hier te importeren is en met de pagina-editor en de modules bewerkt kan worden.")}</p>
+              <div className="grid2">
+                <label>{tx("Naam van de website")}<input value={f.name} maxLength={120} onChange={(e) => set("name", e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
+                <label>{tx("Soort website")}<select value={f.kind} onChange={(e) => set("kind", e.target.value)}>{SITE_KINDS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
+                <label>{tx("Taal van de teksten")}<input value={f.lang} maxLength={40} onChange={(e) => set("lang", e.target.value)} /></label>
+                <label>{tx("Pagina's")} <small className="muted">{tx("gescheiden door komma's, de eerste is de startpagina")}</small><input value={f.pages} onChange={(e) => set("pages", e.target.value)} placeholder="Home, Over ons, Diensten, FAQ, Contact" /></label>
+                <label>{tx("Weergave")}<select value={mode} onChange={(e) => setMode(e.target.value)}><option value="light">{tx("Licht")}</option><option value="dark">{tx("Donker")}</option><option value="both">{tx("Licht en donker")}</option></select></label>
+                <label>{tx("Andere talen")} <small className="muted">{tx("bv. English, Deutsch")}</small><input value={langs} maxLength={200} onChange={(e) => setLangs(e.target.value)} /></label>
+                <label>{tx("Stijl")}<input value={f.style} maxLength={300} onChange={(e) => set("style", e.target.value)} placeholder={tx("bv. warm, speels, veel foto's")} /></label>
+                <label>{tx("Kleuren")}<input value={f.colors} maxLength={200} onChange={(e) => set("colors", e.target.value)} placeholder="bv. #e8590c en #1c1917" /></label>
+              </div>
+              <label>{tx("Extra wensen")} <small className="muted">{tx("Optioneel")}</small><textarea rows={3} maxLength={1500} value={f.extra} onChange={(e) => set("extra", e.target.value)} placeholder={tx("Wat moet de site vertellen? Wie is de doelgroep?")} /></label>
+              <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={() => setTab("modules")}>{tx("Volgende")}</button></div>
+            </div>
+          )}
+          {tab === "modules" && (
+            <div className="form">
+              <ModulePicker catalog={catalog} off={pick.off} objects={pick.objects} onChange={setPick} />
+              <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={() => setTab("prompt")}>{tx("Prompt bekijken")}</button></div>
+            </div>
+          )}
+          {tab === "prompt" && (
+            <div className="form">
+              <textarea id="si-prompt" readOnly rows={18} value={text} onFocus={(e) => e.target.select()} style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: ".82rem" }} />
+              <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
+                <button type="button" className="btn primary" onClick={copy}><IconBolt /> {copied ? tx("Gekopieerd") : tx("Prompt kopiëren")}</button>
+                <small className="muted">{text.length.toLocaleString()} {tx("tekens")}</small>
+              </div>
+            </div>
+          )}
+          {tab === "how" && (
+            <ol className="muted" style={{ margin: 0, paddingLeft: "1.2rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+              <li>{tx("Kopieer de prompt en plak hem in een AI die bestanden kan maken (Claude, ChatGPT, Gemini).")}</li>
+              <li>{tx("De AI levert één ZIP-bestand op met index.html, de andere pagina's, style.css en de afbeeldingen in de map img. Kan de AI geen ZIP maken, dan geeft hij alle bestanden volledig plus een script om de ZIP te maken.")}</li>
+              <li>{tx("Download de ZIP en sleep hem op het tabblad ZIP-bestand hierboven.")}</li>
+              <li>{tx("Klik op Analyseren. Je ziet eerst een voorstel met thema, pagina's, afbeeldingen en modules; pas na je akkoord wordt er iets aangemaakt.")}</li>
+              <li>{tx("Kies bij Koppelen en verbeteren de weergave Bewerkbaar: de pagina's worden dan opgebouwd met de blokken van de pagina-editor, zodat je alles kunt aanpassen.")}</li>
+            </ol>
+          )}
+        </div>
+      </div>
+    </div>, document.body);
+}
+
 export default function SiteImport() {
   const { user } = useAuth();
   const L = lvl(user, "siteimport");
@@ -409,6 +479,9 @@ export default function SiteImport() {
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
   const [open, setOpen] = useState(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [designId, setDesignId] = useState(""); // the website that the AI-creator is making or has made
+  const [designOpen, setDesignOpen] = useState(false);
   const zip = useRef(null);
   const htmlFile = useRef(null);
 
@@ -468,7 +541,7 @@ export default function SiteImport() {
     <>
       <div className="page-head">
         <div>
-          <h1>{tx("Site importeren")}</h1>
+          <h1>{tx("Website ontwerpen")}</h1>
           <p className="muted" style={{ margin: 0 }}>{tx("Lees een andere website in: je krijgt de pagina's, een basis-startpagina, het profieltype en de afbeeldingen. Een thema (kleuren, logo's, e-mail) maak je bij Thema → Nieuw themapakket → Importeren van een website. Niets verandert op je site totdat je het zelf aanzet, en alles is weer te verwijderen.")}</p>
         </div>
       </div>
@@ -477,7 +550,7 @@ export default function SiteImport() {
       {canManage && (
         <Collapsible id="si-new" title={tx("Nieuwe import")} defaultOpen>
           <label style={{ maxWidth: 420, marginBottom: ".75rem" }}>{tx("Naam van de import")} <small className="muted">{tx("ook de naam van de map met alle bestanden")}</small><input value={themeName} maxLength={120} onChange={(e) => setThemeName(e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
-          <Tabs value={tab} onChange={setTab} tabs={[["url", "Website-adres", <IconGlobe key="u" />], ["folder", "Map op de server", <IconFolder key="f" />], ["zip", "ZIP-bestand", <IconImage key="z" />], ["html", "HTML-bestand", <IconGlobe key="h" />]]} />
+          <Tabs value={tab} onChange={setTab} tabs={[["url", "Website-adres", <IconGlobe key="u" />], ["folder", "Map op de server", <IconFolder key="f" />], ["zip", "ZIP-bestand", <IconImage key="z" />], ["html", "HTML-bestand", <IconGlobe key="h" />], ["ai", "AI-creator", <IconBolt key="a" />]]} />
           {tab === "url" && (
             <form className="row" style={{ flexWrap: "nowrap", alignItems: "end", marginTop: ".75rem" }} onSubmit={(e) => { e.preventDefault(); start({ kind: "url", url, name: themeName }); }}>
               <label style={{ flex: 1 }}>{tx("Adres van de website")}<input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.voorbeeld.nl" required /></label>
@@ -511,12 +584,25 @@ export default function SiteImport() {
               </div>
             </div>
           )}
+          {tab === "ai" && <AiCreatorHome refreshKey={designOpen} onOpen={(id) => { setDesignId(id); setDesignOpen(true); }} />}
+          <div style={{ marginTop: ".8rem" }}><button type="button" className="btn" onClick={() => setAiOpen(true)}><IconBolt /> {tx("Maak AI-prompt: inhoud om te importeren")}</button></div>
           <small className="muted" style={{ display: "block", marginTop: ".6rem" }}>
-            {tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. Claude maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
+            {tab === "ai" ? tx("Claude ontwerpt de pagina's met illustraties; foto's voeg je daarna zelf toe in de mediabibliotheek. Het ontwerpen kost AI-tegoed. Er is pas iets aangemaakt na je akkoord bij het importeren.") : tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. Claude maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
           </small>
         </Collapsible>
       )}
 
+      {designOpen && designId && typeof document !== "undefined" && <AiCreatorPopup jobId={designId} onClose={() => setDesignOpen(false)} onImport={async (job) => { // the files of the design (and the photos that it uses) go through the normal html import
+        const fd = new FormData(); fd.append("kind", "html"); fd.append("name", job.name);
+        Object.entries(job.files).forEach(([n, c]) => fd.append("file", new File([c], n.split("/").pop(), { type: n.endsWith(".svg") ? "image/svg+xml" : n.endsWith(".css") ? "text/css" : "text/html" })));
+        const all = Object.values(job.files).join("\n");
+        for (const p of job.brief?.photos || []) { // only the photos that the pages use
+          if (!all.includes(p.file)) continue;
+          try { const blob = await (await fetch(mediaUrl(p.url))).blob(); fd.append("file", new File([blob], p.file, { type: blob.type })); } catch { /* the photo stays in the media library */ }
+        }
+        setDesignOpen(false); setTab("html"); start(fd);
+      }} />}
+      {aiOpen && typeof document !== "undefined" && <AiPromptPopup onClose={() => setAiOpen(false)} />}
       {prog && typeof document !== "undefined" && createPortal(
         <div className="pb-objback">
           <div className="pb-objpop" role="dialog" aria-label={tx("Toepassen")} style={{ width: "min(520px, 94vw)" }}>

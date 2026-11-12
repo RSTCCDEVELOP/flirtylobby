@@ -1,0 +1,717 @@
+# Copyright & Ownership Notice
+# easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+# owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+# reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+# is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+# website https://rstcc.net
+
+"""Website ontwerpen -> AI-creator: Claude (through the Anthropic link of Admin -> API keys) designs a complete website as plain files (html per page, one style.css,
+svg illustrations) in the shape that the html import reads (sections as full-width bands, the blocks of the page editor). The user adjusts it in a chat; the
+files then go through the normal html import (proposal, linking, applying as editable blocks). Runs in the background; the screen polls the job.
+
+The job is first a DRAFT (a step plan: start, style, colours, pages, photos, preview): every step is saved on the server so the user can stop and continue later.
+The design can start from a ZIP (made with the AI prompt) that is read in and improved instead of designed from nothing."""
+import io
+import json
+import logging
+import os
+import re
+import threading
+import uuid
+import zipfile
+from datetime import date
+
+from django import db
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db import transaction
+from django.utils import timezone
+from django.utils.text import get_valid_filename
+
+from apps.integrations import ai
+
+from apps.medialib import areas
+from apps.sysobjects.models import SystemObject
+
+from .models import Language, SiteDesignJob
+
+logger = logging.getLogger(__name__)
+FILE_MAX = 400_000  # characters per file
+FILES_MAX = 40
+NAME_RE = re.compile(r"^(?:img/)?[a-z0-9][a-z0-9._-]{0,60}\.(?:html|css|svg)$")
+MARK = re.compile(r"^=== FILE: (\S+) ===\s*$", re.M)
+FENCE = re.compile(r"^```[a-z]*\s*\n|\n```\s*$", re.I)
+
+RULES = """You are a senior web designer. You design complete, professional websites as plain static files that are imported into the website system Easy2edit.
+The importer reads the html and css and rebuilds every page with the blocks of the Easy2edit page editor, so a clean, predictable structure matters more than clever tricks.
+
+FILES
+- One html file per page (the start page is index.html), ONE shared style.css, and optional illustrations as svg files in img/ (img/hero.svg). No other file types, no JavaScript, no external fonts/scripts/frameworks, no data: urls, no photos or hotlinks.
+- Every html file is a complete document (<!doctype html>, <html lang>, <meta charset>, <meta name=viewport>, <title>, <meta name=description>, <link rel="stylesheet" href="style.css">). Links between pages are relative (about.html); "#id" for places on the same page.
+- Pictures: svg illustrations in img/ (simple, single or two-colour flat shapes in the palette of the site) or inline <svg>, with <img src="img/x.svg" alt="..." width height>. Photos are added later by the user, so where a photo belongs make a tasteful svg illustration or a gradient shape instead.
+
+STRUCTURE OF EVERY PAGE
+- <body> = one <header> (brand, <nav> with 3-6 links, optional button), one <main>, one <footer> (short text, links). Header and footer are identical on every page.
+- <main> consists ONLY of full-width <section> elements with an id. The band background goes on the <section> (edge to edge); inside ONE centred <div class="container"> (max-width 1100px, margin 0 auto, padding 0 1.25rem). Never put a card around a whole section. Section padding 4rem 0 (hero 6rem 0), alternate light and tinted/dark bands.
+- Allowed content: h1 (once, in the hero), h2 (section title), h3 (card title); p, ul/ol/li, strong, em, a; img/figure; buttons as <a class="btn btn-primary"> or <a class="btn btn-outline">; hr; no <form>, no <button> without a link.
+- Columns: a div with display grid/flex, 2-4 columns, one column on mobile (@media (max-width: 760px)). Cards: <div class="card"> with own background, radius, padding, 1px border and/or shadow, only inside the columns, equal height.
+- A hero with text on one side and a visual on the other: two columns (50/50), text left (small label, h1, p, buttons), svg visual right.
+- FAQ: one section id="faq" with <details><summary>Question?</summary><p>Answer.</p></details> per question. Products with prices: <div class="product"> cards with <p class="price">. Events: <article class="event">.
+- Colours as css variables on :root (--primary, --secondary, --bg, --text, --card, --line), used everywhere; contrast at least 4.5:1. Typography in rem (body 1rem/1.6, h1 2.6-3.4rem, h2 1.8-2.2rem, h3 1.2-1.4rem), system font stack. Buttons padding .75rem 1.4rem, radius 10px, weight 600. Works from 360px to 1600px. One h1 per page, alt texts, descriptive link texts. Icons: only single-colour inline svg (stroke="currentColor"), never emoji.
+- Write real, convincing copy in the requested language (no lorem ipsum), concrete headings, short paragraphs, clear calls to action. Every page has a unique <title> (max 60 chars) and meta description (max 155).
+
+LIGHT/DARK MODE AND LANGUAGES
+- Colours are ALWAYS used through css variables (no hard-coded colours in rules, svg illustrations use currentColor or the variables). The user message says which display the website has: "light" = the colours as given on :root; "dark" = the dark colours as given on :root; "both" = the light colours on :root, and the dark colours twice: in :root[data-theme="dark"] {...} and in @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {...} }. Easy2edit sets data-theme on <html> and shows its own light/dark switch: never build a switch and never use JavaScript for it. Text on pictures and on dark bands stays readable in both modes (contrast at least 4.5:1).
+- Languages: write every page in the main language only, one html file per page, never one file per language, no language switcher of your own: the system translates the pages into the other languages and adds the language switch to the header. Leave room for it at the right of the header (the menu must wrap or shrink gracefully), let buttons and menu items grow with longer words (no fixed widths on text, min-width instead of width), and when a right-to-left language is among them (ar, he, fa, ur) use logical css properties (margin-inline, padding-inline, text-align: start, inset-inline) so the layout mirrors correctly.
+
+MODULES AND SYSTEM OBJECTS
+- Easy2edit has modules (webshop, FAQ, community, agenda, ...) and system objects: ready-made, live blocks (an overview of products, an agenda, a subscription plan, a donation button, ...). The user message lists the modules the website uses, with what each module needs from the pages, and the system objects to place.
+- A system object is placed as an EMPTY element on its own line: <div data-sysobject="SLUG"></div> (SLUG exactly as given), directly inside the <div class="container"> of the section where it belongs, after the section heading and a short intro. Never inside <p>, <a>, <details> or a card, never styled, never imitated, never with content: Easy2edit fills it with the live content. Give such a section an id and make it a full band like every other section.
+- Use the links of the system for the module pages (e.g. /producten, /winkelwagen, /faq, /registreren, /login, /dashboard) in menu items and buttons; do not build your own versions of those pages (no forms, no carts).
+
+OUTPUT FORMAT (strict): only files, nothing else before the first file. Every file starts with a line "=== FILE: name ===" (name exactly like img/hero.svg, style.css, about.html) followed by the complete content of the file. No markdown fences, no explanation, no "the rest is the same"."""
+
+
+CATALOG = [  # the modules that a website design can use: what they give, and what the pages need to do with them (key, label, what it is, instruction for the AI)
+    ("faq", "FAQ", "Veelgestelde vragen met antwoorden op een eigen pagina (/faq).", "Put ALL questions in ONE section id=\"faq\" as <details><summary>..</summary><p>..</p></details>; they are moved into the FAQ module. Add a button 'Alle veelgestelde vragen' to /faq."),
+    ("webshop", "Webshop", "Producten met prijzen, winkelwagen en afrekenen (/producten, /winkelwagen).", "Show a few featured products as <div class=\"product\"> cards (picture, h3, <p class=\"price\">, button). Buttons and menu: 'Alle producten' -> /producten, 'Winkelwagen' -> /winkelwagen. No cart, checkout or forms yourself; if a system object for the product overview is selected, place that instead of own product cards."),
+    ("community", "Community & dating", "Profielen, zoeken en matchen, berichten en chat voor leden.", "Explain the benefits, how it works and safety. Buttons: 'Gratis aanmelden' -> /registreren, 'Inloggen' -> /login, members area -> /dashboard. No login, search or chat forms."),
+    ("agenda", "Agenda", "Evenementen, activiteiten en afspraken.", "Use <article class=\"event\"> (h3, date, place, short text) for a few examples; if a system object for the agenda is selected, place that instead."),
+    ("documents", "Documenten", "Downloads en documenten voor bezoekers of leden.", "A section 'Downloads' with a short intro and a button 'Naar de documenten' -> /dashboard. No file lists of your own."),
+    ("marketplace", "Marktplaats", "Advertenties van gebruikers.", "A section that explains how placing and finding adverts works, with buttons 'Aanmelden' -> /registreren and 'Inloggen' -> /login."),
+    ("subscriptions", "Abonnementen", "Betaalde toegang met abonnementen.", "A pricing section (id=\"prijzen\") with the plans; when system objects of kind Abonnement are selected place those (one per plan) instead of own price cards. Buttons -> /registreren."),
+    ("donations", "Donaties", "Giften en donatiecampagnes.", "A section that explains what donations are used for; place the selected donation system objects there; no payment forms."),
+    ("registration", "Aanmelden", "Bezoekers maken zelf een account aan.", "Menu button 'Aanmelden' -> /registreren and link 'Inloggen' -> /login on every page (header), no forms."),
+    ("privacy_pages", "Privacy- en cookiepagina", "De pagina's /privacy en /cookies.", "Link 'Privacy' -> /privacy and 'Cookies' -> /cookies in the footer of every page."),
+    ("languages", "Talen", "Een site in meer dan één taal.", "Write the pages in the main language only; the system adds the language switch and the translations. Do not build a language switcher."),
+    ("seo", "SEO", "Vindbaarheid in zoekmachines.", "Unique title and meta description per page, one h1, descriptive alt texts."),
+    ("cookies", "Cookies", "Cookiebanner en cookiebeleid.", "The system shows the cookie banner itself: do not build one. Link 'Cookies' -> /cookies in the footer."),
+    ("age_gate", "Leeftijdscontrole", "Bezoekers bevestigen hun leeftijd (18+) voor ze de site zien.", "The system shows the age check itself: do not build one. Where it fits, state clearly that the website is for adults (18+)."),
+    ("geo", "Landcontrole", "Toegang per land.", "The system handles the country check itself: do not build one."),
+    ("gambling", "Gokken-popup", "Verantwoord-gokken melding (24+).", "The system shows the notice itself: do not build one. Mention responsible gambling where it fits."),
+]
+# What is NOT offered to a website design: admin tools and system modules. Everything else (also modules and plugins that are added later) is offered, and is ON by default.
+IGNORE_MODULES = {"pages", "edit_mode", "media", "siteimport", "sysobjects", "branding", "theme", "help", "twofa", "word_filter", "stats", "orders", "payments", "integrations", "communication", "plugins", "notifications", "sandbox", "system", "storage", "backups", "roles", "users", "dashboard", "security_basic", "ai", "modules"}
+IGNORE_PLUGINS = {"siteimport", "statistics", "finance", "orders", "profile-themes"}
+GENERIC_HOW = "Offer '{label}' on the website ({desc}). Mention it where it fits: a short section or a menu item/button; use its system objects when they are selected; never build your own forms, pages or data for it."
+
+
+def module_items():
+    """The modules and plugins that a website design can use, from the live system: the curated ones with their own instruction, and every other module or plugin (also new ones) with a general instruction."""
+    from apps.plugins.models import Plugin
+
+    from . import modules as M
+
+    items, covered = [], set()
+
+    def on(key):
+        try:
+            return bool(M.enabled(key))
+        except Exception:  # noqa: BLE001
+            return False
+
+    for key, label, desc, how in CATALOG:
+        items.append({"key": key, "label": label, "desc": desc, "how": how, "enabled": on(key), "kind": "module", "auto": False})
+        covered.add(key)
+        covered.add((M.BY_KEY.get(key) or {}).get("plugin") or "-")
+    for m in M.MODULES:
+        k = m["key"]
+        if k in covered or k in IGNORE_MODULES or m.get("group") in ("Kern", "Systeem") or m.get("core") or (m.get("plugin") and m["plugin"] in {c[0] for c in CATALOG}) or (m.get("plugin") in IGNORE_PLUGINS):
+            continue
+        items.append({"key": k, "label": m["label"], "desc": m.get("desc", ""), "how": GENERIC_HOW.format(label=m["label"], desc=m.get("desc", "")), "enabled": on(k), "kind": "module", "auto": True})
+        covered.add(k)
+        covered.add(m.get("plugin") or "-")
+    for p in Plugin.objects.order_by("title"):
+        if p.name in IGNORE_PLUGINS or p.name in covered:
+            continue
+        desc = (p.description or p.manifest.get("description") or "")[:200]
+        items.append({"key": "plugin:" + p.name, "label": p.title, "desc": desc, "how": GENERIC_HOW.format(label=p.title, desc=desc), "enabled": bool(p.enabled), "kind": "plugin", "auto": True})
+    return items
+
+
+def catalog():
+    """What the design can use: the modules (with whether they are on in this system) and the system objects that exist now (slug, kind, name)."""
+    from apps.sysobjects import service as sos
+    from apps.sysobjects import views as sov
+    from apps.sysobjects.models import SystemObject
+
+    mods = module_items()
+    objs = []
+    try:
+        sos.sync()
+        for o in SystemObject.objects.filter(enabled=True):
+            r = sov._row(o, public=True)
+            if not r:
+                continue
+            names = r.get("names") or {}
+            name = (names.get("") or next(iter(names.values()), "") or (r.get("data") or {}).get("title") or o.slug)
+            objs.append({"slug": o.slug, "kind": o.kind, "kind_label": dict(SystemObject.KINDS).get(o.kind, o.kind), "name": str(name)[:120]})
+    except Exception:  # noqa: BLE001
+        logger.exception("sitecreator catalog")
+    from .models import Language
+
+    langs = [{"code": l.code, "name": l.name, "native": l.native_name, "rtl": l.rtl, "enabled": l.enabled, "default": l.is_default} for l in Language.objects.all()]
+    return {"modules": mods, "objects": objs, "languages": langs}
+
+
+HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+COLOR_KEYS = ("primary", "secondary", "bg", "card", "text", "dark", "dbg", "dcard", "dtext")  # dbg/dcard/dtext: the colours of the dark mode
+MODES = ("light", "dark", "both")
+FONTS = {"sans": 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', "serif": 'Georgia, "Times New Roman", serif', "round": '"Trebuchet MS", "Segoe UI", system-ui, sans-serif'}
+STYLE_TAGS = {"modern", "warm", "zakelijk", "speels", "minimalistisch", "luxe", "natuurlijk", "technisch", "creatief", "klassiek"}
+KINDS = {"company", "shop", "community", "agenda", "blog", "portfolio", "club"}
+IMG_OK = {"jpg", "jpeg", "png", "webp", "gif"}
+MAX_PHOTOS = 30
+
+
+def slug(page, i):
+    s = re.sub(r"[^a-z0-9]+", "-", str(page).lower()).strip("-")[:40]
+    return "index.html" if i == 0 else f"{s or 'page' + str(i + 1)}.html"
+
+
+def pages_of(brief):
+    raw = [p.strip() for p in re.split(r"[,\n]", str(brief.get("pages") or "")) if p.strip()] or ["Home", "Over ons", "Diensten", "FAQ", "Contact"]
+    out, seen = [], set()
+    for i, p in enumerate(raw[:10]):
+        f = slug(p, i)
+        while f in seen:
+            f = f.replace(".html", "-2.html")
+        seen.add(f)
+        out.append((f, p[:60]))
+    return out
+
+
+def parse(text):
+    """{name: content} from the marked output; names are checked, sizes limited."""
+    parts = MARK.split(text or "")
+    out = {}
+    for name, body in zip(parts[1::2], parts[2::2]):
+        name = name.strip().lower()
+        body = FENCE.sub("", body.strip("\n")).strip() + "\n"
+        if NAME_RE.match(name) and len(body) <= FILE_MAX:
+            out[name] = body
+    return out
+
+
+# ── the step plan (draft) ──
+def themes():
+    """The themes of the system (Thema) with their palette: they can be picked as the style of the design."""
+    from . import theme as T
+    from . import themepacks
+
+    out = []
+    for p in themepacks.listing():
+        man = themepacks.manifest_of(p["key"]) or {}
+        v = T.merged(man.get("values") or {})
+        out.append({"key": p["key"], "name": p["name"], "description": p.get("description", ""), "mode": p.get("mode"), "colors": p["colors"], "fonts": p["fonts"], "radius": v.get("radius", 14), "btn_radius": v.get("btn_radius", 10), "active": p.get("active", False)})
+    return out
+
+
+def _clean_colors(c):
+    return {k: str(c[k]) for k in COLOR_KEYS if isinstance(c, dict) and HEX.match(str(c.get(k) or ""))}
+
+
+def photo_file(name, taken):
+    base, ext = os.path.splitext(get_valid_filename(str(name or "foto")).lower())
+    base = re.sub(r"[^a-z0-9._-]+", "-", base).strip("-.")[:40] or "foto"
+    ext = ext.lstrip(".") if ext.lstrip(".") in IMG_OK else "jpg"
+    f, n = f"{base}.{ext}", 2
+    while f in taken:
+        f, n = f"{base}-{n}.{ext}", n + 1
+    return f
+
+
+def _clean_photos(raw, old):
+    from apps.medialib.models import MediaItem
+
+    have = {p["id"]: p for p in old or []}
+    ids = []
+    for p in (raw if isinstance(raw, list) else [])[:MAX_PHOTOS]:
+        try:
+            ids.append((int(p.get("id")), str(p.get("note") or "")[:200]))
+        except (TypeError, ValueError, AttributeError):
+            continue
+    items = {m.id: m for m in MediaItem.objects.filter(id__in=[i for i, _ in ids], kind="image")}
+    out, taken = [], set()
+    for i, note in ids:
+        m = items.get(i)
+        if not m or any(x["id"] == i for x in out):
+            continue
+        f = have.get(i, {}).get("file") or photo_file(m.name, taken)
+        taken.add(f)
+        out.append({"id": i, "file": f, "name": m.name[:120], "url": default_storage.url(m.key), "note": note})
+    return out
+
+
+def clean_brief(patch, old):
+    """The brief with only known keys and safe values; the photos are checked against the media library."""
+    b = dict(old or {})
+    p = patch if isinstance(patch, dict) else {}
+    for k, n in (("name", 120), ("lang", 40), ("pages", 600), ("style", 300), ("extra", 1500), ("theme", 60), ("theme_name", 120)):
+        if k in p:
+            b[k] = str(p[k] or "")[:n]
+    if "kind" in p:
+        b["kind"] = p["kind"] if p["kind"] in KINDS else "company"
+    if "style_tags" in p:
+        b["style_tags"] = [t for t in (p["style_tags"] if isinstance(p["style_tags"], list) else []) if t in STYLE_TAGS][:6]
+    if "colors" in p:
+        b["colors"] = _clean_colors(p["colors"])
+    if "color_mode" in p:
+        b["color_mode"] = p["color_mode"] if p["color_mode"] in MODES else "light"
+    if "langs" in p:
+        known = set(Language.objects.values_list("code", flat=True))
+        b["langs"] = [c for c in (p["langs"] if isinstance(p["langs"], list) else []) if isinstance(c, str) and c in known][:15]
+    if "lang_switch" in p:
+        b["lang_switch"] = bool(p["lang_switch"])
+    if "font" in p:
+        b["font"] = p["font"] if p["font"] in FONTS else "sans"
+    if "radius" in p:
+        try:
+            b["radius"] = max(0, min(40, int(p["radius"])))
+        except (TypeError, ValueError):
+            pass
+    if "photos" in p:
+        b["photos"] = _clean_photos(p["photos"], b.get("photos"))
+    if "modules_off" in p:  # the modules and plugins that the user does NOT want (all others are used, also the ones that are added later)
+        known = {i["key"] for i in module_items()}
+        b["modules_off"] = [k for k in (p["modules_off"] if isinstance(p["modules_off"], list) else []) if k in known][:80]
+    if "objects" in p:
+        known = set(SystemObject.objects.values_list("slug", flat=True))
+        b["objects"] = [x for x in (p["objects"] if isinstance(p["objects"], list) else []) if isinstance(x, str) and x in known][:40]
+    if "step" in p:
+        try:
+            b["step"] = max(0, min(6, int(p["step"])))
+        except (TypeError, ValueError):
+            pass
+    if "mode" in p:
+        b["mode"] = "improve" if p["mode"] == "improve" else "new"
+    return b
+
+
+def create(user, name=""):
+    if not ai.available():
+        raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
+    for old in SiteDesignJob.objects.filter(created_at__lt=timezone.now() - timezone.timedelta(days=60)):
+        old.delete()
+    brief = {"name": str(name or "")[:120], "kind": "company", "lang": "Dutch", "mode": "new", "step": 0, "font": "sans"}
+    return SiteDesignJob.objects.create(user=user, status="draft", name=brief["name"] or "Nieuw ontwerp", brief=brief)
+
+
+def save(job, patch):
+    if job.status not in ("draft", "done", "error"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    b = clean_brief(patch, job.brief)
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, name=(b.get("name") or job.name)[:120], updated_at=timezone.now())
+    job.brief = b
+    return job
+
+
+def listing(user):
+    out = []
+    for j in SiteDesignJob.objects.filter(user=user).order_by("-updated_at")[:30]:
+        out.append({"id": str(j.pk), "name": j.name, "status": j.status, "step": (j.brief or {}).get("step", 0), "pages": len(j.files or {}) and len([f for f in j.files if f.endswith(".html")]), "updated_at": j.updated_at.isoformat()})
+    return out
+
+
+def read_zip(job, upload, user):
+    """A ZIP (made with the AI prompt): the html, css and svg files become the files of this design, the pictures go to the media library (tag design) and into the photo list."""
+    from apps.medialib.models import MediaItem
+    from apps.medialib import areas
+
+    if job.status not in ("draft", "done", "error"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    data = upload.read(40 * 2**20 + 1)
+    if len(data) > 40 * 2**20:
+        raise ValueError("Het ZIP-bestand is te groot (maximaal 40 MB).")
+    try:
+        z = zipfile.ZipFile(io.BytesIO(data))
+    except zipfile.BadZipFile:
+        raise ValueError("Dit is geen geldig ZIP-bestand.")
+    files, photos, taken = {}, list((job.brief or {}).get("photos") or []), {p["file"] for p in (job.brief or {}).get("photos") or []}
+    notes = []
+    for zi in z.infolist()[:400]:
+        if zi.is_dir() or zi.file_size > 6 * 2**20 or "__MACOSX" in zi.filename or os.path.basename(zi.filename).startswith("."):
+            continue
+        base = os.path.basename(zi.filename).lower()
+        ext = base.rsplit(".", 1)[-1] if "." in base else ""
+        raw = z.read(zi)
+        if ext in ("html", "htm", "css", "svg"):
+            name = get_valid_filename(base)
+            name = ("img/" + name) if ext == "svg" else name.replace(".htm", ".html") if ext == "htm" else name
+            if NAME_RE.match(name) and len(files) < FILES_MAX:
+                files[name] = raw.decode("utf-8", "replace")
+        elif ext in IMG_OK and len(photos) < MAX_PHOTOS and zi.file_size <= 5 * 2**20:
+            try:
+                from PIL import Image
+
+                Image.open(io.BytesIO(raw)).verify()
+            except Exception:  # noqa: BLE001
+                notes.append(f"{base} is geen geldige afbeelding.")
+                continue
+            key = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{uuid.uuid4().hex[:8]}-{get_valid_filename(base)}"), ContentFile(raw))
+            item = MediaItem.objects.get(key=key)
+            item.name, item.uploaded_by, item.tags = base[:255], user, ["design"]
+            item.save(update_fields=["name", "uploaded_by", "tags"])
+            f = photo_file(base, taken)
+            taken.add(f)
+            photos.append({"id": item.id, "file": f, "name": base[:120], "url": default_storage.url(item.key), "note": "uit het ZIP-bestand"})
+    if not any(n.endswith(".html") for n in files):
+        raise ValueError("Er staat geen html-bestand in het ZIP-bestand.")
+    htmls = sorted((n for n in files if n.endswith(".html")), key=lambda n: (n != "index.html", n))
+    pages = []
+    for n in htmls:
+        m = re.search(r"<title>(.*?)</title>", files[n], re.S | re.I)
+        pages.append(re.sub(r"\s+", " ", (m.group(1) if m else n[:-5])).split("|")[0].split(" - ")[0].strip()[:60] or n[:-5])
+    b = dict(job.brief or {})
+    b.update({"mode": "improve", "photos": photos, "pages": ", ".join(pages), "from_zip": [n for n in files]})
+    b.setdefault("name", job.name)
+    SiteDesignJob.objects.filter(pk=job.pk).update(files=files, brief=b, updated_at=timezone.now())
+    job.files, job.brief = files, b
+    return job, notes
+
+
+
+# ── documents with the goals of the website (pdf, word): Claude reads them and makes the settings of the step plan ──
+DOC_EXT = {"pdf", "docx", "txt", "md"}
+DOC_MAX = 10 * 2**20
+DOC_TEXT = 40000  # characters that Claude reads
+DOC_SYSTEM = (
+    "You read a document (a brief, a plan, a company profile, a list of objectives) about a website and make the settings for the website designer. "
+    'Answer with ONE JSON object only: {"summary": 2-3 sentences, in Dutch, about what the document says about the website, '
+    '"goals": [at most 8 short Dutch bullets: the objectives of the website, what it must achieve], "name": name of the website or company or "", "kind": one of the kinds, '
+    '"lang": code of the main language of the website (from the languages), "langs": [codes of other languages that the document asks for], '
+    '"pages": [names of the pages in menu order, at most 8, in the language of the website, the first is the home page], '
+    '"extra": audience, offer, tone and key messages for the designer as running text (at most 900 characters, in the language of the document), '
+    '"style_tags": [at most 4 of the style words], "style": short free description of the look or "", "theme": key of the theme that fits best or "", '
+    '"colors": {"primary": "#rrggbb", "secondary": "#rrggbb"} ONLY when the document names brand colours, else {}, "color_mode": "light" | "dark" | "both" or "" when not mentioned, '
+    '"font": "sans" | "serif" | "round" or "", "modules": [keys of the modules that the goals really need, from the modules list]}. '
+    "Use only what the document says or clearly implies; leave a field empty when the document does not tell. Never invent facts."
+)
+
+
+def _doc_text(data, ext):
+    """(text, number of pages) of a pdf, word (docx) or text file."""
+    if ext == "pdf":
+        from pypdf import PdfReader
+
+        r = PdfReader(io.BytesIO(data))
+        if r.is_encrypted:
+            raise ValueError("Dit PDF-bestand is beveiligd met een wachtwoord.")
+        parts = [(p.extract_text() or "") for p in r.pages[:80]]
+        return "\n".join(parts), len(r.pages)
+    if ext == "docx":
+        try:
+            z = zipfile.ZipFile(io.BytesIO(data))
+            xml = z.read("word/document.xml").decode("utf-8", "replace")
+        except Exception:  # noqa: BLE001
+            raise ValueError("Dit Word-bestand kan niet worden gelezen (alleen .docx).")
+        xml = re.sub(r"</w:p>", "\n", xml)
+        xml = re.sub(r"<w:tab/>|<w:br/>", " ", xml)
+        import html as htmllib
+
+        return htmllib.unescape(re.sub(r"<[^>]+>", "", xml)), max(1, xml.count("w:lastRenderedPageBreak") + 1)
+    return data.decode("utf-8", "replace"), 1
+
+
+def _doc_set(pk, doc_id, **kw):
+    with transaction.atomic():
+        job = SiteDesignJob.objects.select_for_update().filter(pk=pk).first()
+        if not job:
+            return None
+        docs = list(job.docs or [])
+        for d in docs:
+            if d.get("id") == doc_id:
+                d.update(kw)
+        SiteDesignJob.objects.filter(pk=pk).update(docs=docs)
+        return job
+
+
+def add_document(job, upload, user):
+    ext = os.path.splitext(str(getattr(upload, "name", "")))[1].lower().lstrip(".")
+    if ext not in DOC_EXT:
+        raise ValueError("Kies een PDF-, Word- (.docx) of tekstbestand.")
+    if len(job.docs or []) >= 8:
+        raise ValueError("Er staan al 8 documenten bij dit ontwerp. Verwijder er eerst een.")
+    data = upload.read(DOC_MAX + 1)
+    if len(data) > DOC_MAX:
+        raise ValueError("Het document is te groot (maximaal 10 MB).")
+    if not data:
+        raise ValueError("Het document is leeg.")
+    name = os.path.basename(str(upload.name))[:120]
+    key = default_storage.save(areas.site_path("designs", f"{job.pk}/{uuid.uuid4().hex[:8]}-{get_valid_filename(name)}"), ContentFile(data))
+    doc = {"id": uuid.uuid4().hex[:10], "name": name, "key": key, "ext": ext, "size": len(data), "status": "reading", "percent": 3, "step": "Starten", "summary": "", "goals": [], "applied": [], "result": {}, "error": "", "uploaded_at": timezone.now().isoformat()}
+    with transaction.atomic():
+        j = SiteDesignJob.objects.select_for_update().get(pk=job.pk)
+        SiteDesignJob.objects.filter(pk=job.pk).update(docs=[*(j.docs or []), doc], updated_at=timezone.now())
+    threading.Thread(target=_read_document, args=(job.pk, doc["id"]), daemon=True).start()
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def _read_document(pk, doc_id):
+    try:
+        job = SiteDesignJob.objects.get(pk=pk)
+        doc = next(d for d in job.docs if d["id"] == doc_id)
+        _doc_set(pk, doc_id, percent=8, step="Het document openen")
+        with default_storage.open(doc["key"], "rb") as fh:
+            data = fh.read()
+        text, pages = _doc_text(data, doc["ext"])
+        text = re.sub(r"[ \t]+", " ", re.sub(r"\n{3,}", "\n\n", text)).strip()
+        if len(text) < 40:
+            raise ValueError("Er is geen tekst in het document gevonden (een gescand document kan ik niet lezen).")
+        _doc_set(pk, doc_id, percent=20, step=f"De tekst lezen ({pages} {'pagina' if pages == 1 else 'pagina' + chr(39) + 's'}, {len(text):,} tekens)".replace(",", "."))
+        cat = catalog()
+        context = json.dumps({
+            "kinds": sorted(KINDS), "style_words": sorted(STYLE_TAGS), "fonts": sorted(FONTS),
+            "themes": [{"key": t["key"], "name": t["name"], "colors": [t["colors"].get("primary"), t["colors"].get("secondary")]} for t in themes()],
+            "modules": [{"key": m["key"], "label": m["label"], "what": m["desc"]} for m in cat["modules"]],
+            "languages": [{"code": l["code"], "name": l["native"]} for l in cat["languages"] if l["enabled"] or l["default"]],
+        }, ensure_ascii=False)
+        _doc_set(pk, doc_id, percent=30, step="Claude leest de doelstellingen")
+        seen = {"n": 0}
+
+        def on_event(kind, _t=""):
+            if kind == "write" and not seen["n"]:
+                seen["n"] = 1
+                _doc_set(pk, doc_id, percent=60, step="Claude bepaalt de instellingen")
+
+        from . import themeimport as TI
+
+        raw = ai.claude_stream(DOC_SYSTEM, f"SETTINGS THAT YOU CAN CHOOSE FROM:\n{context}\n\nDOCUMENT ({doc['name']}):\n{text[:DOC_TEXT]}", max_tokens=3000, timeout=240, on_event=on_event)
+        result = TI._parse_json(raw, need=("summary", "goals"))
+        _doc_set(pk, doc_id, percent=82, step="De instellingen toepassen", result=result)
+        applied = apply_result(pk, result)
+        _doc_set(pk, doc_id, status="done", percent=100, step="Klaar", summary=str(result.get("summary") or "")[:800], goals=[str(g)[:200] for g in (result.get("goals") or [])[:8]], applied=applied, error="")
+    except Exception as e:  # noqa: BLE001
+        logger.exception("sitecreator document")
+        _doc_set(pk, doc_id, status="error", percent=100, step="Mislukt", error=str(e) if isinstance(e, ValueError) else "Het document kon niet worden gelezen. Probeer het nog eens.")
+    finally:
+        db.connections.close_all()
+
+
+def apply_result(pk, r):
+    """The settings that Claude made from a document go into the brief (the step plan); returns what was set, in words."""
+    job = SiteDesignJob.objects.get(pk=pk)
+    b = dict(job.brief or {})
+    cat = catalog()
+    langs = {l["code"]: l for l in cat["languages"]}
+    patch, said = {}, []
+    if str(r.get("name") or "").strip() and (not (b.get("name") or "").strip() or b.get("name") == "Nieuw ontwerp"):
+        patch["name"] = str(r["name"]).strip()[:120]; said.append("Naam")
+    if r.get("kind") in KINDS:
+        patch["kind"] = r["kind"]; said.append("Soort website")
+    if r.get("lang") in langs:
+        l = langs[r["lang"]]
+        patch["lang"] = f"{l['native']} ({l['code']})"; said.append("Hoofdtaal")
+    other = [c for c in (r.get("langs") or []) if c in langs and f"({c})" not in (patch.get("lang") or b.get("lang") or "")]
+    if other:
+        patch["langs"] = other; said.append("Andere talen")
+    pages = [re.sub(r"[,\n]", " ", str(p)).strip()[:60] for p in (r.get("pages") or []) if str(p).strip()][:8]
+    if pages and b.get("mode") != "improve":
+        patch["pages"] = ", ".join(pages); said.append("Pagina's")
+    if str(r.get("extra") or "").strip():
+        patch["extra"] = str(r["extra"]).strip()[:1500]; said.append("Wat de site vertelt")
+    tags = [t for t in (r.get("style_tags") or []) if t in STYLE_TAGS][:4]
+    if tags:
+        patch["style_tags"] = tags; said.append("Sfeer")
+    if str(r.get("style") or "").strip():
+        patch["style"] = str(r["style"]).strip()[:300]
+    th = next((t for t in themes() if t["key"] == r.get("theme")), None)
+    cols = _clean_colors(r.get("colors"))
+    if th:
+        patch["theme"], patch["theme_name"] = th["key"], th["name"]
+        patch["colors"] = {"primary": th["colors"]["primary"], "secondary": th["colors"]["secondary"], "bg": th["colors"]["light_bg"], "card": th["colors"]["light_card"], "text": th["colors"]["light_text"], "dark": th["colors"]["dark_bg"],
+                           "dbg": th["colors"]["dark_bg"], "dcard": th["colors"]["dark_card"], "dtext": th["colors"]["dark_text"]}
+        patch["radius"] = th["radius"]; said.append("Thema")
+    if cols:
+        patch["colors"] = {**(patch.get("colors") or b.get("colors") or {}), **cols}; said.append("Kleuren")
+    if r.get("color_mode") in MODES:
+        patch["color_mode"] = r["color_mode"]; said.append("Weergave (licht/donker)")
+    if r.get("font") in FONTS:
+        patch["font"] = r["font"]; said.append("Lettertype")
+    need = [k for k in (r.get("modules") or []) if k in {m["key"] for m in cat["modules"]}]
+    if need:
+        patch["modules_off"] = [m["key"] for m in cat["modules"] if m["key"] not in need]; said.append(f"Modules ({len(need)} van {len(cat['modules'])})")
+    nb = clean_brief(patch, b)
+    SiteDesignJob.objects.filter(pk=pk).update(brief=nb, name=(nb.get("name") or job.name)[:120], updated_at=timezone.now())
+    return said
+
+
+def reapply_document(job, doc_id):
+    d = next((x for x in job.docs or [] if x["id"] == doc_id), None)
+    if not d or d.get("status") != "done" or not d.get("result"):
+        raise ValueError("Dit document is nog niet gelezen.")
+    said = apply_result(job.pk, d["result"])
+    _doc_set(job.pk, doc_id, applied=said)
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def remove_document(job, doc_id):
+    d = next((x for x in job.docs or [] if x["id"] == doc_id), None)
+    if not d:
+        raise ValueError("Dit document bestaat niet (meer).")
+    try:
+        default_storage.delete(d["key"])
+    except Exception:  # noqa: BLE001
+        pass
+    SiteDesignJob.objects.filter(pk=job.pk).update(docs=[x for x in job.docs if x["id"] != doc_id], updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def document_file(job, doc_id):
+    d = next((x for x in job.docs or [] if x["id"] == doc_id), None)
+    if not d:
+        raise ValueError("Dit document bestaat niet (meer).")
+    return d, default_storage.open(d["key"], "rb")
+
+
+# ── generating ──
+def _brief_text(b):
+    pages = pages_of(b)
+    c = b.get("colors") or {}
+    lines = [
+        f"Website name: {str(b.get('name') or 'Mijn website')[:120]}",
+        f"Type: {b.get('kind') or 'company'}",
+        f"Language of all texts: {str(b.get('lang') or 'Dutch')[:40]}",
+        "Pages (file = menu label, in this order): " + "; ".join(f"{f} = {t}" for f, t in pages),
+        "Style: " + ", ".join([*(b.get("style_tags") or []), *([b["style"]] if b.get("style") else [])] or ["modern, clean, lots of white space, friendly and professional"]),
+    ]
+    if b.get("theme_name"):
+        lines.append(f"Based on the theme '{b['theme_name']}' of the system: follow its look and colours.")
+    if c:
+        lines.append("Colours (use EXACTLY these as the css variables on :root): " + ", ".join(f"--{ {'bg': 'bg', 'card': 'card', 'dark': 'dark-band'}.get(k, k) }: {v}" for k, v in c.items() if k in COLOR_KEYS[:6]) + ". --dark-band is the background of dark bands (hero/footer); derive --line and the text colour on dark bands from them.")
+    else:
+        lines.append("Colours: one strong primary colour, one secondary colour, light background, dark text.")
+    mode = b.get("color_mode") or "light"
+    dark = {"bg": c.get("dbg") or "#0f172a", "card": c.get("dcard") or "#1e293b", "text": c.get("dtext") or "#e2e8f0"}
+    lines.append({"light": "Display: light only.", "dark": f"Display: dark only. Use these as the values on :root: --bg: {dark['bg']}; --card: {dark['card']}; --text: {dark['text']} (instead of the light ones).",
+                  "both": f"Display: light AND dark. Light colours on :root; dark colours (--bg: {dark['bg']}; --card: {dark['card']}; --text: {dark['text']}) in :root[data-theme=\"dark\"] and in the prefers-color-scheme media query, as explained in the rules. The system adds the light/dark switch."}[mode])
+    codes = b.get("langs") or []
+    if codes:
+        names = {l.code: f"{l.native_name} ({l.code}{', right-to-left' if l.rtl else ''})" for l in Language.objects.filter(code__in=codes)}
+        lines.append(f"Other languages of the website (the system translates the pages into them; write only in the main language): {', '.join(names.get(x, x) for x in codes)}." + (" Show a language switch: leave room for it in the header." if b.get("lang_switch", True) else " No language switch in the header."))
+    lines.append(f"Font: {FONTS.get(b.get('font') or 'sans')} (system fonts only).")
+    if b.get("radius") is not None:
+        lines.append(f"Corner radius of cards: {b['radius']}px; buttons: {max(0, b['radius'] - 4)}px.")
+    ph = b.get("photos") or []
+    if ph:
+        lines.append("PHOTOS the user uploaded (use them: reference as img/<file> in <img> tags and url(img/<file>) in css, with fitting alt texts; use each where it fits, hero pictures first; do not output these files, they are added by the system):\n" + "\n".join(f"- {p['file']}: {p.get('note') or 'no description'}" for p in ph))
+    off = set(b.get("modules_off") or [])
+    mods = [i for i in module_items() if i["key"] not in off]
+    if mods:
+        lines.append("MODULES and PLUGINS of the system that this website uses (build the pages so that they work with them; mention each where it fits, do not force a section for every one):\n" + "\n".join(f"- {i['label']}: {i['how']}" for i in mods))
+    objs = b.get("objects") or []
+    if objs:
+        info = {o["slug"]: o for o in catalog()["objects"]}
+        lines.append("SYSTEM OBJECTS to place (each as <div data-sysobject=\"SLUG\"></div>, see the rules; put each in the section that fits it):\n" + "\n".join(f"- {x}: {info.get(x, {}).get('name', '')} ({info.get(x, {}).get('kind_label', '')})" for x in objs))
+    lines.append(f"Extra wishes: {str(b.get('extra') or '-')[:1500]}")
+    return "\n".join(lines)
+
+
+def _ask(system, prompt, max_tokens=24000):
+    return ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=600)
+
+
+def _set(pk, **kw):
+    SiteDesignJob.objects.filter(pk=pk).update(updated_at=timezone.now(), **kw)
+
+
+def generate(job):
+    if job.status == "running":
+        raise ValueError("Er wordt al gewerkt aan dit ontwerp.")
+    if SiteDesignJob.objects.filter(user=job.user, status="running", updated_at__gte=timezone.now() - timezone.timedelta(minutes=12)).exists():
+        raise ValueError("Er wordt al een website ontworpen. Wacht tot die klaar is.")
+    if not ai.available():
+        raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
+    b = job.brief or {}
+    if not (b.get("name") or "").strip():
+        raise ValueError("Geef de website een naam (stap 1).")
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=3, step="Starten", error="", messages=[], updated_at=timezone.now())
+    threading.Thread(target=_generate, args=(job.pk,), daemon=True).start()
+
+
+def _generate(pk):
+    try:
+        job = SiteDesignJob.objects.get(pk=pk)
+        improve = (job.brief or {}).get("mode") == "improve" and any(n.endswith(".html") for n in (job.files or {}))
+        old = dict(job.files or {}) if improve else {}
+        pages = pages_of(job.brief)
+        if improve:  # the pages are the html files of the ZIP (in the order of the brief)
+            have = sorted((n for n in old if n.endswith(".html")), key=lambda n: (n != "index.html", n))
+            pages = [(f, pages_of(job.brief)[i][1] if i < len(pages_of(job.brief)) else f[:-5]) for i, f in enumerate(have)]
+        text = _brief_text(job.brief)
+        nav = "; ".join(f"{t} -> {f}" for f, t in pages)
+        first = pages[0][0]
+        _set(pk, progress=6, step=f"De opmaak en de startpagina {'verbeteren' if improve else 'ontwerpen'} ({pages[0][1]})")
+        if improve:
+            prompt = (f"Here is an existing website (made by an AI). IMPROVE it: apply the colours, font, style and photos below, fix everything that breaks the structure rules, make the design more polished and consistent, and keep the content and meaning of the texts (you may sharpen them). Output ONLY style.css (complete, shared by ALL pages) and {first} (and img/ svg files for it).\n"
+                      f"The menu on every page: {nav}\n\n{text}\n\nCURRENT style.css:\n{old.get('style.css', '(none)')}\n\nCURRENT {first}:\n{old.get(first, '')}")
+        else:
+            prompt = f"Design this website. Now output ONLY style.css (the complete shared stylesheet for ALL pages: also the classes that the other pages will need: cards, columns, faq, products, events, forms-free contact blocks), {first} and the svg illustrations (img/...) of that page.\nThe menu on every page: {nav}\n\n{text}"
+        files = parse(_ask(RULES, prompt))
+        if "style.css" not in files or first not in files:
+            raise ValueError("De AI gaf geen bruikbaar ontwerp terug. Probeer het nog eens.")
+        _set(pk, files=files, progress=30)
+        rest = pages[1:]
+        for n, (f, title) in enumerate(rest):
+            _set(pk, progress=30 + int(65 * n / max(1, len(rest))), step=f"Pagina '{title}' {'verbeteren' if improve else 'ontwerpen'}")
+            ctx = f"style.css:\n{files['style.css']}\n\n{first} (copy its header and footer exactly, same menu):\n{files[first]}"
+            cur = f"\n\nCURRENT {f} (improve this page, keep its content):\n{old.get(f, '')}" if improve else ""
+            new = parse(_ask(RULES, f"{'Improve' if improve else 'Design'} ONE more page of the same website, in exactly the same visual language. Output {f} (and img/ svg files that this page needs). Output style.css too ONLY when you had to add classes: then the complete extended file.\nThe menu on every page: {nav}\nThis page: {title} ({f})\n\n{text}\n\n{ctx}{cur}"))
+            if f not in new:
+                raise ValueError(f"De pagina '{title}' kwam niet terug. Probeer het nog eens.")
+            files = {**files, **new}
+            _set(pk, files=files)
+        _set(pk, status="done", progress=100, step="Klaar", files=files, messages=[{"role": "ai", "text": "Je website is ontworpen. Bekijk de pagina's en zeg wat er anders moet. Daarna kun je hem importeren in Easy2edit."}])
+    except Exception as e:  # noqa: BLE001
+        logger.exception("sitecreator")
+        _set(pk, status="error", error=str(e) if isinstance(e, ValueError) else "Het ontwerpen is niet gelukt. Probeer het nog eens.")
+    finally:
+        db.connections.close_all()
+
+
+def revise(job, instruction, page=""):
+    if job.status == "running":
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    instruction = str(instruction or "").strip()[:2000]
+    if not instruction:
+        raise ValueError("Schrijf wat er anders moet.")
+    msgs = list(job.messages or []) + [{"role": "user", "text": instruction}]
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=10, step="De aanpassing doorvoeren", error="", messages=msgs, updated_at=timezone.now())
+    threading.Thread(target=_revise, args=(job.pk, instruction, page), daemon=True).start()
+
+
+def _revise(pk, instruction, page):
+    try:
+        job = SiteDesignJob.objects.get(pk=pk)
+        files = dict(job.files or {})
+        listing_ = "\n\n".join(f"=== FILE: {n} ===\n{c}" for n, c in files.items())
+        focus = f"The user is looking at the page {page}.\n" if page in files else ""
+        photos = "\n".join(f"- {p['file']}: {p.get('note') or ''}" for p in (job.brief or {}).get("photos") or [])
+        ph = f"Photos that can be used (img/<file>):\n{photos}\n" if photos else ""
+        new = parse(_ask(RULES, f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}"))
+        if not new:
+            raise ValueError("De AI gaf geen aanpassing terug. Probeer het anders te zeggen.")
+        _set(pk, status="done", progress=100, step="Klaar", files={**files, **new}, messages=list(job.messages) + [{"role": "ai", "text": "Aangepast: " + ", ".join(sorted(new)) + "."}])
+    except Exception as e:  # noqa: BLE001
+        logger.exception("sitecreator revise")
+        _set(pk, status="done", progress=100, step="", error="", messages=list(SiteDesignJob.objects.get(pk=pk).messages) + [{"role": "ai", "text": "Dat is niet gelukt: " + (str(e) if isinstance(e, ValueError) else "onbekende fout") + " Het ontwerp is niet veranderd."}])
+    finally:
+        db.connections.close_all()
+
+
+def _doc_public(d):
+    """A document without its storage key; one that has been 'reading' for too long (the server was restarted) is shown as failed, so it can be removed."""
+    out = {k: v for k, v in d.items() if k not in ("key", "result")}
+    try:
+        if out.get("status") == "reading" and timezone.now() - timezone.datetime.fromisoformat(out["uploaded_at"]) > timezone.timedelta(minutes=10):
+            out.update(status="error", error="Het lezen is afgebroken. Verwijder het document en plaats het opnieuw.")
+    except (KeyError, ValueError, TypeError):
+        pass
+    return out
+
+
+def public(job):
+    b = job.brief or {}
+    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": job.files or {}, "messages": job.messages or [], "brief": b,
+            "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
+            "docs": [_doc_public(d) for d in job.docs or []]}

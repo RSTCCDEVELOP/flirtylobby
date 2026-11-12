@@ -1810,3 +1810,164 @@ def presets_update(request, key):
     if isinstance(request.data.get("pages"), list):  # the pages the person agreed to put back as the standard has them
         return Response(presets.update_pages(key, [str(k) for k in request.data["pages"]]))
     return Response(presets.update_installation(key))
+
+
+# ── Website ontwerpen: the AI-creator (a step plan that is saved as a draft, then a website designed by Claude, adjusted in a chat, then imported with the html import) ──
+DESIGN_PERM = [has_level_for("siteimport", {"GET": "use"}, default="manage"), module_required("siteimport")]
+
+
+def _design(request, pk):
+    from .models import SiteDesignJob
+
+    try:
+        return SiteDesignJob.objects.filter(pk=pk, user=request.user).first()
+    except (ValueError, TypeError):
+        return None
+
+
+def _gone():
+    return _bad("Dit ontwerp bestaat niet (meer).", status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET", "POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_list(request):
+    from . import sitecreator
+
+    if request.method == "GET":
+        return Response({"designs": sitecreator.listing(request.user), "themes": sitecreator.themes(), "ai": __import__("apps.integrations.ai", fromlist=["x"]).available()})
+    try:
+        job = sitecreator.create(request.user, request.data.get("name"))
+    except ValueError as e:
+        return _bad(str(e))
+    return Response(sitecreator.public(job), status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_catalog(request):
+    from . import sitecreator
+
+    return Response(sitecreator.catalog())
+
+
+@api_view(["GET", "PATCH", "DELETE"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_job(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    if request.method == "DELETE":
+        job.delete()
+        return Response({"ok": True})
+    if request.method == "PATCH":
+        try:
+            job = sitecreator.save(job, request.data)
+        except ValueError as e:
+            return _bad(str(e))
+    return Response(sitecreator.public(job))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+@parser_classes([MultiPartParser, FormParser])
+def sitecreator_zip(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    f = request.FILES.get("file")
+    if not job:
+        return _gone()
+    if not f or not f.name.lower().endswith(".zip"):
+        return _bad("Kies een ZIP-bestand.")
+    try:
+        job, notes = sitecreator.read_zip(job, f, request.user)
+    except ValueError as e:
+        return _bad(str(e))
+    return Response({**sitecreator.public(job), "notes": notes})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_generate(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.generate(job)
+    except ValueError as e:
+        return _bad(str(e))
+    job.refresh_from_db()
+    return Response(sitecreator.public(job))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_revise(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.revise(job, request.data.get("text"), str(request.data.get("page") or ""))
+    except ValueError as e:
+        return _bad(str(e))
+    job.refresh_from_db()
+    return Response(sitecreator.public(job))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+@parser_classes([MultiPartParser, FormParser])
+def sitecreator_doc_add(request, pk):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    f = request.FILES.get("file")
+    if not f:
+        return _bad("Kies een document.")
+    try:
+        job = sitecreator.add_document(job, f, request.user)
+    except ValueError as e:
+        return _bad(str(e))
+    return Response(sitecreator.public(job), status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "DELETE"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_doc(request, pk, doc_id):
+    from django.http import FileResponse
+
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        if request.method == "DELETE":
+            return Response(sitecreator.public(sitecreator.remove_document(job, doc_id)))
+        d, fh = sitecreator.document_file(job, doc_id)
+    except ValueError as e:
+        return _bad(str(e), status.HTTP_404_NOT_FOUND)
+    return FileResponse(fh, as_attachment=True, filename=d["name"])
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_doc_apply(request, pk, doc_id):
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        return Response(sitecreator.public(sitecreator.reapply_document(job, doc_id)))
+    except ValueError as e:
+        return _bad(str(e))

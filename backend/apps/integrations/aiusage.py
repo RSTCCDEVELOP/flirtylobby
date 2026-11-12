@@ -27,7 +27,7 @@ CATALOG = {
 }
 DEFAULT_PRICES = CATALOG["anthropic"]
 SOURCES = [  # the first part of the module that asked, and how the superadmin reads it
-    ("siteimport_lib", "Site importeren"), ("apps.pages", "Pagina's en teksten"), ("apps.faq", "FAQ en help vertalen"), ("apps.core.pricing", "Prijzen"), ("apps.core.marketing", "Marketing"),
+    ("siteimport_lib", "Website ontwerpen"), ("apps.pages", "Pagina's en teksten"), ("apps.faq", "FAQ en help vertalen"), ("apps.core.pricing", "Prijzen"), ("apps.core.marketing", "Marketing"),
     ("apps.core.resources", "Thema's en bibliotheek"), ("apps.core.views", "Vormgeving en thema's"), ("apps.accounts.fakeusers", "Testgebruikers"), ("apps.plugins", "Plugins"),
     ("plugin_translate", "Plugins vertalen"), ("apps.integrations", "AI-instellingen (koers en prijzen)"), ("django.core.management", "Beheeropdracht (terminal)"), ("apps.core", "Systeem"),
 ]

@@ -26,7 +26,7 @@ function textNodes(doc) {
   return out;
 }
 
-// A page that was taken over 1 to 1 from an html file (Site importeren): its own html, css and scripts run in a frame without any rights
+// A page that was taken over 1 to 1 from an html file (Website ontwerpen): its own html, css and scripts run in a frame without any rights
 // on this site (no cookies, no login, no access to the page around it); the frame grows with its content and its links open the site.
 // With pageKey, someone who may edit sees a pencil at every text and button in edit mode: a small screen to change the text and the link.
 export default function DesignFrame({ html, title, pageKey }) {

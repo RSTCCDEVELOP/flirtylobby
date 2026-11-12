@@ -26,7 +26,7 @@ const emptySeo = { title: "", description: "", og_media: null, og_image: null, n
 export default function PageSettingsModal({ ai, page, languages, defaultLang, onClose, onSaved, canSeo }) {
   const langs = languages.length ? languages : [{ code: "nl", native_name: "Nederlands" }];
   const [tab, setTab] = useState("general");
-  const [imp, setImp] = useState(null); // did this page come from Site importeren? (then it has a tab Import)
+  const [imp, setImp] = useState(null); // did this page come from Website ontwerpen? (then it has a tab Import)
   useEffect(() => { api(`/siteimport/page/${page.key}/`).then((i) => setImp(i?.imported ? i : null)).catch(() => {}); }, [page.key]);
   const [form, setForm] = useState({ slugs: { ...(page.slugs || {}) }, title: { ...page.title }, audience: page.audience, new_tab: !!page.new_tab, url: page.url || "" });
   const [setup, setSetup] = useState({ theme: page.setup?.theme || "", header: page.setup?.header || "", footer: page.setup?.footer || "" }); // this page only: its own theme, header and footer

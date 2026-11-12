@@ -14,7 +14,7 @@ let known = null; // has a site been imported? (asked once; the screen of the im
 const listeners = new Set();
 export const markImported = (v) => { known = !!v; listeners.forEach((f) => f(known)); };
 
-// true when Site importeren has been used: its button is then called "Geïmporteerd"
+// true when Website ontwerpen has been used: its button is then called "Geïmporteerd"
 export function useImported(enabled = true) {
   const [v, setV] = useState(known);
   useEffect(() => {

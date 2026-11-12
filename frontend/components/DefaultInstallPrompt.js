@@ -103,7 +103,7 @@ export default function DefaultInstallPrompt() {
             {tab === "ai" && (<>
               <p style={{ margin: 0 }}>{tx("Je hoeft de website niet zelf te vullen: dat kan met AI.")}</p>
               <ul className="ai-howlist">
-                <li><strong>{tx("Een bestaande website of ontwerp overnemen")}:</strong> {tx("sleep een of meer HTML-bestanden in Admin > Site importeren. De AI maakt het thema, de pagina's, de inhoud en de plaatjes, zet de modules aan die nodig zijn (zoals FAQ) en bouwt de pagina's desgewenst met bewerkbare blokken na.")}</li>
+                <li><strong>{tx("Een bestaande website of ontwerp overnemen")}:</strong> {tx("sleep een of meer HTML-bestanden in Admin > Website ontwerpen. De AI maakt het thema, de pagina's, de inhoud en de plaatjes, zet de modules aan die nodig zijn (zoals FAQ) en bouwt de pagina's desgewenst met bewerkbare blokken na.")}</li>
                 <li><strong>{tx("Teksten schrijven en vertalen")}:</strong> {tx("paginanamen en teksten vertaal je met één klik naar alle talen van de website.")}</li>
                 <li><strong>{tx("Verbeteren met een opdracht")}:</strong> {tx("geef de AI een opdracht (bijvoorbeeld: maak de koppen groter) en laat een pagina opnieuw opbouwen uit het origineel.")}</li>
               </ul>

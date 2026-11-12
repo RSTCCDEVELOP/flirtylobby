@@ -89,7 +89,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/roles", label: "Rollen", icon: <IconShield />, perm: "roles.manage" },
   { href: "/dashboard/admin/languages", label: "Talen", icon: <IconGlobe />, perm: "languages.manage" },
   { href: "/dashboard/admin/pages", label: "Pagina's", icon: <IconFolder /> },
-  { href: "/dashboard/admin/siteimport", label: "Site importeren", icon: <IconGlobe /> },
+  { href: "/dashboard/admin/siteimport", label: "Website ontwerpen", icon: <IconGlobe /> },
   { href: "/dashboard/admin/ai", label: "AI", icon: <IconGrid />, perm: "ai.manage" },
   { href: "/dashboard/admin/sysobjects", label: "Systeemobjecten", icon: <IconGrid /> },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
