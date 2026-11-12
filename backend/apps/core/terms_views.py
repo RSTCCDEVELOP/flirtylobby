@@ -56,6 +56,18 @@ def code(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+def code_fill(request):
+    """A superadmin typed @ in the code field: the code comes back so the field fills itself."""
+    if not terms.required(request.user):
+        return _bad("Alleen beheerders ondertekenen de voorwaarden.", status.HTTP_403_FORBIDDEN)
+    try:
+        return Response({"code": terms.autofill_code(request.user)})
+    except terms.TermsError as e:
+        return _bad(str(e), status.HTTP_403_FORBIDDEN)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def sign(request):
     if not terms.required(request.user):
         return _bad("Alleen beheerders ondertekenen de voorwaarden.", status.HTTP_403_FORBIDDEN)

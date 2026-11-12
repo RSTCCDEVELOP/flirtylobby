@@ -69,7 +69,7 @@ export default function TermsAdmin() {
           {d.signatures.map((s, i) => (
             <div key={i} className="res-item" style={{ gridTemplateColumns: "minmax(0,1fr) 120px 180px" }}>
               <div className="res-main"><strong>{s.name}</strong><small className="muted">{s.email}</small></div>
-              <span>{s.role === "superadmin" ? tx("Super admin") : tx("Admin")}{s.method === "skipped" ? ` · ${tx("zonder e-mailcode")}` : ""}</span>
+              <span>{s.role === "superadmin" ? tx("Super admin") : tx("Admin")}{s.method === "skipped" ? ` · ${tx("zonder e-mailcode")}` : s.method === "auto" ? ` · ${tx("code automatisch ingevuld")}` : ""}</span>
               <span className="muted">{new Date(s.signed_at).toLocaleString()}</span>
             </div>
           ))}

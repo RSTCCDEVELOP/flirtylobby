@@ -24,6 +24,7 @@ urlpatterns = [
     path("system/terms/", terms_views.text),
     path("system/terms/status/", terms_views.status_view),
     path("system/terms/code/", terms_views.code),
+    path("system/terms/code/fill/", terms_views.code_fill),
     path("system/terms/sign/", terms_views.sign),
     path("system/terms/enable-mail/", terms_views.enable_mail),
     path("system/terms/admin/", terms_views.admin),

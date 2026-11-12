@@ -13,6 +13,7 @@ import { confirmDialog } from "../lib/dialog";
 import { setBlock, useSandboxFirst } from "../lib/firstRun";
 import { getLanguage, tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
+import { Logo } from "./BrandingContext";
 import { RichText } from "./SmallEditor";
 import Tabs from "./Tabs";
 
@@ -65,7 +66,18 @@ export default function TermsGate() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
-  const onCode = (v) => setCode(v === "@" && dev ? dev : v.replace(/[^0-9]/g, "").slice(0, 6)); // a superadmin on a local server: @ puts the code in
+  const onCode = async (raw) => { // a superadmin: typing @ puts the code in (the code that came back when it was asked on a local server, else a code that the system makes at once)
+    if (raw.includes("@") && user?.is_staff) {
+      if (dev) { setCode(dev); return; }
+      setBusy(true); setMsg(null);
+      try { const r = await api("/system/terms/code/fill/", { method: "POST", body: {} }); setCode(r.code); setSent(true); setMsg({ ok: true, text: tx("De code is automatisch ingevuld. Klik op Ondertekenen.") }); }
+      catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+      setBusy(false);
+      return;
+    }
+    setCode(raw.replace(/[^0-9]/g, "").slice(0, 6));
+  };
+  const shown = code.length > 3 ? `${code.slice(0, 3)}-${code.slice(3)}` : code;
   const sign = async () => {
     setBusy(true); setMsg(null);
     try { await api("/system/terms/sign/", { method: "POST", body: { code, lang: doc?.lang || lang } }); setDone(true); setBlock("terms", false); }
@@ -96,11 +108,20 @@ export default function TermsGate() {
         )}
         {tab === "sign" && (
           <>
-            <p style={{ margin: 0 }}>{tx("Je ondertekent versie {0} met een code die naar je e-mailadres wordt gestuurd: {1}.", doc?.version || st.version, st.email)}</p>
-            <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
-              <button type="button" className="btn" disabled={busy} onClick={ask}>{sent ? tx("Nieuwe code sturen") : tx("Code sturen")}</button>
-              <input value={code} onChange={(e) => onCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" aria-label={tx("Code")} style={{ width: "9rem", letterSpacing: ".25em", textAlign: "center" }} />
-              <button type="button" className="btn primary" disabled={busy || code.length !== 6} onClick={sign}>{tx("Ondertekenen")}</button>
+            {/* the look of the e-mail with the code: a card with an orange line on top, the title, and the code in big orange digits */}
+            <div style={{ border: "1px solid var(--line)", borderTop: "4px solid var(--blue)", borderRadius: 14, background: "var(--card)", padding: "1.3rem 1.4rem 1.2rem", display: "grid", gap: ".95rem", justifyItems: "center", textAlign: "center" }}>
+              <div className="info-logo"><Logo /></div>
+              <h3 style={{ margin: 0, fontSize: "1.25rem", lineHeight: 1.3 }}>{tx("Je code voor het ondertekenen van de algemene voorwaarden")}</h3>
+              <p className="muted" style={{ margin: 0, maxWidth: 520 }}>{tx("Je ondertekent versie {0} met een code die naar je e-mailadres wordt gestuurd: {1}.", doc?.version || st.version, st.email)}</p>
+              <input value={shown} onChange={(e) => onCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={8} placeholder="000-000" aria-label={tx("Code")} autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter" && code.length === 6 && !busy) sign(); }}
+                style={{ width: "min(17rem, 100%)", textAlign: "center", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "2.2rem", fontWeight: 800, letterSpacing: ".16em", color: "var(--blue)", padding: ".55rem .4rem", borderRadius: 14, border: "1px solid color-mix(in srgb, var(--blue) 35%, var(--line))", background: "color-mix(in srgb, var(--blue) 9%, var(--card))" }} />
+              <small className="muted">{tx("De code is 15 minuten geldig. Heb je dit niet zelf gevraagd, negeer dit bericht dan.")}</small>
+              <div className="row" style={{ justifyContent: "center", gap: ".6rem" }}>
+                <button type="button" className="btn" disabled={busy} onClick={ask}>{sent ? tx("Nieuwe code sturen") : tx("Code sturen")}</button>
+                <button type="button" className="btn primary" disabled={busy || code.length !== 6} onClick={sign}>{tx("Ondertekenen")}</button>
+              </div>
+              {user?.is_staff && <small className="muted">{tx("Superadmin: typ @ in het veld om de code automatisch in te vullen.")}{dev ? ` ${tx("Code")}: ${dev}` : ""}</small>}
             </div>
             {user?.is_staff && (
               <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap" }}>
@@ -109,7 +130,6 @@ export default function TermsGate() {
               </div>
             )}
             {st.mail_ok === false && <div className="alert">{tx("Er is geen e-mailkoppeling ingesteld of ze staat uit. Zonder e-mail kunnen geen codes, facturen en meldingen worden verstuurd. Een superadmin zet de koppeling aan bij API keys (Postmark of SMTP); voor betalen is een Stripe-koppeling nodig.")}</div>}
-            {dev && <small className="muted">{tx("Superadmin zonder e-mail (lokaal of nieuwe installatie): typ @ in het veld om de code in te vullen. Code")}: <strong>{dev}</strong></small>}
             {msg && <div className={`alert ${msg.ok ? "ok" : ""}`}>{msg.text}</div>}
             <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
               <button type="button" className="btn" onClick={() => setTab("read")}>{tx("Terug naar de voorwaarden")}</button>

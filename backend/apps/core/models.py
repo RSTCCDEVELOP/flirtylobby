@@ -225,7 +225,7 @@ class TermsSignature(models.Model):
     name = models.CharField(max_length=200, blank=True)
     email = models.CharField(max_length=254, blank=True)
     lang = models.CharField(max_length=10, blank=True)  # the language of the text that was shown
-    method = models.CharField(max_length=10, default="email")  # email (code from the e-mail) | skipped (a superadmin signed without the e-mail code)
+    method = models.CharField(max_length=10, default="email")  # email (code from the e-mail) | auto (a superadmin typed @: the code was filled in by the system) | skipped (a superadmin signed without the e-mail code)
     ip = models.CharField(max_length=60, blank=True)
     signed_at = models.DateTimeField(auto_now_add=True)
 
@@ -240,6 +240,7 @@ class TermsCode(models.Model):
     code_hash = models.CharField(max_length=64)
     expires_at = models.DateTimeField()
     tries = models.PositiveSmallIntegerField(default=0)
+    auto = models.BooleanField(default=False)  # made for a superadmin who typed @ (the code is filled in by the system): the signature is recorded as such
     created_at = models.DateTimeField(auto_now_add=True)
 
 

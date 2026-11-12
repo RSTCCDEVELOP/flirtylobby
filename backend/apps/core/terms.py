@@ -127,6 +127,16 @@ def send_code(user, request):
     return {"sent": sent, "dev_code": code if local else None}
 
 
+def autofill_code(user):
+    """A superadmin typed @ in the code field: a fresh code is made (no e-mail) and given back, so the field fills itself. A superadmin may also sign without any code, so this opens nothing new; it is recorded as 'auto'."""
+    if not user.is_staff:
+        raise TermsError("Alleen een superadmin kan de code automatisch invullen.")
+    code = f"{secrets.randbelow(10**6):06d}"
+    TermsCode.objects.filter(user=user).delete()
+    TermsCode.objects.create(user=user, code_hash=_hash(user, code), expires_at=timezone.now() + timezone.timedelta(minutes=CODE_MINUTES), auto=True)
+    return code
+
+
 def _record(user, request, lang, method):
     v = current()
     ip = (request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", ""))[:60]
@@ -170,5 +180,6 @@ def sign(user, code, request, lang=""):
     tc.save(update_fields=["tries"])
     if not hmac.compare_digest(tc.code_hash, _hash(user, str(code or "").strip())):
         raise TermsError("De code klopt niet.")
+    auto = tc.auto
     tc.delete()
-    return _record(user, request, lang, "email")
+    return _record(user, request, lang, "auto" if auto else "email")

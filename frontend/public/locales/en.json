@@ -5528,5 +5528,10 @@
   "Oude metingen opruimen": "Clean up old measurements",
   "Metingen en scans die ouder zijn dan het aantal dagen hieronder worden verwijderd.": "Measurements and scans older than the number of days below are removed.",
   "Uit: alle metingen blijven bewaard, voor de statistiek.": "Off: all measurements are kept, for the statistics.",
-  "De cijfers van het live stroomgebruik (per 10 minuten) worden altijd na 3 dagen opgeruimd; de dagcijfers en scans niet, tenzij je dit aanzet.": "The figures of the live power use (per 10 minutes) are always cleaned up after 3 days; the daily figures and scans are not, unless you switch this on."
+  "De cijfers van het live stroomgebruik (per 10 minuten) worden altijd na 3 dagen opgeruimd; de dagcijfers en scans niet, tenzij je dit aanzet.": "The figures of the live power use (per 10 minutes) are always cleaned up after 3 days; the daily figures and scans are not, unless you switch this on.",
+  "De code is automatisch ingevuld. Klik op Ondertekenen.": "The code was filled in automatically. Click Sign.",
+  "Je code voor het ondertekenen van de algemene voorwaarden": "Your code for signing the terms and conditions",
+  "De code is 15 minuten geldig. Heb je dit niet zelf gevraagd, negeer dit bericht dan.": "The code is valid for 15 minutes. If you did not ask for this yourself, ignore this message.",
+  "Superadmin: typ @ in het veld om de code automatisch in te vullen.": "Superadmin: type @ in the field to fill in the code automatically.",
+  "code automatisch ingevuld": "code filled in automatically"
 }
