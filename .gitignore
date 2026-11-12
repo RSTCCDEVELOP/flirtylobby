@@ -84,3 +84,6 @@ backend/imports/
 .certs/
 manuals/tools/video/.cache/
 manuals/tools/video/voice.json
+
+# ── output of Claude (not part of the product) ──
+/Claude outputs/
