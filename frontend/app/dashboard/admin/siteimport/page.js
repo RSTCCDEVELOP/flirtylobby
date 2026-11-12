@@ -397,6 +397,33 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
   );
 }
 
+// The log of a long task (applying, reading): what was done (a check mark per finished step), what is going on now, how long it has been running and how long ago the last message was.
+function ProgressLog({ prog }) {
+  const [hist, setHist] = useState([]);
+  const [now, setNow] = useState(Date.now());
+  const started = useRef(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { if (prog.step) setHist((h) => (h[h.length - 1]?.text === prog.step ? h : [...h.slice(-40), { t: Date.now(), text: prog.step }])); }, [prog.step]);
+  const server = (prog.log || []).map((l) => ({ t: l.t * 1000, text: l.text }));
+  const done = (server.length ? server : hist.slice(0, -1)).slice(-8);  // the finished steps; the step that runs now is the line below them
+  const sec = (ms) => `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, "0")}`;
+  const last = prog.updated ? now - prog.updated * 1000 : now - (hist[hist.length - 1]?.t || now);
+  const running = prog.state === "running" && !prog.error;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontSize: ".86rem" }} aria-live="polite">
+      {done.map((l, n) => (
+        <div key={n} className="muted" style={{ display: "flex", gap: ".5rem", alignItems: "baseline" }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", position: "relative", top: 2 }}><path d="M5 12l5 5 9-10" /></svg>
+          <span>{tx(l.text)}</span>
+        </div>
+      ))}
+      {running && prog.step && <div style={{ display: "flex", gap: ".5rem", alignItems: "baseline", fontWeight: 600 }}><span className="pulse-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--blue)", flex: "none", animation: "pulse-dot 1.1s ease-in-out infinite" }} /><span>{prog.step}</span></div>}
+      {running && <small className="muted">{tx("Bezig sinds {0}", sec(now - started.current))} · {last > 8000 ? tx("laatste melding {0} geleden: dit onderdeel kost even tijd", `${Math.round(last / 1000)} s`) : tx("actief")}</small>}
+      <style>{"@keyframes pulse-dot{0%,100%{opacity:.25}50%{opacity:1}}"}</style>
+    </div>
+  );
+}
+
 export default function SiteImport() {
   const { user } = useAuth();
   const L = lvl(user, "siteimport");
@@ -468,6 +495,7 @@ export default function SiteImport() {
   const importHtml = (e) => { const fl = Array.from(e.target.files || []); e.target.value = ""; if (!fl.length) return; const fd = new FormData(); fd.append("kind", "html"); fl.forEach((f) => fd.append("file", f)); fd.append("name", themeName); start(fd); };
   const showProposal = () => setTimeout(() => document.getElementById("si-proposal")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);  // the proposal stands above the list: bring it into view
   const cancelRef = useRef({ requested: false, importId: null, phase: "", abort: null, drop: false }); // Annuleren: what is going on, so it can be stopped and (for a new import) removed again
+  const resumeProg = () => { const id = cancelRef.current.importId; if (id) runApply({ id, name: prog?.name }, null, { resume: true }); }; // go on where the work stopped: the results that were ready are used again
   const [prog, setProg] = useState(null); // {name, percent, step, error, built}: the progress of an application (Toepassen)
   const applyImport = (i) => { // the columns to link the pages are in the details of the import
     setOpen(i.id);
@@ -479,7 +507,7 @@ export default function SiteImport() {
     const mix = (st) => (p) => ({ ...p, ...st, percent: range[0] + ((st.percent || 0) * (range[1] - range[0])) / 100 });
     setProg((p) => ({ title: p?.title, name: i.name, percent: range[0] + 1, step: tx("Starten…"), error: "", built: [], state: "running" }));
     try {
-      let st = await api(`/siteimport/${i.id}/apply/`, { method: "POST", body: { ...(map ? { map } : {}), mode: opts.mode || "clear", prompt: opts.prompt || "", translate: !!opts.translate, render: opts.render || "design", options: opts.options || {} } });
+      let st = await api(`/siteimport/${i.id}/apply/`, { method: "POST", body: { ...(opts.resume ? { resume: true } : {}), ...(map ? { map } : {}), mode: opts.mode || "clear", prompt: opts.prompt || "", translate: !!opts.translate, render: opts.render || "design", options: opts.options || {} } });
       setProg(mix(st));
       while (st.state === "running" && !st.stale) {
         await new Promise((r) => setTimeout(r, 1500));
@@ -488,7 +516,7 @@ export default function SiteImport() {
         if (cancelRef.current.requested) return;
         setProg(mix(st));
       }
-      if (st.state === "running") setProg((p) => ({ ...p, error: tx("De server reageert niet meer. Probeer het straks nog eens.") }));
+      if (st.state === "running") setProg((p) => ({ ...p, error: st.resumable ? tx("De server reageert niet meer. Wat al klaar was is bewaard: je kunt verdergaan waar je gebleven was.") : tx("De server reageert niet meer. Probeer het straks nog eens.") }));
     } catch (e) { if (cancelRef.current.requested) return; setProg((p) => ({ ...p, error: errorText(e), state: "error" })); }
     await load();
   };
@@ -634,15 +662,17 @@ export default function SiteImport() {
       }} onApply={applyDesign} />}
       {prog && typeof document !== "undefined" && createPortal(
         <div className="pb-objback">
-          <div className="pb-objpop" role="dialog" aria-label={tx("Toepassen")} style={{ width: "min(520px, 94vw)" }}>
+          <div className="pb-objpop" role="dialog" aria-label={tx("Toepassen")} style={{ width: "min(620px, 94vw)" }}>
             <div className="pb-objhead"><strong>{prog.title || tx("Toepassen")}: {prog.name}</strong><span style={{ flex: 1 }} />{prog.state !== "running" && <button type="button" className="pb-panelx" onClick={() => setProg(null)} aria-label={tx("Sluiten")}>×</button>}</div>
             <div style={{ padding: "1rem 1.2rem 1.4rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>{prog.error ? tx("Mislukt") : prog.step}</span><strong>{Math.round(prog.percent || 0)} %</strong></div>
               <div style={{ height: 10, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}><div style={{ width: `${Math.max(2, Math.min(100, prog.percent || 0))}%`, height: "100%", background: prog.error ? "var(--danger)" : "var(--blue)", transition: "width .4s" }} /></div>
+              <ProgressLog prog={prog} />
               {prog.error && <div className="alert">{prog.error}</div>}
               {prog.state === "done" && prog.warning && <div className="alert">{prog.warning}</div>}
               {prog.state === "done" && prog.themeNote && <div className="alert ok">{prog.themeNote}</div>}
               {prog.state === "done" && <div className="alert ok">{tx("Klaar. De pagina's zijn opgebouwd:")} {(prog.built || []).map((b) => <a key={b.path} href={b.path} target="_blank" rel="noreferrer" style={{ marginLeft: ".4rem" }}>{b.title}</a>)}</div>}
+              {prog.state !== "running" && prog.state !== "done" && prog.resumable && <div className="alert ok" role="status">{tx("Je voortgang is bewaard: {0} pagina's geanalyseerd en {1} blokken opgebouwd. Bij verdergaan worden die niet opnieuw gedaan.", prog.resumable.pages, prog.resumable.blocks)} <button type="button" className="btn primary" style={{ marginLeft: ".6rem" }} onClick={resumeProg}>{tx("Verder gaan waar je gebleven was")}</button></div>}
               {prog.state === "running" && <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn danger" disabled={!!prog.cancelling} onClick={cancelProg}>{prog.cancelling ? tx("Bezig met annuleren…") : tx("Annuleren")}</button></div>}
               {prog.state !== "running" && <div className="row" style={{ justifyContent: "flex-start" }}>
                 {prog.state === "done" && !prog.error && (prog.built || []).map((b, n, all) => <a key={b.path} className={`btn${n === 0 ? " primary" : ""}`} href={b.path}>{all.length > 1 ? `${tx("Ga naar")} ${b.title}` : tx("Ga naar pagina")}</a>)}

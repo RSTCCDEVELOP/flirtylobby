@@ -233,27 +233,6 @@ def catalog():
             names = r.get("names") or {}
             name = (names.get("") or next(iter(names.values()), "") or (r.get("data") or {}).get("title") or o.slug)
             objs.append({"slug": o.slug, "kind": o.kind, "kind_label": dict(SystemObject.KINDS).get(o.kind, o.kind), "name": str(name)[:120]})
-        allowed = _installation()
-        if allowed is not None:  # the system objects of plugins and modules that the active standard installation does not have are not offered either
-            from apps.plugins.models import Plugin
-
-            mod_keys, plug_names = allowed
-            names_of = {p.pk: p.name for p in Plugin.objects.all()}
-            by_slug = {o.slug: o for o in SystemObject.objects.all()}
-
-            def fits(o):
-                src = by_slug.get(o["slug"])
-                if src is None:
-                    return True
-                if src.kind in ("plugin", "plugin_item", "plugin_part"):
-                    return names_of.get(src.ref_id) in plug_names
-                if src.kind in ("donation", "plan"):
-                    return "subscriptions" in plug_names
-                if src.kind == "energy":
-                    return "energy" in mod_keys
-                return True
-
-            objs = [o for o in objs if fits(o)]
     except Exception:  # noqa: BLE001
         logger.exception("sitecreator catalog")
     from .models import Language

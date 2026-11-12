@@ -229,6 +229,10 @@ def perform(keep=None, ai=False):
             Plugin.objects.filter(pk=p.pk).update(enabled=False, error="")
         except Exception:  # noqa: BLE001
             logger.exception("Reset: plugin %s could not be switched off completely", p.name)
+    from . import presets as _presets
+
+    for name in _presets.DEFAULT_PLUGINS:  # Website ontwerpen stays on: it is how a new website gets its pages (the plugin has no data of its own that was kept: imports are cleared above)
+        Plugin.objects.filter(name=name).update(enabled=True, error="")
     for key in list(ThemePack.objects.values_list("key", flat=True)):
         themepacks.remove(key)
     for d in Path(themepacks.root()).glob("*/theme.json") if themepacks.root().exists() else []:

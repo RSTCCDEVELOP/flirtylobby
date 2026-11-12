@@ -18,6 +18,8 @@ BASE = ["pages", "edit_mode", "media", "branding", "theme", "languages", "privac
 # the parts of the admin itself (system settings, licence, plugins, storage, back-ups, and with them the page Standaard installaties): never switched off by an installation
 ALWAYS_ON = ["system", "plugins", "storage", "backups", "integrations"]  # "integrations" = the API links module: the links of the superadmin (AI, Stripe, mail, storage) must keep working in every installation
 
+DEFAULT_PLUGINS = ["siteimport"]  # in every standard installation from the start: Website ontwerpen (design a website, import one) is how a new website gets its pages; a superadmin can still take it out of an installation
+
 PRESETS = [
     {"key": "standaard-website", "name": "Standaard website", "icon": "globe", "theme": "normal", "plugins": ["documents"],
      "desc": "Alleen een website: pagina's en menu, media en systeemobjecten, FAQ en SEO, en documentbeheer. Zonder community, abonnementen, donaties of webshop. Met demo-gegevens heb je meteen een complete site.",
@@ -54,7 +56,7 @@ PRESETS = [
 # (the parts that are plugins - Community, Abonnementen, Orders, Webshop, Financieel - are in the plugin list of an installation; plugins_for adds what they need, and _wanted_modules the modules that belong to them)
 for _p in PRESETS:  # a part that became a plugin (SEO, FAQ, Statistieken, Site importeren, Leeftijd/land/gokken) is named in the modules above: it goes to the plugin list, where the screens show it
     _own = {m["key"]: m["plugin"] for m in modules.MODULES if m.get("plugin")}
-    _p["plugins"] = list(dict.fromkeys([*_p.get("plugins", []), *[_own[k] for k in _p["modules"] if k in _own]]))
+    _p["plugins"] = list(dict.fromkeys([*_p.get("plugins", []), *[_own[k] for k in _p["modules"] if k in _own], *DEFAULT_PLUGINS]))
     _p["modules"] = [k for k in _p["modules"] if k not in _own]
 BY_KEY = {p["key"]: p for p in PRESETS}
 DEMO_PARTS = {"media": "Voorbeeldplaatjes", "heroes": "Hero-achtergronden", "users": "Gebruikers met profiel", "plans": "Abonnementen", "money": "Donatie-acties met giften", "faq": "FAQ-vragen", "pages": "Pagina's",
