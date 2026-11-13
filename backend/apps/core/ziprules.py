@@ -106,6 +106,7 @@ class Bundle:
         self.notes = []
         self.translations = {}  # language code -> parsed file
         self.renamed = {}  # old path -> new path (pictures)
+        self.screenshots = {}  # page stem -> jpeg bytes: how the AI that made the design saw the page (used as the reference for the import)
 
     def names(self, ext):
         return sorted(n for n in self.files if n.rsplit(".", 1)[-1] == ext)
@@ -139,7 +140,7 @@ def read_zip(z):
     tops = {n.split("/")[0] for n, _ in entries if "/" in n}
     if entries and all("/" in n for n, _ in entries) and len(tops) == 1:  # one common top folder (the ZIP of a folder): its content is the root
         entries = [(n.split("/", 1)[1], zi) for n, zi in entries]
-    raw = {}
+    raw, shots_raw = {}, {}
     for n, zi in entries:
         parts = n.split("/")
         ext = parts[-1].rsplit(".", 1)[-1].lower() if "." in parts[-1] else ""
@@ -151,6 +152,9 @@ def read_zip(z):
                 continue
         elif len(parts) == 2 and parts[0].lower() == R.IMAGE_FOLDER and ext in R.IMAGE_EXT:
             pass
+        elif len(parts) == 2 and parts[0].lower() == R.SCREENSHOT_FOLDER and ext in R.SCREENSHOT_EXT:
+            shots_raw[n] = zi
+            continue
         else:
             b.notes.append(f"{n} is overgeslagen: alleen de hoofdmap en de map {R.IMAGE_FOLDER}/ worden gelezen.")
             continue
@@ -185,6 +189,31 @@ def read_zip(z):
                 b.notes.append(f"{n} is overgeslagen: {e}.")
                 continue
             b.translations[lang] = d
+    for n, zi in sorted(shots_raw.items())[:R.MAX_SCREENSHOTS]:  # the screenshots: <page>.png (also <page>-desktop.png); mobile ones are not needed
+        base = posixpath.basename(n)
+        stem = re.sub(r"-(desktop|full|pagina)$", "", base.rsplit(".", 1)[0].lower())
+        if stem.endswith(("-mobile", "-tablet", "-phone")):
+            continue
+        if zi.file_size > R.MAX_SCREENSHOT_BYTES:
+            b.notes.append(f"{base} is overgeslagen (groter dan {R.mb(R.MAX_SCREENSHOT_BYTES)} MB).")
+            continue
+        try:
+            import io
+
+            from PIL import Image
+
+            im = Image.open(io.BytesIO(z.read(zi))).convert("RGB")
+            if im.size[0] < 600:
+                b.notes.append(f"{base}: de screenshot is te smal (minimaal 600 px breed) en is overgeslagen.")
+                continue
+            im = im.resize((1000, max(1, int(im.size[1] * 1000 / im.size[0]))))
+            if im.size[1] > 14000:
+                im = im.crop((0, 0, 1000, 14000))
+            out = io.BytesIO()
+            im.save(out, "JPEG", quality=82)
+            b.screenshots[R.clean_name(stem + ".jpg")[0].rsplit(".", 1)[0]] = out.getvalue()
+        except Exception:  # noqa: BLE001
+            b.notes.append(f"{base} is geen geldige afbeelding en is overgeslagen.")
     htmls = sorted((n for n in b.files if n.endswith(".html")), key=lambda x: (x != "index.html", x))
     for n in htmls[R.MAX_PAGES:]:
         del b.files[n]

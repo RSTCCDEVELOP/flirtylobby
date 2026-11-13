@@ -150,6 +150,7 @@ function Detail({ imp, onChanged, onApply, busy }) {
   const [pick, setPick] = useState({});
   const [info, setInfo] = useState(null); // the files of this import, where they are, the pages they can go to and the languages
   const [map, setMap] = useState({});
+  const [skip, setSkip] = useState([]); // the files (pages) that are NOT ticked: they are not made
   const [opts, setOpts] = useState({ prompt: "", mode: "clear", translate: false, render: "design" });
   const [atab, setAtab] = useState("pages");
   const [linkMap, setLinkMap] = useState({});
@@ -192,6 +193,14 @@ function Detail({ imp, onChanged, onApply, busy }) {
             <p className="muted" style={{ margin: ".3rem 0 .8rem" }}>{tx("De originele html is bewaard: je kunt dit zo vaak herhalen, ook met een nieuwe opdracht voor Easy2edit. Kies per tabblad wat er gebeurt en klik onderaan op Toepassen.")}</p>
             <Tabs value={atab} onChange={setAtab} tabs={tabsDef} />
             {atab === "pages" && (<div>
+              <div className="card" style={{ marginBottom: ".8rem" }}>
+                <div className="row between"><strong>{tx("Welke pagina's maken?")}</strong>
+                  <span className="row"><button type="button" className="btn sm" onClick={() => setSkip([])}>{tx("Alles aan")}</button><button type="button" className="btn sm" onClick={() => setSkip(info.sources.map((x) => x.key))}>{tx("Alles uit")}</button></span></div>
+                <small className="muted" style={{ display: "block", margin: ".2rem 0 .5rem" }}>{tx("Een pagina die niet is aangevinkt wordt niet gemaakt.")} ({info.sources.length - skip.length} {tx("van")} {info.sources.length})</small>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: ".35rem .9rem" }}>
+                  {info.sources.map((x) => <label key={x.key} className="check"><input type="checkbox" checked={!skip.includes(x.key)} onChange={(e) => setSkip((o) => (e.target.checked ? o.filter((k) => k !== x.key) : [...o, x.key]))} /><span>{x.title}{x.path ? <small className="muted"> {x.path}</small> : null}</span></label>)}
+                </div>
+              </div>
               <PageMapper sources={info.sources.map((x) => ({ key: x.key, title: x.title, sub: x.path }))} targets={info.targets} map={map} onChange={setMap} freeLabel={tx("Eigen pagina van de import")} />
               <ApplyOptions opts={opts} setOpts={setOpts} needMode={needMode} canReplace={canReplace} languages={info.languages} />
             </div>)}
@@ -215,7 +224,7 @@ function Detail({ imp, onChanged, onApply, busy }) {
                 <label>{tx("Ronde hoeken van knoppen")} (px)<input type="number" min="0" max="40" value={thm.btn_radius ?? 10} onChange={(e) => set("btn_radius", Number(e.target.value))} /></label>
               </div>
             </div>)}
-            <div className="row" style={{ justifyContent: "flex-start", marginTop: ".8rem" }}><button className="btn primary" disabled={busy} onClick={() => onApply(imp, Object.fromEntries(info.sources.map((x) => [x.key, map[x.key] || ""])), { ...opts, options: { links: Object.fromEntries(Object.entries(linkMap).filter(([, v]) => v)), header: hdrOn, site_footer: footOn, theme: thm } })}>{imp.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Toepassen")}</button></div>
+            <div className="row" style={{ justifyContent: "flex-start", marginTop: ".8rem" }}><button className="btn primary" disabled={busy || (info.sources.length > 0 && skip.length >= info.sources.length)} title={skip.length >= info.sources.length ? tx("Vink minstens één pagina aan") : ""} onClick={() => onApply(imp, Object.fromEntries(info.sources.filter((x) => !skip.includes(x.key)).map((x) => [x.key, map[x.key] || ""])), { ...opts, options: { skip, links: Object.fromEntries(Object.entries(linkMap).filter(([, v]) => v)), header: hdrOn, site_footer: footOn, theme: thm } })}>{imp.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Toepassen")}</button></div>
           </div>
         );
       })()}
@@ -457,7 +466,27 @@ export default function SiteImport() {
     finally { setBusy(""); }
   };
   const done = (r) => tx("\"{0}\" is ingelezen. Controleer hieronder het voorstel; pas na je akkoord wordt er iets aangemaakt.", r.name);
-  const start = (body) => {
+  // An import with this name already exists (it was done before): ask whether to overwrite it. true = go on, false = stop.
+  const askOverwrite = async (name) => {
+    const nm = String(name || "").trim().toLowerCase();
+    if (!nm) return true;
+    let old = [];
+    try { old = ((await api("/siteimport/")).imports || []).filter((x) => String(x.name || "").trim().toLowerCase() === nm); } catch { return true; }
+    if (!old.length) return true;
+    const what = await confirmDialog(tx("Er is al een import met de naam \"{0}\". Wil je die overschrijven?", String(name).trim()), {
+      title: tx("Bestaande import"), okLabel: tx("Doorgaan"), cancelLabel: tx("Annuleren"),
+      choices: [{ value: "overwrite", label: tx("Overschrijven"), hint: tx("De oude import wordt verwijderd en wat hij had veranderd wordt teruggezet. Daarna wordt de nieuwe gemaakt.") },
+        { value: "both", label: tx("Allebei bewaren"), hint: tx("De oude import blijft staan; de nieuwe komt ernaast.") }],
+    });
+    if (!what) return false;
+    if (what === "overwrite") {
+      try { for (const o of old) await api(`/siteimport/${o.id}/`, { method: "DELETE" }); await load(); setMsg({ ok: true, text: tx("De oude import \"{0}\" is verwijderd.", String(name).trim()) }); }
+      catch (e) { setMsg({ ok: false, text: errorText(e) }); return false; }
+    }
+    return true;
+  };
+  const start = async (body) => {
+    if (!(await askOverwrite(body instanceof FormData ? body.get("name") : body?.name))) return;
     if (body instanceof FormData && body.get("kind") === "html") return startHtml(body); // the analysis by Easy2edit runs in the background: with a progress bar
     return run("import", () => api("/siteimport/", { method: "POST", body }), done).then((r) => { if (r) { setProposal(r); showProposal(); } });
   };
@@ -523,8 +552,12 @@ export default function SiteImport() {
   // The files of a design as the form of the html import: the pages, the css, the svg's and the photos that the pages use.
   const buildImportForm = async (job) => {
     const fd = new FormData(); fd.append("kind", "html"); fd.append("name", job.name);
-    Object.entries(job.files).forEach(([n, c]) => fd.append("file", new File([c], n.split("/").pop(), { type: n.endsWith(".svg") ? "image/svg+xml" : n.endsWith(".css") ? "text/css" : "text/html" })));
+    const made = new Set((job.pages || []).map((p) => p.file)); // the pages that are ticked in the menu of the wizard: the others are not imported
+    Object.entries(job.files).filter(([n]) => !n.endsWith(".html") || !made.size || made.has(n)).forEach(([n, c]) => fd.append("file", new File([c], n.split("/").pop(), { type: n.endsWith(".svg") ? "image/svg+xml" : n.endsWith(".css") ? "text/css" : "text/html" })));
     Object.entries(job.translation_files || {}).forEach(([code, d]) => fd.append("file", new File([JSON.stringify(d)], `vertalingen-${code}.json`, { type: "application/json" }))); // the supplied translations of the ZIP
+    for (const [stem, s] of Object.entries(job.brief?.shots || {})) { // how the AI that made the design saw each page: the reference for the import
+      try { const blob = await (await fetch(mediaUrl(s.url))).blob(); fd.append("file", new File([blob], `shot--${stem}.jpg`, { type: "image/jpeg" })); } catch { /* the design is imported without it */ }
+    }
     const all = Object.values(job.files).join("\n");
     for (const p of job.brief?.photos || []) { // only the photos that the pages use
       if (!all.includes(p.file)) continue;
@@ -536,6 +569,7 @@ export default function SiteImport() {
   const applyDesign = async (job, o = {}) => {
     const wname = String(job.brief?.name || "").trim();
     if (!wname) { setDesignOpen(true); setMsg({ ok: false, text: tx("Geef de website een naam. De naam van de website is verplicht.") }); return; }
+    if (!(await askOverwrite(wname))) return;
     setDesignOpen(false); setTab("html");
     cancelRef.current = { requested: false, importId: null, phase: "upload", abort: null, drop: true };
     setProg({ title: tx("Toepassen"), name: wname, percent: 1, step: tx("Het ontwerp klaarzetten…"), error: "", built: [], state: "running" });
@@ -568,8 +602,18 @@ export default function SiteImport() {
   const cancelProg = async () => {
     const c = cancelRef.current;
     if (c.requested) return;
-    const drop = !!(c.drop && c.importId);
-    if (!(await confirmDialog(drop ? tx("Annuleren? Alles wat al is gemaakt wordt weer weggehaald.") : tx("Annuleren? Het toepassen stopt. Wat al gebouwd is blijft staan; je kunt het verwijderen of opnieuw toepassen."), { title: tx("Annuleren"), okLabel: tx("Ja, annuleren") }))) return;
+    // Annuleren: the work stops where it is. What was ready is kept to go on later, or everything is thrown away.
+    let what;
+    if (c.phase !== "apply") { // uploading or reading: nothing to go on from; Annuleren as it was
+      if (!(await confirmDialog(c.drop && c.importId ? tx("Annuleren? Alles wat al is gemaakt wordt weer weggehaald.") : tx("Annuleren? Het inlezen stopt."), { title: tx("Annuleren"), okLabel: tx("Ja, annuleren") }))) return;
+      what = c.drop && c.importId ? "delete" : "keep";
+    } else what = await confirmDialog(tx("Het toepassen stopt. Wil je later verdergaan waar je gebleven was?"), {
+      title: tx("Annuleren"), okLabel: tx("Annuleren"), cancelLabel: tx("Doorgaan met toepassen"),
+      choices: [{ value: "keep", label: tx("Ja, later verdergaan"), hint: tx("Wat al klaar is wordt bewaard. Je gaat verder met de knop Verder gaan bij de import.") },
+        { value: "delete", label: tx("Nee, alles verwijderen"), hint: c.drop && c.importId ? tx("Alles wat al is gemaakt wordt weer weggehaald.") : tx("De bewaarde voortgang wordt weggegooid. Wat al op de pagina's staat blijft; verwijder de import om dat terug te zetten.") }],
+    });
+    if (!what) return;
+    const drop = what === "delete" && !!(c.drop && c.importId);
     c.requested = true;
     setProg((p) => ({ ...(p || {}), step: tx("Bezig met annuleren…"), cancelling: true }));
     try {
@@ -579,7 +623,8 @@ export default function SiteImport() {
         for (let n = 0; n < 100; n += 1) { const st = await api(`/siteimport/${c.importId}/apply/`); if (st.state !== "running") break; await new Promise((r) => setTimeout(r, 1500)); }
       }
       if (drop) await api(`/siteimport/${c.importId}/`, { method: "DELETE" });
-      setMsg({ ok: true, text: drop ? tx("Geannuleerd. Er is niets achtergebleven.") : tx("Geannuleerd.") });
+      else if (what === "delete" && c.importId) await api(`/siteimport/${c.importId}/apply/`, { method: "POST", body: { discard: true } });
+      setMsg({ ok: true, text: drop ? tx("Geannuleerd. Er is niets achtergebleven.") : what === "keep" ? tx("Gestopt. Je voortgang is bewaard: ga verder met de knop Verder gaan bij de import.") : tx("Geannuleerd. De bewaarde voortgang is weggegooid.") });
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setProg(null); setProposal(null); await load();
   };
@@ -735,6 +780,7 @@ export default function SiteImport() {
                 ? <button className="btn" disabled={!!busy} onClick={() => toggle(i, "home", false)}>{tx("Startpagina terugzetten")}</button>
                 : <button className="btn" disabled={!!busy} onClick={() => toggle(i, "home", true)}>{tx("Startpagina overnemen")}</button>)}
               <button className="btn" onClick={() => setOpen(open === i.id ? null : i.id)}>{open === i.id ? tx("Sluiten") : tx("Pagina's en afbeeldingen")}</button>
+              {canManage && i.apply?.resumable && i.apply?.state !== "done" && <button className="btn primary" disabled={!!busy || !!prog} title={`${i.apply.resumable.pages} ${tx("pagina's geanalyseerd")}, ${i.apply.resumable.blocks} ${tx("blokken opgebouwd")}`} onClick={() => { cancelRef.current = { requested: false, importId: i.id, phase: "apply", abort: null, drop: false }; runApply(i, null, { resume: true }); }}>{tx("Verder gaan waar je gebleven was")}</button>}
               {canManage && i.apply?.pending && <button className="btn primary" disabled={!!busy || !!prog} onClick={() => applyImport(i)}>{i.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Toepassen")}</button>}
               {(i.paths || []).map((x) => <button key={x.path} className="btn" onClick={() => setShown(x)}>{tx("Pagina bekijken")}: {x.title}</button>)}
               {canManage && <button className="btn danger" disabled={!!busy} onClick={() => remove(i)}>{tx("Verwijderen")}</button>}

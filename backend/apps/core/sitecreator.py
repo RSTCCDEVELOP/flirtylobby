@@ -259,11 +259,14 @@ def slug(page, i):
 def pages_of(brief):
     raw = [p.strip() for p in re.split(r"[,\n]", str(brief.get("pages") or "")) if p.strip()] or ["Home", "Over ons", "Diensten", "FAQ", "Contact"]
     out, seen = [], set()
+    off = set(brief.get("pages_off") or [])  # pages that are not ticked in the menu of the wizard are not made (the start page always is)
     for i, p in enumerate(raw[:10]):
         f = slug(p, i)
         while f in seen:
             f = f.replace(".html", "-2.html")
         seen.add(f)
+        if i > 0 and p[:60] in off:
+            continue
         out.append((f, p[:60]))
     return out
 
@@ -362,6 +365,8 @@ def clean_brief(patch, old):
     if "modules_off" in p:  # the modules and plugins that the user does NOT want (all others are used, also the ones that are added later)
         known = {i["key"] for i in module_items()}
         b["modules_off"] = [k for k in (p["modules_off"] if isinstance(p["modules_off"], list) else []) if k in known][:80]
+    if "pages_off" in p:  # the pages that are NOT made (unticked in the menu)
+        b["pages_off"] = [str(x)[:60] for x in (p["pages_off"] if isinstance(p["pages_off"], list) else []) if str(x).strip()][:20]
     if "modules_extra" in p:  # modules and plugins outside the standard installation that the user switched on on purpose (they raise the price per month)
         known = {i["key"] for i in module_items() if i.get("in_installation") is False}
         b["modules_extra"] = [k for k in (p["modules_extra"] if isinstance(p["modules_extra"], list) else []) if k in known][:80]
@@ -422,6 +427,15 @@ def read_zip(job, upload, user):
     bundle = ziprules.validate_for_site(ziprules.read_zip(z))
     notes = list(bundle.notes)
     files, photos = {}, list((job.brief or {}).get("photos") or [])
+    shots = {}  # the screenshots of the pages from the ZIP: the reference for the import (stem -> {id, url})
+    for stem, data in bundle.screenshots.items():
+        key = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{uuid.uuid4().hex[:8]}-shot-{get_valid_filename(stem)}.jpg"), ContentFile(data))
+        item = MediaItem.objects.get(key=key)
+        item.name, item.uploaded_by, item.tags = f"screenshot {stem}.jpg"[:255], user, ["design-shot"]
+        item.save(update_fields=["name", "uploaded_by", "tags"])
+        shots[stem] = {"id": item.id, "url": default_storage.url(item.key)}
+    if shots:
+        notes.append(f"{len(shots)} screenshots van pagina's meegenomen: ze helpen bij het namaken van de vormgeving.")
     taken = {p["file"] for p in photos}
     for name, data in sorted(bundle.files.items()):
         ext = name.rsplit(".", 1)[-1]
@@ -445,7 +459,7 @@ def read_zip(job, upload, user):
         m = re.search(r"<title>(.*?)</title>", files[n], re.S | re.I)
         pages.append(re.sub(r"\s+", " ", (m.group(1) if m else n[:-5])).split("|")[0].split(" - ")[0].strip()[:60] or n[:-5])
     b = dict(job.brief or {})
-    b.update({"mode": "improve", "photos": photos, "pages": ", ".join(pages), "from_zip": [n for n in files]})
+    b.update({"mode": "improve", "photos": photos, "shots": shots, "pages": ", ".join(pages), "from_zip": [n for n in files]})
     if not (b.get("name") or "").strip() or b.get("name") == "Nieuw ontwerp":  # the name of the website: from the design itself (the title of the start page, without the slogan)
         first = re.search(r"<title>(.*?)</title>", files.get("index.html") or files[htmls[0]], re.S | re.I)
         guess = re.split(r"\s[|–—-]\s|\s[:·]\s", re.sub(r"\s+", " ", first.group(1) if first else "").strip())[0].strip()[:80]

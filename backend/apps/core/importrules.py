@@ -19,6 +19,10 @@ MAX_TOTAL = 40 * 2**20  # whole ZIP
 NAME_MAX = 40  # characters of a file name before the extension
 IMAGE_EXT = ("jpg", "jpeg", "png", "webp", "svg")
 IMAGE_FOLDER = "img"
+SCREENSHOT_FOLDER = "screenshots"  # optional: one picture of every page as the design should look (<page>.png), taken by the AI that made the design
+SCREENSHOT_EXT = ("png", "jpg", "jpeg", "webp")
+MAX_SCREENSHOTS = 24
+MAX_SCREENSHOT_BYTES = 6 * 2**20
 NAME_BASE_RE = re.compile(r"^[a-z0-9_-]{1,%d}$" % NAME_MAX)
 TRANSLATION_FORMAT = "easy2edit-vertalingen/1"
 TRANSLATION_FILE = "vertalingen-<taal>.json"  # <taal> = language code, e.g. vertalingen-en.json
@@ -33,7 +37,7 @@ def mb(n):
 def as_dict():
     """What the AI prompt needs (served by the catalog endpoint)."""
     return {"max_pages": MAX_PAGES, "max_images": MAX_IMAGES, "max_image_mb": float(mb(MAX_IMAGE_BYTES)), "name_max": NAME_MAX, "image_ext": list(IMAGE_EXT),
-            "image_folder": IMAGE_FOLDER, "translation_format": TRANSLATION_FORMAT, "translation_file": TRANSLATION_FILE, "max_html_mb": float(mb(MAX_HTML)), "max_css_kb": MAX_CSS // 1024}
+            "image_folder": IMAGE_FOLDER, "screenshot_folder": SCREENSHOT_FOLDER, "max_screenshots": MAX_SCREENSHOTS, "translation_format": TRANSLATION_FORMAT, "translation_file": TRANSLATION_FILE, "max_html_mb": float(mb(MAX_HTML)), "max_css_kb": MAX_CSS // 1024}
 
 
 def clean_name(name, ext_ok=None):

@@ -45,6 +45,8 @@ export const lum = (h) => { const v = [1, 3, 5].map((i) => parseInt(h.slice(i, i
 export const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 export const esc = (t) => String(t || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 export const pagesOf = (b) => String(b.pages || "").split(",").map((p) => p.trim()).filter(Boolean);
+// the pages that are made: every page that is ticked in the menu (the start page is always made)
+export const activePages = (b) => pagesOf(b).filter((p, i) => i === 0 || !(b.pages_off || []).includes(p));
 
 // The page as one html text for the preview: the stylesheet, the svg pictures and the uploaded photos are put into it (the frame has no access to the other files).
 export function previewHtml(files, name, photos = [], theme = "") {
@@ -136,7 +138,7 @@ export function MonthlyPrice({ catalog, b }) {
 export function promptText(b, catalog) {
   const photos = (b.photos || []).filter((p) => p.file);
   return buildPrompt({
-    name: b.name, kind: b.kind, lang: b.lang, pages: b.pages, extra: b.extra,
+    name: b.name, kind: b.kind, lang: b.lang, pages: activePages(b).join(", "), extra: b.extra,
     style: [...(b.style_tags || []).map((t) => EN_TAGS[t] || t), b.style].filter(Boolean).join(", "),
     modules: (catalog?.modules || []).filter((m) => isUsed(m, b)), objects: (catalog?.objects || []).filter((o) => (b.objects || []).includes(o.slug)),
     palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
@@ -197,7 +199,7 @@ export function DesignPromptPopup({ b, catalog, onClose }) {
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
   const download = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" })); a.download = `${(b.name || "website").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-prompt.txt`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
-  const chips = [[tx("Pagina's"), pagesOf(b).length], [tx("Modules"), (catalog?.modules || []).filter((m) => isUsed(m, b)).length], [tx("Systeemobjecten"), (b.objects || []).length], [tx("Foto's"), photos.length]];
+  const chips = [[tx("Pagina's"), activePages(b).length], [tx("Modules"), (catalog?.modules || []).filter((m) => isUsed(m, b)).length], [tx("Systeemobjecten"), (b.objects || []).length], [tx("Foto's"), photos.length]];
   return createPortal(
     <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pb-objpop" role="dialog" aria-label={tx("AI-prompt voor een externe AI")} style={{ width: "min(900px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>

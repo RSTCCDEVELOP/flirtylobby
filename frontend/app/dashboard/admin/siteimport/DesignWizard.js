@@ -367,13 +367,16 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
 
           {step === 3 && (
             <div className="dw-panel">
-              <h3>{tx("Menu")} <span className="dw-count">{pages.length} {tx("pagina's")}</span></h3>
+              <h3>{tx("Menu")} <span className="dw-count">{pages.filter((p, i) => i === 0 || !(b.pages_off || []).includes(p)).length} {tx("van")} {pages.length} {tx("pagina's worden gemaakt")}</span></h3>
+              <p className="dw-hint">{tx("Een pagina die niet is aangevinkt wordt niet gemaakt. De startpagina wordt altijd gemaakt.")}</p>
               {improve && <p className="dw-hint">{tx("De pagina's komen uit het ZIP-bestand. Je kunt de namen in het menu aanpassen.")}</p>}
               <div style={{ display: "flex", flexDirection: "column", gap: ".45rem" }}>
                 {pages.map((p, i) => (
-                  <div key={i} className="dw-page">
+                  <div key={i} className="dw-page" style={(b.pages_off || []).includes(p) && i > 0 ? { opacity: .55 } : undefined}>
+                    <input type="checkbox" checked={i === 0 || !(b.pages_off || []).includes(p)} disabled={i === 0} aria-label={tx("Deze pagina maken")} title={i === 0 ? tx("De startpagina wordt altijd gemaakt") : tx("Deze pagina maken")}
+                      onChange={(e) => { const off = (b.pages_off || []).filter((x) => x !== p); upd({ pages_off: e.target.checked ? off : [...off, p] }); }} style={{ width: "auto", flex: "none" }} />
                     <b>{i + 1}</b>
-                    <input style={{ flex: 1 }} value={p} maxLength={60} onChange={(e) => setPages(pages.map((x, j) => (j === i ? e.target.value.replace(/,/g, " ") : x)))} />
+                    <input style={{ flex: 1 }} value={p} maxLength={60} onChange={(e) => { const v = e.target.value.replace(/,/g, " "); setPages(pages.map((x, j) => (j === i ? v : x))); if ((b.pages_off || []).includes(p)) upd({ pages_off: (b.pages_off || []).map((x) => (x === p ? v : x)) }); }} />
                     {i === 0 && <span className="badge">{tx("Startpagina")}</span>}
                     {!improve && <>
                       <button type="button" className="btn sm" disabled={i === 0} aria-label={tx("Omhoog")} onClick={() => { const l = [...pages]; [l[i - 1], l[i]] = [l[i], l[i - 1]]; setPages(l); }}>↑</button>
