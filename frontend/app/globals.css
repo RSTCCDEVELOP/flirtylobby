@@ -3505,3 +3505,6 @@ html[data-hl="editorial"] .p-drawer-left .hmenu a:hover, html[data-hl="editorial
 .manual-lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: .15rem; }
 .manual-lang button { border: 0; background: transparent; color: var(--muted); font-weight: 700; font-size: .8rem; padding: .35rem .75rem; border-radius: 999px; cursor: pointer; }
 .manual-lang button.on { background: var(--blue); color: #fff; }
+
+.pb-rowwrap.has-shadow { position: relative; z-index: 1; } /* the shadow of a card lies over the band below it, not under it */
+.pb-heading em { font-style: normal; color: var(--ti-accent, inherit); } /* a marked word of an imported heading */

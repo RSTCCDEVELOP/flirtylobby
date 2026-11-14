@@ -274,7 +274,7 @@ export default function DashboardShell({ children }) {
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const faqSet = useFaqSettings(); // Admin → FAQ → Instellingen: is the Help link shown in the left menus
   const imported = useImported(mods.siteimport !== false);
-  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Geïmporteerd" } : n)).filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
+  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n)).filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
     <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={closeMenu}>

@@ -392,10 +392,27 @@ def create(user, name=""):
     return SiteDesignJob.objects.create(user=user, status="draft", name=brief["name"] or "Nieuw ontwerp", brief=brief)
 
 
+def _sig(job, brief=None):
+    """A fingerprint of the concept (the files and the choices of the steps): what is live is the concept with this fingerprint."""
+    import hashlib
+    import json
+
+    b = {k: v for k, v in (brief if brief is not None else job.brief or {}).items() if k not in ("live_hash", "step")}
+    return hashlib.sha1(json.dumps([job.files or {}, b], sort_keys=True, default=str).encode()).hexdigest()
+
+
+def is_live(job):
+    """True when the concept has been applied and has not been changed since (green 'Live'); changed again: back to 'Concept'."""
+    h = (job.brief or {}).get("live_hash")
+    return bool(h) and h == _sig(job)
+
+
 def save(job, patch):
     if job.status not in ("draft", "done", "error"):
         raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
     b = clean_brief(patch, job.brief)
+    if isinstance(patch, dict) and patch.get("live") is True:  # the design has been applied: this state is live; every later change makes it a concept again, and is applied to the live pages
+        b["live_hash"] = _sig(job, b)
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, name=(b.get("name") or job.name)[:120], updated_at=timezone.now())
     job.brief = b
     return job
@@ -404,7 +421,7 @@ def save(job, patch):
 def listing(user):
     out = []
     for j in SiteDesignJob.objects.filter(user=user).order_by("-updated_at")[:30]:
-        out.append({"id": str(j.pk), "name": j.name, "status": j.status, "step": (j.brief or {}).get("step", 0), "pages": len(j.files or {}) and len([f for f in j.files if f.endswith(".html")]), "updated_at": j.updated_at.isoformat()})
+        out.append({"id": str(j.pk), "name": j.name, "status": j.status, "step": (j.brief or {}).get("step", 0), "live": is_live(j), "applied": bool((j.brief or {}).get("live_hash")), "pages": len(j.files or {}) and len([f for f in j.files if f.endswith(".html")]), "updated_at": j.updated_at.isoformat()})
     return out
 
 
@@ -1069,6 +1086,6 @@ def _stale(job):
 def public(job, files=False):
     job = _stale(job)
     b = job.brief or {}
-    return {"id": str(job.pk), "name": job.name, "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
+    return {"id": str(job.pk), "name": job.name, "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
             "docs": [_doc_public(d) for d in job.docs or []]}

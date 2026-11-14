@@ -41,7 +41,7 @@ export function AiCreatorHome({ onOpen, refreshKey }) {
           <strong>{tx("Mijn ontwerpen")}</strong>
           {d.designs.map((x) => (
             <div key={x.id} className="card" style={{ display: "flex", gap: ".7rem", alignItems: "center", padding: ".6rem .8rem" }}>
-              <span style={{ flex: 1, minWidth: 0 }}><strong>{x.name}</strong> <span className={x.status === "done" ? "badge ok" : "badge off"}>{tx(STATUS[x.status] || x.status)}</span>
+              <span style={{ flex: 1, minWidth: 0 }}><strong>{x.name}</strong> <span className={x.live || (x.status === "done" && !x.applied) ? "badge ok" : "badge off"}>{x.live ? tx("Live") : x.applied && x.status === "done" ? tx("Concept") : tx(STATUS[x.status] || x.status)}</span>
                 <small className="muted" style={{ display: "block" }}>{x.status === "draft" ? `${tx("Stap")} ${x.step + 1} ${tx("van")} ${STEPS.length}: ${tx(STEPS[x.step]?.[1] || "")}` : `${x.pages} ${tx("pagina's")}`} · {new Date(x.updated_at).toLocaleString()}</small></span>
               <button type="button" className="btn sm primary" onClick={() => onOpen(x.id)}>{x.status === "draft" ? tx("Verder gaan") : tx("Openen")}</button>
               <button type="button" className="btn sm danger" onClick={() => del(x)} aria-label={tx("Verwijderen")}><IconTrash /></button>
@@ -160,14 +160,22 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const was = useRef("");
   useEffect(() => { reload(true); }, [reload]);
   useEffect(() => { if (job?.status !== "running" && job?.status !== "stopping") return undefined; const t = setTimeout(() => reload(false), 2000); return () => clearTimeout(t); }, [job, reload]);
-  useEffect(() => { const busyNow = (x) => x === "running" || x === "stopping"; if (busyNow(was.current) && job?.status && !busyNow(job.status)) reload(true); was.current = job?.status || ""; }, [job?.status, reload]); // ready: now fetch the files
+  const liveRev = useRef(false); // a change to a concept that is live: when it is made, the live pages are rebuilt from it
+  const [liveGo, setLiveGo] = useState(false);
+  useEffect(() => { const busyNow = (x) => x === "running" || x === "stopping"; if (busyNow(was.current) && job?.status && !busyNow(job.status)) reload(true).then(() => { if (liveRev.current) { liveRev.current = false; setLiveGo(true); } }); was.current = job?.status || ""; }, [job?.status, reload]); // ready: now fetch the files
+  const applyLive = useCallback(async () => { if (!job || !onApply) return; setBusy("live"); try { await onApply(job, { live: true, theme: false, modules: false, render: "blocks", off: job.modules_off_effective || job.brief?.modules_off || [] }); await reload(false); } finally { setBusy(""); } }, [job, onApply, reload]);
+  useEffect(() => { // the change was made (not a failed one): apply it to the live pages
+    if (!liveGo || !job || job.status === "running" || job.status === "stopping" || !Object.keys(job.files || {}).length) return;
+    setLiveGo(false);
+    if (String((job.messages || []).slice(-1)[0]?.text || "").startsWith("Aangepast")) applyLive();
+  }, [liveGo, job, applyLive]);
   useEffect(() => { chat.current?.scrollTo({ top: 1e6 }); }, [job?.messages?.length, job?.status]);
 
   const send = async (e) => {
     e?.preventDefault();
     if (!text.trim() || sending || job?.status === "running" || job?.status === "stopping") return;
     setSending(true); setErr("");
-    try { merge(await api(`/sitecreator/${jobId}/revise/`, { method: "POST", body: { text, page } })); setText(""); }
+    try { merge(await api(`/sitecreator/${jobId}/revise/`, { method: "POST", body: { text, page } })); setText(""); liveRev.current = !!job?.applied && !!onApply; }
     catch (x) { setErr(errorText(x)); }
     finally { setSending(false); }
   };
@@ -200,6 +208,8 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
       <div className="pb-objpop" role="dialog" aria-label={tx("Website ontwerpen")} style={{ width: "min(96vw, 1700px)", maxWidth: "none", height: "94vh", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="pb-objhead"><strong>{tx("Website ontwerpen")}{job?.name ? `: ${job.name}` : ""}</strong>
           {!wizard && job && <button type="button" className="btn sm" style={{ marginLeft: ".8rem" }} disabled={back} onClick={toSteps}>← {back ? tx("Bezig met stoppen…") : tx("Terug naar de stappen")}</button>}<span style={{ flex: 1 }} />
+          {!wizard && job?.applied && <span className={job.live ? "badge ok" : "badge off"} style={{ marginRight: ".6rem" }} title={tx("Elke aanpassing aan dit concept wordt direct op de live pagina's toegepast.")}>{busy === "live" ? tx("Live bijwerken…") : job.live ? tx("Live") : tx("Concept")}</span>}
+          {!wizard && job?.applied && !job.live && ready && !running && <button type="button" className="btn sm" style={{ marginRight: ".4rem" }} disabled={!!busy} onClick={applyLive}>{tx("Live bijwerken")}</button>}
           {!wizard && ready && <span className="pb-seg" style={{ marginRight: ".6rem" }}>{DEVICES.map(([k, l]) => <button type="button" key={k} className={dev === k ? "on" : ""} onClick={() => setDev(k)}>{tx(l)}</button>)}</span>}
           {!wizard && ready && !running && <button type="button" className="btn sm" style={{ marginRight: ".4rem" }} onClick={() => setImproveOpen(true)}><IconBolt /> {tx("Verbeteren")}</button>}
           {!wizard && ready && !running && (onApply

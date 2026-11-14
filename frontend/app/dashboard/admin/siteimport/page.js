@@ -467,20 +467,20 @@ export default function SiteImport() {
   };
   const done = (r) => tx("\"{0}\" is ingelezen. Controleer hieronder het voorstel; pas na je akkoord wordt er iets aangemaakt.", r.name);
   // An import with this name already exists (it was done before): ask whether to overwrite it. true = go on, false = stop.
-  const askOverwrite = async (name) => {
+  const askOverwrite = async (name, auto = false) => { // auto: a live redesign of the same concept replaces its earlier import without asking
     const nm = String(name || "").trim().toLowerCase();
     if (!nm) return true;
     let old = [];
     try { old = ((await api("/siteimport/")).imports || []).filter((x) => String(x.name || "").trim().toLowerCase() === nm); } catch { return true; }
     if (!old.length) return true;
-    const what = await confirmDialog(tx("Er is al een import met de naam \"{0}\". Wil je die overschrijven?", String(name).trim()), {
+    const what = auto ? "overwrite" : await confirmDialog(tx("Er is al een import met de naam \"{0}\". Wil je die overschrijven?", String(name).trim()), {
       title: tx("Bestaande import"), okLabel: tx("Doorgaan"), cancelLabel: tx("Annuleren"),
       choices: [{ value: "overwrite", label: tx("Overschrijven"), hint: tx("De oude import wordt verwijderd en wat hij had veranderd wordt teruggezet. Daarna wordt de nieuwe gemaakt.") },
         { value: "both", label: tx("Allebei bewaren"), hint: tx("De oude import blijft staan; de nieuwe komt ernaast.") }],
     });
     if (!what) return false;
     if (what === "overwrite") {
-      try { for (const o of old) await api(`/siteimport/${o.id}/`, { method: "DELETE" }); await load(); setMsg({ ok: true, text: tx("De oude import \"{0}\" is verwijderd.", String(name).trim()) }); }
+      try { for (const o of old) await api(`/siteimport/${o.id}/`, { method: "DELETE" }); await load(); if (!auto) setMsg({ ok: true, text: tx("De oude import \"{0}\" is verwijderd.", String(name).trim()) }); }
       catch (e) { setMsg({ ok: false, text: errorText(e) }); return false; }
     }
     return true;
@@ -569,8 +569,9 @@ export default function SiteImport() {
   const applyDesign = async (job, o = {}) => {
     const wname = String(job.brief?.name || "").trim();
     if (!wname) { setDesignOpen(true); setMsg({ ok: false, text: tx("Geef de website een naam. De naam van de website is verplicht.") }); return; }
-    if (!(await askOverwrite(wname))) return;
-    setDesignOpen(false); setTab("html");
+    if (!(await askOverwrite(wname, !!o.live))) return;
+    if (!o.live) setDesignOpen(false); // a live redesign keeps the concept open: you go on adjusting it
+    setTab("html");
     cancelRef.current = { requested: false, importId: null, phase: "upload", abort: null, drop: true };
     setProg({ title: tx("Toepassen"), name: wname, percent: 1, step: tx("Het ontwerp klaarzetten…"), error: "", built: [], state: "running" });
     try {
@@ -596,6 +597,7 @@ export default function SiteImport() {
       await load(); setOpen(ap.id);
       await runApply(ap, null, { render: o.render || "blocks", mode: "clear", prompt: "", translate: !!o.translate }, [45, 100]); // the pages are built: 45 - 100 %
       if (themeNote) setProg((p) => (p ? { ...p, themeNote } : p));
+      if (!cancelRef.current.requested) api(`/sitecreator/${job.id}/`, { method: "PATCH", body: { live: true } }).catch(() => {}); // from now on the concept is adjusted "live"
     } catch (e) { if (cancelRef.current.requested) return; setProg((p) => ({ ...(p || { name: job.name, percent: 0, built: [] }), error: errorText(e), state: "error" })); }
   };
   // Annuleren: stops the reading or the building. Something that was made new by this run is taken away again (nothing stays behind); an application of an existing import only stops.

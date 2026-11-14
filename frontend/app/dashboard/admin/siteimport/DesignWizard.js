@@ -370,6 +370,10 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
               <h3>{tx("Menu")} <span className="dw-count">{pages.filter((p, i) => i === 0 || !(b.pages_off || []).includes(p)).length} {tx("van")} {pages.length} {tx("pagina's worden gemaakt")}</span></h3>
               <p className="dw-hint">{tx("Een pagina die niet is aangevinkt wordt niet gemaakt. De startpagina wordt altijd gemaakt.")}</p>
               {improve && <p className="dw-hint">{tx("De pagina's komen uit het ZIP-bestand. Je kunt de namen in het menu aanpassen.")}</p>}
+              <div style={{ display: "flex", gap: ".5rem", marginBottom: ".5rem" }}>
+                <button type="button" className="btn sm" onClick={() => upd({ pages_off: [] })}>{tx("Alles selecteren")}</button>
+                <button type="button" className="btn sm" onClick={() => upd({ pages_off: pages.filter((_p, i) => i > 0) })}>{tx("Alles deselecteren")}</button>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: ".45rem" }}>
                 {pages.map((p, i) => (
                   <div key={i} className="dw-page" style={(b.pages_off || []).includes(p) && i > 0 ? { opacity: .55 } : undefined}>

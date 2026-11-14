@@ -171,6 +171,9 @@ def _item_style(st):
         out["color"] = _col(st["color"])
     if HEX.fullmatch(str(st.get("bg") or "")):
         out["bg"] = st["bg"]  # a text with a background (a label in a pill)
+    for k in ("border", "accent"):  # a label with a line around it; the colour of a marked word (<em>) in a heading
+        if HEX.fullmatch(str(st.get(k) or "")):
+            out[k] = st[k]
     if st.get("font") in FONTS:
         out["font"] = st["font"]
     if st.get("align") in ("left", "center", "right"):
@@ -195,7 +198,7 @@ def _item_style(st):
             out["pad"] = pad
     if re.fullmatch(r"[1-9][0-9]{0,3}(px|%)", str(st.get("w") or "")):
         out["w"] = str(st["w"])
-    for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 999), ("h", 0, 1000), ("th", 1, 20), ("lw", 5, 100)):  # h: height of a spacer (px), th: thickness and lw: width (%) of a line
+    for key, lo, hi in (("opacity", 0, 100), ("radius", 0, 999), ("minw", 0, 600), ("h", 0, 1000), ("th", 1, 20), ("lw", 5, 100)):  # h: height of a spacer (px), th: thickness and lw: width (%) of a line
         if st.get(key) not in (None, ""):
             try:
                 out[key] = min(max(int(st[key]), lo), hi)
