@@ -271,3 +271,28 @@ def test_a_section_the_ai_cannot_build_is_taken_over_exactly():
     item = rows[0]["cells"][0]["items"][0]
     assert item["type"] == "code" and 'class="band"' in item["html"] and 'src="IMG:3"' in item["html"] and "<script" not in item["html"] and "Titel" in item["html"]
     assert ".band{" in item["css"] and ".pc{" in item["css"] and ":root{--c:#0b1220}" in item["css"] and ".other" not in item["css"]  # only what applies to this section
+
+
+def test_a_section_in_the_design_vocabulary_becomes_exact_rows():
+    from siteimport_lib import cssfacts as C
+    from siteimport_lib import designrows as DR
+
+    from apps.core.webtoolkit import find, parse_html
+
+    css = """:root{--bg:#fffaf5;--text:#3a2a1f;--line:#dcd5ce}
+    .band-light{background:var(--bg);color:var(--text);padding:4rem 0}.container{max-width:1100px;margin:0 auto;padding:0 1.25rem}
+    h2{font-size:2rem;font-weight:800;margin:0 0 1rem}.intro{margin-bottom:2.5rem}h3{font-size:1.25rem;font-weight:700;margin:0 0 .5rem}p{margin:0 0 1rem}
+    .grid{display:grid;gap:1.5rem}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.5rem}"""
+    html = '<main><section id="x" class="band-light"><div class="container"><div class="intro"><h2>Titel</h2></div><div class="grid grid-2"><div class="card"><h3>A</h3><p>Tekst <strong>een</strong></p></div><div class="card"><h3>B</h3><p>Tekst twee</p><a class="btn" href="/x">Knop</a></div></div></div></section></main>'
+    sec = find(parse_html(html), "section")[0]
+    rows = DR.rows_for(sec, C.parse_rules(css), {})
+    assert [len(r["cells"]) for r in rows] == [1, 2]
+    head = rows[0]["cells"][0]["items"][0]
+    assert head["type"] == "heading" and head["size"] == 2.0 and head["weight"] == "800" and head["mb"] == 2.5  # (the margin of the intro goes to its last item)
+    assert rows[0]["pad_top"] == 64 and rows[0]["pad_bottom"] == 0 and rows[1]["pad_bottom"] == 64 and rows[0]["bg"] == "#fffaf5"
+    card = rows[1]["cells"][0]
+    assert card["card"]["radius"] == 14 and card["card"]["pad"] == 24 and card["card"]["bg"] == "#ffffff" and card["card"]["border"] == "#dcd5ce"
+    assert [i["type"] for i in card["items"]] == ["heading", "text"] and card["items"][0]["mb"] == 0.5 and "<strong>een</strong>" in card["items"][1]["html"]
+    assert rows[1]["cells"][1]["items"][-1]["type"] == "button"
+    # something outside the vocabulary: the AI builds the section
+    assert DR.rows_for(find(parse_html('<main><section class="band-light"><div class="container"><table><tr><td>x</td></tr></table></div></section></main>'), "section")[0], C.parse_rules(css), {}) is None

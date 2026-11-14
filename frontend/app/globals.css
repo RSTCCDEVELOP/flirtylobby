@@ -1418,7 +1418,8 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .pb-row { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); align-items: stretch; }
 .pb-row.gap-sm { gap: .5rem; } .pb-row.gap-md { gap: 1.2rem; } .pb-row.gap-lg { gap: 2.4rem; }
 @container pb (max-width: 700px) { .pb-row { grid-template-columns: 1fr; } }
-.pb-cell { display: flex; flex-direction: column; justify-content: var(--jv, flex-start); align-items: var(--ha, flex-start); gap: .8rem; min-width: 0; }
+.pb-cell { display: flex; flex-direction: column; justify-content: var(--jv, flex-start); align-items: var(--ha, flex-start); gap: var(--cg, .8rem); min-width: 0; }
+.pb-tight .rich-text p:last-child, .pb-tight .rich-text ul:last-child, .pb-tight .rich-text ol:last-child { margin-bottom: 0; } /* an item with an exact space below it: no extra space of its last paragraph */
 .pb-cell > .pb-item { max-width: 100%; }
 .pb-cell > .pb-item.obj { width: 100%; }
 .pb-img { max-width: 100%; height: auto; border-radius: var(--radius, 12px); }

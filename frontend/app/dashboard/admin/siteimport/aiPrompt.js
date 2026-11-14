@@ -89,6 +89,17 @@ The importer turns every <section> into a BAND of the page editor and its conten
 - Blocks inside a cell (use only these): heading (size, weight 400-800, colour, alignment), text (p, ul, ol, li, strong, em, a, br; optionally as a label with its own background), image (width 100 %, 50 % or a fixed px width, rounded corners), button (primary, outline or ghost, with a link to a page, a #section or an https address), spacer (a height), line (a divider), FAQ (see below), system object (see below). Anything else (a progress bar, a list with check marks or icons, a mock-up, a table, a gradient shape, an inline svg) becomes a code block: use it sparingly and keep it self-contained (no script, no external files).
 - Pictures: every picture is a plain <img> (or a section background); give a hero picture at least 1600 px width, cards 800 px, and every picture an alt text. Keep important content out of the picture itself.
 
+## CSS vocabulary that Easy2edit reads EXACTLY
+Use these class names and this structure. A section that follows them is rebuilt directly from your css values (colours, sizes, margins, padding, columns, card style), so it looks exactly like your design and its spacing is the same. Anything outside it still works, but is rebuilt less exactly.
+- Band: <section id="..." class="band-light"> (or band-dark, band-tint, band-card). The colours and the padding of the band (for example padding: 4rem 0, hero 6rem 0) are in the css rule of that class.
+- Hero with a picture: class="band-dark hero-bg hero-<page>"; .hero-bg has the overlay (a linear-gradient layer over the picture) and .hero-<page> sets --hero-photo: url(img/x.jpg). The picture can be anywhere in the css rule: Easy2edit finds it.
+- One <div class="container"> in every band (max-width 1100px, margin 0 auto, padding 0 1.25rem). Optional: <div class="intro"> around the label, heading and lead of the band.
+- Content elements, directly in the container, the intro or a card: .label (a small pill text), h1, h2, h3, p, p.lead, ul, ol, a.btn.btn-primary, a.btn.btn-outline, img (with alt), hr, and <div data-sysobject="slug"></div>.
+- Columns: <div class="grid grid-2"> (grid-3, grid-4) with display: grid; grid-template-columns: repeat(N, minmax(0, 1fr)); gap: 1.5rem. Its children are <div class="card"> (a background, a 1px border and/or a shadow, border-radius, padding) or plain elements.
+- Spacing: put it in the css as margin-bottom on headings and paragraphs and as padding on bands and cards, never with empty elements, <br> stacks or inline styles. Easy2edit copies these values.
+- Colours only through css variables (:root); never colours inside the html.
+- Not read exactly (they are rebuilt with more guessing): accordions (<details>), tables, forms, inline svg drawings, iframes.
+
 ${extraLangs.length ? `## Translations (one file per extra language)
 ${extraLangs.map((l) => `- Add a translation file vertalingen-${l.code}.json at the top level of the ZIP with the ${l.native} translation of EVERY text of every page.`).join("\n")}
 - Format of a translation file (UTF-8, valid JSON):
