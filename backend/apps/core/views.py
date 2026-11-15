@@ -670,7 +670,7 @@ def wizard_pdf(request):
             files = [(fname, pdf, "application/pdf")]
             if d.get("with_config"):  # the installation configuration (JSON) goes with it
                 files.append((fname[:-4].replace(f"easy2edit-{t['title'].lower()}-", "easy2edit-installatie-") + ".json", __import__("json").dumps(pricing.build_config(d), indent=2, ensure_ascii=False).encode(), "application/json"))
-            sending.send_email(to, f"{t['title']} Easy2edit – {site}", f"{t['title']}: {site}\n\n{t['total']}: {pricing_pdf.eur(plan['monthly'])}\n\n{t['contact']}", attachments=files)
+            sending.send_email(to, f"{t['title']} easy2edit – {site}", f"{t['title']}: {site}\n\n{t['total']}: {pricing_pdf.eur(plan['monthly'])}\n\n{t['contact']}", attachments=files)
         except sending.DeliveryError as e:
             return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
         return Response({"sent": to})
@@ -1494,7 +1494,7 @@ def _build_number(dj):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def system_info(request):
-    """Info for the Info pop-up in the Beheer menu: the version of Easy2edit and the installed plugins."""
+    """Info for the Info pop-up in the Beheer menu: the version of easy2edit and the installed plugins."""
     from django.conf import settings as dj
 
     from apps.plugins.models import Plugin
@@ -1505,7 +1505,7 @@ def system_info(request):
     sysdata = system.get()
     on = modules.states()
     mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "desc": m.get("desc", ""), "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core"))} for m in modules.MODULES]
-    return Response({"name": "Easy2edit", "version": dj.SYSTEM_VERSION, "build": _build_number(dj), "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
+    return Response({"name": "easy2edit", "version": dj.SYSTEM_VERSION, "build": _build_number(dj), "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
                      "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})
 
 
@@ -1790,7 +1790,7 @@ def standard_admin_file(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def system_update(request):
-    """After an update of Easy2edit: GET = does this site have to be checked, and which steps; POST {step} = do one step (see apps/core/sysupdate.py). Administrators and superadmins."""
+    """After an update of easy2edit: GET = does this site have to be checked, and which steps; POST {step} = do one step (see apps/core/sysupdate.py). Administrators and superadmins."""
     from . import sysupdate
 
     if not (request.user.is_staff or level(request.user, "system") >= 2):
@@ -1855,6 +1855,18 @@ def sitecreator_catalog(request):
     from . import sitecreator
 
     return Response(sitecreator.catalog())
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_theme_brief(request):
+    """?key=<theme>: the colours, fonts and corners of a theme as design conditions for the AI prompt (also a theme of the library that is not installed)."""
+    from . import sitecreator
+
+    try:
+        return Response(sitecreator.theme_brief(str(request.GET.get("key") or "")))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["POST"])

@@ -34,7 +34,7 @@ DEFAULTS = {
     "footer_text": "",
     "footer_logo_height": "0",  # height of the logo in the footer in px (0 = the standard, 36)
     "footer_logo_link": "",  # where a click on the logo in the footer goes (empty = nowhere)
-    "show_credit": True,  # "© Easy2edit <year>" with a link at the bottom of every page
+    "show_credit": True,  # "© easy2edit <year>" with a link at the bottom of every page
     "social_facebook": "", "social_instagram": "", "social_x": "", "social_linkedin": "", "social_youtube": "", "social_tiktok": "",
 }
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]

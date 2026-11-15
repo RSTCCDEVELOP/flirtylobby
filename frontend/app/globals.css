@@ -3778,3 +3778,14 @@ input[type="range"] { accent-color: var(--blue); }
 .cl-ghead:hover { background: color-mix(in srgb, var(--blue) 10%, var(--bg)); }
 .cl-ghead strong { flex: 1; font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; } .cl-ghead small { color: var(--muted); } .cl-chev { width: 1rem; text-align: center; color: var(--muted); }
 .cl-gitems { display: grid; gap: .3rem; padding-left: .4rem; }
+
+/* dragging a part from the editor panel to the page: the lines between the blocks and the columns show where it can go */
+html.pb-panel-dragging iframe { pointer-events: none; }
+html.pb-panel-dragging .pb-insert { min-height: 30px; }
+html.pb-panel-dragging .pb-insert .pb-insline { border-top: 2px dashed var(--blue); }
+html.pb-panel-dragging .pb-insert .pb-inshandle { opacity: 0; }
+.pb-insert.drop-on .pb-insline { border-top: 5px solid var(--blue) !important; border-radius: 3px; }
+html.pb-panel-dragging .pb-cell.edit { outline: 2px dashed color-mix(in srgb, var(--blue) 45%, transparent); outline-offset: -2px; min-height: 3rem; }
+html.pb-panel-dragging .pb-cell.edit.drop-over { outline: 3px solid var(--blue); background: color-mix(in srgb, var(--blue) 8%, transparent); }
+html.pb-panel-dragging .pb-addtile { cursor: grabbing; }
+.pb-addtile[draggable="true"] { cursor: grab; }

@@ -79,7 +79,7 @@ function WebsiteFaq() {
       <div className="page-head">
         <div>
           <h1>{tx("FAQ")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{tx("Je eigen veelgestelde vragen voor bezoekers, op de pagina /faq. Zet de pagina in het menu bij Pagina's. De uitleg van Easy2edit zelf staat apart bij Help in het dashboard.")}</p>
+          <p className="muted" style={{ margin: 0 }}>{tx("Je eigen veelgestelde vragen voor bezoekers, op de pagina /faq. Zet de pagina in het menu bij Pagina's. De uitleg van easy2edit zelf staat apart bij Help in het dashboard.")}</p>
         </div>
         {L >= 2 && <button className="btn primary" onClick={() => setModal({ question: {}, answer: {}, category: {} })}>{tx("+ Nieuwe vraag")}</button>}
       </div>
@@ -131,7 +131,7 @@ function WebsiteFaq() {
 function AdminHelp() {
   return (
     <>
-      <p className="muted">{tx("De uitleg van Easy2edit zelf voor beheerders, in alle talen. Hij toont alleen wat aan staat en waar jij rechten voor hebt. De uitleg die in de bewerkmodus bij de iconen verschijnt wijzig je bij Help-teksten.")} <Link href="/dashboard/admin/helptips" style={{ color: "var(--blue)" }}>{tx("Naar Help-teksten")}</Link></p>
+      <p className="muted">{tx("De uitleg van easy2edit zelf voor beheerders, in alle talen. Hij toont alleen wat aan staat en waar jij rechten voor hebt. De uitleg die in de bewerkmodus bij de iconen verschijnt wijzig je bij Help-teksten.")} <Link href="/dashboard/admin/helptips" style={{ color: "var(--blue)" }}>{tx("Naar Help-teksten")}</Link></p>
       <FaqPage layer="admin" withTitle={false} single />
     </>
   );

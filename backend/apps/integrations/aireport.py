@@ -7,7 +7,7 @@
 
 """One place to call Claude through the Anthropic link (Admin -> API keys): used by the donation texts and the fake-users tool."""
 
-"""The AI use as a PDF (landscape A4, in the house style of Easy2edit): a summary, or with detail a complete list of every call with tokens in and out and the costs."""
+"""The AI use as a PDF (landscape A4, in the house style of easy2edit): a summary, or with detail a complete list of every call with tokens in and out and the costs."""
 import io
 from datetime import date
 from pathlib import Path
@@ -40,7 +40,7 @@ def build(title, subtitle, sections, site="", note=""):
     size = landscape(A4)
     W = size[0] - 30 * mm
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=size, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=14 * mm, bottomMargin=16 * mm, title=title, author="Easy2edit")
+    doc = SimpleDocTemplate(buf, pagesize=size, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=14 * mm, bottomMargin=16 * mm, title=title, author="easy2edit")
     st = lambda **k: ParagraphStyle("x", fontName=k.pop("font", "Helvetica"), **k)  # noqa: E731
     h1 = st(fontSize=22, leading=26, textColor=colors.HexColor(DARK), font="Helvetica-Bold")
     h2 = st(fontSize=12, leading=16, textColor=colors.HexColor(ORANGE), font="Helvetica-Bold", spaceBefore=12, spaceAfter=4)
@@ -86,7 +86,7 @@ def build(title, subtitle, sections, site="", note=""):
         canvas.rect(0, 0, size[0], 4 * mm, stroke=0, fill=1)
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor(GREY))
-        canvas.drawString(15 * mm, 9 * mm, "Easy2edit · AI-gebruik")
+        canvas.drawString(15 * mm, 9 * mm, "easy2edit · AI-gebruik")
         canvas.drawRightString(size[0] - 15 * mm, 9 * mm, f"{d.page}")
         canvas.restoreState()
 

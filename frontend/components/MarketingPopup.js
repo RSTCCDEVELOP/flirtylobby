@@ -51,7 +51,7 @@ export default function MarketingPopup({ module, lang: start, onClose }) {
           <>
             <header className="mk-hero" style={{ background: `linear-gradient(135deg, ${(HUE[d.group] || HUE.Systeem)[0]}, ${(HUE[d.group] || HUE.Systeem)[1]})` }}>
               <span className="mk-bigico" aria-hidden="true"><IconBolt /></span>
-              <div className="mk-herotext"><small>{tx(d.group || "Easy2edit")}</small><h2>{c.title}</h2><p>{c.tagline}</p></div>
+              <div className="mk-herotext"><small>{tx(d.group || "easy2edit")}</small><h2>{c.title}</h2><p>{c.tagline}</p></div>
               {d.languages.length > 1 && (
                 <span className="mk-flags" role="group" aria-label={tx("Taal")}>
                   {d.languages.map((l) => (

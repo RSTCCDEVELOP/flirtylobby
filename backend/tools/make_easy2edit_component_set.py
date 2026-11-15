@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""Makes the standard component set (resource/components/easy2edit-ui-kit-1.0.0.zip) from the Easy2edit UI-kit html file: python3 backend/tools/make_easy2edit_component_set.py [ui-kit.html]. Every component gets its easy2edit_tag here (the TAGS table)."""
+"""Makes the standard component set (resource/components/easy2edit-ui-kit-1.0.0.zip) from the easy2edit UI-kit html file: python3 backend/tools/make_easy2edit_component_set.py [ui-kit.html]. Every component gets its easy2edit_tag here (the TAGS table)."""
 
 import re, json, html as H
 from pathlib import Path
@@ -99,8 +99,8 @@ for c in comps:
 assert len({c['easy2edit_tag'] for c in comps}) == len(comps)
 
 slim = [{k: c[k] for k in ('easy2edit_tag', 'name', 'description', 'group', 'category', 'html')} for c in comps]
-manifest = {"key": "easy2edit-ui-kit", "name": "Easy2edit UI-kit", "version": "1.0.0", "author": "RSTCC", "system_version": "1.0.0",
-            "description": "The standard set of Easy2edit objects: hero, cards, pricing, FAQ, forms, calendar, kanban, KPI, documents, audio and video players and more. They take the colours, fonts and corners of the theme in use.",
+manifest = {"key": "easy2edit-ui-kit", "name": "easy2edit UI-kit", "version": "1.0.0", "author": "RSTCC", "system_version": "1.0.0",
+            "description": "The standard set of easy2edit objects: hero, cards, pricing, FAQ, forms, calendar, kanban, KPI, documents, audio and video players and more. They take the colours, fonts and corners of the theme in use.",
             "components": slim}
 out = Path(__file__).resolve().parents[2] / 'resource' / 'components' / 'easy2edit-ui-kit-1.0.0.zip'
 out.parent.mkdir(parents=True, exist_ok=True)

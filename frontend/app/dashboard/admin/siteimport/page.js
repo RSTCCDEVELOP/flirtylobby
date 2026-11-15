@@ -87,12 +87,12 @@ function ApplyOptions({ opts, setOpts, needMode, canReplace, languages }) {
   return (
     <div className="stack-sm" style={{ display: "flex", flexDirection: "column", gap: ".9rem", marginTop: "1rem" }}>
       <div><strong>{tx("Weergave")}</strong>
-        {[["design", tx("Exact: 1 op 1 zoals het bestand"), tx("De pagina ziet er precies uit als het html-bestand. Teksten pas je aan door het bestand opnieuw te importeren.")], ["blocks", tx("Bewerkbaar: opbouwen met blokken"), tx("Easy2edit bouwt de pagina na met de blokken van het systeem, zodat je alles in de bewerkmodus kunt aanpassen. Dit is een benadering: kaarten, iconen en bijzondere vormen kunnen afwijken.")]].map(([k, l, h]) => (
+        {[["design", tx("Exact: 1 op 1 zoals het bestand"), tx("De pagina ziet er precies uit als het html-bestand. Teksten pas je aan door het bestand opnieuw te importeren.")], ["blocks", tx("Bewerkbaar: opbouwen met blokken"), tx("easy2edit bouwt de pagina na met de blokken van het systeem, zodat je alles in de bewerkmodus kunt aanpassen. Dit is een benadering: kaarten, iconen en bijzondere vormen kunnen afwijken.")]].map(([k, l, h]) => (
           <label key={k} className="check" style={{ display: "flex", gap: ".5rem", marginTop: ".3rem" }}><input type="radio" name="si-render" checked={(opts.render || "design") === k} onChange={() => set({ render: k })} /><span>{l} <small className="muted">{h}</small></span></label>
         ))}
       </div>
-      {blocks && <label>{tx("Opdracht voor Easy2edit (om de pagina te verbeteren)")} <small className="muted">{tx("Optioneel. Bijvoorbeeld: maak de koppen groter, meer ruimte tussen de blokken, de knoppen in het midden.")}</small>
-        <textarea rows={3} value={opts.prompt} maxLength={1500} onChange={(e) => set({ prompt: e.target.value })} placeholder={tx("Wat moet Easy2edit anders doen?")} />
+      {blocks && <label>{tx("Opdracht voor easy2edit (om de pagina te verbeteren)")} <small className="muted">{tx("Optioneel. Bijvoorbeeld: maak de koppen groter, meer ruimte tussen de blokken, de knoppen in het midden.")}</small>
+        <textarea rows={3} value={opts.prompt} maxLength={1500} onChange={(e) => set({ prompt: e.target.value })} placeholder={tx("Wat moet easy2edit anders doen?")} />
       </label>}
       {blocks && needMode && (
         <div><strong>{tx("Er staat al inhoud op de gekozen pagina. Wat moet er gebeuren?")}</strong>
@@ -190,7 +190,7 @@ function Detail({ imp, onChanged, onApply, busy }) {
         return (
           <div className="card" id={`si-map-${imp.id}`} style={{ borderColor: "var(--blue)" }}>
             <strong>{imp.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Pagina's koppelen en toepassen")}</strong>
-            <p className="muted" style={{ margin: ".3rem 0 .8rem" }}>{tx("De originele html is bewaard: je kunt dit zo vaak herhalen, ook met een nieuwe opdracht voor Easy2edit. Kies per tabblad wat er gebeurt en klik onderaan op Toepassen.")}</p>
+            <p className="muted" style={{ margin: ".3rem 0 .8rem" }}>{tx("De originele html is bewaard: je kunt dit zo vaak herhalen, ook met een nieuwe opdracht voor easy2edit. Kies per tabblad wat er gebeurt en klik onderaan op Toepassen.")}</p>
             <Tabs value={atab} onChange={setAtab} tabs={tabsDef} />
             {atab === "pages" && (<div>
               <div className="card" style={{ marginBottom: ".8rem" }}>
@@ -308,7 +308,7 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
 
       {tab === "theme" && (
         <div className="form">
-          <p className="muted" style={{ margin: 0 }}>{tx("Easy2edit heeft uit de kleuren, lettertypen en vormen van het bestand een thema gemaakt.")} {pr.theme.description}</p>
+          <p className="muted" style={{ margin: 0 }}>{tx("easy2edit heeft uit de kleuren, lettertypen en vormen van het bestand een thema gemaakt.")} {pr.theme.description}</p>
           <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}><strong>{pr.theme.name}</strong><Swatches colors={[pr.theme.values?.primary, pr.theme.values?.secondary, ...(pr.theme.palette || []).slice(0, 5)].filter((c, k, a) => c && a.indexOf(c) === k)} /></div>
           <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={useTheme} onChange={(e) => setUseTheme(e.target.checked)} /><span /></span><span>{tx("Thema maken")} <small className="muted">{tx("Het thema komt in de themabibliotheek en kan hierna met één klik worden gebruikt.")}</small></span></label>
         </div>
@@ -378,7 +378,7 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
           onChange={(m) => setPages((l) => l.map((x) => ({ ...x, target: m[String(x.i)] || "" })))} freeLabel={tx("Nieuwe pagina maken")} />
         <ApplyOptions opts={opts} setOpts={setOpts} languages={pr.languages}
           needMode={pages.some((p) => p.include && p.target && ((pr.targets || []).find((t) => t.key === p.target) || {}).rows > 0)} canReplace={false} />
-        <label className="check sec-toggle" style={{ marginTop: "1rem" }}><span className="switch"><input type="checkbox" checked={direct} onChange={(e) => setDirect(e.target.checked)} /><span /></span><span>{tx("Direct na het importeren toepassen")} <small className="muted">{tx("Easy2edit bouwt de pagina's dan meteen op met blokken die je kunt aanpassen. Uit: de pagina's staan eerst als ontwerp en je past ze later toe.")}</small></span></label>
+        <label className="check sec-toggle" style={{ marginTop: "1rem" }}><span className="switch"><input type="checkbox" checked={direct} onChange={(e) => setDirect(e.target.checked)} /><span /></span><span>{tx("Direct na het importeren toepassen")} <small className="muted">{tx("easy2edit bouwt de pagina's dan meteen op met blokken die je kunt aanpassen. Uit: de pagina's staan eerst als ontwerp en je past ze later toe.")}</small></span></label>
         </div>
       )}
 
@@ -487,7 +487,7 @@ export default function SiteImport() {
   };
   const start = async (body) => {
     if (!(await askOverwrite(body instanceof FormData ? body.get("name") : body?.name))) return;
-    if (body instanceof FormData && body.get("kind") === "html") return startHtml(body); // the analysis by Easy2edit runs in the background: with a progress bar
+    if (body instanceof FormData && body.get("kind") === "html") return startHtml(body); // the analysis by easy2edit runs in the background: with a progress bar
     return run("import", () => api("/siteimport/", { method: "POST", body }), done).then((r) => { if (r) { setProposal(r); showProposal(); } });
   };
   // Waits until the analysis of an import is ready, and shows how far it is (the part from..to of the bar).
@@ -578,7 +578,7 @@ export default function SiteImport() {
       const fd = await buildImportForm(job);
       const r = await apiUpload("/siteimport/", fd, (pct) => setProg((p) => ({ ...(p || {}), percent: pct * 0.05, step: `${tx("Uploaden…")} ${pct}%` })), cancelRef.current);
       cancelRef.current.importId = r.id; cancelRef.current.phase = "analyse";
-      const got = await waitForProposal(r.id, 5, 40); // Easy2edit reads the design and makes the proposal: 5 - 40 %
+      const got = await waitForProposal(r.id, 5, 40); // easy2edit reads the design and makes the proposal: 5 - 40 %
       const pr = got.proposal;
       if (!pr) throw new Error(tx("Het ontwerp kon niet worden ingelezen."));
       setProg((p) => ({ ...p, percent: 42, step: tx("Pagina's, afbeeldingen en modules vastleggen…") }));
@@ -691,14 +691,14 @@ export default function SiteImport() {
             <div style={{ marginTop: ".75rem" }}>
               <div className="dropzone" role="button" tabIndex={0} onClick={() => htmlFile.current.click()} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && htmlFile.current.click()}
                 onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); importHtml({ target: { files: e.dataTransfer.files, value: "" } }); }}>
-                <span>{busy === "import" ? tx("Easy2edit leest de bestanden en maakt het voorstel… dit duurt even.") : tx("Sleep één of meer html-bestanden hierheen (met eventueel de css en de afbeeldingen) of klik om te kiezen")}</span>
+                <span>{busy === "import" ? tx("easy2edit leest de bestanden en maakt het voorstel… dit duurt even.") : tx("Sleep één of meer html-bestanden hierheen (met eventueel de css en de afbeeldingen) of klik om te kiezen")}</span>
                 <input ref={htmlFile} type="file" multiple accept=".html,.htm,.css,image/*,text/html" hidden onChange={importHtml} />
               </div>
             </div>
           )}
           {tab === "ai" && <AiCreatorHome refreshKey={designOpen} onOpen={(id) => { setDesignId(id); setDesignOpen(true); }} />}
           <small className="muted" style={{ display: "block", marginTop: ".6rem" }}>
-            {tab === "ai" ? tx("Easy2edit ontwerpt de pagina's met illustraties; foto's voeg je daarna zelf toe in de mediabibliotheek. Het ontwerpen kost AI-tegoed. Er is pas iets aangemaakt na je akkoord bij het importeren.") : tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. Easy2edit maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
+            {tab === "ai" ? tx("easy2edit ontwerpt de pagina's met illustraties; foto's voeg je daarna zelf toe in de mediabibliotheek. Het ontwerpen kost AI-tegoed. Er is pas iets aangemaakt na je akkoord bij het importeren.") : tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. easy2edit maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
           </small>
         </Collapsible>
       )}

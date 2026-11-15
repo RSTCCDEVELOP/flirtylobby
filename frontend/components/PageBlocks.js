@@ -19,6 +19,7 @@ import { useModule } from "./Modules";
 import { Logo } from "./BrandingContext";
 import { useSession } from "./Session";
 import { dragFixed, setMoved } from "../lib/moved";
+import { panelDrag, setPanelDrag } from "../lib/panel-drag";
 import { pushUndo } from "../lib/undo";
 import { SysObjectBySlug } from "./SysObjects";
 import LayoutPresets from "./LayoutPresets";
@@ -334,7 +335,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
     const vis = layout.rows.filter((x) => !(heroOff && own(x)));
     const target = after ? vis.find((x) => x.id === after) : vis[0];  // the block whose handles are on this line: the one above it (the first block for the top line)
     return (
-      <div className={`pb-insert${open ? " open" : ""}`} key={`ins-${key}`} onMouseDown={(e) => e.stopPropagation()}>
+      <div className={`pb-insert${open ? " open" : ""}`} key={`ins-${key}`} onMouseDown={(e) => e.stopPropagation()}
+        onDragOver={(e) => { if (panelDrag()) { e.preventDefault(); e.currentTarget.classList.add("drop-on"); } }} onDragLeave={(e) => e.currentTarget.classList.remove("drop-on")}
+        onDrop={(e) => { if (panelDrag()) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove("drop-on"); dropPanelRow(after || null); } }}>
         <span className="pb-insline" aria-hidden="true" />
         <span className="pb-inshandle">
           <button type="button" className="pb-inbtn add" aria-expanded={open} title={tx("Hier een nieuw blok toevoegen")} aria-label={tx("Nieuw blok")} onClick={() => setInsAt(open ? undefined : key)}>+</button>
@@ -417,6 +420,24 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const addItem = (cid, type, ref = "", widget = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push(makeItem(type, ref, widget)); return l; }); };
   // from the panel: into the picked column, or the last column of the page, or a new block when the page is empty
   const targetCell = (l) => l.rows.flatMap((r) => r.cells).find((c) => c.id === curCell) || l.rows.filter((r) => !(heroOff && own(r))).slice(-1)[0]?.cells.slice(-1)[0];
+  // a part dragged from the panel is dropped in a column (before a part), or on the line between two blocks (a new block)
+  const itemFromPanel = (pd) => (pd.kind === "component" ? compItem(pd.comp) : pd.kind === "object" ? makeItem("object", pd.slug) : pd.kind === "media" ? makeItem("image") : makeItem(pd.type, "", pd.widget));
+  const afterPanelDrop = async (pd, it) => { if (pd.kind === "media") { try { await api("/media/replace/", { method: "POST", body: { target: `block:layout.${pageKey}.${it.id}`, media_id: pd.media.id } }); softRefresh(); } catch (e) { alertDialog(errorText(e)); } } };
+  const dropPanel = (cid, beforeId) => {
+    const pd = panelDrag(); setPanelDrag(null);
+    if (!pd) return;
+    const it = itemFromPanel(pd);
+    change((l) => { const cell = l.rows.flatMap((r) => r.cells).find((c) => c.id === cid); if (!cell) return l; const at = beforeId ? cell.items.findIndex((x) => x.id === beforeId) : -1; cell.items.splice(at < 0 ? cell.items.length : at, 0, it); return l; });
+    setCurCell(cid); afterPanelDrop(pd, it);
+  };
+  const dropPanelRow = (after) => {
+    const pd = panelDrag(); setPanelDrag(null);
+    if (!pd) return;
+    const it = itemFromPanel(pd), row = makeRow(["auto"]);
+    row.cells[0].items.push(it);
+    change((l) => { const at = after ? l.rows.findIndex((x) => x.id === after) + 1 : 0; l.rows.splice(at, 0, row); return l; });
+    setCurCell(row.cells[0].id); afterPanelDrop(pd, it);
+  };
   const addToPage = (item) => change((l) => { let cell = targetCell(l); if (!cell) { const row = { id: uid(), cols: 1, gap: "md", cells: [newCell()] }; l.rows.push(row); cell = row.cells[0]; } cell.items.push(item); return l; });
   const setObjLayout = (iid, n) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { if (n === "1") delete x.layout; else x.layout = n; } }))); return l; });
   const setItem = (iid, patch) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { x.style = { ...(x.style || {}), ...patch }; Object.keys(x.style).forEach((k) => { if (x.style[k] === "" || x.style[k] == null) delete x.style[k]; }); if (!Object.keys(x.style).length) delete x.style; } }))); return l; });
@@ -504,7 +525,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
     const label = it.type === "widget" ? tx(WIDGET_NAMES[it.widget] || "Onderdeel") : it.type === "button" ? tx("Knop") : it.type === "spacer" ? tx("Tussenruimte") : it.type === "line" ? tx("Lijn") : it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
     const shown = over?.id === it.id ? ` drop-${over.pos}` : "";
     const hover = (e) => { // above the middle of the item = before it, below = after it
-      if ((!drag.current && !dragFixed()) || drag.current === it.id) return;
+      if ((!drag.current && !dragFixed() && !panelDrag()) || drag.current === it.id) return;
       e.preventDefault(); e.stopPropagation();
       const r = e.currentTarget.getBoundingClientRect();
       const pos = e.clientY < r.top + r.height / 2 ? "before" : "after";
@@ -513,6 +534,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
     const drop = (e) => {
       e.preventDefault(); e.stopPropagation();
       const from = drag.current, pos = over?.id === it.id ? over.pos : "before";
+      if (!from && panelDrag()) { const nx = pos === "before" ? it.id : c.items[c.items.findIndex((x) => x.id === it.id) + 1]?.id; dropPanel(c.id, nx || null); setOver(null); return; }
       if (!from && dragFixed()) { const nx = pos === "before" ? it.id : c.items[c.items.findIndex((x) => x.id === it.id) + 1]?.id; dropFixed(c.id, nx || null); setOver(null); return; }
       drag.current = null; setOver(null); setDragOn(null); setDragging(false);
       if (!from || from === it.id) return;
@@ -979,8 +1001,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <div className={`pb-row gap-${r.gap}`} style={{ "--cols": r.cols, "--tpl": columns(r) }}>
             {r.cells.map((c) => (
               <div className={`pb-cell${editing ? " edit" : ""}${c.style ? " card" : ""}${shell && curCell === c.id ? " sel" : ""}`} key={c.id} onMouseDown={editing ? () => setCurCell(c.id) : undefined} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], ...(c.gap !== undefined ? { "--cg": `${c.gap}rem` } : {}), textAlign: c.halign, ...(c.style && (c.valign === "center" || c.valign === "bottom") ? { alignSelf: c.valign === "center" ? "center" : "flex-end" } : {}), ...(c.style ? { ...(c.style.bg ? { background: c.style.bg } : {}), ...(c.style.radius != null ? { borderRadius: `${c.style.radius}px` } : {}), ...(c.style.pad != null ? { padding: `${c.style.pad}px` } : {}), ...(c.style.border ? { border: `1px solid ${c.style.border}` } : {}), boxShadow: c.style.shadow ? "0 12px 34px rgba(14, 6, 56, .14)" : "none" } : {}) }}
-                onDragOver={(e) => { if (drag.current || dragFixed()) e.preventDefault(); }}
-                onDrop={(e) => { e.preventDefault(); if (dragFixed() && !drag.current) { dropFixed(c.id, null); return; } if (drag.current) move(drag.current, c.id, null); drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>
+                onDragOver={(e) => { if (drag.current || dragFixed() || panelDrag()) { e.preventDefault(); e.currentTarget.classList.add("drop-over"); } }} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove("drop-over"); }}
+                onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("drop-over"); if (panelDrag() && !drag.current) { dropPanel(c.id, null); return; } if (dragFixed() && !drag.current) { dropFixed(c.id, null); return; } if (drag.current) move(drag.current, c.id, null); drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>
                 {shell && <span className="pb-celltools"><button type="button" className="pb-pencil" title={tx("Deze kolom bewerken")} aria-label={tx("Deze kolom bewerken")} onClick={(e) => { e.stopPropagation(); setCurCell(c.id); setItemOpen({}); setBarOpen({ [r.id]: true }); showSettings(); }}>✎</button><button type="button" className="pb-pencil del" title={tx("Deze kolom verwijderen")} aria-label={tx("Deze kolom verwijderen")} onClick={(e) => { e.stopPropagation(); delCell(r, c); }}>×</button></span>}
                 {editing && (
                   <div className="pb-cellbar" onClick={(e) => e.stopPropagation()}>

@@ -1,4 +1,4 @@
-# Easy2edit
+# easy2edit
 
 Django (DRF) backend + Next.js (SSR) frontend.
 

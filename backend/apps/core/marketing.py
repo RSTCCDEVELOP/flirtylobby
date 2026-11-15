@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""Marketing system objects of Easy2edit: one tile per module that opens a pop-up with a marketing text, examples with made-up data and the flags of the active languages.
+"""Marketing system objects of easy2edit: one tile per module that opens a pop-up with a marketing text, examples with made-up data and the flags of the active languages.
 Built-in texts: Dutch and English (marketing_content.py). Other languages (and improvements) are made with the AI and kept in the database (MarketingText).
 Super admin → Prijzen → Marketing: all tiles on/off, and each tile on/off. A tile is a system object (kind "marketing", ref_key = the module)."""
 import json
@@ -210,7 +210,7 @@ def _json_object(raw):
     return best
 
 
-SYSTEM = ("You write short, friendly, concrete marketing copy for a module of Easy2edit, a modular website system. Keep product terms understandable and never invent prices or claims that are not plausible. "
+SYSTEM = ("You write short, friendly, concrete marketing copy for a module of easy2edit, a modular website system. Keep product terms understandable and never invent prices or claims that are not plausible. "
           "Answer with ONE JSON object only, no text around it, with exactly these keys: title, tagline, intro, story (a longer explanation of 2 to 3 sentences, max 450 characters), steps (3 objects with t and d: how it works), usecase (one short sentence starting with who it is handy for), points (3 objects with t and d), demo (an object with title, rows (3 objects with a, b, badge) and stats (3 objects with v and l)). "
           "The demo holds made-up example data that fits the module. Keep every text short: title max 40 characters, tagline max 80, intro max 250, point title max 30, point text max 90.")
 

@@ -7,7 +7,7 @@
 
 """One place to call Claude through the Anthropic link (Admin -> API keys): used by the donation texts and the fake-users tool."""
 
-"""The manual of Easy2edit in English and Dutch (made with the AI by `github_repo_list -m`): the PDF, the HTML manual, its screenshots and the instruction videos. Plain files in the project folder `manuals/`."""
+"""The manual of easy2edit in English and Dutch (made with the AI by `github_repo_list -m`): the PDF, the HTML manual, its screenshots and the instruction videos. Plain files in the project folder `manuals/`."""
 import re
 from pathlib import Path
 

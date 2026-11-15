@@ -127,7 +127,7 @@ def import_all(request):
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def syslinks_status(request):
-    """For a superadmin: is the locked file with the Easy2edit links there and are Stripe, Postmark and Claude still missing?"""
+    """For a superadmin: is the locked file with the easy2edit links there and are Stripe, Postmark and Claude still missing?"""
     from apps.core import syslinks
 
     return Response(syslinks.file_status())
@@ -142,7 +142,7 @@ def syslinks_install(request):
     try:
         done = syslinks.install_from_file(str(request.data.get("password") or ""))
     except ValueError as e:
-        logger.warning("Easy2edit API links: install refused for %s", request.user.email)
+        logger.warning("easy2edit API links: install refused for %s", request.user.email)
         return Response({"detail": str(e)}, status=400)
-    logger.info("Easy2edit API links installed by %s (%s)", request.user.email, ", ".join(done))
+    logger.info("easy2edit API links installed by %s (%s)", request.user.email, ", ".join(done))
     return Response({"installed": done, **syslinks.file_status()})

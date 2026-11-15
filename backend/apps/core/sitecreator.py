@@ -44,8 +44,8 @@ NAME_RE = re.compile(r"^(?:img/)?[a-z0-9][a-z0-9_-]{0,%d}\.(?:html|css|svg)$" % 
 MARK = re.compile(r"^=== FILE: (\S+) ===\s*$", re.M)
 FENCE = re.compile(r"^```[a-z]*\s*\n|\n```\s*$", re.I)
 
-_RULES = """You are a senior web designer. You design complete, professional websites as plain static files that are imported into the website system Easy2edit.
-The importer reads the html and css and rebuilds every page with the blocks of the Easy2edit page editor, so a clean, predictable structure matters more than clever tricks.
+_RULES = """You are a senior web designer. You design complete, professional websites as plain static files that are imported into the website system easy2edit.
+The importer reads the html and css and rebuilds every page with the blocks of the easy2edit page editor, so a clean, predictable structure matters more than clever tricks.
 
 FILES
 - One html file per page (the start page is index.html), ONE shared style.css, and optional illustrations as svg files in img/ (img/hero.svg). No other file types, no JavaScript, no external fonts/scripts/frameworks, no data: urls, no photos or hotlinks.
@@ -64,12 +64,12 @@ STRUCTURE OF EVERY PAGE
 - Write real, convincing copy in the requested language (no lorem ipsum), concrete headings, short paragraphs, clear calls to action. Every page has a unique <title> (max 60 chars) and meta description (max 155).
 
 LIGHT/DARK MODE AND LANGUAGES
-- Colours are ALWAYS used through css variables (no hard-coded colours in rules, svg illustrations use currentColor or the variables). The user message says which display the website has: "light" = the colours as given on :root; "dark" = the dark colours as given on :root; "both" = the light colours on :root, and the dark colours twice: in :root[data-theme="dark"] {...} and in @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {...} }. Easy2edit sets data-theme on <html> and shows its own light/dark switch: never build a switch and never use JavaScript for it. Text on pictures and on dark bands stays readable in both modes (contrast at least 4.5:1).
+- Colours are ALWAYS used through css variables (no hard-coded colours in rules, svg illustrations use currentColor or the variables). The user message says which display the website has: "light" = the colours as given on :root; "dark" = the dark colours as given on :root; "both" = the light colours on :root, and the dark colours twice: in :root[data-theme="dark"] {...} and in @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {...} }. easy2edit sets data-theme on <html> and shows its own light/dark switch: never build a switch and never use JavaScript for it. Text on pictures and on dark bands stays readable in both modes (contrast at least 4.5:1).
 - Languages: write every page in the main language only, one html file per page, never one file per language, no language switcher of your own: the system translates the pages into the other languages and adds the language switch to the header. Leave room for it at the right of the header (the menu must wrap or shrink gracefully), let buttons and menu items grow with longer words (no fixed widths on text, min-width instead of width), and when a right-to-left language is among them (ar, he, fa, ur) use logical css properties (margin-inline, padding-inline, text-align: start, inset-inline) so the layout mirrors correctly.
 
 MODULES AND SYSTEM OBJECTS
-- Easy2edit has modules (webshop, FAQ, community, agenda, ...) and system objects: ready-made, live blocks (an overview of products, an agenda, a subscription plan, a donation button, ...). The user message lists the modules the website uses, with what each module needs from the pages, and the system objects to place.
-- A system object is placed as an EMPTY element on its own line: <div data-sysobject="SLUG"></div> (SLUG exactly as given), directly inside the <div class="container"> of the section where it belongs, after the section heading and a short intro. Never inside <p>, <a>, <details> or a card, never styled, never imitated, never with content: Easy2edit fills it with the live content. Give such a section an id and make it a full band like every other section.
+- easy2edit has modules (webshop, FAQ, community, agenda, ...) and system objects: ready-made, live blocks (an overview of products, an agenda, a subscription plan, a donation button, ...). The user message lists the modules the website uses, with what each module needs from the pages, and the system objects to place.
+- A system object is placed as an EMPTY element on its own line: <div data-sysobject="SLUG"></div> (SLUG exactly as given), directly inside the <div class="container"> of the section where it belongs, after the section heading and a short intro. Never inside <p>, <a>, <details> or a card, never styled, never imitated, never with content: easy2edit fills it with the live content. Give such a section an id and make it a full band like every other section.
 - Use the links of the system for the module pages (e.g. /producten, /winkelwagen, /faq, /registreren, /login, /dashboard) in menu items and buttons; do not build your own versions of those pages (no forms, no carts).
 
 OUTPUT FORMAT (strict): only files, nothing else before the first file. Every file starts with a line "=== FILE: name ===" (name exactly like img/hero.svg, style.css, about.html) followed by the complete content of the file. No markdown fences, no explanation, no "the rest is the same"."""
@@ -596,13 +596,13 @@ def _read_document(pk, doc_id):
             "modules": [{"key": m["key"], "label": m["label"], "what": m["desc"]} for m in cat["modules"]],
             "languages": [{"code": l["code"], "name": l["native"]} for l in cat["languages"] if l["enabled"] or l["default"]],
         }, ensure_ascii=False)
-        _doc_set(pk, doc_id, percent=30, step="Easy2edit leest de doelstellingen")
+        _doc_set(pk, doc_id, percent=30, step="easy2edit leest de doelstellingen")
         seen = {"n": 0}
 
         def on_event(kind, _t=""):
             if kind == "write" and not seen["n"]:
                 seen["n"] = 1
-                _doc_set(pk, doc_id, percent=60, step="Easy2edit bepaalt de instellingen")
+                _doc_set(pk, doc_id, percent=60, step="easy2edit bepaalt de instellingen")
 
         from . import themeimport as TI
 
@@ -1092,3 +1092,43 @@ def public(job, files=False):
     return {"id": str(job.pk), "name": job.name, "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
             "docs": [_doc_public(d) for d in job.docs or []]}
+
+
+def theme_brief(key):
+    """The chosen theme as conditions for a design: the :root css with its colours (light and dark), the fonts, the corners and the Google Fonts address. Installed themes and themes of the library
+    (not installed yet) both work. Raises ValueError when the theme is not found."""
+    import json
+    import zipfile
+
+    from . import resources, theme, themepacks
+
+    man = themepacks.manifest_of(key)
+    if not man:
+        entry = next((e for e in resources.catalog("themas") if e["name"] == key and not e["bundle"]), None)
+        if not entry:
+            raise ValueError("Dit thema bestaat niet.")
+        import io
+
+        zf = zipfile.ZipFile(io.BytesIO(resources._zip_bytes("themas", entry)))
+        for n in zf.namelist():
+            if n.endswith("theme.json") and "__MACOSX" not in n:
+                d = json.loads(zf.read(n))
+                if d.get("key") == key:
+                    man = d
+                    break
+    if not man:
+        raise ValueError("Dit thema bestaat niet.")
+    v = theme.merged(man.get("values"))
+    fonts = {c["value"]: c for c in theme.FIELDS["font_body"]["choices"]}
+    fb, fh = fonts.get(v["font_body"]) or {}, fonts.get(v["font_heading"]) or {}
+    _css, fonts_url = theme.build(v)
+    light = {"--primary": v["primary"], "--secondary": v["secondary"], "--bg": v["light_page"], "--surface": v["light_bg"], "--card": v["light_card"], "--hover": v["light_hover"], "--line": v["light_line"], "--text": v["light_text"], "--muted": v["light_muted"]}
+    dark = {"--bg": v["dark_page"], "--surface": v["dark_bg"], "--card": v["dark_card"], "--hover": v["dark_hover"], "--line": v["dark_line"], "--text": v["dark_text"], "--muted": v["dark_muted"]}
+    common = {"--font-heading": fh.get("css") or "system-ui, sans-serif", "--font-body": fb.get("css") or "system-ui, sans-serif", "--radius": f"{v['radius']}px", "--btn-radius": f"{v['btn_radius']}px"}
+    block = lambda d, ind="  ": "\n".join(f"{ind}{k}: {val};" for k, val in d.items())  # noqa: E731
+    mode = man.get("mode")
+    css = f":root {{\n{block({**light, **common})}\n}}"
+    if mode != "light":
+        css += f'\n:root[data-theme="dark"] {{\n{block(dark)}\n}}\n@media (prefers-color-scheme: dark) {{\n  :root:not([data-theme="light"]) {{\n{block(dark, "    ")}\n  }}\n}}'
+    return {"key": key, "name": man.get("name") or key, "mode": mode or "light and dark", "css": css, "fonts_url": fonts_url or "", "font_heading": v["font_heading"], "font_body": v["font_body"], "heading_weight": v["heading_weight"],
+            "radius": v["radius"], "btn_radius": v["btn_radius"], "shadow": v["shadow"], "base_size": v["font_size_base"], "line_height": v["line_height"]}

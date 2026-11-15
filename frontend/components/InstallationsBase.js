@@ -37,7 +37,7 @@ export default function InstallationsBase() {
   };
   return (
     <div className="card" style={{ display: "grid", gap: ".5rem" }}>
-      <strong>{tx("Basis voor alle Easy2edit-sites")}</strong>
+      <strong>{tx("Basis voor alle easy2edit-sites")}</strong>
       <small className="muted">
         {info?.exists ? `${tx("Opgeslagen op")} ${new Date(info.saved_at).toLocaleString()} · ${info.same ? tx("gelijk aan deze site") : tx("verschilt van deze site")}` : tx("Nog niets opgeslagen")}
       </small>

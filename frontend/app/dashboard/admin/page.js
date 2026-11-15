@@ -28,7 +28,7 @@ export default function AdminHome() {
   const mods = useModules();
   const aiOn = mods.ai !== false && !!user && (user.is_staff || can(user, "ai.manage"));
   const presets = usePresets(true);  // only the installations the superadmin released
-  const [credit, setCredit] = useState(null); // show "© Easy2edit <year>" at the bottom of every page
+  const [credit, setCredit] = useState(null); // show "© easy2edit <year>" at the bottom of every page
   useEffect(() => { if (canSet) api("/system/").then((d) => setCredit(d.settings.show_credit !== false)).catch(() => {}); }, [canSet]);
   async function toggle(on) {
     setCredit(on);
@@ -60,16 +60,16 @@ export default function AdminHome() {
         </Collapsible>
       )}
 
-      <Collapsible id="admin-about" title={tx("Over Easy2edit")}>
+      <Collapsible id="admin-about" title={tx("Over easy2edit")}>
         <div className="about-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/easy2edit/logo.png" alt="Easy2edit" className="logo-light has-dark" />
+          <img src="/logos/easy2edit/logo.png" alt="easy2edit" className="logo-light has-dark" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/easy2edit/logo_dark.png" alt="Easy2edit" className="logo-dark" />
+          <img src="/logos/easy2edit/logo_dark.png" alt="easy2edit" className="logo-dark" />
         </div>
         <ManualButtons />
         <div className="stack-sm" style={{ maxWidth: 760 }}>
-          <p style={{ margin: 0 }}><strong>{tx("Easy2edit is een eenvoudig, modulair beheersysteem voor portals en data.")}</strong></p>
+          <p style={{ margin: 0 }}><strong>{tx("easy2edit is een eenvoudig, modulair beheersysteem voor portals en data.")}</strong></p>
           <p style={{ margin: 0 }}>{tx("Je bouwt je website of portal uit blokken die je zelf aan- en uitzet: gebruikers en rollen, pagina's en menu, community, abonnementen, SEO en meer. Wat je niet nodig hebt, staat uit en komt niet in beeld.")}</p>
           <ul style={{ margin: 0, paddingLeft: "1.2rem", display: "grid", gap: ".3rem" }}>
             <li>{tx("Modulair: zet onderdelen aan of uit en geef elk onderdeel zijn eigen rechten.")}</li>
@@ -81,7 +81,7 @@ export default function AdminHome() {
           {credit !== null && (
             <label className="check sec-toggle" style={{ marginTop: ".6rem" }}>
               <span className="switch"><input type="checkbox" checked={credit} onChange={(e) => toggle(e.target.checked)} /><span /></span>
-              <span>{tx("Easy2edit-vermelding onderaan elke pagina tonen")} <small className="muted">{tx("© Easy2edit {0} met een link naar easy2edit.com.", new Date().getFullYear())}</small></span>
+              <span>{tx("easy2edit-vermelding onderaan elke pagina tonen")} <small className="muted">{tx("© easy2edit {0} met een link naar easy2edit.com.", new Date().getFullYear())}</small></span>
             </label>
           )}
           <p style={{ margin: 0 }}>{tx("Meer informatie:")} <a href="https://easy2edit.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 600 }}>easy2edit.com</a></p>

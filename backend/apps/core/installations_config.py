@@ -8,7 +8,7 @@
 
 """De basis van de standaard installaties: welke installaties je aanbiedt bij de eerste installatie, welke de beheerders zien, en wat er in de installaties is aangepast (modules, plugins, pagina's, demo-gegevens).
 
-`capture()` schrijft die keuzes naar backend/apps/core/installations.json (dat bestand hoort bij de code: neem het mee in git, dan hebben alle Easy2edit-sites dezelfde basis).
+`capture()` schrijft die keuzes naar backend/apps/core/installations.json (dat bestand hoort bij de code: neem het mee in git, dan hebben alle easy2edit-sites dezelfde basis).
 `apply()` zet ze op een site: bij het starten van de server (entrypoint) en met de knop. Een site krijgt de basis opnieuw zodra het bestand veranderd is (een nieuwe versie uit git); wat op de site zelf is ingesteld blijft tot dat moment staan.
 De installatie die nu actief is en de gemaakte demo-gegevens horen er niet bij. De pagina's die in een installatie zijn opgeslagen wel: hun afbeeldingen en objecten worden op de andere site op naam teruggevonden."""
 import hashlib

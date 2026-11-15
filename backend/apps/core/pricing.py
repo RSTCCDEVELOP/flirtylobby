@@ -197,7 +197,7 @@ def periods(monthly, hosting_monthly=0, hosting_cost=0):
         price = q2(per_month * p["months"])
         share = Decimal(str(cfg.get("rst_share", 0)))
         soft = q2((monthly - Decimal(str(hosting_monthly))) * (Decimal(100) - Decimal(str(p["discount"]))) / 100 * p["months"])  # the share of RST counts over the software, not the hosting
-        cost = q2(soft * share / 100)  # what goes to RST for the use of Easy2edit (the purchase price of the reseller)
+        cost = q2(soft * share / 100)  # what goes to RST for the use of easy2edit (the purchase price of the reseller)
         out.append({"key": k, "label": p["label"], "months": p["months"], "discount": p["discount"], "per_month": str(per_month), "price": str(price), "price_incl_vat": str(q2(price * (Decimal(100) + Decimal(str(cfg["vat_rate"]))) / 100)),
                     "purchase": str(cost), "purchase_per_month": str(q2(cost / p["months"])), "hosting_cost": str(q2(Decimal(str(hosting_cost)) * (Decimal(100) - Decimal(str(p["discount"]))) / 100 * p["months"])), "hosting_profit": str(q2((Decimal(str(hosting_monthly)) - Decimal(str(hosting_cost))) * (Decimal(100) - Decimal(str(p["discount"]))) / 100 * p["months"])), "margin": str(price - cost), "rst_share": float(share)})
     return out
@@ -631,7 +631,7 @@ def apply_config(cfg):
     from .models import License
 
     if cfg.get("format") != "easy2edit-install":
-        raise ValueError("Dit is geen installatieconfiguratie van Easy2edit.")
+        raise ValueError("Dit is geen installatieconfiguratie van easy2edit.")
     cu, site = cfg.get("customer") or {}, cfg.get("site") or {}
     inst = cfg.get("installation") or {}
     key = inst.get("preset") if inst.get("preset") in presets.BY_KEY else "wizard"

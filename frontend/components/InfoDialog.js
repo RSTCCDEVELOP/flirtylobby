@@ -17,7 +17,7 @@ import { useModules } from "./Modules";
 import { Logo } from "./BrandingContext";
 import Tabs from "./Tabs";
 
-// "Info" in the Beheer menu: the version of Easy2edit, the installed plugins and the copyright
+// "Info" in the Beheer menu: the version of easy2edit, the installed plugins and the copyright
 function Popup({ onClose }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");

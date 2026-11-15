@@ -248,7 +248,7 @@ export default function Wizard() {
             </div>
             <label className="wz-q" style={{ alignItems: "center" }}><span className="switch"><input type="checkbox" checked={withJson} onChange={(e) => setWithJson(e.target.checked)} /><span /></span><span>{tx("Bij het mailen ook de installatieconfiguratie (JSON) meesturen")}</span></label>
             <small className="muted">{tx("De JSON installeer je op een server met: python manage.py install_config bestand.json")}</small>
-            <small className="muted">{tx("De offerte heeft de huisstijl van Easy2edit, met de gekozen looptijd gemarkeerd. De namen van de onderdelen staan in het Nederlands.")}</small>
+            <small className="muted">{tx("De offerte heeft de huisstijl van easy2edit, met de gekozen looptijd gemarkeerd. De namen van de onderdelen staan in het Nederlands.")}</small>
           </div>
           <div className="row" style={{ gap: ".5rem" }}><button type="button" className="btn" onClick={() => setStep(4)}>{tx("Terug")}</button><button type="button" className="btn primary" onClick={() => { window.location.href = "/dashboard/superadmin"; }}>{tx("Klaar")}</button></div>
         </div>

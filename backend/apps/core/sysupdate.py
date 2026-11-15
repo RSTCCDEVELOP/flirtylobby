@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""After an update of Easy2edit (a new build): the site is checked and brought up to date, step by step, with a window that shows the progress.
+"""After an update of easy2edit (a new build): the site is checked and brought up to date, step by step, with a window that shows the progress.
 
 The steps never remove content: first a copy of the pages, designs and texts is kept (in the site folder), then the database, the plugins, the themes, the languages and the pages are checked."""
 import logging

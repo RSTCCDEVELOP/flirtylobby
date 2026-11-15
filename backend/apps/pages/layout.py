@@ -240,7 +240,7 @@ def _widget(raw):
             data["width"] = 160
     elif kind == "code":  # own html and css; it runs in a frame without rights (see DesignFrame), so no cleaning of the code is needed here
         data["html"], data["css"] = s("html", 60000), s("css", 30000)
-        if d.get("kit"):  # a component of the Easy2edit UI-kit: drawn with the kit and the colours of the theme (easy2edit_tag = which component)
+        if d.get("kit"):  # a component of the easy2edit UI-kit: drawn with the kit and the colours of the theme (easy2edit_tag = which component)
             data["kit"] = True
             tag = str(d.get("tag") or "").strip()[:60]
             if re.fullmatch(r"[a-z0-9][a-z0-9_-]*", tag):

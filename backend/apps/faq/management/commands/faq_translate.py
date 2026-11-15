@@ -36,7 +36,7 @@ class Command(BaseCommand):
         only = {x.strip() for x in o["only"].split(",") if x.strip()}
         jobs = [("group", g, {"title": t}) for g, _lay, t, _art in GROUPS if (g in only) if only] if only else [("group", g, {"title": t}) for g, _lay, t, _art in GROUPS if o["all"] or len(data["groups"].get(g, {})) < len(langs)]
         jobs += [("item", i, {"q": q, "a": a}) for i, _lay, _g, _n, q, a in ITEMS if (i in only if only else (o["all"] or len((data["items"].get(i, {}).get("a") or {})) < len(langs)))]
-        system = ("You translate help texts of a website management system (Easy2edit) from Dutch. Keep the meaning, a friendly clear tone, and keep product terms and menu names understandable. "
+        system = ("You translate help texts of a website management system (easy2edit) from Dutch. Keep the meaning, a friendly clear tone, and keep product terms and menu names understandable. "
                   "Menu names in the interface such as 'Admin → Pagina's' stay as written. Answer with ONE JSON object only, no text around it: {id: {field: {code: translation}}} for every id and field given.")
         # small requests (2 texts x 11 languages) so an answer is never cut off; four at a time
         import threading

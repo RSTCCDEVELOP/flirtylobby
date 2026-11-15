@@ -81,7 +81,7 @@ export default function SystemReset() {
   const close = () => { if (!busy) { setStep(0); if (step === 3) { if (adminMail) { clearToken(); window.location.href = "/login"; } else window.location.href = "/dashboard/superadmin"; } } };
   return (
     <>
-      <p className="muted" style={{ marginTop: 0 }}>{tx("Maakt het systeem schoon: alle gebruikers (behalve de superadmins), afbeeldingen, pagina's, thema's en gegevens van de modules en plugins worden verwijderd. Alle modules en alle plugins gaan uit (alleen Users en de kernonderdelen blijven aan), het thema wordt Easy2edit en de licentie wordt leeggemaakt.")}</p>
+      <p className="muted" style={{ marginTop: 0 }}>{tx("Maakt het systeem schoon: alle gebruikers (behalve de superadmins), afbeeldingen, pagina's, thema's en gegevens van de modules en plugins worden verwijderd. Alle modules en alle plugins gaan uit (alleen Users en de kernonderdelen blijven aan), het thema wordt easy2edit en de licentie wordt leeggemaakt.")}</p>
       <button type="button" className="btn danger" onClick={open}>{tx("Systeem resetten…")}</button>
       {msg && step === 0 && <div className="alert" style={{ marginTop: ".6rem" }}>{msg.text}</div>}
 
@@ -116,7 +116,7 @@ export default function SystemReset() {
                     <li>{tx("Bestellingen, abonnementen, donaties, chats en alle andere gegevens van de modules")}</li>
                   </ul>
                 </div>
-                <small className="muted">{info.standard_admin ? tx("Blijft: de superadmin {0} (met het standaardwachtwoord opnieuw gemaakt; alle andere superadmins worden verwijderd), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema Easy2edit.")}</small>
+                <small className="muted">{info.standard_admin ? tx("Blijft: de superadmin {0} (met het standaardwachtwoord opnieuw gemaakt; alle andere superadmins worden verwijderd), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema easy2edit.")}</small>
                 {(info.ai_calls > 0 || info.ai_ledger > 0 || info.ai_credit > 0) && (
                   <label className="check sec-toggle">
                     <span className="switch"><input type="checkbox" checked={aiToo} onChange={(e) => setAiToo(e.target.checked)} /><span /></span>
@@ -145,7 +145,7 @@ export default function SystemReset() {
             {step === 3 && (
               <>
                 <h2 style={{ margin: 0 }}>{tx("Het systeem is schoon")}</h2>
-                <p style={{ margin: 0 }}>{tx("Alle gegevens van de site zijn verwijderd, alle modules en plugins staan uit en het thema is Easy2edit. Zet bij Super admin → Modules en Plugins aan wat je nodig hebt.")}</p>
+                <p style={{ margin: 0 }}>{tx("Alle gegevens van de site zijn verwijderd, alle modules en plugins staan uit en het thema is easy2edit. Zet bij Super admin → Modules en Plugins aan wat je nodig hebt.")}</p>
                 {adminMail && <p style={{ margin: 0 }}>{tx("De standaard superadmin is {0}. Andere superadmins zijn verwijderd en iedereen is uitgelogd: log opnieuw in met het standaardwachtwoord.", adminMail)}</p>}
                 <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" onClick={close}>{tx("Sluiten")}</button></div>
               </>

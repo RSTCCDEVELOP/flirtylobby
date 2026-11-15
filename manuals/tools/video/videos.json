@@ -3,15 +3,15 @@
   "id": "welcome",
   "chapter": 1,
   "title": {
-   "en": "Welcome to Easy2edit",
-   "nl": "Welkom bij Easy2edit"
+   "en": "Welcome to easy2edit",
+   "nl": "Welkom bij easy2edit"
   },
   "steps": [
    {
     "path": "/dashboard/admin",
     "say": {
-     "en": "Welcome to Easy2edit, a simple and modular system to build and manage your website. This is the Admin area: your starting point.",
-     "nl": "Welkom bij Easy2edit, een eenvoudig en modulair systeem om je website te bouwen en te beheren. Dit is het beheerscherm: je startpunt."
+     "en": "Welcome to easy2edit, a simple and modular system to build and manage your website. This is the Admin area: your starting point.",
+     "nl": "Welkom bij easy2edit, een eenvoudig en modulair systeem om je website te bouwen en te beheren. Dit is het beheerscherm: je startpunt."
     },
     "actions": [
      {

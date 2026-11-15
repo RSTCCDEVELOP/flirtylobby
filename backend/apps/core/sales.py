@@ -221,7 +221,7 @@ def calc_quote(request):
     t = pricing_pdf.T[lang]
     fname = f"easy2edit-{t['title'].lower()}-{re.sub(r'[^a-z0-9]+', '-', site.lower()).strip('-') or 'website'}.pdf"
     try:
-        sending.send_email(to, f"{t['title']} Easy2edit – {site}", f"{t['title']}: {site}\n\n{t['total']}: {pricing_pdf.eur(plan['monthly'])}\n\n{t['contact']}", attachments=[(fname, pdf, "application/pdf")])
+        sending.send_email(to, f"{t['title']} easy2edit – {site}", f"{t['title']}: {site}\n\n{t['total']}: {pricing_pdf.eur(plan['monthly'])}\n\n{t['contact']}", attachments=[(fname, pdf, "application/pdf")])
     except sending.DeliveryError as e:
         return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
     chosen = ", ".join(plan["plugins"] + list(plan["answers"]))

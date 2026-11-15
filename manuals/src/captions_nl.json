@@ -1,6 +1,6 @@
 {
  "dashboard": "Het dashboard van een gebruiker: profiel, meldingen en het linkermenu met Admin en Super admin.",
- "admin-home": "De Admin startpagina met de blokken Mijn admin-onderdelen, AI-gebruik, Standaard installaties en Over Easy2edit.",
+ "admin-home": "De Admin startpagina met de blokken Mijn admin-onderdelen, AI-gebruik, Standaard installaties en Over easy2edit.",
  "installations": "Standaard installaties: één kleine tegel per websitetype, met Instellen en een tandwiel voor de instellingen.",
  "installation-settings": "De instellingen van een standaard installatie in een popup met tabs: Algemeen, AI, Modules, Plugins en Demo-gegevens.",
  "superadmin-home": "De Super admin startpagina: modules, plugins, prijzen, AI en de systeemtools.",

@@ -175,8 +175,8 @@ export default function AiDashboard() {
               <label key={k}>{tx(l)} ({cr.currency})<input type="number" min="0" step="0.5" defaultValue={cr[k]} onBlur={(e) => { if (Number(e.target.value) !== cr[k]) crSave({ [k]: e.target.value }); }} /></label>))}
           </div>
           <div className={stripe && (stripe.simulated || stripe.via !== "sandbox") ? "alert ok" : "alert"} style={{ margin: 0 }}>
-            {tx("Betalen via")} <strong>Stripe</strong>: {stripe?.simulated ? tx("gesimuleerd: de sandbox staat aan, er wordt niets echt afgeschreven.") : stripe?.via === "link" ? `${tx("de Easy2edit-koppeling")} "${stripe.name}" (${stripe.mode}).` : stripe?.via === "license" ? tx("het Stripe-account van de licentie (er is geen Stripe-koppeling van de superadmin).") : tx("nog niet gekoppeld. Zet bij API keys een Stripe-koppeling aan en vink Superadmin-koppeling aan; zolang dat niet kan, kan er alleen via de sandbox worden betaald.")}
-            <small className="muted" style={{ display: "block" }}>{tx("AI-tegoed wordt altijd betaald via een Easy2edit-koppeling van de superadmin, nooit via de eigen Stripe van de webshop.")}</small>
+            {tx("Betalen via")} <strong>Stripe</strong>: {stripe?.simulated ? tx("gesimuleerd: de sandbox staat aan, er wordt niets echt afgeschreven.") : stripe?.via === "link" ? `${tx("de easy2edit-koppeling")} "${stripe.name}" (${stripe.mode}).` : stripe?.via === "license" ? tx("het Stripe-account van de licentie (er is geen Stripe-koppeling van de superadmin).") : tx("nog niet gekoppeld. Zet bij API keys een Stripe-koppeling aan en vink Superadmin-koppeling aan; zolang dat niet kan, kan er alleen via de sandbox worden betaald.")}
+            <small className="muted" style={{ display: "block" }}>{tx("AI-tegoed wordt altijd betaald via een easy2edit-koppeling van de superadmin, nooit via de eigen Stripe van de webshop.")}</small>
           </div>
           <small className="muted">{tx("De schuifbalk loopt van het kleinste bedrag tot 25, 50 of 100 (maximaal het grootste bedrag), afhankelijk van wat iemand de afgelopen 30 dagen gebruikte. Betalen gaat via de betaalkoppeling.")}</small>
         </div>

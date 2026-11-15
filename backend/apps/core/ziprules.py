@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""Reads a website ZIP (made with the AI prompt of Easy2edit) into a clean bundle, with the rules of importrules.py:
+"""Reads a website ZIP (made with the AI prompt of easy2edit) into a clean bundle, with the rules of importrules.py:
 only the root (or ONE common top folder) and img/; html, css, pictures (jpg, png, webp, svg) and vertalingen-<taal>.json; file names that follow the rule
 (renamed names are rewritten in every html/css reference); svg is sanitized; too many/too large files are skipped with a note. Used by both import routes."""
 import json

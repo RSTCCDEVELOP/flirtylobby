@@ -5,7 +5,7 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 
-// Records the screen of Easy2edit for an instruction video: every step is a page with actions (a visible mouse pointer moves to an element and clicks) while frames are taken
+// Records the screen of easy2edit for an instruction video: every step is a page with actions (a visible mouse pointer moves to an element and clicks) while frames are taken
 // (about 5 per second). Writes <outDir>/step-N/frames.txt (ffmpeg concat list). Called by manuals/tools/video/make_video.py:   node record.mjs plan.json
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";

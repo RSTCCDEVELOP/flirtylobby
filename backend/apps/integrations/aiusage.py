@@ -143,7 +143,7 @@ def credit(user, amount, kind, note="", ref="", by=""):
 
 
 def pay_link(user=None):
-    """How AI credit is paid: always through an Easy2edit link of the superadmin, never the Stripe of the website's own shop. Returns {"key", "name", "via"} (via: "link" = a Stripe link that
+    """How AI credit is paid: always through an easy2edit link of the superadmin, never the Stripe of the website's own shop. Returns {"key", "name", "via"} (via: "link" = a Stripe link that
     is marked as a superadmin link, "license" = the Stripe account of the licence) or None."""
     from .models import Integration
 

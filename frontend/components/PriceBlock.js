@@ -35,7 +35,7 @@ export default function PriceBlock({ price, period = "", onPeriod = null, purcha
       </div>
       {purchase && price.periods[0]?.purchase !== undefined && (
         <div className="pr-buy">
-          <div className="pr-buy-head"><strong>{tx("Inkoop")}</strong><small className="muted">{tx("{0}% van de software is voor RST (gebruik van Easy2edit); hosting wordt ingekocht bij DigitalOcean of de eigen server", price.periods[0].rst_share)}</small></div>
+          <div className="pr-buy-head"><strong>{tx("Inkoop")}</strong><small className="muted">{tx("{0}% van de software is voor RST (gebruik van easy2edit); hosting wordt ingekocht bij DigitalOcean of de eigen server", price.periods[0].rst_share)}</small></div>
           <div className="pr-buy-grid">
             {price.periods.map((p) => (
               <div key={p.key}>

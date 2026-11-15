@@ -74,7 +74,7 @@ export default function PresetSettings({ p, manage, adminOnly, demo, onRelease, 
               {p.plugins.map((x) => <span key={x.name} className={`badge ${x.installed ? "ok" : "off"}`} title={x.installed ? "" : tx("Niet geïnstalleerd")}>{x.title}</span>)}
               {p.theme !== "normal" && <span className="badge">{tx("Thema")}: {p.theme}</span>}
             </div>
-            {manage && !adminOnly && <div className="alert ok" style={{ margin: 0 }}>{tx("Easy2edit-koppeling: Stripe")} <small className="muted">{p.system_api?.stripe ? tx("Gekoppeld en aan (Superadmin-koppeling). Hoort bij elke installatie en blijft staan als je een installatie instelt of verwijdert.") : tx("Hoort bij elke installatie, maar is nog niet gekoppeld (API keys → Stripe → Superadmin-koppeling).")}</small></div>}
+            {manage && !adminOnly && <div className="alert ok" style={{ margin: 0 }}>{tx("easy2edit-koppeling: Stripe")} <small className="muted">{p.system_api?.stripe ? tx("Gekoppeld en aan (Superadmin-koppeling). Hoort bij elke installatie en blijft staan als je een installatie instelt of verwijdert.") : tx("Hoort bij elke installatie, maar is nog niet gekoppeld (API keys → Stripe → Superadmin-koppeling).")}</small></div>}
             <strong>{tx("{0} modules", p.modules.length)}</strong>
             <small className="muted">{p.modules.map((m) => tx(m)).join(", ")}</small>
           </>)}

@@ -171,7 +171,7 @@ def site_base(request_origin=""):
 
 
 def _fetch(url, limit=4_000_000, timeout=15):
-    req = urllib.request.Request(url, headers={"Accept-Encoding": "gzip", "User-Agent": "Easy2edit-EnergyScan/1.0"})
+    req = urllib.request.Request(url, headers={"Accept-Encoding": "gzip", "User-Agent": "easy2edit-EnergyScan/1.0"})
     ctx = ssl._create_unverified_context() if (urlparse(url).hostname or "") in ("localhost", "127.0.0.1") else None  # only for a local test site with its own certificate
     with urllib.request.urlopen(req, timeout=timeout, context=ctx) as res:
         body = res.read(limit + 1)
@@ -309,7 +309,7 @@ def fetch_site(site, days=30):
     try:
         url = _api_url(site.url) + ("&" if "?" in _api_url(site.url) else "?") + f"days={days}"
         check_site_url(url)
-        req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "Easy2edit-Energy/1.0", **({"X-Energy-Key": site.api_key} if site.api_key else {})})
+        req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "easy2edit-Energy/1.0", **({"X-Energy-Key": site.api_key} if site.api_key else {})})
         host = urlparse(url).hostname or ""
         ctx = ssl._create_unverified_context() if host in ("localhost", "127.0.0.1", "::1") else None  # a local test site has its own certificate
         with urllib.request.urlopen(req, timeout=10, context=ctx) as res:

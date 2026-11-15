@@ -5,7 +5,7 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 
-// The Easy2edit UI-kit in a frame: the components (e2e-*) take the colours, fonts and corners of the theme that is in use on this website, light and dark.
+// The easy2edit UI-kit in a frame: the components (e2e-*) take the colours, fonts and corners of the theme that is in use on this website, light and dark.
 // The kit itself (css, script and the list of components with their easy2edit_tag) is in kit-data.js and is loaded only when it is needed.
 import { useEffect, useState } from "react";
 import { api } from "../api";

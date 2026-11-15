@@ -1,6 +1,6 @@
 # Systeem en site gescheiden
 
-Doel: het **systeem** (Easy2edit) blijft één code-basis die je op elke website kunt bijwerken, en alles van **één website** staat apart, zodat een update nooit content overschrijft.
+Doel: het **systeem** (easy2edit) blijft één code-basis die je op elke website kunt bijwerken, en alles van **één website** staat apart, zodat een update nooit content overschrijft.
 
 ```
 easy2edit/                   ← SYSTEEM  (git: RSTCCDEVELOP/easy2edit)

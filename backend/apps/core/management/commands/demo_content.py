@@ -18,7 +18,7 @@ from django.core.management.base import BaseCommand
 SOURCE = "demo"
 GROUPS = [("Kleding", "kleding"), ("Accessoires", "accessoires"), ("Cadeaus", "cadeaus")]
 PRODUCTS = [
-    ("Easy2edit T-shirt", "easy2edit-t-shirt", "Zacht katoenen shirt met het logo.", 24.95, "kleding", (255, 120, 60)),
+    ("easy2edit T-shirt", "easy2edit-t-shirt", "Zacht katoenen shirt met het logo.", 24.95, "kleding", (255, 120, 60)),
     ("Hoodie Classic", "hoodie-classic", "Warme hoodie met capuchon, uniseks.", 49.95, "kleding", (60, 90, 200)),
     ("Petje Sunset", "petje-sunset", "Verstelbare pet in zonsondergangkleuren.", 17.5, "accessoires", (240, 170, 60)),
     ("Tote bag", "tote-bag", "Stevige katoenen tas voor elke dag.", 12.0, "accessoires", (70, 160, 130)),

@@ -13,7 +13,7 @@ import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 
-// A superadmin logs in and the Easy2edit links (Stripe, Postmark, Claude) are not there yet: ask for the password of the locked file in resource/api and install and switch them on.
+// A superadmin logs in and the easy2edit links (Stripe, Postmark, Claude) are not there yet: ask for the password of the locked file in resource/api and install and switch them on.
 export default function ApiLinksInstall() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -32,9 +32,9 @@ export default function ApiLinksInstall() {
     catch (x) { setErr(errorText(x)); setBusy(false); }
   };
   return createPortal(
-    <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Easy2edit API-koppelingen installeren")}>
+    <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("easy2edit API-koppelingen installeren")}>
       <form className="card modal form" style={{ maxWidth: 460 }} onSubmit={go}>
-        <h2 style={{ margin: 0 }}>{tx("Easy2edit API-koppelingen installeren")}</h2>
+        <h2 style={{ margin: 0 }}>{tx("easy2edit API-koppelingen installeren")}</h2>
         <p style={{ margin: 0 }}>{tx("De koppelingen met Stripe, Postmark en Claude zijn nog niet geladen. Vul het wachtwoord van het bestand met de API-koppelingen in om ze te installeren en aan te zetten.")}</p>
         <label>{tx("Wachtwoord")}<input type="password" autoFocus autoComplete="off" value={pw} onChange={(e) => setPw(e.target.value)} /></label>
         {err && <div className="alert">{err}</div>}

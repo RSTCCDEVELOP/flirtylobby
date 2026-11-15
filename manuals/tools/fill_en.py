@@ -33,7 +33,7 @@ for f in glob.glob(str(ROOT / "frontend" / "**" / "*.js"), recursive=True):
 missing = sorted(k for k in keys if k not in en)
 print("missing:", len(missing), flush=True)
 SYS = ("You translate the interface texts of a CMS from Dutch to natural, concise English (UI style: short labels, sentence case). Keep placeholders like {0}, {1} exactly as they are, keep punctuation, keep brand and product names "
-       "(Easy2edit, Stripe, Claude, Mollie), and do not translate technical tokens. Answer with ONE JSON object only: {\"translations\": {\"<dutch text>\": \"<english text>\", ...}} with exactly the keys you were given.")
+       "(easy2edit, Stripe, Claude, Mollie), and do not translate technical tokens. Answer with ONE JSON object only: {\"translations\": {\"<dutch text>\": \"<english text>\", ...}} with exactly the keys you were given.")
 BATCH = 90
 done = 0
 for i in range(0, len(missing), BATCH):

@@ -102,7 +102,7 @@ def applies(item_id):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def help_view(request):
-    """The help of Easy2edit in three layers: ?layer=user | admin | super. Back end only (logged in); only what is on and what this person has the rights for."""
+    """The help of easy2edit in three layers: ?layer=user | admin | super. Back end only (logged in); only what is on and what this person has the rights for."""
     if not modules.enabled("help") or not request.user.is_authenticated:
         return Response({"detail": "Deze module is uitgeschakeld."}, status=404)
     lang = str(request.query_params.get("lang") or "nl")[:5]

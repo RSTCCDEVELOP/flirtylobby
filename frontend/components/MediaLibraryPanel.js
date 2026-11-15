@@ -7,6 +7,7 @@
 
 "use client";
 
+import { dragProps } from "../lib/panel-drag";
 import { useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { tx } from "../lib/t";
@@ -38,7 +39,7 @@ export default function MediaLibraryPanel({ onPick }) {
       {items && !items.length && <small className="muted">{tx("Geen afbeeldingen gevonden.")}</small>}
       <div className="pb-medialib-grid">
         {(items || []).map((i) => (
-          <button type="button" key={i.id} onClick={() => onPick(i)} title={i.name} aria-label={`${tx("Gebruik")} ${i.name}`}>
+          <button type="button" key={i.id} onClick={() => onPick(i)} title={i.name} aria-label={`${tx("Gebruik")} ${i.name}`} {...dragProps({ kind: "media", media: i })}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={mediaUrl(i.url)} alt={i.name} loading="lazy" />
             <small>{i.name}</small>

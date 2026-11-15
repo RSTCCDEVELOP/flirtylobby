@@ -11,7 +11,7 @@ GOES:   every user except the superadmins (with photos, profiles, messages, chat
         the texts edited on the website, the data of the plugins (the plugins stay installed, switched off), theme packages of the site, imported sites, system objects, products/orders,
         subscriptions and donations, notifications, dashboards, logos and home photos.
 STAYS:  the standard superadmin (ADMIN_EMAIL / ADMIN_PASSWORD from the environment; it is made again with that password and every other superadmin goes; without those settings all superadmins stay), the languages, the settings of the installation (names, addresses, security, mail, API keys, roles) and the built-in themes.
-THEN:   all modules off (only the core ones stay: users, dashboard, security, module management), all plugins off, the theme becomes Easy2edit and the licence is emptied.
+THEN:   all modules off (only the core ones stay: users, dashboard, security, module management), all plugins off, the theme becomes easy2edit and the licence is emptied.
 """
 import logging
 import shutil
@@ -219,7 +219,7 @@ def perform(keep=None, ai=False):
         for m in modules.MODULES:
             if not m.get("core"):
                 ModuleState.objects.create(key=m["key"], enabled=m["key"] in modules.ALWAYS_ON)  # (the base stays on: system, plugins, storage, backups and the API keys, of which the links of the superadmin keep working)
-        # look: the default (Easy2edit)
+        # look: the default (easy2edit)
         SiteSettings.objects.update_or_create(pk=1, defaults={"theme": {}})
         from apps.pages.models import MenuSettings
 
@@ -334,7 +334,7 @@ def read_file(doc, password):
     except InvalidToken:
         raise ValueError("Het wachtwoord past niet bij dit bestand.")
     except (ValueError, KeyError, TypeError, AttributeError):
-        raise ValueError("Dit is geen geldig configuratiebestand van Easy2edit.")
+        raise ValueError("Dit is geen geldig configuratiebestand van easy2edit.")
     st = data.get("standard_admin") if isinstance(data, dict) else None
     if not isinstance(st, dict) or not st.get("email") or not st.get("password_hash"):
         raise ValueError("Het bestand bevat geen standaard superadmin.")

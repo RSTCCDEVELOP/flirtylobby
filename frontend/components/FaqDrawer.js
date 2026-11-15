@@ -18,7 +18,7 @@ import { useFaqSettings } from "../lib/faq-settings";
 import UserFaq from "./UserFaq";
 
 // The FAQ icon in the header: opens the FAQ in a panel at the side and keeps you on the page you are on.
-// On the website it shows the FAQ of the site; in the dashboard the help of Easy2edit for the part you are in (user, admin or super admin).
+// On the website it shows the FAQ of the site; in the dashboard the help of easy2edit for the part you are in (user, admin or super admin).
 // Switched on or off at Admin → FAQ → Instellingen (on by default).
 export default function FaqDrawer({ dashboard = false }) {
   const fs = useFaqSettings();

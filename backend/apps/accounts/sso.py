@@ -360,7 +360,7 @@ def passkey_register_options(request):
         return problem
     u, challenge = request.user, b64e(secrets.token_bytes(32))
     return Response({"state": _state("create", challenge, origin, u.pk), "options": {
-        "challenge": challenge, "rp": {"name": settings.SITE_NAME if hasattr(settings, "SITE_NAME") else "Easy2edit", "id": _host(origin)},
+        "challenge": challenge, "rp": {"name": settings.SITE_NAME if hasattr(settings, "SITE_NAME") else "easy2edit", "id": _host(origin)},
         "user": {"id": b64e(f"user:{u.pk}".encode()), "name": u.email, "displayName": (u.display_name or u.get_full_name() or u.email)[:60]},
         "pubKeyCredParams": [{"type": "public-key", "alg": -7}, {"type": "public-key", "alg": -257}], "timeout": 60000, "attestation": "none",
         "authenticatorSelection": {"residentKey": "preferred", "userVerification": pk["verification"]},

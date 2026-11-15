@@ -91,7 +91,7 @@ ANIMS = [
 
 LOGOS = [
     {"value": "custom", "label": "Eigen logo (Logo's & beeld)", "css": ""},
-    {"value": "easy2edit", "label": "Easy2edit-logo", "css": ""},
+    {"value": "easy2edit", "label": "easy2edit-logo", "css": ""},
     {"value": "rstcc", "label": "RSTCC-logo", "css": ""},
     {"value": "studio2", "label": "Studio2-logo", "css": ""},
 ]
@@ -474,7 +474,7 @@ def _neutrals(hue, tint):
 # Only the two house styles live in the system. All other themes are theme packages (<root>/themes/<key>/theme.json)
 # that are switched on or off in Admin -> Themapakketten (see themepacks.py).
 PRESET_DEFS = [
-    {"key": "easy2edit", "name": "Easy2edit", "description": "Het standaardthema van Easy2edit: oranje en grijs, met het Easy2edit-logo.", "overrides": {"brand_logo": "easy2edit", "primary": "#f2823f", "secondary": "#939497"}, "builtin": True},
+    {"key": "easy2edit", "name": "easy2edit", "description": "Het standaardthema van easy2edit: oranje en grijs, met het easy2edit-logo.", "overrides": {"brand_logo": "easy2edit", "primary": "#f2823f", "secondary": "#939497"}, "builtin": True},
     {"key": "standaard", "name": "RSTCC", "description": "De oorspronkelijke stijl met het RSTCC-logo.", "overrides": {"brand_logo": "rstcc", "primary": "#1b97d3", "secondary": "#f08a35"}, "builtin": True},
 ]
 

@@ -17,7 +17,7 @@ import { lvl } from "../lib/perms";
 
 const KEY = "sysupdate-later";
 
-// After an update of Easy2edit (a new build): an administrator or superadmin is asked whether the site may be checked and brought up to date.
+// After an update of easy2edit (a new build): an administrator or superadmin is asked whether the site may be checked and brought up to date.
 // The window shows each step (copy of the content, database, plugins, themes, languages, pages) with a progress bar. Content is never removed.
 export default function SystemUpdatePrompt() {
   const { user } = useAuth() || {};
@@ -60,8 +60,8 @@ export default function SystemUpdatePrompt() {
       {info && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={later}>
           <div className="card modal" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>{tx("Nieuwe versie van Easy2edit")}</h2>
-            <p>{tx("Easy2edit is bijgewerkt naar versie {0}, build {1}. Wil je je site laten controleren en bijwerken, zodat alles compatibel blijft?", info.version, info.build)}</p>
+            <h2 style={{ marginTop: 0 }}>{tx("Nieuwe versie van easy2edit")}</h2>
+            <p>{tx("easy2edit is bijgewerkt naar versie {0}, build {1}. Wil je je site laten controleren en bijwerken, zodat alles compatibel blijft?", info.version, info.build)}</p>
             <ul className="muted" style={{ margin: ".2rem 0 .8rem", paddingLeft: "1.1rem" }}>
               {info.steps.map((s) => <li key={s.key}>{tx(s.label)}</li>)}
             </ul>

@@ -27,6 +27,122 @@ def C(tag, name, desc, group, cat, body):
 
 G = lambda n: f'<div class="e2e-gallery__img" style="--g:{n}"></div>'  # noqa: E731
 
+
+# ---- charts: the data of the examples is drawn here (svg and css only, no library) ----
+import math as _m
+
+
+def _pts(vals, w=400, h=150, pad=10, mx=None):
+    mx = mx or max(vals) * 1.1
+    n = len(vals)
+    return [(round(pad + i * (w - 2 * pad) / (n - 1), 1), round(h - pad - (v / mx) * (h - 2 * pad), 1)) for i, v in enumerate(vals)]
+
+
+def _grid(w=400, h=150, rows=4):
+    return "".join('<line x1="0" x2="%d" y1="%d" y2="%d"/>' % (w, round(h * i / rows), round(h * i / rows)) for i in range(1, rows))
+
+
+def _line(vals, cls="s1", area=False, w=400, h=150, mx=None):
+    pts = _pts(vals, w, h, mx=mx)
+    poly = " ".join("%s,%s" % p for p in pts)
+    a = '<path class="e2e-area %s" d="M%s L%s,%d L%s,%d Z"/>' % (cls, poly.replace(" ", " L"), pts[-1][0], h, pts[0][0], h) if area else ""
+    dots = "".join('<circle class="e2e-dot-pt %s" cx="%s" cy="%s" r="3"><title>%s</title></circle>' % (cls, x, y, v) for (x, y), v in zip(pts, vals))
+    return a + '<polyline class="e2e-line %s" points="%s"/>' % (cls, poly) + dots
+
+
+def _svg(inner, w=400, h=150, label="Grafiek"):
+    return '<svg class="e2e-chart__svg" viewBox="0 0 %d %d" preserveAspectRatio="none" role="img" aria-label="%s"><g class="e2e-chart__grid">%s</g>%s</svg>' % (w, h, label, _grid(w, h), inner)
+
+
+_DAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"]
+_MON = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"]
+_V1 = [42, 58, 51, 74, 69, 92, 85]
+_Y1 = [120, 150, 140, 190, 220, 210, 260, 300, 280, 340, 380, 420]
+_Y2 = [90, 100, 130, 120, 160, 170, 190, 210, 230, 250, 290, 310]
+
+
+def _axis():
+    return '<div class="e2e-chart__axis">' + "".join("<span>%s</span>" % m for m in _MON) + "</div>"
+
+
+def _bars(vals, labels, cls="s1", h=160):
+    mx = max(vals)
+    return '<div class="e2e-bars" style="--h:%dpx">%s</div>' % (h, "".join('<div class="e2e-bar %s" style="--v:%d%%" title="%s"><i></i><small>%s</small></div>' % (cls, round(v / mx * 100), v, l) for v, l in zip(vals, labels)))
+
+
+def _hbars(items):
+    mx = max(v for _l, v in items)
+    return '<ul class="e2e-hbars">%s</ul>' % "".join('<li><span>%s</span><div class="e2e-track"><i style="--v:%d%%"></i></div><b>%s</b></li>' % (l, round(v / mx * 100), v) for l, v in items)
+
+
+def _heat():
+    return "".join('<i data-l="%d"></i>' % ((r * 7 + c * 3 + (r * c) % 5) % 5) for r in range(7) for c in range(24))
+
+
+def _radar(vals, labels, r=62, cx=90, cy=82):
+    n = len(vals)
+    ang = [-_m.pi / 2 + i * 2 * _m.pi / n for i in range(n)]
+    rings = "".join('<polygon points="%s"/>' % " ".join("%s,%s" % (round(cx + r * k / 4 * _m.cos(a), 1), round(cy + r * k / 4 * _m.sin(a), 1)) for a in ang) for k in (1, 2, 3, 4))
+    axes = "".join('<line x1="%d" y1="%d" x2="%s" y2="%s"/>' % (cx, cy, round(cx + r * _m.cos(a), 1), round(cy + r * _m.sin(a), 1)) for a in ang)
+    poly = " ".join("%s,%s" % (round(cx + r * v / 100 * _m.cos(a), 1), round(cy + r * v / 100 * _m.sin(a), 1)) for v, a in zip(vals, ang))
+    labs = "".join('<text x="%s" y="%s" text-anchor="middle">%s</text>' % (round(cx + (r + 14) * _m.cos(a), 1), round(cy + (r + 14) * _m.sin(a) + 3, 1), l) for l, a in zip(labels, ang))
+    return '<svg class="e2e-radar" viewBox="0 0 180 170" role="img" aria-label="Radardiagram"><g class="e2e-chart__grid">%s%s</g><polygon class="e2e-area s1" points="%s"/><polygon class="e2e-line s1" points="%s"/>%s</svg>' % (rings, axes, poly, poly, labs)
+
+
+def _ring(pct, label, cls="s1"):
+    c = 2 * _m.pi * 40
+    return '<div class="e2e-ring %s"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" class="e2e-ring__bg"/><circle cx="50" cy="50" r="40" class="e2e-ring__fg" stroke-dasharray="%s %s" transform="rotate(-90 50 50)"/></svg><b>%d%%</b><small>%s</small></div>' % (cls, round(c * pct / 100, 1), round(c, 1), pct, label)
+
+
+def _gauge(pct):
+    L = _m.pi * 50
+    return '<div class="e2e-gauge"><svg viewBox="0 0 120 70"><path d="M10 60 A50 50 0 0 1 110 60" class="e2e-ring__bg"/><path d="M10 60 A50 50 0 0 1 110 60" class="e2e-ring__fg" stroke-dasharray="%s %s"/></svg><b>%d%%</b><small>van het doel</small></div>' % (round(L * pct / 100, 1), round(L, 1), pct)
+
+
+def _stack(rows):
+    return '<div class="e2e-bars e2e-bars--stack" style="--h:170px">%s</div>' % "".join('<div class="e2e-bar" title="%s"><div class="e2e-stack__col">%s</div><small>%s</small></div>' % (l, "".join('<i class="s%d" style="--v:%d%%"></i>' % (i + 1, v) for i, v in enumerate(vals)), l) for l, vals in rows)
+
+
+def _card(title, body, hint="", cls="", extra=""):
+    head = "<header><h4>%s</h4>%s%s</header>" % (title, ('<small class="e2e-hint">%s</small>' % hint) if hint else "", extra)
+    return '<div class="e2e-chartcard%s">%s%s</div>' % ((" " + cls) if cls else "", head, body)
+
+
+def _legend(items):
+    return '<ul class="e2e-legend e2e-legend--row">%s</ul>' % "".join('<li><i class="s%d"></i>%s</li>' % (i + 1, l) for i, l in enumerate(items))
+
+
+def _trend(label, value, delta, up, vals, cls):
+    return '<div class="e2e-trend"><small>%s</small><b>%s</b><span class="e2e-delta %s">%s %s</span><div class="e2e-chart e2e-chart--mini">%s</div></div>' % (label, value, "is-up" if up else "is-down", "▲" if up else "▼", delta, _svg(_line(vals, cls, area=True, w=200, h=50), 200, 50))
+
+
+def _meter(label, pct, cls="s1"):
+    return '<div><div class="e2e-meters__row"><span>%s</span><b>%d%%</b></div><div class="e2e-track %s"><i style="--v:%d%%"></i></div></div>' % (label, pct, cls, pct)
+
+
+GROUP = "Grafieken & statistieken"
+CHARTS = [
+    C("ui-bar-chart", "Staafdiagram", "Verticale staven per dag of maand; de waarde staat in de tooltip.", GROUP, "Staafdiagram", _card("Bezoekers per dag", _bars(_V1, _DAYS), "Afgelopen week")),
+    C("ui-bar-chart-horizontal", "Staafdiagram liggend", "Liggende staven voor een ranglijst, zoals de meest bekeken pagina's.", GROUP, "Liggend staafdiagram", _card("Meest bekeken pagina's", _hbars([("Home", 1240), ("Diensten", 860), ("Webshop", 640), ("Over ons", 420), ("Contact", 310)]))),
+    C("ui-line-chart", "Lijndiagram", "Lijn met punten en een raster; hoe de waarde verandert in de tijd.", GROUP, "Lijndiagram", _card("Omzet dit jaar", '<div class="e2e-chart">' + _svg(_line(_Y1, "s1")) + "</div>" + _axis(), "in euro's")),
+    C("ui-area-chart", "Vlakdiagram", "Lijn met een gevuld vlak eronder.", GROUP, "Vlakdiagram", _card("Nieuwe leden", '<div class="e2e-chart">' + _svg(_line(_Y1, "s1", area=True)) + "</div>" + _axis())),
+    C("ui-multi-line-chart", "Lijndiagram met meer reeksen", "Twee lijnen met een legenda, bijvoorbeeld dit jaar tegenover vorig jaar.", GROUP, "Lijndiagram, meer reeksen", _card("Bezoek dit jaar en vorig jaar", '<div class="e2e-chart">' + _svg(_line(_Y2, "s2", mx=462) + _line(_Y1, "s1", mx=462)) + "</div>" + _axis(), "", "", _legend(["Dit jaar", "Vorig jaar"]))),
+    C("ui-stacked-bar-chart", "Gestapeld staafdiagram", "Staven die uit delen bestaan, met een legenda.", GROUP, "Gestapeld staafdiagram", _card("Bestellingen per kanaal", _stack(list(zip(_DAYS, [[30, 15, 10], [35, 20, 12], [28, 18, 20], [40, 22, 15], [45, 25, 18], [55, 30, 25], [38, 20, 12]]))), "", "", _legend(["Webshop", "Telefoon", "Winkel"]))),
+    C("ui-pie-chart", "Taartdiagram", "Een volle cirkel met de verdeling en een legenda.", GROUP, "Taartdiagram", _card("Verkoop per categorie", '<div class="e2e-donut"><div class="e2e-donut__ring e2e-pie" style="background:conic-gradient(var(--e2e-primary) 0 40%,var(--e2e-secondary) 40% 65%,var(--e2e-accent) 65% 85%,var(--e2e-info) 85% 100%)"></div><ul class="e2e-legend"><li><i class="s1"></i>Kleding <b>40%</b></li><li><i class="s2"></i>Schoenen <b>25%</b></li><li><i class="s3"></i>Accessoires <b>20%</b></li><li><i class="s4"></i>Overig <b>15%</b></li></ul></div>')),
+    C("ui-gauge", "Meter", "Halve cirkel die laat zien hoever je bent met een doel.", GROUP, "Meter", _card("Maanddoel omzet", _gauge(72), "", "e2e-chartcard--center")),
+    C("ui-radial-progress", "Voortgangsringen", "Drie ringen met een percentage, voor doelen of scores.", GROUP, "Voortgangsringen", _card("Voortgang", '<div class="e2e-rings">' + _ring(82, "Profiel", "s1") + _ring(64, "Taken", "s2") + _ring(37, "Doel", "s3") + "</div>")),
+    C("ui-trend-stats", "Cijfers met trend", "Kerncijfers met een stijging of daling en een klein lijntje.", GROUP, "Cijfers met trend", '<div class="e2e-grid" style="--e2e-min:200px">' + _trend("Omzet", "€ 12.480", "12,4%", True, [4, 6, 5, 8, 7, 10, 12], "s1") + _trend("Bezoekers", "8.214", "4,1%", True, [5, 5, 6, 6, 7, 7, 8], "s2") + _trend("Retouren", "38", "9,0%", False, [9, 8, 9, 7, 6, 6, 5], "s3") + "</div>"),
+    C("ui-heatmap", "Activiteitenkaart", "Rooster van dagen en uren; hoe donkerder, hoe drukker.", GROUP, "Activiteitenkaart", _card("Drukte per uur", '<div class="e2e-heat">' + _heat() + '</div><div class="e2e-heat__scale"><small>Rustig</small><i data-l="0"></i><i data-l="1"></i><i data-l="2"></i><i data-l="3"></i><i data-l="4"></i><small>Druk</small></div>', "ma t/m zo, 0 – 24 uur")),
+    C("ui-funnel", "Trechter", "Stappen waarin bezoekers afhaken, met het percentage per stap.", GROUP, "Trechter", _card("Van bezoek naar bestelling", '<div class="e2e-funnel"><div style="--w:100%"><b>Bezoekers</b><span>12.480</span></div><div style="--w:62%"><b>Productpagina</b><span>7.738 · 62%</span></div><div style="--w:28%"><b>Winkelwagen</b><span>3.494 · 28%</span></div><div style="--w:14%"><b>Afrekenen</b><span>1.747 · 14%</span></div><div style="--w:9%"><b>Besteld</b><span>1.123 · 9%</span></div></div>')),
+    C("ui-progress-bars", "Voortgangsbalken", "Meerdere balken met een naam en een percentage, voor doelen.", GROUP, "Voortgangsbalken", _card("Doelen dit kwartaal", '<div class="e2e-meters">' + _meter("Nieuwe klanten", 78) + _meter("Omzet", 64, "s2") + _meter("Klanttevredenheid", 92, "s5") + "</div>")),
+    C("ui-target-bar", "Doel en werkelijk", "Balk met een streepje voor het doel, om te zien of je ervoor of erachter ligt.", GROUP, "Doel en werkelijk", _card("Omzet tegenover doel", '<div class="e2e-target"><div class="e2e-track"><i style="--v:68%"></i><em style="--t:80%" title="Doel"></em></div><div class="e2e-meters__row" style="margin-top:.5rem"><span>€ 68.000</span><span class="e2e-hint">Doel € 80.000</span></div></div>')),
+    C("ui-leaderboard", "Ranglijst", "Genummerde ranglijst met naam, balk en waarde.", GROUP, "Ranglijst", _card("Beste verkopers", '<ol class="e2e-leader">' + "".join('<li><b>%d</b><span class="e2e-avatar%s">%s</span><span>%s</span><div class="e2e-track"><i style="--v:%d%%"></i></div><strong>%d</strong></li>' % (i + 1, " e2e-avatar--alt" if i % 2 else "", a, n, round(v / 48 * 100), v) for i, (a, n, v) in enumerate([("SD", "Sophie de Vries", 48), ("DS", "Daan Smit", 39), ("LB", "Lotte Bos", 29), ("MK", "Milan Kok", 21)])) + "</ol>")),
+    C("ui-radar-chart", "Radardiagram", "Scores op meerdere onderdelen in één vorm, om sterke en zwakke punten te zien.", GROUP, "Radardiagram", _card("Score per onderdeel", _radar([80, 65, 90, 55, 72], ["Snelheid", "Service", "Prijs", "Aanbod", "Gemak"]), "", "e2e-chartcard--center")),
+    C("ui-compare-stat", "Vergelijking met vorige periode", "Deze periode tegenover de vorige, met twee balken en het verschil.", GROUP, "Vergelijking", _card("Bestellingen deze maand", '<div class="e2e-meters"><div><div class="e2e-meters__row"><span>Deze maand</span><b>236</b></div><div class="e2e-track"><i style="--v:100%"></i></div></div><div><div class="e2e-meters__row"><span>Vorige maand</span><b>200</b></div><div class="e2e-track s2"><i style="--v:85%"></i></div></div></div>', "", "", '<span class="e2e-delta is-up">▲ 18%</span>')),
+    C("ui-chart-switch", "Grafiek met periodekeuze", "Een lijndiagram waarbij je met knoppen kiest tussen week en jaar.", GROUP, "Grafiek met keuze", '<div class="e2e-chartcard" data-e2e-chartswitch><header><h4>Bezoekers</h4><div class="e2e-segmented" role="group" aria-label="Periode"><button type="button" aria-pressed="true" data-show="week">Week</button><button type="button" aria-pressed="false" data-show="jaar">Jaar</button></div></header><div class="e2e-chart" data-set="week">' + _svg(_line(_V1, "s1", area=True)) + '</div><div class="e2e-chart" data-set="jaar" hidden>' + _svg(_line(_Y1, "s1", area=True)) + "</div></div>"),
+]
+
+
 EXTRA = [
     C("ui-announcement-bar", "Aankondigingsbalk", "Smalle balk boven aan de site voor een actie of mededeling, met sluitknop.", "Navigatie", "Aankondigingsbalk", '''
 <div class="e2e-announce" role="region" aria-label="Aankondiging"><span><b>Nieuw:</b> gratis website-check deze maand</span><a href="#">Meer info →</a><button type="button" class="e2e-announce__x" aria-label="Sluiten" data-e2e-close=".e2e-announce">×</button></div>'''),
@@ -161,6 +277,7 @@ EXTRA = [
     C("ui-donut", "Cirkeldiagram", "Ring met de verdeling in delen en een legenda.", "Data & feedback", "Cirkeldiagram", '''
 <div class="e2e-donut"><div class="e2e-donut__ring" style="background:conic-gradient(var(--e2e-primary) 0 45%,var(--e2e-secondary) 45% 75%,var(--e2e-accent) 75% 100%)"></div><ul class="e2e-legend"><li><i style="background:var(--e2e-primary)"></i>Afbeeldingen <b>45%</b></li><li><i style="background:var(--e2e-secondary)"></i>Documenten <b>30%</b></li><li><i style="background:var(--e2e-accent)"></i>Overig <b>25%</b></li></ul></div>'''),
 ]
+EXTRA += CHARTS
 
 CSS = r'''
 /* ===== TABS VOLGEN HET THEMA: data-e2e-tabstyle="pills|underline|segmented|folder" op html, body of het blok (easy2edit zet hem uit Thema > Vormgeving > Uiterlijk van tabbladen) ===== */
@@ -295,6 +412,36 @@ CSS = r'''
 .e2e-donut{display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap}.e2e-donut__ring{--d:8.5rem;width:var(--d);height:var(--d);border-radius:50%;position:relative;flex:none}.e2e-donut__ring::after{content:"";position:absolute;inset:24%;border-radius:50%;background:var(--e2e-bg)}
 .e2e-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.4rem;font-size:.9rem}.e2e-legend li{display:flex;align-items:center;gap:.5rem}.e2e-legend i{width:.7rem;height:.7rem;border-radius:3px;flex:none}.e2e-legend b{margin-left:auto;padding-left:.8rem}
 
+/* ===== GRAFIEKEN & STATISTIEKEN (alleen css en svg, in de kleuren van het thema) ===== */
+.e2e-chartcard{padding:1.2rem 1.3rem;border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);background:var(--e2e-bg);display:flex;flex-direction:column;gap:.9rem}.e2e-chartcard--center{align-items:center;text-align:center}
+.e2e-chartcard>header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.5rem 1rem;width:100%}.e2e-chartcard h4{margin:0}
+.s1{--_s:var(--e2e-primary)}.s2{--_s:var(--e2e-secondary)}.s3{--_s:var(--e2e-accent)}.s4{--_s:var(--e2e-info)}.s5{--_s:var(--e2e-success)}
+.e2e-legend i.s1,.e2e-legend i.s2,.e2e-legend i.s3,.e2e-legend i.s4,.e2e-legend i.s5{background:var(--_s)}.e2e-legend--row{flex-direction:row;flex-wrap:wrap;gap:.4rem 1rem}
+.e2e-chart{width:100%;height:150px}.e2e-chart--mini{height:50px}.e2e-chart__svg{width:100%;height:100%;display:block;overflow:visible}
+.e2e-chart__grid line{stroke:var(--e2e-border);stroke-width:1;vector-effect:non-scaling-stroke}.e2e-chart__grid polygon{fill:none;stroke:var(--e2e-border);stroke-width:1}
+.e2e-line{fill:none;stroke:var(--_s,var(--e2e-primary));stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.e2e-area{fill:color-mix(in srgb,var(--_s,var(--e2e-primary)) 18%,transparent);stroke:none}
+.e2e-dot-pt{fill:var(--e2e-bg);stroke:var(--_s,var(--e2e-primary));stroke-width:2;vector-effect:non-scaling-stroke}.e2e-chart--mini .e2e-dot-pt{display:none}
+.e2e-chart__axis{display:flex;justify-content:space-between;font-size:.72rem;color:var(--e2e-muted)}
+.e2e-bars{display:flex;align-items:flex-end;gap:.5rem;height:var(--h,160px);padding-top:.4rem;border-bottom:1px solid var(--e2e-border);margin-bottom:1.4rem}
+.e2e-bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:.3rem;min-width:0}.e2e-bar>i{width:100%;max-width:2.4rem;height:var(--v);border-radius:6px 6px 0 0;background:var(--_s,var(--e2e-primary));min-height:2px}.e2e-bar:hover>i{filter:brightness(1.1)}.e2e-bar>small{font-size:.72rem;color:var(--e2e-muted);margin-bottom:-1.3rem;white-space:nowrap}
+.e2e-bars--stack .e2e-stack__col{width:100%;max-width:2.4rem;height:100%;display:flex;flex-direction:column-reverse;border-radius:6px 6px 0 0;overflow:hidden}.e2e-bars--stack .e2e-stack__col i{display:block;height:var(--v);background:var(--_s)}
+.e2e-hbars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7rem}.e2e-hbars li{display:grid;grid-template-columns:minmax(4.5rem,8rem) 1fr auto;gap:.8rem;align-items:center}.e2e-hbars span{font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e2e-track{position:relative;height:.7rem;border-radius:999px;background:var(--e2e-surface)}.e2e-track>i{display:block;height:100%;width:var(--v);border-radius:inherit;background:var(--_s,var(--e2e-primary))}.e2e-track>em{position:absolute;top:-.3rem;bottom:-.3rem;left:var(--t);width:3px;border-radius:2px;background:var(--e2e-text)}
+.e2e-pie::after{display:none}
+.e2e-gauge{position:relative;width:min(240px,100%)}.e2e-gauge svg{width:100%;display:block}.e2e-gauge b{position:absolute;left:0;right:0;bottom:.4rem;text-align:center;font-family:var(--e2e-font-heading);font-size:2rem;line-height:1}.e2e-gauge small{position:absolute;left:0;right:0;bottom:-1.1rem;text-align:center;color:var(--e2e-muted)}
+.e2e-ring__bg{fill:none;stroke:var(--e2e-surface);stroke-width:12;stroke-linecap:round}.e2e-ring__fg{fill:none;stroke:var(--_s,var(--e2e-primary));stroke-width:12;stroke-linecap:round}
+.e2e-rings{display:flex;flex-wrap:wrap;gap:1.4rem;justify-content:space-around;width:100%}.e2e-ring{position:relative;width:7.5rem;text-align:center}.e2e-ring svg{width:100%;display:block}.e2e-ring b{position:absolute;left:0;right:0;top:2.2rem;font-family:var(--e2e-font-heading);font-size:1.5rem}.e2e-ring small{display:block;color:var(--e2e-muted);margin-top:.2rem}
+.e2e-trend{padding:1rem 1.1rem;border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);background:var(--e2e-bg);display:flex;flex-direction:column;gap:.2rem}.e2e-trend small{color:var(--e2e-muted)}.e2e-trend b{font-family:var(--e2e-font-heading);font-size:1.9rem;line-height:1.1}
+.e2e-delta{font-size:.82rem;font-weight:700}.e2e-delta.is-up{color:var(--e2e-success)}.e2e-delta.is-down{color:var(--e2e-danger)}
+.e2e-heat{display:grid;grid-template-columns:repeat(24,1fr);gap:3px}.e2e-heat i,.e2e-heat__scale i{aspect-ratio:1;border-radius:3px;background:color-mix(in srgb,var(--e2e-primary) calc(var(--l,0)*22%),var(--e2e-surface))}
+.e2e-heat [data-l="1"],.e2e-heat__scale [data-l="1"]{--l:1}.e2e-heat [data-l="2"],.e2e-heat__scale [data-l="2"]{--l:2}.e2e-heat [data-l="3"],.e2e-heat__scale [data-l="3"]{--l:3}.e2e-heat [data-l="4"],.e2e-heat__scale [data-l="4"]{--l:4.5}
+.e2e-heat__scale{display:flex;gap:3px;align-items:center;font-size:.72rem;color:var(--e2e-muted);justify-content:flex-end}.e2e-heat__scale i{width:.9rem}
+.e2e-funnel{display:flex;flex-direction:column;gap:.4rem;align-items:center}.e2e-funnel>div{width:var(--w);min-width:11rem;max-width:100%;padding:.6rem .9rem;border-radius:var(--e2e-radius);background:color-mix(in srgb,var(--e2e-primary) 85%,var(--e2e-surface));color:var(--e2e-on-primary);display:flex;justify-content:space-between;gap:1rem;font-size:.9rem}
+.e2e-meters{display:flex;flex-direction:column;gap:.9rem;width:100%}.e2e-meters__row{display:flex;justify-content:space-between;gap:1rem;margin-bottom:.3rem}.e2e-target{width:100%}
+.e2e-leader{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7rem;width:100%}.e2e-leader li{display:grid;grid-template-columns:1.4rem auto minmax(5rem,10rem) 1fr auto;gap:.7rem;align-items:center}.e2e-leader li>b{color:var(--e2e-muted);text-align:center}
+.e2e-radar{width:min(320px,100%)}.e2e-radar text{font-size:9px;fill:var(--e2e-muted)}.e2e-radar .e2e-line{stroke-width:2}
+.e2e-chartcard [data-set][hidden]{display:none}
 '''
 
 JS = r'''
@@ -349,6 +496,11 @@ JS = r'''
     items.forEach(function(li){li.addEventListener('click',function(){var k=li.getAttribute('data-md');items.forEach(function(x){x.classList.toggle('is-active',x===li);});root.querySelectorAll('[data-md-pane]').forEach(function(p){p.hidden=p.getAttribute('data-md-pane')!==k;});});});
   });
 
+  document.querySelectorAll('[data-e2e-chartswitch]').forEach(function(root){
+    var bs=[].slice.call(root.querySelectorAll('[data-show]'));
+    bs.forEach(function(b){b.addEventListener('click',function(){bs.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});root.querySelectorAll('[data-set]').forEach(function(p){p.hidden=p.getAttribute('data-set')!==b.getAttribute('data-show');});});});
+  });
+
 })();
 '''
 
@@ -366,12 +518,13 @@ def main():
     tags = {c["easy2edit_tag"] for c in EXTRA}
     keep = [c for c in man["components"] if c["easy2edit_tag"] not in tags]
     comps = keep + EXTRA
-    order = ["Start", "Basis", "Navigatie", "Content-blokken", "Database & lijsten", "Webshop", "Data & feedback", "Planning & agenda", "Zakelijk", "Media", "Afsluiting"]  # the footer stays last
+    order = ["Start", "Basis", "Navigatie", "Content-blokken", "Database & lijsten", "Webshop", "Data & feedback", "Grafieken & statistieken", "Planning & agenda", "Zakelijk", "Media", "Afsluiting"]  # the footer stays last
     comps.sort(key=lambda c: order.index(c["group"]) if c["group"] in order else 99)
     major, minor, patch = (int(x) for x in str(man["version"]).split("."))
     ver = f"{major}.{minor + (0 if man['version'] == '1.0.0' and False else 1) if not any(c['easy2edit_tag'] in tags for c in man['components']) else minor}.{0 if not any(c['easy2edit_tag'] in tags for c in man['components']) else patch + 1}"
+    man["name"] = "easy2edit UI-kit"
     man["version"], man["components"] = ver, comps
-    man["description"] = "The standard set of Easy2edit objects: hero, cards, pricing, FAQ, forms, calendar, kanban, KPI, documents, audio and video players, gallery, carousel, blog, webshop, login and more. They take the colours, fonts and corners of the theme in use."
+    man["description"] = "The standard set of easy2edit objects: hero, cards, pricing, FAQ, forms, calendar, kanban, KPI, documents, audio and video players, gallery, carousel, blog, webshop, login and more. They take the colours, fonts and corners of the theme in use."
     out = LIB / f"{KEY}-{ver}.zip"
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as w:
         w.writestr("components.json", json.dumps(man, indent=2, ensure_ascii=False))

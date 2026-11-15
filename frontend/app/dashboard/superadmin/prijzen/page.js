@@ -81,7 +81,7 @@ export default function PriceEditor() {
       {tab === "host" && host && <div className="card stack" style={{ gap: "1rem" }}>
         <strong>{tx("Inkoop")}</strong>
         <div className="pe-cols">
-          <label>{tx("Aandeel voor RST (%) — inkoop voor het gebruik van Easy2edit")}<input type="number" step="1" min="0" max="100" value={cfg.rst_share} onChange={(e) => setCfg({ ...cfg, rst_share: e.target.value })} /></label></div>
+          <label>{tx("Aandeel voor RST (%) — inkoop voor het gebruik van easy2edit")}<input type="number" step="1" min="0" max="100" value={cfg.rst_share} onChange={(e) => setCfg({ ...cfg, rst_share: e.target.value })} /></label></div>
         <strong>{tx("Hosting (per maand, ex btw)")}</strong>
         <div className="pe-cols">
           <label>{tx("Wisselkoers USD → EUR")}<input type="number" step="0.01" min="0.1" value={host.usd_eur} onChange={(e) => setHost({ ...host, usd_eur: e.target.value })} /></label>
@@ -218,7 +218,7 @@ export default function PriceEditor() {
       {tab === "marketing" && mk && (
         <div className="stack" style={{ gap: "1.4rem" }}>
           <div className="card stack" style={{ gap: "1rem" }}>
-            <h2 style={{ margin: 0 }}>{tx("Easy2edit marketing")}</h2>
+            <h2 style={{ margin: 0 }}>{tx("easy2edit marketing")}</h2>
             <label className={`wz-q${mk.enabled ? " on" : ""}`}>
               <span className="switch"><input type="checkbox" checked={mk.enabled} onChange={(e) => mkSave({ enabled: e.target.checked })} /><span /></span>
               <span className="wz-text"><strong>{tx("Marketing-systeemobjecten")}</strong><small className="muted">{tx("Voor elke module komt er een tegel (systeemobject) die je in de bewerkmodus op een pagina zet. De tegel opent een venster met een marketingtekst over de module, met voorbeelden met verzonnen gegevens, in het thema van je site. Zet hier alles of per module aan of uit.")}</small></span>

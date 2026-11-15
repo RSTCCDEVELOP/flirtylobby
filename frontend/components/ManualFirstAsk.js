@@ -15,7 +15,7 @@ import { answerManual, useSandboxFirst } from "../lib/firstRun";
 import { lvl } from "../lib/perms";
 import ManualPopup from "./ManualPopup";
 
-// A superadmin who starts Easy2edit for the first time (or after the installation): do you want to look at the manual? Yes: the HTML manual opens in a pop-up.
+// A superadmin who starts easy2edit for the first time (or after the installation): do you want to look at the manual? Yes: the HTML manual opens in a pop-up.
 export default function ManualFirstAsk() {
   const { user } = useAuth();
   const isAdmin = !!user && (user.is_staff || lvl(user, "system") >= 3);
@@ -28,7 +28,7 @@ export default function ManualFirstAsk() {
   return createPortal(
     <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Handleiding")}>
       <div className="card modal form" style={{ maxWidth: 480 }}>
-        <h2 style={{ margin: 0 }}>{tx("Welkom bij Easy2edit")}</h2>
+        <h2 style={{ margin: 0 }}>{tx("Welkom bij easy2edit")}</h2>
         <p style={{ margin: 0 }}>{tx("Wil je de handleiding bekijken? Daarin staat hoe je een website opbouwt, importeert, beheert en met AI vult. Je opent hem later altijd met de knop Hulp.")}</p>
         <small className="muted">{tx("De handleiding is in het Engels, met schermafbeeldingen.")}</small>
         <div className="row" style={{ justifyContent: "flex-end", gap: ".5rem" }}>

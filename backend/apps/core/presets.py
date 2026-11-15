@@ -55,7 +55,7 @@ PRESETS = [
     # for testing: everything is on (all modules and all plugins) and every part makes its demo data; the demo data is made from what the installation uses (apps/core/demo.py parts_for)
     {"key": "easy2edit-max", "name": "easy2edit max", "icon": "layers", "theme": "normal",
      "plugins": ["community", "profile-themes", "subscriptions", "agenda", "marketplace", "documents", "webshop", "orders", "finance", "games", "age-gates", "showcase", "statistics", "seo", "faq", "siteimport"],
-     "desc": "Alles staat aan: alle modules en alle plugins, met demo-gegevens overal. Bedoeld om Easy2edit te testen, niet voor een echte website.",
+     "desc": "Alles staat aan: alle modules en alle plugins, met demo-gegevens overal. Bedoeld om easy2edit te testen, niet voor een echte website.",
      "modules": [m["key"] for m in modules.MODULES]},
 ]
 # (the parts that are plugins - Community, Abonnementen, Orders, Webshop, Financieel - are in the plugin list of an installation; plugins_for adds what they need, and _wanted_modules the modules that belong to them)
@@ -215,7 +215,7 @@ def _wanted_modules(preset):
 
 
 def ensure_system_links():
-    """The links of the superadmin (the Easy2edit AI, Stripe, mail and storage links) go with every standard installation: the module API keys is on and those links are switched on (when they have a key), so they work."""
+    """The links of the superadmin (the easy2edit AI, Stripe, mail and storage links) go with every standard installation: the module API keys is on and those links are switched on (when they have a key), so they work."""
     from apps.integrations.models import Integration
 
     from .models import ModuleState

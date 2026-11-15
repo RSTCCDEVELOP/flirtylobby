@@ -19,6 +19,7 @@ import { analyseDesign, buildConvertPrompt } from "./aiPrompt";
 import { componentListText } from "../../../../lib/ui-kit/componentList";
 import { loadKit } from "../../../../lib/ui-kit/kitDoc";
 import Wizard from "./DesignWizard";
+import { BRIEF_STEPS, BriefStep, briefFilled, briefToText } from "./briefWizard";
 
 export { ModulePicker, previewHtml };
 
@@ -29,6 +30,15 @@ const STATUS = { draft: "Concept", running: "Bezig", stopping: "Bezig met stoppe
 function ConvertPromptPopup({ onClose, designs = [] }) {
   const [catalog, setCatalog] = useState(null);
   const [tab, setTab] = useState("design");
+  const [step, setStep] = useState(0);  // the wizard: one step per group of questions, the last step is the design files
+  const [brief, setBrief] = useState(() => { try { return JSON.parse(localStorage.getItem("si:brief") || "{}") || {}; } catch { return {}; } });  // the answers stay when the window is closed
+  useEffect(() => { try { localStorage.setItem("si:brief", JSON.stringify(brief)); } catch {} }, [brief]);
+  const [themeBrief, setThemeBrief] = useState(null);  // the colours, fonts and corners of the chosen theme, as conditions for the design
+  useEffect(() => {
+    if (!brief.theme_key) { setThemeBrief(null); return; }
+    api(`/sitecreator/theme-brief/?key=${encodeURIComponent(brief.theme_key)}`).then(setThemeBrief).catch(() => setThemeBrief(null));
+  }, [brief.theme_key]);
+  useEffect(() => { if (brief.compset_key && compMode === "none") setCompMode("list"); }, [brief.compset_key]);  // eslint-disable-line react-hooks/exhaustive-deps
   const [copied, setCopied] = useState(false);
   const [files, setFiles] = useState([]);  // [{name, text}] the html, css and svg files of the design
   const [compMode, setCompMode] = useState("list");  // the list of the UI-kit components (easy2edit_tag) that goes with the prompt: none | list | html | css
@@ -58,7 +68,7 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
     try { const j = await api(`/sitecreator/${id}/?files=1`); add(Object.entries(j.files || {}).filter(([n]) => /\.(html?|css|svg)$/i.test(n)).map(([name, text]) => ({ name, text: String(text) }))); } catch (x) { setErr(errorText(x)); } finally { setBusy(false); }
   };
   const info = files.length ? analyseDesign(files) : null;
-  const text = buildConvertPrompt({ objects: catalog?.objects || [], rules: catalog?.rules || null, languages: catalog?.languages || [], mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", files, componentsText: kit && compMode !== "none" ? componentListText(kit, compMode) : "" });
+  const text = buildConvertPrompt({ brief: briefToText(brief), themeBrief, compsetName: (sets.find((m) => m.key === brief.compset_key) || {}).name || (brief.compset_key ? brief.compset_key : ""), objects: catalog?.objects || [], rules: catalog?.rules || null, languages: catalog?.languages || [], mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", files, componentsText: kit && compMode !== "none" ? componentListText(kit, compMode) : "" });
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); } catch { document.getElementById("si-cprompt")?.select(); document.execCommand("copy"); }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
@@ -74,25 +84,46 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
           {err && <div className="alert">{err}</div>}
           {tab === "design" && (
             <div className="form">
-              <p className="muted" style={{ margin: 0 }}>{tx("Kies de bestanden van je HTML-ontwerp. Ze komen in de prompt, samen met de kleuren, lettertypen, hoeken, breedtes en meta-gegevens die de importer uit het ontwerp leest. Zo heeft de AI alles wat nodig is.")}</p>
-              <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
-                <label className="btn primary" style={{ cursor: "pointer" }}>{tx("Bestanden kiezen")}<input type="file" multiple accept=".html,.htm,.css,.svg" onChange={pick} style={{ display: "none" }} /></label>
-                <label className="btn" style={{ cursor: "pointer" }}>{tx("Map kiezen")}<input type="file" webkitdirectory="" multiple onChange={pick} style={{ display: "none" }} /></label>
-                {designs.length > 0 && <select defaultValue="" onChange={(e) => { fromDesign(e.target.value); e.target.value = ""; }} disabled={busy} aria-label={tx("Uit een ontwerp")}><option value="">{tx("Uit een van mijn ontwerpen…")}</option>{designs.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>}
-                {files.length > 0 && <button type="button" className="btn" onClick={() => setFiles([])}>{tx("Leegmaken")}</button>}
+              <div role="list" aria-label={tx("Stappen")} style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }}>
+                {[...BRIEF_STEPS.map((st) => st.title), "Ontwerpbestanden"].map((title, i) => (
+                  <button type="button" key={title} role="listitem" onClick={() => setStep(i)} aria-current={step === i ? "step" : undefined} title={tx(title)}
+                    style={{ width: "1.9rem", height: "1.9rem", borderRadius: "50%", border: `1px solid ${step === i ? "var(--blue)" : "var(--line)"}`, background: step === i ? "var(--blue)" : i < step ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", color: step === i ? "#fff" : "var(--text)", cursor: "pointer", fontWeight: 700, fontSize: ".8rem" }}>{i + 1}</button>
+                ))}
               </div>
-              {chips.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{chips.map(([l, n]) => <span key={l} className="badge">{l}: {n}</span>)}{info.dark && <span className="badge">{tx("Donkere modus")}</span>}</div>}
-              {files.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: ".25rem" }}>
-                  {files.map((f) => <div key={f.name} className="row" style={{ justifyContent: "flex-start", gap: ".6rem", alignItems: "center" }}><span style={{ flex: 1, minWidth: 0 }}>{f.name} <small className="muted">{Math.ceil(f.text.length / 1024)} KB</small></span><button type="button" className="btn sm" onClick={() => setFiles((c) => c.filter((x) => x.name !== f.name))} aria-label={tx("Verwijderen")}><IconTrash /></button></div>)}
-                </div>
-              ) : <small className="muted">{tx("Nog geen bestanden: de prompt vraagt de AI dan om je ontwerp te lezen dat je er zelf bij plakt of bijvoegt.")}</small>}
-              <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={() => setTab("prompt")}>{tx("Naar de prompt")}</button></div>
+              <div className="row between" style={{ alignItems: "baseline" }}>
+                <h3 style={{ margin: 0 }}>{tx("Stap")} {step + 1} {tx("van")} {BRIEF_STEPS.length + 1}: {tx(step < BRIEF_STEPS.length ? BRIEF_STEPS[step].title : "Ontwerpbestanden")}</h3>
+                <small className="muted">{briefFilled(brief)} {tx("antwoorden in de prompt")}</small>
+              </div>
+              {step < BRIEF_STEPS.length ? <BriefStep step={BRIEF_STEPS[step]} brief={brief} setBrief={setBrief} onSet={setSetKey} /> : (
+                <>
+              <p className="muted" style={{ margin: 0 }}>{tx("Kies de bestanden van je HTML-ontwerp. Ze komen in de prompt, samen met de kleuren, lettertypen, hoeken, breedtes en meta-gegevens die de importer uit het ontwerp leest. Zo heeft de AI alles wat nodig is.")}</p>
+                  <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
+                    <label className="btn primary" style={{ cursor: "pointer" }}>{tx("Bestanden kiezen")}<input type="file" multiple accept=".html,.htm,.css,.svg" onChange={pick} style={{ display: "none" }} /></label>
+                    <label className="btn" style={{ cursor: "pointer" }}>{tx("Map kiezen")}<input type="file" webkitdirectory="" multiple onChange={pick} style={{ display: "none" }} /></label>
+                    {designs.length > 0 && <select defaultValue="" onChange={(e) => { fromDesign(e.target.value); e.target.value = ""; }} disabled={busy} aria-label={tx("Uit een ontwerp")}><option value="">{tx("Uit een van mijn ontwerpen…")}</option>{designs.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>}
+                    {files.length > 0 && <button type="button" className="btn" onClick={() => setFiles([])}>{tx("Leegmaken")}</button>}
+                  </div>
+                  {chips.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{chips.map(([l, n]) => <span key={l} className="badge">{l}: {n}</span>)}{info.dark && <span className="badge">{tx("Donkere modus")}</span>}</div>}
+                  {files.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: ".25rem" }}>
+                      {files.map((f) => <div key={f.name} className="row" style={{ justifyContent: "flex-start", gap: ".6rem", alignItems: "center" }}><span style={{ flex: 1, minWidth: 0 }}>{f.name} <small className="muted">{Math.ceil(f.text.length / 1024)} KB</small></span><button type="button" className="btn sm" onClick={() => setFiles((c) => c.filter((x) => x.name !== f.name))} aria-label={tx("Verwijderen")}><IconTrash /></button></div>)}
+                    </div>
+                  ) : <small className="muted">{tx("Nog geen bestanden: de prompt vraagt de AI dan om je ontwerp te lezen dat je er zelf bij plakt of bijvoegt.")}</small>}
+                </>
+              )}
+              <div className="row" style={{ justifyContent: "space-between", gap: ".5rem", flexWrap: "wrap", marginTop: ".4rem" }}>
+                <span className="row" style={{ gap: ".5rem" }}>
+                  <button type="button" className="btn" disabled={step === 0} onClick={() => setStep(step - 1)}>{tx("Vorige")}</button>
+                  {step < BRIEF_STEPS.length && <button type="button" className="btn" onClick={() => setStep(step + 1)}>{tx("Volgende")}</button>}
+                  {briefFilled(brief) > 0 && <button type="button" className="btn" onClick={() => { setBrief({}); setStep(0); }}>{tx("Antwoorden wissen")}</button>}
+                </span>
+                <button type="button" className="btn primary" onClick={() => setTab("prompt")}>{tx("Naar de prompt")}</button>
+              </div>
             </div>
           )}
           {tab === "prompt" && (
             <div className="form">
-              <label>{tx("Componenten van Easy2edit meesturen (easy2edit_tag)")}
+              <label>{tx("Componenten van easy2edit meesturen (easy2edit_tag)")}
                 <select value={compMode} onChange={(e) => setCompMode(e.target.value)}>
                   <option value="none">{tx("Niet meesturen")}</option><option value="list">{tx("Alleen de lijst met tags")}</option><option value="html">{tx("Lijst met HTML")}</option><option value="css">{tx("Lijst, HTML en CSS")}</option>
                 </select>
@@ -132,7 +163,7 @@ export function AiCreatorHome({ onOpen, refreshKey }) {
   const del = async (x) => { if (!(await confirmDialog(tx("Dit ontwerp verwijderen? Wat je hebt ingevuld en gemaakt gaat verloren, ook de geüploade documenten."), { danger: true, title: tx("Ontwerp verwijderen"), okLabel: tx("Verwijderen") }))) return; await api(`/sitecreator/${x.id}/`, { method: "DELETE" }).catch(() => {}); load(); };
   return (
     <div style={{ marginTop: ".75rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
-      <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een paar stappen: stijl, kleuren, pagina's en foto's. Daarna maakt Easy2edit alle pagina's en importeer je ze als bewerkbare pagina's. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
+      <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een paar stappen: stijl, kleuren, pagina's en foto's. Daarna maakt easy2edit alle pagina's en importeer je ze als bewerkbare pagina's. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
       {err && <div className="alert">{err}</div>}
       <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" disabled={busy || d?.ai === false} onClick={create}><IconBolt /> {tx("Nieuw ontwerp")}</button><button type="button" className="btn" onClick={() => setConv(true)}><IconEdit /> {tx("AI-prompt maken")}</button></div>
       {conv && <ConvertPromptPopup onClose={() => setConv(false)} designs={d?.designs || []} />}
@@ -177,13 +208,13 @@ function ImprovePopup({ onClose, onStart, busy }) {
                   {FOCUS.map(([k]) => { const on = pick.includes(k); return <button type="button" key={k} className={`dw-chip ${on ? "on" : ""}`} aria-pressed={on} onClick={() => setPick(on ? pick.filter((x) => x !== k) : [...pick, k])}>{on && <IconCheck />} {tx(k)}</button>; })}
                 </div></div>
               <label>{tx("Eigen opdracht")} <small className="muted">{tx("optioneel")}</small><textarea rows={3} maxLength={400} value={text} onChange={(e) => setText(e.target.value)} placeholder={tx("bv. maak de koppen rustiger en geef de knoppen meer ruimte")} /></label>
-              <small className="muted">{canGo ? tx("Easy2edit past alleen aan wat je hier vraagt.") : tx("Kies een aandachtspunt of schrijf een opdracht: zonder opdracht verandert er niets.")}</small>
+              <small className="muted">{canGo ? tx("easy2edit past alleen aan wat je hier vraagt.") : tx("Kies een aandachtspunt of schrijf een opdracht: zonder opdracht verandert er niets.")}</small>
               <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button><button type="button" className="btn primary" disabled={busy || !canGo} onClick={go}><IconBolt /> {busy ? tx("Starten…") : tx("Start verbeteren")}</button></div>
             </div>
           )}
           {tab === "how" && (
             <div className="muted" style={{ display: "grid", gap: ".6rem" }}>
-              <p style={{ margin: 0 }}>{tx("Easy2edit verbetert alle pagina's na elkaar: de opmaak, de teksten en de structuur. Je ziet de voortgang met een percentage.")}</p>
+              <p style={{ margin: 0 }}>{tx("easy2edit verbetert alle pagina's na elkaar: de opmaak, de teksten en de structuur. Je ziet de voortgang met een percentage.")}</p>
               <p style={{ margin: 0 }}>{tx("Je kunt het altijd stoppen. Wat al klaar was blijft bewaard; de rest blijft zoals het was.")}</p>
               <p style={{ margin: 0 }}>{tx("Na het verbeteren kun je de vorige versie terugzetten.")}</p>
             </div>
@@ -315,7 +346,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
           {!wizard && ready && !running && <button type="button" className="btn sm" style={{ marginRight: ".4rem" }} onClick={() => setImproveOpen(true)}><IconBolt /> {tx("Verbeteren")}</button>}
           {!wizard && ready && !running && (onApply
             ? <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => setCreateOpen(true)}><IconCheck /> {tx("Alles aanmaken")}</button>
-            : <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => onImport(job)}>{tx("Importeren in Easy2edit")}</button>)}
+            : <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => onImport(job)}>{tx("Importeren in easy2edit")}</button>)}
           <button type="button" className="pb-panelx" onClick={requestClose} aria-label={tx("Sluiten")}>×</button></div>
         {improveOpen && <ImprovePopup onClose={() => setImproveOpen(false)} onStart={improve} busy={busy === "improve"} />}
         {createOpen && job && <CreatePopup job={job} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
@@ -353,7 +384,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                   <div style={{ width, maxWidth: "100%", height: "100%", background: "#fff", boxShadow: dev === "web" ? "none" : "0 0 0 1px var(--line), 0 10px 40px rgba(0,0,0,.4)", opacity: running ? .6 : 1, transition: "opacity .3s" }}>
                     <iframe title={tx("Voorbeeld")} sandbox="" srcDoc={previewHtml(job.files, cur, job.brief?.photos)} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
                   </div>
-                ) : <p className="muted" style={{ alignSelf: "center" }}>{running ? tx("Easy2edit ontwerpt je website… de eerste pagina verschijnt hier zodra hij klaar is.") : ""}</p>}
+                ) : <p className="muted" style={{ alignSelf: "center" }}>{running ? tx("easy2edit ontwerpt je website… de eerste pagina verschijnt hier zodra hij klaar is.") : ""}</p>}
               </div>
             </div>
           </div>

@@ -51,7 +51,7 @@ function Sets({ onUse }) {
   return (
     <div className="stack">
       {err && <div className="alert">{err}</div>}
-      <p className="muted" style={{ margin: 0 }}>{tx("Een componentenset is een zip met componenten (hero, prijzen, agenda ...), zoals een themapakket. De eerste set, de Easy2edit UI-kit, staat standaard op elke website totdat je een andere kiest. Ontwerpen en prompts gebruiken de set die je kiest.")}</p>
+      <p className="muted" style={{ margin: 0 }}>{tx("Een componentenset is een zip met componenten (hero, prijzen, agenda ...), zoals een themapakket. De eerste set, de easy2edit UI-kit, staat standaard op elke website totdat je een andere kiest. Ontwerpen en prompts gebruiken de set die je kiest.")}</p>
       <strong>{tx("Op deze website")}</strong>
       {d.installed.map((m) => card(m, (
         <span className="row" style={{ gap: ".4rem" }}>

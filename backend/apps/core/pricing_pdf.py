@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""De prijsofferte als PDF in de huisstijl van Easy2edit (oranje en grijs, met het logo), in de gekozen taal."""
+"""De prijsofferte als PDF in de huisstijl van easy2edit (oranje en grijs, met het logo), in de gekozen taal."""
 import io
 from datetime import date
 from decimal import Decimal
@@ -50,7 +50,7 @@ def build(plan, name, site, period, lang="nl", host=None, mail=None, reseller=No
 
     t = T.get(lang, T["nl"])
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=18 * mm, bottomMargin=20 * mm, title=f"{t['title']} {site}", author="Easy2edit")
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=18 * mm, bottomMargin=20 * mm, title=f"{t['title']} {site}", author="easy2edit")
     st = lambda **k: ParagraphStyle("x", fontName=k.pop("font", "Helvetica"), **k)  # noqa: E731
     h1, h2, body, small = st(fontSize=26, leading=30, textColor=colors.HexColor(DARK), font="Helvetica-Bold"), st(fontSize=13, leading=17, textColor=colors.HexColor(ORANGE), font="Helvetica-Bold", spaceBefore=14, spaceAfter=6), st(fontSize=10, leading=14, textColor=colors.HexColor(DARK)), st(fontSize=8.5, leading=12, textColor=colors.HexColor(GREY))
     story = []
@@ -102,7 +102,7 @@ def build(plan, name, site, period, lang="nl", host=None, mail=None, reseller=No
         canvas.rect(0, 0, A4[0], 4 * mm, stroke=0, fill=1)
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor(GREY))
-        canvas.drawString(20 * mm, 9 * mm, ("Easy2edit · easy2edit.com" + (f" · {rs['company']}" if rs.get("company") else ""))[:110])
+        canvas.drawString(20 * mm, 9 * mm, ("easy2edit · easy2edit.com" + (f" · {rs['company']}" if rs.get("company") else ""))[:110])
         canvas.drawRightString(A4[0] - 20 * mm, 9 * mm, f"{d.page}")
         canvas.restoreState()
 

@@ -43,7 +43,7 @@ def _derived():
 
 
 def _derived_before_rename():
-    # keys that were wrapped before the product got its name Easy2edit: only used to READ them (rewrap_all wraps them again with the current master)
+    # keys that were wrapped before the product got its name easy2edit: only used to READ them (rewrap_all wraps them again with the current master)
     return hashlib.sha256(b"flirtylobby-file-key:" + settings.SECRET_KEY.encode()).digest()
 
 

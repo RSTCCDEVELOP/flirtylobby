@@ -24,7 +24,7 @@ def link():
                 return own
     except Exception:  # noqa: BLE001
         pass
-    obj = Integration.objects.filter(provider="anthropic", enabled=True).order_by("-superadmin_only", "id").first()  # AI always runs on an Easy2edit link of the superadmin when there is one
+    obj = Integration.objects.filter(provider="anthropic", enabled=True).order_by("-superadmin_only", "id").first()  # AI always runs on an easy2edit link of the superadmin when there is one
     return obj if obj and obj.config.get("api_key") else None
 
 

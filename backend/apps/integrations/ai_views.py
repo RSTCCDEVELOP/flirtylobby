@@ -521,7 +521,7 @@ def topup(request):
     from apps.core import license_stripe
 
     link = aiusage.pay_link(request.user)
-    if link:  # always through Stripe, with an Easy2edit link of the superadmin (never the shop's own Stripe), when that is switched on
+    if link:  # always through Stripe, with an easy2edit link of the superadmin (never the shop's own Stripe), when that is switched on
         import uuid
 
         ref = "ai_" + uuid.uuid4().hex[:20]

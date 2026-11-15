@@ -178,7 +178,7 @@ export function QuickPrompt({ b, catalog, upd }) {
       <ol className="dw-hint" style={{ margin: "0 0 .6rem", paddingLeft: "1.2rem" }}>
         <li>{tx("Zet hieronder aan welke modules en plugins de site mag gebruiken.")}</li>
         <li>{tx("Kopieer de prompt en plak hem in je AI (Claude, ChatGPT, Gemini …). Die maakt een ZIP met de pagina's (html), style.css, de afbeeldingen in img/ en per extra taal een bestand vertalingen-<taal>.json.")}</li>
-        <li>{tx("Lees het ZIP-bestand hieronder in: Easy2edit importeert de pagina's, de afbeeldingen en de vertalingen, en zet de gekozen modules aan.")}</li>
+        <li>{tx("Lees het ZIP-bestand hieronder in: easy2edit importeert de pagina's, de afbeeldingen en de vertalingen, en zet de gekozen modules aan.")}</li>
       </ol>
       <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem", flexWrap: "wrap" }}>
         <button type="button" className="btn primary" onClick={copy} disabled={!catalog}><IconBolt /> {copied ? tx("Gekopieerd naar het klembord") : tx("Kopieer AI-prompt")}</button>

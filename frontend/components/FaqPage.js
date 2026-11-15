@@ -17,7 +17,7 @@ import FaqArt from "./FaqArt";
 import Tabs from "./Tabs";
 import { useSession } from "./Session";
 
-// The help of Easy2edit: groups with a picture in the colours of the theme, and questions that open. Only what the person has the rights for.
+// The help of easy2edit: groups with a picture in the colours of the theme, and questions that open. Only what the person has the rights for.
 const LAYER_LABEL = { user: "Gebruiker", admin: "Beheer", super: "Super admin" };
 
 export default function FaqPage({ withTitle = true, layer: first = "user", single = true }) {
@@ -43,7 +43,7 @@ export default function FaqPage({ withTitle = true, layer: first = "user", singl
   if (!data) return <Busy />;
   return (
     <div className="faq">
-      {withTitle && <h1>{layer === "user" ? tx("Help van Easy2edit") : layer === "admin" ? tx("Help voor beheer") : tx("Help voor super admin")}</h1>}
+      {withTitle && <h1>{layer === "user" ? tx("Help van easy2edit") : layer === "admin" ? tx("Help voor beheer") : tx("Help voor super admin")}</h1>}
       <p className="muted">{layer === "user" ? tx("Uitleg over het gebruik van de onderdelen die aan staan en die jij mag gebruiken.") : layer === "admin" ? tx("Uitleg over het beheer van de onderdelen, plugins en spelletjes waar jij rechten voor hebt.") : tx("Uitleg voor superadmins: modules, plugins, thema's en back-up.")}</p>
       {!single && data.layers.length > 1 && <Tabs value={layer} onChange={setLayer} tabs={data.layers.map((l) => [l, LAYER_LABEL[l]])} />}
       <div className="faq-tools">

@@ -11,9 +11,9 @@ import os
 
 # provider -> (slug, name, {config field: environment variable}); a link is made when its main variable (the first) is set
 ENV_LINKS = {
-    "postmark": ("postmark-easy2edit", "Postmark Easy2edit", {"server_token": "EASY2EDIT_POSTMARK_TOKEN", "from_email": "EASY2EDIT_POSTMARK_FROM"}),
-    "stripe": ("stripe-easy2edit", "Stripe Easy2edit", {"secret_key": "EASY2EDIT_STRIPE_KEY"}),
-    "anthropic": ("claude-easy2edit", "Claude Easy2edit", {"api_key": "EASY2EDIT_ANTHROPIC_KEY"}),
+    "postmark": ("postmark-easy2edit", "Postmark easy2edit", {"server_token": "EASY2EDIT_POSTMARK_TOKEN", "from_email": "EASY2EDIT_POSTMARK_FROM"}),
+    "stripe": ("stripe-easy2edit", "Stripe easy2edit", {"secret_key": "EASY2EDIT_STRIPE_KEY"}),
+    "anthropic": ("claude-easy2edit", "Claude easy2edit", {"api_key": "EASY2EDIT_ANTHROPIC_KEY"}),
 }
 SECRETS = ("api_key", "secret_key", "server_token", "access_key", "access_key_id", "secret_access_key", "token", "password")
 
@@ -78,7 +78,7 @@ def _has_key(obj):
 
 
 def file_status():
-    """{"file": the password-locked file with the Easy2edit links is there, "missing": [providers without a link that is on and has a key], "needed": file there and something missing}."""
+    """{"file": the password-locked file with the easy2edit links is there, "missing": [providers without a link that is on and has a key], "needed": file there and something missing}."""
     from apps.integrations.models import Integration
 
     missing = [p for p in FILE_PROVIDERS if not any(i.enabled and _has_key(i) for i in Integration.objects.filter(provider=p, superadmin_only=True))]

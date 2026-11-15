@@ -61,7 +61,7 @@ def apply():
         return []
     data = json.loads(PATH.read_text(encoding="utf-8"))
     results = settings_backup.load(data["bundle"], SECTIONS)
-    try:  # the logos of a new or reset site are always those of Easy2edit; the colours come from the saved look, and without a saved look the whole Easy2edit theme is used
+    try:  # the logos of a new or reset site are always those of easy2edit; the colours come from the saved look, and without a saved look the whole easy2edit theme is used
         from . import themepacks
 
         if "theme" in (data["bundle"].get("sections") or {}):

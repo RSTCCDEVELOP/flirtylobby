@@ -179,7 +179,7 @@ try:
             print(r.stdout[-600:], r.stderr[-400:])
             segs = []
             card = work / "title.png"
-            title_card(card, v["title"][lang], "Easy2edit")
+            title_card(card, v["title"][lang], "easy2edit")
             (work / "title.txt").write_text(f"file '{card}'\nduration 3\nfile '{card}'\n")
             segment(work / "title.txt", None, 3.0, work / "seg-0.mp4")
             segs.append(work / "seg-0.mp4")

@@ -7,6 +7,7 @@
 
 "use client";
 
+import { dragProps } from "../lib/panel-drag";
 import { useEffect, useState } from "react";
 import { tx } from "../lib/t";
 import { WIDGET_NAMES } from "./PageWidget";
@@ -54,7 +55,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
   const match = (l, d) => `${tx(l)} ${tx(d)}`.toLowerCase().includes(find);
   const tabs = [...GROUPS.map(([k, l]) => [k, l]), ["componenten", "Componenten"], ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
   const tile = ([type, widget, label, desc, icon]) => (
-    <button type="button" key={`${type}-${widget}`} className="pb-addtile" onClick={() => onAdd(type, widget)}>
+    <button type="button" key={`${type}-${widget}`} className="pb-addtile" onClick={() => onAdd(type, widget)} {...dragProps({ kind: "basic", type, widget })}>
       <span className="pb-addico">{ICON[icon]}</span>
       <span className="pb-addtext"><strong>{tx(label)}</strong><small>{tx(desc)}</small></span>
     </button>
@@ -73,7 +74,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
   );
   const comps = kit?.KIT_COMPONENTS || [];
   const compTile = (c) => (
-    <button type="button" key={c.easy2edit_tag} className="pb-addtile" onClick={() => onComponent(c)} title={c.easy2edit_tag}>
+    <button type="button" key={c.easy2edit_tag} className="pb-addtile" onClick={() => onComponent(c)} title={c.easy2edit_tag} {...dragProps({ kind: "component", comp: c })}>
       <span className="pb-addico">{ICON.object}</span>
       <span className="pb-addtext"><strong>{tx(c.name)}</strong><small>{tx(c.description)}</small></span>
     </button>
@@ -105,7 +106,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
           hits.length || comps.some(compMatch) || objHits.length ? (
             <>
               {hits.length > 0 && <div className="pb-addgrid">{hits.map((h) => (h === "obj" ? objTile : tile(h)))}</div>}
-              {objHits.length > 0 && onObject && <><h4 style={{ margin: ".7rem 0 .3rem" }}>{tx("Systeemobjecten")}</h4><div className="pb-addgrid">{objHits.map((o) => <button type="button" key={o.slug} className="pb-addtile" onClick={() => onObject(o.slug)} title={o.slug}><span className="pb-addico">{ICON.object}</span><span className="pb-addtext"><strong>{o.name}</strong><small>{tx(o.label)}</small></span></button>)}</div></>}
+              {objHits.length > 0 && onObject && <><h4 style={{ margin: ".7rem 0 .3rem" }}>{tx("Systeemobjecten")}</h4><div className="pb-addgrid">{objHits.map((o) => <button type="button" key={o.slug} className="pb-addtile" onClick={() => onObject(o.slug)} title={o.slug} {...dragProps({ kind: "object", slug: o.slug })}><span className="pb-addico">{ICON.object}</span><span className="pb-addtext"><strong>{o.name}</strong><small>{tx(o.label)}</small></span></button>)}</div></>}
               {comps.some(compMatch) && <><h4 style={{ margin: ".7rem 0 .3rem" }}>{tx("Componenten")}</h4><div className="pb-addgrid">{comps.filter(compMatch).map(compTile)}</div></>}
             </>
           ) : <p className="muted" style={{ padding: ".6rem" }}>{tx("Niets gevonden.")}</p>
@@ -131,7 +132,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
                   <details key={g.key} className="pb-sysgroup">
                     <summary><strong>{tx(g.label)}</strong> <small className="muted">({g.items.length})</small></summary>
                     <div className="pb-addgrid">{g.items.map((o) => (
-                      <button type="button" key={o.slug} className="pb-addtile" onClick={() => onObject(o.slug)} title={o.slug}>
+                      <button type="button" key={o.slug} className="pb-addtile" onClick={() => onObject(o.slug)} title={o.slug} {...dragProps({ kind: "object", slug: o.slug })}>
                         <span className="pb-addico">{ICON.object}</span>
                         <span className="pb-addtext"><strong>{o.name}</strong><small>{tx(g.label)}</small></span>
                       </button>

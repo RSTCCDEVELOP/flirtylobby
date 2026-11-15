@@ -14,5 +14,5 @@ import { tx } from "../lib/t";
 export default function LicenseNotice({ site }) {
   const path = usePathname() || "/";
   if (!site?.license_missing || path.startsWith("/onderhoud")) return null;
-  return <div className="license-note" role="note">{tx("Er is geen Easy2edit licentie in gebruik op deze website.")}</div>;
+  return <div className="license-note" role="note">{tx("Er is geen easy2edit licentie in gebruik op deze website.")}</div>;
 }

@@ -5,12 +5,12 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""Component sets: sets of ready-made Easy2edit objects (components), like theme packages. A set is one zip, <key>-<version>.zip, with
+"""Component sets: sets of ready-made easy2edit objects (components), like theme packages. A set is one zip, <key>-<version>.zip, with
 - components.json: {"key", "name", "description", "version", "author", "components": [{"easy2edit_tag", "name", "description", "group", "category", "html"}]}
-- components.css: the css of the components (it uses the tokens --e2e-*, which Easy2edit fills with the colours, fonts and corners of the theme in use)
+- components.css: the css of the components (it uses the tokens --e2e-*, which easy2edit fills with the colours, fonts and corners of the theme in use)
 - components.js: optional, the script that the components need (tabs, calendar, kanban, players ...)
 The library of the product is resource/components (in git); a set is installed on a site by copying it to the components folder of the site. The FIRST set (DEFAULT_KEY,
-the Easy2edit UI-kit) is installed with every installation and stays in use until another one is chosen. Every component has an easy2edit_tag: the name that exports,
+the easy2edit UI-kit) is installed with every installation and stays in use until another one is chosen. Every component has an easy2edit_tag: the name that exports,
 imports, designs and AI prompts use for it."""
 import json
 import re
@@ -221,6 +221,6 @@ def rules_text(key=None):
     except ComponentError:
         return ""
     lines = "\n".join(f"- {c['easy2edit_tag']}: {c['name']} [{c['group']}] - {c['description']}" for c in s["components"])
-    return ("COMPONENTS: Easy2edit has ready-made components, the set \"" + s["name"] + "\" (the classes e2e-*). ALWAYS use them when a part of a page is one of them: wrap it in "
-            "<div data-easy2edit-tag=\"TAG\"> ... </div> with the exact tag and write the component with its e2e-* classes and structure; Easy2edit draws it with the colours, fonts "
+    return ("COMPONENTS: easy2edit has ready-made components, the set \"" + s["name"] + "\" (the classes e2e-*). ALWAYS use them when a part of a page is one of them: wrap it in "
+            "<div data-easy2edit-tag=\"TAG\"> ... </div> with the exact tag and write the component with its e2e-* classes and structure; easy2edit draws it with the colours, fonts "
             "and corners of the theme (so no colours of your own in it). Tags:\n" + lines)
