@@ -157,7 +157,8 @@ function KitStep({ brief, setBrief, onSet }) {
       const have = new Set(own.map((p) => p.key));
       const fromLib = lib.filter((r) => !r.bundle && !have.has(r.name) && r.preview).map((r) => ({ key: r.name, name: r.title, description: r.description, mode: r.preview.mode, library: true, fonts: [r.preview.font, r.preview.font],
         colors: { primary: r.preview.primary, secondary: r.preview.secondary, light_bg: r.preview.light?.page, light_card: r.preview.light?.card, light_text: r.preview.light?.text, dark_bg: r.preview.dark?.page } }));
-      setPacks([...own, ...fromLib]);
+      const seen = new Set();  // every theme once: by key and by name
+      setPacks([...own, ...fromLib].filter((p) => { const k = `${p.key}|${String(p.name).trim().toLowerCase()}`; if (seen.has(p.key) || seen.has(`n:${String(p.name).trim().toLowerCase()}`)) return false; seen.add(p.key); seen.add(`n:${String(p.name).trim().toLowerCase()}`); return !!k; }));
     });
     api("/components/sets/").then((d) => setSets([...(d.installed || []), ...(d.library || []).filter((m) => !m.installed)])).catch(() => setSets([])); }, []);
   const pickTheme = (p) => setBrief((cur) => (p ? { ...cur, theme_key: p.key, primary: p.colors?.primary || cur.primary, secondary: p.colors?.secondary || cur.secondary, /* the colours of the theme go into the fields below (and can still be changed) */ theme_info: `${p.name} (key ${p.key}): primary ${p.colors?.primary}, secondary ${p.colors?.secondary}, page ${p.colors?.light_bg}, card ${p.colors?.light_card}, text ${p.colors?.light_text}; heading font ${p.fonts?.[0]}, body font ${p.fonts?.[1]}; ${p.mode === "dark" ? "dark" : p.mode === "light" ? "light" : "light and dark"} mode. Use exactly these colours and fonts as the theme of the design.` } : { ...cur, theme_key: "", theme_info: "" }));

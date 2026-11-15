@@ -344,11 +344,22 @@ def save_theme(name, description, mode, values, install=False):
     from . import themepacks
 
     name = str(name or "Nieuw thema").strip()[:60] or "Nieuw thema"
-    taken = {e["name"] for e in catalog("themas")} | themepacks.BUILTIN_KEYS()
-    key, n = _slug(name), 2
-    while key in taken or key in {r["key"] for r in themepacks.builtin_manifests()}:
-        key = f"{_slug(name)[:27]}-{n}"
-        n += 1
+    entries = [e for e in catalog("themas") if not e["bundle"]]
+    builtin_names = {str(r.get("name") or "").strip().lower() for r in themepacks.builtin_manifests()}
+    same = next((e for e in entries if e.get("origin") == "site" and str(e["title"]).strip().lower() == name.lower()), None)
+    if same:  # a theme of this site with this name exists: it is replaced, not copied (no easy2edit-2, easy2edit-3 ...)
+        key = same["name"]
+    else:
+        names = {str(e["title"]).strip().lower() for e in entries} | builtin_names  # a name of the library or of a built-in theme is not used twice: the theme gets "naam 2"
+        base, n = name, 2
+        while name.lower() in names:
+            name = f"{base[:56]} {n}"
+            n += 1
+        taken = {e["name"] for e in entries} | themepacks.BUILTIN_KEYS()
+        key, n = _slug(name), 2
+        while key in taken or key in {r["key"] for r in themepacks.builtin_manifests()}:
+            key = f"{_slug(name)[:27]}-{n}"
+            n += 1
     man = {"key": key, "name": name, "description": str(description or "")[:300], "version": "1.0.0", "system_version": str(settings.SYSTEM_VERSION),
            "mode": mode if mode in ("light", "dark") else None, "values": values}
     raw = json.dumps(man, indent=2, ensure_ascii=False) + "\n"
