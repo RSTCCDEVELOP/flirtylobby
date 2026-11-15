@@ -21,6 +21,9 @@ import { useChat } from "./Chat";
 import { useModules } from "./Modules";
 import { refreshMs } from "../lib/refresh";
 
+// Tiles that show in a second group as well (the page stays in its own group in the menu): the theme is also a part of the website.
+const ALSO_IN = { "/dashboard/admin/theme": ["a-site"] };
+
 // The page of one menu group as tiles (the other way to work than the menu on the left): Admin -> Gebruikers, Website, … or the groups of the member menu.
 export default function GroupTiles({ id }) {
   const { user } = useAuth();
@@ -48,7 +51,7 @@ export default function GroupTiles({ id }) {
 
   let items;
   if (admin) {
-    const own = ADMIN_NAV.filter((n) => ADMIN_GROUP_OF[n.href] === id && (() => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); })());
+    const own = ADMIN_NAV.filter((n) => (ADMIN_GROUP_OF[n.href] === id || (ALSO_IN[n.href] || []).includes(id)) && (() => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); })());
     const fromPlugins = plugins.filter((x) => x.has_admin && (ADMIN_SECTION_GROUP[x.section] || "a-system") === id).flatMap((x) => [{ href: `/dashboard/admin/plugin/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true },
       ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugin/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, plugin: true }))]);
     items = [...own, ...fromPlugins].map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n));
