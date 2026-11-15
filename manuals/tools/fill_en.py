@@ -30,6 +30,15 @@ for f in glob.glob(str(ROOT / "frontend" / "**" / "*.js"), recursive=True):
         k = (m.group(1) or m.group(2) or "").replace('\\"', '"').replace("\\'", "'")
         if k and re.search(r"[A-Za-zÀ-ÿ]", k):
             keys.add(k)
+# texts that are in lists and tables of the frontend and are shown with tx(variable): the wizard of the AI prompt, the elements of the editor panel, the help of the editor, the groups of the components
+for rel in ("app/dashboard/admin/siteimport/briefWizard.js", "components/PageAddMenu.js", "components/EditHelp.js", "components/PageBlocks.js", "components/ComponentPicker.js"):
+    f = ROOT / "frontend" / rel
+    if not f.is_file():
+        continue
+    for m in re.finditer(r"\"((?:[^\"\\\n]|\\.){3,400})\"", f.read_text(errors="ignore")):
+        k = m.group(1).replace('\\"', '"')
+        if re.search(r"[A-Za-zÀ-ÿ]{3}", k) and (" " in k or k[:1].isupper()) and not re.search(r"^(use client|\.|#|http|--|[a-z]+[-_][a-z]|<|/)|[{}<>=;]|^[a-z]+$|\.js$", k):
+            keys.add(k)
 missing = sorted(k for k in keys if k not in en)
 print("missing:", len(missing), flush=True)
 SYS = ("You translate the interface texts of a CMS from Dutch to natural, concise English (UI style: short labels, sentence case). Keep placeholders like {0}, {1} exactly as they are, keep punctuation, keep brand and product names "

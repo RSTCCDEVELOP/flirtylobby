@@ -32,5 +32,11 @@
  "orders": "Bestellingen: alle bestellingen van de shop, abonnementen en donaties.",
  "installation-plugins": "De tab Plugins van een standaard installatie: de plugins en modules van de installatie. Een superadmin heeft er een schakelaar bij; een wijziging wordt meteen bewaard als standaard voor de volgende installatie.",
  "design-start": "De eerste stap van de wizard Website ontwerpen met de snelle start: kopieer de AI-prompt voor een externe AI, kies de modules en plugins en zie de prijs per maand.",
- "showcase-admin": "De beheerpagina van de plugin Showcase: projecten met status en afbeeldingen, en de tabs Groepen, Tags en Presentaties."
+ "showcase-admin": "De beheerpagina van de plugin Showcase: projecten met status en afbeeldingen, en de tabs Groepen, Tags en Presentaties.",
+ "editor": "De bewerkmodus: het paneel links met de elementen en de pagina ernaast. Sleep een element naar de pagina of klik erop om het toe te voegen.",
+ "editor-structure": "Het tabblad Structuur van het paneel: de blokken en kolommen van de pagina, met Omhoog en Omlaag.",
+ "editor-components": "Elementen > Componenten: de kant-en-klare componenten van de componentenset, in groepen met een zoekveld.",
+ "components": "Admin > Componenten: de componenten van de set in de kleuren van het thema, in groepen, met HTML kopiëren en easy2edit_tag kopiëren.",
+ "templates": "Admin > Website > Templates: complete startwebsites met voorbeeldplaatjes; kies er één en gebruik hem.",
+ "prompt-wizard": "De wizard voor de AI-prompt: stappen met vragen over de website, een thema en een componentenset. Elk antwoord gaat in de prompt."
 }

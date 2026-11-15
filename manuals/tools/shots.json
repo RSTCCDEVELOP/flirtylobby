@@ -381,5 +381,105 @@
   "chapter": 8,
   "settle": 7000,
   "caption": "The admin page of the Showcase plugin: projects with status and pictures, and the tabs Groups, Tags and Presentations."
+ },
+ {
+  "id": "editor",
+  "file": "editor",
+  "path": "/?edit=1",
+  "chapter": 3,
+  "caption": "Edit mode: the panel at the left with the elements, and the page next to it. Drag an element onto the page, or click it to add it.",
+  "steps": [
+   {
+    "wait": 2500
+   }
+  ]
+ },
+ {
+  "id": "editor-structure",
+  "file": "editor-structure",
+  "path": "/?edit=1",
+  "chapter": 3,
+  "caption": "The tab Structure of the panel: the blocks and columns of the page, with Up and Down.",
+  "steps": [
+   {
+    "wait": 2000
+   },
+   {
+    "clickText": [
+     "Structure",
+     "Structuur"
+    ],
+    "wait": 1200
+   }
+  ]
+ },
+ {
+  "id": "editor-components",
+  "file": "editor-components",
+  "path": "/?edit=1",
+  "chapter": 3,
+  "caption": "Elements > Components: the ready-made components of the component set, in groups with a search box.",
+  "steps": [
+   {
+    "wait": 2000
+   },
+   {
+    "clickText": [
+     "Components",
+     "Componenten"
+    ],
+    "wait": 1800
+   }
+  ]
+ },
+ {
+  "id": "components",
+  "file": "components",
+  "path": "/dashboard/admin/components",
+  "chapter": 5,
+  "caption": "Admin > Components: the components of the set in the colours of the theme, in groups, with Copy HTML and Copy easy2edit_tag.",
+  "steps": [
+   {
+    "wait": 2000
+   }
+  ]
+ },
+ {
+  "id": "templates",
+  "file": "templates",
+  "path": "/dashboard/admin/templates",
+  "chapter": 5,
+  "caption": "Admin > Website > Templates: complete starting websites with example pictures; choose one and use it.",
+  "steps": [
+   {
+    "wait": 1500
+   }
+  ]
+ },
+ {
+  "id": "prompt-wizard",
+  "file": "prompt-wizard",
+  "path": "/dashboard/admin/siteimport",
+  "chapter": 4,
+  "caption": "The AI prompt wizard: steps with questions about the website, a theme and a component set. Every answer goes into the prompt.",
+  "steps": [
+   {
+    "wait": 1500
+   },
+   {
+    "clickText": [
+     "AI creator",
+     "AI-creator"
+    ],
+    "wait": 1500
+   },
+   {
+    "clickText": [
+     "Make AI prompt",
+     "AI-prompt maken"
+    ],
+    "wait": 1500
+   }
+  ]
  }
 ]

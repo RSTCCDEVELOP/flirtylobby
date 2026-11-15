@@ -39,128 +39,129 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color
 @media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
 @media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
 @media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
-</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Handleiding</a><a href="videos.html" class="">Video's</a></nav><span class="ver">Handleiding &middot; versie 1.0.0 build 99</span><span class="sp"></span><input id="q" type="search" placeholder="Zoek in hoofdstukken" aria-label="Zoek in hoofdstukken"><span class="langsw"><b>NL</b><a href="../en/chapter-5.html" hreflang="en" title="English">EN</a></span><a class="btn" id="pdf" href="../../pdf/manual_nl.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Handleiding</h4><a href="index.html" data-t="inhoud" class=""><span>&#9776;</span>Inhoud</a><a href="chapter-1.html" data-t="inleiding easy2edit is een eenvoudig, modulair beheersysteem (cms) voor portals, websites, webshops en communities. het is gebouwd op een django (rest) backend en een next.js frontend, die samen het systeem snel en betrouwbaar houden en tegelijk een flexibele, moderne manier van werken mogelijk maken.
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Handleiding</a><a href="videos.html" class="">Video's</a></nav><span class="ver">Handleiding &middot; versie 1.0.0 build 114</span><span class="sp"></span><input id="q" type="search" placeholder="Zoek in hoofdstukken" aria-label="Zoek in hoofdstukken"><span class="langsw"><b>NL</b><a href="../en/chapter-5.html" hreflang="en" title="English">EN</a></span><a class="btn" id="pdf" href="../../pdf/manual_nl.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Handleiding</h4><a href="index.html" data-t="inhoud" class=""><span>&#9776;</span>Inhoud</a><a href="chapter-1.html" data-t="introductie welkom bij easy2edit, een eenvoudig, modulair beheersysteem (cms) voor het bouwen en runnen van portals, websites, webshops en communities. deze handleiding legt uit hoe het systeem werkt en hoe je het beheert vanuit de adminschermen.
 
-in plaats van te starten vanaf een vaste template, bouw je een website op uit blokken en zet je modules en" class=""><span>1</span>Inleiding</a><a href="chapter-2.html" data-t="aan de slag ## voor de eerste keer inloggen
+## wat is easy2edit
 
-de eerste keer dat je easy2edit opent, log je in met het superadmin-account. dit account heeft volledige toegang tot elke module en instelling, zodat je de eerste installatie kunt voltooien.
+met easy2edit bouw je een website uit blokken. in plaats van code te schrijven, zet je modules en plugins aan of uit, en rangschik je blokken o" class=""><span>1</span>Introductie</a><a href="chapter-2.html" data-t="aan de slag ## eerste keer inloggen
 
-## de sandbox-vraag (alleen bij localhost)
+log voor de eerste keer in op easy2edit als superadmin. het superadmin-account heeft volledige toegang tot elke module en instelling, dus dit is de rol die je gebruikt om de website op te zetten en te laten draaien.
 
-als de site op je eigen computer draait (localhost), vraagt easy2edit je als eerste of je de sandbox wilt aanzetten. met de sandbox" class=""><span>2</span>Aan de slag</a><a href="chapter-3.html" data-t="pagina&#x27;s, menu en bewerkmodus dit hoofdstuk legt uit hoe pagina&#x27;s en het menu zijn georganiseerd in easy2edit, en hoe je met de bewerkmodus pagina&#x27;s direct op het scherm kunt bouwen en aanpassen.
+als je easy2edit op je eigen computer (localhost) draait, vraagt het systeem meteen of je de sandbox wilt aanzetten. dit is het overwegen waard voordat je ver" class=""><span>2</span>Aan de slag</a><a href="chapter-3.html" data-t="pagina&#x27;s, menu en bewerkmodus met easy2edit bouw en beheer je elke pagina van je site vanuit admin &gt; pagina&#x27;s. dit hoofdstuk legt uit hoe pagina&#x27;s zijn georganiseerd, hoe het menu werkt en hoe je de bewerkmodus gebruikt om je pagina&#x27;s vorm te geven.
 
-## overzicht van pagina&#x27;s en menu
+## overzicht van pagina&#x27;s
 
-alle pagina&#x27;s en menu-items beheer je onder admin &gt; pagina&#x27;s. hier vind je drie soorten items:
+in admin &gt; pagina&#x27;s vind je verschillende soorten pagina&#x27;s:
 
-- systeempagina&#x27;s: ingebouwde pagina&#x27;s zoals home en producten.
-- eigen pagina&#x27;s: tekstpagina&#x27;s die te" class=""><span>3</span>Pagina&#x27;s, menu en bewerkmodus</a><a href="chapter-4.html" data-t="een website importeren (site-import) easy2edit kan een bestaande website omzetten in een werkende easy2edit-site. je geeft het één of meer html-bestanden, een adres, een map of een zip-bestand, en de ingebouwde ai leest dit en stelt een voorstel samen. er wordt niets op je site aangemaakt totdat je het voorstel hebt bekeken en goedgekeurd.
+- systeempagina&#x27;s, zoals home en producten, die onderdeel zijn van het systeem.
+- eigen pag" class=""><span>3</span>Pagina&#x27;s, menu en bewerkmodus</a><a href="chapter-4.html" data-t="een website importeren (site import) met site import zet je een bestaande website, een set html-bestanden of een prompt die je hebt gemaakt met een externe ai om in een kant-en-klare easy2edit-site. er wordt niets op je website aangemaakt voordat je het voorstel hebt gezien en goedgekeurd.
 
-je vindt deze functie onder admin &gt; geïmporteerd. de knop heet de eerste keer dat je deze gebr" class=""><span>4</span>Een website importeren (Site-import)</a><a href="chapter-5.html" data-t="media, thema, talen en branding ## mediabibliotheek
+je vindt deze functie onder admin &gt; geïmporteerd. de knop heet &#x27;site import&#x27; totdat je voor het eerst een site hebt geïmporteerd; daarna heet hij" class=""><span>4</span>Een website importeren (Site import)</a><a href="chapter-5.html" data-t="media, thema, talen en branding ## media bibliotheek
 
-in de mediabibliotheek (admin &gt; media) beheer je alle afbeeldingen en video&#x27;s die op je website worden gebruikt. bestanden kunnen lokaal op je server of op s3 worden opgeslagen, afhankelijk van hoe je site is geconfigureerd.
+de media bibliotheek is de plek waar je alle afbeeldingen en video&#x27;s beheert die op je website worden gebruikt. bestanden kunnen lokaal of op s3 worden opgeslagen, en je kunt ze organiseren met tags zodat je ze later makkelijk terugvindt.
 
-elke afbeelding of video die je uploadt kan je voorzien van tags, waardoor het makkelijker wordt om je bestanden te zoeken en organiseren naarmate je bib" class="on"><span>5</span>Media, thema, talen en branding</a><a href="chapter-6.html" data-t="gebruikers, rollen en beveiliging ## gebruikers en profielen
+zodra een afbeelding is geüpload, kun je deze vanuit elke pop-up in het systeem kiezen uit de media bibliotheek, zodat je nooit dezelfde a" class="on"><span>5</span>Media, thema, talen en branding</a><a href="chapter-6.html" data-t="gebruikers, rollen en beveiliging dit hoofdstuk legt uit hoe easy2edit omgaat met accounts, rechten en de beveiligingsinstellingen die je website en de bezoekers ervan beschermen.
 
-easy2edit houdt een overzicht bij van iedereen die kan inloggen op je website of adminomgeving. je beheert deze gegevens onder admin &gt; gebruikers (users).
+## dashboard en profiel
 
-voor elke gebruiker kun je instellen:
+elke beheerder logt in via het inlogscherm en komt terecht op het dashboard, het centrale startpunt voor het beheren van de website. vanaf hier open je ook je eigen profiel om je gegevens bij te werken.
 
-- een account met een gebruikersnaam en wachtwoord
-- een profielfoto
-- een openbaar profiel dat getoond kan worden op de website
-- een geblokkeerde of actieve status
+ga naar admin &gt; dashboar" class=""><span>6</span>Gebruikers, rollen en beveiliging</a><a href="chapter-7.html" data-t="webwinkel, bestellingen, betalingen, abonnementen en donaties easy2edit biedt een reeks onderling verbonden plugins die samen van je website een volledig werkende webwinkel, ledensysteem of donatieplatform maken. afhankelijk van wat je wilt bereiken, combineer je de plugins webwinkel, bestellingen, financieel en abonnementen. dit hoofdstuk legt uit wat elke plugin doet en hoe ze samenwerken.
 
-een accoun" class=""><span>6</span>Gebruikers, rollen en beveiliging</a><a href="chapter-7.html" data-t="webwinkel, bestellingen, betalingen, abonnementen en donaties hoofdstuk 7: webwinkel, bestellingen, betalingen, abonnementen en donaties
+## hoe de plugins met elkaar samenhangen
 
-easy2edit biedt een set plugins die samenwerken om producten te verkopen, bestellingen te beheren, betalingen te verwerken en abonnementen of donatiecampagnes te runnen. afhankelijk van wat je op je site wilt aanbieden, combineer je de plugins webwinkel, bestellingen, financieel en abonnementen. als je begrijpt hoe deze pl" class=""><span>7</span>Webwinkel, bestellingen, betalingen, abonnementen en donaties</a><a href="chapter-8.html" data-t="community, marktplaats, agenda, documenten en games dit hoofdstuk behandelt de plugins die jouw leden samenbrengen: profielen, ontdekken in datingstijl, berichten, chatten, directe verbindingen, een marktplaats, een agenda, documentbeheer, een gamehal, showcase-presentaties en de bijbehorende leeftijds-, land- en gokcontroles.
+deze vier plugins zijn o" class=""><span>7</span>Webwinkel, bestellingen, betalingen, abonnementen en donaties</a><a href="chapter-8.html" data-t="community, marktplaats, agenda, documenten en spellen dit hoofdstuk behandelt de plugins die van jouw site een plek maken waar leden met elkaar in contact komen, handelen, plannen, bestanden delen en spelen. samen kunnen ze een volledige community- of datingsite, een marktplaats, een gedeelde agenda, een documentenbibliotheek en een kleine spellenarcade aandrijven.
 
-## community
+## community overzicht
 
-de community-plugin brengt alles samen wat je nodig hebt voor een community- of datingsite: profielpagina&#x27;s " class=""><span>8</span>Community, marktplaats, agenda, documenten en games</a><a href="chapter-9.html" data-t="seo, faq en statistieken ## seo
+de community-plugin bundelt alles wat je nodig hebt voor een " class=""><span>8</span>Community, marktplaats, agenda, documenten en spellen</a><a href="chapter-9.html" data-t="seo, faq en statistieken ## overzicht
 
-easy2edit helpt je om je website makkelijk vindbaar te maken, niet alleen voor traditionele zoekmachines maar ook voor bots en ai-agents die webcontent lezen en samenvatten. de seo-tools in easy2edit zorgen zowel voor de technische basis als voor de inhoudelijke details waar zoekmachines en ai-systemen naar op zoek zijn.
+dit hoofdstuk behandelt drie gerelateerde tools die je helpen te begrijpen en verbeteren hoe je website presteert: seo-instellingen, de faq-module en het statistieken-dashboard. samen helpen ze zoekmachines, bots en ai-agents om je content te vinden en te begrijpen, laten ze je veelgestelde vragen van bezoekers direct op je site beantwoorden, en geven ze je inzicht in hoe je site daa" class=""><span>9</span>SEO, FAQ en statistieken</a><a href="chapter-10.html" data-t="ai en ai-tegoed easy2edit gebruikt kunstmatige intelligentie, aangedreven door claude (anthropic), door het hele systeem heen. het helpt bij het vertalen van content, het schrijven van paginateksten, het importeren van websites, het opzoeken van prijzen en meer. omdat ai-aanroepen echte kosten met zich meebrengen, wordt elke aanroep gelogd en in de meeste gevallen betaald met ai-tegoed.
 
-standaard regelt easy2edit:
-
-- robots.txt, dat zoekmachines en ander" class=""><span>9</span>SEO, FAQ en statistieken</a><a href="chapter-10.html" data-t="ai en ai-tegoed easy2edit gebruikt kunstmatige intelligentie (claude, van anthropic) door het hele systeem heen om te helpen bij taken zoals het vertalen van content, het schrijven van paginateksten, het importeren van websites, het opzoeken van prijzen en meer. elke aanroep naar de ai wordt tot in detail gelogd, zodat gebruik en kosten volledig transparant en controleerbaar blijven.
-
-## wat wordt bijgehouden
-
-vo" class=""><span>10</span>AI en AI-tegoed</a><a href="chapter-11.html" data-t="plugins, back-ups, licentie en implementatie dit hoofdstuk legt uit hoe je plugins beheert, je website beschermt met back-ups, hoe de licentie en prijzen werken, en hoe easy2edit wordt uitgerold en up-to-date gehouden.
+## hoe ai wordt ingeschak" class=""><span>10</span>AI en AI-tegoed</a><a href="chapter-11.html" data-t="plugins, back-ups, licentie en implementatie dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je je gegevens kunt beschermen met back-ups, hoe de licentiekosten worden berekend en wat je kunt verwachten wanneer het systeem wordt geïmplementeerd en bijgewerkt.
 
 ## plugins
 
-plugins breiden easy2edit uit met extra modules, pagina&#x27;s, adminschermen en vertalingen. je beheert ze via admin &gt; plugins.
+plugins zijn ondertekende pakketten die zich in de map /plugins bevinden. je beheert ze via admin &gt; plugins.
 
-plugins zijn ondertekende pakketten die zich in de map /plugins bevinden. je kunt nieuwe" class=""><span>11</span>Plugins, back-ups, licentie en implementatie</a></nav><main><article><div class="crumb"><a href="index.html">Handleiding</a> / Hoofdstuk 5</div><h1>5. Media, thema, talen en branding</h1>
+- je kunt een plugin installeren vanui" class=""><span>11</span>Plugins, back-ups, licentie en implementatie</a></nav><main><article><div class="crumb"><a href="index.html">Handleiding</a> / Hoofdstuk 5</div><h1>5. Media, thema, talen en branding</h1>
 
 <div class="video"><video controls preload="metadata" poster="../../video/nl/theme-media-languages.jpg" width="1280" height="800"><source src="../../video/nl/theme-media-languages.mp4" type="video/mp4"></video><p>Video: Thema, media en talen <span>(Nederlandse voice-over ook in <a href="../../video/en/theme-media-languages.mp4" target="_blank" rel="noopener">English</a>)</span></p></div>
 <figure><a href="images/theme.jpg" target="_blank" rel="noopener"><img src="images/theme.jpg" alt="Admin &gt; Thema: kleuren, lettertypen, afrondingen en themapakketten." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 1. Admin &gt; Thema: kleuren, lettertypen, afrondingen en themapakketten.</figcaption></figure>
-<h2 id="mediabibliotheek">Mediabibliotheek<a class="anc" href="#mediabibliotheek" aria-label="Link to this section">#</a></h2>
-<p>In de mediabibliotheek (Admin &gt; Media) beheer je alle afbeeldingen en video&#x27;s die op je website worden gebruikt. Bestanden kunnen lokaal op je server of op S3 worden opgeslagen, afhankelijk van hoe je site is geconfigureerd.</p>
-<p>Elke afbeelding of video die je uploadt kan je voorzien van tags, waardoor het makkelijker wordt om je bestanden te zoeken en organiseren naarmate je bibliotheek groeit. Eenmaal geüpload, kun je afbeeldingen vanuit de mediabibliotheek selecteren in elke pop-up binnen easy2edit, zodat je een afbeelding maar één keer hoeft te uploaden en deze daarna overal kunt hergebruiken.</p>
-<p>Typische toepassingen van de mediabibliotheek zijn:</p>
-<ul>
-<li>Productfoto&#x27;s, banners of achtergrondafbeeldingen uploaden</li>
-<li>Videobestanden beheren voor gebruik op pagina&#x27;s</li>
-<li>Bestanden taggen op onderwerp, campagne of pagina zodat ze later makkelijk terug te vinden zijn</li>
-<li>Bestaande afbeeldingen hergebruiken in plaats van duplicaten te uploaden</li>
-</ul>
+<h2 id="media-bibliotheek">Media bibliotheek<a class="anc" href="#media-bibliotheek" aria-label="Link to this section">#</a></h2>
+<p>De media bibliotheek is de plek waar je alle afbeeldingen en video&#x27;s beheert die op je website worden gebruikt. Bestanden kunnen lokaal of op S3 worden opgeslagen, en je kunt ze organiseren met tags zodat je ze later makkelijk terugvindt.</p>
+<p>Zodra een afbeelding is geüpload, kun je deze vanuit elke pop-up in het systeem kiezen uit de media bibliotheek, zodat je nooit dezelfde afbeelding twee keer hoeft te uploaden. Telkens wanneer je een afbeelding toevoegt aan een pagina, een formulier, een product of een ander onderdeel van easy2edit, kies je deze gewoon uit de bibliotheek in plaats van elke keer je computer te doorzoeken.</p>
 <figure><a href="images/media.jpg" target="_blank" rel="noopener"><img src="images/media.jpg" alt="De mediabibliotheek met alle afbeeldingen en video&#x27;s." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 2. De mediabibliotheek met alle afbeeldingen en video&#x27;s.</figcaption></figure>
-<h2 id="logo-s-afbeeldingen">Logo&#x27;s &amp; afbeeldingen<a class="anc" href="#logo-s-afbeeldingen" aria-label="Link to this section">#</a></h2>
-<p>In het onderdeel Logo&#x27;s &amp; afbeeldingen (branding) beheer je de visuele identiteit van je website. Hier kun je het volgende instellen:</p>
+<h2 id="logo-s-en-afbeeldingen-branding">Logo&#x27;s en afbeeldingen (branding)<a class="anc" href="#logo-s-en-afbeeldingen-branding" aria-label="Link to this section">#</a></h2>
+<p>Onder branding beheer je de visuele identiteit van je website:</p>
 <ul>
-<li>Het logo, inclusief aparte versies voor lichte en donkere modus</li>
-<li>De favicon, die te zien is in browsertabbladen</li>
-<li>Het app-icoon, gebruikt wanneer je website als app op een apparaat wordt opgeslagen</li>
+<li>Logo (met aparte versies voor licht en donker modus)</li>
+<li>Favicon</li>
+<li>App-icoon</li>
 <li>De foto&#x27;s die op de homepage worden getoond</li>
 </ul>
-<p>Door deze elementen up-to-date te houden, zorg je ervoor dat je website er op alle apparaten en browsers consistent en professioneel uitziet.</p>
+<p>Deze instellingen gelden voor de hele website, dus als je ze hier bijwerkt, blijft je branding overal consistent.</p>
 <figure><a href="images/languages.jpg" target="_blank" rel="noopener"><img src="images/languages.jpg" alt="Admin &gt; Talen: de talen van de website." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 3. Admin &gt; Talen: de talen van de website.</figcaption></figure>
-<h2 id="thema-en-vormgeving">Thema en vormgeving<a class="anc" href="#thema-en-vormgeving" aria-label="Link to this section">#</a></h2>
-<p>Het onderdeel Vormgeving (thema), te vinden bij Admin &gt; Thema, bepaalt de algehele look-and-feel van je website. Wanneer dit is uitgeschakeld, gebruikt de website de standaardstijl. Wanneer het is ingeschakeld, krijg je toegang tot een breed scala aan ontwerpopties.</p>
-<p>Met de thema-instellingen kun je het volgende aanpassen:</p>
+<h2 id="thema-vormgeving">Thema (vormgeving)<a class="anc" href="#thema-vormgeving" aria-label="Link to this section">#</a></h2>
+<p>Ga naar Admin &gt; Thema om de algemene uitstraling van je website te bepalen. Hier kun je het volgende instellen:</p>
 <ul>
-<li>Kleuren voor zowel lichte als donkere modus</li>
-<li>Lettertypen die op de hele website worden gebruikt</li>
-<li>Afrondingen, zoals de hoeken van knoppen en vakken</li>
-<li>Breedte van de inhoud, die bepaalt hoe breed het hoofdinhoudsgebied wordt getoond</li>
-<li>Header-indeling, inclusief een redactionele indeling met een zijmenu</li>
-<li>Pop-upstijl, die bepaalt hoe pop-upvensters worden weergegeven</li>
+<li>Kleuren voor zowel licht als donker modus</li>
+<li>Lettertypen</li>
+<li>Rondingen (hoeken van elementen)</li>
+<li>Breedte van de inhoud</li>
+<li>Header-layout, inclusief de redactionele layout met een zijmenu</li>
+<li>Pop-up stijl</li>
+<li>Thema-pakketten, die je met één klik kunt wisselen</li>
+<li>Exporteren en importeren van thema&#x27;s, handig om een look op een andere site te hergebruiken of een back-up te bewaren</li>
 </ul>
-<p>easy2edit biedt ook themapakketten, dit zijn kant-en-klare combinaties van deze instellingen. Je kunt met één klik wisselen tussen themapakketten, waardoor je eenvoudig verschillende looks kunt uitproberen of snel een nieuwe stijl op de hele site kunt toepassen.</p>
-<p>Als je een ontwerp hebt gemaakt dat je wilt hergebruiken, of een thema naar een andere website wilt verplaatsen, kun je je thema-instellingen exporteren. Thema&#x27;s kunnen ook worden geïmporteerd, wat handig is om een opgeslagen ontwerp toe te passen of een thema tussen projecten te delen.</p>
-<p>Stappen om een themapakket toe te passen:</p>
-<ol start="1">
-<li>Ga naar Admin &gt; Thema.</li>
-<li>Zorg ervoor dat het onderdeel Thema is ingeschakeld, want als je het uitschakelt, keert de website terug naar de standaardstijl.</li>
-<li>Blader door de beschikbare themapakketten.</li>
-<li>Selecteer degene die je wilt toepassen.</li>
-<li>Controleer je website om te bevestigen dat de nieuwe look zoals verwacht is toegepast.</li>
-</ol>
+<p>Als het thema is uitgezet, gebruikt de website in plaats daarvan de standaardstijl.</p>
+<figure><a href="images/components.jpg" target="_blank" rel="noopener"><img src="images/components.jpg" alt="Admin &gt; Componenten: de componenten van de set in de kleuren van het thema, in groepen, met HTML kopiëren en easy2edit_tag kopiëren." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 4. Admin &gt; Componenten: de componenten van de set in de kleuren van het thema, in groepen, met HTML kopiëren en easy2edit_tag kopiëren.</figcaption></figure>
+<h2 id="componenten">Componenten<a class="anc" href="#componenten" aria-label="Link to this section">#</a></h2>
+<p>Admin &gt; Componenten (ook beschikbaar als tabblad binnen Admin &gt; Thema) bevat kant-en-klare onderdelen die zijn opgebouwd in de kleuren, lettertypen en hoeken van je actieve thema. Elke component heeft een easy2edit_tag, die door exports, imports, designs en AI-prompts wordt gebruikt om de component te identificeren.</p>
+<p>De standaardset, easy2edit UI-kit, heeft 100 componenten die zijn georganiseerd in groepen:</p>
+<ul>
+<li>Start</li>
+<li>Basis</li>
+<li>Navigatie</li>
+<li>Inhoudsblokken</li>
+<li>Database en lijsten (datatabel met zoeken en sorteren, tabel met selectie en bulkacties, lijst met records, grid met kaarten met zoeken en filters, zoekpagina, filterbalk, recorddetail, recordformulier, lijst met detail)</li>
+<li>Webshop</li>
+<li>Data en feedback</li>
+<li>Grafieken en statistieken (staaf, horizontale staaf, gestapelde staaf, lijn, vlak, meerdere lijnen, taart, meter, ringen, trendcijfers, heatmap, trechter, voortgangsbalken, doelbalk, scorebord, radar, vergelijking, grafiek met periodekeuze)</li>
+<li>Planning en agenda (kalenders, rooster, jaar, kanban, planning)</li>
+<li>Zakelijk</li>
+<li>Media</li>
+<li>Footer</li>
+</ul>
+<p>Omdat componenten in de pagina zelf zijn ingebouwd, werken het thema en de componenten altijd visueel samen. De tabbladen die je ziet binnen componenten volgen de instellingen onder Thema &gt; Uiterlijk &gt; Tabbladen.</p>
+<p>Naast de UI-kit zijn er andere componentsets met dezelfde 100 componenten maar een andere uitstraling: easy2edit Zacht, Strak, Speels en Glas.</p>
+<p>Een componentset is een zipbestand (met components.json, components.css en components.js) dat wordt opgeslagen in resource/components. In het tabblad Sets kun je:</p>
+<ul>
+<li>Zien welke sets geïnstalleerd zijn op je website en welke beschikbaar zijn in de bibliotheek</li>
+<li>Een set installeren, kiezen of verwijderen</li>
+<li>Je eigen zipbestand uploaden</li>
+</ul>
+<p>Om componenten te gebruiken tijdens het bewerken van een pagina, open je de pagina-editor en ga je naar Elements &gt; Componenten.</p>
+<p>Het tabblad Lijst biedt een kant-en-klare lijst van elke component samen met de bijbehorende easy2edit_tag, die je direct kunt kopiëren naar een AI-prompt.</p>
+<figure><a href="images/templates.jpg" target="_blank" rel="noopener"><img src="images/templates.jpg" alt="Admin &gt; Website &gt; Templates: complete startwebsites met voorbeeldplaatjes; kies er één en gebruik hem." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 5. Admin &gt; Website &gt; Templates: complete startwebsites met voorbeeldplaatjes; kies er één en gebruik hem.</figcaption></figure>
 <h2 id="talen">Talen<a class="anc" href="#talen" aria-label="Link to this section">#</a></h2>
-<p>Het onderdeel Talen beheert de meertalige ondersteuning van je website. Wanneer deze functie is uitgeschakeld, gebruikt de website alleen de standaardtaal. Wanneer deze is ingeschakeld, kun je je website in meerdere talen aanbieden.</p>
-<p>In dit onderdeel kun je:</p>
+<p>Onder Talen regel je de meertalige ondersteuning voor je website:</p>
 <ul>
-<li>Kiezen welke talen je website aan bezoekers aanbiedt</li>
-<li>De standaardtaal voor de site instellen</li>
-<li>Teksten vertalen met de ingebouwde AI-vertaaltool</li>
+<li>Welke talen de website aanbiedt</li>
+<li>De standaardtaal</li>
+<li>Teksten automatisch vertalen met AI</li>
 </ul>
-<p>Hierdoor kun je een breder publiek bereiken zonder elke pagina handmatig in een andere taal te herschrijven.</p>
-<p>Het is goed om te weten dat de teksten van het easy2edit-systeem zelf, zoals labels en interface-elementen, al in 44 talen beschikbaar zijn. Dit betekent dat de beheeromgeving en ingebouwde systeemteksten zich kunnen aanpassen aan veel talen, los van de inhoudvertalingen die je zelf beheert.</p>
-<p>Stappen om meerdere talen in te schakelen:</p>
+<p>Als talen zijn uitgezet, toont de website alleen de standaardtaal. De systeeminterface zelf is al beschikbaar in 44 talen.</p>
+<h2 id="websjablonen">Websjablonen<a class="anc" href="#websjablonen" aria-label="Link to this section">#</a></h2>
+<p>Via Admin &gt; Website &gt; Sjablonen kun je starten met een complete, kant-en-klare website in plaats van alles vanaf nul te bouwen. Een sjabloon is een zip-bestand dat wordt opgeslagen in resource/templates en kan pagina&#x27;s, afbeeldingen, een menu, en eventueel een thema en een componentenset bevatten, samen met voorbeeldafbeeldingen zodat je het resultaat kunt bekijken.</p>
+<p>Om een sjabloon te gebruiken:</p>
 <ol start="1">
-<li>Ga naar Admin &gt; Talen.</li>
-<li>Schakel meertalige ondersteuning in.</li>
-<li>Selecteer de talen die je op je website wilt aanbieden.</li>
-<li>Stel je gewenste standaardtaal in.</li>
-<li>Gebruik de AI-vertaaltool om je inhoud naar de geselecteerde talen te vertalen.</li>
-<li>Controleer de vertaalde teksten om te zorgen dat ze natuurlijk lezen voordat je ze publiceert.</li>
+<li>Open Admin &gt; Website &gt; Sjablonen en bekijk de beschikbare sjablonen.</li>
+<li>Bekijk de voorbeeldafbeeldingen om te zien hoe het sjabloon eruitziet.</li>
+<li>Kies of je het sjabloon wilt toevoegen naast je bestaande pagina&#x27;s, of dat het pagina&#x27;s met hetzelfde adres mag vervangen.</li>
+<li>Zodra het is toegepast, is alles volledig van jou om te bewerken in de pagina-editor.</li>
 </ol>
-<h2 id="alles-samengevat">Alles samengevat<a class="anc" href="#alles-samengevat" aria-label="Link to this section">#</a></h2>
-<p>Media, branding, thema en taalinstellingen werken samen om te bepalen hoe je website eruitziet en aanvoelt voor bezoekers. De mediabibliotheek houdt je afbeeldingen en video&#x27;s georganiseerd en klaar voor gebruik. De branding-instellingen zorgen ervoor dat je logo en iconen overal consistent zijn waar ze verschijnen. Met de thema-instellingen kun je het ontwerp verfijnen of volledig transformeren, waarbij themapakketten snelle, kant-en-klare stijlen bieden. Tot slot zorgen de taalinstellingen ervoor dat je website bezoekers kan aanspreken in hun voorkeurstaal, terwijl de systeeminterface zelf al in 44 talen gebruikt kan worden.</p>
-<p>Door de tijd te nemen om deze onderdelen zorgvuldig in te stellen, zelfs voordat je je richt op individuele pagina&#x27;s, geef je je website een sterke, professionele en toegankelijke basis.</p><div class="pager"><a href="chapter-4.html"><small>Vorige</small><strong>&larr; Een website importeren (Site-import)</strong></a><a class="nx" href="chapter-6.html"><small>Volgende</small><strong>Gebruikers, rollen en beveiliging &rarr;</strong></a></div><footer>easy2edit handleiding &middot; versie 1.0.0 build 99 &middot; Nederlands</footer></article></main><aside class="toc"><h4>Op deze pagina</h4><a href="#mediabibliotheek">Mediabibliotheek</a><a href="#logo-s-afbeeldingen">Logo&#x27;s &amp; afbeeldingen</a><a href="#thema-en-vormgeving">Thema en vormgeving</a><a href="#talen">Talen</a><a href="#alles-samengevat">Alles samengevat</a></aside></div><script>
+<p>Sjablonen toevoegen aan en verwijderen uit de bibliotheek doet een superadmin, via het tabblad Sjablonen in Super admin &gt; Bibliotheek of rechtstreeks op de pagina Sjablonen.</p><div class="pager"><a href="chapter-4.html"><small>Vorige</small><strong>&larr; Een website importeren (Site import)</strong></a><a class="nx" href="chapter-6.html"><small>Volgende</small><strong>Gebruikers, rollen en beveiliging &rarr;</strong></a></div><footer>easy2edit handleiding &middot; versie 1.0.0 build 114 &middot; Nederlands</footer></article></main><aside class="toc"><h4>Op deze pagina</h4><a href="#media-bibliotheek">Media bibliotheek</a><a href="#logo-s-en-afbeeldingen-branding">Logo&#x27;s en afbeeldingen (branding)</a><a href="#thema-vormgeving">Thema (vormgeving)</a><a href="#componenten">Componenten</a><a href="#talen">Talen</a><a href="#websjablonen">Websjablonen</a></aside></div><script>
 (function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
 var cards=[].slice.call(document.querySelectorAll('.vcard[data-t]')),none=document.getElementById('vnone');
 if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=0;links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)});cards.forEach(function(c){var h=!!v&&c.getAttribute('data-t').indexOf(v)<0;c.classList.toggle('hide',h);if(!h)n++});if(none)none.classList.toggle('show',cards.length>0&&n===0)});
