@@ -203,6 +203,13 @@ DEFAULT_MENU = {
     "item_style": "theme",  # theme (follows the theme) | text | underline | pill | button | outline
     "size": "md",  # sm | md | lg
     "uppercase": False,
+    "font_size": 0,  # size of the menu texts in rem (0.7 to 1.8); 0 = what "size" says
+    "hb_when": "fit",  # when a menu bar turns into the hamburger menu: fit (it does not fit) | always | never | width (window narrower than hb_width) | items (more than hamburger_items items)
+    "hb_width": 900,  # window width (px) below which the bar becomes the hamburger menu (hb_when = width)
+    "hamburger_items": 6,  # a menu bar with more items than this becomes the hamburger menu (hb_when = items)
+    "hb_form": "hamburger",  # what the bar becomes: hamburger | drawer-left | drawer-right | fullscreen
+    "hb_icon": 0,  # size of the hamburger icon in px (16 to 48); 0 = normal
+    "hb_label": False,  # the word "Menu" next to the icon
     "arrows": True,  # a small arrow at items with a sub menu
     "overlay": True,  # drawer / full screen: dim the page behind it
     "close_on_click": True,  # close the menu after a click on a link
@@ -258,7 +265,28 @@ def clean_menu_settings(d):
             out[key] = round(min(max(cast(d.get(key, out[key])), lo), hi), 2) if cast is float else min(max(cast(d.get(key, out[key])), lo), hi)
         except (TypeError, ValueError):
             pass
-    for key in ("uppercase", "arrows", "overlay", "close_on_click", "sticky_bottom"):
+    try:
+        fs = float(d.get("font_size", 0) or 0)
+        out["font_size"] = 0 if fs <= 0 else round(min(max(fs, 0.7), 1.8), 2)
+    except (TypeError, ValueError):
+        pass
+    if d.get("hb_when") in ("fit", "always", "never", "width", "items"):
+        out["hb_when"] = d["hb_when"]
+    elif d.get("auto_fit") is False:  # an older setting
+        out["hb_when"] = "never"
+    if d.get("hb_form") in ("hamburger", "drawer-left", "drawer-right", "fullscreen"):
+        out["hb_form"] = d["hb_form"]
+    for key, lo, hi in (("hb_width", 320, 1800), ("hamburger_items", 1, 30)):
+        try:
+            out[key] = min(max(int(d.get(key, out[key])), lo), hi)
+        except (TypeError, ValueError):
+            pass
+    try:
+        ic = int(d.get("hb_icon", 0) or 0)
+        out["hb_icon"] = 0 if ic <= 0 else min(max(ic, 16), 48)
+    except (TypeError, ValueError):
+        pass
+    for key in ("hb_label", "uppercase", "arrows", "overlay", "close_on_click", "sticky_bottom"):
         if key in d:
             out[key] = bool(d[key])
     return out

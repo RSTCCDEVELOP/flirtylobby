@@ -155,6 +155,11 @@ MENU_STYLES = [
     {"value": "pills", "label": "Knoppen (afgerond)", "css": ""},
     {"value": "boxed", "label": "Omkaderd", "css": ""},
 ]
+MENU_CASES = [
+    {"value": "normal", "label": "Normaal", "css": ""},
+    {"value": "lower", "label": "kleine letters", "css": ""},
+    {"value": "upper", "label": "HOOFDLETTERS", "css": ""},
+]
 FOOTER_LAYOUTS = [
     {"value": "simple", "label": "Eenvoudig: alles gecentreerd onder elkaar", "css": ""},
     {"value": "columns", "label": "Kolommen: links, sociaal en gegevens", "css": ""},
@@ -266,6 +271,7 @@ SCHEMA = [
         choice("header_style", "Header: uiterlijk", "solid", None, HEADER_STYLES),
         choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, YESNO),
         choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
+        choice("menu_case", "Menu: letters", "normal", None, MENU_CASES),
         choice("footer_layout", "Footer: indeling", "brand", None, FOOTER_LAYOUTS),
         choice("footer_tone", "Footer: kleur", "card", None, FOOTER_TONES),
         choice("footer_brand", "Footer: logo en naam", "logo", None, FOOTER_BRANDS),

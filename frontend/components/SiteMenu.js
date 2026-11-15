@@ -22,7 +22,7 @@ export const DEFAULT_MENU = {
   align: { desktop: "left", tablet: "left", mobile: "left" }, toggle_pos: { desktop: "left", tablet: "left", mobile: "left" },
   sub: { desktop: "dropdown", tablet: "dropdown", mobile: "accordion" },
   open_on: { desktop: "hover", tablet: "click", mobile: "click" },
-  item_style: "theme", size: "md", uppercase: false, arrows: true, overlay: true, close_on_click: true, sticky_bottom: true,
+  item_style: "theme", size: "md", uppercase: false, font_size: 0, hb_when: "fit", hb_width: 900, hamburger_items: 6, hb_form: "hamburger", hb_icon: 0, hb_label: false, arrows: true, overlay: true, close_on_click: true, sticky_bottom: true,
   height: { desktop: 0, tablet: 0, mobile: 0 }, bg: "", bg_opacity: 0.88, blur: 10, float: "none", float_after: 80,
 };
 const MenuContext = createContext({ items: [], settings: DEFAULT_MENU });
@@ -104,7 +104,7 @@ export function MenuView({ items, cfg, device, pathname = "", user = null, previ
   const panelCls = `hmenu-panel p-${form}${isOpen ? " open" : ""}`;
   return (
     <>
-      <button type="button" className="icon-btn nav-toggle2" aria-expanded={isOpen} aria-label={isOpen ? tx("Menu sluiten") : tx("Menu openen")} onClick={() => setOpen(!open)}>{isOpen ? <IconX /> : <IconMenu />}</button>
+      <button type="button" className="icon-btn nav-toggle2" aria-expanded={isOpen} aria-label={isOpen ? tx("Menu sluiten") : tx("Menu openen")} onClick={() => setOpen(!open)}>{isOpen ? <IconX /> : <IconMenu />}{cfg.hb_label && <span className="nav-toggle-label">{tx("Menu")}</span>}</button>
       {open && cfg.overlay && form !== "hamburger" && !preview && <div className="hmenu-backdrop" onClick={() => setOpen(false)} />}
       <div className={panelCls}>
         {(form === "fullscreen" || form.startsWith("drawer")) && <button type="button" className="icon-btn hmenu-close" aria-label={tx("Menu sluiten")} onClick={() => setOpen(false)}><IconX /></button>}
@@ -122,6 +122,8 @@ export const headerCss = (cfg, scope = ".site-header") => {
   if (h.desktop > 0) out.push(`${scope}{height:${h.desktop}px !important}`);
   if (h.tablet > 0) out.push(`@media (max-width:${bp.tablet}px){${scope}{height:${h.tablet}px !important}}`);
   if (h.mobile > 0) out.push(`@media (max-width:${bp.mobile}px){${scope}{height:${h.mobile}px !important}}`);
+  if (cfg.font_size > 0) out.push(`${scope} .hmenu a, ${scope} .hmenu .hm-label, ${scope} .hmenu button{font-size:${cfg.font_size}rem !important}`);
+  if (cfg.hb_icon > 0) out.push(`${scope} .nav-toggle2 svg{width:${cfg.hb_icon}px !important;height:${cfg.hb_icon}px !important}`);
   if (cfg.fg) out.push(`${scope} .hmenu a, ${scope} .hmenu .hm-label, ${scope} .site-actions .icon-btn, ${scope} .site-actions a:not(.btn), ${scope} .nav-toggle2 {color:${cfg.fg} !important}`);
   const custom = cfg.bg || Math.abs((cfg.bg_opacity ?? 0.88) - 0.88) > 0.001 || (cfg.blur ?? 10) !== 10;
   if (custom) out.push(`${scope}{background:color-mix(in srgb, ${cfg.bg || "var(--card)"} ${Math.round((cfg.bg_opacity ?? 0.88) * 100)}%, transparent) !important;--hblur:${cfg.blur ?? 10}px !important}`);
@@ -172,7 +174,7 @@ export default function SiteMenu() {
   const wrapRef = useRef(null);
   const [fitAt, setFitAt] = useState(0); // the window width at which the bar did not fit (0 = it fits)
   useEffect(() => {
-    if (form !== "bar") return undefined;
+    if (form !== "bar" || cfg.hb_when !== "fit") return undefined;
     const check = () => {
       const wrap = wrapRef.current, head = wrap?.closest(".site-header"), nav = wrap?.querySelector(".hmenu.f-bar");
       if (!head || !nav) return;
@@ -187,7 +189,7 @@ export default function SiteMenu() {
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
-  }, [form, items, user]);
+  }, [form, items, user, cfg.hb_when]);
   useEffect(() => { // wider than where it failed (with some room to spare): try the bar again
     if (!fitAt) return undefined;
     const on = () => { if (window.innerWidth > fitAt + 40) setFitAt(0); };
@@ -195,8 +197,12 @@ export default function SiteMenu() {
     return () => window.removeEventListener("resize", on);
   }, [fitAt]);
   const dev = device || "desktop";
-  const squeezed = form === "bar" && fitAt > 0 && !!device;
-  const useCfg = edHead ? { ...cfg, forms: { desktop: "drawer-left", tablet: "drawer-left", mobile: "drawer-left" }, overlay: true } : squeezed ? { ...cfg, forms: { ...cfg.forms, [dev]: "hamburger" } } : cfg;
+  const [winW, setWinW] = useState(0);
+  useEffect(() => { const on = () => setWinW(window.innerWidth); on(); window.addEventListener("resize", on); return () => window.removeEventListener("resize", on); }, []);
+  const w = cfg.hb_when || "fit";  // when the bar turns into the hamburger menu (the settings of the menu)
+  const toHb = form === "bar" && !!device && ((w === "fit" && fitAt > 0) || w === "always" || (w === "width" && winW > 0 && winW < (cfg.hb_width || 900)) || (w === "items" && items.length > (cfg.hamburger_items || 6)));
+  const squeezed = toHb;
+  const useCfg = edHead ? { ...cfg, forms: { desktop: "drawer-left", tablet: "drawer-left", mobile: "drawer-left" }, overlay: true } : squeezed ? { ...cfg, forms: { ...cfg.forms, [dev]: cfg.hb_form || "hamburger" } } : cfg;
   return (
     <div ref={wrapRef} className={`hmenu-wrap tp-${cfg.toggle_pos?.[dev] || "left"}`} style={{ visibility: device ? "visible" : "hidden" }}>
       <MenuStyle cfg={cfg} />

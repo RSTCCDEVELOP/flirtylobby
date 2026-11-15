@@ -14,6 +14,8 @@ import { useAuth } from "./AuthContext";
 import PopupStyleGallery from "./PopupStyleGallery";
 import { useUi } from "./Ui";
 import { api, errorText } from "../lib/api";
+import { HamburgerCard } from "./MenuSettingsAdmin";
+import { DEFAULT_MENU } from "./SiteMenu";
 import { lvl } from "../lib/perms";
 import MediaPicker from "./MediaPicker";
 import RichEditor from "./RichEditor";
@@ -69,12 +71,54 @@ function PopupMock({ p }) {
   return <div className={`lay-screen ${p.kind}`}><span className="lay-bar" /><span className="lay-lines" />{body}</div>;
 }
 
-function PageMock({ type, logo, v = {}, scroll = false }) { // scroll: the page is shown scrolled down (does the header stay at the top?)
+
+// Menu in Theme > Layout: a live example of the menu (your items, style, letters, font size and the hamburger menu, on computer / iPad / phone) and the hamburger settings under it.
+const PREVIEW_W = { desktop: 1280, tablet: 900, mobile: 420 };
+function MenuPanel({ v = {}, canEdit }) {
+  const [cfg, setCfg] = useState(null);
+  const [names, setNames] = useState([]);
+  const [items, setItems] = useState([]);
+  const [dev, setDev] = useState("desktop");
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    api("/pages/menu-settings/").then((d) => setCfg({ ...DEFAULT_MENU, ...d })).catch(() => {});
+    api("/pages/menu/").then((d) => { const list = d.items || []; setItems(list); setNames(list.map((x) => x.titles || {}).map((t) => t.nl || t.en || Object.values(t)[0] || "").filter(Boolean).slice(0, 8)); }).catch(() => {});
+  }, []);
+  const set = (patch) => { const next = { ...cfg, ...patch }; setCfg(next); api("/pages/menu-settings/", { method: "PUT", body: next }).then(() => window.dispatchEvent(new Event("pages-changed"))).catch(() => {}); };
+  if (!cfg) return null;
+  const words = names.length ? names : ["Home", "Over ons", "Diensten", "Contact"];
+  const w = PREVIEW_W[dev], when = cfg.hb_when || "fit";
+  const formOfDev = cfg.forms?.[dev] || "bar";
+  const roughFit = words.reduce((n, x) => n + x.length * 8.5 + 26, 0) + 260 <= w;  // about: does the bar fit next to the logo and the icons
+  const hb = formOfDev !== "bar" ? formOfDev : (when === "always" || (when === "width" && w < (cfg.hb_width || 900)) || (when === "items" && words.length > (cfg.hamburger_items || 6)) || (when === "fit" && !roughFit)) ? (cfg.hb_form || "hamburger") : "";
+  const why = formOfDev !== "bar" ? tx("Zo staat het menu voor dit apparaat ingesteld") : hb ? ({ always: tx("Altijd een hamburger-menu"), width: tx("Het scherm is smaller dan {0} px", cfg.hb_width || 900), items: tx("Meer dan {0} items", cfg.hamburger_items || 6), fit: tx("De items passen niet in de header") }[when] || "") : "";
+  const nav = (cls = "") => words.map((x, i) => <a key={x + i} className={`${i === 0 ? "on" : ""} ${cls}`}>{x}</a>);
+  return (
+    <>
+      <div className="menu-live" data-mmenu={v.menu_style || "text"} data-mcase={v.menu_case || "normal"} style={cfg.font_size > 0 ? { "--ml-fs": `${cfg.font_size}rem` } : undefined}>
+        <div className="ml-head"><small className="muted">{tx("Zo ziet je menu eruit")}</small>
+          <span className="pb-seg">{[["desktop", "Computer"], ["tablet", "iPad"], ["mobile", "Telefoon"]].map(([k, l]) => <button type="button" key={k} className={dev === k ? "on" : ""} onClick={() => { setDev(k); setOpen(false); }}>{tx(l)}</button>)}</span></div>
+        <div className="ml-stage" style={{ maxWidth: w, marginBottom: hb && open ? (hb === "hamburger" ? 24 + words.length * 38 : 170) : 0 }}>
+          <div className="ml-bar">
+            <i className="ml-logo" />
+            {hb ? <button type="button" className="ml-toggle" onClick={() => setOpen(!open)} aria-expanded={open}><svg width={cfg.hb_icon || 20} height={cfg.hb_icon || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>{cfg.hb_label && <b>{tx("Menu")}</b>}</button> : <nav>{nav()}</nav>}
+            <span className="ml-actions"><i /><i /></span>
+          </div>
+          {hb && open && (hb === "hamburger" ? <div className="ml-drop">{nav()}</div> : hb === "fullscreen" ? <div className="ml-full" onClick={() => setOpen(false)}>{nav()}</div> : <div className={`ml-drawer ${hb === "drawer-right" ? "right" : ""}`}>{nav()}</div>)}
+        </div>
+        <small className="muted">{hb ? `${tx("Hamburger-menu")}: ${why}. ${tx("Klik op het icoon om het menu te openen.")}` : tx("De menubalk past: alle items staan naast elkaar.")}</small>
+      </div>
+      <HamburgerCard cfg={cfg} set={set} canEdit={canEdit} items={items} plain />
+    </>
+  );
+}
+
+function PageMock({ type, logo, v = {}, scroll = false, words = false }) { // scroll: the page is shown scrolled down (does the header stay at the top?)
   const Logo = () => (logo ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={logo} alt="" className="lay-logo-img" /> : <i className="lay-logo" />);
-  const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mfl": v.footer_layout || "brand", "data-mft": v.footer_tone || "card", "data-mfbrand": v.footer_brand || "logo", "data-mfsocial": v.footer_social || "show", "data-mfmeta": v.footer_meta || "show", "data-mfsize": v.footer_size || "normal", "data-mblocks": v.block_style || "card" };
+  const attrs = { "data-mhl": v.header_layout || "classic", "data-mhs": v.header_style || "solid", "data-mmenu": v.menu_style || "text", "data-mcase": v.menu_case || "normal", "data-mfl": v.footer_layout || "brand", "data-mft": v.footer_tone || "card", "data-mfbrand": v.footer_brand || "logo", "data-mfsocial": v.footer_social || "show", "data-mfmeta": v.footer_meta || "show", "data-mfsize": v.footer_size || "normal", "data-mblocks": v.block_style || "card" };
   if (type === "site") {
     const noHead = v.page_header === "hide", noFoot = v.page_footer === "hide";
-    const top = <div className="lay-top"><Logo /><span className="lay-menu"><b /><b /><b /></span><span className="lay-burger"><b /><b /><b /></span><span className="lay-actions"><i /><i /></span></div>;
+    const top = <div className="lay-top"><Logo /><span className={`lay-menu${words ? " words" : ""}`}>{words ? ["Home", "Over ons", "Contact"].map((w, i) => <b key={w} className={i === 0 ? "on" : ""}>{w}</b>) : <><b /><b /><b /></>}</span><span className="lay-burger"><b /><b /><b /></span><span className="lay-actions"><i /><i /></span></div>;
     if (scroll) { // "Header blijft bovenaan staan": scrolled down, with or without the header at the top
       const stays = (v.header_sticky || "yes") !== "no";
       return (
@@ -184,16 +228,17 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
         <>
           <h2 style={{ margin: "1rem 0 0" }}>{tx("Pagina-indeling van de website")}</h2>
           <p className="muted" style={{ margin: 0 }}>{tx("Kies de indeling van header, menu, footer en blokken. De voorbeelden hieronder passen direct mee en de website volgt na het kiezen.")}</p>
-          {[["Header", ["header_layout", "header_style", "header_sticky"]], ["Menu", ["menu_style"]], ["Header en footer op pagina's", ["page_header", "page_footer"]], ["Blokken en kaarten", ["block_style"]]].map(([title, keys]) => (
+          {[["Header", ["header_layout", "header_style", "header_sticky"]], ["Menu", ["menu_style", "menu_case"]], ["Header en footer op pagina's", ["page_header", "page_footer"]], ["Blokken en kaarten", ["block_style"]]].map(([title, keys]) => (
             <div key={title} className="stack-sm">
               <strong>{tx(title)}</strong>
+              {title === "Menu" && <MenuPanel v={look.values} canEdit={L >= 2} />}
               {look.fields.filter((f) => keys.includes(f.key)).map((f) => (
                 <div key={f.key} className="stack-sm" style={{ gap: ".4rem" }}>
                   <small className="muted">{tx(f.label)}</small>
                   <div className="preset-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
                     {f.choices.map((c) => (
                       <button key={c.value} type="button" disabled={L < 2} className={`preset opt ${look.values[f.key] === c.value ? "active" : ""}`} onClick={() => pick(f.key, c.value)}>
-                        <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" scroll={f.key === "header_sticky"} v={{ ...look.values, [f.key]: c.value }} /></span>
+                        <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" words={f.key === "menu_style" || f.key === "menu_case"} scroll={f.key === "header_sticky"} v={{ ...look.values, [f.key]: c.value }} /></span>
                         <strong style={{ fontSize: ".85rem" }}>{tx(c.label)}</strong>
                       </button>
                     ))}
@@ -229,16 +274,17 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
               </div>
             </div>
           )}
-          {[["Indeling", ["header_layout"]], ["Uiterlijk", ["header_style"]], ["Gedrag bij scrollen", ["header_sticky"]], ["Menu", ["menu_style"]]].map(([title, keys]) => (
+          {[["Indeling", ["header_layout"]], ["Uiterlijk", ["header_style"]], ["Gedrag bij scrollen", ["header_sticky"]], ["Menu", ["menu_style", "menu_case"]]].map(([title, keys]) => (
             <div key={title} className="stack-sm">
               <strong>{tx(title)}</strong>
+              {title === "Menu" && <MenuPanel v={look.values} canEdit={L >= 2} />}
               {look.fields.filter((f) => keys.includes(f.key)).map((f) => (
                 <div key={f.key} className="stack-sm" style={{ gap: ".4rem" }}>
                   <small className="muted">{tx(f.label)}</small>
                   <div className="preset-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
                     {f.choices.map((c) => (
                       <button key={c.value} type="button" disabled={L < 2} className={`preset opt ${look.values[f.key] === c.value ? "active" : ""}`} onClick={() => pick(f.key, c.value)}>
-                        <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" scroll={f.key === "header_sticky"} v={{ ...look.values, [f.key]: c.value }} /></span>
+                        <span className="lay-frame opt" aria-hidden="true"><PageMock type="site" words={f.key === "menu_style" || f.key === "menu_case"} scroll={f.key === "header_sticky"} v={{ ...look.values, [f.key]: c.value }} /></span>
                         <strong style={{ fontSize: ".85rem" }}>{tx(c.label)}</strong>
                       </button>
                     ))}

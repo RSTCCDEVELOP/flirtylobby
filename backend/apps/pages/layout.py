@@ -418,7 +418,7 @@ def clean(data):
                 a, n = f"{base}-{n}", n + 1
             seen.add(a)
             row["anchor"] = a
-    return {"rows": out, "bg": clean_bg((data or {}).get("bg")), "preset": (data or {}).get("preset") if (data or {}).get("preset") in PRESETS else "", **({"hero_off": True} if (data or {}).get("hero_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
+    return {"rows": out, "bg": clean_bg((data or {}).get("bg")), "preset": (data or {}).get("preset") if (data or {}).get("preset") in PRESETS else "", **({"hero_off": True} if (data or {}).get("hero_off") else {}), **({"title_off": True} if (data or {}).get("title_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}), **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
 
 
 PRESETS = ("auto", "single", "two", "three", "four", "hero", "split")  # the layouts ("Opmaak") a page can be given; "auto" = the layout of the community theme (standard pages only)
@@ -453,7 +453,7 @@ def reflow(data, preset):
     else:
         rows = [r for r in old if not r.get("hero")]
     rows = heroes + rows
-    return {"rows": rows, "bg": (data or {}).get("bg", {}), **({"hero_off": True} if (data or {}).get("hero_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}),  **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
+    return {"rows": rows, "bg": (data or {}).get("bg", {}), **({"hero_off": True} if (data or {}).get("hero_off") else {}), **({"title_off": True} if (data or {}).get("title_off") else {}), **_list((data or {}).get("list")), **_moved(data), **({"pad": (data or {}).get("pad")} if (data or {}).get("pad") in PADS else {}),  **({"page_width": "full"} if (data or {}).get("page_width") == "full" else {}), **({"page_size": str((data or {}).get("page_size"))} if str((data or {}).get("page_size")) in ("5", "10", "25", "100") else {})}
 
 
 @api_view(["POST"])

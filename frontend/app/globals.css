@@ -3513,3 +3513,56 @@ html[data-hl="editorial"] .p-drawer-left .hmenu a:hover, html[data-hl="editorial
 /* The blur behind the header lies on its own layer: a header that has backdrop-filter itself becomes the box of everything that is fixed inside it (the menu drawer, the backdrop, popups), which then only fill the header. */
 .site-header { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 .site-header::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; backdrop-filter: blur(var(--hblur, 0px)); -webkit-backdrop-filter: blur(var(--hblur, 0px)); }
+
+/* menu: the letters of the links (theme > Layout > Menu: letters) */
+html[data-mcase="lower"] .site-nav a, html[data-mcase="lower"] .hmenu a, html[data-mcase="lower"] .hmenu button { text-transform: lowercase; }
+html[data-mcase="upper"] .site-nav a, html[data-mcase="upper"] .hmenu a, html[data-mcase="upper"] .hmenu button { text-transform: uppercase; }
+.lay-page[data-mcase="lower"] .lay-menu { text-transform: lowercase; }
+
+/* the preview of the menu choices: real words, so you see the style and the letters */
+.lay-menu.words { gap: 3px; align-items: center; }
+.lay-menu.words b { width: auto; height: auto; background: none; opacity: 1; border: 0; border-radius: 3px; font-size: 6.5px; line-height: 1.2; font-weight: 700; color: var(--muted); padding: 1px 3px; white-space: nowrap; }
+.lay-menu.words b.on { color: var(--text); }
+.lay-page[data-mmenu="underline"] .lay-menu.words b { border-radius: 0; border-bottom: 1.5px solid transparent; height: auto; }
+.lay-page[data-mmenu="underline"] .lay-menu.words b.on { border-bottom-color: var(--blue); }
+.lay-page[data-mmenu="pills"] .lay-menu.words b { height: auto; width: auto; border-radius: 999px; padding: 1px 5px; }
+.lay-page[data-mmenu="pills"] .lay-menu.words b.on { background: var(--blue); color: #fff; opacity: 1; }
+.lay-page[data-mmenu="boxed"] .lay-menu.words b { height: auto; width: auto; border: 1px solid var(--line); border-radius: 3px; padding: 1px 4px; background: var(--card); }
+.lay-page[data-mmenu="boxed"] .lay-menu.words b.on { border-color: var(--blue); color: var(--text); }
+.lay-page[data-mcase="lower"] .lay-menu.words b { text-transform: lowercase; }
+.lay-page[data-mcase="upper"] .lay-menu.words b { text-transform: uppercase; }
+
+/* live example of the menu in Theme > Layout */
+.menu-live { border: 1px solid var(--line); border-radius: 12px; background: var(--card); padding: .6rem .9rem .9rem; display: grid; gap: .5rem; }
+.menu-live .ml-bar { display: flex; align-items: center; gap: 1.2rem; min-height: 48px; padding: 0 .9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.menu-live .ml-logo { width: 74px; height: 22px; border-radius: 6px; background: var(--blue); opacity: .85; flex: none; }
+.menu-live nav { display: flex; gap: .35rem; flex-wrap: wrap; flex: 1; }
+.menu-live nav a { padding: .4rem .8rem; color: var(--muted); font-weight: 600; font-size: .92rem; border: 2px solid transparent; border-radius: 8px; cursor: default; }
+.menu-live nav a.on { color: var(--text); }
+.menu-live[data-mmenu="underline"] nav a { border-radius: 0; border-width: 0 0 2px; }
+.menu-live[data-mmenu="underline"] nav a.on { border-bottom-color: var(--blue); }
+.menu-live[data-mmenu="pills"] nav a { border-radius: 999px; }
+.menu-live[data-mmenu="pills"] nav a.on { background: var(--blue); color: #fff; }
+.menu-live[data-mmenu="boxed"] nav a { border: 1px solid var(--line); background: var(--card); border-radius: var(--btn-radius, 8px); }
+.menu-live[data-mmenu="boxed"] nav a.on { border-color: var(--blue); color: var(--text); }
+.menu-live[data-mcase="lower"] nav a { text-transform: lowercase; }
+.menu-live[data-mcase="upper"] nav a { text-transform: uppercase; }
+.menu-live .ml-actions { display: flex; gap: .4rem; } .menu-live .ml-actions i { width: 22px; height: 22px; border-radius: 50%; background: var(--line); display: block; }
+
+/* menu example: device switch, hamburger and its panels */
+.menu-live .ml-head { display: flex; align-items: center; gap: .6rem; justify-content: space-between; flex-wrap: wrap; }
+.menu-live .ml-stage { position: relative; width: 100%; transition: max-width .25s; }
+.menu-live nav a { font-size: var(--ml-fs, .92rem); }
+.menu-live .ml-toggle { display: inline-flex; align-items: center; gap: .4rem; background: none; border: 1px solid var(--line); border-radius: 8px; padding: .35rem .6rem; color: var(--text); cursor: pointer; }
+.menu-live .ml-bar > .ml-actions { margin-left: auto; }
+.menu-live .ml-drop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 3; display: grid; gap: .1rem; min-width: 220px; padding: .4rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: var(--shadow); }
+.menu-live .ml-drop a { padding: .45rem .7rem; color: var(--text); font-weight: 600; font-size: var(--ml-fs, .92rem); }
+.menu-live .ml-drawer { position: absolute; top: calc(100% + 4px); bottom: -150px; left: 0; z-index: 3; width: min(260px, 80%); display: grid; align-content: start; gap: .1rem; padding: .7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: var(--shadow); }
+.menu-live .ml-drawer.right { left: auto; right: 0; }
+.menu-live .ml-drawer a { padding: .45rem .7rem; color: var(--text); font-weight: 600; font-size: var(--ml-fs, .92rem); }
+.menu-live .ml-full { position: absolute; inset: 0 0 -170px 0; z-index: 3; display: grid; place-content: center; gap: .5rem; text-align: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+.menu-live .ml-full a { font-size: calc(var(--ml-fs, .92rem) * 1.8); font-weight: 700; color: var(--text); cursor: pointer; }
+.menu-live[data-mcase="lower"] :is(.ml-drop, .ml-drawer, .ml-full) a { text-transform: lowercase; } .menu-live[data-mcase="upper"] :is(.ml-drop, .ml-drawer, .ml-full) a { text-transform: uppercase; }
+
+/* a page that was built by an import: nothing around the design (no space above or below it) */
+main.doc[data-bare="1"] { padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }

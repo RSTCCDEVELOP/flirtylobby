@@ -33,6 +33,13 @@ const ALIGN = [["left", "Links"], ["center", "Midden"], ["right", "Rechts"]];
 const bars = (f) => f === "bar" || f === "bottom";
 const STYLES = [["theme", "Zoals het thema"], ["text", "Alleen tekst"], ["underline", "Onderstreept"], ["pill", "Afgeronde knoppen"], ["button", "Knoppen"], ["outline", "Met kader"]];
 const FLOATS = [["none", "Niets", "Het menu blijft zoals het is"], ["shadow", "Schaduw", "Er komt een schaduw onder de header"], ["float", "Zwevend", "De header wordt een zwevende afgeronde balk"], ["hide", "Verdwijnt", "Weg bij naar beneden scrollen, terug bij omhoog"]];
+const HB_WHEN = [
+  ["fit", "Als de items niet in de header passen", "De menubalk wordt vanzelf een hamburger-menu zodra hij niet meer past, en weer een balk als er ruimte is."],
+  ["always", "Altijd", "Ook op een groot scherm staat er alleen het hamburger-menu."],
+  ["never", "Nooit (altijd de menubalk)", "De menubalk blijft staan, ook als hij niet past. Let op: de items kunnen over de header heen lopen."],
+  ["width", "Onder een schermbreedte", "Onder de breedte die je kiest wordt de menubalk een hamburger-menu."],
+  ["items", "Bij veel items", "Een menu met meer items dan je kiest wordt een hamburger-menu."],
+];
 const SIZES = [["sm", "Klein"], ["md", "Normaal"], ["lg", "Groot"]];
 
 // small drawings of the menu forms: the example tiles to choose from
@@ -80,6 +87,42 @@ const Sw = ({ label, hint, checked, onChange, disabled }) => (
     <span>{label}{hint && <small className="muted"> {hint}</small>}</span>
   </label>
 );
+
+
+// The settings of the hamburger menu (when the menu bar turns into it, what it becomes, the icon): in the settings of the menu and in Theme > Layout.
+export function HamburgerCard({ cfg, set, canEdit = true, items = [], plain = false }) {
+  return (
+  <div className={plain ? "form" : "card form"}>
+    <strong>{tx("Hamburger-menu")}</strong>
+    <small className="muted">{tx("Voor een menubalk: wanneer wordt de balk een hamburger-menu, en hoe ziet dat eruit. (Wil je het hamburger-menu op een apparaat altijd, kies dan bij dat apparaat hierboven bij Vorm van het menu: Hamburger-menu.)")}</small>
+    <label>{tx("Wanneer wordt de menubalk een hamburger-menu?")}
+      <select disabled={!canEdit} value={cfg.hb_when || "fit"} onChange={(e) => set({ hb_when: e.target.value })}>
+        {HB_WHEN.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}
+      </select>
+      <small className="muted">{tx(HB_WHEN.find(([k]) => k === (cfg.hb_when || "fit"))?.[2] || "")}</small>
+    </label>
+    {cfg.hb_when === "width" && (
+      <label>{tx("Onder deze schermbreedte (px)")}
+        <input type="number" min={320} max={1800} disabled={!canEdit} value={cfg.hb_width || 900} onChange={(e) => set({ hb_width: Number(e.target.value) || 900 })} />
+      </label>
+    )}
+    {cfg.hb_when === "items" && (
+      <label>{tx("Vanaf meer dan dit aantal items")}
+        <input type="number" min={1} max={30} disabled={!canEdit} value={cfg.hamburger_items || 6} onChange={(e) => set({ hamburger_items: Number(e.target.value) || 6 })} />
+        <small className="muted">{tx("Het menu heeft nu {0} items.", items.length)}</small>
+      </label>
+    )}
+    <div><strong className="opt-title">{tx("Wat de menubalk dan wordt")}</strong>
+      <Tiles value={cfg.hb_form || "hamburger"} onChange={(v) => set({ hb_form: v })} options={FORMS.filter(([k]) => ["hamburger", "drawer-left", "drawer-right", "fullscreen"].includes(k))} disabled={!canEdit} render={(k) => <Mini kind={k} />} />
+    </div>
+    <label>{tx("Grootte van het hamburger-icoon (px)")}
+      <input type="number" min={0} max={48} placeholder={tx("Normaal")} disabled={!canEdit} value={cfg.hb_icon || ""} onChange={(e) => set({ hb_icon: e.target.value === "" ? 0 : Number(e.target.value) })} />
+      <small className="muted">{tx("Leeg = normaal (16 tot 48)")}</small>
+    </label>
+    <Sw label={tx("Het woord Menu naast het icoon")} checked={!!cfg.hb_label} disabled={!canEdit} onChange={(v) => set({ hb_label: v })} />
+  </div>
+  );
+}
 
 export default function MenuSettingsAdmin({ canEdit = true }) {
   const [cfg, setCfg] = useState(null);
@@ -140,11 +183,18 @@ export default function MenuSettingsAdmin({ canEdit = true }) {
         <div><strong className="opt-title">{tx("Grootte")}</strong>
           <Tiles value={cfg.size} onChange={(v) => set({ size: v })} options={SIZES} disabled={!canEdit} render={(k) => <span className={`opt-aa z-${k}`}>Aa</span>} />
         </div>
+        <label>{tx("Lettergrootte van de items (rem)")}
+          <input type="number" min={0} max={1.8} step={0.05} placeholder={tx("Zoals de grootte")} disabled={!canEdit} value={cfg.font_size || ""} onChange={(e) => set({ font_size: e.target.value === "" ? 0 : Number(e.target.value) })} />
+          <small className="muted">{tx("Leeg = zoals de grootte hierboven (0,7 tot 1,8; 1 is de normale tekst)")}</small>
+        </label>
         <Sw label={tx("Hoofdletters")} checked={cfg.uppercase} disabled={!canEdit} onChange={(v) => set({ uppercase: v })} />
         <Sw label={tx("Pijltje bij items met een submenu")} checked={cfg.arrows} disabled={!canEdit} onChange={(v) => set({ arrows: v })} />
         <Sw label={tx("Menu sluiten na een klik op een link")} checked={cfg.close_on_click} disabled={!canEdit} onChange={(v) => set({ close_on_click: v })} />
         <Sw label={tx("Pagina dimmen achter zijpaneel en volledig scherm")} checked={cfg.overlay} disabled={!canEdit} onChange={(v) => set({ overlay: v })} />
       </div>
+
+
+      <HamburgerCard cfg={cfg} set={set} canEdit={canEdit} items={items} />
 
       <div className="card form">
         <strong>{tx("Uiterlijk van de header")}</strong>

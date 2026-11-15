@@ -190,19 +190,21 @@ export default function PageBlocks({ pageKey, title = "" }) {
     window.addEventListener("soft-refresh", f);
     return () => window.removeEventListener("soft-refresh", f);
   }, [pageKey]);
-  const heroOff = !!layout?.hero_off || NO_HERO.includes(pageKey);
+  const titleOff = !!layout?.title_off; // an imported page: its own design has the headings, the title of the page and its banner are not shown
+  const heroOff = !!layout?.hero_off || titleOff || NO_HERO.includes(pageKey);
   const own = (r) => r.hero && r.hero !== "custom" && r.hero !== "plain"; // the banner of the page itself; "custom" (a hero) and "plain" (a grid with a height, without the hero look) are blocks like any other
   const heroRow = layout?.rows?.find(own); // the banner of the page itself; extra heroes ("custom") are blocks like any other
   const heroTheme = heroOff ? "" : heroRow?.hero || (layout ? layout.theme || "normal" : ""); // every page has a hero unless it is switched off; a page without a hero row gets the title in a banner
   useEffect(() => { // with a hero the title is in the banner: the title of the page itself above it is hidden and its text is used
     const par = root.current?.parentElement;
-    if (!heroTheme || !par) return undefined;
+    if ((!heroTheme && !titleOff) || !par) return undefined;
+    if (titleOff) { par.dataset.hero = "1"; par.dataset.bare = "1"; return () => { delete par.dataset.hero; delete par.dataset.bare; }; }  // only the title of the page itself is hidden
     const h = [...par.children].find((e) => e.tagName === "H1");
     if (h) setH1(h.textContent || "");
     par.dataset.hero = "1";
     document.documentElement.dataset.hero = "1";
     return () => { delete par.dataset.hero; delete document.documentElement.dataset.hero; };
-  }, [heroTheme, layout, title]);
+  }, [heroTheme, titleOff, layout, title]);
   useEffect(() => { // a link with #anchor goes to that block (also when the blocks arrive a moment after the page)
     if (!layout || typeof window === "undefined" || !window.location.hash) return;
     const h = decodeURIComponent(window.location.hash.slice(1));
