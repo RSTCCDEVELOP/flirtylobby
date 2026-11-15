@@ -9,8 +9,7 @@
 
 import { tx } from "../lib/t";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { money } from "../lib/format";
 import { pick } from "../lib/i18n";
@@ -92,20 +91,20 @@ export function SysObjectBySlug({ slug, layout = "1" }) {
 }
 
 // Rich text from a page, with the system objects placed in it (<div data-sysobject="slug">) shown as real widgets.
+// The text is cut at every placeholder and the widgets are drawn in between by React itself (a widget in a portal inside the text got lost when the text was drawn again).
+const SLOT = /<div[^>]*data-sysobject="([^"]+)"[^>]*>\s*<\/div>/g;
 export default function RichHtml({ html, className }) {
-  const ref = useRef(null);
   const on = useModule("sysobjects");
-  const [slots, setSlots] = useState([]);
   const [objs, setObjs] = useState([]);
   useEffect(() => { if (on && html.includes("data-sysobject")) load().then(setObjs); }, [on, html]);
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-    setSlots([...ref.current.querySelectorAll("[data-sysobject]")].map((el) => ({ el, slug: el.getAttribute("data-sysobject") })));
-  }, [html, objs]);
+  const parts = html.split(SLOT);  // text, slug, text, slug ... (odd places are slugs)
   return (
-    <>
-      <div ref={ref} className={className} dangerouslySetInnerHTML={{ __html: html }} />
-      {on && slots.map(({ el, slug }) => { const o = objs.find((x) => x.slug === slug); return o ? createPortal(<Widget obj={o} />, el, slug) : null; })}
-    </>
+    <div className={className}>
+      {parts.map((p, i) => {
+        if (i % 2 === 0) return p ? <div key={i} style={{ display: "contents" }} dangerouslySetInnerHTML={{ __html: p }} /> : null;
+        const o = on && objs.find((x) => x.slug === p);
+        return o ? <Widget key={i} obj={o} /> : null;
+      })}
+    </div>
   );
 }
