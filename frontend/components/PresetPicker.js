@@ -7,6 +7,7 @@
 
 "use client";
 
+import { markPlan } from "../lib/planFlag";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, errorText } from "../lib/api";
@@ -154,7 +155,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
       {manage && <InstallationsBase />}
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onUndo={run?.undo ? undoRun : null} onClose={async () => { const ok = run?.undo && run?.done && !run?.error; setRun(null); let ai = false; if (ok) { try { ai = !!(await api("/ai/me/")).module; } catch {} setAiLinked(ai); } if (ok) setFillAsk(true); else window.location.reload(); }} />  {/* the menus and modules come from the server: after the job the page is loaded again */}
-      {fillAsk && <AiFillAsk linked={aiLinked} onNo={() => { window.location.href = "/dashboard/admin/siteimport"; }} />}
+      {fillAsk && <AiFillAsk linked={aiLinked} onNo={() => { markPlan(); window.location.href = "/dashboard/admin/siteimport"; }} />}
       {ask && (
         <div className="overlay" onClick={() => setAsk(null)}>
           <div className="card modal" role="dialog" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>

@@ -7,6 +7,7 @@
 
 "use client";
 
+import { markPlan } from "../lib/planFlag";
 import { useEffect, useState } from "react";
 import { tx } from "../lib/t";
 import { confirmDialog } from "../lib/dialog";
@@ -79,7 +80,7 @@ export default function DefaultInstallPrompt() {
   return (
     <>
       <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onClose={() => { const ok = run?.done && !run?.error; setRun(null); if (ok) setFillAsk(true); else window.location.reload(); }} />
-      {fillAsk && <AiFillAsk linked={aiOn !== false} onNo={() => { window.location.href = "/dashboard/admin/siteimport"; }} />}
+      {fillAsk && <AiFillAsk linked={aiOn !== false} onNo={() => { markPlan(); window.location.href = "/dashboard/admin/siteimport"; }} />}
       {ask && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={later}>
           <div className="card modal form" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>

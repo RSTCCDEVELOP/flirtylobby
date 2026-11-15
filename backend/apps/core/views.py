@@ -464,7 +464,7 @@ def system_reset(request):
         return Response({"detail": "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
     if not request.user.check_password(str(request.data.get("password", ""))):
         return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
-    removed = reset.perform(request.user, ai=bool(request.data.get("ai")))
+    removed = reset.perform(request.user, ai=bool(request.data.get("ai")), delete_admins=bool(request.data.get("delete_admins")), delete_superadmins=bool(request.data.get("delete_superadmins")))
     applied = None
     if request.data.get("preset"):  # start straight from a standard installation
         from . import presets

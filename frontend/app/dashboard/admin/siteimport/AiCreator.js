@@ -20,6 +20,8 @@ import { componentListText } from "../../../../lib/ui-kit/componentList";
 import { loadKit } from "../../../../lib/ui-kit/kitDoc";
 import Wizard from "./DesignWizard";
 import { BRIEF_STEPS, BriefStep, briefFilled, briefToText } from "./briefWizard";
+import StartPlanPopup from "./StartWizard";
+import { planAsked, planDone } from "../../../../lib/planFlag";
 
 export { ModulePicker, previewHtml };
 
@@ -152,11 +154,20 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
 }
 
 // The tab AI-creator: your designs (also the ones that were not finished: continue where you stopped) and a new one.
-export function AiCreatorHome({ onOpen, refreshKey }) {
+export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [conv, setConv] = useState(false);
+  const [plan, setPlan] = useState(false);  // the popup with the step plan
+  const planShown = useRef(false);
+  useEffect(() => { // the step plan opens by itself on an empty installation (no imports, no designs) and after a reset or a new installation, until it has been closed once
+    if (!d || importsEmpty === null || planShown.current) return;
+    planShown.current = true;
+    const a = planAsked();
+    if (a.flag || (importsEmpty && !(d.designs || []).length && !a.off)) setPlan(true);
+  }, [d, importsEmpty]);
+  const closePlan = () => { setPlan(false); planDone(); };
   const load = useCallback(() => api("/sitecreator/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load, refreshKey]);
   const create = async () => { setBusy(true); setErr(""); try { const j = await api("/sitecreator/", { method: "POST", body: {} }); onOpen(j.id); } catch (e) { setErr(errorText(e)); } finally { setBusy(false); } };
@@ -165,8 +176,9 @@ export function AiCreatorHome({ onOpen, refreshKey }) {
     <div style={{ marginTop: ".75rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een paar stappen: stijl, kleuren, pagina's en foto's. Daarna maakt easy2edit alle pagina's en importeer je ze als bewerkbare pagina's. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
       {err && <div className="alert">{err}</div>}
-      <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" disabled={busy || d?.ai === false} onClick={create}><IconBolt /> {tx("Nieuw ontwerp")}</button><button type="button" className="btn" onClick={() => setConv(true)}><IconEdit /> {tx("AI-prompt maken")}</button></div>
+      <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn" onClick={() => setPlan(true)}>{tx("Stappenplan")}</button><button type="button" className="btn primary" disabled={busy || d?.ai === false} onClick={create}><IconBolt /> {tx("Nieuw ontwerp")}</button><button type="button" className="btn" onClick={() => setConv(true)}><IconEdit /> {tx("AI-prompt maken")}</button></div>
       {conv && <ConvertPromptPopup onClose={() => setConv(false)} designs={d?.designs || []} />}
+      {plan && <StartPlanPopup onClose={closePlan} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); else if (a.auto === "new") create(); }} />}
       {d?.ai === false && <div className="alert">{tx("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")}</div>}
       {d?.designs?.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: ".45rem" }}>

@@ -436,7 +436,11 @@ function ProgressLog({ prog }) {
 export default function SiteImport() {
   const { user } = useAuth();
   const L = lvl(user, "siteimport");
-  const [tab, setTab] = useState("url");
+  const [tab, setTab] = useState("ai");  // the AI-creator comes first
+  const pickWay = (a) => {  // the step plan (popup at "Nieuw ontwerp") chose another way: its tab opens
+    setTab(a.tab || "ai");
+    setTimeout(() => document.getElementById("si-new")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
   const [list, setList] = useState(null);
   const [folders, setFolders] = useState([]);
   const [url, setUrl] = useState("");
@@ -662,7 +666,7 @@ export default function SiteImport() {
       {canManage && (
         <Collapsible id="si-new" title={tx("Nieuwe import")} defaultOpen>
           <label style={{ maxWidth: 420, marginBottom: ".75rem" }}>{tx("Naam van de import")} <small className="muted">{tx("ook de naam van de map met alle bestanden")}</small><input value={themeName} maxLength={120} onChange={(e) => setThemeName(e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
-          <Tabs value={tab} onChange={setTab} tabs={[["url", "Website-adres", <IconGlobe key="u" />], ["folder", "Map op de server", <IconFolder key="f" />], ["zip", "ZIP-bestand", <IconImage key="z" />], ["html", "HTML-bestand", <IconGlobe key="h" />], ["ai", "AI-creator", <IconBolt key="a" />]]} />
+          <Tabs value={tab} onChange={setTab} tabs={[["ai", "AI-creator", <IconBolt key="a" />], ["url", "Website-adres", <IconGlobe key="u" />], ["folder", "Map op de server", <IconFolder key="f" />], ["zip", "ZIP-bestand", <IconImage key="z" />], ["html", "HTML-bestand", <IconGlobe key="h" />]]} />
           {tab === "url" && (
             <form className="row" style={{ flexWrap: "nowrap", alignItems: "end", marginTop: ".75rem" }} onSubmit={(e) => { e.preventDefault(); start({ kind: "url", url, name: themeName }); }}>
               <label style={{ flex: 1 }}>{tx("Adres van de website")}<input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.voorbeeld.nl" required /></label>
@@ -696,7 +700,7 @@ export default function SiteImport() {
               </div>
             </div>
           )}
-          {tab === "ai" && <AiCreatorHome refreshKey={designOpen} onOpen={(id) => { setDesignId(id); setDesignOpen(true); }} />}
+          {tab === "ai" && <AiCreatorHome onWay={pickWay} importsEmpty={list ? list.length === 0 : null} refreshKey={designOpen} onOpen={(id) => { setDesignId(id); setDesignOpen(true); }} />}
           <small className="muted" style={{ display: "block", marginTop: ".6rem" }}>
             {tab === "ai" ? tx("easy2edit ontwerpt de pagina's met illustraties; foto's voeg je daarna zelf toe in de mediabibliotheek. Het ontwerpen kost AI-tegoed. Er is pas iets aangemaakt na je akkoord bij het importeren.") : tab === "html" ? tx("Eén of meer html-bestanden, elk bestand wordt een pagina met precies dezelfde opmaak. Sleep de css en de afbeeldingen er ook bij. easy2edit maakt het thema met de kleuren, geeft de pagina's een naam en zet de modules aan die nodig zijn. Eerst zie je het voorstel; er is pas iets aangemaakt na je akkoord.") : tab === "folder" ? tx("Zet de map van de andere site in de map \"imports\" naast de backend (bijvoorbeeld backend/imports/mijnsite). Er moet een index.html in staan.") : tab === "zip" ? tx("Een ZIP met de html-, css- en afbeeldingsbestanden van de site, met een index.html.") : tx("Alleen openbare websites. Er worden maximaal 12 pagina's en 40 afbeeldingen ingelezen.")}
           </small>

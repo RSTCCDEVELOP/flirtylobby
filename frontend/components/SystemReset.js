@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import { usePresets } from "./PresetPicker";
+import { markPlan } from "../lib/planFlag";
 import ProgressBar from "./ProgressBar";
 import { api, errorText, clearToken } from "../lib/api";
 import { tx } from "../lib/t";
@@ -38,6 +39,8 @@ export default function SystemReset() {
   const [saved, setSaved] = useState(false);
   const presets = usePresets();
   const [preset, setPreset] = useState(""); // set up as this standard installation right after the reset
+  const [adminsToo, setAdminsToo] = useState(false); // also remove the administrators (users with a role)? by default they stay
+  const [superToo, setSuperToo] = useState(false); // also remove the other superadmins (the standard superadmin always stays)? by default they stay
   const [aiToo, setAiToo] = useState(false); // also remove the AI data (calls, costs, credit and its history)?
 
   async function open() {
@@ -69,10 +72,11 @@ export default function SystemReset() {
   async function reset() {
     setBusy(true); setMsg(null); setFinished(false); setJob("reset");
     try {
-      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo } });
+      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo, delete_admins: adminsToo, delete_superadmins: superToo } });
       setAdminMail(r?.admin || "");
       setFinished(true);
       await new Promise((r) => setTimeout(r, 700)); // the bar shows 100% for a moment
+      markPlan();  // after a reset the step plan of Website ontwerpen opens
       setStep(3);
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setJob(""); setFinished(false); setBusy(false);
@@ -108,7 +112,9 @@ export default function SystemReset() {
                 <div className="alert">
                   {tx("Dit verwijdert voorgoed:")}
                   <ul style={{ margin: ".4rem 0 0", paddingLeft: "1.2rem" }}>
-                    <li>{tx("{0} gebruikers met hun profielen, berichten en gegevens", info.users)}</li>
+                    <li>{tx("{0} gebruikers met hun profielen, berichten en gegevens", Math.max(0, info.users - (adminsToo ? 0 : info.admins || 0)))}</li>
+                    {adminsToo && info.admins > 0 && <li>{tx("{0} admins (gebruikers met een rol)", info.admins)}</li>}
+                    {superToo && info.other_superadmins > 0 && <li>{tx("{0} andere superadmins", info.other_superadmins)}</li>}
                     <li>{tx("{0} afbeeldingen en video's uit de bibliotheek", info.media)}</li>
                     <li>{tx("{0} eigen pagina's en alle teksten en blokken", info.pages)}</li>
                     {(info.designs > 0 || info.imports > 0) && <li>{tx("{0} ontwerpen en {1} geïmporteerde websites, met hun bestanden", info.designs || 0, info.imports || 0)}</li>}
@@ -116,7 +122,23 @@ export default function SystemReset() {
                     <li>{tx("Bestellingen, abonnementen, donaties, chats en alle andere gegevens van de modules")}</li>
                   </ul>
                 </div>
-                <small className="muted">{info.standard_admin ? tx("Blijft: de superadmin {0} (met het standaardwachtwoord opnieuw gemaakt; alle andere superadmins worden verwijderd), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema easy2edit.")}</small>
+                <small className="muted">{info.standard_admin ? tx("Blijft: de standaard superadmin {0} (met het standaardwachtwoord opnieuw gemaakt), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema easy2edit.")}</small>
+                {info.admins > 0 && (
+                  <label className="check sec-toggle">
+                    <span className="switch"><input type="checkbox" checked={adminsToo} onChange={(e) => setAdminsToo(e.target.checked)} /><span /></span>
+                    <span>{tx("Ook de admins verwijderen?")}
+                      <small className="muted" style={{ display: "block" }}>{tx("{0} admins (gebruikers met een rol of eigen rechten). Uit: ze blijven bestaan met hun rol en kunnen blijven inloggen; hun inhoud gaat wel weg.", info.admins)}</small>
+                    </span>
+                  </label>
+                )}
+                {info.other_superadmins > 0 && (
+                  <label className="check sec-toggle">
+                    <span className="switch"><input type="checkbox" checked={superToo} onChange={(e) => setSuperToo(e.target.checked)} /><span /></span>
+                    <span>{tx("Ook de andere superadmins verwijderen?")}
+                      <small className="muted" style={{ display: "block" }}>{tx("{0} andere superadmins. De standaard superadmin blijft altijd. Uit: ze blijven bestaan en kunnen blijven inloggen.", info.other_superadmins)}</small>
+                    </span>
+                  </label>
+                )}
                 {(info.ai_calls > 0 || info.ai_ledger > 0 || info.ai_credit > 0) && (
                   <label className="check sec-toggle">
                     <span className="switch"><input type="checkbox" checked={aiToo} onChange={(e) => setAiToo(e.target.checked)} /><span /></span>

@@ -71,11 +71,24 @@ def summary():
         imports = m.objects.count() if m else 0
     except Exception:  # noqa: BLE001
         pass
-    return {**ai, "designs": designs, "imports": imports, "users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
+    return {**ai, "designs": designs, "imports": imports, "users": User.objects.filter(is_staff=False).count(), "admins": len(_admin_ids()), "superadmins": User.objects.filter(is_staff=True).count(), "other_superadmins": User.objects.filter(is_staff=True).exclude(email__iexact=standard_email() or "-").count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
             "pages": Page.objects.exclude(kind="system").count(), "plugins": Plugin.objects.count(), "themes": ThemePack.objects.count()}
 
 
-def _files_of_removed():
+def _admin_ids():
+    """The administrators: users who are not superadmins but have a role (direct or through a group) or a module grant of their own."""
+    from apps.accounts.models import ModuleGrant, User
+
+    ids = set(User.objects.filter(is_staff=False, roles__isnull=False).values_list("pk", flat=True))
+    try:
+        ids |= set(User.objects.filter(is_staff=False, user_groups__roles__isnull=False).values_list("pk", flat=True))
+        ids |= set(ModuleGrant.objects.filter(user__isnull=False, user__is_staff=False).values_list("user_id", flat=True))
+    except Exception:  # noqa: BLE001
+        pass
+    return ids
+
+
+def _files_of_removed(keep_ids=()):
     """The files that go with the rows that are about to be deleted (collected first; the rows know where they are)."""
     from apps.accounts.models import User
     from apps.medialib.models import MediaItem
@@ -90,7 +103,7 @@ def _files_of_removed():
                     f = getattr(row, n, None)
                     if f and getattr(f, "name", ""):
                         fields.append(f.name)
-    for u in User.objects.filter(is_staff=False):
+    for u in User.objects.filter(is_staff=False).exclude(pk__in=list(keep_ids)):
         if getattr(u, "image", None) and u.image.name:
             fields.append(u.image.name)
     return keys + fields
@@ -122,8 +135,8 @@ def standard_email():
     return (os.getenv("ADMIN_EMAIL") or "").strip().lower() if os.getenv("ADMIN_PASSWORD") else ""
 
 
-def standard_admin():
-    """Make the standard superadmin of the installation (ADMIN_EMAIL / ADMIN_PASSWORD) with that password and remove every other superadmin. Returns the e-mail address, or "" when it is not set."""
+def standard_admin(others="deactivate"):
+    """Make the standard superadmin of the installation (ADMIN_EMAIL / ADMIN_PASSWORD) with that password. The other superadmins: others="deactivate" (they can no longer log in; the default), "delete" or "keep". Returns the e-mail address, or "" when it is not set."""
     import os
 
     from apps.accounts.models import User
@@ -143,7 +156,10 @@ def standard_admin():
         user.set_password(password)
     user.twofa_method, user.totp_secret, user.totp_last_step = "", "", 0  # the standard admin can always log in with the password
     user.save()
-    User.objects.filter(is_staff=True).exclude(pk=user.pk).update(is_active=False)  # the other superadmins are switched off: they can no longer log in (they can be switched on again by the standard superadmin)
+    if others == "delete":
+        User.objects.filter(is_staff=True).exclude(pk=user.pk).delete()
+    elif others != "keep":
+        User.objects.filter(is_staff=True).exclude(pk=user.pk).update(is_active=False)  # the other superadmins are switched off: they can no longer log in (they can be switched on again by the standard superadmin)
     from django.core.cache import cache
     from rest_framework.authtoken.models import Token
 
@@ -152,8 +168,8 @@ def standard_admin():
     return email
 
 
-def perform(keep=None, ai=False):
-    """Do the reset. Returns what was removed. keep = the superadmin who asks (stays in any case; all superadmins stay)."""
+def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
+    """Do the reset. Returns what was removed. keep = the superadmin who asks. The administrators (users with a role) and the other superadmins stay, unless delete_admins / delete_superadmins is asked; the standard superadmin always stays."""
     from apps.accounts.models import User
     from apps.core import modules, themepacks
     from apps.core.models import ModuleState, SiteSettings, ThemePack
@@ -180,8 +196,9 @@ def perform(keep=None, ai=False):
         removed["demo"] = sum(v for v in demo.remove().values() if isinstance(v, int))
     except Exception:  # noqa: BLE001 - the reset below clears everything anyway
         logger.exception("Reset: demo data could not be removed one by one")
-    files = _files_of_removed()
-    gone_users = list(User.objects.filter(is_staff=False).values_list("pk", flat=True))
+    keep_ids = set() if delete_admins else _admin_ids()  # the administrators stay (without their content) unless they are to be removed too
+    files = _files_of_removed(keep_ids)
+    gone_users = list(User.objects.filter(is_staff=False).exclude(pk__in=list(keep_ids)).values_list("pk", flat=True))
 
     from django.db import connection
 
@@ -204,8 +221,9 @@ def perform(keep=None, ai=False):
             if mdl:
                 mdl.objects.all().delete()
         # users of the site go (their photos, profiles, messages ... follow); the superadmins stay
-        User.objects.filter(is_staff=False).delete()
-        removed["admin"] = standard_admin()  # the standard superadmin, the other superadmins go
+        User.objects.filter(is_staff=False).exclude(pk__in=list(keep_ids)).delete()
+        removed["admin"] = standard_admin("delete" if delete_superadmins else "keep")  # the standard superadmin is made again; the other superadmins stay or go
+        removed["kept_admins"] = len(keep_ids)
         # pages and blocks; the built-in pages come back as they were
         PageLayout.objects.all().delete()
         Page.objects.all().delete()
