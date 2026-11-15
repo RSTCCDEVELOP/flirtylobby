@@ -7,10 +7,14 @@
 
 from django.urls import path
 
-from . import backup_views, terms_views, dashboard, marketing, resource_views, sales, views
+from . import component_views, backup_views, terms_views, dashboard, marketing, resource_views, sales, views, template_views
 from . import manual
 
 urlpatterns = [
+    path("components/", component_views.active),
+    path("components/sets/", component_views.sets),
+    path("templates/", template_views.templates),
+    path("templates/<slug:key>/preview/<int:n>/", template_views.template_preview),
     path("resource/", resource_views.library),
     path("resource/allowed/", resource_views.allowed),
     path("resource/install/", resource_views.install),

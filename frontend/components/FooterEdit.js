@@ -33,7 +33,15 @@ export default function FooterEdit() {
     api("/theme/").then(setTheme).catch((e) => setMsg({ ok: false, text: errorText(e) }));
     api("/system/").then(setSys).catch(() => setSys(false)); // no right for the basic data: only the look
   }, [open]);
+  useEffect(() => {  // in the editor with a panel: a click on an empty place in the footer shows its settings in the panel
+    if (!editing) return undefined;
+    const foot = document.querySelector(".site-footer");
+    const click = (e) => { if (document.documentElement.dataset.pbbar === "1" && !e.target.closest("a, button, select, input")) { window.dispatchEvent(new Event("pb-show-settings")); setTimeout(() => setOpen(true), 60); } };
+    foot?.addEventListener("click", click);
+    return () => foot?.removeEventListener("click", click);
+  }, [editing]);
   if (!editing) return null;
+  const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // the panel of the editor
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
   const setLook = async (key, v) => {
     const values = { ...theme.values, [key]: v };
@@ -48,10 +56,10 @@ export default function FooterEdit() {
   const close = () => { setOpen(false); if (logoTouched && !dirty) { setLogoTouched(false); window.location.reload(); return; } if (dirty) { setDirty(false); window.location.reload(); } };
   return (
     <>
-      <button type="button" className="btn sm footer-edit" onClick={() => setOpen(true)} title={tx("De footer bewerken")} aria-label={tx("De footer bewerken")}><IconEdit width={13} height={13} /></button>
+      <button type="button" className="btn sm footer-edit" onClick={() => { window.dispatchEvent(new Event("pb-show-settings")); setTimeout(() => setOpen(true), 60); }} title={tx("De footer bewerken")} aria-label={tx("De footer bewerken")}><IconEdit width={13} height={13} /></button>
       {open && typeof document !== "undefined" && createPortal(
-        <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
-          <div className="pb-objpop" role="dialog" aria-label={tx("Footer bewerken")} style={{ width: "min(720px, 100%)" }}>
+        <div className={host ? "pb-hdock" : "pb-objback"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) close(); }}>
+          <div className={host ? "pb-hdock-in" : "pb-objpop"} role="dialog" aria-label={tx("Footer bewerken")} style={host ? undefined : { width: "min(720px, 100%)" }}>
             <div className="pb-objhead"><strong>{tx("Footer bewerken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={close} aria-label={tx("Sluiten")}>×</button></div>
             <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ...(sys ? [["logo", "Logo"], ["text", "Teksten en links"]] : [])]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
@@ -83,7 +91,7 @@ export default function FooterEdit() {
               </div>
             )}
           </div>
-        </div>, document.body)}
+        </div>, host || document.body)}
     </>
   );
 }

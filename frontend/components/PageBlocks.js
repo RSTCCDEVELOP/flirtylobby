@@ -27,6 +27,9 @@ import Tabs from "./Tabs";
 import PageButtonPopup from "./PageButtonPopup";
 import PageAddMenu from "./PageAddMenu";
 import { anchorFromEvent, anchorStyle } from "../lib/anchor";
+import ComponentPicker from "./ComponentPicker";
+import EditorShell from "./EditorShell";
+import MediaPicker from "./MediaPicker";
 import { PbWidget, WidgetPopup, WIDGET_DEFAULTS, WIDGET_NAMES } from "./PageWidget";
 import { getLanguage } from "../lib/t";
 import PluginFrame from "./PluginFrame";
@@ -52,14 +55,32 @@ const styleCss = (st) => {
   if (st.radius !== undefined && st.radius !== "") out.borderRadius = `${st.radius}px`;
   return out;
 };
+// your own colours: saved per person (also on other computers) and usable everywhere a colour is chosen
+const readSaved = () => { try { const v = JSON.parse(localStorage.getItem("savedColors") || "[]"); return Array.isArray(v) ? v.filter((x) => /^#[0-9a-f]{6}$/i.test(x)).slice(0, 16) : []; } catch { return []; } };
 function ColorPick({ value, onChange }) {
+  const [saved, setSaved] = useState([]);
+  useEffect(() => { // all colour pickers on the screen show the same saved colours
+    const on = () => setSaved(readSaved());
+    on(); window.addEventListener("saved-colors", on);
+    return () => window.removeEventListener("saved-colors", on);
+  }, []);
+  const store = (list) => { try { localStorage.setItem("savedColors", JSON.stringify(list)); } catch {} setSaved(list); window.dispatchEvent(new Event("saved-colors")); };
+  const isHex = !!value && /^#[0-9a-f]{6}$/i.test(value);
   const custom = value && !TOKEN_VAR[value];
+  const isSaved = isHex && saved.some((c) => c.toLowerCase() === value.toLowerCase());
   return (
     <span className="pb-colorpick">
       <span className="pb-swatches">
-        <button type="button" className={`pb-sw none${!value ? " on" : ""}`} title="Zoals het thema" onClick={() => onChange("")}>∅</button>
-        {PALETTE.map(([k, l]) => <button key={k} type="button" className={`pb-sw${value === k ? " on" : ""}`} style={{ background: TOKEN_VAR[k] }} title={l} onClick={() => onChange(k)} />)}
-        <input type="color" className={custom ? "on" : ""} value={custom ? value : "#888888"} onChange={(e) => onChange(e.target.value)} title="Eigen kleur" />
+        <button type="button" className={`pb-sw none${!value ? " on" : ""}`} title={tx("Zoals het thema")} onClick={() => onChange("")}>∅</button>
+        {PALETTE.map(([k, l]) => <button key={k} type="button" className={`pb-sw${value === k ? " on" : ""}`} style={{ background: TOKEN_VAR[k] }} title={tx(l)} onClick={() => onChange(k)} />)}
+        <input type="color" className={custom ? "on" : ""} value={isHex ? value : "#888888"} onChange={(e) => onChange(e.target.value)} title={tx("Eigen kleur")} />
+      </span>
+      <span className="pb-swatches pb-saved">
+        <small className="muted">{tx("Opgeslagen")}</small>
+        {saved.map((c) => <button key={c} type="button" className={`pb-sw saved${value && value.toLowerCase() === c.toLowerCase() ? " on" : ""}`} style={{ background: c }} title={`${c} · ${tx("Rechtsklik om te verwijderen")}`} onClick={() => onChange(c)} onContextMenu={(e) => { e.preventDefault(); store(saved.filter((x) => x !== c)); }} />)}
+        {isSaved && <label className="pb-sw editsave" title={tx("Deze opgeslagen kleur wijzigen")}><span aria-hidden="true">✎</span><input type="color" value={value} aria-label={tx("Deze opgeslagen kleur wijzigen")} onChange={(e) => { const n = e.target.value.toLowerCase(); store(saved.map((c) => (c.toLowerCase() === value.toLowerCase() ? n : c))); onChange(n); }} /></label>}
+        {isSaved && <button type="button" className="pb-sw delsave" title={tx("Deze opgeslagen kleur verwijderen")} aria-label={tx("Deze opgeslagen kleur verwijderen")} onClick={() => store(saved.filter((c) => c.toLowerCase() !== value.toLowerCase()))}>×</button>}
+        <button type="button" className="pb-sw addsave" disabled={!isHex || isSaved} title={tx("Deze eigen kleur opslaan")} aria-label={tx("Deze eigen kleur opslaan")} onClick={() => store([...saved, value.toLowerCase()].slice(-16))}>+</button>
       </span>
     </span>
   );
@@ -107,7 +128,7 @@ function PbButton({ it, c, editing }) {
 }
 
 export default function PageBlocks({ pageKey, title = "" }) {
-  const { editing } = useSession();
+  const { editing, setEditMode } = useSession();
   const objOn = useModule("sysobjects");
   const [layout, setLayout] = useState(null);
   const [menu, setMenu] = useState(null); // cell id with the add-menu open
@@ -140,6 +161,30 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const [itemTab, setItemTab] = useState({}); // the tab of the settings of a text (text, colour, space)
   const [itemOpen, setItemOpen] = useState({}); // texts whose settings (text style, size, colour, font) are open
   const [pageOpen, setPageOpen] = useState(false); // the page settings (space, items per page, width, hero, layout) are folded away until the gear is clicked
+  // The editor shell (top bar and left panel): one per page (the first block of the page that is in edit mode owns it)
+  const [sbOpen, setSbOpen] = useState(true);
+  const [sbView, setSbView] = useState("elements"); // elements | structure | settings
+  const [pageTarget, setPageTarget] = useState(null); // the place in the panel for the settings of the whole page
+  const [sbTarget, setSbTarget] = useState(null);   // the place in the panel where the settings of the picked block or part are drawn
+  const [curCell, setCurCell] = useState(null);     // the column that gets what you add in the panel
+  const [owner, setOwner] = useState(false);
+  useEffect(() => {
+    if (!editing || typeof window === "undefined") return undefined;
+    const me = `${pageKey}`;
+    if (!window.__pbOwner) { window.__pbOwner = me; setOwner(true); }
+    return () => { if (window.__pbOwner === me) delete window.__pbOwner; setOwner(false); };
+  }, [editing, pageKey]);
+  useEffect(() => { if (editing) { setSbOpen(true); setSbView("elements"); } }, [editing]);  // edit mode on: the panel is there at once
+  const shell = editing && owner;
+  useEffect(() => {
+    const root = document.documentElement;
+    if (shell) { root.dataset.pbbar = "1"; root.dataset.pbsb = sbOpen ? "1" : "rail"; }  // open: the panel; closed: only a narrow strip stays, to open it again else { delete root.dataset.pbbar; delete root.dataset.pbsb; }
+    return () => { delete root.dataset.pbbar; delete root.dataset.pbsb; };
+  }, [shell, sbOpen]);
+  const sbPage = (node) => (shell && pageTarget ? createPortal(node, pageTarget) : node);  // the settings of the whole page go in the panel (tab Pagina)
+  const sbHost = (node) => (shell && sbTarget ? createPortal(node, sbTarget) : node);  // the settings of a block or part go in the panel (when there is one)
+  const [imgPick, setImgPick] = useState(null);  // the picture part whose picture is being chosen (from the panel)
+  const [compPop, setCompPop] = useState(null); // {cell: id} while the component picker (UI-kit) is open
   const [objPop, setObjPop] = useState(null); // {cell: id} while the system objects popup is open
   const [objQ, setObjQ] = useState("");
   const [objTab, setObjTab] = useState("");
@@ -165,7 +210,35 @@ export default function PageBlocks({ pageKey, title = "" }) {
     if (b && typeof window !== "undefined") setBarPos((m) => ({ ...m, [id]: { top: Math.max(8, Math.min(b.bottom + 8, window.innerHeight - 340)), left: Math.max(8, Math.min(b.left, window.innerWidth - 620)) } }));
     toggleBar(id);
   };
-  const toggleBar = (id) => setBarOpen((m) => ({ ...m, [id]: !m[id] }));
+  const toggleBar = (id) => {
+    if (shell && sbTarget) { setItemOpen({}); setBarOpen((m) => ({ [id]: !m[id] })); setSbView("settings"); setSbOpen(true); return; }  // with the panel: one block at a time
+    setBarOpen((m) => ({ ...m, [id]: !m[id] }));
+  };
+  const toggleItem = (id) => {
+    if (shell && sbTarget) { setBarOpen({}); setItemOpen((m) => ({ [id]: !m[id] })); setSbView("settings"); setSbOpen(true); return; }
+    setItemOpen((m) => ({ ...m, [id]: !m[id] }));
+  };
+  // Click to select (like a page builder): a click on a part or on a block shows its settings in the panel; the header does the same (HeaderEdit listens for pb-edit-header)
+  const openIn = (f) => { if (shell && sbTarget) { setBarOpen({}); setItemOpen({}); setSbView("settings"); setSbOpen(true); setTimeout(f, 60); } else f(); };  // a window of settings goes into the panel: first show it, then fill it
+  const showSettings = () => { setSbView("settings"); setSbOpen(true); };
+  const selectItem = (it, c, e) => {
+    if (!shell || !sbTarget || e.target.closest?.("button, a, select, input, textarea, [data-sysobject]")) return;
+    setCurCell(c.id);
+    if (it.type === "button") { setBarOpen({}); setItemOpen({}); showSettings(); setTimeout(() => setBtnEdit(it.id), 60); return; }
+    if (it.type === "widget") { if (it.widget === "code") { setWidgetEdit(it.id); return; } setBarOpen({}); setItemOpen({}); showSettings(); setTimeout(() => setWidgetEdit(it.id), 60); return; }
+    if (!["text", "heading", "spacer", "line", "image"].includes(it.type)) return;
+    setBarOpen({}); setItemOpen({ [it.id]: true }); showSettings();
+  };
+  const selectRow = (r, e) => {
+    if (!shell || !sbTarget || e.target.closest?.(".pb-item, button, a, select, input, textarea, .pb-cellbar, .pb-corner")) return;
+    setItemOpen({}); setBarOpen({ [r.id]: true }); showSettings();
+  };
+  useEffect(() => {
+    if (!shell) return undefined;
+    const on = () => { setBarOpen({}); setItemOpen({}); showSettings(); };
+    window.addEventListener("pb-show-settings", on);
+    return () => window.removeEventListener("pb-show-settings", on);
+  }, [shell]); // eslint-disable-line react-hooks/exhaustive-deps
   const shopTimer = useRef(null); // the page behind the webshop settings loads again a moment after the last change
   const rowDrag = useRef(null); // a whole row (block, hero) that is being dragged
   const [overRow, setOverRow] = useState(null); // {id, pos: before | after}
@@ -225,7 +298,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
       clearTimeout(timer.current);
       setSaving("saving");
       timer.current = setTimeout(async () => {
-        try { await api(`/pages/layout/${encodeURIComponent(pageKey)}/`, { method: "PUT", body: next }); setSaving("saved"); setTimeout(() => setSaving(""), 1500); }
+        try { await api(`/pages/layout/${encodeURIComponent(pageKey)}/`, { method: "PUT", body: next }); setSaving("saved"); window.dispatchEvent(new Event("pb-saved")); setTimeout(() => setSaving(""), 1500); }
         catch (e) { setSaving(""); alertDialog(errorText(e)); }
       }, 600);
       return next;
@@ -244,20 +317,54 @@ export default function PageBlocks({ pageKey, title = "" }) {
     return l;
   });
   // a new block between two others (after the block with id `after`; null = at the top)
-  const addRowAt = (cols, after) => { setInsAt(undefined); change((l) => { const at = after ? l.rows.findIndex((x) => x.id === after) + 1 : 0; l.rows.splice(at, 0, { id: uid(), cols, gap: "md", cells: Array.from({ length: cols }, newCell) }); return l; }); };
-  const insertBar = (after) => (
-    <div className={`pb-insert${insAt === (after || "top") ? " open" : ""}`} key={`ins-${after || "top"}`} onMouseDown={(e) => e.stopPropagation()}>
-      <span className="pb-insline" aria-hidden="true" />
-      <button type="button" className="btn sm pb-insbtn" aria-expanded={insAt === (after || "top")} title={tx("Hier een nieuw blok toevoegen")} onClick={() => setInsAt(insAt === (after || "top") ? undefined : (after || "top"))}>+ {tx("Nieuw blok")}</button>
-      {insAt === (after || "top") && (
-        <span className="pb-insmenu">
-          {[1, 2, 3, 4].map((n) => <button type="button" key={n} className="btn sm" onClick={() => { setInsAt(undefined); addRowAt(n, after); }}>{n === 1 ? tx("Blok") : `${n} ${tx("kolommen")}`}</button>)}
-          {clip?.kind === "row" && <button type="button" className="btn sm primary" onClick={() => { setInsAt(undefined); pasteRow(after || "top"); }}>{PasteIcon} {tx("Blok plakken")}</button>}
+  // A new block like in a page builder: first choose its structure (columns), or a hero. Blocks sit flush against each other; the space is set per block.
+  const themeHex = (v, d) => { try { const c = getComputedStyle(document.documentElement).getPropertyValue(v).trim(); return /^#[0-9a-f]{6}$/i.test(c) ? c : d; } catch { return d; } };
+  // a new hero starts with a background (the primary colour of the theme, or dark) and light text, like in a page builder; picture and overlay are set in the settings of the block
+  const HERO_PRESETS = [["Hero gecentreerd", ["auto"], { halign: "center", bg: "primary" }], ["Hero 50 / 50", ["50", "50"], { halign: "left", bg: "primary" }], ["Hero donker", ["auto"], { halign: "center", bg: "dark" }]];
+  const makeRow = (widths, hero) => {
+    const n = widths.length;
+    const cells = Array.from({ length: n }, (_, i) => ({ ...newCell(), width: widths[i], ...(hero ? { halign: hero.halign, valign: "center" } : {}) }));
+    if (!hero) return { id: uid(), cols: n, gap: "md", cells };
+    cells[0].items.push({ id: uid(), type: "heading", ref: "", style: { tag: "k1" } }, { id: uid(), type: "text", ref: "" });
+    return { id: uid(), cols: n, gap: "lg", hero: "custom", screen: true, inner: true, top: "touch", h_mode: "pct", h: 10, padding: { t: 96, b: 96 }, style: { bg: hero.bg === "dark" ? "#111827" : themeHex("--blue", "#1b97d3"), bg_a: 100, color: "#ffffff", radius: 0 }, cells };
+  };
+  const addRowAt = (widths, after, hero) => { setInsAt(undefined); change((l) => { const at = after ? l.rows.findIndex((x) => x.id === after) + 1 : 0; l.rows.splice(at, 0, makeRow(Array.isArray(widths) ? widths : Array.from({ length: widths }, () => "auto"), hero)); return l; }); };
+  const insertBar = (after) => {
+    const key = after || "top", open = insAt === key;
+    const vis = layout.rows.filter((x) => !(heroOff && own(x)));
+    const target = after ? vis.find((x) => x.id === after) : vis[0];  // the block whose handles are on this line: the one above it (the first block for the top line)
+    return (
+      <div className={`pb-insert${open ? " open" : ""}`} key={`ins-${key}`} onMouseDown={(e) => e.stopPropagation()}>
+        <span className="pb-insline" aria-hidden="true" />
+        <span className="pb-inshandle">
+          <button type="button" className="pb-inbtn add" aria-expanded={open} title={tx("Hier een nieuw blok toevoegen")} aria-label={tx("Nieuw blok")} onClick={() => setInsAt(open ? undefined : key)}>+</button>
+          {target && <button type="button" className="pb-inbtn" title={tx("Dit blok bewerken")} aria-label={tx("Dit blok bewerken")} onClick={() => toggleBar(target.id)}>✎</button>}
+          {target && <button type="button" className="pb-inbtn del" title={tx("Dit blok verwijderen")} aria-label={tx("Dit blok verwijderen")} onClick={() => removeRow(target)}>×</button>}
         </span>
-      )}
-      <span className="pb-insline" aria-hidden="true" />
-    </div>
-  );
+        {open && (
+          <div className="pb-insmenu pb-structpick">
+            <strong>{tx("Kies de opbouw van het nieuwe blok")}</strong>
+            <span className="pb-coltiles">
+              {COLUMN_LAYOUTS.map(([name, widths]) => (
+                <button key={name} type="button" className="pb-coltile" onClick={() => addRowAt(widths, after)} title={`${widths.length} ${tx("kolommen")}: ${name}`}>
+                  <span>{widths.map((w, i) => <i key={i} style={{ flex: w === "auto" ? 1 : Number(w) }} />)}</span><small>{name}</small>
+                </button>
+              ))}
+            </span>
+            <strong>{tx("Hero")}</strong>
+            <span className="pb-coltiles">
+              {HERO_PRESETS.map(([name, widths, hero]) => (
+                <button key={name} type="button" className="pb-coltile hero" onClick={() => addRowAt(widths, after, hero)}>
+                  <span>{widths.map((w, i) => <i key={i} style={{ flex: w === "auto" ? 1 : Number(w) }} />)}</span><small>{tx(name)}</small>
+                </button>
+              ))}
+            </span>
+            {clip?.kind === "row" && <button type="button" className="btn sm primary" onClick={() => { setInsAt(undefined); pasteRow(after || "top"); }}>{PasteIcon} {tx("Blok plakken")}</button>}
+          </div>
+        )}
+      </div>
+    );
+  };
   const addRow = (cols) => change((l) => { l.rows.push({ id: uid(), cols, gap: "md", cells: Array.from({ length: cols }, newCell) }); return l; });
   const addHero = () => change((l) => { l.rows.push({ id: uid(), cols: 1, gap: "md", hero: "custom", h_mode: "pct", h: 50, cells: [{ ...newCell(), halign: "center", valign: "center", items: [{ id: uid(), type: "text", ref: "" }] }] }); return l; });
   const addGrid = () => change((l) => { l.rows.push({ id: uid(), cols: 3, gap: "md", hero: "plain", h_mode: "pct", h: 50, cells: Array.from({ length: 3 }, newCell) }); return l; });
@@ -295,10 +402,22 @@ export default function PageBlocks({ pageKey, title = "" }) {
     if (own(r)) change((l) => { l.hero_off = true; l.rows = l.rows.filter((x) => x.id !== r.id); return l; });
     else delRow(r.id);
   };
+  // a column (placeholder) has its own pencil and cross: the cross empties it, or removes the column when it is empty already
+  const delCell = async (r, c) => {
+    if (c.items.length) { if (!(await confirmDialog(tx("Alles in deze kolom verwijderen?"), { danger: true }))) return; change((l) => { l.rows.flatMap((x) => x.cells).find((x) => x.id === c.id).items = []; return l; }); return; }
+    if (r.cells.length > 1) { change((l) => { const row = l.rows.find((x) => x.id === r.id); row.cells = row.cells.filter((x) => x.id !== c.id); row.cols = row.cells.length; return l; }); return; }
+    removeRow(r);
+  };
   const delRow = (rid) => change((l) => { l.rows = l.rows.filter((x) => x.id !== rid); return l; });
   const setAllCells = (rid, patch) => change((l) => { const row = l.rows.find((x) => x.id === rid); if (row) row.cells.forEach((c) => Object.assign(c, patch)); return l; });
   const setCell = (cid, patch) => change((l) => { Object.assign(l.rows.flatMap((r) => r.cells).find((c) => c.id === cid), patch); return l; });
-  const addItem = (cid, type, ref = "", widget = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push({ id: uid(), type, ref, ...(type === "widget" ? { widget, data: JSON.parse(JSON.stringify(WIDGET_DEFAULTS[widget] || {})) } : {}), ...(type === "heading" ? { style: { tag: "k2" } } : type === "button" ? { btn: { labels: { nl: "Knop" } } } : type === "spacer" ? { style: { h: 40 } } : type === "line" ? { style: { lw: 100, th: 1 } } : {}) }); return l; }); };
+  const compItem = (comp) => ({ id: uid(), type: "widget", ref: "", widget: "code", data: { html: comp.html, css: "", kit: true, tag: comp.easy2edit_tag, name: comp.name, ...(comp.set ? { set: comp.set } : {}) } });
+  const addComponent = (cid, comp) => { setCompPop(null); if (!cid) { addToPage(compItem(comp)); return; } change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push(compItem(comp)); return l; }); };
+  const makeItem = (type, ref = "", widget = "") => ({ id: uid(), type, ref, ...(type === "widget" ? { widget, data: JSON.parse(JSON.stringify(WIDGET_DEFAULTS[widget] || {})) } : {}), ...(type === "heading" ? { style: { tag: "k2" } } : type === "button" ? { btn: { labels: { nl: "Knop" } } } : type === "spacer" ? { style: { h: 40 } } : type === "line" ? { style: { lw: 100, th: 1 } } : {}) });
+  const addItem = (cid, type, ref = "", widget = "") => { setMenu(null); change((l) => { l.rows.flatMap((r) => r.cells).find((c) => c.id === cid).items.push(makeItem(type, ref, widget)); return l; }); };
+  // from the panel: into the picked column, or the last column of the page, or a new block when the page is empty
+  const targetCell = (l) => l.rows.flatMap((r) => r.cells).find((c) => c.id === curCell) || l.rows.filter((r) => !(heroOff && own(r))).slice(-1)[0]?.cells.slice(-1)[0];
+  const addToPage = (item) => change((l) => { let cell = targetCell(l); if (!cell) { const row = { id: uid(), cols: 1, gap: "md", cells: [newCell()] }; l.rows.push(row); cell = row.cells[0]; } cell.items.push(item); return l; });
   const setObjLayout = (iid, n) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { if (n === "1") delete x.layout; else x.layout = n; } }))); return l; });
   const setItem = (iid, patch) => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === iid) { x.style = { ...(x.style || {}), ...patch }; Object.keys(x.style).forEach((k) => { if (x.style[k] === "" || x.style[k] == null) delete x.style[k]; }); if (!Object.keys(x.style).length) delete x.style; } }))); return l; });
   const dropFixed = (cid, before) => { // a fixed element of the page (logo, title, intro) is dropped in a cell
@@ -401,14 +520,16 @@ export default function PageBlocks({ pageKey, title = "" }) {
       move(from, c.id, next === from ? null : next || null);
     };
     return (
-      <div className={`pb-item edit${it.type === "object" ? " obj" : ""}${shown}${dragOn === it.id ? " dragging" : ""}`} key={it.id} style={{ textAlign: c.halign }}
+      <div data-iid={it.id} onClick={(e) => selectItem(it, c, e)} className={`pb-item edit${it.type === "object" ? " obj" : ""}${shown}${dragOn === it.id ? " dragging" : ""}`} key={it.id} style={{ textAlign: c.halign }}
         onDragOver={hover} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver((o) => (o?.id === it.id ? null : o)); }} onDrop={drop}>
+        {shell && <button type="button" className="pb-pencil" title={tx("Bewerken in het paneel")} aria-label={tx("Bewerken in het paneel")} onClick={(e) => { e.stopPropagation(); selectItem(it, c, { target: document.body }); }}>✎</button>}
+        {shell && <button type="button" className="pb-pencil del" title={tx("Verwijderen")} aria-label={tx("Verwijderen")} onClick={(e) => { e.stopPropagation(); delItem(it.id); }}>×</button>}
         <div className="pb-itembar">
           <span className="pb-itemleft">
           <span className="pb-grip" title={tx("Sleep om te verplaatsen")} draggable
             onDragStart={(e) => { drag.current = it.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", it.id); const box = e.currentTarget.closest(".pb-item"); if (box) e.dataTransfer.setDragImage(box, 16, 16); setTimeout(() => { setDragOn(it.id); setDragging(true); }, 0); }}
             onDragEnd={() => { drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>⋮⋮ <small>{label}</small></span>
-          {(it.type === "text" || it.type === "heading" || it.type === "spacer" || it.type === "line" || it.type === "button" || it.type === "widget") && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => (it.type === "button" ? setBtnEdit(it.id) : it.type === "widget" ? setWidgetEdit(it.id) : setItemOpen((m) => ({ ...m, [it.id]: !m[it.id] })))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
+          {(it.type === "text" || it.type === "heading" || it.type === "spacer" || it.type === "line" || it.type === "button" || it.type === "widget") && <button type="button" className={`pb-gear sm${itemOpen[it.id] ? " on" : ""}`} onClick={() => (it.type === "button" ? openIn(() => setBtnEdit(it.id)) : it.type === "widget" ? (it.widget === "code" ? setWidgetEdit(it.id) : openIn(() => setWidgetEdit(it.id))) : toggleItem(it.id))} aria-expanded={!!itemOpen[it.id]} title={tx("Tekstinstellingen")} aria-label={tx("Tekstinstellingen")}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
           </button>}
           {it.type === "object" && (() => { // a system object (product overview, donation, subscription ...): its settings, in a popup (a donation or subscription: its own admin page)
@@ -425,9 +546,10 @@ export default function PageBlocks({ pageKey, title = "" }) {
           </span>
           <button type="button" className="btn sm danger pb-x pb-trash" title={tx("Dit onderdeel van de pagina verwijderen")} aria-label={tx("Dit onderdeel van de pagina verwijderen")} onClick={() => delItem(it.id)}><IconTrash width={22} height={22} /></button>
         </div>
-        {it.type === "image" && itemOpen[it.id] && (
+        {it.type === "image" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             <strong>{tx("Afbeeldingsinstellingen")}</strong>
+            {shell && <div className="pb-stylerow"><button type="button" className="btn sm primary" onClick={() => setImgPick(it.id)}>{tx("Afbeelding kiezen of vervangen")}</button></div>}
             <div className="pb-stylerow"><span>{tx("Uitlijnen")}</span>
               <span className="pb-seg">{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={(it.style?.align || "") === k ? "on" : ""} title={tx(l)} onClick={() => setItem(it.id, { align: it.style?.align === k ? "" : k })}>{g} {tx(l)}</button>)}</span></div>
             <div className="pb-stylerow"><span>{tx("Grootte")}</span>
@@ -441,7 +563,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <button type="button" className="btn sm" disabled={!it.style} onClick={() => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === it.id) delete x.style; }))); return l; })}>{tx("Terug naar standaard")}</button></div>
           </div>
         )}
-        {it.type === "spacer" && itemOpen[it.id] && (
+        {it.type === "spacer" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             <strong>{tx("Tussenruimte")}</strong>
             <div className="pb-stylerow"><span>{tx("Hoogte")}</span>
@@ -449,7 +571,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <input type="number" min={0} max={1000} value={it.style?.h ?? 40} onChange={(e) => setItem(it.id, { h: Math.min(1000, Math.max(0, Number(e.target.value) || 0)) })} style={{ width: "5.5rem" }} /><small className="muted">px</small></div>
           </div>
         )}
-        {it.type === "line" && itemOpen[it.id] && (
+        {it.type === "line" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             <strong>{tx("Lijn")}</strong>
             <Tabs tabs={[["line", "Lijn"], ["space", "Ruimte"]]} value={itemTab[it.id] || "line"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
@@ -465,9 +587,11 @@ export default function PageBlocks({ pageKey, title = "" }) {
             {itemTab[it.id] === "space" && <div className="pb-cols">{padControls(it)}</div>}
           </div>
         )}
-        {(it.type === "text" || it.type === "heading") && itemOpen[it.id] && (
+        {(it.type === "text" || it.type === "heading") && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             <strong>{it.type === "heading" ? tx("Titel setup") : tx("Tekstinstellingen")}</strong>
+            {shell && <div className="pb-sb-content"><small className="muted">{tx("Inhoud")}</small>
+              <EditableText id={key} removable={false} as="div" rich={it.type === "text" || !!it.style?.accent} fallback={tx("Klik om te typen")} className="pb-text pb-sb-text" /></div>}
             <Tabs tabs={[["text", "Tekst"], ["color", "Kleur"], ["space", "Ruimte"]]} value={itemTab[it.id] || "text"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
             {(itemTab[it.id] || "text") === "text" && (
               <div className="pb-cols">
@@ -527,16 +651,95 @@ export default function PageBlocks({ pageKey, title = "" }) {
     );
   };
 
+  const itemLabel = (it) => (it.type === "widget" ? tx(WIDGET_NAMES[it.widget] || "Onderdeel") : it.type === "button" ? tx("Knop") : it.type === "spacer" ? tx("Tussenruimte") : it.type === "line" ? tx("Lijn") : it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref));
+  const goTo = (sel) => document.querySelector(sel)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  const shownRows = layout.rows.filter((r) => !(heroOff && own(r)));
+  const targetRow = shownRows.find((r) => r.cells.some((c) => c.id === curCell)) || shownRows[shownRows.length - 1];
+  // the system objects of the website by module or plugin (for the panel)
+  const objGroupKey = (o) => ((o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part") ? `plugin:${o.data?.name || "plugin"}` : o.kind);
+  const objGroupLabel = (o) => (o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "ai" ? "AI" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin"));
+  const objGroups = [];
+  objects.forEach((o) => { const k = objGroupKey(o); let g = objGroups.find((x) => x.key === k); if (!g) { g = { key: k, label: objGroupLabel(o), items: [] }; objGroups.push(g); } g.items.push({ slug: o.slug, name: `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}` }); });
+  objGroups.sort((a, b) => a.label.localeCompare(b.label));
+  const mediaOn = useModule("media");
+  const addMedia = async (m) => {  // a picture of the media library on the page: an image part that shows it
+    const it = makeItem("image");
+    addToPage(it);
+    try { await api("/media/replace/", { method: "POST", body: { target: `block:layout.${pageKey}.${it.id}`, media_id: m.id } }); softRefresh(); } catch (e) { alertDialog(errorText(e)); }
+  };
+  // what you can do with the picked block or part (the icons on the page are gone: everything is here, in the panel)
+  const pickedId = Object.keys(itemOpen).find((k) => itemOpen[k]) || btnEdit || widgetEdit;
+  const pickedItem = pickedId ? layout.rows.flatMap((r) => r.cells.map((c) => ({ c, it: c.items.find((x) => x.id === pickedId) }))).find((x) => x.it) : null;
+  const pickedRowId = Object.keys(barOpen).find((k) => barOpen[k]);
+  const pickedRow = !pickedItem && pickedRowId ? layout.rows.find((r) => r.id === pickedRowId) : null;
+  const closeAll = () => { setItemOpen({}); setBarOpen({}); setBtnEdit(null); setWidgetEdit(null); };
+  const sbActions = shell && (pickedItem || pickedRow) ? (
+    <div className="pb-sb-actions">
+      <strong>{pickedItem ? itemLabel(pickedItem.it) : (pickedRow.hero ? tx("Hero") : tx("Blok"))}</strong>
+      <span>
+        {pickedItem && <button type="button" className="btn sm" onClick={() => copyItem(pickedItem.it)}>{tx("Kopiëren")}</button>}
+        {pickedItem && <button type="button" className="btn sm" onClick={() => dupItem(pickedItem.it, pickedItem.c.id)}>{tx("Dupliceren")}</button>}
+        {pickedRow && <button type="button" className="btn sm" onClick={() => moveRow(pickedRow.id, -1)}>{tx("Omhoog")}</button>}
+        {pickedRow && <button type="button" className="btn sm" onClick={() => moveRow(pickedRow.id, 1)}>{tx("Omlaag")}</button>}
+        {pickedRow && <button type="button" className="btn sm" onClick={() => dupRow(pickedRow)}>{tx("Dupliceren")}</button>}
+        <button type="button" className="btn sm danger" onClick={() => { if (pickedItem) delItem(pickedItem.it.id); else removeRow(pickedRow); closeAll(); }}>{tx("Verwijderen")}</button>
+      </span>
+    </div>
+  ) : null;
+  const sbElements = shell ? (
+    <PageAddMenu cols={targetRow?.cols || 1} objectCount={objOn ? objects.length : undefined}
+      onAdd={(type, widget) => addToPage(makeItem(type, "", widget))}
+      onCols={(n) => targetRow && setRow(targetRow.id, { cols: n })}
+      onObjects={() => { if (targetRow) { setObjQ(""); setObjPop({ cell: curCell && targetRow.cells.some((c) => c.id === curCell) ? curCell : targetRow.cells[targetRow.cells.length - 1].id, row: targetRow.id }); } }}
+      onComponents={() => setCompPop({ cell: "" })}
+      onComponent={(comp) => addToPage(compItem(comp))}
+      objectGroups={objOn ? objGroups : null} onObject={(slug) => addToPage(makeItem("object", slug))}
+      mediaOn={mediaOn} onMedia={addMedia}
+      onClose={() => {}} />
+  ) : null;
+  const sbStructure = shell ? (
+    <div className="pb-tree">
+      {!shownRows.length && <p className="muted">{tx("Deze pagina heeft nog geen blokken. Kies links bij Elementen wat je wilt toevoegen.")}</p>}
+      {shownRows.map((r, ri) => (
+        <div key={r.id} className="pb-tree-row">
+          <div className="pb-tree-line">
+            <button type="button" className="pb-tree-name" onClick={() => goTo(`#${CSS.escape(rowNavId(r, ri))}`)}><b>{titleOf(r) || (r.hero === "plain" ? tx("Raster") : r.hero ? tx("Hero") : `${tx("Blok")} ${ri + 1}`)}</b></button>
+            <button type="button" className="pb-tree-act" onClick={() => toggleBar(r.id)} title={tx("Instellingen")} aria-label={tx("Instellingen")}>⚙</button>
+            <button type="button" className="pb-tree-act" onClick={() => dupRow(r)} title={tx("Dupliceren")} aria-label={tx("Dupliceren")}>⧉</button>
+            <button type="button" className="pb-tree-act danger" onClick={() => removeRow(r)} title={tx("Verwijderen")} aria-label={tx("Verwijderen")}>×</button>
+          </div>
+          {r.cells.map((c, ci) => (
+            <div key={c.id} className="pb-tree-cell">
+              <button type="button" className={`pb-tree-name cell${curCell === c.id ? " on" : ""}`} onClick={() => setCurCell(c.id)}>{tx("Kolom")} {ci + 1}</button>
+              {c.items.map((it) => (
+                <div key={it.id} className="pb-tree-line item">
+                  <button type="button" className="pb-tree-name" onClick={() => { setCurCell(c.id); goTo(`[data-iid="${it.id}"]`); }}>{itemLabel(it)}</button>
+                  {["text", "heading", "spacer", "line", "image"].includes(it.type) && <button type="button" className="pb-tree-act" onClick={() => toggleItem(it.id)} title={tx("Instellingen")} aria-label={tx("Instellingen")}>⚙</button>}
+                  {it.type === "button" && <button type="button" className="pb-tree-act" onClick={() => openIn(() => setBtnEdit(it.id))} title={tx("Instellingen")} aria-label={tx("Instellingen")}>⚙</button>}
+                  {it.type === "widget" && <button type="button" className="pb-tree-act" onClick={() => (it.widget === "code" ? setWidgetEdit(it.id) : openIn(() => setWidgetEdit(it.id)))} title={tx("Instellingen")} aria-label={tx("Instellingen")}>⚙</button>}
+                  <button type="button" className="pb-tree-act danger" onClick={() => delItem(it.id)} title={tx("Verwijderen")} aria-label={tx("Verwijderen")}>×</button>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  ) : null;
+
   return (
     <section ref={root} data-pad={layout.pad || undefined} data-t={layout.auto || heroTheme || undefined} className={`pb${editing ? " editing" : ""}${dragging ? " is-dragging" : ""}`}>
+      {shell && imgPick && <MediaPicker onClose={() => setImgPick(null)} onPick={async (m) => { const id = imgPick; setImgPick(null); try { await api("/media/replace/", { method: "POST", body: { target: `block:layout.${pageKey}.${id}`, media_id: m.id } }); softRefresh(); } catch (e) { alertDialog(errorText(e)); } }} />}
+      {shell && <EditorShell open={sbOpen} setOpen={setSbOpen} view={sbView} setView={setSbView} title={title || h1 || pageKey} saving={saving} onExit={() => setEditMode(false)} setTarget={setSbTarget} setPageTarget={setPageTarget} actions={sbActions} elements={sbElements} structure={sbStructure} hasSettings={Object.values(barOpen).some(Boolean) || Object.values(itemOpen).some(Boolean)} />}
+      {editing && compPop && <ComponentPicker onPick={(comp) => addComponent(compPop.cell, comp)} onClose={() => setCompPop(null)} />}
       {editing && widgetEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === widgetEdit); return it ? <WidgetPopup anchor={anchor} widget={it.widget} data={it.data || {}} onChange={(d) => setWidgetData(it.id, d)} onClose={() => setWidgetEdit(null)} /> : null; })()}
       {editing && btnEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === btnEdit); return it ? <PageButtonPopup anchor={anchor} btn={it.btn || {}} onChange={(b) => setBtn(it.id, b)} onClose={() => setBtnEdit(null)} /> : null; })()}
-      {editing && (
+      {editing && !shell && (
         <button type="button" className={`pb-pagegear${pageOpen ? " on" : ""}`} onClick={() => setPageOpen(!pageOpen)} aria-expanded={pageOpen} title={pageOpen ? tx("Pagina-instellingen verbergen") : tx("Pagina-instellingen tonen")} aria-label={tx("Pagina-instellingen")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="var(--card)" /><circle cx="15" cy="12" r="2" fill="var(--card)" /><circle cx="8" cy="18" r="2" fill="var(--card)" /></svg>
         </button>
       )}
-      {editing && pageOpen && (
+      {editing && (pageOpen || (shell && pageTarget)) && sbPage(
         <div className="pb-layout"><div className="pb-listopts"><span className="muted">{tx("Ruimte (padding)")}:</span><select value={layout.pad || "md"} aria-label={tx("Ruimte (padding)")} onChange={(e) => change((x) => { if (e.target.value === "md") delete x.pad; else x.pad = e.target.value; return x; })}>{PAD_OPTS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
           <span className="muted">{tx("Items per pagina")}:</span><select value={pageSize} aria-label={tx("Items per pagina")} onChange={(e) => change((x) => { if (e.target.value === "all") delete x.page_size; else x.page_size = e.target.value; return x; })}>{["5", "10", "25", "100", "all"].map((v) => <option key={v} value={v}>{v === "all" ? tx("Alles") : v}</option>)}</select>
           <span className="muted">{tx("Breedte van de pagina")}:</span><span className="pb-seg">{[["column", "In de kolom"], ["full", "Paginabreed"]].map(([k, l]) => <button type="button" key={k} className={(pageWide ? "full" : "column") === k ? "on" : ""} onClick={() => change((x) => { if (k === "full") x.page_width = "full"; else delete x.page_width; return x; })}>{tx(l)}</button>)}</span>
@@ -561,11 +764,12 @@ export default function PageBlocks({ pageKey, title = "" }) {
       {editing && insertBar(null)}
       {layout.rows.filter((r) => !(heroOff && own(r))).map((r, ri) => (
         <Fragment key={r.id}>
-        <div id={rowNavId(r, ri)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.inner ? " inner" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color ? " tcolor" : ""}${r.cells.some((c) => c.style?.shadow) ? " has-shadow" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
+        <div id={rowNavId(r, ri)} onClick={(e) => selectRow(r, e)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.inner ? " inner" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color ? " tcolor" : ""}${r.cells.some((c) => c.style?.shadow) ? " has-shadow" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOverRow((o) => (o?.id === r.id ? null : o)); }}
           onDrop={(e) => { if (!rowDrag.current) return; e.preventDefault(); e.stopPropagation(); const pos = overRow?.id === r.id ? overRow.pos : "before"; dropRow(r.id, pos); rowDrag.current = null; setOverRow(null); setDragging(false); }}
           data-screen={r.screen ? "1" : undefined} data-sqm={r.sq_mobile ? "1" : undefined} data-glow={r.glow === false ? "off" : undefined} data-balign={!r.screen ? r.balign || undefined : undefined} data-pad={r.pad || undefined} data-fx={r.fx || undefined} data-v={r.v || undefined} data-touch={r.top === "touch" ? "1" : undefined} data-prev={r.top === "prev" ? "1" : undefined} style={{ ...styleCss(r.style), ...(r.mt !== undefined && r.mt !== null && r.top !== "touch" ? { marginTop: `calc(${r.mt}px - var(--pbg, 1.2rem))` } : {}), ...(r.padding ? { ...(r.padding.t != null ? { paddingTop: `${r.padding.t}px` } : {}), ...(r.padding.r != null ? { paddingRight: `${r.padding.r}px` } : {}), ...(r.padding.b != null ? { paddingBottom: `${r.padding.b}px` } : {}), ...(r.padding.l != null ? { paddingLeft: `${r.padding.l}px` } : {}) } : {}), ...(r.screen ? (() => { const w = Number(r.width && r.width !== "default" ? r.width : 100) || 100, al = r.balign || "center"; /* a block that is a part of the screen width: centred (or left / right when chosen), not stuck to the left edge */ return { width: `${w}vw`, maxWidth: "none", marginLeft: al === "left" ? "calc(50% - 50vw)" : al === "right" ? `calc(50% + 50vw - ${w}vw)` : `calc(50% - ${w / 2}vw)`, marginRight: "0", paddingLeft: 0, paddingRight: 0 }; })() : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>
           <BgLayer bg={r.bg} />
+          {shell && <span className="pb-rowtools"><button type="button" className="pb-pencil" title={tx("Dit blok bewerken")} aria-label={tx("Dit blok bewerken")} onClick={(e) => { e.stopPropagation(); setItemOpen({}); setBarOpen({ [r.id]: true }); showSettings(); }}>✎</button><button type="button" className="pb-pencil del" title={tx("Dit blok verwijderen")} aria-label={tx("Dit blok verwijderen")} onClick={(e) => { e.stopPropagation(); removeRow(r); }}>×</button></span>}
           {editing && (
             <div className="pb-corner">
               <span className="pb-rowgrip" draggable title={tx("Sleep dit blok naar een andere plek, ook naar boven")}
@@ -780,14 +984,15 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <button type="button" className="btn sm danger pb-trash" onClick={() => removeRow(r)} title={r.hero === "plain" ? tx("Raster verwijderen") : r.hero ? tx("Hero verwijderen") : tx("Rij verwijderen")} aria-label={r.hero === "plain" ? tx("Raster verwijderen") : r.hero ? tx("Hero verwijderen") : tx("Rij verwijderen")}><IconTrash width={22} height={22} /></button>
               </div>
             </div>
-            </div>, document.body
+            </div>, shell && sbTarget ? sbTarget : document.body
           )}
           {own(r) && (title || h1) && <h1 className="pb-hero-title">{title || h1}</h1>}
           <div className={`pb-row gap-${r.gap}`} style={{ "--cols": r.cols, "--tpl": columns(r) }}>
             {r.cells.map((c) => (
-              <div className={`pb-cell${editing ? " edit" : ""}${c.style ? " card" : ""}`} key={c.id} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], ...(c.gap !== undefined ? { "--cg": `${c.gap}rem` } : {}), textAlign: c.halign, ...(c.style && (c.valign === "center" || c.valign === "bottom") ? { alignSelf: c.valign === "center" ? "center" : "flex-end" } : {}), ...(c.style ? { ...(c.style.bg ? { background: c.style.bg } : {}), ...(c.style.radius != null ? { borderRadius: `${c.style.radius}px` } : {}), ...(c.style.pad != null ? { padding: `${c.style.pad}px` } : {}), ...(c.style.border ? { border: `1px solid ${c.style.border}` } : {}), boxShadow: c.style.shadow ? "0 12px 34px rgba(14, 6, 56, .14)" : "none" } : {}) }}
+              <div className={`pb-cell${editing ? " edit" : ""}${c.style ? " card" : ""}${shell && curCell === c.id ? " sel" : ""}`} key={c.id} onMouseDown={editing ? () => setCurCell(c.id) : undefined} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], ...(c.gap !== undefined ? { "--cg": `${c.gap}rem` } : {}), textAlign: c.halign, ...(c.style && (c.valign === "center" || c.valign === "bottom") ? { alignSelf: c.valign === "center" ? "center" : "flex-end" } : {}), ...(c.style ? { ...(c.style.bg ? { background: c.style.bg } : {}), ...(c.style.radius != null ? { borderRadius: `${c.style.radius}px` } : {}), ...(c.style.pad != null ? { padding: `${c.style.pad}px` } : {}), ...(c.style.border ? { border: `1px solid ${c.style.border}` } : {}), boxShadow: c.style.shadow ? "0 12px 34px rgba(14, 6, 56, .14)" : "none" } : {}) }}
                 onDragOver={(e) => { if (drag.current || dragFixed()) e.preventDefault(); }}
                 onDrop={(e) => { e.preventDefault(); if (dragFixed() && !drag.current) { dropFixed(c.id, null); return; } if (drag.current) move(drag.current, c.id, null); drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>
+                {shell && <span className="pb-celltools"><button type="button" className="pb-pencil" title={tx("Deze kolom bewerken")} aria-label={tx("Deze kolom bewerken")} onClick={(e) => { e.stopPropagation(); setCurCell(c.id); setItemOpen({}); setBarOpen({ [r.id]: true }); showSettings(); }}>✎</button><button type="button" className="pb-pencil del" title={tx("Deze kolom verwijderen")} aria-label={tx("Deze kolom verwijderen")} onClick={(e) => { e.stopPropagation(); delCell(r, c); }}>×</button></span>}
                 {editing && (
                   <div className="pb-cellbar" onClick={(e) => e.stopPropagation()}>
                     <span className="pb-seg" title={tx("Horizontaal uitlijnen")}>{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={c.halign === k ? "on" : ""} title={tx(l)} onClick={() => setCell(c.id, { halign: k })}>{g}</button>)}</span>
@@ -796,9 +1001,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
                     {r.cells[0] === c && <button type="button" className="btn sm danger pb-trash" onClick={() => removeRow(r)} title={r.hero === "plain" ? tx("Raster verwijderen") : r.hero ? tx("Hero verwijderen") : tx("Rij verwijderen")} aria-label={tx("Rij verwijderen")}><IconTrash width={22} height={22} /></button>}
                     <span className="pb-add">
                       {clip?.kind === "item" && <button type="button" className="btn sm" title={tx("Het gekopieerde onderdeel hier plakken")} onClick={() => pasteItem(c.id, null)}>{PasteIcon} {tx("Plakken")}</button>}
-                      <button type="button" className="btn sm primary" onClick={() => setMenu(menu === c.id ? null : c.id)}>+ {tx("Toevoegen")}</button>
+                      <button type="button" className="btn sm primary pb-addbtn" onClick={() => setMenu(menu === c.id ? null : c.id)}>+ {tx("Toevoegen")}</button>
                       {menu === c.id && (
-                        <PageAddMenu cols={r.cols} objectCount={objOn ? objects.length : undefined} onAdd={(type, widget) => addItem(c.id, type, "", widget)} onCols={(n) => { setMenu(null); setRow(r.id, { cols: n }); }} onObjects={() => { setMenu(null); setObjQ(""); setObjPop({ cell: c.id, row: r.id }); }} onClose={() => setMenu(null)} />
+                        <PageAddMenu cols={r.cols} objectCount={objOn ? objects.length : undefined} onAdd={(type, widget) => addItem(c.id, type, "", widget)} onCols={(n) => { setMenu(null); setRow(r.id, { cols: n }); }} onObjects={() => { setMenu(null); setObjQ(""); setObjPop({ cell: c.id, row: r.id }); }} onComponents={() => { setMenu(null); setCompPop({ cell: c.id }); }} onComponent={(comp) => { setMenu(null); addComponent(c.id, comp); }} onClose={() => setMenu(null)} />
                       )}
                     </span>
                   </div>

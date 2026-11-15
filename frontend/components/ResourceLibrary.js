@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Tabs from "./Tabs";
 import ThemePackEdit from "./ThemePackEdit";
 import { api, errorText } from "../lib/api";
@@ -15,9 +15,9 @@ import { alertDialog, confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 
 // where an installed part is changed: the theme in Theme, a plugin in its own page, a language in Languages
-const EDIT = { themas: () => "/dashboard/admin/theme", plugins: (r) => `/dashboard/admin/plugins/${r.name}`, languages: () => "/dashboard/admin/languages" };
+const EDIT = { themas: () => "/dashboard/admin/theme", plugins: (r) => `/dashboard/admin/plugins/${r.name}`, languages: () => "/dashboard/admin/languages", components: () => "/dashboard/admin/components", templates: () => "/dashboard/admin/templates" };
 
-const NAME = { plugins: "plugin", themas: "thema", languages: "taal" };
+const NAME = { plugins: "plugin", themas: "thema", languages: "taal", components: "componentenset", templates: "template" };
 const STATE = { new: ["Nieuw", ""], update: ["Update beschikbaar", "warn"], current: ["Geïnstalleerd", "ok"], bundle: ["Bundel", ""] };
 
 // a small picture of a theme (library): the colours, the font and the corners, in the light and the dark stand
@@ -249,6 +249,7 @@ export function ResourceAdmin() {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
   const [pack, setPack] = useState(null); // the theme that is changed in the pop-up (with the AI tab)
+  const tplFile = useRef(null);
   const change = async (r) => { // themes: a pop-up with all settings and the AI; plugins and languages: their own page
     if (kind !== "themas") { window.location.href = EDIT[kind](r); return; }
     try { const d = await api("/theme/packs/"); const p = (d.packs || []).find((x) => x.key === r.name); if (p) setPack(p); else await alertDialog(tx("Dit thema is nog niet geïnstalleerd.")); } catch (e) { await alertDialog(errorText(e)); }
@@ -274,23 +275,38 @@ export function ResourceAdmin() {
     setBusy("");
   };
   const updates = rows.filter((r) => r.state === "update").length;
+  const uploadTemplate = async (e) => {
+    const f = e.target.files?.[0]; e.target.value = "";
+    if (!f) return;
+    setBusy("upload"); setMsg(null);
+    try { const fd = new FormData(); fd.append("file", f); await api("/templates/", { method: "POST", body: fd }); setMsg({ ok: true, text: tx("De template is toegevoegd.") }); await load(); }
+    catch (x) { setMsg({ ok: false, text: errorText(x) }); }
+    setBusy("");
+  };
   return (
     <div className="stack" style={{ gap: ".9rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("De map resource van het product bevat de zips van plugins, thema's en talen (alleen de nieuwste versie). Vink aan wat gebruikers met rechten voor dat onderdeel mogen installeren zonder te uploaden; superadmins kunnen alles installeren. Het vinkje komt in resource/allowed.json en gaat met het product mee.")}</p>
       <Tabs value={kind} onChange={setKind} tabs={Object.keys(lib.kinds).map((k) => [k, lib.titles[k] || k])} />
       {msg && <div className={`alert ${msg.ok ? "ok" : ""}`}>{msg.text}</div>}
+      {kind === "templates" && (
+        <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
+          <input ref={tplFile} type="file" accept=".zip" onChange={uploadTemplate} style={{ display: "none" }} />
+          <button type="button" className="btn primary" disabled={!!busy} onClick={() => tplFile.current?.click()}>+ {tx("Template toevoegen (zip)")}</button>
+          <small className="muted">{tx("Een zip met template.json, pages.zip en voorbeeldplaatjes. Gebruikers kiezen hem bij Admin → Website → Templates.")}</small>
+        </div>
+      )}
       <div className="res-list">
         <div className="res-item res-head"><span>{tx("Naam")}</span><span>{tx("Mag zonder uploaden")}</span><span>{tx("Status")}</span><span /></div>
         {rows.map((r) => (
           <div key={r.file} className="res-item">
             <div className="res-main"><strong>{r.title}</strong> <small className="muted">{r.name !== r.title ? r.name + " · " : ""}{tx("versie")} {r.version}{r.installed_version ? ` (${tx("nu")} ${r.installed_version})` : ""}</small></div>
             <label className="switch" title={tx("Mag zonder uploaden worden geïnstalleerd")}><input type="checkbox" disabled={r.bundle} checked={!r.bundle && !!ok?.[kind]?.has(r.name)} onChange={() => flip(r.name)} /><span /></label>
-            <span className={`badge ${STATE[r.state][1]}`}>{tx(STATE[r.state][0])}</span>
+            <span className={`badge ${STATE[r.state][1]}`}>{kind === "templates" ? tx("Beschikbaar") : tx(STATE[r.state][0])}</span>
             <span className="res-actions">
-              {r.installed && <button type="button" className="btn sm" disabled={!!busy} onClick={() => change(r)}>{tx("Wijzigen")}</button>}
-              <button type="button" className="btn sm" disabled={!!busy} onClick={() => act("/resource/install/", { kind, name: r.name }, (d) => tx("{0} is geïnstalleerd.", d.installed.join(", ")))}>
+              {r.installed && <button type="button" className="btn sm" disabled={!!busy} onClick={() => change(r)}>{kind === "templates" ? tx("Beheren") : tx("Wijzigen")}</button>}
+              {kind !== "templates" && <button type="button" className="btn sm" disabled={!!busy} onClick={() => act("/resource/install/", { kind, name: r.name }, (d) => tx("{0} is geïnstalleerd.", d.installed.join(", ")))}>
                 {r.state === "update" ? tx("Updaten") : r.installed ? tx("Opnieuw") : tx("Installeren")}
-              </button>
+              </button>}
             </span>
           </div>
         ))}

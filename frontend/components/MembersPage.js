@@ -17,6 +17,7 @@ import { useModule } from "./Modules";
 import PageBlocks from "./PageBlocks";
 import Paged from "./Paged";
 import { api, mediaUrl } from "../lib/api";
+import KitScope from "../lib/ui-kit/KitScope";
 
 // examples for the preview in the admin: so the page can be designed with a full list of members (never shown to visitors)
 const SAMPLE = [["Sophie", "Dol op koffie en lange wandelingen", "#ec4899"], ["Daan", "Zoekt een maatje voor festivals", "#6366f1"], ["Lotte", "Yogalerares met een zwak voor sushi", "#f59e0b"], ["Milan", "Ondernemer, hardloper en hobbykok", "#16a34a"], ["Fleur", "Ontwerpster, kattenmens", "#8b5cf6"], ["Jesper", "Gamer en fietser", "#0891b2"], ["Amira", "Reislustig en nieuwsgierig", "#ea580c"], ["Tim", "Muzikant", "#1d4ed8"]]
@@ -40,8 +41,9 @@ export default function MembersPage({ preview = false }) {
   return (
     <>
     <PageBlocks pageKey="members" title={tx("Leden")} />
+    <KitScope tag="ui-team">
     <div className="games-bar" style={{ margin: "1rem 0 1.5rem" }}>
-      <input type="search" placeholder={tx("Zoek op naam of omschrijving…")} value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 420 }} />
+      <input type="search" className="e2e-input" placeholder={tx("Zoek op naam of omschrijving…")} value={q} onChange={(e) => setQ(e.target.value)} style={{ maxWidth: 420 }} />
       <span className="view-switch" role="group" aria-label={tx("Weergave")}>
         <button type="button" className={mode === "grid" ? "active" : ""} onClick={() => choose("grid")} title={tx("Tegels")} aria-pressed={mode === "grid"}><IconGrid /></button>
         <button type="button" className={mode === "list" ? "active" : ""} onClick={() => choose("list")} title={tx("Lijst")} aria-pressed={mode === "list"}><IconMenu /></button>
@@ -49,13 +51,14 @@ export default function MembersPage({ preview = false }) {
     </div>
     <Paged id="members-page" selector=".product-grid" query={q}><div className="product-grid" data-view={mode || undefined}>
       {(preview ? [...(list || []), ...SAMPLE] : list || []).map((m) => (
-        <Link key={m.slug} href={m.sample ? "#" : `/leden/${m.slug}`} onClick={m.sample ? (e) => e.preventDefault() : undefined} className="card member-card" data-g={m.gender || undefined}>
+        <Link key={m.slug} href={m.sample ? "#" : `/leden/${m.slug}`} onClick={m.sample ? (e) => e.preventDefault() : undefined} className="card member-card e2e-card" data-g={m.gender || undefined}>
           <div className="pimg">{m.sample && <span className="sample-face" style={{ background: m.color }}>{m.name[0]}</span>}{m.photo && /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(m.photo)} alt={m.name} />}</div>
           <div className="pbody"><strong>{m.name} <VerifyBadge status={m.verification} size={16} /></strong><span className="muted" style={{ fontSize: ".875rem" }}>{m.headline}</span>{m.card_fields?.length > 0 && <span style={{ fontSize: ".8rem" }}>{cardFieldsText(m.card_fields)}</span>}</div>
         </Link>
       ))}
       {list && !list.length && <p className="muted">{tx("Geen leden gevonden. Sommige profielen zie je pas als je bent ingelogd.")}</p>}
     </div></Paged>
+    </KitScope>
     </>
   );
 }

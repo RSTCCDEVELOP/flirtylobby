@@ -12,6 +12,7 @@ class SiteSettings(models.Model):
     """Singleton (pk=1) holding site-wide settings. `theme` stores only values that differ from the defaults."""
 
     theme = models.JSONField(default=dict, blank=True)
+    component_set = models.CharField(max_length=60, blank=True, default="")  # the key of the set of Easy2edit objects (components) in use ("" = the standard set)
 
     class Meta:
         verbose_name_plural = "Site settings"

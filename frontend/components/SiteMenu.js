@@ -184,21 +184,33 @@ export default function SiteMenu() {
       const brand = head.querySelector(".brand"), actions = head.querySelector(".site-actions"); // the menu may not run into the logo or the icons
       const nr = nav.getBoundingClientRect();
       const clash = (brand && nr.right > brand.getBoundingClientRect().left - 8 && nr.left < brand.getBoundingClientRect().right) || (actions && nr.right > actions.getBoundingClientRect().left - 8 && nr.left < actions.getBoundingClientRect().right);
-      if (wrapped || over || clash) setFitAt(window.innerWidth);
+      if (wrapped || over || clash) setFitAt(head.clientWidth || window.innerWidth);
     };
     check();
     window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const head = wrapRef.current?.closest(".site-header"); // the editor panel narrows the page without a window resize: watch the header itself
+    const ro = typeof ResizeObserver !== "undefined" && head ? new ResizeObserver(check) : null;
+    if (ro) ro.observe(head);
+    return () => { window.removeEventListener("resize", check); if (ro) ro.disconnect(); };
   }, [form, items, user, cfg.hb_when]);
   useEffect(() => { // wider than where it failed (with some room to spare): try the bar again
     if (!fitAt) return undefined;
-    const on = () => { if (window.innerWidth > fitAt + 40) setFitAt(0); };
+    const head = wrapRef.current?.closest(".site-header");
+    const on = () => { if ((head?.clientWidth || window.innerWidth) > fitAt + 40) setFitAt(0); };
     window.addEventListener("resize", on);
-    return () => window.removeEventListener("resize", on);
+    const ro = typeof ResizeObserver !== "undefined" && head ? new ResizeObserver(on) : null;
+    if (ro) ro.observe(head);
+    return () => { window.removeEventListener("resize", on); if (ro) ro.disconnect(); };
   }, [fitAt]);
   const dev = device || "desktop";
   const [winW, setWinW] = useState(0);
-  useEffect(() => { const on = () => setWinW(window.innerWidth); on(); window.addEventListener("resize", on); return () => window.removeEventListener("resize", on); }, []);
+  useEffect(() => { // the width of the page itself (narrower than the window while the editor panel is open)
+    const head = () => wrapRef.current?.closest(".site-header");
+    const on = () => setWinW(head()?.clientWidth || window.innerWidth); on(); window.addEventListener("resize", on);
+    const ro = typeof ResizeObserver !== "undefined" && head() ? new ResizeObserver(on) : null;
+    if (ro) ro.observe(head());
+    return () => { window.removeEventListener("resize", on); if (ro) ro.disconnect(); };
+  }, []);
   const w = cfg.hb_when || "fit";  // when the bar turns into the hamburger menu (the settings of the menu)
   const toHb = form === "bar" && !!device && ((w === "fit" && fitAt > 0) || w === "always" || (w === "width" && winW > 0 && winW < (cfg.hb_width || 900)) || (w === "items" && items.length > (cfg.hamburger_items || 6)));
   const squeezed = toHb;

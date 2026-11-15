@@ -7,10 +7,12 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { tx } from "../lib/t";
 import { WIDGET_NAMES } from "./PageWidget";
 import Tabs from "./Tabs";
+import { loadKit } from "../lib/ui-kit/kitDoc";
+import MediaLibraryPanel from "./MediaLibraryPanel";
 
 // One-colour icons (they follow the colour of the text)
 const I = (d) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -42,12 +44,15 @@ const GROUPS = [
 
 // The pop-up of "+ Toevoegen" in a block (edit mode): tabs (basis, media, company, layout, system), each with parts with an icon and a line of explanation; search over all of them.
 // onAdd(type, widget), onCols(n), onObjects(); cols = the number of columns now; objectCount = how many system objects there are (undefined = the module is off).
-export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObjects, onClose }) {
+export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObjects, onComponents, onComponent, objectGroups = null, onObject = null, mediaOn = false, onMedia = null, onClose }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("basis");
+  const [libOpen, setLibOpen] = useState(false);  // the media library under the tile "Media bibliotheek": opens and closes with the tile
+  const [kit, setKit] = useState(null);  // the components of the UI-kit (loaded when this menu opens)
+  useEffect(() => { loadKit().then(setKit).catch(() => {}); }, []);
   const find = q.trim().toLowerCase();
   const match = (l, d) => `${tx(l)} ${tx(d)}`.toLowerCase().includes(find);
-  const tabs = [...GROUPS.map(([k, l]) => [k, l]), ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
+  const tabs = [...GROUPS.map(([k, l]) => [k, l]), ["componenten", "Componenten"], ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
   const tile = ([type, widget, label, desc, icon]) => (
     <button type="button" key={`${type}-${widget}`} className="pb-addtile" onClick={() => onAdd(type, widget)}>
       <span className="pb-addico">{ICON[icon]}</span>
@@ -66,6 +71,30 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
       <div className="pb-addcols">{[1, 2, 3, 4].map((n) => <button type="button" key={n} className={cols === n ? "on" : ""} onClick={() => onCols(n)} title={n === 1 ? tx("Eén kolom") : `${n} ${tx("kolommen")}`}>{n}</button>)}<small className="muted">{tx("kolommen")}</small></div>
     </div>
   );
+  const comps = kit?.KIT_COMPONENTS || [];
+  const compTile = (c) => (
+    <button type="button" key={c.easy2edit_tag} className="pb-addtile" onClick={() => onComponent(c)} title={c.easy2edit_tag}>
+      <span className="pb-addico">{ICON.object}</span>
+      <span className="pb-addtext"><strong>{tx(c.name)}</strong><small>{tx(c.description)}</small></span>
+    </button>
+  );
+  const compMatch = (c) => `${c.name} ${c.description} ${c.easy2edit_tag} ${c.category} ${c.group}`.toLowerCase().includes(find);
+  const compGroups = [...new Set(comps.map((c) => c.group))];
+  const compList = (
+    <div className="pb-compcats">
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center", margin: ".1rem 0 .4rem" }}>
+        <small className="muted">{comps.length ? `${comps.length} ${tx("componenten in de kleuren van je thema")}` : tx("Laden…")}</small>
+        {onComponents && <button type="button" className="btn sm" onClick={onComponents}>{tx("Voorbeelden bekijken")}</button>}
+      </div>
+      {compGroups.map((g) => (
+        <div key={g} className="pb-compcat">
+          <h4 style={{ margin: ".7rem 0 .3rem" }}>{tx(g)}</h4>
+          <div className="pb-addgrid">{comps.filter((c) => c.group === g).map(compTile)}</div>
+        </div>
+      ))}
+    </div>
+  );
+  const objHits = find && objectGroups ? objectGroups.flatMap((g) => g.items.filter((o) => `${o.name} ${g.label} ${o.slug}`.toLowerCase().includes(find)).map((o) => ({ ...o, label: g.label }))) : [];
   const hits = find ? [...GROUPS.flatMap(([, , items]) => items.filter(([, , l, d]) => match(l, d))), ...(objectCount !== undefined && match("Systeemobjecten", "Producten, formulieren, abonnementen") ? ["obj"] : [])] : null;
   return (
     <div className="pb-addpanel" role="dialog" aria-label={tx("Onderdeel toevoegen")} onMouseDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === "Escape" && onClose()}>
@@ -73,12 +102,44 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
       {!find && <Tabs tabs={tabs} value={tab} onChange={setTab} className="pb-addtabs" />}
       <div className="pb-addscroll">
         {find ? (
-          hits.length ? <div className="pb-addgrid">{hits.map((h) => (h === "obj" ? objTile : tile(h)))}</div> : <p className="muted" style={{ padding: ".6rem" }}>{tx("Niets gevonden.")}</p>
+          hits.length || comps.some(compMatch) || objHits.length ? (
+            <>
+              {hits.length > 0 && <div className="pb-addgrid">{hits.map((h) => (h === "obj" ? objTile : tile(h)))}</div>}
+              {objHits.length > 0 && onObject && <><h4 style={{ margin: ".7rem 0 .3rem" }}>{tx("Systeemobjecten")}</h4><div className="pb-addgrid">{objHits.map((o) => <button type="button" key={o.slug} className="pb-addtile" onClick={() => onObject(o.slug)} title={o.slug}><span className="pb-addico">{ICON.object}</span><span className="pb-addtext"><strong>{o.name}</strong><small>{tx(o.label)}</small></span></button>)}</div></>}
+              {comps.some(compMatch) && <><h4 style={{ margin: ".7rem 0 .3rem" }}>{tx("Componenten")}</h4><div className="pb-addgrid">{comps.filter(compMatch).map(compTile)}</div></>}
+            </>
+          ) : <p className="muted" style={{ padding: ".6rem" }}>{tx("Niets gevonden.")}</p>
         ) : (
           <>
             {GROUPS.filter(([k]) => k === tab).map(([k, , items]) => <div className="pb-addgrid" key={k}>{items.map(tile)}</div>)}
             {tab === "opmaak" && colsRow}
-            {tab === "systeem" && <div className="pb-addgrid">{objTile}</div>}
+            {tab === "componenten" && compList}
+            {tab === "media" && mediaOn && onMedia && (
+              <div className="pb-medialib-part">
+                <button type="button" className={`pb-addtile${libOpen ? " on" : ""}`} aria-expanded={libOpen} onClick={() => setLibOpen(!libOpen)}>
+                  <span className="pb-addico">{ICON.image}</span>
+                  <span className="pb-addtext"><strong>{tx("Media bibliotheek")}</strong><small>{tx("Een afbeelding uit je bibliotheek")}</small></span>
+                  <span className="pb-addchev" aria-hidden="true">{libOpen ? "▾" : "▸"}</span>
+                </button>
+                {libOpen && <div style={{ marginTop: ".5rem" }}><MediaLibraryPanel onPick={onMedia} /></div>}
+              </div>
+            )}
+            {tab === "systeem" && (objectGroups && onObject ? (
+              <div className="pb-sysgroups">
+                <small className="muted">{objectCount} {tx("systeemobjecten, per module of plugin")}</small>
+                {objectGroups.map((g) => (
+                  <details key={g.key} className="pb-sysgroup">
+                    <summary><strong>{tx(g.label)}</strong> <small className="muted">({g.items.length})</small></summary>
+                    <div className="pb-addgrid">{g.items.map((o) => (
+                      <button type="button" key={o.slug} className="pb-addtile" onClick={() => onObject(o.slug)} title={o.slug}>
+                        <span className="pb-addico">{ICON.object}</span>
+                        <span className="pb-addtext"><strong>{o.name}</strong><small>{tx(g.label)}</small></span>
+                      </button>
+                    ))}</div>
+                  </details>
+                ))}
+              </div>
+            ) : <div className="pb-addgrid">{objTile}</div>)}
           </>
         )}
       </div>

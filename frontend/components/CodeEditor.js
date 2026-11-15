@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { mediaUrl } from "../lib/api";
 import { tx } from "../lib/t";
 import Tabs from "./Tabs";
+import { kitHead, loadKit } from "../lib/ui-kit/kitDoc";
 
 // One-colour icons for the toolbar (they follow the colour of the text)
 const I = (d) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -34,14 +35,16 @@ export default function CodeEditor({ data = {}, onChange, onClose }) {
   const id = `e${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const media = mediaUrl("/media/");
   const set = (patch) => onChange({ ...data, ...patch });
+  const [kitStr, setKitStr] = useState("");  // a component of the UI-kit: the visual editor shows it with the kit and the colours of the theme
+  useEffect(() => { if (data.kit) loadKit(data.set || "").then((k) => setKitStr(kitHead(k))).catch(() => {}); }, [data.kit]);
   const doc = useMemo(() => {
     const body = String(data.html || "").replace(/<script[\s\S]*?(<\/script>|$)/gi, "").replaceAll("__MEDIA__/", media);
     const css = String(data.css || "").replaceAll("__MEDIA__/", media);
-    return `<!doctype html><meta charset="utf-8"><style>html,body{margin:0}body{padding:24px;min-height:100vh;box-sizing:border-box;font-family:system-ui,sans-serif;line-height:1.5;background:${bg === "dark" ? "#0e0638" : "#ffffff"};color:${bg === "dark" ? "#fff" : "#0e0638"}}#root{outline:none;min-height:80px}#root *{outline:none}#root:empty:before{content:"${tx("Typ hier, of schrijf de code bij HTML")}";opacity:.5}${css}</style><div id="root" contenteditable="true" spellcheck="false">${body}</div><script>(function(){var id=${JSON.stringify(id)},r=document.getElementById("root");function send(){parent.postMessage({code:id,html:r.innerHTML},"*")}
+    return `<!doctype html><meta charset="utf-8">${kitStr}<style>html,body{margin:0}body{padding:24px;min-height:100vh;box-sizing:border-box;font-family:system-ui,sans-serif;line-height:1.5;background:${bg === "dark" ? "#0e0638" : "#ffffff"};color:${bg === "dark" ? "#fff" : "#0e0638"}}#root{outline:none;min-height:80px}#root *{outline:none}#root:empty:before{content:"${tx("Typ hier, of schrijf de code bij HTML")}";opacity:.5}${css}</style><div id="root" contenteditable="true" spellcheck="false">${body}</div><script>(function(){var id=${JSON.stringify(id)},r=document.getElementById("root");function send(){parent.postMessage({code:id,html:r.innerHTML},"*")}
 r.addEventListener("input",send);r.addEventListener("blur",send);r.addEventListener("click",function(e){if(e.target.closest("a"))e.preventDefault()});
 window.addEventListener("message",function(e){var m=e.data||{};if(m.code!==id)return;r.focus();if(m.cmd==="link"){var u=m.url;if(u)document.execCommand("createLink",false,u)}else document.execCommand(m.cmd,false,null);send()});})();<\/script>`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gen, bg]);
+  }, [gen, bg, kitStr]);
   useEffect(() => {
     const on = (e) => {
       if (e.source !== ref.current?.contentWindow || e.data?.code !== id) return;

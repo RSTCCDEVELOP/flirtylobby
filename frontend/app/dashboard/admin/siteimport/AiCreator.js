@@ -16,6 +16,8 @@ import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { DEVICES, DW_CSS, ModulePicker, previewHtml, STEPS } from "./designKit";
 import { analyseDesign, buildConvertPrompt } from "./aiPrompt";
+import { componentListText } from "../../../../lib/ui-kit/componentList";
+import { loadKit } from "../../../../lib/ui-kit/kitDoc";
 import Wizard from "./DesignWizard";
 
 export { ModulePicker, previewHtml };
@@ -29,6 +31,12 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
   const [tab, setTab] = useState("design");
   const [copied, setCopied] = useState(false);
   const [files, setFiles] = useState([]);  // [{name, text}] the html, css and svg files of the design
+  const [compMode, setCompMode] = useState("list");  // the list of the UI-kit components (easy2edit_tag) that goes with the prompt: none | list | html | css
+  const [kit, setKit] = useState(null);
+  const [setKey, setSetKey] = useState("");  // the component set whose list goes with the prompt ("" = the set in use)
+  const [sets, setSets] = useState([]);
+  useEffect(() => { api("/components/sets/").then((d) => setSets(d.installed || [])).catch(() => {}); }, []);
+  useEffect(() => { loadKit(setKey).then(setKit).catch(() => setKit(null)); }, [setKey]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => { api("/sitecreator/catalog/").then(setCatalog).catch(() => setCatalog({})); }, []);
@@ -50,7 +58,7 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
     try { const j = await api(`/sitecreator/${id}/?files=1`); add(Object.entries(j.files || {}).filter(([n]) => /\.(html?|css|svg)$/i.test(n)).map(([name, text]) => ({ name, text: String(text) }))); } catch (x) { setErr(errorText(x)); } finally { setBusy(false); }
   };
   const info = files.length ? analyseDesign(files) : null;
-  const text = buildConvertPrompt({ objects: catalog?.objects || [], rules: catalog?.rules || null, languages: catalog?.languages || [], mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", files });
+  const text = buildConvertPrompt({ objects: catalog?.objects || [], rules: catalog?.rules || null, languages: catalog?.languages || [], mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", files, componentsText: kit && compMode !== "none" ? componentListText(kit, compMode) : "" });
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); } catch { document.getElementById("si-cprompt")?.select(); document.execCommand("copy"); }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
@@ -84,6 +92,13 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
           )}
           {tab === "prompt" && (
             <div className="form">
+              <label>{tx("Componenten van Easy2edit meesturen (easy2edit_tag)")}
+                <select value={compMode} onChange={(e) => setCompMode(e.target.value)}>
+                  <option value="none">{tx("Niet meesturen")}</option><option value="list">{tx("Alleen de lijst met tags")}</option><option value="html">{tx("Lijst met HTML")}</option><option value="css">{tx("Lijst, HTML en CSS")}</option>
+                </select>
+                {sets.length > 1 && <select value={setKey} onChange={(e) => setSetKey(e.target.value)} aria-label={tx("Componentenset")}><option value="">{tx("Set in gebruik")}</option>{sets.map((m) => <option key={m.key} value={m.key}>{m.name}</option>)}</select>}
+                <small className="muted">{tx("De AI gebruikt dan kant-en-klare componenten; de import herkent ze aan hun easy2edit_tag en tekent ze in de kleuren van je thema.")}</small>
+              </label>
               <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}><span className="badge">{tx("Systeemobjecten")}: {(catalog?.objects || []).length}</span>{chips.map(([l, n]) => <span key={l} className="badge">{l}: {n}</span>)}</div>
               <textarea id="si-cprompt" readOnly rows={16} value={text} onFocus={(e) => e.target.select()} style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: ".82rem" }} />
               <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>

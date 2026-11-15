@@ -18,6 +18,8 @@ export const TILES = [
   { href: "/dashboard/admin/integrations", title: "API keys", big: "Externe koppelingen", small: "Aan/uit, testen en beheren", modules: ["integrations"] },
   { href: "/dashboard/admin/notifications", title: "Notificaties", big: "Meldingen aan gebruikers", small: "Weergave, soorten, e-mail en berichten sturen", modules: ["notifications"] },
   { href: "/dashboard/admin/faq", title: "FAQ", big: "Eigen veelgestelde vragen", small: "Maken, vertalen en ordenen voor de pagina /faq", modules: ["faq"] },
+  { href: "/dashboard/admin/templates", title: "Templates", big: "Een complete website als start", small: "Kies een template met voorbeeldplaatjes en pas hem daarna zelf aan", modules: ["pages"] },
+  { href: "/dashboard/admin/components", title: "Componenten", big: "Kant-en-klare onderdelen", small: "Hero, prijzen, agenda, kalender en meer in de kleuren van je thema", modules: ["pages"] },
   { href: "/dashboard/admin/helptips", title: "Help-teksten", big: "Uitleg in de bewerkmodus", small: "Wijzig de uitleg van het vraagteken per taal", modules: ["pages"] },
   { href: "/dashboard/admin/media", title: "Media", big: "Afbeeldingen & video's", small: "Lokaal of S3, per bestand", modules: ["media"] },
   { href: "/dashboard/admin/community", title: "Community", big: "Profielen, berichten en chat", small: "Methode, opties en limieten", modules: ["profiles", "discover", "messages", "chat", "directconnect"] },

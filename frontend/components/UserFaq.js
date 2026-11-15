@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { getLanguage, tx } from "../lib/t";
 import { useSession } from "./Session";
+import KitScope from "../lib/ui-kit/KitScope";
 
 // The FAQ of the website (made by its owner): questions that open, with a search box and optional headings
 export default function UserFaq() {
@@ -32,9 +33,11 @@ export default function UserFaq() {
       {cats.map((c) => (
         <section key={c || "_"} className="faq-section">
           {c && <h2>{c}</h2>}
-          <div className="faq-list">
-            {shown.filter((i) => (i.category || "") === c).map((i) => <details key={i.id} className="faq-item"><summary>{i.q}</summary><p>{i.a}</p></details>)}
-          </div>
+          <KitScope tag="ui-faq">
+            <div className="e2e-accordion">
+              {shown.filter((i) => (i.category || "") === c).map((i) => <details key={i.id}><summary>{i.q}</summary><div className="e2e-accordion__content">{i.a}</div></details>)}
+            </div>
+          </KitScope>
         </section>
       ))}
       {!shown.length && <p className="muted">{items.length ? tx("Niets gevonden.") : tx("Er zijn nog geen vragen.")}</p>}

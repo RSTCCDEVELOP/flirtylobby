@@ -12,6 +12,7 @@ import { api, mediaUrl } from "../lib/api";
 import { tx } from "../lib/t";
 import { useSession } from "./Session";
 import TextEditPopup from "./TextEditPopup";
+import { kitHead, kitTail, useKit } from "../lib/ui-kit/kitDoc";
 
 // The texts of a design: every piece of text in the html, in order. The frame and this component count them in the same way, so a click in the frame
 // ("text number 12") can be found again in the html that is saved. (Also run inside the frame: keep this function free of anything outside it.)
@@ -40,8 +41,12 @@ export default function DesignFrame({ html, title, pageKey }) {
   const [err, setErr] = useState("");
   useEffect(() => setCur(html), [html]);
   const id = `d${useId().replace(/[^a-zA-Z0-9]/g, "")}`; // the same on the server and in the browser: the frame sends its height with this name
+  const hasKit = /data-easy2edit-tag\s*=/.test(String(cur || ""));  // the design uses components of the UI-kit: they are drawn with the kit and the colours of the theme
+  const { kit, tick } = useKit(hasKit);
   const doc = useMemo(() => {
-    const src = String(cur || "").replaceAll("__MEDIA__/", mediaUrl("/media/"));
+    let src = String(cur || "").replaceAll("__MEDIA__/", mediaUrl("/media/"));
+    if (hasKit && kit) src = (/<\/head>/i.test(src) ? src.replace(/<\/head>/i, `${kitHead(kit)}</head>`) : kitHead(kit) + src).replace(/<\/body>/i, `${kitTail(kit)}</body>`);
+    if (hasKit && kit && !/<\/body>/i.test(src)) src += kitTail(kit);
     const edit = canEdit ? `var textNodes=${textNodes.toString()};var pen=document.createElement("div");pen.style.cssText="position:absolute;z-index:2147483647;width:30px;height:30px;border-radius:50%;background:#7b2ce0;color:#fff;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none";pen.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>';document.body.appendChild(pen);var hot=null,hotNode=null;
 var INL={SPAN:1,B:1,STRONG:1,EM:1,I:1,U:1,SMALL:1,MARK:1,SUP:1,SUB:1,CODE:1},OK={A:1,BR:1};
 function pure(el){var all=el.querySelectorAll("*");for(var i=0;i<all.length;i++){var t=all[i].tagName;if(!INL[t]&&!OK[t])return false}return true}
@@ -57,7 +62,7 @@ document.addEventListener("click",function(e){var h=hotNode||at(e.clientX,e.clie
 document.querySelectorAll("a[href]").forEach(function(a){var h=a.getAttribute("href")||"";if(h&&h.charAt(0)!=="#"&&!/^javascript:/i.test(h)){var o=a.getAttribute("data-open")||(a.getAttribute("target")==="_blank"?"tab":"self");a.setAttribute("data-open",o);a.target=o==="self"?"_top":"_blank";if(o==="window")a.addEventListener("click",function(e){if(e.defaultPrevented)return;e.preventDefault();window.open(a.href,"_blank","popup=yes,width=1100,height=750")})}});${edit}
 window.addEventListener("load",send);window.addEventListener("resize",send);if(window.ResizeObserver)new ResizeObserver(send).observe(document.body);setInterval(send,1500);})();<\/script>`;
     return /<\/body>/i.test(src) ? src.replace(/<\/body>/i, `${tail}</body>`) : src + tail;
-  }, [cur, id, canEdit]);
+  }, [cur, id, canEdit, hasKit, kit, tick]);
   useEffect(() => {
     const on = (e) => {
       if (e.source !== ref.current?.contentWindow || e.data?.design !== id) return;

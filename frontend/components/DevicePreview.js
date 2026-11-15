@@ -9,6 +9,7 @@
 
 import { tx } from "../lib/t";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSession } from "./Session";
 
 const DEVICES = {
@@ -31,14 +32,24 @@ export default function DevicePreview() {
   const [src, setSrc] = useState("");
   const [visitor, setVisitor] = useState(false); // false = the framed page can be edited, true = as a visitor sees it
   const [used, setUsed] = useState(false);
+  const [rev, setRev] = useState(0); // the framed page loads again after every save of the editor on the big screen
+  const [host, setHost] = useState(null); // the foot of the panel of the editor: the choice of the view is there (not floating over the page)
+  useEffect(() => {
+    const f = () => setHost(document.getElementById("pb-device-host"));
+    const saved = () => setTimeout(() => setRev((n) => n + 1), 400);
+    window.addEventListener("pb-saved", saved);
+    f();
+    const t = setInterval(f, 400);
+    return () => { clearInterval(t); window.removeEventListener("pb-saved", saved); };
+  }, []);
   useEffect(() => {
     if (dev === "computer") return setSrc("");
     const u = new URL(window.location.href);
     u.searchParams.delete("preview"); u.searchParams.delete("frame");
-    u.searchParams.set(visitor ? "preview" : "frame", "1");
+    u.searchParams.set(visitor || host ? "preview" : "frame", "1"); // with the editor panel on the big screen the frame only shows the result
     setSrc(u.toString());
-    setUsed(true);
-  }, [dev, visitor]);
+    if (!host) setUsed(true);
+  }, [dev, visitor, !!host]);
   // back to the full page: show what was changed in the frame
   const close = () => { if (used) { setUsed(false); window.location.reload(); } setDev("computer"); };
   useEffect(() => {
@@ -50,22 +61,29 @@ export default function DevicePreview() {
   const d = DEVICES[dev];
   return (
     <>
-      <div className="device-bar" role="group" aria-label={tx("Weergave testen")}>
+      {document.documentElement.dataset.pbbar === "1" && !host ? null : host ? createPortal(
+      <div className={host ? "device-bar docked" : "device-bar"} role="group" aria-label={tx("Weergave testen")}>
         <span>{tx("Weergave")}</span>
         {Object.entries(DEVICES).map(([k, v]) => <button type="button" key={k} className={dev === k ? "on" : ""} title={tx(v.label)} aria-pressed={dev === k} onClick={() => (k === "computer" ? close() : setDev(k))}><Ico k={k} /></button>)}
       </div>
+      , host) : (
+      <div className={host ? "device-bar docked" : "device-bar"} role="group" aria-label={tx("Weergave testen")}>
+        <span>{tx("Weergave")}</span>
+        {Object.entries(DEVICES).map(([k, v]) => <button type="button" key={k} className={dev === k ? "on" : ""} title={tx(v.label)} aria-pressed={dev === k} onClick={() => (k === "computer" ? close() : setDev(k))}><Ico k={k} /></button>)}
+      </div>
+      )}
       {dev !== "computer" && src && (
-        <div className="device-overlay" onClick={close}>
+        <div className={`device-overlay${host ? " docked" : ""}`} onClick={host ? undefined : close}>
           <div className={`device-frame ${dev}`} style={{ width: d.w }} onClick={(e) => e.stopPropagation()}>
             <div className="device-top">
               <span>{tx(d.label)} · {d.w}px</span>
-              <span className="device-mode">
+              {!host && <span className="device-mode">
                 <button type="button" className={!visitor ? "on" : ""} onClick={() => setVisitor(false)}>{tx("Bewerken")}</button>
                 <button type="button" className={visitor ? "on" : ""} onClick={() => setVisitor(true)}>{tx("Bezoeker")}</button>
-              </span>
+              </span>}
               <button type="button" className="btn sm" onClick={close}>{tx("Sluiten")}</button>
             </div>
-            <iframe title={tx(d.label)} src={src} style={{ height: `min(${d.h}px, calc(100vh - 6rem))` }} />
+            <iframe key={rev} title={tx(d.label)} src={src} style={{ height: `min(${d.h}px, calc(100vh - ${host ? "9rem" : "6rem"}))` }} />
           </div>
         </div>
       )}

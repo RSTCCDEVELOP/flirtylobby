@@ -100,6 +100,8 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/faq", label: "FAQ", icon: <IconHelp /> },
   { href: "/dashboard/admin/notifications", label: "Notificaties", icon: <IconBell /> },
   { href: "/dashboard/admin/help", label: "Help", icon: <IconHelp />, helpLayer: true },
+  { href: "/dashboard/admin/templates", label: "Templates", icon: <IconFolder /> },
+  { href: "/dashboard/admin/components", label: "Componenten", icon: <IconGrid /> },
   { href: "/dashboard/admin/helptips", label: "Help-teksten", icon: <IconEdit /> },
   { href: "/dashboard/admin/actions", label: "Actions", icon: <IconLock /> },
   { href: "/dashboard/admin/media", label: "Media", icon: <IconFolder />, perm: "media.manage" },
@@ -134,7 +136,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/users": "a-people", "/dashboard/admin/ai": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-system", "/dashboard/admin/theme": "a-system", "/dashboard/admin/themes": "a-system", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-system", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
-  "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site",
+  "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site", "/dashboard/admin/components": "a-site", "/dashboard/admin/templates": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
   "/dashboard/admin/security": "a-system", "/dashboard/admin/energy": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/settings-backup": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/btw": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };

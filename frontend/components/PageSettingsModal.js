@@ -23,7 +23,7 @@ const BG = [["none", "Geen"], ["image", "Afbeelding"], ["video", "Video"]];
 const emptySeo = { title: "", description: "", og_media: null, og_image: null, noindex: false, canonical: "" };
 
 // Pop-up with the basics of one page: name, audience, SEO per language and a background (picture or video) from the media library.
-export default function PageSettingsModal({ ai, page, languages, defaultLang, onClose, onSaved, canSeo }) {
+export default function PageSettingsModal({ ai, page, languages, defaultLang, onClose, onSaved, canSeo, docked = false }) {  // docked: in the panel of the editor, not a window
   const langs = languages.length ? languages : [{ code: "nl", native_name: "Nederlands" }];
   const [tab, setTab] = useState("general");
   const [imp, setImp] = useState(null); // did this page come from Website ontwerpen? (then it has a tab Import)
@@ -142,9 +142,9 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
 
   const tabs = [["general", "Algemeen", <IconSliders key="g" />], ...(imp ? [["import", "Import", <IconSliders key="i" />]] : []), ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
   return (
-    <div className="overlay" onClick={onClose}>
-      <form className="card modal pgs form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
-        <h2 style={{ margin: 0 }}>{tx("Pagina-instellingen")}: {form.title[defaultLang] || page.key}</h2>
+    <div className={docked ? "pgs-dockwrap" : "overlay"} onClick={docked ? undefined : onClose}>
+      <form className={docked ? "pgs form docked" : "card modal pgs form"} onClick={(e) => e.stopPropagation()} onSubmit={save}>
+        {docked ? <strong>{form.title[defaultLang] || page.key}</strong> : <h2 style={{ margin: 0 }}>{tx("Pagina-instellingen")}: {form.title[defaultLang] || page.key}</h2>}
         <Tabs tabs={tabs} value={tab} onChange={setTab} />
 
         <div className="pgs-body">
@@ -356,7 +356,7 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
         </div>
 
         {error && <div className="alert">{error}</div>}
-        <div className="row"><button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button><button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>
+        <div className="row">{!docked && <button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button>}<button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>
       </form>
       {picker && (
         <div onClick={(e) => e.stopPropagation()}>

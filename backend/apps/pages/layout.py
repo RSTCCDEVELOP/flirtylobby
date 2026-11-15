@@ -240,6 +240,14 @@ def _widget(raw):
             data["width"] = 160
     elif kind == "code":  # own html and css; it runs in a frame without rights (see DesignFrame), so no cleaning of the code is needed here
         data["html"], data["css"] = s("html", 60000), s("css", 30000)
+        if d.get("kit"):  # a component of the Easy2edit UI-kit: drawn with the kit and the colours of the theme (easy2edit_tag = which component)
+            data["kit"] = True
+            tag = str(d.get("tag") or "").strip()[:60]
+            if re.fullmatch(r"[a-z0-9][a-z0-9_-]*", tag):
+                data["tag"] = tag
+            cset = str(d.get("set") or "").strip()[:60]
+            if re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,59}", cset):  # the component set it comes from (empty = the set in use)
+                data["set"] = cset
     elif kind == "hours":
         data["lines"] = [{"day": str(i.get("day") or "").strip()[:30], "time": str(i.get("time") or "").strip()[:30]} for i in (d.get("lines") or [])[:10] if isinstance(i, dict) and (i.get("day") or i.get("time"))]
     return {"widget": kind, "data": data}

@@ -18,6 +18,7 @@ import { confirmDialog } from "../lib/dialog";
 import { getLanguage, tx } from "../lib/t";
 import { makeTranslator } from "../lib/plugin-i18n";
 import { useAuth } from "./AuthContext";
+import { loadKit, kitTokens } from "../lib/ui-kit/kitDoc";
 import { useSession } from "./Session";
 import MediaPicker from "./MediaPicker";
 import RichEditor from "./RichEditor";
@@ -64,7 +65,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
         try { const r = await fetch(`${apiBase()}/api/plugins/lang/${name}/?lang=${lang}`); if (r.ok) dict.current = await r.json(); } catch {}
         const strings = Object.fromEntries(dict.current.keys.map((k) => [k, makeTranslator(dict.current.dict, tx)(k)]));
         frame.current.contentWindow.postMessage({ plugin: "init", name, lang, strings, apiBase: apiBase(), route: routeRef.current || {}, siteOrigin: window.location.origin, vars: siteVars(), attrs: { editing: site?.editing ? "1" : "0", blocks: document.documentElement.dataset.blocks || "card", hero: document.documentElement.dataset.hero || "0", list: document.documentElement.dataset.list || "grid", center: document.documentElement.dataset.center || "0", pagesize: document.documentElement.dataset.pagesize || "all" }, scheme: scheme(), user: { id: user?.id, name: user?.first_name || user?.email, email: user?.email, is_staff: !!user?.is_staff } }, "*");
-        sendView();
+        sendView(); sendKit();
       } else if (d.plugin === "confirm") reply({ ok: true, data: await confirmDialog(String(d.message || ""), { title: d.opts?.title, okLabel: d.opts?.okLabel, danger: !!d.opts?.danger }) });
       else if (d.plugin === "store") {  // the page has no storage of its own: keep it per plugin in this browser
         const k = `plg:${name}:${String(d.key || "").slice(0, 60)}`;
@@ -91,11 +92,13 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
         catch (err) { reply({ ok: false, error: text(errorText(err)) }); }
       }
     };
+    const sendKit = () => loadKit("").then((k) => frame.current?.contentWindow?.postMessage({ plugin: "kit", css: k.KIT_CSS, tokens: kitTokens() }, "*")).catch(() => {});  // the component set in use, for the e2e-* parts of the page
     const onTheme = () => frame.current?.contentWindow?.postMessage({ plugin: "vars", vars: siteVars(), scheme: scheme() }, "*");  // the colours follow the light/dark switch of the site
     window.addEventListener("message", onMessage);
     window.addEventListener("themechange", onTheme);
+    window.addEventListener("themechange", sendKit);
     frame.current?.contentWindow?.postMessage({ plugin: "rehello" }, "*");  // a frame that loaded before this page was ready (server-rendered) missed its first hello
-    return () => { window.removeEventListener("message", onMessage); window.removeEventListener("themechange", onTheme); };
+    return () => { window.removeEventListener("message", onMessage); window.removeEventListener("themechange", onTheme); window.removeEventListener("themechange", sendKit); };
   }, [name, user, router, onWrite]);
   useEffect(() => { frame.current?.contentWindow?.postMessage({ plugin: "attrs", attrs: { editing: site?.editing ? "1" : "0" } }, "*"); }, [site?.editing]);
   const closeAdmin = () => { setAdminPop(null); if (dirty.current) { dirty.current = false; softRefresh(); } };

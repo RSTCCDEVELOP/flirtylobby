@@ -15,6 +15,8 @@ import { api, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { buildPrompt } from "./aiPrompt";
+import { componentListText } from "../../../../lib/ui-kit/componentList";
+import { loadKit } from "../../../../lib/ui-kit/kitDoc";
 
 // The steps of the design flow: key, name, one line under the name, icon.
 export const STEPS = [
@@ -135,13 +137,21 @@ export function MonthlyPrice({ catalog, b }) {
 }
 
 // The text of the prompt for an external AI, made from everything that was chosen (also used by the quick start on the first step).
-export function promptText(b, catalog) {
+
+// The list of the UI-kit components (easy2edit_tag) as text for the prompt: loaded when it is needed.
+function useComponentsText(setKey = "") {
+  const [t, setT] = useState("");
+  useEffect(() => { loadKit(setKey).then((k) => setT(componentListText(k, "list"))).catch(() => setT("")); }, [setKey]);
+  return t;
+}
+
+export function promptText(b, catalog, componentsText = "") {
   const photos = (b.photos || []).filter((p) => p.file);
   return buildPrompt({
     name: b.name, kind: b.kind, lang: b.lang, pages: activePages(b).join(", "), extra: b.extra,
     style: [...(b.style_tags || []).map((t) => EN_TAGS[t] || t), b.style].filter(Boolean).join(", "),
     modules: (catalog?.modules || []).filter((m) => isUsed(m, b)), objects: (catalog?.objects || []).filter((o) => (b.objects || []).includes(o.slug)),
-    palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
+    componentsText, palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
     languages: { main: b.lang || "", mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", extra: (b.langs || []).map((c) => (catalog?.languages || []).find((l) => l.code === c)).filter(Boolean), switcher: b.lang_switch !== false }, font: FONTS[b.font || "sans"], radius: b.radius ?? null, theme: b.theme_name || "", photos, rules: catalog?.rules || null,
   });
 }
@@ -149,12 +159,13 @@ export function promptText(b, catalog) {
 
 // The quick start on the first step: a short explanation, the switches of the modules and plugins that the site may use, and one button that makes the prompt and copies it.
 export function QuickPrompt({ b, catalog, upd }) {
+  const compText = useComponentsText(b.component_set || "");
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
   const mods = catalog?.modules || [];
   const extra = (b.langs || []).length;
   const copy = async () => {
-    const text = promptText(b, catalog);
+    const text = promptText(b, catalog, compText);
     try { await navigator.clipboard.writeText(text); } catch {
       const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove();
     }
@@ -190,10 +201,11 @@ export function QuickPrompt({ b, catalog, upd }) {
 
 // The prompt for an external AI (Claude, ChatGPT, Gemini...) made from everything that was chosen in the step plan: the AI makes the website as HTML pages in a ZIP that can be read back in here.
 export function DesignPromptPopup({ b, catalog, onClose }) {
+  const compText = useComponentsText(b.component_set || "");
   const [tab, setTab] = useState("prompt");
   const [copied, setCopied] = useState(false);
   const photos = (b.photos || []).filter((p) => p.file);
-  const text = promptText(b, catalog);
+  const text = promptText(b, catalog, compText);
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); } catch { document.getElementById("si-dprompt")?.select(); document.execCommand("copy"); }
     setCopied(true); setTimeout(() => setCopied(false), 2000);

@@ -3566,3 +3566,202 @@ html[data-mcase="upper"] .site-nav a, html[data-mcase="upper"] .hmenu a, html[da
 
 /* a page that was built by an import: nothing around the design (no space above or below it) */
 main.doc[data-bare="1"] { padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
+
+/* ───────── The editor shell of the page: a bar at the top and a panel at the left (elements, structure, settings of the picked block) ───────── */
+:root { --pb-bar-h: 48px; --pb-sb-w: 340px; }
+.pb-topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--pb-bar-h); z-index: 1100; display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: 0 .6rem; background: #1b1f27; color: #e8ebf0; border-bottom: 1px solid #2c323d; font-size: .88rem; }
+.pb-tb-left, .pb-tb-right { display: flex; align-items: center; gap: .3rem; min-width: 0; } .pb-tb-mid { flex: 1; text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c9cfd9; }
+.pb-tb-btn { display: inline-flex; align-items: center; gap: .4rem; height: 34px; padding: 0 .65rem; border: 0; border-radius: 8px; background: transparent; color: inherit; cursor: pointer; font: inherit; font-weight: 600; }
+.pb-tb-btn:hover { background: #2c323d; } .pb-tb-btn.on { background: #3a4150; color: #fff; } .pb-tb-btn.primary { background: var(--blue); color: #fff; } .pb-tb-btn.primary:hover { filter: brightness(1.08); }
+.pb-tb-save { color: #98a1b0; font-size: .8rem; margin-right: .4rem; }
+@media (max-width: 900px) { .pb-tb-btn span { display: none; } .pb-tb-mid { display: none; } }
+.pb-sidebar { position: fixed; top: var(--pb-bar-h); left: 0; bottom: 0; width: var(--pb-sb-w); z-index: 1090; display: flex; flex-direction: column; background: var(--card); color: var(--text); border-right: 1px solid var(--line); box-shadow: 4px 0 24px rgba(0, 0, 0, .12); }
+.pb-sb-head { display: flex; align-items: center; gap: .5rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); background: var(--bg); }
+.pb-sb-link { background: none; border: 0; color: var(--blue); font-weight: 600; cursor: pointer; font-size: .82rem; } .pb-sb-x { background: none; border: 0; font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--muted); }
+.pb-sb-body { flex: 1; overflow: auto; padding: .7rem; } .pb-sb-pane[hidden] { display: none; } .pb-sb-hint { padding: .4rem .2rem; }
+/* the page moves aside: the bar is above it, the panel at its left */
+html[data-pbbar="1"] body { padding-top: var(--pb-bar-h); }
+html[data-pbbar="1"] .site-header { top: var(--pb-bar-h); }
+html[data-pbsb="1"] body { padding-left: var(--pb-sb-w); }
+html[data-pbbar="1"] .edit-banner { display: none; }
+@media (max-width: 900px) { html[data-pbsb="1"] body { padding-left: 0; } .pb-sidebar { width: min(var(--pb-sb-w), 92vw); } }
+/* in the panel: the add menu and the settings are part of it, not a window */
+.pb-sidebar .pb-addpanel { position: static; width: 100%; max-height: none; box-shadow: none; border: 0; padding: 0; background: transparent; transform: none; }
+.pb-sidebar .pb-addgrid { grid-template-columns: 1fr !important; } .pb-sidebar .pb-addscroll { max-height: none; overflow: visible; }
+.pb-sidebar .pb-addtabs { flex-wrap: wrap; }
+.pb-sb-settings .pb-dockwrap { position: static; width: 100%; padding: 0; pointer-events: auto; display: block; }
+.pb-sb-settings .pb-rowbar.pop, .pb-sb-settings .pb-rowbar.pop.pb-center.docked { position: static; width: 100%; max-height: none; box-shadow: none; border: 0; background: transparent; }
+.pb-sb-settings .pb-dockseg { display: none; } .pb-sb-settings .pb-rowbar.pop .pb-panelbody { grid-template-columns: 1fr; }
+.pb-sb-settings .pb-stylebox { position: static; width: 100%; max-width: none; margin: 0 0 .8rem; box-shadow: none; }
+.pb-cell.sel { outline: 2px solid var(--blue); outline-offset: -2px; }
+/* the structure of the page */
+.pb-tree { display: grid; gap: .5rem; } .pb-tree-row { border: 1px solid var(--line); border-radius: 10px; padding: .35rem .45rem; background: var(--bg); }
+.pb-tree-line { display: flex; align-items: center; gap: .15rem; } .pb-tree-line.item { padding-left: 1.4rem; }
+.pb-tree-name { flex: 1; text-align: left; background: none; border: 0; padding: .3rem .4rem; border-radius: 6px; cursor: pointer; color: var(--text); font: inherit; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pb-tree-name:hover { background: var(--hover); }
+.pb-tree-name.cell { display: block; width: 100%; padding-left: .9rem; font-size: .8rem; color: var(--muted); } .pb-tree-name.cell.on { color: var(--blue); font-weight: 700; }
+.pb-tree-act { background: none; border: 0; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; color: var(--muted); } .pb-tree-act:hover { background: var(--hover); color: var(--text); } .pb-tree-act.danger:hover { color: var(--danger); }
+
+/* the split between the panel and the page (like a page builder): the page uses the room that is left, full-width blocks follow it, and the divider can be dragged */
+.pb-sb-resize { position: absolute; top: 0; bottom: 0; right: -5px; width: 10px; cursor: col-resize; z-index: 2; touch-action: none; }
+.pb-sb-resize::after { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px; background: transparent; transition: background .15s; } .pb-sb-resize:hover::after, html.pb-resizing .pb-sb-resize::after { background: var(--blue); }
+html.pb-resizing, html.pb-resizing * { cursor: col-resize !important; user-select: none !important; } html.pb-resizing iframe { pointer-events: none !important; }
+html[data-pbsb="1"] body { overflow-x: hidden; }
+html[data-pbsb="1"] .pb-rowwrap[style*="100vw"] { width: calc(100vw - var(--pb-sb-w)) !important; margin-left: calc(50% - (100vw - var(--pb-sb-w)) / 2) !important; }
+html[data-pbsb="1"] .site-header, html[data-pbsb="1"] .site-footer { max-width: 100%; }
+@media (max-width: 900px) { .pb-sb-resize { display: none; } html[data-pbsb="1"] .pb-rowwrap[style*="100vw"] { width: 100vw !important; margin-left: calc(50% - 50vw) !important; } }
+
+/* the settings of the whole page, in the panel */
+.pb-sb-page .pb-layout { margin: 0; padding: 0; border: 0; box-shadow: none; background: transparent; }
+.pb-sb-page .pb-listopts { display: grid; gap: .5rem; align-items: stretch; } .pb-sb-page .pb-listopts > .muted { margin-top: .5rem; font-weight: 600; } .pb-sb-page .pb-listopts select { width: 100%; }
+
+/* media library and system objects in the editor panel */
+.pb-medialib { display: grid; gap: .6rem; } .pb-medialib-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.pb-medialib-grid button { display: grid; gap: .25rem; padding: .3rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer; text-align: left; color: var(--text); }
+.pb-medialib-grid button:hover { border-color: var(--blue); } .pb-medialib-grid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 7px; background: var(--bg); } .pb-medialib-grid small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .72rem; color: var(--muted); }
+.pb-sysgroups { display: grid; gap: .5rem; } .pb-sysgroup { border: 1px solid var(--line); border-radius: 10px; background: var(--bg); padding: .1rem .5rem .5rem; } .pb-sysgroup > summary { cursor: pointer; padding: .5rem .2rem; list-style: none; } .pb-sysgroup > summary::-webkit-details-marker { display: none; } .pb-sysgroup > summary::before { content: "▸"; display: inline-block; margin-right: .4rem; transition: transform .15s; } .pb-sysgroup[open] > summary::before { transform: rotate(90deg); }
+
+/* the page settings (the screen of Admin > Pagina's) in the panel of the editor */
+.pgs-panel { margin-top: 1rem; padding-top: .8rem; border-top: 1px solid var(--line); } .pgs.docked { display: grid; gap: .8rem; padding: 0; border: 0; box-shadow: none; background: transparent; max-width: none; width: 100%; }
+.pgs.docked .tabs, .pgs.docked [role="tablist"] { flex-wrap: wrap; } .pgs.docked .pgs-body { max-height: none; overflow: visible; }
+
+/* the panel folded in: a narrow strip stays at the left, with a button to open it again */
+:root { --pb-rail-w: 44px; }
+.pb-sb-rail { position: fixed; top: var(--pb-bar-h); left: 0; bottom: 0; width: var(--pb-rail-w); z-index: 1090; display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .5rem 0; background: var(--card); border-right: 1px solid var(--line); box-shadow: 4px 0 18px rgba(0, 0, 0, .08); }
+.pb-rail-btn { width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; } .pb-rail-btn:hover { background: var(--hover); color: var(--text); } .pb-rail-btn:first-child { background: var(--blue); color: #fff; margin-bottom: .3rem; }
+html[data-pbsb="rail"] body { padding-left: var(--pb-rail-w); overflow-x: hidden; }
+html[data-pbsb="rail"] .pb-rowwrap[style*="100vw"] { width: calc(100vw - var(--pb-rail-w)) !important; margin-left: calc(50% - (100vw - var(--pb-rail-w)) / 2) !important; }
+@media (max-width: 900px) { html[data-pbsb="rail"] body { padding-left: 0; } .pb-sb-rail { width: 36px; } html[data-pbsb="rail"] .pb-rowwrap[style*="100vw"] { width: 100vw !important; margin-left: calc(50% - 50vw) !important; } }
+
+/* click to select: the header settings in the panel; the picked block or part is marked */
+.pb-hdock-in .pb-objhead { padding: 0 0 .6rem; } .pb-hdock-in .grid2 { grid-template-columns: 1fr; }
+html[data-pbbar="1"] .pb-item.edit:hover { outline: 1px dashed var(--blue); outline-offset: 2px; } html[data-pbbar="1"] .site-header { cursor: pointer; }
+
+/* Hover to edit (like a page builder): the tools of a part, a column and a block only show when the mouse is over it; the page stays clean */
+html[data-pbbar="1"] .pb-item.edit { position: relative; outline: 1px solid transparent; outline-offset: 2px; transition: outline-color .12s; }
+html[data-pbbar="1"] .pb-item.edit:hover { outline: 1px solid var(--blue); }
+html[data-pbbar="1"] .pb-item.edit > .pb-itembar { position: absolute; top: -30px; left: 0; right: 0; z-index: 30; display: flex; justify-content: space-between; opacity: 0; pointer-events: none; transition: opacity .12s; }
+html[data-pbbar="1"] .pb-item.edit:hover > .pb-itembar, html[data-pbbar="1"] .pb-item.edit:focus-within > .pb-itembar { opacity: 1; pointer-events: auto; }
+html[data-pbbar="1"] .pb-item.edit > .pb-itembar .pb-itemleft { background: var(--blue); color: #fff; border-radius: 8px 8px 0 0; padding: 2px 4px; display: inline-flex; align-items: center; gap: 2px; }
+html[data-pbbar="1"] .pb-item.edit > .pb-itembar .pb-itemleft .btn, html[data-pbbar="1"] .pb-item.edit > .pb-itembar .pb-itemleft .pb-gear, html[data-pbbar="1"] .pb-item.edit > .pb-itembar .pb-grip { background: transparent; border-color: transparent; color: #fff; box-shadow: none; }
+html[data-pbbar="1"] .pb-item.edit > .pb-itembar .pb-trash { align-self: flex-start; transform: scale(.8); transform-origin: top right; }
+html[data-pbbar="1"] .pb-rowwrap > .pb-corner, html[data-pbbar="1"] .pb-cellbar { opacity: 0; pointer-events: none; transition: opacity .12s; }
+html[data-pbbar="1"] .pb-rowwrap:hover > .pb-corner, html[data-pbbar="1"] .pb-rowwrap:hover .pb-cellbar, html[data-pbbar="1"] .pb-rowwrap:focus-within > .pb-corner { opacity: 1; pointer-events: auto; }
+html[data-pbbar="1"] .pb-rowwrap:hover { outline: 1px solid color-mix(in srgb, var(--blue) 55%, transparent); outline-offset: -1px; }
+html[data-pbbar="1"] .pb-cell.edit { border-color: transparent; } html[data-pbbar="1"] .pb-cell.edit:hover { border-color: color-mix(in srgb, var(--blue) 45%, transparent); }
+
+/* New blocks and heroes like in a page builder: a thin insert line with a round + (not a tall band), blocks flush against each other, a structure picker */
+.pb-insert { position: relative; min-height: 14px; margin: 0 auto; max-width: none; opacity: 1; gap: .4rem; padding: 0 1rem; }
+.pb-insert .pb-insline { flex: 1; height: 0; border-top: 1px dashed transparent; transition: border-color .12s; }
+.pb-insplus { width: 24px; height: 24px; line-height: 20px; border-radius: 50%; border: 0; background: var(--blue); color: #fff; font-size: 1.1rem; cursor: pointer; opacity: 0; transform: scale(.7); transition: opacity .12s, transform .12s; flex: none; z-index: 3; }
+.pb-insert:hover .pb-insplus, .pb-insert.open .pb-insplus, .pb-insplus:focus-visible { opacity: 1; transform: none; } .pb-insert:hover .pb-insline, .pb-insert.open .pb-insline { border-top-color: var(--blue); }
+.pb-structpick { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 60; width: min(520px, calc(100% - 2rem)); display: grid; gap: .5rem; padding: .8rem .9rem; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text); box-shadow: 0 16px 44px rgba(0, 0, 0, .35); }
+.pb-structpick .pb-coltiles { display: flex; flex-wrap: wrap; gap: .4rem; }
+html[data-pbbar="1"] .pb-rowwrap.hero { margin-bottom: 0; border-radius: 0; }
+html[data-pbbar="1"] .pb-rowwrap { margin-bottom: 0; }
+
+.pb-addtile.on { border-color: var(--blue); } .pb-addchev { margin-left: auto; color: var(--muted); padding-left: .5rem; }
+.pb-medialib-part { margin-top: .5rem; }
+
+/* heroes sit flush against the next block, also on the page itself */
+.pb-rowwrap.hero { margin-bottom: 0; } .pb-rowwrap.hero[data-screen="1"] { border-radius: 0; }
+
+/* the line between two blocks: no space of its own; the line lies on the edge of the blocks and holds + (new block), edit and delete */
+.pb-insert { display: block; position: relative; height: 0; min-height: 0; margin: 0; padding: 0; max-width: none; width: 100%; z-index: 25; opacity: 1; overflow: visible; }
+.pb-insert .pb-insline { position: absolute; left: 0; right: 0; top: 0; height: 0; border-top: 2px solid transparent; transition: border-color .12s; }
+.pb-insert:hover .pb-insline, .pb-insert.open .pb-insline { border-top-color: var(--blue); }
+.pb-inshandle { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); display: inline-flex; gap: 1px; opacity: 0; transition: opacity .12s; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+.pb-insert:hover .pb-inshandle, .pb-insert.open .pb-inshandle, .pb-inshandle:focus-within { opacity: 1; }
+.pb-inbtn { width: 30px; height: 28px; border: 0; background: var(--blue); color: #fff; font-size: 1rem; line-height: 1; cursor: pointer; } .pb-inbtn:hover { filter: brightness(1.12); } .pb-inbtn.del:hover { background: var(--danger); }
+.pb-insert::before { content: ""; position: absolute; left: 0; right: 0; top: -12px; height: 24px; }  /* a wider hit area for the hover */
+.pb-structpick { top: 18px !important; }
+html[data-pbbar="1"] .pb > .pb-rowwrap, html[data-pbbar="1"] .pb > * + .pb-rowwrap { margin-top: 0; margin-bottom: 0; }
+
+/* the blocks lie against each other: the grid of the page put a gap around every block AND around every insert line, so in edit mode the gap is 0 (the space of a block is its own padding) */
+html[data-pbbar="1"] .pb, html[data-pbbar="1"] .pb[data-pad] { row-gap: 0 !important; gap: 0 !important; --pbg: 0px; }
+html[data-pbbar="1"] .pb-rowwrap[data-prev] { margin-top: 0; }
+
+/* No icons on the page: only a pencil on what the mouse is over (and on the line between blocks). Everything else is in the panel at the left. */
+html[data-pbbar="1"] .pb-itembar, html[data-pbbar="1"] .pb-cellbar, html[data-pbbar="1"] .pb-rowwrap > .pb-corner, html[data-pbbar="1"] .pb-rowtag, html[data-pbbar="1"] .pb-addbtn, html[data-pbbar="1"] .pb-tstyle .img-edit-btn, html[data-pbbar="1"] .lorem-wrap, html[data-pbbar="1"] .pb-tstyle .lorem-wrap { display: none !important; }
+html[data-pbbar="1"] .pb-cell.edit { min-height: 0; padding: 0; border: 0; }
+.pb-pencil { display: none; }
+html[data-pbbar="1"] .pb-item.edit > .pb-pencil { display: grid; place-items: center; position: absolute; top: -12px; right: 26px; z-index: 31; width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--blue); color: #fff; cursor: pointer; opacity: 0; transition: opacity .12s; box-shadow: 0 3px 10px rgba(0, 0, 0, .3); font-size: .85rem; line-height: 1; }
+html[data-pbbar="1"] .pb-item.edit:hover > .pb-pencil { opacity: 1; }
+.pb-sb-actions { display: grid; gap: .5rem; padding: .5rem .6rem; margin-bottom: .8rem; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); } .pb-sb-actions > span { display: flex; flex-wrap: wrap; gap: .35rem; }
+.pb-sb-content { display: grid; gap: .3rem; margin-bottom: .8rem; } .pb-sb-content .pb-sb-text { min-height: 3rem; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); }
+
+html[data-pbbar="1"] .pb-item.edit > .pb-pencil.del { right: -4px; background: var(--danger); font-size: 1.1rem; } html[data-pbbar="1"] .pb-item.edit:hover > .pb-pencil.del { opacity: 1; }
+
+/* pictures: like the other parts, no tools in the picture; the pencil and the cross on hover, the rest in the panel */
+html[data-pbbar="1"] .ei-wrap .img-edit-btn, html[data-pbbar="1"] .ei-wrap .pb-grip, html[data-pbbar="1"] .ei-wrap .btn.danger, html[data-pbbar="1"] .ei-wrap [class*="trash"], html[data-pbbar="1"] .ei-wrap .img-hover-tools, html[data-pbbar="1"] .ei-wrap .ei-tools, html[data-pbbar="1"] .ei-wrap > .ei-inner > div[class*="tools"] { display: none !important; }
+html[data-pbbar="1"] .ei-wrap .img-edit-btn.img-set-btn { display: none !important; }
+html[data-pbbar="1"] .ei-wrap .item-trash { display: none !important; }
+
+/* a block (hero) has its own pencil and cross in its top right corner, visible when the mouse is over the block */
+.pb-rowtools { display: none; }
+html[data-pbbar="1"] .pb-rowwrap > .pb-rowtools { display: flex; gap: 4px; position: absolute; top: 10px; right: 10px; z-index: 40; opacity: 0; transition: opacity .12s; }
+html[data-pbbar="1"] .pb-rowwrap:hover > .pb-rowtools { opacity: 1; }
+html[data-pbbar="1"] .pb-rowtools .pb-pencil { display: grid; place-items: center; position: static; opacity: 1; width: 30px; height: 30px; border: 0; border-radius: 50%; background: var(--blue); color: #fff; cursor: pointer; font-size: .95rem; box-shadow: 0 3px 10px rgba(0, 0, 0, .35); }
+html[data-pbbar="1"] .pb-rowtools .pb-pencil.del { background: var(--danger); font-size: 1.2rem; }
+
+/* the choice of the view (computer, iPad, phone) is at the foot of the editor panel */
+.pb-sb-foot { border-top: 1px solid var(--line); padding: .5rem .7rem; background: var(--bg); }
+.device-bar.docked { position: static; box-shadow: none; border: 0; background: transparent; padding: 0; display: flex; gap: .3rem; } .device-bar.docked span { flex: 1; font-weight: 600; }
+.pb-sb-foot:empty { display: none; }
+
+/* a column (placeholder): when the mouse is over the column (and not over a part in it) it gets a dashed frame and its own pencil and cross inside its top right corner; over a part, only the part shows its tools */
+.pb-celltools { display: none; }
+html[data-pbbar="1"] .pb-cell.edit { position: relative; }
+html[data-pbbar="1"] .pb-cell.edit > .pb-celltools { display: flex; gap: 4px; position: absolute; top: 6px; right: 6px; z-index: 32; opacity: 0; pointer-events: none; transition: opacity .12s; }
+html[data-pbbar="1"] .pb-cell.edit:hover { outline: 2px dashed var(--blue); outline-offset: -2px; }
+html[data-pbbar="1"] .pb-cell.edit:hover > .pb-celltools { opacity: 1; pointer-events: auto; }
+html[data-pbbar="1"] .pb-cell.edit:has(.pb-item:hover) { outline: 0; }
+html[data-pbbar="1"] .pb-cell.edit:has(.pb-item:hover) > .pb-celltools { opacity: 0; pointer-events: none; }
+html[data-pbbar="1"] .pb-celltools .pb-pencil { display: grid; place-items: center; position: static; opacity: 1; width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--blue); color: #fff; cursor: pointer; font-size: .85rem; line-height: 1; box-shadow: 0 3px 10px rgba(0, 0, 0, .3); }
+html[data-pbbar="1"] .pb-celltools .pb-pencil.del { background: var(--danger); font-size: 1.1rem; }
+
+/* saved own colours under the theme colours of every colour picker */
+.pb-colorpick { display: grid; gap: .35rem; }
+.pb-saved { align-items: center; }
+.pb-saved small { margin-right: .2rem; }
+.pb-sw.addsave { display: grid; place-items: center; background: var(--card); color: var(--text); border: 1px dashed var(--line); font-weight: 700; line-height: 1; cursor: pointer; }
+.pb-sw.addsave:disabled { opacity: .4; cursor: default; }
+
+/* sliders in the colours of the theme: our own track and thumb, centred on each other, inside the panel */
+input[type="range"] { accent-color: var(--blue); }
+.pb-sidebar input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; height: 20px; margin: 0; padding: 0; background: transparent; border: 0; outline-offset: 2px; cursor: pointer; }
+.pb-sidebar input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; border: 0; background: color-mix(in srgb, var(--blue) 25%, var(--line)); }
+.pb-sidebar input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; border: 2px solid var(--card); background: var(--blue); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
+.pb-sidebar input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; border: 0; background: color-mix(in srgb, var(--blue) 25%, var(--line)); }
+.pb-sidebar input[type="range"]::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--blue); }
+.pb-sidebar input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--card); background: var(--blue); }
+
+/* the settings in the left panel: one column, every label at the same place and every field the same width */
+.pb-sidebar .pb-cols { grid-template-columns: minmax(0, 1fr); gap: .7rem; align-items: stretch; }
+.pb-sidebar .pb-stylerow { display: flex; flex-wrap: nowrap; align-items: center; gap: .6rem; margin: 0; min-width: 0; }
+.pb-sidebar .pb-stylerow > span:first-child, .pb-sidebar .pb-cols > .pb-stylerow > span:first-child { flex: 0 0 7rem; min-width: 0; font-size: .82rem; font-weight: 600; }
+.pb-sidebar .pb-stylerow > select, .pb-sidebar .pb-stylerow > input:not([type="range"]):not([type="color"]):not([type="checkbox"]), .pb-sidebar .pb-stylerow > .pb-colorpick, .pb-sidebar .pb-stylerow > .pb-seg { flex: 1 1 0; min-width: 0; width: auto !important; max-width: none; box-sizing: border-box; }
+.pb-sidebar .pb-stylerow > small { flex: 0 0 auto; }
+.pb-sidebar .pb-stylerow > .pb-seg { display: flex; } .pb-sidebar .pb-stylerow > .pb-seg > button { flex: 1; }
+.pb-sidebar .pb-stylerow > input[type="range"] { flex: 1 1 0; width: auto !important; }
+.pb-sidebar .pb-stylerow > small { min-width: 3.2rem; text-align: right; }
+
+/* saved colours: the picked one gets a pencil (change it) and a cross (remove it), in that order; the rows stay together at the left */
+.pb-sidebar .pb-stylerow > .pb-colorpick { justify-items: start; }
+.pb-colorpick .pb-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.pb-sw.editsave, .pb-sw.delsave { position: relative; display: grid; place-items: center; background: var(--blue); color: #fff; border: 0; font-size: .8rem; line-height: 1; cursor: pointer; overflow: hidden; }
+.pb-sw.delsave { background: var(--danger); font-size: 1rem; }
+.pb-sw.editsave input[type="color"] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; padding: 0; }
+
+/* the editor stays on the big screen: the iPad or phone frame sits in the space of the website, right of the panel and under the top bar, and shows the result (it loads again after every save) */
+.device-overlay.docked { top: var(--pb-bar-h); left: var(--pb-sb-w); z-index: 1080; padding: 1rem; background: rgba(8, 12, 22, .6); pointer-events: auto; }
+@media (max-width: 900px) { .device-overlay.docked { left: 0; } }
+
+/* web templates (Admin > Website > Templates) */
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.tpl-card { display: flex; flex-direction: column; gap: .45rem; padding: .8rem; }
+.tpl-img { display: block; width: 100%; aspect-ratio: 16 / 10; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--bg); cursor: pointer; }
+.tpl-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tpl-img.empty { cursor: default; }
+.tpl-big { width: 100%; max-height: 60vh; object-fit: contain; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.tpl-thumb { width: 84px; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: none; cursor: pointer; } .tpl-thumb.on { border-color: var(--blue); }
+.tpl-thumb img { width: 100%; display: block; }

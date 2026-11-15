@@ -99,13 +99,16 @@ IGNORE_PLUGINS = {"siteimport", "statistics", "finance", "orders", "profile-them
 GENERIC_HOW = "Offer '{label}' on the website ({desc}). Mention it where it fits: a short section or a menu item/button; use its system objects when they are selected; never build your own forms, pages or data for it."
 
 
-def rules():
+def rules(brief=None):
     """The system rules for the AI with the numbers of importrules.py filled in (the same numbers that the importer and the AI prompt of the screen use)."""
     d = R.as_dict()
     out = _RULES
     for k, v in (("MAX_PAGES", d["max_pages"]), ("MAX_IMAGES", d["max_images"]), ("MAX_IMAGE_MB", f"{d['max_image_mb']:g}"), ("NAME_MAX", d["name_max"])):
         out = out.replace(f"@{k}@", str(v))
-    return out
+    from . import componentpacks
+
+    comp = componentpacks.rules_text((brief or {}).get("component_set") or None)  # the ready-made components (the set that was chosen) with their easy2edit_tag: the designs use them, the import recognises them
+    return out + ("\n\n" + comp if comp else "")
 
 
 def module_items():
@@ -337,7 +340,7 @@ def clean_brief(patch, old):
     """The brief with only known keys and safe values; the photos are checked against the media library."""
     b = dict(old or {})
     p = patch if isinstance(patch, dict) else {}
-    for k, n in (("name", 120), ("lang", 40), ("pages", 600), ("style", 300), ("extra", 1500), ("theme", 60), ("theme_name", 120)):
+    for k, n in (("name", 120), ("lang", 40), ("pages", 600), ("style", 300), ("extra", 1500), ("theme", 60), ("theme_name", 120), ("component_set", 60)):
         if k in p:
             b[k] = str(p[k] or "")[:n]
     if "kind" in p:
@@ -977,7 +980,7 @@ def _generate(pk):
                       f"The menu on every page: {nav}\n\n{text}\n\nCURRENT style.css:\n{old.get('style.css', '(none)')}\n\nCURRENT {first}:\n{old.get(first, '')}")
         else:
             prompt = f"Design this website. Now output ONLY style.css (the complete shared stylesheet for ALL pages: also the classes that the other pages will need: cards, columns, faq, products, events, forms-free contact blocks), {first} and the svg illustrations (img/...) of that page.\nThe menu on every page: {nav}\n\n{text}"
-        files = parse(_ask(rules(), prompt, pk=pk))
+        files = parse(_ask(rules(job.brief), prompt, pk=pk))
         if "style.css" not in files or first not in files:
             raise ValueError("De AI gaf geen bruikbaar ontwerp terug. Probeer het nog eens.")
         if improve:
@@ -988,7 +991,7 @@ def _generate(pk):
             _set(pk, progress=30 + int(65 * n / max(1, len(rest))), step=f"Pagina '{title}' {'verbeteren' if improve else 'ontwerpen'}")
             ctx = f"style.css:\n{files['style.css']}\n\n{first} (copy its header and footer exactly, same menu):\n{files[first]}"
             cur = f"\n\nCURRENT {f} (improve this page, keep its content):\n{old.get(f, '')}" if improve else ""
-            new = parse(_ask(rules(), f"{'Improve' if improve else 'Design'} ONE more page of the same website, in exactly the same visual language. Output {f} (and img/ svg files that this page needs). Output style.css too ONLY when you had to add classes: then the complete extended file.\nThe menu on every page: {nav}\nThis page: {title} ({f})\n\n{text}\n\n{ctx}{cur}", pk=pk))
+            new = parse(_ask(rules(job.brief), f"{'Improve' if improve else 'Design'} ONE more page of the same website, in exactly the same visual language. Output {f} (and img/ svg files that this page needs). Output style.css too ONLY when you had to add classes: then the complete extended file.\nThe menu on every page: {nav}\nThis page: {title} ({f})\n\n{text}\n\n{ctx}{cur}", pk=pk))
             if f not in new:
                 raise ValueError(f"De pagina '{title}' kwam niet terug. Probeer het nog eens.")
             files = {**files, **new}
@@ -1051,7 +1054,7 @@ def _revise(pk, instruction, page):
         focus = f"The user is looking at the page {page}.\n" if page in files else ""
         photos = "\n".join(f"- {p['file']}: {p.get('note') or ''}" for p in (job.brief or {}).get("photos") or [])
         ph = f"Photos that can be used (img/<file>):\n{photos}\n" if photos else ""
-        new = parse(_ask(rules(), f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}", pk=pk))
+        new = parse(_ask(rules(job.brief), f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}", pk=pk))
         if not new:
             raise ValueError("De AI gaf geen aanpassing terug. Probeer het anders te zeggen.")
         _set(pk, status="done", progress=100, step="Klaar", files={**files, **new}, messages=list(job.messages) + [{"role": "ai", "text": "Aangepast: " + ", ".join(sorted(new)) + "."}])

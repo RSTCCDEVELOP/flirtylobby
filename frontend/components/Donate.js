@@ -14,6 +14,7 @@ import { api, errorText, mediaUrl } from "../lib/api";
 import { money } from "../lib/format";
 import { placeStyle } from "./ImagePlace";
 import { useSession } from "./Session";
+import KitScope from "../lib/ui-kit/KitScope";
 
 export function Campaign({ c, currency, user, onClose }) {
   const [amount, setAmount] = useState(Number(c.default));
@@ -35,8 +36,8 @@ export function Campaign({ c, currency, user, onClose }) {
   }
 
   return (
-    <form className="card don-card" onSubmit={give}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: ".6rem" }}><h2>{c.name}</h2>{onClose && <button type="button" className="btn sm" onClick={onClose}>{tx("Sluiten")}</button>}</div>
+    <KitScope tag="ui-form-fields"><form className="card don-card" onSubmit={give}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: ".6rem" }}><h2>{c.name}</h2>{onClose && <button type="button" className="e2e-btn e2e-btn--outline e2e-btn--sm" onClick={onClose}>{tx("Sluiten")}</button>}</div>
       {c.infoView && (c.infoView.image || c.infoView.title || c.infoView.text) && (
         <div className="don-info">
           {c.infoView.image && <img src={mediaUrl(c.infoView.image)} alt="" style={placeStyle(c.infoView.placement)} />}
@@ -52,21 +53,21 @@ export function Campaign({ c, currency, user, onClose }) {
       {c.grants.length > 0 && <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{gives ? "🎁 " : ""}{tx("Als dank krijg je")} {c.grant_days} {tx("dagen")}: {c.grants.map((g) => tx(g.label)).join(", ")}{Number(c.min_for_grants) > 0 ? ` (${tx("vanaf")} ${money(c.min_for_grants, currency)})` : ""}{!user && ` — ${tx("log in om dit te ontvangen")}`}</p>}
       {!user && (
         <div className="grid2">
-          <label>{tx("Naam")}<input value={f.name} maxLength={120} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
-          <label>{tx("E-mail")}<input type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></label>
+          <div className="e2e-field"><label className="e2e-label">{tx("Naam")}</label><input className="e2e-input" value={f.name} maxLength={120} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
+          <div className="e2e-field"><label className="e2e-label">{tx("E-mail")}</label><input className="e2e-input" type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
         </div>
       )}
-      {c.allow_message && <label>{tx("Bericht (optioneel)")}<input value={f.message} maxLength={300} onChange={(e) => setF({ ...f, message: e.target.value })} /></label>}
-      {c.allow_anonymous && <label className="check"><input type="checkbox" checked={f.anonymous} onChange={(e) => setF({ ...f, anonymous: e.target.checked })} /> {tx("Mijn naam niet tonen")}</label>}
+      {c.allow_message && <div className="e2e-field"><label className="e2e-label">{tx("Bericht (optioneel)")}</label><input className="e2e-input" value={f.message} maxLength={300} onChange={(e) => setF({ ...f, message: e.target.value })} /></div>}
+      {c.allow_anonymous && <label className="e2e-check"><input type="checkbox" checked={f.anonymous} onChange={(e) => setF({ ...f, anonymous: e.target.checked })} /> {tx("Mijn naam niet tonen")}</label>}
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-      <button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : `${tx("Doneer")} ${money(amount, currency)}`}</button>
+      <button className="e2e-btn" disabled={busy}>{busy ? tx("Bezig…") : `${tx("Doneer")} ${money(amount, currency)}`}</button>
       {c.recent?.length > 0 && (
         <div className="don-recent">
           <strong style={{ fontSize: ".85rem" }}>{tx("Recente donaties")}</strong>
           {c.recent.map((r, i) => <div key={i}><span><strong>{r.name}</strong> {money(r.amount, currency)}</span>{r.message && <em className="muted"> “{r.message}”</em>}</div>)}
         </div>
       )}
-    </form>
+    </form></KitScope>
   );
 }
 

@@ -27,7 +27,7 @@ const KIND_HINT = {
 
 // modules: [{label, how}] the modules that the website uses; objects: [{slug, name, kind_label}] the system objects (live blocks of the system) that have to be placed on the pages.
 // From the step plan (the design) it also gets: palette {primary, secondary, bg, card, text, dark, dbg, dcard, dtext} (exact colours; dbg/dcard/dtext are the dark mode), colorMode "light" | "dark" | "both", languages {main, extra: [{code, native, rtl}], switcher}, font (css stack), radius (px), theme (name of the chosen theme) and photos [{file, note}] that the user has uploaded.
-export function buildPrompt({ name, kind, lang, pages, style, colors, extra, modules = [], objects = [], palette = null, font = "", radius = null, theme = "", photos = [], colorMode = "light", languages = null, rules = null }) {
+export function buildPrompt({ name, kind, lang, pages, style, colors, extra, modules = [], objects = [], palette = null, font = "", radius = null, theme = "", photos = [], colorMode = "light", languages = null, rules = null, componentsText = "" }) {
   const RL = { max_pages: 12, max_images: 40, max_image_mb: 5, name_max: 40, ...(rules || {}) }; // the numbers of the importer (served by /sitecreator/catalog/)
   const mainLang = (languages && languages.main) || lang || "Dutch";
   const extraLangs = (languages && languages.extra) || [];
@@ -108,7 +108,7 @@ ${extraLangs.map((l) => `- Add a translation file vertalingen-${l.code}.json at 
   The keys of an item are "element", the code of the main language (${mainCode}) and the code of the target language (the same as "doel"). "element" is one of: title, meta description, og:title, og:description, h1, h2, h3, p, li, summary, link, alt, aria-label.
 - One item per text, in the order of the page: the <title>, the meta description, og:title, og:description, every h1, h2, h3, p, li, summary, every link and button text, every alt text and every aria-label. Copy the source text EXACTLY as it is in the html, including simple inline html (em, strong, a, br) and entities; keep that html in the same place in the translation. In a translation only p, ul, ol, li, strong, em, a and br are allowed as html. Translate naturally for the target audience; keep prices, numbers, product names and brand names, and use the number format of the target language (€ 30.95).
 
-` : ""}## 4. SEO
+` : ""}${componentsText ? componentsText + "\n" : ""}## 4. SEO
 - Every page has a unique <title> (max 60 characters) and <meta name="description"> (max 155 characters).
 - Include an Open Graph image (og:image, img/og.jpg, 1200x630) on the start page.
 
@@ -218,7 +218,7 @@ function designSection(files, a) {
 
 // The prompt for an AI that gets a finished HTML design (one or more html files, with or without css and pictures) and turns it into ONE ZIP that Easy2edit imports
 // (Website ontwerpen > ZIP-bestand) with the modules and live system objects linked. objects: [{slug, name, kind_label}] from /sitecreator/catalog/; rules: the numbers of the importer.
-export function buildConvertPrompt({ objects = [], rules = null, languages = [], mainCode = "nl", files = [] } = {}) {
+export function buildConvertPrompt({ objects = [], rules = null, languages = [], mainCode = "nl", files = [], componentsText = "" } = {}) {
   const RL = { max_pages: 12, max_images: 40, max_image_mb: 5, name_max: 40, ...(rules || {}) };
   const live = objects || [];
   const extra = (languages || []).filter((l) => l.enabled && !l.default);
@@ -261,6 +261,7 @@ Easy2edit has modules (showcase, webshop, FAQ, agenda, documents, marketplace, g
 - Modules without example content are filled with demo content by the importer, so never make up fake data outside a design element.
 ${live.length ? `The blocks that exist in this system now (slug: name, kind):\n${live.map((o) => `- ${o.slug}: ${o.name} (${o.kind_label})`).join("\n")}\n` : "Use the slugs that Easy2edit shows under Website ontwerpen > AI creator > Systeemobjecten."}
 Links of the system you may use: / (home), /login, /registreren, /dashboard, /faq, /producten, /winkelwagen, /privacy, /cookies. Never build your own login, registration, cart or checkout.
+${componentsText ? "\n" + componentsText : ""}
 
 ## 5. SEO
 Every page: a unique <title> (max 60 characters) and <meta name="description"> (max 155), <html lang="...">, one <h1>, alt texts on every picture; the start page has og:image (img/og.jpg, 1200x630).

@@ -501,18 +501,72 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
 (function () {
   var last = null;  /* the button that was clicked last: a pop-up of the site opens at it */
   document.addEventListener("click", function (e) { var b = e.target && e.target.closest && e.target.closest("button, a, [role=button]"); if (b) { var r = b.getBoundingClientRect(); last = { left: r.left, top: r.top, bottom: r.bottom }; } }, true);
+  /* the text colour on the primary (--on-blue) and the secondary colour (--on-orange) of the site: light or dark, whichever reads better */
+  function onColors(v) {
+    function lum(hex) { var m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim()); if (!m) return null; var n = parseInt(m[1], 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(function (x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
+    [["--blue", "--on-blue"], ["--orange", "--on-orange"]].forEach(function (p) {
+      var L = lum(v[p[0]]); if (L === null) return;
+      document.documentElement.style.setProperty(p[1], (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.0575) ? "#ffffff" : "#151515");
+    });
+  }
   var pending = {}, n = 0, strings = {}, resolveReady, ready = new Promise(function (r) { resolveReady = r; });
   window.addEventListener("message", function (e) {
     var d = e.data || {};
-    if (d.plugin === "init" || d.plugin === "vars") { Object.keys(d.vars || {}).forEach(function (k) { document.documentElement.style.setProperty(k, d.vars[k]); }); }
+    if (d.plugin === "init" || d.plugin === "vars") { Object.keys(d.vars || {}).forEach(function (k) { document.documentElement.style.setProperty(k, d.vars[k]); }); onColors(d.vars || {}); }
     if (d.scheme) { document.documentElement.style.colorScheme = d.scheme; }  /* a transparent page in a frame gets a white canvas unless it says which scheme it uses */
     if (d.plugin === "init" && d.attrs) { Object.keys(d.attrs).forEach(function (k) { document.documentElement.setAttribute("data-" + k, d.attrs[k]); }); }  /* the layout choices of the theme (block style) */
     if (d.plugin === "init") { strings = d.strings || {}; document.documentElement.lang = d.lang || "nl"; resolveReady({ user: d.user, name: d.name, apiBase: d.apiBase, lang: d.lang, route: d.route || {}, siteOrigin: d.siteOrigin || "" }); }
     if (d.plugin === "attrs" && d.attrs) { Object.keys(d.attrs).forEach(function (k) { document.documentElement.setAttribute("data-" + k, d.attrs[k]); }); }  /* a choice of the site changed (edit mode on/off) */
     if (d.plugin === "viewport") { document.documentElement.style.setProperty("--vh", d.h + "px"); document.documentElement.style.setProperty("--vw", d.w + "px"); }  /* the size of the screen under the header: a page can fill it */
+    if (d.plugin === "kit") { useKit(d.css, d.tokens); }  /* the components of the set in use, in the colours of the theme (see system.kit) */
     if (d.plugin === "rehello") { parent.postMessage({ plugin: "hello" }, "*"); }  /* the page loaded before the site was ready to answer (server-rendered page): ask again */
     if (d.plugin === "reply" && pending[d.id]) { var p = pending[d.id]; delete pending[d.id]; d.ok ? p.resolve(d.data) : p.reject(new Error(d.error || "Mislukt")); }
   });
+  /* The UI-kit (the component set of the site, e2e-*): its css is limited to this page (class e2e-scope on <html>), so only the components change, never the plain tags.
+     The usual parts of a plugin page (buttons, badges, fields) take the kit's look by themselves; for the rest use the e2e-* classes of the component list. */
+  function scoped(css) {
+    var sheet; try { sheet = new CSSStyleSheet(); sheet.replaceSync(css); } catch (x) { return ""; }
+    function rules(list) { return Array.prototype.map.call(list, function (r) {
+      if (r.type === 1) {
+        var sel = r.selectorText.split(",").map(function (v) { return v.trim(); });
+        if (sel.every(function (v) { return v === ":root" || v === "[data-e2e-theme]"; })) return ".e2e-scope{" + r.style.cssText + "}";
+        var keep = sel.filter(function (v) { return /^\.e2e|^\[data-e2e/.test(v); }).map(function (v) { return ".e2e-scope " + v; });
+        return keep.length ? keep.join(",") + "{" + r.style.cssText + "}" : "";
+      }
+      if (r.type === 4) return "@media " + r.conditionText + "{" + rules(r.cssRules) + "}";
+      if (r.type === 7 || r.type === 5) return r.cssText;
+      return "";
+    }).join("\n"); }
+    return rules(sheet.cssRules);
+  }
+  var KITMAP = [
+    ["button.primary, a.primary, .btn.primary", "e2e-btn"], [".btn:not(.primary):not(.danger), a.btn:not(.primary)", "e2e-btn e2e-btn--outline"],
+    [".badge", "e2e-badge"], [".badge.ok", "e2e-badge--success"], [".badge.warn", "e2e-badge--warning"], [".badge.bad, .badge.danger", "e2e-badge--danger"],
+    ["input[type=text], input[type=search], input[type=email], input[type=number], input[type=password], input[type=url], input[type=tel], input[type=date], input[type=datetime-local], input[type=time], input:not([type])", "e2e-input"],
+    ["select", "e2e-select"], ["textarea", "e2e-textarea"]
+  ];
+  function bridge() {
+    if (!document.documentElement.classList.contains("e2e-scope")) return;
+    Array.prototype.forEach.call(document.querySelectorAll(".tabs"), function (box) {  /* tab bars: the buttons are the tabs of the kit; the one with class "on" is the selected one */
+      box.classList.add("e2e-tabs__list"); box.setAttribute("role", "tablist");
+      Array.prototype.forEach.call(box.querySelectorAll(":scope > button"), function (b) {
+        b.classList.add("e2e-tabs__tab"); if (b.getAttribute("role") !== "tab") b.setAttribute("role", "tab");
+        var on = b.classList.contains("on") ? "true" : "false"; if (b.getAttribute("aria-selected") !== on) b.setAttribute("aria-selected", on);
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("table:not(.e2e-table)"), function (tb) { tb.classList.add("e2e-table"); });
+    KITMAP.forEach(function (m) { Array.prototype.forEach.call(document.querySelectorAll(m[0]), function (el) { m[1].split(" ").forEach(function (c) { if (c) el.classList.add(c); }); }); });
+  }
+  var bridging = null;
+  function useKit(css, tokens) {
+    var st = document.getElementById("e2e-kit");
+    if (!st) { st = document.createElement("style"); st.id = "e2e-kit"; (document.head || document.documentElement).appendChild(st); }
+    st.textContent = scoped(css || "") + "\n" + String(tokens || "").replace(/^:root\{/, ".e2e-scope{");
+    document.documentElement.classList.add("e2e-scope");
+    document.documentElement.style.setProperty("--e2e-on", "1");
+    bridge();
+    if (!bridging && window.MutationObserver) { bridging = new MutationObserver(function () { clearTimeout(bridging.t); bridging.t = setTimeout(bridge, 30); }); bridging.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] }); }
+  }
   function call(type, extra) { return new Promise(function (resolve, reject) { var id = ++n; pending[id] = { resolve: resolve, reject: reject }; parent.postMessage(Object.assign({ plugin: type, id: id }, extra), "*"); }); }
   window.system = {
     ready: ready,

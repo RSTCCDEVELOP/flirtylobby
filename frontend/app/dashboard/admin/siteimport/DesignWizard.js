@@ -46,6 +46,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
   const [b, setB] = useState(job.brief || {});
   const [step, setStep] = useState(Math.min(LAST, job.brief?.step || 0));
   const [themes, setThemes] = useState([]);
+  const [compSets, setCompSets] = useState([]);  // the component sets of this website (Admin > Website > Componenten): the design uses the one that is chosen
   const [catalog, setCatalog] = useState(null);
   const [save, setSave] = useState("saved"); // saved | dirty | saving | error
   const [err, setErr] = useState(job.error || "");
@@ -79,7 +80,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
   }, [job.id]);
   const upd = (patch) => { setB((o) => ({ ...o, ...patch })); pend.current = { ...pend.current, ...patch }; setSave("dirty"); clearTimeout(timer.current); timer.current = setTimeout(flush, 600); };
   useEffect(() => () => { flush(); }, [flush]);
-  useEffect(() => { api("/sitecreator/").then((d) => setThemes(d.themes || [])).catch(() => {}); api("/sitecreator/catalog/").then(setCatalog).catch(() => {}); }, []);
+  useEffect(() => { api("/sitecreator/").then((d) => setThemes(d.themes || [])).catch(() => {}); api("/sitecreator/catalog/").then(setCatalog).catch(() => {}); api("/components/sets/").then((d) => setCompSets(d.installed || [])).catch(() => {}); }, []);
   useEffect(() => { // a document is being read: show the progress, and take over the settings that Easy2edit made when it is ready
     if (!docs.some((d) => d.status === "reading")) return undefined;
     const t = setTimeout(async () => {
@@ -310,6 +311,23 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
                 ))}
               </div>
             </div>
+            {compSets.length > 0 && (
+              <div className="dw-panel">
+                <h3>{tx("Componenten")}</h3>
+                <p className="muted" style={{ margin: "0 0 .6rem" }}>{tx("De ontwerper gebruikt kant-en-klare Easy2edit-objecten (hero, prijzen, agenda, kalender ...) uit de set die je kiest. Elk component heeft een easy2edit_tag.")}</p>
+                <div className="dw-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
+                  {compSets.map((m) => {
+                    const on = (b.component_set || "") === (m.default ? "" : m.key) || (!b.component_set && m.active);
+                    return (
+                      <button type="button" key={m.key} className={`dw-opt ${on ? "on" : ""}`} onClick={() => upd({ component_set: m.key })}>
+                        <b>{m.name} {m.active && <span className="badge ok">{tx("In gebruik")}</span>}</b>
+                        <small>{m.count} {tx("componenten")} · v{m.version}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="dw-panel">
               <h3>{tx("Sfeer")} <span className="dw-count">{tx("maximaal 6")}</span></h3>
               <div className="dw-chips" style={{ marginTop: 0 }}>

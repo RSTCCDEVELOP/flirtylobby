@@ -9,7 +9,7 @@
 
 import { tx } from "../lib/t";
 import { usePathname, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { softRefresh } from "../lib/softrefresh";
 import PluginFrame from "./PluginFrame";
@@ -32,7 +32,14 @@ export default function PageSettingsButton() {
   const [busy, setBusy] = useState(false);
   const [shop, setShop] = useState(false); // the page of one product: its settings are the layout of the webshop (Webshop → Layout → Productpagina)
   const timer = useRef(null);
-  if (!editing || !user || path.startsWith("/dashboard") || mods?.pages === false || lvl(user, "pages") < 2) return null;
+  const [panel, setPanel] = useState(false);  // the editor has its own panel: the page settings are in it (tab Pagina), so no button here
+  useEffect(() => {
+    const root = document.documentElement, on = () => setPanel(root.dataset.pbbar === "1");
+    on();
+    const mo = new MutationObserver(on); mo.observe(root, { attributes: true, attributeFilter: ["data-pbbar"] });
+    return () => mo.disconnect();
+  }, []);
+  if (panel || !editing || !user || path.startsWith("/dashboard") || mods?.pages === false || lvl(user, "pages") < 2) return null;
 
   async function open() {
     setBusy(true);

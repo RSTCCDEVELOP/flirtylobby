@@ -17,9 +17,9 @@ from pathlib import Path
 
 from django.conf import settings
 
-KINDS = {"plugins": "plugins", "themas": "theme", "languages": "languages"}  # folder -> the module whose rights decide who may use it
-TITLES = {"plugins": "Plugins", "themas": "Thema's", "languages": "Talen"}
-ENTRY = {"plugins": "plugin.json", "themas": "theme.json", "languages": "language.json"}
+KINDS = {"plugins": "plugins", "themas": "theme", "languages": "languages", "components": "pages", "templates": "pages"}  # folder -> the module whose rights decide who may use it
+TITLES = {"plugins": "Plugins", "themas": "Thema's", "languages": "Talen", "components": "Componenten", "templates": "Templates"}
+ENTRY = {"plugins": "plugin.json", "themas": "theme.json", "languages": "language.json", "components": "components.json", "templates": "template.json"}
 
 
 class ResourceError(ValueError):
@@ -39,9 +39,9 @@ def root():
 
 def site_dir(kind):
     """The folder of THIS site where packages that were made here are kept (themes: site/themes/<key>-<version>.zip), or None. The library resource/ belongs to the product (in git) and is only read."""
-    if kind != "themas":
+    if kind not in ("themas", "templates"):
         return None
-    d = Path(settings.THEMES_DIR)
+    d = Path(settings.THEMES_DIR if kind == "themas" else settings.TEMPLATES_DIR)
     try:
         d.mkdir(parents=True, exist_ok=True)
     except OSError:
@@ -79,7 +79,7 @@ def _read(path, kind):
             continue
         if kind == "plugins":
             name, title = d.get("name"), d.get("title")
-        elif kind == "themas":
+        elif kind in ("themas", "components", "templates"):
             name, title = d.get("key"), d.get("name")
         else:
             name, title = d.get("code"), d.get("native_name") or d.get("name")
@@ -126,7 +126,19 @@ def _installed():
     for code in Language.objects.values_list("code", flat=True):
         pack = langpacks.installed(code)
         langs[code] = (pack or {}).get("version", "") if pack else ""
-    return {"plugins": {p.name: p.version for p in Plugin.objects.all()}, "themas": {t["key"]: t.get("version", "") for t in themepacks.listing()}, "languages": langs}
+    from . import componentpacks
+
+    try:
+        comps = {k: m.get("version", "") for k, (_f, m) in componentpacks.installed_map().items()}
+    except Exception:  # noqa: BLE001 - the library must stay readable
+        comps = {}
+    try:  # a template is not installed: what is in the library is there to use
+        from . import templatepacks
+
+        temps = {k: m["version"] for k, (_f, m, _o) in templatepacks.all_templates().items()}
+    except Exception:  # noqa: BLE001
+        temps = {}
+    return {"templates": temps, "components": comps, "plugins": {p.name: p.version for p in Plugin.objects.all()}, "themas": {t["key"]: t.get("version", "") for t in themepacks.listing()}, "languages": langs}
 
 
 def allowed():
@@ -192,10 +204,12 @@ def install(kind, name, user):
     from apps.plugins import installer, runtime
     from apps.plugins.models import Plugin
 
-    from . import langpacks, themepacks
+    from . import componentpacks, langpacks, themepacks
 
     if not can_use(user, kind):
         raise ResourceError("Je hebt hier geen rechten voor.")
+    if kind == "templates":
+        raise ResourceError("Een template gebruik je bij Admin → Website → Templates.")
     entry = next((e for e in catalog(kind) if e["name"] == name), None)
     if not entry:
         raise ResourceError("Dit staat niet in de bibliotheek (map resource).")
@@ -212,8 +226,10 @@ def install(kind, name, user):
             return [p.name]
         if kind == "themas":
             return themepacks.install_zip(data)
+        if kind == "components":
+            return [componentpacks.install(name)["key"]]
         return langpacks.install_zip(data)
-    except (installer.InstallError, themepacks.ThemeError, langpacks.LanguageError) as e:
+    except (installer.InstallError, themepacks.ThemeError, langpacks.LanguageError, componentpacks.ComponentError) as e:
         raise ResourceError(str(e))
 
 

@@ -31,7 +31,16 @@ export default function HeaderEdit() {
     if (!open) return;
     api("/theme/").then(setTheme).catch((e) => setMsg({ ok: false, text: errorText(e) }));
   }, [open]);
+  useEffect(() => {  // in the editor with a panel: a click on the header shows its settings in the panel
+    if (!editing) return undefined;
+    const on = () => { window.dispatchEvent(new Event("pb-show-settings")); setTimeout(() => setOpen(true), 60); };
+    const head = document.querySelector(".site-header");
+    const click = (e) => { if (document.documentElement.dataset.pbbar === "1" && !e.target.closest("a, button, select, input")) on(); };
+    head?.addEventListener("click", click);
+    return () => head?.removeEventListener("click", click);
+  }, [editing]);
   if (!editing) return null;
+  const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // the panel of the editor
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
   const save = async (values) => { try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   const setLook = (key, v) => { const values = { ...theme.values, [key]: v }; setTheme({ ...theme, values }); setDirty(true); save(values); };
@@ -55,10 +64,10 @@ export default function HeaderEdit() {
   const heightField = fields.find((f) => f.key === "site_header_h");
   return (
     <>
-      <button type="button" className="btn sm footer-edit header-edit" onClick={() => setOpen(true)} title={tx("De header bewerken")} aria-label={tx("De header bewerken")}><IconEdit width={13} height={13} /></button>
+      <button type="button" className="btn sm footer-edit header-edit" onClick={() => { window.dispatchEvent(new Event("pb-show-settings")); setTimeout(() => setOpen(true), 60); }} title={tx("De header bewerken")} aria-label={tx("De header bewerken")}><IconEdit width={13} height={13} /></button>
       {open && typeof document !== "undefined" && createPortal(
-        <div className="pb-objback" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
-          <div className="pb-objpop" role="dialog" aria-label={tx("Header bewerken")} style={{ width: "min(720px, 100%)" }}>
+        <div className={host ? "pb-hdock" : "pb-objback"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) close(); }}>
+          <div className={host ? "pb-hdock-in" : "pb-objpop"} role="dialog" aria-label={tx("Header bewerken")} style={host ? undefined : { width: "min(720px, 100%)" }}>
             <div className="pb-objhead"><strong>{tx("Header bewerken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={close} aria-label={tx("Sluiten")}>×</button></div>
             <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ["logo", "Logo"], ["menu", "Menu"]]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
@@ -89,7 +98,7 @@ export default function HeaderEdit() {
               </div>
             )}
           </div>
-        </div>, document.body)}
+        </div>, host || document.body)}
     </>
   );
 }
