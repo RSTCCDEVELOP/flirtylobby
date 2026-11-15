@@ -15,7 +15,7 @@ import { anchorStyle } from "../lib/anchor";
 import { Logo } from "./BrandingContext";
 import DesignFrame from "./DesignFrame";
 import CodeEditor from "./CodeEditor";
-import { kitHead, kitTail, useKit } from "../lib/ui-kit/kitDoc";
+import KitHtml from "../lib/ui-kit/KitHtml";
 
 // Ready-made parts for a page: contact data, social media, map, video, quote, figures, logo and opening hours.
 // The data of the website itself (address, phone, social media) comes from Admin → Systeem → Basisgegevens.
@@ -42,8 +42,6 @@ export function PbWidget({ it, editing }) {
   const w = it.widget, d = it.data || {};
   const [site, setSite] = useState(null);
   useEffect(() => { if (["contact", "social", "map"].includes(w)) api("/site/").then(setSite).catch(() => {}); }, [w]);
-  const { kit, tick } = useKit(w === "code" && !!d.kit, d.set || "");  // a component of the UI-kit: drawn with the colours of the theme
-  const kitDoc = useMemo(() => (kit ? `<!doctype html><meta charset="utf-8"><base target="_top">${kitHead(kit)}<style>${d.css || ""}</style>${d.html || ""}${kitTail(kit)}` : ""), [kit, tick, d.html, d.css]); // eslint-disable-line react-hooks/exhaustive-deps
   const [font, setFont] = useState("sans-serif");
   useEffect(() => { if (w === "code") setFont(getComputedStyle(document.body).fontFamily.replace(/"/g, "'")); }, [w]); // the frame has its own page: it gets the font of this website
   const empty = (text) => <div className="pb-widget-empty">{editing ? text : null}</div>;
@@ -79,7 +77,7 @@ export function PbWidget({ it, editing }) {
   if (w === "quote") return <figure className="pb-w pb-w-quote"><blockquote>{d.text}</blockquote>{d.author && <figcaption>{d.author}</figcaption>}</figure>;
   if (w === "stats") return <div className="pb-w pb-w-stats">{(d.items || []).map((s, i) => <div key={i}><strong>{s.value}</strong><span>{s.label}</span></div>)}</div>;
   if (w === "logo") return <div className="pb-w pb-w-logo" style={{ "--wl-w": `${d.width || 160}px` }}><Logo /></div>;
-  if (w === "code" && d.kit) return kitDoc ? <div className="pb-w pb-w-code pb-w-kit" data-easy2edit-tag={d.tag || undefined}><DesignFrame title={tx(d.name || "Component")} html={kitDoc} /></div> : null;
+  if (w === "code" && d.kit) return <div className="pb-w pb-w-code pb-w-kit"><KitHtml html={d.html} css={d.css} tag={d.tag} set={d.set || ""} /></div>;  // built into the page: the theme and the components work together (no frame)
   if (w === "code") return d.html || d.css ? <div className="pb-w pb-w-code"><DesignFrame title={tx("HTML / CSS-code")} html={`<!doctype html><meta charset="utf-8"><base target="_top"><style>body{margin:0;font-family:${font};line-height:1.5}${d.css || ""}</style>${d.html || ""}`} /></div> : empty(tx("Vul de HTML of CSS in bij de instellingen van dit blok."));
   if (w === "hours") return <dl className="pb-w pb-w-hours">{(d.lines || []).map((l, i) => <div key={i}><dt>{l.day}</dt><dd>{l.time}</dd></div>)}</dl>;
   return null;

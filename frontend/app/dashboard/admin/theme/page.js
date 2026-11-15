@@ -10,6 +10,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../../components/AuthContext";
+import ComponentsAdmin from "../../../../components/ComponentsAdmin";
 import BrandingAdmin from "../../../../components/BrandingAdmin";
 import EmailLayoutAdmin from "../../../../components/EmailLayoutAdmin";
 import { IconGrid, IconImage, IconMail, IconPalette, IconRocket } from "../../../../components/Icons";
@@ -35,6 +36,7 @@ function ThemeAdmin() {
     themeOn && lvl(user, "theme") >= 1 && ["look", "Vormgeving", <IconPalette key="l" />],
     themeOn && lvl(user, "theme") >= 1 && ["layout", "Layout", <IconGrid key="y" />],
     themeOn && lvl(user, "theme") >= 1 && ["loader", "Laden", <IconRocket key="r" />],
+    themeOn && lvl(user, "pages") >= 1 && ["components", "Componenten", <IconGrid key="c" />],
     brandingOn && lvl(user, "branding") >= 1 && ["brand", "Logo's & beeld", <IconImage key="b" />],
     commOn && lvl(user, "communication") >= 1 && ["email", "E-mail", <IconMail key="e" />],
   ].filter(Boolean);
@@ -57,6 +59,7 @@ function ThemeAdmin() {
         {tab === "look" && <ThemeLook />}
         {tab === "layout" && <ThemeLayout />}
         {tab === "loader" && <LoaderAdmin canEdit={lvl(user, "theme") >= 2} />}
+        {tab === "components" && <ComponentsAdmin embedded />}
         {tab === "brand" && <BrandingAdmin />}
         {tab === "email" && <EmailLayoutAdmin canEdit={lvl(user, "communication") >= 2} onMessage={setMsg} />}
       </div>

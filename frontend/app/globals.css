@@ -3765,3 +3765,9 @@ input[type="range"] { accent-color: var(--blue); }
 .tpl-big { width: 100%; max-height: 60vh; object-fit: contain; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
 .tpl-thumb { width: 84px; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: none; cursor: pointer; } .tpl-thumb.on { border-color: var(--blue); }
 .tpl-thumb img { width: 100%; display: block; }
+
+/* the popup looks: the button "Gebruik dit uiterlijk" sits at the bottom of every card, so the buttons of a row are on one line */
+.pw-card { height: 100%; }
+.pw-meta { flex: 1; }
+.pw-meta > button { margin-top: auto; }
+.pw-meta > small { margin-bottom: .5rem; }

@@ -10,7 +10,8 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
-import { kitHead, kitTail, useKit } from "../lib/ui-kit/kitDoc";
+import KitHtml from "../lib/ui-kit/KitHtml";
+import { useKit } from "../lib/ui-kit/kitDoc";
 
 // The components of the Easy2edit UI-kit: pick one (in the page editor) or look at them (Admin > Website > Componenten). Each has an easy2edit_tag: the name that
 // the exports, the imports, the designs and the AI prompts use for it. The components take the colours, fonts and corners of the theme that is in use.
@@ -25,7 +26,6 @@ export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = fa
   const find = q.trim().toLowerCase();
   const list = all.filter((c) => (!group || c.group === group) && (!find || `${c.name} ${c.description} ${c.easy2edit_tag} ${c.category}`.toLowerCase().includes(find)));
   const sel = all.find((c) => c.easy2edit_tag === tag) || list[0] || null;
-  const doc = useMemo(() => (kit && sel ? `<!doctype html><meta charset="utf-8"><base target="_blank">${kitHead(kit)}<div style="padding:18px">${sel.html}</div>${kitTail(kit)}` : ""), [kit, sel, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const copy = async (text, what) => {
     try { await navigator.clipboard.writeText(text); } catch { const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
     setMsg(tx("{0} gekopieerd", what)); setTimeout(() => setMsg(""), 1800);
@@ -56,7 +56,7 @@ export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = fa
               <code className="badge" title="easy2edit_tag">{sel.easy2edit_tag}</code>
               <small className="muted" style={{ flex: 1 }}>{tx(sel.description)}</small>
             </div>
-            <iframe title={sel.name} srcDoc={doc} sandbox="allow-scripts allow-popups" style={{ width: "100%", height: compact ? 360 : 520, border: "1px solid var(--line)", borderRadius: 12, background: "var(--page, #fff)" }} />
+            <div style={{ height: compact ? 360 : 520, overflow: "auto", padding: 18, border: "1px solid var(--line)", borderRadius: 12, background: "var(--page, #fff)", color: "var(--text)" }}><KitHtml key={sel.easy2edit_tag} html={sel.html} tag={sel.easy2edit_tag} set={sel.set || ""} /></div>
             <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap", alignItems: "center" }}>
               {onPick && <button type="button" className="btn primary" onClick={() => onPick(sel)}>{tx(pickLabel)}</button>}
               <button type="button" className="btn" onClick={() => copy(sel.html, tx("HTML"))}>{tx("Kopieer HTML")}</button>

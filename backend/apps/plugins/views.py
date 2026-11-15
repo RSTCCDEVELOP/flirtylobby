@@ -518,7 +518,7 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     if (d.plugin === "init") { strings = d.strings || {}; document.documentElement.lang = d.lang || "nl"; resolveReady({ user: d.user, name: d.name, apiBase: d.apiBase, lang: d.lang, route: d.route || {}, siteOrigin: d.siteOrigin || "" }); }
     if (d.plugin === "attrs" && d.attrs) { Object.keys(d.attrs).forEach(function (k) { document.documentElement.setAttribute("data-" + k, d.attrs[k]); }); }  /* a choice of the site changed (edit mode on/off) */
     if (d.plugin === "viewport") { document.documentElement.style.setProperty("--vh", d.h + "px"); document.documentElement.style.setProperty("--vw", d.w + "px"); }  /* the size of the screen under the header: a page can fill it */
-    if (d.plugin === "kit") { useKit(d.css, d.tokens); }  /* the components of the set in use, in the colours of the theme (see system.kit) */
+    if (d.plugin === "kit") { fonts(d.fonts || []); if (d.tabs) document.documentElement.setAttribute("data-e2e-tabstyle", d.tabs); useKit(d.css, d.tokens); }  /* the components of the set in use, in the colours of the theme (see system.kit) */
     if (d.plugin === "rehello") { parent.postMessage({ plugin: "hello" }, "*"); }  /* the page loaded before the site was ready to answer (server-rendered page): ask again */
     if (d.plugin === "reply" && pending[d.id]) { var p = pending[d.id]; delete pending[d.id]; d.ok ? p.resolve(d.data) : p.reject(new Error(d.error || "Mislukt")); }
   });
@@ -530,7 +530,7 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
       if (r.type === 1) {
         var sel = r.selectorText.split(",").map(function (v) { return v.trim(); });
         if (sel.every(function (v) { return v === ":root" || v === "[data-e2e-theme]"; })) return ".e2e-scope{" + r.style.cssText + "}";
-        var keep = sel.filter(function (v) { return /^\.e2e|^\[data-e2e/.test(v); }).map(function (v) { return ".e2e-scope " + v; });
+        var keep = sel.filter(function (v) { return /^\.e2e|^\[data-e2e/.test(v); }).map(function (v) { return v.indexOf("[data-e2e") === 0 ? ".e2e-scope" + v : ".e2e-scope " + v; });
         return keep.length ? keep.join(",") + "{" + r.style.cssText + "}" : "";
       }
       if (r.type === 4) return "@media " + r.conditionText + "{" + rules(r.cssRules) + "}";
@@ -557,6 +557,8 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     Array.prototype.forEach.call(document.querySelectorAll("table:not(.e2e-table)"), function (tb) { tb.classList.add("e2e-table"); });
     KITMAP.forEach(function (m) { Array.prototype.forEach.call(document.querySelectorAll(m[0]), function (el) { m[1].split(" ").forEach(function (c) { if (c) el.classList.add(c); }); }); });
   }
+  /* the web fonts of the theme: the site loads them with a link in its own page, so this frame loads them too */
+  function fonts(list) { list.forEach(function (href) { if (/^https:\/\/fonts\.googleapis\.com\//.test(href) && !document.querySelector('link[href="' + href + '"]')) { var l = document.createElement("link"); l.rel = "stylesheet"; l.href = href; (document.head || document.documentElement).appendChild(l); } }); }
   var bridging = null;
   function useKit(css, tokens) {
     var st = document.getElementById("e2e-kit");

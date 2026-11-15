@@ -18,7 +18,7 @@ import { confirmDialog } from "../lib/dialog";
 import { getLanguage, tx } from "../lib/t";
 import { makeTranslator } from "../lib/plugin-i18n";
 import { useAuth } from "./AuthContext";
-import { loadKit, kitTokens } from "../lib/ui-kit/kitDoc";
+import { loadKit, kitTokens, themeFontLinks } from "../lib/ui-kit/kitDoc";
 import { useSession } from "./Session";
 import MediaPicker from "./MediaPicker";
 import RichEditor from "./RichEditor";
@@ -92,7 +92,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
         catch (err) { reply({ ok: false, error: text(errorText(err)) }); }
       }
     };
-    const sendKit = () => loadKit("").then((k) => frame.current?.contentWindow?.postMessage({ plugin: "kit", css: k.KIT_CSS, tokens: kitTokens() }, "*")).catch(() => {});  // the component set in use, for the e2e-* parts of the page
+    const sendKit = () => loadKit("").then((k) => frame.current?.contentWindow?.postMessage({ plugin: "kit", css: k.KIT_CSS, tokens: kitTokens(), fonts: themeFontLinks(), tabs: document.documentElement.dataset.tabs || "pills" }, "*")).catch(() => {});  // the component set in use, for the e2e-* parts of the page
     const onTheme = () => frame.current?.contentWindow?.postMessage({ plugin: "vars", vars: siteVars(), scheme: scheme() }, "*");  // the colours follow the light/dark switch of the site
     window.addEventListener("message", onMessage);
     window.addEventListener("themechange", onTheme);

@@ -45,8 +45,11 @@ export function kitTokens() {
 }
 
 // What goes in the frame around a component: kit css, the tokens of the theme, then the html and the script of the kit.
-export const kitHead = (kit) => `<style>${kit.KIT_CSS}</style><style>${kitTokens()}html,body{margin:0}body{background:transparent;color:var(--e2e-text);font-family:var(--e2e-font-body);line-height:1.5}</style>`;
-export const kitTail = (kit) => `<script>${String(kit.KIT_RUNTIME).replace(/<\/script/gi, "<\\/script")}<\/script>`;
+// The web fonts of the theme are loaded by a <link> in the page, not in a frame: the frame needs the same link or the font falls back to a standard one.
+export const themeFontLinks = () => (typeof document === "undefined" ? [] : [...document.querySelectorAll('link[rel="stylesheet"][href*="fonts.googleapis.com"]')].map((l) => l.href));
+const fontTags = () => themeFontLinks().map((h) => `<link rel="stylesheet" href="${h.replace(/"/g, "&quot;")}">`).join("");
+export const kitHead = (kit) => `${fontTags()}<style>${kit.KIT_CSS}</style><style>${kitTokens()}html,body{margin:0}body{background:transparent;color:var(--e2e-text);font-family:var(--e2e-font-body);line-height:1.5}</style>`;
+export const kitTail = (kit) => `<script>document.documentElement.setAttribute("data-e2e-tabstyle",${JSON.stringify(typeof document === "undefined" ? "pills" : document.documentElement.dataset.tabs || "pills")});${String(kit.KIT_RUNTIME).replace(/<\/script/gi, "<\\/script")}<\/script>`;
 
 // The kit as loaded data in a component; `tick` changes when the theme changes (light/dark or new colours), so the frame is drawn again.
 export function useKit(on = true, key = "") {

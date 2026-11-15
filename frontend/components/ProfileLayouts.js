@@ -7,6 +7,7 @@
 
 "use client";
 
+import KitScope from "../lib/ui-kit/KitScope";
 import { tx } from "../lib/t";
 import Link from "next/link";
 import { alertDialog } from "../lib/dialog";
@@ -25,7 +26,8 @@ const without = (fields = [], keys) => fields.filter((f) => !keys.includes(f.key
 const chipList = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 const DAYS = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 const initial = (p) => (p.name || "?")[0].toUpperCase();
-const Chips = ({ items }) => <span className="chips">{items.map((t) => <span key={t} className="chip" style={{ cursor: "default" }}>{t}</span>)}</span>;
+// the interests and other chips are the badges of the UI-kit (tag ui-badges); the rest of the profile keeps the design of its own theme (profile themes)
+const Chips = ({ items }) => <KitScope tag="ui-badges" className="chips">{items.map((t) => <span key={t} className="chip e2e-badge" style={{ cursor: "default" }}>{t}</span>)}</KitScope>;
 const Linky = ({ f, icon }) => f && (
   <a className="btn sm" href={f.value} target="_blank" rel="noopener noreferrer nofollow">{icon} {f.label}</a>
 );
