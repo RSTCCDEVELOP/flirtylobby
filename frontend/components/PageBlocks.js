@@ -14,7 +14,7 @@ import { tx } from "../lib/t";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
-import { EditableImage, EditableText } from "./EditMode";
+import { EditableImage, EditableText, ImageStyleSide } from "./EditMode";
 import { useModule } from "./Modules";
 import { Logo } from "./BrandingContext";
 import { useSession } from "./Session";
@@ -548,19 +548,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
         </div>
         {it.type === "image" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
-            <strong>{tx("Afbeeldingsinstellingen")}</strong>
             {shell && <div className="pb-stylerow"><button type="button" className="btn sm primary" onClick={() => setImgPick(it.id)}>{tx("Afbeelding kiezen of vervangen")}</button></div>}
-            <div className="pb-stylerow"><span>{tx("Uitlijnen")}</span>
-              <span className="pb-seg">{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={(it.style?.align || "") === k ? "on" : ""} title={tx(l)} onClick={() => setItem(it.id, { align: it.style?.align === k ? "" : k })}>{g} {tx(l)}</button>)}</span></div>
-            <div className="pb-stylerow"><span>{tx("Grootte")}</span>
-              <input type="number" min={1} max={4000} value={parseInt(it.style?.w) || ""} placeholder={tx("Auto")} onChange={(e) => setItem(it.id, { w: e.target.value === "" ? "" : `${e.target.value}${(it.style?.w || "").endsWith("%") ? "%" : "px"}` })} style={{ width: "6rem" }} />
-              <select value={(it.style?.w || "").endsWith("%") ? "%" : "px"} onChange={(e) => it.style?.w && setItem(it.id, { w: `${parseInt(it.style.w)}${e.target.value}` })}><option value="px">px</option><option value="%">%</option></select>
-              {[["25%", "Klein"], ["50%", "Middel"], ["75%", "Groot"], ["100%", "Volledig"]].map(([v, l]) => <button type="button" className={`btn sm${it.style?.w === v ? " primary" : ""}`} key={v} onClick={() => setItem(it.id, { w: v })}>{tx(l)}</button>)}</div>
-            <div className="pb-stylerow"><span>{tx("Doorzichtigheid")}</span>
-              <input type="range" min={0} max={100} step={5} value={it.style?.opacity ?? 100} onChange={(e) => setItem(it.id, { opacity: Number(e.target.value) })} style={{ width: 160 }} /><small className="muted">{it.style?.opacity ?? 100}% {tx("zichtbaar")}</small></div>
-            <div className="pb-stylerow"><span>{tx("Ronde hoeken")}</span>
-              <input type="number" min={0} max={200} step={2} value={it.style?.radius ?? ""} placeholder={tx("Thema")} onChange={(e) => setItem(it.id, { radius: e.target.value === "" ? "" : Number(e.target.value) })} style={{ width: "6rem" }} /><small className="muted">px</small>
-              <button type="button" className="btn sm" disabled={!it.style} onClick={() => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === it.id) delete x.style; }))); return l; })}>{tx("Terug naar standaard")}</button></div>
+            <ImageStyleSide id={key} />
           </div>
         )}
         {it.type === "spacer" && itemOpen[it.id] && sbHost(

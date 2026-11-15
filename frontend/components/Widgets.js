@@ -17,7 +17,7 @@ import { confirmDialog } from "../lib/dialog";
 import { money, ORDER_STATUS } from "../lib/format";
 import { canAdmin, lvl } from "../lib/perms";
 import { IconBag, IconChat, IconGrid, IconGroup, IconKey, IconMail, IconSearch, IconShield, IconUser, IconUsers } from "./Icons";
-import { BarChart, Donut } from "./Charts";
+import { BarChart } from "./Charts";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
 import AgendaTile from "./AgendaTile";
 import { refreshMs } from "../lib/refresh";
@@ -100,7 +100,7 @@ function MessagesBlock() {
   return (
     <>
       <p style={{ margin: 0 }}><strong>{unread}</strong> {tx("ongelezen")}</p>
-      <ul className="widget-list">{d.slice(0, 4).map((c) => <li key={c.user.id}><span>{c.user.name}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}</span><small className="muted">{c.last.subject || c.last.body}</small></li>)}</ul>
+      <ul className="e2e-rows" data-easy2edit-tag="ui-rows">{d.slice(0, 4).map((c) => <li key={c.user.id}><span>{c.user.name}{c.unread > 0 && <span className="cart-count">{c.unread}</span>}</span><small className="muted">{c.last.subject || c.last.body}</small></li>)}</ul>
       {!d.length && <p className="muted">{tx("Nog geen berichten.")}</p>}
       <Link className="btn sm" href="/dashboard/community/messages">{tx("Naar berichten")}</Link>
     </>
@@ -116,7 +116,7 @@ function ChatBlock() {
 function MatchesBlock() {
   const d = useData("/community/summary/");
   if (!d?.discover) return <Loading d={d === undefined ? d : null} />;
-  return <><div className="cards" style={{ margin: 0 }}><div className="stat"><span>{tx("Matches")}</span><strong>{d.discover.matches}</strong></div><div className="stat"><span>{tx("Nieuwe likes")}</span><strong>{d.discover.likes_new}</strong></div><div className="stat"><span>{tx("Favorieten")}</span><strong>{d.discover.favorites}</strong></div></div><Link className="btn sm" style={{ marginTop: ".75rem" }} href="/dashboard/community/discover">{tx("Zoeken & matchen")}</Link></>;
+  return <><div className="e2e-statrow" data-easy2edit-tag="ui-stat-row"><div className="e2e-statbox"><span>{tx("Matches")}</span><b>{d.discover.matches}</b></div><div className="e2e-statbox"><span>{tx("Nieuwe likes")}</span><b>{d.discover.likes_new}</b></div><div className="e2e-statbox"><span>{tx("Favorieten")}</span><b>{d.discover.favorites}</b></div></div><Link className="btn sm" style={{ marginTop: ".75rem" }} href="/dashboard/community/discover">{tx("Zoeken & matchen")}</Link></>;
 }
 
 // Start of the search for this profile type: the text and the button follow the theme (Dating / Business / Sporters / …)
@@ -145,7 +145,7 @@ function VisitsChart() {
 function UsersStats() {
   const d = useData("/dashboard/stats/?kind=users_growth");
   if (!d) return <Loading d={d} />;
-  return <div className="cards" style={{ margin: 0 }}><div className="stat"><span>{tx("Users")}</span><strong>{d.total}</strong></div><div className="stat"><span>{tx("Actief")}</span><strong>{d.active}</strong></div><div className="stat"><span>{tx("Geblokkeerd")}</span><strong>{d.blocked}</strong></div></div>;
+  return <div className="e2e-statrow" data-easy2edit-tag="ui-stat-row"><div className="e2e-statbox"><span>{tx("Users")}</span><b>{d.total}</b></div><div className="e2e-statbox"><span>{tx("Actief")}</span><b>{d.active}</b></div><div className="e2e-statbox"><span>{tx("Geblokkeerd")}</span><b>{d.blocked}</b></div></div>;
 }
 
 function UsersChart() {
@@ -165,7 +165,7 @@ function OrdersRecent() {
   if (!d) return <Loading d={d} />;
   return (
     <>
-      <ul className="widget-list">{d.map((o) => <li key={o.number}><span><strong>{o.number}</strong> {o.name}</span><span>{money(o.total)} <span className={`badge ${ORDER_STATUS[o.status][1]}`}>{ORDER_STATUS[o.status][0]}</span></span></li>)}</ul>
+      <ul className="e2e-rows" data-easy2edit-tag="ui-rows">{d.map((o) => <li key={o.number}><span><strong>{o.number}</strong> {o.name}</span><span>{money(o.total)} <span className={`badge ${ORDER_STATUS[o.status][1]}`}>{ORDER_STATUS[o.status][0]}</span></span></li>)}</ul>
       {!d.length && <p className="muted">{tx("Nog geen bestellingen.")}</p>}
       <Link className="btn sm" href="/dashboard/admin/plugin/orders">{tx("Alle orders")}</Link>
     </>
@@ -175,13 +175,27 @@ function OrdersRecent() {
 function LowStock() {
   const d = useData("/dashboard/stats/?kind=low_stock");
   if (!d) return <Loading d={d} />;
-  return <><ul className="widget-list">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "stock-out" : "stock-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">{tx("Alle producten hebben voldoende voorraad.")}</p>}<Link className="btn sm" href="/dashboard/admin/plugins/webshop">{tx("Producten")}</Link></>;
+  return <><ul className="e2e-rows" data-easy2edit-tag="ui-rows">{d.map((p) => <li key={p.id}><span>{p.name}</span><span className={p.stock === 0 ? "is-low stock-out" : "is-low"}>{p.stock === 0 ? "uitverkocht" : `${p.stock} over`}</span></li>)}</ul>{!d.length && <p className="muted">{tx("Alle producten hebben voldoende voorraad.")}</p>}<Link className="btn sm" href="/dashboard/admin/plugins/webshop">{tx("Producten")}</Link></>;
+}
+
+// the pie chart of the UI-kit (tag ui-donut): the colours of the theme
+const KIT_COLORS = ["var(--e2e-primary)", "var(--e2e-secondary)", "var(--e2e-accent)", "var(--e2e-info)", "var(--e2e-success)"];
+function KitDonut({ parts }) {
+  const total = parts.reduce((n, p) => n + p.value, 0) || 1;
+  let acc = 0;
+  const stops = parts.map((p, i) => { const a = acc; acc += (p.value / total) * 100; return `${KIT_COLORS[i % KIT_COLORS.length]} ${a}% ${acc}%`; }).join(",");
+  return (
+    <div className="e2e-donut" data-easy2edit-tag="ui-donut">
+      <div className="e2e-donut__ring" style={{ background: `conic-gradient(${stops || "var(--e2e-surface) 0 100%"})` }} />
+      <ul className="e2e-legend">{parts.map((p, i) => <li key={i}><i style={{ background: KIT_COLORS[i % KIT_COLORS.length] }} />{p.label}<b>{p.value}</b></li>)}</ul>
+    </div>
+  );
 }
 
 function MediaUsage() {
   const d = useData("/dashboard/stats/?kind=media_usage");
   if (!d) return <Loading d={d} />;
-  return <><Donut parts={d.parts} /><p className="muted" style={{ margin: ".5rem 0 0" }}>{tx("{0} MB in {1} bestanden", (d.bytes / 1048576).toFixed(1), d.total)}</p></>;
+  return <><KitDonut parts={d.parts} /><p className="muted" style={{ margin: ".5rem 0 0" }}>{tx("{0} MB in {1} bestanden", (d.bytes / 1048576).toFixed(1), d.total)}</p></>;
 }
 
 function ModulesBlock() {

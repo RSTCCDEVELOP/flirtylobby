@@ -79,6 +79,7 @@ export const PRESET_ICONS = {
   ribbon: <><path d="M12 14a5.5 5.5 0 10-5.5-5.5c0 2 1.5 3.7 3 5.2L8 21l4-2.5 4 2.5-2.5-7.3c1.5-1.5 3-3.2 3-5.2" /></>,
   tag: <><path d="M3 12V4a1 1 0 011-1h8l9 9-9 9z" /><circle cx="8" cy="8" r="1.3" /></>,
   lock: <><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 018 0v3M12 15v2" /></>,
+  layers: <><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 12.5l9 5 9-5" /><path d="M3 17l9 5 9-5" /></>,
   gamepad: <><rect x="2.5" y="7" width="19" height="11" rx="5" /><path d="M7.5 10.5v4M5.5 12.5h4M15.5 11.5h.01M18 13.5h.01" /></>,
 };
 export const PresetIcon = ({ name, size = 26 }) => PRESET_ICONS[name] ? <svg {...p} width={size} height={size}>{PRESET_ICONS[name]}</svg> : null;

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { kitTokens, useKit } from "./kitDoc";
 
 // The components of the set in use (e2e-*) straight in the page of a module, without a frame: the css of the set is limited to this block (the global rules of the set for html, body, a, p ... stay out)
@@ -30,14 +30,41 @@ function scopedCss(css, scope) {
   return rules(sheet.cssRules);
 }
 
-export default function KitScope({ tag, className = "", children }) {
+// the usual parts of a screen (buttons, badges, fields) take the look of the kit by themselves inside a block with `bridge`
+const BRIDGE = [["button.primary, a.primary, .btn.primary", "e2e-btn"], [".btn:not(.primary):not(.danger)", "e2e-btn e2e-btn--outline"], [".badge", "e2e-badge"], [".badge.ok", "e2e-badge--success"], [".badge.warn", "e2e-badge--warning"],
+  ["input[type=text], input[type=search], input[type=email], input[type=number], input[type=password], input:not([type])", "e2e-input"], ["select", "e2e-select"], ["textarea", "e2e-textarea"]];
+
+// The css of the set is put in the page ONCE (it is limited to .e2e-scope, so it is the same for every block), the blocks only carry the class.
+function putCss(css) {
+  if (typeof document === "undefined" || !css) return;
+  let st = document.getElementById("e2e-kit-scoped");
+  if (!st) { st = document.createElement("style"); st.id = "e2e-kit-scoped"; document.head.appendChild(st); }
+  if (st.textContent !== css) st.textContent = css;
+}
+
+export default function KitScope({ tag, className = "", bridge = false, stage = false, children }) {
   const { kit, tick } = useKit(true, "");
-  const css = useMemo(() => (kit ? `${scopedCss(kit.KIT_CSS, ".e2e-scope")}\n${kitTokens().replace(/^:root\{/, ".e2e-scope{")}` : ""), [kit, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  const css = useMemo(() => { // the stage (a preview of a component) is a card of the theme on the background of the theme: the component takes the card colour of the theme
+    if (!kit) return "";
+    const stageCss = ".e2e-scope.e2e-stage{--e2e-bg:var(--card);--e2e-surface:var(--bg);background:var(--card);border:1px solid var(--line);border-radius:var(--radius, 12px);padding:1.1rem}";
+    return `${scopedCss(kit.KIT_CSS, ".e2e-scope")}\n${kitTokens().replace(/^:root\{/, ".e2e-scope{")}\n${stageCss}`;
+  }, [kit, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [ready, setReady] = useState(false);
   const [tabs, setTabs] = useState("pills");  // the look of the tabs follows the theme (Thema > Vormgeving > Uiterlijk van tabbladen)
+  const root = useRef(null);
+  useEffect(() => { if (css) { putCss(css); setReady(true); } }, [css]);
   useEffect(() => setTabs(document.documentElement.dataset.tabs || "pills"), [tick]);
+  useEffect(() => {
+    const el = root.current;
+    if (!bridge || !el || !ready) return undefined;
+    const run = () => BRIDGE.forEach(([sel, cls]) => el.querySelectorAll(sel).forEach((n) => cls.split(" ").forEach((c) => !n.classList.contains(c) && n.classList.add(c))));
+    run();
+    const mo = new MutationObserver(run);
+    mo.observe(el, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [bridge, ready]);
   return (
-    <div data-e2e-tabstyle={tabs} className={`e2e-scope${className ? ` ${className}` : ""}`} data-easy2edit-tag={tag || undefined} style={{ color: "var(--e2e-text)", fontFamily: "var(--e2e-font-body)", visibility: css ? "visible" : "hidden" }}>
-      {css && <style>{css}</style>}
+    <div ref={root} data-e2e-tabstyle={tabs} className={`e2e-scope${stage ? " e2e-stage" : ""}${className ? ` ${className}` : ""}`} data-easy2edit-tag={tag || undefined} style={{ color: "var(--e2e-text)", fontFamily: "var(--e2e-font-body)", visibility: ready ? "visible" : "hidden" }}>
       {children}
     </div>
   );

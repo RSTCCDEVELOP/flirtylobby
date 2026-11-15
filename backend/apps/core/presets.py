@@ -52,6 +52,11 @@ PRESETS = [
     {"key": "spelletjessite", "name": "Spelletjessite", "icon": "gamepad", "theme": "normal", "plugins": ["community", "profile-themes", "subscriptions", "games"],
      "desc": "Een community rond spelletjes: speel alleen of samen, met profielen, chat, ranglijsten en een abonnement voor extra spellen.",
      "modules": BASE + ["faq", "sysobjects"]},
+    # for testing: everything is on (all modules and all plugins) and every part makes its demo data; the demo data is made from what the installation uses (apps/core/demo.py parts_for)
+    {"key": "easy2edit-max", "name": "easy2edit max", "icon": "layers", "theme": "normal",
+     "plugins": ["community", "profile-themes", "subscriptions", "agenda", "marketplace", "documents", "webshop", "orders", "finance", "games", "age-gates", "showcase", "statistics", "seo", "faq", "siteimport"],
+     "desc": "Alles staat aan: alle modules en alle plugins, met demo-gegevens overal. Bedoeld om Easy2edit te testen, niet voor een echte website.",
+     "modules": [m["key"] for m in modules.MODULES]},
 ]
 # (the parts that are plugins - Community, Abonnementen, Orders, Webshop, Financieel - are in the plugin list of an installation; plugins_for adds what they need, and _wanted_modules the modules that belong to them)
 for _p in PRESETS:  # a part that became a plugin (SEO, FAQ, Statistieken, Site importeren, Leeftijd/land/gokken) is named in the modules above: it goes to the plugin list, where the screens show it

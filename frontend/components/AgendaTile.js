@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { getLanguage, tx } from "../lib/t";
+import KitScope from "../lib/ui-kit/KitScope";
 
 const STYLES = [["list", "Lijst"], ["next", "Eerstvolgende"], ["week", "Week"], ["month", "Maand"], ["compact", "Compact"]];
 const HEX = { blue: "#3b82f6", orange: "#f97316", green: "#16a34a", pink: "#ec4899", purple: "#8b5cf6", teal: "#0d9488", red: "#dc2626", gray: "#64748b" };
@@ -32,14 +33,21 @@ export default function AgendaTile({ ctx }) {
   const lang = getLanguage();
   const today = new Date();
 
-  const rows = (list) => list.map((e, i) => (
-    <Link key={`${e.id}-${i}`} href="/dashboard/plugins/agenda" className="ag-row">
-      <span className="ag-bar" style={{ background: HEX[e.color] || HEX.blue }} />
-      <span className="ag-when">{when(e)}<small>{time(e)}</small></span>
-      <span className="ag-main"><strong>{e.title}</strong>{e.location && <small>📍 {e.location}</small>}</span>
-      {e.my_status === "invited" && <span className="badge ag-badge">{tx("Uitgenodigd")}</span>}
-    </Link>
-  ));
+  // the list is the agenda list of the UI-kit (tag ui-agenda): a date block, the title with place and time, the colour of the appointment as a stripe
+  const rows = (list) => (
+    <ul className="e2e-agenda">{list.map((e, i) => {
+      const dt = new Date(e.all_day ? `${String(e.starts_at).slice(0, 10)}T12:00:00` : e.starts_at);
+      return (
+        <li key={`${e.id}-${i}`} style={{ padding: 0 }}>
+          <Link href="/dashboard/plugins/agenda" style={{ display: "flex", gap: "1rem", alignItems: "center", width: "100%", padding: ".85rem 1rem", color: "inherit", textDecoration: "none", borderLeft: `4px solid ${HEX[e.color] || HEX.blue}`, borderRadius: "inherit" }}>
+            <span className="e2e-date"><small>{dt.toLocaleDateString(lang, { month: "short" })}</small><b>{dt.getDate()}</b></span>
+            <span className="e2e-agenda__body"><h4>{e.title}</h4><span className="e2e-meta"><span>{time(e)}</span>{e.location && <span>{e.location}</span>}</span></span>
+            {e.my_status === "invited" && <span className="e2e-badge e2e-badge--warning">{tx("Uitgenodigd")}</span>}
+          </Link>
+        </li>
+      );
+    })}</ul>
+  );
   let body;
   if (d === undefined) body = <p className="muted">{tx("Laden…")}</p>;
   else if (d === null) body = <p className="muted">{tx("Niet beschikbaar.")}</p>;
@@ -84,10 +92,10 @@ export default function AgendaTile({ ctx }) {
       </div>
     );
   } else if (style === "compact") body = <div className="ag-compact">{items.slice(0, 4).map((e, i) => <Link key={i} href="/dashboard/plugins/agenda"><span style={{ background: HEX[e.color] || HEX.blue }} />{time(e)} {e.title}</Link>)}</div>;
-  else body = <div className="ag-list">{rows(items)}</div>;
+  else body = rows(items);
 
   return (
-    <div className={`agenda-tile ag-${ctx?.theme || "normal"}`}>
+    <KitScope tag="ui-agenda" className={`agenda-tile ag-${ctx?.theme || "normal"}`}>
       <div className="ag-head">
         <span className="muted">{d?.today > 0 ? tx("{0} vandaag", d.today) : tx("Komende afspraken")}{d?.pending > 0 && <span className="cart-count" style={{ marginLeft: ".4rem" }}>{d.pending}</span>}</span>
         <span className="ag-styles" role="group" aria-label={tx("Weergave")}>
@@ -102,15 +110,15 @@ export default function AgendaTile({ ctx }) {
               <span className="ag-bar" style={{ background: HEX[e.color] || HEX.blue }} />
               <span className="ag-main"><strong>{e.title}</strong><small>{e.from && `${e.from} · `}{when(e)} {time(e)}</small></span>
               <span className="ag-inv-btns">
-                <button type="button" className="btn sm primary" onClick={() => answer(e.id, "accepted")}>{tx("Accepteren")}</button>
-                <button type="button" className="btn sm" onClick={() => answer(e.id, "declined")}>{tx("Afwijzen")}</button>
+                <button type="button" className="e2e-btn e2e-btn--sm" onClick={() => answer(e.id, "accepted")}>{tx("Accepteren")}</button>
+                <button type="button" className="e2e-btn e2e-btn--sm e2e-btn--outline" onClick={() => answer(e.id, "declined")}>{tx("Afwijzen")}</button>
               </span>
             </div>
           ))}
         </div>
       )}
       {body}
-      <Link className="btn sm" style={{ marginTop: ".6rem" }} href="/dashboard/plugins/agenda">{tx("Open agenda")}</Link>
-    </div>
+      <Link className="e2e-btn e2e-btn--sm e2e-btn--outline" style={{ marginTop: ".6rem" }} href="/dashboard/plugins/agenda">{tx("Open agenda")}</Link>
+    </KitScope>
   );
 }

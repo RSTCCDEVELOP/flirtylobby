@@ -43,7 +43,7 @@ function prefixCss(css, prefix) {
   return rules(sheet.cssRules);
 }
 
-export default function KitHtml({ html, css = "", tag, set = "", className = "" }) {
+export default function KitHtml({ html, css = "", tag, set = "", className = "", stage = false }) {
   const { kit } = useKit(true, set);
   const root = useRef(null);
   const id = "kh" + useId().replace(/[^a-z0-9]/gi, "");
@@ -70,7 +70,7 @@ export default function KitHtml({ html, css = "", tag, set = "", className = "" 
     return () => { off.forEach((f) => f()); timers.forEach((h) => clearInterval(h)); el.removeEventListener("click", stop); };
   }, [kit, clean]);
   return (
-    <KitScope tag={tag} className={`${id} ${className}`.trim()}>
+    <KitScope tag={tag} stage={stage} className={`${id} ${className}`.trim()}>
       {own && <style>{own}</style>}
       <div ref={root} dangerouslySetInnerHTML={{ __html: clean }} />
     </KitScope>

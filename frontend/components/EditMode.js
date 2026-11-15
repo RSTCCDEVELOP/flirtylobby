@@ -365,6 +365,22 @@ function ImageStylePanel({ st, onChange }) {
   );
 }
 
+// The same settings as the gear of the picture, but in the editor panel at the left: it reads and writes the style that is stored with the picture (<id>.st).
+export function ImageStyleSide({ id }) {
+  const { blocks, setBlock, defaultLang } = useContext(ContentContext);
+  const st = parseSt(blocks[`${id}.st`]?.[defaultLang]);
+  const change = async (patch) => {
+    const key = `${id}.st`, prev = blocks[key]?.[defaultLang];
+    const next = patch === null ? {} : { ...st, ...patch };
+    Object.keys(next).forEach((k) => { if (next[k] === "" || next[k] == null) delete next[k]; });
+    const v = JSON.stringify(next);
+    pushUndo(tx("Afbeeldingsinstelling gewijzigd"), async () => { setBlock(key, defaultLang, prev ?? ""); try { await api("/content/save/", { method: "PUT", body: { key, lang: defaultLang, text: prev ?? "" } }); } catch {} }, { key: `img:${key}`, merge: 2500 });
+    setBlock(key, defaultLang, v);
+    try { await api("/content/save/", { method: "PUT", body: { key, lang: defaultLang, text: v } }); } catch (e) { (await alertDialog(errorText(e))); }
+  };
+  return <ImageStylePanel st={st} onChange={change} />;
+}
+
 // hover (mouse-over): lower opacity, or show another image / video over the picture
 const hoverWrap = (hv, img) => {
   if (!hv?.mode) return img;

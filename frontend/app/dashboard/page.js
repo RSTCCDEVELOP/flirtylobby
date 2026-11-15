@@ -22,6 +22,7 @@ import DashboardSearch from "../../components/DashboardSearch";
 import DashboardShortcuts from "../../components/DashboardShortcuts";
 import DashboardLibrary from "../../components/DashboardLibrary";
 import { byId, defaultLayout, themeLayout, WIDGETS } from "../../components/Widgets";
+import KitScope from "../../lib/ui-kit/KitScope";
 import { api, errorText } from "../../lib/api";
 
 // The user's start page: blocks (charts, content, module items) that he can rearrange, extend and remove.
@@ -128,7 +129,7 @@ export default function DashboardHome() {
                       <button className="btn sm danger" onClick={() => remove(l.id)}>{tx("Weg")}</button>
                     </div>
                   )}
-                  <C ctx={ctx} />
+                  <KitScope bridge><C ctx={ctx} /></KitScope>
                 </section>
               );
             })}

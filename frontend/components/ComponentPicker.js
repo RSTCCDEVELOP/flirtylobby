@@ -26,6 +26,8 @@ export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = fa
   const find = q.trim().toLowerCase();
   const list = all.filter((c) => (!group || c.group === group) && (!find || `${c.name} ${c.description} ${c.easy2edit_tag} ${c.category}`.toLowerCase().includes(find)));
   const sel = all.find((c) => c.easy2edit_tag === tag) || list[0] || null;
+  const [openG, setOpenG] = useState(null);  // one group is open, the others are closed (a click on another group opens that one); null = the group of the chosen component
+  const grouped = groups.map((g) => [g, list.filter((c) => c.group === g)]).filter(([, l]) => l.length);
   const copy = async (text, what) => {
     try { await navigator.clipboard.writeText(text); } catch { const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
     setMsg(tx("{0} gekopieerd", what)); setTimeout(() => setMsg(""), 1800);
@@ -40,11 +42,26 @@ export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = fa
         </select>
         <div className="cl-list" style={{ display: "grid", gap: ".3rem", maxHeight: compact ? 380 : 620, overflow: "auto", paddingRight: ".2rem" }}>
           {!kit && <small className="muted">{tx("Laden…")}</small>}
-          {list.map((c) => (
-            <button type="button" key={c.easy2edit_tag} className={`btn sm ${sel?.easy2edit_tag === c.easy2edit_tag ? "primary" : ""}`} style={{ justifyContent: "flex-start", textAlign: "left", flexDirection: "column", alignItems: "flex-start", gap: 0 }} onClick={() => setTag(c.easy2edit_tag)}>
-              <strong>{tx(c.name)}</strong><small style={{ opacity: .75 }}>{c.easy2edit_tag}</small>
-            </button>
-          ))}
+          {grouped.map(([g, items]) => {
+            const current = openG === null ? (sel?.group || grouped[0]?.[0]) : openG;
+            const folded = !find && current !== g;  // a search opens every group that has a hit
+            return (
+              <div key={g} className="cl-group">
+                <button type="button" className="cl-ghead" aria-expanded={!folded} onClick={() => setOpenG(current === g ? "" : g)}>
+                  <span className="cl-chev" aria-hidden="true">{folded ? "›" : "⌄"}</span><strong>{tx(g)}</strong><small>{items.length}</small>
+                </button>
+                {!folded && (
+                  <div className="cl-gitems">
+                    {items.map((c) => (
+                      <button type="button" key={c.easy2edit_tag} className={`btn sm ${sel?.easy2edit_tag === c.easy2edit_tag ? "primary" : ""}`} style={{ justifyContent: "flex-start", textAlign: "left", flexDirection: "column", alignItems: "flex-start", gap: 0 }} onClick={() => setTag(c.easy2edit_tag)}>
+                        <strong>{tx(c.name)}</strong><small style={{ opacity: .75 }}>{c.easy2edit_tag}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {kit && !list.length && <small className="muted">{tx("Niets gevonden.")}</small>}
         </div>
       </div>
@@ -56,7 +73,7 @@ export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = fa
               <code className="badge" title="easy2edit_tag">{sel.easy2edit_tag}</code>
               <small className="muted" style={{ flex: 1 }}>{tx(sel.description)}</small>
             </div>
-            <div style={{ height: compact ? 360 : 520, overflow: "auto", padding: 18, border: "1px solid var(--line)", borderRadius: 12, background: "var(--page, #fff)", color: "var(--text)" }}><KitHtml key={sel.easy2edit_tag} html={sel.html} tag={sel.easy2edit_tag} set={sel.set || ""} /></div>
+            <div style={{ height: compact ? 360 : 520, overflow: "auto", padding: 14, border: "1px solid var(--line)", borderRadius: 12, background: "var(--bg)", color: "var(--text)" }}><KitHtml stage key={sel.easy2edit_tag} html={sel.html} tag={sel.easy2edit_tag} set={sel.set || ""} /></div>
             <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap", alignItems: "center" }}>
               {onPick && <button type="button" className="btn primary" onClick={() => onPick(sel)}>{tx(pickLabel)}</button>}
               <button type="button" className="btn" onClick={() => copy(sel.html, tx("HTML"))}>{tx("Kopieer HTML")}</button>

@@ -3771,3 +3771,10 @@ input[type="range"] { accent-color: var(--blue); }
 .pw-meta { flex: 1; }
 .pw-meta > button { margin-top: auto; }
 .pw-meta > small { margin-bottom: .5rem; }
+
+/* the list of components, grouped: a head per group that folds away */
+.cl-group { display: grid; gap: .3rem; }
+.cl-ghead { display: flex; align-items: center; gap: .4rem; width: 100%; padding: .4rem .5rem; border: 0; border-radius: 8px; background: var(--bg); color: var(--text); cursor: pointer; text-align: left; }
+.cl-ghead:hover { background: color-mix(in srgb, var(--blue) 10%, var(--bg)); }
+.cl-ghead strong { flex: 1; font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; } .cl-ghead small { color: var(--muted); } .cl-chev { width: 1rem; text-align: center; color: var(--muted); }
+.cl-gitems { display: grid; gap: .3rem; padding-left: .4rem; }
