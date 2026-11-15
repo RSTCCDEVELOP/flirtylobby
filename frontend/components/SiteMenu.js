@@ -124,7 +124,7 @@ export const headerCss = (cfg, scope = ".site-header") => {
   if (h.mobile > 0) out.push(`@media (max-width:${bp.mobile}px){${scope}{height:${h.mobile}px !important}}`);
   if (cfg.fg) out.push(`${scope} .hmenu a, ${scope} .hmenu .hm-label, ${scope} .site-actions .icon-btn, ${scope} .site-actions a:not(.btn), ${scope} .nav-toggle2 {color:${cfg.fg} !important}`);
   const custom = cfg.bg || Math.abs((cfg.bg_opacity ?? 0.88) - 0.88) > 0.001 || (cfg.blur ?? 10) !== 10;
-  if (custom) out.push(`${scope}{background:color-mix(in srgb, ${cfg.bg || "var(--card)"} ${Math.round((cfg.bg_opacity ?? 0.88) * 100)}%, transparent) !important;backdrop-filter:blur(${cfg.blur ?? 10}px) !important;-webkit-backdrop-filter:blur(${cfg.blur ?? 10}px) !important}`);
+  if (custom) out.push(`${scope}{background:color-mix(in srgb, ${cfg.bg || "var(--card)"} ${Math.round((cfg.bg_opacity ?? 0.88) * 100)}%, transparent) !important;--hblur:${cfg.blur ?? 10}px !important}`);
   return out.join("\n");
 };
 

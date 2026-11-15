@@ -111,6 +111,7 @@ export default function SystemReset() {
                     <li>{tx("{0} gebruikers met hun profielen, berichten en gegevens", info.users)}</li>
                     <li>{tx("{0} afbeeldingen en video's uit de bibliotheek", info.media)}</li>
                     <li>{tx("{0} eigen pagina's en alle teksten en blokken", info.pages)}</li>
+                    {(info.designs > 0 || info.imports > 0) && <li>{tx("{0} ontwerpen en {1} geïmporteerde websites, met hun bestanden", info.designs || 0, info.imports || 0)}</li>}
                     <li>{tx("De gegevens van {0} plugins (de plugins gaan uit) en {1} thema's", info.plugins, info.themes)}</li>
                     <li>{tx("Bestellingen, abonnementen, donaties, chats en alle andere gegevens van de modules")}</li>
                   </ul>

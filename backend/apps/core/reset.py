@@ -27,7 +27,7 @@ LEGACY_TABLES = ("social_", "subscriptions_", "shop_", "stats_", "seo_", "siteim
 
 # models (app_label.Model) of which every row goes
 WIPE = [
-    "core.ContentBlock", "core.DashboardLayout", "core.ThemeImportJob", "core.UserShortcuts", "core.UserPrefs",
+    "core.ContentBlock", "core.SiteDesignJob", "core.DashboardLayout", "core.ThemeImportJob", "core.UserShortcuts", "core.UserPrefs",
     "accounts.PendingRegistration", "accounts.Invitation", "notifications.Notification", "notifications.NotificationPref", "accounts.UserGroup", "accounts.ModuleGrant",
     "branding.SiteAsset", "branding.HomePhoto", "plugin_seo.SeoPage",
     "sandbox.SandboxMessage", "sandbox.SandboxPayment", "plugin_orders.OrderItem", "plugin_orders.Order",
@@ -64,7 +64,14 @@ def summary():
         ai = {"ai_calls": AiUsage.objects.count(), "ai_ledger": AiLedger.objects.count() + AiTopup.objects.count(), "ai_credit": float(AiAccount.objects.filter(user__is_staff=False).aggregate(v=Sum("balance"))["v"] or 0)}
     except Exception:  # noqa: BLE001
         ai = {"ai_calls": 0, "ai_ledger": 0, "ai_credit": 0}
-    return {**ai, "users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
+    designs = imports = 0
+    try:  # the designs of the website designer and the imported websites
+        designs = _model("core.SiteDesignJob").objects.count()
+        m = _model("plugin_siteimport.SiteImport")
+        imports = m.objects.count() if m else 0
+    except Exception:  # noqa: BLE001
+        pass
+    return {**ai, "designs": designs, "imports": imports, "users": User.objects.filter(is_staff=False).count(), "superadmins": User.objects.filter(is_staff=True).count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
             "pages": Page.objects.exclude(kind="system").count(), "plugins": Plugin.objects.count(), "themes": ThemePack.objects.count()}
 
 

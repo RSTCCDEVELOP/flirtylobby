@@ -127,7 +127,7 @@ label.check input { width: auto; }
 .site-header {
   position: sticky; top: 0; z-index: 20; height: var(--site-header-h); display: flex; align-items: center; gap: 1rem;
   padding: 0 clamp(1rem, 4vw, 3rem); background: color-mix(in srgb, var(--card) 88%, transparent);
-  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+  --hblur: 10px; border-bottom: 1px solid var(--line);
 }
 .site-header .brand img { height: var(--site-logo-h); }
 .site-nav { display: flex; gap: .25rem; margin-left: 1.5rem; }
@@ -987,7 +987,7 @@ label > em, label > small { font-style: normal; font-weight: 500; }
 .page-bg img, .page-bg video { width: 100%; height: 100%; object-fit: cover; }
 .page-bg-shade { position: absolute; inset: 0; background: #000; }
 body[data-pagebg="1"] .site, body[data-pagebg="1"] .login-page { background: transparent; position: relative; z-index: 1; }
-body[data-pagebg="1"] .site-header { background: color-mix(in srgb, var(--card) 82%, transparent); backdrop-filter: blur(8px); }
+body[data-pagebg="1"] .site-header { background: color-mix(in srgb, var(--card) 82%, transparent); --hblur: 8px; }
 body[data-pagebg="1"] .doc, body[data-pagebg="1"] .shop { color: #fff; }
 .media-tile video { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #000; }
 .pgs-bgprev { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #000; aspect-ratio: 16 / 7; max-height: 220px; }
@@ -1713,10 +1713,10 @@ html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-h
 
 /* ── Page layout templates (Thema → Layout): header, menu, footer and blocks of the website. The theme sets them as data attributes on <html>. ── */
 html[data-hsticky="no"] .site-header { position: relative; }
-html[data-hstyle="solid"] .site-header { background: var(--card); backdrop-filter: none; border-bottom: 1px solid var(--line); box-shadow: none; }
-html[data-hstyle="shadow"] .site-header { background: var(--card); backdrop-filter: none; border-bottom: 0; box-shadow: var(--shadow); }
-html[data-hstyle="glass"] .site-header { background: color-mix(in srgb, var(--card) 70%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
-html[data-hstyle="plain"] .site-header { background: transparent; backdrop-filter: none; border-bottom: 0; box-shadow: none; }
+html[data-hstyle="solid"] .site-header { background: var(--card); --hblur: 0px; border-bottom: 1px solid var(--line); box-shadow: none; }
+html[data-hstyle="shadow"] .site-header { background: var(--card); --hblur: 0px; border-bottom: 0; box-shadow: var(--shadow); }
+html[data-hstyle="glass"] .site-header { background: color-mix(in srgb, var(--card) 70%, transparent); --hblur: 14px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+html[data-hstyle="plain"] .site-header { background: transparent; --hblur: 0px; border-bottom: 0; box-shadow: none; }
 
 @media (min-width: 721px) {
   /* centered: the logo in the middle, the menu on the left and the icons (cart, bell, ...) on the right, all on ONE line; a menu that does not fit becomes the hamburger (SiteMenu) */
@@ -2625,6 +2625,7 @@ html[data-ft="dark"] .site-footer .foot-brand .foot-name, html[data-ft="brand"] 
 /* a block with a height: its columns fill that height, so "Verticaal in de kolommen" (boven, midden, onder) places the content inside the block, also in edit mode */
 .pb-rowwrap.sized > .pb-row { flex: 1 1 auto; align-items: stretch; }
 .pb-rowwrap.sized > .pb-row > .pb-cell { min-height: 100%; }
+.pb-rowwrap.sized > .pb-row > .pb-cell.card[style*="align-self"] { min-height: 0; }  /* a card that is centred (or at the bottom) in its row keeps the height of its content, it does not fill the whole row */
 .uc:has(.pb-rowwrap[data-v="bottom"]) { justify-content: flex-end; }
 
 /* "Direct tegen de header": the top edge of the block is flush with the header, nothing in between (also in edit mode) */
@@ -3507,4 +3508,8 @@ html[data-hl="editorial"] .p-drawer-left .hmenu a:hover, html[data-hl="editorial
 .manual-lang button.on { background: var(--blue); color: #fff; }
 
 .pb-rowwrap.has-shadow { position: relative; z-index: 1; } /* the shadow of a card lies over the band below it, not under it */
-.pb-heading em { font-style: normal; color: var(--ti-accent, inherit); } /* a marked word of an imported heading */
+.pb-heading em { font-style: normal; color: var(--ti-accent, inherit); } .pb-tstyle .pb-text.pb-heading em, .pb-tstyle.ts-color .pb-text.pb-heading em { color: var(--ti-accent, inherit) !important; } /* a marked word of an imported heading (also when the heading has its own colour) */
+
+/* The blur behind the header lies on its own layer: a header that has backdrop-filter itself becomes the box of everything that is fixed inside it (the menu drawer, the backdrop, popups), which then only fill the header. */
+.site-header { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.site-header::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; backdrop-filter: blur(var(--hblur, 0px)); -webkit-backdrop-filter: blur(var(--hblur, 0px)); }

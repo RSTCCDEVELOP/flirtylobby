@@ -9,23 +9,108 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconBolt, IconCheck, IconSend, IconTrash } from "../../../../components/Icons";
+import { IconBolt, IconCheck, IconEdit, IconSend, IconTrash } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import { api, errorText } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { DEVICES, DW_CSS, ModulePicker, previewHtml, STEPS } from "./designKit";
+import { analyseDesign, buildConvertPrompt } from "./aiPrompt";
 import Wizard from "./DesignWizard";
 
 export { ModulePicker, previewHtml };
 
 const STATUS = { draft: "Concept", running: "Bezig", stopping: "Bezig met stoppen", done: "Klaar", error: "Mislukt" };
 
+
+// The prompt that turns a finished HTML design into an import ZIP (with the modules and live system objects linked) by an external AI.
+function ConvertPromptPopup({ onClose, designs = [] }) {
+  const [catalog, setCatalog] = useState(null);
+  const [tab, setTab] = useState("design");
+  const [copied, setCopied] = useState(false);
+  const [files, setFiles] = useState([]);  // [{name, text}] the html, css and svg files of the design
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(() => { api("/sitecreator/catalog/").then(setCatalog).catch(() => setCatalog({})); }, []);
+  const add = (list) => setFiles((cur) => { const m = new Map(cur.map((f) => [f.name, f])); list.forEach((f) => m.set(f.name, f)); return [...m.values()].sort((a, b) => a.name.localeCompare(b.name)); });
+  const pick = async (e) => {
+    setErr("");
+    const out = [];
+    for (const f of [...(e.target.files || [])]) {
+      const name = (f.webkitRelativePath ? f.webkitRelativePath.split("/").slice(1).join("/") : f.name) || f.name;
+      if (!/\.(html?|css|svg)$/i.test(name)) continue;
+      if (f.size > 1500000) { setErr(`${name}: ${tx("is te groot (max 1,5 MB)")}`); continue; }
+      out.push({ name, text: await f.text() });
+    }
+    add(out); e.target.value = "";
+  };
+  const fromDesign = async (id) => {
+    if (!id) return;
+    setBusy(true); setErr("");
+    try { const j = await api(`/sitecreator/${id}/?files=1`); add(Object.entries(j.files || {}).filter(([n]) => /\.(html?|css|svg)$/i.test(n)).map(([name, text]) => ({ name, text: String(text) }))); } catch (x) { setErr(errorText(x)); } finally { setBusy(false); }
+  };
+  const info = files.length ? analyseDesign(files) : null;
+  const text = buildConvertPrompt({ objects: catalog?.objects || [], rules: catalog?.rules || null, languages: catalog?.languages || [], mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", files });
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(text); } catch { document.getElementById("si-cprompt")?.select(); document.execCommand("copy"); }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+  const download = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" })); a.download = "html-naar-easy2edit-zip-prompt.txt"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+  const chips = info ? [[tx("HTML-bestanden"), files.filter((f) => /\.html?$/i.test(f.name)).length], [tx("CSS-bestanden"), files.filter((f) => /\.css$/i.test(f.name)).length], [tx("Kleuren"), info.colors.length], [tx("Lettertypen"), info.fonts.length], [tx("Afbeeldingen"), info.pics.length]] : [];
+  return createPortal(
+    <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="pb-objpop" role="dialog" aria-label={tx("AI-prompt: HTML-ontwerp naar importeer-ZIP")} style={{ width: "min(900px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="pb-objhead"><strong>{tx("AI-prompt: HTML-ontwerp naar importeer-ZIP")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
+        <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
+          <Tabs value={tab} onChange={setTab} tabs={[["design", "Ontwerp"], ["prompt", "Prompt"], ["how", "Zo gebruik je het"]]} />
+          {err && <div className="alert">{err}</div>}
+          {tab === "design" && (
+            <div className="form">
+              <p className="muted" style={{ margin: 0 }}>{tx("Kies de bestanden van je HTML-ontwerp. Ze komen in de prompt, samen met de kleuren, lettertypen, hoeken, breedtes en meta-gegevens die de importer uit het ontwerp leest. Zo heeft de AI alles wat nodig is.")}</p>
+              <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
+                <label className="btn primary" style={{ cursor: "pointer" }}>{tx("Bestanden kiezen")}<input type="file" multiple accept=".html,.htm,.css,.svg" onChange={pick} style={{ display: "none" }} /></label>
+                <label className="btn" style={{ cursor: "pointer" }}>{tx("Map kiezen")}<input type="file" webkitdirectory="" multiple onChange={pick} style={{ display: "none" }} /></label>
+                {designs.length > 0 && <select defaultValue="" onChange={(e) => { fromDesign(e.target.value); e.target.value = ""; }} disabled={busy} aria-label={tx("Uit een ontwerp")}><option value="">{tx("Uit een van mijn ontwerpen…")}</option>{designs.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>}
+                {files.length > 0 && <button type="button" className="btn" onClick={() => setFiles([])}>{tx("Leegmaken")}</button>}
+              </div>
+              {chips.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{chips.map(([l, n]) => <span key={l} className="badge">{l}: {n}</span>)}{info.dark && <span className="badge">{tx("Donkere modus")}</span>}</div>}
+              {files.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: ".25rem" }}>
+                  {files.map((f) => <div key={f.name} className="row" style={{ justifyContent: "flex-start", gap: ".6rem", alignItems: "center" }}><span style={{ flex: 1, minWidth: 0 }}>{f.name} <small className="muted">{Math.ceil(f.text.length / 1024)} KB</small></span><button type="button" className="btn sm" onClick={() => setFiles((c) => c.filter((x) => x.name !== f.name))} aria-label={tx("Verwijderen")}><IconTrash /></button></div>)}
+                </div>
+              ) : <small className="muted">{tx("Nog geen bestanden: de prompt vraagt de AI dan om je ontwerp te lezen dat je er zelf bij plakt of bijvoegt.")}</small>}
+              <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={() => setTab("prompt")}>{tx("Naar de prompt")}</button></div>
+            </div>
+          )}
+          {tab === "prompt" && (
+            <div className="form">
+              <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}><span className="badge">{tx("Systeemobjecten")}: {(catalog?.objects || []).length}</span>{chips.map(([l, n]) => <span key={l} className="badge">{l}: {n}</span>)}</div>
+              <textarea id="si-cprompt" readOnly rows={16} value={text} onFocus={(e) => e.target.select()} style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: ".82rem" }} />
+              <div className="row" style={{ justifyContent: "flex-start", alignItems: "center" }}>
+                <button type="button" className="btn primary" onClick={copy} disabled={!catalog}><IconBolt /> {copied ? tx("Gekopieerd") : tx("Prompt kopiëren")}</button>
+                <button type="button" className="btn" onClick={download} disabled={!catalog}>{tx("Downloaden als tekstbestand")}</button>
+                <small className="muted">{text.length.toLocaleString()} {tx("tekens")}</small>
+              </div>
+            </div>
+          )}
+          {tab === "how" && (
+            <ol className="muted" style={{ margin: 0, paddingLeft: "1.2rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+              <li>{tx("Kies bij Ontwerp de HTML- en CSS-bestanden van je ontwerp.")}</li>
+              <li>{tx("Kopieer de prompt en plak hem in een AI die bestanden kan maken (Claude, ChatGPT, Gemini). Voeg de afbeeldingen van je ontwerp toe als bijlage.")}</li>
+              <li>{tx("De AI levert één ZIP-bestand op. Upload dat bij Website ontwerpen op het tabblad ZIP-bestand.")}</li>
+            </ol>
+          )}
+        </div>
+      </div>
+    </div>, document.body);
+}
+
 // The tab AI-creator: your designs (also the ones that were not finished: continue where you stopped) and a new one.
 export function AiCreatorHome({ onOpen, refreshKey }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [conv, setConv] = useState(false);
   const load = useCallback(() => api("/sitecreator/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load, refreshKey]);
   const create = async () => { setBusy(true); setErr(""); try { const j = await api("/sitecreator/", { method: "POST", body: {} }); onOpen(j.id); } catch (e) { setErr(errorText(e)); } finally { setBusy(false); } };
@@ -34,7 +119,8 @@ export function AiCreatorHome({ onOpen, refreshKey }) {
     <div style={{ marginTop: ".75rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een paar stappen: stijl, kleuren, pagina's en foto's. Daarna maakt Easy2edit alle pagina's en importeer je ze als bewerkbare pagina's. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
       {err && <div className="alert">{err}</div>}
-      <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" disabled={busy || d?.ai === false} onClick={create}><IconBolt /> {tx("Nieuw ontwerp")}</button></div>
+      <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" disabled={busy || d?.ai === false} onClick={create}><IconBolt /> {tx("Nieuw ontwerp")}</button><button type="button" className="btn" onClick={() => setConv(true)}><IconEdit /> {tx("AI-prompt maken")}</button></div>
+      {conv && <ConvertPromptPopup onClose={() => setConv(false)} designs={d?.designs || []} />}
       {d?.ai === false && <div className="alert">{tx("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")}</div>}
       {d?.designs?.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: ".45rem" }}>

@@ -60,7 +60,7 @@ export function buildPrompt({ name, kind, lang, pages, style, colors, extra, mod
 - Use relative links between the pages (href="about.html"), "#section-id" for links to a place on the same page, and normal https:// addresses for external links.
 
 ## 3. Structure of every page (this is what makes it editable in Easy2edit)
-- <body> contains, in this order: one <header> (logo/name, <nav> with links, optionally one button), one <main>, one <footer>. Easy2edit uses its own header and footer, so keep these simple: brand, 3-6 links, an optional button; footer with short text and links.
+- <body> contains, in this order: one <header> (logo/name, <nav> with links, optionally one button), one <main>, one <footer>. Easy2edit uses its own header and footer, so keep these simple (the header logo must be an <img> file in img/: it becomes the logo of the site; no backdrop-filter or position:fixed inside the header): brand, 3-6 links, an optional button; footer with short text and links.
 - <main> consists ONLY of full-width <section> elements, one per band of the page, each with a clear id ("hero", "services", "faq", "contact"). Never put a card or box around a whole section; the background colour of the band goes on the <section> itself, edge to edge.
 - Inside a section put ONE centred container: <div class="container"> with max-width 1100px, margin 0 auto, padding 0 1.25rem. Use the same container on every page.
 - Vertical rhythm: every section has padding 4rem 0 (hero 6rem 0), alternating light and tinted or dark background so the bands are easy to tell apart.
@@ -147,6 +147,134 @@ ${photos.length ? "- The photos listed above are not in the ZIP, so they will no
 - If you cannot create a ZIP or files, then give every file complete in its own code block with the file name above it (style.css first, then ${files.join(", then ")}), plus a short Python or shell script that builds the ZIP from those files, and the list of pictures I still have to add (file name, size in pixels, one-line description). Never shorten or write "the rest is the same".
 - Finish with one short line per page saying what it is for, and the list of modules the site needs (web shop, FAQ, agenda, ...) if any.
 
-## ${modules.length || objects.length ? 8 : 7}. How I will use it
+${completeness(modules.length || objects.length ? 8 : 7)}
+## ${modules.length || objects.length ? 9 : 8}. How I will use it
 I upload the ZIP in Easy2edit at Website ontwerpen (tab ZIP-bestand). Easy2edit takes the colours and shapes as a theme, puts the pictures in the media library, turns every section into editable rows and blocks of the page editor (the system objects become live blocks), and switches on the modules the content needs. Nothing else is needed from you.`;
+}
+
+
+
+// The rules that make an AI deliver EVERYTHING: the whole design, every page, every picture, the screenshots, with a list that proves it. Used by both prompts.
+const completeness = (n) => `## ${n}. Deliver it COMPLETE
+- Complete means: every page, every section, every text, every picture, the whole of style.css, the screenshots and the translation files (if asked). Nothing is left out, shortened, summarised or "left as an exercise". Never write "...", "etc.", "same as above", "the rest is similar" or a placeholder instead of real content. Copy the texts of the design word for word.
+- Do not stop halfway and do not ask me whether to continue. If the work is too long for one answer, carry on in the next messages without me asking, and only give me the final ZIP when everything is in it. Work file by file and finish each file before you start the next.
+- Before you build the ZIP make a checklist of everything that has to be in it: all pages (from the design and from the menus), all pictures that the html and css refer to, the screenshots, the translation files, the logo, the icons. Tick them off one by one against the real files, and fix what is missing.
+- Include a file MANIFEST.txt at the top level of the ZIP: one line per file (name, what it is, size) plus the list of the live blocks (data-sysobject slugs) and where you placed them, and anything you could not do or had to assume. The importer ignores this file.
+- After building: unzip your own ZIP, list its content and compare it with the checklist. Count the pages, the pictures and the screenshots. In your last message give me that list and the counts, and say clearly "complete" or name exactly what is missing and why. Do not claim it is complete when it is not.
+- If a picture, font or file from my design is not available to you, do not drop it silently: keep the reference, use a neutral placeholder of the same size and list it in the last message.
+`;
+
+// What the importer reads from a design, worked out from the files themselves: the colour variables (light and dark), the colours that are used most, the fonts, the corner radii, the widths,
+// the meta data (theme-color, icons, og:image, language) and the pictures. files: [{name, text}] (html, css, svg). Used by the prompt that converts a design into an import ZIP.
+const top = (arr, n) => { const m = {}; arr.forEach((x) => { m[x] = (m[x] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n); };
+export function analyseDesign(files) {
+  const css = files.filter((f) => /\.css$/i.test(f.name)).map((f) => f.text).concat(files.filter((f) => /\.html?$/i.test(f.name)).flatMap((f) => [...f.text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]))).join("\n").replace(/\/\*[\s\S]*?\*\//g, "");
+  const html = files.filter((f) => /\.html?$/i.test(f.name));
+  const vars = [];
+  for (const m of css.matchAll(/([^{}]*(?::root|\.theme-dark|\.theme-light|\[data-theme[^\]]*\])[^{}]*)\{([^{}]*)\}/g)) {
+    const decl = [...m[2].matchAll(/(--[\w-]+)\s*:\s*([^;]+);?/g)].map((d) => `${d[1]}: ${d[2].trim()}`);
+    if (decl.length) vars.push({ selector: m[1].replace(/\s+/g, " ").trim().slice(-120), decl });
+  }
+  const colors = top([...css.matchAll(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g)].map((m) => m[0].toLowerCase().replace(/\s+/g, "")), 24);
+  const fonts = [...new Set([...css.matchAll(/font-family\s*:\s*([^;}]+)/gi)].map((m) => m[1].trim()))].slice(0, 8);
+  const faces = [...css.matchAll(/@font-face\s*\{[^}]*font-family\s*:\s*([^;}]+)[^}]*\}/gi)].map((m) => m[1].trim().replace(/["']/g, ""));
+  const webfonts = html.flatMap((f) => [...f.text.matchAll(/<link[^>]+href=["']([^"']*(?:fonts\.googleapis|fonts\.bunny|use\.typekit)[^"']*)["']/gi)].map((m) => m[1]));
+  const radii = top([...css.matchAll(/border-radius\s*:\s*([^;}]+)/gi)].map((m) => m[1].trim()), 6);
+  const widths = top([...css.matchAll(/max-width\s*:\s*(\d+(?:\.\d+)?(?:px|rem))/gi)].map((m) => m[1]), 5);
+  const sizes = top([...css.matchAll(/\b(h[1-3])\s*(?:,\s*h[1-3]\s*)*\{[^}]*font-size\s*:\s*([^;}]+)/gi)].map((m) => `${m[1]} ${m[2].trim()}`), 6);
+  const meta = html.map((f) => ({
+    name: f.name,
+    lang: (f.text.match(/<html[^>]*\blang=["']([^"']+)/i) || [])[1] || "",
+    title: ((f.text.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "").replace(/\s+/g, " ").trim(),
+    themeColor: (f.text.match(/<meta[^>]+name=["']theme-color["'][^>]*content=["']([^"']+)/i) || [])[1] || "",
+    icons: [...f.text.matchAll(/<link[^>]+rel=["'][^"']*icon[^"']*["'][^>]*href=["']([^"']+)/gi)].map((m) => m[1]),
+    og: (f.text.match(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)/i) || [])[1] || "",
+  }));
+  const pics = [...new Set(files.flatMap((f) => [...f.text.matchAll(/(?:src|poster)=["']([^"']+\.(?:png|jpe?g|webp|gif|svg))["']|url\(["']?([^"')]+\.(?:png|jpe?g|webp|gif|svg))["']?\)/gi)].map((m) => m[1] || m[2])))].filter((x) => x && !/^(https?:|data:|\/\/)/.test(x));
+  const remote = [...new Set(files.flatMap((f) => [...f.text.matchAll(/(?:src|href)=["'](https?:\/\/[^"']+\.(?:png|jpe?g|webp|gif|svg))["']/gi)].map((m) => m[1])))].slice(0, 20);
+  const dark = vars.some((v) => /dark/.test(v.selector)) || /prefers-color-scheme\s*:\s*dark/.test(css);
+  return { vars, colors, fonts, faces, webfonts, radii, widths, sizes, meta, pics, remote, dark };
+}
+
+const MAX_DESIGN = 700000; // characters of design files that go into the prompt
+function designSection(files, a) {
+  const rows = [];
+  rows.push(`Files: ${files.map((f) => f.name).join(", ")}.`);
+  if (a.vars.length) rows.push(`Colour variables (the theme; keep these exact values and names):\n${a.vars.map((v) => `  ${v.selector} { ${v.decl.join("; ")} }`).join("\n")}`);
+  rows.push(`${a.dark ? "The design HAS a dark mode: keep it (see the dark rules above)." : "The design has no dark mode: do not invent one."}`);
+  if (a.colors.length) rows.push(`Colours used in the css, most used first: ${a.colors.map(([c, n]) => `${c} (${n}x)`).join(", ")}. Turn every colour that is used more than once into a variable.`);
+  if (a.fonts.length || a.faces.length || a.webfonts.length) rows.push(`Fonts: ${a.fonts.join(" | ") || "(none set)"}${a.faces.length ? `; @font-face: ${a.faces.join(", ")}` : ""}${a.webfonts.length ? `; loaded from the web: ${a.webfonts.join(", ")}` : ""}. Keep the same look: Easy2edit takes the main font family from font-family. If a font is loaded from the web or by @font-face, keep its name FIRST in the font-family stack and end the stack with a system font; do not link external font files.`);
+  if (a.radii.length) rows.push(`Corner radii (most used first): ${a.radii.map(([r, n]) => `${r} (${n}x)`).join(", ")}. Easy2edit sets the corner radius of the theme, buttons and popups from these.`);
+  if (a.widths.length) rows.push(`Content widths: ${a.widths.map(([w, n]) => `${w} (${n}x)`).join(", ")} (the container becomes the content width of the site).`);
+  if (a.sizes.length) rows.push(`Heading sizes: ${a.sizes.map(([x]) => x).join("; ")}.`);
+  const mt = a.meta.filter((m) => m.themeColor || m.icons.length || m.og || m.lang);
+  if (mt.length) rows.push(`Meta data per page:\n${mt.map((m) => `  ${m.name}: lang=${m.lang || "-"}; title="${m.title}"; theme-color=${m.themeColor || "-"}; icons=${m.icons.join(", ") || "-"}; og:image=${m.og || "-"}`).join("\n")}`);
+  if (a.pics.length) rows.push(`Pictures that the files refer to: ${a.pics.join(", ")}. Every one of them MUST be in img/ of the ZIP under exactly the name used in the html/css (take them from my files; if I did not give the picture, say so in your last message).`);
+  if (a.remote.length) rows.push(`Pictures linked from other websites (hotlinks): ${a.remote.join(", ")}. Download them into img/ and change the references to img/<name>.`);
+  const per = Math.max(20000, Math.floor(MAX_DESIGN / Math.max(1, files.length)));
+  const body = files.map((f) => `=== FILE: ${f.name} ===\n${f.text.replace(/data:[a-z/+.-]+;base64,[A-Za-z0-9+/=]{200,}/g, "data:...(removed: make it a file in img/)").slice(0, per)}${f.text.length > per ? "\n...(cut off: this file is longer; ask me for the rest)" : ""}`).join("\n\n");
+  return `## 0. The design to convert (read ALL of it before you start)\nWhat the importer will read from it, worked out from the files:\n${rows.map((r) => `- ${r}`).join("\n")}\n\nThe complete files:\n\n${body}\n\n=== END OF FILES ===\n`;
+}
+
+// The prompt for an AI that gets a finished HTML design (one or more html files, with or without css and pictures) and turns it into ONE ZIP that Easy2edit imports
+// (Website ontwerpen > ZIP-bestand) with the modules and live system objects linked. objects: [{slug, name, kind_label}] from /sitecreator/catalog/; rules: the numbers of the importer.
+export function buildConvertPrompt({ objects = [], rules = null, languages = [], mainCode = "nl", files = [] } = {}) {
+  const RL = { max_pages: 12, max_images: 40, max_image_mb: 5, name_max: 40, ...(rules || {}) };
+  const live = objects || [];
+  const extra = (languages || []).filter((l) => l.enabled && !l.default);
+  const has = files.length > 0;
+  return `You are a senior front-end engineer. I give you an existing HTML design (${has ? "all its files are in section 0 below" : "one or more html files, maybe with css, pictures and screenshots; they come with this prompt"}). Convert it, WITHOUT changing how it looks, into ONE ZIP file that the website system Easy2edit imports (Website ontwerpen > ZIP-bestand). Easy2edit reads the html AND the css and rebuilds every page exactly with its page editor (bands, cells, cards, headings, texts, images, buttons), takes the colours as a theme, puts the pictures in the media library and links the live modules. A predictable structure matters more than clever tricks: keep the look, change the markup where the rules below need it.
+
+${has ? designSection(files, analyseDesign(files)) : ""}
+## 1. What you deliver
+- ONE downloadable ZIP, top level (or inside one single top-level folder): every page as an html file (the start page MUST be index.html; at most ${RL.max_pages} pages), ONE shared style.css, a folder img/ with all pictures${extra.length ? `, the translation files vertalingen-<code>.json` : ""} and a folder ${RL.screenshot_folder || "screenshots"}/ with one full-page desktop screenshot (1440 px wide, png/jpg/webp, named after the html file: index.png for index.html) per page, made from the FINAL result. No other subfolders.
+- Make the ZIP yourself with your file tools and give me the download link. Do not give loose code as the answer; only if you cannot create files, give every file complete in its own code block plus a script that builds the ZIP. Never write "the rest is the same".
+- Pictures: jpg, png, webp or svg; at most ${RL.max_images} files, each at most ${RL.max_image_mb} MB; file names lowercase letters, digits, - and _ only, at most ${RL.name_max} characters before the extension; every file used at least once; relative paths only (img/x.jpg) in html and css; no data: URLs, no hotlinks. Convert pictures that are embedded as data: URLs or linked from the web into real files in img/. svg: shapes and text only, no scripts.
+
+## 2. Structure of every page
+- <body>: one <header> (logo as <a class="logo"><img src="img/logo.png" alt="..."></a>: the logo MUST be an image file (png/svg in img/) inside the header, never inline svg or only text, because that picture becomes the logo of the site; a separate dark-mode version is img/logo-dark.png, one <nav> with at most 6 links, optionally ONE <a class="btn btn-primary"> as call to action), one <main>, one <footer> with short text and a <nav aria-label="Footer menu">. Every page is linked from a nav. Use relative links between pages (about.html), #id for places on the same page, https:// for external. Rename a link target if the page is renamed.
+- Header: its background is var(--card) (so it follows the light/dark theme), its links var(--text). The header is turned into the Easy2edit menu: keep it simple and the same on every page. Leave room at the right for the language switch and the light/dark switch of Easy2edit; do not build your own.
+- <main> consists ONLY of full-width <section id="..."> bands. Background colour/picture of the band goes on the <section>; never a box around a whole section. Inside: ONE <div class="container"> (max-width 1100px; margin 0 auto; padding 0 1.25rem). Vertical rhythm through padding on the section (4rem 0, hero 6rem 0), alternating light / tinted / dark bands.
+- Elements inside the container: .label (small pill text above a heading), h1 (once per page, in the hero), h2, h3, p, p.lead, ul/ol/li, strong/em/a, a.btn.btn-primary, a.btn.btn-outline, img (with alt, width, height), hr, <div class="intro"> around label+heading+lead, <div class="grid grid-2|grid-3|grid-4"> (display:grid; grid-template-columns: repeat(N, minmax(0,1fr)); gap) with children <div class="card"> (background, 1px border and/or shadow, border-radius, padding; cards in one row have equal height) and <div data-sysobject="..."></div>.
+- A heading with a coloured word: <h1>Plain <em>coloured</em> words</h1> with h1 em { font-style: normal; color: var(--primary); }.
+- Round number badges, pills, check lists, mock-ups: build them as simple elements with classes in style.css (border-radius: 50% with equal width and height for a round badge). Icons: single-colour inline <svg stroke="currentColor"> only; never emoji or coloured icons, and never let an icon carry the meaning.
+- Spacing ONLY through css margins/padding (margin-bottom on headings and paragraphs, padding on bands and cards): no empty elements, <br> stacks, &nbsp; or inline styles. Easy2edit copies these values, so the page looks the same after the import.
+- FAQ: ONE section id="faq" with <details><summary>Question?</summary><p>Answer.</p></details> per question (they are moved into the FAQ module).
+- No JavaScript for content or layout (no sliders, tabs, accordions by script), no <form>, no <button> without a link, no external fonts or scripts, no css framework, no @import. Use system fonts (system-ui, -apple-system, "Segoe UI", Roboto, sans-serif). Contact goes to a mailto:/tel: link or a link to the contact page.
+
+## 3. style.css: theme and exact values
+- ALL css in ONE style.css linked by every html file (<link rel="stylesheet" href="style.css">); no <style> blocks, no style="" attributes (except a background-image of one section that cannot be a class).
+- Colours only as variables on :root, used everywhere (no hard-coded colours in rules, also not in dark mode): --primary (buttons, links), --secondary (accent), --bg (page), --card (cards and header), --text, --dark-band (dark bands: hero, call to action, footer; text on it is light, e.g. --on-dark), --line (derived from --text). Easy2edit takes these as the theme.
+- If the design has a dark mode: put the dark values of --bg, --card and --text in :root[data-theme="dark"] { } AND in @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { } }. Easy2edit sets data-theme on <html>; never build a switch. Keep text contrast at least 4.5:1 in both modes.
+- Band classes: <section class="band-light">, band-dark, band-tint, band-card. A hero with a picture: class="band-dark hero-bg hero-<page>" where .hero-bg holds the overlay (a linear-gradient layer over the picture) and .hero-<page> sets --hero-photo: url(img/x.jpg). Easy2edit reads background pictures, overlays, padding, min-height, border-radius, shadows, widths and gaps straight from these rules: keep the real values in the css, never in the html.
+- Icons and meta: keep <link rel="icon"> / apple-touch-icon (files in img/), <meta name="theme-color"> and og:image; the logo in the header is read as the logo of the site (a separate dark-mode logo: name it logo-dark.png). Typography in rem (body 1rem/1.6; h1 2.6-3.4rem; h2 1.8-2.2rem; h3 1.2-1.4rem); buttons padding .75rem 1.4rem, border-radius 10px, weight 600. Square corners stay square: write border-radius: 0 where the design has none.
+- Responsive from 360 px to 1600 px; columns become one column on a phone.
+
+## 4. Modules and live system objects of Easy2edit
+Easy2edit has modules (showcase, webshop, FAQ, agenda, documents, marketplace, games, ...) with ready-made LIVE blocks that the system fills with real data. Where the design shows a part that such a block can do (a project overview, a product overview, a cart, a checkout, an agenda, a document list, ...), replace the made-up content with the block, written EXACTLY as an empty element on its own line directly inside the container, after the heading and a short intro:
+  <div data-sysobject="SLUG"></div>
+- Never inside <p>, <a>, <details>, a card or a column with other items; no content, classes or styling. Use each block once, where it fits best. Do not redraw what the block shows.
+- ALSO keep the design of that part, so the live block gets the same look: directly after the live element add
+  <div class="showcase-design" data-sysobject-design="SLUG" data-layout="scroller"> ... the made-up example ... </div>
+  (class name: showcase-design, webshop-design, ... any). The importer uses it as the DESIGN of the live block and drops its content; style it in style.css like the live block should look. Put a comment before it: <!-- design of SLUG, not content -->.
+- Showcase example cards become REAL projects: inside the design element give every example a <div class="card pc"> with <div class="pimg"><img src="img/x.jpg" alt="..."><span class="st st-active"><i></i>Online</span></div> (status class st-active, st-development or st-offline) and <div class="pb"><h3>Title</h3><p>Short text</p><div class="meta"><span>Group</span><span>5 weeks</span></div><div class="tags"><span class="tg">Tag</span></div></div>. Use real, fitting pictures from img/ (also listed in the ZIP) for these cards.
+- Modules without example content are filled with demo content by the importer, so never make up fake data outside a design element.
+${live.length ? `The blocks that exist in this system now (slug: name, kind):\n${live.map((o) => `- ${o.slug}: ${o.name} (${o.kind_label})`).join("\n")}\n` : "Use the slugs that Easy2edit shows under Website ontwerpen > AI creator > Systeemobjecten."}
+Links of the system you may use: / (home), /login, /registreren, /dashboard, /faq, /producten, /winkelwagen, /privacy, /cookies. Never build your own login, registration, cart or checkout.
+
+## 5. SEO
+Every page: a unique <title> (max 60 characters) and <meta name="description"> (max 155), <html lang="...">, one <h1>, alt texts on every picture; the start page has og:image (img/og.jpg, 1200x630).
+
+${extra.length ? `## 6. Translations
+Write the pages in the main language (${mainCode}) only; Easy2edit translates. If you can, add per extra language (${extra.map((l) => `${l.native || l.name} (${l.code})`).join(", ")}) a file vertalingen-<code>.json: {"formaat": "easy2edit-vertalingen/1", "bron": "${mainCode}", "doel": "<code>", "paginas": {"index.html": [{"element": "h1", "${mainCode}": "<text exactly as in the html>", "<code>": "<translation>"}, ...]}}. element is one of title, meta description, og:title, og:description, h1, h2, h3, p, li, summary, link, alt, aria-label; one item per text in page order; copy source text exactly, keep inline html (em, strong, a, br) in place.
+
+` : ""}${completeness(extra.length ? 7 : 6)}
+## ${extra.length ? 8 : 7}. Check BEFORE you deliver
+- Render every page (canvas, preview or headless browser) at 1440, 820 and 390 px and compare it with the original: same colours, sizes, spacing, rounded and square corners, shadows, round badges, heading colours. Fix every difference, look again, repeat.
+- Check: one container per section, one h1 per page, header/footer identical on every page, every nav link and image reference resolves to a file with the exact same name, style.css linked in every html file, no unused files, no placeholders, no inline styles, dark mode readable.
+- Unzip the ZIP and test it: index.html at the top level, all html files, style.css, img/ and screenshots/ present, opening index.html straight from the folder works.
+- In your last message tell me in a few lines what you changed to make it importable, which live blocks (data-sysobject) you placed where, and anything you could not convert.
+
+## ${extra.length ? 9 : 8}. How I use it
+I upload the ZIP at Website ontwerpen (tab ZIP-bestand). Easy2edit rebuilds the pages, sets the theme and the menu from the header, puts the pictures in the media library, turns the data-sysobject elements into live blocks, creates real showcase projects from the example cards and demo content for empty modules.`;
 }
