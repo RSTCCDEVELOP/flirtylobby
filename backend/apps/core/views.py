@@ -795,6 +795,8 @@ def sandbox_first(request):
             sandbox.save({"enabled": True})
         if staff and "on" in request.data:
             obj.data = {**(obj.data or {}), "sandbox_asked": True}
+        if staff and request.data.get("welcome"):  # the very first popup (language and light or dark) was answered
+            obj.data = {**(obj.data or {}), "welcome_asked": True}
         if request.data.get("manual"):  # the question whether to look at the manual (first start, or after the installation) was answered
             obj.data = {**(obj.data or {}), "manual_asked": True}
         obj.save()
@@ -802,7 +804,7 @@ def sandbox_first(request):
     local = host in ("localhost", "127.0.0.1", "::1", "0.0.0.0") or host.endswith(".localhost") or host.endswith(".local")
     if not staff:  # the question about the sandbox on your own computer is for the superadmin
         local = False
-    return Response({"local": local, "asked": bool((obj.data or {}).get("sandbox_asked")), "manual_asked": bool((obj.data or {}).get("manual_asked")), "enabled": sandbox.active()})
+    return Response({"local": local, "asked": bool((obj.data or {}).get("sandbox_asked")), "manual_asked": bool((obj.data or {}).get("manual_asked")), "welcome_asked": bool((obj.data or {}).get("welcome_asked")) or not staff, "enabled": sandbox.active()})
 
 
 @api_view(["GET"])
@@ -1944,11 +1946,116 @@ def sitecreator_chat(request, pk):
     if not job:
         return _gone()
     try:
-        sitecreator.chat(job, request.data.get("text"), request.data.get("images"))
+        sitecreator.chat(job, request.data.get("text"), request.data.get("images"), request.data.get("lang"))
     except ValueError as e:
         return _bad(str(e))
     job.refresh_from_db()
     return Response(sitecreator.public(job))
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_export(request, pk):
+    """Superadmins: the design as json (the choices, the chat with the answers and the files)."""
+    from . import sitecreator
+
+    if not _superadmin(request):
+        return Response({"detail": "Alleen een superadmin kan een ontwerp exporteren."}, status=status.HTTP_403_FORBIDDEN)
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    return Response(sitecreator.export_job(job))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_resume(request, pk):
+    """The design got stuck (the server was restarted): go on with what was running."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.resume(job)
+    except ValueError as e:
+        return _bad(str(e))
+    job.refresh_from_db()
+    return Response(sitecreator.public(job))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_more_photos(request, pk):
+    """The pages still ask for pictures that are not there: the designer searches iStock for them (in the background)."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.more_photos(job)
+    except ValueError as e:
+        return _bad(str(e))
+    job.refresh_from_db()
+    return Response(sitecreator.public(job))
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_costs_all(request):
+    """The costs of every design of this user (for the cost window)."""
+    from . import sitecreator
+
+    return Response(sitecreator.designs_costs(request.user))
+
+
+@api_view(["GET", "POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_costs(request, pk):
+    """What this design costs so far (GET); POST resets the counter of this design."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    if request.method == "POST":
+        sitecreator.reset_costs(job)
+        job.refresh_from_db()
+    return Response(sitecreator.design_costs(job))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_import(request):
+    """Superadmins: reads an exported design. Exists already: {"exists": true, ...}; then the same call with mode "replace" or "add"."""
+    from . import sitecreator
+
+    if not _superadmin(request):
+        return Response({"detail": "Alleen een superadmin kan een ontwerp importeren."}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        job, info = sitecreator.import_job(request.user, request.data.get("data"), str(request.data.get("mode") or ""), str(request.data.get("parts") or "all"))
+    except ValueError as e:
+        return _bad(str(e))
+    if job is None:
+        return Response(info)
+    return Response({**info, "design": sitecreator.public(job)})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_answers(request, pk):
+    """Keeps the answers that the customer filled in on a questionnaire of the chat (also while they are not sent yet), so they are back when the window is opened again."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.save_answers(job, request.data.get("index"), request.data.get("ans"), request.data.get("own"))
+    except ValueError as e:
+        return _bad(str(e))
+    return Response({"ok": True})
 
 
 @api_view(["POST", "DELETE"])
@@ -2127,6 +2234,21 @@ def sitecreator_search_terms(request, pk):
     if not _design(request, pk):
         return _gone()
     return Response({"terms": sitecreator.search_terms(request.data.get("name"), request.data.get("what"), "video" if request.data.get("kind") == "video" else "photo")})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_fictional(request, pk):
+    """{"question", "name", "what", "lang"}: fictional answer for a field of the questionnaire (the customer typed @ and Enter)."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        return Response({"text": sitecreator.fictional_answer(job, request.data.get("question"), request.data.get("name"), request.data.get("what"), request.data.get("lang"))})
+    except ValueError as e:
+        return _bad(str(e))
 
 
 @api_view(["POST", "DELETE"])

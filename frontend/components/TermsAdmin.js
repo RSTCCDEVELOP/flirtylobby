@@ -14,6 +14,7 @@ import { tx } from "../lib/t";
 import SmallEditor from "./SmallEditor";
 import Tabs from "./Tabs";
 
+import Loading from "./Loading";
 // Super admin: the terms and conditions in every language. Tabs: the text (a tab per language), the signatures. A new version has to be signed again by every admin and superadmin.
 export default function TermsAdmin() {
   const [d, setD] = useState(null);
@@ -25,7 +26,7 @@ export default function TermsAdmin() {
   const [dirty, setDirty] = useState(false);
   const take = (r) => { setD(r); setTexts(r.texts || {}); setDirty(false); };
   useEffect(() => { api("/system/terms/admin/").then(take).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
 
   const cur = texts[lang] || { title: "", body: "" };
   const set = (patch) => { setTexts((t) => ({ ...t, [lang]: { ...(t[lang] || { title: "", body: "" }), ...patch } })); setDirty(true); };

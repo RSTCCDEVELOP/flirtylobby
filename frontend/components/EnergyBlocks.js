@@ -12,6 +12,7 @@ import { api } from "../lib/api";
 import { tx } from "../lib/t";
 import { useSession } from "./Session";
 
+import Loading from "./Loading";
 const nf = (n, d = 0) => { try { return new Intl.NumberFormat(undefined, { maximumFractionDigits: d, minimumFractionDigits: 0 }).format(n); } catch { return String(n); } };
 export const fmtBytes = (b) => (b >= 1e6 ? `${nf(b / 1e6, 2)} MB` : b >= 1e3 ? `${nf(b / 1e3, 0)} KB` : `${nf(b)} B`);
 export const fmtG = (g) => (g >= 100 ? `${nf(g, 0)} g` : g >= 1 ? `${nf(g, 2)} g` : `${nf(g, 3)} g`);
@@ -205,7 +206,7 @@ export default function EnergyBlock({ layout = "overview", days = 30 }) {
   const net = layout === "network";
   const { d, err } = useEnergy(days, net ? "/energy/network/" : "/energy/view/");
   if (err) return net && editing ? <div className="card muted">{tx("Het totaalbeeld is nog niet gepubliceerd (Super admin → Energie).")}</div> : null;
-  if (!d) return <div className="card muted">{tx("Laden…")}</div>;
+  if (!d) return <div className="card muted"><Loading /></div>;
   if (net) return <Network n={d} />;
   const none = d.source === "none";
   if (layout === "badge") return none ? <Empty /> : <Badge d={d} />;

@@ -15,6 +15,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 _request = contextvars.ContextVar("ai_request", default=None)  # the request that is being handled (the middleware sets it)
+_ref = contextvars.ContextVar("ai_ref", default="")  # what the calls are made for (a design of the AI creator): "design:<id>"
 _actor = contextvars.ContextVar("ai_actor", default=None)  # a user id that was set by hand (work in the background)
 
 PROVIDERS = [("anthropic", "Claude"), ("openai", "OpenAI"), ("gemini", "Gemini")]
@@ -246,6 +247,21 @@ def clear_request(token):
     _request.reset(token)
 
 
+class for_ref:
+    """with for_ref("design:<id>"): the AI calls inside are counted for that design too."""
+
+    def __init__(self, ref):
+        self.ref = str(ref or "")[:40]
+
+    def __enter__(self):
+        self._t = _ref.set(self.ref)
+        return self
+
+    def __exit__(self, *exc):
+        _ref.reset(self._t)
+        return False
+
+
 def run_as(user_id, fn, *a, **kw):
     """Run fn (work in the background, a thread) so that its AI calls are counted for this user."""
     token = _actor.set(user_id)
@@ -386,7 +402,7 @@ def begin(model, system, prompt, web=False):
             for k in [k for k, v in RUNNING.items() if time.time() - v["started"] > 1800]:  # (a call that never ended is forgotten after half an hour)
                 RUNNING.pop(k, None)
             RUNNING[rid] = {"id": rid, "started": time.time(), "source": name, "model": model, "provider": provider_of(model), "user": (user.email if user else "")[:254], "group": grp, "billable": billable, "owner": owner, "margins": margins,
-                            "tokens_in": max(1, len(str(system or "")) // 4 + len(str(prompt or "")) // 4), "tokens_out": 0, "exact_in": False, "web": bool(web)}
+                            "tokens_in": max(1, len(str(system or "")) // 4 + len(str(prompt or "")) // 4), "tokens_out": 0, "exact_in": False, "web": bool(web), "ref": _ref.get()}
         return rid
     except Exception:  # noqa: BLE001
         return None
@@ -429,6 +445,23 @@ def running_now(sup):
     return sorted(out, key=lambda x: x["seconds"])
 
 
+def running_for(ref):
+    """The calls that are busy now for this ref (a design): [{charged, tokens}] with the costs so far (charged, margin included)."""
+    from .models import AiSettings
+
+    st = AiSettings.load()
+    with _rlock:
+        items = [e for e in RUNNING.values() if e.get("ref") == ref]
+    out = []
+    for e in items:
+        try:
+            _c, charged = cost_of(st, e["model"], e["tokens_in"], e["tokens_out"], e["provider"], e["group"], e["billable"], e["margins"])
+        except Exception:  # noqa: BLE001
+            charged = 0
+        out.append({"charged": float(charged if e["billable"] else 0), "tokens": e["tokens_in"] + e["tokens_out"]})
+    return out
+
+
 def record(model, usage, started, ok=True, error="", web=False, images=0, system="", provider=None):
     """Write one row. Never raises: monitoring may never break an AI call."""
     try:
@@ -443,7 +476,7 @@ def record(model, usage, started, ok=True, error="", web=False, images=0, system
         cost, charged = cost_of(st, model, tin, tout, provider, grp, billable, margins)
         row = AiUsage.objects.create(user=user, user_label=(user.email if user else "")[:254], group=grp, billable=billable, owner=owner, source=name, purpose=" ".join(str(system or "").split()[:6])[:80], provider=provider, model=(model or "")[:60],
                                tokens_in=tin, tokens_out=tout, duration_ms=int((time.time() - started) * 1000), ok=ok, error=str(error)[:120], web=bool(web), images=int(images or 0),
-                               cost=Decimal(str(round(cost, 6))), rate=(st.rate if st.cost_currency != st.currency else 1), charged=Decimal(str(round(charged, 6))))
+                               ref=_ref.get(), cost=Decimal(str(round(cost, 6))), rate=(st.rate if st.cost_currency != st.currency else 1), charged=Decimal(str(round(charged, 6))))
         if cfg.credit_required and billable and subject(user) and charged > 0:
             credit(user, -Decimal(str(round(charged, 6))), "usage", row.source)  # the use is paid from the credit
     except Exception:  # noqa: BLE001

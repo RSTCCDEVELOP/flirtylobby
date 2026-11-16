@@ -49,3 +49,20 @@ def test_standard_pages_of_parts_that_are_off_do_not_exist_until_the_part_is_on(
     monkeypatch.setattr(modules, "enabled", lambda k: True if k == "discover" else real(k))  # (the part is a plugin: switched on)
     pages_service.ensure_defaults()  # the part is on now: its page is there
     assert Page.objects.filter(key="search").exists()
+
+
+@pytest.mark.django_db
+def test_name_and_details_of_the_website_are_gone_after_a_reset_and_the_name_is_easy2edit_again():
+    from apps.core import reset, system
+    from apps.core.models import SystemSettings
+
+    row, _ = SystemSettings.objects.get_or_create(pk=1)
+    row.data = {**(row.data or {}), "site_name": "Hebbes Fasion", "tab_title": "hebbes", "company_name": "Studio2", "phone": "085 201 77 85", "frontend_url": "https://example.test", "installation_name": "Standaard website", "welcome_asked": True}
+    row.save()
+    assert system.site_name() == "Hebbes Fasion"
+    reset.perform()
+    d = SystemSettings.objects.get(pk=1).data
+    assert not any(d.get(k) for k in ("site_name", "tab_title", "company_name", "phone", "installation_name"))
+    assert d.get("frontend_url") == "https://example.test"  # the technical settings stay
+    assert not d.get("welcome_asked")  # the first question (language, light or dark) comes again
+    assert system.site_name() == "easy2edit"

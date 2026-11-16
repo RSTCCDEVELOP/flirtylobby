@@ -29,11 +29,12 @@ export function useSandboxFirst(enabled = true) {
     if (enabled && state === null && !loading) { loading = true; api("/system/sandbox-first/").then(set).catch(() => set({ local: false, asked: true, manual_asked: true, enabled: false })).finally(() => { loading = false; }); }
     return () => { subs.delete(setSt); licSubs.delete(setLic); };
   }, [enabled]);
+  const welcomeOpen = !!(st && st.welcome_asked === false);  // the very first question (language and light or dark) comes before everything
   const rawSandbox = !!(st && st.local && !st.asked), rawManual = !!(st && !st.manual_asked);
   // one after the other: licence, sandbox, manual; then the rest (installation, AI)
   const licOpen = lic[0] === "1", anyBlock = lic[1] === "1", updOpen = lic[2] === "1", termsOpen = lic[3] === "1";
-  const first = licOpen || termsOpen; // licence and terms come before sandbox, manual, update, installation and AI
-  return { licenseOpen: licOpen, sandboxPending: !first && rawSandbox, manualPending: !first && !rawSandbox && rawManual, pendingBase: first || rawSandbox || rawManual, pendingInstall: first || updOpen || rawSandbox || rawManual, pending: anyBlock || rawSandbox || rawManual, known: st !== null, st };
+  const first = welcomeOpen || licOpen || termsOpen; // licence and terms come before sandbox, manual, update, installation and AI
+  return { welcomeOpen, licenseOpen: licOpen, sandboxPending: !first && rawSandbox, manualPending: !first && !rawSandbox && rawManual, pendingBase: first || rawSandbox || rawManual, pendingInstall: first || updOpen || rawSandbox || rawManual, pending: anyBlock || rawSandbox || rawManual, known: st !== null, st };
 }
 
 export const answerSandbox = async (on) => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { on } })); } catch { set({ ...(state || { local: true }), asked: true }); } };
@@ -41,3 +42,6 @@ export const answerSandbox = async (on) => { try { set(await api("/system/sandbo
 // the question "look at the manual?" was answered (yes or no)
 export const answerManual = async () => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { manual: true } })); } catch { set({ ...(state || {}), manual_asked: true }); } };
 
+
+// the very first popup of a new installation (language and light or dark) was answered
+export const answerWelcome = async () => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { welcome: true } })); } catch { set({ ...(state || {}), welcome_asked: true }); } };

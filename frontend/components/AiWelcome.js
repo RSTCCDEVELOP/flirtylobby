@@ -19,6 +19,7 @@ import { lvl } from "../lib/perms";
 import AiCreditPopup from "./AiCreditPopup";
 import { money } from "./AiCharts";
 
+import Loading from "./Loading";
 // The first time someone logs in as an admin (or superadmin): how the AI works, that credit is needed first, and (superadmin) the AI credit settings to put in place.
 export default function AiWelcome() {
   const { user } = useAuth();
@@ -82,7 +83,7 @@ export default function AiWelcome() {
             <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem" }}>
               <Link className="btn" href="/dashboard/superadmin/ai" onClick={done}>{tx("Alle AI-instellingen (marges en prijzen)")}</Link>
             </div>
-          </>) : <p className="muted">{tx("Laden…")}</p>)}
+          </>) : <p className="muted"><Loading /></p>)}
         </div>
       </div>
       {buy && <AiCreditPopup info={me} onClose={() => setBuy(false)} />}

@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { tx } from "../lib/t";
 
+import Loading from "./Loading";
 // The media library inside the editor panel: search, filter on a tag and click a picture to put it on the page.
 export default function MediaLibraryPanel({ onPick }) {
   const [items, setItems] = useState(null);
@@ -35,7 +36,7 @@ export default function MediaLibraryPanel({ onPick }) {
         </select>
       )}
       {err && <div className="alert">{err}</div>}
-      {items === null && !err && <small className="muted">{tx("Laden…")}</small>}
+      {items === null && !err && <small className="muted"><Loading /></small>}
       {items && !items.length && <small className="muted">{tx("Geen afbeeldingen gevonden.")}</small>}
       <div className="pb-medialib-grid">
         {(items || []).map((i) => (

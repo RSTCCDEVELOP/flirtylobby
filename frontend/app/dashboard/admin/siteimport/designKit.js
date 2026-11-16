@@ -18,6 +18,7 @@ import { buildPrompt } from "./aiPrompt";
 import { componentListText } from "../../../../lib/ui-kit/componentList";
 import { hexOf, loadKit } from "../../../../lib/ui-kit/kitDoc";
 
+import Loading from "../../../../components/Loading";
 // The steps of the design flow: key, name, one line under the name, icon.
 export const STEPS = [
   ["start", "Start", "Naam, soort en taal", IconEdit], ["style", "Stijl", "Thema en sfeer", IconPalette], ["colors", "Kleuren", "Palet en weergave", IconSliders], ["pages", "Pagina's", "Menu en volgorde", IconFolder],
@@ -280,7 +281,7 @@ export function ModulePicker({ catalog, b, upd }) {
   const objects = b.objects || [], off = b.modules_off || [];
   const onChange = (p) => upd({ ...(p.off ? { modules_off: p.off } : {}), ...(p.extra ? { modules_extra: p.extra } : {}), objects: p.objects });
   const [q, setQ] = useState("");
-  if (!catalog) return <div className="dw-panel"><span className="muted">{tx("Laden…")}</span></div>;
+  if (!catalog) return <div className="dw-panel"><span className="muted"><Loading /></span></div>;
   const toggle = (list, k) => (list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
   const keys = catalog.modules.map((m) => m.key), shown = catalog.modules.filter((m) => !q.trim() || `${m.label} ${m.desc}`.toLowerCase().includes(q.trim().toLowerCase()));
   const onCount = catalog.modules.filter((m) => isUsed(m, b)).length, kinds = [...new Set(catalog.objects.map((o) => o.kind_label))];

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 
+import Loading from "./Loading";
 // The tab "Plugins" of a standard installation: a switch for every module and every plugin. Every switch is saved at once as the standard of this installation: the next time the
 // installation is set up it gets exactly these modules and plugins (and installations.json, the basis for other sites, follows by itself: see installations_config.py).
 export default function PresetPlugins({ preset }) {
@@ -38,7 +39,7 @@ export default function PresetPlugins({ preset }) {
       <span className="wz-text"><strong>{title}{badge && <span className="badge" style={{ marginLeft: ".5rem" }}>{badge}</span>}</strong>{sub && <small className="muted">{sub}</small>}</span>
     </label>
   );
-  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
   const groups = [...new Set(opts.modules.map((m) => m.group || ""))];
   return (
     <>

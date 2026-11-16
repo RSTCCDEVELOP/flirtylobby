@@ -11,11 +11,11 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../../../../lib/t";
 
-// A short step plan that helps to choose how to fill the website: a template, the AI-creator, an AI prompt for an external AI, or reading in a website, folder, ZIP or html files.
+// A short step plan that helps to choose how to fill the website: a ready-to-use template, the AI-creator, or reading in a website, folder, ZIP or html files.
 // The wizard: questions that give the AI chat build a good start. At the end the chat starts with the choices. Someone who already has a website, a design or a ZIP is sent to the right place.
 // onStart(brief, firstMessage): the chat build opens with these settings; onPick(action): {tab: "url"|"folder"|"zip"|"html", auto?: "prompt"} for an existing website or design.
 const WAYS = {
-  prompt: { title: "Een AI-prompt voor een externe AI", text: "Een wizard stelt vragen over je website en maakt een prompt voor Claude, ChatGPT of Gemini. De AI levert een ZIP die je hier importeert. De prompt maken kost niets.", button: "AI-prompt maken", action: { auto: "prompt" } },
+  templates: { title: "Kant-en-klare templates", text: "Kies een complete website met voorbeeldplaatjes (pagina's, menu en soms een eigen thema) en pas hem daarna zelf aan in de editor.", button: "Templates bekijken", action: { href: "/dashboard/admin/templates" } },
   url: { title: "Een website inlezen (adres)", text: "Je geeft het adres van een bestaande website. easy2edit leest de pagina's, de afbeeldingen en de opmaak in. Alleen openbare websites.", button: "Website-adres invullen", action: { tab: "url" } },
   folder: { title: "Een map op de server inlezen", text: "Een map met de bestanden van een website op de server. Handig voor een grote site of een eigen ontwerp.", button: "Map kiezen", action: { tab: "folder" } },
   zip: { title: "Een ZIP-bestand importeren", text: "Een ZIP met HTML, CSS en afbeeldingen, bijvoorbeeld van een ontwerper of van een externe AI. easy2edit bouwt er bewerkbare pagina's van.", button: "ZIP kiezen", action: { tab: "zip" } },
@@ -23,7 +23,7 @@ const WAYS = {
 };
 
 const Q = {
-  start: { q: "Waar begin je mee?", opts: [["Ik wil een nieuwe website maken met de AI", "=new"], ["Ik heb al een website of een ontwerp dat ik wil overnemen", "existing"], ["Ik wil dat een externe AI (Claude, ChatGPT, Gemini) mijn website ontwerpt", "=prompt"]] },
+  start: { q: "Waar begin je mee?", opts: [["Ik wil een nieuwe website maken met de AI", "=new"], ["Ik heb al een website of een ontwerp dat ik wil overnemen", "existing"], ["Ik wil een kant-en-klare template gebruiken", "=templates"]] },
   existing: { q: "Waar staat die website of dat ontwerp?", opts: [["Op internet, ik heb het adres", "=url"], ["In een map op de server", "=folder"], ["Als ZIP-bestand", "=zip"], ["Als losse HTML-bestanden", "=html"]] },
 };
 
@@ -46,7 +46,7 @@ function ChooseWizard({ onPick, onStart }) {
         <>
           <strong style={{ fontSize: "1.05rem" }}>{tx(node.q)}</strong>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: ".5rem" }}>
-            {node.opts.map(([label, next]) => <button type="button" key={label} className="card" style={{ textAlign: "left", padding: ".7rem .9rem", cursor: "pointer", font: "inherit", color: "var(--text)" }} onClick={() => (next === "=new" ? onStart({}, NEW_TEXT) : setPath([...path, [label, next]]))}>{tx(label)}</button>)}
+            {node.opts.map(([label, next]) => <button type="button" key={label} className="card" style={{ textAlign: "left", padding: ".7rem .9rem", cursor: "pointer", font: "inherit", color: "var(--text)" }} onClick={() => (next === "=new" ? onStart({}, tx(NEW_TEXT)) : setPath([...path, [label, next]]))}>{tx(label)}</button>)}
           </div>
           {path.length > 0 && <div><button type="button" className="btn sm" onClick={() => setPath(path.slice(0, -1))}>{tx("Vorige vraag")}</button></div>}
         </>

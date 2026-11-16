@@ -18,6 +18,7 @@ import { IconImage, IconGrid } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import MediaViewEditor from "../../../../components/MediaViewEditor";
 
+import Loading from "../../../../components/Loading";
 const fmt = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 // The media system objects (photo book, carousel, photo wall, slideshow): blocks for a page that show pictures of the library, with effects.
@@ -57,7 +58,7 @@ function MediaObjects({ canEdit, canManage, setMsg }) {
     if (!(await confirmDialog(tx("\"{0}\" verwijderen? Pagina's waar het op staat tonen het niet meer.", v.name), { danger: true }))) return;
     try { await api(`/mediaviews/${v.id}/`, { method: "DELETE" }); load(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   }
-  if (views === null) return <p className="muted">{tx("Laden…")}</p>;
+  if (views === null) return <p className="muted"><Loading /></p>;
   return (
     <>
       <p className="muted" style={{ margin: "0 0 1rem" }}>{tx("Blokken met foto's uit je bibliotheek die je in de bewerkmodus op een pagina zet: een fotoboek, een beeldcarrousel, een fotomuur of een diavoorstelling, elk met eigen effecten en instellingen.")}</p>

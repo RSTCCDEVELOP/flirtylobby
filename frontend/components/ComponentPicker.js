@@ -13,6 +13,7 @@ import { tx } from "../lib/t";
 import KitHtml from "../lib/ui-kit/KitHtml";
 import { useKit } from "../lib/ui-kit/kitDoc";
 
+import Loading from "./Loading";
 // The components of the easy2edit UI-kit: pick one (in the page editor) or look at them (Admin > Website > Componenten). Each has an easy2edit_tag: the name that
 // the exports, the imports, the designs and the AI prompts use for it. The components take the colours, fonts and corners of the theme that is in use.
 export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = false, setKey = "" }) {
@@ -41,7 +42,7 @@ export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = fa
           {groups.map((g) => <option key={g} value={g}>{tx(g)} ({all.filter((c) => c.group === g).length})</option>)}
         </select>
         <div className="cl-list" style={{ display: "grid", gap: ".3rem", maxHeight: compact ? 380 : 620, overflow: "auto", paddingRight: ".2rem" }}>
-          {!kit && <small className="muted">{tx("Laden…")}</small>}
+          {!kit && <small className="muted"><Loading /></small>}
           {grouped.map(([g, items]) => {
             const current = openG === null ? (sel?.group || grouped[0]?.[0]) : openG;
             const folded = !find && current !== g;  // a search opens every group that has a hit

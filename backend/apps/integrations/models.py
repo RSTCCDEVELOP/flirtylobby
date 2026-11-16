@@ -87,6 +87,7 @@ class AiUsage(models.Model):
     cost = models.DecimalField(max_digits=12, decimal_places=6, default=0)  # what it costs us, in the purchase currency (price of the tokens)
     rate = models.DecimalField(max_digits=14, decimal_places=6, default=1)  # the rate of that moment: purchase currency -> selling currency
     charged = models.DecimalField(max_digits=12, decimal_places=6, default=0)  # what is charged, in the selling currency (with the margin)
+    ref = models.CharField(max_length=40, blank=True, db_index=True)  # what the call was made for ("design:<id>": a design of the AI creator), to count the costs of one design
 
     class Meta:
         ordering = ["-created_at"]

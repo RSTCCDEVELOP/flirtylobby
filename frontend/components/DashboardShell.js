@@ -35,6 +35,7 @@ import AiWelcome from "./AiWelcome";
 import ApiLinksInstall from "./ApiLinksInstall";
 import ManualHelp from "./ManualHelp";
 import SandboxFirstAsk from "./SandboxFirstAsk";
+import WelcomeFirstAsk from "./WelcomeFirstAsk";
 import ManualFirstAsk from "./ManualFirstAsk";
 import { menuLabel } from "./SiteMenu";
 import { useUi } from "./Ui";
@@ -400,6 +401,7 @@ export default function DashboardShell({ children }) {
       <main className="content">
         <FindOnPage />
         {user && (user.is_staff || Object.values(user.module_levels || {}).some((v) => v >= 2)) && <TermsGate />}
+        {user?.is_staff && <WelcomeFirstAsk />}
         {user?.is_staff && <SandboxFirstAsk />}
         {user && (user.is_staff || lvl(user, "system") >= 3) && <ManualFirstAsk />}
         {user?.is_staff && <DefaultInstallPrompt />}

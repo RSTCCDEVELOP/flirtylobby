@@ -16,6 +16,7 @@ import { LineChart } from "./EnergyBlocks";
 import { IconCheck } from "./Icons";
 import { useSession } from "./Session";
 
+import Loading from "./Loading";
 const nf = (n, d = 1) => { try { return new Intl.NumberFormat(undefined, { maximumFractionDigits: d, minimumFractionDigits: 0 }).format(n); } catch { return String(n); } };
 const hm = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
 
@@ -28,7 +29,7 @@ export default function EnergyLive() {
   const [copied, setCopied] = useState(false);
   useUpdates(`energy-live-${hours}`, () => api(`/energy/live/?hours=${hours}`), 10000, (r) => { setD(r); setErr(false); }, true, { live: true, onError: () => setErr(true) }); // live: every 10 seconds, not while the tab is hidden
   if (err && !d) return <p className="muted">{tx("De energiegegevens zijn niet beschikbaar.")}</p>;
-  if (!d) return <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return <p className="muted"><Loading /></p>;
   const pts = d.points.map((p) => ({ x: hm(p.t), y: p.w }));
   const copy = async () => { try { await navigator.clipboard.writeText(d.api.url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ } };
   return (

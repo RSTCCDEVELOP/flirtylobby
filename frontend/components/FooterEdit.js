@@ -15,6 +15,7 @@ import { IconEdit } from "./Icons";
 import { useSession } from "./Session";
 import Tabs from "./Tabs";
 
+import Loading from "./Loading";
 const LOOK = [["footer_layout", "Indeling"], ["footer_tone", "Kleur"], ["footer_brand", "Logo en naam"], ["footer_social", "Sociale media"], ["footer_meta", "Bedrijfsgegevens"], ["footer_size", "Ruimte"]];
 const SOCIAL = [["facebook", "Facebook"], ["instagram", "Instagram"], ["x", "X"], ["linkedin", "LinkedIn"], ["youtube", "YouTube"], ["tiktok", "TikTok"]];
 
@@ -63,7 +64,7 @@ export default function FooterEdit() {
             <div className="pb-objhead"><strong>{tx("Footer bewerken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={close} aria-label={tx("Sluiten")}>×</button></div>
             <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ...(sys ? [["logo", "Logo"], ["text", "Teksten en links"]] : [])]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-            {tab === "look" && (!theme ? <p className="muted">{tx("Laden…")}</p> : (
+            {tab === "look" && (!theme ? <p className="muted"><Loading /></p> : (
               <div className="stack-sm">
                 <label className="packlay-row"><span className="switch"><input type="checkbox" checked={(theme.values.page_footer || "show") !== "hide"} onChange={(e) => setLook("page_footer", e.target.checked ? "show" : "hide")} /><span /></span><span className="packlay-text"><strong>{tx("Footer standaard tonen")}</strong><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
                 <div className="grid2">

@@ -14,6 +14,7 @@ import Tabs from "../../../../components/Tabs";
 import PdfButton from "../../../../components/AiPdfButton";
 import { BarList, Columns, Donut, Kpi, KpiGrid, GROUP_COLOR, GROUPS, Legend, Stacked, money, moneyTok, num, short } from "../../../../components/AiCharts";
 
+import Loading from "../../../../components/Loading";
 const PROVIDERS = [["anthropic", "Claude"], ["openai", "OpenAI"], ["gemini", "Gemini"]];
 const PERIODS = [["day", "Laatste 24 uur"], ["week", "Laatste 7 dagen"], ["month", "Laatste 30 dagen"], ["quarter", "Laatste 90 dagen"], ["year", "Laatste jaar"]];
 const GROUP_NAME = { user: "Gebruiker", admin: "Admin", super: "Superadmin", system: "Systeem", site: "Website" };
@@ -95,7 +96,7 @@ export default function AiDashboard() {
       <p className="muted">{tx("Alle AI-aanroepen van het systeem: wie, waar, hoeveel en wat het kost. De module staat altijd aan zodra er een AI-koppeling is.")}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       <Tabs value={tab} onChange={setTab} tabs={[["overview", "Overzicht"], ["where", "Waar"], ["users", "Gebruikers"], ["costs", "Kosten"], ["credit", "Tegoed"], ["blocks", "Blokken"], ["settings", "Instellingen"]]} />
-      {!d && !msg && <p className="muted">{tx("Laden…")}</p>}
+      {!d && !msg && <p className="muted"><Loading /></p>}
       {d && tab === "overview" && (<div className="ai-wrap">
         {filters}
         <KpiGrid>
@@ -241,7 +242,7 @@ export default function AiDashboard() {
         </>)}
         {ptab !== "general" && (() => {
           const pv = provs?.providers?.find((x) => x.provider === ptab);
-          if (!pv) return <p className="muted">{tx("Laden…")}</p>;
+          if (!pv) return <p className="muted"><Loading /></p>;
           const own = st.prices?.[ptab] || {};
           const rate = st.cost_currency === st.currency ? 1 : Number(st.rate);
           const names = [...pv.models.map((r) => r.model), ...Object.keys(own).filter((k) => !pv.models.some((r) => r.model === k))];

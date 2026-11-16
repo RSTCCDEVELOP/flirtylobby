@@ -16,6 +16,7 @@ import { IconBolt } from "./Icons";
 import SmallEditor from "./SmallEditor";
 import Tabs from "./Tabs";
 
+import Loading from "./Loading";
 // Superadmin: make a template of the website as it is now. The server builds the zip (settings of the system, pages, menu, pictures; never the data of users) and puts it in resource/templates;
 // here the example pictures are made: a screenshot of every chosen page (and the home page on a phone), which the choice screen and the demo show.
 const slug = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
@@ -124,7 +125,7 @@ export default function TemplateCreate({ onClose, onMade }) {
         {tab === "shots" && (
           <div className="stack-sm" style={{ gap: ".6rem" }}>
             <p className="muted" style={{ margin: 0 }}>{tx("Kies de pagina's die in de template komen: alleen die van dit ontwerp staan aan. Pagina's van een eerdere website of demo, of waarvan de module uitstaat, staan uit. Van de gekozen pagina's (maximaal 6) wordt een schermafdruk gemaakt voor het keuzescherm en voor een demo.")}</p>
-            {pages === null && <p className="muted">{tx("Laden…")}</p>}
+            {pages === null && <p className="muted"><Loading /></p>}
             {pages && !pages.length && <p className="muted">{tx("Er zijn geen eigen pagina's. Er wordt een voorbeeldplaatje getekend in de kleuren van het thema.")}</p>}
             {(pages || []).map((p) => <label key={p.key} style={{ display: "flex", gap: ".5rem", alignItems: "flex-start", opacity: p.default || on[p.key] ? 1 : .75 }}><input type="checkbox" checked={!!on[p.key]} onChange={(e) => setOn((o) => ({ ...o, [p.key]: e.target.checked }))} style={{ marginTop: 4 }} /><span>{p.title} <small className="muted">{p.path}</small>{p.reason && <small className="muted" style={{ display: "block" }}>{tx(p.reason)}</small>}</span></label>)}
             {pages?.length > 0 && <label style={{ display: "flex", gap: ".5rem", alignItems: "center" }}><input type="checkbox" checked={mobile} onChange={(e) => setMobile(e.target.checked)} /> {tx("Ook de eerste gekozen pagina op een telefoon")}</label>}

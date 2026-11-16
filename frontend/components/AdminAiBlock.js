@@ -18,6 +18,7 @@ import AiCreditPopup from "./AiCreditPopup";
 import PdfButton from "./AiPdfButton";
 import { money, num, short } from "./AiCharts";
 
+import Loading from "./Loading";
 const GROUP_NAME = { user: "Gebruiker", admin: "Admin" };
 
 // A block on the admin page: the AI use of the users and admins (not of the superadmins), the own credit with a button to top it up, and for a superadmin a button per user to put credit on.
@@ -51,7 +52,7 @@ export default function AdminAiBlock() {
         </select>
         <Link className="btn sm" href="/dashboard/admin/ai">{tx("Volledig overzicht")}</Link>
       </div>
-      {!d && !err && <p className="muted">{tx("Laden…")}</p>}
+      {!d && !err && <p className="muted"><Loading /></p>}
       {d && (<>
         {me && (
           <div className="card ai-credit">

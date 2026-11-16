@@ -16,6 +16,7 @@ import { IconEdit } from "./Icons";
 import { useSession } from "./Session";
 import Tabs from "./Tabs";
 
+import Loading from "./Loading";
 const LOOK = [["header_layout", "Indeling"], ["header_style", "Uiterlijk"], ["header_sticky", "Blijft bovenaan bij scrollen"], ["menu_style", "Uiterlijk van het menu"], ["mode_switch", "Schakelaar licht/donker"]];
 
 // The Edit button of the header (edit mode), like the one of the footer: its look and the size of its logo in one popup.
@@ -71,7 +72,7 @@ export default function HeaderEdit() {
             <div className="pb-objhead"><strong>{tx("Header bewerken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={close} aria-label={tx("Sluiten")}>×</button></div>
             <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ["logo", "Logo"], ["menu", "Menu"]]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-            {tab === "look" && (!theme ? <p className="muted">{tx("Laden…")}</p> : (
+            {tab === "look" && (!theme ? <p className="muted"><Loading /></p> : (
               <div className="stack-sm">
                 <label className="packlay-row"><span className="switch"><input type="checkbox" checked={(theme.values.page_header || "show") !== "hide"} onChange={(e) => setLook("page_header", e.target.checked ? "show" : "hide")} /><span /></span><span><strong>{tx("Header standaard tonen")}</strong><br /><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
                 <div className="grid2">
@@ -84,7 +85,7 @@ export default function HeaderEdit() {
                 <small className="muted">{tx("Zien hoe de varianten eruitzien kan bij Admin → Thema → Layout → Header.")}</small>
               </div>
             ))}
-            {tab === "logo" && (!theme || !logoField ? <p className="muted">{tx("Laden…")}</p> : (
+            {tab === "logo" && (!theme || !logoField ? <p className="muted"><Loading /></p> : (
               <div className="stack-sm">
                 <label>{tx("Hoogte van het logo")}: <strong>{Number(theme.values.site_logo_h) || 52} px</strong>
                   <input type="range" min={logoField.min} max={logoField.max} step={2} value={Number(theme.values.site_logo_h) || 52} onChange={(e) => setLogo(Number(e.target.value))} /></label>

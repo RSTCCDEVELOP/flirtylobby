@@ -15,7 +15,7 @@ import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import { useSession } from "./Session";
-import { setLicenseOpen } from "../lib/firstRun";
+import { setLicenseOpen, useSandboxFirst } from "../lib/firstRun";
 
 // Every time an administrator logs in and the website has no licence: ask to arrange it now (the payment page, or contact the reseller).
 const keyOf = () => `licprompt:${(localStorage.getItem("token") || "").slice(-10)}`;
@@ -25,6 +25,7 @@ export default function LicensePrompt({ site }) {
   const user = dash?.user ?? site_?.user ?? null, ready = site_?.ready ?? true;
   const mods = useModules();
   const [lic, setLic] = useState(null);
+  const { welcomeOpen } = useSandboxFirst(false);  // the very first question (language, light or dark) comes before this one
   const admin = !!user && (user.is_staff || canAdmin(user, mods));
   useEffect(() => {
     if (!ready || !admin || !site?.license_missing) return undefined;
@@ -34,7 +35,7 @@ export default function LicensePrompt({ site }) {
     return () => setLicenseOpen(false);
   }, [ready, admin, site?.license_missing]);
   const dismiss = () => { try { sessionStorage.setItem(keyOf(), "1"); } catch {} setLic(null); setLicenseOpen(false); }; // asked once per login
-  if (!lic) return null;
+  if (!lic || welcomeOpen) return null;
   const r = lic.reseller || {};
   return (
     <div className="overlay" onClick={dismiss}>

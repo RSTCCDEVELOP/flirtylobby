@@ -13,6 +13,7 @@ import { tx } from "../lib/t";
 import { useSession } from "./Session";
 import { BarList, Columns, Donut, GROUP_COLOR, Legend, Stacked, money, num, short } from "./AiCharts";
 
+import Loading from "./Loading";
 const PERIODS = [["day", "24 uur"], ["week", "7 dagen"], ["month", "30 dagen"], ["quarter", "90 dagen"], ["year", "Jaar"]];
 const GROUP_NAME = { user: "Gebruiker", admin: "Admin", super: "Superadmin", system: "Systeem" };
 
@@ -29,7 +30,7 @@ export default function AiBlock({ block }) {
   }, [user?.is_staff, period]);
   if (!user?.is_staff) return editing ? <div className="card muted">{tx("AI-blok: alleen zichtbaar voor superadmins.")}</div> : null;
   if (denied) return null;
-  if (!d) return <div className="card muted">{tx("Laden…")}</div>;
+  if (!d) return <div className="card muted"><Loading /></div>;
   const cur = d.currency, cc = d.cost_currency, m = (n) => money(n, cur), t = d.totals;
   const head = (title) => (
     <div className="row" style={{ justifyContent: "space-between", gap: ".6rem" }}>

@@ -14,6 +14,7 @@ import { tx } from "../../../lib/t";
 import AiCreditPopup from "../../../components/AiCreditPopup";
 import { money, num, short } from "../../../components/AiCharts";
 
+import Loading from "../../../components/Loading";
 const KIND = { topup: "Gekocht", usage: "Gebruikt", adjust: "Aangepast" };
 
 // The AI of the user himself: credit (when it has to be bought), the use of the last 30 days and the history.
@@ -31,7 +32,7 @@ export default function MyAi() {
   }, [paid, ref, load]);
   useEffect(() => { if (paid) { setMsg({ ok: true, text: tx("Bedankt! Zodra de betaling binnen is, staat het tegoed hieronder.") }); const t = setTimeout(load, 2500); return () => clearTimeout(t); } return undefined; }, [paid, load]);
   useEffect(() => { if (d && wantBuy) setBuy(true); }, [!!d, wantBuy]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
   const m = (n) => money(n, d.currency);
   return (
     <>

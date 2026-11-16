@@ -17,6 +17,7 @@ import { useModules } from "./Modules";
 import { Logo } from "./BrandingContext";
 import Tabs from "./Tabs";
 
+import Loading from "./Loading";
 // "Info" in the Beheer menu: the version of easy2edit, the installed plugins and the copyright
 function Popup({ onClose }) {
   const [d, setD] = useState(null);
@@ -32,7 +33,7 @@ function Popup({ onClose }) {
         <button type="button" className="icon-btn info-x" onClick={onClose} aria-label={tx("Sluiten")}><IconX /></button>
         <div className="info-logo"><Logo /></div>
         {err && <div className="alert">{err}</div>}
-        {!d && !err && <p className="muted">{tx("Laden…")}</p>}
+        {!d && !err && <p className="muted"><Loading /></p>}
         {d && (
           <>
             <h2 style={{ margin: ".4rem 0 0", textAlign: "center" }}>{d.name} <small className="muted">{tx("versie")} {d.version} {tx("build")} {d.build}</small></h2>

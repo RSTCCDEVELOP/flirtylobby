@@ -16,6 +16,7 @@ import { useAuth } from "./AuthContext";
 import { IconSearch, IconStar } from "./Icons";
 import { useModules } from "./Modules";
 
+import Loading from "./Loading";
 // Dashboard search: one box that looks through every setting, page and option of the dashboard, in every language
 // (public/search-index.json: the Dutch texts plus their translations, built by scripts/build-search-index.mjs).
 const norm = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
@@ -66,7 +67,7 @@ export default function DashboardSearch() {
       </div>
       {q.trim() && (
         <ul className="dash-search-list" role="listbox">
-          {!index && <li className="muted">{tx("Laden…")}</li>}
+          {!index && <li className="muted"><Loading /></li>}
           {index && !results.length && <li className="muted">{tx("Niets gevonden.")}</li>}
           {results.map((e) => (
             <li key={`${e.h}|${e.t}`} className="dash-search-row">

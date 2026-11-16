@@ -15,6 +15,7 @@ import ProgressBar from "./ProgressBar";
 import { IconBolt, IconX } from "./Icons";
 import MarketingMock, { HUE } from "./MarketingMock";
 
+import Loading from "./Loading";
 const siteLang = () => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } };
 
 // The marketing pop-up of a module: a short text, three advantages and an example with made-up data in the theme of the site. The flags switch the language;
@@ -46,7 +47,7 @@ export default function MarketingPopup({ module, lang: start, onClose }) {
       <div className="card modal mk-modal" role="dialog" aria-label={c?.title || "Marketing"} dir={rtl ? "rtl" : undefined} onClick={(e) => e.stopPropagation()}>
         <button type="button" className="icon-btn info-x" onClick={onClose} aria-label={tx("Sluiten")}><IconX /></button>
         {err && !c && <div className="alert">{err}</div>}
-        {!c && !err && <p className="muted">{tx("Laden…")}</p>}
+        {!c && !err && <p className="muted"><Loading /></p>}
         {c && (
           <>
             <header className="mk-hero" style={{ background: `linear-gradient(135deg, ${(HUE[d.group] || HUE.Systeem)[0]}, ${(HUE[d.group] || HUE.Systeem)[1]})` }}>

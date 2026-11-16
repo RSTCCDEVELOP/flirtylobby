@@ -17,12 +17,13 @@ import { Logo } from "./BrandingContext";
 import { RichText } from "./SmallEditor";
 import Tabs from "./Tabs";
 
+import Loading from "./Loading";
 // Admins and superadmins must sign the terms and conditions: read them, ask for a code by e-mail and type it. Comes right after the licence message, before the rest.
 // A new version (published by the superadmin) must be signed again. On a local server a superadmin gets the code on the screen too (testing); typing @ puts it in.
 export default function TermsGate() {
   const { user, logout } = useAuth();
   const adm = !!user && (user.is_staff || Object.values(user.module_levels || {}).some((v) => v >= 2)); // the same rule as on the server: superadmins and everybody with edit rights somewhere
-  const { licenseOpen } = useSandboxFirst(adm);
+  const { licenseOpen, welcomeOpen } = useSandboxFirst(adm);
   const [st, setSt] = useState(null);     // {required, signed, version, local, email}
   const [doc, setDoc] = useState(null);   // {title, body, lang, version}
   const [lang, setLang] = useState(getLanguage() || "nl");
@@ -42,7 +43,7 @@ export default function TermsGate() {
   }, [adm]);
   useEffect(() => { if (st && st.required && !st.signed) api(`/system/terms/?lang=${lang}`).then(setDoc).catch(() => {}); }, [st, lang]);
 
-  if (!adm || !st || !st.required || st.signed || done || licenseOpen) return null;
+  if (!adm || !st || !st.required || st.signed || done || licenseOpen || welcomeOpen) return null;
 
   const ask = async () => {
     setBusy(true); setMsg(null);
@@ -98,7 +99,7 @@ export default function TermsGate() {
         {tab === "read" && (
           <>
             <div className="terms-text" style={{ maxHeight: "46vh", overflow: "auto", border: "1px solid var(--line)", borderRadius: 12, padding: ".8rem 1rem" }}>
-              {doc ? <RichText value={doc.body} /> : <p className="muted">{tx("Laden…")}</p>}
+              {doc ? <RichText value={doc.body} /> : <p className="muted"><Loading /></p>}
             </div>
             <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
               <button type="button" className="btn" onClick={() => logout?.()}>{tx("Uitloggen")}</button>

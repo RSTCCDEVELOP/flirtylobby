@@ -38,6 +38,13 @@ WIPE = [
 ]
 
 
+# The identity of the website that was on this system: name, tab title, company and contact details, address, social links and the logo link. After a reset they are gone: the name is easy2edit again.
+# (The technical settings of the installation stay: addresses of the servers, security, e-mail, API keys, sizes, time zone.)
+IDENTITY_KEYS = ("site_name", "tab_title", "tagline", "company_name", "footer_text", "kvk", "vat_id", "contact_email", "support_email", "phone", "address", "street", "house_number", "postal_code",
+                 "city", "country", "social_instagram", "social_facebook", "social_x", "social_linkedin", "social_youtube", "social_tiktok", "footer_logo_height", "footer_logo_link", "installation_name",
+                 "maintenance_message", "maintenance_messages")
+
+
 def _model(label):
     from django.apps import apps
 
@@ -357,7 +364,7 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
 
         row = SystemSettings.objects.filter(pk=1).first()
         if row:
-            row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids")}
+            row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids", "welcome_asked", *IDENTITY_KEYS)}  # also the name and the details of the website that was here: it is easy2edit again
             row.save()
     except Exception:  # noqa: BLE001
         logger.exception("Reset: the choice of the standard installation could not be cleared")

@@ -15,6 +15,7 @@ import Tabs from "../../../../components/Tabs";
 import PdfButton from "../../../../components/AiPdfButton";
 import { BarList, Columns, Donut, Kpi, KpiGrid, GROUP_COLOR, Legend, Stacked, money, num, short } from "../../../../components/AiCharts";
 
+import Loading from "../../../../components/Loading";
 const PERIODS = [["day", "Laatste 24 uur"], ["week", "Laatste 7 dagen"], ["month", "Laatste 30 dagen"], ["quarter", "Laatste 90 dagen"], ["year", "Laatste jaar"]];
 const GROUP_NAME = { user: "Gebruiker", admin: "Admin" };
 const DAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"];
@@ -49,7 +50,7 @@ export default function AiAdmin() {
       <p className="muted">{tx("Het AI-gebruik van je gebruikers en van jezelf, en wat het kost. Per gebruiker kun je een rapport als PDF maken.")}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       <Tabs value={tab} onChange={setTab} tabs={[["overview", "Overzicht"], ["users", "Gebruikers"], ["credit", "Tegoed voor gebruikers"]]} />
-      {!d && !msg && <p className="muted">{tx("Laden…")}</p>}
+      {!d && !msg && <p className="muted"><Loading /></p>}
       {d && tab === "overview" && (<div className="ai-wrap">
         {filters}
         <KpiGrid>

@@ -281,7 +281,7 @@ API_URL_INTERNAL=http://backend:8000"""
 
 def site_name():
     """The name of the website: what the header, browser tab, e-mails, the app icon and the 2-step app show."""
-    return get()["site_name"] or "Studio2"
+    return get()["site_name"] or "easy2edit"
 
 
 def limit_mb(key):

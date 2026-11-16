@@ -17,7 +17,9 @@ import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import KitScope from "../lib/ui-kit/KitScope";
 import { useUpdates } from "../lib/updates";
-import { CostSummary, money, num, short } from "./AiCharts";
+import { Columns, CostSummary, money, num, short } from "./AiCharts";
+import { confirmDialog } from "../lib/dialog";
+import { ACTIVE_DESIGN_EVENT, getActiveDesign } from "../lib/activeDesign";
 
 // The floating item "AI" of the back office (admin and superadmin screens): it appears as soon as the AI has been used (the last 30 minutes, or while you work) and opens a small window
 // with the costs of every request, live. Only what is charged, margin included, in the currency of the website (euro by default); never the purchase price.
@@ -38,6 +40,20 @@ export default function AiLiveCost() {
   const [pos, setPos] = useState("br");  // where the icon sits: tl, tr, bl, br; remembered per user on the server (PrefsSync keeps "aiLivePos")
   useEffect(() => { try { const v = localStorage.getItem("aiLivePos"); if (["tl", "tr", "bl", "br"].includes(v)) setPos(v); } catch {} }, [allowed]);
   const place = (v) => { setPos(v); try { localStorage.setItem("aiLivePos", v); } catch {} };
+  const [design, setDesign] = useState(getActiveDesign());  // the design of the AI creator that is open: its own counter
+  const [dcost, setDcost] = useState(null);
+  useEffect(() => { const h = (e) => { setDesign(e.detail || null); setDcost(null); }; window.addEventListener(ACTIVE_DESIGN_EVENT, h); return () => window.removeEventListener(ACTIVE_DESIGN_EVENT, h); }, []);
+  const [dlist, setDlist] = useState([]);  // the costs of every design, each with its own counter
+  const loadDesign = useCallback(async () => {
+    try { const d = await api("/sitecreator/costs/"); setDlist(d.designs || []); } catch { /* quiet: no right for designs */ }
+    if (!design?.id) return;
+    try { setDcost(await api(`/sitecreator/${design.id}/costs/`)); } catch { /* quiet */ }
+  }, [design?.id]);
+  const resetDesign = async (id = design?.id) => {
+    if (!id) return;
+    if (!(await confirmDialog(tx("De teller van dit ontwerp op nul zetten? De kosten zelf blijven in de lijst met alle AI-kosten staan."), { title: tx("Teller resetten"), okLabel: tx("Resetten") }))) return;
+    try { await api(`/sitecreator/${id}/costs/`, { method: "POST", body: {} }); await loadDesign(); } catch { /* quiet */ }
+  };
   const last = useRef(0);
   const first = useRef(true);
   const openRef = useRef(false);
@@ -55,11 +71,13 @@ export default function AiLiveCost() {
         if (!first.current) { if (!openRef.current) setFresh((n) => n + d.rows.length); setPulse(true); setTimeout(() => setPulse(false), 1800); }
       }
       first.current = false;
+      loadDesign();
     } catch { /* quiet: the item simply stays as it is */ }
-  }, []);
+  }, [loadDesign]);
   useUpdates("ai-live-window", poll, 1500, null, allowed && open, { live: true }); // only asks while the small window is open ...
   useUpdates("ai-live-badge", poll, 20000, null, allowed && !open);  // ... and now and then for the counter on the icon when it is closed
   useEffect(() => { if (open) setFresh(0); }, [open]);
+  useEffect(() => { if (open) loadDesign(); }, [open, loadDesign]);
   if (!allowed) return null;  // (always there in the back office, also before the first AI call: the costs of a design that is being made appear when it is ready)
 
   const symbol = (() => { try { return new Intl.NumberFormat("nl-NL", { style: "currency", currency: meta.currency || "EUR", currencyDisplay: "narrowSymbol" }).formatToParts(0).find((x) => x.type === "currency")?.value || meta.currency; } catch { return meta.currency || "€"; } })(); // € for euro, $ for dollar ...
@@ -81,6 +99,29 @@ export default function AiLiveCost() {
             </span>
           </header>
           <CostSummary solid now={money(tot, sym)} today={sums ? money(sums.today.charged + busyCost, sym) : "—"} month={sums ? money(sums.month.charged + busyCost, sym) : "—"} subs={[`${rows.length} ${tx("verzoeken")} · ${short(tokens)} ${tx("tokens")}${failed ? ` · ${failed} ${tx("mislukt")}` : ""}`, sums ? `${sums.today.calls} ${tx("verzoeken")}` : "", sums ? `${sums.month.calls} ${tx("verzoeken")}` : ""]} />
+          {dlist.length > 0 && (
+            <div data-easy2edit-tag="ui-cost-widget" style={{ padding: ".5rem .9rem", borderBottom: "1px solid var(--e2e-border)", display: "grid", gap: ".35rem" }}>
+              <small className="e2e-hint" style={{ textTransform: "uppercase", letterSpacing: ".06em" }}>{tx("Kosten per ontwerp")}</small>
+              {dlist.map((d) => (
+                <div key={d.id} style={{ display: "flex", alignItems: "center", gap: ".5rem", fontWeight: design?.id === d.id ? 600 : 400 }}>
+                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={d.name}>{d.name}<small className="e2e-hint"> · {d.calls} {tx("verzoeken")}</small></span>
+                  <b style={{ fontVariantNumeric: "tabular-nums" }}>{money(d.charged, sym)}</b>
+                  <button type="button" className="e2e-btn e2e-btn--sm" onClick={() => resetDesign(d.id)} title={tx("Teller van dit ontwerp op nul zetten")}>{tx("Reset")}</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {design?.id && (
+            <div data-easy2edit-tag="ui-cost-widget" style={{ padding: ".6rem .9rem", borderBottom: "1px solid var(--e2e-border)", display: "grid", gap: ".4rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: ".6rem" }}>
+                <span style={{ minWidth: 0 }}><small className="e2e-hint" style={{ display: "block" }}>{tx("Kosten van dit ontwerp")}{design.name ? `: ${design.name}` : ""}</small>
+                  <b style={{ fontSize: "1.25rem", fontVariantNumeric: "tabular-nums" }}>{money(dcost?.charged || 0, sym)}</b></span>
+                <button type="button" className="e2e-btn e2e-btn--sm" onClick={() => resetDesign()} title={tx("Teller van dit ontwerp op nul zetten")}>{tx("Reset")}</button>
+              </div>
+              <small className="e2e-hint">{dcost ? `${dcost.calls} ${tx("verzoeken")} · ${short(dcost.tokens)} ${tx("tokens")}` : tx("Bezig…")}</small>
+              {dcost?.items?.length > 0 && <Columns values={dcost.items.map((i) => i.charged)} labels={dcost.items.map((_, k) => String(k + 1))} />}
+            </div>
+          )}
           <ul className="e2e-fold">
             {running.map((r) => (
               <li key={r.id} className="e2e-fold__run" data-easy2edit-tag="ui-cost-widget">

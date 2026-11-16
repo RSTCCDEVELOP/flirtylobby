@@ -448,3 +448,170 @@ def test_search_terms_come_from_the_ai_and_are_cleaned(monkeypatch):
     assert sc.search_terms("", "") == []
     monkeypatch.setattr(sc.ai, "available", lambda: False)
     assert sc.search_terms("Bue", "boekhouding voor het MKB") == []
+
+
+def test_design_export_and_import_json(job):
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={"index.html": "<h1>Hoi</h1>"}, status="done", messages=[{"role": "ai", "text": "Vragen", "questions": [{"id": "name", "q": "Naam?", "type": "text", "options": []}], "answers": {"ans": {"name": "Blue"}, "own": {}}}])
+    job.refresh_from_db()
+    data = json.loads(json.dumps(sitecreator.export_job(job)))
+    assert data["format"] == "easy2edit-design" and "files" not in data["design"]
+    assert data["render"]["files"]["index.html"] == "<h1>Hoi</h1>" and data["render"]["pages"][0]["file"] == "index.html"  # the made pages: a section of their own
+    got, info = sitecreator.import_job(job.user, data)  # the same id exists: the user is asked
+    assert got is None and info["exists"] and info["id"] == str(job.pk)
+    new, info = sitecreator.import_job(job.user, data, "add")  # a row is added
+    assert new.pk != job.pk and info["added"] and new.messages[0]["answers"]["ans"]["name"] == "Blue" and new.status == "done"
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={})
+    back, info = sitecreator.import_job(job.user, data, "replace")  # replaced
+    assert back.pk == job.pk and info["replaced"] and back.files == {"index.html": "<h1>Hoi</h1>"}
+    only, info = sitecreator.import_job(job.user, data, "add", "questions")  # only the questions and answers
+    assert only.files == {} and only.status == "draft" and only.messages[0]["answers"]["ans"]["name"] == "Blue"
+    with pytest.raises(ValueError):
+        sitecreator.import_job(job.user, {"format": "iets-anders"})
+
+
+def test_answers_of_questions_added_by_the_screen_are_kept(job):
+    msgs = [{"role": "ai", "text": "Vragen", "questions": [{"id": "sfeer", "q": "Sfeer?", "type": "text", "options": []}]}]
+    SiteDesignJob.objects.filter(pk=job.pk).update(messages=msgs)
+    job.refresh_from_db()
+    sitecreator.save_answers(job, 0, {"colors": "Thema Blue (hoofdkleur #123456)", "name": "Blue BV", "sfeer": "Rustig", "onbekend": "x"}, {})
+    job.refresh_from_db()
+    a = job.messages[0]["answers"]["ans"]
+    assert a["colors"].startswith("Thema Blue") and a["name"] == "Blue BV" and a["sfeer"] == "Rustig" and "onbekend" not in a
+    assert job.name == "Blue BV"
+
+
+def test_design_costs_count_only_this_design_and_can_be_reset(job):
+    from decimal import Decimal
+
+    from apps.integrations.models import AiUsage
+
+    AiUsage.objects.create(source="System", ref=sitecreator._ref_of(job.pk), charged=Decimal("0.5"), tokens_in=100, tokens_out=50)
+    AiUsage.objects.create(source="System", ref=sitecreator._ref_of(job.pk), charged=Decimal("0.25"), tokens_in=10, tokens_out=5)
+    AiUsage.objects.create(source="System", ref="d:andere", charged=Decimal("9"))
+    c = sitecreator.design_costs(job)
+    assert c["calls"] == 2 and c["charged"] == 0.75 and c["tokens"] == 165
+    sitecreator.reset_costs(job)
+    job.refresh_from_db()
+    assert sitecreator.design_costs(job)["calls"] == 0
+    AiUsage.objects.create(source="System", ref=sitecreator._ref_of(job.pk), charged=Decimal("0.1"))
+    assert sitecreator.design_costs(job)["charged"] == 0.1
+
+
+def test_fictional_answer_for_a_field(job, monkeypatch):
+    monkeypatch.setattr(sitecreator.ai, "available", lambda: True)
+    monkeypatch.setattr(sitecreator.ai, "claude", lambda system, prompt, **kw: '  "Voorbeeldstraat 1, 1000 AA Teststad, 010-1234567, info@example.com"  ')
+    t = sitecreator.fictional_answer(job, "Welke contactgegevens?", "Blue BV", "advies", "nl")
+    assert "example.com" in t and not t.startswith('"')
+    with pytest.raises(ValueError):
+        sitecreator.fictional_answer(job, "", "x")
+
+
+def test_costs_of_all_designs_separately(job):
+    from decimal import Decimal
+
+    from apps.integrations.models import AiUsage
+
+    other = SiteDesignJob.objects.create(user=job.user, name="Tweede", status="done", brief={})
+    AiUsage.objects.create(source="System", ref=sitecreator._ref_of(job.pk), charged=Decimal("1.5"))
+    AiUsage.objects.create(source="System", ref=sitecreator._ref_of(other.pk), charged=Decimal("0.5"))
+    by = {d["id"]: d for d in sitecreator.designs_costs(job.user)["designs"]}
+    assert by[str(job.pk)]["charged"] == 1.5 and by[str(other.pk)]["charged"] == 0.5
+    sitecreator.reset_costs(other)  # each design has its own counter
+    other.refresh_from_db()
+    by = {d["id"]: d for d in sitecreator.designs_costs(job.user)["designs"]}
+    assert str(other.pk) not in by and by[str(job.pk)]["charged"] == 1.5
+
+
+def test_running_calls_of_a_design_count_along(job):
+    from apps.integrations import aiusage
+
+    with aiusage.for_ref(sitecreator._ref_of(job.pk)):
+        rid = aiusage.begin("claude-sonnet-5-5", "systeem", "vraag " * 200)
+    try:
+        c = sitecreator.design_costs(job)
+        assert c["busy"] == 1 and c["calls"] == 1 and c["tokens"] > 0
+        assert any(d["id"] == str(job.pk) for d in sitecreator.designs_costs(job.user)["designs"])
+    finally:
+        aiusage.end(rid)
+    assert sitecreator.design_costs(job)["busy"] == 0
+
+
+def test_a_stuck_design_can_be_stopped_or_continued(job, monkeypatch):
+    from django.utils import timezone
+
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=3, step="Het plan maken", brief={**job.brief, "run": {"fn": "_generate", "args": []}})
+    SiteDesignJob.objects.filter(pk=job.pk).update(updated_at=timezone.now() - timezone.timedelta(minutes=3))
+    job.refresh_from_db()
+    assert sitecreator.is_stalled(job) and sitecreator.public(job)["stalled"] is True
+    started = []
+    monkeypatch.setattr(sitecreator, "_generate", lambda pk: started.append(pk))
+    sitecreator.resume(job)
+    import time as _t
+    for _ in range(50):
+        if started:
+            break
+        _t.sleep(0.05)
+    assert started == [job.pk]
+    for _ in range(100):  # the worker thread ends (it says "error": it did not finish the design)
+        if job.pk not in sitecreator.ACTIVE:
+            break
+        _t.sleep(0.05)
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", updated_at=timezone.now() - timezone.timedelta(minutes=3))
+    job.refresh_from_db()
+    stopped = sitecreator.stop(job)
+    assert stopped.status in ("draft", "done") and not sitecreator.is_stalled(stopped)
+    with pytest.raises(ValueError):
+        sitecreator.resume(stopped)
+
+
+def test_an_error_in_the_work_is_reported_on_the_design(job):
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running")
+
+    def boom(pk):
+        raise RuntimeError("iStock is niet bereikbaar")
+
+    sitecreator._run_for(boom, job.pk, (job.pk,))
+    job.refresh_from_db()
+    assert job.status == "error" and "iStock is niet bereikbaar" in job.error
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", error="")
+    sitecreator._run_for(lambda pk: None, job.pk, (job.pk,))  # ends without a result: also reported
+    job.refresh_from_db()
+    assert job.status == "error" and "onverwacht" in job.error
+
+
+def test_resume_of_a_design_that_started_before_the_work_was_kept(job, monkeypatch):
+    from django.utils import timezone
+
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", messages=[{"role": "user", "text": "Antwoorden"}, {"role": "ai", "text": "Klaar, ik ontwerp"}], brief={"chat": True, "name": "Chat"}, updated_at=timezone.now() - timezone.timedelta(minutes=5))
+    job.refresh_from_db()
+    started = []
+    monkeypatch.setattr(sitecreator, "_generate", lambda pk: started.append(pk))
+    sitecreator.resume(job)
+    import time as _t
+    for _ in range(60):
+        if started:
+            break
+        _t.sleep(0.05)
+    assert started == [job.pk]
+
+
+def test_one_pager_gets_a_complete_plan_with_menu_anchors(job, monkeypatch):
+    def broken(*a, **k):
+        raise ValueError("geen AI")
+
+    monkeypatch.setattr(sitecreator, "_ask", broken)
+    plan = sitecreator._site_plan(job.pk, job, [("index.html", "Home")])
+    secs = plan["pages"][0]["sections"]
+    assert len(secs) >= 5 and secs[0]["id"] == "hero"
+    ids = [x["id"] for x in secs]
+    assert len(set(ids)) == len(ids) and {"about", "services", "contact"} <= set(ids)
+    assert all(x["menu"] for x in secs if x["id"] != "hero")  # these go in the menu
+
+
+def test_pages_that_the_customer_ticked_are_used(job):
+    q = [{"id": "pages", "q": "Welke pagina's?", "type": "multi", "options": ["Home", "Over ons", "Diensten"]}]
+    msgs = [{"role": "ai", "text": "Vragen", "questions": q, "answers": {"ans": {"pages": ["Home", "Over ons", "Diensten"]}, "own": {}}}]
+    assert sitecreator._answered_pages(msgs) == "Home, Over ons, Diensten"
+    msgs[0]["answers"]["ans"]["pages"] = ["One pager (alles op één pagina)"]
+    assert sitecreator._answered_pages(msgs) == "Home"
+    assert sitecreator._answered_pages([{"role": "ai", "text": "x"}]) is None

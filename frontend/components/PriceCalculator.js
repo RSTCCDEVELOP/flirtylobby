@@ -14,6 +14,7 @@ import PriceBlock from "./PriceBlock";
 import VerifyEmail from "./VerifyEmail";
 import { PresetIcon } from "./Icons";
 
+import Loading from "./Loading";
 const eur = (v) => new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(Number(v));
 
 // The calculation form as a system object on a page: the visitor picks what is needed, sees the price per month, quarter and year and has the quotation mailed as a PDF.
@@ -33,7 +34,7 @@ function Calc() {
   useEffect(() => { if (conf) api("/sales/calculator/plan/", { method: "POST", body: { answers } }).then(setPlan).catch(() => {}); }, [conf, key]); // eslint-disable-line react-hooks/exhaustive-deps
   const visible = useMemo(() => (conf?.questions || []).filter((q) => (q.requires || []).every((r) => answers[r])), [conf, answers]);
   if (conf === false) return null;
-  if (!conf) return <p className="muted">{tx("Laden…")}</p>;
+  if (!conf) return <p className="muted"><Loading /></p>;
   const tier = (n) => { let per = 0; (conf.email?.tiers || []).forEach((t) => { if (n >= t.from) per = t.price; }); return per; };
   const mails = Number(answers.email) || 0;
   const post = async (token) => {

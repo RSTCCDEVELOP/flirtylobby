@@ -13,6 +13,7 @@ import Tabs from "../../../../components/Tabs";
 import { Widgets } from "../../../../components/StatWidgets";
 import { api, errorText } from "../../../../lib/api";
 
+import Loading from "../../../../components/Loading";
 const PERIODS = [7, 30, 90];
 
 export default function StatistiekenPage() {
@@ -68,7 +69,7 @@ export default function StatistiekenPage() {
         {nav && <nav className="stat-nav" aria-label={tx("Kies een onderdeel")}>{nav}</nav>}
         <div className="stat-body">
           {main === "plugins" && tabs && !tabs.plugins.length && <p className="muted">{tx("Er zijn geen plugins geïnstalleerd.")}</p>}
-          {!data && !err ? <p className="muted">{tx("Laden…")}</p> : data && (
+          {!data && !err ? <p className="muted"><Loading /></p> : data && (
             <>
               {title && <h2 className="stat-title">{title}</h2>}
               <Widgets widgets={data.widgets} />

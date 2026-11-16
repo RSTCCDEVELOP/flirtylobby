@@ -57,6 +57,8 @@ STRUCTURE OF EVERY PAGE
 - <body> = one <header> (brand, <nav> with 3-6 links, optional button), one <main>, one <footer> (short text, links). Header and footer are identical on every page.
 - <main> consists ONLY of full-width <section> elements with an id. The band background goes on the <section> (edge to edge); inside ONE centred <div class="container"> (max-width 1100px, margin 0 auto, padding 0 1.25rem). Never put a card around a whole section. Section padding 4rem 0 (hero 6rem 0), alternate light and tinted/dark bands.
 - Allowed content: h1 (once, in the hero), h2 (section title), h3 (card title); p, ul/ol/li, strong, em, a; img/figure; buttons as <a class="btn btn-primary"> or <a class="btn btn-outline">; hr; no <form>, no <button> without a link.
+- Logos of partners, customers or clients are NOT pictures: you cannot supply them and they are not on iStock. Write those names as plain text (for example a row of names) and never use <img> for them.
+- The page is later built from the blocks of the easy2edit page editor only (heading, text with lists, picture, button, line, spacer, cards in columns, figures/stats, quote, opening hours, contact details, social links, map, video, logo, FAQ, ready-made components with a data-easy2edit-tag, system objects). There are no html or css blocks: do not design anything that needs its own markup (progress bars, check-mark icons, mock-up screens, tables, decorative shapes, inline svg in the text). Where such a part would go, use one of those blocks instead.
 - Columns: a div with display grid/flex, 2-4 columns, one column on mobile (@media (max-width: 760px)). Cards: <div class="card"> with own background, radius, padding, 1px border and/or shadow, only inside the columns, equal height.
 - A hero with text on one side and a visual on the other: two columns (50/50), text left (small label, h1, p, buttons), svg visual right.
 - FAQ: one section id="faq" with <details><summary>Question?</summary><p>Answer.</p></details> per question. Products with prices: <div class="product"> cards with <p class="price">. Events: <article class="event">.
@@ -694,7 +696,7 @@ def add_document(job, upload, user):
     with transaction.atomic():
         j = SiteDesignJob.objects.select_for_update().get(pk=job.pk)
         SiteDesignJob.objects.filter(pk=job.pk).update(docs=[*(j.docs or []), doc], updated_at=timezone.now())
-    threading.Thread(target=_read_document, args=(job.pk, doc["id"]), daemon=True).start()
+    _spawn(_read_document, job.pk, doc["id"])
     return SiteDesignJob.objects.get(pk=job.pk)
 
 
@@ -1171,7 +1173,10 @@ def _ask(system, prompt, max_tokens=24000, pk=None, images=None):
 
     if pk and _stop_requested(pk, fresh=True):
         raise Stopped("Gestopt.")
-    return ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=600, cancel=cancel if pk else None, images=images)
+    from apps.integrations import aiusage
+
+    with aiusage.for_ref(_ref_of(pk) if pk else ""):  # the costs of this design are counted
+        return ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=600, cancel=cancel if pk else None, images=images)
 
 
 def _notify_done(pk, what):
@@ -1212,7 +1217,7 @@ def generate(job, improve=False, focus=""):
         b["improve_now"], b["focus"] = True, str(focus or "").strip()[:500]
         SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, files_prev=dict(job.files or {}))  # the way back
     SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=3, step="Starten", error="", messages=keep, updated_at=timezone.now())
-    threading.Thread(target=_generate, args=(job.pk,), daemon=True).start()
+    _spawn(_generate, job.pk)
 
 
 
@@ -1294,13 +1299,15 @@ def _site_plan(pk, job, pages):
     lst = componentpacks.rules_text(b.get("component_set") or None).split("Tags:\n", 1)[-1]
     objs = ", ".join(b.get("objects") or [])
     prompt = (f"{_brief_text(b)}\n\nPlan the pages. The pages (file = title): " + "; ".join(f"{f} = {t}" for f, t in pages) + ".\n"
-              "For EVERY page give 4 to 8 sections, each ONE component, in the order of the page. Use the full variety of the set where it fits the content (hero variants, features, cards, split text+picture, stats, steps, timeline, testimonials, team, gallery, video, pricing, comparison table, FAQ, calendar, agenda, booking, charts, KPI, newsletter, contact, call-to-action ...), not the same few every time. "
+              + ("This is a ONE PAGER: there is only ONE page, so give 7 to 10 sections for it that together make the complete website (hero, about, services/offer, benefits, showcase or gallery, reviews, FAQ, contact ... as fits the business). EVERY section that belongs in the menu gets a short \"menu\" label (max 20 characters, in the language of the website) and a unique lowercase \"id\" (about, services, ...): the menu of the navbar links to these ids. "
+                 if len(pages) == 1 else "For EVERY page give 4 to 8 sections, each ONE component, in the order of the page.")
+              + " Each section is ONE component, in the order of the page. Use the full variety of the set where it fits the content (hero variants, features, cards, split text+picture, stats, steps, timeline, testimonials, team, gallery, video, pricing, comparison table, FAQ, calendar, agenda, booking, charts, KPI, newsletter, contact, call-to-action ...), not the same few every time. "
               "The first section of the start page is a hero; every page ends with a call to action or contact section. Do NOT include the navbar and footer (they are added to every page). "
               "Besides a single component a section can be a BAND with COLUMNS (a full-width row of the page editor with 1-4 columns side by side, each column holding one component): "
               '{"layout": "band", "id": "x", "bg": "none"|"soft" (a tinted band), "cols": "1"|"2"|"3"|"4"|"2-1"|"1-2"|"3-1"|"1-3" (width ratios of the columns), "valign": "top"|"center", "screen": false|true (true = a full-screen-height band, for a hero), "cells": [{"tag": "ui-...", "goal": "..."}, ...one cell per column]}. '
               "Use bands where two or three things belong side by side (for example text next to a form, a stats block next to a testimonial, two cards of different kinds) and vary the rhythm of the page: a tinted band, a full-screen hero, wide and narrow columns; not every section the same. "
               + (f"System objects that must be placed as a section: {objs} (use {{\"sysobject\": \"slug\"}} for them). " if objs else "")
-              + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-hero-split", "id": "hero", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
+              + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-hero-split", "id": "hero", "menu": "", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
               f"Available tags:\n{lst}")
     plan = {}
     try:
@@ -1317,7 +1324,7 @@ def _site_plan(pk, job, pages):
     for i, (f, title) in enumerate(pages):
         p = byfile.get(f) or {}
         secs = []
-        for s in (p.get("sections") or [])[:10]:
+        for s in (p.get("sections") or [])[:(12 if len(pages) == 1 else 10)]:
             if not isinstance(s, dict):
                 continue
             if s.get("layout") == "band":  # a band with columns: 1-4 cells, each one component
@@ -1325,12 +1332,25 @@ def _site_plan(pk, job, pages):
                 if cells:
                     cols = str(s.get("cols") or len(cells))
                     cols = cols if cols in LAYOUT_COLS and (cols.isdigit() and int(cols) == len(cells) or "-" in cols and len(cells) == 2) else str(len(cells))
-                    secs.append({"layout": "band", "id": clean_id(s.get("id")), "bg": "soft" if s.get("bg") == "soft" else "none", "cols": cols, "valign": "center" if s.get("valign") == "center" else "top", "screen": bool(s.get("screen")), "cells": cells, "goal": str(s.get("goal") or "")[:200]})
+                    secs.append({"layout": "band", "id": clean_id(s.get("id")), "bg": "soft" if s.get("bg") == "soft" else "none", "cols": cols, "valign": "center" if s.get("valign") == "center" else "top", "screen": bool(s.get("screen")), "cells": cells, "goal": str(s.get("goal") or "")[:200], "menu": str(s.get("menu") or "")[:30]})
             elif s.get("sysobject") or s.get("tag") in tags:
-                secs.append({"tag": s.get("tag"), "sysobject": clean_id(s.get("sysobject")), "id": clean_id(s.get("id")), "goal": str(s.get("goal") or "")[:300]})
+                secs.append({"tag": s.get("tag"), "sysobject": clean_id(s.get("sysobject")), "id": clean_id(s.get("id")), "goal": str(s.get("goal") or "")[:300], "menu": str(s.get("menu") or "")[:30]})
+        if not secs and len(pages) == 1:  # a one pager always gets a complete standard plan
+            secs = [{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}", "menu": ""}, {"tag": "ui-split", "id": "about", "goal": "Who we are and what we stand for", "menu": "About us"},
+                    {"tag": "ui-features", "id": "services", "goal": "The services or the offer", "menu": "Services"}, {"tag": "ui-testimonials", "id": "reviews", "goal": "What customers say", "menu": "Reviews"},
+                    {"tag": "ui-faq", "id": "faq", "goal": "The most asked questions", "menu": "FAQ"}, {"tag": "ui-cta", "id": "contact", "goal": "Contact: ask for a quote or call", "menu": "Contact"}]
+            secs = [x for x in secs if x["tag"] in tags] or secs
         if not secs:  # standard plan
             secs = ([{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}"}, {"tag": "ui-features", "id": "voordelen", "goal": "The main benefits"}] if i == 0 else [{"tag": "ui-section-heading", "id": "intro", "goal": f"Introduction of {title}"}, {"tag": "ui-split", "id": "tekst", "goal": f"The story of {title}"}]) + [{"tag": "ui-cta", "id": "contact", "goal": "Invite to get in touch"}]
         out_pages.append({"file": f, "title": str(p.get("title") or title)[:60], "description": str(p.get("description") or "")[:155], "sections": secs})
+    if len(out_pages) == 1:  # a one pager: every section has a unique id (the menu links to it)
+        seen = set()
+        for n, x in enumerate(out_pages[0]["sections"]):
+            i = x.get("id") or (x.get("menu") and re.sub(r"[^a-z0-9]+", "-", x["menu"].lower()).strip("-")) or f"sectie-{n + 1}"
+            while i in seen:
+                i += "-2"
+            seen.add(i)
+            x["id"] = i
     return {"brand": str(plan.get("brand") or (b.get("name") or "Website"))[:40], "pages": out_pages}
 
 
@@ -1361,6 +1381,10 @@ def _generate_sections(pk, job):
     sysm = _section_system(b)
     _set(pk, progress=3, step="Het plan van de pagina's maken")
     plan = _site_plan(pk, job, pages)
+    if len(plan["pages"]) == 1:  # a one pager: the menu consists of anchor links to the sections of the page
+        links = [(x.get("menu"), x["id"]) for x in plan["pages"][0]["sections"] if x.get("menu") and x.get("id")]
+        if links:
+            nav = "; ".join(f"{t} -> #{i}" for t, i in links) + " (all links are anchors on this ONE page: use exactly these href values)"
     total = 2 + sum(len(s.get("cells") or [1]) for p in plan["pages"] for s in p["sections"])
     done = [0]
 
@@ -1647,6 +1671,26 @@ def set_slot(job, file, media_id):
     return SiteDesignJob.objects.get(pk=job.pk)
 
 
+def fictional_answer(job, question, name="", what="", lang=""):
+    """The customer typed @ and Enter in a field of the questionnaire: the AI invents fictional but believable data for that question (for a company like this one), so the design can be tried out. Only example addresses and numbers."""
+    question = str(question or "").strip()[:240]
+    if len(question) < 3:
+        raise ValueError("Er is geen vraag.")
+    if not ai.available():
+        raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
+    ui = re.sub(r"[^A-Za-z-]", "", str(lang or (job.brief or {}).get("ui_lang") or ""))[:10]
+    lg = Language.objects.filter(code=ui).first() if ui else None
+    prompt = (f"Question of a questionnaire for a new website: {question}\nCompany name: {str(name or (job.brief or {}).get('name') or '-')[:120]}\nWhat it does: {str(what or '-')[:400]}\n\n"
+              f"Write a short, realistic but FICTIONAL answer for this question, as the customer could have filled it in (for contact details: an invented address, telephone number and e-mail address; use only example domains such as example.com and fictional numbers). "
+              f"Language: {(lg.name if lg else ui) or 'the language of the question'}. Max 300 characters, no explanation, no quotes: only the answer text.")
+    with __import__("apps.integrations.aiusage", fromlist=["x"]).for_ref(_ref_of(job.pk)):
+        out = ai.claude("You invent fictional sample data for a website questionnaire. Reply with only the answer text.", prompt, max_tokens=300, timeout=40)
+    text = " ".join(str(out or "").split()).strip().strip('"')[:300]
+    if not text:
+        raise ValueError("De AI kon geen gegevens bedenken.")
+    return text
+
+
 def search_terms(name, what, kind="photo"):
     """From what the customer filled in about the company (name, what it offers and to whom): 4 to 6 English iStock search phrases for fitting photos (or videos). [] without an AI link or on an error."""
     what = str(what or "").strip()[:400]
@@ -1901,7 +1945,230 @@ def auto_previews(pk):
         logger.warning("auto previews failed", exc_info=True)
 
 
-def chat(job, text, shots=None):
+def _ref_of(pk):
+    """What the AI calls of a design are marked with (short: the field holds 40 characters)."""
+    return "d:" + str(pk).replace("-", "")
+
+
+ACTIVE = set()  # the designs that are being worked on in THIS process (a restart of the server empties it: then a design that says "running" is stuck)
+
+
+def _run_for(fn, pk, args):
+    """Work in the background for a design: every AI call inside is counted for that design."""
+    from apps.integrations import aiusage
+
+    ACTIVE.add(pk)
+    try:
+        with aiusage.for_ref(_ref_of(pk)):
+            fn(*args)
+        row = SiteDesignJob.objects.filter(pk=pk).values("status").first()  # the work ended but the design still says "running": say so, never hang
+        if row and row["status"] in ("running", "stopping"):
+            SiteDesignJob.objects.filter(pk=pk).update(status="error", progress=100, step="", error="Het ontwerpen stopte onverwacht, zonder melding. Probeer het nog eens.", updated_at=timezone.now())
+    except Exception as e:  # noqa: BLE001 - an error is caught and reported on the design (the window shows it), never swallowed
+        logger.exception("design work failed")
+        msg = str(e).strip() or type(e).__name__
+        SiteDesignJob.objects.filter(pk=pk).update(status="error", progress=100, step="", error=f"Er ging iets mis: {msg[:300]}", updated_at=timezone.now())
+    finally:
+        ACTIVE.discard(pk)
+
+
+def _spawn(fn, pk, *args):
+    try:  # what runs is kept, so a design that got stuck (the server was restarted) can go on
+        row = SiteDesignJob.objects.filter(pk=pk).first()
+        if row:
+            b = dict(row.brief or {})
+            b["run"] = {"fn": fn.__name__, "args": [a for a in args if isinstance(a, (str, int, bool)) or a is None]}
+            SiteDesignJob.objects.filter(pk=pk).update(brief=b)
+    except Exception:  # noqa: BLE001
+        logger.warning("run not kept", exc_info=True)
+    threading.Thread(target=_run_for, args=(fn, pk, (pk, *args)), daemon=True).start()
+
+
+def is_stalled(job):
+    """The design says "running" but nothing works on it any more (no worker in this process and no sign of life for a minute): the server was restarted or the work died."""
+    return job.status in ("running", "stopping") and job.pk not in ACTIVE and timezone.now() - job.updated_at > timezone.timedelta(seconds=60)
+
+
+def resume(job):
+    """Go on with what was running when it got stuck."""
+    if not is_stalled(job):
+        raise ValueError("Het ontwerpen loopt nog.")
+    run = (job.brief or {}).get("run") or {}
+    fns = {"_generate": _generate, "_chat": _chat, "_revise": _revise, "_more_photos": _more_photos, "_read_document": _read_document}
+    fn, args = fns.get(run.get("fn")), list(run.get("args") or [])
+    if not fn:  # (it started before the work was kept) see where the chat stands
+        last = (job.messages or [])[-1] if job.messages else None
+        has = any(n.endswith(".html") for n in (job.files or {}))
+        if last and last.get("role") == "user":
+            fn, args = _chat, [str(last.get("text") or ""), has]  # the answer of the designer was still to come
+        elif last and last.get("role") == "ai" and not has and (job.brief or {}).get("chat") and str((job.brief or {}).get("name") or "").strip():
+            fn, args = _generate, []  # the designer was ready: the website was being designed
+    if not fn:
+        raise ValueError("Er is niets om mee door te gaan. Stop het en begin opnieuw.")
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", step="Verder gaan", error="", updated_at=timezone.now())
+    _spawn(fn, job.pk, *args)
+
+
+def more_photos(job):
+    """After the design: the places where the pages ask for a picture and that still have none (no photo, no iStock choice): the designer searches iStock for each of them and puts the best fit in the design. Runs in the background."""
+    if job.status not in ("done", "error", "draft"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    if not [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and "logo" not in x["file"]]:
+        raise ValueError("Er ontbreken geen afbeeldingen.")
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=5, step="Meer afbeeldingen zoeken", error="", updated_at=timezone.now())
+    _spawn(_more_photos, job.pk)
+
+
+def _more_photos(pk):
+    try:
+        job = SiteDesignJob.objects.get(pk=pk)
+        empty = [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and "logo" not in x["file"]][:20]  # (a logo of a partner or customer is not a photo: iStock has no fitting picture)
+        used = {str(x.get("istock") or "") for x in photo_slots(job)}
+        for n, x in enumerate(empty):
+            _set(pk, progress=5 + int(80 * n / max(1, len(empty))), step=f"Afbeeldingen zoeken op iStock ({n + 1} van {len(empty)})")
+            try:
+                hit = next(iter(search_istock(x["query"] or x["alt"] or x["file"], skip=used)), None)
+            except Exception:  # noqa: BLE001
+                hit = None
+            if hit:
+                try:
+                    set_istock_pick(SiteDesignJob.objects.get(pk=pk), x["file"], {"id": hit["id"], "url": hit["url"], "preview": hit.get("preview", ""), "title": x["alt"] or x["query"]})
+                    used.add(str(hit["id"]))
+                except ValueError:
+                    continue
+        _set(pk, step="Voorbeeldfoto's ophalen", progress=90)
+        auto_previews(pk)
+    except Exception:  # noqa: BLE001
+        logger.warning("more photos failed", exc_info=True)
+    finally:
+        _set(pk, status="done", progress=100, step="")
+
+
+EXPORT_FORMAT = "easy2edit-design"
+
+
+def designs_costs(user):
+    """What each of the designs of this user costs (charged, margin included), since the counter of that design was reset: [{id, name, charged, calls}] for the designs that have costs, most recent first."""
+    from django.db.models import Count, Sum
+
+    from apps.integrations import aiusage
+    from apps.integrations.models import AiSettings, AiUsage
+
+    jobs = list(SiteDesignJob.objects.filter(user=user).order_by("-updated_at")[:30])
+    refs = {_ref_of(j.pk): j for j in jobs}
+    base = {r["ref"]: r for r in AiUsage.objects.filter(ref__in=list(refs), billable=True).values("ref").annotate(c=Sum("charged"), n=Count("id"))}
+    out = []
+    for ref, j in refs.items():
+        since = (j.brief or {}).get("cost_reset_at")
+        if since:
+            r = AiUsage.objects.filter(ref=ref, billable=True, created_at__gte=since).aggregate(c=Sum("charged"), n=Count("id"))
+        else:
+            r = base.get(ref) or {"c": 0, "n": 0}
+        busy = aiusage.running_for(ref)
+        if r["n"] or busy:
+            out.append({"id": str(j.pk), "name": j.name, "charged": round(float(r["c"] or 0) + sum(b["charged"] for b in busy), 4), "calls": r["n"] + len(busy)})
+    return {"currency": AiSettings.load().currency, "designs": out}
+
+
+def design_costs(job):
+    """What this design costs (what is charged, margin included; never the purchase price), since the counter was reset: total, per request (for the chart) and the tokens."""
+    from apps.integrations import aiusage
+    from apps.integrations.models import AiSettings, AiUsage
+
+    since = (job.brief or {}).get("cost_reset_at")
+    qs = AiUsage.objects.filter(ref=_ref_of(job.pk))
+    if since:
+        qs = qs.filter(created_at__gte=since)
+    rows = list(qs.order_by("id")[:400])
+    items = [{"id": r.id, "at": r.created_at.isoformat(timespec="seconds"), "charged": float(r.charged) if r.billable else 0.0, "tokens": r.tokens_in + r.tokens_out, "ok": r.ok} for r in rows]
+    busy = aiusage.running_for(_ref_of(job.pk))  # what is being made now counts along (live)
+    items += [{"id": 0, "at": "", "charged": b["charged"], "tokens": b["tokens"], "ok": True, "busy": True} for b in busy]
+    return {"currency": AiSettings.load().currency, "charged": round(sum(i["charged"] for i in items), 4), "calls": len(items), "tokens": sum(i["tokens"] for i in items), "since": since or "", "busy": len(busy), "items": items[-40:]}
+
+
+def reset_costs(job):
+    b = dict(job.brief or {})
+    b["cost_reset_at"] = timezone.now().isoformat()
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b)
+
+
+def export_job(job):
+    """A design as data (json): the choices, the chat with the questionnaires and their answers, and the files (html, css, svg). Pictures of the media library are not part of it (only their names in the brief)."""
+    pages = [{"file": f, "title": ((re.search(r"<title>(.*?)</title>", str(c), re.S | re.I) or [None, ""])[1]).strip()[:120]} for f, c in (job.files or {}).items() if f.endswith(".html")]
+    out = {"format": EXPORT_FORMAT, "version": 2, "exported_at": timezone.now().isoformat(), "design": {
+        "id": str(job.pk), "name": job.name, "status": job.status, "brief": job.brief or {}, "messages": job.messages or [], "translations": job.translations or {}}}
+    if job.files:  # the pages that were made: a section of their own (the questions and answers stay usable without it)
+        out["render"] = {"pages": pages, "files": job.files or {}, "files_prev": job.files_prev or {}}
+    return out
+
+
+def import_job(user, data, mode="", parts="all"):
+    """Reads an exported design. When a design with the same id exists: without mode the answer is {"exists": ...} (the user chooses), mode "replace" replaces it, mode "add" adds the design as a new row. Returns (job or None, info)."""
+    from apps.medialib.models import MediaItem
+
+    if not isinstance(data, dict) or data.get("format") != EXPORT_FORMAT or not isinstance(data.get("design"), dict):
+        raise ValueError("Dit is geen geëxporteerd ontwerp (verwacht: easy2edit-design json).")
+    d = data["design"]
+    rd = data.get("render") if isinstance(data.get("render"), dict) else d  # (an older export has the files in the design itself)
+    files = {str(k)[:120]: v for k, v in (rd.get("files") if isinstance(rd.get("files"), dict) else {}).items() if isinstance(v, str)}
+    prev = {str(k)[:120]: v for k, v in (rd.get("files_prev") if isinstance(rd.get("files_prev"), dict) else {}).items() if isinstance(v, str)}
+    if parts == "questions":  # only the questions, the answers and the choices: the pages are made again
+        files, prev = {}, {}
+    if sum(len(v) for v in files.values()) + sum(len(v) for v in prev.values()) > 8_000_000:
+        raise ValueError("Dit ontwerp is te groot om in te lezen.")
+    brief = dict(d.get("brief") if isinstance(d.get("brief"), dict) else {})
+    brief.pop("live_hash", None)  # it is not live on this website
+    for k in ("photos", "videos"):  # own pictures of the media library only stay when they exist here
+        if isinstance(brief.get(k), list):
+            ids = {x.get("id") for x in brief[k] if isinstance(x, dict)}
+            have = set(MediaItem.objects.filter(pk__in=[i for i in ids if isinstance(i, int)]).values_list("pk", flat=True))
+            brief[k] = [x for x in brief[k] if isinstance(x, dict) and x.get("id") in have]
+    msgs = [m for m in (d.get("messages") if isinstance(d.get("messages"), list) else []) if isinstance(m, dict)][:200]
+    trans = d.get("translations") if isinstance(d.get("translations"), dict) else {}
+    name = str(d.get("name") or brief.get("name") or "Nieuw ontwerp")[:120]
+    status_ = d.get("status") if d.get("status") in ("draft", "done", "error") else ("done" if files else "draft")
+    if not files:
+        status_ = "draft"
+    fields = dict(name=name, status=status_, progress=100 if status_ == "done" else 0, step="", error="", brief=brief, files=files, files_prev=prev, messages=msgs, translations=trans)
+    try:
+        old = SiteDesignJob.objects.filter(pk=str(d.get("id") or "")).first() if d.get("id") else None
+    except (ValueError, TypeError):
+        old = None
+    if old and not mode:
+        return None, {"exists": True, "id": str(old.pk), "name": old.name}
+    if old and mode == "replace":
+        if old.status in ("running", "stopping"):
+            raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+        SiteDesignJob.objects.filter(pk=old.pk).update(user=user, updated_at=timezone.now(), **fields)
+        return SiteDesignJob.objects.get(pk=old.pk), {"replaced": True}
+    return SiteDesignJob.objects.create(user=user, **fields), {"added": True}
+
+
+def save_answers(job, index, ans, own):
+    """The filled in values of a questionnaire are kept with the question message (ids and values only, size limited)."""
+    msgs = list(job.messages or [])
+    try:
+        i = int(index)
+    except (TypeError, ValueError):
+        raise ValueError("Onbekende vraag.")
+    if not (0 <= i < len(msgs)) or not msgs[i].get("questions"):
+        raise ValueError("Onbekende vraag.")
+    ids = {q.get("id") for q in msgs[i]["questions"]} | {"name", "url", "logo", "media", "colors"}  # (the questions that the screen adds itself are kept too)
+    clean = {}
+    for k, v in (ans if isinstance(ans, dict) else {}).items():
+        if k in ids:
+            clean[k] = [str(x)[:300] for x in v[:30]] if isinstance(v, list) else str(v or "")[:1500]
+    keep = {k: str(v)[:600] for k, v in (own if isinstance(own, dict) else {}).items() if k in ids}
+    msgs[i] = {**msgs[i], "answers": {"ans": clean, "own": keep}}
+    upd = {"messages": msgs}
+    for qid in [q.get("id") for q in msgs[i]["questions"]] + ["name"]:  # the design is saved under the company name that was filled in (the answer to the question about the name)
+        if re.match(r"^(name|naam|company_?name|business_?name|bedrijfs_?naam|brand)$", str(qid or ""), re.I) and isinstance(clean.get(qid), str) and clean[qid].strip():
+            upd["name"] = clean[qid].strip()[:120]
+            break
+    SiteDesignJob.objects.filter(pk=job.pk).update(**upd)
+
+
+def chat(job, text, shots=None, ui_lang=""):
     if job.status in ("running", "stopping"):
         raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
     text = str(text or "").strip()[:2000]
@@ -1912,10 +2179,31 @@ def chat(job, text, shots=None):
     has = any(n.endswith(".html") for n in (job.files or {}))
     b = dict(job.brief or {})
     b["chat"] = True
+    ui = re.sub(r"[^A-Za-z-]", "", str(ui_lang or ""))[:10]
+    if ui:
+        b["ui_lang"] = ui  # the language of the screen of the customer: the designer speaks it
     shots = clean_shots(shots)
     msgs = list(job.messages or []) + [{"role": "user", "text": text, **({"img": _thumbs(shots)} if shots else {})}]
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, status="running", progress=5, step="Aan het denken" if not has else "De aanpassing doorvoeren", error="", messages=msgs, updated_at=timezone.now())
-    threading.Thread(target=_chat, args=(job.pk, text, has, shots), daemon=True).start()
+    _spawn(_chat, job.pk, text, has, shots)
+
+
+def _answered_pages(msgs):
+    """The pages that the customer ticked in the last questionnaire (saved with the answers): "Home" for a one pager, else the ticked pages as a list. None when there is no such answer."""
+    for m in reversed(msgs or []):
+        if not m.get("questions"):
+            continue
+        ans = ((m.get("answers") or {}).get("ans")) or {}
+        for q in m["questions"]:
+            qid = str(q.get("id") or "")
+            if re.search(r"page|pagina", qid, re.I) and not re.search(r"layout|indeling", qid, re.I) and q.get("type") == "multi":
+                v = ans.get(qid)
+                if isinstance(v, list) and v:
+                    if any(re.search(r"one.?pager", str(x), re.I) for x in v):
+                        return "Home"
+                    return ", ".join(str(x) for x in v)[:600]
+        return None
+    return None
 
 
 def _chat(pk, text, has, shots=None):
@@ -1927,7 +2215,13 @@ def _chat(pk, text, has, shots=None):
         convo = "\n".join(f"{'Customer' if m['role'] == 'user' else 'Designer'}: {m['text']}" for m in (job.messages or [])[-20:])
         mods = [i for i in module_items() if i["key"] not in effective_off(job.brief)]
         cat = "Modules of the system: " + ", ".join(f"{i['key']} ({i['label']})" for i in mods[:40]) if mods else ""
-        out = _ask(CHAT_SYSTEM, f"{cat}\n\nConversation so far:\n{convo}\n\nAnswer now with the JSON.", max_tokens=5000, pk=pk, images=shots or None)
+        ui = (job.brief or {}).get("ui_lang") or ""
+        try:
+            lg = Language.objects.filter(code=ui).first() if ui else None
+        except Exception:
+            lg = None
+        say = f"LANGUAGE: write the reply, every question, every answer option and the default in {(lg.name if lg else ui)} ({ui}), the language of the customer's screen, even if the conversation so far is in another language.\n\n" if ui else ""
+        out = _ask(CHAT_SYSTEM, f"{say}{cat}\n\nConversation so far:\n{convo}\n\nAnswer now with the JSON.", max_tokens=5000, pk=pk, images=shots or None)
         m = re.search(r"\{.*\}", out, re.S)
         try:
             d = json.loads(m.group(0)) if m else {}
@@ -1940,6 +2234,9 @@ def _chat(pk, text, has, shots=None):
         qs = clean_questions(d.get("questions")) if not d.get("ready") else []
         msgs = list(job.messages or []) + [{"role": "ai", "text": reply, **({"questions": qs} if qs else {})}]
         br = d.get("brief") if isinstance(d.get("brief"), dict) else {}
+        answered = _answered_pages(msgs)  # the pages that the customer ticked in the questionnaire win over what the designer wrote down
+        if answered and isinstance(br, dict):
+            br = {**br, "pages": answered}
         if d.get("ready") and str(br.get("name") or "").strip():
             patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
             patch["chat"] = True
@@ -1961,6 +2258,9 @@ def _chat(pk, text, has, shots=None):
 
 def stop(job):
     """Stop was pressed: the work ends at the next moment (also the answer of Claude that is coming in)."""
+    if is_stalled(job):  # nothing works on it any more: it ends at once
+        _finish_stopped(job.pk, "Het ontwerpen is gestopt omdat het vast stond.")
+        return SiteDesignJob.objects.get(pk=job.pk)
     SiteDesignJob.objects.filter(pk=job.pk, status="running").update(status="stopping", step="Bezig met stoppen…", updated_at=timezone.now())  # (the status is read from the database, not from this copy)
     return SiteDesignJob.objects.get(pk=job.pk)
 
@@ -1994,7 +2294,7 @@ def revise(job, instruction, page="", shots=None):
     shots = clean_shots(shots)
     msgs = list(job.messages or []) + [{"role": "user", "text": instruction, **({"img": _thumbs(shots)} if shots else {})}]
     SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=10, step="De aanpassing doorvoeren", error="", messages=msgs, updated_at=timezone.now())
-    threading.Thread(target=_revise, args=(job.pk, instruction, page, shots), daemon=True).start()
+    _spawn(_revise, job.pk, instruction, page, shots)
 
 
 
@@ -2219,7 +2519,7 @@ def _stale(job):
 def public(job, files=False):
     job = _stale(job)
     b = job.brief or {}
-    return {"id": str(job.pk), "name": job.name, "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
+    return {"id": str(job.pk), "name": job.name, "stalled": is_stalled(job), "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(), "files_sig": f"{len(job.files or {})}-{sum(len(str(v)) for v in (job.files or {}).values())}", "chat": bool(b.get("chat")), "istock_tried": bool(b.get("istock_tried")), "photo_slots": photo_slots(job) if b.get("chat") else [],
             "docs": [_doc_public(d) for d in job.docs or []]}
 

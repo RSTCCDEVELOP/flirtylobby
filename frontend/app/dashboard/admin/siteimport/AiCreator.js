@@ -13,7 +13,10 @@ import { IconBolt, IconCamera, IconCheck, IconChat, IconImage, IconMenu, IconPal
 import Tabs from "../../../../components/Tabs";
 import { api, apiUpload, errorText, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
-import { tx } from "../../../../lib/t";
+import { tx, getLanguage } from "../../../../lib/t";
+import { useAuth } from "../../../../components/AuthContext";
+import { setActiveDesign } from "../../../../lib/activeDesign";
+import Loading from "../../../../components/Loading";
 import { captureFrame } from "../../../../lib/screenshot";
 import { COLOR_ROLES, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DEVICES, DW_CSS, FONT_NAMES, MODES, ModulePicker, previewHtml, STEPS } from "./designKit";
 import { analyseDesign, buildConvertPrompt } from "./aiPrompt";
@@ -154,7 +157,52 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
 }
 
 // The tab AI-creator: your designs (also the ones that were not finished: continue where you stopped) and a new one.
+// Superadmins: designs as json. Export of one design (the choices, the chat with the answers, the files) and a drop area to read json files again; an existing design is replaced or a row is added.
+function DesignJsonDrop({ onDone, onErr }) {
+  const [over, setOver] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const input = useRef(null);
+  const take = async (list) => {
+    const files = [...list].filter((f) => /\.json$/i.test(f.name) || f.type === "application/json");
+    if (!files.length) { onErr(tx("Kies een json-bestand van een geëxporteerd ontwerp.")); return; }
+    setBusy(true); onErr("");
+    try {
+      for (const f of files) {
+        let data;
+        try { data = JSON.parse(await f.text()); } catch { throw new Error(`${f.name}: ${tx("Dit is geen geldig json-bestand.")}`); }
+        let parts = "all";
+        if (data?.render?.files && Object.keys(data.render.files).length) {  // the file has made pages (a render): load the whole set or only the questions
+          const pick = await confirmDialog(tx("Dit bestand bevat ook de gemaakte pagina's (render). Wat wil je inladen?"), { title: tx("Ontwerp inladen"), okLabel: tx("Complete set"), cancelLabel: tx("Overslaan"),
+            choices: [{ value: "all", label: tx("Complete set"), hint: tx("De vragen met antwoorden, de keuzes en de gemaakte pagina's.") }, { value: "questions", label: tx("Alleen de vragen"), hint: tx("De vragen met antwoorden en de keuzes; de pagina's worden opnieuw gemaakt.") }] });
+          if (!pick) continue;
+          parts = pick;
+        }
+        let r = await api("/sitecreator/import/", { method: "POST", body: { data, parts } });
+        if (r.exists) {
+          const what = await confirmDialog(tx("Het ontwerp \"{0}\" bestaat al. Wat wil je doen?", r.name || f.name), { title: tx("Ontwerp bestaat al"), okLabel: tx("Vervangen"), cancelLabel: tx("Overslaan"),
+            choices: [{ value: "replace", label: tx("Vervangen"), hint: tx("Het bestaande ontwerp krijgt de gegevens uit het bestand.") }, { value: "add", label: tx("Een rij toevoegen"), hint: tx("Het bestaande ontwerp blijft staan; het bestand komt als nieuw ontwerp ernaast.") }] });
+          if (!what) continue;
+          r = await api("/sitecreator/import/", { method: "POST", body: { data, mode: what, parts } });
+        }
+      }
+      onDone();
+    } catch (x) { onErr(errorText(x)); } finally { setBusy(false); }
+  };
+  return (
+    <div role="button" tabIndex={0} aria-label={tx("Sleep een ontwerp (json) hierheen")} data-easy2edit-tag="ui-dropzone" onClick={() => !busy && input.current?.click()} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.current?.click(); } }}
+      onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={(e) => { e.preventDefault(); setOver(false); if (!busy) take(e.dataTransfer.files); }}
+      style={{ display: "grid", justifyItems: "center", gap: ".2rem", padding: ".8rem", textAlign: "center", borderRadius: 12, cursor: busy ? "default" : "pointer", border: `2px dashed ${over ? "var(--blue)" : "var(--line)"}`, background: over ? "color-mix(in srgb, var(--blue) 10%, var(--card))" : "var(--bg)" }}>
+      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: over ? "var(--blue)" : "var(--muted)" }}><path d="M12 16V5" /><path d="M7.5 9.5L12 5l4.5 4.5" /><path d="M5 19h14" /></svg>
+      <strong style={{ fontSize: ".85rem" }}>{busy ? tx("Bezig met inlezen…") : tx("Sleep een ontwerp (json) hierheen")}</strong>
+      <small className="muted">{tx("of klik om een bestand te kiezen")}</small>
+      <input ref={input} type="file" accept="application/json,.json" multiple style={{ display: "none" }} onChange={(e) => { take(e.target.files); e.target.value = ""; }} />
+    </div>
+  );
+}
+
 export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }) {
+  const { user } = useAuth();
+  const superadmin = !!user && !!(user.is_staff || user.is_superuser);
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -177,8 +225,15 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
       const j = await api("/sitecreator/", { method: "POST", body: {} });
       await api(`/sitecreator/${j.id}/`, { method: "PATCH", body: { ...brief, chat: true } });
       onOpen(j.id);
-      await api(`/sitecreator/${j.id}/chat/`, { method: "POST", body: { text: firstText } });
+      await api(`/sitecreator/${j.id}/chat/`, { method: "POST", body: { text: firstText, lang: getLanguage() } });
     } catch (e) { setErr(errorText(e)); } finally { setBusy(false); }
+  };
+  const exportOne = async (x) => {
+    try {
+      const data = await api(`/sitecreator/${x.id}/export/`);
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const a = document.createElement("a"); a.href = url; a.download = `${(x.name || "ontwerp").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ontwerp"}.design.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    } catch (e) { setErr(errorText(e)); }
   };
   const del = async (x) => { if (!(await confirmDialog(tx("Dit ontwerp verwijderen? Wat je hebt ingevuld en gemaakt gaat verloren, ook de geüploade documenten."), { danger: true, title: tx("Ontwerp verwijderen"), okLabel: tx("Verwijderen") }))) return; await api(`/sitecreator/${x.id}/`, { method: "DELETE" }).catch(() => {}); load(); };
   return (
@@ -194,14 +249,16 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
       {conv && <ConvertPromptPopup onClose={() => setConv(false)} designs={d?.designs || []} />}
       {plan && <StartPlanPopup onClose={closePlan} onStart={startChat} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); }} />}
       {d?.ai === false && <div className="alert">{tx("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")}</div>}
+      {superadmin && <DesignJsonDrop onDone={load} onErr={setErr} />}
       {d?.designs?.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: ".45rem" }}>
           <strong>{tx("Mijn ontwerpen")}</strong>
           {d.designs.map((x) => (
             <div key={x.id} className="card" style={{ display: "flex", gap: ".7rem", alignItems: "center", padding: ".6rem .8rem" }}>
-              <span style={{ flex: 1, minWidth: 0 }}><strong>{x.name}</strong> <span className={x.live || (x.status === "done" && !x.applied) ? "badge ok" : "badge off"}>{x.live ? tx("Live") : x.applied && x.status === "done" ? tx("Concept") : tx(STATUS[x.status] || x.status)}</span>
+              <span style={{ flex: 1, minWidth: 0 }}><strong>{x.name}</strong> {x.pages > 0 && <span title={tx("De pagina's zijn gemaakt")} aria-label={tx("De pagina's zijn gemaakt")} style={{ display: "inline-flex", verticalAlign: "middle", color: "var(--muted)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg></span>} <span className={x.live || (x.status === "done" && !x.applied) ? "badge ok" : "badge off"}>{x.live ? tx("Live") : x.applied && x.status === "done" ? tx("Concept") : tx(STATUS[x.status] || x.status)}</span>
                 <small className="muted" style={{ display: "block" }}>{x.chat && x.status === "draft" ? tx("AI chat build") : x.status === "draft" ? `${tx("Stap")} ${x.step + 1} ${tx("van")} ${STEPS.length}: ${tx(STEPS[x.step]?.[1] || "")}` : `${x.pages} ${tx("pagina's")}`} · {new Date(x.updated_at).toLocaleString()}</small></span>
               <button type="button" className="btn sm primary" onClick={() => onOpen(x.id)}>{x.status === "draft" ? tx("Verder gaan") : tx("Openen")}</button>
+              {superadmin && <button type="button" className="btn sm" onClick={() => exportOne(x)} title={tx("Exporteren als json")} aria-label={tx("Exporteren als json")}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11" /><path d="M7.5 10.5L12 15l4.5-4.5" /><path d="M5 19h14" /></svg></button>}
               <button type="button" className="btn sm danger" onClick={() => del(x)} aria-label={tx("Verwijderen")}><IconTrash /></button>
             </div>
           ))}
@@ -371,7 +428,7 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
       {err && <div className="alert">{err}</div>}
       <form onSubmit={search} role="search" style={{ display: "flex", gap: ".35rem", flexWrap: "wrap", margin: ".2rem 0 .5rem" }}>
         <input type="search" value={q} maxLength={120} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek een foto of video op iStock…")} aria-label={tx("Zoek een foto of video op iStock")} style={{ flex: "1 1 160px", minWidth: 0 }} />
-        <select value={kind} onChange={(e) => { setKind(e.target.value); setFound(null); }} aria-label={tx("Soort")}><option value="photo">{tx("Foto's")}</option><option value="video">{tx("Video's")}</option></select>
+        <select value={kind} onChange={(e) => { setKind(e.target.value); setFound(null); }} aria-label={tx("Soort")} style={{ flex: "0 0 auto", width: "auto", maxWidth: 90 }}><option value="photo">{tx("Foto's")}</option><option value="video">{tx("Video's")}</option></select>
         <button className="btn sm primary" disabled={searching || q.trim().length < 2}><IconSearch /> {searching ? tx("Bezig…") : tx("Zoeken")}</button>
       </form>
       {found && (
@@ -447,16 +504,18 @@ const LAYOUTS = [
 ];
 const LAYOUT_DEFAULT = "Afwisselend ritme met gekleurde banden";
 // A carousel with one card at a time inside the width of the side menu; the arrows (or swiping) go to the next card.
-function Carousel({ accent, children, tag }) {
+function Carousel({ accent, children, tag, active = -1, chosen = "" }) {
   const track = useRef(null);
+  useEffect(() => { const t = track.current; if (t && active >= 0) t.scrollTo({ left: active * (t.clientWidth || 190), behavior: "auto" }); }, [active]);  // the chosen one is in view (also when the window is opened again)
   const go = (d) => track.current?.scrollBy({ left: d * (track.current.clientWidth || 190), behavior: "smooth" });
   const ac = accent || "var(--blue)";
   const arrow = (d) => <button type="button" onClick={() => go(d)} aria-label={d < 0 ? tx("Vorige") : tx("Volgende")} style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", border: `1px solid ${ac}`, background: "var(--card)", color: ac, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">{d < 0 ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}</svg></button>;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: ".35rem" }} data-easy2edit-tag={tag}>
+    <div style={{ display: "flex", alignItems: "center", gap: ".35rem", flexWrap: "wrap" }} data-easy2edit-tag={tag}>
       {arrow(-1)}
       <div ref={track} style={{ display: "flex", gap: ".6rem", overflowX: "auto", scrollSnapType: "x mandatory", padding: ".2rem", flex: "1 1 0", width: 0, minWidth: 0, scrollbarWidth: "none" }}>{children}</div>
       {arrow(1)}
+      {chosen !== null && <small role="status" style={{ flex: "0 0 100%", order: 9, color: chosen ? ac : "var(--muted)", fontWeight: chosen ? 600 : 400 }}>{chosen ? `${tx("Gekozen")}: ${chosen}` : tx("Nog niets gekozen")}</small>}
     </div>
   );
 }
@@ -466,7 +525,7 @@ const cardStyle = (on, ac) => ({ flex: "0 0 100%", boxSizing: "border-box", scro
 function LayoutCarousel({ value, onToggle, disabled, accent }) {
   const ac = accent || "var(--blue)";
   return (
-    <Carousel accent={accent} tag="ui-layout-carousel">
+    <Carousel accent={accent} tag="ui-layout-carousel" active={LAYOUTS.findIndex(([n]) => value.includes(n))} chosen={LAYOUTS.filter(([n]) => value.includes(n)).map(([n]) => tx(n)).join(", ")}>
       {LAYOUTS.map(([name, desc, rows]) => { const on = value.includes(name); return (
         <button key={name} type="button" disabled={disabled} aria-pressed={on} onClick={() => onToggle(name)} title={tx(desc)} style={cardStyle(on, ac)}>
           {on && tick(ac)}
@@ -482,6 +541,7 @@ function LayoutCarousel({ value, onToggle, disabled, accent }) {
 
 // The colour themes of the system (Thema's), as a carousel of small page drawings in the colours of each theme; one is chosen, the colours go to the AI with the answer.
 function themeAnswer(t) { const c = t.colors || {}; return `${tx("Thema")} ${t.name} (${tx("hoofdkleur")} ${c.primary}, ${tx("tweede kleur")} ${c.secondary}, ${tx("achtergrond")} ${c.light_bg}, ${tx("kaarten")} ${c.light_card}, ${tx("tekst")} ${c.light_text})`; }
+const sameTheme = (t, v) => !!v && (v === themeAnswer(t) || (String(v).includes(` ${t.name} (`) && String(v).includes(String(t.colors?.primary || "\u0000"))));  // also when the answer was made in another language
 function ThemeCarousel({ themes, value, onPick, disabled, jobId, onJob, onChanged }) {
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
@@ -502,8 +562,8 @@ function ThemeCarousel({ themes, value, onPick, disabled, jobId, onJob, onChange
   };
   return (
     <>
-    <Carousel accent={value ? list.find((t) => themeAnswer(t) === value)?.colors?.primary : undefined} tag="ui-theme-carousel">
-      {list.map((t) => { const c = t.colors || {}, ans = themeAnswer(t), on = value === ans, ac = c.primary; return (
+    <Carousel accent={value ? list.find((t) => sameTheme(t, value))?.colors?.primary : undefined} tag="ui-theme-carousel" active={list.findIndex((t) => sameTheme(t, value))} chosen={list.find((t) => sameTheme(t, value))?.name || ""}>
+      {list.map((t) => { const c = t.colors || {}, on = sameTheme(t, value), ac = c.primary; return (
         <button key={t.key} type="button" disabled={disabled || !!busy} aria-pressed={on} onClick={() => choose(t, on)} title={t.description} style={cardStyle(on, ac)}>
           {on && tick(ac)}
           <span aria-hidden="true" style={{ display: "grid", gap: 4, padding: 6, background: c.light_bg, border: "1px solid var(--line)", borderRadius: 8, height: 110, gridTemplateRows: "auto 1fr auto", boxSizing: "border-box" }}>
@@ -573,12 +633,15 @@ function DropZone({ jobId, onJob, role, accept, multiple, label, hint, disabled,
 }
 
 // The question about photos and videos: search them on iStock and choose; a chosen one goes into the project at once (the list of photos and videos) and into the answer, so the designer uses it.
-function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic }) {
-  const [q, setQ] = useState(defaultQuery || "");
-  const [kind, setKind] = useState("photo");
-  const [found, setFound] = useState(null);
+function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, picked, onAsk }) {
+  const memo = (() => { try { return JSON.parse(localStorage.getItem(`siPick:${jobId}`) || "null") || {}; } catch { return {}; } })();  // the last search is kept per design (only a convenience of this browser)
+  const [q, setQ] = useState(memo.q || defaultQuery || "");
+  const [kind, setKind] = useState(memo.kind || "photo");
+  const [found, setFound] = useState(Array.isArray(memo.found) ? memo.found : null);
+  useEffect(() => { try { localStorage.setItem(`siPick:${jobId}`, JSON.stringify({ q, kind, found: (found || []).slice(0, 40) })); } catch {} }, [q, kind, found, jobId]);
   const [searching, setSearching] = useState(false);
-  const [chosen, setChosen] = useState([]);  // [{id, title, kind}]
+  const pickedList = Object.entries(picked || {}).filter(([, it]) => it && it.id);  // what is in the list of the design (kept on the server): the source of the selection
+  const chosen = pickedList.map(([, it]) => ({ id: it.id, title: String(it.title || "").slice(0, 80), kind: it.video ? "video" : "photo" }));
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const run = async (query, k) => {
@@ -586,6 +649,7 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic }) 
     setSearching(true); setErr(""); setFound(null);
     try { setFound((await api(`/sitecreator/${jobId}/istock-search/?q=${encodeURIComponent(query.trim())}&kind=${k}`)).items || []); } catch (x) { setErr(errorText(x)); } finally { setSearching(false); }
   };
+  useEffect(() => { onAnswer(text(chosen)); }, [chosen.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if ((defaultQuery || "").trim().length >= 2) run(defaultQuery, "photo"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // what the customer filled in about the company: the AI suggests search words for fitting pictures; the first one is filled in and searched, the others are buttons
   const [terms, setTerms] = useState([]);
@@ -605,22 +669,33 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic }) 
     return () => { alive = false; };
   }, [topic?.go]); // eslint-disable-line react-hooks/exhaustive-deps
   const text = (list) => list.length ? `${tx("Gekozen op iStock")} (${tx("in mijn lijst gezet")}): ` + list.map((c) => `iStock ${c.id}${c.title ? ` "${c.title}"` : ""}${c.kind === "video" ? ` (${tx("video")})` : ""}`).join(", ") : "";
+  const unpick = async (file) => { setBusy(file); setErr(""); try { onJob?.(await api(`/sitecreator/${jobId}/slot/`, { method: "DELETE", body: { file } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
   const choose = async (it) => {
     if (chosen.some((c) => c.id === it.id)) return;
     setBusy(it.id); setErr("");
     try {
       onJob?.(await api(`/sitecreator/${jobId}/slot/`, { method: "POST", body: { add: it } }));
-      const next = [...chosen, { id: it.id, title: (it.title || "").slice(0, 80), kind }];
-      setChosen(next); onAnswer(text(next));
+
     } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
   };
   return (
     <div style={{ display: "grid", gap: ".5rem" }} data-easy2edit-tag="ui-media-picker">
-      <form onSubmit={(e) => { e.preventDefault(); run(q, kind); }} role="search" style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }}>
-        <input type="search" value={q} maxLength={120} disabled={disabled} onChange={(e) => { typed.current = true; setQ(e.target.value); }} placeholder={tx("Zoek foto's of video's op iStock…")} aria-label={tx("Zoek een foto of video op iStock")} style={{ flex: "1 1 140px", minWidth: 0 }} />
-        <select value={kind} onChange={(e) => { setKind(e.target.value); setFound(null); }} aria-label={tx("Soort")}><option value="photo">{tx("Foto's")}</option><option value="video">{tx("Video's")}</option></select>
-        <button className="btn sm primary" disabled={disabled || searching || q.trim().length < 2}><IconSearch /> {searching ? tx("Bezig…") : tx("Zoeken")}</button>
+      <form onSubmit={(e) => { e.preventDefault(); run(q, kind); }} role="search" style={{ display: "grid", gap: ".35rem" }}>
+        <div style={{ display: "flex", gap: ".35rem", alignItems: "center" }}>
+        <input type="search" value={q} maxLength={120} disabled={disabled} onChange={(e) => { typed.current = true; setQ(e.target.value); }} placeholder={tx("Zoek foto's of video's op iStock…")} aria-label={tx("Zoek een foto of video op iStock")} style={{ flex: "1 1 0", minWidth: 0, width: 0 }} />
+        {q.trim().length < 2 && onAsk
+          ? <button type="button" className="btn sm primary" disabled={disabled || suggesting} onClick={async () => { setErr(""); if ((await onAsk()) === false) setErr(tx("Vul eerst de omschrijving van je bedrijf in.")); }}><IconSearch /> {suggesting ? tx("Bezig…") : tx("Zoeken")}</button>
+          : <button className="btn sm primary" disabled={disabled || searching || q.trim().length < 2}><IconSearch /> {searching ? tx("Bezig…") : tx("Zoeken")}</button>}
+        </div>
+        <select value={kind} onChange={(e) => { setKind(e.target.value); setFound(null); }} aria-label={tx("Soort")} style={{ width: "100%" }}><option value="photo">{tx("Foto's")}</option><option value="video">{tx("Video's")}</option></select>
       </form>
+      {!found && !searching && !suggesting && !terms.length && !pickedList.length && onAsk && (
+        <button type="button" disabled={disabled} onClick={async () => { setErr(""); if ((await onAsk()) === false) setErr(tx("Vul eerst de omschrijving van je bedrijf in.")); }}
+          style={{ display: "grid", justifyItems: "center", gap: ".35rem", padding: "1rem .6rem", borderRadius: 10, border: "1px dashed var(--line)", background: "var(--card)", color: "inherit", cursor: "pointer", font: "inherit" }}>
+          <span style={{ width: 34, height: 34, display: "grid", placeItems: "center", color: "var(--blue)" }}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg></span>
+          <small className="muted">{tx("Nog geen foto's. Klik om passende foto's en video's te zoeken bij je bedrijf.")}</small>
+        </button>
+      )}
       {(terms.length > 0 || suggesting) && <div style={{ display: "flex", gap: ".3rem", flexWrap: "wrap", alignItems: "center" }}>
         <small className="muted">{suggesting ? tx("De AI bedenkt zoekwoorden…") : tx("Voorstel van de AI")}:</small>
         {terms.map((t) => <button key={t} type="button" disabled={disabled} onClick={() => { typed.current = true; setQ(t); run(t, kind); }} style={{ padding: ".15rem .6rem", borderRadius: 999, border: `1px solid ${q === t ? "var(--blue)" : "var(--line)"}`, background: q === t ? "color-mix(in srgb, var(--blue) 14%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".8rem" }}>{t}</button>)}
@@ -637,12 +712,19 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic }) 
             </button>); })}
         </div>
       )}
+      {pickedList.length > 0 && <div style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }} data-easy2edit-tag="ui-media-picked" aria-label={tx("Gekozen")}>
+        {pickedList.map(([file, it]) => (
+          <span key={file} style={{ position: "relative", width: 52, height: 52, borderRadius: 8, overflow: "hidden", background: "var(--line)", border: "2px solid var(--blue)", opacity: busy === file ? .5 : 1 }} title={it.title || `iStock ${it.id}`}>
+            {(it.preview || it.video) && <img src={it.preview || it.video} alt={it.title || ""} referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+            <button type="button" disabled={disabled || !!busy} onClick={() => unpick(file)} className="pb-panelx" aria-label={tx("Weghalen")} style={{ position: "absolute", top: 1, right: 1, width: 16, height: 16, minWidth: 0, fontSize: ".7rem", lineHeight: 1, padding: 0 }}>×</button>
+          </span>))}
+      </div>}
       {chosen.length > 0 && <small className="muted" role="status">{chosen.length} {tx("gekozen: ze staan in je lijst Foto's en video's en gaan mee met je antwoord.")}</small>}
     </div>
   );
 }
 
-function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound }) {
+function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound, saved, onSave, picked }) {
   // the first questionnaire always has a question for the logo and one for photos and videos (own files and iStock), also when the AI did not think of them: two separate drop zones
   const given = [...first];
   const isName = (q) => /^(name|naam|company_?name|business_?name|bedrijfs_?naam|brand)$/i.test(q.id || "");
@@ -650,6 +732,12 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
   if (jobId && firstRound && first.length >= 3) {  // a questionnaire always starts with the company name and the address of the current website
     if (!given.some(isName)) given.unshift({ id: "name", q: tx("Wat is de naam van het bedrijf of de organisatie?"), type: "text", options: [] });
     if (!given.some(isUrl)) given.splice(1, 0, { id: "url", q: tx("Wat is het adres (url) van je huidige website? Laat leeg als je die nog niet hebt."), type: "text", options: [] });
+  }
+  const hasColors = (q) => /colou?r|kleur|palet|theme|thema/i.test(q.id || "") && !/mode|scheme|light|dark|licht|donker|modus|display|weergave/i.test(q.id || "");
+  if (jobId && firstRound && given.length >= 3 && !given.some(hasColors)) {  // the choice of the colour theme is always asked, also when the AI did not think of it
+    const at = given.findIndex((q) => /layout|indeling/i.test(q.id || ""));
+    const cq = { id: "colors", q: tx("Welke kleuren passen bij je bedrijf?"), type: "text", options: [] };
+    if (at >= 0) given.splice(at, 0, cq); else given.push(cq);
   }
   given.sort((x, y) => (isName(y) ? 1 : 0) - (isName(x) ? 1 : 0) || (isUrl(y) ? 1 : 0) - (isUrl(x) ? 1 : 0));  // name first, then the url
   if (jobId && firstRound && given.length >= 3) {
@@ -661,8 +749,15 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
   const questions = [...given].sort((x, y) => (/width|breedte/i.test(y.id || "") && rank(x) ? 1 : 0) - (/width|breedte/i.test(x.id || "") && rank(y) ? 1 : 0));  // the maximum width always comes before the page layout
   const isLayout = (q) => /layout|indeling/i.test(q.id || "");  // the question about the page layout is answered in the carousel of pictures
   const init = () => Object.fromEntries(questions.map((q) => [q.id, isLayout(q) ? [LAYOUT_DEFAULT] : q.type === "multi" ? (Array.isArray(q.default) ? q.default : []) : (typeof q.default === "string" ? q.default : "")]));
-  const [ans, setAns] = useState(init);
-  const [own, setOwn] = useState({});  // what the customer dropped in a drop zone, per question: goes with the answer
+  const [ans, setAns] = useState(() => { const d = init(); const sv = saved?.ans || {}; Object.keys(d).forEach((k) => { if (sv[k] !== undefined && sv[k] !== null && (Array.isArray(sv[k]) === Array.isArray(d[k]))) d[k] = sv[k]; }); return d; });
+  const [own, setOwn] = useState(saved?.own || {});
+  const saveT = useRef(null);
+  const first1 = useRef(true);
+  const pend = useRef(null);  // the last change that is not sent to the server yet
+  const saveFn = useRef(onSave);
+  saveFn.current = onSave;
+  useEffect(() => { if (first1.current) { first1.current = false; return undefined; } pend.current = [ans, own]; clearTimeout(saveT.current); saveT.current = setTimeout(() => { const v = pend.current; pend.current = null; if (v) saveFn.current?.(v[0], v[1]); }, 500); return undefined; }, [ans, own]);
+  useEffect(() => () => { clearTimeout(saveT.current); const v = pend.current; pend.current = null; if (v) saveFn.current?.(v[0], v[1]); }, []);  // the window is closed (or the form goes away) before the pause was over: save what was filled in now  // what the customer dropped in a drop zone, per question: goes with the answer
   const isLogo = (q) => /logo/i.test(q.id || "") && !!jobId;
   const looksColors = (q) => /colou?r|kleur|palet|theme|thema/i.test(q.id || "") && !/mode|scheme|light|dark|licht|donker|modus|display|weergave/i.test(q.id || "");  // not "color_mode" (light or dark)
   const colorQ = [...questions].reverse().find(looksColors);  // only ONE carousel of colour themes: at the last colour question
@@ -684,7 +779,25 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
   const [go, setGo] = useState({ n: 0, name: "", what: "" });  // started when the customer leaves the field about the company and wants the photo search
   const asked = useRef("");
   const bizQ = questions.find((q) => q.type === "text" && !isName(q) && !isUrl(q) && !/logo|media|photo|foto|video|istock|extra|other|overig|opmerking|contact|goal|doel/i.test(q.id || "")) || null;  // "what kind of company is it and what do you offer": the first free text question
-  const needName = !!nameQ && !String(ans[nameQ.id] || "").trim();  // the name is the one thing that is needed
+  const needName = !!nameQ && !String(ans[nameQ.id] || "").trim();
+  const needColors = !!colorQ && themes.length > 0 && !String(ans[colorQ.id] || "").trim();  // the colour theme is needed too  // the name is the one thing that is needed
+  const askPhotos = async (given) => {  // the same question as after the description of the company: shall the AI think of search words and search iStock? (false = there is no description yet)
+    const what = String(given || (bizQ ? ans[bizQ.id] : "") || "").trim();
+    if (what.length < 8) return false;
+    if (await confirmDialog(tx("Zal ik alvast foto's en video's zoeken op iStock die bij je bedrijf passen? De AI bedenkt zoekwoorden en je ziet de resultaten bij de vraag over foto's en video's."), { title: tx("Foto's alvast zoeken"), okLabel: tx("Ja, zoek maar") })) setGo((g) => ({ n: g.n + 1, name: nameQ ? String(ans[nameQ.id] || "") : "", what }));
+    return true;
+  };
+  const [filling, setFilling] = useState("");
+  const [fakeErr, setFakeErr] = useState("");
+  const fake = async (q) => {  // "@" and Enter in a field: the AI invents fictional data for this question
+    if (!jobId || filling) return;
+    setFilling(q.id); setFakeErr("");
+    try {
+      const r = await api(`/sitecreator/${jobId}/fictional/`, { method: "POST", body: { question: q.q, name: nameQ ? String(ans[nameQ.id] || "") : "", what: bizQ ? String(ans[bizQ.id] || "") : "", lang: getLanguage() } });
+      set(q.id, r.text || "");
+    } catch (e) { setFakeErr(errorText(e)); } finally { setFilling(""); }
+  };
+  const atEnter = (q) => (e) => { if (e.key === "Enter" && String(e.currentTarget.value || "").trim() === "@") { e.preventDefault(); fake(q); } };
   const compose = () => questions.map((q) => { const a = ans[q.id]; const o = own[q.id] ? ` ${own[q.id]}` : ""; const v = Array.isArray(a) ? (a.length ? a.join(", ") : tx("geen")) : (a || (o ? "" : tx("beslis zelf"))); return `${q.q} ${v}${o}`; }).join("\n");
   const chip = (on) => ({ padding: ".25rem .7rem", borderRadius: 999, border: `1px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "color-mix(in srgb, var(--blue) 16%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".85rem" });
   return (
@@ -693,24 +806,21 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
         <div key={q.id} style={{ display: "grid", gap: ".3rem" }}>
           <strong style={{ fontSize: ".88rem" }}>{q.q}</strong>
           {isLogo(q) ? <><DropZone jobId={jobId} onJob={onJob} role="logo" accept="image/*" label={tx("Sleep je logo hierheen")} hint={tx("of klik om een bestand te kiezen (png, jpg, webp of svg)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} />
-            <input value={ans[q.id]} maxLength={300} disabled={disabled} onChange={(e) => set(q.id, e.target.value)} placeholder={tx("Of typ de bedrijfsnaam zoals die in de header moet staan")} /></>
-          : isMedia(q) ? <><MediaPicker jobId={jobId} onJob={onJob} disabled={disabled} defaultQuery={queryHint} topic={{ name: go.name, what: go.what, go: go.n }} onAnswer={(t) => set(q.id, t)} />
+            <input value={ans[q.id]} maxLength={300} disabled={disabled || filling === q.id} onKeyDown={atEnter(q)} onChange={(e) => set(q.id, e.target.value)} placeholder={filling === q.id ? tx("Bezig…") : tx("Of typ de bedrijfsnaam zoals die in de header moet staan")} /></>
+          : isMedia(q) ? <><MediaPicker jobId={jobId} picked={picked} onAsk={() => askPhotos()} onJob={onJob} disabled={disabled} defaultQuery={queryHint} topic={{ name: go.name, what: go.what, go: go.n }} onAnswer={(t) => set(q.id, t)} />
             <DropZone jobId={jobId} onJob={onJob} role="media" multiple accept="image/*,video/mp4,video/webm" label={tx("Sleep je eigen foto's of video's hierheen")} hint={tx("of klik om bestanden te kiezen (jpg, png, webp, mp4, webm)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} /></>
           : isColors(q) && themes.length ? <ThemeCarousel themes={themes} value={ans[q.id] || ""} disabled={disabled} jobId={jobId} onJob={onJob} onChanged={onChanged} onPick={(v) => set(q.id, v)} />
           : isLayout(q) ? <LayoutCarousel value={ans[q.id]} disabled={disabled} accent={accent} onToggle={(n) => set(q.id, ans[q.id].includes(n) ? ans[q.id].filter((x) => x !== n) : [...ans[q.id], n])} />
           : q.type === "text"
-            ? <input value={ans[q.id]} maxLength={300} disabled={disabled} onChange={(e) => set(q.id, e.target.value)} placeholder={tx("Jouw antwoord (of laat leeg)")}
-              onBlur={bizQ && q.id === bizQ.id && jobId ? async () => {
-                const what = String(ans[q.id] || "").trim();
-                if (what.length < 8 || asked.current === what || !questions.some(isMedia)) return;
-                asked.current = what;
-                if (await confirmDialog(tx("Zal ik alvast foto's en video's zoeken op iStock die bij je bedrijf passen? De AI bedenkt zoekwoorden en je ziet de resultaten bij de vraag over foto's en video's."), { title: tx("Foto's alvast zoeken"), okLabel: tx("Ja, zoek maar") })) setGo((g) => ({ n: g.n + 1, name: nameQ ? String(ans[nameQ.id] || "") : "", what }));
-              } : undefined} />
+            ? <input value={ans[q.id]} maxLength={300} disabled={disabled || filling === q.id} onKeyDown={atEnter(q)} onChange={(e) => set(q.id, e.target.value)} placeholder={filling === q.id ? tx("De AI bedenkt gegevens…") : tx("Jouw antwoord (of laat leeg)")}
+              onBlur={bizQ && q.id === bizQ.id && jobId ? () => { const what = String(ans[q.id] || "").trim(); if (what.length >= 8 && asked.current !== what && questions.some(isMedia)) { asked.current = what; askPhotos(what); } } : undefined} />
             : <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem" }}>{optsOf(q).map((o) => { const on = q.type === "multi" ? ans[q.id].includes(o) : ans[q.id] === o; return <button key={o} type="button" disabled={disabled} aria-pressed={on} onClick={() => (q.type === "multi" ? toggle(q, o) : set(q.id, on ? "" : o))} style={chip(on)}>{o}</button>; })}</div>}
         </div>
       ))}
+      {fakeErr && <div className="alert">{fakeErr}</div>}
+      <small className="muted">{tx("Tip: typ @ in een veld en druk op Enter, dan bedenkt de AI fictieve gegevens.")}</small>
       <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
-        <button type="button" className="btn primary" disabled={disabled || needName} onClick={() => onSend(compose())} title={needName ? tx("Vul eerst de naam in") : undefined}>{tx("Verstuur mijn antwoorden")}</button>
+        <button type="button" className="btn primary" disabled={disabled || needName || needColors} onClick={() => { pend.current = null; onSave?.(ans, own); onSend(compose()); }} title={needName ? tx("Vul eerst de naam in") : needColors ? tx("Kies eerst een kleurthema") : undefined}>{tx("Verstuur mijn antwoorden")}</button>
         <button type="button" className="btn" disabled={disabled} onClick={() => onSend(tx("Beslis zelf wat er niet is ingevuld en ga aan de slag."))}>{tx("Beslis zelf")}</button>
       </div>
     </div>
@@ -766,7 +876,11 @@ function ThemeBlock({ job, onChanged }) {
 // The workspace: the step plan while it is a draft; when the website has been made: the chat on the left, the website on the right (per page, on a computer, iPad or phone). When it is good: import it.
 export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const [job, setJob] = useState(null);
+  useEffect(() => { setActiveDesign(jobId ? { id: jobId, name: "" } : null); return () => setActiveDesign(null); }, [jobId]);  // the cost window shows the costs of this design
+  useEffect(() => { if (jobId && job?.name) setActiveDesign({ id: jobId, name: job.name }); }, [jobId, job?.name]);
   const [err, setErr] = useState("");
+  const [moreOff, setMoreOff] = useState("");  // "not now" for the question about more pictures (per number of missing pictures)
+  const [reopen, setReopen] = useState(-1);  // an earlier questionnaire that is opened again with the answers of the customer
   const [page, setPage] = useState("index.html");
   const [dev, setDev] = useState("web");
   // the chat column: drag the bar to make it wider or narrower, or fold it away completely (an icon brings it back) to look at the website
@@ -831,11 +945,31 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const sendWith = async (t, imgs = []) => {
     if (!t.trim() || sending || job?.status === "running" || job?.status === "stopping") return;
     setSending(true); setErr("");
-    try { merge(await api(`/sitecreator/${jobId}/${chatMode ? "chat" : "revise"}/`, { method: "POST", body: { text: t, page, images: imgs } })); setText(""); setShots([]); liveRev.current = !!job?.applied && !!onApply; }
+    try { merge(await api(`/sitecreator/${jobId}/${chatMode ? "chat" : "revise"}/`, { method: "POST", body: { text: t, page, images: imgs, lang: getLanguage() } })); setText(""); setShots([]); liveRev.current = !!job?.applied && !!onApply; }
     catch (x) { setErr(errorText(x)); }
     finally { setSending(false); }
   };
   const send = (e) => { e?.preventDefault(); return sendWith(text, shots); };
+  const filesRef = useRef({});
+  filesRef.current = job?.files || {};
+  // A link inside the preview never leaves it (a click on "index.html" used to load the whole back office in the frame and it hung on "Laden…"): a link to a page of the design opens that page, "#place" scrolls, everything else does nothing.
+  const keepInPreview = (e) => {
+    try {
+      const doc = e.currentTarget.contentDocument;
+      if (!doc || doc.__keep) return;
+      doc.__keep = true;
+      doc.addEventListener("click", (ev) => {
+        const a = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
+        if (!a) return;
+        const href = String(a.getAttribute("href") || "");
+        ev.preventDefault();
+        if (href.startsWith("#")) { const el = href.length > 1 ? doc.getElementById(href.slice(1)) : null; if (el) el.scrollIntoView({ behavior: "smooth" }); return; }
+        const m = href.split("#")[0].split("?")[0].split("/").pop();
+        if (m && filesRef.current[m] && /\.html?$/i.test(m)) setPage(m);
+      });
+      doc.addEventListener("submit", (ev) => ev.preventDefault());
+    } catch { /* the frame is not reachable: nothing to do */ }
+  };
   const running = job?.status === "running" || job?.status === "stopping";
   const act = async (what, path, body) => { setBusy(what); setErr(""); try { merge(await api(`/sitecreator/${jobId}/${path}/`, { method: "POST", body: body || {} })); return true; } catch (x) { setErr(errorText(x)); return false; } finally { setBusy(""); } };
   const stop = () => act("stop", "stop");
@@ -859,6 +993,10 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const pages = job?.pages || [];
   const width = DEVICES.find((d) => d[0] === dev)[2];
   const ready = job && Object.keys(job.files || {}).some((n) => n.endsWith(".html"));
+  const mainHtml = ready ? String(job.files?.["index.html"] || "") : "";
+  const thinSections = ready && (job.pages || []).length === 1 ? (mainHtml.match(/<div id="[^"]+">/g) || []).length : 99;  // a one pager with only a few sections lacks content
+  const [thinOff, setThinOff] = useState("");
+  const missingPics = ready ? (job.photo_slots || []).filter((x) => x.kind !== "video" && !x.done && !x.istock && !/logo/i.test(x.file)).length : 0;  // places where a page asks for a picture and there is none yet
   // the blocks Colours and Photos and videos wait until the questionnaire round has been: while the customer is asked the questions (or the first answer of the AI is still to come) they are hidden
   const lastMsg = (job?.messages || []).slice(-1)[0];
   const asking = !!lastMsg?.questions?.length || (!ready && (!lastMsg || lastMsg.role === "user"));
@@ -886,7 +1024,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
           <button type="button" className="pb-panelx" onClick={requestClose} aria-label={tx("Sluiten")}>×</button></div>
         {improveOpen && <ImprovePopup onClose={() => setImproveOpen(false)} onStart={improve} busy={busy === "improve"} />}
         {createOpen && job && <CreatePopup job={job} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
-        {!job && <p className="muted" style={{ padding: "1rem" }}>{err || tx("Laden…")}</p>}
+        {!job && <p className="muted" style={{ padding: "1rem" }}>{err || <Loading />}</p>}
         {wizard && <Wizard key={job.id + (again ? "a" : "")} job={job} onJob={merge} onReload={() => reload(true)} onApply={onApply ? (o) => onApply(job, o) : undefined} onImprove={() => setImproveOpen(true)} onWorkspace={ready && job.status !== "draft" ? () => setAgain(false) : undefined} onGenerate={(j) => { setAgain(false); merge(j); }} />}
         {job && !wizard && (
           <div ref={gridEl} style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: side.shut ? "0px 0px minmax(0, 1fr)" : `${side.w}px 10px minmax(0, 1fr)` }}>
@@ -894,14 +1032,35 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
               <div ref={chat} style={{ flex: 1, overflowY: "auto", padding: ".9rem", display: "flex", flexDirection: "column", gap: ".6rem" }}>
                 {chatMode && !(job.messages || []).length && <div style={{ alignSelf: "flex-start", maxWidth: "92%", padding: ".55rem .8rem", borderRadius: 12, background: "var(--card)", border: "1px solid var(--line)" }}>{tx("Hoi! Vertel in je eigen woorden wat voor website je wilt: waar is hij voor en voor wie? Ik ontwerp hem met de componenten en modules van easy2edit en je ziet het resultaat rechts. Foto's zoek je zelf op iStock; ik laat zien welke ik nodig heb.")}</div>}
                 {(job.messages || []).map((m, i) => (
-                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && i === (job.messages || []).length - 1 && <QuestionForm key={i} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}</div>
+                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} picked={job.brief?.picked} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
                 ))}
+                {!running && ready && thinSections < 5 && thinOff !== jobId && (
+                  <div className="card" data-easy2edit-tag="ui-notice" style={{ padding: ".7rem .9rem", display: "grid", gap: ".5rem" }}>
+                    <span>{tx("Deze onepager heeft maar {0} secties, dus er mist content. Zal ik de pagina aanvullen (over ons, diensten, voordelen, reviews, FAQ en contact) en het menu naar die secties laten linken?", String(thinSections))}</span>
+                    <span style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+                      <button type="button" className="btn sm primary" disabled={!!busy} onClick={async () => { setErr(""); setThinOff(jobId); try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text: tx("Deze onepager mist content. Vul de pagina aan met de ontbrekende secties (over ons, diensten, voordelen, reviews, FAQ en contact), elk met een eigen id, in dezelfde stijl. Laat het menu in de navigatiebalk en de voettekst linken naar die secties."), lang: getLanguage() } })); } catch (x) { setErr(errorText(x)); } }}>{tx("Ja, vul de pagina aan")}</button>
+                      <button type="button" className="btn sm" onClick={() => setThinOff(jobId)}>{tx("Niet nu")}</button>
+                    </span>
+                  </div>
+                )}
+                {!running && ready && missingPics > 0 && moreOff !== `${jobId}:${missingPics}` && (
+                  <div className="card" data-easy2edit-tag="ui-notice" style={{ padding: ".7rem .9rem", display: "grid", gap: ".5rem" }}>
+                    <span>{tx("Er ontbreken nog {0} afbeeldingen op de pagina's. Zal ik meer afbeeldingen zoeken op iStock en aan het ontwerp toevoegen?", String(missingPics))}</span>
+                    <span style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+                      <button type="button" className="btn sm primary" disabled={!!busy} onClick={async () => { setErr(""); try { merge(await api(`/sitecreator/${jobId}/more-photos/`, { method: "POST", body: {} })); } catch (x) { setErr(errorText(x)); } }}><IconSearch /> {tx("Ja, zoek meer afbeeldingen")}</button>
+                      <button type="button" className="btn sm" onClick={() => setMoreOff(`${jobId}:${missingPics}`)}>{tx("Niet nu")}</button>
+                    </span>
+                  </div>
+                )}
                 {running && (
                   <div className="card" style={{ padding: ".7rem .9rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: ".5rem" }}><span>{job.step || tx("Bezig…")}</span><strong>{Math.round(job.progress || 0)} %</strong></div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: ".5rem" }}><span>{tx(job.step || "Bezig…")}</span><strong>{Math.round(job.progress || 0)} %</strong></div>
                     <div style={{ height: 8, borderRadius: 999, background: "var(--line)", overflow: "hidden", marginTop: ".5rem" }}><div style={{ width: `${Math.max(3, Math.min(100, job.progress || 0))}%`, height: "100%", background: "var(--blue)", transition: "width .4s" }} /></div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: ".6rem", marginTop: ".6rem", flexWrap: "wrap" }}>
-                      <small className="muted" style={{ flex: 1, minWidth: 180 }}>{tx("Je kunt dit venster sluiten: het ontwerp wordt doorgemaakt en staat daarna onder Mijn ontwerpen.")}</small>
+                      {job.stalled
+                        ? <small style={{ flex: "1 1 100%", color: "var(--danger, #dc2626)" }} role="alert">{tx("Het ontwerpen lijkt vast te staan: er werkt niets meer aan (de server is waarschijnlijk herstart). Wil je doorgaan waar het gebleven was?")}</small>
+                        : <small className="muted" style={{ flex: 1, minWidth: 180 }}>{tx("Je kunt dit venster sluiten: het ontwerp wordt doorgemaakt en staat daarna onder Mijn ontwerpen.")}</small>}
+                      {job.stalled && <button type="button" className="btn sm primary" disabled={!!busy} onClick={async () => { setErr(""); try { merge(await api(`/sitecreator/${jobId}/resume/`, { method: "POST", body: {} })); } catch (x) { setErr(errorText(x)); } }}>{tx("Doorgaan")}</button>}
                       <button type="button" className="btn sm danger" disabled={job.status === "stopping" || busy === "stop"} onClick={stop}>{job.status === "stopping" ? tx("Bezig met stoppen…") : tx("Stoppen")}</button>
                     </div>
                   </div>
@@ -910,7 +1069,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 {!running && job.can_restore && <button type="button" className="btn sm" style={{ alignSelf: "flex-start" }} disabled={!!busy} onClick={restore}>{busy === "restore" ? tx("Bezig…") : tx("Vorige versie terugzetten")}</button>}
               </div>
               {blocksOpen && (ready || chatMode) && <ThemeBlock key={job.id + (job.brief?.theme_name || "")} job={job} onChanged={() => reload(true)} />}
-              {blocksOpen && chatMode && <PhotoSlots job={job} onJob={merge} onAsk={async (t) => { try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text: t, page } })); } catch (x) { setErr(errorText(x)); } }} onShow={(file) => { const p = pages.find((q) => String(job.files?.[q.file] || "").toLowerCase().includes(file)); if (p) setPage(p.file); return p?.title || ""; }} />}
+              {blocksOpen && chatMode && <PhotoSlots job={job} onJob={merge} onAsk={async (t) => { try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text: t, page, lang: getLanguage() } })); } catch (x) { setErr(errorText(x)); } }} onShow={(file) => { const p = pages.find((q) => String(job.files?.[q.file] || "").toLowerCase().includes(file)); if (p) setPage(p.file); return p?.title || ""; }} />}
               {shots.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", padding: ".5rem .7rem 0", borderTop: "1px solid var(--line)" }} aria-label={tx("Screenshots bij je bericht")}>{shots.map((u, k) => <span key={k} style={{ position: "relative" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", height: 54, borderRadius: 8, border: "1px solid var(--line)" }} /><button type="button" className="pb-panelx" onClick={() => setShots((s) => s.filter((_, i) => i !== k))} aria-label={tx("Screenshot weghalen")} style={{ position: "absolute", top: -6, right: -6 }}>×</button></span>)}<small className="muted" style={{ alignSelf: "center" }}>{tx("gaat mee met je volgende bericht")}</small></div>}
               <form onSubmit={send} style={{ padding: ".7rem", borderTop: shots.length ? 0 : "1px solid var(--line)", display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
                 <textarea rows={3} style={{ flex: 1 }} value={text} maxLength={2000} disabled={running} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(e); }} placeholder={tx("Wat moet er anders? bv. maak de kop rustiger, voeg een prijzenblok toe")} />
@@ -934,7 +1093,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 {ready ? (
                   <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24, boxShadow: "0 12px 40px rgba(0,0,0,.35)" }), opacity: running ? .6 : 1, transition: "opacity .3s" }}>
                     <div style={{ width: `${100 / zoom}%`, height: `${100 / zoom}%`, transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
-                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], "", chatMode, kit)} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], "", chatMode, kit)} onLoad={keepInPreview} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
                     </div>
                   </div>
                 ) : <p className="muted" style={{ alignSelf: "center", textAlign: "center", maxWidth: 360 }}>{running ? "" : chatMode ? tx("Hier verschijnt het voorbeeld van je website zodra het ontwerp klaar is.") : ""}</p>}
@@ -949,7 +1108,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                     <strong style={{ fontSize: "1.5rem", letterSpacing: ".02em" }}>{tx("Work in progress")}</strong>
                     <span style={{ fontSize: "2.4rem", fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{Math.round(job.progress || 0)}%</span>
                     <div style={{ width: "min(320px, 70%)", height: 8, borderRadius: 999, background: "rgba(255,255,255,.3)", overflow: "hidden" }}><div style={{ width: `${Math.max(3, Math.min(100, job.progress || 0))}%`, height: "100%", background: "#fff", transition: "width .4s" }} /></div>
-                    {job.step && <small style={{ opacity: .9 }}>{job.step}</small>}
+                    {job.step && <small style={{ opacity: .9 }}>{tx(job.step)}</small>}
                   </div>
                 )}
               </div>

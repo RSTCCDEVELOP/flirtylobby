@@ -13,6 +13,7 @@ import { api } from "../lib/api";
 import { getLanguage, tx } from "../lib/t";
 import KitScope from "../lib/ui-kit/KitScope";
 
+import Loading from "./Loading";
 const STYLES = [["list", "Lijst"], ["next", "Eerstvolgende"], ["week", "Week"], ["month", "Maand"], ["compact", "Compact"]];
 const HEX = { blue: "#3b82f6", orange: "#f97316", green: "#16a34a", pink: "#ec4899", purple: "#8b5cf6", teal: "#0d9488", red: "#dc2626", gray: "#64748b" };
 const KEY = "agenda:tile";
@@ -49,7 +50,7 @@ export default function AgendaTile({ ctx }) {
     })}</ul>
   );
   let body;
-  if (d === undefined) body = <p className="muted">{tx("Laden…")}</p>;
+  if (d === undefined) body = <p className="muted"><Loading /></p>;
   else if (d === null) body = <p className="muted">{tx("Niet beschikbaar.")}</p>;
   else if (!items.length) body = <p className="muted" style={{ margin: 0 }}>{tx("Geen komende afspraken.")}</p>;
   else if (style === "next") {

@@ -16,6 +16,7 @@ import { tx } from "../lib/t";
 import { componentListText } from "../lib/ui-kit/componentList";
 import { resetKit, useKit } from "../lib/ui-kit/kitDoc";
 
+import Loading from "./Loading";
 const MODES = [["list", "Alleen de lijst (tags)", "Elke easy2edit_tag met wat het is. Klein, voor in een prompt."], ["html", "Lijst met HTML", "Ook de HTML van elk component, zodat een AI ze precies kan overnemen."], ["css", "Lijst, HTML en CSS", "Ook de CSS van de kit, zodat een AI de componenten in zijn voorbeeld kan tonen."]];
 
 
@@ -38,7 +39,7 @@ function Sets({ onUse }) {
     setBusy("upload"); setErr("");
     try { const fd = new FormData(); fd.append("file", f); setD(await api("/components/sets/", { method: "POST", body: fd })); resetKit(); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
   };
-  if (!d) return err ? <div className="alert">{err}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return err ? <div className="alert">{err}</div> : <p className="muted"><Loading /></p>;
   const card = (m, right) => (
     <div key={m.key} className="card" style={{ display: "flex", gap: ".8rem", alignItems: "center", padding: ".7rem .9rem", flexWrap: "wrap" }}>
       <span style={{ flex: 1, minWidth: 200 }}>

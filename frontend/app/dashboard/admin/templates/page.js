@@ -14,6 +14,7 @@ import { alertDialog, confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import KitScope from "../../../../lib/ui-kit/KitScope";
 
+import Loading from "../../../../components/Loading";
 const MODES = [["copy", "Naast mijn pagina's zetten", "De pagina's van de template komen erbij. Jouw bestaande pagina's blijven staan."], ["replace", "In plaats van mijn pagina's", "Een pagina met hetzelfde adres wordt vervangen door die van de template."]];
 
 // The result of the check after a template was read in: every part with OK or what is wrong (and what was repaired).
@@ -69,7 +70,7 @@ export default function TemplatesPage() {
     try { setD(await api("/templates/", { method: "POST", body: { action: "remove", key: t.key } })); } catch (e) { await alertDialog(errorText(e)); }
     setBusy("");
   };
-  if (!d) return err ? <div className="alert">{err}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!d) return err ? <div className="alert">{err}</div> : <p className="muted"><Loading /></p>;
   const list = d.templates.filter((t) => !q.trim() || `${t.name} ${t.description} ${t.author}`.toLowerCase().includes(q.trim().toLowerCase()));
   return (
     <KitScope tag="ui-cards" className="stack">

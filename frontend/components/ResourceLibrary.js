@@ -15,6 +15,7 @@ import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 
+import Loading from "./Loading";
 // where an installed part is changed: the theme in Theme, a plugin in its own page, a language in Languages
 const EDIT = { themas: () => "/dashboard/admin/theme", plugins: (r) => `/dashboard/admin/plugins/${r.name}`, languages: () => "/dashboard/admin/languages", components: () => "/dashboard/admin/components", templates: () => "/dashboard/admin/templates" };
 
@@ -48,7 +49,7 @@ export function ThemeGallery({ onChanged, canManage = false }) {
   const load = useCallback(() => api("/resource/").then((d) => setRows(d?.kinds?.themas || [])).catch(() => setRows([])), []);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (canManage) api("/content/ai/").then((r) => setAi(!!r.available)).catch(() => setAi(false)); }, [canManage]);
-  if (!rows) return <p className="muted">{tx("Laden…")}</p>;
+  if (!rows) return <p className="muted"><Loading /></p>;
   const list = rows.filter((r) => !r.bundle && (!q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase())))
     .sort((a, b) => ["update", "new", "current"].indexOf(a.state) - ["update", "new", "current"].indexOf(b.state) || a.title.localeCompare(b.title));
   if (!rows.some((r) => !r.bundle)) return null;
@@ -261,7 +262,7 @@ export function ResourceAdmin() {
   }).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   const [makeTpl, setMakeTpl] = useState(false);  // (a hook: before the early return below)
   useEffect(() => { load(); }, [load]);
-  if (!lib) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
+  if (!lib) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
   const rows = lib.kinds[kind] || [];
   const flip = (name) => setOk((cur) => { const s = new Set(cur[kind]); s.has(name) ? s.delete(name) : s.add(name); return { ...cur, [kind]: s }; });
   const save = async () => {

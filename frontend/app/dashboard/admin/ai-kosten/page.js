@@ -15,6 +15,7 @@ import { useUpdates } from "../../../../lib/updates";
 import Tabs from "../../../../components/Tabs";
 import { BarList, Columns, Donut, GROUPS, Kpi, KpiGrid, Legend, Stacked, money, num, short } from "../../../../components/AiCharts";
 
+import Loading from "../../../../components/Loading";
 const PERIODS = [["day", "Laatste 24 uur"], ["week", "Laatste 7 dagen"], ["month", "Laatste 30 dagen"], ["quarter", "Laatste 90 dagen"], ["year", "Laatste jaar"]];
 const DAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"];
 
@@ -114,7 +115,7 @@ function Overview({ fail }) {
   const [d, setD] = useState(null);
   useUpdates("ai-summary", () => api("/admin/ai/summary/"), 15000, setS, true, { onError: fail });
   useEffect(() => { setD(null); api(`/ai/admin/overview/?period=${period}`).then(setD).catch(fail); }, [period, fail]);
-  if (!s) return <p className="muted">{tx("Laden…")}</p>;
+  if (!s) return <p className="muted"><Loading /></p>;
   const m = (n) => money(n, s.currency);
   const delta = s.last_month.charged ? Math.round(((s.month.charged - s.last_month.charged) / s.last_month.charged) * 100) : null;
   const keys = d ? GROUPS.filter((g) => d.by_group.some((r) => r.group === g)) : [];
@@ -134,7 +135,7 @@ function Overview({ fail }) {
           <h4 style={{ flex: 1, margin: 0 }}>{tx("Kosten in de tijd")}</h4>
           <select className="e2e-select" style={{ width: "auto", minWidth: "12rem" }} value={period} onChange={(e) => setPeriod(e.target.value)} aria-label={tx("Periode")}>{PERIODS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
         </header>
-        {!d ? <p className="muted">{tx("Laden…")}</p> : <><Legend keys={keys.length ? keys : ["user", "admin"]} /><Stacked series={d.series} metric="charged" format={(v) => (v >= 1 ? short(v) : v.toFixed(2))} /></>}
+        {!d ? <p className="muted"><Loading /></p> : <><Legend keys={keys.length ? keys : ["user", "admin"]} /><Stacked series={d.series} metric="charged" format={(v) => (v >= 1 ? short(v) : v.toFixed(2))} /></>}
       </div>
       {d && <div className="e2e-grid" style={{ "--e2e-min": "340px" }}>
         <div className="e2e-chartcard"><header><h4>{tx("Kosten per groep")}</h4></header><Donut rows={d.by_group.map((r) => ({ key: r.group, label: tx(r.name), value: r.charged }))} /></div>
@@ -157,7 +158,7 @@ function Stats({ fail }) {
   return (
     <div className="ai-wrap">
       <div className="ai-filters"><label>{tx("Periode")}<select className="e2e-select" value={period} onChange={(e) => setPeriod(e.target.value)}>{PERIODS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label></div>
-      {!d ? <p className="muted">{tx("Laden…")}</p> : (<>
+      {!d ? <p className="muted"><Loading /></p> : (<>
         <KpiGrid>
           <Kpi label={tx("Verzoeken")} value={num(t.calls)} sub={`${num(t.errors)} ${tx("mislukt")} (${t.calls ? Math.round((t.errors / t.calls) * 100) : 0}%)`} />
           <Kpi label={tx("Kosten")} value={m(t.charged)} sub={t.calls ? `${m(t.charged / t.calls)} ${tx("per verzoek")}` : ""} />
