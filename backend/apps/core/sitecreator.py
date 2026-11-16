@@ -446,7 +446,7 @@ def clean_brief(patch, old):
     """The brief with only known keys and safe values; the photos are checked against the media library."""
     b = dict(old or {})
     p = patch if isinstance(patch, dict) else {}
-    for k, n in (("name", 120), ("lang", 40), ("pages", 600), ("style", 300), ("extra", 1500), ("theme", 60), ("theme_name", 120), ("component_set", 60)):
+    for k, n in (("name", 120), ("lang", 40), ("pages", 600), ("style", 300), ("extra", 1500), ("theme", 60), ("theme_name", 120), ("component_set", 60), ("contact", 500)):
         if k in p:
             b[k] = str(p[k] or "")[:n]
     if "kind" in p:
@@ -1025,7 +1025,7 @@ def max_width_of(b):
 def layout_css(b):
     w = max_width_of(b)
     mw = f"{w}px" if w else "none"
-    return LAYOUT_CSS.replace("__MAXW__", mw) + f".container, .band .container {{ max-width: {mw}; }}\n"
+    return LAYOUT_CSS.replace("__MAXW__", mw) + f".container, .band .container {{ max-width: {mw}; margin: 0 auto; padding: 0 1.25rem; box-sizing: border-box; width: 100%; }}\n"
 
 
 def themed(files, b):
@@ -1074,6 +1074,8 @@ def _brief_text(b):
         *([ "ONE PAGER: the whole website is ONE page (index.html). Put everything (hero, about, services, reviews, contact ...) as sections of that page, each section with an id; the menu in the navbar consists of anchor links to those sections (href=\"#id\"), no other pages exist." ] if len(pages) == 1 else []),
         "Style: " + ", ".join([*(b.get("style_tags") or []), *([b["style"]] if b.get("style") else [])] or ["modern, clean, lots of white space, friendly and professional"]),
     ]
+    if b.get("contact"):
+        lines.append("CONTACT DETAILS of the customer (use EXACTLY these in the contact section, the call to action and the footer; never invent an address, a phone number or an e-mail address, and never use example.com): " + str(b["contact"])[:500])
     if b.get("theme_name"):
         lines.append(f"Based on the theme '{b['theme_name']}' of the system: follow its look and colours.")
     if c and b.get("mode") == "improve" and b.get("palette_from_zip") and c == b.get("zip_palette"):
@@ -1367,6 +1369,8 @@ def _page_html(brief, plan_page, header, sections, footer):
     lang = {"dutch": "nl", "nederlands": "nl", "english": "en", "engels": "en", "german": "de", "duits": "de", "french": "fr", "frans": "fr", "spanish": "es", "spaans": "es"}.get(str((brief or {}).get("lang") or "").strip().lower(), "nl")
     esc = lambda x: str(x or "").replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")  # noqa: E731
     title = esc(plan_page["title"] + (f" | {name}" if name and name.lower() not in plan_page["title"].lower() else ""))
+    wide = lambda h: h if ("e2e-container" in h or 'class="container"' in h or "class='container'" in h) else f'<div class="container">\n{h}\n</div>'  # noqa: E731 - every section has the same width: a component without a container of its own gets the container of the site
+    sections = [(s_id, wide(h)) for s_id, h in sections]
     body = "\n".join(f'<div id="{s_id}">\n{h}\n</div>' if s_id else h for s_id, h in sections)
     return (f'<!doctype html>\n<html lang="{lang}">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>{title[:80]}</title>\n<meta name="description" content="{esc(plan_page["description"])}">\n<link rel="stylesheet" href="style.css">\n</head>\n'
             f"<body>\n<header>\n{header}\n</header>\n<main>\n{body}\n</main>\n<footer>\n{footer}\n</footer>\n</body>\n</html>\n")
@@ -2044,6 +2048,49 @@ def _more_photos(pk):
         _set(pk, status="done", progress=100, step="")
 
 
+def apply_identity(job):
+    """When the design is put on the website: the footer of the site shows what the designer made (name, short text, address, phone, e-mail), not the standard "easy2edit": the identity of the website is filled from the design.
+    The name and the footer text are always set (they belong to this design); address, phone and e-mail only when they are still empty (existing details are never overwritten). Returns what was set."""
+    from . import system
+
+    b = job.brief or {}
+    name = str(b.get("name") or job.name or "").strip()[:100]
+    html = str((job.files or {}).get("index.html") or "")
+    m = re.search(r"<footer\b[^>]*>(.*?)</footer>", html, re.S | re.I)
+    foot = m.group(1) if m else ""
+    paras = [" ".join(re.sub(r"<[^>]+>", " ", x).split()) for x in re.findall(r"<p\b[^>]*>(.*?)</p>", foot, re.S | re.I)]
+    texts = [" ".join(t.split()) for t in re.split(r"\s*(?:<br\s*/?>|</(?:p|li|div|span|a|h\d)>)\s*", foot) for t in [re.sub(r"<[^>]+>", " ", t)] if t.strip()]
+    email = next(iter(re.findall(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", foot)), "")
+    phone = next((x.strip() for t in texts for x in re.findall(r"\+?\d[\d\s().-]{7,}\d", t)), "")
+    address = next((t for t in texts if re.search(r"\d", t) and "," in t and email not in t and phone not in t and len(t) < 160), "")
+    blurb = next((p for p in paras if len(p) >= 40 and email not in p), "")
+    given = str(b.get("contact") or "")  # what the customer typed wins over what the designer wrote in the footer
+    if given:
+        email = next(iter(re.findall(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", given)), email)
+        phone = next(iter(re.findall(r"\+?\d[\d\s().-]{7,}\d", given)), phone).strip()
+        rest = re.sub(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", " ", re.sub(r"\+?\d[\d\s().-]{7,}\d", " ", given))
+        rest = re.sub(r"(?i)\b(phone|tel|telefoon|e-?mail|email|address|adres|contact)\s*:", " ", rest)
+        parts = [x.strip(" .;|") for x in re.split(r"[.;\n|]", rest) if x.strip(" .;|")]
+        address = next((x for x in parts if re.search(r"\d", x) and "," in x), address)
+    cur = system.get()
+    new = {}
+    if name:
+        new["site_name"] = name
+        if not cur.get("company_name"):
+            new["company_name"] = name
+    if blurb:
+        new["footer_text"] = blurb[:500]
+    if email and not cur.get("contact_email"):
+        new["contact_email"] = email
+    if phone and not cur.get("phone"):
+        new["phone"] = phone[:40]
+    if address and not cur.get("address"):
+        new["address"] = address[:200]
+    if new:
+        system.save(new)
+    return new
+
+
 EXPORT_FORMAT = "easy2edit-design"
 
 
@@ -2188,6 +2235,21 @@ def chat(job, text, shots=None, ui_lang=""):
     _spawn(_chat, job.pk, text, has, shots)
 
 
+def _answered_contact(msgs):
+    """What the customer filled in as contact details in the last questionnaire (address, phone, e-mail ...), or "" when nothing: the designer uses exactly this."""
+    for m in reversed(msgs or []):
+        if not m.get("questions"):
+            continue
+        ans = ((m.get("answers") or {}).get("ans")) or {}
+        for q in m["questions"]:
+            txt = f"{q.get('id') or ''} {q.get('q') or ''}"
+            v = ans.get(q.get("id"))
+            if re.search(r"contact|adres|address|telefoon|phone|e-?mail|gegevens|details", txt, re.I) and isinstance(v, str) and len(v.strip()) >= 6 and not re.fullmatch(r"(beslis zelf|decide yourself|none|geen)\W*", v.strip(), re.I):
+                return v.strip()[:500]
+        return ""
+    return ""
+
+
 def _answered_pages(msgs):
     """The pages that the customer ticked in the last questionnaire (saved with the answers): "Home" for a one pager, else the ticked pages as a list. None when there is no such answer."""
     for m in reversed(msgs or []):
@@ -2234,11 +2296,14 @@ def _chat(pk, text, has, shots=None):
         qs = clean_questions(d.get("questions")) if not d.get("ready") else []
         msgs = list(job.messages or []) + [{"role": "ai", "text": reply, **({"questions": qs} if qs else {})}]
         br = d.get("brief") if isinstance(d.get("brief"), dict) else {}
+        answered_contact = _answered_contact(msgs)  # the contact details that the customer typed win over everything the designer could invent
+        if answered_contact and isinstance(br, dict):
+            br = {**br, "contact": answered_contact}
         answered = _answered_pages(msgs)  # the pages that the customer ticked in the questionnaire win over what the designer wrote down
         if answered and isinstance(br, dict):
             br = {**br, "pages": answered}
         if d.get("ready") and str(br.get("name") or "").strip():
-            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
+            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width", "contact") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
             patch["chat"] = True
             _set(pk, brief=clean_brief(patch, job.brief), name=str(((job.brief or {}).get("name") if "name" in ((job.brief or {}).get("locked") or []) else "") or br["name"]).strip()[:120], messages=msgs, progress=6, step="De website ontwerpen")
             if patch.get("istock_search"):

@@ -32,6 +32,9 @@ export function BrandingProvider({ value, logoSet, siteName, children }) {
 export const useBranding = () => useContext(BrandingContext);
 
 // header: the logo of the site header (own light and dark version, else the normal logo)
+// a logo whose file cannot be loaded: the standard logo (never a broken picture)
+const fallbackLogo = (e) => { const el = e.currentTarget; if (el.dataset.fb !== "1" && !el.src.endsWith("/logos/easy2edit/logo.png")) { el.dataset.fb = "1"; el.src = "/logos/easy2edit/logo.png"; } };
+
 export function Logo({ className = "", alt, header = false }) {
   const { assets, alt: setAlt } = useBranding();
   alt = alt || setAlt || "Studio2";
@@ -42,7 +45,7 @@ export function Logo({ className = "", alt, header = false }) {
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={light} alt={alt} className={`${className} logo-light ${dark ? "has-dark" : ""}`} />
+      <img src={light} alt={alt} onError={fallbackLogo} className={`${className} logo-light ${dark ? "has-dark" : ""}`} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {dark && <img src={dark} alt={alt} className={`${className} logo-dark`} />}
     </>

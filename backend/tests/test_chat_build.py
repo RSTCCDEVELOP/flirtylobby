@@ -615,3 +615,40 @@ def test_pages_that_the_customer_ticked_are_used(job):
     msgs[0]["answers"]["ans"]["pages"] = ["One pager (alles op één pagina)"]
     assert sitecreator._answered_pages(msgs) == "Home"
     assert sitecreator._answered_pages([{"role": "ai", "text": "x"}]) is None
+
+
+def test_every_section_gets_the_same_width(job):
+    plan_page = {"title": "Home", "description": ""}
+    html = sitecreator._page_html({"name": "X"}, plan_page, "<nav></nav>", [("hero", '<section class="e2e-hero"><div class="e2e-container">a</div></section>'), ("over", '<div data-easy2edit-tag="ui-features"><section>b</section></div>'),
+                                                                        ("kolommen", '<section class="band"><div class="container"><div class="cols">c</div></div></section>')], "<p>f</p>")
+    assert html.count('<div class="container">') == 2  # the band has its own, the hero has e2e-container: only the features section is wrapped
+    assert '<div id="over">\n<div class="container">' in html
+    assert "margin: 0 auto" in sitecreator.layout_css({"max_width": 1100})
+
+
+def test_the_design_fills_the_identity_of_the_website(job):
+    from apps.core import system
+
+    footer = ('<footer><div data-easy2edit-tag="ui-footer"><footer><b>Blue Business</b><p>Blue Business Process Solutions reimagines end-to-end business solutions for companies today.</p>'
+              '<ul><li>48 Harbor Lane, Bristol, BS1 4QT, UK</li><li>+44 117 496 0123</li><li>hello@example.com</li></ul></footer></div></footer>')
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={"index.html": f"<html><body><main></main>{footer}</body></html>"}, brief={"name": "Blue Business Process Solutions"})
+    job.refresh_from_db()
+    got = sitecreator.apply_identity(job)
+    assert got["site_name"] == "Blue Business Process Solutions" and got["contact_email"] == "hello@example.com"
+    assert got["phone"].startswith("+44") and "Harbor Lane" in got["address"] and "reimagines" in got["footer_text"]
+    assert system.site_name() == "Blue Business Process Solutions"
+    again = sitecreator.apply_identity(job)  # existing details are not overwritten
+    assert "contact_email" not in again and "phone" not in again and again["site_name"]
+
+
+def test_contact_details_of_the_customer_are_used(job):
+    q = [{"id": "contact_details", "q": "Which contact details should we display?", "type": "text", "options": []}]
+    msgs = [{"role": "ai", "text": "x", "questions": q, "answers": {"ans": {"contact_details": "Greenfield Trading Co., 48 Marigold Lane, Fairview, TX 75001. Phone: (555) 204-9981. Email: contact@greenfieldtrading-example.com."}, "own": {}}}]
+    got = sitecreator._answered_contact(msgs)
+    assert "Marigold Lane" in got and "204-9981" in got
+    assert sitecreator._answered_contact([{"role": "ai", "text": "x", "questions": q, "answers": {"ans": {"contact_details": "decide yourself"}}}]) == ""
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief={"name": "Greenfield", "contact": got}, files={"index.html": "<footer><p>Invented address 1, Bristol</p></footer>"})
+    job.refresh_from_db()
+    assert "CONTACT DETAILS" in sitecreator._brief_text(job.brief) and "Marigold Lane" in sitecreator._brief_text(job.brief)
+    new = sitecreator.apply_identity(job)
+    assert new["contact_email"] == "contact@greenfieldtrading-example.com" and "204-9981" in new["phone"] and "Marigold Lane" in new["address"]

@@ -1969,6 +1969,18 @@ def sitecreator_export(request, pk):
 
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+def sitecreator_identity(request, pk):
+    """The design is put on the website: the name, the footer text and the contact details of the website are filled from the design."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    return Response({"set": sitecreator.apply_identity(job)})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
 def sitecreator_resume(request, pk):
     """The design got stuck (the server was restarted): go on with what was running."""
     from . import sitecreator

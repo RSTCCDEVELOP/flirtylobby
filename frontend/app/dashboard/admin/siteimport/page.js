@@ -602,6 +602,7 @@ export default function SiteImport() {
       }
       await load(); setOpen(ap.id);
       await runApply(ap, null, { render: o.render || "blocks", mode: "clear", prompt: "", translate: !!o.translate }, [45, 100]); // the pages are built: 45 - 100 %
+      if (!cancelRef.current.requested) api(`/sitecreator/${job.id}/identity/`, { method: "POST", body: {} }).catch(() => {}); // the footer and the details of the website follow the design (name, text, address, phone, e-mail)
       if (themeNote) setProg((p) => (p ? { ...p, themeNote } : p));
       if (!cancelRef.current.requested) api(`/sitecreator/${job.id}/`, { method: "PATCH", body: { live: true } }).catch(() => {}); // from now on the concept is adjusted "live"
     } catch (e) { if (cancelRef.current.requested) return; setProg((p) => ({ ...(p || { name: job.name, percent: 0, built: [] }), error: errorText(e), state: "error" })); }

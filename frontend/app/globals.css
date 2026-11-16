@@ -1422,6 +1422,8 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .pb-tight .rich-text p:last-child, .pb-tight .rich-text ul:last-child, .pb-tight .rich-text ol:last-child { margin-bottom: 0; } /* an item with an exact space below it: no extra space of its last paragraph */
 .pb-cell > .pb-item { max-width: 100%; }
 .pb-cell > .pb-item.obj { width: 100%; }
+.pb-cell > .pb-item:has(.pb-w-kit), .pb-cell > .pb-item:has(.pb-w-code) { width: 100%; align-self: stretch; }  /* a ready-made component (or code) fills the whole cell: in a cell that centres or starts left its items would shrink to their content (a section that is only 2/3 of the page, left) */
+.pb-w-kit { width: 100%; }
 .pb-img { max-width: 100%; height: auto; border-radius: var(--radius, 12px); }
 .pb-cell.edit { border: 1px dashed var(--blue); border-radius: var(--radius, 12px); padding: .5rem; min-height: 140px; }
 .pb-cellbar { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; align-self: stretch; padding-bottom: .4rem; border-bottom: 1px dashed var(--line); margin-bottom: .2rem; }

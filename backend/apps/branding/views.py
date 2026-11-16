@@ -44,7 +44,14 @@ def branding(request):
     """Public. Returns relative media paths (the frontend prefixes the API origin)."""
     if not modules.enabled("branding"):
         return Response({"assets": {}, "photos": [], "slots": {k: {"label": v[0], "hint": v[1]} for k, v in SLOTS.items()}})
-    assets = {a.slot: f"{a.image.url}?v={int(a.updated_at.timestamp())}" for a in SiteAsset.objects.all()}
+    assets = {}
+    for a in SiteAsset.objects.all():
+        try:
+            if not a.image or not a.image.storage.exists(a.image.name):  # the file is gone (a wiped site folder): the standard logo is shown, not a broken picture
+                continue
+            assets[a.slot] = f"{a.image.url}?v={int(a.updated_at.timestamp())}"
+        except Exception:  # noqa: BLE001
+            continue
     photos = [{"id": p.id, "url": p.image.url, "caption": p.caption} for p in HomePhoto.objects.all()]
     return Response({"assets": assets, "photos": photos, "slots": {k: {"label": v[0], "hint": v[1]} for k, v in SLOTS.items()}})
 

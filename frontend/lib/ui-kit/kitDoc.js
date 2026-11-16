@@ -12,8 +12,16 @@ import { api } from "../api";
 
 // The component set (see Admin > Website > Componenten): its css, its script and its components come from the server. key "" = the set in use.
 // The result: {key, name, KIT_CSS, KIT_RUNTIME, KIT_COMPONENTS}; every component knows its set (c.set) and has its easy2edit_tag.
+// A rule that every component set needs: a picture in the visual of a hero or in the media of a split fills the whole box (it used to sit small in the coloured box) and the decoration that is meant for an empty box is hidden.
+export const KIT_FIX = `
+.e2e-hero__visual>img,.e2e-split__media>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;max-width:none}
+.e2e-hero__visual:has(>img)::after,.e2e-split__media:has(>img)::before,.e2e-split__media:has(>img)::after{display:none}
+.e2e-hero__visual:has(>img),.e2e-split__media:has(>img){overflow:hidden}
+.e2e-cta :is(h1,h2,h3,p,span,small,li){color:inherit}
+.e2e-cta p{opacity:.92}
+`;
 const cache = {};
-export const loadKit = (key = "") => (cache[key] ||= api(`/components/?full=1${key ? `&key=${encodeURIComponent(key)}` : ""}`).then((d) => ({ key: d.key, name: d.name, KIT_CSS: d.css || "", KIT_RUNTIME: d.runtime || "", KIT_COMPONENTS: (d.components || []).map((c) => ({ ...c, set: d.key })) })).catch((e) => { delete cache[key]; throw e; }));
+export const loadKit = (key = "") => (cache[key] ||= api(`/components/?full=1${key ? `&key=${encodeURIComponent(key)}` : ""}`).then((d) => ({ key: d.key, name: d.name, KIT_CSS: (d.css || "") + KIT_FIX, KIT_RUNTIME: d.runtime || "", KIT_COMPONENTS: (d.components || []).map((c) => ({ ...c, set: d.key })) })).catch((e) => { delete cache[key]; throw e; }));
 export const resetKit = () => { Object.keys(cache).forEach((k) => delete cache[k]); };
 
 export const hexOf = (v) => {
