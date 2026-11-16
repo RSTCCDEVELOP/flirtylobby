@@ -30,6 +30,8 @@ def templates(request):
     if lvl < 1:
         return _bad("Geen toegang.", status.HTTP_403_FORBIDDEN)
     if request.method == "GET":
+        if request.GET.get("pages") and request.user.is_staff:  # the screen that makes a template: the pages that will be in it (for the example pictures)
+            return Response({"pages": tp.site_pages()})
         return Response({"templates": tp.listing(), "manage": bool(request.user.is_staff), "can_use": lvl >= 3})
     try:
         if request.FILES.get("file"):
@@ -38,6 +40,20 @@ def templates(request):
             tp.add_upload(request.FILES["file"])
             return Response({"templates": tp.listing(), "manage": True, "can_use": True}, status=status.HTTP_201_CREATED)
         action, key = str(request.data.get("action") or ""), str(request.data.get("key") or "")
+        if action == "create":  # a template from the website as it is now (settings of the system, pages, example pictures); no data of users
+            if not request.user.is_staff:
+                return _bad("Alleen een superadmin kan templates maken.", status.HTTP_403_FORBIDDEN)
+            shots = [(f.name, f.read()) for f in request.FILES.getlist("previews")[:12]]
+            m = tp.build_from_site(key, request.data.get("name"), request.data.get("description"), request.data.get("author"), request.data.get("version") or "1.0.0", shots, request.data.getlist("pages") or None)
+            return Response({"templates": tp.listing(), "manage": True, "can_use": True, "made": {"key": m["key"], "name": m["name"], "version": m["version"], "skipped": m["skipped"], "errors": m["errors"]}}, status=status.HTTP_201_CREATED)
+        if action == "suggest":  # the AI fills in the details of the new template
+            if not request.user.is_staff:
+                return _bad("Alleen een superadmin kan templates maken.", status.HTTP_403_FORBIDDEN)
+            return Response(tp.suggest_details(str(request.data.get("lang") or "")))
+        if action == "verify":
+            if not request.user.is_staff:
+                return _bad("Alleen een superadmin kan het systeem controleren.", status.HTTP_403_FORBIDDEN)
+            return Response(tp.verify(key, fix=bool(request.data.get("fix", True)), user=request.user))
         if action == "remove":
             if not request.user.is_staff:
                 return _bad("Alleen een superadmin kan templates verwijderen.", status.HTTP_403_FORBIDDEN)
@@ -46,7 +62,10 @@ def templates(request):
         if action == "apply":
             if lvl < 3:
                 return _bad("Geen rechten om pagina's te beheren.", status.HTTP_403_FORBIDDEN)
-            return Response(tp.apply(key, request.user, str(request.data.get("mode") or "copy")))
+            scope = "system" if request.data.get("scope") == "system" else "pages"
+            if scope == "system" and not request.user.is_staff:
+                return _bad("Alleen een superadmin kan het hele systeem terugzetten.", status.HTTP_403_FORBIDDEN)
+            return Response(tp.apply(key, request.user, str(request.data.get("mode") or "copy"), scope))
     except tp.TemplateError as e:
         return _bad(str(e))
     return _bad("Onbekende actie.")

@@ -7,9 +7,6 @@
 
 import logging
 import os
-import sys
-import threading
-import time
 
 from django.apps import AppConfig
 
@@ -22,25 +19,12 @@ class EnergyConfig(AppConfig):
 
     def ready(self):
         """The automatic measuring (once a day by default) is started by a small timer inside the web process, like the backups. `python manage.py energy_collect` does the same from a cron job."""
-        if os.getenv("ENERGY_SCHEDULER", "1") != "1":
-            return
-        argv0 = os.path.basename(sys.argv[0] or "")
-        if argv0 == "manage.py" and not (len(sys.argv) > 1 and sys.argv[1] == "runserver" and os.environ.get("RUN_MAIN") == "true"):
-            return  # migrate, check, shell, tests… do not start a timer
-        threading.Thread(target=self._loop, name="energy-scheduler", daemon=True).start()
+        from apps.core import background
 
-    @staticmethod
-    def _loop():
-        from django.db import close_old_connections
+        def run():
+            from . import scheduler
 
-        time.sleep(45)
-        while True:
-            try:
-                from . import scheduler
+            scheduler.run_due()
 
-                scheduler.run_due()
-            except Exception:  # noqa: BLE001 - the timer must never stop
-                logger.exception("energy scheduler")
-            finally:
-                close_old_connections()
-            time.sleep(60)
+        background.register("energy", run, every=300, first=45, enabled=lambda: os.getenv("ENERGY_SCHEDULER", "1") == "1")  # (the measuring is once a day: a check every five minutes is plenty)
+        background.start()

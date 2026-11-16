@@ -77,6 +77,7 @@ export default function SystemReset() {
       setFinished(true);
       await new Promise((r) => setTimeout(r, 700)); // the bar shows 100% for a moment
       markPlan();  // after a reset the step plan of Website ontwerpen opens
+      try { localStorage.removeItem("theme"); document.documentElement.dataset.theme = "light"; } catch {}  // back to the standard theme in light mode (also on this device)
       setStep(3);
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setJob(""); setFinished(false); setBusy(false);
@@ -122,7 +123,7 @@ export default function SystemReset() {
                     <li>{tx("Bestellingen, abonnementen, donaties, chats en alle andere gegevens van de modules")}</li>
                   </ul>
                 </div>
-                <small className="muted">{info.standard_admin ? tx("Blijft: de standaard superadmin {0} (met het standaardwachtwoord opnieuw gemaakt), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema easy2edit.")}</small>
+                <small className="muted">{info.standard_admin ? tx("Blijft: de standaard superadmin {0} (met het standaardwachtwoord opnieuw gemaakt), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema easy2edit, in lichte weergave.")}{" "}{tx("In de map site blijven alleen de database, de backups, de instellingen en exports van de superadmin (content) en de plugins staan; de rest (geëxporteerde pagina's, imports, toegevoegde templates, bestanden in de mediamap) wordt opgeruimd.")}</small>
                 {info.admins > 0 && (
                   <label className="check sec-toggle">
                     <span className="switch"><input type="checkbox" checked={adminsToo} onChange={(e) => setAdminsToo(e.target.checked)} /><span /></span>

@@ -13,7 +13,7 @@ import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
-import { IconBolt, IconFolder, IconGlobe, IconImage } from "../../../../components/Icons";
+
 import { AiCreatorHome, AiCreatorPopup } from "./AiCreator";
 import Tabs from "../../../../components/Tabs";
 import { createPortal } from "react-dom";
@@ -122,7 +122,7 @@ function DevicePopup({ title, sub, link, onClose, scrollHere = false, children }
           {link && <a className="btn sm" href={link} target="_blank" rel="noreferrer">{tx("Openen in een nieuw tabblad")}</a>}
           <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
         <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", background: "var(--bg)", overflow: scrollHere ? "auto" : "hidden", borderRadius: 8 }}>
-          <div style={{ width, maxWidth: "100%", height: scrollHere ? "auto" : "100%", background: "#fff", boxShadow: dev === "web" ? "none" : "0 0 0 1px var(--line), 0 10px 40px rgba(0,0,0,.4)" }}>{children}</div>
+          <div style={{ width, maxWidth: "100%", height: scrollHere ? "auto" : "100%", boxSizing: "border-box", background: "#fff", ...(dev === "web" ? {} : { overflow: "hidden", border: `${dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "mobile" ? 34 : 24, boxShadow: "0 12px 40px rgba(0,0,0,.35)" }) }}>{children}</div>
         </div>
       </div>
     </div>
@@ -336,7 +336,6 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
         </div>
       )}
 
-
       {tab === "pages" && (
         <div className="form">
           {pr.home.title && <label className="check"><input type="checkbox" checked={home} onChange={(e) => setHome(e.target.checked)} /> <span><strong>{tx("Startpagina")}</strong>: {pr.home.title} <small className="muted">— {pr.home.preview}</small></span></label>}
@@ -452,6 +451,9 @@ export default function SiteImport() {
   const [open, setOpen] = useState(null);
   const [designId, setDesignId] = useState(""); // the website that the AI-creator is making or has made
   const [designOpen, setDesignOpen] = useState(false);
+  useEffect(() => { // the link of a notification ("het ontwerp is klaar") opens that design
+    try { const id = new URLSearchParams(window.location.search).get("design"); if (id && /^[0-9a-f-]{36}$/i.test(id)) { setDesignId(id); setDesignOpen(true); setTab("ai"); } } catch {}
+  }, []);
   const zip = useRef(null);
   const htmlFile = useRef(null);
 
@@ -658,15 +660,17 @@ export default function SiteImport() {
       <div className="page-head">
         <div>
           <h1>{tx("Website ontwerpen")}</h1>
-          <p className="muted" style={{ margin: 0 }}>{tx("Lees een andere website in: je krijgt de pagina's, een basis-startpagina, het profieltype en de afbeeldingen. Een thema (kleuren, logo's, e-mail) maak je bij Thema → Nieuw themapakket → Importeren van een website. Niets verandert op je site totdat je het zelf aanzet, en alles is weer te verwijderen.")}</p>
+          <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een gesprek met de AI. Een bestaande website, een ontwerp, een ZIP, een map of een voorbeeldadres neem je mee via de wizard. Niets verandert op je site totdat je het zelf aanzet, en alles is weer te verwijderen.")}</p>
         </div>
       </div>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       {canManage && (
-        <Collapsible id="si-new" title={tx("Nieuwe import")} defaultOpen>
-          <label style={{ maxWidth: 420, marginBottom: ".75rem" }}>{tx("Naam van de import")} <small className="muted">{tx("ook de naam van de map met alle bestanden")}</small><input value={themeName} maxLength={120} onChange={(e) => setThemeName(e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
-          <Tabs value={tab} onChange={setTab} tabs={[["ai", "AI-creator", <IconBolt key="a" />], ["url", "Website-adres", <IconGlobe key="u" />], ["folder", "Map op de server", <IconFolder key="f" />], ["zip", "ZIP-bestand", <IconImage key="z" />], ["html", "HTML-bestand", <IconGlobe key="h" />]]} />
+        <Collapsible id="si-new" title={tx("AI chat build")} defaultOpen>
+          {tab !== "ai" && <div style={{ display: "flex", flexDirection: "column", gap: ".6rem", marginBottom: ".4rem" }}>
+            <div><button type="button" className="btn sm" onClick={() => setTab("ai")}>← {tx("Terug naar de AI chat build")}</button></div>
+            <label style={{ maxWidth: 420, marginBottom: ".75rem" }}>{tx("Naam van de import")} <small className="muted">{tx("ook de naam van de map met alle bestanden")}</small><input value={themeName} maxLength={120} onChange={(e) => setThemeName(e.target.value)} placeholder={tx("bv. Bakkerij De Zon")} /></label>
+          </div>}
           {tab === "url" && (
             <form className="row" style={{ flexWrap: "nowrap", alignItems: "end", marginTop: ".75rem" }} onSubmit={(e) => { e.preventDefault(); start({ kind: "url", url, name: themeName }); }}>
               <label style={{ flex: 1 }}>{tx("Adres van de website")}<input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.voorbeeld.nl" required /></label>

@@ -13,13 +13,12 @@ import { tx } from "../../../../lib/t";
 import Link from "next/link";
 import Tabs from "../../../../components/Tabs";
 import PdfButton from "../../../../components/AiPdfButton";
-import { BarList, Columns, Donut, GROUP_COLOR, Legend, Stacked, money, num, short } from "../../../../components/AiCharts";
+import { BarList, Columns, Donut, Kpi, KpiGrid, GROUP_COLOR, Legend, Stacked, money, num, short } from "../../../../components/AiCharts";
 
 const PERIODS = [["day", "Laatste 24 uur"], ["week", "Laatste 7 dagen"], ["month", "Laatste 30 dagen"], ["quarter", "Laatste 90 dagen"], ["year", "Laatste jaar"]];
 const GROUP_NAME = { user: "Gebruiker", admin: "Admin" };
 const DAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"];
 const ago = (iso) => (iso ? new Date(iso).toLocaleString() : "");
-const Kpi = ({ label, value, sub }) => <div className="card stat"><span>{label}</span><strong style={{ fontSize: "1.5rem" }}>{value}</strong>{sub && <small>{sub}</small>}</div>;
 
 // The AI overview for an admin: what the users and the admins use and what that costs them (no purchase prices, no margin), with a report per user.
 export default function AiAdmin() {
@@ -53,14 +52,14 @@ export default function AiAdmin() {
       {!d && !msg && <p className="muted">{tx("Laden…")}</p>}
       {d && tab === "overview" && (<div className="ai-wrap">
         {filters}
-        <div className="cards" style={{ marginTop: 0 }}>
+        <KpiGrid>
           <Kpi label={tx("Aanroepen")} value={num(t.calls)} sub={`${num(t.errors)} ${tx("mislukt")}`} />
           <Kpi label={tx("Tokens in")} value={short(t.tokens_in)} />
           <Kpi label={tx("Tokens uit")} value={short(t.tokens_out)} />
           <Kpi label={tx("Kosten")} value={m(t.charged)} />
           <Kpi label={tx("Gemiddelde duur")} value={`${(t.avg_ms / 1000).toFixed(1)} s`} />
           <Kpi label={tx("Actieve gebruikers")} value={num(t.users)} />
-        </div>
+        </KpiGrid>
         <div className="card"><strong>{tx("Kosten in de tijd")}</strong><Legend keys={["user", "admin"]} /><Stacked series={d.series} metric="charged" format={(v) => (v >= 1 ? short(v) : v.toFixed(2))} /></div>
         <div className="grid2">
           <div className="card"><strong>{tx("Aanroepen per groep")}</strong><Donut rows={d.by_group.map((r) => ({ key: r.group, label: tx(r.name), value: r.calls }))} /></div>

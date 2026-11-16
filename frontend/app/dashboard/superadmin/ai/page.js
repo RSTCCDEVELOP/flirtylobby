@@ -12,7 +12,7 @@ import { api, errorText } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
 import Tabs from "../../../../components/Tabs";
 import PdfButton from "../../../../components/AiPdfButton";
-import { BarList, Columns, Donut, GROUP_COLOR, GROUPS, Legend, Stacked, money, moneyTok, num, short } from "../../../../components/AiCharts";
+import { BarList, Columns, Donut, Kpi, KpiGrid, GROUP_COLOR, GROUPS, Legend, Stacked, money, moneyTok, num, short } from "../../../../components/AiCharts";
 
 const PROVIDERS = [["anthropic", "Claude"], ["openai", "OpenAI"], ["gemini", "Gemini"]];
 const PERIODS = [["day", "Laatste 24 uur"], ["week", "Laatste 7 dagen"], ["month", "Laatste 30 dagen"], ["quarter", "Laatste 90 dagen"], ["year", "Laatste jaar"]];
@@ -20,7 +20,6 @@ const GROUP_NAME = { user: "Gebruiker", admin: "Admin", super: "Superadmin", sys
 const DAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"];
 const Badge = ({ g, site }) => <span className="badge" style={{ background: "transparent", border: `1px solid ${GROUP_COLOR[g]}`, color: GROUP_COLOR[g] }}>{g === "site" && site ? site : tx(GROUP_NAME[g] || g)}</span>;
 const ago = (iso) => (iso ? new Date(iso).toLocaleString() : "");
-function Kpi({ label, value, sub }) { return <div className="card stat"><span>{label}</span><strong style={{ fontSize: "1.5rem" }}>{value}</strong>{sub && <small>{sub}</small>}</div>; }
 
 // The AI dashboard of the superadmin: every call to Claude, per user, per group and per part of the system, with what it costs and what is charged (margin on top).
 export default function AiDashboard() {
@@ -99,7 +98,7 @@ export default function AiDashboard() {
       {!d && !msg && <p className="muted">{tx("Laden…")}</p>}
       {d && tab === "overview" && (<div className="ai-wrap">
         {filters}
-        <div className="cards" style={{ marginTop: 0 }}>
+        <KpiGrid>
           <Kpi label={tx("Aanroepen")} value={num(t.calls)} sub={`${num(t.errors)} ${tx("mislukt")}`} />
           <Kpi label={tx("Tokens in")} value={short(t.tokens_in)} />
           <Kpi label={tx("Tokens uit")} value={short(t.tokens_out)} />
@@ -109,7 +108,7 @@ export default function AiDashboard() {
           {d.own > 0 && <Kpi label={tx("Eigen kosten reseller")} value={m(d.own)} sub={tx("niet in rekening gebracht")} />}
           <Kpi label={tx("Gemiddelde duur")} value={`${(t.avg_ms / 1000).toFixed(1)} s`} />
           <Kpi label={tx("Actieve gebruikers")} value={num(t.users)} />
-        </div>
+        </KpiGrid>
         <div className="card"><strong>{tx("In rekening gebracht in de tijd")}</strong><Legend /><Stacked series={d.series} metric="charged" format={(v) => (v >= 1 ? short(v) : v.toFixed(2))} /></div>
         <div className="card"><strong>{tx("Aanroepen in de tijd")}</strong><Legend /><Stacked series={d.series} metric="calls" /></div>
         <div className="grid2">

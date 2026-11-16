@@ -168,6 +168,79 @@ def standard_admin(others="deactivate"):
     return email
 
 
+# What stays in the site folder (<project>/site) at a reset: the database, the back-ups, the settings and exports of the superadmin (content), the installed plugins and the notes. Everything else goes.
+SITE_KEEP = {"Database", "backups", "content", "plugins", "themes", "media", "README.md"}  # (themes and media are cleaned apart, carefully)
+
+
+def _empty(path, keep=()):
+    """Remove what is in a folder (the folder itself stays). Returns the number of items removed. Never outside a real folder: a link or a path that is too short is left alone."""
+    from pathlib import Path as _P
+
+    d = _P(path)
+    try:
+        if d.is_symlink() or not d.is_dir() or len(d.resolve().parts) < 4:
+            return 0
+        n = 0
+        for child in d.iterdir():
+            if child.name in keep or child.name.startswith("."):
+                continue
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child, ignore_errors=True)
+            else:
+                child.unlink(missing_ok=True)
+            n += 1
+        return n
+    except OSError:
+        logger.exception("Reset: %s could not be cleaned completely", path)
+        return 0
+
+
+def clean_site_folder(keep_user_ids=()):
+    """The site folder after a reset: back-ups, database, settings and plugins stay; the exports of pages (pages, public, private), imports, templates that were added, installed component sets
+    (the standard one comes back), the packages of themes that were made and what is left in the media folder go. The media of the users who stay (superadmins, and the administrators who stay) is kept."""
+    from django.conf import settings
+
+    from . import componentpacks
+
+    removed = 0
+    site = settings.SITE_DIR
+    if site.is_dir():
+        for child in list(site.iterdir()):
+            if child.name in SITE_KEEP or child.name.startswith(".") or child.is_symlink():
+                continue
+            if child.is_dir():
+                removed += _empty(child)  # (the folder itself stays: it is a place that the system writes to)
+            else:
+                child.unlink(missing_ok=True)
+                removed += 1
+    for d in (settings.SITE_IMPORT_DIR, settings.TEMPLATES_DIR, settings.COMPONENTS_DIR):  # (these may be set to other places than the site folder)
+        removed += _empty(d)
+    for z in (settings.THEMES_DIR.glob("*.zip") if settings.THEMES_DIR.is_dir() else []):  # the theme packages that were made (the folders of built-in themes that were changed stay)
+        z.unlink(missing_ok=True)
+        removed += 1
+    media = settings.MEDIA_ROOT
+    if media.is_dir():
+        for child in media.iterdir():
+            if child.name.startswith(".") or child.is_symlink():
+                continue
+            if child.name == "users" and child.is_dir():
+                for u in child.iterdir():
+                    if u.name not in {str(i) for i in keep_user_ids} and u.is_dir():
+                        shutil.rmtree(u, ignore_errors=True)
+                        removed += 1
+                continue
+            if child.is_dir():
+                shutil.rmtree(child, ignore_errors=True)
+            else:
+                child.unlink(missing_ok=True)
+            removed += 1
+    try:
+        componentpacks.ensure_default()  # the standard component set is installed again
+    except Exception:  # noqa: BLE001
+        logger.exception("Reset: the standard component set could not be put back")
+    return removed
+
+
 def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
     """Do the reset. Returns what was removed. keep = the superadmin who asks. The administrators (users with a role) and the other superadmins stay, unless delete_admins / delete_superadmins is asked; the standard superadmin always stays."""
     from apps.accounts.models import User
@@ -238,7 +311,13 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
             if not m.get("core"):
                 ModuleState.objects.create(key=m["key"], enabled=m["key"] in modules.ALWAYS_ON)  # (the base stays on: system, plugins, storage, backups and the API keys, of which the links of the superadmin keep working)
         # look: the default (easy2edit)
-        SiteSettings.objects.update_or_create(pk=1, defaults={"theme": {}})
+        SiteSettings.objects.update_or_create(pk=1, defaults={"theme": {"default_mode": "light"}})  # the standard theme, starting in light mode
+        from .models import UserPrefs
+
+        for up in UserPrefs.objects.all():  # the light or dark choice of the people is cleared too: everybody starts in light mode again
+            if "theme" in (up.data or {}):
+                up.data = {k: v for k, v in up.data.items() if k != "theme"}
+                up.save(update_fields=["data"])
         from apps.pages.models import MenuSettings
 
         MenuSettings.objects.all().delete()  # the look of the header menu (colours, size, form) goes back to the default too: an imported site leaves its own header colours there
@@ -303,6 +382,9 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
             default_storage.delete(name)
         except Exception:  # noqa: BLE001
             pass
+    from apps.accounts.models import User as _U
+
+    removed["site_folder"] = clean_site_folder([u.pk for u in _U.objects.filter(is_staff=True)] + list(keep_ids))  # the site folder: only back-ups, database, settings and plugins stay
     logger.warning("System reset: %s", removed)
     return removed
 

@@ -31,7 +31,7 @@ function scopedCss(css, scope) {
 }
 
 // the usual parts of a screen (buttons, badges, fields) take the look of the kit by themselves inside a block with `bridge`
-const BRIDGE = [["button.primary, a.primary, .btn.primary", "e2e-btn"], [".btn:not(.primary):not(.danger)", "e2e-btn e2e-btn--outline"], [".badge", "e2e-badge"], [".badge.ok", "e2e-badge--success"], [".badge.warn", "e2e-badge--warning"],
+const BRIDGE = [["table.table, table.tbl", "e2e-table"], [".table-wrap", "e2e-table-wrap"], ["button.primary, a.primary, .btn.primary", "e2e-btn"], [".btn:not(.primary):not(.danger)", "e2e-btn e2e-btn--outline"], [".badge", "e2e-badge"], [".badge.ok", "e2e-badge--success"], [".badge.warn", "e2e-badge--warning"],
   ["input[type=text], input[type=search], input[type=email], input[type=number], input[type=password], input:not([type])", "e2e-input"], ["select", "e2e-select"], ["textarea", "e2e-textarea"]];
 
 // The css of the set is put in the page ONCE (it is limited to .e2e-scope, so it is the same for every block), the blocks only carry the class.

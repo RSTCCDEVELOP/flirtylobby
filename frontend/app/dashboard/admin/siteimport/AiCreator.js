@@ -9,12 +9,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconBolt, IconCheck, IconEdit, IconSend, IconTrash } from "../../../../components/Icons";
+import { IconBolt, IconCamera, IconCheck, IconChat, IconImage, IconMenu, IconPalette, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
-import { api, errorText } from "../../../../lib/api";
+import { api, apiUpload, errorText, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
-import { DEVICES, DW_CSS, ModulePicker, previewHtml, STEPS } from "./designKit";
+import { captureFrame } from "../../../../lib/screenshot";
+import { COLOR_ROLES, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DEVICES, DW_CSS, FONT_NAMES, MODES, ModulePicker, previewHtml, STEPS } from "./designKit";
 import { analyseDesign, buildConvertPrompt } from "./aiPrompt";
 import { componentListText } from "../../../../lib/ui-kit/componentList";
 import { loadKit } from "../../../../lib/ui-kit/kitDoc";
@@ -26,7 +27,6 @@ import { planAsked, planDone } from "../../../../lib/planFlag";
 export { ModulePicker, previewHtml };
 
 const STATUS = { draft: "Concept", running: "Bezig", stopping: "Bezig met stoppen", done: "Klaar", error: "Mislukt" };
-
 
 // The prompt that turns a finished HTML design into an import ZIP (with the modules and live system objects linked) by an external AI.
 function ConvertPromptPopup({ onClose, designs = [] }) {
@@ -170,15 +170,29 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
   const closePlan = () => { setPlan(false); planDone(); };
   const load = useCallback(() => api("/sitecreator/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load, refreshKey]);
-  const create = async () => { setBusy(true); setErr(""); try { const j = await api("/sitecreator/", { method: "POST", body: {} }); onOpen(j.id); } catch (e) { setErr(errorText(e)); } finally { setBusy(false); } };
+  const create = async (chat = false) => { setBusy(true); setErr(""); try { const j = await api("/sitecreator/", { method: "POST", body: {} }); if (chat) await api(`/sitecreator/${j.id}/`, { method: "PATCH", body: { chat: true } }); onOpen(j.id); } catch (e) { setErr(errorText(e)); } finally { setBusy(false); } };
+  const startChat = async (brief, firstText) => {  // the wizard is ready: the AI chat build starts with the choices and a first message with everything the customer said
+    setBusy(true); setErr(""); closePlan();
+    try {
+      const j = await api("/sitecreator/", { method: "POST", body: {} });
+      await api(`/sitecreator/${j.id}/`, { method: "PATCH", body: { ...brief, chat: true } });
+      onOpen(j.id);
+      await api(`/sitecreator/${j.id}/chat/`, { method: "POST", body: { text: firstText } });
+    } catch (e) { setErr(errorText(e)); } finally { setBusy(false); }
+  };
   const del = async (x) => { if (!(await confirmDialog(tx("Dit ontwerp verwijderen? Wat je hebt ingevuld en gemaakt gaat verloren, ook de geüploade documenten."), { danger: true, title: tx("Ontwerp verwijderen"), okLabel: tx("Verwijderen") }))) return; await api(`/sitecreator/${x.id}/`, { method: "DELETE" }).catch(() => {}); load(); };
   return (
     <div style={{ marginTop: ".75rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
-      <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een paar stappen: stijl, kleuren, pagina's en foto's. Daarna maakt easy2edit alle pagina's en importeer je ze als bewerkbare pagina's. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
+      <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een gesprek met de AI: links de chat, rechts direct het voorbeeld. Wil je eerst een opzet laten maken? Start dan de wizard: die stelt een paar vragen (ook als je al een website, een ontwerp, een ZIP of een voorbeeldadres hebt) en zet de eerste opzet klaar. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
       {err && <div className="alert">{err}</div>}
-      <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn" onClick={() => setPlan(true)}>{tx("Stappenplan")}</button><button type="button" className="btn primary" disabled={busy || d?.ai === false} onClick={create}><IconBolt /> {tx("Nieuw ontwerp")}</button><button type="button" className="btn" onClick={() => setConv(true)}><IconEdit /> {tx("AI-prompt maken")}</button></div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: ".6rem" }}>
+        {[
+          [IconChat, "AI chat build", () => create(true), busy || d?.ai === false],
+          [IconMenu, "Wizard", () => setPlan(true), false],
+        ].map(([Ic, label, go, off]) => <button type="button" key={label} className="btn" disabled={off} onClick={go} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: "2.8rem", width: "100%", background: "#1e293b", color: "#fff", borderColor: "#334155", fontWeight: 600 }}><Ic /> {tx(label)}</button>)}
+      </div>
       {conv && <ConvertPromptPopup onClose={() => setConv(false)} designs={d?.designs || []} />}
-      {plan && <StartPlanPopup onClose={closePlan} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); else if (a.auto === "new") create(); }} />}
+      {plan && <StartPlanPopup onClose={closePlan} onStart={startChat} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); }} />}
       {d?.ai === false && <div className="alert">{tx("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")}</div>}
       {d?.designs?.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: ".45rem" }}>
@@ -186,7 +200,7 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
           {d.designs.map((x) => (
             <div key={x.id} className="card" style={{ display: "flex", gap: ".7rem", alignItems: "center", padding: ".6rem .8rem" }}>
               <span style={{ flex: 1, minWidth: 0 }}><strong>{x.name}</strong> <span className={x.live || (x.status === "done" && !x.applied) ? "badge ok" : "badge off"}>{x.live ? tx("Live") : x.applied && x.status === "done" ? tx("Concept") : tx(STATUS[x.status] || x.status)}</span>
-                <small className="muted" style={{ display: "block" }}>{x.status === "draft" ? `${tx("Stap")} ${x.step + 1} ${tx("van")} ${STEPS.length}: ${tx(STEPS[x.step]?.[1] || "")}` : `${x.pages} ${tx("pagina's")}`} · {new Date(x.updated_at).toLocaleString()}</small></span>
+                <small className="muted" style={{ display: "block" }}>{x.chat && x.status === "draft" ? tx("AI chat build") : x.status === "draft" ? `${tx("Stap")} ${x.step + 1} ${tx("van")} ${STEPS.length}: ${tx(STEPS[x.step]?.[1] || "")}` : `${x.pages} ${tx("pagina's")}`} · {new Date(x.updated_at).toLocaleString()}</small></span>
               <button type="button" className="btn sm primary" onClick={() => onOpen(x.id)}>{x.status === "draft" ? tx("Verder gaan") : tx("Openen")}</button>
               <button type="button" className="btn sm danger" onClick={() => del(x)} aria-label={tx("Verwijderen")}><IconTrash /></button>
             </div>
@@ -196,7 +210,6 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
     </div>
   );
 }
-
 
 // Improve: starts the improvement of the design as it is now, with the points that the user wants Claude to look at.
 const FOCUS = [["Opmaak en kleuren", "the visual design and colours"], ["Teksten", "the texts (clear, concrete, no filler)"], ["Mobiel", "the layout on a phone"], ["Toegankelijkheid", "accessibility and contrast"], ["Structuur voor de pagina-editor", "the structure (sections, one container per section, clean cards) so that it imports well into the page editor"]];
@@ -283,12 +296,506 @@ function CreatePopup({ job, onClose, onCreate, onReview }) {
     </div>, document.body);
 }
 
+// The photos that the pages of a chat design ask for: every slot has a search on iStock (the user downloads the photo there himself) and a place to put the downloaded photo in.
+// A block under the chat (colours, photos): the header (in the main colour) always stays visible, with an arrow up/down; only the part below it scrolls.
+function Fold({ title, defaultOpen, children }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  const toggle = () => setOpen((o) => !o);
+  return (
+    <div data-easy2edit-tag="ui-fold" style={{ borderTop: "1px solid var(--line)", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, maxHeight: open ? "45%" : "none", flex: "none" }}>
+      <div role="button" tabIndex={0} aria-expanded={open} onClick={toggle} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(); } }}
+        style={{ cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: ".4rem", padding: ".5rem .8rem", background: "var(--blue)", color: "#fff", userSelect: "none", flex: "none" }}>
+        {title}
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: "auto", flex: "none" }}>{open ? <path d="M6 15l6-6 6 6" /> : <path d="M6 9l6 6 6-6" />}</svg>
+      </div>
+      {open && <div style={{ overflowY: "auto", overflowX: "hidden", minHeight: 0, padding: ".5rem .8rem" }}>{children}</div>}
+    </div>
+  );
+}
+
+function PhotoSlots({ job, onJob, onShow, onAsk }) {
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const slots = job.photo_slots || [];
+  const [looking, setLooking] = useState(false);
+  const [note, setNote] = useState("");
+  const [q, setQ] = useState("");
+  const [kind, setKind] = useState("photo");  // what the search field looks for: photos or videos
+  const [found, setFound] = useState(null);    // the results of the search field
+  const [target, setTarget] = useState("");    // the slot where a result goes
+  const [searching, setSearching] = useState(false);
+  const tried = useRef("");
+  const look = useCallback(async () => {
+    setLooking(true); setErr("");
+    try { const r = await api(`/sitecreator/${job.id}/istock/`, { method: "POST", body: {} }); onJob(r); setNote(r.found ? `${r.found} ${tx("foto's en video's gevonden op iStock")}` : tx("Er is niets nieuws gevonden. Probeer een andere omschrijving of vul zelf een nummer in.")); } catch (x) { setErr(errorText(x)); } finally { setLooking(false); }
+  }, [job.id, onJob]);
+  // once per design the AI looks for a real iStock photo (number and address) for every empty slot
+  useEffect(() => { if (slots.length && !job.istock_tried && job.status !== "running" && tried.current !== job.id) { tried.current = job.id; look(); } }, [slots.length, job.istock_tried, job.status, job.id, look]);
+  const open = slots.filter((x) => !x.done).length;
+  const put = async (slot, f) => {
+    const vid = slot.kind === "video";
+    if (!f || !f.type.startsWith(vid ? "video/" : "image/")) { setErr(vid ? tx("Kies een video (mp4 of webm).") : tx("Kies een afbeelding (jpg, png of webp).")); return; }
+    setBusy(slot.file); setErr("");
+    try {
+      const fd = new FormData(); fd.append("files", f); fd.append("tags", "design");
+      const r = await apiUpload("/media/upload/", fd, () => {});
+      if (!r.items?.length) throw new Error((r.errors || []).join(" ") || tx("Uploaden is niet gelukt."));
+      onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { file: slot.file, media: r.items[0].id } })); if (onShow) onShow(slot.file);
+    } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
+  };
+  const saveNo = async (slot, v) => { if ((v || "") === (slot.istock || "")) return; setErr(""); try { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { file: slot.file, istock: v } })); } catch (x) { setErr(errorText(x)); } };
+  const search = async (e) => {
+    e?.preventDefault();
+    if (q.trim().length < 2) return;
+    setSearching(true); setErr(""); setFound(null);
+    try { setFound((await api(`/sitecreator/${job.id}/istock-search/?q=${encodeURIComponent(q.trim())}&kind=${kind}`)).items || []); } catch (x) { setErr(errorText(x)); } finally { setSearching(false); }
+  };
+  const choose = async (item) => {
+    const slot = target ? slots.find((x) => x.file === target) : null;
+    setBusy(slot ? slot.file : "add"); setErr("");
+    try {
+      if (slot) { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { file: slot.file, pick: item } })); setNote(`${tx("Gekozen voor")}: ${slot.alt || slot.file}`); }
+      else { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { add: item } })); setNote(`${tx("Toegevoegd aan je lijst")}: iStock ${item.id}`); }
+    } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
+  };
+  const place = async (slot) => {  // a chosen photo: the example is put in the library and the designer is asked to use it in the website
+    if (!slot.done) await usePreview(slot);
+    if (onAsk) await onAsk(slot.kind === "video" ? `Use the video video/${slot.file} (${slot.alt || "chosen on iStock"}) at a fitting place in the design, as a calm background or block.` : `Use the photo img/${slot.file} (${slot.alt || "chosen on iStock"}) at a fitting place in the design.`);
+  };
+  const usePreview = async (slot) => { setBusy(slot.file); setErr(""); try { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { file: slot.file, use_preview: true } })); const where = onShow ? onShow(slot.file) : ""; setNote(`${(slot.kind === "video" ? tx("Voorbeeldvideo (met watermerk) toegepast op het ontwerp") : tx("Voorbeeldfoto (met watermerk) toegepast op het ontwerp"))}${where ? `: ${tx("pagina")} ${where}` : ""}. ${tx("Vervang hem later door de gelicentieerde foto.")}`); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
+  const hide = async (slot) => { setBusy(slot.file); try { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { file: slot.file, hide: true } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
+  const clear = async (slot) => { setBusy(slot.file); try { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "DELETE", body: { file: slot.file } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
+  return (
+    <Fold defaultOpen={open > 0} title={<><IconImage /> {tx("Foto's en video's")} <span className={open ? "badge" : "badge ok"}>{slots.length - open}/{slots.length}</span> <button type="button" className="btn sm" style={{ marginLeft: ".4rem" }} disabled={looking} onClick={(e) => { e.preventDefault(); e.stopPropagation(); look(); }} title={tx("Zoek passende foto's en video's op iStock")}><IconSearch /> {looking ? tx("Bezig…") : tx("Zoeken")}</button></>}>
+      <p className="muted" style={{ margin: ".4rem 0", fontSize: ".85rem" }}>{tx("Zoek elke foto of video op iStock, download hem zelf (daar heb je een licentie voor nodig) en zet hem hier in de plek. Tot die tijd staat er een grijs vlak.")}</p>
+      {err && <div className="alert">{err}</div>}
+      <form onSubmit={search} role="search" style={{ display: "flex", gap: ".35rem", flexWrap: "wrap", margin: ".2rem 0 .5rem" }}>
+        <input type="search" value={q} maxLength={120} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek een foto of video op iStock…")} aria-label={tx("Zoek een foto of video op iStock")} style={{ flex: "1 1 160px", minWidth: 0 }} />
+        <select value={kind} onChange={(e) => { setKind(e.target.value); setFound(null); }} aria-label={tx("Soort")}><option value="photo">{tx("Foto's")}</option><option value="video">{tx("Video's")}</option></select>
+        <button className="btn sm primary" disabled={searching || q.trim().length < 2}><IconSearch /> {searching ? tx("Bezig…") : tx("Zoeken")}</button>
+      </form>
+      {found && (
+        <div style={{ margin: "0 0 .6rem" }}>
+          <label style={{ display: "flex", gap: ".4rem", alignItems: "center", fontSize: ".82rem", marginBottom: ".4rem" }}>{tx("Toevoegen aan")}
+            <select value={target} onChange={(e) => setTarget(e.target.value)} style={{ flex: 1, minWidth: 0 }}>
+              <option value="">{tx("Nieuw in mijn lijst")}</option>
+              {slots.filter((x) => (x.kind === "video") === (kind === "video")).map((x) => <option key={x.file} value={x.file}>{x.alt || x.file}{x.done ? ` (${tx("vervangen")})` : ""}</option>)}
+            </select>
+          </label>
+          {!found.length && <p className="muted" style={{ fontSize: ".85rem" }}>{tx("Niets gevonden. Probeer een ander zoekwoord (Engels werkt het best).")}</p>}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: ".4rem" }}>
+            {found.map((it) => (
+              <div key={it.id} className="card" style={{ padding: ".3rem", display: "grid", gap: ".25rem", minWidth: 0 }}>
+                <a href={it.preview || it.url} target="_blank" rel="noopener noreferrer" title={it.title} style={{ display: "block", aspectRatio: "1", borderRadius: 8, overflow: "hidden", background: "var(--line)" }}>{it.preview && <img src={it.preview} alt={it.title || ""} referrerPolicy="no-referrer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}</a>
+                <small className="muted" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={it.title}>iStock {it.id}</small>
+                <button type="button" className="btn sm" disabled={!!busy} onClick={() => choose(it)}>{busy === "add" ? tx("Bezig…") : tx("Kies")}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {note && !err && <p className="muted" style={{ margin: ".2rem 0 .4rem", fontSize: ".85rem" }} role="status">{note}</p>}
+      <div style={{ display: "grid", gap: ".5rem", gridTemplateColumns: "minmax(0, 1fr)" }}>
+        {slots.map((x) => {
+          const ph = [...(job.brief?.photos || []), ...(job.brief?.videos || [])].find((p) => p.file === x.file);
+          const vid = x.kind === "video";
+          return (
+            <div key={x.file} className="card" style={{ display: "grid", gap: ".5rem", padding: ".55rem .65rem", minWidth: 0 }}>
+              <div style={{ display: "flex", gap: ".65rem", alignItems: "flex-start", minWidth: 0 }}>
+                <span style={{ flex: "none", width: 72, height: 72, borderRadius: 10, overflow: "hidden", background: "var(--line)", display: "grid", placeItems: "center", color: "var(--muted)" }}>{ph ? (vid ? <video src={mediaUrl(ph.url)} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={mediaUrl(ph.url)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />) : x.preview ? <a href={x.preview} target="_blank" rel="noopener noreferrer" title={tx("Voorbeeld (iStock, met watermerk)")} style={{ display: "block", width: "100%", height: "100%" }}><img src={x.preview} alt={x.title || ""} referrerPolicy="no-referrer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></a> : <IconImage />}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <strong style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: ".85rem", lineHeight: 1.3 }} title={x.alt || x.file}>{vid && <IconVideo />}{vid ? " " : ""}{x.alt || x.file}</strong>
+                  <small className="muted" style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={x.file}>{x.file}</small>
+                  {x.istock ? (
+                    <span style={{ display: "flex", alignItems: "center", gap: ".4rem", marginTop: 4, minWidth: 0 }}>
+                      <span className="badge" style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>iStock {x.istock}</span>
+                      {x.title && <small className="muted" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={x.title}>{x.title}</small>}
+                      <button type="button" className="btn sm" style={{ flex: "none", padding: "0 .4rem" }} onClick={() => saveNo(x, "")} aria-label={tx("Nummer wissen")} title={tx("Nummer wissen")}>×</button>
+                    </span>
+                  ) : (
+                    <input defaultValue="" inputMode="numeric" maxLength={80} placeholder={tx("iStock-nummer")} aria-label={tx("iStock-nummer")} onBlur={(e) => saveNo(x, e.target.value.trim())} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} style={{ marginTop: 4, width: "100%", boxSizing: "border-box", padding: ".2rem .4rem", fontSize: ".8rem" }} />
+                  )}
+                </span>
+                <button type="button" className="pb-panelx" disabled={!!busy} onClick={() => hide(x)} aria-label={tx("Uit de lijst halen")} title={tx("Uit de lijst halen")}>×</button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem" }}>
+                {x.extra && <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => place(x)} title={tx("Zet deze foto in het ontwerp: de AI plaatst hem op een passende plek")}>{tx("In ontwerp")}</button>}
+                {(vid ? x.video : x.preview) && !x.done && !x.extra && <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => usePreview(x)} title={tx("Download de voorbeeldfoto van iStock (met watermerk) en gebruik hem in het ontwerp")}>{busy === x.file ? tx("Bezig…") : vid ? tx("Gebruik video") : tx("Gebruik foto")}</button>}
+                <a className="btn sm" href={x.download || x.url} target="_blank" rel="noopener noreferrer" title={x.download ? tx("Naar de foto op iStock om te downloaden") : tx("Zoeken op iStock")}>{x.download ? `${tx("Downloaden")} ↗` : <><IconSearch /> {tx("Zoeken")}</>}</a>
+                {x.download && <a className="btn sm" href={x.url} target="_blank" rel="noopener noreferrer" title={tx("Zoeken op iStock")}><IconSearch /> {tx("Zoeken")}</a>}
+                <label className="btn sm" style={{ cursor: busy ? "default" : "pointer", opacity: busy === x.file ? .6 : 1 }}>{x.done ? tx("Vervangen") : vid ? tx("Video kiezen") : tx("Foto kiezen")}<input type="file" accept={vid ? "video/mp4,video/webm" : "image/*"} style={{ display: "none" }} disabled={!!busy} onChange={(e) => { put(x, e.target.files?.[0]); e.target.value = ""; }} /></label>
+                {x.done && <button type="button" className="btn sm danger" disabled={!!busy} onClick={() => clear(x)} aria-label={vid ? tx("Video verwijderen") : tx("Foto verwijderen")} title={vid ? tx("Video verwijderen") : tx("Foto verwijderen")}><IconTrash /></button>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Fold>
+  );
+}
+
+// The questions of the designer when the request was short: every question has answers to click (and a default), the customer answers all at once or lets the designer decide.
+// The page layouts as small drawings (a row = a band, the blocks in it = its columns, a tinted row = a band with a soft background), in a carousel; drawn in the active colour of the design.
+const LAYOUTS = [
+  ["Volledige breedte", "Rustig en klassiek", [[[1]], [[1]], [[1]]]],
+  ["Tekst naast afbeelding", "Beeld links en rechts afwisselend", [[[1, 1]], [[1, 1]], [[1, 1]]]],
+  ["Breed met smalle zijkolom", "Tekst met een contact- of prijskaart", [[[2, 1]], [[1, 2]], [[2, 1]]]],
+  ["Drie kolommen", "Diensten, voordelen of stappen", [[[1]], [[1, 1, 1]], [[1, 1, 1]]]],
+  ["Vier blokken", "Feiten, cijfers of iconen", [[[1]], [[1, 1, 1, 1]], [[1]]]],
+  ["Afwisselend ritme met gekleurde banden", "Brede, smalle en gekleurde banden door elkaar", [[[1]], [[1, 1], true], [[1, 1, 1]], [[2, 1], true]]],
+  ["Volledig scherm opening", "De eerste band vult het hele scherm", [[[1], false, 2], [[1, 1]], [[1, 1, 1]]]],
+];
+const LAYOUT_DEFAULT = "Afwisselend ritme met gekleurde banden";
+// A carousel with one card at a time inside the width of the side menu; the arrows (or swiping) go to the next card.
+function Carousel({ accent, children, tag }) {
+  const track = useRef(null);
+  const go = (d) => track.current?.scrollBy({ left: d * (track.current.clientWidth || 190), behavior: "smooth" });
+  const ac = accent || "var(--blue)";
+  const arrow = (d) => <button type="button" onClick={() => go(d)} aria-label={d < 0 ? tx("Vorige") : tx("Volgende")} style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", border: `1px solid ${ac}`, background: "var(--card)", color: ac, cursor: "pointer", display: "grid", placeItems: "center", padding: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">{d < 0 ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}</svg></button>;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: ".35rem" }} data-easy2edit-tag={tag}>
+      {arrow(-1)}
+      <div ref={track} style={{ display: "flex", gap: ".6rem", overflowX: "auto", scrollSnapType: "x mandatory", padding: ".2rem", flex: "1 1 0", width: 0, minWidth: 0, scrollbarWidth: "none" }}>{children}</div>
+      {arrow(1)}
+    </div>
+  );
+}
+const tick = (ac) => <span aria-hidden="true" style={{ position: "absolute", top: 6, right: 6, width: 20, height: 20, borderRadius: "50%", background: ac, color: "#fff", display: "grid", placeItems: "center" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>;
+const cardStyle = (on, ac) => ({ flex: "0 0 100%", boxSizing: "border-box", scrollSnapAlign: "start", scrollSnapStop: "always", display: "grid", gap: ".4rem", textAlign: "left", padding: ".5rem", borderRadius: 12, cursor: "pointer", font: "inherit", color: "inherit", border: `2px solid ${on ? ac : "var(--line)"}`, background: on ? `color-mix(in srgb, ${ac} 10%, var(--card))` : "var(--card)", boxShadow: on ? `0 4px 14px color-mix(in srgb, ${ac} 28%, transparent)` : "none", position: "relative" });
+
+function LayoutCarousel({ value, onToggle, disabled, accent }) {
+  const ac = accent || "var(--blue)";
+  return (
+    <Carousel accent={accent} tag="ui-layout-carousel">
+      {LAYOUTS.map(([name, desc, rows]) => { const on = value.includes(name); return (
+        <button key={name} type="button" disabled={disabled} aria-pressed={on} onClick={() => onToggle(name)} title={tx(desc)} style={cardStyle(on, ac)}>
+          {on && tick(ac)}
+          <span aria-hidden="true" style={{ display: "grid", gap: 3, padding: 5, background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 8, height: 110, gridTemplateRows: rows.map((r) => `${r[2] || 1}fr`).join(" ") }}>
+            {rows.map((r, i) => <span key={i} style={{ display: "grid", gap: 3, gridTemplateColumns: r[0].map((f) => `${f}fr`).join(" "), padding: r[1] ? 3 : 0, background: r[1] ? `color-mix(in srgb, ${ac} 16%, transparent)` : "transparent", borderRadius: 4 }}>{r[0].map((_, j) => <i key={j} style={{ display: "block", borderRadius: 3, background: ac, opacity: j % 2 && r[0].length === 2 ? .45 : .8 }} />)}</span>)}
+          </span>
+          <strong style={{ fontSize: ".8rem", lineHeight: 1.2 }}>{tx(name)}</strong>
+          <small className="muted" style={{ lineHeight: 1.25 }}>{tx(desc)}</small>
+        </button>); })}
+    </Carousel>
+  );
+}
+
+// The colour themes of the system (Thema's), as a carousel of small page drawings in the colours of each theme; one is chosen, the colours go to the AI with the answer.
+function themeAnswer(t) { const c = t.colors || {}; return `${tx("Thema")} ${t.name} (${tx("hoofdkleur")} ${c.primary}, ${tx("tweede kleur")} ${c.secondary}, ${tx("achtergrond")} ${c.light_bg}, ${tx("kaarten")} ${c.light_card}, ${tx("tekst")} ${c.light_text})`; }
+function ThemeCarousel({ themes, value, onPick, disabled, jobId, onJob, onChanged }) {
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const [list, setList] = useState(themes);
+  useEffect(() => setList(themes), [themes]);
+  // choosing: the theme is installed when it is not yet, the colours of the design change at once, and the theme that an earlier choice installed is removed
+  const choose = async (t, on) => {
+    if (on) { onPick(""); return; }
+    onPick(themeAnswer(t));
+    if (!jobId) return;
+    setBusy(t.key); setErr("");
+    try {
+      const j = await api(`/sitecreator/${jobId}/theme-apply/`, { method: "POST", body: { key: t.key } });
+      onJob?.(j);
+      await onChanged?.();  // the pages get the new colours at once
+      const d = await api("/sitecreator/theme-library/"); setList((d.themes || []).filter((x) => x.colors?.primary));
+    } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
+  };
+  return (
+    <>
+    <Carousel accent={value ? list.find((t) => themeAnswer(t) === value)?.colors?.primary : undefined} tag="ui-theme-carousel">
+      {list.map((t) => { const c = t.colors || {}, ans = themeAnswer(t), on = value === ans, ac = c.primary; return (
+        <button key={t.key} type="button" disabled={disabled || !!busy} aria-pressed={on} onClick={() => choose(t, on)} title={t.description} style={cardStyle(on, ac)}>
+          {on && tick(ac)}
+          <span aria-hidden="true" style={{ display: "grid", gap: 4, padding: 6, background: c.light_bg, border: "1px solid var(--line)", borderRadius: 8, height: 110, gridTemplateRows: "auto 1fr auto", boxSizing: "border-box" }}>
+            <span style={{ display: "flex", gap: 4, alignItems: "center" }}><i style={{ width: 22, height: 6, borderRadius: 3, background: c.light_text, opacity: .8 }} /><i style={{ marginLeft: "auto", width: 26, height: 10, borderRadius: 5, background: c.primary }} /></span>
+            <span style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+              <i style={{ borderRadius: 5, background: c.light_card, border: `1px solid color-mix(in srgb, ${c.light_text} 14%, transparent)` }} />
+              <i style={{ borderRadius: 5, background: c.primary, opacity: .9 }} />
+            </span>
+            <span style={{ display: "flex", gap: 4, alignItems: "center" }}><i style={{ width: 16, height: 6, borderRadius: 3, background: c.secondary }} /><i style={{ width: 34, height: 5, borderRadius: 3, background: c.light_text, opacity: .35 }} /><i style={{ marginLeft: "auto", width: 12, height: 12, borderRadius: "50%", background: c.dark_bg }} /></span>
+          </span>
+          <strong style={{ fontSize: ".8rem", lineHeight: 1.2 }}>{t.name}{busy === t.key && <small className="muted"> · {tx("Installeren…")}</small>}</strong>
+          <small className="muted" style={{ lineHeight: 1.25 }}>{t.description}{!t.installed && !on ? ` · ${tx("wordt geïnstalleerd als je hem kiest")}` : ""}</small>
+        </button>); })}
+    </Carousel>
+    {err && <div className="alert">{err}</div>}
+    </>
+  );
+}
+
+// A drop zone (drag and drop, or click to choose) for the customer's own logo, photos or videos: the files go to the media library and into the project; the designer uses them.
+function DropZone({ jobId, onJob, role, accept, multiple, label, hint, disabled, onText }) {
+  const [over, setOver] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState([]);  // [{file, url, video}]
+  const [err, setErr] = useState("");
+  const input = useRef(null);
+  const take = async (list) => {
+    const files = [...list].filter((f) => (role === "logo" ? f.type.startsWith("image/") : f.type.startsWith("image/") || f.type.startsWith("video/")));
+    if (!files.length) { setErr(role === "logo" ? tx("Kies een afbeelding (png, jpg, webp of svg).") : tx("Kies foto's (jpg, png, webp) of video's (mp4, webm).")); return; }
+    setBusy(true); setErr("");
+    try {
+      let next = role === "logo" ? [] : [...done];
+      for (const f of (role === "logo" ? files.slice(0, 1) : files)) {
+        const fd = new FormData(); fd.append("files", f); fd.append("tags", "design");
+        const r = await apiUpload("/media/upload/", fd, () => {});
+        if (!r.items?.length) throw new Error((r.errors || []).join(" ") || tx("Uploaden is niet gelukt."));
+        const j = await api(`/sitecreator/${jobId}/own-media/`, { method: "POST", body: { media: r.items[0].id, role } });
+        onJob?.(j);
+        const all = [...(j.brief?.photos || []), ...(j.brief?.videos || [])];
+        const it = all.find((p) => p.id === r.items[0].id);
+        if (it) next = [...next.filter((x) => x.file !== it.file), { file: it.file, url: it.url, video: f.type.startsWith("video/") }];
+      }
+      setDone(next);
+      onText?.(next.length ? `${role === "logo" ? tx("Mijn logo is geüpload") : tx("Eigen bestanden geüpload")} (${tx("in het project gezet")}): ${next.map((x) => x.file).join(", ")}.` : "");
+    } catch (x) { setErr(errorText(x)); } finally { setBusy(false); }
+  };
+  const drop = (e) => { e.preventDefault(); setOver(false); if (!disabled && !busy) take(e.dataTransfer.files); };
+  const remove = async (x) => { try { onJob?.(await api(`/sitecreator/${jobId}/own-media/`, { method: "DELETE", body: { file: x.file } })); const next = done.filter((y) => y.file !== x.file); setDone(next); onText?.(next.length ? `${tx("Eigen bestanden geüpload")}: ${next.map((y) => y.file).join(", ")}.` : ""); } catch (e) { setErr(errorText(e)); } };
+  return (
+    <div style={{ display: "grid", gap: ".4rem" }} data-easy2edit-tag="ui-dropzone">
+      <div role="button" tabIndex={0} aria-label={label} onClick={() => !disabled && !busy && input.current?.click()} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.current?.click(); } }}
+        onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)} onDrop={drop}
+        style={{ display: "grid", justifyItems: "center", gap: ".25rem", padding: "1rem .8rem", textAlign: "center", borderRadius: 12, cursor: disabled || busy ? "default" : "pointer", border: `2px dashed ${over ? "var(--blue)" : "var(--line)"}`, background: over ? "color-mix(in srgb, var(--blue) 10%, var(--card))" : "var(--bg)", transition: "all .15s" }}>
+        <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ color: over ? "var(--blue)" : "var(--muted)" }}><path d="M12 16V5" /><path d="M7.5 9.5L12 5l4.5 4.5" /><path d="M5 19h14" /></svg>
+        <strong style={{ fontSize: ".85rem" }}>{busy ? tx("Bezig met uploaden…") : label}</strong>
+        <small className="muted">{hint}</small>
+        <input ref={input} type="file" accept={accept} multiple={!!multiple} style={{ display: "none" }} onChange={(e) => { take(e.target.files); e.target.value = ""; }} />
+      </div>
+      {err && <div className="alert">{err}</div>}
+      {done.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{done.map((x) => (
+        <span key={x.file} style={{ position: "relative" }}>
+          <span style={{ display: "grid", placeItems: "center", width: role === "logo" ? 96 : 58, height: 58, borderRadius: 8, overflow: "hidden", background: "var(--line)", border: "1px solid var(--line)" }}>{x.video ? <video src={mediaUrl(x.url)} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={mediaUrl(x.url)} alt={x.file} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: role === "logo" ? "contain" : "cover" }} />}</span>
+          <button type="button" className="pb-panelx" onClick={() => remove(x)} aria-label={tx("Weghalen")} style={{ position: "absolute", top: -6, right: -6 }}>×</button>
+        </span>))}</div>}
+    </div>
+  );
+}
+
+// The question about photos and videos: search them on iStock and choose; a chosen one goes into the project at once (the list of photos and videos) and into the answer, so the designer uses it.
+function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic }) {
+  const [q, setQ] = useState(defaultQuery || "");
+  const [kind, setKind] = useState("photo");
+  const [found, setFound] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [chosen, setChosen] = useState([]);  // [{id, title, kind}]
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const run = async (query, k) => {
+    if ((query || "").trim().length < 2) return;
+    setSearching(true); setErr(""); setFound(null);
+    try { setFound((await api(`/sitecreator/${jobId}/istock-search/?q=${encodeURIComponent(query.trim())}&kind=${k}`)).items || []); } catch (x) { setErr(errorText(x)); } finally { setSearching(false); }
+  };
+  useEffect(() => { if ((defaultQuery || "").trim().length >= 2) run(defaultQuery, "photo"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // what the customer filled in about the company: the AI suggests search words for fitting pictures; the first one is filled in and searched, the others are buttons
+  const [terms, setTerms] = useState([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const typed = useRef(false);
+  useEffect(() => {  // the customer left the field about the company and said yes: the AI suggests words and the search starts
+    if (!topic?.go) return;
+    let alive = true;
+    (async () => {
+      setSuggesting(true);
+      try {
+        const r = await api(`/sitecreator/${jobId}/search-terms/`, { method: "POST", body: { name: topic.name || "", what: topic.what || "", kind } });
+        const list = r.terms || []; if (!alive) return; setTerms(list);
+        if (list.length && !typed.current) { setQ(list[0]); run(list[0], kind); }
+      } catch { /* quiet: the search field simply stays as it is */ } finally { if (alive) setSuggesting(false); }
+    })();
+    return () => { alive = false; };
+  }, [topic?.go]); // eslint-disable-line react-hooks/exhaustive-deps
+  const text = (list) => list.length ? `${tx("Gekozen op iStock")} (${tx("in mijn lijst gezet")}): ` + list.map((c) => `iStock ${c.id}${c.title ? ` "${c.title}"` : ""}${c.kind === "video" ? ` (${tx("video")})` : ""}`).join(", ") : "";
+  const choose = async (it) => {
+    if (chosen.some((c) => c.id === it.id)) return;
+    setBusy(it.id); setErr("");
+    try {
+      onJob?.(await api(`/sitecreator/${jobId}/slot/`, { method: "POST", body: { add: it } }));
+      const next = [...chosen, { id: it.id, title: (it.title || "").slice(0, 80), kind }];
+      setChosen(next); onAnswer(text(next));
+    } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
+  };
+  return (
+    <div style={{ display: "grid", gap: ".5rem" }} data-easy2edit-tag="ui-media-picker">
+      <form onSubmit={(e) => { e.preventDefault(); run(q, kind); }} role="search" style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }}>
+        <input type="search" value={q} maxLength={120} disabled={disabled} onChange={(e) => { typed.current = true; setQ(e.target.value); }} placeholder={tx("Zoek foto's of video's op iStock…")} aria-label={tx("Zoek een foto of video op iStock")} style={{ flex: "1 1 140px", minWidth: 0 }} />
+        <select value={kind} onChange={(e) => { setKind(e.target.value); setFound(null); }} aria-label={tx("Soort")}><option value="photo">{tx("Foto's")}</option><option value="video">{tx("Video's")}</option></select>
+        <button className="btn sm primary" disabled={disabled || searching || q.trim().length < 2}><IconSearch /> {searching ? tx("Bezig…") : tx("Zoeken")}</button>
+      </form>
+      {(terms.length > 0 || suggesting) && <div style={{ display: "flex", gap: ".3rem", flexWrap: "wrap", alignItems: "center" }}>
+        <small className="muted">{suggesting ? tx("De AI bedenkt zoekwoorden…") : tx("Voorstel van de AI")}:</small>
+        {terms.map((t) => <button key={t} type="button" disabled={disabled} onClick={() => { typed.current = true; setQ(t); run(t, kind); }} style={{ padding: ".15rem .6rem", borderRadius: 999, border: `1px solid ${q === t ? "var(--blue)" : "var(--line)"}`, background: q === t ? "color-mix(in srgb, var(--blue) 14%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".8rem" }}>{t}</button>)}
+      </div>}
+      {err && <div className="alert">{err}</div>}
+      {found && !found.length && <small className="muted">{tx("Niets gevonden. Probeer een ander zoekwoord (Engels werkt het best).")}</small>}
+      {found && found.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: ".4rem" }}>
+          {found.map((it) => { const on = chosen.some((c) => c.id === it.id); return (
+            <button key={it.id} type="button" disabled={disabled || !!busy || on} aria-pressed={on} onClick={() => choose(it)} title={it.title} style={{ position: "relative", padding: 0, borderRadius: 10, overflow: "hidden", aspectRatio: "1", cursor: on ? "default" : "pointer", background: "var(--line)", border: `2px solid ${on ? "var(--blue)" : "var(--line)"}` }}>
+              {it.preview && <img src={it.preview} alt={it.title || ""} referrerPolicy="no-referrer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: busy === it.id ? .5 : 1 }} />}
+              {on && tick("var(--blue)")}
+              <small style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "1px 4px", background: "rgba(0,0,0,.55)", color: "#fff", fontSize: ".66rem", textAlign: "left" }}>{busy === it.id ? tx("Bezig…") : `iStock ${it.id}`}</small>
+            </button>); })}
+        </div>
+      )}
+      {chosen.length > 0 && <small className="muted" role="status">{chosen.length} {tx("gekozen: ze staan in je lijst Foto's en video's en gaan mee met je antwoord.")}</small>}
+    </div>
+  );
+}
+
+function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound }) {
+  // the first questionnaire always has a question for the logo and one for photos and videos (own files and iStock), also when the AI did not think of them: two separate drop zones
+  const given = [...first];
+  const isName = (q) => /^(name|naam|company_?name|business_?name|bedrijfs_?naam|brand)$/i.test(q.id || "");
+  const isUrl = (q) => /^(url|website|site_?url|website_?url|web_?address|adres|domain|domein)$/i.test(q.id || "");
+  if (jobId && firstRound && first.length >= 3) {  // a questionnaire always starts with the company name and the address of the current website
+    if (!given.some(isName)) given.unshift({ id: "name", q: tx("Wat is de naam van het bedrijf of de organisatie?"), type: "text", options: [] });
+    if (!given.some(isUrl)) given.splice(1, 0, { id: "url", q: tx("Wat is het adres (url) van je huidige website? Laat leeg als je die nog niet hebt."), type: "text", options: [] });
+  }
+  given.sort((x, y) => (isName(y) ? 1 : 0) - (isName(x) ? 1 : 0) || (isUrl(y) ? 1 : 0) - (isUrl(x) ? 1 : 0));  // name first, then the url
+  if (jobId && firstRound && given.length >= 3) {
+    if (!given.some((q) => /logo/i.test(q.id || ""))) given.push({ id: "logo", q: tx("Heb je een logo dat ik moet gebruiken?"), type: "text", options: [] });
+    if (!given.some((q) => /media|photo|foto|image|afbeeld|video|istock|beeld/i.test(q.id || "") && !/logo/i.test(q.id || ""))) given.push({ id: "media", q: tx("Wil je foto's of video's gebruiken? Zoek ze op iStock of sleep je eigen bestanden erin."), type: "text", options: [] });
+  }
+  const isMedia = (q) => /media|photo|foto|image|afbeeld|video|istock|beeld/i.test(q.id || "") && !!jobId;  // photos and videos are searched and chosen on iStock
+  const rank = (q) => (/layout|indeling/i.test(q.id || "") ? 1 : 0);
+  const questions = [...given].sort((x, y) => (/width|breedte/i.test(y.id || "") && rank(x) ? 1 : 0) - (/width|breedte/i.test(x.id || "") && rank(y) ? 1 : 0));  // the maximum width always comes before the page layout
+  const isLayout = (q) => /layout|indeling/i.test(q.id || "");  // the question about the page layout is answered in the carousel of pictures
+  const init = () => Object.fromEntries(questions.map((q) => [q.id, isLayout(q) ? [LAYOUT_DEFAULT] : q.type === "multi" ? (Array.isArray(q.default) ? q.default : []) : (typeof q.default === "string" ? q.default : "")]));
+  const [ans, setAns] = useState(init);
+  const [own, setOwn] = useState({});  // what the customer dropped in a drop zone, per question: goes with the answer
+  const isLogo = (q) => /logo/i.test(q.id || "") && !!jobId;
+  const looksColors = (q) => /colou?r|kleur|palet|theme|thema/i.test(q.id || "") && !/mode|scheme|light|dark|licht|donker|modus|display|weergave/i.test(q.id || "");  // not "color_mode" (light or dark)
+  const colorQ = [...questions].reverse().find(looksColors);  // only ONE carousel of colour themes: at the last colour question
+  const isColors = (q) => q === colorQ;
+  const [themes, setThemes] = useState([]);
+  useEffect(() => { if (questions.some(isColors)) api("/sitecreator/theme-library/").then((d) => setThemes((d.themes || []).filter((t) => t.colors?.primary))).catch(() => {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (id, v) => setAns((a) => ({ ...a, [id]: v }));
+  const ONE = "One pager (alles op één pagina)";
+  const isPages = (q) => /page|pagina/i.test(q.id || "") && !/layout|indeling/i.test(q.id || "") && q.type === "multi";
+  const optsOf = (q) => (isPages(q) && !q.options.some((o) => /one.?pager|één pagina|een pagina/i.test(o)) ? [ONE, ...q.options] : q.options);  // the pages question always offers a one pager
+  const toggle = (q, o) => {
+    const one = (x) => /one.?pager/i.test(x);
+    const cur = ans[q.id];
+    if (!isPages(q)) return set(q.id, cur.includes(o) ? cur.filter((x) => x !== o) : [...cur, o]);
+    if (one(o)) return set(q.id, cur.includes(o) ? [] : [o]);  // a one pager excludes the other pages
+    set(q.id, cur.includes(o) ? cur.filter((x) => x !== o) : [...cur.filter((x) => !one(x)), o]);
+  };
+  const nameQ = questions.find(isName);
+  const [go, setGo] = useState({ n: 0, name: "", what: "" });  // started when the customer leaves the field about the company and wants the photo search
+  const asked = useRef("");
+  const bizQ = questions.find((q) => q.type === "text" && !isName(q) && !isUrl(q) && !/logo|media|photo|foto|video|istock|extra|other|overig|opmerking|contact|goal|doel/i.test(q.id || "")) || null;  // "what kind of company is it and what do you offer": the first free text question
+  const needName = !!nameQ && !String(ans[nameQ.id] || "").trim();  // the name is the one thing that is needed
+  const compose = () => questions.map((q) => { const a = ans[q.id]; const o = own[q.id] ? ` ${own[q.id]}` : ""; const v = Array.isArray(a) ? (a.length ? a.join(", ") : tx("geen")) : (a || (o ? "" : tx("beslis zelf"))); return `${q.q} ${v}${o}`; }).join("\n");
+  const chip = (on) => ({ padding: ".25rem .7rem", borderRadius: 999, border: `1px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "color-mix(in srgb, var(--blue) 16%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".85rem" });
+  return (
+    <div style={{ display: "grid", gap: ".7rem", marginTop: ".7rem", paddingTop: ".6rem", borderTop: "1px dashed var(--line)", whiteSpace: "normal" }}>
+      {questions.map((q) => (
+        <div key={q.id} style={{ display: "grid", gap: ".3rem" }}>
+          <strong style={{ fontSize: ".88rem" }}>{q.q}</strong>
+          {isLogo(q) ? <><DropZone jobId={jobId} onJob={onJob} role="logo" accept="image/*" label={tx("Sleep je logo hierheen")} hint={tx("of klik om een bestand te kiezen (png, jpg, webp of svg)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} />
+            <input value={ans[q.id]} maxLength={300} disabled={disabled} onChange={(e) => set(q.id, e.target.value)} placeholder={tx("Of typ de bedrijfsnaam zoals die in de header moet staan")} /></>
+          : isMedia(q) ? <><MediaPicker jobId={jobId} onJob={onJob} disabled={disabled} defaultQuery={queryHint} topic={{ name: go.name, what: go.what, go: go.n }} onAnswer={(t) => set(q.id, t)} />
+            <DropZone jobId={jobId} onJob={onJob} role="media" multiple accept="image/*,video/mp4,video/webm" label={tx("Sleep je eigen foto's of video's hierheen")} hint={tx("of klik om bestanden te kiezen (jpg, png, webp, mp4, webm)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} /></>
+          : isColors(q) && themes.length ? <ThemeCarousel themes={themes} value={ans[q.id] || ""} disabled={disabled} jobId={jobId} onJob={onJob} onChanged={onChanged} onPick={(v) => set(q.id, v)} />
+          : isLayout(q) ? <LayoutCarousel value={ans[q.id]} disabled={disabled} accent={accent} onToggle={(n) => set(q.id, ans[q.id].includes(n) ? ans[q.id].filter((x) => x !== n) : [...ans[q.id], n])} />
+          : q.type === "text"
+            ? <input value={ans[q.id]} maxLength={300} disabled={disabled} onChange={(e) => set(q.id, e.target.value)} placeholder={tx("Jouw antwoord (of laat leeg)")}
+              onBlur={bizQ && q.id === bizQ.id && jobId ? async () => {
+                const what = String(ans[q.id] || "").trim();
+                if (what.length < 8 || asked.current === what || !questions.some(isMedia)) return;
+                asked.current = what;
+                if (await confirmDialog(tx("Zal ik alvast foto's en video's zoeken op iStock die bij je bedrijf passen? De AI bedenkt zoekwoorden en je ziet de resultaten bij de vraag over foto's en video's."), { title: tx("Foto's alvast zoeken"), okLabel: tx("Ja, zoek maar") })) setGo((g) => ({ n: g.n + 1, name: nameQ ? String(ans[nameQ.id] || "") : "", what }));
+              } : undefined} />
+            : <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem" }}>{optsOf(q).map((o) => { const on = q.type === "multi" ? ans[q.id].includes(o) : ans[q.id] === o; return <button key={o} type="button" disabled={disabled} aria-pressed={on} onClick={() => (q.type === "multi" ? toggle(q, o) : set(q.id, on ? "" : o))} style={chip(on)}>{o}</button>; })}</div>}
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
+        <button type="button" className="btn primary" disabled={disabled || needName} onClick={() => onSend(compose())} title={needName ? tx("Vul eerst de naam in") : undefined}>{tx("Verstuur mijn antwoorden")}</button>
+        <button type="button" className="btn" disabled={disabled} onClick={() => onSend(tx("Beslis zelf wat er niet is ingevuld en ga aan de slag."))}>{tx("Beslis zelf")}</button>
+      </div>
+    </div>
+  );
+}
+
+// The theme of the design: colours, font, corners and light/dark. The system writes it as the theme on :root of the pages, so the pages follow at once without asking the AI again, and it is the same theme that the website gets when it is made.
+function ThemeBlock({ job, onChanged }) {
+  const b = job.brief || {};
+  const [vals, setVals] = useState({ colors: { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...(b.colors || {}) }, font: b.font || "sans", radius: b.radius ?? 14, max_width: b.max_width ?? 1100, color_mode: b.color_mode || "light" });
+  const [busy, setBusy] = useState(false);
+  const timer = useRef(null);
+  const push = (next) => {
+    setVals(next);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(async () => { setBusy(true); try { await api(`/sitecreator/${job.id}/`, { method: "PATCH", body: { colors: next.colors, font: next.font, radius: next.radius, max_width: next.max_width, color_mode: next.color_mode } }); await onChanged(); } catch {} finally { setBusy(false); } }, 450);
+  };
+  const setColor = (k, v) => push({ ...vals, colors: { ...vals.colors, [k]: v } });
+  const roles = [...COLOR_ROLES, ...(vals.color_mode !== "light" ? DARK_ROLES : [])];
+  return (
+    <Fold title={<>
+        <IconPalette /> {tx("Kleuren")}
+        <span aria-hidden="true" style={{ display: "inline-flex", gap: 3, marginLeft: ".2rem" }}>{["primary", "secondary", "bg", "text"].map((k) => <i key={k} style={{ width: 14, height: 14, borderRadius: "50%", background: vals.colors[k], border: "1px solid var(--line)" }} />)}</span>
+        {busy && <small style={{ opacity: .85 }}>· {tx("Bezig…")}</small>}
+      </>}>
+      <div style={{ display: "grid", gap: ".6rem", marginTop: ".5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".45rem .8rem" }}>
+          {roles.map(([k, l]) => (
+            <label key={k} style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".85rem", minWidth: 0 }}>
+              <input type="color" value={vals.colors[k] || "#000000"} onChange={(e) => setColor(k, e.target.value)} aria-label={tx(l)} style={{ flex: "none", width: 34, height: 28, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+              <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(l)}</span>
+            </label>
+          ))}
+        </div>
+        <label style={{ display: "grid", gap: ".2rem", fontSize: ".85rem" }}>{tx("Weergave")}
+          <select value={vals.color_mode} onChange={(e) => push({ ...vals, color_mode: e.target.value })}>{MODES.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
+        </label>
+        <label style={{ display: "grid", gap: ".2rem", fontSize: ".85rem" }}>{tx("Lettertype")}
+          <select value={vals.font} onChange={(e) => push({ ...vals, font: e.target.value })}>{FONT_NAMES.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
+        </label>
+        <label style={{ display: "grid", gap: ".2rem", fontSize: ".85rem" }}>{tx("Maximale breedte van het ontwerp")}
+          <select value={vals.max_width} onChange={(e) => push({ ...vals, max_width: Number(e.target.value) })}>{[[960, "Smal (960 px)"], [1100, "Standaard (1100 px)"], [1280, "Breed (1280 px)"], [1440, "Extra breed (1440 px)"], [0, "Hele schermbreedte"]].map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
+        </label>
+        <label style={{ display: "grid", gap: ".2rem", fontSize: ".85rem" }}>{tx("Hoeken")}: {vals.radius}px
+          <input type="range" min="0" max="24" value={vals.radius} onChange={(e) => push({ ...vals, radius: Number(e.target.value) })} />
+        </label>
+        <small className="muted">{tx("De pagina's passen direct aan, zonder de AI. Dit is het thema dat je website krijgt.")}</small>
+      </div>
+    </Fold>
+  );
+}
+
 // The workspace: the step plan while it is a draft; when the website has been made: the chat on the left, the website on the right (per page, on a computer, iPad or phone). When it is good: import it.
 export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const [job, setJob] = useState(null);
   const [err, setErr] = useState("");
   const [page, setPage] = useState("index.html");
   const [dev, setDev] = useState("web");
+  // the chat column: drag the bar to make it wider or narrower, or fold it away completely (an icon brings it back) to look at the website
+  const [side, setSide] = useState(() => { try { return { w: Math.max(260, Number(localStorage.getItem("siChatW")) || 380), shut: localStorage.getItem("siChatShut") === "1" }; } catch { return { w: 380, shut: false }; } });
+  const gridEl = useRef(null);
+  const saveSide = (n) => { setSide(n); try { localStorage.setItem("siChatW", String(n.w)); localStorage.setItem("siChatShut", n.shut ? "1" : "0"); } catch {} };
+  const dragSide = (e) => {
+    e.preventDefault();
+    const el = gridEl.current; if (!el) return;
+    const box = el.getBoundingClientRect(), max = Math.min(900, box.width * 0.75);
+    const move = (ev) => setSide((o) => ({ ...o, w: Math.round(Math.max(260, Math.min(max, ev.clientX - box.left))) }));
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); setSide((o) => { try { localStorage.setItem("siChatW", String(o.w)); } catch {} return o; }); };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+  };
+  const frame = useRef(null);
+  const [kit, setKit] = useState(null);  // the component set: the preview draws the components like the website does
+  useEffect(() => { loadKit(job?.brief?.component_set || "").then(setKit).catch(() => setKit(null)); }, [job?.brief?.component_set]);
+  const [shots, setShots] = useState([]);  // screenshots of the preview that go along with the next message to the designer
+  const [shooting, setShooting] = useState(false);
+  const shoot = async () => {
+    if (shots.length >= 3) { setErr(tx("Je kunt maximaal 3 screenshots meesturen.")); return; }
+    setShooting(true); setErr("");
+    try { const d = await captureFrame(frame.current); setShots((s) => [...s, d]); } catch (x) { setErr(errorText(x)); } finally { setShooting(false); }
+  };
+  const [zoom, setZoom] = useState(1);  // like the zoom of a browser (+ and -): the whole page gets bigger or smaller, fonts too, and the page lays itself out for the new width
+  useEffect(() => { try { const z = Number(localStorage.getItem("aiPreviewZoom")); if (z >= .5 && z <= 2) setZoom(z); } catch {} }, []);
+  const zoomTo = (z) => { const v = Math.min(2, Math.max(.5, Math.round(z * 100) / 100)); setZoom(v); try { localStorage.setItem("aiPreviewZoom", String(v)); } catch {} };
+  const ZOOMS = [.5, .67, .75, .8, .9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+  const zoomStep = (dir) => zoomTo(dir > 0 ? ZOOMS.find((z) => z > zoom + .001) || 2 : [...ZOOMS].reverse().find((z) => z < zoom - .001) || .5);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [again, setAgain] = useState(false); // back to the step plan of a finished design
@@ -299,8 +806,9 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const chat = useRef(null);
 
   // The files of a design (html with css) can be several MB: only the full load asks for them; the answers of saving and polling are light and keep the files that are already here.
-  const merge = useCallback((r) => setJob((prev) => ({ ...r, files: r.files && Object.keys(r.files).length ? r.files : prev?.files || {} })), []);
-  const reload = useCallback(async (full = true) => { try { merge(await api(`/sitecreator/${jobId}/${full ? "?files=1" : ""}`)); } catch (e) { setErr(errorText(e)); } }, [jobId, merge]);
+  const sig = useRef(""); // the version of the files that is on the screen (files_sig of the server)
+  const merge = useCallback((r) => { if (r.files && Object.keys(r.files).length && r.files_sig) sig.current = r.files_sig; setJob((prev) => ({ ...r, files: r.files && Object.keys(r.files).length ? r.files : prev?.files || {} })); }, []);
+  const reload = useCallback(async (full = true) => { try { const r = await api(`/sitecreator/${jobId}/${full ? "?files=1" : ""}`); merge(r); if (full) sig.current = r.files_sig || ""; else if (r.files_sig && r.files_sig !== sig.current) { const f = await api(`/sitecreator/${jobId}/?files=1`); sig.current = f.files_sig || ""; merge(f); } } catch (e) { setErr(errorText(e)); } }, [jobId, merge]); // while the AI works: as soon as a page is ready (the files changed) the preview is updated
   const was = useRef("");
   useEffect(() => { reload(true); }, [reload]);
   useEffect(() => { if (job?.status !== "running" && job?.status !== "stopping") return undefined; const t = setTimeout(() => reload(false), 2000); return () => clearTimeout(t); }, [job, reload]);
@@ -313,16 +821,21 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
     setLiveGo(false);
     if (String((job.messages || []).slice(-1)[0]?.text || "").startsWith("Aangepast")) applyLive();
   }, [liveGo, job, applyLive]);
-  useEffect(() => { chat.current?.scrollTo({ top: 1e6 }); }, [job?.messages?.length, job?.status]);
+  useEffect(() => { // new messages: to the bottom; but a questionnaire opens at its top, so the first question is the first thing to see
+    const box = chat.current; if (!box) return;
+    const q = box.querySelector("[data-questionnaire]");
+    if (q && !job?.status?.match(/running|stopping/)) box.scrollTo({ top: Math.max(0, box.scrollTop + q.getBoundingClientRect().top - box.getBoundingClientRect().top - 8) });
+    else box.scrollTo({ top: 1e6 });
+  }, [job?.messages?.length, job?.status]);
 
-  const send = async (e) => {
-    e?.preventDefault();
-    if (!text.trim() || sending || job?.status === "running" || job?.status === "stopping") return;
+  const sendWith = async (t, imgs = []) => {
+    if (!t.trim() || sending || job?.status === "running" || job?.status === "stopping") return;
     setSending(true); setErr("");
-    try { merge(await api(`/sitecreator/${jobId}/revise/`, { method: "POST", body: { text, page } })); setText(""); liveRev.current = !!job?.applied && !!onApply; }
+    try { merge(await api(`/sitecreator/${jobId}/${chatMode ? "chat" : "revise"}/`, { method: "POST", body: { text: t, page, images: imgs } })); setText(""); setShots([]); liveRev.current = !!job?.applied && !!onApply; }
     catch (x) { setErr(errorText(x)); }
     finally { setSending(false); }
   };
+  const send = (e) => { e?.preventDefault(); return sendWith(text, shots); };
   const running = job?.status === "running" || job?.status === "stopping";
   const act = async (what, path, body) => { setBusy(what); setErr(""); try { merge(await api(`/sitecreator/${jobId}/${path}/`, { method: "POST", body: body || {} })); return true; } catch (x) { setErr(errorText(x)); return false; } finally { setBusy(""); } };
   const stop = () => act("stop", "stop");
@@ -330,7 +843,8 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   useEffect(() => { if (back && job && job.status !== "running" && job.status !== "stopping") { setBack(false); setAgain(true); } }, [back, job]);
   const restore = () => act("restore", "restore").then((ok) => ok && reload(true));
   const improve = async (focus) => { if (await act("improve", "generate", { improve: true, focus })) setImproveOpen(false); };
-  const wizard = job && (job.status === "draft" || job.status === "error" || again);
+  const chatMode = !!(job?.chat || job?.brief?.chat); // AI chat build: always the chat, never the steps
+  const wizard = job && !chatMode && (job.status === "draft" || job.status === "error" || again);
   // Closing a design that is still a concept (in the steps): save it for later or throw it away. Escape or "Doorgaan" keeps the window open.
   const requestClose = async () => {
     if (!job || !wizard || running) { onClose(); return; }
@@ -345,16 +859,26 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const pages = job?.pages || [];
   const width = DEVICES.find((d) => d[0] === dev)[2];
   const ready = job && Object.keys(job.files || {}).some((n) => n.endsWith(".html"));
+  // the blocks Colours and Photos and videos wait until the questionnaire round has been: while the customer is asked the questions (or the first answer of the AI is still to come) they are hidden
+  const lastMsg = (job?.messages || []).slice(-1)[0];
+  const asking = !!lastMsg?.questions?.length || (!ready && (!lastMsg || lastMsg.role === "user"));
+  const blocksOpen = !asking;
   const cur = job?.files?.[page] ? page : pages.find((p) => job?.files?.[p.file])?.file || "index.html";
 
   return createPortal(
     <div className="pb-objback">
-      <div className="pb-objpop" role="dialog" aria-label={tx("Website ontwerpen")} style={{ width: "min(96vw, 1700px)", maxWidth: "none", height: "94vh", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="pb-objpop" role="dialog" aria-label={tx("Website ontwerpen")} style={{ width: "min(96vw, 1700px)", maxWidth: "none", height: "94vh", maxHeight: "94vh", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
         <div className="pb-objhead"><strong>{tx("Website ontwerpen")}{job?.name ? `: ${job.name}` : ""}</strong>
-          {!wizard && job && <button type="button" className="btn sm" style={{ marginLeft: ".8rem" }} disabled={back} onClick={toSteps}>← {back ? tx("Bezig met stoppen…") : tx("Terug naar de stappen")}</button>}<span style={{ flex: 1 }} />
+          {!wizard && job && !chatMode && <button type="button" className="btn sm" style={{ marginLeft: ".8rem" }} disabled={back} onClick={toSteps}>← {back ? tx("Bezig met stoppen…") : tx("Terug naar de stappen")}</button>}<span style={{ flex: 1 }} />
           {!wizard && job?.applied && <span className={job.live ? "badge ok" : "badge off"} style={{ marginRight: ".6rem" }} title={tx("Elke aanpassing aan dit concept wordt direct op de live pagina's toegepast.")}>{busy === "live" ? tx("Live bijwerken…") : job.live ? tx("Live") : tx("Concept")}</span>}
           {!wizard && job?.applied && !job.live && ready && !running && <button type="button" className="btn sm" style={{ marginRight: ".4rem" }} disabled={!!busy} onClick={applyLive}>{tx("Live bijwerken")}</button>}
           {!wizard && ready && <span className="pb-seg" style={{ marginRight: ".6rem" }}>{DEVICES.map(([k, l]) => <button type="button" key={k} className={dev === k ? "on" : ""} onClick={() => setDev(k)}>{tx(l)}</button>)}</span>}
+          {!wizard && ready && <span className="pb-seg" style={{ marginRight: ".6rem" }} role="group" aria-label={tx("Zoomen")}>
+            <button type="button" onClick={() => zoomStep(-1)} disabled={zoom <= .5} aria-label={tx("Verkleinen")} title={tx("Verkleinen")}>−</button>
+            <button type="button" onClick={() => zoomTo(1)} title={tx("Terug naar 100%")} style={{ minWidth: "3.4em", fontVariantNumeric: "tabular-nums" }}>{Math.round(zoom * 100)}%</button>
+            <button type="button" onClick={() => zoomStep(1)} disabled={zoom >= 2} aria-label={tx("Vergroten")} title={tx("Vergroten")}>+</button>
+          </span>}
+          {!wizard && ready && <button type="button" className="btn sm" style={{ marginRight: ".6rem" }} onClick={shoot} disabled={shooting} aria-label={tx("Screenshot maken")} title={tx("Maak een screenshot van wat je nu ziet en stuur hem mee met je volgende bericht")}><IconCamera /></button>}
           {!wizard && ready && !running && <button type="button" className="btn sm" style={{ marginRight: ".4rem" }} onClick={() => setImproveOpen(true)}><IconBolt /> {tx("Verbeteren")}</button>}
           {!wizard && ready && !running && (onApply
             ? <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => setCreateOpen(true)}><IconCheck /> {tx("Alles aanmaken")}</button>
@@ -365,11 +889,12 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
         {!job && <p className="muted" style={{ padding: "1rem" }}>{err || tx("Laden…")}</p>}
         {wizard && <Wizard key={job.id + (again ? "a" : "")} job={job} onJob={merge} onReload={() => reload(true)} onApply={onApply ? (o) => onApply(job, o) : undefined} onImprove={() => setImproveOpen(true)} onWorkspace={ready && job.status !== "draft" ? () => setAgain(false) : undefined} onGenerate={(j) => { setAgain(false); merge(j); }} />}
         {job && !wizard && (
-          <div style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "minmax(280px, 380px) 1fr" }}>
-            <div style={{ display: "flex", flexDirection: "column", minHeight: 0, borderRight: "1px solid var(--line)" }}>
+          <div ref={gridEl} style={{ flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: side.shut ? "0px 0px minmax(0, 1fr)" : `${side.w}px 10px minmax(0, 1fr)` }}>
+            <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, overflow: "hidden", visibility: side.shut ? "hidden" : "visible" }}>
               <div ref={chat} style={{ flex: 1, overflowY: "auto", padding: ".9rem", display: "flex", flexDirection: "column", gap: ".6rem" }}>
+                {chatMode && !(job.messages || []).length && <div style={{ alignSelf: "flex-start", maxWidth: "92%", padding: ".55rem .8rem", borderRadius: 12, background: "var(--card)", border: "1px solid var(--line)" }}>{tx("Hoi! Vertel in je eigen woorden wat voor website je wilt: waar is hij voor en voor wie? Ik ontwerp hem met de componenten en modules van easy2edit en je ziet het resultaat rechts. Foto's zoek je zelf op iStock; ik laat zien welke ik nodig heb.")}</div>}
                 {(job.messages || []).map((m, i) => (
-                  <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{m.text}</div>
+                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && i === (job.messages || []).length - 1 && <QuestionForm key={i} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}</div>
                 ))}
                 {running && (
                   <div className="card" style={{ padding: ".7rem .9rem" }}>
@@ -384,19 +909,49 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 {err && <div className="alert">{err}</div>}
                 {!running && job.can_restore && <button type="button" className="btn sm" style={{ alignSelf: "flex-start" }} disabled={!!busy} onClick={restore}>{busy === "restore" ? tx("Bezig…") : tx("Vorige versie terugzetten")}</button>}
               </div>
-              <form onSubmit={send} style={{ padding: ".7rem", borderTop: "1px solid var(--line)", display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
+              {blocksOpen && (ready || chatMode) && <ThemeBlock key={job.id + (job.brief?.theme_name || "")} job={job} onChanged={() => reload(true)} />}
+              {blocksOpen && chatMode && <PhotoSlots job={job} onJob={merge} onAsk={async (t) => { try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text: t, page } })); } catch (x) { setErr(errorText(x)); } }} onShow={(file) => { const p = pages.find((q) => String(job.files?.[q.file] || "").toLowerCase().includes(file)); if (p) setPage(p.file); return p?.title || ""; }} />}
+              {shots.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", padding: ".5rem .7rem 0", borderTop: "1px solid var(--line)" }} aria-label={tx("Screenshots bij je bericht")}>{shots.map((u, k) => <span key={k} style={{ position: "relative" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", height: 54, borderRadius: 8, border: "1px solid var(--line)" }} /><button type="button" className="pb-panelx" onClick={() => setShots((s) => s.filter((_, i) => i !== k))} aria-label={tx("Screenshot weghalen")} style={{ position: "absolute", top: -6, right: -6 }}>×</button></span>)}<small className="muted" style={{ alignSelf: "center" }}>{tx("gaat mee met je volgende bericht")}</small></div>}
+              <form onSubmit={send} style={{ padding: ".7rem", borderTop: shots.length ? 0 : "1px solid var(--line)", display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
                 <textarea rows={3} style={{ flex: 1 }} value={text} maxLength={2000} disabled={running} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(e); }} placeholder={tx("Wat moet er anders? bv. maak de kop rustiger, voeg een prijzenblok toe")} />
                 <button className="btn primary" disabled={running || sending || !text.trim()} aria-label={tx("Aanpassen")}><IconSend /></button>
               </form>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0 }}>
-              {ready && <div style={{ padding: ".5rem .8rem 0" }}><Tabs value={cur} onChange={setPage} tabs={pages.filter((p) => job.files[p.file]).map((p) => [p.file, p.title])} /></div>}
-              <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", background: "var(--bg)", padding: ".6rem" }}>
+            <div role="separator" aria-orientation="vertical" aria-label={tx("Breedte van de chat aanpassen")} title={tx("Sleep om de chat breder of smaller te maken (dubbelklik: standaard)")} onPointerDown={side.shut ? undefined : dragSide} onDoubleClick={() => saveSide({ ...side, w: 380 })}
+              style={{ position: "relative", cursor: side.shut ? "default" : "col-resize", background: "var(--line)", width: side.shut ? 0 : 10, touchAction: "none", display: "flex", alignItems: "center", justifyContent: "center", userSelect: "none" }}>
+              {!side.shut && <>
+                <i aria-hidden="true" style={{ width: 2, height: 38, borderRadius: 2, background: "var(--muted, #94a3b8)", opacity: .7 }} />
+                <button type="button" onPointerDown={(e) => e.stopPropagation()} onClick={() => saveSide({ ...side, shut: true })} aria-label={tx("Chat wegklappen")} title={tx("Chat wegklappen")}
+                  style={{ position: "absolute", top: 8, left: -10, width: 24, height: 24, padding: 0, borderRadius: "50%", border: "1px solid var(--line)", background: "var(--card)", color: "var(--text)", cursor: "pointer", display: "grid", placeItems: "center", zIndex: 3 }}>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+                </button></>}
+            </div>
+            <div style={{ position: "relative", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0 }}>
+              {side.shut && <button type="button" onClick={() => saveSide({ ...side, shut: false })} aria-label={tx("Chat tonen")} title={tx("Chat tonen")}
+                style={{ position: "absolute", top: 10, left: 10, zIndex: 6, display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .7rem", borderRadius: 999, border: 0, background: "var(--blue)", color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(0,0,0,.3)", font: "inherit", fontSize: ".82rem" }}><IconChat /> {tx("Chat")}</button>}
+              {ready && <div style={{ padding: ".5rem .8rem 0", ...(side.shut ? { paddingLeft: "5.6rem" } : {}) }}><Tabs value={cur} onChange={setPage} tabs={pages.filter((p) => job.files[p.file]).map((p) => [p.file, p.title])} /></div>}
+              <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", justifyContent: "center", background: "var(--bg)", padding: ".6rem" }}>
                 {ready ? (
-                  <div style={{ width, maxWidth: "100%", height: "100%", background: "#fff", boxShadow: dev === "web" ? "none" : "0 0 0 1px var(--line), 0 10px 40px rgba(0,0,0,.4)", opacity: running ? .6 : 1, transition: "opacity .3s" }}>
-                    <iframe title={tx("Voorbeeld")} sandbox="" srcDoc={previewHtml(job.files, cur, job.brief?.photos)} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                  <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24, boxShadow: "0 12px 40px rgba(0,0,0,.35)" }), opacity: running ? .6 : 1, transition: "opacity .3s" }}>
+                    <div style={{ width: `${100 / zoom}%`, height: `${100 / zoom}%`, transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
+                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], "", chatMode, kit)} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                    </div>
                   </div>
-                ) : <p className="muted" style={{ alignSelf: "center" }}>{running ? tx("easy2edit ontwerpt je website… de eerste pagina verschijnt hier zodra hij klaar is.") : ""}</p>}
+                ) : <p className="muted" style={{ alignSelf: "center", textAlign: "center", maxWidth: 360 }}>{running ? "" : chatMode ? tx("Hier verschijnt het voorbeeld van je website zodra het ontwerp klaar is.") : ""}</p>}
+                {running && (
+                  <div role="status" aria-live="polite" data-easy2edit-tag="ui-work-overlay" style={{ position: "absolute", inset: 0, zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: ".7rem", background: "color-mix(in srgb, var(--blue) 55%, transparent)", backdropFilter: "blur(1px)", color: "#fff", textAlign: "center", padding: "1rem", pointerEvents: "auto" }}>
+                    <svg aria-hidden="true" width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeLinecap="round" style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,.2))" }}>
+                      <circle cx="32" cy="32" r="26" strokeWidth="4" opacity=".25" />
+                      <path d="M32 6a26 26 0 0 1 26 26" strokeWidth="4"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="1.1s" repeatCount="indefinite" /></path>
+                      <path d="M32 14a18 18 0 0 0-18 18" strokeWidth="3" opacity=".7"><animateTransform attributeName="transform" type="rotate" from="360 32 32" to="0 32 32" dur="1.8s" repeatCount="indefinite" /></path>
+                      <g fill="currentColor" stroke="none"><rect x="26" y="26" width="12" height="12" rx="3"><animate attributeName="opacity" values="1;.25;1" dur="1.4s" repeatCount="indefinite" /><animateTransform attributeName="transform" type="rotate" values="0 32 32;90 32 32;90 32 32" keyTimes="0;.5;1" dur="1.4s" repeatCount="indefinite" /></rect></g>
+                    </svg>
+                    <strong style={{ fontSize: "1.5rem", letterSpacing: ".02em" }}>{tx("Work in progress")}</strong>
+                    <span style={{ fontSize: "2.4rem", fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{Math.round(job.progress || 0)}%</span>
+                    <div style={{ width: "min(320px, 70%)", height: 8, borderRadius: 999, background: "rgba(255,255,255,.3)", overflow: "hidden" }}><div style={{ width: `${Math.max(3, Math.min(100, job.progress || 0))}%`, height: "100%", background: "#fff", transition: "width .4s" }} /></div>
+                    {job.step && <small style={{ opacity: .9 }}>{job.step}</small>}
+                  </div>
+                )}
               </div>
             </div>
           </div>

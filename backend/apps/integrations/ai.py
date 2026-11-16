@@ -56,17 +56,21 @@ def claude(system, prompt, max_tokens=2500, timeout=90, web=False, images=None):
 
     purpose = " ".join(str(system or "").split()[:6])[:60]
     started, mdl, nimg = time.time(), body_model(body), len(images or [])
+    rid = aiusage.begin(mdl, system, prompt, web)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as res:
             data = json.loads(res.read())
     except urllib.error.HTTPError as e:
+        aiusage.end(rid)
         stats.record("ai", "call", body_model(body)), stats.record("ai", "error", f"HTTP {e.code}")
         aiusage.record(mdl, None, started, False, f"HTTP {e.code}", web, nimg, system)
         raise ValueError(f"Claude gaf een fout (HTTP {e.code}). Controleer de koppeling en het tegoed.")
     except Exception as e:  # noqa: BLE001
+        aiusage.end(rid)
         stats.record("ai", "call", body_model(body)), stats.record("ai", "error", "verbinding")
         aiusage.record(mdl, None, started, False, "verbinding", web, nimg, system)
         raise ValueError(f"Geen verbinding met Claude: {e}")
+    aiusage.end(rid)
     usage = data.get("usage") or {}
     aiusage.record(mdl, usage, started, True, "", web, nimg, system)
     stats.record("ai", "call", body_model(body))
@@ -76,15 +80,16 @@ def claude(system, prompt, max_tokens=2500, timeout=90, web=False, images=None):
     return "".join(b.get("text", "") for b in data.get("content", []))
 
 
-def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_event=None, cancel=None):
+def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_event=None, cancel=None, images=None):
     """Like claude(), but streamed so the caller can show what happens: on_event(kind, text) with kind "search" (a web search: the query), "found" (results came in) and "write" (the answer is being written).
     Returns the text. Raises ValueError with a readable message.
     cancel: a function that is called for every piece that comes in; when it raises (a ValueError), the answer is stopped at once: the connection is closed, so nothing more is written (and paid)."""
     obj = link()
     if not obj:
         raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
-    aiusage.gate(obj.config.get("model") or "claude-sonnet-5-5", (system, prompt), max_tokens, 0)
-    payload = {"model": obj.config.get("model") or "claude-sonnet-5-5", "max_tokens": max_tokens, "system": system, "stream": True, "messages": [{"role": "user", "content": prompt}]}
+    aiusage.gate(obj.config.get("model") or "claude-sonnet-5-5", (system, prompt), max_tokens, len(images or []))
+    content = ([{"type": "image", "source": {"type": "base64", "media_type": mt, "data": data}} for mt, data in images] + [{"type": "text", "text": prompt}]) if images else prompt  # screenshots go along with the question
+    payload = {"model": obj.config.get("model") or "claude-sonnet-5-5", "max_tokens": max_tokens, "system": system, "stream": True, "messages": [{"role": "user", "content": content}]}
     if web:
         payload["tools"] = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 8}]
     body = json.dumps(payload).encode()
@@ -94,6 +99,8 @@ def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_ev
     emit = on_event or (lambda *_a: None)
     started, mdl = time.time(), body_model(body)
     text, kinds, partial, usage = [], {}, {}, {}
+    rid = aiusage.begin(mdl, system, prompt, web)  # visible in the live window; the costs grow with every piece that comes in
+    written = [0]
     try:
         with urllib.request.urlopen(req, timeout=timeout) as res:
             for raw in res:
@@ -121,8 +128,13 @@ def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_ev
                     d = ev.get("delta") or {}
                     if d.get("type") == "text_delta":
                         text.append(d.get("text", ""))
+                        written[0] += len(d.get("text", ""))
+                    elif d.get("type") == "thinking_delta":
+                        written[0] += len(d.get("thinking", ""))  # thinking is paid as output too
                     elif d.get("type") == "input_json_delta":
                         partial[i] = partial.get(i, "") + d.get("partial_json", "")
+                        written[0] += len(d.get("partial_json", ""))
+                    aiusage.progress(rid, written_chars=written[0])  # the costs grow with everything that is written, whatever it is
                 elif t == "content_block_stop" and kinds.get(i) == "server_tool_use":
                     try:
                         emit("search", str(json.loads(partial.get(i) or "{}").get("query") or ""))
@@ -130,23 +142,29 @@ def claude_stream(system, prompt, max_tokens=4000, timeout=300, web=False, on_ev
                         emit("search", "")
                 elif t == "message_start":
                     usage.update((ev.get("message") or {}).get("usage") or {})
+                    aiusage.progress(rid, tokens_in=usage.get("input_tokens"))  # the exact tokens of the request
                 elif t == "message_delta":
                     usage.update(ev.get("usage") or {})
+                    aiusage.progress(rid, tokens_out=usage.get("output_tokens"))
                     if (ev.get("delta") or {}).get("stop_reason") == "max_tokens":
                         raise ValueError("Het antwoord van de AI werd afgebroken (te lang). Probeer het nog eens.")
                 elif t == "error":
                     raise ValueError("Claude gaf een fout: " + str((ev.get("error") or {}).get("message") or "onbekend"))
     except urllib.error.HTTPError as e:
+        aiusage.end(rid)
         stats.record("ai", "call", body_model(body)), stats.record("ai", "error", f"HTTP {e.code}")
         aiusage.record(mdl, None, started, False, f"HTTP {e.code}", web, 0, system)
         raise ValueError(f"Claude gaf een fout (HTTP {e.code}). Controleer de koppeling en het tegoed.")
     except ValueError as e:
+        aiusage.end(rid)
         aiusage.record(mdl, usage, started, False, str(e), web, 0, system)  # (what was used before the error is counted)
         raise
     except Exception as e:  # noqa: BLE001
+        aiusage.end(rid)
         stats.record("ai", "call", body_model(body)), stats.record("ai", "error", "verbinding")
         aiusage.record(mdl, None, started, False, "verbinding", web, 0, system)
         raise ValueError(f"Geen verbinding met Claude: {e}")
+    aiusage.end(rid)
     aiusage.record(mdl, usage, started, True, "", web, 0, system)
     stats.record("ai", "call", body_model(body))
     stats.record("ai", "purpose", " ".join(str(system or "").split()[:6])[:60])

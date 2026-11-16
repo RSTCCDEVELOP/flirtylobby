@@ -8,10 +8,11 @@
 "use client";
 
 import { tx } from "../lib/t";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconBolt } from "./Icons";
 import { useUi } from "./Ui";
+import { useUpdates } from "../lib/updates";
 
 const EVERY = 60000; // check once a minute and when the tab becomes visible again
 
@@ -22,21 +23,10 @@ export default function VersionNotice({ current }) {
   const [hidden, setHidden] = useState(false);
   const seen = useRef(current);
 
-  useEffect(() => {
-    if (!on || !current || current === "dev") return;
-    let alive = true;
-    const check = async () => {
-      try {
-        const r = await fetch("/build-id", { cache: "no-store" });
-        const { id } = await r.json();
-        if (alive && id && id !== "dev" && id !== current) { if (id !== seen.current) setHidden(false); seen.current = id; setFresh(true); }
-      } catch {}
-    };
-    const t = setInterval(check, EVERY);
-    const vis = () => document.visibilityState === "visible" && check();
-    document.addEventListener("visibilitychange", vis);
-    return () => { alive = false; clearInterval(t); document.removeEventListener("visibilitychange", vis); };
-  }, [on, current]);
+  useUpdates("build-id", async () => (await fetch("/build-id", { cache: "no-store" })).json(), EVERY, (r) => {
+    const id = r?.id;
+    if (id && id !== "dev" && id !== current) { if (id !== seen.current) setHidden(false); seen.current = id; setFresh(true); }
+  }, !!on && !!current && current !== "dev");
 
   if (!on || !fresh || hidden || typeof document === "undefined") return null;
   return createPortal(

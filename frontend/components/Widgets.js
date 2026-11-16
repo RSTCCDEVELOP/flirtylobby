@@ -10,7 +10,7 @@
 import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { useModule } from "./Modules";
 import { confirmDialog } from "../lib/dialog";
@@ -20,7 +20,8 @@ import { IconBag, IconChat, IconGrid, IconGroup, IconKey, IconMail, IconSearch, 
 import { BarChart } from "./Charts";
 import RichEditor, { plainToHtml, toDisplay } from "./RichEditor";
 import AgendaTile from "./AgendaTile";
-import { refreshMs } from "../lib/refresh";
+
+import { useUpdates } from "../lib/updates";
 
 /* Dashboard blocks. A block only exists while its module is on and the user has the access it needs (see `available`).
    To add one: write a component, add an entry to WIDGETS. */
@@ -216,15 +217,8 @@ function SandboxBlock() {
 function DirectBlock() {
   const [rooms, setRooms] = useState(null);
   const on = useModule("directconnect");  // no calls while the module is off
-  useEffect(() => {
-    if (!on) return undefined;
-    let stop = false;
-    let denied = 0;  // "no" from the server: ask again after a few minutes
-    const load = () => (Date.now() < denied ? null : api("/direct/rooms/").then((r) => !stop && setRooms(r)).catch((e) => { if ([401, 403, 404].includes(e?.status)) denied = Date.now() + 5 * 60 * 1000; if (!stop) setRooms([]); }));
-    load();
-    const t = setInterval(load, refreshMs(4000));
-    return () => { stop = true; clearInterval(t); };
-  }, [on]);
+  const denied = useRef(0);  // "no" from the server: ask again after a few minutes
+  useUpdates("direct-rooms", () => (Date.now() < denied.current ? Promise.resolve([]) : api("/direct/rooms/")), 4000, setRooms, on, { live: true, onError: (e) => { if ([401, 403, 404].includes(e?.status)) denied.current = Date.now() + 5 * 60 * 1000; setRooms([]); } });
   if (!rooms) return <Busy />;
   const connected = rooms.filter((r) => r.guest_online);
   return (

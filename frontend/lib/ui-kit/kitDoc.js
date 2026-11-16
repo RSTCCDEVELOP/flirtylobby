@@ -16,7 +16,7 @@ const cache = {};
 export const loadKit = (key = "") => (cache[key] ||= api(`/components/?full=1${key ? `&key=${encodeURIComponent(key)}` : ""}`).then((d) => ({ key: d.key, name: d.name, KIT_CSS: d.css || "", KIT_RUNTIME: d.runtime || "", KIT_COMPONENTS: (d.components || []).map((c) => ({ ...c, set: d.key })) })).catch((e) => { delete cache[key]; throw e; }));
 export const resetKit = () => { Object.keys(cache).forEach((k) => delete cache[k]); };
 
-const hexOf = (v) => {
+export const hexOf = (v) => {
   v = String(v || "").trim();
   if (/^#[0-9a-f]{3}$/i.test(v)) return "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
   if (/^#[0-9a-f]{6}$/i.test(v)) return v;

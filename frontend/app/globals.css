@@ -2332,11 +2332,11 @@ html[data-parallax="1"] .sec-bg img, html[data-parallax="1"] .sec-bg video, html
 .ei-wrap.sized:not(.al) { display: block; width: 100%; } .ei-wrap.sized:not(.al) > .ei-inner { display: inline-block; vertical-align: top; }
 
 /* help mode */
-.edit-help-btn { position: fixed; top: 4.75rem; right: 7.05rem; z-index: 1010; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; box-shadow: var(--shadow); }
+.edit-help-btn { position: fixed; top: 4.75rem; right: 7.05rem; z-index: 100001; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; box-shadow: var(--shadow); }
 .edit-help-btn:hover, .edit-help-btn.on { color: #fff; background: var(--blue); border-color: var(--blue); }
-.edit-help-dim { position: fixed; inset: 0; z-index: 1000; background: rgba(2, 6, 16, .62); pointer-events: none; display: flex; justify-content: center; align-items: flex-start; padding-top: 1rem; }
+.edit-help-dim { position: fixed; inset: 0; z-index: 99990; background: rgba(2, 6, 16, .62); pointer-events: none; display: flex; justify-content: center; align-items: flex-start; padding-top: 1rem; }
 .edit-help-dim span { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: .4rem 1rem; font-size: .85rem; box-shadow: var(--shadow); }
-.edit-help-tip { position: fixed; left: 0; top: 0; will-change: transform; z-index: 1020; max-width: 320px; background: #fff; color: #111827; border-radius: 12px; padding: .7rem .9rem; font-size: .85rem; line-height: 1.45; box-shadow: 0 12px 32px rgba(0,0,0,.5); pointer-events: none; border-left: 4px solid var(--blue); }
+.edit-help-tip { position: fixed; left: 0; top: 0; will-change: transform; z-index: 100000; max-width: 320px; background: #fff; color: #111827; border-radius: 12px; padding: .7rem .9rem; font-size: .85rem; line-height: 1.45; box-shadow: 0 12px 32px rgba(0,0,0,.5); pointer-events: none; border-left: 4px solid var(--blue); }
 .help-target { outline: 3px solid #fff !important; outline-offset: 2px; }
 
 /* a grid with its own height and settings, without the look of a hero (no banner colours, no circles) */

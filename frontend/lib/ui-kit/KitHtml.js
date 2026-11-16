@@ -10,6 +10,7 @@
 import { useEffect, useId, useMemo, useRef } from "react";
 import KitScope from "./KitScope";
 import { useKit } from "./kitDoc";
+import { mediaUrl } from "../api";
 
 // A component of the UI-kit built straight into the page (no frame): the theme and the components work together, the fonts and colours are the ones of the page itself.
 // The html is cleaned first (no scripts, no event attributes, no javascript: links, no frames); the script of the set runs on this block only.
@@ -47,8 +48,9 @@ export default function KitHtml({ html, css = "", tag, set = "", className = "",
   const { kit } = useKit(true, set);
   const root = useRef(null);
   const id = "kh" + useId().replace(/[^a-z0-9]/gi, "");
-  const clean = useMemo(() => cleanHtml(html), [html]);
-  const own = useMemo(() => prefixCss(css, `.${id}`), [css, id]);
+  const media = (t) => String(t || "").replaceAll("__MEDIA__/", mediaUrl("/media/")); // the pictures of an imported or designed page (__MEDIA__/themes/...) come from the media folder
+  const clean = useMemo(() => cleanHtml(media(html)), [html]); // eslint-disable-line react-hooks/exhaustive-deps
+  const own = useMemo(() => prefixCss(media(css), `.${id}`), [css, id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { // the script of the set (tabs, calendar, kanban, players ...) on this block only
     const el = root.current;
     if (!el || !kit?.KIT_RUNTIME) return undefined;

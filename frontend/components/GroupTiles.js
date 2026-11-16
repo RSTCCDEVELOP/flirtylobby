@@ -19,7 +19,8 @@ import { ADMIN_GROUP_OF, ADMIN_GROUPS, ADMIN_NAV, ADMIN_SECTION_GROUP, COMMUNITY
 import { IconGrid } from "./Icons";
 import { useChat } from "./Chat";
 import { useModules } from "./Modules";
-import { refreshMs } from "../lib/refresh";
+
+import { useUpdates } from "../lib/updates";
 
 // Tiles that show in a second group as well (the page stays in its own group in the menu): the theme is also a part of the website.
 const ALSO_IN = { "/dashboard/admin/theme": ["a-site"] };
@@ -34,13 +35,7 @@ export default function GroupTiles({ id }) {
   const [summary, setSummary] = useState(null); // the numbers that the left menu shows (new messages, requests ...): the tiles show them too
   const chat = useChat();
   const communityOn = ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false);  // no calls for the community while its modules are off
-  useEffect(() => {
-    if (admin || !communityOn) return undefined;
-    const load = () => api("/community/summary/").then(setSummary).catch(() => {});
-    load();
-    const t = setInterval(load, refreshMs(20000));
-    return () => clearInterval(t);
-  }, [admin, communityOn]);
+  useUpdates("community-summary", () => api("/community/summary/"), 20000, setSummary, !admin && communityOn);
   const countOf = (n) => (n.badge === "direct_active" ? chat?.directActive?.length || 0 : n.badge && summary ? (n.badge === "discover_new" ? summary.discover?.likes_new || 0 : summary[n.badge]) || 0 : 0);
   useEffect(() => {
     if (mods.plugins === false) return;

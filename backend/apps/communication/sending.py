@@ -37,9 +37,14 @@ def post_json(url, headers, payload):
         raise DeliveryError(f"Verzenden mislukt: {e}")
 
 
-def email_integration():
+def email_integration(slug=None):
+    """The mail link to send through: the one with this slug (when it is on and a mail provider), else the first mail link that is on."""
     if not modules.enabled("integrations"):
         return None
+    if slug:
+        obj = Integration.objects.filter(enabled=True, provider__in=("postmark", "smtp"), slug=slug).first()
+        if obj:
+            return obj
     for p in ("postmark", "smtp"):
         obj = Integration.objects.filter(enabled=True, provider=p).first()
         if obj:
@@ -47,7 +52,7 @@ def email_integration():
     return None
 
 
-def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None, code=None, attachments=None):
+def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None, code=None, attachments=None, integration=None, reply_to=None):
     """Send an e-mail (plain text or HTML, see Communicatie -> E-mailopmaak). Sender and reply-to come from the communication page (fallback: the integration's own sender)."""
     from apps.sandbox import service as sandbox
 
@@ -56,7 +61,7 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
     if sandbox.active("email"):  # sandbox: capture instead of sending
         sandbox.capture("email", to, subject, body + (f"\n\n[bijlage: {', '.join(a[0] for a in attachments)}]" if attachments else ""), sender=from_addr or sender("email_from", purpose) or "")
         return "sandbox"
-    obj = email_integration()
+    obj = email_integration(integration)
     if not obj:
         if dj_settings.DEBUG:
             logger.warning("E-mail to %s (DEBUG, not sent): %s", to, subject)
@@ -69,7 +74,7 @@ def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, a
     frm = from_addr or sender("email_from", purpose) or c.get("from_email")
     if not frm:
         raise DeliveryError("Geen afzender ingesteld: voeg er een toe bij Admin → Communicatie.")
-    reply = sender("email_reply", purpose)
+    reply = reply_to or sender("email_reply", purpose)
     if obj.provider == "postmark":
         payload = {"From": frm, "To": to, "Subject": subject, "TextBody": text, "MessageStream": "outbound"}
         if html_body:

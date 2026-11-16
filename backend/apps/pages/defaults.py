@@ -163,8 +163,15 @@ def ensure_pages():
     theme = _theme()
     have_lang = set(Language.objects.values_list("code", flat=True))
     order = Page.objects.count()
+    from apps.core import modules as _modules
+
+    def on(module):  # a standard page only exists while its module (or plugin) is on: after a reset the site has no pages of parts that are off
+        return not module or any(_modules.enabled(m) for m in str(module).split("|"))
+
     for key, url, module, scope, in_menu in SCREENS:
         row = Page.objects.filter(key=key).first() or Page.objects.filter(url=url, scope=scope).first()
+        if not row and not on(module):
+            continue
         if not row:
             Page.objects.create(key=key, kind="link" if scope == "private" else "system", title=title(key), url=url, module=module, scope=scope, in_menu=in_menu,
                                 audience="members" if scope == "private" else "all", order=order)
@@ -173,6 +180,8 @@ def ensure_pages():
             Page.objects.filter(pk=row.pk).update(module=module)
     for key, url, module, scope, in_menu in CONTENT:
         row = Page.objects.filter(key=key).first()
+        if not row and not on(module):
+            continue
         if not row:
             Page.objects.create(key=key, kind="content", title=title(key), url=url, module=module, scope=scope, in_menu=in_menu, audience="all", order=order)
             order += 1

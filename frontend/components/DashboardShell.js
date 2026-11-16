@@ -13,6 +13,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
+import AiLiveCost from "./AiLiveCost";
 import FaqDrawer from "./FaqDrawer";
 import DefaultInstallPrompt from "./DefaultInstallPrompt";
 import SystemUpdatePrompt from "./SystemUpdatePrompt";
@@ -44,8 +45,9 @@ import { useNavMode } from "../lib/navmode";
 import { useSession } from "./Session";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconImage, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconReceipt, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
-import { refreshMs } from "../lib/refresh";
+import { IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
+
+import { useUpdates } from "../lib/updates";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: <IconHome /> },
@@ -92,6 +94,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/pages", label: "Pagina's", icon: <IconFolder /> },
   { href: "/dashboard/admin/siteimport", label: "Website ontwerpen", icon: <IconGlobe /> },
   { href: "/dashboard/admin/ai", label: "AI", icon: <IconGrid />, perm: "ai.manage" },
+  { href: "/dashboard/admin/ai-kosten", label: "AI-kosten", icon: <IconGrid />, perm: "ai.manage" },
   { href: "/dashboard/admin/sysobjects", label: "Systeemobjecten", icon: <IconGrid /> },
   { href: "/dashboard/admin/communication", label: "Communicatie", icon: <IconMail /> },
   { href: "/dashboard/admin/integrations", label: "API keys", icon: <IconKey />, perm: "integrations.manage" },
@@ -133,7 +136,7 @@ const ADMIN_GROUPS = [
   { id: "a-shop", title: "Webshop" }, { id: "a-subs", title: "Subscription" }, { id: "a-system", title: "Systeem" },
 ];
 const ADMIN_GROUP_OF = {
-  "/dashboard/admin/users": "a-people", "/dashboard/admin/ai": "a-people", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
+  "/dashboard/admin/users": "a-people", "/dashboard/admin/ai": "a-people", "/dashboard/admin/ai-kosten": "a-system", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-system", "/dashboard/admin/theme": "a-system", "/dashboard/admin/themes": "a-system", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-system", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site", "/dashboard/admin/components": "a-site", "/dashboard/admin/templates": "a-site",
@@ -231,13 +234,7 @@ export default function DashboardShell({ children }) {
   }
 
   const communityOn = ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false);
-  useEffect(() => {
-    if (!communityOn) return;
-    const load = () => api("/community/summary/").then(setSummary).catch(() => {});
-    load();
-    const t = setInterval(load, refreshMs(20000));
-    return () => clearInterval(t);
-  }, [communityOn, pathname]);
+  useUpdates("community-summary", () => api("/community/summary/"), 20000, setSummary, communityOn); // (the tiles ask for the same news: one request for both)
   // plugins with a page of their own (switched on, and for this user)
   const [pluginMenu, setPluginMenu] = useState([]);
   const [privMenu, setPrivMenu] = useState([]); // the dashboard pages (Admin -> Pagina's, tab Dashboard): a menu in the header of the dashboard
@@ -410,6 +407,7 @@ export default function DashboardShell({ children }) {
         {user && !user.is_staff && <AiCreditGate />}
         {user && <ApiLinksInstall />}
         {user && <AiWelcome />}
+        {user && <AiLiveCost />}
         {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} />{(user?.is_staff || canAdmin(user, mods)) && <ManualHelp />}</div>}
         {children}
       </main>

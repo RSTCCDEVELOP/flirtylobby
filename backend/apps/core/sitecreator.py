@@ -108,7 +108,35 @@ def rules(brief=None):
     from . import componentpacks
 
     comp = componentpacks.rules_text((brief or {}).get("component_set") or None)  # the ready-made components (the set that was chosen) with their easy2edit_tag: the designs use them, the import recognises them
-    return out + ("\n\n" + comp if comp else "")
+    out = out + ("\n\n" + comp if comp else "")
+    if comp:
+        out += COMPONENTS_ONLY.replace("@TEMPLATES@", componentpacks.templates_text((brief or {}).get("component_set") or None))
+    if (brief or {}).get("chat"):
+        out += CHAT_PHOTO_RULES.replace("@MAX_IMAGES@", str(d["max_images"]))
+    return out
+
+
+COMPONENTS_ONLY = """
+
+COMPONENTS ONLY (this overrides everything above about layout, structure and css where it differs)
+The website is built ONLY from the easy2edit components and the theme, so that the preview is exactly the website after the import. You do not design your own look.
+- <header> is the ui-navbar component and <footer> is the ui-footer component. Every section of <main> is ONE component: <div data-easy2edit-tag="TAG"> ... </div> (an id for #links goes on that div). Choose the components that fit the content from the list of tags above; the templates below show the exact markup of the main ones.
+- COPY the markup of the template: the same tags, the same e2e-* classes, the same nesting. You change only the texts, the links, the pictures (src/alt) and the number of repeated items (cards, steps, questions, logos ...). Use the component for the use it was made for, in the language of the website.
+- NEVER write css for a class that starts with e2e-, never colours, sizes or fonts of your own inside a component (no style="" on components), no own button classes: buttons are e2e-btn, e2e-btn e2e-btn--outline, e2e-btn--lg, e2e-btn--sm.
+- Colours, fonts and corners are the THEME of this website, written by the SYSTEM on :root in style.css (the variables --primary, --secondary, --bg, --surface, --card, --hover, --line, --text, --muted, --font-heading, --font-body, --radius, --btn-radius). You never write a :root block or a colour value of your own. style.css only holds at most 15 lines for a rare helper class (using those variables), or is just a comment. The system draws all components with the theme.
+- Plain text outside the components: use ui-section-heading (eyebrow, heading, intro) and ui-split (text with a picture). Pictures: <img src="img/name.jpg" alt="..."> where a template has a picture slot (instead of the empty e2e-hero__visual / picture div).
+
+TEMPLATES (the exact markup of the main components):
+@TEMPLATES@"""
+
+
+CHAT_PHOTO_RULES = """
+
+PHOTOS (this website is made in a chat; the user has no photos yet)
+- Where a real photo fits (hero, team, product, service, blog), use <img src="img/<descriptive-english-words>.jpg" alt="<what the photo shows, in English, 4-10 words, concrete>"> with a short lowercase file name with hyphens (e.g. img/hair-salon-interior.jpg). Use at most @MAX_IMAGES@ photos in the whole website and give every photo its own file name.
+- The user searches these photos on iStock (istockphoto.com) from the alt text and downloads them himself: so the alt text must be a good search description. Never use external image urls, never hotlink, never invent other photo sources. Logos, icons and illustrations stay inline svg or img/*.svg that you make yourself.
+- Video: where a moving picture fits (at most ONE, for example a calm background of the hero), use <video src="video/<descriptive-english-words>.mp4" autoplay muted loop playsinline aria-label="<what the video shows, in English, 4-10 words>"></video> inside a box with a fixed aspect-ratio and a background colour; never controls, never a second video. The user finds it on iStock Video and puts it in.
+- The page must look good while the photo is still missing: give the photo a fixed aspect-ratio or height and a background colour from the variables, so nothing jumps when the photo arrives."""
 
 
 def module_items():
@@ -300,6 +328,66 @@ def themes():
     return out
 
 
+def theme_library():
+    """All colour themes to choose from: the installed ones and the themes of the library (resource/themas) that are not installed yet. Each with its colours."""
+    import io
+    import json
+    import zipfile
+
+    from . import resources, theme as T
+
+    out = [{**t, "installed": True} for t in themes()]
+    have = {t["key"] for t in out}
+    try:
+        cat = resources.catalog("themas")
+    except Exception:  # noqa: BLE001 - the library is a bonus: the installed themes still work
+        return out
+    for e in cat:
+        if e.get("bundle") or e["name"] in have:
+            continue
+        try:
+            zf = zipfile.ZipFile(io.BytesIO(resources._zip_bytes("themas", e)))
+            man = next((json.loads(zf.read(n)) for n in zf.namelist() if n.endswith("theme.json") and "__MACOSX" not in n), None)
+            v = T.merged((man or {}).get("values"))
+        except Exception:  # noqa: BLE001
+            continue
+        out.append({"key": e["name"], "name": (man or {}).get("name") or e.get("title") or e["name"], "description": (man or {}).get("description", ""), "mode": (man or {}).get("mode"),
+                    "colors": {k: v[k] for k in ("primary", "secondary", "light_bg", "light_card", "light_text", "dark_bg", "dark_card", "dark_text")}, "installed": False})
+        have.add(e["name"])
+    return out
+
+
+def apply_theme(job, key, user):
+    """The customer chose a colour theme in the chat: install it when it is not installed yet, give the design its colours at once, and remove the theme that an earlier choice installed
+    (only one that this flow installed and that the website does not use). Returns the job."""
+    from . import resources, theme as T, themepacks
+
+    if job.status not in ("draft", "done", "error"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    prev = str((job.brief or {}).get("theme_installed") or "")
+    man = themepacks.manifest_of(key)
+    fresh = False
+    if not man:
+        try:
+            resources.install("themas", key, user)
+        except resources.ResourceError as e:
+            raise ValueError(str(e))
+        man = themepacks.manifest_of(key)
+        fresh = True
+        if not man:
+            raise ValueError("Dit thema bestaat niet.")
+    if prev and prev != key and prev not in themepacks.BUILTIN_KEYS():
+        if not next((r.get("active") for r in themepacks.listing() if r["key"] == prev), False):
+            themepacks.remove(prev)  # the theme that the earlier choice installed goes away; the new one is shown
+    v = T.merged(man.get("values"))
+    colors = {"primary": v["primary"], "secondary": v["secondary"], "bg": v["light_page"], "card": v["light_card"], "text": v["light_text"], "dark": v["dark_bg"], "dbg": v["dark_page"], "dcard": v["dark_card"], "dtext": v["dark_text"]}
+    job = save(job, {"colors": colors, "theme_name": man.get("name") or key})
+    b = {**(job.brief or {}), "theme_installed": key if (fresh or prev == key) else ""}
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b)
+    job.brief = b
+    return job
+
+
 def _clean_colors(c):
     return {k: str(c[k]) for k in COLOR_KEYS if isinstance(c, dict) and HEX.match(str(c.get(k) or ""))}
 
@@ -336,6 +424,22 @@ def _clean_photos(raw, old):
     return out
 
 
+# The page layouts that the customer can ask for in the wizard (key -> what the designer is told). They map to the bands with columns of the page editor.
+LAYOUT_CHOICES = {
+    "full": "Full-width sections one below the other (calm, classic); a full-width band is a band with cols \"1\".",
+    "split": "Text next to an image or form: bands with two equal columns (cols \"2\"), the image side alternating left and right.",
+    "wide_narrow": "A wide main column next to a narrow side column (cols \"2-1\" and \"1-2\"), for example text with a contact card, price or opening hours.",
+    "three": "Three equal columns for services, benefits or steps (cols \"3\").",
+    "four": "Four small blocks in a row for facts, numbers or icons (cols \"4\").",
+    "rhythm": "A varied rhythm: alternate full-width bands, two- and three-column bands and tinted bands (bg \"soft\"), so no two neighbouring sections look the same.",
+    "screen": "A full-screen opening band (screen true) with the main message, then calmer bands below it.",
+}
+
+
+def _clean_layouts(v):
+    return [k for k in (v if isinstance(v, list) else []) if k in LAYOUT_CHOICES][:7]
+
+
 def clean_brief(patch, old):
     """The brief with only known keys and safe values; the photos are checked against the media library."""
     b = dict(old or {})
@@ -356,6 +460,17 @@ def clean_brief(patch, old):
         b["langs"] = [c for c in (p["langs"] if isinstance(p["langs"], list) else []) if isinstance(c, str) and c in known][:15]
     if "lang_switch" in p:
         b["lang_switch"] = bool(p["lang_switch"])
+    if "locked" in p:  # the choices that the customer made himself (wizard): the designer does not change them
+        b["locked"] = [k for k in (p["locked"] if isinstance(p["locked"], list) else []) if k in ("name", "kind", "pages", "style", "style_tags", "layouts", "max_width", "lang", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search")][:20]
+    if "max_width" in p:
+        try:
+            b["max_width"] = int(p["max_width"]) if int(p["max_width"]) in MAX_WIDTHS else 1100
+        except (TypeError, ValueError):
+            pass
+    if "layouts" in p:
+        b["layouts"] = _clean_layouts(p["layouts"])
+    if "istock_search" in p:
+        b["istock_search"] = bool(p["istock_search"])  # the customer allows the designer to look for photos and videos on iStock
     if "font" in p:
         b["font"] = p["font"] if p["font"] in FONTS else "sans"
     if "radius" in p:
@@ -383,6 +498,8 @@ def clean_brief(patch, old):
             pass
     if "mode" in p:
         b["mode"] = "improve" if p["mode"] == "improve" else "new"
+    if "chat" in p:  # a design that is made in a conversation (AI chat build)
+        b["chat"] = bool(p["chat"])
     return b
 
 
@@ -416,7 +533,11 @@ def save(job, patch):
     b = clean_brief(patch, job.brief)
     if isinstance(patch, dict) and patch.get("live") is True:  # the design has been applied: this state is live; every later change makes it a concept again, and is applied to the live pages
         b["live_hash"] = _sig(job, b)
-    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, name=(b.get("name") or job.name)[:120], updated_at=timezone.now())
+    upd = {}
+    if isinstance(patch, dict) and any(k in patch for k in ("colors", "font", "radius", "color_mode")) and (job.files or {}).get("style.css"):
+        upd["files"] = themed(job.files, b)  # new colours: the theme of the pages changes at once, without asking the AI
+        job.files = upd["files"]
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, name=(b.get("name") or job.name)[:120], updated_at=timezone.now(), **upd)
     job.brief = b
     return job
 
@@ -424,7 +545,7 @@ def save(job, patch):
 def listing(user):
     out = []
     for j in SiteDesignJob.objects.filter(user=user).order_by("-updated_at")[:30]:
-        out.append({"id": str(j.pk), "name": j.name, "status": j.status, "step": (j.brief or {}).get("step", 0), "live": is_live(j), "applied": bool((j.brief or {}).get("live_hash")), "pages": len(j.files or {}) and len([f for f in j.files if f.endswith(".html")]), "updated_at": j.updated_at.isoformat()})
+        out.append({"id": str(j.pk), "name": j.name, "status": j.status, "step": (j.brief or {}).get("step", 0), "live": is_live(j), "applied": bool((j.brief or {}).get("live_hash")), "chat": bool((j.brief or {}).get("chat")), "pages": len(j.files or {}) and len([f for f in j.files if f.endswith(".html")]), "updated_at": j.updated_at.isoformat()})
     return out
 
 
@@ -839,6 +960,86 @@ def theme_values(b):
     return clean
 
 
+def _top_blocks(css):
+    out, depth, start, pre = [], 0, 0, ""
+    for i, ch in enumerate(css):
+        if ch == "{":
+            if depth == 0:
+                pre, start = css[start:i].strip(), i + 1
+            depth += 1
+        elif ch == "}" and depth:
+            depth -= 1
+            if depth == 0:
+                out.append((pre, css[start:i]))
+                start = i + 1
+    return out
+
+
+def theme_root_css(b):
+    """The theme of this design as the css variables on :root, written by the SYSTEM (not by the AI): the colours, font and corners of the step plan in the same variables that a theme of easy2edit has.
+    So the preview, the saved theme and the imported website all have the same colours, and the user can change them without asking the AI again."""
+    from . import theme
+
+    v = theme_values(b)
+    fonts = {c["value"]: c for c in theme.FIELDS["font_body"]["choices"]}
+    fb, fh = fonts.get(v["font_body"]) or {}, fonts.get(v["font_heading"]) or {}
+    light = {"--primary": v["primary"], "--secondary": v["secondary"], "--bg": v["light_page"], "--surface": v["light_bg"], "--card": v["light_card"], "--hover": v["light_hover"], "--line": v["light_line"], "--text": v["light_text"], "--muted": v["light_muted"]}
+    dark = {"--bg": v["dark_page"], "--surface": v["dark_bg"], "--card": v["dark_card"], "--hover": v["dark_hover"], "--line": v["dark_line"], "--text": v["dark_text"], "--muted": v["dark_muted"]}
+    common = {"--font-heading": fh.get("css") or "system-ui, sans-serif", "--font-body": fb.get("css") or "system-ui, sans-serif", "--radius": f"{v['radius']}px", "--btn-radius": f"{v['btn_radius']}px"}
+    block = lambda d, ind="  ": "\n".join(f"{ind}{k}: {val};" for k, val in d.items())  # noqa: E731
+    mode = (b or {}).get("color_mode") or "light"
+    base = {**light, **common} if mode != "dark" else {**light, **dark, **common}
+    css = f"/* THEME (written by the system from the colours of the design: change the colours in the step plan or with the colour button, not here) */\n:root {{\n{block(base)}\n}}"
+    if mode == "both":
+        css += f'\n:root[data-theme="dark"] {{\n{block(dark)}\n}}\n@media (prefers-color-scheme: dark) {{\n  :root:not([data-theme="light"]) {{\n{block(dark, "    ")}\n  }}\n}}'
+    return css
+
+
+# The layout vocabulary of a design (bands with columns): written by the SYSTEM, the same for the preview and the import. A band is a full-width row of the page editor, a column is a cell of that row.
+LAYOUT_COLS = {"1": "1fr", "2": "repeat(2, 1fr)", "3": "repeat(3, 1fr)", "4": "repeat(4, 1fr)", "2-1": "2fr 1fr", "1-2": "1fr 2fr", "3-1": "3fr 1fr", "1-3": "1fr 3fr"}
+LAYOUT_CSS = """/* LAYOUT (written by the system): bands (rows) with columns */
+.band { padding: 4rem 0; }
+.band--soft { background: var(--surface); --e2e-bg: var(--surface); --e2e-surface: var(--bg); }
+.band--screen { min-height: 100vh; display: flex; align-items: center; }
+.band--screen > .container { width: 100%; }
+.band .container { max-width: __MAXW__; margin: 0 auto; padding: 0 1.25rem; }
+.cols { display: grid; gap: 1.5rem; }
+""" + "".join(f".cols-{k} {{ display: grid; grid-template-columns: {v}; }}\n" for k, v in LAYOUT_COLS.items()) + """.cols--center { align-items: center; }
+@media (max-width: 760px) { .cols, .cols-1, .cols-2, .cols-3, .cols-4, .cols-2-1, .cols-1-2, .cols-3-1, .cols-1-3 { grid-template-columns: 1fr; } .band--screen { min-height: 0; } }
+"""
+
+
+MAX_WIDTHS = (960, 1100, 1280, 1440, 0)  # the maximum width of the content in px; 0 = the whole width of the screen
+
+
+def max_width_of(b):
+    try:
+        w = int((b or {}).get("max_width", 1100))
+    except (TypeError, ValueError):
+        w = 1100
+    return w if w in MAX_WIDTHS else 1100
+
+
+def layout_css(b):
+    w = max_width_of(b)
+    mw = f"{w}px" if w else "none"
+    return LAYOUT_CSS.replace("__MAXW__", mw) + f".container, .band .container {{ max-width: {mw}; }}\n"
+
+
+def themed(files, b):
+    """The files with the theme of the design on :root in style.css: what the AI wrote on :root (colours, fonts) is replaced by the theme of the system. A design from a ZIP keeps its own css."""
+    css = (files or {}).get("style.css")
+    if not css or ((b or {}).get("mode") == "improve" and (b or {}).get("palette_from_zip")):
+        return files
+    rest = []
+    for pre, body in _top_blocks(re.sub(r"/\*.*?\*/", "", css, flags=re.S)):
+        flat = re.sub(r"\s+", "", pre)
+        if flat.startswith(":root") or (flat.startswith("@media(prefers-color-scheme") and ":root" in body) or re.match(r"^\.(band|cols|valign)", flat) or (flat.startswith("@media(max-width:760px)") and ".cols" in body):
+            continue  # the colours of the theme and the layout vocabulary are written by the system, not by the AI
+        rest.append(f"{pre}{{{body}}}")
+    return {**files, "style.css": theme_root_css(b) + "\n\n" + "\n".join(rest) + "\n" + layout_css(b)}
+
+
 def make_theme(job, use=False):
     """A theme package with the style of this design, named after the website; with use it is also made the look of the website."""
     from . import resources, themepacks
@@ -868,30 +1069,39 @@ def _brief_text(b):
         f"Type: {b.get('kind') or 'company'}",
         f"Language of all texts: {str(b.get('lang') or 'Dutch')[:40]}",
         "Pages (file = menu label, in this order): " + "; ".join(f"{f} = {t}" for f, t in pages),
+        *([ "ONE PAGER: the whole website is ONE page (index.html). Put everything (hero, about, services, reviews, contact ...) as sections of that page, each section with an id; the menu in the navbar consists of anchor links to those sections (href=\"#id\"), no other pages exist." ] if len(pages) == 1 else []),
         "Style: " + ", ".join([*(b.get("style_tags") or []), *([b["style"]] if b.get("style") else [])] or ["modern, clean, lots of white space, friendly and professional"]),
     ]
     if b.get("theme_name"):
         lines.append(f"Based on the theme '{b['theme_name']}' of the system: follow its look and colours.")
     if c and b.get("mode") == "improve" and b.get("palette_from_zip") and c == b.get("zip_palette"):
-        lines.append("Colours: KEEP the colours of the existing design exactly as they are in its css (keep its own colour variables and values; they were read from it: " + ", ".join(f"{k} {v}" for k, v in c.items() if k in COLOR_KEYS[:6]) + "). Do not replace them with other colours and do not rename its variables.")
-    elif c:
-        lines.append("Colours (use EXACTLY these as the css variables on :root): " + ", ".join(f"--{ {'bg': 'bg', 'card': 'card', 'dark': 'dark-band'}.get(k, k) }: {v}" for k, v in c.items() if k in COLOR_KEYS[:6]) + ". --dark-band is the background of dark bands (hero/footer); derive --line and the text colour on dark bands from them.")
+        lines.append("Colours: KEEP the colours of the existing design exactly as they are in its css (keep its own colour variables and values; they were read from it: " + ", ".join(f"{k} {v}" for k, v in c.items() if k in COLOR_KEYS[:6]) + "). Do not change them and do not invent new ones.")
     else:
-        lines.append("Colours: one strong primary colour, one secondary colour, light background, dark text.")
+        tv = theme_values(b)
+        lines.append("THEME (colours, font and corners): the SYSTEM writes these on :root in style.css as css variables; you do NOT write a :root block and no colours of your own. Use them only through var(--primary), var(--secondary), var(--bg), var(--surface), var(--card), var(--hover), var(--line), var(--text), var(--muted), var(--font-heading), var(--font-body), var(--radius), var(--btn-radius). "
+                     f"The values: primary {tv['primary']}, secondary {tv['secondary']}, page {tv['light_page']}, cards {tv['light_card']}, text {tv['light_text']}" + (f"; dark mode: page {tv['dark_page']}, cards {tv['dark_card']}, text {tv['dark_text']}" if (b.get("color_mode") or "light") != "light" else "") + ". The user can change the colours later; everything follows at once.")
     mode = b.get("color_mode") or "light"
-    dark = {"bg": c.get("dbg") or "#0f172a", "card": c.get("dcard") or "#1e293b", "text": c.get("dtext") or "#e2e8f0"}
-    lines.append({"light": "Display: light only.", "dark": f"Display: dark only. Use these as the values on :root: --bg: {dark['bg']}; --card: {dark['card']}; --text: {dark['text']} (instead of the light ones).",
-                  "both": f"Display: light AND dark. Light colours on :root; dark colours (--bg: {dark['bg']}; --card: {dark['card']}; --text: {dark['text']}) in :root[data-theme=\"dark\"] and in the prefers-color-scheme media query, as explained in the rules. The system adds the light/dark switch."}[mode])
+    lines.append({"light": "Display: light only.", "dark": "Display: dark only (the theme already holds the dark colours on :root).", "both": "Display: light AND dark (the theme holds both: :root[data-theme=\"dark\"] is written by the system)."}.get(mode, "Display: light only."))
     codes = b.get("langs") or []
     if codes:
         names = {l.code: f"{l.native_name} ({l.code}{', right-to-left' if l.rtl else ''})" for l in Language.objects.filter(code__in=codes)}
         lines.append(f"Other languages of the website (the system translates the pages into them; write only in the main language): {', '.join(names.get(x, x) for x in codes)}." + (" Show a language switch: leave room for it in the header." if b.get("lang_switch", True) else " No language switch in the header."))
-    lines.append(f"Font: {FONTS.get(b.get('font') or 'sans')} (system fonts only).")
-    if b.get("radius") is not None:
-        lines.append(f"Corner radius of cards: {b['radius']}px; buttons: {max(0, b['radius'] - 4)}px.")
-    ph = b.get("photos") or []
+    lines.append(f"Maximum width of the content: {max_width_of(b) or 'the whole screen'}{'px' if max_width_of(b) else ''} (the system sets it on .container; write no max-width of your own on containers).")
+    if b.get("layouts"):
+        lines.append("LAYOUT wishes of the customer (use these page layouts, with bands and columns, instead of making everything full width):\n" + "\n".join(f"- {LAYOUT_CHOICES[k]}" for k in b["layouts"]))
+    allph = b.get("photos") or []
+    logos = [p for p in allph if str(p.get("file", "")).startswith("logo.")]
+    ph = [p for p in allph if p not in logos]
+    if logos:
+        lines.append("LOGO of the company (separate from the content pictures): use it ONLY as the logo in the header and the footer, as <img src=\"img/" + logos[0]["file"] + "\" alt=\"" + str(b.get("name") or "logo")[:60] + "\"> next to or instead of the text mark; never as a content picture, never in the body of a page; the file is added by the system.")
     if ph:
-        lines.append("PHOTOS the user uploaded (use them: reference as img/<file> in <img> tags and url(img/<file>) in css, with fitting alt texts; use each where it fits, hero pictures first; do not output these files, they are added by the system):\n" + "\n".join(f"- {p['file']}: {p.get('note') or 'no description'}" for p in ph))
+        lines.append("CONTENT PHOTOS the user uploaded (use them: reference as img/<file> in <img> tags and url(img/<file>) in css, with fitting alt texts; use each where it fits, hero pictures first; do not output these files, they are added by the system):\n" + "\n".join(f"- {p['file']}: {p.get('note') or 'no description'}" for p in ph))
+    vids = b.get("videos") or []
+    if vids:
+        lines.append("CONTENT VIDEOS the user uploaded (use them: <video src=\"video/<file>\" autoplay muted loop playsinline> as a calm background or block; the files are added by the system):\n" + "\n".join(f"- {p['file']}: {p.get('note') or ''}" for p in vids))
+    picked = [(f, it) for f, it in (b.get("picked") or {}).items() if f not in {p.get("file") for p in [*(b.get("photos") or []), *(b.get("videos") or [])]}]
+    if picked:
+        lines.append("PHOTOS and VIDEOS that the user already chose on iStock (use them where they fit: <img src=\"img/FILE\" alt=\"...\"> or <video src=\"video/FILE\" ...>, with these exact file names):\n" + "\n".join(f"- {f}: {it.get('title') or ''}" for f, it in picked[:12]))
     mods = [i for i in module_items() if i["key"] not in effective_off(b)]
     if mods:
         lines.append("MODULES and PLUGINS of the system that this website uses (build the pages so that they work with them; mention each where it fits, do not force a section for every one):\n" + "\n".join(f"- {i['label']}: {i['how']}" for i in mods))
@@ -921,14 +1131,59 @@ def _stop_requested(pk, fresh=False):
     return v
 
 
-def _ask(system, prompt, max_tokens=24000, pk=None):
+SHOT_RE = re.compile(r"^data:(image/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$")
+
+
+def clean_shots(raw):
+    """Screenshots that the user sends along with a message: [(media_type, base64)], at most 3, each a png, jpeg or webp of at most about 4 MB."""
+    out = []
+    for x in (raw if isinstance(raw, list) else [])[:12]:
+        m = SHOT_RE.match(str(x or ""))
+        if m and len(m.group(2)) <= 6_000_000:
+            out.append((m.group(1), m.group(2)))
+        if len(out) == 3:
+            break
+    return out
+
+
+def _thumbs(shots):
+    """Small pictures (data urls) of the screenshots for in the chat; they are kept with the message."""
+    out = []
+    try:
+        import base64
+        from PIL import Image
+
+        for _mt, b64 in shots:
+            im = Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB")
+            im.thumbnail((420, 420))
+            buf = io.BytesIO()
+            im.save(buf, "JPEG", quality=70)
+            out.append("data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode())
+    except Exception:  # noqa: BLE001
+        logger.warning("screenshot thumbnail failed", exc_info=True)
+    return out
+
+
+def _ask(system, prompt, max_tokens=24000, pk=None, images=None):
     def cancel():
         if pk and _stop_requested(pk):
             raise Stopped("Gestopt.")
 
     if pk and _stop_requested(pk, fresh=True):
         raise Stopped("Gestopt.")
-    return ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=600, cancel=cancel if pk else None)
+    return ai.claude_stream(system, prompt, max_tokens=max_tokens, timeout=600, cancel=cancel if pk else None, images=images)
+
+
+def _notify_done(pk, what):
+    """A notification (bell, pop-up) for the owner: the design is ready or changed. Also when the window of the design has been closed. Never breaks the work."""
+    try:
+        from apps.notifications import service
+
+        job = SiteDesignJob.objects.filter(pk=pk).select_related("user").first()
+        if job and job.user_id:
+            service.notify(job.user, "design", f"{what}: {job.name or 'Website'}", "De AI is klaar. Open het ontwerp om het te bekijken.", f"/dashboard/admin/siteimport?design={pk}")
+    except Exception:  # noqa: BLE001
+        logger.warning("design notification failed", exc_info=True)
 
 
 def _set(pk, **kw):
@@ -960,6 +1215,187 @@ def generate(job, improve=False, focus=""):
     threading.Thread(target=_generate, args=(job.pk,), daemon=True).start()
 
 
+
+# ── sectioned design: a website is built in SMALL pieces (one component at a time), so an answer is never too long ──
+SECTION_SYSTEM = """You write ONE part of a website for easy2edit: the html of ONE ready-made component (a block of the page editor), in the language of the website.
+- Output ONLY the html of that component, nothing else: no explanation, no markdown fences. It starts with <div data-easy2edit-tag="TAG"> and ends with the matching </div>.
+- COPY the template that you get: the same tags, the same e2e-* classes, the same nesting. You change only the texts (real, convincing, concrete copy that fits this business; no lorem ipsum), the links, the pictures (src/alt) and the number of repeated items (cards, steps, questions ...; as asked).
+- NEVER write css, a <style> or <script>, never style="" colours/sizes, never classes of your own: the theme and the component set draw everything. Buttons: e2e-btn, e2e-btn e2e-btn--outline.
+- Links between pages are relative file names (about.html); for places on the same page "#id". For the system use: /producten, /winkelwagen, /faq, /registreren, /login, /dashboard, /privacy, /cookies.
+- Pictures: <img src="img/<descriptive-english-words>.jpg" alt="<what it shows, in English, 4-10 words>"> where the template has a picture slot (the user adds the real photos later; never external urls, never data: urls)."""
+SECTION_JSON = """You plan the pages of a website made ONLY of ready-made components of easy2edit. Answer with ONE JSON object, nothing else."""
+
+
+def _div_balanced(html):
+    return len(re.findall(r"<div\b", html, re.I)) == len(re.findall(r"</div\s*>", html, re.I))
+
+
+def _clean_component(text, tag):
+    """The html of one component from an answer of the AI, or None when it is not usable."""
+    t = FENCE.sub("", str(text or "").strip()).strip()
+    t = re.sub(r"^```[a-z]*\s*|\s*```$", "", t, flags=re.I).strip()
+    m = re.search(r'<div\b[^>]*data-easy2edit-tag="%s"' % re.escape(tag), t)
+    if not m:
+        return None
+    t = t[m.start():]
+    last = t.rfind("</div>")
+    if last < 0:
+        return None
+    t = t[: last + 6]
+    if re.search(r"<\s*(script|style|iframe)\b", t, re.I) or len(t) > 30000 or not _div_balanced(t):
+        return None
+    return t
+
+
+def _template(brief, tag):
+    from . import componentpacks
+
+    return componentpacks.templates_text((brief or {}).get("component_set") or None, (tag,))
+
+
+def _fallback_component(brief, tag, title=""):
+    """The unchanged template: a part that never gets lost, the user changes its texts in the editor."""
+    t = _template(brief, tag)
+    t = re.sub(r"^--- .*? ---\n", "", t)
+    return t or f'<div data-easy2edit-tag="{tag}"><section class="e2e-section"><div class="e2e-container"><h2>{title or tag}</h2></div></section></div>'
+
+
+def _piece(pk, brief, system, prompt, tag, max_tokens=4500, title=""):
+    """ONE small piece (one component): asked with a retry (shorter) when the answer is cut off or not usable; when it still fails the template is used. Never raises, except for Stop."""
+    last = ""
+    for attempt, hint in enumerate(("", "\nYour previous answer was cut off or not usable. Be SHORTER: at most 3 repeated items, short sentences. Output only the html of the component.", "\nOnce more, as short as possible: at most 2 repeated items.")):
+        try:
+            out = _ask(system, prompt + hint, max_tokens=max_tokens, pk=pk)
+        except Stopped:
+            raise
+        except ValueError as e:
+            last = str(e)
+            continue
+        html = _clean_component(out, tag)
+        if html:
+            return html
+    logger.warning("sitecreator piece %s: template used (%s)", tag, last)
+    return _fallback_component(brief, tag, title)
+
+
+def _section_system(brief):
+    from . import componentpacks
+
+    comp = componentpacks.rules_text((brief or {}).get("component_set") or None)
+    return SECTION_SYSTEM + "\n\n" + comp
+
+
+def _site_plan(pk, job, pages):
+    """A SMALL plan: for every page the components (sections) in order, chosen from the whole set. Never fails: a standard plan is the fallback."""
+    from . import componentpacks
+
+    b = job.brief or {}
+    tags = [c["easy2edit_tag"] for c in componentpacks.get(b.get("component_set") or None)["components"]]
+    lst = componentpacks.rules_text(b.get("component_set") or None).split("Tags:\n", 1)[-1]
+    objs = ", ".join(b.get("objects") or [])
+    prompt = (f"{_brief_text(b)}\n\nPlan the pages. The pages (file = title): " + "; ".join(f"{f} = {t}" for f, t in pages) + ".\n"
+              "For EVERY page give 4 to 8 sections, each ONE component, in the order of the page. Use the full variety of the set where it fits the content (hero variants, features, cards, split text+picture, stats, steps, timeline, testimonials, team, gallery, video, pricing, comparison table, FAQ, calendar, agenda, booking, charts, KPI, newsletter, contact, call-to-action ...), not the same few every time. "
+              "The first section of the start page is a hero; every page ends with a call to action or contact section. Do NOT include the navbar and footer (they are added to every page). "
+              "Besides a single component a section can be a BAND with COLUMNS (a full-width row of the page editor with 1-4 columns side by side, each column holding one component): "
+              '{"layout": "band", "id": "x", "bg": "none"|"soft" (a tinted band), "cols": "1"|"2"|"3"|"4"|"2-1"|"1-2"|"3-1"|"1-3" (width ratios of the columns), "valign": "top"|"center", "screen": false|true (true = a full-screen-height band, for a hero), "cells": [{"tag": "ui-...", "goal": "..."}, ...one cell per column]}. '
+              "Use bands where two or three things belong side by side (for example text next to a form, a stats block next to a testimonial, two cards of different kinds) and vary the rhythm of the page: a tinted band, a full-screen hero, wide and narrow columns; not every section the same. "
+              + (f"System objects that must be placed as a section: {objs} (use {{\"sysobject\": \"slug\"}} for them). " if objs else "")
+              + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-hero-split", "id": "hero", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
+              f"Available tags:\n{lst}")
+    plan = {}
+    try:
+        out = _ask(SECTION_JSON, prompt, max_tokens=6000, pk=pk)
+        m = re.search(r"\{.*\}", out, re.S)
+        plan = json.loads(m.group(0)) if m else {}
+    except Stopped:
+        raise
+    except Exception:  # noqa: BLE001
+        logger.warning("sitecreator plan failed, standard plan", exc_info=True)
+    byfile = {p.get("file"): p for p in (plan.get("pages") or []) if isinstance(p, dict)}
+    out_pages = []
+    clean_id = lambda x: re.sub(r"[^a-z0-9_-]", "", str(x or "").lower())[:40]  # noqa: E731
+    for i, (f, title) in enumerate(pages):
+        p = byfile.get(f) or {}
+        secs = []
+        for s in (p.get("sections") or [])[:10]:
+            if not isinstance(s, dict):
+                continue
+            if s.get("layout") == "band":  # a band with columns: 1-4 cells, each one component
+                cells = [{"tag": c.get("tag"), "goal": str(c.get("goal") or "")[:300]} for c in (s.get("cells") or [])[:4] if isinstance(c, dict) and c.get("tag") in tags]
+                if cells:
+                    cols = str(s.get("cols") or len(cells))
+                    cols = cols if cols in LAYOUT_COLS and (cols.isdigit() and int(cols) == len(cells) or "-" in cols and len(cells) == 2) else str(len(cells))
+                    secs.append({"layout": "band", "id": clean_id(s.get("id")), "bg": "soft" if s.get("bg") == "soft" else "none", "cols": cols, "valign": "center" if s.get("valign") == "center" else "top", "screen": bool(s.get("screen")), "cells": cells, "goal": str(s.get("goal") or "")[:200]})
+            elif s.get("sysobject") or s.get("tag") in tags:
+                secs.append({"tag": s.get("tag"), "sysobject": clean_id(s.get("sysobject")), "id": clean_id(s.get("id")), "goal": str(s.get("goal") or "")[:300]})
+        if not secs:  # standard plan
+            secs = ([{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}"}, {"tag": "ui-features", "id": "voordelen", "goal": "The main benefits"}] if i == 0 else [{"tag": "ui-section-heading", "id": "intro", "goal": f"Introduction of {title}"}, {"tag": "ui-split", "id": "tekst", "goal": f"The story of {title}"}]) + [{"tag": "ui-cta", "id": "contact", "goal": "Invite to get in touch"}]
+        out_pages.append({"file": f, "title": str(p.get("title") or title)[:60], "description": str(p.get("description") or "")[:155], "sections": secs})
+    return {"brand": str(plan.get("brand") or (b.get("name") or "Website"))[:40], "pages": out_pages}
+
+
+def _band_html(s, cells):
+    """A band (a full-width row of the page editor) with columns; every column holds one component. The css for it is the layout vocabulary of the system."""
+    cls = "band" + (" band--soft" if s.get("bg") == "soft" else "") + (" band--screen" if s.get("screen") else "")
+    cols = f"cols cols-{s.get('cols') or len(cells)}" + (" cols--center" if s.get("valign") == "center" else "")
+    body = "\n".join(f'<div class="col">\n{h}\n</div>' for h in cells)
+    return f'<section class="{cls}">\n<div class="container">\n<div class="{cols}">\n{body}\n</div>\n</div>\n</section>'
+
+
+def _page_html(brief, plan_page, header, sections, footer):
+    name = str((brief or {}).get("name") or "")
+    lang = {"dutch": "nl", "nederlands": "nl", "english": "en", "engels": "en", "german": "de", "duits": "de", "french": "fr", "frans": "fr", "spanish": "es", "spaans": "es"}.get(str((brief or {}).get("lang") or "").strip().lower(), "nl")
+    esc = lambda x: str(x or "").replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")  # noqa: E731
+    title = esc(plan_page["title"] + (f" | {name}" if name and name.lower() not in plan_page["title"].lower() else ""))
+    body = "\n".join(f'<div id="{s_id}">\n{h}\n</div>' if s_id else h for s_id, h in sections)
+    return (f'<!doctype html>\n<html lang="{lang}">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>{title[:80]}</title>\n<meta name="description" content="{esc(plan_page["description"])}">\n<link rel="stylesheet" href="style.css">\n</head>\n'
+            f"<body>\n<header>\n{header}\n</header>\n<main>\n{body}\n</main>\n<footer>\n{footer}\n</footer>\n</body>\n</html>\n")
+
+
+def _generate_sections(pk, job):
+    """A new design, piece by piece: plan -> navbar -> footer -> every section of every page (one small answer each). The page is shown after every piece. Returns the files."""
+    b = job.brief or {}
+    pages = pages_of(b)
+    text = _brief_text(b)
+    nav = "; ".join(f"{t} -> {f}" for f, t in pages)
+    sysm = _section_system(b)
+    _set(pk, progress=3, step="Het plan van de pagina's maken")
+    plan = _site_plan(pk, job, pages)
+    total = 2 + sum(len(s.get("cells") or [1]) for p in plan["pages"] for s in p["sections"])
+    done = [0]
+
+    def step(label):
+        done[0] += 1
+        _set(pk, progress=min(97, 5 + int(92 * done[0] / total)), step=f"{label} ({done[0]} van {total})")
+
+    files = themed({"style.css": "/* extra rules for rare helper classes (the theme is written by the system) */\n"}, b)
+    tpl = lambda tag: _template(b, tag)  # noqa: E731
+    step("Menu maken")
+    header = _piece(pk, b, sysm, f"Component: ui-navbar.\nBrand: {plan['brand']}\nMenu links (label -> file): {nav}\nA button on the right: a short call to action to the contact page.\n\n{text}\n\nTemplate:\n{tpl('ui-navbar')}", "ui-navbar", title=plan["brand"])
+    step("Voettekst maken")
+    footer = _piece(pk, b, sysm, f"Component: ui-footer.\nBrand: {plan['brand']}\nLinks (label -> file): {nav}; also 'Privacy' -> /privacy and 'Cookies' -> /cookies.\n\n{text}\n\nTemplate:\n{tpl('ui-footer')}", "ui-footer", title=plan["brand"])
+    def one(pg, n, s, tag, goal, label):
+        step(label)
+        ctx = f"Page: {pg['title']} ({pg['file']}). Section {n + 1} of {len(pg['sections'])}: {tag}. Goal: {goal}\nOther sections on this page: " + ", ".join(f"{x.get('tag') or x.get('sysobject') or 'band'}: {x.get('goal', '')}" for x in pg["sections"] if x is not s)[:700]
+        return _piece(pk, b, sysm, f"Component: {tag}.\n{ctx}\nMenu (label -> file): {nav}\n\n{text}\n\nTemplate (copy it, change texts/links/pictures and the number of items):\n{tpl(tag)}", tag, title=pg["title"])
+
+    for pg in plan["pages"]:
+        secs = []
+        for n, s in enumerate(pg["sections"]):
+            label = f"{pg['title']}: sectie {n + 1} van {len(pg['sections'])}"
+            if s.get("layout") == "band":
+                cells = [one(pg, n, s, c["tag"], c["goal"] or s.get("goal", ""), f"{label} (kolom {k + 1} van {len(s['cells'])})") for k, c in enumerate(s["cells"])]
+                secs.append((s.get("id") or "", _band_html(s, cells)))
+            elif s.get("sysobject"):
+                step(label)
+                secs.append((s.get("id") or "", f'<div data-sysobject="{s["sysobject"]}"></div>'))
+            else:
+                secs.append((s.get("id") or "", one(pg, n, s, s["tag"], s["goal"], f"{label} ({s['tag'].replace('ui-', '')})")))
+            files[pg["file"]] = _page_html(b, pg, header, secs, footer)  # the page is complete after every piece: the preview shows it growing
+            _set(pk, files=files)
+    return files
+
+
 def _generate(pk):
     try:
         job = SiteDesignJob.objects.get(pk=pk)
@@ -969,6 +1405,15 @@ def _generate(pk):
         if improve:  # the pages are the html files of the ZIP (in the order of the brief)
             have = sorted((n for n in old if n.endswith(".html")), key=lambda n: (n != "index.html", n))
             pages = [(f, pages_of(job.brief)[i][1] if i < len(pages_of(job.brief)) else f[:-5]) for i, f in enumerate(have)]
+        if not improve:  # a new design is built in small pieces (one component at a time): an answer can never be too long
+            files = _generate_sections(pk, SiteDesignJob.objects.get(pk=pk))
+            if ((SiteDesignJob.objects.get(pk=pk).brief or {}).get("picked") or {}):
+                auto_previews(pk)  # while the status is still "running": the real example photos come in the preview
+            b2 = {k: v for k, v in (SiteDesignJob.objects.get(pk=pk).brief or {}).items() if k not in ("improve_now", "focus")}
+            b2["sectioned"] = True
+            _set(pk, status="done", progress=100, step="Klaar", files=files, brief=b2, messages=list(SiteDesignJob.objects.get(pk=pk).messages or []) + [{"role": "ai", "text": "Je website is ontworpen. Bekijk de pagina's en zeg wat er anders moet. Daarna kun je alles aanmaken of eerst importeren om te controleren."}])
+            _notify_done(pk, "Ontwerp klaar")
+            return
         text = _brief_text(job.brief)
         if (job.brief or {}).get("focus"):
             text += "\nFOCUS of this improvement (pay special attention to this): " + str(job.brief["focus"])
@@ -985,6 +1430,7 @@ def _generate(pk):
             raise ValueError("De AI gaf geen bruikbaar ontwerp terug. Probeer het nog eens.")
         if improve:
             files = {**old, **files}  # what is not improved yet stays as it was: nothing is lost when a later page fails
+        files = themed(files, job.brief)  # the colours come from the theme of the design, not from the AI
         _set(pk, files=files, progress=30)
         rest = pages[1:]
         for n, (f, title) in enumerate(rest):
@@ -995,16 +1441,520 @@ def _generate(pk):
             if f not in new:
                 raise ValueError(f"De pagina '{title}' kwam niet terug. Probeer het nog eens.")
             files = {**files, **new}
+            files = themed(files, job.brief)
             _set(pk, files=files)
         b2 = {k: v for k, v in (job.brief or {}).items() if k not in ("improve_now", "focus")}
         done_msg = "Het ontwerp is verbeterd. Bekijk de pagina's en zeg wat er anders moet. Is het goed, dan kun je alles aanmaken." if improve else "Je website is ontworpen. Bekijk de pagina's en zeg wat er anders moet. Daarna kun je alles aanmaken of eerst importeren om te controleren."
         _set(pk, status="done", progress=100, step="Klaar", files=files, brief=b2, messages=list(SiteDesignJob.objects.get(pk=pk).messages or []) + [{"role": "ai", "text": done_msg}])
+        _notify_done(pk, "Ontwerp verbeterd" if improve else "Ontwerp klaar")
     except Stopped:
         _finish_stopped(pk, "Gestopt. Wat al klaar was is bewaard; de rest is zoals het was.")
     except Exception as e:  # noqa: BLE001
         logger.exception("sitecreator")
         row = SiteDesignJob.objects.filter(pk=pk).first()
         _set(pk, status="error", error=str(e) if isinstance(e, ValueError) else "Het ontwerpen is niet gelukt. Probeer het nog eens.", **({"brief": {k: v for k, v in (row.brief or {}).items() if k not in ("improve_now", "focus")}} if row else {}))
+    finally:
+        db.connections.close_all()
+
+
+# ── AI chat build: the website is designed in a conversation ──
+PHOTO_REF = re.compile(r"""(?:src=|url\()\s*["']?(?:\.?/?)(img/[A-Za-z0-9_\-]+\.(?:jpe?g|png|webp|gif))""", re.I)
+ALT_REF = re.compile(r"""<img\b[^>]*>""", re.I)
+VIDEO_REF = re.compile(r"""<video\b[^>]*>""", re.I)
+VIDEO_SRC = re.compile(r"""src=\s*["']?(?:\.?/?)(video/[A-Za-z0-9_\-]+\.(?:mp4|webm))""", re.I)
+
+
+def photo_slots(job):
+    """The photos that the pages ask for (img/<name>.jpg) and that are not filled in yet: [{file, alt, query, url, done}] with a search address on iStock. The user downloads the photo there himself and puts it in the slot."""
+    have = {p["file"]: p for p in [*((job.brief or {}).get("photos") or []), *((job.brief or {}).get("videos") or [])]}
+    picked = (job.brief or {}).get("picked") or {}  # photos and videos that the user chose with the search field: they are in the list even when no page asks for them
+    numbers = {**picked, **((job.brief or {}).get("istock") or {})}
+    hidden = set((job.brief or {}).get("slots_hidden") or [])
+    found = {}
+    for n, c in (job.files or {}).items():
+        if not n.endswith((".html", ".css")):
+            continue
+        text = str(c)
+        for m in ALT_REF.finditer(text):
+            tag = m.group(0)
+            r = PHOTO_REF.search(tag)
+            if r:
+                alt = re.search(r"""alt=["']([^"']*)["']""", tag, re.I)
+                found.setdefault(r.group(1).split("/")[-1].lower(), (alt.group(1).strip() if alt else ""))
+        for r in PHOTO_REF.finditer(text):
+            found.setdefault(r.group(1).split("/")[-1].lower(), "")
+        for m in VIDEO_REF.finditer(text):
+            r = VIDEO_SRC.search(m.group(0))
+            if r:
+                alt = re.search(r"""aria-label=["']([^"']*)["']""", m.group(0), re.I)
+                found.setdefault(r.group(1).split("/")[-1].lower(), (alt.group(1).strip() if alt else ""))
+    for f, it in picked.items():
+        found.setdefault(f, str((it or {}).get("title") or ""))
+    out = []
+    for f, alt in found.items():
+        if f in hidden:
+            continue
+        words = re.sub(r"[^a-z0-9 ]+", " ", (alt or os.path.splitext(f)[0].replace("-", " ").replace("_", " ")).lower()).split()[:10]
+        q = "-".join(words)
+        out.append({"file": f, "alt": alt[:160], "query": " ".join(words), "url": (f"https://www.istockphoto.com/{'search/2/film?phrase=' if f.endswith(('.mp4', '.webm')) else 'photos/'}{(q.replace('-', '%20') if f.endswith(('.mp4', '.webm')) else q)}" if q else "https://www.istockphoto.com/photos"), "done": f in have, "extra": f in picked and f not in (job.brief or {}).get("istock", {}), "kind": "video" if f.endswith((".mp4", ".webm")) else "photo", **_istock_of(numbers.get(f))})
+    return sorted(out, key=lambda x: (x["done"], x["file"]))
+
+
+def _istock_of(v):
+    """{istock: number, download: address, title} of a stored value (a typed number, or what the AI found: {id, url, title})."""
+    if isinstance(v, dict):
+        n, url, title, prev, vid = str(v.get("id") or ""), str(v.get("url") or ""), str(v.get("title") or "")[:160], str(v.get("preview") or ""), str(v.get("video") or "")
+    else:
+        n, url, title, prev, vid = str(v or ""), "", "", "", ""
+    if not n:
+        return {"istock": "", "download": "", "title": "", "preview": "", "video": ""}
+    return {"istock": n, "download": url or f"https://www.istockphoto.com/search/2/{'film' if vid else 'image'}?phrase={n}", "title": title, "preview": prev, "video": vid}
+
+
+def resolve_istock(n):
+    """What iStock shows for a photo number: {id, url (the page of the photo), preview (the small watermarked example picture), title}; {} when it is not found. Only istockphoto.com is called."""
+    import urllib.request
+
+    try:
+        req = urllib.request.Request(f"https://www.istockphoto.com/search/2/image?phrase={int(n)}", headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            final = r.geturl()
+            html = r.read(1_500_000).decode("utf-8", "ignore")
+    except Exception:  # noqa: BLE001
+        return {}
+    if not re.match(r"https://www\.istockphoto\.com/[a-z/]*photo/[^?#]*gm%s" % re.escape(str(int(n))), final):
+        return {}
+    m = re.search(r"https://media\.istockphoto\.com/id/%s/photo/([a-z0-9-]+)\.jpg\?s=612x612[^\"'\\\s<]*" % re.escape(str(int(n))), html) or re.search(r"https://media\.istockphoto\.com/id/%s/photo/([a-z0-9-]+)\.jpg\?s=\d+x\d+[^\"'\\\s<]*" % re.escape(str(int(n))), html)
+    return {"id": str(int(n)), "url": final[:400], "preview": m.group(0).replace("&amp;", "&")[:600] if m else "", "title": (m.group(1).replace("-", " ").capitalize() if m else "")}
+
+
+def _istock_id(text):
+    text = str(text or "")
+    m = re.search(r"gm(\d+)", text, re.I) or re.search(r"\d{5,}", text)  # "1234567890", "gm1234567890-123" or a pasted iStock address
+    return (m.group(1) if m and m.lastindex else m.group(0)) if m else ""
+
+
+def _istock_get(url):
+    import urllib.request
+
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return r.geturl(), r.read(2_500_000).decode("utf-8", "ignore")
+
+
+def search_istock(query, skip=(), video=False):
+    """The best fitting photos that iStock itself shows for a search: [{id, url, preview, title}] in the order of iStock, without the numbers in skip. Only istockphoto.com is called."""
+    words = re.sub(r"[^a-z0-9 ]+", " ", str(query or "").lower()).split()[:8]
+    q = "-".join(words)
+    if not q:
+        return []
+    try:
+        _, html = _istock_get(f"https://www.istockphoto.com/search/2/film?phrase={'%20'.join(words)}" if video else f"https://www.istockphoto.com/photos/{q}")
+    except Exception:  # noqa: BLE001
+        return []
+    out, seen = [], set(skip)
+    kind = "video" if video else "photo"
+    html = html.replace("\\u0026", "&").replace("&amp;", "&")
+    for m in re.finditer(r"/%s/([a-z0-9-]+)-gm(\d{5,14})-(\d+)" % kind, html):
+        n = m.group(2)
+        if n in seen:
+            continue
+        seen.add(n)
+        if video:
+            pm = re.search(r"https://media\.istockphoto\.com/id/%s/video/[a-z0-9-]+\.jpg\?s=\d+x\d+[^\"'\\\s<]*" % n, html)
+            vm = re.search(r"https://media\.istockphoto\.com/id/%s/video/[a-z0-9-]+\.mp4\?s=mp4-[^\"'\\\s<]*" % n, html)
+            if not vm:
+                continue  # without an example film there is nothing to show
+        else:
+            pm, vm = re.search(r"https://media\.istockphoto\.com/id/%s/photo/[a-z0-9-]+\.jpg\?s=612x612[^\"'\\\s<]*" % n, html), None
+        out.append({"id": n, "url": f"https://www.istockphoto.com/{kind}/{m.group(1)}-gm{n}-{m.group(3)}", "preview": pm.group(0)[:600] if pm else "", "video": vm.group(0)[:600] if vm else "", "title": m.group(1).replace("-", " ").capitalize()[:160]})
+        if len(out) >= 12:
+            break
+    return out
+
+
+def find_istock(job):
+    """For every open photo slot iStock is searched (with the description of the photo) and the best fitting photo is given: number, address and an example picture. Slots that have a number without an example picture get the picture. Photos are not used twice. Returns the job; the number of new photos is in job.found."""
+    b = dict(job.brief or {})
+    d = dict(b.get("istock") or {})
+    used = {_istock_of(v)["istock"] for v in d.values()}
+    found = 0
+    for x in photo_slots(job):
+        if x["done"]:
+            continue
+        if x["istock"]:
+            if not x["preview"] and x["kind"] == "photo":
+                got = resolve_istock(x["istock"])
+                if got:
+                    d[x["file"]] = got
+                    found += 1
+            continue
+        hit = next(iter(search_istock(x["alt"] or x["query"], skip=used, video=x["kind"] == "video")), None)
+        if hit:
+            d[x["file"]] = hit
+            used.add(hit["id"])
+            found += 1
+    b["istock"] = d
+    b["istock_tried"] = True
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    job = SiteDesignJob.objects.get(pk=job.pk)
+    job.found = found
+    return job
+
+
+def set_istock(job, file, number):
+    """Remember the iStock number (the id of the photo on iStock) of a slot; empty removes it. The download link of the slot is made from it."""
+    file = str(file or "").split("/")[-1].lower()
+    text = str(number or "")
+    number = _istock_id(text)
+    if text.strip() and not number:
+        raise ValueError("Een iStock-nummer bestaat uit 5 tot 14 cijfers.")
+    if not any(x["file"] == file for x in photo_slots(job)):
+        raise ValueError("Deze plek bestaat niet (meer).")
+    if number and not 5 <= len(number) <= 14:
+        raise ValueError("Een iStock-nummer bestaat uit 5 tot 14 cijfers.")
+    b = dict(job.brief or {})
+    d = dict(b.get("istock") or {})
+    if number:
+        d[file] = number if file.endswith((".mp4", ".webm")) else (resolve_istock(number) or number)
+    else:
+        d.pop(file, None)
+    b["istock"] = d
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def set_slot(job, file, media_id):
+    """Put a photo of the media library (uploaded by the user) in a slot of the pages: from now on the file name of the slot shows this photo."""
+    from apps.medialib.models import MediaItem
+
+    file = str(file or "").split("/")[-1].lower()
+    if not any(x["file"] == file for x in photo_slots(job)):
+        raise ValueError("Deze plek bestaat niet (meer).")
+    video = file.endswith((".mp4", ".webm"))
+    m = MediaItem.objects.filter(pk=media_id, kind="video" if video else "image").first()
+    if not m:
+        raise ValueError("Deze video is niet gevonden. Upload hem opnieuw." if video else "Deze foto is niet gevonden. Upload hem opnieuw.")
+    b = dict(job.brief or {})
+    store = "videos" if video else "photos"  # videos live apart from the photos (the photo list is checked against the images of the library)
+    photos = [p for p in b.get(store) or [] if p.get("file") != file]
+    if len(photos) >= (3 if video else MAX_PHOTOS):
+        raise ValueError("Er kunnen niet meer video's bij." if video else "Er kunnen niet meer foto's bij.")
+    alt = next((x["alt"] for x in photo_slots(job) if x["file"] == file), "")
+    photos.append({"id": m.id, "file": file, "name": m.name[:120], "url": default_storage.url(m.key), "note": alt[:200]})
+    b[store] = photos
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def search_terms(name, what, kind="photo"):
+    """From what the customer filled in about the company (name, what it offers and to whom): 4 to 6 English iStock search phrases for fitting photos (or videos). [] without an AI link or on an error."""
+    what = str(what or "").strip()[:400]
+    name = str(name or "").strip()[:120]
+    if len(what) + len(name) < 4 or not ai.available():
+        return []
+    try:
+        out = ai.claude("You choose search phrases for the stock photo site iStock. Reply with ONLY a JSON object.",
+                        f"Company: {name or '-'}\nWhat it does and for whom: {what or '-'}\n\nGive 4 to 6 search phrases in English (2 to 4 words each) for {'calm, short background videos' if kind == 'video' else 'photos'} that fit the website of this company: concrete subjects and settings, no brand names, no people's names. "
+                        'Answer: {"terms": ["phrase 1", "phrase 2"]}', max_tokens=300, timeout=40)
+        m = re.search(r"\{.*\}", out or "", re.S)
+        terms = (json.loads(m.group(0)) if m else {}).get("terms") or []
+    except Exception:  # noqa: BLE001
+        logger.warning("search terms failed", exc_info=True)
+        return []
+    return [str(t).strip()[:60] for t in terms if isinstance(t, str) and len(str(t).strip()) >= 3][:6]
+
+
+def add_own_media(job, media_id, role="media"):
+    """The customer dropped his own logo, photo or video in the questionnaire: it goes in the project (the photo list or the video list) and the designer is told to use it. role "logo": the company logo (one)."""
+    from apps.medialib.models import MediaItem
+
+    if job.status not in ("draft", "done", "error"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    m = MediaItem.objects.filter(pk=media_id, kind__in=("image", "video")).first()
+    if not m:
+        raise ValueError("Dit bestand is niet gevonden. Upload het opnieuw.")
+    b = dict(job.brief or {})
+    video = m.kind == "video"
+    if video and role == "logo":
+        raise ValueError("Een logo is een afbeelding.")
+    store = "videos" if video else "photos"
+    lst = list(b.get(store) or [])
+    if any(x.get("id") == m.id for x in lst):
+        return job
+    taken = {x["file"] for x in [*b.get("photos", []), *b.get("videos", [])]}
+    if video:
+        if len(lst) >= 3:
+            raise ValueError("Er kunnen niet meer video's bij.")
+        ext = os.path.splitext(m.name)[1].lstrip(".").lower()
+        base = re.sub(r"[^a-z0-9_-]+", "-", os.path.splitext(get_valid_filename(m.name).lower())[0]).strip("-_")[:R.NAME_MAX] or "video"
+        f, n = f"{base}.{ext if ext in ('mp4', 'webm') else 'mp4'}", 2
+        while f in taken:
+            f, n = f"{base}-{n}.{ext if ext in ('mp4', 'webm') else 'mp4'}", n + 1
+        note = "Own video of the customer: use it as a calm background or block where it fits."
+    else:
+        if role == "logo":
+            lst = [x for x in lst if not str(x.get("file", "")).startswith("logo.")]  # one logo
+            taken = {x["file"] for x in lst}
+            ext = os.path.splitext(m.name)[1].lstrip(".").lower()
+            f = f"logo.{ext if ext in IMG_OK else 'png'}"
+            note = "LOGO of the company: use it as the logo in the header and the footer instead of a text mark."
+        else:
+            if len(lst) >= MAX_PHOTOS:
+                raise ValueError("Er kunnen niet meer foto's bij.")
+            f = photo_file(m.name, taken)
+            note = "Own photo of the customer: use it where it fits."
+    lst.append({"id": m.id, "file": f, "name": m.name[:120], "url": default_storage.url(m.key), "note": note})
+    b[store] = lst
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def remove_own_media(job, file):
+    b = dict(job.brief or {})
+    f = str(file or "").split("/")[-1].lower()
+    for store in ("photos", "videos"):
+        b[store] = [x for x in b.get(store) or [] if x.get("file") != f]
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def set_istock_pick(job, file, item):
+    """A photo (or video) that the user found with the search field of iStock goes to a slot: number, address, example picture and title. Only addresses on iStock are accepted."""
+    file = str(file or "").split("/")[-1].lower()
+    slot = next((x for x in photo_slots(job) if x["file"] == file), None)
+    if not slot:
+        raise ValueError("Deze plek bestaat niet (meer).")
+    item = item if isinstance(item, dict) else {}
+    n = _istock_id(item.get("id"))
+    url, prev, vid = str(item.get("url") or ""), str(item.get("preview") or ""), str(item.get("video") or "")
+    ok = lambda u, host: not u or re.match(r"https://%s/" % re.escape(host), u)  # noqa: E731
+    if not (5 <= len(n) <= 14) or not url or not ok(url, "www.istockphoto.com") or not ok(prev, "media.istockphoto.com") or not ok(vid, "media.istockphoto.com"):
+        raise ValueError("Deze foto komt niet van iStock.")
+    if (slot["kind"] == "video") != bool(vid):
+        raise ValueError("Kies een video voor een video-plek en een foto voor een foto-plek.")
+    b = dict(job.brief or {})
+    d = dict(b.get("istock") or {})
+    d[file] = {"id": n, "url": url[:400], "preview": prev[:600], "video": vid[:600], "title": str(item.get("title") or "")[:160]}
+    b["istock"] = d
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def add_pick(job, item):
+    """A photo or video that the user found with the search field is ADDED to the list (also when no page asks for it yet). Only addresses on iStock are accepted."""
+    item = item if isinstance(item, dict) else {}
+    n = _istock_id(item.get("id"))
+    url, prev, vid = str(item.get("url") or ""), str(item.get("preview") or ""), str(item.get("video") or "")
+    ok = lambda u, host: not u or re.match(r"https://%s/" % re.escape(host), u)  # noqa: E731
+    if not (5 <= len(n) <= 14) or not url or not ok(url, "www.istockphoto.com") or not ok(prev, "media.istockphoto.com") or not ok(vid, "media.istockphoto.com"):
+        raise ValueError("Deze foto komt niet van iStock.")
+    b = dict(job.brief or {})
+    d = dict(b.get("picked") or {})
+    file = f"istock-{n}.{'mp4' if vid else 'jpg'}"
+    if file not in d and len(d) >= 30:
+        raise ValueError("De lijst is vol (30). Haal eerst iets weg.")
+    d[file] = {"id": n, "url": url[:400], "preview": prev[:600], "video": vid[:600], "title": str(item.get("title") or "")[:160]}
+    b["picked"] = d
+    b["slots_hidden"] = [x for x in b.get("slots_hidden") or [] if x != file]
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def use_preview(job, file, user):
+    """Download the example (with the watermark) that iStock shows for the photo or the video of a slot, put it in the media library and in the slot, so the website shows a real picture or film until the licensed one is there."""
+    import urllib.request
+    import uuid as _uuid
+
+    from apps.medialib.models import MediaItem
+
+    file = str(file or "").split("/")[-1].lower()
+    slot = next((x for x in photo_slots(job) if x["file"] == file), None)
+    if not slot:
+        raise ValueError("Deze plek bestaat niet (meer).")
+    video = slot["kind"] == "video"
+    url = (slot.get("video") if video else slot.get("preview")) or ""
+    if not re.match(r"https://media\.istockphoto\.com/id/\d+/", url):
+        raise ValueError("Er is nog geen voorbeeld van iStock voor deze plek. Zoek eerst een " + ("video." if video else "foto."))
+    cap = 40_000_000 if video else 8_000_000
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Referer": "https://www.istockphoto.com/"})
+        with urllib.request.urlopen(req, timeout=60 if video else 20) as r:
+            data = r.read(cap + 1)
+    except Exception:  # noqa: BLE001
+        raise ValueError("Het voorbeeld van iStock kon niet worden gehaald. Probeer het nog eens.")
+    if len(data) > cap:
+        raise ValueError("Het voorbeeld is te groot.")
+    if video:
+        ext = "mp4" if data[4:8] == b"ftyp" else None  # an mp4 starts with the box "ftyp"
+    else:
+        try:
+            from PIL import Image
+
+            im = Image.open(io.BytesIO(data))
+            im.verify()
+            ext = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}.get(im.format)
+        except Exception:  # noqa: BLE001
+            ext = None
+    if not ext:
+        raise ValueError("Het voorbeeld van iStock is geen geldige " + ("video." if video else "afbeelding."))
+    name = f"istock-{slot['istock']}-voorbeeld.{ext}"
+    key = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{_uuid.uuid4().hex[:8]}-{get_valid_filename(name)}"), ContentFile(data))
+    item = MediaItem.objects.get(key=key)
+    item.name, item.uploaded_by = name[:255], user
+    item.tags = ["design", "istock"]
+    item.save(update_fields=["name", "uploaded_by", "tags"])
+    return set_slot(job, file, item.id)
+
+
+def hide_slot(job, file):
+    """Take a photo slot out of the list (the page keeps its grey tile)."""
+    file = str(file or "").split("/")[-1].lower()
+    b = dict(job.brief or {})
+    b["slots_hidden"] = sorted(set(b.get("slots_hidden") or []) | {file})[:200]
+    if file in (b.get("picked") or {}):  # a chosen photo is taken out of the list for good
+        b["picked"] = {k: v for k, v in b["picked"].items() if k != file}
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def clear_slot(job, file):
+    b = dict(job.brief or {})
+    f = str(file or "").split("/")[-1].lower()
+    b["photos"] = [p for p in b.get("photos") or [] if p.get("file") != f]
+    b["videos"] = [p for p in b.get("videos") or [] if p.get("file") != f]
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+CHAT_SYSTEM = """You are the website designer of easy2edit, talking with a customer in a chat. Together you design a complete website that is built from the ready-made components, modules and system objects of easy2edit.
+Be friendly, short and concrete (2-4 sentences), in the language of the customer.
+QUESTIONS: when the request is short or vague (for example only "make a website for an accountancy firm"), do NOT ask one question at a time and do not start designing: ask a QUESTIONNAIRE in the same answer: 6 to 9 questions that fit this kind of business, each with ready-made answer options that the customer can click (and a sensible default). ALWAYS start with these two questions, in this order: 1. the name of the company or organisation (id "name", type "text"), 2. the address (url) of the current website, if there is one (id "url", type "text", the customer may leave it empty; when given, use it as a source for the offer, texts and tone). Then think of what a good designer needs to know, for example: what exactly does the business offer and for whom (text), the feeling of the style (options), light, dark or both (light/dark mode), which other languages the website needs (multi choice of common languages, default none), the maximum width of the content (ask this BEFORE the page layout; give it the id "width", choice: narrow 960, standard 1100, wide 1280, extra wide 1440, whole screen; default 1100), which page layout (give this question the id "layout" and type "multi": the system shows it as a carousel of pictures, so the options may be short; it offers:  full width, text next to image, wide with narrow side column, three columns, four blocks, varied rhythm with tinted bands, full-screen opening; default varied rhythm), which pages (give this question the id "pages" and type "multi": fitting pages with a sensible default selection; the system adds the option "One pager (alles op één pagina)" at the front, which excludes the others), which extra functions fit this kind of business (multi choice: FAQ, agenda/appointments, webshop, community, documents/downloads, newsletter, contact form ...), the colours (give this question the id "colors" and type "choice"; the system shows the colour themes of the system as a carousel and sends the chosen theme with its hex colours: use exactly those colours; your options may be just "my own: tell me" and a few palette names), whether there is a logo (give this question the id "logo": the system shows a drop zone where the customer drops his logo, which is then in the project; he can also type the brand name), photos and videos (give this question the id "media" and type "text": the system shows an iStock search where the customer finds and chooses photos and videos; the chosen ones are put in his list and come back in his answer as "iStock <number>"; when he chose some or says yes, set istock_search true in the brief; when he chose none, you may still look for fitting ones yourself unless he says not to; the customer downloads them himself with an iStock licence; below the search the system also shows a drop zone for his own photos and videos, which are put in the project and mentioned in his answer),  the main goal of the website (call to action: appointment, quote, call, buy ...), and contact details to show (text). Use "type": "choice" (one answer), "multi" (several answers) or "text" (free text).
+When the customer has already given a lot of detail, ask only what is missing (at most 3 questions) or go on. When you know enough, or the customer answered the questionnaire or says to decide yourself, set "ready" to true: the website is then designed at once and shown on the right. Everything that was not answered you decide yourself and say what you chose; the customer can change it afterwards in the chat.
+Photos: the website uses photos that the customer downloads from iStock (istockphoto.com) himself; you only say what is needed, never claim to supply photos.
+Answer with ONLY a JSON object: {"reply": "your message to the customer", "ready": true|false, "questions": [{"id": "short_id", "q": "the question", "type": "choice|multi|text", "options": ["option 1", "option 2"], "default": "option or [options] or empty"}] (only when you ask questions; otherwise []), "brief": {"name": "name of the website", "kind": "company|shop|community|agenda|blog|portfolio|club", "lang": "language of the texts, e.g. Dutch", "pages": "Home, Over ons, Diensten, Contact (comma separated, 3-8 pages, the first is the start page; when the customer chose a one pager: only \"Home\")", "style": "one sentence about the look and feel", "extra": "everything else the customer told you that matters for texts and content (offer, audience, tone, address, opening hours ...)", "colors": {"primary": "#rrggbb main colour", "secondary": "#rrggbb second colour", "bg": "#rrggbb page background", "card": "#rrggbb cards", "text": "#rrggbb text"} (choose colours that fit the business and the feeling of the style; use the colours the customer names; with good contrast), "font": "sans|serif|round", "radius": 0-24 (corners in px), "max_width": 960|1100|1280|1440|0 (maximum width of the content in px, 0 = whole screen), "layouts": ["full|split|wide_narrow|three|four|rhythm|screen" (the page layouts the customer chose; [] when nothing was chosen)], "color_mode": "light|dark|both", "langs": ["language codes of the OTHER languages, e.g. en, de; [] for none"], "lang_switch": true|false, "istock_search": true|false (true when the customer allows you to look for photos and videos on iStock), "modules_off": []}}
+The "brief" is only needed when "ready" is true."""
+
+
+def clean_questions(raw):
+    """The questions of the designer for the customer, checked: [{id, q, type: choice|multi|text, options, default}], at most 10."""
+    out = []
+    for x in (raw if isinstance(raw, list) else [])[:10]:
+        if not isinstance(x, dict) or not str(x.get("q") or "").strip():
+            continue
+        t = x.get("type") if x.get("type") in ("choice", "multi", "text") else "text"
+        opts = [str(o).strip()[:80] for o in (x.get("options") or []) if str(o).strip()][:12] if t != "text" else []
+        if t != "text" and not opts:
+            t = "text"
+        dflt = x.get("default")
+        dflt = [str(v)[:80] for v in dflt][:12] if isinstance(dflt, list) else str(dflt or "")[:200]
+        out.append({"id": re.sub(r"[^a-z0-9_]", "", str(x.get("id") or f"q{len(out) + 1}").lower())[:30] or f"q{len(out) + 1}", "q": str(x["q"]).strip()[:240], "type": t, "options": opts, "default": dflt})
+    return out
+
+
+def auto_photos(pk, job):
+    """Before the design: the designer looks for fitting photos (and at most one calm video) on iStock, makes a selection and puts it in the list of the customer. The design then uses them. Never fails: no result = the design goes on without."""
+    b = dict(job.brief or {})
+    try:
+        _set(pk, progress=5, step="Passende foto's zoeken op iStock")
+        out = _ask(SECTION_JSON, f"{_brief_text(b)}\n\nPlan the photos for this website: 6 to 8 searches for iStock, each with English search words that describe the photo concretely (subject, setting, mood; no brand names), the purpose (hero, team, office, service, customer, detail ...) and kind \"photo\" (at most ONE \"video\": a calm hero background). "
+                   'Answer: {"searches": [{"query": "english words", "purpose": "hero", "kind": "photo"}]}', max_tokens=2000, pk=pk)
+        m = re.search(r"\{.*\}", out or "", re.S)
+        searches = [s for s in ((json.loads(m.group(0)) if m else {}).get("searches") or []) if isinstance(s, dict) and str(s.get("query") or "").strip()][:8]
+    except Stopped:
+        raise
+    except Exception:  # noqa: BLE001
+        logger.warning("iStock plan failed", exc_info=True)
+        return job
+    picked = dict(b.get("picked") or {})
+    used = {str((v or {}).get("id")) for v in picked.values()}
+    videos = 0
+    for n, s in enumerate(searches):
+        video = s.get("kind") == "video" and videos < 1
+        _set(pk, progress=6, step=f"Foto's zoeken op iStock ({n + 1} van {len(searches)})")
+        try:
+            hit = next(iter(search_istock(str(s["query"]), skip=used, video=video)), None)
+        except Exception:  # noqa: BLE001
+            hit = None
+        if hit and len(picked) < 30:
+            picked[f"istock-{hit['id']}.{'mp4' if video else 'jpg'}"] = {"id": hit["id"], "url": hit["url"], "preview": hit.get("preview", ""), "video": hit.get("video", "") if video else "", "title": str(s.get("purpose") or "")[:40] + (": " if s.get("purpose") else "") + str(hit.get("title") or "")[:120]}
+            used.add(hit["id"])
+            videos += 1 if video else 0
+    if picked != (b.get("picked") or {}):
+        b["picked"] = picked
+        SiteDesignJob.objects.filter(pk=pk).update(brief=b, updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=pk)
+
+
+def auto_previews(pk):
+    """After the design: the example pictures (with watermark) of the chosen iStock photos that the pages use are put in the pictures of the design, so the preview shows real photos at once. Never fails."""
+    try:
+        job = SiteDesignJob.objects.get(pk=pk)
+        for x in photo_slots(job):
+            if x.get("kind") == "photo" and x.get("preview") and not x.get("done") and x["file"].startswith("istock-"):
+                _set(pk, step=f"Voorbeeldfoto's ophalen ({x['file']})")
+                try:
+                    job = use_preview(job, x["file"], job.user)
+                except ValueError:
+                    continue
+    except Exception:  # noqa: BLE001
+        logger.warning("auto previews failed", exc_info=True)
+
+
+def chat(job, text, shots=None):
+    if job.status in ("running", "stopping"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    text = str(text or "").strip()[:2000]
+    if not text:
+        raise ValueError("Schrijf een bericht.")
+    if not ai.available():
+        raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
+    has = any(n.endswith(".html") for n in (job.files or {}))
+    b = dict(job.brief or {})
+    b["chat"] = True
+    shots = clean_shots(shots)
+    msgs = list(job.messages or []) + [{"role": "user", "text": text, **({"img": _thumbs(shots)} if shots else {})}]
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, status="running", progress=5, step="Aan het denken" if not has else "De aanpassing doorvoeren", error="", messages=msgs, updated_at=timezone.now())
+    threading.Thread(target=_chat, args=(job.pk, text, has, shots), daemon=True).start()
+
+
+def _chat(pk, text, has, shots=None):
+    try:
+        job = SiteDesignJob.objects.get(pk=pk)
+        if has:
+            _revise(pk, text, "", shots)
+            return
+        convo = "\n".join(f"{'Customer' if m['role'] == 'user' else 'Designer'}: {m['text']}" for m in (job.messages or [])[-20:])
+        mods = [i for i in module_items() if i["key"] not in effective_off(job.brief)]
+        cat = "Modules of the system: " + ", ".join(f"{i['key']} ({i['label']})" for i in mods[:40]) if mods else ""
+        out = _ask(CHAT_SYSTEM, f"{cat}\n\nConversation so far:\n{convo}\n\nAnswer now with the JSON.", max_tokens=5000, pk=pk, images=shots or None)
+        m = re.search(r"\{.*\}", out, re.S)
+        try:
+            d = json.loads(m.group(0)) if m else {}
+        except ValueError:
+            d = {}
+        reply = str(d.get("reply") or "").strip()[:1500]
+        if not reply:
+            raise ValueError("De AI gaf geen antwoord. Probeer het nog eens.")
+        job = SiteDesignJob.objects.get(pk=pk)
+        qs = clean_questions(d.get("questions")) if not d.get("ready") else []
+        msgs = list(job.messages or []) + [{"role": "ai", "text": reply, **({"questions": qs} if qs else {})}]
+        br = d.get("brief") if isinstance(d.get("brief"), dict) else {}
+        if d.get("ready") and str(br.get("name") or "").strip():
+            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
+            patch["chat"] = True
+            _set(pk, brief=clean_brief(patch, job.brief), name=str(((job.brief or {}).get("name") if "name" in ((job.brief or {}).get("locked") or []) else "") or br["name"]).strip()[:120], messages=msgs, progress=6, step="De website ontwerpen")
+            if patch.get("istock_search"):
+                auto_photos(pk, SiteDesignJob.objects.get(pk=pk))  # the selection is in the list before the designing starts
+            _generate(pk)  # makes the files and ends with status "done" (also on an error)
+            return
+        _set(pk, status="done", progress=100, step="", messages=msgs)
+    except Stopped:
+        _finish_stopped(pk, "Gestopt.")
+    except Exception as e:  # noqa: BLE001
+        logger.exception("sitecreator chat")
+        row = SiteDesignJob.objects.filter(pk=pk).first()
+        _set(pk, status="done", progress=100, step="", error="", messages=list(row.messages if row else []) + [{"role": "ai", "text": "Dat is niet gelukt: " + (str(e) if isinstance(e, ValueError) else "probeer het nog eens.")}])
     finally:
         db.connections.close_all()
 
@@ -1035,32 +1985,212 @@ def restore(job):
     return SiteDesignJob.objects.get(pk=job.pk)
 
 
-def revise(job, instruction, page=""):
+def revise(job, instruction, page="", shots=None):
     if job.status in ("running", "stopping"):
         raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
     instruction = str(instruction or "").strip()[:2000]
     if not instruction:
         raise ValueError("Schrijf wat er anders moet.")
-    msgs = list(job.messages or []) + [{"role": "user", "text": instruction}]
+    shots = clean_shots(shots)
+    msgs = list(job.messages or []) + [{"role": "user", "text": instruction, **({"img": _thumbs(shots)} if shots else {})}]
     SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=10, step="De aanpassing doorvoeren", error="", messages=msgs, updated_at=timezone.now())
-    threading.Thread(target=_revise, args=(job.pk, instruction, page), daemon=True).start()
+    threading.Thread(target=_revise, args=(job.pk, instruction, page, shots), daemon=True).start()
 
 
-def _revise(pk, instruction, page):
+
+# ── changing a sectioned design: only the parts that change are asked, one small answer each ──
+def _main_parts(html):
+    """(before, [(id, html)], after) of a page made in sections: the text before <main>, the top-level blocks of <main>, the text after </main>. None when there is no <main>."""
+    m1 = re.search(r"<main[^>]*>", html or "")
+    if not m1:
+        return None
+    m2 = html.rfind("</main>")
+    if m2 < m1.end():
+        return None
+    inner = html[m1.end():m2]
+    parts, depth, start = [], 0, None
+    for m in re.finditer(r"<div\b[^>]*>|</div\s*>", inner):
+        if m.group(0).startswith("</"):
+            depth -= 1
+            if depth == 0 and start is not None:
+                parts.append(inner[start:m.end()].strip())
+                start = None
+        else:
+            if depth == 0:
+                start = m.start()
+            depth += 1
+    out = []
+    for p in parts:
+        idm = re.match(r'<div id="([a-z0-9_-]*)">\s*(?=<div\b)', p)
+        if idm and p.endswith("</div>"):
+            out.append((idm.group(1), p[idm.end():-6].strip()))  # the wrapper with the id of the section is taken off
+        else:
+            out.append(("", p))
+    return html[:m1.end()], out, html[m2:]
+
+
+def _band_cells(h):
+    """[(start, end)] of the inner html of the columns (<div class="col">) of a band; [] when it is not a band."""
+    cells, depth, open_at, inner_at = [], 0, [], []
+    for m in re.finditer(r"<div\b[^>]*>|</div\s*>", h):
+        if m.group(0).startswith("</"):
+            depth -= 1
+            if open_at and open_at[-1] == depth:
+                cells.append((inner_at.pop(), m.start()))
+                open_at.pop()
+        else:
+            if re.search(r'class="col"', m.group(0)):
+                open_at.append(depth)
+                inner_at.append(m.end())
+            depth += 1
+    return sorted(cells)
+
+
+def _join_main(before, sections, after):
+    body = "\n".join(f'<div id="{i}">\n{h}\n</div>' if i else h for i, h in sections)
+    return f"{before}\n{body}\n{after}"
+
+
+def _outline(files):
+    lines = []
+    for n in sorted((n for n in files if n.endswith(".html")), key=lambda n: (n != "index.html", n)):
+        mp = _main_parts(files[n])
+        if not mp:
+            continue
+        lines.append(f"{n}:")
+        for i, (sid, h) in enumerate(mp[1]):
+            tag = re.search(r'data-easy2edit-tag="([^"]+)"', h) or re.search(r'data-(sysobject)="([^"]+)"', h)
+            head = re.search(r"<h[1-3][^>]*>(.*?)</h[1-3]>", h, re.S)
+            cells = _band_cells(h) if 'class="band' in h else []
+            name = ("band with columns [" + " | ".join((re.search(r'data-easy2edit-tag="([^"]+)"', h[a:b_]) or [None, "?"])[1] for k, (a, b_) in enumerate(cells)) + "] (edit a column with \"cell\": 0..)") if cells else (tag.group(1) if tag else "part")
+            lines.append(f"  {i}. {name}{f' #{sid}' if sid else ''}" + (f" - {re.sub(r'<[^>]+>', '', head.group(1)).strip()[:70]}" if head else ""))
+    return "\n".join(lines)
+
+
+def _revise_sections(pk, job, instruction, page, shots):
+    """The change is planned first (small answer: which parts change), then every part is redone on its own. A shared menu or footer is changed on every page. Never too long."""
+    b = dict(job.brief or {})
+    files = dict(job.files or {})
+    sysm = _section_system(b)
+    outline = _outline(files)
+    focus = f"The user is looking at the page {page}.\n" if page in files else ""
+    look = "The user attached a screenshot of how the page looks to him now (see the picture): use it to understand what he means.\n" if shots else ""
+    plan_prompt = (f"{focus}{look}Here are the pages of the website as a list of parts (index. component - first heading):\n{outline}\n\nThe user asks: {instruction}\n\n"
+                   "Decide what has to change and answer with ONE JSON object: "
+                   '{"reply": "one or two friendly sentences for the user about what you will do", "changes": [{"op": "edit", "file": "index.html", "index": 2, "goal": "what the part must become"}, {"op": "add", "file": "index.html", "after": 1, "tag": "ui-cta", "goal": "what the new part says"}, {"op": "delete", "file": "index.html", "index": 3}, {"op": "menu", "goal": "..."}, {"op": "footer", "goal": "..."}, '
+                   '{"op": "theme", "colors": {"primary": "#rrggbb", "secondary": "#rrggbb", "bg": "#rrggbb", "card": "#rrggbb", "text": "#rrggbb"}, "font": "sans|serif|round", "radius": 14}]}\n'
+                   "Rules: change as little as possible, at most 14 changes; a change of colours, font or corners is ONE theme change (no part is redone for it); a change of the menu or footer is one menu/footer change (it goes to every page). Use only tags of the component set for add.")
+    out = _ask(SECTION_JSON, plan_prompt, max_tokens=4000, pk=pk, images=shots or None)
+    m = re.search(r"\{.*\}", out or "", re.S)
+    try:
+        plan = json.loads(m.group(0)) if m else {}
+    except ValueError:
+        plan = {}
+    changes = [c for c in (plan.get("changes") or []) if isinstance(c, dict)][:14]
+    if not changes:
+        raise ValueError("De AI wist niet welk deel er anders moest. Zeg het iets concreter (bijvoorbeeld op welke pagina).")
+    total, n = len(changes), 0
+    parts = {f: _main_parts(h) for f, h in files.items() if f.endswith(".html")}
+    for c in changes:
+        n += 1
+        op = c.get("op")
+        _set(pk, progress=min(95, 8 + int(85 * n / total)), step=f"Onderdeel {n} van {total} aanpassen")
+        f = str(c.get("file") or "")
+        if op == "theme":
+            patch = {k: c.get(k) for k in ("colors", "font", "radius") if c.get(k) not in (None, "", {})}
+            if patch:
+                b = clean_brief(patch, b)
+                files = themed(files, b)
+        elif op in ("menu", "footer"):
+            part, tagname = ("header", "ui-navbar") if op == "menu" else ("footer", "ui-footer")
+            for fn, h in list(files.items()):
+                mm = re.search(rf"<{part}>\s*(.*?)\s*</{part}>", h, re.S) if fn.endswith(".html") else None
+                if mm:
+                    cur = mm.group(1)
+                    break
+            else:
+                continue
+            nav = "; ".join(f"{t} -> {fi}" for fi, t in pages_of(b))
+            new = _piece(pk, b, sysm, f"Component: {tagname}. Change this part: {c.get('goal') or instruction}\nMenu (label -> file): {nav}\n\nCURRENT html (keep everything that does not change):\n{cur}", tagname)
+            if new == _fallback_component(b, tagname):
+                new = cur  # (nothing usable came back: the part stays as it was)
+            for fn, h in list(files.items()):
+                if fn.endswith(".html"):
+                    files[fn] = re.sub(rf"(<{part}>\s*).*?(\s*</{part}>)", lambda mm_: mm_.group(1) + new + mm_.group(2), h, count=1, flags=re.S)
+                    parts[fn] = _main_parts(files[fn])
+        elif f in parts and parts[f]:
+            before, secs, after = parts[f]
+            if op == "edit":
+                i = int(c.get("index", -1)) if str(c.get("index", "")).lstrip("-").isdigit() else -1
+                if 0 <= i < len(secs) and 'class="band' in secs[i][1] and _band_cells(secs[i][1]):  # a column of a band: only that column is redone
+                    band = secs[i][1]
+                    spans = _band_cells(band)
+                    k = int(c.get("cell", 0)) if str(c.get("cell", "0")).isdigit() else 0
+                    a0, b0 = spans[min(k, len(spans) - 1)]
+                    cur = band[a0:b0].strip()
+                    tag = (re.search(r'data-easy2edit-tag="([^"]+)"', cur) or [None, ""])[1]
+                    if tag:
+                        new = _piece(pk, b, sysm, f"Component: {tag}. Change this part: {c.get('goal') or instruction}\nPage: {f}. Menu (label -> file): " + "; ".join(f"{t} -> {fi}" for fi, t in pages_of(b)) + f"\n\n{_brief_text(b)[:1500]}\n\nCURRENT html (keep what does not change, same structure and classes):\n{cur}", tag)
+                        if new != _fallback_component(b, tag):
+                            secs[i] = (secs[i][0], band[:a0] + "\n" + new + "\n" + band[b0:])
+                elif 0 <= i < len(secs):
+                    cur = secs[i][1]
+                    tag = (re.search(r'data-easy2edit-tag="([^"]+)"', cur) or [None, ""])[1]
+                    if tag:
+                        new = _piece(pk, b, sysm, f"Component: {tag}. Change this part: {c.get('goal') or instruction}\nPage: {f}. Menu (label -> file): " + "; ".join(f"{t} -> {fi}" for fi, t in pages_of(b)) + f"\n\n{_brief_text(b)[:1500]}\n\nCURRENT html (keep what does not change, same structure and classes):\n{cur}", tag)
+                        if new != _fallback_component(b, tag):
+                            secs[i] = (secs[i][0], new)
+            elif op == "add":
+                tag = str(c.get("tag") or "")
+                from . import componentpacks
+
+                known = {x["easy2edit_tag"] for x in componentpacks.get(b.get("component_set") or None)["components"]}
+                if tag in known:
+                    at = int(c.get("after", len(secs) - 1)) if str(c.get("after", "")).lstrip("-").isdigit() else len(secs) - 1
+                    new = _piece(pk, b, sysm, f"Component: {tag}.\nPage: {f}. Goal: {c.get('goal') or instruction}\n\n{_brief_text(b)[:1500]}\n\nTemplate (copy it, change texts/links/pictures and the number of items):\n{_template(b, tag)}", tag)
+                    secs.insert(max(0, min(len(secs), at + 1)), ("", new))
+            elif op == "delete":
+                i = int(c.get("index", -1)) if str(c.get("index", "")).lstrip("-").isdigit() else -1
+                if 0 <= i < len(secs) and len(secs) > 1:
+                    secs.pop(i)
+            files[f] = _join_main(before, secs, after)
+        _set(pk, files=files)  # the preview shows every change as soon as it is done
+    return files, b, str(plan.get("reply") or "").strip()[:400], changes
+
+
+def _revise(pk, instruction, page, shots=None):
     try:
         job = SiteDesignJob.objects.get(pk=pk)
+        if (job.brief or {}).get("sectioned") and any(_main_parts(h) for n, h in (job.files or {}).items() if n.endswith(".html")):  # a design in sections: only the parts that change, one small answer each
+            files2, b2, reply, changes = _revise_sections(pk, job, instruction, page, shots)
+            names = sorted({str(c.get("file")) for c in changes if str(c.get("file") or "").endswith(".html")})
+            _set(pk, status="done", progress=100, step="Klaar", files=themed(files2, b2), brief=b2, messages=list(SiteDesignJob.objects.get(pk=pk).messages or []) + [{"role": "ai", "text": (reply + " " if reply else "") + f"Aangepast: {len(changes)} onderdeel/onderdelen" + (f" ({', '.join(names)})" if names else "") + "."}])
+            _notify_done(pk, "Ontwerp bijgewerkt")
+            return
         files = dict(job.files or {})
         listing_ = "\n\n".join(f"=== FILE: {n} ===\n{c}" for n, c in files.items())
         focus = f"The user is looking at the page {page}.\n" if page in files else ""
-        photos = "\n".join(f"- {p['file']}: {p.get('note') or ''}" for p in (job.brief or {}).get("photos") or [])
+        photos = "\n".join(f"- {p['file']}: {p.get('note') or ''}" for p in [*((job.brief or {}).get("photos") or []), *((job.brief or {}).get("videos") or [])])
         ph = f"Photos that can be used (img/<file>):\n{photos}\n" if photos else ""
-        new = parse(_ask(rules(job.brief), f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{ph}Change: {instruction}\n\n{listing_}", pk=pk))
+        chosen = "\n".join(f"- {f}: {it.get('title') or ''}" for f, it in ((job.brief or {}).get("picked") or {}).items() if f not in {p["file"] for p in [*((job.brief or {}).get("photos") or []), *((job.brief or {}).get("videos") or [])]})
+        ph += f"Photos that the user chose on iStock and wants in the website (use them where they fit, as <img src=\"img/<file>\"> or <video src=\"video/<file>\">):\n{chosen}\n" if chosen else ""
+        look = "The user attached a screenshot of how the page looks to him right now (see the picture(s)): use it to understand what he means.\n" if shots else ""
+        new = parse(_ask(rules(job.brief), f"Here is the current website. Apply the change that the user asks for. Output ONLY the files that change, each complete (when the change is the look of the whole site, change style.css; when it is a text or section, change that page). Keep everything else exactly as it is, and keep the structure rules.\n{focus}{look}{ph}Change: {instruction}\n\n{listing_}", pk=pk, images=shots or None))
         if not new:
             raise ValueError("De AI gaf geen aanpassing terug. Probeer het anders te zeggen.")
-        _set(pk, status="done", progress=100, step="Klaar", files={**files, **new}, messages=list(job.messages) + [{"role": "ai", "text": "Aangepast: " + ", ".join(sorted(new)) + "."}])
+        _set(pk, status="done", progress=100, step="Klaar", files=themed({**files, **new}, job.brief), messages=list(job.messages) + [{"role": "ai", "text": "Aangepast: " + ", ".join(sorted(new)) + "."}])
+        _notify_done(pk, "Ontwerp bijgewerkt")
     except Stopped:
         _finish_stopped(pk, "Gestopt: de aanpassing is niet doorgevoerd.")
     except Exception as e:  # noqa: BLE001
+        row = SiteDesignJob.objects.filter(pk=pk).first()
+        if row and isinstance(e, ValueError) and "afgebroken" in str(e) and not (row.brief or {}).get("sectioned") and (row.brief or {}).get("chat"):
+            # the answer was too long for a design in the old, one-piece form: it is rebuilt in small pieces (with the change as a wish) and the progress bar shows every piece
+            b = dict(row.brief or {})
+            b["extra"] = (str(b.get("extra") or "") + f"\nChange asked for in the chat: {instruction}")[-1500:]
+            _set(pk, brief=b, files_prev=row.files or {}, status="running", progress=3, step="Het ontwerp opnieuw opbouwen in kleine stukjes", error="", messages=list(row.messages or []) + [{"role": "ai", "text": "Dat was te veel voor één keer. Ik bouw het ontwerp nu opnieuw op in kleine stukjes, met jouw wens erbij. Je ziet de voortgang."}])
+            db.connections.close_all()
+            return _generate(pk)
         logger.exception("sitecreator revise")
         _set(pk, status="done", progress=100, step="", error="", messages=list(SiteDesignJob.objects.get(pk=pk).messages) + [{"role": "ai", "text": "Dat is niet gelukt: " + (str(e) if isinstance(e, ValueError) else "onbekende fout") + " Het ontwerp is niet veranderd."}])
     finally:
@@ -1090,7 +2220,7 @@ def public(job, files=False):
     job = _stale(job)
     b = job.brief or {}
     return {"id": str(job.pk), "name": job.name, "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
-            "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(),
+            "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(), "files_sig": f"{len(job.files or {})}-{sum(len(str(v)) for v in (job.files or {}).values())}", "chat": bool(b.get("chat")), "istock_tried": bool(b.get("istock_tried")), "photo_slots": photo_slots(job) if b.get("chat") else [],
             "docs": [_doc_public(d) for d in job.docs or []]}
 
 

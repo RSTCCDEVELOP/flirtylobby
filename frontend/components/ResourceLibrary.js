@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Tabs from "./Tabs";
 import ThemePackEdit from "./ThemePackEdit";
+import TemplateCreate from "./TemplateCreate";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
@@ -258,6 +259,7 @@ export function ResourceAdmin() {
     setLib(d);
     setOk((cur) => cur || Object.fromEntries(Object.entries(d.kinds).map(([k, rows]) => [k, new Set(rows.filter((r) => r.allowed).map((r) => r.name))])));
   }).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
+  const [makeTpl, setMakeTpl] = useState(false);  // (a hook: before the early return below)
   useEffect(() => { load(); }, [load]);
   if (!lib) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Laden…")}</p>;
   const rows = lib.kinds[kind] || [];
@@ -288,10 +290,12 @@ export function ResourceAdmin() {
       <p className="muted" style={{ margin: 0 }}>{tx("De map resource van het product bevat de zips van plugins, thema's en talen (alleen de nieuwste versie). Vink aan wat gebruikers met rechten voor dat onderdeel mogen installeren zonder te uploaden; superadmins kunnen alles installeren. Het vinkje komt in resource/allowed.json en gaat met het product mee.")}</p>
       <Tabs value={kind} onChange={setKind} tabs={Object.keys(lib.kinds).map((k) => [k, lib.titles[k] || k])} />
       {msg && <div className={`alert ${msg.ok ? "ok" : ""}`}>{msg.text}</div>}
+      {makeTpl && <TemplateCreate onClose={() => setMakeTpl(false)} onMade={(r) => { setMsg({ ok: true, text: `${tx("De template is gemaakt en staat in resource/templates")}: ${r.made?.name} ${r.made?.version}.${r.made?.skipped?.length ? ` ${tx("Overgeslagen (te groot of ontbreekt)")}: ${r.made.skipped.slice(0, 5).join(", ")}.` : ""}` }); load(); }} />}
       {kind === "templates" && (
         <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
           <input ref={tplFile} type="file" accept=".zip" onChange={uploadTemplate} style={{ display: "none" }} />
           <button type="button" className="btn primary" disabled={!!busy} onClick={() => tplFile.current?.click()}>+ {tx("Template toevoegen (zip)")}</button>
+          <button type="button" className="btn primary" disabled={!!busy} onClick={() => setMakeTpl(true)}>{tx("Template maken")}</button>
           <small className="muted">{tx("Een zip met template.json, pages.zip en voorbeeldplaatjes. Gebruikers kiezen hem bij Admin → Website → Templates.")}</small>
         </div>
       )}

@@ -446,7 +446,7 @@ def system_settings(request):
         if errors:
             return Response({"detail": " ".join(errors.values()), "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
         system.save(cleaned)
-    return Response({"settings": system.get(), "checks": system.checks(request), "env": system.env_files(), "environments": system.ENVIRONMENTS,
+    return Response({"settings": system.get(), "checks": system.checks(request), "env": system.env_files(), "environments": system.ENVIRONMENTS, "currencies": system.CURRENCIES,
                      "request_origin": f"{request.scheme}://{request.get_host()}"})
 
 
@@ -1936,6 +1936,82 @@ def sitecreator_generate(request, pk):
 
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+def sitecreator_chat(request, pk):
+    """AI chat build: one message of the customer; the designer answers (and designs or changes the website)."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.chat(job, request.data.get("text"), request.data.get("images"))
+    except ValueError as e:
+        return _bad(str(e))
+    job.refresh_from_db()
+    return Response(sitecreator.public(job))
+
+
+@api_view(["POST", "DELETE"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_slot(request, pk):
+    """A photo (downloaded by the user from iStock and uploaded to the media library) goes in a photo slot of the chat design; DELETE empties the slot."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        if request.method == "DELETE":
+            job = sitecreator.clear_slot(job, request.data.get("file"))
+        elif request.data.get("add"):
+            job = sitecreator.add_pick(job, request.data.get("add"))
+        elif request.data.get("pick"):
+            job = sitecreator.set_istock_pick(job, request.data.get("file"), request.data.get("pick"))
+        elif request.data.get("use_preview"):
+            job = sitecreator.use_preview(job, request.data.get("file"), request.user)
+        elif request.data.get("hide"):
+            job = sitecreator.hide_slot(job, request.data.get("file"))
+        elif "istock" in request.data:
+            job = sitecreator.set_istock(job, request.data.get("file"), request.data.get("istock"))
+        else:
+            job = sitecreator.set_slot(job, request.data.get("file"), request.data.get("media"))
+    except ValueError as e:
+        return _bad(str(e))
+    return Response(sitecreator.public(job))
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_istock_search(request, pk):
+    """The search field of the photos: what iStock shows for a search word (photos or videos), with number, address and example picture."""
+    from . import sitecreator
+
+    if not _design(request, pk):
+        return _gone()
+    q = str(request.query_params.get("q") or "").strip()[:120]
+    if len(q) < 2:
+        return _bad("Typ een zoekwoord van minstens 2 letters.")
+    return Response({"items": sitecreator.search_istock(q, video=request.query_params.get("kind") == "video")})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_istock(request, pk):
+    """The AI searches iStock for a fitting photo (number and address) for every open photo slot of the chat design."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        job = sitecreator.find_istock(job)
+    except Exception as e:  # noqa: BLE001
+        return _bad(str(e) if isinstance(e, ValueError) else "Zoeken op iStock is niet gelukt. Probeer het nog eens.")
+    return Response({**sitecreator.public(job), "found": getattr(job, "found", 0)})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
 def sitecreator_revise(request, pk):
     from . import sitecreator
 
@@ -1943,7 +2019,7 @@ def sitecreator_revise(request, pk):
     if not job:
         return _gone()
     try:
-        sitecreator.revise(job, request.data.get("text"), str(request.data.get("page") or ""))
+        sitecreator.revise(job, request.data.get("text"), str(request.data.get("page") or ""), request.data.get("images"))
     except ValueError as e:
         return _bad(str(e))
     job.refresh_from_db()
@@ -2015,6 +2091,59 @@ def sitecreator_palette(request, pk):
     except ValueError as e:
         return _bad(str(e))
     return Response({**sitecreator.public(job), "note": note})
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_theme_library(request):
+    """The colour themes to choose from in the chat: installed and not installed (library)."""
+    from . import sitecreator
+
+    return Response({"themes": sitecreator.theme_library()})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_theme_apply(request, pk):
+    """{"key": theme}: installs the theme when needed, gives the design its colours and removes the theme that an earlier choice installed."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        job = sitecreator.apply_theme(job, str(request.data.get("key") or ""), request.user)
+    except ValueError as e:
+        return _bad(str(e))
+    return Response(sitecreator.public(job))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_search_terms(request, pk):
+    """{"name", "what", "kind"}: search phrases for iStock that fit the company (asked from the AI)."""
+    from . import sitecreator
+
+    if not _design(request, pk):
+        return _gone()
+    return Response({"terms": sitecreator.search_terms(request.data.get("name"), request.data.get("what"), "video" if request.data.get("kind") == "video" else "photo")})
+
+
+@api_view(["POST", "DELETE"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_own_media(request, pk):
+    """POST {"media": id, "role": "logo"|"media"}: the customer's own logo, photo or video (uploaded to the media library) goes in the project and the prompt. DELETE {"file"} takes it out again."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        if request.method == "DELETE":
+            return Response(sitecreator.public(sitecreator.remove_own_media(job, request.data.get("file"))))
+        return Response(sitecreator.public(sitecreator.add_own_media(job, request.data.get("media"), "logo" if request.data.get("role") == "logo" else "media")))
+    except ValueError as e:
+        return _bad(str(e))
 
 
 @api_view(["POST"])

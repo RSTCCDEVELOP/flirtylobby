@@ -279,6 +279,22 @@ EXTRA = [
 ]
 EXTRA += CHARTS
 
+# ---- AI costs: the live list, the three amounts, the floating window ----
+COSTS = [
+    C("ui-live-feed", "Live lijst", "Een lijst die live bijgewerkt wordt (bv. elk AI-verzoek met kosten), met een lampje, pauzeren en wissen.", "Data & feedback", "Live lijst", """
+<div class="e2e-live"><header class="e2e-live__head"><i class="e2e-live__dot"></i><b>Live: elk verzoek verschijnt hier direct</b><span class="e2e-live__tools"><button class="e2e-btn e2e-btn--ghost e2e-btn--sm">Pauzeren</button><button class="e2e-btn e2e-btn--ghost e2e-btn--sm">Wissen</button></span></header>
+<div class="e2e-table-wrap"><table class="e2e-table"><thead><tr><th>Tijd</th><th>Waarvoor</th><th>Wie</th><th>Tokens</th><th style="text-align:right">Kosten</th></tr></thead><tbody>
+<tr><td>10:26:03</td><td><strong>Website ontwerpen</strong></td><td>Ronald</td><td>20.076 → 24.000</td><td style="text-align:right"><strong>€ 1,51</strong></td></tr>
+<tr><td>10:22:45</td><td><strong>Vertalen</strong> <span class="e2e-badge e2e-badge--danger">mislukt</span></td><td>Systeem</td><td>19.358 → 17.211</td><td style="text-align:right"><strong>€ 1,14</strong></td></tr></tbody></table></div></div>"""),
+    C("ui-cost-summary", "Kosten: nu, vandaag, maand", "Drie bedragen naast elkaar: wat het nu kost, wat het vandaag kost en wat het deze maand kost.", "Grafieken & statistieken", "Kosten", """
+<div class="e2e-costs"><div class="e2e-costs__main"><small>Nu</small><b>€ 8,05</b></div><div class="e2e-costs__item"><small>Vandaag</small><b>€ 12,40</b><span class="e2e-hint">24 verzoeken</span></div><div class="e2e-costs__item"><small>Deze maand</small><b>€ 186,10</b><span class="e2e-hint">412 verzoeken</span></div></div>"""),
+    C("ui-cost-widget", "Zwevend kostenvenster", "Een ronde knop met het valutateken die een klein venster opent met de kosten nu, vandaag en deze maand en de verzoeken per soort, uit te klappen.", "Data & feedback", "Kostenvenster", """
+<div class="e2e-floatwin"><div class="e2e-floatwin__panel"><div class="e2e-costs e2e-costs--solid"><div class="e2e-costs__main"><small>Nu</small><b>€ 8,05</b></div><div class="e2e-costs__item"><small>Vandaag</small><b>€ 12,40</b></div><div class="e2e-costs__item"><small>Deze maand</small><b>€ 186,10</b></div></div>
+<ul class="e2e-fold"><li><button class="e2e-fold__head" aria-expanded="false"><span>Systeem</span><b>€ 8,05</b></button></li><li><button class="e2e-fold__head" aria-expanded="false"><span>Website ontwerpen</span><b>€ 3,20</b></button></li></ul></div>
+<button class="e2e-floatwin__btn" aria-label="Kosten">€</button></div>"""),
+]
+EXTRA += COSTS
+
 CSS = r'''
 /* ===== TABS VOLGEN HET THEMA: data-e2e-tabstyle="pills|underline|segmented|folder" op html, body of het blok (easy2edit zet hem uit Thema > Vormgeving > Uiterlijk van tabbladen) ===== */
 [data-e2e-tabstyle="pills"] .e2e-tabs:not(.e2e-pills) .e2e-tabs__list{border:0;background:transparent;padding:0;gap:.4rem;flex-wrap:wrap;overflow:visible;display:flex;border-radius:0}
@@ -442,6 +458,57 @@ CSS = r'''
 .e2e-leader{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.7rem;width:100%}.e2e-leader li{display:grid;grid-template-columns:1.4rem auto minmax(5rem,10rem) 1fr auto;gap:.7rem;align-items:center}.e2e-leader li>b{color:var(--e2e-muted);text-align:center}
 .e2e-radar{width:min(320px,100%)}.e2e-radar text{font-size:9px;fill:var(--e2e-muted)}.e2e-radar .e2e-line{stroke-width:2}
 .e2e-chartcard [data-set][hidden]{display:none}
+
+/* ===== LIVE LIJST, KOSTEN, ZWEVEND VENSTER ===== */
+.e2e-live{border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);background:var(--e2e-bg);overflow:hidden}
+.e2e-live__head{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;border-bottom:1px solid var(--e2e-border)}.e2e-live__head b{flex:1}.e2e-live__tools{display:flex;gap:.3rem}
+.e2e-live__dot{width:.6rem;height:.6rem;border-radius:50%;background:var(--e2e-success);box-shadow:0 0 0 4px color-mix(in srgb,var(--e2e-success) 25%,transparent)}.e2e-live.is-paused .e2e-live__dot{background:var(--e2e-muted);box-shadow:none}
+.e2e-live tbody tr.is-new{background:var(--e2e-primary-soft)}.e2e-live tbody tr[data-open]{cursor:pointer}
+.e2e-costs{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:.5rem;align-items:end;padding:1rem 1.15rem;border-radius:var(--e2e-radius-lg);background:var(--e2e-surface)}
+.e2e-costs small{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--e2e-muted)}.e2e-costs b{display:block;font-family:var(--e2e-font-heading);font-size:1.2rem;line-height:1.4;font-variant-numeric:tabular-nums}
+.e2e-costs__main b{font-size:1.9rem;line-height:1.15}.e2e-costs__item{border-left:1px solid var(--e2e-border);padding-left:.7rem}
+.e2e-costs--solid{background:var(--e2e-primary);color:var(--e2e-on-primary,#fff);border-radius:0}.e2e-costs--solid small,.e2e-costs--solid .e2e-hint{color:inherit;opacity:.85}.e2e-costs--solid .e2e-costs__item{border-color:rgba(255,255,255,.3)}
+.e2e-floatwin{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:.6rem}
+.e2e-floatwin__panel{width:min(400px,100%);max-height:60vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--e2e-border);border-radius:calc(var(--e2e-radius-lg) + 4px);background:var(--e2e-bg);box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.e2e-floatwin__btn{width:3.25rem;height:3.25rem;border-radius:50%;border:0;background:var(--e2e-primary);color:var(--e2e-on-primary,#fff);font:700 1.5rem/1 var(--e2e-font-heading);cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.e2e-fold{list-style:none;margin:0;padding:.35rem .5rem;overflow-y:auto}.e2e-fold li{border-radius:var(--e2e-radius)}.e2e-fold li.is-open{background:var(--e2e-surface)}
+.e2e-fold__head{width:100%;display:flex;justify-content:space-between;gap:.6rem;align-items:center;padding:.6rem;background:none;border:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
+.e2e-fold__head::before{content:"›";display:inline-block;width:1rem;transition:transform .15s;opacity:.6}.e2e-fold__head[aria-expanded="true"]::before{transform:rotate(90deg)}.e2e-fold__head span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e2e-fold__body{padding:0 .6rem .6rem 1.6rem;font-size:.85rem;color:var(--e2e-muted)}.e2e-fold__body div{display:flex;justify-content:space-between;gap:.6rem;padding:.25rem 0;border-top:1px dashed var(--e2e-border)}
+
+/* ===== SERIEKLEUREN (s1..s5) BINNEN DE COMPONENTEN: zo blijven ze ook werken in een blok van een pagina of scherm (alleen e2e-regels) ===== */
+.e2e-bar.s1,.e2e-stack__col i.s1,.e2e-legend i.s1,.e2e-track.s1,.e2e-chartcard .s1{--_s:var(--e2e-primary)}
+.e2e-bar.s2,.e2e-stack__col i.s2,.e2e-legend i.s2,.e2e-track.s2,.e2e-chartcard .s2{--_s:var(--e2e-secondary)}
+.e2e-bar.s3,.e2e-stack__col i.s3,.e2e-legend i.s3,.e2e-track.s3,.e2e-chartcard .s3{--_s:var(--e2e-accent)}
+.e2e-bar.s4,.e2e-stack__col i.s4,.e2e-legend i.s4,.e2e-track.s4,.e2e-chartcard .s4{--_s:var(--e2e-info)}
+.e2e-bar.s5,.e2e-stack__col i.s5,.e2e-legend i.s5,.e2e-track.s5,.e2e-chartcard .s5{--_s:var(--e2e-success)}
+.e2e-live__empty{padding:2.2rem 1rem;text-align:center;color:var(--e2e-muted)}
+
+/* ===== TABEL: volgt het thema (kleur van de kop, hoeken, schaduw, lettertype); verandert overal waar een tabel van de set staat ===== */
+.e2e-table-wrap{border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);background:var(--e2e-bg);box-shadow:var(--e2e-shadow);overflow:auto;max-height:var(--e2e-table-max,none)}
+.e2e-table{border-collapse:separate;border-spacing:0;font-size:.93rem;color:var(--e2e-text)}
+.e2e-table th,.e2e-table td{padding:.8rem 1.15rem;border-bottom:1px solid color-mix(in srgb,var(--e2e-border) 70%,transparent);vertical-align:middle;font-variant-numeric:tabular-nums}
+.e2e-table thead th{position:sticky;top:0;z-index:1;white-space:nowrap;background:color-mix(in srgb,var(--e2e-primary) 8%,var(--e2e-surface));color:var(--e2e-primary-ink,var(--e2e-text));font-family:var(--e2e-font-heading);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid var(--e2e-primary-line)}
+.e2e-table tbody tr{transition:background .12s}
+.e2e-table tbody tr:nth-child(even){background:color-mix(in srgb,var(--e2e-surface) 55%,transparent)}
+.e2e-table tbody tr:hover{background:var(--e2e-primary-soft)}
+.e2e-table tbody td:first-child{font-weight:600}
+.e2e-table tbody tr:last-child td{border-bottom:0}
+.e2e-table .e2e-num{text-align:right}
+.e2e-table small,.e2e-table .e2e-hint{color:var(--e2e-muted)}
+.e2e-table .e2e-badge{white-space:nowrap}
+.e2e-table tfoot td{font-weight:700;background:var(--e2e-surface);border-top:2px solid var(--e2e-border-strong,var(--e2e-border))}
+@media(max-width:640px){.e2e-table th,.e2e-table td{padding:.65rem .8rem}}
+
+/* ===== KOSTEN: de drie bedragen staan bovenaan op één lijn; een verzoek dat bezig is ===== */
+.e2e-costs{align-items:start}
+.e2e-costs__main,.e2e-costs__item{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.e2e-costs__main b,.e2e-costs__item b{line-height:1.25}
+.e2e-costs__main .e2e-hint,.e2e-costs__item .e2e-hint{display:block}
+.e2e-fold__run{display:flex;gap:.65rem;align-items:center;padding:.6rem .7rem;margin:.1rem 0 .35rem;border-radius:var(--e2e-radius);background:color-mix(in srgb,var(--e2e-primary) 10%,var(--e2e-bg))}
+.e2e-fold__run span{flex:1;min-width:0}.e2e-fold__run small{display:block;color:var(--e2e-muted)}.e2e-fold__run b{font-variant-numeric:tabular-nums}
+.e2e-live__dot.is-busy{animation:e2e-pulse 1.1s ease-in-out infinite}
+@keyframes e2e-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--e2e-success) 45%,transparent)}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--e2e-success) 0%,transparent)}}
 '''
 
 JS = r'''

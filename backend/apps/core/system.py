@@ -19,6 +19,7 @@ from django.conf import settings
 from .models import SystemSettings
 
 DEFAULTS = {
+    "installation_name": "",  # the name of the last installation (a standard installation or the wizard): what the AI costs call "the site"
     "site_name": "", "tab_title": "", "tagline": "", "company_name": "", "environment": "production",
     "frontend_url": "", "backend_url": "", "extra_origins": [],
     "contact_email": "", "support_email": "", "admin_email": "", "phone": "", "kvk": "", "vat_id": "", "address": "",
@@ -26,6 +27,7 @@ DEFAULTS = {
     "aliases": [],  # extra domain names of the website (www.x.nl, x.nl): visitors can be sent on to the main address
     "redirect_aliases": False,
     "timezone": "Europe/Amsterdam",
+    "currency": "EUR",  # the currency of prices, shop, donations and subscriptions (ISO 4217)
     "maintenance": False, "maintenance_message": "", "maintenance_messages": {},  # the notice per language: {code: text}
     "max_image_mb": "20", "max_video_mb": "300", "max_photo_mb": "5",
     "signal_seconds": "0",  # how often the browser asks for call signals (video and chat calls): 0 = 1.5 seconds
@@ -41,6 +43,7 @@ SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
 INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200)}
 ENVIRONMENTS = ["production", "staging", "development"]
+CURRENCIES = ["EUR", "USD", "GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "BGN", "TRY", "CAD", "AUD", "NZD", "JPY", "CNY", "INR", "BRL", "MXN", "ZAR", "AED", "SAR", "ILS", "SGD", "HKD", "KRW", "THB", "IDR"]
 URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -113,6 +116,12 @@ def clean(incoming):
             out[k] = list(dict.fromkeys(items))[:20]
         elif k in ("redirect_aliases", "maintenance", "show_credit"):
             out[k] = bool(v)
+        elif k == "currency":
+            c = str(v or "").strip().upper()
+            if c not in CURRENCIES:
+                errors[k] = "Kies een valuta uit de lijst."
+            else:
+                out[k] = c
         elif k == "timezone":
             try:
                 from zoneinfo import ZoneInfo
@@ -155,7 +164,21 @@ def save(cleaned):
     obj.data = {**(obj.data or {}), **cleaned}
     obj.save()
     _sync_seo(old, get())
+    try:
+        from apps.integrations import aiusage
+
+        aiusage.forget_names()  # the names in the AI costs follow at once
+    except Exception:  # noqa: BLE001
+        pass
     return get()
+
+
+def set_installation_name(name):
+    """Remember the name of the installation that was done last (the website name itself stays as it is)."""
+    name = str(name or "").strip()[:100]
+    if name:
+        save({"installation_name": name})
+    return name
 
 
 def _sync_seo(old, new):
@@ -298,6 +321,12 @@ def license_changed():
     _lic["v"] = None
 
 
+def currency():
+    """The currency of the website (default EUR): what prices, the shop, donations and subscriptions are in."""
+    c = str(get().get("currency") or "EUR").upper()
+    return c if c in CURRENCIES else "EUR"
+
+
 def maintenance_on():
     """Maintenance mode of Basisgegevens, or a licence that has run out: the website then shows the maintenance page (administrators keep working to renew it)."""
     return bool(get()["maintenance"] or license_info()["expired"])
@@ -307,7 +336,7 @@ def public():
     """What the website itself needs (no secrets): name, domains, contact, footer, maintenance."""
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
-            "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"],
+            "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"], "currency": currency(),
             "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0)}

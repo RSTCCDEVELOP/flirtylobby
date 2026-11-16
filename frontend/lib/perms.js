@@ -46,6 +46,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/themes", modules: ["theme", "branding"] },
   { href: "/dashboard/admin/plugins", module: "plugins" },
   { href: "/dashboard/admin/ai", module: "ai", perm: "ai.manage" },
+  { href: "/dashboard/admin/ai-kosten", module: "ai", perm: "ai.manage" },
 ];
 
 export const pageAllowed = (user, page, mods = {}) => {

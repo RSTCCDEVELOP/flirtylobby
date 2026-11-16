@@ -16,6 +16,8 @@ router.register("admin/integrations", views.IntegrationViewSet, basename="integr
 urlpatterns = [
     path("integrations/", views.active_integrations),
     path("admin/ai/overview/", ai_views.overview),
+    path("admin/ai/live/", ai_views.live),
+    path("admin/ai/summary/", ai_views.summary),
     path("admin/ai/costs/", ai_views.costs),
     path("admin/ai/settings/", ai_views.settings),
     path("admin/ai/rate/", ai_views.rate),

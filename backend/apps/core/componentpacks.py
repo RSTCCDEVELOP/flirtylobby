@@ -96,9 +96,28 @@ def _zips(folder):
     return out
 
 
+_checked = {"t": 0.0}
+
+
 def ensure_default():
-    """The standard set is installed on every site (copied from the library) when it is not there yet."""
+    """The standard set is installed on every site (copied from the library) when it is not there yet. A set that came with the product and has a newer version in the library is updated
+    (at most once a minute is looked): so new components (and their css) are on every site as soon as the library has them. Sets that were uploaded and are not in the library stay as they are."""
+    import time
+
     lib, site = _zips(library_dir()), _zips(site_dir())
+    if time.time() - _checked["t"] > 60:
+        _checked["t"] = time.time()
+        for key, (f, m) in lib.items():
+            if key in site and _ver(m["version"]) > _ver(site[key][1]["version"]):
+                try:
+                    for old in site_dir().glob("*.zip"):
+                        if read(old, full=False)["key"] == key:
+                            old.unlink()
+                    shutil.copy2(f, site_dir() / f.name)
+                    _cache.pop(key, None)
+                except (ComponentError, OSError):
+                    pass
+        site = _zips(site_dir())
     if DEFAULT_KEY not in site and DEFAULT_KEY in lib:
         try:
             shutil.copy2(lib[DEFAULT_KEY][0], site_dir() / lib[DEFAULT_KEY][0].name)
@@ -212,6 +231,24 @@ def activate(key):
     s.component_set = "" if key == DEFAULT_KEY else key  # "" = the standard set
     s.save(update_fields=["component_set"])
     return get(key)
+
+
+TEMPLATE_TAGS = ("ui-navbar", "ui-hero-split", "ui-hero-center", "ui-hero-dark", "ui-section-heading", "ui-cards", "ui-features", "ui-split", "ui-stats", "ui-pricing", "ui-testimonials", "ui-team", "ui-faq", "ui-cta", "ui-contact",
+                 "ui-steps-process", "ui-gallery", "ui-newsletter", "ui-comparison-table", "ui-footer")
+
+
+def templates_text(key=None, tags=TEMPLATE_TAGS):
+    """The real html of the main components of a set (compact), so that a designer copies the exact structure and classes instead of inventing its own."""
+    try:
+        s = get(key)
+    except ComponentError:
+        return ""
+    by = {c["easy2edit_tag"]: c for c in s["components"]}
+    out = []
+    for t in tags:
+        if t in by:
+            out.append(f"--- {t} ({by[t]['name']}) ---\n" + re.sub(r">\s+<", "><", re.sub(r"\s+", " ", by[t]["html"])).strip())
+    return "\n".join(out)
 
 
 def rules_text(key=None):

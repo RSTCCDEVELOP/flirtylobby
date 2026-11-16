@@ -159,9 +159,25 @@ def _ai_linked():
         return False
 
 
+def _sync_pages():
+    """A part was switched on or off: the standard pages of the parts that are on are made (the ones of parts that are off are not there)."""
+    try:
+        from apps.pages import service as pages_service
+
+        pages_service.ensure_defaults()
+    except Exception:  # noqa: BLE001 - never breaks switching a module
+        pass
+
+
 def invalidate():
     _cache["v"] = None
     _pl["t"] = 0
+    try:
+        from django.db import transaction
+
+        transaction.on_commit(_sync_pages)  # after the change is saved
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def enabled(key):

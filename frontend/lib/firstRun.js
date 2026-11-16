@@ -40,3 +40,4 @@ export const answerSandbox = async (on) => { try { set(await api("/system/sandbo
 
 // the question "look at the manual?" was answered (yes or no)
 export const answerManual = async () => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { manual: true } })); } catch { set({ ...(state || {}), manual_asked: true }); } };
+

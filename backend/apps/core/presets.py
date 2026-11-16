@@ -1077,6 +1077,13 @@ def apply(key, preset=None, overwrite_pages=False):
     data = _data()
     data["active_preset"] = key
     _save_data(data)
+    if key != "wizard":  # (the wizard sets the name of the website itself, right after this)
+        try:
+            from . import system as _system
+
+            _system.set_installation_name(str(preset.get("name") or ""))
+        except Exception:  # noqa: BLE001
+            logger.exception("Preset %s: the name of the installation could not be saved", key)
     try:
         from apps.sysobjects import service as so
 

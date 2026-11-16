@@ -33,6 +33,7 @@ import { DirectHostProvider } from "../components/DirectHost";
 import LangRoot from "../components/LangRoot";
 import VersionNotice from "../components/VersionNotice";
 import { getSite } from "../lib/site-server";
+import SiteCurrency from "../components/SiteCurrency";
 import DevicePreview from "../components/DevicePreview";
 import NavProgress from "../components/NavProgress";
 import DonateThanks from "../components/DonateThanks";
@@ -156,6 +157,7 @@ export default async function RootLayout({ children }) {
         {theme?.css && <style id="theme-live" dangerouslySetInnerHTML={{ __html: theme.css }} />}
       </head>
       <body>
+        <SiteCurrency currency={site?.currency} />
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>
         <SessionProvider>

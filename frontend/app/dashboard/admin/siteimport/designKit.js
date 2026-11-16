@@ -16,7 +16,7 @@ import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { buildPrompt } from "./aiPrompt";
 import { componentListText } from "../../../../lib/ui-kit/componentList";
-import { loadKit } from "../../../../lib/ui-kit/kitDoc";
+import { hexOf, loadKit } from "../../../../lib/ui-kit/kitDoc";
 
 // The steps of the design flow: key, name, one line under the name, icon.
 export const STEPS = [
@@ -50,12 +50,41 @@ export const pagesOf = (b) => String(b.pages || "").split(",").map((p) => p.trim
 // the pages that are made: every page that is ticked in the menu (the start page is always made)
 export const activePages = (b) => pagesOf(b).filter((p, i) => i === 0 || !(b.pages_off || []).includes(p));
 
+// The preview of a design must be the same as the website after the import. The import draws the components of the UI-kit (e2e-...) with the CSS of the kit in the colours of the theme, and it leaves the own rules
+// of the design for those components out; so the preview does the same: the kit css, the colours of the design as tokens (--e2e-*), and the css of the design WITHOUT its own rules for e2e-... classes.
+const lumOf = (h) => { const c = [1, 3, 5].map((i) => { const x = parseInt(h.substr(i, 2), 16) / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+const onOf = (h) => (lumOf(h) < 0.4 ? "#ffffff" : "#151515"); // white text on a dark colour, dark text on a light one
+export function designTokens(css) {
+  const vars = {};
+  for (const m of String(css || "").matchAll(/:root\s*\{([^}]*)\}/g)) for (const d of m[1].split(";")) { const i = d.indexOf(":"); if (i > 0) vars[d.slice(0, i).trim()] = d.slice(i + 1).trim(); }
+  const col = (...names) => { for (const n of names) { const h = hexOf(vars[n]); if (h) return h; } return ""; };
+  const t = { "--e2e-primary": col("--primary", "--brand", "--color-primary", "--blue"), "--e2e-secondary": col("--secondary", "--accent", "--color-secondary"), "--e2e-bg": col("--bg", "--page", "--background", "--color-bg"),
+    "--e2e-surface": col("--bg-soft", "--surface", "--bg-alt", "--card"), "--e2e-text": col("--text", "--ink", "--color-text", "--foreground"), "--e2e-border": col("--line", "--border", "--color-border") };
+  if (t["--e2e-primary"]) t["--e2e-on-primary"] = onOf(t["--e2e-primary"]);
+  if (t["--e2e-secondary"]) t["--e2e-on-secondary"] = onOf(t["--e2e-secondary"]);
+  if (vars["--font-heading"] || vars["--font"]) t["--e2e-font-heading"] = vars["--font-heading"] || vars["--font"];
+  if (vars["--font-body"] || vars["--font"]) t["--e2e-font-body"] = vars["--font-body"] || vars["--font"];
+  const r = parseFloat(vars["--radius"] || vars["--btn-radius"]); if (r) t["--e2e-radius"] = `${r}px`;
+  return `:root{${Object.entries(t).filter(([, v]) => v).map(([k, v]) => `${k}:${v}`).join(";")}}`;
+}
+export function stripKitRules(css) {
+  if (typeof CSSStyleSheet === "undefined") return css;
+  let sheet;
+  try { sheet = new CSSStyleSheet(); sheet.replaceSync(css); } catch { return css; }
+  const walk = (list) => [...list].map((r) => {
+    if (r.type === 1) { const keep = r.selectorText.split(",").map((s) => s.trim()).filter((s) => !/\.e2e-|\[data-e2e/.test(s)); return keep.length ? `${keep.join(",")}{${r.style.cssText}}` : ""; }
+    if (r.type === 4) { const inner = walk(r.cssRules); return inner ? `@media ${r.conditionText}{${inner}}` : ""; }
+    return r.cssText;
+  }).join("\n");
+  return walk(sheet.cssRules);
+}
+
 // The page as one html text for the preview: the stylesheet, the svg pictures and the uploaded photos are put into it (the frame has no access to the other files).
-export function previewHtml(files, name, photos = [], theme = "") {
+export function previewHtml(files, name, photos = [], theme = "", placeholders = false, kit = null) {
   let h = files[name] || "";
   if (theme) h = /<html\b[^>]*data-theme=/i.test(h) ? h.replace(/(<html\b[^>]*data-theme=)["'][^"']*["']/i, `$1"${theme}"`) : h.replace(/<html\b/i, `<html data-theme="${theme}"`); // the design in its light or its dark mode
   const css = files["style.css"] || "";
-  h = h.replace(/<link\b[^>]*stylesheet[^>]*>/gi, () => `<style>${css}</style>`);
+  h = h.replace(/<link\b[^>]*stylesheet[^>]*>/gi, () => (kit && kit.KIT_CSS ? `<style>${kit.KIT_CSS}</style><style>${designTokens(css)}</style><style>${stripKitRules(css)}</style>` : `<style>${css}</style>`));
   const find = (p) => {
     const base = p.split("?")[0].split("/").pop().toLowerCase();
     const photo = photos.find((x) => x.file === base);
@@ -63,8 +92,10 @@ export function previewHtml(files, name, photos = [], theme = "") {
     const f = files["img/" + base] || files[base];
     return f && base.endsWith(".svg") ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(f)}` : null;
   };
-  h = h.replace(/(src=["'])([^"']+\.(?:svg|jpe?g|png|webp|gif))(["'])/gi, (m, a, p, b) => (find(p) ? a + find(p) + b : m));
-  h = h.replace(/url\((["']?)([^)"']+\.(?:svg|jpe?g|png|webp|gif))\1\)/gi, (m, q, p) => (find(p) ? `url(${q}${find(p)}${q})` : m));
+  const none = placeholders ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><rect width="400" height="300" fill="#e2e8f0"/><g fill="none" stroke="#94a3b8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><rect x="150" y="105" width="100" height="80" rx="10"/><circle cx="182" cy="133" r="9"/><path d="M155 180l32-32 22 20 14-12 27 24"/></g></svg>')}` : null; // a photo that is not here yet (chat design): a grey tile
+  const at = (p) => find(p) || (none && /\.(?:jpe?g|png|webp|gif)(?:\?.*)?$/i.test(p) && !/^(?:https?:)?\/\//i.test(p) ? none : null);
+  h = h.replace(/(src=["'])([^"']+\.(?:svg|jpe?g|png|webp|gif|mp4|webm))(["'])/gi, (m, a, p, b) => (at(p) ? a + at(p) + b : m));
+  h = h.replace(/url\((["']?)([^)"']+\.(?:svg|jpe?g|png|webp|gif))\1\)/gi, (m, q, p) => (at(p) ? `url(${q}${at(p)}${q})` : m));
   return h;
 }
 

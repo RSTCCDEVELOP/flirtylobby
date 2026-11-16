@@ -85,8 +85,8 @@ def main():
         for old in LIB.glob(f"{v['key']}-*.zip"):
             old.unlink()
         css_v = css.split("/* ===== VARIANT")[0].rstrip() + "\n" + v["css"]
-        m = {**man, "key": v["key"], "name": v["name"], "description": v["description"], "version": "1.0.0"}
-        out = LIB / f"{v['key']}-1.0.0.zip"
+        m = {**man, "key": v["key"], "name": v["name"], "description": v["description"], "version": "1.0.4"}
+        out = LIB / f"{v['key']}-1.0.4.zip"
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as w:
             w.writestr("components.json", json.dumps(m, indent=2, ensure_ascii=False))
             w.writestr("components.css", css_v)

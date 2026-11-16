@@ -110,6 +110,64 @@ def _overview(request, admin=False):
 
 
 @api_view(["GET"])
+@permission_classes([AiAdmin])
+def live(request):
+    """The floating AI window of the back office: the latest AI calls with their costs, one row per request. ?after=<id> gives only newer calls (cheap to poll);
+    without it the calls of the last 30 minutes. Only what is charged (the selling currency, euro by default, margin included): never the purchase price of the AI supplier. A superadmin sees all groups; an admin only users and admins."""
+    sup = bool(request.user.is_staff)
+    try:
+        after = int(request.query_params.get("after") or 0)
+    except ValueError:
+        after = 0
+    qs = AiUsage.objects.filter(owner="system") if sup else AiUsage.objects.filter(owner="system", group__in=("user", "admin"))
+    top = qs.order_by("-id").values_list("id", flat=True).first() or 0
+    rows = qs.filter(id__gt=after) if after else qs.filter(created_at__gte=timezone.now() - timedelta(minutes=30))
+    names = aiusage.group_names()
+    out = []
+    for r in rows.order_by("-id")[:40]:
+        item = {"id": r.id, "at": r.created_at.isoformat(timespec="seconds"), "source": r.source, "purpose": r.purpose, "model": r.model, "group": names.get(r.group, r.group),
+                "user": r.user_label, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out, "ms": r.duration_ms, "ok": r.ok, "error": r.error, "web": r.web, "images": r.images, "charged": F(r.charged) if r.billable else 0}
+        out.append(item)
+    st = AiSettings.load()
+    now = timezone.localtime()
+    def total(since):
+        t = qs.filter(created_at__gte=since).annotate(c_charged=Fld("charged")).aggregate(n=Count("id"), charged=Sum("c_charged", filter=Q(billable=True)))
+        return {"calls": t["n"] or 0, "charged": F(t["charged"])}
+    day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return Response({"currency": st.currency, "super": sup, "top": top, "rows": out, "today": total(day), "month": total(day.replace(day=1)), "running": aiusage.running_now(sup)})
+
+
+@api_view(["GET"])
+@permission_classes([AiAdmin])
+def summary(request):
+    """The big numbers of the AI costs page: what is charged (margin included, never the purchase price) today, yesterday, in the last 7 days, this month, last month, this year and in total, with the expectation for the whole month. Same view as the live window: a superadmin sees all groups, an admin only users and admins."""
+    import calendar
+
+    sup = bool(request.user.is_staff)
+    qs = AiUsage.objects.filter(owner="system") if sup else AiUsage.objects.filter(owner="system", group__in=("user", "admin"))
+    now = timezone.localtime()
+    day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    month = day.replace(day=1)
+    last_month = (month - timedelta(days=1)).replace(day=1)
+    spans = {"today": (day, None), "yesterday": (day - timedelta(days=1), day), "week": (day - timedelta(days=6), None), "month": (month, None), "last_month": (last_month, month), "year": (day.replace(month=1, day=1), None), "all": (None, None)}
+    out = {}
+    for k, (a, b) in spans.items():
+        q = qs
+        if a:
+            q = q.filter(created_at__gte=a)
+        if b:
+            q = q.filter(created_at__lt=b)
+        t = q.annotate(c_charged=Fld("charged")).aggregate(n=Count("id"), bad=Count("id", filter=Q(ok=False)), charged=Sum("c_charged", filter=Q(billable=True)), tin=Sum("tokens_in"), tout=Sum("tokens_out"))
+        out[k] = {"calls": t["n"] or 0, "errors": t["bad"] or 0, "charged": F(t["charged"]), "tokens": (t["tin"] or 0) + (t["tout"] or 0)}
+    days_in = calendar.monthrange(now.year, now.month)[1]
+    elapsed = max(1, (now - month).total_seconds() / 86400)
+    out["expected_month"] = F(out["month"]["charged"] / elapsed * days_in) if out["month"]["charged"] else 0
+    out["currency"] = AiSettings.load().currency
+    out["super"] = sup
+    return Response(out)
+
+
+@api_view(["GET"])
 @permission_classes([IsAdminUser])
 def costs(request):
     """The costs per month or week: for every group and for every user."""

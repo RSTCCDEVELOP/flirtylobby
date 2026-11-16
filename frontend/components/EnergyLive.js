@@ -8,7 +8,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useUpdates } from "../lib/updates";
 import { api } from "../lib/api";
 import { tx } from "../lib/t";
 import { LineChart } from "./EnergyBlocks";
@@ -25,12 +26,7 @@ export default function EnergyLive() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(false);
   const [copied, setCopied] = useState(false);
-  const load = useCallback(() => api(`/energy/live/?hours=${hours}`).then((r) => { setD(r); setErr(false); }).catch(() => setErr(true)), [hours]);
-  useEffect(() => {
-    load();
-    const t = setInterval(() => { if (!document.hidden) load(); }, 10000); // live: every 10 seconds, not while the tab is hidden
-    return () => clearInterval(t);
-  }, [load]);
+  useUpdates(`energy-live-${hours}`, () => api(`/energy/live/?hours=${hours}`), 10000, (r) => { setD(r); setErr(false); }, true, { live: true, onError: () => setErr(true) }); // live: every 10 seconds, not while the tab is hidden
   if (err && !d) return <p className="muted">{tx("De energiegegevens zijn niet beschikbaar.")}</p>;
   if (!d) return <p className="muted">{tx("Laden…")}</p>;
   const pts = d.points.map((p) => ({ x: hm(p.t), y: p.w }));

@@ -16,6 +16,7 @@ import { IconBell, IconCheck, IconX } from "./Icons";
 import { useSession } from "./Session";
 import { refreshMs } from "../lib/refresh";
 import { notifySocketOpen, subscribeNotify } from "../lib/notifysocket";
+import { subscribe } from "../lib/updates";
 
 export const KIND_LABEL = { system: "Bericht van de beheerder", message: "Nieuw bericht", chat: "Nieuw chatbericht", like: "Nieuwe like", match: "Nieuwe match", request: "Verzoek", direct: "Verzoek om te chatten", donation: "Donatie", subscription: "Abonnement", order: "Bestelling", security: "Beveiliging", plugin: "Plugin" };
 
@@ -58,13 +59,13 @@ export default function NotificationFeed() {
     if (!user) return undefined;
     load();
     let t = null;
-    const poll = (ms) => { clearInterval(t); t = setInterval(load, ms); };
+    const poll = (ms) => { if (t) t(); t = subscribe("notify-feed", load, ms, null, { first: false }); }; // (one controller for all the news: nothing runs while the tab is hidden)
     const stop = subscribeNotify((m) => {
       if (m.type === "notify" || m.type === "hello") { load(); poll(300000); }
       if (m.type === "closed") poll(refreshMs(30000));
     });
     poll(notifySocketOpen() ? 300000 : refreshMs(30000));
-    return () => { stop(); clearInterval(t); };
+    return () => { stop(); if (t) t(); };
   }, [user, load]);
   useEffect(() => {
     const away = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false); };

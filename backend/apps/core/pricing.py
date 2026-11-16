@@ -650,6 +650,7 @@ def apply_config(cfg):
     address = ", ".join(x for x in (cu.get("street"), " ".join(x for x in (cu.get("postal_code"), cu.get("city")) if x), cu.get("country")) if x)
     data = {"site_name": site.get("name", ""), "company_name": cu.get("company", ""), "contact_email": cu.get("email", ""), "phone": cu.get("mobile") or cu.get("phone", ""), "address": address, "kvk": cu.get("kvk", ""), "vat_id": cu.get("vat_id", "")}
     system.save({k: v for k, v in data.items() if v})
+    system.set_installation_name(site.get("name", "") or cu.get("company", ""))
     lic, _ = License.objects.get_or_create(pk=1)
     lic.client = cu.get("company") or cu.get("contact") or lic.client
     lic.client_address = address[:300]

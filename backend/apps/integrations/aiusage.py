@@ -36,13 +36,17 @@ GROUP_NAMES = {"user": "Gebruikers", "admin": "Admins", "super": "Superadmins", 
 _names = {"t": 0, "v": None}
 
 
+def forget_names():
+    _names.update(t=0, v=None)
+
+
 def group_names():
     """The names of the groups; the group "site" has the name of the website (the costs of superadmins and the system, when they are for the account of the customer)."""
     if time.time() - _names["t"] > 30 or _names["v"] is None:
         try:
             from apps.core import system
 
-            site = (system.site_name() or "").strip()
+            site = (system.get().get("installation_name") or system.site_name() or "").strip()  # the name of the last installation
         except Exception:  # noqa: BLE001
             site = ""
         _names.update(t=time.time(), v={**GROUP_NAMES, "site": site or GROUP_NAMES["site"]})
@@ -346,6 +350,85 @@ def cost_of(settings, model, tin, tout, provider=None, group="user", billable=Tr
     return base_in + base_out, (base_in * (1 + mi / 100) + base_out * (1 + mo / 100)) * rate
 
 
+def _billing(st, user):
+    """(group, billable, owner, margins, cfg) of a call for this user: who is charged and with which margin."""
+    grp, billable, owner, margins = group_of(user), True, "system", None
+    cfg = Cfg(st, user)
+    if cfg.tenant:  # the own system of an admin: his AI link, his Stripe, his margin; not a cost or a revenue of the reseller
+        owner, margins = "tenant", cfg.margins
+    elif grp in ("super", "system"):  # of the reseller or the system: for the customer when the switch is on (booked on the group of the site), else a cost of the reseller
+        if st.bill_internal:
+            grp = "site"
+        else:
+            billable = False
+    return grp, billable, owner, margins, cfg
+
+
+# ---- the calls that are busy right now: their costs grow while the answer comes in (tokens in at the request, tokens out while it is written) ----
+import threading as _threading
+import uuid as _uuid
+
+RUNNING = {}
+_rlock = _threading.Lock()
+
+
+def begin(model, system, prompt, web=False):
+    """A call starts: it is visible in the live window at once, with the tokens of the request (estimated until Claude says the exact number). Returns an id for progress() and end(); never raises."""
+    try:
+        from .models import AiSettings
+
+        user = current_user()
+        name, _mod = where()
+        st = AiSettings.load()
+        grp, billable, owner, margins, _cfg = _billing(st, user)
+        rid = _uuid.uuid4().hex[:12]
+        with _rlock:
+            for k in [k for k, v in RUNNING.items() if time.time() - v["started"] > 1800]:  # (a call that never ended is forgotten after half an hour)
+                RUNNING.pop(k, None)
+            RUNNING[rid] = {"id": rid, "started": time.time(), "source": name, "model": model, "provider": provider_of(model), "user": (user.email if user else "")[:254], "group": grp, "billable": billable, "owner": owner, "margins": margins,
+                            "tokens_in": max(1, len(str(system or "")) // 4 + len(str(prompt or "")) // 4), "tokens_out": 0, "exact_in": False, "web": bool(web)}
+        return rid
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def progress(rid, tokens_in=None, tokens_out=None, written_chars=None):
+    e = RUNNING.get(rid) if rid else None
+    if not e:
+        return
+    if tokens_in:
+        e["tokens_in"], e["exact_in"] = int(tokens_in), True
+    if tokens_out:
+        e["tokens_out"] = max(e["tokens_out"], int(tokens_out))
+    elif written_chars is not None:
+        e["tokens_out"] = max(e["tokens_out"], int(written_chars) // 4)  # (an estimate while it is being written; the real number comes at the end)
+
+
+def end(rid):
+    with _rlock:
+        RUNNING.pop(rid, None)
+
+
+def running_now(sup):
+    """What is busy now, with the costs so far (charged, margin included, never the purchase price); a superadmin sees all, an admin only users and admins."""
+    from .models import AiSettings
+
+    st = AiSettings.load()
+    out = []
+    with _rlock:
+        items = list(RUNNING.values())
+    for e in items:
+        if e["owner"] != "system" or (not sup and e["group"] not in ("user", "admin")):
+            continue
+        try:
+            _cost, charged = cost_of(st, e["model"], e["tokens_in"], e["tokens_out"], e["provider"], e["group"], e["billable"], e["margins"])
+        except Exception:  # noqa: BLE001
+            charged = 0
+        out.append({"id": e["id"], "source": e["source"], "model": e["model"], "user": e["user"], "group": e["group"], "tokens_in": e["tokens_in"], "tokens_out": e["tokens_out"], "seconds": round(time.time() - e["started"], 1), "web": e["web"],
+                    "charged": round(float(charged if e["billable"] else 0), 4)})
+    return sorted(out, key=lambda x: x["seconds"])
+
+
 def record(model, usage, started, ok=True, error="", web=False, images=0, system="", provider=None):
     """Write one row. Never raises: monitoring may never break an AI call."""
     try:
@@ -356,15 +439,7 @@ def record(model, usage, started, ok=True, error="", web=False, images=0, system
         tin, tout = int((usage or {}).get("input_tokens") or 0), int((usage or {}).get("output_tokens") or 0)
         st = AiSettings.load()
         provider = provider or provider_of(model)
-        grp, billable, owner, margins = group_of(user), True, "system", None
-        cfg = Cfg(st, user)
-        if cfg.tenant:  # the own system of an admin: his AI link, his Stripe, his margin; not a cost or a revenue of the reseller
-            owner, margins = "tenant", cfg.margins
-        elif grp in ("super", "system"):  # of the reseller or the system: for the customer when the switch is on (booked on the group of the site), else a cost of the reseller
-            if st.bill_internal:
-                grp = "site"
-            else:
-                billable = False
+        grp, billable, owner, margins, cfg = _billing(st, user)
         cost, charged = cost_of(st, model, tin, tout, provider, grp, billable, margins)
         row = AiUsage.objects.create(user=user, user_label=(user.email if user else "")[:254], group=grp, billable=billable, owner=owner, source=name, purpose=" ".join(str(system or "").split()[:6])[:80], provider=provider, model=(model or "")[:60],
                                tokens_in=tin, tokens_out=tout, duration_ms=int((time.time() - started) * 1000), ok=ok, error=str(error)[:120], web=bool(web), images=int(images or 0),

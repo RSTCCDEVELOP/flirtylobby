@@ -56,7 +56,7 @@ def ensure_defaults():
     for key, _u, module, *_ in SYSTEM:  # a page that moved to a plugin follows that plugin
         Page.objects.filter(kind="system", key=key).exclude(module=module).update(module=module)
     for i, (key, url, module, in_menu, audience, titles) in enumerate(SYSTEM):
-        if key not in have:
+        if key not in have and (not module or any(modules.enabled(m) for m in module.split("|"))):  # (a page of a part that is off is not made: it comes when the part is switched on)
             Page.objects.create(key=key, kind="system", title=titles, url=url, module=module, in_menu=in_menu, audience=audience, order=n + i)
 
 

@@ -21,6 +21,7 @@ KINDS = [
     ("order", "orders", "Bestelling", "De status van je bestelling is gewijzigd.", "info", True, True, True),
     ("security", "security_basic", "Beveiliging", "Belangrijke meldingen over de beveiliging van je account.", "danger", True, True, False),
     ("agenda", "plugins", "Agenda", "Uitnodigingen, antwoorden, wijzigingen en herinneringen van je afspraken.", "info", True, True, True),
+    ("design", "ai", "Website-ontwerp", "Het ontwerp van je website is klaar of bijgewerkt door de AI.", "success", True, False, True),
     ("plugin", "plugins", "Plugin", "Berichten van plugins, zoals de spelletjes en de webshop.", "info", True, False, True),
 ]
 BY_KEY = {k[0]: {"key": k[0], "module": k[1], "label": k[2], "desc": k[3], "level": k[4], "show": k[5], "email": k[6], "user_can_hide": k[7]} for k in KINDS}

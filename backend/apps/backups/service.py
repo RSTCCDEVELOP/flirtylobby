@@ -105,11 +105,13 @@ def _remap_layout(data, m):
 
 
 # ── collect ─────────────────────────────────────────────────────────────────
-def collect_site():
-    """(site dict, {zip path: bytes}, skipped file names)."""
+def collect_site(only=None):
+    """(site dict, {zip path: bytes}, skipped file names). only: a set of page keys: then only these pages (with their layouts, texts and pictures) are taken."""
     used = set()
     pages = []
     for p in Page.objects.select_related("parent"):
+        if only is not None and p.key not in only:
+            continue
         if not page_changed(p):
             continue
         row = {f: getattr(p, f) for f in PAGE_FIELDS}
@@ -117,10 +119,12 @@ def collect_site():
         row["background"] = p.background or {}
         used |= _bg_ids(p.background)
         pages.append(row)
-    menu = [{"key": p.key, "order": p.order, "parent": p.parent.key if p.parent_id else None, "in_menu": p.in_menu, "enabled": p.enabled} for p in Page.objects.select_related("parent")]
+    menu = [{"key": p.key, "order": p.order, "parent": p.parent.key if p.parent_id else None, "in_menu": p.in_menu, "enabled": p.enabled} for p in Page.objects.select_related("parent") if only is None or p.key in only]
 
     layouts = {}
     for l in PageLayout.objects.all():
+        if only is not None and l.key not in only:
+            continue
         if not _standard_layout(l.key, l.data):
             layouts[l.key] = l.data
             used |= _layout_ids(l.data)
@@ -130,6 +134,8 @@ def collect_site():
     for b in ContentBlock.objects.all():
         if std.get((b.key, b.lang)) == b.text:
             continue
+        if only is not None and b.key.startswith("layout.") and b.key.split(".")[1] not in only:
+            continue  # a text of a page that is not in the selection
         content.append({"key": b.key, "lang": b.lang, "text": b.text})
         used |= _ids_in_text(b.text)
     try:

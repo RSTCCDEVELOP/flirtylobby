@@ -52,7 +52,11 @@ def need_orders():
 def settings():
     """The order settings (currency, VAT ...); the defaults when the Orders plugin is off."""
     o = orders()
-    return o.settings() if o else dict(DEFAULT_SETTINGS)
+    d = o.settings() if o else dict(DEFAULT_SETTINGS)
+    from apps.core import system
+
+    d["currency"] = system.currency()  # one currency for the whole website: Admin -> System -> Basisgegevens
+    return d
 
 
 def can_pay_online():
