@@ -170,7 +170,8 @@ function Detail({ imp, onChanged, onApply, busy }) {
   return (
     <div className="si-detail">
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-      {d.notes?.length > 0 && <div className="alert">{d.notes.join(" ")}</div>}
+      {d.notes?.some((n) => !String(n).startsWith("INFO: ")) && <div className="alert">{d.notes.filter((n) => !String(n).startsWith("INFO: ")).join(" ")}</div>}
+      {d.notes?.some((n) => String(n).startsWith("INFO: ")) && <div className="alert ok">{d.notes.filter((n) => String(n).startsWith("INFO: ")).map((n) => String(n).slice(6)).join(" ")}</div>}
       {info && info.sources.length > 0 && (() => {
         const dest = (x) => (x.key in map ? map[x.key] : "");
         const rowsOf = (k) => info.targets.find((t) => t.key === k) || {};
@@ -301,7 +302,8 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
         <div className="grow"><strong style={{ fontSize: "1.1rem" }}>{tx("Voorstel voor")} “{imp.name}”</strong><br /><small className="muted">{tx("Bron")}: {imp.source} · {tx("Bestanden in")} <code>{imp.folder}</code></small></div>
       </div>
       <p className="muted" style={{ margin: 0 }}>{tx("Controleer het voorstel. Er is nog niets aan je site veranderd: pas na je akkoord worden de pagina's en afbeeldingen aangemaakt.")}</p>
-      {imp.notes?.length > 0 && <div className="alert">{imp.notes.join(" ")}</div>}
+      {imp.notes?.some((n) => !String(n).startsWith("INFO: ")) && <div className="alert">{imp.notes.filter((n) => !String(n).startsWith("INFO: ")).join(" ")}</div>}
+      {imp.notes?.some((n) => String(n).startsWith("INFO: ")) && <div className="alert ok">{imp.notes.filter((n) => String(n).startsWith("INFO: ")).map((n) => String(n).slice(6)).join(" ")}</div>}
       {pr.design && pr.pages.length > 0 && <p className="muted" style={{ margin: 0 }}>{tx("Koppel bij het tabblad Koppelen en verbeteren elke pagina aan een pagina van je website (bijvoorbeeld de startpagina), of laat hem een nieuwe pagina worden. Wat daar stond komt terug als je de import verwijdert.")}</p>}
       {pr.design && <div className="alert ok">{tx("De pagina's worden 1 op 1 overgenomen, met hun eigen opmaak. De header en footer van de site staan op die pagina's uit; zet ze aan bij de instellingen van de pagina.")}</div>}
       <Tabs value={tab} onChange={setTab} tabs={[...(pr.theme.ai ? [["theme", "Thema"]] : []), ["profile", "Profielen"], ["pages", "Pagina's", null, nPages + (home ? 1 : 0)], ...(pr.design && (pr.targets || []).length ? [["link", "Koppelen en verbeteren", null, pages.filter((p) => p.include && p.target).length]] : []), ["assets", "Afbeeldingen", null, nAssets], ...(pr.modules?.length ? [["modules", "Modules", null, mods.filter((m) => m.include).length]] : [])]} />

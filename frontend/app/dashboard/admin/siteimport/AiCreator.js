@@ -355,8 +355,9 @@ function CreatePopup({ job, onClose, onCreate, onReview }) {
 
 // The photos that the pages of a chat design ask for: every slot has a search on iStock (the user downloads the photo there himself) and a place to put the downloaded photo in.
 // A block under the chat (colours, photos): the header (in the main colour) always stays visible, with an arrow up/down; only the part below it scrolls.
-function Fold({ title, defaultOpen, children }) {
+function Fold({ title, defaultOpen, children, shut }) {
   const [open, setOpen] = useState(!!defaultOpen);
+  useEffect(() => { if (shut) setOpen(false); }, [shut]);  // while the AI is making the pages the block folds itself away
   const toggle = () => setOpen((o) => !o);
   return (
     <div data-easy2edit-tag="ui-fold" style={{ borderTop: "1px solid var(--line)", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, maxHeight: open ? "45%" : "none", flex: "none" }}>
@@ -423,7 +424,7 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
   const hide = async (slot) => { setBusy(slot.file); try { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { file: slot.file, hide: true } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
   const clear = async (slot) => { setBusy(slot.file); try { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "DELETE", body: { file: slot.file } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
   return (
-    <Fold defaultOpen={open > 0} title={<><IconImage /> {tx("Foto's en video's")} <span className={open ? "badge" : "badge ok"}>{slots.length - open}/{slots.length}</span> <button type="button" className="btn sm" style={{ marginLeft: ".4rem" }} disabled={looking} onClick={(e) => { e.preventDefault(); e.stopPropagation(); look(); }} title={tx("Zoek passende foto's en video's op iStock")}><IconSearch /> {looking ? tx("Bezig…") : tx("Zoeken")}</button></>}>
+    <Fold shut={job.status === "running" || job.status === "stopping"} defaultOpen={open > 0} title={<><IconImage /> {tx("Foto's en video's")} <span className={open ? "badge" : "badge ok"}>{slots.length - open}/{slots.length}</span> <button type="button" className="btn sm" style={{ marginLeft: ".4rem" }} disabled={looking} onClick={(e) => { e.preventDefault(); e.stopPropagation(); look(); }} title={tx("Zoek passende foto's en video's op iStock")}><IconSearch /> {looking ? tx("Bezig…") : tx("Zoeken")}</button></>}>
       <p className="muted" style={{ margin: ".4rem 0", fontSize: ".85rem" }}>{tx("Zoek elke foto of video op iStock, download hem zelf (daar heb je een licentie voor nodig) en zet hem hier in de plek. Tot die tijd staat er een grijs vlak.")}</p>
       {err && <div className="alert">{err}</div>}
       <form onSubmit={search} role="search" style={{ display: "flex", gap: ".35rem", flexWrap: "wrap", margin: ".2rem 0 .5rem" }}>
@@ -515,7 +516,7 @@ function Carousel({ accent, children, tag, active = -1, chosen = "" }) {
       {arrow(-1)}
       <div ref={track} style={{ display: "flex", gap: ".6rem", overflowX: "auto", scrollSnapType: "x mandatory", padding: ".2rem", flex: "1 1 0", width: 0, minWidth: 0, scrollbarWidth: "none" }}>{children}</div>
       {arrow(1)}
-      {chosen !== null && <small role="status" style={{ flex: "0 0 100%", order: 9, color: chosen ? ac : "var(--muted)", fontWeight: chosen ? 600 : 400 }}>{chosen ? `${tx("Gekozen")}: ${chosen}` : tx("Nog niets gekozen")}</small>}
+      {chosen !== null && <small role="status" style={{ flex: "0 0 100%", order: 9, textAlign: "center", color: chosen ? ac : "var(--muted)", fontWeight: chosen ? 600 : 400 }}>{chosen ? `${tx("Gekozen")}: ${chosen}` : tx("Nog niets gekozen")}</small>}
     </div>
   );
 }
@@ -724,7 +725,7 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
   );
 }
 
-function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound, saved, onSave, picked }) {
+function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound, saved, onSave, picked, colors, mode }) {
   // the first questionnaire always has a question for the logo and one for photos and videos (own files and iStock), also when the AI did not think of them: two separate drop zones
   const given = [...first];
   const isName = (q) => /^(name|naam|company_?name|business_?name|bedrijfs_?naam|brand)$/i.test(q.id || "");
@@ -749,9 +750,10 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
   const questions = [...given].sort((x, y) => (/width|breedte/i.test(y.id || "") && rank(x) ? 1 : 0) - (/width|breedte/i.test(x.id || "") && rank(y) ? 1 : 0));  // the maximum width always comes before the page layout
   const isLayout = (q) => /layout|indeling/i.test(q.id || "");  // the question about the page layout is answered in the carousel of pictures
   const init = () => Object.fromEntries(questions.map((q) => [q.id, isLayout(q) ? [LAYOUT_DEFAULT] : q.type === "multi" ? (Array.isArray(q.default) ? q.default : []) : (typeof q.default === "string" ? q.default : "")]));
-  const [ans, setAns] = useState(() => { const d = init(); const sv = saved?.ans || {}; Object.keys(d).forEach((k) => { if (sv[k] !== undefined && sv[k] !== null && (Array.isArray(sv[k]) === Array.isArray(d[k]))) d[k] = sv[k]; }); return d; });
+  const [ans, setAns] = useState(() => { const d = init(); const sv = saved?.ans || {}; if (typeof sv.page_bg === "string") d.page_bg = sv.page_bg; if (typeof sv.front_bg === "string") d.front_bg = sv.front_bg; Object.keys(d).forEach((k) => { if (sv[k] !== undefined && sv[k] !== null && (Array.isArray(sv[k]) === Array.isArray(d[k]))) d[k] = sv[k]; }); return d; });
   const [own, setOwn] = useState(saved?.own || {});
   const saveT = useRef(null);
+  const bgT = useRef(null);
   const first1 = useRef(true);
   const pend = useRef(null);  // the last change that is not sent to the server yet
   const saveFn = useRef(onSave);
@@ -798,7 +800,35 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
     } catch (e) { setFakeErr(errorText(e)); } finally { setFilling(""); }
   };
   const atEnter = (q) => (e) => { if (e.key === "Enter" && String(e.currentTarget.value || "").trim() === "@") { e.preventDefault(); fake(q); } };
-  const compose = () => questions.map((q) => { const a = ans[q.id]; const o = own[q.id] ? ` ${own[q.id]}` : ""; const v = Array.isArray(a) ? (a.length ? a.join(", ") : tx("geen")) : (a || (o ? "" : tx("beslis zelf"))); return `${q.q} ${v}${o}`; }).join("\n");
+  const [bgOpen, setBgOpen] = useState("");  // "page" | "front" | "": which colour the popup chooses
+  const modeDark = (mode || "light") === "dark";
+  const lum = (h) => { const c = String(h || "#fff").replace("#", ""); const f = c.length === 3 ? c.replace(/./g, "$&$&") : c; const n = [0, 2, 4].map((i) => parseInt(f.slice(i, i + 2), 16) / 255).map((v) => (v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)); return .2126 * n[0] + .7152 * n[1] + .0722 * n[2]; };
+  const ink = (v) => (lum(v) < .4 ? "#f4f6fa" : "#1f2937");
+  // two colours: the BACKGROUND (the page behind everything) and the FRONTEND (the background of the heroes, blocks and content). Rule: in the light mode the background is a dark colour of the theme and the frontend a light one; in the dark mode the other way round.
+  const KEY = { page: modeDark ? "dpage" : "page", front: modeDark ? "dbg" : "bg" };
+  const shown = { page: colors?.[KEY.page] || colors?.[modeDark ? "dbg" : "bg"] || "#ffffff", front: colors?.[KEY.front] || "#ffffff" };
+  const patchOf = (target, v) => (target === "page" ? { [KEY.page]: v } : { [KEY.front]: v, [modeDark ? "dtext" : "text"]: ink(v) });  // the text colour follows the frontend colour so it stays readable
+  const sendColors = (patch) => { if (jobId) api(`/sitecreator/${jobId}/`, { method: "PATCH", body: { colors: { ...(colors || {}), ...patch } } }).then(() => onChanged?.()).catch(() => {}); };
+  const pickColor = (target, v, close = true) => { set(target === "page" ? "page_bg" : "front_bg", v); if (close) setBgOpen(""); sendColors(patchOf(target, v)); };
+  const chosenTheme = themes.find((t) => sameTheme(t, ans[colorQ?.id])) || null;
+  const choicesFor = (target) => {  // the colours of the chosen theme: for the background the opposite of the mode first, for the frontend the colour of the mode first
+    const c = chosenTheme?.colors || {};
+    const light = [[c.light_bg, "Licht"], [c.light_card, "Kaart (licht)"]], dark = [[c.dark_bg, "Donker"], [c.dark_card, "Kaart (donker)"], [c.dark_text, "Tekst (licht)"]];
+    const brand = [[c.primary, "hoofdkleur"], [c.secondary, "tweede kleur"]];
+    const wantDark = target === "page" ? !modeDark : modeDark;
+    return (wantDark ? [...dark, ...light, ...brand] : [...light, ...dark, ...brand]).filter(([v]) => /^#[0-9a-f]{3,8}$/i.test(String(v || "")));
+  };
+  const bgDone = useRef(new Set());  // themes whose default colours were already put on the design
+  useEffect(() => {  // a theme is chosen (its colours are on the design now): the default background and frontend colour of that theme are put on the design
+    const t = chosenTheme;
+    if (!t || ans.page_bg || ans.front_bg || bgDone.current.has(t.key) || !colors?.primary || String(colors.primary).toLowerCase() !== String(t.colors?.primary || "").toLowerCase()) return;
+    const pc = choicesFor("page")[0]?.[0], fc = choicesFor("front")[0]?.[0];
+    if (!pc || !fc) return;
+    bgDone.current.add(t.key);
+    set("page_bg", pc); set("front_bg", fc);
+    sendColors({ ...patchOf("page", pc), ...patchOf("front", fc) });
+  }, [chosenTheme?.key, colors?.primary]); // eslint-disable-line react-hooks/exhaustive-deps
+  const compose = () => questions.map((q) => { const a = ans[q.id]; const o = own[q.id] ? ` ${own[q.id]}` : ""; const v = Array.isArray(a) ? (a.length ? a.join(", ") : tx("geen")) : (a || (o ? "" : tx("beslis zelf"))); return `${q.q} ${v}${o}`; }).join("\n") + (ans.page_bg ? `\n${tx("Achtergrondkleur van de pagina")}: ${ans.page_bg}` : "") + (ans.front_bg ? `\n${tx("Frontendkleur (hero, blokken en inhoud)")}: ${ans.front_bg}` : "");
   const chip = (on) => ({ padding: ".25rem .7rem", borderRadius: 999, border: `1px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "color-mix(in srgb, var(--blue) 16%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".85rem" });
   return (
     <div style={{ display: "grid", gap: ".7rem", marginTop: ".7rem", paddingTop: ".6rem", borderTop: "1px dashed var(--line)", whiteSpace: "normal" }}>
@@ -809,7 +839,14 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
             <input value={ans[q.id]} maxLength={300} disabled={disabled || filling === q.id} onKeyDown={atEnter(q)} onChange={(e) => set(q.id, e.target.value)} placeholder={filling === q.id ? tx("Bezig…") : tx("Of typ de bedrijfsnaam zoals die in de header moet staan")} /></>
           : isMedia(q) ? <><MediaPicker jobId={jobId} picked={picked} onAsk={() => askPhotos()} onJob={onJob} disabled={disabled} defaultQuery={queryHint} topic={{ name: go.name, what: go.what, go: go.n }} onAnswer={(t) => set(q.id, t)} />
             <DropZone jobId={jobId} onJob={onJob} role="media" multiple accept="image/*,video/mp4,video/webm" label={tx("Sleep je eigen foto's of video's hierheen")} hint={tx("of klik om bestanden te kiezen (jpg, png, webp, mp4, webm)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} /></>
-          : isColors(q) && themes.length ? <ThemeCarousel themes={themes} value={ans[q.id] || ""} disabled={disabled} jobId={jobId} onJob={onJob} onChanged={onChanged} onPick={(v) => set(q.id, v)} />
+          : isColors(q) && themes.length ? <><ThemeCarousel themes={themes} value={ans[q.id] || ""} disabled={disabled} jobId={jobId} onJob={onJob} onChanged={onChanged} onPick={(v) => { set(q.id, v); set("page_bg", ""); }} />
+              {[["page", "Achtergrondkleur van de pagina"], ["front", "Frontendkleur (hero, blokken en inhoud)"]].map(([t, l]) => (
+                <button key={t} type="button" disabled={disabled} onClick={() => setBgOpen(t)} data-easy2edit-tag="ui-page-bg" title={tx(l)}
+                  style={{ display: "flex", alignItems: "center", gap: ".7rem", width: "100%", boxSizing: "border-box", padding: ".5rem .7rem", marginTop: ".2rem", borderRadius: 10, border: "1px solid var(--line)", background: "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", textAlign: "left" }}>
+                  <i style={{ width: 44, height: 28, borderRadius: 6, border: "1px solid var(--line)", background: ans[t === "page" ? "page_bg" : "front_bg"] || shown[t], flex: "none" }} />
+                  <span style={{ flex: 1, minWidth: 0 }}>{tx(l)}: <b>{ans[t === "page" ? "page_bg" : "front_bg"] || shown[t]}</b></span>
+                  <small className="muted">{tx("Kiezen")}</small>
+                </button>))}</>
           : isLayout(q) ? <LayoutCarousel value={ans[q.id]} disabled={disabled} accent={accent} onToggle={(n) => set(q.id, ans[q.id].includes(n) ? ans[q.id].filter((x) => x !== n) : [...ans[q.id], n])} />
           : q.type === "text"
             ? <input value={ans[q.id]} maxLength={300} disabled={disabled || filling === q.id} onKeyDown={atEnter(q)} onChange={(e) => set(q.id, e.target.value)} placeholder={filling === q.id ? tx("De AI bedenkt gegevens…") : tx("Jouw antwoord (of laat leeg)")}
@@ -817,6 +854,27 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
             : <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem" }}>{optsOf(q).map((o) => { const on = q.type === "multi" ? ans[q.id].includes(o) : ans[q.id] === o; return <button key={o} type="button" disabled={disabled} aria-pressed={on} onClick={() => (q.type === "multi" ? toggle(q, o) : set(q.id, on ? "" : o))} style={chip(on)}>{o}</button>; })}</div>}
         </div>
       ))}
+      {bgOpen && createPortal(
+        <div className="pb-objback" style={{ zIndex: 1400 }} onMouseDown={(e) => { if (e.target === e.currentTarget) setBgOpen(""); }}>
+          <div className="pb-objpop" role="dialog" aria-label={tx(bgOpen === "page" ? "Achtergrondkleur van de pagina" : "Frontendkleur (hero, blokken en inhoud)")} style={{ width: "min(460px, 94vw)" }}>
+            <div className="pb-objhead"><strong>{tx(bgOpen === "page" ? "Achtergrondkleur van de pagina" : "Frontendkleur (hero, blokken en inhoud)")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={() => setBgOpen("")} aria-label={tx("Sluiten")}>×</button></div>
+            <div style={{ padding: "1rem", display: "grid", gap: ".8rem" }}>
+              <small className="muted">{bgOpen === "page" ? (modeDark ? tx("Donkere modus: de achtergrond is een lichte kleur van het thema.") : tx("Lichte modus: de achtergrond is een donkere kleur van het thema.")) : (modeDark ? tx("Donkere modus: de frontend is een donkere kleur van het thema.") : tx("Lichte modus: de frontend is een lichte kleur van het thema."))}{chosenTheme ? ` (${chosenTheme.name})` : ""}</small>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: ".5rem" }}>
+                {choicesFor(bgOpen).map(([v, l]) => (
+                  <button key={v + l} type="button" onClick={() => pickColor(bgOpen, v)} style={{ display: "grid", gap: ".3rem", padding: ".4rem", borderRadius: 10, border: `2px solid ${(ans[bgOpen === "page" ? "page_bg" : "front_bg"] || shown[bgOpen]).toLowerCase() === String(v).toLowerCase() ? "var(--blue)" : "var(--line)"}`, background: "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", textAlign: "left" }}>
+                    <i style={{ height: 38, borderRadius: 6, border: "1px solid var(--line)", background: v }} />
+                    <small>{tx(l)} <b>{v}</b></small>
+                  </button>))}
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: ".6rem", fontSize: ".85rem" }}>
+                <input type="color" value={ans[bgOpen === "page" ? "page_bg" : "front_bg"] || shown[bgOpen]} onChange={(e) => pickColor(bgOpen, e.target.value, false)} aria-label={tx("Eigen kleur")} style={{ width: 44, height: 32, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+                <span>{tx("Eigen kleur")}</span>
+                <button type="button" className="btn sm" style={{ marginLeft: "auto" }} onClick={() => { const t = bgOpen; const v = choicesFor(t)[0]?.[0]; setBgOpen(""); if (v) pickColor(t, v, false); }}>{tx("Standaard")}</button>
+              </label>
+            </div>
+          </div>
+        </div>, document.body)}
       {fakeErr && <div className="alert">{fakeErr}</div>}
       <small className="muted">{tx("Tip: typ @ in een veld en druk op Enter, dan bedenkt de AI fictieve gegevens.")}</small>
       <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
@@ -841,7 +899,7 @@ function ThemeBlock({ job, onChanged }) {
   const setColor = (k, v) => push({ ...vals, colors: { ...vals.colors, [k]: v } });
   const roles = [...COLOR_ROLES, ...(vals.color_mode !== "light" ? DARK_ROLES : [])];
   return (
-    <Fold title={<>
+    <Fold shut={job.status === "running" || job.status === "stopping"} title={<>
         <IconPalette /> {tx("Kleuren")}
         <span aria-hidden="true" style={{ display: "inline-flex", gap: 3, marginLeft: ".2rem" }}>{["primary", "secondary", "bg", "text"].map((k) => <i key={k} style={{ width: 14, height: 14, borderRadius: "50%", background: vals.colors[k], border: "1px solid var(--line)" }} />)}</span>
         {busy && <small style={{ opacity: .85 }}>· {tx("Bezig…")}</small>}
@@ -883,6 +941,9 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const [reopen, setReopen] = useState(-1);  // an earlier questionnaire that is opened again with the answers of the customer
   const [page, setPage] = useState("index.html");
   const [dev, setDev] = useState("web");
+  const [prevMode, setPrevMode] = useState("light");  // the preview in the light or the dark mode (only when the design has both)
+  const [view, setView] = useState("creator");  // the two tabs of a finished design: "creator" (the design) and "live" (the page on the website)
+  const [liveKey, setLiveKey] = useState(0);
   // the chat column: drag the bar to make it wider or narrower, or fold it away completely (an icon brings it back) to look at the website
   const [side, setSide] = useState(() => { try { return { w: Math.max(260, Number(localStorage.getItem("siChatW")) || 380), shut: localStorage.getItem("siChatShut") === "1" }; } catch { return { w: 380, shut: false }; } });
   const gridEl = useRef(null);
@@ -980,7 +1041,28 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const chatMode = !!(job?.chat || job?.brief?.chat); // AI chat build: always the chat, never the steps
   const wizard = job && !chatMode && (job.status === "draft" || job.status === "error" || again);
   // Closing a design that is still a concept (in the steps): save it for later or throw it away. Escape or "Doorgaan" keeps the window open.
+  const baseline = useRef(null);  // the state of the design when the creator was opened: to see what changed and to put it back
+  useEffect(() => { baseline.current = null; if (jobId) api(`/sitecreator/${jobId}/version/`).then((d) => { if (!baseline.current) baseline.current = d; }).catch(() => {}); }, [jobId]);
   const requestClose = async () => {
+    if (job && chatMode && !running && baseline.current && Object.keys(baseline.current.files || {}).length > 0) {  // a design that was already finished when it was opened: when something changed, ask what to do with it (a design that was made in this very session is just kept)
+      try {
+        const now = await api(`/sitecreator/${job.id}/version/`);
+        if (JSON.stringify(now) !== JSON.stringify(baseline.current)) {
+          const what = await confirmDialog(tx("Je hebt dit ontwerp aangepast. Wat wil je doen met de wijzigingen?"), {
+            title: tx("Ontwerp sluiten"), okLabel: tx("Sluiten"), cancelLabel: tx("Doorgaan met ontwerpen"),
+            choices: [{ value: "save", label: tx("Opslaan"), hint: tx("De wijzigingen blijven in dit ontwerp.") },
+              { value: "new", label: tx("Als nieuwe versie opslaan"), hint: tx("De wijzigingen worden een nieuw ontwerp (naam + 1); dit ontwerp blijft zoals het was.") },
+              { value: "discard", label: tx("Niet opslaan"), hint: tx("De wijzigingen worden weggegooid; het ontwerp gaat terug naar hoe het was toen je het opende.") }],
+          });
+          if (!what) return;
+          if (what === "new" || what === "discard") {
+            try { await api(`/sitecreator/${job.id}/version/`, { method: "POST", body: { action: what, snapshot: baseline.current } }); } catch (e) { setErr(errorText(e)); return; }
+          }
+        }
+      } catch { /* the check failed: just close */ }
+      onClose();
+      return;
+    }
     if (!job || !wizard || running) { onClose(); return; }
     const what = await confirmDialog(tx("Dit ontwerp is nog een concept. Wil je het bewaren om later verder te gaan, of verwijderen?"), {
       title: tx("Ontwerp sluiten"), okLabel: tx("Sluiten"), cancelLabel: tx("Doorgaan met ontwerpen"),
@@ -996,6 +1078,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const mainHtml = ready ? String(job.files?.["index.html"] || "") : "";
   const thinSections = ready && (job.pages || []).length === 1 ? (mainHtml.match(/<div id="[^"]+">/g) || []).length : 99;  // a one pager with only a few sections lacks content
   const [thinOff, setThinOff] = useState("");
+  const designLangCode = (() => { const l = String(job?.brief?.lang || ""); const m = l.match(/\(([a-z]{2,3})\)/i); if (m) return m[1].toLowerCase(); const n = l.toLowerCase(); return { dutch: "nl", nederlands: "nl", english: "en", engels: "en", german: "de", duits: "de", french: "fr", frans: "fr", spanish: "es", spaans: "es" }[n.split(/[\s(]/)[0]] || ""; })();  // the language of the design: the live page is shown in it, so it can be compared 1 to 1
   const missingPics = ready ? (job.photo_slots || []).filter((x) => x.kind !== "video" && !x.done && !x.istock && !/logo/i.test(x.file)).length : 0;  // places where a page asks for a picture and there is none yet
   // the blocks Colours and Photos and videos wait until the questionnaire round has been: while the customer is asked the questions (or the first answer of the AI is still to come) they are hidden
   const lastMsg = (job?.messages || []).slice(-1)[0];
@@ -1032,7 +1115,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
               <div ref={chat} style={{ flex: 1, overflowY: "auto", padding: ".9rem", display: "flex", flexDirection: "column", gap: ".6rem" }}>
                 {chatMode && !(job.messages || []).length && <div style={{ alignSelf: "flex-start", maxWidth: "92%", padding: ".55rem .8rem", borderRadius: 12, background: "var(--card)", border: "1px solid var(--line)" }}>{tx("Hoi! Vertel in je eigen woorden wat voor website je wilt: waar is hij voor en voor wie? Ik ontwerp hem met de componenten en modules van easy2edit en je ziet het resultaat rechts. Foto's zoek je zelf op iStock; ik laat zien welke ik nodig heb.")}</div>}
                 {(job.messages || []).map((m, i) => (
-                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} picked={job.brief?.picked} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
+                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} picked={job.brief?.picked} colors={job.brief?.colors} mode={job.brief?.color_mode} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
                 ))}
                 {!running && ready && thinSections < 5 && thinOff !== jobId && (
                   <div className="card" data-easy2edit-tag="ui-notice" style={{ padding: ".7rem .9rem", display: "grid", gap: ".5rem" }}>
@@ -1045,9 +1128,9 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 )}
                 {!running && ready && missingPics > 0 && moreOff !== `${jobId}:${missingPics}` && (
                   <div className="card" data-easy2edit-tag="ui-notice" style={{ padding: ".7rem .9rem", display: "grid", gap: ".5rem" }}>
-                    <span>{tx("Er ontbreken nog {0} afbeeldingen op de pagina's. Zal ik meer afbeeldingen zoeken op iStock en aan het ontwerp toevoegen?", String(missingPics))}</span>
+                    <span>{tx("Er staan nog {0} lege afbeeldingen op de pagina's. Zal ik ze invullen met de foto's die je hebt gekozen (en alleen als dat niet genoeg is, meer zoeken op iStock)?", String(missingPics))}</span>
                     <span style={{ display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
-                      <button type="button" className="btn sm primary" disabled={!!busy} onClick={async () => { setErr(""); try { merge(await api(`/sitecreator/${jobId}/more-photos/`, { method: "POST", body: {} })); } catch (x) { setErr(errorText(x)); } }}><IconSearch /> {tx("Ja, zoek meer afbeeldingen")}</button>
+                      <button type="button" className="btn sm primary" disabled={!!busy} onClick={async () => { setErr(""); try { merge(await api(`/sitecreator/${jobId}/more-photos/`, { method: "POST", body: {} })); } catch (x) { setErr(errorText(x)); } }}><IconSearch /> {tx("Ja, vul de afbeeldingen in")}</button>
                       <button type="button" className="btn sm" onClick={() => setMoreOff(`${jobId}:${missingPics}`)}>{tx("Niet nu")}</button>
                     </span>
                   </div>
@@ -1088,12 +1171,26 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
             <div style={{ position: "relative", display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0 }}>
               {side.shut && <button type="button" onClick={() => saveSide({ ...side, shut: false })} aria-label={tx("Chat tonen")} title={tx("Chat tonen")}
                 style={{ position: "absolute", top: 10, left: 10, zIndex: 6, display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .7rem", borderRadius: 999, border: 0, background: "var(--blue)", color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(0,0,0,.3)", font: "inherit", fontSize: ".82rem" }}><IconChat /> {tx("Chat")}</button>}
-              {ready && <div style={{ padding: ".5rem .8rem 0", ...(side.shut ? { paddingLeft: "5.6rem" } : {}) }}><Tabs value={cur} onChange={setPage} tabs={pages.filter((p) => job.files[p.file]).map((p) => [p.file, p.title])} /></div>}
+              {ready && <div style={{ padding: ".5rem .8rem 0", display: "flex", alignItems: "flex-end", gap: ".8rem", flexWrap: "wrap", ...(side.shut ? { paddingLeft: "5.6rem" } : {}) }}>
+                <Tabs value={view} onChange={(v) => { setView(v); if (v === "live") setLiveKey((n) => n + 1); }} tabs={job.applied ? [["creator", tx("Creator")], ["live", tx("Live")]] : [["creator", tx("Creator")]]} />
+                {view === "creator" && <Tabs value={cur} onChange={setPage} tabs={pages.filter((p) => job.files[p.file]).map((p) => [p.file, p.title])} />}
+                {view === "creator" && job.brief?.color_mode === "both" && (
+                  <span role="group" aria-label={tx("Weergave")} data-easy2edit-tag="ui-mode-switch" style={{ marginLeft: "auto", display: "inline-flex", border: "1px solid var(--line)", borderRadius: 999, overflow: "hidden", marginBottom: ".3rem" }}>
+                    {[["light", "Licht"], ["dark", "Donker"]].map(([k, l]) => <button key={k} type="button" aria-pressed={prevMode === k} onClick={() => setPrevMode(k)} style={{ border: 0, padding: ".25rem .8rem", cursor: "pointer", font: "inherit", fontSize: ".82rem", background: prevMode === k ? "var(--blue)" : "var(--card)", color: prevMode === k ? "#fff" : "inherit" }}>{tx(l)}</button>)}
+                  </span>
+                )}
+              </div>}
               <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", justifyContent: "center", background: "var(--bg)", padding: ".6rem" }}>
-                {ready ? (
+                {ready && view === "live" && job.applied ? (
+                  <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24 }) }}>
+                    {job.applied
+                      ? <iframe key={liveKey} title={tx("Live pagina")} src={`${cur === "index.html" ? "/" : `/${cur.replace(/\.html?$/i, "")}`}${designLangCode ? `?lang=${designLangCode}` : ""}`} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                      : <p className="muted" style={{ maxWidth: 360, textAlign: "center", padding: "1rem" }}>{tx("Dit ontwerp staat nog niet op de website. Zet het eerst live met de knop rechtsboven.")}</p>}
+                  </div>
+                ) : ready ? (
                   <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24, boxShadow: "0 12px 40px rgba(0,0,0,.35)" }), opacity: running ? .6 : 1, transition: "opacity .3s" }}>
                     <div style={{ width: `${100 / zoom}%`, height: `${100 / zoom}%`, transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
-                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], "", chatMode, kit)} onLoad={keepInPreview} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], job.brief?.color_mode === "both" ? prevMode : "", chatMode, kit)} onLoad={keepInPreview} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
                     </div>
                   </div>
                 ) : <p className="muted" style={{ alignSelf: "center", textAlign: "center", maxWidth: 360 }}>{running ? "" : chatMode ? tx("Hier verschijnt het voorbeeld van je website zodra het ontwerp klaar is.") : ""}</p>}

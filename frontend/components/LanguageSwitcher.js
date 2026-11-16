@@ -27,7 +27,7 @@ export default function LanguageSwitcher({ flags = false }) {
   useEffect(() => {
     const load = () => api("/languages/").then((d) => {
       let saved = null;
-      try { saved = localStorage.getItem("lang"); } catch {}
+      try { saved = new URLSearchParams(window.location.search).get("lang") || localStorage.getItem("lang"); } catch {}
       const lang = d.languages.find((l) => l.code === saved) || d.languages.find((l) => l.code === d.default) || d.languages[0];
       setData(d);
       if (lang) { setCurrent(lang.code); apply(lang); }

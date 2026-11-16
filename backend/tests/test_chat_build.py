@@ -652,3 +652,104 @@ def test_contact_details_of_the_customer_are_used(job):
     assert "CONTACT DETAILS" in sitecreator._brief_text(job.brief) and "Marigold Lane" in sitecreator._brief_text(job.brief)
     new = sitecreator.apply_identity(job)
     assert new["contact_email"] == "contact@greenfieldtrading-example.com" and "204-9981" in new["phone"] and "Marigold Lane" in new["address"]
+
+
+def test_footer_of_the_website_follows_the_design(job):
+    from apps.core import theme as T
+    from apps.core.models import SiteSettings
+
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={"index.html": '<footer><div data-easy2edit-tag="ui-footer"><p>Blue Business Process Solutions helps companies optimise their operations.</p></div></footer>'}, brief={"name": "Blue"})
+    job.refresh_from_db()
+    new = sitecreator.apply_identity(job)
+    v = T.merged(SiteSettings.load().theme)
+    assert new.get("footer_tone") == "dark" and v["footer_tone"] == "dark" and v["footer_layout"] == "brand" and v["footer_brand"] == "name"
+
+
+def test_unused_chosen_photos_fill_the_empty_places_and_missing_svgs_go(job):
+    pick = {"id": "1111111", "url": "https://www.istockphoto.com/photo/gm1111111", "preview": "https://media.istockphoto.com/id/1111111/photo/x.jpg", "title": "Office"}
+    html = '<img src="img/backoffice.jpg" alt="Back office"><img src="img/istock-2222222.jpg" alt="x"><img src="img/logo-client-1.svg" alt="Cascade Retail"><img src="img/hero.svg" alt="h">'
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={"index.html": html, "img/hero.svg": "<svg/>"},
+                                                   brief={"picked": {"istock-1111111.jpg": pick, "istock-2222222.jpg": {**pick, "id": "2222222", "preview": "https://media.istockphoto.com/id/2222222/photo/x.jpg"}}})
+    job.refresh_from_db()
+    job, n = sitecreator.assign_unused_picked(job)
+    assert n == 1 and job.brief["istock"]["backoffice.jpg"]["id"] == "1111111"  # the unused photo goes in the empty place
+    cleaned = sitecreator._without_missing_svgs(html, {"img/hero.svg": "<svg/>"})
+    assert "logo-client-1.svg" not in cleaned and "<span>Cascade Retail</span>" in cleaned and 'src="img/hero.svg"' in cleaned
+
+
+def test_functions_that_the_customer_did_not_choose_are_not_used(job, monkeypatch):
+    q = [{"id": "extras", "q": "Which extra functions fit your business?", "type": "multi", "options": ["FAQ", "Agenda/appointments", "Newsletter", "Documents/downloads"]},
+         {"id": "pages", "q": "Which pages?", "type": "multi", "options": ["Home"]}]
+    msgs = [{"role": "ai", "text": "x", "questions": q, "answers": {"ans": {"extras": [], "pages": ["Home"]}}}]
+    assert sitecreator._answered_extras(msgs) == []
+    block = sitecreator.blocked_tags([])
+    assert {"ui-faq", "ui-newsletter", "ui-calendar", "ui-files-feed"} <= block
+    assert "ui-faq" not in sitecreator.blocked_tags(["FAQ"]) and sitecreator.blocked_tags(None) == set()
+    assert "None" not in sitecreator._brief_text({"name": "X", "extras": []}) and "only these extra functions: none" in sitecreator._brief_text({"name": "X", "extras": []})
+
+    def one_pager_with_faq(*a, **k):
+        return '{"pages": [{"file": "index.html", "title": "Home", "sections": [{"tag": "ui-hero-split", "id": "hero"}, {"tag": "ui-faq", "id": "faq", "menu": "FAQ"}, {"tag": "ui-newsletter", "id": "nieuws", "menu": "News"}, {"tag": "ui-cta", "id": "contact", "menu": "Contact"}]}], "brand": "X"}'
+
+    monkeypatch.setattr(sitecreator, "_ask", one_pager_with_faq)
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief={"name": "X", "extras": []})
+    job.refresh_from_db()
+    plan = sitecreator._site_plan(job.pk, job, [("index.html", "Home")])
+    assert [x["id"] for x in plan["pages"][0]["sections"]] == ["hero", "contact"]  # no FAQ and no newsletter section
+
+
+def test_login_and_download_links_go_when_not_chosen():
+    nav = '<ul><li><a href="#a">Over ons</a></li><li><a href="#d">Downloads</a></li></ul><a class="e2e-btn" href="/login">Inloggen</a><a href="/signup">Aanmelden</a><a href="#c">Contact</a>'
+    out = sitecreator.strip_unchosen_links(nav, [])
+    assert "Downloads" not in out and "Inloggen" not in out and "Aanmelden" not in out and "Over ons" in out and "Contact" in out
+    assert "Downloads" in sitecreator.strip_unchosen_links(nav, ["Documents/downloads"]) and "Inloggen" not in sitecreator.strip_unchosen_links(nav, ["Documents/downloads"])
+    assert sitecreator.strip_unchosen_links(nav, None) == nav  # without an answer nothing is removed
+
+
+def test_new_version_and_discard_when_the_creator_is_closed(job):
+    SiteDesignJob.objects.filter(pk=job.pk).update(name="Blue", files={"index.html": "<h1>oud</h1>"}, status="done")
+    job.refresh_from_db()
+    old = json.loads(json.dumps(sitecreator.snapshot(job)))
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={"index.html": "<h1>nieuw</h1>"})
+    job.refresh_from_db()
+    new = sitecreator.save_as_new_version(job, old)
+    job.refresh_from_db()
+    assert new.name == "Blue 2" and new.files["index.html"] == "<h1>nieuw</h1>" and job.files["index.html"] == "<h1>oud</h1>"
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={"index.html": "<h1>weer anders</h1>"})
+    job.refresh_from_db()
+    back = sitecreator.restore_snapshot(job, old)
+    assert back.files["index.html"] == "<h1>oud</h1>"
+    assert sitecreator.next_version_name("Blue 2") == "Blue 3" and sitecreator.next_version_name("Blue") == "Blue 2"
+
+
+def test_one_pager_menu_only_has_what_the_customer_asked_for():
+    b = {"pages": "Home", "extras": [], "one_pager_pages": "One pager (all on one page)"}
+    ok = lambda i, m: sitecreator.menu_allowed(b, {"id": i, "menu": m})  # noqa: E731
+    assert ok("about", "About") and ok("services", "Services") and ok("contact", "Contact")
+    assert not ok("reviews", "Reviews") and not ok("results", "Results") and not ok("how", "How it works") and not ok("faq", "FAQ") and not ok("downloads", "Downloads") and not ok("showcase", "Showcase")
+    assert sitecreator.menu_allowed({**b, "extras": ["FAQ"]}, {"id": "faq", "menu": "FAQ"})
+
+
+def test_unanswered_questions_are_not_designed(job):
+    q = [{"id": "extra_functions", "q": "Which extra functions fit your business?", "type": "multi", "options": ["FAQ", "None"]},
+         {"id": "cta", "q": "What is the main goal of the website (call to action)?", "type": "choice", "options": ["Request a quote"]},
+         {"id": "contact", "q": "What contact details should be shown?", "type": "text", "options": []}]
+    msgs = [{"role": "ai", "text": "x", "questions": q, "answers": {"ans": {"extra_functions": [], "cta": "", "contact": "Marigold Lane 48, 555-204-9981"}}}]
+    left = sitecreator._unanswered(msgs)
+    assert "Which extra functions fit your business?" in left and "What is the main goal of the website (call to action)?" in left and len(left) == 2
+    text = sitecreator._brief_text({"name": "X", "unanswered": left, "no_cta": True})
+    assert "UNANSWERED" in text and "NO CALL TO ACTION" in text
+    assert sitecreator._unanswered([{"role": "ai", "text": "x", "questions": q}]) == []  # nothing saved: the designer decides
+
+
+def test_page_background_and_frontend_colour_are_separate():
+    v = sitecreator.theme_values({"colors": {"bg": "#f4f6fa", "page": "#0b0f19", "dbg": "#0b0f19", "dpage": "#e5e9f2"}, "color_mode": "both"})
+    assert v["light_bg"] == "#f4f6fa" and v["light_page"] == "#0b0f19"  # the frontend (content) is light, the page behind it dark
+    assert v["dark_bg"] == "#0b0f19" and v["dark_page"] == "#e5e9f2"
+    assert "page" in sitecreator._clean_colors({"page": "#111111", "dpage": "#eeeeee"})
+
+
+def test_frontend_is_a_column_with_the_maximum_width_over_the_page_colour():
+    css = sitecreator.layout_css({"max_width": 1100})
+    assert "body { background: var(--page, var(--bg)); }" in css
+    assert "body > main { max-width: 1100px;" in css and "background: var(--bg)" in css and "body > header" not in css and "body > footer" not in css  # header and footer are blocks of their own: full width
+    assert "max-width: none" in sitecreator.layout_css({"max_width": 0})

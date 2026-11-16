@@ -1979,6 +1979,27 @@ def sitecreator_identity(request, pk):
     return Response({"set": sitecreator.apply_identity(job)})
 
 
+@api_view(["GET", "POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_version(request, pk):
+    """GET: the state of the design (to see later whether something changed). POST {"action": "discard"|"new", "snapshot": the state from the opening}: put the old state back, or keep this session as a new version (name +1)."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    if request.method == "GET":
+        return Response(sitecreator.snapshot(job))
+    try:
+        if request.data.get("action") == "new":
+            new = sitecreator.save_as_new_version(job, request.data.get("snapshot"))
+            return Response({"id": str(new.pk), "name": new.name})
+        job = sitecreator.restore_snapshot(job, request.data.get("snapshot"))
+    except ValueError as e:
+        return _bad(str(e))
+    return Response({"id": str(job.pk), "name": job.name})
+
+
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
 def sitecreator_resume(request, pk):

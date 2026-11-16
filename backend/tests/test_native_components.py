@@ -42,3 +42,9 @@ def test_without_a_picture_in_the_list_or_for_other_components_nothing_changes()
     assert DR.native_component_rows(_node(SPLIT), {}) is None  # the picture is not known: stays a component
     other = _node('<div data-easy2edit-tag="ui-faq"><div>x</div></div>')
     assert DR.native_component_rows(other, {}) is None
+
+
+def test_the_first_picture_of_a_page_has_number_zero_and_still_gets_its_cell():
+    rows = DR.native_component_rows(_node(HERO), {"img/hero.jpg": 0})  # the pictures are numbered from 0
+    text, pic = rows[0]["cells"]
+    assert text["width"] == "55" and pic["items"][0]["img"] == 0

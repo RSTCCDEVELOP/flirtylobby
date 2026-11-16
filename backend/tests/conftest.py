@@ -14,6 +14,16 @@ PLUGIN = os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "siteimp
 sys.path.insert(0, os.path.abspath(PLUGIN))
 
 
+@pytest.fixture(autouse=True)
+def _never_touch_the_real_site(settings, tmp_path):
+    """No test may read or empty the real media library or site folder (a reset test used to wipe backend/media)."""
+    base = tmp_path / "isolated"
+    for name, sub in (("MEDIA_ROOT", "media"), ("SITE_DIR", "site"), ("SITE_IMPORT_DIR", "imports"), ("TEMPLATES_DIR", "templates"), ("COMPONENTS_DIR", "components")):
+        if hasattr(settings, name):
+            (base / sub).mkdir(parents=True, exist_ok=True)
+            setattr(settings, name, base / sub)
+
+
 @pytest.fixture
 def media(settings, tmp_path):
     """Everything the import writes (media library, theme folders) goes to a temporary folder."""

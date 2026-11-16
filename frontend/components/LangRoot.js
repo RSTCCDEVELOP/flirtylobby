@@ -35,7 +35,7 @@ export default function LangRoot({ children, languages: given, defaultLanguage: 
       setLang(code);
     };
     let saved = null;
-    try { saved = localStorage.getItem("lang"); } catch {}
+    try { saved = new URLSearchParams(window.location.search).get("lang") || localStorage.getItem("lang"); } catch {}  // ?lang=nl shows the page in that language (the preview of a design) without changing the choice of the visitor
     choose(saved);
     const onChange = (e) => choose(e.detail);
     window.addEventListener("langchange", onChange);

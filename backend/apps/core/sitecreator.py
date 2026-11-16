@@ -275,7 +275,7 @@ def catalog():
 
 
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
-COLOR_KEYS = ("primary", "secondary", "bg", "card", "text", "dark", "dbg", "dcard", "dtext")  # dbg/dcard/dtext: the colours of the dark mode
+COLOR_KEYS = ("primary", "secondary", "bg", "card", "text", "dark", "dbg", "dcard", "dtext", "page", "dpage")  # page/dpage: the background behind the site (bg/dbg: the frontend: heroes, blocks and content)  # dbg/dcard/dtext: the colours of the dark mode
 MODES = ("light", "dark", "both")
 FONTS = {"sans": 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', "serif": 'Georgia, "Times New Roman", serif', "round": '"Trebuchet MS", "Segoe UI", system-ui, sans-serif'}
 STYLE_TAGS = {"modern", "warm", "zakelijk", "speels", "minimalistisch", "luxe", "natuurlijk", "technisch", "creatief", "klassiek"}
@@ -446,7 +446,7 @@ def clean_brief(patch, old):
     """The brief with only known keys and safe values; the photos are checked against the media library."""
     b = dict(old or {})
     p = patch if isinstance(patch, dict) else {}
-    for k, n in (("name", 120), ("lang", 40), ("pages", 600), ("style", 300), ("extra", 1500), ("theme", 60), ("theme_name", 120), ("component_set", 60), ("contact", 500)):
+    for k, n in (("name", 120), ("lang", 40), ("pages", 600), ("style", 300), ("extra", 1500), ("theme", 60), ("theme_name", 120), ("component_set", 60), ("contact", 500), ("one_pager_pages", 300)):
         if k in p:
             b[k] = str(p[k] or "")[:n]
     if "kind" in p:
@@ -462,6 +462,12 @@ def clean_brief(patch, old):
         b["langs"] = [c for c in (p["langs"] if isinstance(p["langs"], list) else []) if isinstance(c, str) and c in known][:15]
     if "lang_switch" in p:
         b["lang_switch"] = bool(p["lang_switch"])
+    if "unanswered" in p:
+        b["unanswered"] = [str(x)[:160] for x in (p["unanswered"] if isinstance(p["unanswered"], list) else [])][:12]
+    if "no_cta" in p:
+        b["no_cta"] = bool(p["no_cta"])
+    if "extras" in p:  # the extra functions that the customer chose in the questionnaire ([] = none)
+        b["extras"] = [str(x)[:40] for x in (p["extras"] if isinstance(p["extras"], list) else [])][:12]
     if "locked" in p:  # the choices that the customer made himself (wizard): the designer does not change them
         b["locked"] = [k for k in (p["locked"] if isinstance(p["locked"], list) else []) if k in ("name", "kind", "pages", "style", "style_tags", "layouts", "max_width", "lang", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search")][:20]
     if "max_width" in p:
@@ -952,8 +958,8 @@ def theme_values(b):
     r = int(b.get("radius") if b.get("radius") is not None else 14)
     v = {
         "primary": c["primary"], "secondary": c["secondary"],
-        "light_page": c["bg"], "light_bg": c["bg"], "light_card": c["card"], "light_hover": mix(c["bg"], c["card"], 0.5), "light_line": mix(c["text"], c["bg"], 0.86), "light_text": c["text"], "light_muted": mix(c["text"], c["bg"], 0.42),
-        "dark_page": c["dbg"], "dark_bg": c["dbg"], "dark_card": c["dcard"], "dark_hover": mix(c["dbg"], c["dcard"], 0.5), "dark_line": mix(c["dbg"], c["dtext"], 0.15), "dark_text": c["dtext"], "dark_muted": mix(c["dtext"], c["dbg"], 0.36),
+        "light_page": c.get("page") or c["bg"], "light_bg": c["bg"], "light_card": c["card"], "light_hover": mix(c["bg"], c["card"], 0.5), "light_line": mix(c["text"], c["bg"], 0.86), "light_text": c["text"], "light_muted": mix(c["text"], c["bg"], 0.42),
+        "dark_page": c.get("dpage") or c["dbg"], "dark_bg": c["dbg"], "dark_card": c["dcard"], "dark_hover": mix(c["dbg"], c["dcard"], 0.5), "dark_line": mix(c["dbg"], c["dtext"], 0.15), "dark_text": c["dtext"], "dark_muted": mix(c["dtext"], c["dbg"], 0.36),
         "font_body": SYSTEM_FONT.get(b.get("font") or "sans", "System"), "font_heading": SYSTEM_FONT.get(b.get("font") or "sans", "System"),
         "radius": r, "btn_radius": max(0, r - 4), "popup_radius": r,
         "default_mode": {"light": "light", "dark": "dark", "both": "system"}.get(b.get("color_mode") or "light", "light"),
@@ -985,8 +991,8 @@ def theme_root_css(b):
     v = theme_values(b)
     fonts = {c["value"]: c for c in theme.FIELDS["font_body"]["choices"]}
     fb, fh = fonts.get(v["font_body"]) or {}, fonts.get(v["font_heading"]) or {}
-    light = {"--primary": v["primary"], "--secondary": v["secondary"], "--bg": v["light_page"], "--surface": v["light_bg"], "--card": v["light_card"], "--hover": v["light_hover"], "--line": v["light_line"], "--text": v["light_text"], "--muted": v["light_muted"]}
-    dark = {"--bg": v["dark_page"], "--surface": v["dark_bg"], "--card": v["dark_card"], "--hover": v["dark_hover"], "--line": v["dark_line"], "--text": v["dark_text"], "--muted": v["dark_muted"]}
+    light = {"--primary": v["primary"], "--secondary": v["secondary"], "--bg": v["light_bg"], "--page": v["light_page"], "--surface": v["light_bg"], "--card": v["light_card"], "--hover": v["light_hover"], "--line": v["light_line"], "--text": v["light_text"], "--muted": v["light_muted"]}
+    dark = {"--bg": v["dark_bg"], "--page": v["dark_page"], "--surface": v["dark_bg"], "--card": v["dark_card"], "--hover": v["dark_hover"], "--line": v["dark_line"], "--text": v["dark_text"], "--muted": v["dark_muted"]}
     common = {"--font-heading": fh.get("css") or "system-ui, sans-serif", "--font-body": fb.get("css") or "system-ui, sans-serif", "--radius": f"{v['radius']}px", "--btn-radius": f"{v['btn_radius']}px"}
     block = lambda d, ind="  ": "\n".join(f"{ind}{k}: {val};" for k, val in d.items())  # noqa: E731
     mode = (b or {}).get("color_mode") or "light"
@@ -1025,7 +1031,7 @@ def max_width_of(b):
 def layout_css(b):
     w = max_width_of(b)
     mw = f"{w}px" if w else "none"
-    return LAYOUT_CSS.replace("__MAXW__", mw) + f".container, .band .container {{ max-width: {mw}; margin: 0 auto; padding: 0 1.25rem; box-sizing: border-box; width: 100%; }}\n"
+    return LAYOUT_CSS.replace("__MAXW__", mw) + f"body {{ background: var(--page, var(--bg)); }}  /* the page colour: the whole page, 100% wide */\nbody > main {{ max-width: {mw}; margin-left: auto; margin-right: auto; background: var(--bg); }}  /* the frontend: the column up to the maximum width, with its own colour: the elements, blocks and heroes stand in it. The header and the footer are blocks of their own: 100% wide with their own background */\n" + f".container, .band .container {{ max-width: {mw}; margin: 0 auto; padding: 0 1.25rem; box-sizing: border-box; width: 100%; }}\n"
 
 
 def themed(files, b):
@@ -1074,6 +1080,12 @@ def _brief_text(b):
         *([ "ONE PAGER: the whole website is ONE page (index.html). Put everything (hero, about, services, reviews, contact ...) as sections of that page, each section with an id; the menu in the navbar consists of anchor links to those sections (href=\"#id\"), no other pages exist." ] if len(pages) == 1 else []),
         "Style: " + ", ".join([*(b.get("style_tags") or []), *([b["style"]] if b.get("style") else [])] or ["modern, clean, lots of white space, friendly and professional"]),
     ]
+    if b.get("unanswered"):
+        lines.append("UNANSWERED: the customer left these questions EMPTY, so design NOTHING for them (no section, no text, no button, no menu item, no placeholder content): " + "; ".join(b["unanswered"]))
+    if b.get("no_cta"):
+        lines.append("NO CALL TO ACTION: the customer chose no main goal. Do NOT design a call-to-action section or banner, no 'Request a ...' / 'Contact us' / 'Get started' buttons in the hero or the navbar, and no call-to-action wording anywhere.")
+    if isinstance(b.get("extras"), list):
+        lines.append("FUNCTIONS: the customer chose only these extra functions: " + (", ".join(b["extras"]) or "none") + ". Do NOT add any other function: no FAQ, agenda/appointments/booking, web shop, community, login or sign-up, documents/downloads, newsletter or contact form unless it is in this list (a plain contact section with the contact details is always fine). No login, sign-up, account or downloads links in the menu or the footer.")
     if b.get("contact"):
         lines.append("CONTACT DETAILS of the customer (use EXACTLY these in the contact section, the call to action and the footer; never invent an address, a phone number or an e-mail address, and never use example.com): " + str(b["contact"])[:500])
     if b.get("theme_name"):
@@ -1301,7 +1313,7 @@ def _site_plan(pk, job, pages):
     lst = componentpacks.rules_text(b.get("component_set") or None).split("Tags:\n", 1)[-1]
     objs = ", ".join(b.get("objects") or [])
     prompt = (f"{_brief_text(b)}\n\nPlan the pages. The pages (file = title): " + "; ".join(f"{f} = {t}" for f, t in pages) + ".\n"
-              + ("This is a ONE PAGER: there is only ONE page, so give 7 to 10 sections for it that together make the complete website (hero, about, services/offer, benefits, showcase or gallery, reviews, FAQ, contact ... as fits the business). EVERY section that belongs in the menu gets a short \"menu\" label (max 20 characters, in the language of the website) and a unique lowercase \"id\" (about, services, ...): the menu of the navbar links to these ids. "
+              + ("This is a ONE PAGER: there is only ONE page, so give 7 to 10 sections for it that together make the complete website (hero, about, services/offer, benefits, showcase or gallery, reviews, contact ... as fits the business; only the functions that the customer chose, see FUNCTIONS above). Give a short \"menu\" label (max 20 characters, in the language of the website) ONLY to the sections that the customer asked for: about us, services, contact, and showcase/portfolio, FAQ, blog or documents ONLY when the customer chose them. Sections such as reviews, results or how it works get NO menu label (leave it empty): a menu has at most 5 items. Every section gets a unique lowercase \"id\" (about, services, ...). "
                  if len(pages) == 1 else "For EVERY page give 4 to 8 sections, each ONE component, in the order of the page.")
               + " Each section is ONE component, in the order of the page. Use the full variety of the set where it fits the content (hero variants, features, cards, split text+picture, stats, steps, timeline, testimonials, team, gallery, video, pricing, comparison table, FAQ, calendar, agenda, booking, charts, KPI, newsletter, contact, call-to-action ...), not the same few every time. "
               "The first section of the start page is a hero; every page ends with a call to action or contact section. Do NOT include the navbar and footer (they are added to every page). "
@@ -1340,11 +1352,17 @@ def _site_plan(pk, job, pages):
         if not secs and len(pages) == 1:  # a one pager always gets a complete standard plan
             secs = [{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}", "menu": ""}, {"tag": "ui-split", "id": "about", "goal": "Who we are and what we stand for", "menu": "About us"},
                     {"tag": "ui-features", "id": "services", "goal": "The services or the offer", "menu": "Services"}, {"tag": "ui-testimonials", "id": "reviews", "goal": "What customers say", "menu": "Reviews"},
-                    {"tag": "ui-faq", "id": "faq", "goal": "The most asked questions", "menu": "FAQ"}, {"tag": "ui-cta", "id": "contact", "goal": "Contact: ask for a quote or call", "menu": "Contact"}]
-            secs = [x for x in secs if x["tag"] in tags] or secs
+                    {"tag": "ui-faq", "id": "faq", "goal": "The most asked questions", "menu": "FAQ"} if "ui-faq" not in blocked_tags(b.get("extras") if isinstance(b.get("extras"), list) else None) else None, {"tag": "ui-cta", "id": "contact", "goal": "Contact: ask for a quote or call", "menu": "Contact"}]
+            secs = [x for x in secs if x and x["tag"] in tags] or [x for x in secs if x]
         if not secs:  # standard plan
             secs = ([{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}"}, {"tag": "ui-features", "id": "voordelen", "goal": "The main benefits"}] if i == 0 else [{"tag": "ui-section-heading", "id": "intro", "goal": f"Introduction of {title}"}, {"tag": "ui-split", "id": "tekst", "goal": f"The story of {title}"}]) + [{"tag": "ui-cta", "id": "contact", "goal": "Invite to get in touch"}]
         out_pages.append({"file": f, "title": str(p.get("title") or title)[:60], "description": str(p.get("description") or "")[:155], "sections": secs})
+    block = blocked_tags(b.get("extras") if isinstance(b.get("extras"), list) else None)
+    if b.get("no_cta"):
+        block = block | {"ui-cta"}
+    if block:  # sections of functions that the customer did not choose are left out
+        for pg_ in out_pages:
+            pg_["sections"] = [x for x in pg_["sections"] if x.get("tag") not in block and not (x.get("layout") == "band" and any(c.get("tag") in block for c in x.get("cells") or []))] or pg_["sections"][:1]
     if len(out_pages) == 1:  # a one pager: every section has a unique id (the menu links to it)
         seen = set()
         for n, x in enumerate(out_pages[0]["sections"]):
@@ -1386,7 +1404,7 @@ def _generate_sections(pk, job):
     _set(pk, progress=3, step="Het plan van de pagina's maken")
     plan = _site_plan(pk, job, pages)
     if len(plan["pages"]) == 1:  # a one pager: the menu consists of anchor links to the sections of the page
-        links = [(x.get("menu"), x["id"]) for x in plan["pages"][0]["sections"] if x.get("menu") and x.get("id")]
+        links = [(x.get("menu"), x["id"]) for x in plan["pages"][0]["sections"] if x.get("menu") and x.get("id") and menu_allowed(b, x)][:6]
         if links:
             nav = "; ".join(f"{t} -> #{i}" for t, i in links) + " (all links are anchors on this ONE page: use exactly these href values)"
     total = 2 + sum(len(s.get("cells") or [1]) for p in plan["pages"] for s in p["sections"])
@@ -1399,9 +1417,10 @@ def _generate_sections(pk, job):
     files = themed({"style.css": "/* extra rules for rare helper classes (the theme is written by the system) */\n"}, b)
     tpl = lambda tag: _template(b, tag)  # noqa: E731
     step("Menu maken")
-    header = _piece(pk, b, sysm, f"Component: ui-navbar.\nBrand: {plan['brand']}\nMenu links (label -> file): {nav}\nA button on the right: a short call to action to the contact page.\n\n{text}\n\nTemplate:\n{tpl('ui-navbar')}", "ui-navbar", title=plan["brand"])
+    header = _piece(pk, b, sysm, f"Component: ui-navbar.\nBrand: {plan['brand']}\nMenu links (label -> file): {nav}\nA button on the right: a short call to action to the contact page (leave it out when the brief says NO CALL TO ACTION). No login, sign-up or account links, unless the FUNCTIONS in the brief include them.\n\n{text}\n\nTemplate:\n{tpl('ui-navbar')}", "ui-navbar", title=plan["brand"])
     step("Voettekst maken")
     footer = _piece(pk, b, sysm, f"Component: ui-footer.\nBrand: {plan['brand']}\nLinks (label -> file): {nav}; also 'Privacy' -> /privacy and 'Cookies' -> /cookies.\n\n{text}\n\nTemplate:\n{tpl('ui-footer')}", "ui-footer", title=plan["brand"])
+    header, footer = strip_unchosen_links(header, b.get("extras")), strip_unchosen_links(footer, b.get("extras"))  # no login, sign-up or downloads links when the customer did not choose such functions
     def one(pg, n, s, tag, goal, label):
         step(label)
         ctx = f"Page: {pg['title']} ({pg['file']}). Section {n + 1} of {len(pg['sections'])}: {tag}. Goal: {goal}\nOther sections on this page: " + ", ".join(f"{x.get('tag') or x.get('sysobject') or 'band'}: {x.get('goal', '')}" for x in pg["sections"] if x is not s)[:700]
@@ -1419,7 +1438,7 @@ def _generate_sections(pk, job):
                 secs.append((s.get("id") or "", f'<div data-sysobject="{s["sysobject"]}"></div>'))
             else:
                 secs.append((s.get("id") or "", one(pg, n, s, s["tag"], s["goal"], f"{label} ({s['tag'].replace('ui-', '')})")))
-            files[pg["file"]] = _page_html(b, pg, header, secs, footer)  # the page is complete after every piece: the preview shows it growing
+            files[pg["file"]] = _without_missing_svgs(_page_html(b, pg, header, secs, footer), files)  # the page is complete after every piece: the preview shows it growing
             _set(pk, files=files)
     return files
 
@@ -1436,6 +1455,10 @@ def _generate(pk):
         if not improve:  # a new design is built in small pieces (one component at a time): an answer can never be too long
             files = _generate_sections(pk, SiteDesignJob.objects.get(pk=pk))
             if ((SiteDesignJob.objects.get(pk=pk).brief or {}).get("picked") or {}):
+                try:
+                    assign_unused_picked(SiteDesignJob.objects.get(pk=pk))  # empty places get the photos that the customer chose and the pages do not use
+                except Exception:  # noqa: BLE001
+                    logger.warning("unused photos not placed", exc_info=True)
                 auto_previews(pk)  # while the status is still "running": the real example photos come in the preview
             b2 = {k: v for k, v in (SiteDesignJob.objects.get(pk=pk).brief or {}).items() if k not in ("improve_now", "focus")}
             b2["sectioned"] = True
@@ -1934,12 +1957,42 @@ def auto_photos(pk, job):
     return SiteDesignJob.objects.get(pk=pk)
 
 
+def _without_missing_svgs(html, files):
+    """The designer refers to pictures (img/logo-client-1.svg) that it does not make: such a tag becomes its text (the alt), so there is no broken picture and no request that ends in a 404."""
+    def fix(m):
+        tag = m.group(0)
+        src = re.search(r"""src=["']([^"']+\.svg)["']""", tag, re.I)
+        if not src or src.group(1).startswith(("http:", "https:", "data:", "/")) or src.group(1) in files:
+            return tag
+        alt = re.search(r"""alt=["']([^"']*)["']""", tag, re.I)
+        return f"<span>{alt.group(1)}</span>" if alt and alt.group(1).strip() else ""
+
+    return re.sub(r"<img\b[^>]*>", fix, html or "", flags=re.I)
+
+
+def assign_unused_picked(job):
+    """The pages ask for pictures (img/backoffice.jpg) that have none yet, while the customer chose more photos than the pages use: the unused chosen photos go in the empty places (the example picture follows in auto_previews)."""
+    b = job.brief or {}
+    picked = b.get("picked") or {}
+    html = " ".join(str(v) for k, v in (job.files or {}).items() if k.endswith((".html", ".css")))
+    unused = [(f, it) for f, it in picked.items() if f not in html and it and it.get("preview") and not it.get("video")]
+    empty = [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and not x.get("extra") and "logo" not in x["file"]]
+    n = 0
+    for x, (f, it) in zip(empty, unused):
+        try:
+            job = set_istock_pick(job, x["file"], {"id": it.get("id"), "url": it.get("url"), "preview": it.get("preview"), "title": x["alt"] or it.get("title") or ""})
+            n += 1
+        except ValueError:
+            continue
+    return job, n
+
+
 def auto_previews(pk):
     """After the design: the example pictures (with watermark) of the chosen iStock photos that the pages use are put in the pictures of the design, so the preview shows real photos at once. Never fails."""
     try:
         job = SiteDesignJob.objects.get(pk=pk)
         for x in photo_slots(job):
-            if x.get("kind") == "photo" and x.get("preview") and not x.get("done") and x["file"].startswith("istock-"):
+            if x.get("kind") == "photo" and x.get("preview") and not x.get("done"):
                 _set(pk, step=f"Voorbeeldfoto's ophalen ({x['file']})")
                 try:
                     job = use_preview(job, x["file"], job.user)
@@ -2026,6 +2079,9 @@ def more_photos(job):
 def _more_photos(pk):
     try:
         job = SiteDesignJob.objects.get(pk=pk)
+        job, placed = assign_unused_picked(job)  # first the photos that were chosen and are not used yet, only then a new search
+        if placed:
+            _set(pk, step="De gekozen foto's plaatsen", progress=20)
         empty = [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and "logo" not in x["file"]][:20]  # (a logo of a partner or customer is not a photo: iStock has no fitting picture)
         used = {str(x.get("istock") or "") for x in photo_slots(job)}
         for n, x in enumerate(empty):
@@ -2088,6 +2144,59 @@ def apply_identity(job):
         new["address"] = address[:200]
     if new:
         system.save(new)
+    if 'data-easy2edit-tag="ui-footer"' in html:  # the footer of the website looks like the footer of the design: dark, brand on the left with columns, the name of the website as brand
+        try:
+            from . import theme as T
+            from .models import SiteSettings
+
+            so = SiteSettings.load()
+            clean, errors = T.validate({"footer_tone": "dark", "footer_layout": "brand", "footer_brand": "name"})
+            if not errors:
+                so.theme = {**(so.theme or {}), **{k: v for k, v in clean.items() if v != T.DEFAULTS[k]}}
+                so.save()
+                new["footer_tone"] = "dark"
+        except Exception:  # noqa: BLE001 - only the look
+            logger.warning("footer look not set", exc_info=True)
+    return new
+
+
+SNAP_KEYS = ("name", "brief", "messages", "files", "files_prev", "translations")
+
+
+def snapshot(job):
+    """The state of a design as data (what 'save' keeps): used to see whether something changed while the creator was open, and to put the old state back."""
+    return {k: getattr(job, k) for k in SNAP_KEYS}
+
+
+def restore_snapshot(job, snap):
+    """Put an earlier state of the design back (not saving the changes of this session)."""
+    if job.status in ("running", "stopping"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    if not isinstance(snap, dict):
+        raise ValueError("Er is niets om terug te zetten.")
+    fields = {k: snap[k] for k in SNAP_KEYS if k in snap and isinstance(snap[k], (dict, list, str))}
+    fields["status"] = "done" if (fields.get("files") or {}) else "draft"
+    SiteDesignJob.objects.filter(pk=job.pk).update(**fields, step="", error="", updated_at=timezone.now())
+    return SiteDesignJob.objects.get(pk=job.pk)
+
+
+def next_version_name(name):
+    """'Blue' -> 'Blue 2', 'Blue 2' -> 'Blue 3'."""
+    name = str(name or "Nieuw ontwerp").strip()
+    m = re.match(r"^(.*?)(?:\s+v?(\d+))$", name)
+    return (f"{m.group(1)} {int(m.group(2)) + 1}" if m else f"{name} 2")[:120]
+
+
+def save_as_new_version(job, old_snap):
+    """What was done in this session becomes a NEW design (name +1); the design that was opened goes back to how it was. Returns the new job."""
+    if job.status in ("running", "stopping"):
+        raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
+    cur = snapshot(job)
+    name = next_version_name(job.name)
+    brief = {k: v for k, v in (cur["brief"] or {}).items() if k not in ("live_hash", "run")}
+    brief["name"] = name
+    new = SiteDesignJob.objects.create(user=job.user, status="done" if cur["files"] else "draft", name=name, brief=brief, messages=cur["messages"], files=cur["files"], files_prev=cur["files_prev"], translations=cur["translations"])
+    restore_snapshot(job, old_snap)
     return new
 
 
@@ -2200,7 +2309,7 @@ def save_answers(job, index, ans, own):
         raise ValueError("Onbekende vraag.")
     if not (0 <= i < len(msgs)) or not msgs[i].get("questions"):
         raise ValueError("Onbekende vraag.")
-    ids = {q.get("id") for q in msgs[i]["questions"]} | {"name", "url", "logo", "media", "colors"}  # (the questions that the screen adds itself are kept too)
+    ids = {q.get("id") for q in msgs[i]["questions"]} | {"name", "url", "logo", "media", "colors", "page_bg", "front_bg"}  # (the questions that the screen adds itself are kept too)
     clean = {}
     for k, v in (ans if isinstance(ans, dict) else {}).items():
         if k in ids:
@@ -2246,6 +2355,115 @@ def _answered_contact(msgs):
             v = ans.get(q.get("id"))
             if re.search(r"contact|adres|address|telefoon|phone|e-?mail|gegevens|details", txt, re.I) and isinstance(v, str) and len(v.strip()) >= 6 and not re.fullmatch(r"(beslis zelf|decide yourself|none|geen)\W*", v.strip(), re.I):
                 return v.strip()[:500]
+        return ""
+    return ""
+
+
+EXTRA_FAMILIES = (  # (words in the answer, the components that belong to that function)
+    (r"faq|veelgestelde", {"ui-faq"}),
+    (r"agenda|afspra|appoint|booking|boek|calendar|kalender", {"ui-calendar", "ui-agenda", "ui-booking", "ui-schedule", "ui-mini-calendar", "ui-calendar-weeks", "ui-year-calendar", "ui-calendar-toolbar"}),
+    (r"shop|winkel", {"ui-product-cards", "ui-cart-summary"}),
+    (r"community|gemeenschap", {"ui-login-card", "ui-profile-card"}),
+    (r"document|download", {"ui-files-feed"}),
+    (r"newsletter|nieuwsbrief", {"ui-newsletter"}),
+)
+
+
+def _answered_extras(msgs):
+    """The extra functions that the customer ticked in the last questionnaire ([] = none ticked), or None when there was no such question."""
+    for m in reversed(msgs or []):
+        if not m.get("questions"):
+            continue
+        ans = ((m.get("answers") or {}).get("ans")) or {}
+        for q in m["questions"]:
+            if q.get("type") == "multi" and re.search(r"extra|function|functie|module|feature", f"{q.get('id') or ''} {q.get('q') or ''}", re.I) and not re.search(r"page|pagina|layout|indeling|lang|taal", str(q.get("id") or ""), re.I):
+                v = ans.get(q.get("id"))
+                if isinstance(v, list):
+                    return [str(x) for x in v if not re.fullmatch(r"(none|geen|geen van .*)", str(x).strip(), re.I)]
+        return None
+    return None
+
+
+_ACCOUNT_LABELS = r"inloggen|aanmelden|registreren|account|mijn account|log ?in|sign ?(?:up|in)|register|login|anmelden|einloggen|registrieren|se connecter|s'inscrire|connexion|inscription|iniciar sesi[oó]n|registrarse"
+_DOWNLOAD_LABELS = r"downloads?|documenten|documents|dokumente"
+
+
+def strip_unchosen_links(html, extras):
+    """The menu and footer of the kit have a login and sign-up link and a downloads link: they are removed when the customer did not choose such a function."""
+    if not isinstance(extras, list):
+        return html
+    chosen = " ".join(extras).lower()
+    labels = []
+    if not re.search(r"community|gemeenschap|account|login", chosen):
+        labels.append(_ACCOUNT_LABELS)
+    if not re.search(r"document|download", chosen):
+        labels.append(_DOWNLOAD_LABELS)
+    if not labels:
+        return html
+    lab = "|".join(labels)
+    html = re.sub(rf"<li[^>]*>\s*<a\b[^>]*>\s*(?:{lab})\s*</a>\s*</li>", "", html or "", flags=re.I)
+    return re.sub(rf"<a\b[^>]*>\s*(?:{lab})\s*</a>", "", html, flags=re.I)
+
+
+def menu_allowed(b, sec):
+    """A section only gets an item in the menu of a one pager when the customer asked for it: about us, services and contact always; showcase/portfolio, FAQ, blog, documents only when chosen. Reviews, results, how it works and the like stay on the page without a menu item."""
+    key = f"{sec.get('id') or ''} {sec.get('menu') or ''}".lower()
+    if re.search(r"about|over[- ]ons|service|dienst|contact|offer|aanbod", key):
+        return True
+    chosen = " ".join([str(b.get("pages") or ""), " ".join(b.get("extras") or []), str(b.get("one_pager_pages") or "")]).lower()
+    for words, label in ((r"faq|veelgestelde", r"faq"), (r"portfolio|showcase|project|werk|cases", r"portfolio|showcase|project|werk|cases|results|resultaten"), (r"blog|nieuws", r"blog|news|nieuws"), (r"document|download", r"document|download")):
+        if re.search(label, key) and re.search(words, chosen):
+            return True
+    return False
+
+
+def blocked_tags(extras):
+    """The components of the functions that the customer did NOT choose: they are not used in the pages (extras None = everything is allowed)."""
+    if extras is None:
+        return set()
+    chosen = " ".join(extras).lower()
+    out = set()
+    for words, tags in EXTRA_FAMILIES:
+        if not re.search(words, chosen):
+            out |= tags
+    return out
+
+
+def _unanswered(msgs):
+    """The questions of the last questionnaire that the customer left empty (nothing chosen, nothing typed): nothing may be designed for them. Name, address, logo, photos, colours, layout and languages are handled elsewhere."""
+    out = []
+    for m in reversed(msgs or []):
+        if not m.get("questions"):
+            continue
+        ans = ((m.get("answers") or {}).get("ans")) or {}
+        if not ans:
+            return []  # nothing was saved: the customer let the designer decide
+        for q in m["questions"]:
+            qid = str(q.get("id") or "")
+            if re.search(r"^(name|naam|url|logo|media|colou?rs?|kleur|layout|indeling|width|breedte|langs?|talen|pages?|paginas?)|photo|foto|video|colou?r|kleur|layout|lang|width|pagina|page", qid, re.I):
+                continue
+            v = ans.get(qid)
+            empty = (not v) if isinstance(v, (list, str)) or v is None else False
+            if isinstance(v, str) and re.fullmatch(r"\s*(none|geen|beslis zelf|decide yourself)?\W*", v, re.I):
+                empty = True
+            if isinstance(v, list) and all(re.fullmatch(r"(none|geen)", str(x).strip(), re.I) for x in v):
+                empty = True
+            if empty:
+                out.append(str(q.get("q") or qid)[:160])
+        return out
+    return out
+
+
+def _answered_pages_raw(msgs):
+    """What was ticked at the pages question, as it stands (also for a one pager): used to decide which sections get a menu item."""
+    for m in reversed(msgs or []):
+        if not m.get("questions"):
+            continue
+        ans = ((m.get("answers") or {}).get("ans")) or {}
+        for q in m["questions"]:
+            qid = str(q.get("id") or "")
+            if re.search(r"page|pagina", qid, re.I) and not re.search(r"layout|indeling", qid, re.I) and q.get("type") == "multi" and isinstance(ans.get(qid), list):
+                return ", ".join(str(x) for x in ans[qid])[:300]
         return ""
     return ""
 
@@ -2296,14 +2514,27 @@ def _chat(pk, text, has, shots=None):
         qs = clean_questions(d.get("questions")) if not d.get("ready") else []
         msgs = list(job.messages or []) + [{"role": "ai", "text": reply, **({"questions": qs} if qs else {})}]
         br = d.get("brief") if isinstance(d.get("brief"), dict) else {}
+        if isinstance(br, dict):
+            left = _unanswered(msgs)
+            br = {**br, "unanswered": left}
+            if any(re.search(r"call to action|main goal|hoofddoel|doel van", q, re.I) for q in left):
+                br["no_cta"] = True  # no goal chosen: no call to action is designed
+            else:
+                br["no_cta"] = False
+        answered_extras = _answered_extras(msgs)
+        if answered_extras is not None and isinstance(br, dict):
+            br = {**br, "extras": answered_extras}
         answered_contact = _answered_contact(msgs)  # the contact details that the customer typed win over everything the designer could invent
         if answered_contact and isinstance(br, dict):
             br = {**br, "contact": answered_contact}
         answered = _answered_pages(msgs)  # the pages that the customer ticked in the questionnaire win over what the designer wrote down
         if answered and isinstance(br, dict):
             br = {**br, "pages": answered}
+            raw_pages = _answered_pages_raw(msgs)
+            if raw_pages and isinstance(br, dict):
+                br = {**br, "one_pager_pages": raw_pages}
         if d.get("ready") and str(br.get("name") or "").strip():
-            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width", "contact") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
+            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width", "contact", "extras", "one_pager_pages", "unanswered", "no_cta") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
             patch["chat"] = True
             _set(pk, brief=clean_brief(patch, job.brief), name=str(((job.brief or {}).get("name") if "name" in ((job.brief or {}).get("locked") or []) else "") or br["name"]).strip()[:120], messages=msgs, progress=6, step="De website ontwerpen")
             if patch.get("istock_search"):
