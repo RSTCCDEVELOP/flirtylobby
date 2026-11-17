@@ -83,9 +83,10 @@ services:
     environment:
       # Server-side requests stay on the Docker network.
       API_URL_INTERNAL: ${API_URL_INTERNAL:-http://backend:8000}
-      # Coolify supplies this at runtime. /build-id exposes it so the live
-      # frontend can be matched directly to the commit shown in Deployments.
-      APP_VERSION: ${SOURCE_COMMIT:-unknown}
+      # Set APP_VERSION=$SOURCE_COMMIT in Coolify's Environment Variables.
+      # Keeping SOURCE_COMMIT out of Compose interpolation lets Coolify provide
+      # its predefined deployed-commit value rather than an editable fallback.
+      APP_VERSION: ${APP_VERSION:-}
     depends_on:
       - backend
 
