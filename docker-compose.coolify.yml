@@ -5,6 +5,10 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
+# Keep one stable Compose project across Coolify deployments.  Without this,
+# Compose can derive a project name from Coolify's per-deployment checkout
+# directory and create a new stack instead of reconciling the previous one.
+name: easy2edit
 
 services:
   db:
