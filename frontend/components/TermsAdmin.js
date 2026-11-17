@@ -26,7 +26,7 @@ export default function TermsAdmin() {
   const [dirty, setDirty] = useState(false);
   const take = (r) => { setD(r); setTexts(r.texts || {}); setDirty(false); };
   useEffect(() => { api("/system/terms/admin/").then(take).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Loading fill />;
 
   const cur = texts[lang] || { title: "", body: "" };
   const set = (patch) => { setTexts((t) => ({ ...t, [lang]: { ...(t[lang] || { title: "", body: "" }), ...patch } })); setDirty(true); };

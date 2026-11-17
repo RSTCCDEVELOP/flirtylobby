@@ -49,6 +49,9 @@ def site_ping(request):
     try:
         site, callback = sitemanager.ping(request.META.get("HTTP_X_EASY2EDIT_KEY", ""), request.data if isinstance(request.data, dict) else {}, _seen_ip(request))
     except PermissionError as e:
+        blocked = EasySite.objects.filter(token_hash=sitemanager._hash(request.META.get("HTTP_X_EASY2EDIT_KEY", "")), status="blocked").first()
+        if blocked:  # the website is told that it is blocked, with the message for its visitors: it goes offline itself (also when it could not be reached when it was blocked)
+            return Response({"detail": str(e), "reason": "blocked", "message": blocked.block_message or sitemanager.BLOCK_MESSAGE}, status=status.HTTP_403_FORBIDDEN)
         return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
     return Response({"ok": True, "url": site.url, "status": site.status, **({"callback_key": callback} if callback else {})})
 
@@ -230,12 +233,17 @@ def site_admin(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
     d = request.data if isinstance(request.data, dict) else {}
     if "name" in d:
-        site.name = str(d["name"] or "").strip()[:150]
+        new_name = str(d["name"] or "").strip()[:150]
+        if new_name != site.name:
+            site.name_locked = True  # changed here: the website no longer overwrites it
+        site.name = new_name
     if "notes" in d:
         site.notes = str(d["notes"] or "").strip()[:2000]
+    offline = None
     if "status" in d:
         if d["status"] not in ("pending", "active", "blocked", "disconnected"):
             return Response({"detail": "Onbekende status."}, status=status.HTTP_400_BAD_REQUEST)
+        offline = sitemanager.apply_status_change(site, d["status"], str(d.get("block_message") or ""))  # blocked: the website goes offline with a message
         site.status = d["status"]
     if "url" in d:
         url = sitemanager._clean_url(d["url"])
@@ -243,7 +251,7 @@ def site_admin(request, pk):
             return Response({"detail": "Gebruik een adres als https://naam.easy2edit.com (zonder pad)."}, status=status.HTTP_400_BAD_REQUEST)
         site.url, site.url_generated = url, False
     site.save()
-    return Response(sitemanager.public(site))
+    return Response({**sitemanager.public(site), "offline": offline})
 
 
 def _site_or_404(pk):

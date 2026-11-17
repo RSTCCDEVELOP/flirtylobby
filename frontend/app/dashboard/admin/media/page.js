@@ -58,7 +58,7 @@ function MediaObjects({ canEdit, canManage, setMsg }) {
     if (!(await confirmDialog(tx("\"{0}\" verwijderen? Pagina's waar het op staat tonen het niet meer.", v.name), { danger: true }))) return;
     try { await api(`/mediaviews/${v.id}/`, { method: "DELETE" }); load(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   }
-  if (views === null) return <p className="muted"><Loading /></p>;
+  if (views === null) return <Loading fill />;
   return (
     <>
       <p className="muted" style={{ margin: "0 0 1rem" }}>{tx("Blokken met foto's uit je bibliotheek die je in de bewerkmodus op een pagina zet: een fotoboek, een beeldcarrousel, een fotomuur of een diavoorstelling, elk met eigen effecten en instellingen.")}</p>

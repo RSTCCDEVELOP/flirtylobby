@@ -41,8 +41,8 @@ function Popup({ onClose }) {
             <div style={{ marginTop: ".8rem" }}>
               {tab === "info" && (
                 <ul className="info-plugins">
-                  {[["Licentienummer", d.license?.number], ["Opdrachtgever", d.license?.client], ["Adres opdrachtgever", d.license?.client_address], ["Licentie geldig tot", d.license?.valid_until ? new Date(d.license.valid_until).toLocaleDateString() + (d.license.expired ? ` (${tx("verlopen")})` : "") : ""], ["Website", d.site?.site_name], ["Eigenaar", d.site?.company_name], ["Adres (URL)", d.site?.frontend_url || (typeof window !== "undefined" ? window.location.origin : "")],
-                    ["E-mail", d.site?.contact_email], ["Support", d.site?.support_email], ["Telefoon", d.site?.phone], ["Adres", d.site?.address], ["KvK", d.site?.kvk], ["BTW-nummer", d.site?.vat_id]]
+                  {[["Licentienummer", d.license?.number], ["Opdrachtgever", d.license?.client], ["Adres opdrachtgever", d.license?.client_address], ["Licentie geldig tot", d.license?.valid_until ? new Date(d.license.valid_until).toLocaleDateString() + (d.license.expired ? ` (${tx("verlopen")})` : "") : ""], ["Website", d.site?.site_name], ["Hoofd-URL", d.license?.main_url], ["Eigenaar", d.site?.company_name], ["Adres (URL)", d.site?.frontend_url || (typeof window !== "undefined" ? window.location.origin : "")],
+                    ["Contactpersoon", d.site?.contact_person], ["E-mail", d.site?.contact_email], ["Support", d.site?.support_email], ["Telefoon", d.site?.phone], ["Mobiel", d.site?.mobile], ["Adres", d.site?.address], ["KvK", d.site?.kvk], ["BTW-nummer", d.site?.vat_id]]
                     .filter(([, v]) => v).map(([k, v]) => (
                       <li key={k}><span>{tx(k)}</span><span className="info-ver">{/^https?:\/\//.test(v) ? <a href={v} target="_blank" rel="noreferrer">{v}</a> : k === "E-mail" || k === "Support" ? <a href={`mailto:${v}`}>{v}</a> : v}</span></li>
                     ))}

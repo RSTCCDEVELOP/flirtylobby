@@ -7,7 +7,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { canAdmin } from "../lib/perms";
@@ -35,6 +34,12 @@ export default function LicensePrompt({ site }) {
     return () => setLicenseOpen(false);
   }, [ready, admin, site?.license_missing]);
   const dismiss = () => { try { sessionStorage.setItem(keyOf(), "1"); } catch {} setLic(null); setLicenseOpen(false); }; // asked once per login
+  // "Licentie regelen" starts the set-up wizard (basic data, costs and the licence); on a page outside the dashboard it is opened there
+  const arrange = () => {
+    dismiss();
+    try { sessionStorage.setItem("e2e_open_setup", "1"); } catch { /* no storage */ }
+    if (window.location.pathname.startsWith("/dashboard")) { try { sessionStorage.removeItem("e2e_open_setup"); } catch { /* no storage */ } window.dispatchEvent(new Event("open-setup-wizard")); } else window.location.assign("/dashboard");
+  };
   if (!lic || welcomeOpen) return null;
   const r = lic.reseller || {};
   return (
@@ -46,7 +51,7 @@ export default function LicensePrompt({ site }) {
         <div className="row" style={{ flexWrap: "nowrap", gap: ".5rem", justifyContent: "flex-end" }}>
           <button type="button" className="btn" onClick={dismiss}>{tx("Later")}</button>
           {(r.email || r.url) && (r.url ? <a className="btn" href={r.url} target="_blank" rel="noopener noreferrer">{tx("Contact met reseller")}</a> : <a className="btn" href={`mailto:${r.email}`}>{tx("Contact met reseller")}</a>)}
-          <Link className="btn primary" href="/dashboard/license" onClick={dismiss}>{tx("Licentie regelen")}</Link>
+          <button type="button" className="btn primary" onClick={arrange}>{tx("Licentie regelen")}</button>
         </div>
       </div>
     </div>

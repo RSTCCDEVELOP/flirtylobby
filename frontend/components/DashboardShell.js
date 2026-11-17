@@ -17,6 +17,7 @@ import AiLiveCost from "./AiLiveCost";
 import FaqDrawer from "./FaqDrawer";
 import DefaultInstallPrompt from "./DefaultInstallPrompt";
 import SystemUpdatePrompt from "./SystemUpdatePrompt";
+import SetupWizard from "./SetupWizard";
 import TermsGate from "./TermsGate";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
@@ -406,6 +407,7 @@ export default function DashboardShell({ children }) {
         {user && (user.is_staff || lvl(user, "system") >= 3) && <ManualFirstAsk />}
         {user?.is_staff && <DefaultInstallPrompt />}
         {user && <SystemUpdatePrompt />}
+        {user && <SetupWizard />}
         {user && !user.is_staff && <AiCreditGate />}
         {user && <ApiLinksInstall />}
         {user && <AiWelcome />}

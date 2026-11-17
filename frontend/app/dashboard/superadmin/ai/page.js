@@ -242,7 +242,7 @@ export default function AiDashboard() {
         </>)}
         {ptab !== "general" && (() => {
           const pv = provs?.providers?.find((x) => x.provider === ptab);
-          if (!pv) return <p className="muted"><Loading /></p>;
+          if (!pv) return <Loading fill />;
           const own = st.prices?.[ptab] || {};
           const rate = st.cost_currency === st.currency ? 1 : Number(st.rate);
           const names = [...pv.models.map((r) => r.model), ...Object.keys(own).filter((k) => !pv.models.some((r) => r.model === k))];

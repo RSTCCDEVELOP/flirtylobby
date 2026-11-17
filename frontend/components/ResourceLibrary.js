@@ -50,7 +50,7 @@ export function ThemeGallery({ onChanged, canManage = false }) {
   const load = useCallback(() => api("/resource/").then((d) => setRows(d?.kinds?.themas || [])).catch(() => setRows([])), []);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (canManage) api("/content/ai/").then((r) => setAi(!!r.available)).catch(() => setAi(false)); }, [canManage]);
-  if (!rows) return <p className="muted"><Loading /></p>;
+  if (!rows) return <Loading fill />;
   const list = rows.filter((r) => !r.bundle && (!q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase())))
     .sort((a, b) => ["update", "new", "current"].indexOf(a.state) - ["update", "new", "current"].indexOf(b.state) || a.title.localeCompare(b.title));
   if (!rows.some((r) => !r.bundle)) return null;
@@ -265,7 +265,7 @@ export function ResourceAdmin() {
   }).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
   const [makeTpl, setMakeTpl] = useState(false);  // (a hook: before the early return below)
   useEffect(() => { load(); }, [load]);
-  if (!lib) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
+  if (!lib) return msg ? <div className="alert">{msg.text}</div> : <Loading fill />;
   const rows = lib.kinds[kind] || [];
   const flip = (name) => setOk((cur) => { const s = new Set(cur[kind]); s.has(name) ? s.delete(name) : s.add(name); return { ...cur, [kind]: s }; });
   const save = async () => {

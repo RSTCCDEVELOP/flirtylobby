@@ -54,6 +54,9 @@ def catalog():
     lic = License.objects.filter(pk=1).first()
     out.append({"kind": "backup", "key": "slots", "label": f"Backups bewaren ({backup_slots()} in totaal, {lic.backup_included if lic else 0} inbegrepen)", "group": "Systeem", "price": backup_cost(lic),
                 "active": bool(on.get("backups", True)), "computed": True})
+    host = hosting_line(lic)
+    if host:
+        out.append(host)
     for p in Plugin.objects.order_by("name"):
         out.append({"kind": "plugin", "key": p.name, "label": p.title or p.name, "group": "Plugins", "price": pr.get(("plugin", p.name), Decimal(0)), "active": bool(p.enabled)})
         try:
@@ -67,6 +70,21 @@ def catalog():
             out.append({"kind": "game", "key": k, "label": i["title"], "group": f"{p.title or p.name}: " + "spelletjes", "price": pr.get(("game", k), Decimal(0)),
                         "active": bool(p.enabled and i.get("enabled", True))})
     return out
+
+
+def hosting_options():
+    """The hosting choices of the price list with their price per month incl. VAT: [{key, label, desc, price}]."""
+    from . import pricing
+
+    vat = (100 + Decimal(str(pricing.load()["vat_rate"]))) / 100
+    return [{"key": o["key"], "label": o["label"], "desc": o.get("desc", ""), "price": str((Decimal(o["price"]) * vat).quantize(TWO))} for o in pricing.hosting_options()]
+
+
+def hosting_line(lic):
+    """The hosting that is paid with the licence, as a line of the price: None when there is none."""
+    key = (lic.hosting if lic else "") or ""
+    o = next((x for x in hosting_options() if x["key"] == key and Decimal(x["price"]) > 0), None)
+    return {"kind": "hosting", "key": o["key"], "label": "Hosting: " + o["label"], "group": "Hosting", "price": Decimal(o["price"]), "active": True} if o else None
 
 
 def backup_slots():
@@ -91,8 +109,24 @@ def monthly(lic=None):
     return (base + sum((c["price"] for c in catalog() if c["active"]), Decimal(0))).quantize(TWO)
 
 
+def discount(months):
+    """The discount (percent) for a payment of this many months: set by the superadmin in the price list (Subscriptions): month, quarter, year. 0 when there is none."""
+    from . import pricing
+
+    for p in (pricing.load().get("periods") or {}).values():
+        if int(p.get("months", 0)) == int(months):
+            return Decimal(str(p.get("discount", 0)))
+    return Decimal(0)
+
+
 def for_period(months, lic=None):
-    return (monthly(lic) * months).quantize(TWO)
+    """What a payment of this many months costs: the monthly price times the months, less the discount of that period."""
+    return (monthly(lic) * months * (Decimal(100) - discount(months)) / 100).quantize(TWO)
+
+
+def period_overview(lic=None):
+    """[{months, discount, price, per_month}] for month, quarter and year: what the subscriptions cost now."""
+    return [{"months": m, "discount": str(discount(m)), "price": str(for_period(m, lic)), "per_month": str((for_period(m, lic) / m).quantize(TWO))} for m in (1, 3, 12)]
 
 
 def total(lic=None):

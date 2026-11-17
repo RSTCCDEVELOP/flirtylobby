@@ -24,8 +24,8 @@ const SERIES = (g) => `s${Math.max(0, GROUPS.indexOf(g)) + 1}`; // the colour of
 const SERIES_VAR = ["--e2e-primary", "--e2e-secondary", "--e2e-accent", "--e2e-info", "--e2e-success"];
 
 // Everything below is made of easy2edit objects (the component set in use): ui-kpi, ui-legend, ui-stacked-bar-chart, ui-bar-chart, ui-bar-chart-horizontal, ui-donut, ui-cost-summary. They take the colours and corners of the theme.
-export function KpiGrid({ children }) {
-  return <KitScope><div className="e2e-grid" style={{ "--e2e-min": "190px" }} data-easy2edit-tag="ui-kpi">{children}</div></KitScope>;
+export function KpiGrid({ children, min = 190 }) {
+  return <KitScope><div className="e2e-grid" style={{ "--e2e-min": `${min}px` }} data-easy2edit-tag="ui-kpi">{children}</div></KitScope>;
 }
 export function Kpi({ label, value, sub, accent }) {
   return <div className="e2e-kpi" style={accent ? { borderTop: "3px solid var(--e2e-primary)" } : undefined}><span className="e2e-kpi__label">{label}</span><span className="e2e-kpi__value">{value}</span>{sub && <span className="e2e-hint">{sub}</span>}</div>;

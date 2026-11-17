@@ -36,7 +36,7 @@ export default function MediaLibraryPanel({ onPick }) {
         </select>
       )}
       {err && <div className="alert">{err}</div>}
-      {items === null && !err && <small className="muted"><Loading /></small>}
+      {items === null && !err && <small className="muted"><Loading compact /></small>}
       {items && !items.length && <small className="muted">{tx("Geen afbeeldingen gevonden.")}</small>}
       <div className="pb-medialib-grid">
         {(items || []).map((i) => (

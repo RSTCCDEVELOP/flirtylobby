@@ -39,7 +39,7 @@ function Sets({ onUse }) {
     setBusy("upload"); setErr("");
     try { const fd = new FormData(); fd.append("file", f); setD(await api("/components/sets/", { method: "POST", body: fd })); resetKit(); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
   };
-  if (!d) return err ? <div className="alert">{err}</div> : <p className="muted"><Loading /></p>;
+  if (!d) return err ? <div className="alert">{err}</div> : <Loading fill />;
   const card = (m, right) => (
     <div key={m.key} className="card" style={{ display: "flex", gap: ".8rem", alignItems: "center", padding: ".7rem .9rem", flexWrap: "wrap" }}>
       <span style={{ flex: 1, minWidth: 200 }}>

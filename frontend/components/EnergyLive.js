@@ -29,7 +29,7 @@ export default function EnergyLive() {
   const [copied, setCopied] = useState(false);
   useUpdates(`energy-live-${hours}`, () => api(`/energy/live/?hours=${hours}`), 10000, (r) => { setD(r); setErr(false); }, true, { live: true, onError: () => setErr(true) }); // live: every 10 seconds, not while the tab is hidden
   if (err && !d) return <p className="muted">{tx("De energiegegevens zijn niet beschikbaar.")}</p>;
-  if (!d) return <p className="muted"><Loading /></p>;
+  if (!d) return <Loading fill />;
   const pts = d.points.map((p) => ({ x: hm(p.t), y: p.w }));
   const copy = async () => { try { await navigator.clipboard.writeText(d.api.url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ } };
   return (

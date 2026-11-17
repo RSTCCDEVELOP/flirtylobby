@@ -39,7 +39,7 @@ export default function PresetPlugins({ preset }) {
       <span className="wz-text"><strong>{title}{badge && <span className="badge" style={{ marginLeft: ".5rem" }}>{badge}</span>}</strong>{sub && <small className="muted">{sub}</small>}</span>
     </label>
   );
-  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
+  if (!opts) return msg ? <div className="alert">{msg.text}</div> : <Loading fill />;
   const groups = [...new Set(opts.modules.map((m) => m.group || ""))];
   return (
     <>

@@ -11,7 +11,8 @@ import { useEffect, useState } from "react";
 import { LineChart, Donut } from "./Charts";
 import { ADVICE_STATUS, ADVICE_TEXT } from "./EnergyAdvice";
 import { fmtBytes, fmtG, Rating } from "./EnergyBlocks";
-import { IconBolt, IconBriefcase, IconChart, IconGlobe, IconLeaf, IconUsers } from "./Icons";
+import { IconBolt, IconBriefcase, IconChart, IconCheck, IconGlobe, IconInfo, IconLeaf, IconRefresh, IconUsers, IconX } from "./Icons";
+import { Kpi, KpiGrid } from "./AiCharts";
 import Loading from "./Loading";
 import Tabs from "./Tabs";
 import { api, errorText } from "../lib/api";
@@ -29,14 +30,9 @@ const REASON = {
 };
 const errText = (e) => (e?.data?.reason && REASON[e.data.reason] ? tx(REASON[e.data.reason]) : errorText(e));
 
-const Stat = ({ label, value, sub }) => (
-  <div className="card stat" style={{ padding: ".7rem .9rem", gap: ".2rem" }}>
-    <small className="muted">{label}</small>
-    <strong style={{ fontSize: "1.35rem", fontVariantNumeric: "tabular-nums" }}>{value}</strong>
-    {sub && <small className="muted">{sub}</small>}
-  </div>
-);
-const Tiles = ({ children }) => <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: ".6rem" }}>{children}</div>;
+// the figures are the kit objects ui-kpi (same height, theme colours)
+const Stat = ({ label, value, sub }) => <Kpi label={label} value={value} sub={sub} />;
+const Tiles = ({ children, min }) => <KpiGrid min={min}>{children}</KpiGrid>;
 const Panel = ({ title, children }) => (
   <div className="card" style={{ display: "grid", gap: ".6rem", alignContent: "start", minWidth: 0 }}>
     <strong>{title}</strong>
@@ -60,6 +56,30 @@ function BarList({ rows }) {
   );
 }
 
+// The same as the Info pop-up of the website (Beheer -> Info): the licence, the client, the contact data, the version and what is installed.
+function InfoPanel({ d }) {
+  const l = d.license, r = d.reseller || {}, s = d.site || {};
+  const date = (v) => (v ? new Date(v).toLocaleDateString() : "");
+  const rows = [
+    ["Licentienummer", l.number], ["Opdrachtgever", l.client], ["Adres opdrachtgever", l.client_address], ["Licentie geldig tot", date(l.valid_until)], ["Uitgegeven op", l.issued_at ? when(l.issued_at) : ""],
+    ["Reseller", [r.name, r.email].filter(Boolean).join(" · ")], ["Website", s.frontend_url], ["E-mail", s.contact_email], ["Support", s.support_email], ["Telefoon", s.phone], ["Adres", s.address], ["KvK", s.kvk], ["BTW-nummer", s.vat_id],
+  ].filter(([, v]) => v);
+  return (
+    <>
+      <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap", alignItems: "center" }}>
+        <span className={`badge ${l.state === "active" ? "ok" : l.state === "expired" ? "warn" : ""}`}>{l.state === "active" ? tx("Licentie actief") : l.state === "expired" ? tx("Licentie verlopen") : tx("Geen licentie")}</span>
+        <span className={`badge ${d.installation.state === "installed" ? "ok" : ""}`}>{d.installation.state === "installed" ? tx("Geïnstalleerd") : tx("Lege standaardinstallatie")}{d.installation.name ? ` · ${d.installation.name}` : ""}</span>
+      </div>
+      <ul className="info-plugins">
+        {rows.map(([k, v]) => <li key={k}><span>{tx(k)}</span><span className="info-ver">{/^https?:\/\//.test(v) ? <a href={v} target="_blank" rel="noopener noreferrer">{v}</a> : v}</span></li>)}
+        <li><span>{tx("Versie")}</span><span className="info-ver">{d.version} {tx("build")} {d.build}</span></li>
+        <li><span>{tx("Plugins")}</span><span className="info-ver">{d.plugins.on} {tx("aan")} / {d.plugins.total}</span></li>
+        <li><span>{tx("Modules")}</span><span className="info-ver">{d.modules.on} {tx("aan")} / {d.modules.total}</span></li>
+      </ul>
+    </>
+  );
+}
+
 // The page statistics of the website (the plugin Statistics): visitors, bots, where they come from, the pages.
 function PluginSwitch({ on, busy, onChange }) {
   return (
@@ -73,6 +93,7 @@ function PluginSwitch({ on, busy, onChange }) {
 }
 
 function Stats({ d, run, busy }) {
+  const [sub, setSub] = useState("overview");  // overview | course | sources: no scrolling
   const toggle = async (on) => {
     if (!on && !(await confirmDialog(tx("De statistieken-plugin uitzetten? Er worden dan geen bezoeken meer geteld; wat al is verzameld blijft bewaard."), { okLabel: tx("Uitzetten"), danger: true }))) return;
     run({ action: "plugin", name: "statistics", enabled: on }, on ? tx("De statistieken-plugin is aangezet. De cijfers beginnen vanaf nu.") : tx("De statistieken-plugin is uitgezet."), "stats");
@@ -83,34 +104,36 @@ function Stats({ d, run, busy }) {
   return (
     <>
       <PluginSwitch on busy={busy} onChange={toggle} />
-      <Tiles>
+      <Tabs value={sub} onChange={setSub} tabs={[["overview", "Overzicht"], ["course", "Verloop"], ["sources", "Bronnen"]]} />
+      {sub === "overview" && <Tiles min={170}>
         <Stat label={tx("Bezoekers")} value={num(t.visitors)} sub={tx("laatste {0} dagen", d.days)} />
         <Stat label={tx("Paginaweergaven")} value={num(t.page_views)} />
         <Stat label={tx("Klikken uit zoekmachines")} value={num(t.search_clicks)} />
         <Stat label={tx("Klikken uit AI-assistenten")} value={num(t.ai_clicks)} />
         <Stat label={tx("Bezoeken van zoekbots")} value={num(t.bot_search)} />
         <Stat label={tx("Bezoeken van AI-bots")} value={num(t.bot_ai)} />
-      </Tiles>
-      <Panels>
-        <Panel title={tx("Bezoekers en paginaweergaven per dag")}>
+      </Tiles>}
+      {sub !== "overview" && <Panels>
+        {sub === "course" && <Panel title={tx("Bezoekers en paginaweergaven per dag")}>
           <LineChart dates={d.dates} series={[{ label: tx("Bezoekers"), values: s.visitors, total: t.visitors }, { label: tx("Paginaweergaven"), values: s.page_views, total: t.page_views, color: "var(--orange)" }]} />
-        </Panel>
-        <Panel title={tx("Bezoeken van bots per dag")}>
+        </Panel>}
+        {sub === "course" && <Panel title={tx("Bezoeken van bots per dag")}>
           <LineChart dates={d.dates} area={false} series={[{ label: tx("Zoekbots"), values: s.bot_search, total: t.bot_search }, { label: tx("AI-bots"), values: s.bot_ai, total: t.bot_ai, color: "#8b5cf6" }, { label: tx("Overig"), values: s.bot_other, total: t.bot_other, color: "#16a34a" }]} />
-        </Panel>
-        <Panel title={tx("Waar bezoekers vandaan komen")}>
+        </Panel>}
+        {sub === "sources" && <Panel title={tx("Waar bezoekers vandaan komen")}>
           {d.referrers.length ? <Donut parts={d.referrers.map((r) => ({ label: tx(kind[r.label] || r.label), value: r.value }))} /> : <small className="muted">–</small>}
-        </Panel>
-        <Panel title={tx("Bots per naam")}><BarList rows={d.bots} /></Panel>
-        <Panel title={tx("Meest bezochte pagina's")}><BarList rows={d.pages} /></Panel>
-        <Panel title={tx("Beste landingspagina's (uit zoek en AI)")}><BarList rows={d.landing} /></Panel>
-      </Panels>
+        </Panel>}
+        {sub === "sources" && <Panel title={tx("Bots per naam")}><BarList rows={d.bots} /></Panel>}
+        {sub === "sources" && <Panel title={tx("Meest bezochte pagina's")}><BarList rows={d.pages} /></Panel>}
+        {sub === "sources" && <Panel title={tx("Beste landingspagina's (uit zoek en AI)")}><BarList rows={d.landing} /></Panel>}
+      </Panels>}
     </>
   );
 }
 
 // The energy use of the website (the module Energy): the score now and after the advice, the course per day, and the advice with what it is expected to give.
 function Energy({ d, run, busy, reload }) {
+  const [sub, setSub] = useState("overview");  // overview | course | advice: no scrolling
   const a = d.advice, sm = d.summary, b = d.benchmark;
   const same = a.after_apply.co2_g === a.current.co2_g && a.after_all.co2_g === a.current.co2_g;  // nothing that can be won with what is known
   const dates = d.series.map((x) => x.date);
@@ -122,7 +145,8 @@ function Energy({ d, run, busy, reload }) {
   );
   return (
     <>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: ".7rem" }}>
+      <Tabs value={sub} onChange={setSub} tabs={[["overview", "Overzicht"], ["course", "Verloop"], ["advice", "Adviezen"]]} />
+      {sub === "overview" && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: ".7rem" }}>
         <Score label={tx("Nu")} s={a.current} />
         {same ? (
           <div className="card" style={{ gridColumn: "span 2", display: "grid", gap: ".5rem", alignContent: "center" }}>
@@ -139,21 +163,21 @@ function Energy({ d, run, busy, reload }) {
             <Score label={tx("Na ook de handmatige stappen")} s={a.after_all} />
           </>
         )}
-      </div>
-      <Tiles>
+      </div>}
+      {sub === "overview" && <Tiles min={150}>
         <Stat label={tx("Paginaweergaven")} value={num(sm.views)} sub={tx("laatste {0} dagen", d.period_days)} />
         <Stat label={tx("Gemiddeld paginagewicht")} value={fmtBytes(sm.avg_page_bytes)} sub={b.vs_pct != null ? `${b.vs_pct > 0 ? "+" : ""}${b.vs_pct}% ${tx("t.o.v. een gemiddelde pagina")}` : ""} />
         <Stat label={tx("CO₂ per pagina")} value={fmtG(sm.avg_co2_g)} />
         <Stat label={tx("Energie")} value={`${sm.total_kwh} kWh`} />
         <Stat label={tx("Uitstoot")} value={`${sm.total_co2_kg} kg`} sub="CO₂" />
         <Stat label={tx("Verzoeken per pagina")} value={sm.avg_requests} />
-      </Tiles>
-      <Panel title={tx("CO₂ per pagina per dag")}>
+      </Tiles>}
+      {sub === "course" && <Panel title={tx("CO₂ per pagina per dag")}>
         {d.series.length
           ? <LineChart dates={dates} totals={false} format={(v) => fmtG(v)} series={[{ label: tx("Deze website"), values: d.series.map((x) => x.avg_co2_g) }, { label: tx("Gemiddelde webpagina"), values: d.series.map(() => b.co2_g), dashed: true, color: "var(--muted)" }]} />
           : <small className="muted">{tx("Nog geen metingen.")}</small>}
-      </Panel>
-      <Panel title={tx("Adviezen en verbeteringen")}>
+      </Panel>}
+      {sub === "advice" && <Panel title={tx("Adviezen en verbeteringen")}>
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: ".6rem" }}>
           {a.items.map((i) => {
             const [label, cls] = ADVICE_STATUS[i.status] || ["", "badge"];
@@ -168,14 +192,14 @@ function Energy({ d, run, busy, reload }) {
             );
           })}
         </ul>
-      </Panel>
+      </Panel>}
     </>
   );
 }
 
 // Super admin+ -> Site manager -> view: what the website itself says when the easy2edit server asks it through its API (users, statistics, energy, reseller, AI).
 export function SiteView({ site, onClose }) {
-  const [tab, setTab] = useState("users");
+  const [tab, setTab] = useState("info");
   const [data, setData] = useState({});
   const [err, setErr] = useState({});
   const [busy, setBusy] = useState(false);
@@ -196,16 +220,25 @@ export function SiteView({ site, onClose }) {
   const money = (v, cur) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: cur || "EUR" }).format(v || 0); } catch { return `${v}`; } };
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="card modal wide" style={{ width: "min(1040px, 96vw)", maxWidth: "96vw", maxHeight: "92vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }} onClick={(e) => e.stopPropagation()}>
-        <div className="row between" style={{ alignItems: "center" }}>
-          <h2 style={{ margin: 0 }}>{site.name || site.url}</h2>
-          <button type="button" className="btn sm" onClick={onClose}>{tx("Sluiten")}</button>
+      <div className="card modal wide" style={{ width: "min(1040px, 96vw)", maxWidth: "96vw", maxHeight: "92vh", padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "1.2rem 1.5rem 0", borderBottom: "1px solid var(--line)", display: "grid", gap: ".9rem", flex: "0 0 auto" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{site.name || site.url}</h2>
+              <small className="muted" style={{ display: "flex", gap: ".5rem", alignItems: "center", flexWrap: "wrap" }}>
+                <a href={site.url} target="_blank" rel="noopener noreferrer">{String(site.url || "").replace(/^https?:\/\//, "")}</a>
+                <span className="badge" data-easy2edit-tag="ui-badge">{tx("Gevraagd bij de website zelf via zijn API")}</span>
+              </small>
+            </div>
+            <button type="button" className="btn sm" aria-label={tx("Sluiten")} title={tx("Sluiten")} onClick={onClose} style={{ flex: "0 0 auto", padding: ".35rem .5rem" }}><span style={{ display: "inline-flex", width: 18, height: 18 }}><IconX /></span></button>
+          </div>
+          <Tabs value={tab} onChange={(k) => { setTab(k); setNote(null); }} tabs={[["info", "Info", <IconInfo key="i" />], ["users", "Gebruikers", <IconUsers key="u" />], ["stats", "Statistieken", <IconChart key="s" />], ["energy", "Energie", <IconLeaf key="e" />], ["reseller", "Reseller", <IconBriefcase key="r" />], ["ai", "AI-gebruik", <IconBolt key="a" />]]} />
         </div>
-        <small className="muted">{site.url} · {tx("Gevraagd bij de website zelf via zijn API")}</small>
-        <Tabs value={tab} onChange={(k) => { setTab(k); setNote(null); }} tabs={[["users", "Gebruikers", <IconUsers key="u" />], ["stats", "Statistieken", <IconChart key="s" />], ["energy", "Energie", <IconLeaf key="e" />], ["reseller", "Reseller", <IconBriefcase key="r" />], ["ai", "AI-gebruik", <IconBolt key="a" />]]} />
+        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "1.1rem 1.5rem 1.5rem", display: "flex", flexDirection: "column", gap: ".9rem" }}>
         {note && <div className={note.ok ? "alert ok" : "alert"}>{note.text}</div>}
         {err[tab] && <div className="alert">{errText(err[tab])}</div>}
         {!d && !err[tab] && <p className="muted"><Loading /></p>}
+        {d && tab === "info" && <InfoPanel d={d} />}
         {d && tab === "users" && (
           <>
             <Tiles>
@@ -274,6 +307,7 @@ export function SiteView({ site, onClose }) {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );
@@ -323,6 +357,66 @@ export function SiteOnline({ site, onChanged }) {
           </label>
           {done && <div className="alert ok">{done}</div>}
         </>
+      )}
+    </div>
+  );
+}
+
+// The "maintenance" tab of the edit pop-up: what has to be brought up to date on the website (database, library, check after a new build) and the button that does it, through its API.
+export function SiteMaintenance({ site }) {
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState(null);
+  const [offline, setOffline] = useState(true);  // the website shows the maintenance page while it is updated
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState(null);
+  const load = () => api(`/system/sites/${site.id}/info/?part=maintenance`).then((x) => { setD(x); setErr(null); }).catch(setErr);
+  useEffect(() => { load(); }, [site.id]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const running = !!d?.update?.running;
+  useEffect(() => { if (!running) return undefined; const t = setInterval(load, 3000); return () => clearInterval(t); }, [running]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const start = async () => {
+    setBusy(true); setNote(null);
+    try { await api(`/system/sites/${site.id}/action/`, { method: "POST", body: { action: "update", offline } }); setNote({ ok: true, text: tx("De update is gestart.") }); await load(); }
+    catch (e) { setNote({ ok: false, text: errText(e) }); }
+    setBusy(false);
+  };
+  if (err && !d) return <div className="alert">{errText(err)}</div>;
+  if (!d) return <Loading compact />;
+  const behind = Number(d.build) < Number(d.latest?.build);
+  const libs = Object.entries(d.library_updates || {});
+  const u = d.update || {};
+  return (
+    <div style={{ display: "grid", gap: ".8rem" }}>
+      <Tiles>
+        <Stat label={tx("Versie van deze website")} value={d.version} sub={`build ${d.build}`} />
+        <Stat label={tx("Nieuwste versie")} value={d.latest?.version || "–"} sub={d.latest?.build ? `build ${d.latest.build}` : ""} />
+      </Tiles>
+      {behind && <div className="alert">{tx("Deze website draait een oudere versie van de code (build {0}, nieuwste {1}). Zet eerst de nieuwe code live (deploy); daarna werkt Updaten de database bij.", d.build, d.latest.build)}</div>}
+      <div className="card" style={{ display: "grid", gap: ".5rem" }}>
+        <strong>{tx("Database")} <span className={`badge ${d.pending_count ? "warn" : "ok"}`}>{d.pending_count ? tx("{0} wijzigingen te installeren", d.pending_count) : tx("Actueel")}</span></strong>
+        {d.pending_count > 0 && <small className="muted" style={{ overflowWrap: "anywhere" }}>{d.pending_migrations.join(", ")}</small>}
+        <strong>{tx("Bibliotheek")} <span className={`badge ${libs.length ? "warn" : "ok"}`}>{libs.length ? tx("Updates beschikbaar") : tx("Actueel")}</span></strong>
+        {libs.map(([k, names]) => <small key={k} className="muted">{tx(k === "themas" ? "Thema's" : k === "languages" ? "Talen" : k === "components" ? "Componenten" : "Plugins")}: {names.join(", ")}</small>)}
+        <strong>{tx("Controle na een nieuwe build")} <span className={`badge ${d.check_needed ? "warn" : "ok"}`}>{d.check_needed ? tx("Nog uit te voeren") : tx("Gedaan")}</span></strong>
+      </div>
+      {(d.needs_update || running) ? (
+        <div className="card" style={{ display: "grid", gap: ".7rem" }}>
+          <label className="check sec-toggle">
+            <span className="switch"><input type="checkbox" checked={offline} disabled={busy || running} onChange={(e) => setOffline(e.target.checked)} /><span /></span>
+            <span>{tx("Website offline zetten tijdens het updaten")}<small className="muted" style={{ display: "block" }}>{tx("Bezoekers zien dan de onderhoudspagina. Na de update gaat de website weer online.")}</small></span>
+          </label>
+          <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", alignItems: "center" }}>
+            <button type="button" className="btn primary" disabled={busy || running} onClick={start}><IconRefresh /> {running ? tx("Bezig met bijwerken…") : tx("Updaten")}</button>
+            {running && <Loading compact />}
+          </div>
+        </div>
+      ) : <div className="alert ok"><IconCheck /> {tx("Alles is bijgewerkt.")}</div>}
+      {note && <div className={note.ok ? "alert ok" : "alert"}>{note.text}</div>}
+      {u.steps?.length > 0 && (
+        <div className="card" style={{ display: "grid", gap: ".4rem" }}>
+          <strong>{tx("Laatste update")} {u.finished && <small className="muted">· {when(u.finished)}</small>}</strong>
+          {u.steps.map((x) => <small key={x.key}><span className={`badge ${x.ok ? "ok" : "warn"}`}>{x.ok ? tx("Gelukt") : tx("Mislukt")}</span> {tx(x.label)}{x.message ? ` · ${x.message}` : ""}</small>)}
+          {u.error && <div className="alert">{u.error}</div>}
+        </div>
       )}
     </div>
   );

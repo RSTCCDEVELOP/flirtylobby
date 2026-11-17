@@ -14,7 +14,7 @@ from decimal import Decimal
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
-PARTS = ("status", "users", "reseller", "ai", "stats", "energy")
+PARTS = ("info", "status", "users", "reseller", "ai", "stats", "energy", "maintenance")
 
 
 def _f(v):
@@ -29,6 +29,30 @@ def status():
     s = system.get()
     return {"online": not system.maintenance_on(), "maintenance": bool(s["maintenance"]), "maintenance_message": s["maintenance_message"], "site_name": system.site_name(),
             "version": str(settings.SYSTEM_VERSION), "build": sitemanager.build_number(), "url": system.origin(s["frontend_url"])}
+
+
+def info():
+    """The same as the Info pop-up of the website (Beheer -> Info): the licence (number, client, address, valid until, issued), the reseller, the contact data, the version and what is installed."""
+    from django.conf import settings
+
+    from apps.plugins.models import Plugin
+
+    from . import modules, sitemanager, system
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    li = system.license_info()
+    s = system.get()
+    on = modules.states()
+    plugins = list(Plugin.objects.values_list("enabled", flat=True))
+    return {"name": system.site_name(), "version": str(settings.SYSTEM_VERSION), "build": sitemanager.build_number(),
+            "license": {"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "", "issued_at": lic.issued_at if lic else None,
+                        "valid_until": lic.valid_until.isoformat() if lic and lic.valid_until else None, "has": li["has"], "expired": li["expired"], "state": sitemanager.licence_and_installation()["license"]["state"]},
+            "reseller": li["reseller"],
+            "site": {k: s.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")},
+            "plugins": {"on": sum(1 for e in plugins if e), "total": len(plugins)},
+            "modules": {"on": sum(1 for m in modules.MODULES if on.get(m["key"], True)), "total": len(modules.MODULES)},
+            "installation": sitemanager.licence_and_installation()["installation"]}
 
 
 def users():
@@ -104,8 +128,42 @@ def energy(days=30):
                        "items": [{"key": i["key"], "status": i["status"], "saving": i.get("saving", 0), "applicable": i.get("applicable", False)} for i in adv["items"]]}}
 
 
+def _library_updates():
+    """{kind: [names]} of what is installed and has a newer version in the library (the same rule as "update everything")."""
+    from . import resources
+
+    out = {}
+    try:
+        rows = resources.overview(None)
+    except resources.ResourceError:
+        return out
+    for kind in ("plugins", "themas", "languages", "components"):
+        names = [r["name"] for r in rows.get(kind, []) if r["state"] == "update" and not (kind == "languages" and not r.get("installed_version"))]
+        if names:
+            out[kind] = names
+    return out
+
+
+def maintenance():
+    """What has to be brought up to date on this website: the database (migrations that have not been done), the plugins, themes, languages and components with a newer version in the library, and the check after a new build."""
+    from django.conf import settings
+    from django.db import connection
+    from django.db.migrations.executor import MigrationExecutor
+
+    from . import sitemanager, sysupdate
+
+    ex = MigrationExecutor(connection)
+    pending = [f"{m.app_label}.{m.name}" for m, _backwards in ex.migration_plan(ex.loader.graph.leaf_nodes())]
+    lib = _library_updates()
+    chk = sysupdate.status(None)
+    st = sitemanager._state().get("update") or {}
+    return {"version": str(settings.SYSTEM_VERSION), "build": sitemanager.build_number(), "checked_build": chk["checked"], "check_needed": bool(chk["needed"]),
+            "pending_migrations": pending[:30], "pending_count": len(pending), "library_updates": lib,
+            "needs_update": bool(pending or lib or chk["needed"]), "online": status()["online"], "update": st}
+
+
 def build(part):
-    return {"status": status, "users": users, "reseller": reseller, "ai": ai, "stats": stats, "energy": energy}[part]()
+    return {"info": info, "status": status, "users": users, "reseller": reseller, "ai": ai, "stats": stats, "energy": energy, "maintenance": maintenance}[part]()
 
 
 def set_online(online, message=""):
@@ -162,4 +220,50 @@ def action(body):
             raise ValueError("Er is geen website-adres ingesteld (Admin → Basisgegevens): zonder dat kan de website zichzelf niet meten.")
         _background(lambda: service.scan(base))
         return {"ok": True, "started": True}
+    if kind == "update":
+        st = sitemanager_state().get("update") or {}
+        if st.get("running"):
+            raise ValueError("Er wordt al bijgewerkt.")
+        _set_update(running=True, started=timezone.now().isoformat(timespec="seconds"), finished="", steps=[], error="")
+        offline = bool(body.get("offline"))
+        _background(lambda: _do_update(offline))
+        return {"ok": True, "started": True}
     raise ValueError("Onbekende actie.")
+
+
+# ── bringing the website up to date: the database and what comes from the library ──
+def sitemanager_state():
+    from . import sitemanager
+
+    return sitemanager._state()
+
+
+def _set_update(**kw):
+    from . import sitemanager
+
+    sitemanager._save(update={**(sitemanager._state().get("update") or {}), **kw})
+
+
+def _do_update(offline=False):
+    """The steps of the update after a new build (sysupdate): a copy of the content, the database, plugins, themes, languages, pages. With offline: the website shows the maintenance page meanwhile."""
+    from types import SimpleNamespace
+
+    from . import sysupdate
+
+    user = SimpleNamespace(is_authenticated=True, is_staff=True)  # (the update of the system itself: nobody is asking from a browser)
+    was_online = status()["online"]
+    steps, error = [], ""
+    try:
+        if offline and was_online:
+            set_online(False, "Onderhoud: de website wordt bijgewerkt. Probeer het zo meteen opnieuw.")
+        for key, label in sysupdate.STEPS:
+            r = sysupdate.run(key, user)
+            steps.append({"key": key, "label": label, "ok": bool(r.get("ok")), "message": str(r.get("message") or "")[:300]})
+            _set_update(steps=steps)
+        error = "; ".join(f"{x['label']}: {x['message']}" for x in steps if not x["ok"])[:400]
+    except Exception as e:  # noqa: BLE001
+        error = str(e)[:300]
+    finally:
+        if offline and was_online:
+            set_online(True)  # back online (also when a step failed)
+        _set_update(running=False, finished=timezone.now().isoformat(timespec="seconds"), steps=steps, error=error)

@@ -14,6 +14,7 @@ import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
 import { useAutoSave } from "../../../../lib/autosave";
 import SaveStatus from "../../../../components/SaveStatus";
+import PhoneInput from "../../../../components/PhoneInput";
 
 const CURRENCY_NAME = { EUR: "Euro", USD: "US dollar", GBP: "Brits pond", CHF: "Zwitserse frank", SEK: "Zweedse kroon", NOK: "Noorse kroon", DKK: "Deense kroon", PLN: "Poolse zloty", CZK: "Tsjechische kroon", HUF: "Hongaarse forint", RON: "Roemeense leu", BGN: "Bulgaarse lev", TRY: "Turkse lira", CAD: "Canadese dollar", AUD: "Australische dollar", NZD: "Nieuw-Zeelandse dollar", JPY: "Japanse yen", CNY: "Chinese yuan", INR: "Indiase roepie", BRL: "Braziliaanse real", MXN: "Mexicaanse peso", ZAR: "Zuid-Afrikaanse rand", AED: "VAE-dirham", SAR: "Saoedische riyal", ILS: "Israëlische shekel", SGD: "Singaporese dollar", HKD: "Hongkongse dollar", KRW: "Zuid-Koreaanse won", THB: "Thaise baht", IDR: "Indonesische roepie" };
 const TIMEZONES = ["Europe/Amsterdam", "Europe/Brussels", "Europe/Berlin", "Europe/Paris", "Europe/London", "Europe/Madrid", "Europe/Lisbon", "Europe/Rome", "Europe/Vienna", "Europe/Zurich", "Europe/Athens", "Europe/Istanbul", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "UTC"];
@@ -43,6 +44,11 @@ export default function SystemPage() {
   const [msg, setMsg] = useState(null);
   const load = (r) => { setD(r); setForm({ ...r.settings, extra_origins: (r.settings.extra_origins || []).join(", "), aliases: (r.settings.aliases || []).join(", ") }); };
   useEffect(() => { api("/system/").then(load).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
+  useEffect(() => { // the set-up wizard saved the basic data: read them again
+    const again = () => api("/system/").then(load).catch(() => {});
+    window.addEventListener("setup-saved", again);
+    return () => window.removeEventListener("setup-saved", again);
+  }, []);
   const [trBusy, setTrBusy] = useState(false);
   async function translateNotice() {
     setTrBusy(true); setMsg(null);
@@ -73,14 +79,14 @@ export default function SystemPage() {
 
   return (
     <>
-      <div className="page-head"><h1>{tx("Basisgegevens")}</h1></div>
+      <div className="page-head"><h1>{tx("Basisgegevens")}</h1><button type="button" className="btn" onClick={() => window.dispatchEvent(new Event("open-setup-wizard"))}>{tx("Wizard openen")}</button></div>
       <p className="muted">{tx("De basis van deze installatie: naam, adressen en contactgegevens, plus alles wat nodig is om de website live te zetten.")}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
       <form onSubmit={save}>
         <Collapsible id="sys-site" title={tx("Website")} defaultOpen>
           <div className="grid2">
-            <label>{tx("Naam van de website")}<input value={form.site_name} onChange={set("site_name")} maxLength={80} placeholder="Studio2" /></label>
+            <label>{tx("Naam van de website")} *<input value={form.site_name} onChange={set("site_name")} maxLength={80} placeholder="Studio2" /></label>
             <label>{tx("Slogan")}<input value={form.tagline} onChange={set("tagline")} maxLength={120} /></label>
             <label>{tx("Titel van het browsertabblad (startpagina)")}<input value={form.tab_title || ""} onChange={set("tab_title")} maxLength={120} placeholder={form.site_name || "Studio2"} /></label>
             <label>{tx("Omgeving")}
@@ -133,11 +139,14 @@ export default function SystemPage() {
         </Collapsible>
         <Collapsible id="sys-contact" title={tx("Bedrijf en contact")}>
           <div className="grid2">
-            <label>{tx("Bedrijfsnaam")}<input value={form.company_name} onChange={set("company_name")} /></label>
-            <label>{tx("Contact e-mail")}<input type="email" value={form.contact_email} onChange={set("contact_email")} /></label>
+            <label>{tx("Bedrijfsnaam")} *<input value={form.company_name} onChange={set("company_name")} /></label>
+            <label>{tx("Voornaam contactpersoon")} *<input value={form.contact_first_name || ""} onChange={set("contact_first_name")} /></label>
+            <label>{tx("Achternaam contactpersoon")} *<input value={form.contact_last_name || ""} onChange={set("contact_last_name")} /></label>
+            <label>{tx("Contact e-mail")} *<input type="email" value={form.contact_email} onChange={set("contact_email")} /></label>
             <label>{tx("Support e-mail")}<input type="email" value={form.support_email} onChange={set("support_email")} /></label>
             <label>{tx("Beheer e-mail (meldingen van het systeem)")}<input type="email" value={form.admin_email} onChange={set("admin_email")} /></label>
-            <label>{tx("Telefoon")}<input value={form.phone} onChange={set("phone")} /></label>
+            <label>{tx("Telefoon")}<PhoneInput value={form.phone || ""} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} /></label>
+            <label>{tx("Mobiel nummer")} *<PhoneInput value={form.mobile || ""} onChange={(v) => setForm((f) => ({ ...f, mobile: v }))} /></label>
             <div className="addr-grid" style={{ gridColumn: "1 / -1" }}>
               <label className="a-street">{tx("Straat")}<input value={form.street || ""} onChange={set("street")} autoComplete="address-line1" /></label>
               <label className="a-nr">{tx("Huisnummer")}<input value={form.house_number || ""} onChange={set("house_number")} maxLength={12} /></label>

@@ -115,7 +115,7 @@ function Overview({ fail }) {
   const [d, setD] = useState(null);
   useUpdates("ai-summary", () => api("/admin/ai/summary/"), 15000, setS, true, { onError: fail });
   useEffect(() => { setD(null); api(`/ai/admin/overview/?period=${period}`).then(setD).catch(fail); }, [period, fail]);
-  if (!s) return <p className="muted"><Loading /></p>;
+  if (!s) return <Loading fill />;
   const m = (n) => money(n, s.currency);
   const delta = s.last_month.charged ? Math.round(((s.month.charged - s.last_month.charged) / s.last_month.charged) * 100) : null;
   const keys = d ? GROUPS.filter((g) => d.by_group.some((r) => r.group === g)) : [];

@@ -103,10 +103,42 @@ def own_ip(url):
         socket.setdefaulttimeout(None)
 
 
+def live_url():
+    """The public address of this website when it is live: the address in Admin -> Basisgegevens, else the first public https address of the environment (CORS_ALLOWED_ORIGINS). '' on a development machine."""
+    import ipaddress
+
+    cands = [system.origin(system.get()["frontend_url"]), *[system.origin(o) for o in (getattr(settings, "CORS_ALLOWED_ORIGINS", None) or [])]]
+    for u in cands:
+        p = urlparse(u or "")
+        host = p.hostname or ""
+        if p.scheme != "https" or "." not in host or host in ("localhost",) or host.endswith((".local", ".localhost", ".internal")):
+            continue
+        try:
+            if not ipaddress.ip_address(host).is_global:
+                continue
+        except ValueError:
+            pass  # (a name, not an IP address)
+        return u
+    return ""
+
+
+def licence_and_installation():
+    """The licence of this website (none | active | expired, with the end date) and whether it is set up (installed) or still an empty standard installation."""
+    from . import presets
+
+    lic = system.license_info()
+    state = "none" if not lic["has"] else ("expired" if lic["expired"] else "active")
+    s = system.get()
+    active = presets._data().get("active_preset")  # (the wizard is an installation too, though it is not one of the standard ones)
+    installed = bool(active not in (None, "standaard-website") or str(s["site_name"] or "").strip())  # a website with a name of its own, or one of the other installations / the wizard
+    return {"license": {"state": state, "until": lic["valid_until"] or ""}, "installation": {"state": "installed" if installed else "empty", "name": str(s["installation_name"] or active or "")[:100]}}
+
+
 def payload(event, role=""):
     s = system.get()
-    url = system.origin(s["frontend_url"])
-    return {"instance_id": instance_id(), "name": system.site_name(), "url": url, "api_url": system.origin(s["backend_url"]), "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else ""}
+    url = system.origin(s["frontend_url"]) or live_url()
+    name = str(s["site_name"] or "").strip() or url or system.site_name()  # a website that has no name yet (not set up) is shown by its address
+    return {"instance_id": instance_id(), "name": name, "url": url, "api_url": system.origin(s["backend_url"]), "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else "", **licence_and_installation()}
 
 
 # ── the server side: the list of websites ───────────────────────────────────
@@ -140,7 +172,8 @@ def _clean_ip(value):
 
 
 def _fill(site, data, seen_ip):
-    site.name = str(data.get("name") or site.name or "")[:150]
+    if not site.name_locked:  # a name that was changed here stays
+        site.name = str(data.get("name") or site.name or "")[:150]
     url = _clean_url(data.get("url"))
     if url:
         site.url, site.url_generated = url, False
@@ -154,6 +187,11 @@ def _fill(site, data, seen_ip):
         site.ip = ip
     site.seen_ip = _clean_ip(seen_ip) or site.seen_ip
     site.version, site.build = str(data.get("version") or "")[:30], str(data.get("build") or "")[:20]
+    lic, ins = data.get("license") or {}, data.get("installation") or {}
+    if isinstance(lic, dict) and lic.get("state") in ("none", "active", "expired"):
+        site.license_state, site.license_until = lic["state"], str(lic.get("until") or "")[:10]
+    if isinstance(ins, dict) and ins.get("state") in ("installed", "empty"):
+        site.install_state, site.install_name = ins["state"], str(ins.get("name") or "")[:100]
     site.last_seen = timezone.now()
 
 
@@ -232,7 +270,7 @@ def rate_ok(ip, limit=20):
 
 
 def public(s):
-    return {"id": s.pk, "instance_id": s.instance_id, "name": s.name, "url": s.url, "api_url": s.api_url, "has_callback": bool(s.callback_key_enc), "url_generated": s.url_generated, "ip": s.ip, "seen_ip": s.seen_ip, "version": s.version, "build": s.build, "status": s.status,
+    return {"id": s.pk, "instance_id": s.instance_id, "name": s.name, "url": s.url, "block_message": s.block_message, "license_state": s.license_state, "license_until": s.license_until, "install_state": s.install_state, "install_name": s.install_name, "blocked_offline": s.blocked_offline, "api_url": s.api_url, "has_callback": bool(s.callback_key_enc), "url_generated": s.url_generated, "ip": s.ip, "seen_ip": s.seen_ip, "version": s.version, "build": s.build, "status": s.status,
             "first_seen": s.first_seen, "last_seen": s.last_seen, "last_login_at": s.last_login_at, "last_login_role": s.last_login_role, "login_count": s.login_count, "notes": s.notes}
 
 
@@ -274,8 +312,11 @@ def report(event="login", role=""):
                 if r.get("callback_key"):  # the key for the calls of the easy2edit server to this website
                     _save(callback_key=str(r["callback_key"]))
         _save(last_ok_at=timezone.now().isoformat(timespec="seconds"), last_error="", last_event=event)
+        _released()
         return {"ok": True, "error": ""}
     except urllib.error.HTTPError as e:
+        if e.code == 403 and _blocked_by_server(e):  # blocked: offline with the message; the key stays
+            return {"ok": False, "error": "blocked"}
         if e.code in (401, 403):  # the key is no longer known: register again next time
             _save(token="", last_error=f"HTTP {e.code}")
         else:
@@ -287,6 +328,32 @@ def report(event="login", role=""):
         except Exception:  # noqa: BLE001
             pass
         return {"ok": False, "error": str(e)[:200]}
+
+
+def _blocked_by_server(e):
+    """The easy2edit server says that this website is blocked (a 403 with reason "blocked"): take this website offline with the message of the server. -> True when that was it."""
+    try:
+        data = json.loads(e.read(2000).decode("utf-8", "ignore"))
+    except (ValueError, OSError, AttributeError):
+        return False
+    if data.get("reason") != "blocked":
+        return False
+    from . import remote_info
+
+    try:
+        remote_info.set_online(False, str(data.get("message") or BLOCK_MESSAGE))
+    finally:
+        _save(blocked_offline=True, last_error="blocked")
+    return True
+
+
+def _released():
+    """The website was taken offline because it was blocked, and the server answers again: put it online again."""
+    if _state().get("blocked_offline"):
+        from . import remote_info
+
+        remote_info.set_online(True)
+        _save(blocked_offline=False)
 
 
 def disabled():
@@ -363,9 +430,10 @@ def _safe_base(site):
     return base
 
 
-def call_site(site, path, params=None, body=None):
-    """Ask / tell a website (an approved one) something with the callback key. -> the answer (a dict). Never for the website that is this installation: use remote_info directly."""
-    if site.status != "active":
+def call_site(site, path, params=None, body=None, allow_blocked=False):
+    """Ask / tell a website (an approved one) something with the callback key. -> the answer (a dict). Never for the website that is this installation: use remote_info directly.
+    allow_blocked: also a website that is blocked (to take it offline when it is blocked, and to put it online again when it is released)."""
+    if site.status != "active" and not (allow_blocked and site.status == "blocked"):
         raise RemoteError("pending", "Keur deze website eerst goed.")
     key = crypto.decrypt(site.callback_key_enc).get("k") if site.callback_key_enc else ""
     if not key:
@@ -394,9 +462,10 @@ def site_info(site, part):
 
     if part not in remote_info.PARTS:
         raise ValueError("Onbekend onderdeel.")
-    if site.instance_id == instance_id():
-        return remote_info.build(part)
-    return call_site(site, "info", {"part": part})
+    data = remote_info.build(part) if site.instance_id == instance_id() else call_site(site, "info", {"part": part})
+    if part == "maintenance":  # the newest version that this (easy2edit) server runs: the website is compared with it
+        data = {**data, "latest": {"version": str(settings.SYSTEM_VERSION), "build": build_number()}}
+    return data
 
 
 def site_action(site, body):
@@ -408,12 +477,40 @@ def site_action(site, body):
     return call_site(site, "action", body=body)
 
 
-def set_site_online(site, online, message=""):
+def set_site_online(site, online, message="", allow_blocked=False):
     from . import remote_info
 
     if site.instance_id == instance_id():
         return remote_info.set_online(online, message)
-    return call_site(site, "state", body={"online": bool(online), "message": str(message or "")[:500]})
+    return call_site(site, "state", body={"online": bool(online), "message": str(message or "")[:500]}, allow_blocked=allow_blocked)
+
+
+BLOCK_MESSAGE = "Deze website is geblokkeerd en tijdelijk niet beschikbaar. Neem contact op met de beheerder."
+
+
+def apply_status_change(site, new, message=""):
+    """A website changes status (the Site manager): blocking takes it offline with a message, through its API (while its key still works); releasing it puts it online again, when we took it offline.
+    The website itself is not touched when it is this installation. -> {ok, reason, detail} of that call, or None when there was nothing to do. The status itself is changed by the caller."""
+    old = site.status
+    own = site.instance_id == instance_id()
+    if new == "blocked" and old != "blocked":
+        site.block_message = (str(message or "").strip() or BLOCK_MESSAGE)[:500]
+        if own or old != "active":
+            return None  # (a website that is not approved has no key to call with: it is blocked here and goes offline itself at its next report)
+        try:
+            set_site_online(site, False, site.block_message, allow_blocked=True)
+            site.blocked_offline = True
+            return {"ok": True}
+        except RemoteError as e:
+            return {"ok": False, "reason": e.reason, "detail": str(e)}
+    if old == "blocked" and new in ("active", "pending") and site.blocked_offline and not own:
+        try:
+            set_site_online(site, True, "", allow_blocked=True)
+            site.blocked_offline = False
+            return {"ok": True}
+        except RemoteError as e:
+            return {"ok": False, "reason": e.reason, "detail": str(e)}
+    return None
 
 
 # ── this website as a client of the easy2edit server: is it connected, disconnect, connect again ──
@@ -436,9 +533,12 @@ def check():
         if resp.get("callback_key"):
             _save(callback_key=str(resp["callback_key"]))
         _save(last_ok_at=timezone.now().isoformat(timespec="seconds"), last_error="", last_event="check")
+        _released()
         status = resp.get("status") or "active"
         return {"state": "connected" if status == "active" else status, "status": status, "server_url": api}
     except urllib.error.HTTPError as e:
+        if e.code == 403 and _blocked_by_server(e):
+            return {"state": "blocked"}
         _save(last_error=f"HTTP {e.code}")
         if e.code == 404:
             return {"state": "disabled"}
@@ -466,3 +566,19 @@ def connect():
     """Connect to the easy2edit server again: this website reports itself (a new registration; the server may ask for approval). -> {ok, error}."""
     _save(disconnected=False)
     return report("sync")
+
+
+def auto_register():
+    """At every start of the backend: a website that is live (it has a public address) and is not registered yet reports itself, so it is in the Site manager of the easy2edit server
+    without anybody having logged in; a registered website reports that it is alive. Not on a development machine, not when disconnected, never an error. -> what happened."""
+    if disabled() or _state().get("disconnected"):
+        return "skipped"
+    if not live_url():
+        return "not live"
+    try:
+        if server_enabled():
+            return "ok" if report("sync")["ok"] else "failed"  # (the server puts its own website in its own list)
+        first = not _state().get("token")  # (looked at before the call: a call that registers makes the key)
+        return ("registered" if first else "alive") if report("register" if first else "sync")["ok"] else "failed"
+    except Exception:  # noqa: BLE001
+        return "failed"

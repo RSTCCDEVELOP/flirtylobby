@@ -23,6 +23,7 @@ DEFAULTS = {
     "site_name": "", "tab_title": "", "tagline": "", "company_name": "", "environment": "production",
     "frontend_url": "", "backend_url": "", "extra_origins": [],
     "contact_email": "", "support_email": "", "admin_email": "", "phone": "", "kvk": "", "vat_id": "", "address": "",
+    "contact_person": "", "contact_first_name": "", "contact_last_name": "", "mobile": "",  # the contact person and a mobile number: required, with the name, the main address, the address and the other contact data (see SETUP_FIELDS)
     "street": "", "house_number": "", "postal_code": "", "city": "", "country": "",  # the address always in parts; "address" is made from them (one line) for what reads it as text
     "aliases": [],  # extra domain names of the website (www.x.nl, x.nl): visitors can be sent on to the main address
     "redirect_aliases": False,
@@ -40,6 +41,9 @@ DEFAULTS = {
     "show_credit": True,  # "© easy2edit <year>" with a link at the bottom of every page
     "social_facebook": "", "social_instagram": "", "social_x": "", "social_linkedin": "", "social_youtube": "", "social_tiktok": "",
 }
+# What has to be filled in on every website (the set-up form for administrators): name, main address (the website address), address, contact person, e-mail and phone numbers.
+SETUP_FIELDS = ("site_name", "company_name", "frontend_url", "street", "house_number", "postal_code", "city", "country", "contact_first_name", "contact_last_name", "contact_email", "mobile")  # the phone number is not required, the mobile number is
+PHONE_FIELDS = ("phone", "mobile")
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
 INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200)}
@@ -61,6 +65,12 @@ def compose_address(d):
     return ", ".join(x for x in (line1, line2, country if country.lower() not in ("", "nl", "nederland", "netherlands") else "") if x)
 
 
+def setup_missing():
+    """The required fields (SETUP_FIELDS) that are still empty."""
+    s = split_contact(get())
+    return [k for k in SETUP_FIELDS if not str(s.get(k) or "").strip()]
+
+
 def get():
     stored = SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
     d = {**DEFAULTS, **{k: v for k, v in stored.items() if k in DEFAULTS}}
@@ -77,6 +87,19 @@ def origin(url):
     """https://example.com/path -> https://example.com (what browsers send as Origin)."""
     u = urlparse(url or "")
     return f"{u.scheme}://{u.netloc}" if u.scheme and u.netloc else ""
+
+
+def split_contact(s):
+    """An older contact_person (one field) gives the first and last name."""
+    if not s.get("contact_first_name") and not s.get("contact_last_name") and s.get("contact_person"):
+        first, _, last = s["contact_person"].strip().partition(" ")
+        return {**s, "contact_first_name": first, "contact_last_name": last}
+    return s
+
+
+def with_scheme(v):
+    """www.voorbeeld.nl -> https://www.voorbeeld.nl (https:// does not have to be typed)."""
+    return "https://" + v if v and not re.match(r"^[a-z][a-z0-9+.-]*://", v, re.I) else v
 
 
 def clean(incoming):
@@ -98,9 +121,9 @@ def clean(incoming):
                 errors[k] = f"Ongeldig adres: {bad[0]} (gebruik bv. https://www.voorbeeld.nl, zonder pad)."
             out[k] = items[:20]
         elif k in ("frontend_url", "backend_url"):
-            v = str(v or "").strip().rstrip("/")
+            v = with_scheme(str(v or "").strip().rstrip("/"))
             if v and not URL_RE.match(v):
-                errors[k] = "Gebruik een adres als https://www.voorbeeld.nl (zonder pad of slash erachter)."
+                errors[k] = "Gebruik een adres als www.voorbeeld.nl (zonder pad of slash erachter)."
             out[k] = v
         elif k in ("contact_email", "support_email", "admin_email"):
             v = str(v or "").strip()
@@ -163,6 +186,9 @@ def clean(incoming):
             out[k] = str(v or "").strip()[:500]
         else:
             out[k] = str(v or "").strip()[:200]
+    if "contact_first_name" in out or "contact_last_name" in out:  # contact_person is first and last name together
+        cur = get()
+        out["contact_person"] = " ".join(f"{out.get('contact_first_name', cur['contact_first_name'])} {out.get('contact_last_name', cur['contact_last_name'])}".split())
     if any(k in out for k in ADDRESS_PARTS):  # the one-line address follows the parts
         cur = get()
         out["address"] = compose_address({k: out.get(k, cur[k]) for k in ADDRESS_PARTS})
@@ -174,6 +200,15 @@ def save(cleaned):
     old = get()
     obj.data = {**(obj.data or {}), **cleaned}
     obj.save()
+    if "frontend_url" in cleaned:  # the main address is also on the licence (Super admin -> Licentie): it follows, unless the licence has an address of its own
+        try:
+            from .models import License
+
+            lic = License.objects.filter(pk=1).first()
+            if lic and (not lic.main_url or lic.main_url == old["frontend_url"]):
+                License.objects.filter(pk=1).update(main_url=cleaned["frontend_url"])
+        except Exception:  # noqa: BLE001
+            pass
     _sync_seo(old, get())
     try:
         from apps.integrations import aiusage

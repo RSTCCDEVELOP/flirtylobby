@@ -451,6 +451,338 @@ def site_public(request):
     return Response(system.public())
 
 
+def _setup_pay_guard(request):
+    from apps.accounts.access import can_admin
+
+    return None if can_admin(request.user) else Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_pay(request):
+    """Payment step: saves the basic data and the choices (hosting, period), then makes the Stripe Checkout page. POST {fields…, hosting, renew_months} -> {url}."""
+    from . import license_price, setup_pay
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    if _license_exists():
+        return Response({"detail": "Er is al een licentie."}, status=400)
+    d = request.data
+    cleaned, errors = system.clean({k: v for k, v in d.items() if k in system.SETUP_FIELDS})
+    merged = {**{k: system.split_contact(system.get()).get(k, "") for k in system.SETUP_FIELDS}, **cleaned}
+    for k in system.SETUP_FIELDS:
+        if not str(merged.get(k) or "").strip():
+            errors[k] = "Dit veld is verplicht."
+    try:
+        months = int(d.get("renew_months"))
+    except (TypeError, ValueError):
+        months = 0
+    if months not in (1, 3, 12):
+        errors["renew_months"] = "Kies per maand, per kwartaal of per jaar."
+    if str(d.get("hosting") or "") not in {o["key"] for o in license_price.hosting_options()}:
+        errors["hosting"] = "Kies een hosting uit de lijst."
+    if errors:
+        return Response({"detail": " ".join(errors.values()), "errors": errors}, status=400)
+    system.save(cleaned)
+    setup_pay.prepare(str(d.get("hosting")), months)
+    if not setup_pay.provider():
+        return Response({"detail": "Stripe is niet gekoppeld voor de licentie (Super admin → Licentie → Betalen)."}, status=400)
+    base = (system.get().get("frontend_url") or "").rstrip("/") or request.build_absolute_uri("/").rstrip("/").replace(":8000", ":5173")
+    origin = request.headers.get("Origin") or base
+    try:
+        return Response({"url": setup_pay.checkout(request.user, origin.rstrip("/"))})
+    except setup_pay.PayError as e:
+        return Response({"detail": str(e)}, status=400)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_pay_confirm(request):
+    """The customer is back from Stripe: POST {session_id}."""
+    from . import setup_pay
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    try:
+        setup_pay.confirm(request.user, request.data.get("session_id"))
+    except setup_pay.PayError as e:
+        return Response({"detail": str(e)}, status=400)
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_pdf(request):
+    """The licence overview as a PDF (button in the last step of the wizard): POST the fields of the wizard (+ lang, pay: stripe|invoice|none)."""
+    from . import setup_pdf
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    d = request.data
+    lang = str(d.get("lang") or "nl")[:2]
+    number = (__import__("apps.core.models", fromlist=["x"]).License.objects.filter(pk=1).values_list("number", flat=True).first() or "") or _reserved_number()
+    pdf = setup_pdf.build(d, lang, number, str(d.get("pay") or ""))
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="easy2edit-licence-{number}.pdf"'
+    return resp
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_pay_test(request):
+    """Only for testing: "Betaal (test)": on localhost a superadmin goes on as if it was paid (Stripe not linked)."""
+    from . import setup_pay
+
+    if request.get_host().split(":")[0] not in ("localhost", "127.0.0.1", "[::1]") or not request.user.is_staff:
+        return Response({"detail": "Alleen een superadmin op localhost."}, status=403)
+    setup_pay.mark_ok(request.user)
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_pay_none(request):
+    """"Betaal niet": the wizard goes on without paying; the licence is then made for a short time (setup_pay.TRIAL_DAYS), after that the website goes into free mode.
+    POST {hosting, renew_months} (kept, like with paying)."""
+    from . import license_price, setup_pay
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    try:
+        months = int(request.data.get("renew_months"))
+    except (TypeError, ValueError):
+        months = 0
+    if months not in (1, 3, 12):
+        return Response({"detail": "Kies per maand, per kwartaal of per jaar."}, status=400)
+    if str(request.data.get("hosting") or "") not in {o["key"] for o in license_price.hosting_options()}:
+        return Response({"detail": "Kies een hosting uit de lijst."}, status=400)
+    setup_pay.prepare(str(request.data.get("hosting")), months)
+    setup_pay.mark_skipped(request.user)
+    return Response({"ok": True, "trial_days": setup_pay.TRIAL_DAYS})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_pay_invoice(request):
+    """A superadmin or superadmin+ lets the licence be paid on account (a invoice) instead of with Stripe: POST {hosting, renew_months}. The choices that decide the price are kept."""
+    from . import license_price, setup_pay
+    from .models import License
+
+    if not (request.user.is_staff or getattr(request.user, "is_superplus", False)):
+        return Response({"detail": "Alleen een superadmin mag op rekening kiezen."}, status=403)
+    try:
+        months = int(request.data.get("renew_months"))
+    except (TypeError, ValueError):
+        months = 0
+    if months not in (1, 3, 12):
+        return Response({"detail": "Kies per maand, per kwartaal of per jaar."}, status=400)
+    if str(request.data.get("hosting") or "") not in {o["key"] for o in license_price.hosting_options()}:
+        return Response({"detail": "Kies een hosting uit de lijst."}, status=400)
+    setup_pay.prepare(str(request.data.get("hosting")), months)
+    License.objects.filter(pk=1).update(payment_method="invoice")
+    setup_pay.mark_ok(request.user)
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_consent(request):
+    """Send the code for the consent with the licence: POST {method: email|sms, to}. On localhost a superadmin gets the code back (to test without sending)."""
+    from apps.accounts.access import can_admin
+
+    from . import setup_consent
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    try:
+        code, on_screen = setup_consent.start(request.user, str(request.data.get("method") or ""), request.data.get("to"))
+    except setup_consent.ConsentError as e:
+        return Response({"detail": str(e)}, status=400)
+    local = request.get_host().split(":")[0] in ("localhost", "127.0.0.1", "[::1]") and request.user.is_staff
+    return Response({"sent": True, "code": code if (on_screen or local) else None})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_consent_verify(request):
+    from apps.accounts.access import can_admin
+
+    from . import setup_consent
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    try:
+        setup_consent.verify(request.user, request.data.get("code"))
+    except setup_consent.ConsentError as e:
+        return Response({"detail": str(e)}, status=400)
+    return Response({"ok": True})
+
+
+def _license_brief():
+    """The licence that was made: number, who it is for, the main address, the end date and the period (None when there is none yet)."""
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.number:
+        return None
+    return {"number": lic.number, "client": lic.client, "main_url": lic.main_url, "valid_until": lic.valid_until.isoformat() if lic.valid_until else "", "renew_months": lic.renew_months, "issued_at": lic.issued_at.isoformat() if lic.issued_at else ""}
+
+
+def _pay_info(user):
+    from . import license_price, setup_pay
+
+    return {"required": setup_pay.required(), "provider": setup_pay.provider(), "mode": setup_pay.mode(), "ok": setup_pay.ok(user)}
+
+
+def _license_server():
+    """Where the licence comes from, quickly (no call over the network): this is the easy2edit server | linked to the easy2edit server (licence server) | disconnected | local (not linked)."""
+    from . import global_settings, sitemanager
+
+    st = sitemanager._state()
+    if sitemanager.server_enabled():
+        mode = "server"
+    elif st.get("disconnected"):
+        mode = "disconnected"
+    elif st.get("token"):
+        mode = "linked"
+    else:
+        mode = "local"
+    return {"mode": mode, "url": global_settings.get().get("api_url", "") if mode in ("linked", "disconnected") else "", "last_ok_at": st.get("last_ok_at", "") if mode == "linked" else ""}
+
+
+def _license_exists():
+    from .models import License
+
+    lic = License.objects.filter(pk=1).first()
+    return bool(lic and lic.number)
+
+
+RESERVED_KEY = "setup-license-number"
+
+
+def _reserved_number():
+    """The licence number that the wizard shows in its last step (it becomes active when the licence is made): made once, kept until then."""
+    import secrets
+
+    from django.core.cache import cache
+
+    n = cache.get(RESERVED_KEY)
+    if not n:
+        alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O/1/I: easy to read out
+        n = "-".join("".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(4))
+        cache.set(RESERVED_KEY, n, 7 * 24 * 3600)
+    return n
+
+
+def _make_license(until=None, months=None, hosting=None):
+    """After the basic data are complete and there is no licence yet: it is made by itself (number, client, address, main address) and runs for the date the user chose (default one year)."""
+    import secrets
+    from datetime import date, timedelta
+
+    from django.utils import timezone
+
+    from .models import License
+
+    if system.setup_missing():
+        return
+    s = system.get()
+    lic, _ = License.objects.get_or_create(pk=1)
+    if not lic.number:
+        lic.number = _reserved_number()  # the number that was shown in the last step of the wizard
+        __import__("django.core.cache", fromlist=["cache"]).cache.delete(RESERVED_KEY)
+        lic.issued_at = timezone.now()
+        lic.valid_until = until or (date.today() + timedelta(days=365))
+        if months in (1, 3, 12):
+            lic.renew_months = months
+        if hosting:
+            lic.hosting = str(hosting)[:30]
+    lic.client = lic.client or (s.get("company_name") or s.get("site_name") or "")[:200]
+    if not lic.client_address:
+        lic.client_parts = {k: s.get(k, "") for k in system.ADDRESS_PARTS}
+        lic.client_address = (s.get("address") or "")[:300]
+    lic.main_url = lic.main_url or s.get("frontend_url", "")
+    lic.save()
+    system.license_changed()
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def system_setup(request):
+    """Set-up form for the basic data. GET: the required fields that are still empty (+ the current values). PUT: save them (all required).
+    Administrators, superadmins and superadmin+ may fill it in; only a superadmin (is_staff) may close it without filling it in (can_skip)."""
+    from apps.accounts.access import can_admin
+
+    if not can_admin(request.user):
+        return Response({"missing": [], "needed": False, "can_skip": False, "settings": {}})
+    if request.method == "PUT":
+        data = {k: v for k, v in request.data.items() if k in system.SETUP_FIELDS}
+        cleaned, errors = system.clean(data)
+        merged = {**{k: system.split_contact(system.get()).get(k, "") for k in system.SETUP_FIELDS}, **cleaned}
+        for k in system.SETUP_FIELDS:
+            if not str(merged.get(k) or "").strip():
+                errors[k] = "Dit veld is verplicht."
+        for k in system.PHONE_FIELDS:
+            if k in cleaned and cleaned[k] and len(re.sub(r"\D", "", cleaned[k])) < 6:
+                errors[k] = "Geef een geldig telefoonnummer op."
+        until, months = None, None
+        if "renew_months" in request.data and not _license_exists():  # the subscription: per month, quarter or year
+            try:
+                months = int(request.data.get("renew_months"))
+            except (TypeError, ValueError):
+                months = 0
+            if months not in (1, 3, 12):
+                errors["renew_months"] = "Kies per maand, per kwartaal of per jaar."
+        if "hosting" in request.data and not _license_exists():
+            from . import license_price
+
+            if str(request.data.get("hosting")) not in {o["key"] for o in license_price.hosting_options()}:
+                errors["hosting"] = "Kies een hosting uit de lijst."
+        if not _license_exists():
+            from . import setup_consent, setup_pay
+
+            if setup_pay.required() and not setup_pay.ok(request.user):  # paying (Stripe subscription) comes before the consent and the licence
+                errors["pay"] = "Betaal eerst het abonnement."
+
+            if not setup_consent.ok(request.user):  # the licence is made only after the consent with a code (e-mail or SMS)
+                errors["consent"] = "Geef akkoord met de code die je per e-mail of SMS krijgt."
+        if "license_until" in request.data and not _license_exists():  # the end date the user chose for the licence that is made now (default: one year)
+            from datetime import date
+
+            try:
+                until = date.fromisoformat(str(request.data.get("license_until") or ""))
+                if until <= date.today():
+                    errors["license_until"] = "Kies een einddatum in de toekomst."
+            except ValueError:
+                errors["license_until"] = "Geef een geldige datum."
+        if errors:
+            return Response({"detail": " ".join(errors.values()), "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+        from . import setup_pay as _sp
+
+        if not _license_exists() and _sp.skipped(request.user):  # not paid: the licence runs for a short time only
+            from datetime import date as _date, timedelta as _td
+
+            until = _date.today() + _td(days=_sp.TRIAL_DAYS)
+        system.save(cleaned)
+        _make_license(until, months, request.data.get("hosting"))
+        __import__("apps.core.setup_consent", fromlist=["x"]).clear(request.user)
+        __import__("apps.core.setup_pay", fromlist=["x"]).clear(request.user)
+    cur = system.split_contact(system.get())
+    missing = system.setup_missing()
+    me = request.user  # what is known about the person who is logged in: the form uses it for the fields that are still empty
+    street, nr = str(getattr(me, "address", "") or "").strip(), ""
+    m = re.match(r"^(.+?)\s+(\d+\s?[A-Za-z]?(?:[-/ ]?\d+[A-Za-z]?)?)$", street)  # "Talmastraat 24" -> street + house number
+    if m:
+        street, nr = m.group(1), m.group(2)
+    suggest = {"contact_first_name": me.first_name, "contact_last_name": me.last_name, "contact_email": me.email, "mobile": me.phone,
+               "street": street, "house_number": nr, "postal_code": getattr(me, "postal_code", ""), "city": getattr(me, "city", ""), "country": getattr(me, "country", "")}
+    suggest = {k: str(v).strip() for k, v in suggest.items() if str(v or "").strip() and not str(cur.get(k) or "").strip()}
+    from datetime import date, timedelta
+
+    needs_license = not _license_exists()
+    return Response({"license": _license_brief(), "needs_license": needs_license, "license_number": _reserved_number() if needs_license else None, "hosting_current": (__import__("apps.core.models", fromlist=["x"]).License.objects.filter(pk=1).values_list("hosting", flat=True).first() or ""), "pay": _pay_info(request.user), "license_server": _license_server(), "consent_methods": __import__("apps.core.setup_consent", fromlist=["x"]).methods(), "consent_ok": __import__("apps.core.setup_consent", fromlist=["x"]).ok(request.user), "renew_months": (__import__("apps.core.models", fromlist=["x"]).License.objects.filter(pk=1).values_list("renew_months", flat=True).first() or 12), "hosting_options": __import__("apps.core.license_price", fromlist=["x"]).hosting_options(), "hosting_default": ((__import__("apps.core.pricing", fromlist=["x"]).load().get("hosting") or {}).get("default") or "shared"), "license_until": (date.today() + timedelta(days=365)).isoformat(), "missing": missing, "needed": bool(missing), "can_skip": bool(request.user.is_staff), "fields": list(system.SETUP_FIELDS), "suggest": suggest,
+                     "settings": {k: cur.get(k, "") for k in system.SETUP_FIELDS}})
+
+
 @api_view(["GET", "PUT"])
 @permission_classes([has_level("system", "manage"), module_required("system")])
 def system_settings(request):
@@ -1308,16 +1640,30 @@ def theme_pack_refine(request, key):
     return Response({"summary": summary, "changed": sorted(changes), "values": theme.merged(themepacks._doc(key)["values"]), "packs": themepacks.listing()})
 
 
+def _client_parts(lic):
+    """The address of the client in parts (street, house number, postal code, city, country): as stored, or taken from the one-line address."""
+    from . import system
+
+    parts = {k: str((lic.client_parts or {}).get(k, "")) for k in system.ADDRESS_PARTS} if lic else {}
+    if lic and not any(parts.values()) and lic.client_address:
+        m = system.ADDRESS_RE.match(lic.client_address)
+        if m:
+            parts.update(street=m["street"].strip(), house_number=m["nr"].strip(), postal_code=m["zip"].strip().upper(), city=m["city"].strip())
+        else:
+            parts["street"] = lic.client_address
+    return parts or {k: "" for k in system.ADDRESS_PARTS}
+
+
 def _license_out():
     from .models import License
 
     lic = License.objects.filter(pk=1).first()
     from . import license_price, system
 
-    return {"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "", "issued_at": lic.issued_at if lic else None,
+    return {"number": lic.number if lic else "", "client": lic.client if lic else "", "client_address": lic.client_address if lic else "", "client_parts": _client_parts(lic), "main_url": lic.main_url if lic else "", "issued_at": lic.issued_at if lic else None,
             "valid_until": lic.valid_until.isoformat() if lic and lic.valid_until else None, "expired": system.license_info()["expired"],
             "price": str(license_price.refresh()), "base_price": str(license_price.config_base()), "renew_months": lic.renew_months if lic else 12, "has": system.license_info()["has"],
-            "monthly": str(license_price.monthly(lic)), "quarterly": str(license_price.for_period(3, lic)), "yearly": str(license_price.for_period(12, lic)),
+            "monthly": str(license_price.monthly(lic)), "quarterly": str(license_price.for_period(3, lic)), "yearly": str(license_price.for_period(12, lic)), "periods": license_price.period_overview(lic),
             "backup_included": lic.backup_included if lic else 5, "backup_slot_price": str(lic.backup_slot_price) if lic else "0.00", "backup_slots": license_price.backup_slots(),
             "reseller": {"name": lic.reseller_name, "email": lic.reseller_email, "url": lic.reseller_url} if lic else {"name": "", "email": "", "url": ""},
             "billing": __import__("apps.core.license_billing", fromlist=["state"]).state(lic) if lic else None}
@@ -1342,8 +1688,19 @@ def system_license(request):
         d = request.data
         if "client" in d:
             lic.client = str(d.get("client") or "").strip()[:200]
-        if "client_address" in d:
+        if isinstance(d.get("client_parts"), dict):  # the address in parts, like the address of the basic data
+            lic.client_parts = {k: " ".join(str(d["client_parts"].get(k) or "").split())[:12 if k == "house_number" else 80] for k in system.ADDRESS_PARTS}
+            if lic.client_parts["postal_code"]:
+                lic.client_parts["postal_code"] = lic.client_parts["postal_code"].upper()
+            lic.client_address = system.compose_address(lic.client_parts)
+        elif "client_address" in d:
             lic.client_address = str(d.get("client_address") or "").strip()[:300]
+            lic.client_parts = {}
+        if "main_url" in d:
+            url = system.with_scheme(str(d.get("main_url") or "").strip().rstrip("/"))
+            if url and not system.URL_RE.match(url):
+                return Response({"detail": "Gebruik een adres als www.voorbeeld.nl (zonder pad of slash erachter)."}, status=status.HTTP_400_BAD_REQUEST)
+            lic.main_url = url[:300]
         if "valid_until" in d:
             try:
                 lic.valid_until = date.fromisoformat(str(d["valid_until"])) if d.get("valid_until") else None
@@ -1389,7 +1746,7 @@ def system_license(request):
                 setattr(lic, k, str(d.get(k) or "").strip()[:n])
         if lic.reseller_url and not re.fullmatch(r"https?://[^\s]{3,290}|/[^\s]{0,290}", lic.reseller_url):
             return Response({"detail": "Geef een geldige link (https://…)."}, status=400)
-        lic.save(update_fields=["client", "client_address", "valid_until", "base_price", "renew_months", "allowed_methods", "payment_method", "backup_included", "backup_slot_price", "reseller_name", "reseller_email", "reseller_url"])
+        lic.save(update_fields=["client", "client_address", "client_parts", "main_url", "valid_until", "base_price", "renew_months", "allowed_methods", "payment_method", "backup_included", "backup_slot_price", "reseller_name", "reseller_email", "reseller_url"])
     elif request.method == "DELETE":  # empty the licence (the reseller data stays: it says where a new one is bought)
         from .reset import clear_license
 
@@ -1544,7 +1901,7 @@ def system_info(request):
     on = modules.states()
     mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "desc": m.get("desc", ""), "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core"))} for m in modules.MODULES]
     return Response({"name": "easy2edit", "version": dj.SYSTEM_VERSION, "build": _build_number(dj), "plugins": plugins, "modules": mods, "copyright": "RST CC BV", "license": _license_out(),
-                     "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})
+                     "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_person", "mobile", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})
 
 
 # ── Licence for the administrator: costs and how to pay ─────────────────────

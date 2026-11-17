@@ -34,7 +34,7 @@ function Calc() {
   useEffect(() => { if (conf) api("/sales/calculator/plan/", { method: "POST", body: { answers } }).then(setPlan).catch(() => {}); }, [conf, key]); // eslint-disable-line react-hooks/exhaustive-deps
   const visible = useMemo(() => (conf?.questions || []).filter((q) => (q.requires || []).every((r) => answers[r])), [conf, answers]);
   if (conf === false) return null;
-  if (!conf) return <p className="muted"><Loading /></p>;
+  if (!conf) return <Loading fill />;
   const tier = (n) => { let per = 0; (conf.email?.tiers || []).forEach((t) => { if (n >= t.from) per = t.price; }); return per; };
   const mails = Number(answers.email) || 0;
   const post = async (token) => {

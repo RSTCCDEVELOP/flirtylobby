@@ -1,0 +1,486 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { api, errorText, downloadPost } from "../lib/api";
+import { tx, getLanguage } from "../lib/t";
+import { useAuth } from "./AuthContext";
+import { canAdmin } from "../lib/perms";
+import { useModules } from "./Modules";
+import { IconCheck, IconReceipt } from "./Icons";
+import PhoneInput from "./PhoneInput";
+import { confirmDialog } from "../lib/dialog";
+import CostsInfo from "./CostsInfo";
+import { money } from "../lib/format";
+import KitScope from "../lib/ui-kit/KitScope";
+
+// The basic data (name, main address, address, contact person, e-mail and phone numbers) are required. Are they empty when an administrator logs in? Then this wizard opens.
+// Everybody who may administer can fill it in; only a superadmin may close it without filling it in (for this session).
+const STEPS = [
+  ["site", "Website", ["site_name", "company_name", "frontend_url"]],
+  ["address", "Adres", ["street", "house_number", "postal_code", "city", "country"]],
+  ["contact", "Contact", ["contact_first_name", "contact_last_name", "contact_email", "mobile"]],
+  ["hosting", "Hosting", ["hosting"]],  // the hosting that goes with the licence (only when there is no licence yet): from the price list
+  ["costs", "Kosten", ["license_until"]],
+  ["agree", "Akkoord", ["consent_ok"]],  // consent with a code by e-mail or SMS (only when the licence is made now): before paying
+  ["pay", "Betalen", ["pay_ok"]],  // a Stripe subscription (test mode with test keys): the licence is made only after paying
+  ["overview", "Overzicht", []],  // the last screen: everything of the licence together, with its number; Save makes it
+   // what the website costs, from everything that is in use; the end date of the licence (only when there is no licence yet: it is made by itself)
+];
+const SKIP_KEY = "e2e_setup_skipped";
+// Only for testing: on this computer (localhost) a superadmin who types a single @ in any field gets all fields filled with made-up data.
+const TEST_DATA = { site_name: "Testwebsite", company_name: "Testbedrijf BV", frontend_url: "www.testbedrijf.nl", street: "Teststraat", house_number: "12", postal_code: "1234 AB", city: "Utrecht", country: "Nederland",
+  contact_first_name: "Test", contact_last_name: "Gebruiker", contact_email: "test@testbedrijf.nl", phone: "+31 301234567", mobile: "+31 612345678" };
+const isLocal = () => typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+
+export default function SetupWizard() {
+  const { user } = useAuth();
+  const mods = useModules();
+  const allowed = !!user && (user.is_staff || canAdmin(user, mods));
+  const [d, setD] = useState(null);
+  const [form, setForm] = useState({});
+  const [step, setStep] = useState("site");
+  const [error, setError] = useState("");
+  const [errs, setErrs] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [closed, setClosed] = useState(false);
+  const [costs, setCosts] = useState(null);
+  const [costInfo, setCostInfo] = useState(false);
+  const [done, setDone] = useState(null);  // the licence that was made: shown when everything is saved
+  const [pay, setPay] = useState({ busy: false, error: "" });  // the payment step (Stripe)
+  const [consent, setConsent] = useState({ method: "email", sent: false, busy: false, error: "", shown: "" });  // the consent with the licence: a code (000-0000) by e-mail or SMS
+  const [forced, setForced] = useState(false);  // opened again by hand (button on the Basisgegevens page), also when everything is filled in
+
+  useEffect(() => {
+    if (!allowed) return;
+    try { if (sessionStorage.getItem(SKIP_KEY)) { setClosed(true); return; } } catch { /* no storage */ }
+    api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); if (r.settings && !r.settings.frontend_url && typeof window !== "undefined") setForm((f) => ({ ...f, frontend_url: window.location.origin.includes("localhost") ? "" : window.location.origin })); }).catch(() => {});
+  }, [allowed]);
+
+  useEffect(() => {
+    if (!allowed) return undefined;
+    const again = (to) => api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setStep(typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
+    window.addEventListener("open-setup-wizard", again);
+    try { // back from Stripe: is the session paid? Then the wizard goes on with the agreement
+      const qs = new URLSearchParams(window.location.search);
+      if (qs.get("setup_paid") && qs.get("session_id")) {
+        window.history.replaceState(null, "", window.location.pathname);
+        api("/system/setup/pay/confirm/", { method: "POST", body: { session_id: qs.get("session_id") } }).then(() => again("overview")).catch((e) => { again("pay").then(() => setError(errorText(e))); });
+      } else if (qs.get("setup_cancel")) { window.history.replaceState(null, "", window.location.pathname); again("pay"); }
+    } catch { /* no address bar */ }
+    try { if (sessionStorage.getItem("e2e_open_setup")) { sessionStorage.removeItem("e2e_open_setup"); again(); } } catch { /* no storage */ }  // asked for on another page (the licence question): open now
+    return () => window.removeEventListener("open-setup-wizard", again);
+  }, [allowed]);
+
+  useEffect(() => { // the hosting options come from the price list: read them again when they are not there (an older answer of the server)
+    if (step === "hosting" && d && !(d.hosting_options || []).length) api("/system/setup/").then((r) => { setD(r); setForm((f) => ({ ...f, hosting: f.hosting || r.hosting_default || "shared" })); }).catch(() => {});
+  }, [step, d]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { // the costs of everything that is in use (read when the tab is opened)
+    if ((step === "costs" || step === "pay" || step === "overview") && !costs) api("/system/license/usage/").then(setCosts).catch(() => setCosts({ items: [], error: true }));
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // what is known about the logged in person (the server's suggestion, and the profile of the login itself) is read in when a step is shown: only the fields that are still empty
+  useEffect(() => {
+    if (!d?.needed && !forced) return;
+    const known = { contact_first_name: user?.first_name, contact_last_name: user?.last_name, contact_email: user?.email, mobile: user?.phone, ...(d.suggest || {}) };
+    setForm((f) => {
+      const o = { ...f };
+      STEPS.find((x) => x[0] === step)[2].forEach((k) => { if (!String(o[k] || "").trim() && String(known[k] || "").trim()) o[k] = String(known[k]).trim(); });
+      return o;
+    });
+  }, [step, d, user, forced]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!allowed || closed || !(d?.needed || forced || done) || typeof document === "undefined") return null;
+  const steps = STEPS.filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
+  const hostOpt = d.needs_license ? (d.hosting_options || []).find((o) => o.key === form.hosting) : null;  // the chosen hosting: a line of the price (not in the base price)
+  const hostPrice = hostOpt ? Number(hostOpt.price) : 0;
+  const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrs((x) => ({ ...x, [k]: "" })); };
+  const empty = (k) => !String(form[k] || "").trim();
+  const stepIdx = steps.findIndex((s) => s[0] === step);
+  const stepDone = (s) => !steps.find((x) => x[0] === s)[2].some(empty);
+  const checkStep = () => {
+    const bad = {};
+    steps[stepIdx][2].forEach((k) => { if (empty(k)) bad[k] = tx("Dit veld is verplicht."); });
+    setErrs((x) => ({ ...x, ...bad }));
+    return !Object.keys(bad).length;
+  };
+  // what is known about the logged in person is read when you go to a step: only the fields that are still empty
+  const fill = (key) => setForm((f) => { const o = { ...f }; steps.find((s) => s[0] === key)[2].forEach((k) => { if (!String(o[k] || "").trim() && d.suggest?.[k]) o[k] = d.suggest[k]; }); return o; });
+  const next = () => { if (checkStep()) { const n = steps[stepIdx + 1][0]; fill(n); setStep(n); } };
+  const save = async () => {
+    if (!checkStep()) return;
+    setBusy(true); setError("");
+    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); if (r.license?.number && d.needs_license) setDone(r.license); } }
+    catch (e) {
+      const bad = Object.fromEntries(Object.entries(e?.data?.errors || {}).map(([k, v]) => [k, tx(v)]));  // each message in the chosen language
+      setError(Object.keys(bad).length ? Object.values(bad).join(" ") : errorText(e));
+      setErrs(bad);
+      const first = bad.consent ? steps.find((s) => s[0] === "agree") : steps.find((s) => s[2].some((k) => bad[k]));
+      if (first) setStep(first[0]);
+    }
+    setBusy(false);
+  };
+  const skip = () => { try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* no storage */ } setClosed(true); };
+  // the fields are the form components of the set (ui-form-fields): e2e-field, e2e-label, e2e-input, e2e-error
+  const field = (k, label, { type = "text", span, ...rest } = {}) => (
+    <div key={k} className="e2e-field" style={span ? { gridColumn: span } : undefined}>
+      <label className="e2e-label" htmlFor={`sw-${k}`}><span>{label} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
+      <input id={`sw-${k}`} className={`e2e-input${errs[k] ? " e2e-input--error" : ""}`} type={type} value={form[k] || ""} onChange={set(k)} aria-invalid={errs[k] ? "true" : undefined} aria-required="true" {...rest} />
+      {errs[k] && <span className="e2e-error">{errs[k]}</span>}
+    </div>
+  );
+  const phoneField = (k, label, req) => (
+    <div key={k} className="e2e-field">
+      <label className="e2e-label" htmlFor={`sw-${k}`}><span>{label}{req && <> <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></>}</span></label>
+      <PhoneInput id={`sw-${k}`} value={form[k] || ""} onChange={(v) => { setForm((f) => ({ ...f, [k]: v })); setErrs((x) => ({ ...x, [k]: "" })); }} invalid={!!errs[k]} required={req} />
+      {errs[k] && <span className="e2e-error">{errs[k]}</span>}
+    </div>
+  );
+  const pct = Math.round((steps.filter((s) => stepDone(s[0])).length / steps.length) * 100);
+  // the consent: send a code, check it (the code has the form 000-0000)
+  const canMail = !!d.consent_methods?.email || (isLocal() && user?.is_staff), canSms = !!d.consent_methods?.sms || (isLocal() && user?.is_staff);
+  const startPay = async () => {
+    setPay({ busy: true, error: "" });
+    try { const r = await api("/system/setup/pay/", { method: "POST", body: form }); window.location.assign(r.url); }
+    catch (e) { setPay({ busy: false, error: errorText(e) }); }
+  };
+  const payTest = async () => { // only for testing, on localhost: as if it was paid
+    setPay({ busy: true, error: "" });
+    try { await api("/system/setup/pay/test/", { method: "POST", body: {} }); setForm((f) => ({ ...f, pay_ok: "1" })); setPay({ busy: false, error: "" }); } catch (e) { setPay({ busy: false, error: errorText(e) }); }
+  };
+  const payNone = async () => { // not paying: a warning first; the licence then runs for a short time only
+    if (!(await confirmDialog(tx("Als je niet betaalt, gaat je website binnenkort in free mode. Wil je toch doorgaan zonder te betalen?"), { okLabel: tx("Toch doorgaan"), cancelLabel: tx("Annuleren") }))) return;
+    setPay({ busy: true, error: "" });
+    try { await api("/system/setup/pay/none/", { method: "POST", body: { hosting: form.hosting, renew_months: form.renew_months } }); setForm((f) => ({ ...f, pay_ok: "1", pay_none_done: "1", pay_invoice_done: "" })); setPay({ busy: false, error: "" }); }
+    catch (e) { setPay({ busy: false, error: errorText(e) }); }
+  };
+  const downloadPdf = async () => { // the licence overview as a PDF (with the easy2edit logo)
+    setPay((p) => ({ ...p, error: "" }));
+    try { await downloadPost("/system/setup/pdf/", { ...form, lang: getLanguage(), pay: form.pay_none_done === "1" ? "none" : form.pay_invoice_done === "1" ? "invoice" : form.pay_ok === "1" ? "stripe" : "open" }, "easy2edit-licence.pdf"); }
+    catch (e) { setPay((p) => ({ ...p, error: errorText(e) })); }
+  };
+  const payInvoice = async () => { // a superadmin: the licence is paid on account (an invoice)
+    setPay({ busy: true, error: "" });
+    try { await api("/system/setup/pay/invoice/", { method: "POST", body: { hosting: form.hosting, renew_months: form.renew_months } }); setForm((f) => ({ ...f, pay_ok: "1", pay_invoice_done: "1", pay_none_done: "" })); setPay({ busy: false, error: "" }); }
+    catch (e) { setPay({ busy: false, error: errorText(e) }); }
+  };
+  const method = canMail && (consent.method === "email" || !canSms) ? "email" : "sms";  // SMS only when the SMS service (API keys) is on
+  const sendCode = async () => {
+    setConsent((c) => ({ ...c, busy: true, error: "" }));
+    try {
+      const to = method === "email" ? form.contact_email : String(form.mobile || "").replace(/[\s-]/g, "");
+      const r = await api("/system/setup/consent/", { method: "POST", body: { method, to } });
+      setConsent((c) => ({ ...c, busy: false, sent: true, shown: r.code || "" }));
+      return r.code || "";
+    } catch (e) { setConsent((c) => ({ ...c, busy: false, error: errorText(e) })); return ""; }
+  };
+  const checkCode = async (code) => {
+    setConsent((c) => ({ ...c, busy: true, error: "" }));
+    try { await api("/system/setup/consent/verify/", { method: "POST", body: { code } }); setForm((f) => ({ ...f, consent_ok: "1" })); setErrs((x) => ({ ...x, consent_ok: "" })); setConsent((c) => ({ ...c, busy: false })); }
+    catch (e) { setConsent((c) => ({ ...c, busy: false, error: errorText(e) })); }
+  };
+  const typeCode = async (e) => {
+    let v = e.target.value;
+    if (v === "@" && user?.is_staff && isLocal()) { const c = consent.shown || await sendCode(); if (c) { setForm((f) => ({ ...f, consent_code: c })); checkCode(c); } return; }  // only for testing on this computer: an @ gives the code
+    v = v.replace(/\D/g, "").slice(0, 7);
+    v = v.length > 3 ? `${v.slice(0, 3)}-${v.slice(3)}` : v;
+    setForm((f) => ({ ...f, consent_code: v }));
+    if (v.length === 8) checkCode(v);
+  };
+  const go = (s) => { const i = steps.findIndex((x) => x[0] === s); if (i <= stepIdx || steps.slice(0, i).every((x) => stepDone(x[0]))) { if (i > stepIdx) fill(s); setStep(s); } };
+  return createPortal(
+    <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Licentiegegevens")}>
+      {done ? (
+      <div className="card modal" style={{ maxWidth: 520, width: "100%", padding: "1.6rem 1.8rem" }}>
+        <KitScope tag="ui-alerts">
+          <div className="e2e-stack" style={{ gap: "1.1rem", textAlign: "center", alignItems: "center" }}>
+            <span className="e2e-alert__icon" style={{ width: 44, height: 44 }}><IconCheck width={22} height={22} /></span>
+            <h2 style={{ margin: 0 }}>{tx("Licentie aangemaakt")}</h2>
+            <div style={{ width: "100%", padding: "1rem", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #f4f6fa)", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))" }}>
+              <span className="e2e-hint">{tx("Licentienummer")}</span>
+              <div style={{ fontFamily: "monospace", fontSize: "1.45rem", fontWeight: 700, letterSpacing: ".06em", userSelect: "all", wordBreak: "break-all" }}>{done.number}</div>
+            </div>
+            <div className="e2e-stack" style={{ gap: ".25rem" }}>
+              {done.client && <span>{done.client}</span>}
+              {done.main_url && <span className="e2e-hint">{done.main_url.replace(/^https?:\/\//, "")}</span>}
+              {done.valid_until && <span className="e2e-hint">{tx("Verlengdatum")}: {new Date(done.valid_until).toLocaleDateString(getLanguage(), { day: "numeric", month: "long", year: "numeric" })}</span>}
+            </div>
+            <div className="e2e-row" style={{ gap: ".6rem", justifyContent: "center", flexWrap: "wrap" }}>
+              <button type="button" className="e2e-btn e2e-btn--outline" onClick={downloadPdf} style={{ gap: ".5rem" }}><span style={{ display: "inline-flex", width: 18, height: 18 }}><IconReceipt /></span>{tx("Download PDF")}</button>
+              <button type="button" className="e2e-btn" onClick={() => { setDone(null); setClosed(true); window.dispatchEvent(new Event("setup-saved")); }}>{tx("Sluiten")}</button>
+            </div>
+          </div>
+        </KitScope>
+      </div>
+      ) : (
+      <div className="card modal" style={{ maxWidth: 680, width: "100%", maxHeight: "94vh", padding: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onInputCapture={(e) => { if (user?.is_staff && isLocal() && e.target?.tagName === "INPUT" && e.target.id !== "sw-consent_code" && e.target.value === "@") { setForm((f) => ({ ...f, ...TEST_DATA })); setErrs({}); setError(""); } }}>
+        <KitScope tag="ui-form-fields" className="sw-col">
+          <div className="sw-wrap">
+            <div className="sw-head">
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap" }}>
+              <div style={{ minWidth: 0 }}>
+                <h2 style={{ margin: 0 }}>{tx("Licentiegegevens")}</h2>
+                <p className="e2e-hint" style={{ margin: ".3rem 0 0" }}>{tx("Vul de gegevens van deze website in. Alle velden zijn verplicht.")}</p>
+              </div>
+              {(() => { // where the licence comes from: the easy2edit licence server, or only this computer
+                const ls = d.license_server || { mode: "local" };
+                const look = { linked: ["var(--e2e-success, #2f9e6a)", tx("Gekoppeld aan easy2edit (licentieserver)")], server: ["var(--e2e-primary)", tx("Dit is de easy2edit licentieserver")], disconnected: ["var(--e2e-secondary, #939497)", tx("Lokaal: ontkoppeld van easy2edit")], local: ["var(--e2e-secondary, #939497)", tx("Lokaal: niet gekoppeld aan easy2edit")] }[ls.mode] || [];
+                return (
+                  <div role="status" data-easy2edit-tag="ui-badge" style={{ display: "inline-flex", alignItems: "center", gap: ".45rem", padding: ".3rem .7rem", maxWidth: "100%", flex: "0 1 auto", borderRadius: "var(--e2e-radius, 10px)", background: `color-mix(in srgb, ${look[0]} 16%, var(--e2e-bg, #fff))`, border: `1px solid color-mix(in srgb, ${look[0]} 45%, var(--e2e-bg, #fff))`, fontSize: ".8rem", fontWeight: 600 }}>
+                    <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: "50%", background: look[0], flex: "0 0 auto" }} />
+                    <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{look[1]}{ls.url ? <span style={{ fontWeight: 400, opacity: .75 }}> · {ls.url.replace(/^https?:\/\//, "")}</span> : null}</span>
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="e2e-progress" role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100" data-easy2edit-tag="ui-progress"><span style={{ width: `${pct}%` }} /></div>
+            <div className="e2e-tabs" data-easy2edit-tag="ui-tabs">
+              <div className="e2e-tabs__list" role="tablist">
+                {steps.map((s, i) => <button key={s[0]} type="button" role="tab" className="e2e-tabs__tab" aria-selected={step === s[0]} onClick={() => go(s[0])}>{i + 1}. {tx(s[1])}{stepDone(s[0]) && <IconCheck width={14} height={14} style={{ marginLeft: ".35rem", verticalAlign: "-2px" }} />}</button>)}
+              </div>
+            </div>
+            </div>
+            <div className={`sw-body${step === "costs" ? " fit" : ""}`}>
+            {error && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{error}</div></div>}
+            <form className="e2e-grid" style={{ "--e2e-min": "230px" }} onSubmit={(e) => { e.preventDefault(); if (stepIdx < steps.length - 1) next(); else save(); }}>
+              {step === "site" && <>
+                {field("site_name", tx("Naam van de website"), { span: "1 / -1" })}
+                {field("company_name", tx("Bedrijfsnaam"), { autoComplete: "organization", span: "1 / -1" })}
+                {field("frontend_url", tx("Hoofd-URL"), { placeholder: "www.voorbeeld.nl", inputMode: "url", span: "1 / -1" })}
+                <span className="e2e-hint" style={{ gridColumn: "1 / -1" }}>{tx("Het hoofdadres van de website, zonder pad of slash erachter. Dit staat ook op het licentiescherm.")}</span>
+              </>}
+              {step === "address" && <>
+                {field("street", tx("Straat"), { autoComplete: "address-line1", span: "1 / -1" })}
+                {field("house_number", tx("Huisnummer"), { maxLength: 12 })}
+                {field("postal_code", tx("Postcode"), { maxLength: 10, autoComplete: "postal-code" })}
+                {field("city", tx("Plaats"), { autoComplete: "address-level2" })}
+                {field("country", tx("Land"), { placeholder: "Nederland" })}
+              </>}
+              {step === "contact" && <>
+                {field("contact_first_name", tx("Voornaam contactpersoon"), { autoComplete: "given-name" })}
+                {field("contact_last_name", tx("Achternaam contactpersoon"), { autoComplete: "family-name" })}
+                {field("contact_email", tx("Contact e-mail"), { type: "email", autoComplete: "email", span: "1 / -1" })}
+                {phoneField("phone", tx("Telefoon"), false)}
+                {phoneField("mobile", tx("Mobiel nummer"), true)}
+              </>}
+              {step === "hosting" && (
+                <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem" }} role="radiogroup" aria-label={tx("Hosting")}>
+                  {(d.hosting_options || []).map((o) => (
+                    <label key={o.key} className="e2e-check" style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: ".7rem", padding: ".7rem .9rem", border: `1px solid ${form.hosting === o.key ? "var(--e2e-primary)" : "var(--e2e-line, rgba(0,0,0,.12))"}`, borderRadius: "var(--e2e-radius, 10px)", background: form.hosting === o.key ? "var(--e2e-primary-soft, transparent)" : "transparent", cursor: "pointer" }}>
+                      <input type="radio" name="sw-hosting" style={{ flex: "0 0 auto", marginTop: ".2rem" }} checked={form.hosting === o.key} onChange={() => { setForm((f) => ({ ...f, hosting: o.key })); setErrs((x) => ({ ...x, hosting: "" })); }} />
+                      <span style={{ flex: 1 }}><strong>{o.label}</strong><br /><small className="e2e-hint">{o.desc}</small></span>
+                      <span style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{money(o.price)} {tx("per maand")}</span>
+                    </label>
+                  ))}
+                  <span className="e2e-hint">{tx("De prijs van de hosting staat apart in de kosten en zit niet in de basisprijs. Prijzen inclusief btw, uit de prijslijst.")}</span>
+                  {errs.hosting && <span className="e2e-error">{errs.hosting}</span>}
+                </div>
+              )}
+              {step === "pay" && (() => {
+                const mo = Number(costs?.monthly || 0), per = [1, 3, 12].includes(Number(form.renew_months)) ? Number(form.renew_months) : 12;
+                const pr = (costs?.periods || []).find((x) => Number(x.months) === per), disc = pr ? Number(pr.discount) : 0;
+                const price = (mo + hostPrice) * per * (1 - disc / 100), perMonth = price / per, now = new Date();
+                const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = days - now.getDate() + 1;
+                const perLabel = per === 1 ? "Daarna per maand" : per === 3 ? "Daarna per kwartaal" : "Daarna per jaar";
+                return (
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: "1rem" }}>
+                    <div style={{ paddingBottom: "1rem", borderBottom: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.15)))" }}>
+                      <strong style={{ fontSize: "1.05rem" }}>{tx("Betaal het abonnement")}</strong>
+                      <p style={{ margin: ".3rem 0 0" }}>{tx("Je betaalt via Stripe. Het abonnement start op de 1e van de maand: eerst betaal je de dagen tot het einde van deze maand naar rato, daarna elke periode het volledige bedrag.")}</p>
+                    </div>
+                    {!costs ? <span className="e2e-hint">{tx("Laden…")}</span> : (
+                      <div className="e2e-grid" style={{ "--e2e-min": "170px" }}>
+                        <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("Nu tot einde van de maand")}</span><strong style={{ fontSize: "1.35rem" }}>{money(Math.round((perMonth * left / days) * 100) / 100)}</strong></div>
+                        <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx(perLabel)}</span><strong style={{ fontSize: "1.35rem" }}>{money(Math.round(price * 100) / 100)}</strong><span className="e2e-hint">{tx("incl. btw")}</span></div>
+                      </div>
+                    )}
+                    {d.pay?.mode === "test" && <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div><strong>{tx("Testmodus")}</strong><br />{tx("Gebruik de testkaart 4242 4242 4242 4242, een datum in de toekomst en een willekeurige CVC.")}</div></div>}
+                    {form.pay_ok === "1" ? (
+                      form.pay_none_done === "1"
+                        ? <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Niet betaald. De licentie loopt maar kort; daarna gaat je website in free mode.")}</div></div>
+                        : <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{form.pay_invoice_done === "1" ? tx("Op rekening gekozen. Je kunt doorgaan naar het overzicht.") : tx("Betaald. Je kunt doorgaan naar het overzicht.")}</div></div>
+                    ) : (
+                      <>
+                        {form.pay_invoice === "1" && <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{tx("De factuur wordt iedere 1e van de maand verstuurd.")}</div></div>}
+                        {!d.pay?.provider && form.pay_invoice !== "1" && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Stripe is niet gekoppeld voor de licentie (Super admin → Licentie → Betalen). Kies Op rekening om door te gaan.")}</div></div>}
+                        <div className="e2e-row" style={{ gap: ".7rem", alignItems: "center", flexWrap: "wrap" }}>
+                          {form.pay_invoice === "1"
+                            ? <button type="button" className="e2e-btn" disabled={pay.busy} onClick={payInvoice}>{tx("Op rekening")}</button>
+                            : d.pay?.provider
+                              ? <button type="button" className="e2e-btn" disabled={pay.busy} onClick={startPay}>{pay.busy ? tx("Je wordt doorgestuurd naar Stripe…") : tx("Betalen met Stripe")}</button>
+                              : isLocal() && user?.is_staff ? <button type="button" className="e2e-btn" disabled={pay.busy} onClick={payTest}>{tx("Betaal (test)")}</button> : null}
+                          <button type="button" className="e2e-btn e2e-btn--outline" disabled={pay.busy} onClick={payNone}>{tx("Betaal niet")}</button>
+                          {(user?.is_staff || user?.is_superadmin_plus) && (
+                            <label className="e2e-switch" data-easy2edit-tag="ui-form-fields" style={{ display: "inline-flex", flexDirection: "row", alignItems: "center", gap: ".5rem", marginLeft: "auto", whiteSpace: "nowrap" }}><input type="checkbox" checked={form.pay_invoice === "1"} onChange={(e) => setForm((f) => ({ ...f, pay_invoice: e.target.checked ? "1" : "" }))} /> {tx("Op rekening (factuur)")}</label>
+                          )}
+                        </div>
+
+                      </>
+                    )}
+                    {pay.error && <span className="e2e-error">{pay.error}</span>}
+                    {form.pay_ok !== "1" && <span className="e2e-hint">{tx("Je kunt pas verder als de betaling is gelukt, of kies Betaal niet.")}</span>}
+                  </div>
+                );
+              })()}
+              {step === "overview" && (() => {
+                const mo = Number(costs?.monthly || 0), per = [1, 3, 12].includes(Number(form.renew_months)) ? Number(form.renew_months) : 12;
+                const pr = (costs?.periods || []).find((x) => Number(x.months) === per), disc = pr ? Number(pr.discount) : 0;
+                const price = (mo + hostPrice) * per * (1 - disc / 100);
+                const perLabel = tx(per === 1 ? "Per maand" : per === 3 ? "Per kwartaal" : "Per jaar");
+                const how = form.pay_none_done === "1" ? tx("Niet betaald (free mode na korte tijd)") : form.pay_invoice_done === "1" ? tx("Op rekening") : form.pay_ok === "1" ? tx("Betaald") : "";
+                const rows = [
+                  [tx("Opdrachtgever"), form.company_name || form.site_name],
+                  [tx("Naam van de website"), form.site_name],
+                  [tx("Hoofd-URL"), form.frontend_url],
+                  [tx("Adres"), [[form.street, form.house_number].filter(Boolean).join(" "), [form.postal_code, form.city].filter(Boolean).join(" "), form.country].filter(Boolean).join(", ")],
+                  [tx("Contactpersoon"), [form.contact_first_name, form.contact_last_name].filter(Boolean).join(" ")],
+                  [tx("Contact e-mail"), form.contact_email],
+                  [tx("Mobiel nummer"), form.mobile],
+                  [tx("Hosting"), hostOpt ? hostOpt.label : ""],
+                  [tx("Abonnement"), `${perLabel}${disc > 0 ? ` · ${tx("korting")} ${disc}%` : ""}`],
+                  [tx("Prijs"), `${money(Math.round(price * 100) / 100)} ${perLabel.toLowerCase()} · ${tx("incl. btw")}`],
+                  [tx("Verlengdatum"), form.license_until ? new Date(form.license_until).toLocaleDateString(getLanguage(), { day: "numeric", month: "long", year: "numeric" }) : ""],
+                  [tx("Betaling"), how],
+                ].filter((r) => r[1]);
+                return (
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: "1rem" }}>
+                    <div style={{ textAlign: "center", padding: ".9rem 1rem", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #f4f6fa)", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))" }} data-easy2edit-tag="ui-kpi">
+                      <span className="e2e-hint">{tx("Licentienummer")}</span>
+                      <div style={{ fontFamily: "monospace", fontSize: "1.5rem", fontWeight: 700, letterSpacing: ".06em", userSelect: "all" }}>{d.license_number}</div>
+                      <span className="e2e-hint">{tx("Het nummer wordt actief zodra je opslaat.")}</span>
+                    </div>
+                    <div className="e2e-table-wrap" data-easy2edit-tag="ui-data-table">
+                      <table className="e2e-table"><tbody>
+                        {rows.map(([l, v]) => <tr key={l}><td style={{ width: "38%", opacity: .75 }}>{l}</td><td><strong>{v}</strong></td></tr>)}
+                      </tbody></table>
+                    </div>
+                    {form.pay_none_done === "1" && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Niet betaald. De licentie loopt maar kort; daarna gaat je website in free mode.")}</div></div>}
+                    <div className="e2e-row" style={{ justifyContent: "center" }}>
+                      <button type="button" className="e2e-btn e2e-btn--outline" onClick={downloadPdf} data-easy2edit-tag="ui-button-variants" style={{ gap: ".5rem" }}><span style={{ display: "inline-flex", width: 18, height: 18 }}><IconReceipt /></span>{tx("Download PDF")}</button>
+                    </div>
+                    {pay.error && <span className="e2e-error" style={{ textAlign: "center" }}>{pay.error}</span>}
+                  </div>
+                );
+              })()}
+              {step === "agree" && (
+                <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: "1rem" }}>
+                  <div style={{ paddingBottom: "1rem", borderBottom: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.15)))" }}>
+                    <strong style={{ fontSize: "1.05rem" }}>{tx("Akkoord met de licentie")}</strong>
+                    <p style={{ margin: ".3rem 0 0" }}>{tx("Je geeft akkoord op de licentie voor")} <strong>{form.company_name || form.site_name}</strong>. {tx("Je bevestigt dit met een code die je per e-mail of SMS krijgt.")}</p>
+                  </div>
+                  {form.consent_ok === "1" ? (
+                    <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{tx("Akkoord gegeven. Ga verder naar de betaling.")}</div></div>
+                  ) : (
+                    <div className="e2e-stack" style={{ gap: "1rem", alignItems: "center", textAlign: "center" }}>
+                      {!canMail && !canSms && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Er is geen e-mail- of SMS-koppeling actief (API keys), dus er kan geen code worden verstuurd.")}</div></div>}
+                      {canMail && canSms && (
+                        <div className="e2e-field" style={{ alignItems: "center" }}>
+                          <span className="e2e-label">{tx("Code versturen via")}</span>
+                          <div className="e2e-tabs e2e-pills" data-easy2edit-tag="ui-tabs-pills"><div className="e2e-tabs__list" role="radiogroup" aria-label={tx("Code versturen via")}>
+                            {[["email", "E-mail"], ["sms", "SMS"]].map(([m, l]) => (
+                              <button key={m} type="button" role="radio" className="e2e-tabs__tab" aria-checked={method === m} aria-selected={method === m} onClick={() => setConsent((c) => ({ ...c, method: m, sent: false, shown: "", error: "" }))}>{l}</button>
+                            ))}
+                          </div></div>
+                        </div>
+                      )}
+                      <div className="e2e-row" style={{ alignItems: "flex-end", justifyContent: "center", gap: ".8rem", flexWrap: "wrap" }}>
+                        <div className="e2e-field" style={{ alignItems: "center" }}>
+                          <label className="e2e-label" htmlFor="sw-consent_code"><span>{tx("Code")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
+                          <input id="sw-consent_code" className={`e2e-input${consent.error || errs.consent_ok ? " e2e-input--error" : ""}`} inputMode="numeric" autoComplete="one-time-code" placeholder="000-0000" maxLength={8} value={form.consent_code || ""} onChange={typeCode} style={{ width: 170, textAlign: "center", letterSpacing: ".15em", fontVariantNumeric: "tabular-nums" }} />
+                        </div>
+                        <button type="button" className="e2e-btn e2e-btn--outline" disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode} style={{ height: 46 }}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
+                      </div>
+                      <span className="e2e-hint">{consent.sent ? tx("De code is verstuurd. Die is 10 minuten geldig.") : `${tx("De code gaat naar")} ${method === "email" ? form.contact_email : form.mobile}`}{consent.shown ? ` · ${tx("Code")}: ${consent.shown}` : ""}</span>
+                      {(consent.error || errs.consent_ok) && <span className="e2e-error">{consent.error || errs.consent_ok}</span>}
+                    </div>
+                  )}
+                </div>
+              )}
+              {step === "costs" && (
+                <div className="e2e-stack sw-fit-costs" style={{ gridColumn: "1 / -1", gap: ".8rem" }}>
+                  {!costs ? <span className="e2e-hint">{tx("Laden…")}</span> : <>
+                    {(() => { // the subscription starts on the 1st: until the end of this month you pay in proportion, after that the full month price
+                      const now = new Date(), lang = getLanguage(), mo = Number(costs.monthly || 0), per = [1, 3, 12].includes(Number(form.renew_months)) ? Number(form.renew_months) : 12;
+                      const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = days - now.getDate() + 1;
+                      const pr = (costs.periods || []).find((x) => Number(x.months) === per);  // the discount of the chosen subscription (price list > Subscriptions)
+                      const disc = pr ? Number(pr.discount) : 0, price = (mo + hostPrice) * per * (1 - disc / 100), perMonth = price / per;
+                      const fmt = (d) => d.toLocaleDateString(lang, { day: "numeric", month: "long" });
+                      const tiles = [
+                        [tx("Nu tot einde van de maand"), money(Math.round((perMonth * left / days) * 100) / 100), `${fmt(now)} – ${fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0))}`],
+                        [tx(per === 1 ? "Daarna per maand" : per === 3 ? "Daarna per kwartaal" : "Daarna per jaar"), money(Math.round(price * 100) / 100), `${tx("vanaf")} ${fmt(new Date(now.getFullYear(), now.getMonth() + 1, 1))}`],  // the price of the chosen subscription: the price per month times its months
+                        [tx("Per maand"), money(Math.round(perMonth * 100) / 100), disc > 0 ? `${tx("korting")} ${disc}% · ${tx("incl. btw")}` : tx("incl. btw")],
+                      ];
+                      return (
+                        <div className="e2e-grid" style={{ "--e2e-min": "150px" }}>
+                          {tiles.map(([l, v, sub]) => (
+                            <div key={l} className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{l}</span><strong style={{ fontSize: "1.35rem" }}>{v}</strong><span className="e2e-hint">{sub}</span></div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    <span className="e2e-hint">{tx("Het abonnement gaat altijd in op de 1e van de maand. Voor de rest van deze maand betaal je naar rato van het aantal dagen; vanaf de 1e van de volgende maand betaal je de volledige maandprijs.")}</span>
+                    {d.needs_license && (
+                      <>
+                      <div className="e2e-row" style={{ alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
+                      <div className="e2e-field">
+                        <span className="e2e-label">{tx("Abonnement")}</span>
+                        <div className="e2e-tabs e2e-pills" data-easy2edit-tag="ui-tabs-pills" style={{ minHeight: 46, display: "flex", alignItems: "center" }}><div className="e2e-tabs__list" role="radiogroup" aria-label={tx("Abonnement")}>
+                          {[[1, "Per maand"], [3, "Per kwartaal"], [12, "Per jaar"]].map(([m, l]) => (
+                            <button key={m} type="button" role="radio" className="e2e-tabs__tab" aria-checked={Number(form.renew_months) === m} aria-selected={Number(form.renew_months) === m} onClick={() => setForm((f) => { const e = new Date(); e.setMonth(e.getMonth() + m); return { ...f, renew_months: m, license_until: e.toISOString().slice(0, 10) }; })}>{tx(l)}</button>
+                          ))}
+                        </div></div>
+                      </div>
+                      <div className="e2e-field">
+                        <label className="e2e-label" htmlFor="sw-license_until"><span>{tx("Verlengdatum")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
+                        <input id="sw-license_until" className={`e2e-input${errs.license_until ? " e2e-input--error" : ""}`} type="date" min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} value={form.license_until || ""} onChange={set("license_until")} aria-required="true" style={{ maxWidth: 240 }} />
+                        {errs.license_until && <span className="e2e-error">{errs.license_until}</span>}
+                        
+                      </div>
+                      </div>
+                      <span className="e2e-hint">{tx("Standaard één jaar. De licentie wordt automatisch gemaakt met de gegevens die je hebt ingevuld.")}</span>
+                      </>
+                    )}
+                    <div className="e2e-table-wrap" data-easy2edit-tag="ui-data-table">
+                      <table className="e2e-table">
+                        <thead><tr><th>{tx("Onderdeel")}</th><th style={{ textAlign: "right" }}>{tx("Per maand")}</th></tr></thead>
+                        <tbody>
+                          {(() => { const base = Number(costs.monthly || 0) - (costs.items || []).reduce((t, i) => t + Number(i.price || 0), 0); return base > 0.005 ? <tr><td>{tx("Basisprijs en backups")}</td><td style={{ textAlign: "right" }}>{money(base)}</td></tr> : null; })()}
+                          {hostOpt && hostPrice > 0 && <tr><td>{tx("Hosting")}: {hostOpt.label}</td><td style={{ textAlign: "right" }}>{money(hostPrice)}</td></tr>}
+                          {(costs.items || []).map((i) => <tr key={`${i.kind}:${i.key}`}><td>{i.label}</td><td style={{ textAlign: "right" }}>{money(i.price)}</td></tr>)}
+                          {!(costs.items || []).length && <tr><td colSpan={2} className="e2e-hint">{tx("Er zijn geen kosten.")}</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="e2e-row" style={{ gap: ".5rem", alignItems: "center", flexWrap: "wrap" }}><span className="e2e-hint">{tx("De kosten van AI zijn niet meegerekend in de licentie.")}</span><button type="button" className="e2e-btn e2e-btn--outline e2e-btn--sm" onClick={() => setCostInfo(true)}>{tx("Uitleg over de kosten")}</button></div>
+                    
+                  </>}
+                </div>
+              )}
+              <button type="submit" hidden />
+            </form>
+            </div>
+            <div className="e2e-row sw-foot" style={{ justifyContent: "space-between", gap: ".6rem", flexWrap: "wrap" }} data-easy2edit-tag="ui-button-variants">
+              <div>{forced ? <button type="button" className="e2e-btn e2e-btn--ghost" onClick={() => { setForced(false); setClosed(true); }}>{tx("Sluiten")}</button> : d.can_skip && <button type="button" className="e2e-btn e2e-btn--ghost" onClick={skip}>{tx("Nu niet invullen")}</button>}</div>
+              <div className="e2e-row" style={{ gap: ".6rem" }}>
+                {stepIdx > 0 && <button type="button" className="e2e-btn e2e-btn--outline" onClick={() => setStep(steps[stepIdx - 1][0])}>{tx("Vorige")}</button>}
+                {stepIdx < steps.length - 1
+                  ? <button type="button" className="e2e-btn" disabled={(step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1")} onClick={next}>{tx("Volgende")}</button>
+                  : <button type="button" className="e2e-btn" disabled={busy} onClick={save}>{tx("Opslaan")}</button>}
+              </div>
+            </div>
+          </div>
+        </KitScope>
+      </div>
+      )}
+      {costInfo && <CostsInfo onClose={() => setCostInfo(false)} />}
+    </div>, document.body);
+}

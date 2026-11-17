@@ -110,6 +110,13 @@ class EasySite(models.Model):
     build = models.CharField(max_length=20, blank=True)
     token_hash = models.CharField(max_length=64, blank=True)  # of the key the website uses for its next calls (the key itself is not kept)
     api_url = models.CharField(max_length=300, blank=True)  # the API address of the website (backend): where the easy2edit server asks for information (users, reseller, AI) and switches it offline/online
+    license_state = models.CharField(max_length=10, blank=True)  # none | active | expired: the licence of the website itself (as it reported)
+    license_until = models.CharField(max_length=10, blank=True)  # the end date of that licence (YYYY-MM-DD)
+    install_state = models.CharField(max_length=10, blank=True)  # installed (set up) | empty (a standard installation that is still empty)
+    install_name = models.CharField(max_length=100, blank=True)  # which installation (the name of the standard installation or of the wizard)
+    name_locked = models.BooleanField(default=False)  # the name was changed in the Site manager: the website no longer overwrites it
+    blocked_offline = models.BooleanField(default=False)  # the easy2edit server took the website offline when it was blocked (so it is put online again when it is released)
+    block_message = models.CharField(max_length=500, blank=True)  # the message that visitors see while the website is blocked
     callback_key_enc = models.TextField(blank=True)  # the key the easy2edit server shows to the website when it calls it (encrypted); the website checks it
     status = models.CharField(max_length=10, default="pending")  # pending (waits for approval: it can report, but gets no library and no keys) | active | blocked
     first_seen = models.DateTimeField(auto_now_add=True)
@@ -172,6 +179,9 @@ class License(models.Model):
     sub_amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # the amount that the subscription at Stripe collects now (kept in line with the price)
     stripe_config_encrypted = models.TextField(blank=True)  # the Stripe account of whoever sells the licence (keys encrypted): NOT the Stripe link of the website's own shop
     payment_ref = models.CharField(max_length=40, blank=True)  # the open renewal payment
+    client_parts = models.JSONField(default=dict, blank=True)  # the address of the client in parts: street, house_number, postal_code, city, country (client_address is the same on one line)
+    hosting = models.CharField(max_length=30, blank=True)  # the hosting that is paid with the licence (a key of the hosting options in the price list); empty = none / own hosting
+    main_url = models.CharField(max_length=300, blank=True)  # the main address of the website (https://...): the licence is for this address
     reseller_name = models.CharField(max_length=120, blank=True)  # who sells the licence: shown to administrators when there is none
     reseller_email = models.EmailField(blank=True)
     reseller_url = models.CharField(max_length=300, blank=True)  # the page where a licence is ordered and paid

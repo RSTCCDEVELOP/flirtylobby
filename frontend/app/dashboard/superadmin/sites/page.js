@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconCheck, IconEdit, IconEye, IconGlobe, IconRefresh, IconSettings, IconTrash } from "../../../../components/Icons";
-import { SiteOnline, SiteView } from "../../../../components/SiteDetails";
+import { SiteMaintenance, SiteOnline, SiteView } from "../../../../components/SiteDetails";
 import Tabs from "../../../../components/Tabs";
 import Loading from "../../../../components/Loading";
 import PlusLock from "../../../../components/PlusLock";
@@ -46,7 +46,7 @@ export default function SiteManager() {
   const checked = useRef(false);
   useEffect(() => { if (plus && data && !data.me.server && !checked.current) { checked.current = true; runCheck(); } }, [plus, data, runCheck]);
   if (!plus) return <p className="muted">{tx("Dit onderdeel is alleen voor een superadmin+.")} <PlusLock /></p>;
-  if (!data) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
+  if (!data) return msg ? <div className="alert">{msg.text}</div> : <Loading fill />;
   const { me, sites } = data;
   const act = async (body, ok) => {
     setBusy(body.action); setMsg(null);
@@ -62,8 +62,12 @@ export default function SiteManager() {
   const connect = async () => { await act({ action: "connect" }, tx("Gemeld bij de easy2edit-server.")); runCheck(); };
   const save = async () => {
     setBusy("edit");
-    try { await api(`/system/sites/${edit.id}/`, { method: "PATCH", body: { name: edit.name, url: edit.url, notes: edit.notes, status: edit.status } }); setEdit(null); await load(); }
-    catch (e) { setEdit((x) => ({ ...x, error: errorText(e) })); }
+    try {
+      const r = await api(`/system/sites/${edit.id}/`, { method: "PATCH", body: { name: edit.name, url: edit.url, notes: edit.notes, status: edit.status, block_message: edit.block_message || "" } });
+      await load();
+      if (r.offline && r.offline.ok === false) { setEdit((x) => ({ ...x, error: tx("Opgeslagen, maar de website kon niet via zijn API offline of online worden gezet: {0}. Hij volgt bij zijn volgende melding.", r.offline.detail || r.offline.reason) })); }  // blocked / released: the website is switched through its API
+      else { if (r.offline?.ok) setMsg({ ok: true, text: r.status === "blocked" ? tx("Geblokkeerd en offline gezet met een melding.") : tx("Vrijgegeven en weer online gezet.") }); setEdit(null); }
+    } catch (e) { setEdit((x) => ({ ...x, error: errorText(e) })); }
     setBusy("");
   };
   const approve = async (s) => {
@@ -80,13 +84,15 @@ export default function SiteManager() {
       <p className="muted">{tx("Elke easy2edit-website meldt zich de eerste keer bij de easy2edit-server en daarna bij elke keer dat een beheerder, superadmin of superadmin+ inlogt. De server houdt de lijst bij.")}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
 
-      <div className="card" style={{ display: "grid", gap: ".7rem", marginBottom: "1rem" }}>
+      <div className="card" style={{ display: "grid", gap: "1.1rem", marginBottom: "1rem" }}>
+        <div className="sm-top">
+          <div style={{ display: "grid", gap: ".6rem", alignContent: "start", minWidth: 0 }}>
         <strong>{tx("Deze website")}</strong>
         {me.server ? (
           <small className="muted">{tx("Meldt zich bij")} <code>{me.api_url}</code> · {me.last_ok_at ? `${tx("laatste melding")} ${when(me.last_ok_at)}` : tx("nog niet gemeld")}</small>
         ) : (() => {
           const st = me.disconnected ? "disconnected" : check?.state;  // the connection with the easy2edit server, live
-          const bad = ["refused", "disabled", "offline"].includes(st);
+          const bad = ["refused", "disabled", "offline", "blocked"].includes(st);
           return (
             <div style={{ display: "grid", gap: ".5rem" }}>
               <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem", flexWrap: "wrap" }}>
@@ -101,23 +107,27 @@ export default function SiteManager() {
           );
         })()}
         {me.server && me.last_error && <div className="alert">{tx("Laatste fout")}: {me.last_error}</div>}
-        <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", flexWrap: "wrap", alignItems: "center" }}>
+          </div>
+          <div className="sm-buttons">
           {!me.server && !me.disconnected && <button type="button" className="btn" disabled={!!busy || checking} onClick={runCheck}><IconRefresh /> {checking ? tx("Bezig…") : tx("Verbinding testen")}</button>}
           <button type="button" className="btn" disabled={!!busy || (!me.server && me.disconnected)} onClick={() => act({ action: "sync" }, tx("Gemeld bij de easy2edit-server."))}><IconRefresh /> {busy === "sync" ? tx("Bezig…") : tx("Nu melden")}</button>
           {!me.server && (me.disconnected
             ? <button type="button" className="btn primary" disabled={!!busy} onClick={connect}>{tx("Verbinden")}</button>
             : <button type="button" className="btn danger" disabled={!!busy} onClick={disconnect}>{tx("Ontkoppelen")}</button>)}
+          </div>
+        </div>
+        <div className="sm-switches">
           <label className="check sec-toggle">
             <span className="switch"><input type="checkbox" checked={!!me.server} disabled={!!busy} onChange={(e) => act({ action: "server", on: e.target.checked }, e.target.checked ? tx("Deze installatie is nu de site manager-server.") : tx("Deze installatie is geen site manager-server meer."))} /><span /></span>
             <span>{tx("Deze installatie is de easy2edit-server (site manager)")}<small className="muted" style={{ display: "block" }}>{tx("Alleen op de installatie die api.easy2edit.com draait: die neemt dan de meldingen van alle websites aan en toont de lijst hieronder.")}</small></span>
           </label>
-        </div>
-        {me.server && (
-          <label className="check sec-toggle">
+          {me.server && (
+            <label className="check sec-toggle">
             <span className="switch"><input type="checkbox" checked={!!me.auto_approve} disabled={!!busy} onChange={(e) => act({ action: "auto_approve", on: e.target.checked }, tx("Opgeslagen."))} /><span /></span>
             <span>{tx("Nieuwe websites automatisch goedkeuren")}<small className="muted" style={{ display: "block" }}>{tx("Uit (aanbevolen): een nieuwe website kan zich melden, maar krijgt pas de bibliotheek en de sleutels als je hem hier goedkeurt.")}</small></span>
           </label>
-        )}
+          )}
+        </div>
       </div>
 
       {me.server ? (
@@ -147,6 +157,10 @@ export default function SiteManager() {
                 </span>
                 <span className="sm-cell">
                   <span><span className={`badge ${s.status === "active" ? "ok" : s.status === "pending" ? "warn" : ""}`}>{s.status === "active" ? tx("Actief") : s.status === "pending" ? tx("Wacht op goedkeuring") : s.status === "disconnected" ? tx("Ontkoppeld") : tx("Geblokkeerd")}</span></span>
+                  <span className="sm-chips">
+                    {s.license_state && <span className={`badge ${s.license_state === "active" ? "ok" : s.license_state === "expired" ? "warn" : ""}`} title={s.license_until ? `${tx("Geldig tot")}: ${s.license_until}` : ""}>{s.license_state === "active" ? tx("Licentie actief") : s.license_state === "expired" ? tx("Licentie verlopen") : tx("Geen licentie")}</span>}
+                    {s.install_state && <span className={`badge ${s.install_state === "installed" ? "ok" : ""}`} title={s.install_name || ""}>{s.install_state === "installed" ? tx("Geïnstalleerd") : tx("Lege standaardinstallatie")}</span>}
+                  </span>
                   <small className="muted">{when(s.last_seen)}</small>
                 </span>
                 <span className="sm-actions">
@@ -181,8 +195,8 @@ export default function SiteManager() {
                 </span>
                 <span className={`badge ${label[1]}`}>{tx(label[0])}</span>
               </div>
-              <Tabs value={edit.tab || "data"} onChange={(k) => setEdit({ ...edit, tab: k })} tabs={[["data", "Gegevens", <IconSettings key="d" />], ["online", "Online", <IconGlobe key="o" />]]} />
-              {edit.tab === "online" ? <SiteOnline site={edit} /> : (
+              <Tabs value={edit.tab || "data"} onChange={(k) => setEdit({ ...edit, tab: k })} tabs={[["data", "Gegevens", <IconSettings key="d" />], ["online", "Online", <IconGlobe key="o" />], ["maintenance", "Onderhoud", <IconRefresh key="m" />]]} />
+              {edit.tab === "online" ? <SiteOnline site={edit} /> : edit.tab === "maintenance" ? <SiteMaintenance site={edit} /> : (
                 <>
                   <div className="form-grid">
                     <label>{tx("Naam")}<input value={edit.name || ""} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></label>
@@ -195,16 +209,21 @@ export default function SiteManager() {
                     </label>
                     <label className="check sec-toggle">
                       <span className="switch"><input type="checkbox" checked={blocked} onChange={(e) => setStatus(e.target.checked ? "blocked" : first !== "blocked" ? first : "active")} /><span /></span>
-                      <span>{tx("Geblokkeerd")}<small className="muted" style={{ display: "block" }}>{tx("Een geblokkeerde website kan zich niet meer melden en krijgt niets meer van de server.")}</small></span>
+                      <span>{tx("Geblokkeerd")}<small className="muted" style={{ display: "block" }}>{tx("Een geblokkeerde website gaat offline met een melding, kan zich niet meer melden en krijgt niets meer van de server.")}</small></span>
                     </label>
+                    {blocked && (
+                      <label>{tx("Bericht voor bezoekers bij blokkeren")}
+                        <textarea rows={2} maxLength={500} value={edit.block_message || ""} onChange={(e) => setEdit({ ...edit, block_message: e.target.value })} placeholder={tx("Leeg = het standaardbericht: de website is geblokkeerd en tijdelijk niet beschikbaar.")} />
+                      </label>
+                    )}
                   </div>
                   <label>{tx("Notities")}<textarea rows={3} value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></label>
                   {edit.error && <div className="alert">{edit.error}</div>}
                 </>
               )}
               <div className="row" style={{ justifyContent: "flex-end" }}>
-                <button type="button" className="btn" onClick={() => setEdit(null)}>{edit.tab === "online" ? tx("Sluiten") : tx("Annuleren")}</button>
-                {edit.tab !== "online" && <button className="btn primary" disabled={busy === "edit"}>{tx("Opslaan")}</button>}
+                <button type="button" className="btn" onClick={() => setEdit(null)}>{edit.tab === "online" || edit.tab === "maintenance" ? tx("Sluiten") : tx("Annuleren")}</button>
+                {edit.tab !== "online" && edit.tab !== "maintenance" && <button className="btn primary" disabled={busy === "edit"}>{tx("Opslaan")}</button>}
               </div>
             </form>
           </div>

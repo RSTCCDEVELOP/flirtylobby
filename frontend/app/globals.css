@@ -3948,3 +3948,49 @@ html.pb-panel-dragging .pb-addtile { cursor: grabbing; }
 .bar-list .bl-bar { height: .6rem; border-radius: 99px; background: var(--line); overflow: hidden; }
 .bar-list .bl-bar > span { display: block; height: 100%; border-radius: 99px; background: var(--blue); }
 .bar-list .bl-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* the loader: always in the middle of the place where it loads (across and down), in every screen */
+.ui-loading { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 7rem; padding: 1.2rem .5rem; box-sizing: border-box; text-align: center; }
+.ui-loading.fill { min-height: 50vh; }
+.ui-loading.compact { min-height: 3rem; padding: .5rem; }
+.busy { display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; }
+
+/* Site manager: the card "this website": status left, buttons right; the two switches below, next to each other and on the same height */
+.sm-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1rem 2rem; align-items: start; }
+.sm-buttons { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; align-items: center; }
+.sm-switches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 2rem; align-items: start; border-top: 1px solid var(--line); padding-top: 1rem; }
+.sm-switches > label { margin: 0; }
+@media (max-width: 900px) { .sm-top, .sm-switches { grid-template-columns: minmax(0, 1fr); } .sm-buttons { justify-content: flex-start; } }
+
+.sm-chips { display: flex; flex-wrap: wrap; gap: .25rem; }
+
+/* admin tiles: the text on top, the level ("Administration") at the bottom inside the card with room below it */
+.tile-wrap { display: flex; flex-direction: column; padding-bottom: 1.1rem; }
+.tile-wrap .tile-link { flex: 1 1 auto; height: auto; }
+.tile-wrap .tile-level { margin-top: .8rem; align-self: flex-start; line-height: 1.2; }
+
+/* set-up wizard: required marker */
+.req { color: var(--danger, #c0392b); font-weight: 700; }
+
+/* set-up wizard: head and footer stay, only the middle scrolls (one scroll bar) */
+.sw-col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.sw-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.sw-head { padding: 1.4rem 1.6rem .6rem; display: grid; gap: .9rem; }
+.sw-body { flex: 1; min-height: 0; overflow-y: auto; padding: .4rem 1.6rem .8rem; display: grid; gap: .7rem; align-content: start; }
+.sw-foot { padding: .8rem 1.6rem 1.2rem; border-top: 1px solid var(--line, rgba(0,0,0,.1)); }
+.sw-head .e2e-tabs__tab { padding: .4rem .75rem; font-size: .9rem; }
+
+/* wizard, tab Kosten: the prices and the explanation stay in view, only the list of components scrolls */
+.sw-body.fit { display: flex; flex-direction: column; }
+.sw-body.fit > form { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.sw-fit-costs { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .6rem !important; }
+.sw-fit-costs .e2e-table-wrap { flex: 1 1 auto; min-height: 130px; overflow: auto; }
+.sw-fit-costs .e2e-table thead th { position: sticky; top: 0; z-index: 1; background: var(--e2e-surface, #f4f6fa); }
+
+/* wizard: the tabs share the full width on one line */
+.sw-head .e2e-tabs__list { display: flex; flex-wrap: nowrap; width: 100%; }
+.sw-head .e2e-tabs__tab { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: .4rem .3rem; font-size: .88rem; }
+
+/* wizard: six tabs on one line */
+.sw-head .e2e-tabs__list { gap: .2rem; }
+.sw-head .e2e-tabs__tab { flex: 1 1 auto; padding: .35rem .3rem; font-size: .82rem; }

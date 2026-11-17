@@ -70,7 +70,7 @@ export default function TemplatesPage() {
     try { setD(await api("/templates/", { method: "POST", body: { action: "remove", key: t.key } })); } catch (e) { await alertDialog(errorText(e)); }
     setBusy("");
   };
-  if (!d) return err ? <div className="alert">{err}</div> : <p className="muted"><Loading /></p>;
+  if (!d) return err ? <div className="alert">{err}</div> : <Loading fill />;
   const list = d.templates.filter((t) => !q.trim() || `${t.name} ${t.description} ${t.author}`.toLowerCase().includes(q.trim().toLowerCase()));
   return (
     <KitScope tag="ui-cards" className="stack">

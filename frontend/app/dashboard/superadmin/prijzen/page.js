@@ -18,6 +18,7 @@ import Collapsible from "../../../../components/Collapsible";
 import PriceList from "../../../../components/PriceList";
 import PlusLock from "../../../../components/PlusLock";
 import PriceAI from "../../../../components/PriceAI";
+import { money } from "../../../../lib/format";
 
 // The price list (apps/core/pricing.json, goes with every installation): base price, discounts per period and the price of every package, module and plugin, per month ex VAT.
 export default function PriceEditor() {
@@ -61,7 +62,7 @@ export default function PriceEditor() {
     setBusy(false);
   };
   const groups = [...new Set(data.catalog.map((c) => c.group))];
-  const TABS = [["basis", tx("Basis en korting")], ["impl", tx("Ontwerp en implementatie")], ["host", tx("Hosting en inkoop")], ["mail", tx("E-mail")], ...groups.map((g) => [g, tx(g)]), ["pricelist", tx("Prijslijst")], ["sales", tx("Sales")], ["marketing", tx("Marketing")]];
+  const TABS = [["basis", tx("Basis")], ["subs", tx("Abonnementen")], ["impl", tx("Ontwerp en implementatie")], ["host", tx("Hosting en inkoop")], ["mail", tx("E-mail")], ...groups.map((g) => [g, tx(g)]), ["pricelist", tx("Prijslijst")], ["sales", tx("Sales")], ["marketing", tx("Marketing")]];
   return (
     <>
       <div className="row between" style={{ alignItems: "center" }}><h1 style={{ margin: 0 }}>{tx("Prijzen")}<PlusLock /></h1><PriceAI onDone={() => api("/system/pricing/").then(load)} /></div>
@@ -74,10 +75,29 @@ export default function PriceEditor() {
         <div className="pe-cols">
           <label>{tx("Basisprijs per maand (€)")}<input type="number" step="0.01" min="0" value={cfg.base_price} onChange={(e) => setCfg({ ...cfg, base_price: e.target.value })} /></label>
           <label>{tx("Btw (%)")}<input type="number" step="1" min="0" max="50" value={cfg.vat_rate} onChange={(e) => setCfg({ ...cfg, vat_rate: e.target.value })} /></label>
-          {Object.entries(cfg.periods).map(([k, p]) => (
-            <label key={k}>{tx("Korting")} {tx(p.label).toLowerCase()} (%)<input type="number" step="1" min="0" max="90" value={p.discount} disabled={p.months === 1} onChange={(e) => setCfg({ ...cfg, periods: { ...cfg.periods, [k]: { ...p, discount: e.target.value } } })} /></label>
-          ))}
         </div>
+      </div>}
+      {tab === "subs" && <div className="card stack" style={{ gap: ".8rem" }}>
+        <strong>{tx("Abonnementen en korting")}</strong>
+        <p className="muted" style={{ margin: 0 }}>{tx("Stel per abonnement de korting op de maandprijs in. De korting werkt door in de prijs van de licentie, in de installatiewizard en in de offerte. Een langere periode is meestal goedkoper.")}</p>
+        <div className="table-wrap"><table className="tbl">
+          <thead><tr><th>{tx("Abonnement")}</th><th>{tx("Maanden")}</th><th>{tx("Korting")} (%)</th><th style={{ textAlign: "right" }}>{tx("Voorbeeld per maand")}</th><th style={{ textAlign: "right" }}>{tx("Voorbeeld per periode")}</th></tr></thead>
+          <tbody>
+            {Object.entries(cfg.periods).map(([k, p]) => {
+              const per = Math.round(Number(cfg.base_price || 0) * (1 - Number(p.discount || 0) / 100) * 100) / 100;
+              return (
+                <tr key={k}>
+                  <td><strong>{tx(p.label)}</strong></td>
+                  <td>{p.months}</td>
+                  <td><input type="number" step="1" min="0" max="90" style={{ width: 90 }} value={p.discount} onChange={(e) => setCfg({ ...cfg, periods: { ...cfg.periods, [k]: { ...p, discount: e.target.value } } })} /></td>
+                  <td style={{ textAlign: "right" }}>{money(per)}</td>
+                  <td style={{ textAlign: "right" }}>{money(Math.round(per * p.months * 100) / 100)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table></div>
+        <small className="muted">{tx("Het voorbeeld rekent met de basisprijs, exclusief btw.")}</small>
       </div>}
       {tab === "host" && host && <div className="card stack" style={{ gap: "1rem" }}>
         <strong>{tx("Inkoop")}</strong>

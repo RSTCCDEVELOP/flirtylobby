@@ -157,7 +157,12 @@ export default function LicenseAdmin() {
         <section className="lic-col">
           <h3>{tx("Licentie")}</h3>
           <label>{tx("Opdrachtgever")}<input value={lic.client} maxLength={200} onChange={(e) => field("client", e.target.value)} placeholder={tx("Naam van de opdrachtgever van deze website")} /></label>
-          <label>{tx("Adres opdrachtgever")}<input value={lic.client_address || ""} maxLength={300} onChange={(e) => field("client_address", e.target.value)} placeholder={tx("Straat, postcode en plaats")} /></label>
+          <label>{tx("Hoofd-URL")}<input value={lic.main_url || ""} maxLength={300} onChange={(e) => field("main_url", e.target.value)} placeholder="www.voorbeeld.nl" inputMode="url" /></label>
+          <div className="addr-grid">
+            {[["street", "Straat", "a-street", { autoComplete: "address-line1" }], ["house_number", "Huisnummer", "a-nr", { maxLength: 12 }], ["postal_code", "Postcode", "a-zip", { maxLength: 10, autoComplete: "postal-code" }], ["city", "Plaats", "a-city", { autoComplete: "address-level2" }], ["country", "Land", "a-country", { placeholder: "Nederland" }]].map(([k, label, cls, rest]) => (
+              <label key={k} className={cls}>{tx(label)}<input value={lic.client_parts?.[k] || ""} onChange={(e) => field("client_parts", { ...(lic.client_parts || {}), [k]: e.target.value })} {...rest} /></label>
+            ))}
+          </div>
           <label>{tx("Licentie geldig tot")}<input type="date" value={lic.valid_until || ""} onChange={(e) => field("valid_until", e.target.value)} />
             <small className="muted" style={{ display: "block" }}>{tx("Leeg = geen einddatum. Na deze datum ziet iedereen de onderhoudspagina; superadmins kunnen nog inloggen om de licentie te verlengen.")}</small></label>
           <div style={{ display: "flex", gap: ".6rem", alignItems: "end", flexWrap: "wrap" }}>

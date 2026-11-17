@@ -32,7 +32,7 @@ export default function MyAi() {
   }, [paid, ref, load]);
   useEffect(() => { if (paid) { setMsg({ ok: true, text: tx("Bedankt! Zodra de betaling binnen is, staat het tegoed hieronder.") }); const t = setTimeout(load, 2500); return () => clearTimeout(t); } return undefined; }, [paid, load]);
   useEffect(() => { if (d && wantBuy) setBuy(true); }, [!!d, wantBuy]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!d) return msg ? <div className="alert">{msg.text}</div> : <p className="muted"><Loading /></p>;
+  if (!d) return msg ? <div className="alert">{msg.text}</div> : <Loading fill />;
   const m = (n) => money(n, d.currency);
   return (
     <>

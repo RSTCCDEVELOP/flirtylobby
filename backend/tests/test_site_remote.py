@@ -272,3 +272,72 @@ def test_the_actions_go_through_the_api_with_the_callback_key(client, plus, monk
     assert r.status_code == 502 and r.json()["reason"] == "refused" and "website-adres" in r.json()["detail"]  # the reason of the website is shown
     plain = mk("a@example.com", is_staff=True, is_superuser=True)
     assert client.post(f"/api/system/sites/{sid}/action/", json.dumps({"action": "energy_scan"}), content_type=JSON, **auth(plain)).status_code == 403
+
+
+@pytest.mark.django_db
+def test_what_has_to_be_brought_up_to_date():
+    d = remote_info.maintenance()
+    assert set(d) >= {"version", "build", "pending_migrations", "pending_count", "library_updates", "needs_update", "check_needed", "online", "update"}
+    assert d["pending_migrations"] == [] and d["pending_count"] == 0  # (the test database is up to date)
+    assert "maintenance" in remote_info.PARTS
+
+
+@pytest.mark.django_db
+def test_the_update_runs_the_steps_and_can_keep_the_website_offline_meanwhile(monkeypatch):
+    from apps.core import sysupdate
+
+    seen = []
+
+    def fake_run(step, user):
+        seen.append((step, remote_info.status()["online"], user.is_staff))
+        return {"ok": step != "plugins", "message": "klaar" if step != "plugins" else "plugin kapot"}
+
+    monkeypatch.setattr(sysupdate, "run", fake_run)
+    assert remote_info.action({"action": "update", "offline": True}) == {"ok": True, "started": True}
+    assert [x[0] for x in seen] == [k for k, _l in sysupdate.STEPS]  # every step, in order
+    assert all(online is False and staff for _s, online, staff in seen)  # offline while it runs, as the system itself
+    assert remote_info.status()["online"] is True  # and back online afterwards
+    st = remote_info.maintenance()["update"]
+    assert st["running"] is False and st["finished"] and len(st["steps"]) == len(sysupdate.STEPS)
+    assert "plugin kapot" in st["error"] and any(not x["ok"] for x in st["steps"])  # a step that fails does not stop the others, and is reported
+    seen.clear()
+    remote_info.action({"action": "update"})  # without "offline": the website stays online
+    assert all(online is True for _s, online, _u in seen)
+
+
+@pytest.mark.django_db
+def test_an_update_that_is_running_is_not_started_twice(monkeypatch):
+    from apps.core import sitemanager
+
+    sitemanager._save(update={"running": True})
+    with pytest.raises(ValueError, match="al bijgewerkt"):
+        remote_info.action({"action": "update"})
+
+
+@pytest.mark.django_db
+def test_the_server_compares_a_website_with_its_own_version(client, plus):
+    sitemanager.set_server(True)
+    register(client)
+    sid = EasySite.objects.get().pk
+    # (the own website is read directly, without a call: its key is not needed)
+    own = EasySite.objects.create(instance_id=sitemanager.instance_id(), name="own", status="active")
+    d = client.get(f"/api/system/sites/{own.pk}/info/?part=maintenance", **auth(plus)).json()
+    assert set(d["latest"]) == {"version", "build"} and d["latest"]["version"] == d["version"]
+
+
+@pytest.mark.django_db
+def test_the_info_of_a_website_is_the_info_of_its_info_popup():
+    from datetime import date
+
+    from apps.core.models import License
+
+    License.objects.update_or_create(pk=1, defaults={"number": "9WRH-WTQ6-JPQD-YJ3C", "client": "RST coaching en Consultancy BV", "client_address": "Ambachtsweg 46 3542 DH Utrecht", "valid_until": date(2027, 11, 17), "reseller_name": "Studio2"})
+    system.license_changed()
+    system.save({"contact_email": "info@example.org", "kvk": "12345678"})
+    d = remote_info.info()
+    lic = d["license"]
+    assert lic["number"] == "9WRH-WTQ6-JPQD-YJ3C" and lic["client"] == "RST coaching en Consultancy BV" and lic["client_address"] == "Ambachtsweg 46 3542 DH Utrecht"
+    assert lic["valid_until"] == "2027-11-17" and lic["has"] and not lic["expired"] and lic["state"] == "active"
+    assert d["reseller"]["name"] == "Studio2" and d["site"]["contact_email"] == "info@example.org" and d["site"]["kvk"] == "12345678"
+    assert set(d["plugins"]) == {"on", "total"} and set(d["modules"]) == {"on", "total"} and d["installation"]["state"] in ("installed", "empty")
+    assert "info" in remote_info.PARTS

@@ -67,7 +67,7 @@ export default function DashboardSearch() {
       </div>
       {q.trim() && (
         <ul className="dash-search-list" role="listbox">
-          {!index && <li className="muted"><Loading /></li>}
+          {!index && <li className="muted"><Loading compact /></li>}
           {index && !results.length && <li className="muted">{tx("Niets gevonden.")}</li>}
           {results.map((e) => (
             <li key={`${e.h}|${e.t}`} className="dash-search-row">

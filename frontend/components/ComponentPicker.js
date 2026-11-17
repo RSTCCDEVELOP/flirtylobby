@@ -42,7 +42,7 @@ export function ComponentLibrary({ onPick, pickLabel = "Toevoegen", compact = fa
           {groups.map((g) => <option key={g} value={g}>{tx(g)} ({all.filter((c) => c.group === g).length})</option>)}
         </select>
         <div className="cl-list" style={{ display: "grid", gap: ".3rem", maxHeight: compact ? 380 : 620, overflow: "auto", paddingRight: ".2rem" }}>
-          {!kit && <small className="muted"><Loading /></small>}
+          {!kit && <small className="muted"><Loading compact /></small>}
           {grouped.map(([g, items]) => {
             const current = openG === null ? (sel?.group || grouped[0]?.[0]) : openG;
             const folded = !find && current !== g;  // a search opens every group that has a hit

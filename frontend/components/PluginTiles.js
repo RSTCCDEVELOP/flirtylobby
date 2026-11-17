@@ -91,7 +91,7 @@ export function PluginLibrary({ onChanged }) {
   const [srcErr, setSrcErr] = useState("");  // the easy2edit server does not give the library now (a quiet note: only installing gives a pop-up)
   const load = useCallback(() => api("/resource/").then((d) => { setRows(d?.kinds?.plugins || []); setSrcErr(d?.source?.error || ""); }).catch(() => setRows([])), []);
   useEffect(() => { load(); }, [load]);
-  if (!rows) return <p className="muted"><Loading /></p>;
+  if (!rows) return <Loading fill />;
   const updates = rows.filter((r) => r.state === "update").length;
   const count = (s) => rows.filter((r) => r.state === s).length;
   const list = rows.filter((r) => (filter === "all" || r.state === filter) && (!q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase())));

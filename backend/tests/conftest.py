@@ -35,6 +35,16 @@ def _never_write_the_real_defaults(monkeypatch, tmp_path):
     monkeypatch.setattr(default_links, "PATH", tmp_path / "defaults" / "default_links.json")
 
 
+@pytest.fixture(autouse=True)
+def _forget_the_licence_cache():
+    """The licence is kept in memory for a few seconds: a test that makes an expired licence must not leave the next test in maintenance mode."""
+    from apps.core import system
+
+    system.license_changed()
+    yield
+    system.license_changed()
+
+
 @pytest.fixture
 def media(settings, tmp_path):
     """Everything the import writes (media library, theme folders) goes to a temporary folder."""

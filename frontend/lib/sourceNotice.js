@@ -11,6 +11,7 @@ import { tx } from "./t";
 // The library comes from the easy2edit server (Super admin+ -> easy2edit settings -> Settings) and that server does not give it: a pop-up that says why and what to do.
 // Only at installing, updating and saving; showing the library never gives an error.
 export const SOURCE_TEXT = {
+  blocked: "Deze website is geblokkeerd door de easy2edit-server en staat offline met een melding. Neem contact op met de beheerder van de server.",
   disconnected: "Deze website is ontkoppeld van de easy2edit-server. Verbind hem opnieuw bij Super admin+ → Site manager.",
   disabled: "De easy2edit-server heeft de site manager niet ingeschakeld. Zet op de server bij Super admin+ → Site manager de schakelaar \"Deze installatie is de easy2edit-server (site manager)\" aan en probeer het opnieuw.",
   pending: "De easy2edit-server heeft deze website nog niet goedgekeurd. Vraag een superadmin+ om hem goed te keuren in de Site manager van de server.",

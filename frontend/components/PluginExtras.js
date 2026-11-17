@@ -21,7 +21,7 @@ export function PluginObjects({ p }) {
   const load = () => api("/sysobjects/admin/").then((l) => setRows(l.filter((o) => o.kind === "plugin_part" && o.data?.name === p.name))).catch((e) => { setErr(errorText(e)); setRows([]); });
   useEffect(() => { load(); }, [p.name, p.enabled]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggle = async (o) => { try { await api(`/sysobjects/admin/${o.id}/`, { method: "PATCH", body: { enabled: !o.enabled } }); load(); } catch (e) { setErr(errorText(e)); } };
-  if (rows === null) return <p className="muted"><Loading /></p>;
+  if (rows === null) return <Loading fill />;
   return (
     <div className="stack" style={{ gap: "1rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("Deze blokken zet je in de bewerkmodus op een pagina (systeemobjecten). Ze nemen de vormgeving van het gekozen thema over. Bezoekers zien alleen wat voor hen is gedeeld.")}</p>
@@ -52,7 +52,7 @@ export function PluginAbout({ p }) {
   const [langs, setLangs] = useState(null);
   const [only, setOnly] = useState("all");
   useEffect(() => { api("/languages/").then((d) => setLangs(d.languages || [])).catch(() => setLangs([])); }, []);
-  if (!langs) return <p className="muted"><Loading /></p>;
+  if (!langs) return <Loading fill />;
   const texts = p.descriptions || {};
   const nl = p.description;
   const done = langs.filter((l) => texts[l.code] || l.code === "nl").length;

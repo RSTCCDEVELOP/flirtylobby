@@ -70,7 +70,14 @@ export function useKit(on = true, key = "") {
     window.addEventListener("themechange", f);
     const mo = new MutationObserver(f);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "style"] });
-    return () => { window.removeEventListener("themechange", f); mo.disconnect(); };
+    // the css of the theme arrives (or changes) as a <style> in the head, often after the first draw: the colours are read again then (the style of the kit itself does not count)
+    let raf = 0;
+    const head = new MutationObserver((recs) => {
+      if (recs.every((r) => r.target.id === "e2e-kit-scoped" || r.target.parentNode?.id === "e2e-kit-scoped")) return;
+      cancelAnimationFrame(raf); raf = requestAnimationFrame(f);
+    });
+    head.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => { window.removeEventListener("themechange", f); mo.disconnect(); head.disconnect(); cancelAnimationFrame(raf); };
   }, [on]);
   return { kit, tick };
 }
