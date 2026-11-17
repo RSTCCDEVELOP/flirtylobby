@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation";
 import BackButton from "./BackButton";
 
 // A "back" button on every page of the website (not on the home page): to the page the visitor came from, else to the home page.
-// (The dashboard has its own, in its menu bar.)
+// (The dashboard has its own, in its menu bar; the login page has "Terug naar website" in its card.)
 export default function SiteBack() {
   const pathname = usePathname();
   useEffect(() => { // the button hangs just under the header, whatever its height (the menu can wrap onto a second row), with a little space
@@ -27,6 +27,6 @@ export default function SiteBack() {
     window.addEventListener("resize", set); window.addEventListener("scroll", set, { passive: true });
     return () => { ro?.disconnect(); window.removeEventListener("resize", set); window.removeEventListener("scroll", set); };
   }, [pathname]);
-  if (!pathname || pathname === "/" || pathname.startsWith("/dashboard")) return null;
+  if (!pathname || pathname === "/" || pathname === "/login" || pathname.startsWith("/dashboard")) return null;  // the login card has its own "back to the website"
   return <div className="site-back"><BackButton pathname={pathname} fallback="/" /></div>;
 }
