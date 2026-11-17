@@ -1063,6 +1063,16 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
       onClose();
       return;
     }
+    if (job && chatMode && !running && baseline.current && Object.keys(baseline.current.files || {}).length === 0 && Object.keys(job.files || {}).length > 0) {  // a design that was made in this session: keep it or throw it away (a new version makes no sense: there was no earlier one)
+      const what = await confirmDialog(tx("Dit ontwerp is nieuw gemaakt. Wil je het bewaren of weggooien?"), {
+        title: tx("Ontwerp sluiten"), okLabel: tx("Sluiten"), cancelLabel: tx("Doorgaan met ontwerpen"),
+        choices: [{ value: "save", label: tx("Opslaan"), hint: tx("Je vindt het ontwerp terug bij Mijn ontwerpen.") }, { value: "delete", label: tx("Niet opslaan"), hint: tx("Het nieuwe ontwerp wordt verwijderd.") }],
+      });
+      if (!what) return;
+      if (what === "delete") await api(`/sitecreator/${job.id}/`, { method: "DELETE" }).catch(() => {});
+      onClose();
+      return;
+    }
     if (!job || !wizard || running) { onClose(); return; }
     const what = await confirmDialog(tx("Dit ontwerp is nog een concept. Wil je het bewaren om later verder te gaan, of verwijderen?"), {
       title: tx("Ontwerp sluiten"), okLabel: tx("Sluiten"), cancelLabel: tx("Doorgaan met ontwerpen"),
@@ -1079,7 +1089,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const thinSections = ready && (job.pages || []).length === 1 ? (mainHtml.match(/<div id="[^"]+">/g) || []).length : 99;  // a one pager with only a few sections lacks content
   const [thinOff, setThinOff] = useState("");
   const designLangCode = (() => { const l = String(job?.brief?.lang || ""); const m = l.match(/\(([a-z]{2,3})\)/i); if (m) return m[1].toLowerCase(); const n = l.toLowerCase(); return { dutch: "nl", nederlands: "nl", english: "en", engels: "en", german: "de", duits: "de", french: "fr", frans: "fr", spanish: "es", spaans: "es" }[n.split(/[\s(]/)[0]] || ""; })();  // the language of the design: the live page is shown in it, so it can be compared 1 to 1
-  const missingPics = ready ? (job.photo_slots || []).filter((x) => x.kind !== "video" && !x.done && !x.istock && !/logo/i.test(x.file)).length : 0;  // places where a page asks for a picture and there is none yet
+  const missingPics = ready ? (job.photo_slots || []).filter((x) => x.kind !== "video" && !x.done && !/logo/i.test(x.file)).length : 0;  // places where a page asks for a picture and there is none yet
   // the blocks Colours and Photos and videos wait until the questionnaire round has been: while the customer is asked the questions (or the first answer of the AI is still to come) they are hidden
   const lastMsg = (job?.messages || []).slice(-1)[0];
   const asking = !!lastMsg?.questions?.length || (!ready && (!lastMsg || lastMsg.role === "user"));

@@ -751,5 +751,36 @@ def test_page_background_and_frontend_colour_are_separate():
 def test_frontend_is_a_column_with_the_maximum_width_over_the_page_colour():
     css = sitecreator.layout_css({"max_width": 1100})
     assert "body { background: var(--page, var(--bg)); }" in css
-    assert "body > main { max-width: 1100px;" in css and "background: var(--bg)" in css and "body > header" not in css and "body > footer" not in css  # header and footer are blocks of their own: full width
+    assert "body > main { max-width: 1100px;" in css and "background: var(--bg)" in css and "body > header {" not in css and "body > footer { max-width: 1100px;" in css  # the header is full width; the footer has the width of the column
     assert "max-width: none" in sitecreator.layout_css({"max_width": 0})
+
+
+def test_name_becomes_text_logo_unless_customer_has_own_logo(db):
+    from apps.branding.models import SiteAsset
+    from apps.core import sitecreator as S
+
+    colors = {"text": "#102030", "dtext": "#eeeeee", "primary": "#1b97d3"}
+    SiteAsset(slot="logo").image.save("easy2edit-logo.png", __import__("django").core.files.base.ContentFile(b"x"), save=True)  # the standard logo of the system
+    S.text_logo("Blue BPS", colors)
+    a, b = SiteAsset.objects.get(slot="logo"), SiteAsset.objects.get(slot="logo_dark")
+    assert a.image.name.endswith(".svg") and b.image.name.endswith(".svg")
+    assert "#102030" in a.image.read().decode() and "#eeeeee" in b.image.read().decode()
+    S.text_logo("Other name", colors)  # a text logo of an earlier design is replaced
+    assert "Other" in SiteAsset.objects.get(slot="logo").image.read().decode()
+    own = SiteAsset.objects.get(slot="logo")
+    own.image.save("customer-logo.png", __import__("django").core.files.base.ContentFile(b"x"), save=True)  # an upload of the customer
+    S.text_logo("Third", colors)
+    assert SiteAsset.objects.get(slot="logo").image.name.endswith("customer-logo.png") or "customer-logo" in SiteAsset.objects.get(slot="logo").image.name
+
+
+def test_footer_columns_and_brand_of_the_design(db):
+    from apps.core import sitecreator as S, system
+
+    html = ('<header><div data-easy2edit-tag="ui-navbar"><nav><a href="index.html" class="e2e-nav__brand">Blue<b>BPS</b></a></nav></div></header>'
+            '<footer><div class="e2e-grid"><div><h4>Bedrijf</h4><ul><li><a href="#about">Over ons</a></li><li><a href="over-ons.html">Team</a></li><li><a href="https://x.nl/a">Extern</a></li></ul></div>'
+            '<div><h4>Leeg</h4><ul></ul></div></div></footer>')
+    assert S.brand_of(html) == ("Blue", "BPS")
+    cols = S.footer_columns_of(html)
+    assert cols == [{"title": "Bedrijf", "links": [{"label": "Over ons", "url": "/#about"}, {"label": "Team", "url": "/over-ons"}, {"label": "Extern", "url": "https://x.nl/a"}]}]
+    cleaned, errors = system.clean({"footer_columns": cols + [{"title": "Slecht", "links": [{"label": "x", "url": "javascript:alert(1)"}]}]})
+    assert not errors and cleaned["footer_columns"] == cols  # an unsafe address is dropped, and so is the column that is left empty by it

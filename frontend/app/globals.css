@@ -370,7 +370,7 @@ html[data-theme="dark"] img.logo-light.has-dark { display: none !important; }
 .cookie-cats label.check { align-items: flex-start; }
 .cookie-cats span { display: flex; flex-direction: column; }
 .cookie-cats small { color: var(--muted); font-weight: 400; }
-.site-footer { display: flex; gap: 1.25rem; justify-content: center; padding: 1.25rem; font-size: .85rem; color: var(--muted); }
+.site-footer { width: 100%; max-width: var(--content-w, 1100px); margin-left: auto; margin-right: auto; box-sizing: border-box; display: flex; gap: 1.25rem; justify-content: center; padding: 1.25rem; font-size: .85rem; color: var(--muted); }
 .site-footer a:hover, .link-btn:hover { color: var(--text); text-decoration: underline; }
 .link-btn { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
 .doc { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.25rem; flex: 1; }
@@ -1421,9 +1421,12 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .pb-cell { display: flex; flex-direction: column; justify-content: var(--jv, flex-start); align-items: var(--ha, flex-start); gap: var(--cg, .8rem); min-width: 0; }
 .pb-tight .rich-text p:last-child, .pb-tight .rich-text ul:last-child, .pb-tight .rich-text ol:last-child { margin-bottom: 0; } /* an item with an exact space below it: no extra space of its last paragraph */
 .pb-cell > .pb-item { max-width: 100%; }
+.pb-cell.btnrow { flex-direction: row; flex-wrap: wrap; align-items: center; align-content: var(--jv, flex-start); justify-content: var(--ha, flex-start); column-gap: .8rem; }  /* two or more buttons in a cell stand next to each other (they wrap on a narrow screen) */
+.pb-cell.btnrow > .pb-item:not(.btnitem) { flex: 0 0 100%; }
 .pb-cell > .pb-item.obj { width: 100%; }
 .pb-cell > .pb-item:has(.pb-w-kit), .pb-cell > .pb-item:has(.pb-w-code) { width: 100%; align-self: stretch; }  /* a ready-made component (or code) fills the whole cell: in a cell that centres or starts left its items would shrink to their content (a section that is only 2/3 of the page, left) */
-.pb-w-kit { width: 100%; }
+.pb-w.pb-w-kit { display: block; width: 100%; }  /* a block, not inline-flex: else the component shrinks to its narrowest part (the intro) and a grid of 4 becomes 2 */
+.pb-w-kit > .e2e-scope { width: 100%; }
 .pb-img { max-width: 100%; height: auto; border-radius: var(--radius, 12px); }
 .pb-cell.edit { border: 1px dashed var(--blue); border-radius: var(--radius, 12px); padding: .5rem; min-height: 140px; }
 .pb-cellbar { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; align-self: stretch; padding-bottom: .4rem; border-bottom: 1px dashed var(--line); margin-bottom: .2rem; }
@@ -1712,6 +1715,16 @@ html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-h
 .slider-check { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--ok, #16a34a); color: #fff; font-size: .7rem; display: grid; place-items: center; }
 
 .imp-wait span { width: 35% !important; animation: impwait 1.2s ease-in-out infinite; } @keyframes impwait { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+
+/* footer with the link columns of a design: the brand on the left, the columns next to it, the rest below over the whole width */
+html body .site-footer:has(.foot-cols) { display: grid; grid-template-columns: minmax(200px, 1.3fr) 3fr; gap: 1.5rem 3rem; align-items: start; text-align: left; padding: 2.5rem clamp(1rem, 4vw, 3rem); }
+html body .site-footer:has(.foot-cols) > .foot-brand { grid-column: 1; align-items: flex-start; text-align: left; }
+html body .site-footer:has(.foot-cols) > .foot-cols { grid-column: 2; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.5rem; }
+html body .site-footer:has(.foot-cols) > :not(.foot-brand):not(.foot-cols) { grid-column: 1 / -1; justify-content: flex-start; text-align: left; }
+.foot-cols h4 { margin: 0 0 .6rem; font-size: .95rem; color: inherit; }
+.foot-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.foot-cols a { color: inherit; opacity: .85; text-decoration: none; } .foot-cols a:hover { opacity: 1; text-decoration: underline; }
+@media (max-width: 760px) { html body .site-footer:has(.foot-cols) { grid-template-columns: 1fr; } html body .site-footer:has(.foot-cols) > .foot-cols { grid-column: 1; } }
 
 /* ── Page layout templates (Thema → Layout): header, menu, footer and blocks of the website. The theme sets them as data attributes on <html>. ── */
 html[data-hsticky="no"] .site-header { position: relative; }

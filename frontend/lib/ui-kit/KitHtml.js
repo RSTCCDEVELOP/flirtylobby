@@ -44,6 +44,9 @@ function prefixCss(css, prefix) {
   return rules(sheet.cssRules);
 }
 
+// the basic type of the kit inside a block of a page: headings, paragraphs and lists look like in the design (the set keeps these rules out of its scoped css, so the small headings of the website would win)
+const pageType = (c) => `.${c}{font-size:16px;line-height:1.6}.${c} :is(h1,h2,h3,h4){font-family:var(--e2e-font-heading);line-height:1.15;margin:0 0 .5em;font-weight:600;letter-spacing:.01em;color:var(--e2e-text)}.${c} h1{font-size:clamp(2rem,4vw,3.2rem)}.${c} h2{font-size:clamp(1.6rem,3vw,2.3rem)}.${c} h3{font-size:1.35rem}.${c} h4{font-size:1.1rem}.${c} p{margin:0 0 1em;font-size:1rem}.${c} :is(li){font-size:1rem}`;
+
 export default function KitHtml({ html, css = "", tag, set = "", className = "", stage = false }) {
   const { kit } = useKit(true, set);
   const root = useRef(null);
@@ -73,7 +76,7 @@ export default function KitHtml({ html, css = "", tag, set = "", className = "",
   }, [kit, clean]);
   return (
     <KitScope tag={tag} stage={stage} className={`${id} ${className}`.trim()}>
-      {own && <style>{own}</style>}
+      <style>{pageType(id) + (own || "")}</style>
       <div ref={root} dangerouslySetInnerHTML={{ __html: clean }} />
     </KitScope>
   );

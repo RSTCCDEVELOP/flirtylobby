@@ -34,6 +34,7 @@ DEFAULTS = {
     "refresh_seconds": "0",  # how often the pages ask the server for news (messages, notifications, chat): 0 = every part at its own pace
 
     "footer_text": "",
+    "footer_columns": [],  # link columns in the footer: [{title, links: [{label, url}]}] (a design brings its own)
     "footer_logo_height": "0",  # height of the logo in the footer in px (0 = the standard, 36)
     "footer_logo_link": "",  # where a click on the logo in the footer goes (empty = nowhere)
     "show_credit": True,  # "© easy2edit <year>" with a link at the bottom of every page
@@ -148,6 +149,16 @@ def clean(incoming):
             out[k] = v
         elif k == "maintenance_messages":
             out[k] = {str(c)[:10]: str(t or "").strip()[:500] for c, t in (v.items() if isinstance(v, dict) else []) if re.fullmatch(r"[a-zA-Z-]{2,10}", str(c)) and str(t or "").strip()}
+        elif k == "footer_columns":
+            cols = []
+            for c in (v if isinstance(v, list) else [])[:4]:
+                if not isinstance(c, dict):
+                    continue
+                links = [{"label": str(x.get("label") or "").strip()[:60], "url": str(x.get("url") or "").strip()[:300]} for x in (c.get("links") or [])[:8] if isinstance(x, dict)]
+                links = [x for x in links if x["label"] and re.match(r"^(https?://[^\s]+|/[^\s]*|mailto:[^\s]+|tel:[^\s]+)$", x["url"])]
+                if str(c.get("title") or "").strip() and links:
+                    cols.append({"title": str(c["title"]).strip()[:40], "links": links})
+            out[k] = cols
         elif k in ("maintenance_message", "footer_text"):
             out[k] = str(v or "").strip()[:500]
         else:
@@ -337,6 +348,6 @@ def public():
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"], "currency": currency(),
-            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
+            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_columns": s["footer_columns"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0)}

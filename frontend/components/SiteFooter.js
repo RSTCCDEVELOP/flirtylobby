@@ -40,7 +40,17 @@ export default async function SiteFooter() {
         <strong className="foot-name">{site?.site_name || site?.company_name || ""}</strong>
         {site?.footer_text && <span className="foot-text">{site.footer_text}</span>}
       </div>
-      {navLinks.length > 0 && (
+      {(site?.footer_columns || []).length > 0 && (
+        <div className="foot-cols">{/* the link columns of the footer of a design: a heading with its links */}
+          {site.footer_columns.map((c) => (
+            <nav key={c.title} aria-label={c.title}>
+              <h4>{c.title}</h4>
+              <ul>{c.links.map((l) => <li key={l.label + l.url}>{/^(https?:|mailto:|tel:)/.test(l.url) ? <a href={l.url}>{l.label}</a> : <Link href={l.url}>{l.label}</Link>}</li>)}</ul>
+            </nav>
+          ))}
+        </div>
+      )}
+      {!(site?.footer_columns || []).length && navLinks.length > 0 && (
         <nav className="foot-nav" aria-label="Menu">
           {navLinks.map((i) => /^(https?:|mailto:|tel:)/.test(href(i)) ? <a key={i.id} href={href(i)}>{label(i)}</a> : <Link key={i.id} href={href(i)}>{label(i)}</Link>)}
         </nav>

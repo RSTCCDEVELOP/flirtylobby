@@ -48,3 +48,15 @@ def test_the_first_picture_of_a_page_has_number_zero_and_still_gets_its_cell():
     rows = DR.native_component_rows(_node(HERO), {"img/hero.jpg": 0})  # the pictures are numbered from 0
     text, pic = rows[0]["cells"]
     assert text["width"] == "55" and pic["items"][0]["img"] == 0
+
+
+def test_photos_under_each_other_become_one_gallery():
+    def pic(n):
+        return {"type": "image", "img": n}
+
+    side = [{"cells": [{"items": [pic(0)]}, {"items": [pic(1)]}, {"items": [pic(2)]}]}]
+    assert DR.galleries(side)[0]["cells"][0]["items"] == [{"type": "gallery", "imgs": [0, 1, 2]}]
+    run = [{"cells": [{"items": [{"type": "heading"}, pic(3), pic(4), pic(5), {"type": "text"}]}]}]
+    assert [i["type"] for i in DR.galleries(run)[0]["cells"][0]["items"]] == ["heading", "gallery", "text"]
+    two = [{"cells": [{"items": [pic(0), pic(1)]}]}]
+    assert [i["type"] for i in DR.galleries(two)[0]["cells"][0]["items"]] == ["image", "image"]

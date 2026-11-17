@@ -126,6 +126,7 @@ The website is built ONLY from the easy2edit components and the theme, so that t
 - COPY the markup of the template: the same tags, the same e2e-* classes, the same nesting. You change only the texts, the links, the pictures (src/alt) and the number of repeated items (cards, steps, questions, logos ...). Use the component for the use it was made for, in the language of the website.
 - NEVER write css for a class that starts with e2e-, never colours, sizes or fonts of your own inside a component (no style="" on components), no own button classes: buttons are e2e-btn, e2e-btn e2e-btn--outline, e2e-btn--lg, e2e-btn--sm.
 - Colours, fonts and corners are the THEME of this website, written by the SYSTEM on :root in style.css (the variables --primary, --secondary, --bg, --surface, --card, --hover, --line, --text, --muted, --font-heading, --font-body, --radius, --btn-radius). You never write a :root block or a colour value of your own. style.css only holds at most 15 lines for a rare helper class (using those variables), or is just a comment. The system draws all components with the theme.
+- Three or more photos that belong together (a gallery, our work, the team, the location): NEVER place them under each other or as separate blocks: put them side by side in ONE <div class="e2e-gallery"> with only <img src="img/name.jpg" alt="..."> children. The system makes a photo carousel of it (the media system object).
 - Plain text outside the components: use ui-section-heading (eyebrow, heading, intro) and ui-split (text with a picture). Pictures: <img src="img/name.jpg" alt="..."> where a template has a picture slot (instead of the empty e2e-hero__visual / picture div).
 
 TEMPLATES (the exact markup of the main components):
@@ -1028,10 +1029,16 @@ def max_width_of(b):
     return w if w in MAX_WIDTHS else 1100
 
 
+GALLERY_CSS = """.e2e-gallery { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; }  /* photos together: a photo carousel (the importer makes the media system object of it) */
+.e2e-gallery > img, .e2e-gallery > figure { flex: 0 0 calc(33.333% - 8px); aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; scroll-snap-align: start; margin: 0; }
+@media (max-width: 760px) { .e2e-gallery > img, .e2e-gallery > figure { flex-basis: 80%; } }
+"""
+
+
 def layout_css(b):
     w = max_width_of(b)
     mw = f"{w}px" if w else "none"
-    return LAYOUT_CSS.replace("__MAXW__", mw) + f"body {{ background: var(--page, var(--bg)); }}  /* the page colour: the whole page, 100% wide */\nbody > main {{ max-width: {mw}; margin-left: auto; margin-right: auto; background: var(--bg); }}  /* the frontend: the column up to the maximum width, with its own colour: the elements, blocks and heroes stand in it. The header and the footer are blocks of their own: 100% wide with their own background */\n" + f".container, .band .container {{ max-width: {mw}; margin: 0 auto; padding: 0 1.25rem; box-sizing: border-box; width: 100%; }}\n"
+    return LAYOUT_CSS.replace("__MAXW__", mw) + f"body {{ background: var(--page, var(--bg)); }}  /* the page colour: the whole page, 100% wide */\nbody > main {{ max-width: {mw}; margin-left: auto; margin-right: auto; background: var(--bg); }}  /* the frontend: the column up to the maximum width, with its own colour: the elements, blocks and heroes stand in it. The header is a block of its own, 100% wide; the footer has the same width as the column */\nbody > footer {{ max-width: {mw}; margin-left: auto; margin-right: auto; box-sizing: border-box; }}\n" + f".container, .band .container {{ max-width: {mw}; margin: 0 auto; padding: 0 1.25rem; box-sizing: border-box; width: 100%; }}\n" + GALLERY_CSS
 
 
 def themed(files, b):
@@ -2070,7 +2077,7 @@ def more_photos(job):
     """After the design: the places where the pages ask for a picture and that still have none (no photo, no iStock choice): the designer searches iStock for each of them and puts the best fit in the design. Runs in the background."""
     if job.status not in ("done", "error", "draft"):
         raise ValueError("Er wordt nog gewerkt aan dit ontwerp.")
-    if not [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and "logo" not in x["file"]]:
+    if not [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and "logo" not in x["file"]]:
         raise ValueError("Er ontbreken geen afbeeldingen.")
     SiteDesignJob.objects.filter(pk=job.pk).update(status="running", progress=5, step="Meer afbeeldingen zoeken", error="", updated_at=timezone.now())
     _spawn(_more_photos, job.pk)
@@ -2082,6 +2089,14 @@ def _more_photos(pk):
         job, placed = assign_unused_picked(job)  # first the photos that were chosen and are not used yet, only then a new search
         if placed:
             _set(pk, step="De gekozen foto's plaatsen", progress=20)
+        for x in [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and x["istock"] and not x.get("preview") and "logo" not in x["file"]]:
+            got = resolve_istock(x["istock"])  # a photo was chosen but its example picture was never found: look it up again
+            if got.get("preview"):
+                try:
+                    set_istock_pick(SiteDesignJob.objects.get(pk=pk), x["file"], {**got, "title": x["alt"] or got.get("title") or ""})
+                except ValueError:
+                    continue
+        job = SiteDesignJob.objects.get(pk=pk)
         empty = [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and "logo" not in x["file"]][:20]  # (a logo of a partner or customer is not a photo: iStock has no fitting picture)
         used = {str(x.get("istock") or "") for x in photo_slots(job)}
         for n, x in enumerate(empty):
@@ -2102,6 +2117,89 @@ def _more_photos(pk):
         logger.warning("more photos failed", exc_info=True)
     finally:
         _set(pk, status="done", progress=100, step="")
+
+
+def footer_columns_of(html):
+    """The link columns of the footer of the design: [{title, links: [{label, url}]}] (a column is a heading with a list of links). Addresses of the design become addresses of the website: #about -> /#about, index.html -> /, about.html -> /about."""
+    m = re.search(r"<footer\b[^>]*>(.*?)</footer>", html or "", re.S | re.I)
+    foot = m.group(1) if m else ""
+
+    def url(h):
+        h = (h or "").strip()
+        if h.startswith("#"):
+            return "/" + h
+        if re.fullmatch(r"(?:\./)?index\.html(#.*)?", h):
+            return "/" + (re.search(r"#.*", h).group(0) if "#" in h else "")
+        r = re.fullmatch(r"(?:\./)?([a-z0-9_-]+)\.html(#.*)?", h)
+        return f"/{r.group(1)}{r.group(2) or ''}" if r else h
+
+    cols = []
+    for head, body in re.findall(r"<h[3-5]\b[^>]*>(.*?)</h[3-5]>\s*<ul\b[^>]*>(.*?)</ul>", foot, re.S | re.I):
+        title = " ".join(re.sub(r"<[^>]+>", " ", head).split())
+        links = [{"label": " ".join(re.sub(r"<[^>]+>", " ", t).split()), "url": url(h)} for h, t in re.findall(r"<a\b[^>]*href=[\"']([^\"']*)[\"'][^>]*>(.*?)</a>", body, re.S | re.I)]
+        links = [x for x in links if x["label"] and x["url"]]
+        if title and links:
+            cols.append({"title": title, "links": links})
+    return cols
+
+
+def brand_of(html):
+    """The text mark in the header of the design: ("Blue", "BPS") for <a class="e2e-nav__brand">Blue<b>BPS</b></a> (the bold part gets the accent colour); ("", "") when there is none."""
+    m = re.search(r"<header\b[^>]*>.*?<a\b[^>]*class=[\"'][^\"']*brand[^\"']*[\"'][^>]*>(.*?)</a>", html or "", re.S | re.I)
+    if not m:
+        return "", ""
+    inner = m.group(1)
+    b = re.search(r"<(?:b|strong)\b[^>]*>(.*?)</(?:b|strong)>", inner, re.S | re.I)
+    clean = lambda t: " ".join(re.sub(r"<[^>]+>", " ", t).split())  # noqa: E731
+    if b:
+        return clean(inner[:b.start()]), clean(b.group(1))
+    return clean(inner), ""
+
+
+def text_logo(name, colors, parts=None):
+    """The header of the design shows the name of the company as its logo; the website has no text logo, only pictures: when the website has no logo of its own (an upload), the name becomes a logo (svg) in the colours of the design, for the light and for the dark mode. A text logo of an earlier design is replaced; a logo that was uploaded is never touched."""
+    import html as _h
+    import secrets
+
+    from django.core.files.base import ContentFile
+
+    from apps.branding.models import SiteAsset
+
+    prefix = "design-logo-"
+
+    def mine(slot):
+        a = SiteAsset.objects.filter(slot=slot).first()
+        return a, (a is None or os.path.basename(a.image.name).startswith((prefix, "easy2edit-")))  # (the standard logo of the system is not a logo of the customer)
+
+    def hexof(v, d):
+        return v if re.fullmatch(r"#[0-9a-fA-F]{6}", str(v or "")) else d
+
+    for slot, ink in (("logo", hexof(colors.get("text"), "#1f2937")), ("logo_dark", hexof(colors.get("dtext"), "#f3f4f6"))):
+        asset, replace = mine(slot)
+        if not replace:
+            continue
+        words = name.split()
+        first, rest = (" ".join(words[:-1]), words[-1]) if len(words) > 1 else (name, "")
+        if parts and (parts[0] or parts[1]):
+            first, rest = parts  # the text mark of the header of the design
+        w = int((len(first) + len(rest) + 1) * 21 + 16)
+        accent = hexof(colors.get("primary"), ink)
+        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="56" viewBox="0 0 {w} 56"><text x="0" y="39" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="34" font-weight="700" fill="{ink}">'
+               f'{_h.escape(first)}{(" <tspan fill=%s>%s</tspan>" % (chr(34) + accent + chr(34), _h.escape(rest))) if rest else ""}</text></svg>')
+        fname = f"{prefix}{slot}-{secrets.token_hex(3)}.svg"
+        if asset:
+            old = asset.image.name
+            asset.image.save(fname, ContentFile(svg.encode()), save=True)
+            if os.path.basename(old).startswith("easy2edit-"):
+                continue  # the file of the standard logo stays (the system may need it again)
+            try:
+                from apps.medialib import service
+
+                service.release(old)
+            except Exception:  # noqa: BLE001
+                pass
+        else:
+            SiteAsset(slot=slot).image.save(fname, ContentFile(svg.encode()), save=True)
 
 
 def apply_identity(job):
@@ -2142,8 +2240,16 @@ def apply_identity(job):
         new["phone"] = phone[:40]
     if address and not cur.get("address"):
         new["address"] = address[:200]
+    cols = footer_columns_of(html)
+    if cols:
+        new["footer_columns"] = cols  # the link columns of the footer of the design (the footer of the website shows them)
     if new:
         system.save(new)
+    if name:
+        try:
+            text_logo(name, b.get("colors") or {}, brand_of(html))
+        except Exception:  # noqa: BLE001 - only the look
+            logger.warning("text logo not made", exc_info=True)
     if 'data-easy2edit-tag="ui-footer"' in html:  # the footer of the website looks like the footer of the design: dark, brand on the left with columns, the name of the website as brand
         try:
             from . import theme as T
