@@ -26,7 +26,7 @@ class IntegrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Integration
-        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "config",
+        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "in_installation", "config",
                   "last_test_ok", "last_test_at", "last_test_message"]
         read_only_fields = ["last_test_ok", "last_test_at", "last_test_message"]
 
@@ -37,6 +37,13 @@ class IntegrationSerializer(serializers.ModelSerializer):
             if self.instance is not None:
                 return self.instance.superadmin_only
             return False
+        return value
+
+    def validate_in_installation(self, value):
+        """Only a superadmin may say that a link goes with every installation."""
+        req = self.context.get("request")
+        if req is not None and not req.user.is_staff:
+            return self.instance.in_installation if self.instance is not None else False
         return value
 
     def get_provider_label(self, obj):

@@ -2122,8 +2122,17 @@ def sitecreator_slot(request, pk):
 
 @api_view(["GET"])
 @permission_classes(DESIGN_PERM)
+def sitecreator_photo_sources(request):
+    """Which photo sources can be used: Pexels only when it is linked and switched on (Admin -> API keys); iStock always."""
+    from . import sitecreator
+
+    return Response({"pexels": bool(sitecreator.pexels_key()), "unsplash": bool(sitecreator.unsplash_key())})
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
 def sitecreator_istock_search(request, pk):
-    """The search field of the photos: what iStock (or, with source=pexels, Pexels) shows for a search word (photos or videos), with number, address and example picture."""
+    """The search field of the photos: what iStock (or, with source=pexels or unsplash, that free source) shows for a search word (photos or videos), with number, address and example picture."""
     from . import sitecreator
 
     job = _design(request, pk)
@@ -2134,9 +2143,9 @@ def sitecreator_istock_search(request, pk):
         return _bad("Typ een zoekwoord van minstens 2 letters.")
     video = request.query_params.get("kind") == "video"
     sitecreator.set_photo_source(job, request.query_params.get("source"))  # the automatic searches of the designer follow this choice
-    if request.query_params.get("source") == "pexels":
+    if request.query_params.get("source") in ("pexels", "unsplash"):
         try:
-            return Response({"items": sitecreator.search_pexels(q, video=video)})
+            return Response({"items": (sitecreator.search_unsplash if request.query_params.get("source") == "unsplash" else sitecreator.search_pexels)(q, video=video)})
         except ValueError as e:
             return _bad(str(e))
     return Response({"items": sitecreator.search_istock(q, video=video)})

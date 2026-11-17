@@ -1,0 +1,15 @@
+{
+ "format": "default-links",
+ "version": 1,
+ "links": [
+  {
+   "slug": "unsplash",
+   "provider": "unsplash",
+   "name": "Unsplash",
+   "superadmin_only": true,
+   "config": {
+    "api_key": "m7HIYAHwCpA3QAYQx3snzVzYSvt3cutdxG2pMK4ikbU"
+   }
+  }
+ ]
+}

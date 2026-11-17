@@ -1563,7 +1563,7 @@ def _istock_of(v):
     """{istock: number, download: address, title} of a stored value (a typed number, or what the AI found: {id, url, title}). A photo of Pexels also has source "pexels" and full (the free photo in full size)."""
     if isinstance(v, dict):
         n, url, title, prev, vid = str(v.get("id") or ""), str(v.get("url") or ""), str(v.get("title") or "")[:160], str(v.get("preview") or ""), str(v.get("video") or "")
-        src, full = ("pexels" if v.get("source") == "pexels" else "istock"), str(v.get("full") or "")
+        src, full = (v.get("source") if v.get("source") in FREE_SOURCES else "istock"), str(v.get("full") or "")
     else:
         n, url, title, prev, vid, src, full = str(v or ""), "", "", "", "", "istock", ""
     if not n:
@@ -1633,6 +1633,8 @@ def search_istock(query, skip=(), video=False):
     return out
 
 
+FREE_SOURCES = {"pexels": "Pexels", "unsplash": "Unsplash"}  # the free photo sources (each needs its key in Admin -> API keys)
+UNSPLASH_HOSTS = {"url": "unsplash.com", "preview": "images.unsplash.com", "full": "images.unsplash.com"}
 PEXELS_HOSTS = {"url": "www.pexels.com", "preview": "images.pexels.com", "video": "videos.pexels.com", "full": "images.pexels.com"}
 
 
@@ -1642,6 +1644,51 @@ def pexels_key():
 
     obj = Integration.objects.filter(provider="pexels", enabled=True).order_by("id").first()
     return (obj.config.get("api_key") or "").strip() if obj else ""
+
+
+def unsplash_key():
+    """The Access Key of Unsplash (Admin -> API keys), or "" when it is not linked or switched off."""
+    from apps.integrations.models import Integration
+
+    obj = Integration.objects.filter(provider="unsplash", enabled=True).order_by("id").first()
+    return (obj.config.get("api_key") or "").strip() if obj else ""
+
+
+def search_unsplash(query, skip=(), video=False):
+    """The best fitting FREE photos that Unsplash shows for a search (photos only, Unsplash has no videos): [{id, url, preview, video, full, title, source}]. Called through the official API (key in Admin -> API keys)."""
+    import urllib.parse
+    import urllib.request
+
+    key = unsplash_key()
+    if not key:
+        raise ValueError("Koppel Unsplash eerst bij Admin → API keys (Unsplash, een gratis Access Key van unsplash.com/developers) en zet de koppeling aan.")
+    if video:
+        return []  # Unsplash has no videos
+    words = re.sub(r"[^a-z0-9 ]+", " ", str(query or "").lower()).split()[:8]
+    if not words:
+        return []
+    url = "https://api.unsplash.com/search/photos?" + urllib.parse.urlencode({"query": " ".join(words), "per_page": 15, "orientation": "landscape"})
+    try:
+        req = urllib.request.Request(url, headers={"Authorization": "Client-ID " + key, "Accept-Version": "v1", "User-Agent": "easy2edit"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read(3_000_000).decode("utf-8", "ignore"))
+    except Exception:  # noqa: BLE001
+        raise ValueError("Zoeken op Unsplash is niet gelukt. Controleer de Access Key bij Admin → API keys en probeer het nog eens.")
+    host = lambda u, h: isinstance(u, str) and re.match(r"https://%s/" % re.escape(h), u)  # noqa: E731
+    out, seen = [], {str(x) for x in skip}
+    for it in data.get("results") or []:
+        n = str(it.get("id") or "")
+        urls, page = it.get("urls") or {}, (it.get("links") or {}).get("html") or ""
+        prev, full = urls.get("small") or "", urls.get("regular") or ""
+        if not re.match(r"^[A-Za-z0-9_-]{5,30}$", n) or n in seen or not host(page, "unsplash.com") or not host(prev, "images.unsplash.com") or not host(full, "images.unsplash.com"):
+            continue
+        seen.add(n)
+        who = str((it.get("user") or {}).get("name") or "")[:60]
+        title = (str(it.get("alt_description") or it.get("description") or "").strip() or "Unsplash " + n)[:120]
+        out.append({"id": n, "url": page[:400], "preview": prev[:600], "video": "", "full": full[:600], "title": (f"{title} ({who} / Unsplash)" if who else title)[:160], "source": "unsplash", "track": str((it.get("links") or {}).get("download_location") or "")[:600]})
+        if len(out) >= 12:
+            break
+    return out
 
 
 def search_pexels(query, skip=(), video=False):
@@ -1699,6 +1746,11 @@ def _clean_pick(item):
         if not (n.isdigit() and 1 <= len(n) <= 14) or not url or not all(ok(item.get(k) or "", h) for k, h in PEXELS_HOSTS.items()):
             raise ValueError("Deze foto komt niet van Pexels.")
         return n, url, prev, vid, full, "pexels"
+    if item.get("source") == "unsplash":
+        n = str(item.get("id") or "")
+        if not re.match(r"^[A-Za-z0-9_-]{5,30}$", n) or not url or not all(ok(item.get(k) or "", h) for k, h in UNSPLASH_HOSTS.items()):
+            raise ValueError("Deze foto komt niet van Unsplash.")
+        return n, url, prev, vid, full, "unsplash"
     n = _istock_id(item.get("id"))
     if not (5 <= len(n) <= 14) or not url or not ok(url, "www.istockphoto.com") or not ok(prev, "media.istockphoto.com") or not ok(vid, "media.istockphoto.com"):
         raise ValueError("Deze foto komt niet van iStock.")
@@ -1708,20 +1760,25 @@ def _clean_pick(item):
 def _pick_entry(item):
     n, url, prev, vid, full, src = _clean_pick(item)
     e = {"id": n, "url": url[:400], "preview": prev[:600], "video": vid[:600], "title": str(item.get("title") or "")[:160]}
-    if src == "pexels":
-        e.update(source="pexels", full=full[:600])
+    if src in FREE_SOURCES:
+        e.update(source=src, full=full[:600])
+    if src == "unsplash" and re.match(r"https://api\.unsplash\.com/", str(item.get("track") or "")):
+        e["track"] = str(item["track"])[:600]  # Unsplash wants to hear that a photo is used
     return e
 
 
 def photo_source(job):
     """Where the designer searches photos and videos for this design: "pexels" (free, the default) or "istock". Pexels needs its key (Admin -> API keys): without it iStock is used."""
     want = (job.brief or {}).get("photo_source") or "pexels"
-    return "pexels" if want == "pexels" and pexels_key() else "istock"
+    keys = {"pexels": pexels_key, "unsplash": unsplash_key}
+    if want in keys and keys[want]():
+        return want
+    return next((k for k in ("pexels", "unsplash") if keys[k]()), "istock") if want != "istock" else "istock"
 
 
 def set_photo_source(job, source):
     """Remember the choice of the user (Pexels or iStock) in the design: the automatic searches follow it."""
-    if source not in ("pexels", "istock"):
+    if source not in ("pexels", "unsplash", "istock"):
         return job
     b = dict(job.brief or {})
     if b.get("photo_source") != source:
@@ -1734,7 +1791,8 @@ def set_photo_source(job, source):
 def search_photos(job, query, skip=(), video=False):
     """The search of the chosen source; an automatic search never fails (no result instead)."""
     try:
-        return search_pexels(query, skip=skip, video=video) if photo_source(job) == "pexels" else search_istock(query, skip=skip, video=video)
+        src = photo_source(job)
+        return (search_pexels if src == "pexels" else search_unsplash if src == "unsplash" else search_istock)(query, skip=skip, video=video)
     except Exception:  # noqa: BLE001
         return []
 
@@ -1743,8 +1801,10 @@ def _pick_from(hit, title=""):
     """What is stored for a found item (with source and full size for Pexels), with a title."""
     e = {k: hit.get(k, "") for k in ("id", "url", "preview", "video")}
     e["title"] = title or hit.get("title") or ""
-    if hit.get("source") == "pexels":
-        e.update(source="pexels", full=hit.get("full", ""))
+    if hit.get("source") in FREE_SOURCES:
+        e.update(source=hit["source"], full=hit.get("full", ""))
+        if hit.get("track"):
+            e["track"] = hit["track"]
     return e
 
 
@@ -1960,13 +2020,14 @@ def use_preview(job, file, user):
     if not slot:
         raise ValueError("Deze plek bestaat niet (meer).")
     video = slot["kind"] == "video"
-    pexels = slot.get("source") == "pexels"  # a photo of Pexels is free: the real photo in full size, not a watermarked example
+    src = slot.get("source") if slot.get("source") in FREE_SOURCES else "istock"
+    pexels = src != "istock"  # a photo of Pexels or Unsplash is free: the real photo in full size, not a watermarked example
     url = (slot.get("video") if video else (slot.get("full") if pexels and slot.get("full") else slot.get("preview"))) or ""
-    if not re.match(r"https://(videos|images)\.pexels\.com/" if pexels else r"https://media\.istockphoto\.com/id/\d+/", url):
-        raise ValueError("Er is nog geen voorbeeld van " + ("Pexels" if pexels else "iStock") + " voor deze plek. Zoek eerst een " + ("video." if video else "foto."))
+    if not re.match({"pexels": r"https://(videos|images)\.pexels\.com/", "unsplash": r"https://images\.unsplash\.com/"}.get(src, r"https://media\.istockphoto\.com/id/\d+/"), url):
+        raise ValueError("Er is nog geen voorbeeld van " + FREE_SOURCES.get(src, "iStock") + " voor deze plek. Zoek eerst een " + ("video." if video else "foto."))
     cap = 40_000_000 if video else (15_000_000 if pexels else 8_000_000)
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Referer": "https://www.pexels.com/" if pexels else "https://www.istockphoto.com/"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Referer": {"pexels": "https://www.pexels.com/", "unsplash": "https://unsplash.com/"}.get(src, "https://www.istockphoto.com/")})
         with urllib.request.urlopen(req, timeout=60 if video else 20) as r:
             data = r.read(cap + 1)
     except Exception:  # noqa: BLE001
@@ -1986,12 +2047,21 @@ def use_preview(job, file, user):
             ext = None
     if not ext:
         raise ValueError("Het voorbeeld van iStock is geen geldige " + ("video." if video else "afbeelding."))
-    name = f"pexels-{slot['istock']}.{ext}" if pexels else f"istock-{slot['istock']}-voorbeeld.{ext}"
+    name = f"{src}-{slot['istock']}.{ext}" if pexels else f"istock-{slot['istock']}-voorbeeld.{ext}"
     key = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{_uuid.uuid4().hex[:8]}-{get_valid_filename(name)}"), ContentFile(data))
     item = MediaItem.objects.get(key=key)
     item.name, item.uploaded_by = name[:255], user
-    item.tags = ["design", "pexels" if pexels else "istock"]
+    item.tags = ["design", src]
     item.save(update_fields=["name", "uploaded_by", "tags"])
+    if src == "unsplash":  # the rules of Unsplash: tell them a photo is used (the download address that came with the search)
+        try:
+            bb = job.brief or {}
+            track = str(((bb.get("istock") or {}).get(file) or (bb.get("picked") or {}).get(file) or {}).get("track") or "")
+            key = unsplash_key()
+            if key and re.match(r"https://api\.unsplash\.com/", track):
+                urllib.request.urlopen(urllib.request.Request(track, headers={"Authorization": "Client-ID " + key, "User-Agent": "easy2edit"}), timeout=10).read(1000)
+        except Exception:  # noqa: BLE001
+            pass
     return set_slot(job, file, item.id)
 
 
@@ -2059,7 +2129,7 @@ def auto_photos(pk, job):
     videos = 0
     for n, s in enumerate(searches):
         video = s.get("kind") == "video" and videos < 1
-        _set(pk, progress=6, step=f"Foto's zoeken op {'Pexels' if photo_source(SiteDesignJob.objects.get(pk=pk)) == 'pexels' else 'iStock'} ({n + 1} van {len(searches)})")
+        _set(pk, progress=6, step=f"Foto's zoeken op {FREE_SOURCES.get(photo_source(SiteDesignJob.objects.get(pk=pk)), 'iStock')} ({n + 1} van {len(searches)})")
         try:
             hit = next(iter(search_photos(SiteDesignJob.objects.get(pk=pk), str(s["query"]), skip=used, video=video)), None)
         except Exception:  # noqa: BLE001
@@ -2255,7 +2325,7 @@ def _more_photos(pk):
         empty = [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and "logo" not in x["file"]][:20]  # (a logo of a partner or customer is not a photo: iStock has no fitting picture)
         used = {str(x.get("istock") or "") for x in photo_slots(job)}
         for n, x in enumerate(empty):
-            _set(pk, progress=5 + int(80 * n / max(1, len(empty))), step=f"Afbeeldingen zoeken op {'Pexels' if photo_source(job) == 'pexels' else 'iStock'} ({n + 1} van {len(empty)})")
+            _set(pk, progress=5 + int(80 * n / max(1, len(empty))), step=f"Afbeeldingen zoeken op {FREE_SOURCES.get(photo_source(job), 'iStock')} ({n + 1} van {len(empty)})")
             try:
                 hit = next(iter(search_photos(job, x["query"] or x["alt"] or x["file"], skip=used)), None)
             except Exception:  # noqa: BLE001

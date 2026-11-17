@@ -13,6 +13,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
+import { IconKey, IconLock, IconSettings } from "../../../../components/Icons";
+import Tabs from "../../../../components/Tabs";
 import { api, errorText } from "../../../../lib/api";
 import { alertDialog } from "../../../../lib/dialog";
 import Paged from "../../../../components/Paged";
@@ -136,7 +138,7 @@ export default function Integrations() {
 
   async function save(e) {
     e.preventDefault();
-    const { id, error: _e, models: _m, notice: _n, loadingModels: _l, ...body } = modal;
+    const { id, error: _e, models: _m, notice: _n, loadingModels: _l, tab: _t, ...body } = modal;
     try {
       await (id ? api(`/admin/integrations/${id}/`, { method: "PATCH", body }) : api("/admin/integrations/", { method: "POST", body }));
       setModal(null);
@@ -148,6 +150,8 @@ export default function Integrations() {
   }
 
   const fields = modal && spec(modal.provider)?.fields;
+  const tabbed = (fields || []).length > 3;  // a link with many fields (for example S3) gets tabs: general and settings
+  const itab = modal?.tab === "fields" ? "fields" : "general";
 
   return (
     <>
@@ -174,7 +178,7 @@ export default function Integrations() {
             <div className="card api-card" key={i.id}>
               <div className="api-head">
                 <span className={`dot ${st}`} title={STATUS_TEXT[st]} />
-                <strong>{i.name}</strong>{i.superadmin_only && <span className="badge" style={{ marginLeft: ".4rem" }}>{tx("Superadmin")}</span>}
+                <strong>{i.name}</strong>{i.in_installation && <span title={tx("Systeemkoppeling: gaat mee met elke installatie")} aria-label={tx("Systeemkoppeling: gaat mee met elke installatie")} style={{ marginLeft: ".4rem", display: "inline-flex", verticalAlign: "middle", width: 16, height: 16 }}><IconLock /></span>}{i.superadmin_only && <span className="badge" style={{ marginLeft: ".4rem" }}>{tx("Superadmin")}</span>}
                 <label className="switch" title={i.enabled ? tx("Actief") : tx("Uit")}>
                   <input type="checkbox" checked={i.enabled} disabled={L < 2} onChange={() => toggle(i)} />
                   <span />
@@ -231,9 +235,10 @@ export default function Integrations() {
 
       {modal && fields && (
         <div className="overlay" onClick={() => setModal(null)}>
-          <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save}>
+          <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save} onInvalidCapture={(e) => { const t = e.target.closest?.("[data-tab]")?.dataset.tab; if (tabbed && t && t !== itab) setModal((m) => ({ ...m, tab: t })); }}>
             <h2>{modal.id ? tx("Koppeling wijzigen") : tx("Nieuwe koppeling")}</h2>
-            <div className="form-grid">
+            {tabbed && <Tabs value={itab} onChange={(k) => setModal({ ...modal, tab: k })} tabs={[["general", "Algemeen", <IconSettings key="g" />], ["fields", "Instellingen", <IconKey key="k" />]]} />}
+            <div className="form-grid" data-tab="general" style={tabbed && itab !== "general" ? { display: "none" } : undefined}>
               <label>{tx("Systeem")}
                 <select value={modal.provider} disabled={!!modal.id}
                   onChange={(e) => pick(e.target.value, modal)}>
@@ -245,9 +250,15 @@ export default function Integrations() {
                 <input value={modal.slug} onChange={(e) => setModal({ ...modal, slug: e.target.value.toLowerCase() })} pattern="[a-z0-9\-]+" required disabled={!!modal.id} placeholder={tx("bv. anthropic")} />
               </label>
               {user?.is_staff && (
+                <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem 1.5rem", alignItems: "start" }}>
                 <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!modal.superadmin_only} onChange={(e) => setModal({ ...modal, superadmin_only: e.target.checked })} /><span /></span>
                   <span>{tx("Superadmin-koppeling")}<small className="muted" style={{ display: "block" }}>{tx("Alleen superadmins zien en wijzigen deze koppeling, bijvoorbeeld de AI-koppeling die de reseller betaalt.")}</small></span></label>
+                  <label className="check sec-toggle" style={{ alignItems: "flex-start" }}><span className="switch"><input type="checkbox" checked={!!modal.in_installation} onChange={(e) => setModal({ ...modal, in_installation: e.target.checked })} /><span /></span>
+                  <span>{tx("In elke installatie meenemen")}<small className="muted" style={{ display: "block" }}>{tx("Deze koppeling gaat met haar sleutel mee met elke nieuwe installatie, staat aan en is meteen beschikbaar zonder instellen. Gebruik dit alleen voor een sleutel die elke installatie mag delen.")}</small></span></label>
+                </div>
               )}
+            </div>
+            <div className="form-grid" data-tab="fields" style={tabbed && itab !== "fields" ? { display: "none" } : undefined}>
               {fields.map((f) => (
                 <label key={f.key}>{f.label}
                   {f.type === "select" ? (

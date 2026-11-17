@@ -139,6 +139,7 @@ urlpatterns = [
     path("sitecreator/costs/", views.sitecreator_costs_all),
     path("sitecreator/catalog/", views.sitecreator_catalog),
     path("sitecreator/price/", views.sitecreator_price),
+    path("sitecreator/photo-sources/", views.sitecreator_photo_sources),
     path("sitecreator/theme-brief/", views.sitecreator_theme_brief),
     path("sitecreator/theme-library/", views.sitecreator_theme_library),
     path("sitecreator/<uuid:pk>/", views.sitecreator_job),

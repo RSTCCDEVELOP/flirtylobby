@@ -16,6 +16,7 @@ python manage.py migrate --noinput
 python manage.py site_content restore --if-empty
 python manage.py ensure_admin
 python manage.py site_defaults apply --if-new
+python manage.py default_links apply
 python manage.py installations_config apply
 python manage.py repair_installation
 python manage.py collectstatic --noinput

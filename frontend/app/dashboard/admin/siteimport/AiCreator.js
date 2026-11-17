@@ -355,15 +355,35 @@ function CreatePopup({ job, onClose, onCreate, onReview }) {
 
 // The photos that the pages of a chat design ask for: every slot has a search on iStock (the user downloads the photo there himself) and a place to put the downloaded photo in.
 // A block under the chat (colours, photos): the header (in the main colour) always stays visible, with an arrow up/down; only the part below it scrolls.
-// Where the photos and videos are searched: Pexels (free, the default) or iStock (licence needed, watermarked example). The choice is kept in this browser (only a convenience).
-const sourceNow = () => { try { return localStorage.getItem("siSource") === "istock" ? "istock" : "pexels"; } catch { return "pexels"; } };
+// Where the photos and videos are searched: the free sources (Pexels, Unsplash) only when they are linked and switched on (Admin -> API keys), and iStock (licence needed, watermarked example). Without an active free source the choice is not shown and iStock is used. The choice is kept in this browser (only a convenience).
+const SRC_NAMES = { pexels: "Pexels", unsplash: "Unsplash", istock: "iStock" };
+const srcLabel = (s) => SRC_NAMES[s] || "iStock";
+const freeTx = (src, k) => (src === "unsplash" ? tx(k).replace(/Pexels/g, "Unsplash") : tx(k));  // the texts of the free sources are written for Pexels: the name is swapped for Unsplash
+let FREE_ON = null;  // null = not asked yet, otherwise {pexels: bool, unsplash: bool}: which free sources are linked and switched on
+let FREE_P = null;
+const loadFree = () => FREE_P || (FREE_P = api("/sitecreator/photo-sources/").then((r) => { FREE_ON = { pexels: !!r?.pexels, unsplash: !!r?.unsplash }; try { window.dispatchEvent(new Event("siSource")); } catch {} return FREE_ON; }).catch(() => { FREE_P = null; return null; }));
+const freeList = () => ["pexels", "unsplash"].filter((k) => FREE_ON && FREE_ON[k]);
+const sourceNow = () => {
+  const on = freeList();
+  if (!FREE_ON || !on.length) return "istock";  // as long as it is not known (or when no free source is active) iStock: Pexels is never assumed
+  let v = "";
+  try { v = localStorage.getItem("siSource") || ""; } catch {}
+  if (v === "istock") return "istock";
+  return on.includes(v) ? v : on[0];
+};
 function useSource() {  // one choice for the whole screen: every search field, the question in the chat and the dialog follow it
   const [source, set] = useState(sourceNow);
-  useEffect(() => { const on = () => set(sourceNow()); window.addEventListener("siSource", on); return () => window.removeEventListener("siSource", on); }, []);
+  const [, tick] = useState(0);  // the answer about the free sources also has to redraw the choice when the source itself stays the same
+  useEffect(() => {
+    const on = () => { set(sourceNow()); tick((n) => n + 1); };
+    window.addEventListener("siSource", on);
+    loadFree();
+    return () => window.removeEventListener("siSource", on);
+  }, []);
   const setSource = (v) => { try { localStorage.setItem("siSource", v); } catch {} set(v); try { window.dispatchEvent(new Event("siSource")); } catch {} };
-  return [source, setSource, source === "pexels" ? "Pexels" : "iStock"];
+  return [source, setSource, srcLabel(source)];
 }
-const SourceSelect = ({ value, onChange, style }) => <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={tx("Zoeken bij")} style={style}><option value="pexels">Pexels ({tx("gratis")})</option><option value="istock">iStock</option></select>;
+const SourceSelect = ({ value, onChange, style }) => !FREE_ON || !freeList().length ? null : <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={tx("Zoeken bij")} style={style}>{freeList().map((k) => <option key={k} value={k}>{srcLabel(k)}</option>)}<option value="istock">iStock</option></select>;
 
 function Fold({ title, defaultOpen, children, shut }) {
   const [open, setOpen] = useState(!!defaultOpen);
@@ -424,7 +444,7 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
     setBusy(slot ? slot.file : "add"); setErr("");
     try {
       if (slot) { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { file: slot.file, pick: item } })); setNote(`${tx("Gekozen voor")}: ${slot.alt || slot.file}`); }
-      else { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { add: item } })); setNote(`${tx("Toegevoegd aan je lijst")}: ${item.source === "pexels" ? "Pexels" : "iStock"} ${item.id}`); }
+      else { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "POST", body: { add: item } })); setNote(`${tx("Toegevoegd aan je lijst")}: ${srcLabel(item.source)} ${item.id}`); }
     } catch (x) { setErr(errorText(x)); } finally { setBusy(""); }
   };
   const place = async (slot) => {  // a chosen photo: the example is put in the library and the designer is asked to use it in the website
@@ -436,7 +456,7 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
   const clear = async (slot) => { setBusy(slot.file); try { onJob(await api(`/sitecreator/${job.id}/slot/`, { method: "DELETE", body: { file: slot.file } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
   return (
     <Fold shut={job.status === "running" || job.status === "stopping"} defaultOpen={open > 0} title={<><IconImage /> {tx("Foto's en video's")} <span className={open ? "badge" : "badge ok"}>{slots.length - open}/{slots.length}</span> <button type="button" className="btn sm" style={{ marginLeft: ".4rem" }} disabled={looking} onClick={(e) => { e.preventDefault(); e.stopPropagation(); look(); }} title={`${tx("Zoek passende foto's en video's op")} ${srcName}`}><IconSearch /> {looking ? tx("Bezig…") : tx("Zoeken")}</button></>}>
-      <p className="muted" style={{ margin: ".4rem 0", fontSize: ".85rem" }}>{source === "pexels" ? tx("Zoek foto's en video's op Pexels: die zijn gratis te gebruiken. Een gekozen foto komt meteen in je ontwerp.") : tx("Zoek elke foto of video op iStock, download hem zelf (daar heb je een licentie voor nodig) en zet hem hier in de plek. Tot die tijd staat er een grijs vlak.")}</p>
+      <p className="muted" style={{ margin: ".4rem 0", fontSize: ".85rem" }}>{source !== "istock" ? freeTx(source, "Zoek foto's en video's op Pexels: die zijn gratis te gebruiken. Een gekozen foto komt meteen in je ontwerp.") : tx("Zoek elke foto of video op iStock, download hem zelf (daar heb je een licentie voor nodig) en zet hem hier in de plek. Tot die tijd staat er een grijs vlak.")}</p>
       {err && <div className="alert">{err}</div>}
       <form onSubmit={search} role="search" style={{ display: "flex", gap: ".35rem", flexWrap: "wrap", margin: ".2rem 0 .5rem" }}>
         <input type="search" value={q} maxLength={120} onChange={(e) => setQ(e.target.value)} placeholder={`${tx("Zoek een foto of video op")} ${srcName}…`} aria-label={`${tx("Zoek een foto of video op")} ${srcName}`} style={{ flex: "1 1 160px", minWidth: 0 }} />
@@ -457,7 +477,7 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
             {found.map((it) => (
               <div key={it.id} className="card" style={{ padding: ".3rem", display: "grid", gap: ".25rem", minWidth: 0 }}>
                 <a href={it.preview || it.url} target="_blank" rel="noopener noreferrer" title={it.title} style={{ display: "block", aspectRatio: "1", borderRadius: 8, overflow: "hidden", background: "var(--line)" }}>{it.preview && <img src={it.preview} alt={it.title || ""} referrerPolicy="no-referrer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}</a>
-                <small className="muted" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={it.title}>{it.source === "pexels" ? "Pexels" : "iStock"} {it.id}</small>
+                <small className="muted" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={it.title}>{srcLabel(it.source)} {it.id}</small>
                 <button type="button" className="btn sm" disabled={!!busy} onClick={() => choose(it)}>{busy === "add" ? tx("Bezig…") : tx("Kies")}</button>
               </div>
             ))}
@@ -472,13 +492,13 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
           return (
             <div key={x.file} className="card" style={{ display: "grid", gap: ".5rem", padding: ".55rem .65rem", minWidth: 0 }}>
               <div style={{ display: "flex", gap: ".65rem", alignItems: "flex-start", minWidth: 0 }}>
-                <span style={{ flex: "none", width: 72, height: 72, borderRadius: 10, overflow: "hidden", background: "var(--line)", display: "grid", placeItems: "center", color: "var(--muted)" }}>{ph ? (vid ? <video src={mediaUrl(ph.url)} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={mediaUrl(ph.url)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />) : x.preview ? <a href={x.preview} target="_blank" rel="noopener noreferrer" title={x.source === "pexels" ? tx("Foto van Pexels (gratis te gebruiken)") : tx("Voorbeeld (iStock, met watermerk)")} style={{ display: "block", width: "100%", height: "100%" }}><img src={x.preview} alt={x.title || ""} referrerPolicy="no-referrer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></a> : <IconImage />}</span>
+                <span style={{ flex: "none", width: 72, height: 72, borderRadius: 10, overflow: "hidden", background: "var(--line)", display: "grid", placeItems: "center", color: "var(--muted)" }}>{ph ? (vid ? <video src={mediaUrl(ph.url)} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={mediaUrl(ph.url)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />) : x.preview ? <a href={x.preview} target="_blank" rel="noopener noreferrer" title={x.source === "pexels" || x.source === "unsplash" ? freeTx(x.source, "Foto van Pexels (gratis te gebruiken)") : tx("Voorbeeld (iStock, met watermerk)")} style={{ display: "block", width: "100%", height: "100%" }}><img src={x.preview} alt={x.title || ""} referrerPolicy="no-referrer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></a> : <IconImage />}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <strong style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontSize: ".85rem", lineHeight: 1.3 }} title={x.alt || x.file}>{vid && <IconVideo />}{vid ? " " : ""}{x.alt || x.file}</strong>
                   <small className="muted" style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={x.file}>{x.file}</small>
                   {x.istock ? (
                     <span style={{ display: "flex", alignItems: "center", gap: ".4rem", marginTop: 4, minWidth: 0 }}>
-                      <span className="badge" style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>{x.source === "pexels" ? "Pexels" : "iStock"} {x.istock}</span>
+                      <span className="badge" style={{ flex: "none", fontVariantNumeric: "tabular-nums" }}>{srcLabel(x.source)} {x.istock}</span>
                       {x.title && <small className="muted" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={x.title}>{x.title}</small>}
                       <button type="button" className="btn sm" style={{ flex: "none", padding: "0 .4rem" }} onClick={() => saveNo(x, "")} aria-label={tx("Nummer wissen")} title={tx("Nummer wissen")}>×</button>
                     </span>
@@ -490,7 +510,7 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem" }}>
                 {x.extra && <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => place(x)} title={tx("Zet deze foto in het ontwerp: de AI plaatst hem op een passende plek")}>{tx("In ontwerp")}</button>}
-                {(vid ? x.video : x.preview) && !x.done && !x.extra && <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => usePreview(x)} title={x.source === "pexels" ? tx("Gebruik deze gratis foto van Pexels in het ontwerp") : tx("Download de voorbeeldfoto van iStock (met watermerk) en gebruik hem in het ontwerp")}>{busy === x.file ? tx("Bezig…") : vid ? tx("Gebruik video") : tx("Gebruik foto")}</button>}
+                {(vid ? x.video : x.preview) && !x.done && !x.extra && <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => usePreview(x)} title={x.source === "pexels" || x.source === "unsplash" ? freeTx(x.source, "Gebruik deze gratis foto van Pexels in het ontwerp") : tx("Download de voorbeeldfoto van iStock (met watermerk) en gebruik hem in het ontwerp")}>{busy === x.file ? tx("Bezig…") : vid ? tx("Gebruik video") : tx("Gebruik foto")}</button>}
                 <a className="btn sm" href={x.download || x.url} target="_blank" rel="noopener noreferrer" title={x.download ? tx("Naar de foto op iStock om te downloaden") : tx("Zoeken op iStock")}>{x.download ? `${tx("Downloaden")} ↗` : <><IconSearch /> {tx("Zoeken")}</>}</a>
                 {x.download && <a className="btn sm" href={x.url} target="_blank" rel="noopener noreferrer" title={tx("Zoeken op iStock")}><IconSearch /> {tx("Zoeken")}</a>}
                 <label className="btn sm" style={{ cursor: busy ? "default" : "pointer", opacity: busy === x.file ? .6 : 1 }}>{x.done ? tx("Vervangen") : vid ? tx("Video kiezen") : tx("Foto kiezen")}<input type="file" accept={vid ? "video/mp4,video/webm" : "image/*"} style={{ display: "none" }} disabled={!!busy} onChange={(e) => { put(x, e.target.files?.[0]); e.target.value = ""; }} /></label>
@@ -655,7 +675,7 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
   useEffect(() => { try { localStorage.setItem(`siPick:${jobId}`, JSON.stringify({ q, kind, found: (found || []).slice(0, 40) })); } catch {} }, [q, kind, found, jobId]);
   const [searching, setSearching] = useState(false);
   const pickedList = Object.entries(picked || {}).filter(([, it]) => it && it.id);  // what is in the list of the design (kept on the server): the source of the selection
-  const chosen = pickedList.map(([, it]) => ({ id: it.id, src: it.source === "pexels" ? "Pexels" : "iStock", title: String(it.title || "").slice(0, 80), kind: it.video ? "video" : "photo" }));
+  const chosen = pickedList.map(([, it]) => ({ id: it.id, src: srcLabel(it.source), title: String(it.title || "").slice(0, 80), kind: it.video ? "video" : "photo" }));
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const run = async (query, k) => {
@@ -685,7 +705,7 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
   const text = (list) => list.length ? `${tx("Gekozen")} (${tx("in mijn lijst gezet")}): ` + list.map((c) => `${c.src} ${c.id}${c.title ? ` "${c.title}"` : ""}${c.kind === "video" ? ` (${tx("video")})` : ""}`).join(", ") : "";
   const unpick = async (file) => { setBusy(file); setErr(""); try { onJob?.(await api(`/sitecreator/${jobId}/slot/`, { method: "DELETE", body: { file } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
   const choose = async (it) => {
-    if (chosen.some((c) => c.id === it.id && c.src === (it.source === "pexels" ? "Pexels" : "iStock"))) return;
+    if (chosen.some((c) => c.id === it.id && c.src === (srcLabel(it.source)))) return;
     setBusy(it.id); setErr("");
     try {
       onJob?.(await api(`/sitecreator/${jobId}/slot/`, { method: "POST", body: { add: it } }));
@@ -721,17 +741,17 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
       {found && !found.length && <small className="muted">{tx("Niets gevonden. Probeer een ander zoekwoord (Engels werkt het best).")}</small>}
       {found && found.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: ".4rem" }}>
-          {found.map((it) => { const on = chosen.some((c) => c.id === it.id && c.src === (it.source === "pexels" ? "Pexels" : "iStock")); return (
+          {found.map((it) => { const on = chosen.some((c) => c.id === it.id && c.src === (srcLabel(it.source))); return (
             <button key={it.id} type="button" disabled={disabled || !!busy || on} aria-pressed={on} onClick={() => choose(it)} title={it.title} style={{ position: "relative", padding: 0, borderRadius: 10, overflow: "hidden", aspectRatio: "1", cursor: on ? "default" : "pointer", background: "var(--line)", border: `2px solid ${on ? "var(--blue)" : "var(--line)"}` }}>
               {it.preview && <img src={it.preview} alt={it.title || ""} referrerPolicy="no-referrer" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: busy === it.id ? .5 : 1 }} />}
               {on && tick("var(--blue)")}
-              <small style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "1px 4px", background: "rgba(0,0,0,.55)", color: "#fff", fontSize: ".66rem", textAlign: "left" }}>{busy === it.id ? tx("Bezig…") : `${it.source === "pexels" ? "Pexels" : "iStock"} ${it.id}`}</small>
+              <small style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "1px 4px", background: "rgba(0,0,0,.55)", color: "#fff", fontSize: ".66rem", textAlign: "left" }}>{busy === it.id ? tx("Bezig…") : `${srcLabel(it.source)} ${it.id}`}</small>
             </button>); })}
         </div>
       )}
       {pickedList.length > 0 && <div style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }} data-easy2edit-tag="ui-media-picked" aria-label={tx("Gekozen")}>
         {pickedList.map(([file, it]) => (
-          <span key={file} style={{ position: "relative", width: 52, height: 52, borderRadius: 8, overflow: "hidden", background: "var(--line)", border: "2px solid var(--blue)", opacity: busy === file ? .5 : 1 }} title={it.title || `${it.source === "pexels" ? "Pexels" : "iStock"} ${it.id}`}>
+          <span key={file} style={{ position: "relative", width: 52, height: 52, borderRadius: 8, overflow: "hidden", background: "var(--line)", border: "2px solid var(--blue)", opacity: busy === file ? .5 : 1 }} title={it.title || `${srcLabel(it.source)} ${it.id}`}>
             {(it.preview || it.video) && <img src={it.preview || it.video} alt={it.title || ""} referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
             <button type="button" disabled={disabled || !!busy} onClick={() => unpick(file)} className="pb-panelx" aria-label={tx("Weghalen")} style={{ position: "absolute", top: 1, right: 1, width: 16, height: 16, minWidth: 0, fontSize: ".7rem", lineHeight: 1, padding: 0 }}>×</button>
           </span>))}
@@ -803,7 +823,8 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
   const askPhotos = async (given) => {  // the same question as after the description of the company: shall the AI think of search words and search? The customer chooses where. (false = there is no description yet)
     const what = String(given || (bizQ ? ans[bizQ.id] : "") || "").trim();
     if (what.length < 8) return false;
-    const now = sourceNow(), opts = [{ value: "pexels", label: "Pexels", hint: tx("Gratis foto's en video's, direct te gebruiken") }, { value: "istock", label: "iStock", hint: tx("Betaald, je downloadt zelf met een licentie") }];
+    await loadFree();  // which free sources are active: never offer one that is not linked
+    const now = sourceNow(), opts = [...freeList().map((k) => ({ value: k, label: srcLabel(k), hint: k === "unsplash" ? freeTx(k, "Foto van Pexels (gratis te gebruiken)") : tx("Gratis foto's en video's, direct te gebruiken") })), { value: "istock", label: "iStock", hint: tx("Betaald, je downloadt zelf met een licentie") }];
     const where = await confirmDialog(tx("Zal ik alvast foto's en video's zoeken die bij je bedrijf passen? De AI bedenkt zoekwoorden en je ziet de resultaten bij de vraag over foto's en video's. Kies waar ik zoek."), { title: tx("Foto's alvast zoeken"), okLabel: tx("Ja, zoek maar"), choices: [...opts].sort((a, b) => (a.value === now ? -1 : b.value === now ? 1 : 0)) });
     if (where) { setSource(where); setGo((g) => ({ n: g.n + 1, name: nameQ ? String(ans[nameQ.id] || "") : "", what })); }
     return true;
@@ -1108,10 +1129,11 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
     if (job && chatMode && !running && baseline.current && Object.keys(baseline.current.files || {}).length === 0 && Object.keys(job.files || {}).length > 0) {  // a design that was made in this session: keep it or throw it away (a new version makes no sense: there was no earlier one)
       const what = await confirmDialog(tx("Dit ontwerp is nieuw gemaakt. Wil je het bewaren of weggooien?"), {
         title: tx("Ontwerp sluiten"), okLabel: tx("Sluiten"), cancelLabel: tx("Doorgaan met ontwerpen"),
-        choices: [{ value: "save", label: tx("Opslaan"), hint: tx("Je vindt het ontwerp terug bij Mijn ontwerpen.") }, { value: "delete", label: tx("Niet opslaan"), hint: tx("Het nieuwe ontwerp wordt verwijderd.") }],
+        choices: [{ value: "save", label: tx("Opslaan"), hint: tx("Je vindt het ontwerp terug bij Mijn ontwerpen.") }, { value: "discard", label: tx("Niet opslaan"), hint: tx("De wijzigingen worden weggegooid; het ontwerp gaat terug naar hoe het was toen je het opende.") }],
       });
       if (!what) return;
-      if (what === "delete") await api(`/sitecreator/${job.id}/`, { method: "DELETE" }).catch(() => {});
+      // "Niet opslaan" never deletes the design itself (name, answers, photos): it only puts it back to how it was when it was opened
+      if (what === "discard") { try { await api(`/sitecreator/${job.id}/version/`, { method: "POST", body: { action: "discard", snapshot: baseline.current } }); } catch (e) { setErr(errorText(e)); return; } }
       onClose();
       return;
     }

@@ -8,7 +8,7 @@
 """Standaard instellingen: de instellingen van deze site (beveiliging, vormgeving, community, talen, dashboard en de vernieuwsnelheid) vastgelegd als de standaard.
 
 `capture()` schrijft ze naar backend/apps/core/site_defaults.json (dat bestand hoort bij de code: neem het mee in git, dan is het de standaard voor elke nieuwe installatie).
-`apply()` zet ze terug: bij een nieuwe installatie (eerste start), na "Systeem resetten", of met de knop. Geen sleutels, wachtwoorden, adressen, IP-lijsten of teksten van de site."""
+`apply()` zet ze terug: bij een nieuwe installatie (eerste start), na "Systeem resetten", of met de knop. Geen wachtwoorden, adressen, IP-lijsten of teksten van de site. Alleen de API-koppelingen die een superadmin heeft gemarkeerd als 'in elke installatie meenemen' gaan mee (met hun sleutel), en staan aan: zie apps/integrations/default_links.py."""
 import json
 import logging
 from pathlib import Path
@@ -51,16 +51,29 @@ def capture():
     cur = system.get()
     data = {"format": "site-defaults", "version": 1, "captured_at": timezone.now().isoformat(timespec="seconds"), "bundle": bundle, "system": {k: cur[k] for k in SYSTEM_KEYS if k in cur}}
     PATH.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    try:
+        from apps.integrations import default_links
+
+        default_links.capture()  # the API links that every installation gets (Unsplash)
+    except Exception:  # noqa: BLE001
+        logger.exception("Default API links could not be saved")
     logger.warning("Site defaults saved (%s parts)", len(bundle["sections"]))
     return info()
 
 
 def apply():
     """Put the saved defaults back. Returns [{key, ok, message}] (empty when nothing was saved)."""
+    links = []
+    try:  # the API links that every installation gets, switched on (also when no other defaults were saved)
+        from apps.integrations import default_links
+
+        links = default_links.apply(force=True)
+    except Exception:  # noqa: BLE001
+        logger.exception("Default API links could not be set")
     if not PATH.is_file():
-        return []
+        return links
     data = json.loads(PATH.read_text(encoding="utf-8"))
-    results = settings_backup.load(data["bundle"], SECTIONS)
+    results = links + settings_backup.load(data["bundle"], SECTIONS)
     try:  # the logos of a new or reset site are always those of easy2edit; the colours come from the saved look, and without a saved look the whole easy2edit theme is used
         from . import themepacks
 
