@@ -42,6 +42,12 @@ def _get_or_make(**ident_and_defaults):
 
 def sync():
     """Create objects for ticked items, remove those that are no longer ticked (or whose source is gone). Cheap; called on every save."""
+    try:
+        from apps.medialib import mediaviews
+
+        mediaviews.ensure_defaults()  # the media objects (carousel, slider, coverflow ...) exist from the start
+    except Exception:  # noqa: BLE001 - never stops the sync
+        logger.warning("default media objects not made", exc_info=True)
     keep = set()
     for kind, qs in sources().items():
         for src in qs:

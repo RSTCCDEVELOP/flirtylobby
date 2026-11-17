@@ -670,9 +670,16 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const objGroupKey = (o) => ((o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part") ? `plugin:${o.data?.name || "plugin"}` : o.kind);
   const objGroupLabel = (o) => (o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "ai" ? "AI" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin"));
   const objGroups = [];
-  objects.forEach((o) => { const k = objGroupKey(o); let g = objGroups.find((x) => x.key === k); if (!g) { g = { key: k, label: objGroupLabel(o), items: [] }; objGroups.push(g); } g.items.push({ slug: o.slug, name: `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}` }); });
+  objects.forEach((o) => { const k = objGroupKey(o); let g = objGroups.find((x) => x.key === k); if (!g) { g = { key: k, label: objGroupLabel(o), items: [] }; objGroups.push(g); } g.items.push({ slug: o.slug, kind: o.kind, typeLabel: o.data?.type_label || "", mtype: o.data?.type || "", name: `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}` }); });
   objGroups.sort((a, b) => a.label.localeCompare(b.label));
   const mediaOn = useModule("media");
+  const addMediaKind = async (kind, label) => {  // a kind of media object that was not made yet (carousel, coverflow, mosaic ...): it is made now, with the pictures (or videos) of the library, and put on the page
+    try {
+      const v = await api("/mediaviews/", { method: "POST", body: { name: label, type: kind, source: { mode: "all", ids: [], tags: [], limit: 12 } } });
+      setObjects(await api("/sysobjects/"));
+      addToPage(makeItem("object", `media-${v.slug}`));
+    } catch (e) { alertDialog(errorText(e)); }
+  };
   const addMedia = async (m) => {  // a picture of the media library on the page: an image part that shows it
     const it = makeItem("image");
     addToPage(it);
@@ -705,7 +712,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
       onComponents={() => setCompPop({ cell: "" })}
       onComponent={(comp) => addToPage(compItem(comp))}
       objectGroups={objOn ? objGroups : null} onObject={(slug) => addToPage(makeItem("object", slug))}
-      mediaOn={mediaOn} onMedia={addMedia}
+      mediaOn={mediaOn} onMedia={addMedia} onMediaKind={addMediaKind}
       onClose={() => {}} />
   ) : null;
   const sbStructure = shell ? (

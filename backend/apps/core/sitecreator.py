@@ -126,7 +126,7 @@ The website is built ONLY from the easy2edit components and the theme, so that t
 - COPY the markup of the template: the same tags, the same e2e-* classes, the same nesting. You change only the texts, the links, the pictures (src/alt) and the number of repeated items (cards, steps, questions, logos ...). Use the component for the use it was made for, in the language of the website.
 - NEVER write css for a class that starts with e2e-, never colours, sizes or fonts of your own inside a component (no style="" on components), no own button classes: buttons are e2e-btn, e2e-btn e2e-btn--outline, e2e-btn--lg, e2e-btn--sm.
 - Colours, fonts and corners are the THEME of this website, written by the SYSTEM on :root in style.css (the variables --primary, --secondary, --bg, --surface, --card, --hover, --line, --text, --muted, --font-heading, --font-body, --radius, --btn-radius). You never write a :root block or a colour value of your own. style.css only holds at most 15 lines for a rare helper class (using those variables), or is just a comment. The system draws all components with the theme.
-- Three or more photos that belong together (a gallery, our work, the team, the location): NEVER place them under each other or as separate blocks: put them side by side in ONE <div class="e2e-gallery"> with only <img src="img/name.jpg" alt="..."> children. The system makes a photo carousel of it (the media system object).
+- Three or more photos that belong together (a gallery, our work, the team, the location, a row of pictures): NEVER place them under each other, as separate blocks or in a "logos" row: use EXACTLY this markup, the photo carousel of easy2edit (a media system object): <div data-easy2edit-tag="ui-gallery"><div class="e2e-gallery"><img src="img/name.jpg" alt="..."><img src="img/other.jpg" alt="..."> ...</div></div> with only <img> children (no wrappers). Use e2e-logos ONLY for real logos (svg), never for photos.
 - Plain text outside the components: use ui-section-heading (eyebrow, heading, intro) and ui-split (text with a picture). Pictures: <img src="img/name.jpg" alt="..."> where a template has a picture slot (instead of the empty e2e-hero__visual / picture div).
 
 TEMPLATES (the exact markup of the main components):
@@ -137,7 +137,7 @@ CHAT_PHOTO_RULES = """
 
 PHOTOS (this website is made in a chat; the user has no photos yet)
 - Where a real photo fits (hero, team, product, service, blog), use <img src="img/<descriptive-english-words>.jpg" alt="<what the photo shows, in English, 4-10 words, concrete>"> with a short lowercase file name with hyphens (e.g. img/hair-salon-interior.jpg). Use at most @MAX_IMAGES@ photos in the whole website and give every photo its own file name.
-- The user searches these photos on iStock (istockphoto.com) from the alt text and downloads them himself: so the alt text must be a good search description. Never use external image urls, never hotlink, never invent other photo sources. Logos, icons and illustrations stay inline svg or img/*.svg that you make yourself.
+- The user searches these photos on iStock (istockphoto.com) from the alt text and downloads them himself: so the alt text must be a good search description. Never use external image urls, never hotlink, never invent other photo sources. Logos, icons and illustrations stay inline svg or img/*.svg that you make yourself. NEVER make pictures of logos of partners, clients or brands (no img/partner-logo-*.jpg): write those names as plain text.
 - Video: where a moving picture fits (at most ONE, for example a calm background of the hero), use <video src="video/<descriptive-english-words>.mp4" autoplay muted loop playsinline aria-label="<what the video shows, in English, 4-10 words>"></video> inside a box with a fixed aspect-ratio and a background colour; never controls, never a second video. The user finds it on iStock Video and puts it in.
 - The page must look good while the photo is still missing: give the photo a fixed aspect-ratio or height and a background colour from the variables, so nothing jumps when the photo arrives."""
 
@@ -1030,8 +1030,9 @@ def max_width_of(b):
 
 
 GALLERY_CSS = """.e2e-gallery { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; }  /* photos together: a photo carousel (the importer makes the media system object of it) */
-.e2e-gallery > img, .e2e-gallery > figure { flex: 0 0 calc(33.333% - 8px); aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; scroll-snap-align: start; margin: 0; }
-@media (max-width: 760px) { .e2e-gallery > img, .e2e-gallery > figure { flex-basis: 80%; } }
+.e2e-gallery > * { flex: 0 0 calc(33.333% - 8px); margin: 0; scroll-snap-align: start; min-width: 0; }
+.e2e-gallery img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; }
+@media (max-width: 760px) { .e2e-gallery > * { flex-basis: 80%; } }
 """
 
 
@@ -1049,7 +1050,7 @@ def themed(files, b):
     rest = []
     for pre, body in _top_blocks(re.sub(r"/\*.*?\*/", "", css, flags=re.S)):
         flat = re.sub(r"\s+", "", pre)
-        if flat.startswith(":root") or (flat.startswith("@media(prefers-color-scheme") and ":root" in body) or re.match(r"^\.(band|cols|valign)", flat) or (flat.startswith("@media(max-width:760px)") and ".cols" in body):
+        if flat.startswith(":root") or (flat.startswith("@media(prefers-color-scheme") and ":root" in body) or re.match(r"^\.(band|cols|valign|e2e-gallery)", flat) or (flat.startswith("@media(max-width:760px)") and (".cols" in body or ".e2e-gallery" in body)):
             continue  # the colours of the theme and the layout vocabulary are written by the system, not by the AI
         rest.append(f"{pre}{{{body}}}")
     return {**files, "style.css": theme_root_css(b) + "\n\n" + "\n".join(rest) + "\n" + layout_css(b)}
@@ -1445,7 +1446,7 @@ def _generate_sections(pk, job):
                 secs.append((s.get("id") or "", f'<div data-sysobject="{s["sysobject"]}"></div>'))
             else:
                 secs.append((s.get("id") or "", one(pg, n, s, s["tag"], s["goal"], f"{label} ({s['tag'].replace('ui-', '')})")))
-            files[pg["file"]] = _without_missing_svgs(_page_html(b, pg, header, secs, footer), files)  # the page is complete after every piece: the preview shows it growing
+            files[pg["file"]] = normalise_galleries(_without_missing_svgs(_page_html(b, pg, header, secs, footer), files))  # the page is complete after every piece: the preview shows it growing
             _set(pk, files=files)
     return files
 
@@ -1559,14 +1560,15 @@ def photo_slots(job):
 
 
 def _istock_of(v):
-    """{istock: number, download: address, title} of a stored value (a typed number, or what the AI found: {id, url, title})."""
+    """{istock: number, download: address, title} of a stored value (a typed number, or what the AI found: {id, url, title}). A photo of Pexels also has source "pexels" and full (the free photo in full size)."""
     if isinstance(v, dict):
         n, url, title, prev, vid = str(v.get("id") or ""), str(v.get("url") or ""), str(v.get("title") or "")[:160], str(v.get("preview") or ""), str(v.get("video") or "")
+        src, full = ("pexels" if v.get("source") == "pexels" else "istock"), str(v.get("full") or "")
     else:
-        n, url, title, prev, vid = str(v or ""), "", "", "", ""
+        n, url, title, prev, vid, src, full = str(v or ""), "", "", "", "", "istock", ""
     if not n:
-        return {"istock": "", "download": "", "title": "", "preview": "", "video": ""}
-    return {"istock": n, "download": url or f"https://www.istockphoto.com/search/2/{'film' if vid else 'image'}?phrase={n}", "title": title, "preview": prev, "video": vid}
+        return {"istock": "", "download": "", "title": "", "preview": "", "video": "", "source": "istock", "full": ""}
+    return {"istock": n, "download": url or f"https://www.istockphoto.com/search/2/{'film' if vid else 'image'}?phrase={n}", "title": title, "preview": prev, "video": vid, "source": src, "full": full}
 
 
 def resolve_istock(n):
@@ -1631,6 +1633,121 @@ def search_istock(query, skip=(), video=False):
     return out
 
 
+PEXELS_HOSTS = {"url": "www.pexels.com", "preview": "images.pexels.com", "video": "videos.pexels.com", "full": "images.pexels.com"}
+
+
+def pexels_key():
+    """The API key of Pexels (Admin -> API keys), or "" when it is not linked or switched off."""
+    from apps.integrations.models import Integration
+
+    obj = Integration.objects.filter(provider="pexels", enabled=True).order_by("id").first()
+    return (obj.config.get("api_key") or "").strip() if obj else ""
+
+
+def search_pexels(query, skip=(), video=False):
+    """The best fitting FREE photos or videos that Pexels shows for a search: [{id, url, preview, video, full, title, source}]. Pexels is called through its official API (key in Admin -> API keys)."""
+    import urllib.parse
+    import urllib.request
+
+    key = pexels_key()
+    if not key:
+        raise ValueError("Koppel Pexels eerst bij Admin → API keys (Pexels, een gratis sleutel van pexels.com/api) en zet de koppeling aan.")
+    words = re.sub(r"[^a-z0-9 ]+", " ", str(query or "").lower()).split()[:8]
+    if not words:
+        return []
+    url = f"https://api.pexels.com/{'videos' if video else 'v1'}/search?" + urllib.parse.urlencode({"query": " ".join(words), "per_page": 15, "orientation": "landscape"})
+    try:
+        req = urllib.request.Request(url, headers={"Authorization": key, "User-Agent": "easy2edit"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read(3_000_000).decode("utf-8", "ignore"))
+    except Exception:  # noqa: BLE001
+        raise ValueError("Zoeken op Pexels is niet gelukt. Controleer de sleutel bij Admin → API keys en probeer het nog eens.")
+    host = lambda u, h: isinstance(u, str) and re.match(r"https://%s/" % re.escape(h), u)  # noqa: E731
+    out, seen = [], {str(x) for x in skip}
+    for it in (data.get("videos") if video else data.get("photos")) or []:
+        n = str(it.get("id") or "")
+        page = it.get("url") or ""
+        if not n.isdigit() or n in seen or not host(page, "www.pexels.com"):
+            continue
+        seen.add(n)
+        if video:
+            files = [f for f in it.get("video_files") or [] if f.get("file_type") == "video/mp4" and host(f.get("link"), "videos.pexels.com")]
+            files.sort(key=lambda f: abs((f.get("width") or 0) - 1280))
+            prev = it.get("image") or ""
+            if not files or not host(prev, "images.pexels.com"):
+                continue
+            title = (it.get("url") or "").rstrip("/").split("/")[-1].rsplit("-", 1)[0].replace("-", " ").capitalize()
+            out.append({"id": n, "url": page, "preview": prev[:600], "video": files[0]["link"][:600], "full": "", "title": title[:160], "source": "pexels"})
+        else:
+            src = it.get("src") or {}
+            prev, full = src.get("large") or src.get("medium") or "", src.get("large2x") or src.get("large") or ""
+            if not host(prev, "images.pexels.com") or not host(full, "images.pexels.com"):
+                continue
+            out.append({"id": n, "url": page, "preview": prev[:600], "video": "", "full": full[:600], "title": str(it.get("alt") or "")[:160] or "Pexels " + n, "source": "pexels"})
+        if len(out) >= 12:
+            break
+    return out
+
+
+def _clean_pick(item):
+    """(number, address, example picture, video, full, source) of a photo or video that the user chose in the search field; only addresses of iStock or Pexels are accepted."""
+    item = item if isinstance(item, dict) else {}
+    url, prev, vid, full = str(item.get("url") or ""), str(item.get("preview") or ""), str(item.get("video") or ""), str(item.get("full") or "")
+    ok = lambda u, host: not u or re.match(r"https://%s/" % re.escape(host), u)  # noqa: E731
+    if item.get("source") == "pexels":
+        n = str(item.get("id") or "")
+        if not (n.isdigit() and 1 <= len(n) <= 14) or not url or not all(ok(item.get(k) or "", h) for k, h in PEXELS_HOSTS.items()):
+            raise ValueError("Deze foto komt niet van Pexels.")
+        return n, url, prev, vid, full, "pexels"
+    n = _istock_id(item.get("id"))
+    if not (5 <= len(n) <= 14) or not url or not ok(url, "www.istockphoto.com") or not ok(prev, "media.istockphoto.com") or not ok(vid, "media.istockphoto.com"):
+        raise ValueError("Deze foto komt niet van iStock.")
+    return n, url, prev, vid, "", "istock"
+
+
+def _pick_entry(item):
+    n, url, prev, vid, full, src = _clean_pick(item)
+    e = {"id": n, "url": url[:400], "preview": prev[:600], "video": vid[:600], "title": str(item.get("title") or "")[:160]}
+    if src == "pexels":
+        e.update(source="pexels", full=full[:600])
+    return e
+
+
+def photo_source(job):
+    """Where the designer searches photos and videos for this design: "pexels" (free, the default) or "istock". Pexels needs its key (Admin -> API keys): without it iStock is used."""
+    want = (job.brief or {}).get("photo_source") or "pexels"
+    return "pexels" if want == "pexels" and pexels_key() else "istock"
+
+
+def set_photo_source(job, source):
+    """Remember the choice of the user (Pexels or iStock) in the design: the automatic searches follow it."""
+    if source not in ("pexels", "istock"):
+        return job
+    b = dict(job.brief or {})
+    if b.get("photo_source") != source:
+        b["photo_source"] = source
+        SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+        job = SiteDesignJob.objects.get(pk=job.pk)
+    return job
+
+
+def search_photos(job, query, skip=(), video=False):
+    """The search of the chosen source; an automatic search never fails (no result instead)."""
+    try:
+        return search_pexels(query, skip=skip, video=video) if photo_source(job) == "pexels" else search_istock(query, skip=skip, video=video)
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _pick_from(hit, title=""):
+    """What is stored for a found item (with source and full size for Pexels), with a title."""
+    e = {k: hit.get(k, "") for k in ("id", "url", "preview", "video")}
+    e["title"] = title or hit.get("title") or ""
+    if hit.get("source") == "pexels":
+        e.update(source="pexels", full=hit.get("full", ""))
+    return e
+
+
 def find_istock(job):
     """For every open photo slot iStock is searched (with the description of the photo) and the best fitting photo is given: number, address and an example picture. Slots that have a number without an example picture get the picture. Photos are not used twice. Returns the job; the number of new photos is in job.found."""
     b = dict(job.brief or {})
@@ -1647,9 +1764,9 @@ def find_istock(job):
                     d[x["file"]] = got
                     found += 1
             continue
-        hit = next(iter(search_istock(x["alt"] or x["query"], skip=used, video=x["kind"] == "video")), None)
+        hit = next(iter(search_photos(job, x["alt"] or x["query"], skip=used, video=x["kind"] == "video")), None)
         if hit:
-            d[x["file"]] = hit
+            d[x["file"]] = _pick_from(hit)
             used.add(hit["id"])
             found += 1
     b["istock"] = d
@@ -1803,17 +1920,13 @@ def set_istock_pick(job, file, item):
     slot = next((x for x in photo_slots(job) if x["file"] == file), None)
     if not slot:
         raise ValueError("Deze plek bestaat niet (meer).")
-    item = item if isinstance(item, dict) else {}
-    n = _istock_id(item.get("id"))
-    url, prev, vid = str(item.get("url") or ""), str(item.get("preview") or ""), str(item.get("video") or "")
-    ok = lambda u, host: not u or re.match(r"https://%s/" % re.escape(host), u)  # noqa: E731
-    if not (5 <= len(n) <= 14) or not url or not ok(url, "www.istockphoto.com") or not ok(prev, "media.istockphoto.com") or not ok(vid, "media.istockphoto.com"):
-        raise ValueError("Deze foto komt niet van iStock.")
+    entry = _pick_entry(item)
+    vid = entry["video"]
     if (slot["kind"] == "video") != bool(vid):
         raise ValueError("Kies een video voor een video-plek en een foto voor een foto-plek.")
     b = dict(job.brief or {})
     d = dict(b.get("istock") or {})
-    d[file] = {"id": n, "url": url[:400], "preview": prev[:600], "video": vid[:600], "title": str(item.get("title") or "")[:160]}
+    d[file] = entry
     b["istock"] = d
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
     return SiteDesignJob.objects.get(pk=job.pk)
@@ -1821,18 +1934,14 @@ def set_istock_pick(job, file, item):
 
 def add_pick(job, item):
     """A photo or video that the user found with the search field is ADDED to the list (also when no page asks for it yet). Only addresses on iStock are accepted."""
-    item = item if isinstance(item, dict) else {}
-    n = _istock_id(item.get("id"))
-    url, prev, vid = str(item.get("url") or ""), str(item.get("preview") or ""), str(item.get("video") or "")
-    ok = lambda u, host: not u or re.match(r"https://%s/" % re.escape(host), u)  # noqa: E731
-    if not (5 <= len(n) <= 14) or not url or not ok(url, "www.istockphoto.com") or not ok(prev, "media.istockphoto.com") or not ok(vid, "media.istockphoto.com"):
-        raise ValueError("Deze foto komt niet van iStock.")
+    entry = _pick_entry(item)
+    n, vid = entry["id"], entry["video"]
     b = dict(job.brief or {})
     d = dict(b.get("picked") or {})
-    file = f"istock-{n}.{'mp4' if vid else 'jpg'}"
+    file = f"{entry.get('source', 'istock')}-{n}.{'mp4' if vid else 'jpg'}"
     if file not in d and len(d) >= 30:
         raise ValueError("De lijst is vol (30). Haal eerst iets weg.")
-    d[file] = {"id": n, "url": url[:400], "preview": prev[:600], "video": vid[:600], "title": str(item.get("title") or "")[:160]}
+    d[file] = entry
     b["picked"] = d
     b["slots_hidden"] = [x for x in b.get("slots_hidden") or [] if x != file]
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
@@ -1851,12 +1960,13 @@ def use_preview(job, file, user):
     if not slot:
         raise ValueError("Deze plek bestaat niet (meer).")
     video = slot["kind"] == "video"
-    url = (slot.get("video") if video else slot.get("preview")) or ""
-    if not re.match(r"https://media\.istockphoto\.com/id/\d+/", url):
-        raise ValueError("Er is nog geen voorbeeld van iStock voor deze plek. Zoek eerst een " + ("video." if video else "foto."))
-    cap = 40_000_000 if video else 8_000_000
+    pexels = slot.get("source") == "pexels"  # a photo of Pexels is free: the real photo in full size, not a watermarked example
+    url = (slot.get("video") if video else (slot.get("full") if pexels and slot.get("full") else slot.get("preview"))) or ""
+    if not re.match(r"https://(videos|images)\.pexels\.com/" if pexels else r"https://media\.istockphoto\.com/id/\d+/", url):
+        raise ValueError("Er is nog geen voorbeeld van " + ("Pexels" if pexels else "iStock") + " voor deze plek. Zoek eerst een " + ("video." if video else "foto."))
+    cap = 40_000_000 if video else (15_000_000 if pexels else 8_000_000)
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Referer": "https://www.istockphoto.com/"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36", "Referer": "https://www.pexels.com/" if pexels else "https://www.istockphoto.com/"})
         with urllib.request.urlopen(req, timeout=60 if video else 20) as r:
             data = r.read(cap + 1)
     except Exception:  # noqa: BLE001
@@ -1876,11 +1986,11 @@ def use_preview(job, file, user):
             ext = None
     if not ext:
         raise ValueError("Het voorbeeld van iStock is geen geldige " + ("video." if video else "afbeelding."))
-    name = f"istock-{slot['istock']}-voorbeeld.{ext}"
+    name = f"pexels-{slot['istock']}.{ext}" if pexels else f"istock-{slot['istock']}-voorbeeld.{ext}"
     key = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{_uuid.uuid4().hex[:8]}-{get_valid_filename(name)}"), ContentFile(data))
     item = MediaItem.objects.get(key=key)
     item.name, item.uploaded_by = name[:255], user
-    item.tags = ["design", "istock"]
+    item.tags = ["design", "pexels" if pexels else "istock"]
     item.save(update_fields=["name", "uploaded_by", "tags"])
     return set_slot(job, file, item.id)
 
@@ -1949,13 +2059,13 @@ def auto_photos(pk, job):
     videos = 0
     for n, s in enumerate(searches):
         video = s.get("kind") == "video" and videos < 1
-        _set(pk, progress=6, step=f"Foto's zoeken op iStock ({n + 1} van {len(searches)})")
+        _set(pk, progress=6, step=f"Foto's zoeken op {'Pexels' if photo_source(SiteDesignJob.objects.get(pk=pk)) == 'pexels' else 'iStock'} ({n + 1} van {len(searches)})")
         try:
-            hit = next(iter(search_istock(str(s["query"]), skip=used, video=video)), None)
+            hit = next(iter(search_photos(SiteDesignJob.objects.get(pk=pk), str(s["query"]), skip=used, video=video)), None)
         except Exception:  # noqa: BLE001
             hit = None
         if hit and len(picked) < 30:
-            picked[f"istock-{hit['id']}.{'mp4' if video else 'jpg'}"] = {"id": hit["id"], "url": hit["url"], "preview": hit.get("preview", ""), "video": hit.get("video", "") if video else "", "title": str(s.get("purpose") or "")[:40] + (": " if s.get("purpose") else "") + str(hit.get("title") or "")[:120]}
+            picked[f"{hit.get('source', 'istock')}-{hit['id']}.{'mp4' if video else 'jpg'}"] = _pick_from(hit, str(s.get("purpose") or "")[:40] + (": " if s.get("purpose") else "") + str(hit.get("title") or "")[:120])
             used.add(hit["id"])
             videos += 1 if video else 0
     if picked != (b.get("picked") or {}):
@@ -1964,13 +2074,58 @@ def auto_photos(pk, job):
     return SiteDesignJob.objects.get(pk=pk)
 
 
+def normalise_galleries(html):
+    """Photos together are ONE photo carousel (the media system object of easy2edit), in the markup that the importer knows: <div data-easy2edit-tag="ui-gallery"><div class="e2e-gallery"><img>...</div></div>.
+    A row of photos in a "logos" row, and a gallery with wrappers around the pictures, are made like that. Real logos (svg) stay a logos row."""
+    def imgs_of(inner):
+        return re.findall(r"<img\b[^>]*>", inner, re.I)
+
+    def gallery(imgs):
+        return '<div data-easy2edit-tag="ui-gallery"><div class="e2e-gallery">' + "".join(imgs) + "</div></div>"
+
+    def logos(m):
+        imgs = imgs_of(m.group(1))
+        photos = [i for i in imgs if re.search(r"""src=["'][^"']+\.(?:jpe?g|png|webp)["']""", i, re.I)]
+        return gallery(photos) if len(imgs) >= 3 and len(photos) == len(imgs) else m.group(0)
+
+    html = re.sub(r"""<div\b[^>]*class=["'][^"']*\be2e-logos\b[^"']*["'][^>]*>((?:\s*<img\b[^>]*>){3,}\s*)</div>""", logos, html or "", flags=re.I)
+
+    # a gallery (with or without the tag, with or without wrappers): rebuilt from its pictures
+    out, pos = [], 0
+    for m in re.finditer(r"""<div\b[^>]*class=["'][^"']*\be2e-gallery\b[^"']*["'][^>]*>""", html, re.I):
+        if m.start() < pos:
+            continue
+        depth, i = 1, m.end()
+        for t in re.finditer(r"</?div\b[^>]*>", html[m.end():], re.I):
+            depth += -1 if t.group(0).startswith("</") else 1
+            if depth == 0:
+                i = m.end() + t.end()
+                break
+        else:
+            continue
+        inner = html[m.end():i - len("</div>")]
+        imgs = imgs_of(inner)
+        if len(imgs) < 2:
+            continue
+        start = m.start()
+        pre = re.search(r"""<div\b[^>]*data-easy2edit-tag=["']ui-gallery["'][^>]*>\s*$""", html[:start], re.I)
+        tail = re.match(r"\s*</div>", html[i:]) if pre else None
+        if pre and tail:
+            start, i = pre.start(), i + tail.end()
+        out.append(html[pos:start] + gallery(imgs))
+        pos = i
+    return "".join(out) + html[pos:] if out else html
+
+
 def _without_missing_svgs(html, files):
     """The designer refers to pictures (img/logo-client-1.svg) that it does not make: such a tag becomes its text (the alt), so there is no broken picture and no request that ends in a 404."""
     def fix(m):
         tag = m.group(0)
-        src = re.search(r"""src=["']([^"']+\.svg)["']""", tag, re.I)
+        src = re.search(r"""src=["']([^"']+\.svg)["']""", tag, re.I) or re.search(r"""src=["'](img/[^"']*logo[^"']*\.(?:jpe?g|png|webp|gif))["']""", tag, re.I)  # (a made-up logo of a partner or client as a photo: no photo exists for it, iStock has none)
         if not src or src.group(1).startswith(("http:", "https:", "data:", "/")) or src.group(1) in files:
             return tag
+        if not src.group(1).lower().endswith(".svg") and os.path.basename(src.group(1)).lower().startswith("logo."):
+            return tag  # the logo of the customer himself (dropped in the questionnaire): that file is added by the system
         alt = re.search(r"""alt=["']([^"']*)["']""", tag, re.I)
         return f"<span>{alt.group(1)}</span>" if alt and alt.group(1).strip() else ""
 
@@ -1987,7 +2142,7 @@ def assign_unused_picked(job):
     n = 0
     for x, (f, it) in zip(empty, unused):
         try:
-            job = set_istock_pick(job, x["file"], {"id": it.get("id"), "url": it.get("url"), "preview": it.get("preview"), "title": x["alt"] or it.get("title") or ""})
+            job = set_istock_pick(job, x["file"], _pick_from(it, x["alt"] or it.get("title") or ""))
             n += 1
         except ValueError:
             continue
@@ -2100,14 +2255,14 @@ def _more_photos(pk):
         empty = [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and not x["istock"] and "logo" not in x["file"]][:20]  # (a logo of a partner or customer is not a photo: iStock has no fitting picture)
         used = {str(x.get("istock") or "") for x in photo_slots(job)}
         for n, x in enumerate(empty):
-            _set(pk, progress=5 + int(80 * n / max(1, len(empty))), step=f"Afbeeldingen zoeken op iStock ({n + 1} van {len(empty)})")
+            _set(pk, progress=5 + int(80 * n / max(1, len(empty))), step=f"Afbeeldingen zoeken op {'Pexels' if photo_source(job) == 'pexels' else 'iStock'} ({n + 1} van {len(empty)})")
             try:
-                hit = next(iter(search_istock(x["query"] or x["alt"] or x["file"], skip=used)), None)
+                hit = next(iter(search_photos(job, x["query"] or x["alt"] or x["file"], skip=used)), None)
             except Exception:  # noqa: BLE001
                 hit = None
             if hit:
                 try:
-                    set_istock_pick(SiteDesignJob.objects.get(pk=pk), x["file"], {"id": hit["id"], "url": hit["url"], "preview": hit.get("preview", ""), "title": x["alt"] or x["query"]})
+                    set_istock_pick(SiteDesignJob.objects.get(pk=pk), x["file"], _pick_from(hit, x["alt"] or x["query"]))
                     used.add(str(hit["id"]))
                 except ValueError:
                     continue

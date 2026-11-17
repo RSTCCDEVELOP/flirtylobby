@@ -784,3 +784,29 @@ def test_footer_columns_and_brand_of_the_design(db):
     assert cols == [{"title": "Bedrijf", "links": [{"label": "Over ons", "url": "/#about"}, {"label": "Team", "url": "/over-ons"}, {"label": "Extern", "url": "https://x.nl/a"}]}]
     cleaned, errors = system.clean({"footer_columns": cols + [{"title": "Slecht", "links": [{"label": "x", "url": "javascript:alert(1)"}]}]})
     assert not errors and cleaned["footer_columns"] == cols  # an unsafe address is dropped, and so is the column that is left empty by it
+
+
+def test_made_up_partner_logos_become_text_but_the_customer_logo_stays():
+    from apps.core import sitecreator as S
+
+    html = ('<p><img src="img/partner-logo-northfield-group.jpg" alt="Northfield Group company logo"> <img src="img/logo.png" alt="Blue BPS"> '
+            '<img src="img/istock-1.jpg" alt="Call centre"> <img src="img/client-logo-x.svg" alt="X"></p>')
+    out = S._without_missing_svgs(html, {})
+    assert "<span>Northfield Group company logo</span>" in out and "<span>X</span>" in out  # no picture exists for a made-up logo: its name is text
+    assert 'src="img/logo.png"' in out and 'src="img/istock-1.jpg"' in out  # the customer's own logo and the photos stay
+
+
+def test_photos_together_become_the_gallery_markup_of_easy2edit():
+    from apps.core import sitecreator as S
+
+    photos = "".join(f'<img src="img/istock-{n}.jpg" alt="p{n}">' for n in range(1, 6))
+    # a row of photos in a logos row
+    out = S.normalise_galleries(f'<main><div class="e2e-logos">{photos}</div></main>')
+    assert out.count('data-easy2edit-tag="ui-gallery"') == 1 and 'class="e2e-gallery"' in out and out.count("<img") == 5 and "e2e-logos" not in out
+    # a gallery with wrappers around the pictures
+    wrapped = "".join(f'<div class="e2e-gallery__img" style="--g:{n}"><img src="img/istock-{n}.jpg" alt="p"></div>' for n in range(1, 5))
+    out = S.normalise_galleries(f'<section><div data-easy2edit-tag="ui-gallery"><div class="e2e-gallery">{wrapped}</div></div><p>x</p></section>')
+    assert "e2e-gallery__img" not in out and out.count("<img") == 4 and out.count('data-easy2edit-tag="ui-gallery"') == 1 and out.endswith("<p>x</p></section>")
+    # real logos (svg) stay a logos row
+    logos = "".join(f'<img src="img/logo-{n}.svg" alt="l">' for n in range(1, 5))
+    assert S.normalise_galleries(f'<div class="e2e-logos">{logos}</div>') == f'<div class="e2e-logos">{logos}</div>'

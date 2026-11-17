@@ -35,6 +35,23 @@ const ICON = {
   code: I(<><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16" /></>),
   object: I(<><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="8" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /><rect x="13" y="13" width="8" height="8" rx="1.5" /></>),
 };
+// the kinds of media objects with a single-colour icon each (the tile of a kind that is not made yet creates it)
+const MEDIA_ICON = {
+  carousel: I(<><rect x="7" y="6" width="10" height="12" rx="1.5" /><path d="M3 9v6M21 9v6" /></>),
+  slideshow: I(<><rect x="3" y="5" width="18" height="12" rx="2" /><path d="M9 20h6" /></>),
+  coverflow: I(<><rect x="8" y="6" width="8" height="12" rx="1.5" /><path d="M5 8l-2 1.5v5L5 16M19 8l2 1.5v5L19 16" /></>),
+  filmstrip: I(<><rect x="3" y="4" width="18" height="11" rx="2" /><path d="M5 19h3M10.5 19h3M16 19h3" /></>),
+  mosaic: I(<><rect x="3" y="3" width="10" height="10" rx="1.5" /><rect x="15" y="3" width="6" height="6" rx="1.5" /><rect x="15" y="11" width="6" height="10" rx="1.5" /><rect x="3" y="15" width="10" height="6" rx="1.5" /></>),
+  stack: I(<><rect x="6" y="7" width="13" height="11" rx="1.5" /><path d="M4 16V6a1.5 1.5 0 011.5-1.5H16" /></>),
+  book: I(<><path d="M12 6v14M12 6c-2-1.5-5-2-8-1.5V18c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6z" /></>),
+  album: I(<><rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="8" rx="1.5" /><rect x="3" y="13" width="8" height="8" rx="1.5" /><rect x="13" y="13" width="8" height="8" rx="1.5" /></>),
+  wall: I(<><rect x="3" y="3" width="8" height="12" rx="1.5" /><rect x="13" y="3" width="8" height="7" rx="1.5" /><rect x="13" y="12" width="8" height="9" rx="1.5" /><rect x="3" y="17" width="8" height="4" rx="1.5" /></>),
+  videogrid: I(<><rect x="3" y="4" width="8" height="7" rx="1.5" /><rect x="13" y="4" width="8" height="7" rx="1.5" /><rect x="3" y="13" width="8" height="7" rx="1.5" /><rect x="13" y="13" width="8" height="7" rx="1.5" /><path d="M6 6.5v2l2-1z" /></>),
+  playlist: I(<><rect x="3" y="4" width="12" height="9" rx="1.5" /><path d="M7.5 6.5v4l3.5-2zM18 5v14M3 17h12M3 20h12" /></>),
+  vcarousel: I(<><rect x="7" y="6" width="10" height="12" rx="1.5" /><path d="M3 9v6M21 9v6M11 10v4l3-2z" /></>),
+};
+const MEDIA_KINDS = [["carousel", "Beeldcarrousel"], ["slideshow", "Diavoorstelling"], ["coverflow", "Coverflow"], ["filmstrip", "Galerij met filmstrip"], ["mosaic", "Mozaïek"], ["stack", "Fotostapel"], ["book", "Bladerboek"], ["album", "Fotoboek"], ["wall", "Fotomuur"], ["videogrid", "Videoraster"], ["playlist", "Videolijst met speler"], ["vcarousel", "Videocarrousel"]];
+const mediaIcon = (t) => MEDIA_ICON[t] || ICON.image;
 // [type, widget, label, description, icon] per tab
 const GROUPS = [
   ["basis", "Basis", [["heading", "", "Kop", "Een titel of tussenkop", "heading"], ["text", "", "Tekst", "Een alinea met opmaak", "text"], ["image", "", "Afbeelding", "Een foto uit de bibliotheek", "image"], ["button", "", "Knop", "Naar een pagina of link, in alle talen", "button"], ["widget", "quote", "Citaat", "Een uitspraak met naam", "quote"]]],
@@ -45,9 +62,12 @@ const GROUPS = [
 
 // The pop-up of "+ Toevoegen" in a block (edit mode): tabs (basis, media, company, layout, system), each with parts with an icon and a line of explanation; search over all of them.
 // onAdd(type, widget), onCols(n), onObjects(); cols = the number of columns now; objectCount = how many system objects there are (undefined = the module is off).
-export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObjects, onComponents, onComponent, objectGroups = null, onObject = null, mediaOn = false, onMedia = null, onClose }) {
+export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObjects, onComponents, onComponent, objectGroups = null, onObject = null, mediaOn = false, onMedia = null, onMediaKind = null, onClose }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState("basis");
+  const [shut, setShut] = useState(() => { try { return JSON.parse(localStorage.getItem("pb-comp-shut") || "{}"); } catch { return {}; } });  // the groups of the components that are folded (remembered)
+  const fold = (g) => setShut((o) => { const n = { ...o, [g]: !o[g] }; try { localStorage.setItem("pb-comp-shut", JSON.stringify(n)); } catch { /* no storage: it just is not remembered */ } return n; });
+  const foldAll = (closed) => setShut(() => { const n = closed ? Object.fromEntries(compGroups.map((g) => [g, true])) : {}; try { localStorage.setItem("pb-comp-shut", JSON.stringify(n)); } catch { /* not remembered */ } return n; });
   const [libOpen, setLibOpen] = useState(false);  // the media library under the tile "Media bibliotheek": opens and closes with the tile
   const [kit, setKit] = useState(null);  // the components of the UI-kit (loaded when this menu opens)
   useEffect(() => { loadKit().then(setKit).catch(() => {}); }, []);
@@ -87,14 +107,26 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
         <small className="muted">{comps.length ? `${comps.length} ${tx("componenten in de kleuren van je thema")}` : tx("Laden…")}</small>
         {onComponents && <button type="button" className="btn sm" onClick={onComponents}>{tx("Voorbeelden bekijken")}</button>}
       </div>
+      {compGroups.length > 1 && (
+        <div className="row" style={{ gap: ".4rem", margin: "0 0 .2rem" }}>
+          <button type="button" className="btn sm" onClick={() => foldAll(true)}>{tx("Alles inklappen")}</button>
+          <button type="button" className="btn sm" onClick={() => foldAll(false)}>{tx("Alles uitklappen")}</button>
+        </div>
+      )}
       {compGroups.map((g) => (
         <div key={g} className="pb-compcat">
-          <h4 style={{ margin: ".7rem 0 .3rem" }}>{tx(g)}</h4>
-          <div className="pb-addgrid">{comps.filter((c) => c.group === g).map(compTile)}</div>
+          <h4 style={{ margin: ".7rem 0 .3rem" }}>
+            <button type="button" className="pb-comphead" aria-expanded={!shut[g] || !!find} onClick={() => fold(g)}>
+              <span>{tx(g)} <small className="muted">({comps.filter((c) => c.group === g).length})</small></span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: shut[g] && !find ? "rotate(-90deg)" : "none", transition: "transform .15s" }}><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+          </h4>
+          {(!shut[g] || !!find) && <div className="pb-addgrid">{comps.filter((c) => c.group === g).map(compTile)}</div>}
         </div>
       ))}
     </div>
   );
+  const mediaObjects = (objectGroups || []).flatMap((g) => g.items).filter((o) => o.kind === "media");  // photo and video objects (carousel, slider, coverflow, mosaic, book ...): they live in the Media tab
   const objHits = find && objectGroups ? objectGroups.flatMap((g) => g.items.filter((o) => `${o.name} ${g.label} ${o.slug}`.toLowerCase().includes(find)).map((o) => ({ ...o, label: g.label }))) : [];
   const hits = find ? [...GROUPS.flatMap(([, , items]) => items.filter(([, , l, d]) => match(l, d))), ...(objectCount !== undefined && match("Systeemobjecten", "Producten, formulieren, abonnementen") ? ["obj"] : [])] : null;
   return (
@@ -115,6 +147,30 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
             {GROUPS.filter(([k]) => k === tab).map(([k, , items]) => <div className="pb-addgrid" key={k}>{items.map(tile)}</div>)}
             {tab === "opmaak" && colsRow}
             {tab === "componenten" && compList}
+            {tab === "media" && objectGroups && onObject && (
+              <div className="pb-mediaobjs">
+                <h4 style={{ margin: ".9rem 0 .3rem" }}>
+                  <button type="button" className="pb-comphead" aria-expanded={!shut.__media || !!find} onClick={() => fold("__media")}>
+                    <span>{tx("Presentaties, sliders en carrousels")} <small className="muted">({mediaObjects.length})</small></span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: shut.__media ? "rotate(-90deg)" : "none", transition: "transform .15s" }}><path d="m6 9 6 6 6-6" /></svg>
+                  </button>
+                </h4>
+                {!shut.__media && <div className="pb-addgrid">
+                  {mediaObjects.map((o) => (
+                    <button type="button" key={o.slug} className="pb-addtile" onClick={() => onObject(o.slug)} title={o.slug} {...dragProps({ kind: "object", slug: o.slug })}>
+                      <span className="pb-addico">{mediaIcon(o.mtype)}</span>
+                      <span className="pb-addtext"><strong>{o.name}</strong><small>{tx(o.typeLabel || "Media")}</small></span>
+                    </button>
+                  ))}
+                  {onMediaKind && MEDIA_KINDS.filter(([k]) => !mediaObjects.some((o) => o.mtype === k)).map(([k, l]) => (
+                    <button type="button" key={`new-${k}`} className="pb-addtile" onClick={() => onMediaKind(k, tx(l))} title={tx("Maakt dit onderdeel met de afbeeldingen van je bibliotheek")}>
+                      <span className="pb-addico">{mediaIcon(k)}</span>
+                      <span className="pb-addtext"><strong>{tx(l)}</strong><small>{tx("Toevoegen en instellen")}</small></span>
+                    </button>
+                  ))}
+                </div>}
+              </div>
+            )}
             {tab === "media" && mediaOn && onMedia && (
               <div className="pb-medialib-part">
                 <button type="button" className={`pb-addtile${libOpen ? " on" : ""}`} aria-expanded={libOpen} onClick={() => setLibOpen(!libOpen)}>
@@ -128,7 +184,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
             {tab === "systeem" && (objectGroups && onObject ? (
               <div className="pb-sysgroups">
                 <small className="muted">{objectCount} {tx("systeemobjecten, per module of plugin")}</small>
-                {objectGroups.map((g) => (
+                {objectGroups.filter((g) => !g.items.every((o) => o.kind === "media")).map((g) => (
                   <details key={g.key} className="pb-sysgroup">
                     <summary><strong>{tx(g.label)}</strong> <small className="muted">({g.items.length})</small></summary>
                     <div className="pb-addgrid">{g.items.map((o) => (

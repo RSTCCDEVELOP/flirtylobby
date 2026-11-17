@@ -2123,15 +2123,23 @@ def sitecreator_slot(request, pk):
 @api_view(["GET"])
 @permission_classes(DESIGN_PERM)
 def sitecreator_istock_search(request, pk):
-    """The search field of the photos: what iStock shows for a search word (photos or videos), with number, address and example picture."""
+    """The search field of the photos: what iStock (or, with source=pexels, Pexels) shows for a search word (photos or videos), with number, address and example picture."""
     from . import sitecreator
 
-    if not _design(request, pk):
+    job = _design(request, pk)
+    if not job:
         return _gone()
     q = str(request.query_params.get("q") or "").strip()[:120]
     if len(q) < 2:
         return _bad("Typ een zoekwoord van minstens 2 letters.")
-    return Response({"items": sitecreator.search_istock(q, video=request.query_params.get("kind") == "video")})
+    video = request.query_params.get("kind") == "video"
+    sitecreator.set_photo_source(job, request.query_params.get("source"))  # the automatic searches of the designer follow this choice
+    if request.query_params.get("source") == "pexels":
+        try:
+            return Response({"items": sitecreator.search_pexels(q, video=video)})
+        except ValueError as e:
+            return _bad(str(e))
+    return Response({"items": sitecreator.search_istock(q, video=video)})
 
 
 @api_view(["POST"])
@@ -2144,7 +2152,7 @@ def sitecreator_istock(request, pk):
     if not job:
         return _gone()
     try:
-        job = sitecreator.find_istock(job)
+        job = sitecreator.find_istock(sitecreator.set_photo_source(job, request.data.get("source")))
     except Exception as e:  # noqa: BLE001
         return _bad(str(e) if isinstance(e, ValueError) else "Zoeken op iStock is niet gelukt. Probeer het nog eens.")
     return Response({**sitecreator.public(job), "found": getattr(job, "found", 0)})
@@ -2264,8 +2272,10 @@ def sitecreator_search_terms(request, pk):
     """{"name", "what", "kind"}: search phrases for iStock that fit the company (asked from the AI)."""
     from . import sitecreator
 
-    if not _design(request, pk):
+    job = _design(request, pk)
+    if not job:
         return _gone()
+    sitecreator.set_photo_source(job, request.data.get("source"))
     return Response({"terms": sitecreator.search_terms(request.data.get("name"), request.data.get("what"), "video" if request.data.get("kind") == "video" else "photo")})
 
 

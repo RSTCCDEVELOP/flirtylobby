@@ -75,7 +75,9 @@ class FileKey(models.Model):
 class MediaView(models.Model):
     """A way to show pictures on a page (photo book, carousel, photo wall, slideshow): a system object that is put on a page in edit mode."""
 
-    TYPES = [("album", "Fotoboek"), ("carousel", "Beeldcarrousel"), ("wall", "Fotomuur"), ("slideshow", "Diavoorstelling")]
+    TYPES = [("album", "Fotoboek"), ("carousel", "Beeldcarrousel"), ("wall", "Fotomuur"), ("slideshow", "Diavoorstelling"),
+             ("coverflow", "Coverflow"), ("filmstrip", "Galerij met filmstrip"), ("mosaic", "Mozaïek"), ("stack", "Fotostapel"), ("book", "Bladerboek"),
+             ("videogrid", "Videoraster"), ("playlist", "Videolijst met speler"), ("vcarousel", "Videocarrousel")]
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=70, unique=True)
     type = models.CharField(max_length=12, choices=TYPES)

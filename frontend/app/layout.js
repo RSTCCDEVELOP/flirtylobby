@@ -199,7 +199,8 @@ export default async function RootLayout({ children }) {
             <DevicePreview />
             <PaymentRequired />
         <SandboxBadge status={sandbox} />
-        {jsonld.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonld).replace(/</g, "\\u003c") }} />}
+        {/* one script per object: tools that read the block expect an object with "@context", not an array */}
+        {jsonld.map((o, i) => <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(o).replace(/</g, "\\u003c") }} />)}
           </BrandingProvider>
         <ChatWidget />
         <DialogHost />

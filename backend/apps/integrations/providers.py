@@ -37,6 +37,10 @@ def _http_get(url, headers):
         return False, f"Geen verbinding: {e}"
 
 
+def test_pexels(c):
+    return _http_get("https://api.pexels.com/v1/search?query=nature&per_page=1", {"Authorization": c["api_key"]})
+
+
 def test_anthropic(c):
     if not c.get("api_key"):
         return False, "API-sleutel ontbreekt."
@@ -228,6 +232,7 @@ PROVIDERS = {
         f("public_url", "Publieke URL (bucket-URL of CDN, optioneel)", required=False),
         f("prefix", "Map in de bucket (optioneel, bv. site)", required=False),
         f("encryption_key", "Hoofdsleutel", secret=True, required=False)]},
+    "pexels": {"label": "Pexels (gratis foto's en video's)", "test": test_pexels, "fields": [f("api_key", "API-sleutel (gratis aan te vragen op pexels.com/api)", secret=True)]},
     "stripe": {"label": "Stripe", "test": test_stripe, "fields": [f("secret_key", "Secret key", secret=True)]},
     "mollie": {"label": "Mollie", "test": test_mollie, "fields": [f("api_key", "API-sleutel (live_ of test_)", secret=True)]},
     "postmark": {"label": "Postmark", "test": test_postmark, "fields": [f("server_token", "Server-token", secret=True), f("from_email", "Afzender (e-mailadres, gevalideerd bij Postmark)", required=False)]},

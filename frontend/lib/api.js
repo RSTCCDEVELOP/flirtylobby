@@ -13,9 +13,14 @@ function base() {
   if (typeof window === "undefined") return CONFIGURED;
   try {
     const u = new URL(CONFIGURED);
+    // Page on https but the configured backend is http (frontend started without the script)? The browser blocks that, and the https backend answers on the same address: use https.
+    if (window.location.protocol === "https:" && u.protocol === "http:") u.protocol = "https:";
     if (["localhost", "127.0.0.1"].includes(u.hostname) && !["localhost", "127.0.0.1"].includes(window.location.hostname)) {
       return `${u.protocol}//${window.location.hostname}:${u.port || 8000}`;
     }
+    // Backend on localhost: use 127.0.0.1. The backend listens on IPv4 only, and Safari tries localhost via IPv6 (::1) first, which ends in "Load failed". The certificate covers 127.0.0.1.
+    if (u.hostname === "localhost" && window.location.hostname === "localhost") u.hostname = "127.0.0.1";
+    return u.origin;
   } catch {}
   return CONFIGURED;
 }

@@ -12,15 +12,28 @@ from django.utils.text import slugify
 from .models import MediaItem, MediaView
 
 RATIOS = ("1/1", "4/3", "3/2", "16/9", "3/4")
-COMMON = {"ratio": "4/3", "gap": 12, "radius": 8, "shadow": False, "hover": "zoom", "plane_opacity": 45, "captions": "none", "lightbox": True}
+SHAPES = ("rect", "rounded", "circle", "arch", "hexagon", "diamond")  # the form of every picture (rect follows the setting "Ronde hoeken")
+COMMON = {"ratio": "4/3", "gap": 12, "radius": 8, "shape": "rect", "shadow": False, "hover": "zoom", "plane_opacity": 45, "captions": "none", "lightbox": True}
 DEFAULTS = {
     "album": {**COMMON, "columns": 4, "frame": "none", "tilt": False},
     "carousel": {**COMMON, "visible": 3, "autoplay": True, "interval": 4, "arrows": True, "dots": True, "loop": True},
     "wall": {**COMMON, "columns": 4, "ratio": "auto"},
     "slideshow": {"transition": "fade", "interval": 5, "autoplay": True, "height": 480, "arrows": True, "dots": True, "caption_overlay": True, "captions": "below", "lightbox": False, "radius": 8, "shadow": False},
+    # pictures
+    "coverflow": {"ratio": "4/3", "radius": 8, "shape": "rect", "depth": 55, "autoplay": False, "interval": 4, "arrows": True, "dots": True, "captions": "below", "lightbox": True, "shadow": True},
+    "filmstrip": {"ratio": "3/2", "radius": 8, "shape": "rect", "thumbs": "bottom", "thumb_size": 84, "autoplay": False, "interval": 5, "arrows": True, "captions": "below", "lightbox": True, "shadow": False},
+    "mosaic": {"columns": 4, "gap": 8, "radius": 8, "shape": "rect", "pattern": "feature", "hover": "zoom", "plane_opacity": 45, "captions": "hover", "lightbox": True, "shadow": False},
+    "stack": {"ratio": "4/3", "radius": 8, "shape": "rect", "spread": 10, "autoplay": False, "interval": 4, "arrows": True, "captions": "below", "lightbox": True, "shadow": True},
+    "book": {"ratio": "3/4", "per_page": 1, "cover": "classic", "radius": 2, "shape": "rect", "arrows": True, "captions": "below", "lightbox": False, "shadow": True},
+    # videos
+    "videogrid": {**COMMON, "columns": 3, "ratio": "16/9", "captions": "below"},
+    "playlist": {"ratio": "16/9", "radius": 8, "shape": "rect", "list_pos": "right", "autoplay": False, "loop": True, "captions": "below", "shadow": False},
+    "vcarousel": {**COMMON, "ratio": "16/9", "visible": 2, "autoplay": False, "interval": 6, "arrows": True, "dots": True, "loop": True, "captions": "below"},
 }
-CHOICES = {"ratio": RATIOS + ("auto",), "hover": ("none", "zoom", "lift", "dim", "plane", "caption"), "captions": ("none", "below", "hover"), "frame": ("none", "polaroid", "border", "shadow"), "transition": ("fade", "slide", "zoom")}
-RANGES = {"gap": (0, 40), "radius": (0, 40), "plane_opacity": (0, 100), "columns": (2, 6), "visible": (1, 5), "interval": (2, 12), "height": (200, 900)}
+VIDEO_TYPES = ("videogrid", "playlist", "vcarousel")  # these show the videos of the library, the others the pictures
+CHOICES = {"ratio": RATIOS + ("auto",), "hover": ("none", "zoom", "lift", "dim", "plane", "caption"), "captions": ("none", "below", "hover"), "frame": ("none", "polaroid", "border", "shadow"), "transition": ("fade", "slide", "zoom"),
+           "shape": SHAPES, "thumbs": ("bottom", "left", "right"), "pattern": ("feature", "alternate", "random"), "list_pos": ("right", "bottom"), "cover": ("classic", "white", "dark", "wood")}
+RANGES = {"gap": (0, 40), "radius": (0, 40), "plane_opacity": (0, 100), "columns": (2, 6), "visible": (1, 5), "interval": (2, 12), "height": (200, 900), "depth": (0, 100), "thumb_size": (50, 160), "spread": (0, 30), "per_page": (1, 4)}
 LABEL = dict(MediaView.TYPES)
 
 
@@ -57,7 +70,7 @@ def clean_source(raw):
 
 def items(view):
     """The pictures of a view: [{url, name, alt}]."""
-    src, qs = clean_source(view.source), MediaItem.objects.filter(kind="image")
+    src, qs = clean_source(view.source), MediaItem.objects.filter(kind="video" if view.type in VIDEO_TYPES else "image")
     from . import areas
 
     for p in areas.user_prefixes():  # the files of members are never shown
@@ -69,7 +82,7 @@ def items(view):
         rows = [i for i in qs if set(src["tags"]) & set(i.tags or [])]
     else:
         rows = list(qs.order_by("-created_at"))
-    return [{"url": default_storage.url(i.key), "name": i.name.rsplit(".", 1)[0], "alt": i.name.rsplit(".", 1)[0]} for i in rows[:src["limit"]]]
+    return [{"url": default_storage.url(i.key), "name": i.name.rsplit(".", 1)[0], "alt": i.name.rsplit(".", 1)[0], "kind": i.kind, "mime": i.mime} for i in rows[:src["limit"]]]
 
 
 def out(view):
@@ -267,8 +280,30 @@ def remove_demo(what=None):
     return done
 
 
+def ensure_defaults():
+    """The media objects are there from the start, once: one ready-made object per kind (carousel, slider, coverflow, mosaic, photo book, video grid ...) that shows all pictures (or all videos) of the library, so they can be placed on a page at once and set up afterwards. After that they belong to the owner: a deleted one does not come back. Returns the number made."""
+    from apps.core import modules
+    from apps.core.models import SystemSettings
+
+    if not modules.enabled("media"):
+        return 0
+    st, _ = SystemSettings.objects.get_or_create(pk=1)
+    if (st.data or {}).get("media_defaults_made"):
+        return 0
+    made = 0
+    for kind, label in MediaView.TYPES:
+        slug = f"standaard-{kind}"
+        if MediaView.objects.filter(slug=slug).exists():
+            continue
+        MediaView.objects.create(name=label, slug=slug, type=kind, source=clean_source({"mode": "all", "limit": 12}), settings=clean_settings(kind, {}))
+        made += 1
+    st.data = {**(st.data or {}), "media_defaults_made": True}
+    st.save()
+    return made
+
+
 def demo(replace=False, count=16):
-    """Four examples (photo book, image carousel, photo wall, slideshow), each with its own effects, with example pictures that are made for it."""
+    """Examples of the picture objects (photo book, carousel, photo wall, slideshow, coverflow, film strip, mosaic, stack, flip book, round pictures), each with its own effects, with example pictures that are made for it."""
     pics = demo_images(count)
     pad = lambda lo, hi: (pics[lo:hi] or pics[:max(1, hi - lo)])  # noqa: E731  (a small count: the same pictures again)
     if replace:
@@ -278,6 +313,12 @@ def demo(replace=False, count=16):
         ("Demo: beeldcarrousel", "carousel", {"visible": 3, "autoplay": True, "interval": 4, "hover": "zoom", "ratio": "4/3", "radius": 12, "dots": True, "arrows": True}, pad(4, 16)),
         ("Demo: fotomuur", "wall", {"columns": 4, "hover": "plane", "plane_opacity": 40, "captions": "hover", "gap": 8, "radius": 6, "ratio": "auto"}, pics[:30]),
         ("Demo: diavoorstelling", "slideshow", {"transition": "fade", "interval": 5, "height": 460, "caption_overlay": True, "dots": True, "arrows": True, "radius": 10}, [pics[i % len(pics)] for i in (0, 2, 7, 3, 9)]),
+        ("Demo: coverflow", "coverflow", {"depth": 60, "ratio": "4/3", "captions": "below", "radius": 10}, pad(0, 9)),
+        ("Demo: galerij met filmstrip", "filmstrip", {"thumbs": "bottom", "ratio": "3/2", "captions": "below"}, pad(2, 12)),
+        ("Demo: mozaïek", "mosaic", {"columns": 4, "pattern": "feature", "gap": 6, "captions": "hover"}, pad(0, 12)),
+        ("Demo: fotostapel", "stack", {"spread": 12, "ratio": "4/3", "captions": "below"}, pad(1, 8)),
+        ("Demo: bladerboek", "book", {"per_page": 2, "cover": "classic", "ratio": "3/4"}, pad(0, 10)),
+        ("Demo: ronde foto's", "carousel", {"visible": 4, "shape": "circle", "ratio": "1/1", "gap": 16, "dots": True}, pad(3, 15)),
     ]
     made = 0
     for name, kind, settings, ids in sets:
