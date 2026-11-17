@@ -13,8 +13,15 @@ from rest_framework.response import Response
 from . import resources
 
 
-def _bad(msg, code=status.HTTP_400_BAD_REQUEST):
-    return Response({"detail": msg}, status=code)
+def _bad(msg, code=status.HTTP_400_BAD_REQUEST, **extra):
+    return Response({"detail": msg, **extra}, status=code)
+
+
+def _fail(e):
+    """A ResourceError as an answer; when the easy2edit server cannot give the library, the reason goes with it (the screen shows a pop-up)."""
+    if isinstance(e, resources.SourceUnavailable):
+        return _bad(str(e), source=e.reason)
+    return _bad(str(e))
 
 
 @api_view(["GET"])
@@ -25,7 +32,7 @@ def library(request):
     if not kinds:
         return _bad("Je hebt hier geen rechten voor.", status.HTTP_403_FORBIDDEN)
     data = resources.overview(request.user)
-    return Response({"kinds": {k: data[k] for k in kinds}, "manage": request.user.is_staff, "titles": resources.TITLES, "folder": str(resources.root())})
+    return Response({"kinds": {k: data[k] for k in kinds}, "manage": request.user.is_staff, "titles": resources.TITLES, "folder": str(resources.root()), "source": resources.source_state()})
 
 
 @api_view(["PUT"])
@@ -44,7 +51,7 @@ def install(request):
     try:
         done = resources.install(d["kind"], str(d.get("name") or ""), request.user)
     except resources.ResourceError as e:
-        return _bad(str(e))
+        return _fail(e)
     return Response({"installed": done, "library": resources.overview(request.user)[d["kind"]]}, status=status.HTTP_201_CREATED)
 
 
@@ -74,7 +81,7 @@ def update(request):
     try:
         done = resources.update_all(d["kind"], request.user)
     except resources.ResourceError as e:
-        return _bad(str(e))
+        return _fail(e)
     return Response({"updated": done, "library": resources.overview(request.user)[d["kind"]]})
 
 

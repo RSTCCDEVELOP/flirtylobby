@@ -8,12 +8,13 @@
 "use client";
 
 import { tx } from "../../../../lib/t";
-import { confirmDialog } from "../../../../lib/dialog";
+import { alertDialog, confirmDialog } from "../../../../lib/dialog";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
-import { IconUser } from "../../../../components/Icons";
+import { IconShield, IconUser } from "../../../../components/Icons";
+import PlusLock from "../../../../components/PlusLock";
 import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { useView } from "../../../../lib/useView";
@@ -114,12 +115,23 @@ export default function ModulesPage() {
   const [access, setAccess] = useState(null);
   const view = useView("modules");
 
-  const load = useCallback(() => api("/modules/all/").then(setMods).catch((e) => setMsg({ ok: false, text: errorText(e) })), []);
+  const plus = !!user?.is_superadmin_plus;  // superadmin+: also sees and manages the easy2edit modules ("Alleen superadmin+")
+  const showMods = setMods;  // a module of easy2edit ("Alleen superadmin+") is shown to every superadmin, with a lock: a click gives a message
+  const locked = (m) => !!m.owner_only && !plus;
+  const deny = () => alertDialog(tx("Dit onderdeel is alleen voor een superadmin+."));
+  const load = useCallback(() => api("/modules/all/").then(showMods).catch((e) => setMsg({ ok: false, text: errorText(e) })), [showMods]);
+  async function markOwner(m) {
+    setBusy(m.key); setMsg(null);
+    try { showMods(await api(`/modules/${m.key}/`, { method: "PATCH", body: { owner_only: !m.owner_only } })); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy("");
+  }
   const [pk, setPk] = useState([]);
   const loadPk = useCallback(() => api("/modules/packages/").then(setPk).catch(() => {}), []);
   useEffect(() => { load(); loadPk(); }, [load, loadPk]);
 
   async function toggle(m) {
+    if (locked(m)) return deny();
     if (m.core || m.plugin) return;
     const next = !m.enabled;
     if (!next && !(await confirmDialog(tx("Module \"{0}\" uitzetten? De functie is dan overal inactief.", m.label)))) return;
@@ -127,7 +139,7 @@ export default function ModulesPage() {
     setMsg(null);
     try {
       const fresh = await api(`/modules/${m.key}/`, { method: "PATCH", body: { enabled: next } });
-      setMods(fresh);
+      showMods(fresh);
       const missing = next ? (fresh.find((x) => x.key === m.key)?.requires || []).filter((r) => !r.enabled) : [];
       const dependants = !next ? fresh.filter((x) => x.enabled && (x.requires || []).some((r) => r.key === m.key)) : [];
       const warn = missing.length
@@ -147,7 +159,7 @@ export default function ModulesPage() {
     try {
       let fresh = mods;
       for (const m of p.modules) if (!m.plugin && m.enabled !== on) fresh = await api(`/modules/${m.key}/`, { method: "PATCH", body: { enabled: on } });
-      setMods(fresh); await loadPk();
+      showMods(fresh); await loadPk();
       setMsg({ ok: true, text: tx("{0} staat nu {1}.", p.label, on ? "aan" : "uit") });
       router.refresh();
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
@@ -163,7 +175,7 @@ export default function ModulesPage() {
         for (const k of todo) fresh = await api(`/modules/${k}/`, { method: "PATCH", body: { enabled: true } });
         todo = [...new Set(fresh.filter((x) => x.enabled).flatMap((x) => (x.requires || []).filter((r) => !r.enabled).map((r) => r.key)))];
       }
-      setMods(fresh);
+      showMods(fresh);
       setMsg({ ok: true, text: tx("De modules zijn aangezet.") });
       router.refresh();
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
@@ -229,16 +241,21 @@ export default function ModulesPage() {
               {shownList.map((m) => (
                 <div key={m.key} className={`card module-tile ${m.enabled ? "" : "off"}`}>
                   <div className="module-top">
-                    <strong>{m.label}</strong>
+                    <strong>{m.label}{m.owner_only && <PlusLock />}</strong>
                     <span className="module-controls">
                       {m.acl && (
-                        <button className="icon-btn module-people" onClick={() => setAccess(m)} title={tx("Wie heeft toegang?")} aria-label={tx("Toegang tot {0}", m.label)}>
+                        <button className="icon-btn module-people" onClick={() => (locked(m) ? deny() : setAccess(m))} title={tx("Wie heeft toegang?")} aria-label={tx("Toegang tot {0}", m.label)}>
                           <IconUser />
                           {m.grants > 0 && <span className="module-count">{m.grants}</span>}
                         </button>
                       )}
+                      {plus && (
+                        <button type="button" className="icon-btn" disabled={busy === m.key} onClick={() => markOwner(m)} aria-pressed={!!m.owner_only}
+                          title={m.owner_only ? tx("Alleen superadmin+: klik om vrij te geven voor superadmins") : tx("Alleen een superadmin+ laten zien en beheren (easy2edit-module)")}
+                          style={m.owner_only ? { color: "var(--blue)", background: "color-mix(in srgb, var(--blue) 14%, var(--card))" } : undefined}><IconShield /></button>
+                      )}
                       <label className="switch" title={m.core ? tx("Kernmodule: altijd aan") : m.plugin ? tx("Dit is een plugin: aan of uit zet je bij Plugins") : m.enabled ? tx("Uitzetten") : tx("Aanzetten")}>
-                        <input type="checkbox" checked={m.enabled} disabled={m.core || !!m.plugin || busy === m.key} onChange={() => toggle(m)} />
+                        <input type="checkbox" checked={m.enabled} disabled={(m.core || !!m.plugin || busy === m.key) && !locked(m)} onChange={() => toggle(m)} />
                         <span />
                       </label>
                     </span>
@@ -251,6 +268,7 @@ export default function ModulesPage() {
                     </div>
                   ))}
                   <span className={`badge ${m.enabled ? "ok" : "off"}`}>{m.core ? tx("Kern") : m.enabled ? tx("Aan") : tx("Uit")}</span>
+                  {m.owner_only && <span className="badge" style={{ marginLeft: ".3rem" }}>{tx("Superadmin+")}</span>}
                 </div>
               ))}
             </div>

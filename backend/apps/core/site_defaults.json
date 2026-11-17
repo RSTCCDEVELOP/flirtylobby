@@ -1,11 +1,11 @@
 {
  "format": "site-defaults",
  "version": 1,
- "captured_at": "2026-10-27T08:30:38+00:00",
+ "captured_at": "2026-11-17T11:05:29+00:00",
  "bundle": {
   "format": "easy2edit-settings",
   "version": 1,
-  "exported_at": "2026-10-27T08:30:38+00:00",
+  "exported_at": "2026-11-17T11:05:29+00:00",
   "secrets_included": false,
   "files_included": false,
   "sections": {
@@ -13,20 +13,23 @@
     "v": 1,
     "label": "Vormgeving",
     "data": {
-     "light_page": "#fff7f0",
-     "light_bg": "#fdece0",
-     "light_card": "#fffaf5",
-     "light_hover": "#fff1e6",
-     "light_line": "#f0d9c5",
-     "light_text": "#3a2a1f",
-     "light_muted": "#8a6a52",
-     "dark_page": "#1f140d",
-     "dark_bg": "#170f09",
-     "dark_card": "#2a1b10",
-     "dark_hover": "#342315",
-     "dark_line": "#4a3220",
-     "dark_text": "#f5e6d8",
-     "dark_muted": "#c9a888"
+     "primary": "#1b97d3",
+     "secondary": "#f08a35",
+     "popup_radius": 10,
+     "light_page": "#1b97d3",
+     "light_bg": "#ffffff",
+     "light_hover": "#ffffff",
+     "light_line": "#e0e1e3",
+     "light_muted": "#7d838b",
+     "dark_bg": "#0f1420",
+     "dark_hover": "#121826",
+     "dark_line": "#2f3440",
+     "dark_muted": "#989ca6",
+     "radius": 10,
+     "btn_radius": 6,
+     "content_w": 1100,
+     "footer_tone": "dark",
+     "footer_brand": "name"
     }
    },
    "security": {
@@ -639,15 +642,6 @@
        "order": 10
       },
       {
-       "code": "ko",
-       "name": "Koreaans",
-       "native_name": "한국어",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 11
-      },
-      {
        "code": "hi",
        "name": "Hindi",
        "native_name": "हिन्दी",
@@ -675,78 +669,6 @@
        "order": 14
       },
       {
-       "code": "sv",
-       "name": "Zweeds",
-       "native_name": "Svenska",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 15
-      },
-      {
-       "code": "da",
-       "name": "Deens",
-       "native_name": "Dansk",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 16
-      },
-      {
-       "code": "no",
-       "name": "Noors",
-       "native_name": "Norsk",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 17
-      },
-      {
-       "code": "fi",
-       "name": "Fins",
-       "native_name": "Suomi",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 18
-      },
-      {
-       "code": "el",
-       "name": "Grieks",
-       "native_name": "Ελληνικά",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 19
-      },
-      {
-       "code": "cs",
-       "name": "Tsjechisch",
-       "native_name": "Čeština",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 20
-      },
-      {
-       "code": "hu",
-       "name": "Hongaars",
-       "native_name": "Magyar",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 21
-      },
-      {
-       "code": "ro",
-       "name": "Roemeens",
-       "native_name": "Română",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 22
-      },
-      {
        "code": "uk",
        "name": "Oekraïens",
        "native_name": "Українська",
@@ -763,177 +685,6 @@
        "enabled": false,
        "is_default": false,
        "order": 24
-      },
-      {
-       "code": "th",
-       "name": "Thais",
-       "native_name": "ไทย",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 25
-      },
-      {
-       "code": "vi",
-       "name": "Vietnamees",
-       "native_name": "Tiếng Việt",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 26
-      },
-      {
-       "code": "he",
-       "name": "Hebreeuws",
-       "native_name": "עברית",
-       "rtl": true,
-       "enabled": false,
-       "is_default": false,
-       "order": 27
-      },
-      {
-       "code": "fa",
-       "name": "Perzisch",
-       "native_name": "فارسی",
-       "rtl": true,
-       "enabled": false,
-       "is_default": false,
-       "order": 28
-      },
-      {
-       "code": "ur",
-       "name": "Urdu",
-       "native_name": "اردو",
-       "rtl": true,
-       "enabled": false,
-       "is_default": false,
-       "order": 29
-      },
-      {
-       "code": "bn",
-       "name": "Bengaals",
-       "native_name": "বাংলা",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 30
-      },
-      {
-       "code": "bg",
-       "name": "Bulgaars",
-       "native_name": "Български",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 31
-      },
-      {
-       "code": "hr",
-       "name": "Kroatisch",
-       "native_name": "Hrvatski",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 32
-      },
-      {
-       "code": "sk",
-       "name": "Slowaaks",
-       "native_name": "Slovenčina",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 33
-      },
-      {
-       "code": "sl",
-       "name": "Sloveens",
-       "native_name": "Slovenščina",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 34
-      },
-      {
-       "code": "sr",
-       "name": "Servisch",
-       "native_name": "Српски",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 35
-      },
-      {
-       "code": "lt",
-       "name": "Litouws",
-       "native_name": "Lietuvių",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 36
-      },
-      {
-       "code": "lv",
-       "name": "Lets",
-       "native_name": "Latviešu",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 37
-      },
-      {
-       "code": "et",
-       "name": "Estisch",
-       "native_name": "Eesti",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 38
-      },
-      {
-       "code": "ca",
-       "name": "Catalaans",
-       "native_name": "Català",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 39
-      },
-      {
-       "code": "ms",
-       "name": "Maleis",
-       "native_name": "Bahasa Melayu",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 40
-      },
-      {
-       "code": "tl",
-       "name": "Filipijns",
-       "native_name": "Filipino",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 41
-      },
-      {
-       "code": "sw",
-       "name": "Swahili",
-       "native_name": "Kiswahili",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 42
-      },
-      {
-       "code": "af",
-       "name": "Afrikaans",
-       "native_name": "Afrikaans",
-       "rtl": false,
-       "enabled": false,
-       "is_default": false,
-       "order": 43
       }
      ]
     }
@@ -954,5 +705,10 @@
   "max_photo_mb": "5",
   "show_credit": true,
   "timezone": "Europe/Amsterdam"
+ },
+ "global": {
+  "base_domain": "easy2edit.com",
+  "api_url": "https://api.easy2edit.com",
+  "site_url": "https://easy2edit.com"
  }
 }

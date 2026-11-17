@@ -8,6 +8,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IconArchive, IconRefresh } from "./Icons";
+import SuperTile from "./SuperTile";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
@@ -32,15 +34,15 @@ export default function SaveDefaults() {
     setBusy("");
   };
   return (
-    <div className="card stat" style={{ display: "grid", gap: ".5rem", alignContent: "start" }}>
-      <span>{tx("Standaard instellingen")}</span>
-      <strong style={{ fontSize: "1.25rem" }}>{tx("Instellingen als standaard")}</strong>
-      <small>{info?.exists ? `${tx("Opgeslagen op")} ${new Date(info.captured_at).toLocaleString()}` : tx("Nog niets opgeslagen")}</small>
-      <div className="row" style={{ gap: ".5rem", flexWrap: "wrap" }}>
-        <button type="button" className="btn primary" disabled={!!busy} onClick={() => run("capture")}>{busy === "capture" ? tx("Bezig…") : tx("Save defaults")}</button>
-        {info?.exists && <button type="button" className="btn" disabled={!!busy} onClick={() => run("apply")}>{busy === "apply" ? tx("Bezig…") : tx("Standaard toepassen")}</button>}
-      </div>
-      {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
-    </div>
+    <SuperTile icon={IconArchive} label={tx("Standaard instellingen")} title={tx("Standaard opslaan")}
+      text={info?.exists ? `${tx("Opgeslagen op")} ${new Date(info.captured_at).toLocaleString()}` : tx("Nog niets opgeslagen")}
+      footer={
+        <>
+          <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => run("capture")}>{busy === "capture" ? tx("Bezig…") : tx("Save defaults")}</button>
+          {info?.exists && <button type="button" className="btn sm" disabled={!!busy} onClick={() => run("apply")} title={tx("Standaard toepassen")} aria-label={tx("Standaard toepassen")}><IconRefresh /></button>}
+        </>
+      }>
+      {msg && <div className={msg.ok ? "alert ok st-msg" : "alert st-msg"}>{msg.text}</div>}
+    </SuperTile>
   );
 }

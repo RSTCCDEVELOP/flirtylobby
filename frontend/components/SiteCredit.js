@@ -6,11 +6,11 @@
 // website https://rstcc.net
 
 // "© easy2edit <year>" at the bottom of every page (can be switched off in Admin -> Overzicht -> Over easy2edit)
-export default function SiteCredit({ show }) {
+export default function SiteCredit({ show, url }) {
   if (!show) return null;
   return (
     <div className="site-credit">
-      <a href="https://easy2edit.com" target="_blank" rel="noopener noreferrer">© easy2edit {new Date().getFullYear()}</a>
+      <a href={/^https:\/\//.test(url || "") ? url : "https://easy2edit.com"} target="_blank" rel="noopener noreferrer">© easy2edit {new Date().getFullYear()}</a>
     </div>
   );
 }

@@ -16,6 +16,7 @@ import SalesTest from "../../../../components/SalesTest";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
 import PriceList from "../../../../components/PriceList";
+import PlusLock from "../../../../components/PlusLock";
 import PriceAI from "../../../../components/PriceAI";
 
 // The price list (apps/core/pricing.json, goes with every installation): base price, discounts per period and the price of every package, module and plugin, per month ex VAT.
@@ -63,7 +64,7 @@ export default function PriceEditor() {
   const TABS = [["basis", tx("Basis en korting")], ["impl", tx("Ontwerp en implementatie")], ["host", tx("Hosting en inkoop")], ["mail", tx("E-mail")], ...groups.map((g) => [g, tx(g)]), ["pricelist", tx("Prijslijst")], ["sales", tx("Sales")], ["marketing", tx("Marketing")]];
   return (
     <>
-      <div className="row between" style={{ alignItems: "center" }}><h1 style={{ margin: 0 }}>{tx("Prijzen")}</h1><PriceAI onDone={() => api("/system/pricing/").then(load)} /></div>
+      <div className="row between" style={{ alignItems: "center" }}><h1 style={{ margin: 0 }}>{tx("Prijzen")}<PlusLock /></h1><PriceAI onDone={() => api("/system/pricing/").then(load)} /></div>
       <p className="muted">{tx("Prijzen per maand, exclusief btw. Ze staan in backend/apps/core/pricing.json en gaan mee met elke implementatie: neem dat bestand mee in git, dan gelden dezelfde prijzen overal.")}</p>
       {data.config.note && <small className="muted">{data.config.note}</small>}
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}

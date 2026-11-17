@@ -10,9 +10,15 @@
 import { ResourceAdmin } from "../../../components/ResourceLibrary";
 import { tx } from "../../../lib/t";
 import Link from "next/link";
+import { alertDialog } from "../../../lib/dialog";
+import { IconBolt, IconGlobe, IconGlobe2, IconGrid, IconReceipt, IconRefresh, IconRocket, IconSliders } from "../../../components/Icons";
+import PlusLock from "../../../components/PlusLock";
+import SuperTile from "../../../components/SuperTile";
+import { useAuth } from "../../../components/AuthContext";
 import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
 import LicenseAdmin from "../../../components/LicenseAdmin";
+import GlobalSettings from "../../../components/GlobalSettings";
 import SaveDefaults from "../../../components/SaveDefaults";
 import PresetPicker from "../../../components/PresetPicker";
 import ProfileThemeSwitches from "../../../components/ProfileThemeSwitches";
@@ -22,56 +28,35 @@ import SystemReset from "../../../components/SystemReset";
 import StandardAdmin from "../../../components/StandardAdmin";
 
 export default function SuperAdminHome() {
+  const { user } = useAuth();
+  const plus = !!user?.is_superadmin_plus;  // superadmin+: the price list, the site manager and the data of the easy2edit server
+  const deny = (e) => { if (!plus) { e.preventDefault(); alertDialog(tx("Dit onderdeel is alleen voor een superadmin+.")); } };
   return (
     <>
       <h1>{tx("Super admin")}</h1>
       <p className="muted">{tx("Alles op één plek, inclusief het aan- en uitzetten van modules en wie ze mag gebruiken.")}</p>
       <Collapsible id="super-system" title={tx("Systeem")}>
         <div className="cards" style={{ marginTop: 0 }}>
-          <Link href="/dashboard/superadmin/modules" className="card stat link-card">
-            <span>{tx("Modules")}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{tx("Aan en uit zetten")}</strong>
-            <small>{tx("En bepaal wie ze mag gebruiken")}</small>
-          </Link>
-          <Link href="/dashboard/superadmin/vernieuwen" className="card stat link-card">
-            <span>{tx("Vernieuwen")}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{tx("Verversing en oproepsignalen")}</strong>
-            <small>{tx("Hoe vaak de pagina's bij de server vragen (seconden)")}</small>
-          </Link>
-          <Link href="/dashboard/superadmin/ai" className="card stat link-card">
-            <span>{tx("AI")}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{tx("Gebruik, kosten en marge")}</strong>
-            <small>{tx("Alle AI-verkeer per gebruiker, groep en onderdeel")}</small>
-          </Link>
-          <Link href="/dashboard/superadmin/energy" className="card stat link-card">
-            <span>{tx("Energie")}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{tx("Totaalbeeld van alle websites")}</strong>
-            <small>{tx("Paginagewicht, verzoeken en uitstoot, verzameld via de API")}</small>
-          </Link>
-          <Link href="/dashboard/superadmin/energy-instellingen" className="card stat link-card">
-            <span>{tx("Green metingen")}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{tx("Instellingen voor energie en uitstoot")}</strong>
-            <small>{tx("Rekenmodel, te meten pagina's, bewaartijd en API")}</small>
-          </Link>
-          <Link href="/dashboard/superadmin/wizard" className="card stat link-card">
-            <span>{tx("Installatie")}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{tx("Wizard: installatie en licentie")}</strong>
-            <small>{tx("Naam, vragen, modules, plugins en prijs")}</small>
-          </Link>
-          <Link href="/dashboard/superadmin/prijzen" className="card stat link-card">
-            <span>{tx("Prijzen")}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{tx("Prijslijst bewerken")}</strong>
-            <small>{tx("Per maand, kwartaal en jaar, ex btw")}</small>
-          </Link>
+          <SuperTile href="/dashboard/superadmin/modules" icon={IconGrid} label={tx("Modules")} title={tx("Aan en uit zetten")} text={tx("En bepaal wie ze mag gebruiken")} />
+          <SuperTile href="/dashboard/superadmin/vernieuwen" icon={IconRefresh} label={tx("Vernieuwen")} title={tx("Verversing en oproepsignalen")} text={tx("Hoe vaak de pagina's bij de server vragen (seconden)")} />
+          <SuperTile href="/dashboard/superadmin/ai" icon={IconBolt} label={tx("AI")} title={tx("Gebruik, kosten en marge")} text={tx("Alle AI-verkeer per gebruiker, groep en onderdeel")} />
+          <SuperTile href="/dashboard/superadmin/energy" icon={IconGlobe2} label={tx("Energie")} title={tx("Totaalbeeld van alle websites")} text={tx("Paginagewicht, verzoeken en uitstoot, verzameld via de API")} />
+          <SuperTile href="/dashboard/superadmin/energy-instellingen" icon={IconSliders} label={tx("Green metingen")} title={tx("Instellingen voor energie en uitstoot")} text={tx("Rekenmodel, te meten pagina's, bewaartijd en API")} />
+          <SuperTile href="/dashboard/superadmin/wizard" icon={IconRocket} label={tx("Installatie")} title={tx("Wizard: installatie en licentie")} text={tx("Naam, vragen, modules, plugins en prijs")} />
+          <SuperTile href="/dashboard/superadmin/prijzen" icon={IconReceipt} label={tx("Prijzen")} title={tx("Prijslijst bewerken")} text={tx("Per maand, kwartaal en jaar, ex btw")} lock onClick={deny} />
+          <SuperTile href="/dashboard/superadmin/sites" icon={IconGlobe} label={tx("Site manager")} title={tx("Alle easy2edit-websites")} text={tx("Adressen, IP-adressen en inlogs van beheerders")} lock onClick={deny} />
+          <GlobalSettings />
           <SaveDefaults />
         </div>
       </Collapsible>
       <Collapsible id="super-resource" title={tx("Bibliotheek: plugins, thema's en talen")}>
         <ResourceAdmin />
       </Collapsible>
-      <Collapsible id="super-license" title={tx("Licentie")}>
-        <LicenseAdmin />
-      </Collapsible>
+      <div onClickCapture={plus ? undefined : (e) => { e.preventDefault(); e.stopPropagation(); alertDialog(tx("Dit onderdeel is alleen voor een superadmin+.")); }}>
+        <Collapsible id="super-license" title={<>{tx("Licentie")}<PlusLock /></>}>
+          {plus && <LicenseAdmin />}
+        </Collapsible>
+      </div>
       <Collapsible id="super-themes" title={tx("Profielthema's (community)")}>
         <ProfileThemeSwitches />
       </Collapsible>

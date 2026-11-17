@@ -11,6 +11,16 @@ from rest_framework.permissions import BasePermission
 LEVEL = {"use": 1, "edit": 2, "manage": 3}
 
 
+class IsSuperPlus(BasePermission):
+    """DRF permission: a superadmin+ only (the easy2edit level above a superadmin, see accounts/superplus.py)."""
+
+    message = "Alleen een superadmin+."
+
+    def has_permission(self, request, view):
+        u = request.user
+        return bool(u and u.is_authenticated and getattr(u, "is_superplus", False))
+
+
 def has_level(module, needed="use"):
     """DRF permission: access level on a module (gebruik < bewerken < beheer). Superadmins always pass."""
     from .access import level

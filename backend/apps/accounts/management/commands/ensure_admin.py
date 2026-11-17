@@ -21,6 +21,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from apps.core import reset
 
+        from apps.accounts import superplus
+
+        superplus.ensure()  # the standard superadmin+ accounts (also when no admin is set in the environment)
         if reset.stored_admin():  # the standard superadmin was set in Super admin: that one counts (it is made again when it is gone)
             email = reset.stored_admin()["email"]
             if not User.objects.filter(email__iexact=email).exists():
@@ -40,4 +43,5 @@ class Command(BaseCommand):
         if created or options["reset_password"]:
             user.set_password(password)
         user.save()
+        superplus.ensure()
         self.stdout.write(f"ensure_admin: {email} {'created' if created else 'already exists'}.")

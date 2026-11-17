@@ -27,7 +27,7 @@ def health(request):
 # ── Theme / "Vormgeving" ────────────────────────────────────────────────────
 from rest_framework import status  # noqa: E402
 from apps.accounts.access import level as access_level  # noqa: E402
-from apps.accounts.permissions import has_level, has_level_for  # noqa: E402
+from apps.accounts.permissions import IsSuperPlus, has_level, has_level_for  # noqa: E402
 from . import modules  # noqa: E402
 from .modules import module_required  # noqa: E402
 
@@ -396,7 +396,8 @@ def _module_payload():
     counts = dict(ModuleGrant.objects.values_list("module").annotate(n=Count("id")))
     label = {m["key"]: m["label"] for m in modules.MODULES}
     # a module that needs other modules (e.g. subscriptions need orders): which of those are off
-    return [{**m, "enabled": st[m["key"]], "core": bool(m.get("core")), "acl": m.get("acl", True), "grants": counts.get(m["key"], 0),
+    owner = modules.owner_only_keys()
+    return [{**m, "enabled": st[m["key"]], "core": bool(m.get("core")), "acl": m.get("acl", True), "grants": counts.get(m["key"], 0), "owner_only": m["key"] in owner,
              "requires": [{"key": r, "label": label.get(r, r), "enabled": st.get(r, True)} for r in m.get("requires", [])]}
             for m in modules.MODULES if not m.get("hidden")]  # (parts that are plugins are switched on and off at Plugins, not here)
 
@@ -413,6 +414,18 @@ def module_update(request, key):
     m = modules.BY_KEY.get(key)
     if not m:
         return Response({"detail": "Onbekende module."}, status=status.HTTP_404_NOT_FOUND)
+    plus = bool(request.user.is_superplus)
+    if "owner_only" in request.data:  # mark a module as an easy2edit module (only a superadmin+ sees and manages it); also for a core module
+        if not plus:
+            return Response({"detail": "Alleen een superadmin+ kan dit instellen."}, status=status.HTTP_403_FORBIDDEN)
+        row, _ = ModuleState.objects.get_or_create(key=key, defaults={"enabled": bool(modules.enabled(key))})  # (a new row keeps the state the module has now)
+        row.owner_only = bool(request.data.get("owner_only"))
+        row.save(update_fields=["owner_only", "updated_at"])
+        modules.invalidate()
+        logger.info("Module %s %s by %s", key, "marked superadmin+ only" if row.owner_only else "released for superadmins", request.user.email)
+        return Response(_module_payload())
+    if key in modules.owner_only_keys() and not plus:
+        return Response({"detail": "Deze module is alleen voor een superadmin+."}, status=status.HTTP_403_FORBIDDEN)
     if m.get("core"):
         return Response({"detail": "Kernmodules kunnen niet worden uitgezet."}, status=status.HTTP_400_BAD_REQUEST)
     if m.get("plugin"):
@@ -496,6 +509,29 @@ def refresh_settings(request):
     return Response({"refresh_seconds": int(cur["refresh_seconds"] or 0), "signal_seconds": int(cur["signal_seconds"] or 0)})
 
 
+@api_view(["GET", "PUT", "POST"])
+@permission_classes([IsAuthenticated])
+def global_settings_view(request):
+    """Default and global settings (the data of the default easy2edit server): superadmin+ only. GET: the values and the standard. PUT: save them."""
+    from . import global_settings
+
+    if not request.user.is_superplus:  # the data of the easy2edit server: superadmin+ only
+        return Response({"detail": "Alleen een superadmin+."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "POST":  # {action: "test_source"}: can this installation reach the library of the easy2edit server?
+        from . import resources
+
+        if request.data.get("action") != "test_source":
+            return Response({"detail": "Onbekende actie."}, status=status.HTTP_400_BAD_REQUEST)
+        ok, message = resources.test_source()  # message: the number of items, or the reason (disabled | refused | unreachable)
+        return Response({"ok": ok, "message": message, **({} if ok else {"source": message})}, status=status.HTTP_200_OK)
+    if request.method == "PUT":
+        values, errors = global_settings.clean(request.data if isinstance(request.data, dict) else {})
+        if errors:
+            return Response({"detail": " ".join(errors.values()), "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+        global_settings.save(values)
+    return Response({"values": global_settings.get(), "defaults": global_settings.DEFAULTS, "labels": global_settings.LABELS})
+
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def site_defaults_view(request):
@@ -542,8 +578,8 @@ def pricing_view(request):
     """The price list (superadmins): GET = config + everything with a price; POST {base_price, vat_rate, periods:{k:{discount}}, items:{key: price}} = save (pricing.json) and put it in the licence."""
     from . import pricing
 
-    if not request.user.is_staff:
-        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if not request.user.is_superplus:  # the price list is an easy2edit matter: superadmin+ only
+        return Response({"detail": "Alleen een superadmin+."}, status=status.HTTP_403_FORBIDDEN)
     if request.method == "POST":
         try:
             pricing.save(request.data if isinstance(request.data, dict) else {})
@@ -579,8 +615,8 @@ def pricing_ai(request):
 
     from . import pricing
 
-    if not request.user.is_staff:
-        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if not request.user.is_superplus:  # (superadmin+ only, like the price list itself)
+        return Response({"detail": "Alleen een superadmin+."}, status=status.HTTP_403_FORBIDDEN)
     if request.method == "GET" and request.query_params.get("last"):  # what the last calculation had done (to ask: go on or start again)
         return Response(pricing.run_info())
     if request.method == "GET":  # the progress of a running calculation: {steps: [{t, at}], done, result, error}
@@ -1288,7 +1324,7 @@ def _license_out():
 
 
 @api_view(["GET", "PUT", "POST", "DELETE"])
-@permission_classes([IsAdminUser])  # superadmins only
+@permission_classes([IsSuperPlus])  # superadmin+ only (the licence of the easy2edit server side)
 def system_license(request):
     """GET the licence; PUT {client}; POST makes a new licence number (XXXX-XXXX-XXXX-XXXX)."""
     import secrets
@@ -1426,7 +1462,7 @@ def license_pay(request):
 
 
 @api_view(["GET", "PUT"])
-@permission_classes([IsAdminUser])  # superadmins only
+@permission_classes([IsSuperPlus])  # superadmin+ only (the licence of the easy2edit server side)
 def license_prices(request):
     """The price (incl. VAT) of every module, plugin and game, and what is in use now. PUT {prices: {"module:faq": "2.50", "plugin:games": "10", "game:games:chess": "1"}}."""
     from decimal import Decimal, InvalidOperation
@@ -1573,7 +1609,7 @@ def license_subscribe(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAdminUser])  # superadmins only
+@permission_classes([IsSuperPlus])  # superadmin+ only (the licence of the easy2edit server side)
 def license_invoice_paid(request):
     """On account: the invoice was paid, the licence is extended with one period."""
     from . import license_billing
@@ -1596,7 +1632,7 @@ def module_packages(request):
 
 
 @api_view(["GET", "PUT", "POST"])
-@permission_classes([IsAdminUser])  # superadmins only
+@permission_classes([IsSuperPlus])  # superadmin+ only (the licence of the easy2edit server side)
 def license_stripe_settings(request):
     """The Stripe account of the licence (keys never go back to the screen). POST tests the key."""
     from . import license_stripe

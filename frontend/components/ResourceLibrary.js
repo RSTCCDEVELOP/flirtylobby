@@ -13,6 +13,7 @@ import ThemePackEdit from "./ThemePackEdit";
 import TemplateCreate from "./TemplateCreate";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
+import { sourceError } from "../lib/sourceNotice";
 import { tx } from "../lib/t";
 
 import Loading from "./Loading";
@@ -56,7 +57,7 @@ export function ThemeGallery({ onChanged, canManage = false }) {
   const add = async (r) => {
     setBusy(r.name); setMsg(null);
     try { const d = await api("/resource/install/", { method: "POST", body: { kind: "themas", name: r.name } }); setMsg({ ok: true, text: tx("{0} is geïnstalleerd.", d.installed.join(", ")) }); await load(); onChanged?.(); }
-    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    catch (e) { if (!sourceError(e)) setMsg({ ok: false, text: errorText(e) }); }
     setBusy("");
   };
   const remove = async (r) => {
@@ -134,7 +135,7 @@ export function ResourceButtons({ kind, onChanged }) {
   const add = async (r) => {
     setBusy(r.name); setMsg(null); setProg({ total: 1, done: 0, name: r.title });
     try { const d = await api("/resource/install/", { method: "POST", body: { kind, name: r.name } }); setProg({ total: 1, done: 1, name: r.title }); done(tx("{0} is geïnstalleerd.", d.installed.join(", "))); }
-    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    catch (e) { if (!sourceError(e)) setMsg({ ok: false, text: errorText(e) }); }
     setProg(null); setBusy("");
   };
   const pickable = (r) => !r.bundle; // what "select all" ticks: everything that is shown (also what is installed already: it is installed again); a bundle is installed with its own button
@@ -144,12 +145,14 @@ export function ResourceButtons({ kind, onChanged }) {
     if (!names.length) return;
     setBusy("*"); setMsg(null);
     const ok = [], failed = [];
+    let srcReason = "";
     for (const [i, name] of names.entries()) {  // one by one: a plugin that needs another one finds it installed
       setProg({ total: names.length, done: i, name: rows.find((r) => r.name === name)?.title || name });
       try { const d = await api("/resource/install/", { method: "POST", body: { kind, name } }); ok.push(...d.installed); }
-      catch (e) { failed.push(`${name}: ${errorText(e)}`); }
+      catch (e) { if (e?.data?.source) { srcReason = e.data.source; break; } failed.push(`${name}: ${errorText(e)}`); }
     }
     setProg({ total: names.length, done: names.length, name: "" });
+    if (srcReason) sourceError({ data: { source: srcReason } });
     setSel(new Set());
     setMsg({ ok: !failed.length, text: [ok.length ? tx("{0} is geïnstalleerd.", ok.join(", ")) : "", ...failed].filter(Boolean).join(" ") });
     load(); onChanged?.();
@@ -189,7 +192,7 @@ export function ResourceButtons({ kind, onChanged }) {
   const update = async () => {
     setBusy("*"); setMsg(null); setProg({ total: updates, done: 0, name: tx("Alles wat een update heeft") });
     try { const d = await api("/resource/update/", { method: "POST", body: { kind } }); done(d.updated.length ? tx("Bijgewerkt: {0}.", d.updated.join(", ")) : tx("Alles is al actueel.")); }
-    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    catch (e) { if (!sourceError(e)) setMsg({ ok: false, text: errorText(e) }); }
     setProg(null); setBusy("");
   };
   const shown = rows.filter((r) => !q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase()));
@@ -274,7 +277,7 @@ export function ResourceAdmin() {
   const act = async (path, body, text) => {
     setBusy(body.name || "*"); setMsg(null);
     try { const d = await api(path, { method: "POST", body }); setMsg({ ok: true, text: text(d) }); await load(); }
-    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    catch (e) { if (!sourceError(e)) setMsg({ ok: false, text: errorText(e) }); }
     setBusy("");
   };
   const updates = rows.filter((r) => r.state === "update").length;

@@ -175,10 +175,27 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
+def _base_domain():
+    """The base domain of the easy2edit websites (Super admin -> Default and global settings): the environment first, then the saved default settings (a file: the database is not there yet), else easy2edit.com."""
+    import json
+    import re as _re
+
+    d = os.getenv("EASY2EDIT_BASE_DOMAIN", "").strip().lower().lstrip(".")
+    if not d:
+        try:
+            with open(BASE_DIR / "apps" / "core" / "site_defaults.json", encoding="utf-8") as f:
+                d = str((json.load(f).get("global") or {}).get("base_domain") or "").strip().lower().lstrip(".")
+        except (OSError, ValueError):
+            d = ""
+    return d if _re.fullmatch(r"([a-z0-9-]+\.)+[a-z]{2,24}", d) else "easy2edit.com"
+
+
+EASY2EDIT_BASE_DOMAIN = _base_domain()
+
 if DEBUG:
     # development only: also reachable from phones / other computers on the local network (10.x, 192.168.x, 172.16-31.x)
     ALLOWED_HOSTS = ["*"]
-    CORS_ALLOWED_ORIGIN_REGEXES = [r"^https?://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|localhost|127\.0\.0\.1|([a-z0-9-]+\.)+easy2edit\.com):5173$"]  # also https (./dev-certs.sh) and a local test domain such as siten.easy2edit.com
+    CORS_ALLOWED_ORIGIN_REGEXES = [r"^https?://(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|localhost|127\.0\.0\.1|([a-z0-9-]+\.)+" + __import__("re").escape(EASY2EDIT_BASE_DOMAIN) + r"):5173$"]  # also https (./dev-certs.sh) and a local test domain such as siten.easy2edit.com
 else:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 

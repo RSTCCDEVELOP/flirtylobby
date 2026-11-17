@@ -93,7 +93,32 @@ class ModuleState(models.Model):
 
     key = models.CharField(max_length=50, unique=True)
     enabled = models.BooleanField(default=True)
+    owner_only = models.BooleanField(default=False)  # an easy2edit module: only a superadmin+ sees and manages it
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class EasySite(models.Model):
+    """An easy2edit website that has reported itself to the easy2edit server (Super admin+ -> Site manager). Kept on the installation that is the site manager server."""
+
+    instance_id = models.CharField(max_length=40, unique=True)  # made once by the website itself
+    name = models.CharField(max_length=150, blank=True)
+    url = models.CharField(max_length=300, blank=True)  # the address of the website (reported, or made from the base domain of the easy2edit server)
+    url_generated = models.BooleanField(default=False)
+    ip = models.GenericIPAddressField(null=True, blank=True)  # the IP address the website itself reports (its server)
+    seen_ip = models.GenericIPAddressField(null=True, blank=True)  # the address the last call came from
+    version = models.CharField(max_length=30, blank=True)
+    build = models.CharField(max_length=20, blank=True)
+    token_hash = models.CharField(max_length=64, blank=True)  # of the key the website uses for its next calls (the key itself is not kept)
+    status = models.CharField(max_length=10, default="active")  # active | blocked
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
+    last_login_at = models.DateTimeField(null=True, blank=True)  # the last time an administrator logged in on that website
+    last_login_role = models.CharField(max_length=20, blank=True)  # admin | superadmin | superadmin+
+    login_count = models.PositiveIntegerField(default=0)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-last_seen", "-first_seen"]
 
 
 class SystemSettings(models.Model):

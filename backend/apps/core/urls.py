@@ -8,7 +8,7 @@
 from django.urls import path
 
 from . import component_views, backup_views, terms_views, dashboard, marketing, resource_views, sales, views, template_views
-from . import manual
+from . import manual, sitemanager_views
 
 urlpatterns = [
     path("components/", component_views.active),
@@ -63,6 +63,13 @@ urlpatterns = [
     path("system/pricing/ai/", views.pricing_ai),
     path("system/refresh/", views.refresh_settings),
     path("system/site-defaults/", views.site_defaults_view),
+    path("system/global-settings/", views.global_settings_view),
+    path("easy2edit/sites/register/", sitemanager_views.site_register),
+    path("easy2edit/sites/ping/", sitemanager_views.site_ping),
+    path("easy2edit/source/", sitemanager_views.source_list),
+    path("easy2edit/source/file/", sitemanager_views.source_file),
+    path("system/sites/", sitemanager_views.sites_admin),
+    path("system/sites/<int:pk>/", sitemanager_views.site_admin),
     path("system/installations-config/", views.installations_config_view),
     path("system/presets/", views.presets_list),
     path("system/presets/admin/", views.presets_admin),

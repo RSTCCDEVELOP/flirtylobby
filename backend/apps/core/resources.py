@@ -26,6 +26,103 @@ class ResourceError(ValueError):
     pass
 
 
+class SourceUnavailable(ResourceError):
+    """The easy2edit server cannot give the library. reason: "disabled" (the site manager is not switched on there), "refused" (this website is not known or is blocked), "unreachable"."""
+
+    def __init__(self, reason, message):
+        super().__init__(message)
+        self.reason = reason
+
+
+# ── the library from the easy2edit server ───────────────────────────────────
+MAX_ZIP = 80_000_000
+
+
+def _remote_call(path, params):
+    """GET on the easy2edit server with the key of this website (it registers first when it has none). -> bytes."""
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    from . import global_settings, sitemanager
+
+    key = sitemanager._state().get("token") or ""
+    if not key:
+        sitemanager.report("sync")  # the first time: this website reports itself and gets its key
+        key = sitemanager._state().get("token") or ""
+    if not key:  # (the server answered nothing or does not accept registrations: the site manager is not switched on there, or it cannot be reached)
+        raise SourceUnavailable(_why(), "Deze website is nog niet aangemeld bij de easy2edit-server.")
+    url = f"{global_settings.get()['api_url']}/api/easy2edit/source/{path}?" + urllib.parse.urlencode(params)
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"X-Easy2edit-Key": key, "User-Agent": "easy2edit-site"}), timeout=30) as r:
+            return r.read(MAX_ZIP + 1)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:  # the easy2edit server does not have the site manager switched on
+            raise SourceUnavailable("disabled", "De easy2edit-server heeft de site manager niet ingeschakeld.")
+        if e.code in (401, 403):
+            sitemanager._save(token="")  # the key is not known any more: register again next time
+            raise SourceUnavailable("refused", "De easy2edit-server kent deze website niet of heeft hem geblokkeerd.")
+        raise SourceUnavailable("unreachable", f"De easy2edit-server gaf een fout (HTTP {e.code}).")
+    except Exception:  # noqa: BLE001
+        raise SourceUnavailable("unreachable", "De easy2edit-server is niet bereikbaar.")
+
+
+def _why():
+    """Why the registration at the easy2edit server did not work (from what the last report said)."""
+    from . import sitemanager
+
+    err = str(sitemanager._state().get("last_error") or "")
+    return "disabled" if "404" in err else "refused" if ("401" in err or "403" in err) else "unreachable"
+
+
+def remote_catalog(kind):
+    """The library of the easy2edit server for one kind (kept for five minutes)."""
+    from django.core.cache import cache
+
+    ck = f"e2e-source:{kind}"
+    rows = cache.get(ck)
+    if rows is None:
+        try:
+            rows = json.loads(_remote_call("", {"kind": kind}).decode("utf-8")).get("items") or []
+        except SourceUnavailable as e:
+            cache.set("e2e-source-error", e.reason, 120)  # the library shows a quiet note about it
+            raise
+        except (json.JSONDecodeError, UnicodeDecodeError):  # (not ValueError: a ResourceError is one too, and has its own message)
+            cache.set("e2e-source-error", "unreachable", 120)
+            raise SourceUnavailable("unreachable", "Onverwacht antwoord van de easy2edit-server.")
+        cache.delete("e2e-source-error")
+        cache.set(ck, rows, 300)
+    return [{**e, "origin": "easy2edit"} for e in rows if isinstance(e, dict) and e.get("name") and e.get("file")]
+
+
+def remote_file(kind, file):
+    data = _remote_call("file/", {"kind": kind, "file": file})
+    if len(data) > MAX_ZIP or data[:2] != b"PK":
+        raise ResourceError("Het bestand van de easy2edit-server is geen geldige zip.")
+    return data
+
+
+def test_source():
+    """Reach the library of the easy2edit server: -> (ok, message)."""
+    from django.core.cache import cache
+
+    cache.delete_many([f"e2e-source:{k}" for k in KINDS])
+    try:
+        n = sum(len(remote_catalog(k)) for k in KINDS)
+    except SourceUnavailable as e:
+        return False, e.reason
+    except ResourceError as e:
+        return False, "unreachable"
+    return True, f"{n}"
+
+
+def source_state():
+    """{remote, error}: for the library screen: is the source the easy2edit server, and did the last call fail (disabled | refused | unreachable)."""
+    from django.core.cache import cache
+
+    return {"remote": remote(), "error": (cache.get("e2e-source-error") or "") if remote() else ""}
+
+
 def root():
     d = Path(settings.RESOURCE_DIR)
     for p in [d, *[d / k for k in KINDS]]:  # (a library on a read-only mount, as in Coolify, cannot be written to: only make what is missing, and do not stop when that is not possible)
@@ -49,10 +146,20 @@ def site_dir(kind):
     return d
 
 
-def _folders(kind):
+def _folders(kind, site=True, product=True):
     """[(origin, folder)] the packages of this kind are read from: first the site, then the library of the product."""
-    out = [("site", site_dir(kind))] if site_dir(kind) else []
-    return out + [("product", root() / kind)]
+    out = [("site", site_dir(kind))] if (site and site_dir(kind)) else []
+    return out + ([("product", root() / kind)] if product else [])
+
+
+def remote():
+    """True when the library comes from the easy2edit server (Super admin+ -> easy2edit settings -> Settings): then the folder resource/ of this installation is not read. The server itself always uses its own folder."""
+    from . import global_settings, sitemanager
+
+    try:
+        return global_settings.get()["source_mode"] == "easy2edit" and not sitemanager.server_enabled()
+    except Exception:  # noqa: BLE001 - database not ready
+        return False
 
 
 def _ver(v):
@@ -97,12 +204,33 @@ def _read(path, kind):
     return out
 
 
-def catalog(kind):
-    """The library of one kind: one entry per plugin / theme / language (the latest version), plus the bundles (a zip with several)."""
+def catalog(kind, strict=False):
+    """The library of one kind: one entry per plugin / theme / language (the latest version), plus the bundles (a zip with several). From the easy2edit server when the source is set to that.
+    strict: raise SourceUnavailable when the server cannot be reached (installing, updating); otherwise (showing the library) the library is just what was made on this site."""
     if kind not in KINDS:
         raise ResourceError("Onbekend onderdeel.")
+    if not remote():
+        return local_catalog(kind)
+    try:
+        theirs = remote_catalog(kind)
+    except SourceUnavailable:
+        if strict:
+            raise
+        theirs = []
+    rows = [e for e in local_catalog(kind, product=False)] + theirs  # what was made on this site, and the library of the easy2edit server
     best, bundles = {}, []
-    for origin, folder in _folders(kind):
+    for e in rows:
+        if e["bundle"]:
+            bundles.append(e)
+        elif e["name"] not in best or _ver(e["version"]) > _ver(best[e["name"]]["version"]):  # (the site comes first: at an equal version its own package wins)
+            best[e["name"]] = e
+    return sorted(best.values(), key=lambda e: e["title"].lower()) + bundles
+
+
+def local_catalog(kind, site=True, product=True):
+    """The library of one kind read from the folders of this installation (site = what was made here, product = the folder resource/)."""
+    best, bundles = {}, []
+    for origin, folder in _folders(kind, site, product):
         for f in sorted(folder.glob("*.zip")):
             items = _read(f, kind)
             if len(items) > 1:  # all themes / all languages in one zip
@@ -160,13 +288,13 @@ def set_allowed(data):
     return cur
 
 
-def overview(user=None):
+def overview(user=None, strict=False):
     """The library with the state of every item. A user who is not a superadmin only sees what is allowed."""
     inst, ok = _installed(), allowed()
     out = {}
     for kind in KINDS:
         rows = []
-        for e in catalog(kind):
+        for e in catalog(kind, strict=strict):
             ver = inst[kind].get(e["name"]) if not e["bundle"] else None
             have = e["name"] in inst[kind] if not e["bundle"] else False
             if e["bundle"]:
@@ -192,6 +320,8 @@ def can_use(user, kind):
 
 
 def _zip_bytes(kind, entry):
+    if entry.get("origin") == "easy2edit":
+        return remote_file(kind, entry["file"])
     folder = dict(_folders(kind)).get(entry.get("origin") or "product") or (root() / kind)
     f = folder / entry["file"]
     if f.resolve().parent != folder.resolve():
@@ -210,7 +340,7 @@ def install(kind, name, user):
         raise ResourceError("Je hebt hier geen rechten voor.")
     if kind == "templates":
         raise ResourceError("Een template gebruik je bij Admin → Website → Templates.")
-    entry = next((e for e in catalog(kind) if e["name"] == name), None)
+    entry = next((e for e in catalog(kind, strict=True) if e["name"] == name), None)  # (strict: an easy2edit server that does not answer is a clear message, not "not in the library")
     if not entry:
         raise ResourceError("Dit staat niet in de bibliotheek (map resource).")
     if not user.is_staff and name not in allowed()[kind]:
@@ -227,7 +357,7 @@ def install(kind, name, user):
         if kind == "themas":
             return themepacks.install_zip(data)
         if kind == "components":
-            return [componentpacks.install(name)["key"]]
+            return [componentpacks.install(name, data=data if entry.get("origin") == "easy2edit" else None)["key"]]
         return langpacks.install_zip(data)
     except (installer.InstallError, themepacks.ThemeError, langpacks.LanguageError, componentpacks.ComponentError) as e:
         raise ResourceError(str(e))
@@ -284,7 +414,7 @@ def remove(kind, name, user, with_demo=False):
 def update_all(kind, user):
     """Update everything of this kind that is installed and has a newer version in the library. Returns the names."""
     done = []
-    for row in overview(user)[kind]:
+    for row in overview(user, strict=True)[kind]:
         if row["state"] == "update" and not (kind == "languages" and not row["installed_version"]):  # (built-in languages are only replaced when asked for by name)
             install(kind, row["name"], user)
             done.append(row["name"])

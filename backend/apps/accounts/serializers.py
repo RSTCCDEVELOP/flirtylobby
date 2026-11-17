@@ -31,7 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "is_fake", "email", "role", "roles", "user_groups", "is_active", "is_staff", "last_login", "date_joined", "password", "otp_active", "twofa_method", "twofa_required", "image", "show_public", "verification"] + PROFILE_FIELDS
+        fields = ["id", "is_fake", "email", "role", "roles", "user_groups", "is_active", "is_staff", "is_superadmin_plus", "last_login", "date_joined", "password", "otp_active", "twofa_method", "twofa_required", "image", "show_public", "verification"] + PROFILE_FIELDS
         read_only_fields = ["is_fake", "last_login", "date_joined", "otp_active", "twofa_method", "image"]
         extra_kwargs = {"email": {"required": True}, **WORD_KWARGS}
 
@@ -52,6 +52,14 @@ class UserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         # users.manage without being a beheerder must not be able to escalate privileges
         actor = self.context["request"].user
+        if not actor.is_superplus:  # only a superadmin+ makes a superadmin+ (or takes that off) and changes one
+            if "is_superadmin_plus" in attrs and bool(attrs["is_superadmin_plus"]) != bool(self.instance.is_superadmin_plus if self.instance else False):
+                raise serializers.ValidationError({"is_superadmin_plus": "Alleen een superadmin+ kan dit instellen."})
+            if self.instance and self.instance.is_superadmin_plus:
+                raise serializers.ValidationError("Je mag een superadmin+ niet wijzigen.")
+            attrs.pop("is_superadmin_plus", None)
+        elif attrs.get("is_superadmin_plus"):
+            attrs["is_staff"] = True  # a superadmin+ is a superadmin too
         if not actor.is_staff:
             if attrs.get("is_staff"):
                 raise serializers.ValidationError({"is_staff": "Alleen superadmins kunnen superadmins aanmaken."})
@@ -189,8 +197,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "is_staff", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"] + PROFILE_FIELDS
-        read_only_fields = ["id", "email", "role", "is_staff", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"]
+        fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"] + PROFILE_FIELDS
+        read_only_fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"]
         extra_kwargs = WORD_KWARGS
 
 

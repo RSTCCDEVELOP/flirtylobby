@@ -174,7 +174,7 @@ export default async function RootLayout({ children }) {
               <PageBackdrop map={backgrounds} />
               <SiteBack />
               <PageTransition>{children}</PageTransition>
-              <SiteCredit show={site?.show_credit !== false} />
+              <SiteCredit show={site?.show_credit !== false} url={site?.easy2edit?.site_url} />
               <EditBanner />
               <PageSettingsButton />
               <EditHelp />

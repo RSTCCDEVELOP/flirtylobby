@@ -44,6 +44,9 @@ def levels(user):
 
         for g in ModuleGrant.objects.filter(Q(user=user) | Q(role_id__in=role_ids) | Q(group_id__in=group_ids)):
             bump(g.module, g.level)
+    if not (user.is_staff and getattr(user, "is_superadmin_plus", False)):  # the easy2edit modules ("Alleen superadmin+") are for a superadmin+ only: nobody else has a level there
+        for k in modules.owner_only_keys():
+            out.pop(k, None)
     user._levels = out
     return out
 

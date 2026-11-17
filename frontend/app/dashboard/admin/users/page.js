@@ -8,6 +8,7 @@
 "use client";
 
 import MediaField from "../../../../components/MediaField";
+import PlusLock from "../../../../components/PlusLock";
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
@@ -142,7 +143,7 @@ export default function Users() {
                 <td>{u.email}</td>
                 <td>{u.function || "—"}</td>
                 <td>
-                  {u.is_staff && <span className="badge ok" style={{ marginRight: ".3rem" }}>{tx("Superadmin")}</span>}
+                  {u.is_staff && <span className="badge ok" style={{ marginRight: ".3rem" }}>{u.is_superadmin_plus ? <>{tx("Superadmin+")}<PlusLock /></> : tx("Superadmin")}</span>}
                   {u.roles.map((id) => <span key={id} className="chip" style={{ cursor: "default", marginRight: ".3rem" }}>{roles.find((r) => r.id === id)?.name || "…"}</span>)}
                   {u.user_groups.map((id) => <span key={id} className="chip" style={{ cursor: "default", marginRight: ".3rem" }}>{groups.find((g) => g.id === id)?.name || "…"}</span>)}
                   {!u.is_staff && !u.roles.length && !u.user_groups.length && <span className="muted">{tx("User")}</span>}
@@ -266,6 +267,9 @@ export default function Users() {
                 {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
               </div>
             </div>
+            {me.is_superadmin_plus && <label className="check sec-toggle">
+              <span className="switch"><input type="checkbox" checked={!!modal.is_superadmin_plus} onChange={(e) => setModal({ ...modal, is_superadmin_plus: e.target.checked, ...(e.target.checked ? { is_staff: true } : {}) })} disabled={modal.id === me.id} /><span /></span><span>{tx("Superadmin+ (ziet en beheert ook de easy2edit-modules)")}</span>
+            </label>}
             {me.is_staff && <label className="check sec-toggle">
               <span className="switch"><input type="checkbox" checked={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} /><span /></span><span>{tx("Superadmin (alle rechten, beheert ook admins en superadmins)")}</span>
             </label>}

@@ -9,7 +9,7 @@
 
 import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api, getToken, clearToken, setToken } from "../lib/api";
 import TwoFactorGate from "./TwoFactorGate";
@@ -52,6 +52,14 @@ export function AuthProvider({ children }) {
   }, [router]);
 
   const replaceToken = (t) => setToken(t);
+
+  // a profile that was loaded before a field existed (a page that stayed open over an update) is asked for once more: the new rights (superadmin+) show without logging in again
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (!user || user.is_superadmin_plus !== undefined || refreshed.current) return;
+    refreshed.current = true;
+    api("/auth/me/").then(setUser).catch(() => {});
+  }, [user]);
 
   if (loading || !user) return <Busy full />;
   return <AuthContext.Provider value={{ user, setUser, logout, replaceToken }}>{user.twofa?.setup_required ? <TwoFactorGate /> : children}</AuthContext.Provider>;

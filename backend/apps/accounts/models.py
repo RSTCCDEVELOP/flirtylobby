@@ -104,6 +104,11 @@ class User(AbstractUser):
     otp_expires = models.DateTimeField(null=True, blank=True)
     otp_attempts = models.PositiveSmallIntegerField(default=0)
     otp_sent_at = models.DateTimeField(null=True, blank=True)
+    is_superadmin_plus = models.BooleanField(default=False)  # superadmin+: a superadmin who also sees and manages the easy2edit modules (see accounts/superplus.py)
+
+    @property
+    def is_superplus(self):
+        return bool(self.is_staff and self.is_superadmin_plus)
 
     def all_roles(self):
         """Roles given directly plus the roles of all groups the user is in."""

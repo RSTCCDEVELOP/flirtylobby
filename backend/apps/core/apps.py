@@ -13,6 +13,11 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         from corsheaders.signals import check_request_enabled
+        from django.contrib.auth.signals import user_logged_in
+
+        from . import sitemanager
+
+        user_logged_in.connect(sitemanager.on_login, dispatch_uid="easy2edit-sitemanager-login")  # an administrator logs in: the website reports itself to the easy2edit server (in the background)
 
         def allow_configured(sender, request, **kwargs):
             """The website address and extra addresses from Systeem -> Basisgegevens may use the API without changing the environment."""

@@ -172,6 +172,7 @@ def _sync_pages():
 def invalidate():
     _cache["v"] = None
     _pl["t"] = 0
+    _oo["t"] = 0
     try:
         from django.db import transaction
 
@@ -184,6 +185,22 @@ def enabled(key):
     if key.startswith("plugin:"):  # a page or part that belongs to a plugin is on when that plugin is switched on
         return plugin_on(key[7:])
     return states().get(key, True)
+
+
+_oo = {"t": 0, "v": set()}
+
+
+def owner_only_keys():
+    """The modules that are marked "Alleen superadmin+" (easy2edit modules): only a superadmin+ sees and manages them."""
+    now = time.time()
+    if now - _oo["t"] > TTL:
+        from .models import ModuleState
+
+        try:
+            _oo.update(t=now, v=set(ModuleState.objects.filter(owner_only=True).values_list("key", flat=True)))
+        except Exception:  # noqa: BLE001 - database not ready
+            _oo.update(t=now, v=set())
+    return _oo["v"]
 
 
 _pl = {"t": 0, "v": set()}

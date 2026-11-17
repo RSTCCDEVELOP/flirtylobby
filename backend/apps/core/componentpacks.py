@@ -166,18 +166,36 @@ def listing():
             "library": [{**m, "file": f.name, "installed": k in inst, "update": k in inst and _ver(m["version"]) > _ver(inst[k][1]["version"])} for k, (f, m) in sorted(lib.items(), key=lambda kv: kv[1][1]["name"].lower())]}
 
 
-def install(key):
-    lib = _zips(library_dir())
-    if key not in lib:
-        raise ComponentError("Deze componentenset staat niet in de bibliotheek.")
-    f = lib[key][0]
+def install(key, data=None):
+    """Install a set from the library. data: the zip itself (the library of the easy2edit server); otherwise the zip in the folder resource/components."""
+    if data is not None:
+        tmp = site_dir() / f".{key}.download.tmp"
+        tmp.write_bytes(data)
+        try:
+            man = read(tmp, full=False)
+            if man["key"] != key:
+                raise ComponentError("Dit bestand is niet de gevraagde componentenset.")
+        except ComponentError:
+            tmp.unlink(missing_ok=True)
+            raise
+        target = site_dir() / f"{key}-{man.get('version') or '1.0.0'}.zip"
+        src = tmp
+    else:
+        lib = _zips(library_dir())
+        if key not in lib:
+            raise ComponentError("Deze componentenset staat niet in de bibliotheek.")
+        src = lib[key][0]
+        target = site_dir() / src.name
     for old in site_dir().glob("*.zip"):  # only the latest version of a set is kept
         try:
             if read(old, full=False)["key"] == key:
                 old.unlink()
         except (ComponentError, OSError):
             pass
-    shutil.copy2(f, site_dir() / f.name)
+    if data is not None:
+        src.replace(target)
+    else:
+        shutil.copy2(src, target)
     _cache.pop(key, None)
     return get(key)
 

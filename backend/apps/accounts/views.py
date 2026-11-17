@@ -318,6 +318,8 @@ class UserViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         if self.get_object() == request.user:
             return Response({"detail": "Je kunt jezelf niet verwijderen."}, status=status.HTTP_400_BAD_REQUEST)
+        if self.get_object().is_superadmin_plus and not request.user.is_superplus:
+            return Response({"detail": "Je mag een superadmin+ niet verwijderen."}, status=status.HTTP_403_FORBIDDEN)
         from .erasure import erase_user
 
         erase_user(self.get_object())  # files, keys, group/role links and records go too
@@ -328,6 +330,8 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         if user == request.user:
             return Response({"detail": "Je kunt jezelf niet blokkeren."}, status=status.HTTP_400_BAD_REQUEST)
+        if user.is_superadmin_plus and not request.user.is_superplus:
+            return Response({"detail": "Je mag een superadmin+ niet blokkeren."}, status=status.HTTP_403_FORBIDDEN)
         user.is_active = False
         user.save(update_fields=["is_active"])
         Token.objects.filter(user=user).delete()

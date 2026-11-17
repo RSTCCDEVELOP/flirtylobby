@@ -12,12 +12,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
-import { confirmDialog } from "../lib/dialog";
+import { alertDialog, confirmDialog } from "../lib/dialog";
 import { TILES, LEVEL_LABEL } from "../lib/admin-tiles";
 import { lvl } from "../lib/perms";
 import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import Paged from "./Paged";
+import PlusLock from "./PlusLock";
 import ViewBar from "./ViewBar";
 import { useView } from "../lib/useView";
 
@@ -39,7 +40,10 @@ export default function AdminTiles({ all = false }) {
     const locked = t.modules.every((m) => state?.[m]?.core);
     return { ...t, on, level, locked };
   }).filter((t) => (all ? true : t.on && t.level >= 1));
+  const isLocked = (t) => all && !user?.is_superadmin_plus && t.modules.some((m) => state?.[m]?.owner_only);  // an easy2edit module is shown with a lock; a click gives a message
+  const deny = () => alertDialog(tx("Dit onderdeel is alleen voor een superadmin+."));
   const flip = async (t) => {
+    if (isLocked(t)) return deny();
     const next = !t.on, keys = t.modules.filter((m) => !state?.[m]?.core);
     if (!next && !(await confirmDialog(tx("\"{0}\" uitzetten? De functie is dan overal inactief.", t.title)))) return;
     setBusy(t.href); setMsg("");
@@ -57,14 +61,14 @@ export default function AdminTiles({ all = false }) {
     <div className={`cards${view.cls}`} style={{ marginTop: 0 }}>
       {shown.map((t) => (
         <div key={t.href} className={`card stat link-card tile-wrap ${all && !t.on ? "tile-off" : ""}`}>
-          <Link href={t.href} className="tile-link">
-            <span>{t.title}</span>
+          <Link href={t.href} className="tile-link" onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}>
+            <span>{t.title}{all && t.modules.some((m) => state?.[m]?.owner_only) && <PlusLock />}</span>
             <strong style={{ fontSize: "1.25rem" }}>{t.big}</strong>
             <small>{t.small}</small>
           </Link>
           {all ? (
             <label className="switch tile-switch" title={t.locked ? tx("Kernonderdeel: altijd aan") : t.on ? tx("Uitzetten") : tx("Aanzetten")}>
-              <input type="checkbox" checked={t.on} disabled={t.locked || busy === t.href || !state} onChange={() => flip(t)} /><span />
+              <input type="checkbox" checked={t.on} disabled={(t.locked || busy === t.href || !state) && !isLocked(t)} onChange={() => flip(t)} /><span />
             </label>
           ) : <span className="tile-level">{LEVEL_LABEL[t.level]}</span>}
         </div>

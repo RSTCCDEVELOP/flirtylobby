@@ -7,13 +7,12 @@
 
 "use client";
 
-import { ResourceButtons } from "../../../../components/ResourceLibrary";
 import { Busy } from "../../../../components/PageLoader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
-import Collapsible from "../../../../components/Collapsible";
-import { IconGrid, IconRefresh, IconSettings } from "../../../../components/Icons";
+import { IconCart, IconGrid, IconRefresh, IconSettings } from "../../../../components/Icons";
 import ModuleOffAlert from "../../../../components/ModuleOffAlert";
+import { InstalledTiles, ManageModal, PluginLibrary } from "../../../../components/PluginTiles";
 import PluginFrame from "../../../../components/PluginFrame";
 import SaveStatus from "../../../../components/SaveStatus";
 import Tabs from "../../../../components/Tabs";
@@ -30,6 +29,7 @@ export default function PluginsPage() {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
+  const [manage, setManage] = useState(null);  // the name of the plugin whose settings are open in the pop-up
   const input = useRef(null);
   const load = useCallback(() => api("/plugins/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e), module: e?.data?.module })), []);
   useEffect(() => { load(); }, [load]);
@@ -55,8 +55,8 @@ export default function PluginsPage() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); load(); }
   }
   async function remove(p) {
-    if (!(await confirmDialog(tx("Plugin {0} verwijderen? De map met bestanden, de instellingen en de gegevens van de plugin worden gewist.", p.title), { title: tx("Plugin verwijderen"), okLabel: tx("Verwijderen"), danger: true }))) return;
-    try { await api(`/plugins/${p.name}/`, { method: "DELETE" }); window.dispatchEvent(new Event("plugins-changed")); load(); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    if (!(await confirmDialog(tx("Plugin {0} verwijderen? De map met bestanden, de instellingen en de gegevens van de plugin worden gewist.", p.title), { title: tx("Plugin verwijderen"), okLabel: tx("Verwijderen"), danger: true }))) return false;
+    try { await api(`/plugins/${p.name}/`, { method: "DELETE" }); window.dispatchEvent(new Event("plugins-changed")); load(); return true; } catch (e) { setMsg({ ok: false, text: errorText(e) }); return false; }
   }
   async function scan() {
     setBusy(true); setMsg(null);
@@ -91,36 +91,38 @@ export default function PluginsPage() {
       </div>}
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
-      <Tabs value={tab} onChange={setTab} tabs={[["installed", "Geïnstalleerd", <IconGrid key="i" />, d.plugins.length || undefined], ["upload", "Uploaden", <IconRefresh key="u" />], ["develop", "Ontwikkelen", <IconSettings key="d" />]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["installed", "Geïnstalleerd", <IconGrid key="i" />, d.plugins.length || undefined], ["library", "Bibliotheek", <IconCart key="l" />], ["upload", "Uploaden", <IconRefresh key="u" />], ["develop", "Ontwikkelen", <IconSettings key="d" />]]} />
 
       {tab === "installed" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" }}>
-          <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem" }}>
-            <ResourceButtons kind="plugins" onChanged={load} />
-            <button type="button" className="btn" disabled={busy} onClick={scan}>{tx("Map op de server scannen")}</button>
-            <small className="muted"><code>{d.folder}</code></small>
-          </div>
-          {!d.plugins.length && <p className="muted">{tx("Er zijn nog geen plugins. Upload een zipbestand, of zet een map in")} <code>{d.folder}</code> {tx("en kies Map scannen.")}</p>}
-          {d.plugins.map((p) => (
-            <Collapsible key={p.name} id={`plugin-${p.name}`} title={`${p.title}  ·  ${tx("plugin")} ${p.version}  ·  ${tx("systeem")} ${p.built_for}${["outdated", "incompatible", "newer"].includes(p.compat) ? "  ⚠" : ""}`}>
-              <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-                <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.enabled} disabled={!p.enabled && (!!p.blocked || (p.requires_missing || []).length > 0)} onChange={(e) => toggle(p, e.target.checked)} /><span /></span><span><strong>{p.enabled ? tx("Aan") : tx("Uit")}</strong></span></label>
-                <span className="muted">{tx("Plugin")} {p.version} · {tx("voor systeem")} {p.built_for} · {tx(SECTION_LABEL[p.section] || p.section)}</span>
-              </div>
-              {(p.requires?.length > 0 || p.required_by?.length > 0) && <p className="muted" style={{ margin: ".4rem 0 0", fontSize: ".85rem" }}>{p.requires?.length > 0 && <>{tx("Heeft nodig:")} {p.requires.join(", ")}. </>}{p.required_by?.length > 0 && <>{tx("Nodig voor:")} {p.required_by.join(", ")}.</>}{(p.requires_missing || []).length > 0 ? ` ${tx("Nog niet geïnstalleerd:")} ${p.requires_missing.join(", ")}.` : (p.requires_off || []).length > 0 && !p.enabled ? ` ${tx("Staan nog uit:")} ${p.requires_off.map((x) => x.title).join(", ")}.` : ""}</p>}
-              <PluginTabs p={p} onSaved={upd} extra={p.settings_web && p.enabled ? [["shopsettings", "Instellingen", <IconSettings key="ss" />]] : []}>
-                {(tab) => tab === "shopsettings" && p.settings_web && p.enabled && <PluginFrame name={p.name} file={p.settings_web} title={`${p.title} – ${tx("instellingen")}`} bare />}
-              </PluginTabs>
-              <div className="row" style={{ justifyContent: "flex-start" }}>
-                <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Instellingen")}</a>
-                {p.enabled && p.has_web && p.menu && <a className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</a>}
-                {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg({ ok: false, text: errorText(e) }))}>{tx("Downloaden (zip)")}</button>}
-                <button type="button" className="btn danger" onClick={() => remove(p)}>{tx("Verwijderen")}</button>
-              </div>
-            </Collapsible>
-          ))}
-        </div>
+        <>
+          {!d.plugins.length && <p className="muted" style={{ marginTop: "1rem" }}>{tx("Er zijn nog geen plugins. Upload een zipbestand, of zet een map in")} <code>{d.folder}</code> {tx("en kies Map scannen.")} <button type="button" className="btn sm" onClick={() => setTab("library")}>{tx("Bibliotheek")}</button></p>}
+          <InstalledTiles plugins={d.plugins} onToggle={toggle} onManage={(p) => setManage(p.name)} />
+        </>
       )}
+
+      {tab === "library" && <PluginLibrary onChanged={() => { load(); window.dispatchEvent(new Event("plugins-changed")); }} />}
+
+      {manage && (() => {
+        const p = d.plugins.find((x) => x.name === manage);
+        if (!p) return null;
+        return (
+          <ManageModal p={p} onClose={() => setManage(null)}>
+            <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+              <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.enabled} disabled={!p.enabled && (!!p.blocked || (p.requires_missing || []).length > 0)} onChange={(e) => toggle(p, e.target.checked)} /><span /></span><span>{p.enabled ? tx("Actief") : tx("Uit")}</span></label>
+            </div>
+            {(p.requires?.length > 0 || p.required_by?.length > 0) && <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{p.requires?.length > 0 && <>{tx("Heeft nodig:")} {p.requires.join(", ")}. </>}</p>}
+            <PluginTabs p={p} onSaved={upd} extra={p.settings_web && p.enabled ? [["shopsettings", "Instellingen", <IconSettings key="ss" />]] : []}>
+              {(tab) => tab === "shopsettings" && p.settings_web && p.enabled && <PluginFrame name={p.name} file={p.settings_web} title={`${p.title} – ${tx("instellingen")}`} bare />}
+            </PluginTabs>
+            <div className="row" style={{ justifyContent: "flex-start", flexWrap: "wrap" }}>
+              <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Instellingen")}</a>
+              {p.enabled && p.has_web && p.menu && <a className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</a>}
+              {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg({ ok: false, text: errorText(e) }))}>{tx("Downloaden (zip)")}</button>}
+              <button type="button" className="btn danger" onClick={async () => { if (await remove(p)) setManage(null); }}>{tx("Verwijderen")}</button>
+            </div>
+          </ManageModal>
+        );
+      })()}
 
       {tab === "upload" && (
         <div className="card" style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
@@ -132,7 +134,6 @@ export default function PluginsPage() {
           </div>
           <small className="muted">{tx("Maximaal {0} MB. Het zipbestand moet een plugin.json bevatten.", d.max_zip_mb)}</small>
           <div className="row" style={{ justifyContent: "flex-start", alignItems: "center", gap: ".6rem", borderTop: "1px solid var(--line)", paddingTop: ".8rem" }}>
-            <ResourceButtons kind="plugins" onChanged={load} />
             <button type="button" className="btn" disabled={busy} onClick={scan}>{busy ? tx("Bezig…") : tx("Map op de server scannen")}</button>
             <small className="muted">{tx("Zoekt plugins in")} <code>{d.folder}</code></small>
           </div>
