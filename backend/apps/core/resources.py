@@ -38,7 +38,7 @@ class SourceUnavailable(ResourceError):
 MAX_ZIP = 80_000_000
 
 
-def _remote_call(path, params):
+def _remote_call(path, params, prefix="source/"):
     """GET on the easy2edit server with the key of this website (it registers first when it has none). -> bytes."""
     import urllib.error
     import urllib.parse
@@ -46,19 +46,28 @@ def _remote_call(path, params):
 
     from . import global_settings, sitemanager
 
+    if sitemanager._state().get("disconnected"):
+        raise SourceUnavailable("disconnected", "Deze website is ontkoppeld van de easy2edit-server.")
     key = sitemanager._state().get("token") or ""
     if not key:
         sitemanager.report("sync")  # the first time: this website reports itself and gets its key
         key = sitemanager._state().get("token") or ""
     if not key:  # (the server answered nothing or does not accept registrations: the site manager is not switched on there, or it cannot be reached)
         raise SourceUnavailable(_why(), "Deze website is nog niet aangemeld bij de easy2edit-server.")
-    url = f"{global_settings.get()['api_url']}/api/easy2edit/source/{path}?" + urllib.parse.urlencode(params)
+    url = f"{global_settings.get()['api_url']}/api/easy2edit/{prefix}{path}?" + urllib.parse.urlencode(params)
     try:
         with urllib.request.urlopen(urllib.request.Request(url, headers={"X-Easy2edit-Key": key, "User-Agent": "easy2edit-site"}), timeout=30) as r:
             return r.read(MAX_ZIP + 1)
     except urllib.error.HTTPError as e:
         if e.code == 404:  # the easy2edit server does not have the site manager switched on
             raise SourceUnavailable("disabled", "De easy2edit-server heeft de site manager niet ingeschakeld.")
+        if e.code == 403:
+            try:
+                why = json.loads(e.read(2000).decode("utf-8", "ignore")).get("reason")
+            except (ValueError, OSError):
+                why = ""
+            if why == "pending":  # known, but not approved yet: the key stays
+                raise SourceUnavailable("pending", "Deze website is nog niet goedgekeurd door de easy2edit-server.")
         if e.code in (401, 403):
             sitemanager._save(token="")  # the key is not known any more: register again next time
             raise SourceUnavailable("refused", "De easy2edit-server kent deze website niet of heeft hem geblokkeerd.")

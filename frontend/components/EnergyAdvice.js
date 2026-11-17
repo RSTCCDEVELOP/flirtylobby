@@ -27,6 +27,8 @@ const HOWTO = {
   compression: "# nginx\ngzip on;\ngzip_min_length 1024;\ngzip_types text/css application/javascript application/json image/svg+xml;\n\n# Next.js (frontend): standaard aan in productie (compress: true)\n# Coolify / Traefik: zet de compress-middleware aan",
   production: "cd frontend\nnpm run build\nnpm start\n\n# en zet bij Admin → Basisgegevens de omgeving op Productie",
 };
+export { TEXT as ADVICE_TEXT };
+export { STATUS as ADVICE_STATUS };
 const STATUS = { todo: ["Te doen", "badge off"], applied: ["Toegepast", "badge ok"], manual: ["Handmatig", "badge off"], ok: ["Goed", "badge ok"], info: ["Let op", "badge off"], unknown: ["Nog niet gemeten", "badge"] };
 
 function Score({ label, s, sub }) {

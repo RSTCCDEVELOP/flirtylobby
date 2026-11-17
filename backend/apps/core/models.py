@@ -109,7 +109,9 @@ class EasySite(models.Model):
     version = models.CharField(max_length=30, blank=True)
     build = models.CharField(max_length=20, blank=True)
     token_hash = models.CharField(max_length=64, blank=True)  # of the key the website uses for its next calls (the key itself is not kept)
-    status = models.CharField(max_length=10, default="active")  # active | blocked
+    api_url = models.CharField(max_length=300, blank=True)  # the API address of the website (backend): where the easy2edit server asks for information (users, reseller, AI) and switches it offline/online
+    callback_key_enc = models.TextField(blank=True)  # the key the easy2edit server shows to the website when it calls it (encrypted); the website checks it
+    status = models.CharField(max_length=10, default="pending")  # pending (waits for approval: it can report, but gets no library and no keys) | active | blocked
     first_seen = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(null=True, blank=True)
     last_login_at = models.DateTimeField(null=True, blank=True)  # the last time an administrator logged in on that website

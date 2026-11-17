@@ -31,12 +31,12 @@ def site_register(request):
     if not sitemanager.rate_ok(ip):
         return Response({"detail": "Te veel aanmeldingen."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
     try:
-        site, key = sitemanager.register(request.data if isinstance(request.data, dict) else {}, ip)
+        site, key, callback = sitemanager.register(request.data if isinstance(request.data, dict) else {}, ip)
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except PermissionError as e:
         return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
-    return Response({"key": key, "url": site.url, "id": site.pk}, status=status.HTTP_201_CREATED)
+    return Response({"key": key, "callback_key": callback, "url": site.url, "id": site.pk}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -47,17 +47,36 @@ def site_ping(request):
     if not sitemanager.server_enabled():
         raise Http404
     try:
-        site = sitemanager.ping(request.META.get("HTTP_X_EASY2EDIT_KEY", ""), request.data if isinstance(request.data, dict) else {}, _seen_ip(request))
+        site, callback = sitemanager.ping(request.META.get("HTTP_X_EASY2EDIT_KEY", ""), request.data if isinstance(request.data, dict) else {}, _seen_ip(request))
     except PermissionError as e:
         return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
-    return Response({"ok": True, "url": site.url})
+    return Response({"ok": True, "url": site.url, "status": site.status, **({"callback_key": callback} if callback else {})})
 
 
-def _source_site(request):
-    """The website that asks for the library: it must be known (its key) and this installation must be the easy2edit server."""
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def site_disconnect(request):
+    """A website disconnects itself (with its key): the server forgets its keys."""
     if not sitemanager.server_enabled():
         raise Http404
-    return sitemanager.site_for_key(request.META.get("HTTP_X_EASY2EDIT_KEY", ""))
+    try:
+        sitemanager.disconnect_site(request.META.get("HTTP_X_EASY2EDIT_KEY", ""))
+    except PermissionError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+    return Response({"ok": True})
+
+
+def _approved(request):
+    """The website that asks for the library or the default links: this installation must be the easy2edit server and the website must be known and approved.
+    -> (site, None) or (None, the refusal; with "reason": "pending" when it only waits for approval)."""
+    if not sitemanager.server_enabled():
+        raise Http404
+    site = sitemanager.site_for_key(request.META.get("HTTP_X_EASY2EDIT_KEY", ""))
+    if site and site.status == "active":
+        return site, None
+    pending = bool(site and site.status == "pending")
+    return None, Response({"detail": "Deze website wacht op goedkeuring." if pending else "Onbekende of geblokkeerde website.", "reason": "pending" if pending else "refused"}, status=status.HTTP_403_FORBIDDEN)
 
 
 @api_view(["GET"])
@@ -67,8 +86,9 @@ def source_list(request):
     """The library of this installation (the folder resource/) for the websites that use the easy2edit server as their source: ?kind=plugins|themas|languages|components|templates."""
     from . import resources
 
-    if not _source_site(request):
-        return Response({"detail": "Onbekende of geblokkeerde website."}, status=status.HTTP_403_FORBIDDEN)
+    site, refusal = _approved(request)
+    if refusal:
+        return refusal
     kind = request.query_params.get("kind")
     if kind not in resources.KINDS:
         return Response({"detail": "Onbekend onderdeel."}, status=status.HTTP_400_BAD_REQUEST)
@@ -86,8 +106,9 @@ def source_file(request):
 
     from . import resources
 
-    if not _source_site(request):
-        return Response({"detail": "Onbekende of geblokkeerde website."}, status=status.HTTP_403_FORBIDDEN)
+    site, refusal = _approved(request)
+    if refusal:
+        return refusal
     kind, file = request.query_params.get("kind"), str(request.query_params.get("file") or "")
     if kind not in resources.KINDS or not re.fullmatch(r"[A-Za-z0-9._+-]+\.zip", file):
         return Response({"detail": "Onbekend bestand."}, status=status.HTTP_400_BAD_REQUEST)
@@ -96,6 +117,67 @@ def source_file(request):
     if not path.is_file() or path.resolve().parent != folder.resolve():
         raise Http404
     return HttpResponse(path.read_bytes(), content_type="application/zip")
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def default_links(request):
+    """The API links that are marked "in every installation" (Admin -> API keys), with their keys: for approved websites only. The keys are not in the code (git): they come from here."""
+    site, refusal = _approved(request)
+    if refusal:
+        return refusal
+    from apps.integrations.models import Integration
+
+    return Response({"links": [{"slug": o.slug, "provider": o.provider, "name": o.name, "superadmin_only": o.superadmin_only, "config": {k: v for k, v in (o.config or {}).items() if isinstance(v, str) and v.strip()}}
+                               for o in Integration.objects.filter(in_installation=True).order_by("id")]})
+
+
+# ── this website, asked by the easy2edit server (with the callback key) ─────
+def _from_the_server(request):
+    return sitemanager.callback_ok(request.META.get("HTTP_X_EASY2EDIT_CALLBACK", ""), _seen_ip(request))
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def remote_info(request):
+    """What this website tells the easy2edit server: ?part=status|users|reseller|ai (numbers; no personal data of end users)."""
+    from . import remote_info as info
+
+    if not _from_the_server(request):
+        return Response({"detail": "Niet toegestaan."}, status=status.HTTP_403_FORBIDDEN)
+    part = request.query_params.get("part")
+    if part not in info.PARTS:
+        return Response({"detail": "Onbekend onderdeel."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(info.build(part))
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def remote_state(request):
+    """The easy2edit server takes this website offline (the maintenance page; administrators can still log in) or puts it online: {online: bool}."""
+    from . import remote_info as info
+
+    if not _from_the_server(request):
+        return Response({"detail": "Niet toegestaan."}, status=status.HTTP_403_FORBIDDEN)
+    return Response(info.set_online(bool(request.data.get("online")), str(request.data.get("message") or "")))
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def remote_action(request):
+    """The easy2edit server tells this website to do something: {action: "plugin", name: "statistics", enabled} | {action: "energy_scan"}."""
+    from . import remote_info as info
+
+    if not _from_the_server(request):
+        return Response({"detail": "Niet toegestaan."}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        return Response(info.action(request.data if isinstance(request.data, dict) else {}))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def _plus_only(request):
@@ -114,6 +196,16 @@ def sites_admin(request):
         action = request.data.get("action")
         if action == "server":
             sitemanager.set_server(bool(request.data.get("on")))
+        elif action == "auto_approve":
+            sitemanager.set_auto_approve(bool(request.data.get("on")))
+        elif action == "check":  # a live check of the connection (this website as a client of the easy2edit server)
+            return Response({"check": sitemanager.check(), "me": sitemanager.info()})
+        elif action == "disconnect":
+            sitemanager.disconnect()
+        elif action == "connect":
+            result = sitemanager.connect()
+            if not result["ok"]:
+                return Response({"detail": f"Verbinden is niet gelukt: {result['error']}", "info": sitemanager.info()}, status=status.HTTP_502_BAD_GATEWAY)
         elif action == "sync":
             result = sitemanager.report("sync", sitemanager.role_of(request.user))
             if not result["ok"]:
@@ -142,7 +234,7 @@ def site_admin(request, pk):
     if "notes" in d:
         site.notes = str(d["notes"] or "").strip()[:2000]
     if "status" in d:
-        if d["status"] not in ("active", "blocked"):
+        if d["status"] not in ("pending", "active", "blocked", "disconnected"):
             return Response({"detail": "Onbekende status."}, status=status.HTTP_400_BAD_REQUEST)
         site.status = d["status"]
     if "url" in d:
@@ -152,3 +244,54 @@ def site_admin(request, pk):
         site.url, site.url_generated = url, False
     site.save()
     return Response(sitemanager.public(site))
+
+
+def _site_or_404(pk):
+    site = EasySite.objects.filter(pk=pk).first()
+    if not site:
+        raise Http404
+    return site
+
+
+def _remote_failed(e):
+    return Response({"detail": str(e), "reason": e.reason}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def site_info(request, pk):
+    """Superadmin+: information of a website, asked through its API: ?part=status|users|reseller|ai."""
+    if (deny := _plus_only(request)):
+        return deny
+    try:
+        return Response(sitemanager.site_info(_site_or_404(pk), str(request.query_params.get("part") or "")))
+    except ValueError as e:
+        if isinstance(e, sitemanager.RemoteError):
+            return _remote_failed(e)
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def site_action(request, pk):
+    """Superadmin+: tell a website to switch the plugin Statistics or to start a measurement of its energy use, through its API."""
+    if (deny := _plus_only(request)):
+        return deny
+    try:
+        return Response(sitemanager.site_action(_site_or_404(pk), request.data if isinstance(request.data, dict) else {}))
+    except sitemanager.RemoteError as e:
+        return _remote_failed(e)
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def site_online(request, pk):
+    """Superadmin+: take a website offline or put it online again, through its API: {online: bool}."""
+    if (deny := _plus_only(request)):
+        return deny
+    try:
+        return Response(sitemanager.set_site_online(_site_or_404(pk), bool(request.data.get("online")), str(request.data.get("message") or "")))
+    except sitemanager.RemoteError as e:
+        return _remote_failed(e)

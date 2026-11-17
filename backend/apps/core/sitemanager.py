@@ -33,6 +33,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
+from apps.integrations import crypto
+
 from . import global_settings, system
 from .models import EasySite, SystemSettings
 
@@ -76,7 +78,7 @@ def instance_id():
 def info():
     """What the Site manager screen shows about this website itself."""
     st = _state()
-    return {"server": bool(st.get("server")), "api_url": global_settings.get()["api_url"], "instance_id": st.get("instance_id") or "", "registered": bool(st.get("token")) or bool(st.get("server")),
+    return {"server": bool(st.get("server")), "disconnected": bool(st.get("disconnected")), "auto_approve": bool(st.get("auto_approve")), "api_url": global_settings.get()["api_url"], "instance_id": st.get("instance_id") or "", "registered": bool(st.get("token")) or bool(st.get("server")),
             "last_ok_at": st.get("last_ok_at"), "last_error": st.get("last_error") or "", "last_event": st.get("last_event") or ""}
 
 
@@ -104,7 +106,7 @@ def own_ip(url):
 def payload(event, role=""):
     s = system.get()
     url = system.origin(s["frontend_url"])
-    return {"instance_id": instance_id(), "name": system.site_name(), "url": url, "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else ""}
+    return {"instance_id": instance_id(), "name": system.site_name(), "url": url, "api_url": system.origin(s["backend_url"]), "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else ""}
 
 
 # ── the server side: the list of websites ───────────────────────────────────
@@ -144,6 +146,9 @@ def _fill(site, data, seen_ip):
         site.url, site.url_generated = url, False
     elif not site.url:
         site.url, site.url_generated = make_url(site.name), True  # the address is made from the base domain of the easy2edit server
+    api = _clean_url(data.get("api_url"))
+    if api:
+        site.api_url = api
     ip = _clean_ip(data.get("ip"))
     if ip:
         site.ip = ip
@@ -161,24 +166,49 @@ def register(data, seen_ip):
     iid = re.sub(r"[^a-f0-9]", "", str(data.get("instance_id") or "").lower())[:40]
     if len(iid) < 16:
         raise ValueError("Ongeldige site-id.")
-    if EasySite.objects.filter(instance_id=iid).exists():
+    existing = EasySite.objects.filter(instance_id=iid).first()
+    if existing and existing.status != "disconnected":
         raise PermissionError("Deze website is al aangemeld: gebruik de sleutel.")
     key = f"{secrets.token_urlsafe(32)}"
-    site = EasySite(instance_id=iid, token_hash=_hash(key))
+    site = existing or EasySite(instance_id=iid)  # a website that disconnected itself registers again: its record is used again
+    site.token_hash = _hash(key)
+    site.status = "active" if _state().get("auto_approve") else "pending"  # a new website waits for approval (unless that is switched on): registering is open to the world
     _fill(site, data, seen_ip)
+    callback = _new_callback(site)
     site.save()
     logger.info("Site manager: new website %s (%s)", site.name, site.url)
-    return site, key
+    return site, key, callback
 
 
 def site_for_key(key):
-    """The (not blocked) website that belongs to this key, or None."""
+    """The website that belongs to this key (not blocked), or None. Its status says whether it is approved (active) or still waiting (pending)."""
     site = EasySite.objects.filter(token_hash=_hash(str(key or ""))).first() if key else None
     return site if site and site.status != "blocked" else None
 
 
+def disconnect_site(key):
+    """The website itself disconnects from this server: its key and callback key are gone, the record stays (status disconnected)."""
+    site = site_for_key(key)
+    if not site:
+        raise PermissionError("Onbekende of geblokkeerde website.")
+    site.status, site.token_hash, site.callback_key_enc = "disconnected", "", ""
+    site.save(update_fields=["status", "token_hash", "callback_key_enc"])
+    return site
+
+
+def set_auto_approve(on):
+    return _save(auto_approve=bool(on))
+
+
+def _new_callback(site):
+    """A key for the calls of the easy2edit server TO the website (kept encrypted here); the website gets it once and checks it."""
+    key = secrets.token_urlsafe(32)
+    site.callback_key_enc = crypto.encrypt({"k": key})
+    return key
+
+
 def ping(key, data, seen_ip):
-    """A call of a known website (with its key): update the record. -> the site."""
+    """A call of a known website (with its key): update the record. -> (the site, a callback key when the website has none yet, else None)."""
     site = EasySite.objects.filter(token_hash=_hash(str(key or ""))).first()
     if not site or site.status == "blocked":
         raise PermissionError("Onbekende of geblokkeerde website.")
@@ -186,8 +216,9 @@ def ping(key, data, seen_ip):
     if data.get("event") == "login":
         site.last_login_at, site.last_login_role = timezone.now(), (data.get("role") if data.get("role") in ROLES else "")
         site.login_count += 1
+    callback = None if site.callback_key_enc and data.get("callback") != "missing" else _new_callback(site)  # (a website that lost its key asks for a new one)
     site.save()
-    return site
+    return site, callback
 
 
 def rate_ok(ip, limit=20):
@@ -201,7 +232,7 @@ def rate_ok(ip, limit=20):
 
 
 def public(s):
-    return {"id": s.pk, "instance_id": s.instance_id, "name": s.name, "url": s.url, "url_generated": s.url_generated, "ip": s.ip, "seen_ip": s.seen_ip, "version": s.version, "build": s.build, "status": s.status,
+    return {"id": s.pk, "instance_id": s.instance_id, "name": s.name, "url": s.url, "api_url": s.api_url, "has_callback": bool(s.callback_key_enc), "url_generated": s.url_generated, "ip": s.ip, "seen_ip": s.seen_ip, "version": s.version, "build": s.build, "status": s.status,
             "first_seen": s.first_seen, "last_seen": s.last_seen, "last_login_at": s.last_login_at, "last_login_role": s.last_login_role, "login_count": s.login_count, "notes": s.notes}
 
 
@@ -215,6 +246,8 @@ def _post(url, body, key=""):
 def report(event="login", role=""):
     """Tell the easy2edit server about this website (register the first time, ping after that). -> {ok, error}. Never raises."""
     try:
+        if _state().get("disconnected") and not server_enabled():  # disconnected on purpose: no calls at all
+            return {"ok": False, "error": "disconnected"}
         data = payload(event, role)
         st = _state()
         if server_enabled():  # this installation is the server: its own website goes straight into its own list
@@ -235,9 +268,11 @@ def report(event="login", role=""):
                 key = str(r.get("key") or "")
                 if not key:
                     raise ValueError("De server gaf geen sleutel.")
-                _save(token=key)
+                _save(token=key, **({"callback_key": str(r["callback_key"])} if r.get("callback_key") else {}))
             if key and (event == "login" or st.get("token")):
-                _post(f"{api}/api/easy2edit/sites/ping/", data, key)
+                r = _post(f"{api}/api/easy2edit/sites/ping/", {**data, **({} if _state().get("callback_key") else {"callback": "missing"})}, key)
+                if r.get("callback_key"):  # the key for the calls of the easy2edit server to this website
+                    _save(callback_key=str(r["callback_key"]))
         _save(last_ok_at=timezone.now().isoformat(timespec="seconds"), last_error="", last_event=event)
         return {"ok": True, "error": ""}
     except urllib.error.HTTPError as e:
@@ -283,3 +318,151 @@ def on_login(sender, request=None, user=None, **kwargs):
     role = role_of(user)
     if role:
         report_async("login", role)
+
+
+# ── the calls of the easy2edit server TO a website (information, offline/online) ─
+def callback_ok(key, ip=""):
+    """This website: is this the key the easy2edit server was given? Wrong guesses are counted per address (20 per hour)."""
+    import hmac
+
+    from django.core.cache import cache
+
+    ck = f"sitemgr-cb:{ip}"
+    if cache.get(ck, 0) >= 20:
+        return False
+    mine = str(_state().get("callback_key") or "")
+    ok = bool(mine) and hmac.compare_digest(str(key or ""), mine)
+    if not ok:
+        cache.set(ck, cache.get(ck, 0) + 1, 3600)
+    return ok
+
+
+class RemoteError(ValueError):
+    """The call to a website did not work; reason: "pending" | "nokey" | "unsafe" | "unreachable" | "refused"."""
+
+    def __init__(self, reason, message):
+        super().__init__(message)
+        self.reason = reason
+
+
+def _safe_base(site):
+    """The API address of an approved website, only when it is safe to call: https, and not an address inside our own network (except on a development machine)."""
+    import ipaddress
+
+    base = (site.api_url or site.url or "").rstrip("/")
+    u = urlparse(base)
+    if not u.hostname or u.scheme not in ("https", "http") or (u.scheme == "http" and not settings.DEBUG):
+        raise RemoteError("unsafe", "Het API-adres van deze website is niet veilig om aan te roepen (https is nodig).")
+    if not settings.DEBUG:
+        try:
+            infos = socket.getaddrinfo(u.hostname, u.port or 443, proto=socket.IPPROTO_TCP)
+            if not infos or any(not ipaddress.ip_address(i[4][0]).is_global for i in infos):
+                raise RemoteError("unsafe", "Het adres van deze website wijst naar een intern netwerk: dat roepen we niet aan.")
+        except socket.gaierror:
+            raise RemoteError("unreachable", "Het adres van deze website is niet te vinden.")
+    return base
+
+
+def call_site(site, path, params=None, body=None):
+    """Ask / tell a website (an approved one) something with the callback key. -> the answer (a dict). Never for the website that is this installation: use remote_info directly."""
+    if site.status != "active":
+        raise RemoteError("pending", "Keur deze website eerst goed.")
+    key = crypto.decrypt(site.callback_key_enc).get("k") if site.callback_key_enc else ""
+    if not key:
+        raise RemoteError("nokey", "Deze website heeft nog geen koppelsleutel: die wordt uitgewisseld bij het eerstvolgende inloggen van een beheerder op die website.")
+    import urllib.parse
+
+    url = f"{_safe_base(site)}/api/easy2edit/remote/{path}/" + (("?" + urllib.parse.urlencode(params)) if params else "")
+    req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None, method="POST" if body is not None else "GET",
+                                 headers={"Content-Type": "application/json", "User-Agent": "easy2edit-server", "X-Easy2edit-Callback": key})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read(1_000_000).decode("utf-8", "ignore") or "{}")
+    except urllib.error.HTTPError as e:
+        try:
+            why = str(json.loads(e.read(2000).decode("utf-8", "ignore")).get("detail") or "")[:300]
+        except (ValueError, OSError, AttributeError):
+            why = ""
+        raise RemoteError("refused", why or f"De website weigert de aanvraag (HTTP {e.code}).")
+    except Exception:  # noqa: BLE001
+        raise RemoteError("unreachable", "De website is niet bereikbaar via zijn API.")
+
+
+def site_info(site, part):
+    """The information of a website (part: status | users | reseller | ai), asked through its API; this installation's own website is read directly."""
+    from . import remote_info
+
+    if part not in remote_info.PARTS:
+        raise ValueError("Onbekend onderdeel.")
+    if site.instance_id == instance_id():
+        return remote_info.build(part)
+    return call_site(site, "info", {"part": part})
+
+
+def site_action(site, body):
+    """Tell a website to do something: switch the plugin Statistics, start a measurement of the energy use."""
+    from . import remote_info
+
+    if site.instance_id == instance_id():
+        return remote_info.action(body)
+    return call_site(site, "action", body=body)
+
+
+def set_site_online(site, online, message=""):
+    from . import remote_info
+
+    if site.instance_id == instance_id():
+        return remote_info.set_online(online, message)
+    return call_site(site, "state", body={"online": bool(online), "message": str(message or "")[:500]})
+
+
+# ── this website as a client of the easy2edit server: is it connected, disconnect, connect again ──
+def check():
+    """A live check of the connection with the easy2edit server. -> {state, ...}: server (this installation IS the server) | disconnected | connected | pending (known, waits for approval) |
+    refused (not known or blocked) | disabled (the server has no site manager on) | offline (not reachable; error says why)."""
+    if server_enabled():
+        return {"state": "server"}
+    if _state().get("disconnected"):
+        return {"state": "disconnected"}
+    api = global_settings.get()["api_url"]
+    try:
+        key = _state().get("token") or ""
+        if not key:
+            r = report("sync")  # not registered yet: that is done now
+            key = _state().get("token") or ""
+            if not key:
+                return {"state": "offline", "error": r.get("error") or "geen sleutel"}
+        resp = _post(f"{api}/api/easy2edit/sites/ping/", {**payload("check"), **({} if _state().get("callback_key") else {"callback": "missing"})}, key)
+        if resp.get("callback_key"):
+            _save(callback_key=str(resp["callback_key"]))
+        _save(last_ok_at=timezone.now().isoformat(timespec="seconds"), last_error="", last_event="check")
+        status = resp.get("status") or "active"
+        return {"state": "connected" if status == "active" else status, "status": status, "server_url": api}
+    except urllib.error.HTTPError as e:
+        _save(last_error=f"HTTP {e.code}")
+        if e.code == 404:
+            return {"state": "disabled"}
+        if e.code in (401, 403):
+            _save(token="")  # the key is not known any more: it registers again at the next report
+            return {"state": "refused"}
+        return {"state": "offline", "error": f"HTTP {e.code}"}
+    except Exception as e:  # noqa: BLE001
+        _save(last_error=str(e)[:200])
+        return {"state": "offline", "error": str(e)[:200]}
+
+
+def disconnect():
+    """Disconnect this website from the easy2edit server: the server is told (when it can be reached), the keys are removed here, and nothing is reported or fetched until it connects again."""
+    st = _state()
+    if st.get("token"):
+        try:
+            _post(f"{global_settings.get()['api_url']}/api/easy2edit/sites/disconnect/", {}, st["token"])
+        except Exception:  # noqa: BLE001 - not reachable: it is disconnected here anyway
+            pass
+    _save(token="", callback_key="", disconnected=True)
+
+
+def connect():
+    """Connect to the easy2edit server again: this website reports itself (a new registration; the server may ask for approval). -> {ok, error}."""
+    _save(disconnected=False)
+    return report("sync")

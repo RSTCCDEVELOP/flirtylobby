@@ -1,5 +1,43 @@
 {
  "format": "default-links",
- "version": 1,
- "links": []
+ "version": 2,
+ "note": "Only the shape of the links. No keys and no settings in here: they come from the easy2edit server (Site manager).",
+ "links": [
+  {
+   "slug": "postmark",
+   "provider": "postmark",
+   "name": "Postmark Easy2edit",
+   "superadmin_only": true
+  },
+  {
+   "slug": "s3",
+   "provider": "s3",
+   "name": "S3-opslag",
+   "superadmin_only": false
+  },
+  {
+   "slug": "donatie",
+   "provider": "stripe",
+   "name": "Stripe Donatie Easy2edit",
+   "superadmin_only": true
+  },
+  {
+   "slug": "anthropic",
+   "provider": "anthropic",
+   "name": "Claude Easy2edit",
+   "superadmin_only": true
+  },
+  {
+   "slug": "elevenlabs-easy2edit",
+   "provider": "elevenlabs",
+   "name": "ElevenLabs Easy2edit",
+   "superadmin_only": false
+  },
+  {
+   "slug": "unsplash",
+   "provider": "unsplash",
+   "name": "Unsplash",
+   "superadmin_only": true
+  }
+ ]
 }

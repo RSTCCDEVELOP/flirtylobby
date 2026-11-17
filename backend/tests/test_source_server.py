@@ -33,8 +33,12 @@ def library(tmp_path, settings):
     return tmp_path
 
 
-def key_of(client):
+def key_of(client, approve=True):
     r = client.post("/api/easy2edit/sites/register/", json.dumps({"instance_id": IID, "name": "Blue"}), content_type=JSON)
+    if approve:
+        from apps.core.models import EasySite
+
+        EasySite.objects.update(status="active")  # (a new website waits for approval)
     return r.json()["key"]
 
 
@@ -62,6 +66,15 @@ def test_the_server_hands_out_its_library_to_known_websites_only(client, library
 
     EasySite.objects.update(status="blocked")  # a blocked website gets nothing
     assert client.get("/api/easy2edit/source/?kind=themas", HTTP_X_EASY2EDIT_KEY=key).status_code == 403
+
+
+@pytest.mark.django_db
+def test_a_website_that_waits_for_approval_gets_no_library(client, library):
+    sitemanager.set_server(True)
+    key = key_of(client, approve=False)
+    r = client.get("/api/easy2edit/source/?kind=themas", HTTP_X_EASY2EDIT_KEY=key)
+    assert r.status_code == 403 and r.json()["reason"] == "pending"
+    assert client.get("/api/easy2edit/source/file/?kind=themas&file=t1-1.0.0.zip", HTTP_X_EASY2EDIT_KEY=key).status_code == 403
 
 
 @pytest.mark.django_db

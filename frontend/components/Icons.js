@@ -84,3 +84,5 @@ export const PRESET_ICONS = {
 };
 export const PresetIcon = ({ name, size = 26 }) => PRESET_ICONS[name] ? <svg {...p} width={size} height={size}>{PRESET_ICONS[name]}</svg> : null;
 export const IconTrash = I(<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />);
+export const IconChart = I(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />);
+export const IconLeaf = I(<><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15" /><path d="M5 19c3-5 6-8 11-10" /></>);

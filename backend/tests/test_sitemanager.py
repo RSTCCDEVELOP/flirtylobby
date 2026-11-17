@@ -45,6 +45,7 @@ def test_a_website_registers_and_reports_logins(client):
     s = EasySite.objects.get(instance_id=IID)
     assert s.url == "https://blue-bps.easy2edit.com" and s.url_generated and s.ip == "198.51.100.4" and s.seen_ip == "203.0.113.7"  # the address is made from the base domain
     assert key and s.token_hash != key  # only a hash of the key is kept
+    assert s.status == "pending"  # it waits for approval, but may report
     assert post(client, "/api/easy2edit/sites/register/", {"instance_id": IID}).status_code == 403  # known: it has to use its key
     assert post(client, "/api/easy2edit/sites/ping/", {"event": "login", "role": "superadmin+"}, "wrong").status_code == 403
     assert post(client, "/api/easy2edit/sites/ping/", {"event": "login", "role": "superadmin+", "version": "1.0.0", "build": "126", "url": "https://www.blue.nl"}, key).status_code == 200
@@ -118,3 +119,11 @@ def test_the_list_is_for_a_superadmin_plus(client):
     assert client.patch(f"/api/system/sites/{pk}/", json.dumps({"name": "Nieuw", "status": "blocked", "url": "https://x.nl"}), content_type=JSON, **auth(plus)).json()["status"] == "blocked"
     assert client.patch(f"/api/system/sites/{pk}/", json.dumps({"url": "ftp://x"}), content_type=JSON, **auth(plus)).status_code == 400
     assert client.delete(f"/api/system/sites/{pk}/", **auth(plus)).status_code == 204 and not EasySite.objects.exists()
+
+
+@pytest.mark.django_db
+def test_automatic_approval_is_a_choice_of_the_server(client):
+    sitemanager.set_server(True)
+    sitemanager.set_auto_approve(True)
+    post(client, "/api/easy2edit/sites/register/", {"instance_id": IID, "name": "Blue"})
+    assert EasySite.objects.get().status == "active"

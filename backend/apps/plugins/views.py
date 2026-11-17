@@ -26,7 +26,7 @@ from apps.core.modules import module_required
 
 from django.conf import settings
 
-from . import installer, manifest as mf, runtime, signing
+from . import installer, manifest as mf, runtime, signing, switch
 from .models import Plugin
 
 logger = logging.getLogger(__name__)
@@ -128,44 +128,10 @@ def plugin(request, name):
             sysobj.sync()
             installer.sync_menu_page(p)
         if "enabled" in request.data:
-            want = bool(request.data["enabled"])
-            if want:
-                installer.repair_chain(p)
-                p = Plugin.objects.get(pk=p.pk)
-                todo, absent = runtime.requirement_chain(p)
-                if absent:
-                    return bad("Deze plugin heeft nog niet geïnstalleerde plugins nodig: " + ", ".join(absent) + ". Installeer die eerst.")
-                if todo and not request.data.get("with_requires"):
-                    return bad("Zet eerst ook aan: " + ", ".join(x.title for x in todo) + ".")
-                for dep in todo:  # the plugins this one needs, the ones they need first
-                    err = runtime.load(dep)
-                    if err:
-                        Plugin.objects.filter(pk=dep.pk).update(error=err, enabled=False)
-                        return bad(f"{dep.title} kon niet worden gestart: {err}")
-                    Plugin.objects.filter(pk=dep.pk).update(enabled=True, error="")
-            if not want and (need := runtime.dependents(p.name)):
-                names = dict(Plugin.objects.filter(name__in=need).values_list("name", "title"))
-                return bad("Eerst deze plugins uitzetten: " + ", ".join(names.get(n, n) for n in need) + ". Zij hebben deze plugin nodig.")
-            if want:
-                err = runtime.load(p)
-                if err:
-                    Plugin.objects.filter(pk=p.pk).update(error=err, enabled=False)
-                    return bad(f"De plugin kon niet worden gestart: {err}")
-                Plugin.objects.filter(pk=p.pk).update(enabled=True, error="")
-                try:  # the price list of the licence follows the plugins in use
-                    from apps.core import pricing
-
-                    pricing.apply_to_license()
-                except Exception:  # noqa: BLE001
-                    pass  # (the licence prices follow the next time they are saved)
-            else:
-                runtime.unload(p.name)
-                Plugin.objects.filter(pk=p.pk).update(enabled=False)
-            p.refresh_from_db()
-            from apps.core import modules
-
-            modules.invalidate()
-            installer.sync_menu_page(p)  # (a plugin that is off has no item in the menu)
+            try:
+                p = switch.set_enabled(p, bool(request.data["enabled"]), bool(request.data.get("with_requires")))
+            except switch.SwitchError as e:
+                return bad(str(e))
     return Response(_out(p))
 
 

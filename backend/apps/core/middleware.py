@@ -33,7 +33,7 @@ class MaintenanceMiddleware:
     """Maintenance mode (Basisgegevens): while it is on, only administrators use the system. Visitors and members get 503 for everything that changes data
     (except logging in, which itself refuses non-administrators); a member who is still logged in gets 503 for the whole API (except /api/auth/ and /api/site/)."""
 
-    OPEN = ("/api/auth/", "/api/site/", "/api/pages/aliases/")
+    OPEN = ("/api/auth/", "/api/site/", "/api/pages/aliases/", "/api/easy2edit/")  # (/api/easy2edit/: the calls between the easy2edit server and the websites; they have their own keys. A website that is offline must still be put online again.)
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -71,7 +71,7 @@ class ClosedSiteMiddleware:
     (the login and password steps, the look of the site, the languages and the module list). Everything else gives 401."""
 
     OPEN = ("/api/auth/", "/api/site/", "/api/invite/", "/api/modules/", "/api/theme/", "/api/branding/", "/api/languages/", "/api/security/public/", "/api/security/check/",
-            "/api/sandbox/status/", "/api/pages/state/", "/api/pages/setup/", "/api/pages/aliases/")
+            "/api/sandbox/status/", "/api/pages/state/", "/api/pages/setup/", "/api/pages/aliases/", "/api/easy2edit/")
 
     def __init__(self, get_response):
         self.get_response = get_response

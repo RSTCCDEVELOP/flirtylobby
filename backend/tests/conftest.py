@@ -24,6 +24,17 @@ def _never_touch_the_real_site(settings, tmp_path):
             setattr(settings, name, base / sub)
 
 
+@pytest.fixture(autouse=True)
+def _never_write_the_real_defaults(monkeypatch, tmp_path):
+    """No test may write the files that are part of the code (the saved default settings, the default links): a test used to overwrite default_links.json."""
+    from apps.core import site_defaults
+    from apps.integrations import default_links
+
+    (tmp_path / "defaults").mkdir(exist_ok=True)
+    monkeypatch.setattr(site_defaults, "PATH", tmp_path / "defaults" / "site_defaults.json")
+    monkeypatch.setattr(default_links, "PATH", tmp_path / "defaults" / "default_links.json")
+
+
 @pytest.fixture
 def media(settings, tmp_path):
     """Everything the import writes (media library, theme folders) goes to a temporary folder."""

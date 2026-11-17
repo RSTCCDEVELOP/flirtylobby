@@ -3920,3 +3920,31 @@ html.pb-panel-dragging .pb-addtile { cursor: grabbing; }
 .st-foot { display: flex; align-items: center; gap: .5rem; flex-wrap: nowrap; margin-top: .4rem; min-height: 2.1rem; }
 .st-foot .btn { white-space: nowrap; }
 .st-msg { font-size: .8rem; }
+
+/* Site manager: the list of websites. No table that is wider than the screen: the columns share the room, and when the room is small the cells wrap under each other. The buttons are always in view. */
+.sm-list { container-type: inline-size; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius, 14px); overflow: hidden; }
+.sm-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.5fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: .5rem 1rem; align-items: center; padding: .8rem 1rem; border-top: 1px solid var(--line); }
+.sm-row:first-child { border-top: 0; }
+.sm-head { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: color-mix(in srgb, var(--card) 60%, var(--bg)); padding-top: .6rem; padding-bottom: .6rem; }
+.sm-cell { display: flex; flex-direction: column; gap: .15rem; min-width: 0; overflow-wrap: anywhere; font-size: .9rem; }
+.sm-cell a { overflow-wrap: anywhere; }
+.sm-actions { display: flex; align-items: center; justify-content: flex-end; gap: .35rem; flex-wrap: nowrap; }
+.sm-actions .btn { white-space: nowrap; }
+@container (max-width: 860px) {
+  .sm-head { display: none; }
+  .sm-row { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); padding: .9rem 1rem; }
+  .sm-actions { grid-column: 1 / -1; justify-content: flex-start; padding-top: .3rem; }
+}
+
+/* line chart (Charts.js) */
+.line-chart .chart-axis { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-top: .15rem; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: .3rem 1.1rem; list-style: none; margin: .5rem 0 0; padding: 0; font-size: .82rem; }
+.chart-legend li { display: inline-flex; align-items: center; gap: .35rem; }
+.chart-legend i { width: .7rem; height: .7rem; border-radius: 3px; display: inline-block; }
+/* a list of bars (label, bar, value) */
+.bar-list { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; }
+.bar-list li { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto; gap: .6rem; align-items: center; font-size: .85rem; }
+.bar-list .bl-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-list .bl-bar { height: .6rem; border-radius: 99px; background: var(--line); overflow: hidden; }
+.bar-list .bl-bar > span { display: block; height: 100%; border-radius: 99px; background: var(--blue); }
+.bar-list .bl-val { font-variant-numeric: tabular-nums; font-weight: 600; }
