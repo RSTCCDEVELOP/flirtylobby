@@ -71,7 +71,9 @@ def clean(d):
         if out["email"] and not EMAIL_RE.match(out["email"]):
             err["email"] = "Dit e-mailadres is ongeldig."
     if "phone" in d:
-        out["phone"] = str(d["phone"] or "").strip()[:30]
+        out["phone"], bad = _phone(d["phone"])
+        if bad:
+            err["phone"] = bad
     if "websites" in d:
         rows = []
         for w in (d["websites"] if isinstance(d["websites"], list) else [])[:20]:
@@ -114,17 +116,51 @@ def people_of(raw):
     return raw if isinstance(raw, list) else []
 
 
+def split_name(full):
+    """"Jan van Dijk" -> ("Jan", "van Dijk"): the first word is the first name (for persons that were saved with one name field)."""
+    parts = str(full or "").strip().split(None, 1)
+    return (parts[0], parts[1]) if len(parts) == 2 else (parts[0] if parts else "", "")
+
+
+def phone_ok(v):
+    """A phone number as the phone field makes it ("+31 612345678"): a country code and 6 to 15 digits. A country code alone is empty."""
+    digits = re.sub(r"\D", "", str(v or ""))
+    return bool(re.fullmatch(r"[+\d][\d\s().-]*", str(v or "").strip())) and 6 <= len(digits) <= 15
+
+
+def _phone(v, n=30):
+    """-> (the number or "", an error text or ""). Only a country code (no number) counts as empty."""
+    v = str(v or "").strip()[:n]
+    digits = re.sub(r"\D", "", v)
+    if not v or (v.startswith("+") and len(digits) <= 3):
+        return "", ""
+    return v, ("" if phone_ok(v) else "Dit telefoonnummer is ongeldig.")
+
+
 def clean_people(raw):
-    """-> (the list of persons, errors). A person: role, name, function, email, phone, mobile, same_address (default: the main address of the reseller) and an own address."""
+    """-> (the list of persons, errors). A person: role, first_name, last_name (both always needed; name is the two together), function, email, phone, mobile, same_address (default: the main address of the reseller) and an own address."""
     out, err = [], {}
     for n, row in enumerate(people_of(raw)[:25]):
         row = row if isinstance(row, dict) else {}
+        first, last = str(row.get("first_name") or "").strip()[:60], str(row.get("last_name") or "").strip()[:60]
+        if not first and not last and row.get("name"):  # a person from before: one name field
+            first, last = (x[:60] for x in split_name(row.get("name")))
         email = str(row.get("email") or "").strip()[:254]
         if email and not EMAIL_RE.match(email):
             err[f"contact_{n}"] = "Dit e-mailadres is ongeldig."
+        phone, e1 = _phone(row.get("phone"))
+        mobile, e2 = _phone(row.get("mobile"))
+        if e1 or e2:
+            err[f"contact_phone_{n}"] = e1 or e2
+        function = str(row.get("function") or "").strip()[:100]
+        if (email or phone or mobile or function or first or last) and not (first and last):
+            err[f"contact_name_{n}"] = "Vul de voornaam en de achternaam in."
+        make_login = row.get("make_login") is True  # the switch "also make a login": the login is made when the reseller is saved (then the switch goes off)
+        if make_login and not email:
+            err[f"contact_{n}"] = "Een login heeft een e-mailadres nodig."
         addr = row.get("address") if isinstance(row.get("address"), dict) else {}
-        out.append({"id": re.sub(r"[^a-zA-Z0-9-]", "", str(row.get("id") or ""))[:40] or secrets.token_hex(6), "role": row.get("role") if row.get("role") in ROLES else "other",
-                    "name": str(row.get("name") or "").strip()[:120], "function": str(row.get("function") or "").strip()[:100], "email": email, "phone": str(row.get("phone") or "").strip()[:30], "mobile": str(row.get("mobile") or "").strip()[:30],
+        out.append({"id": re.sub(r"[^a-zA-Z0-9-]", "", str(row.get("id") or ""))[:40] or secrets.token_hex(6), "role": row.get("role") if row.get("role") in ROLES else "other", "make_login": make_login,
+                    "first_name": first, "last_name": last, "name": f"{first} {last}".strip(), "function": function, "email": email, "phone": phone, "mobile": mobile,
                     "same_address": row.get("same_address") is not False, "address": {k: str(addr.get(k) or "").strip()[:100] for k in ADDRESS}})
     return out, err
 
@@ -140,17 +176,17 @@ def brief(r, full=True):
         return {"id": r.pk, "name": r.name, "website": r.website, "email": r.email, "phone": r.phone, "websites": r.websites or [], "info": r.info, "city": (r.address or {}).get("city", ""), "country": (r.address or {}).get("country", ""),
                 "sales": {"name": first_of(c, "sales").get("name", ""), "email": first_of(c, "sales").get("email", ""), "phone": first_of(c, "sales").get("phone", "")}, "support_email": first_of(c, "support").get("email", "")}
     return {"id": r.pk, "name": r.name, "active": r.active, "website": r.website, "email": r.email, "phone": r.phone, "websites": r.websites or [], "info": r.info, "address": {k: (r.address or {}).get(k, "") for k in ADDRESS}, "kvk": r.kvk, "vat_id": r.vat_id,
-            "contacts": [{**p, "full_address": ({k: (r.address or {}).get(k, "") for k in ADDRESS} if p.get("same_address", True) else p.get("address", {}))} for p in c],
+            "contacts": [{**p, "has_login": bool(p.get("email")) and any(l.email.lower() == str(p["email"]).lower() for l in r.logins.all()), "full_address": ({k: (r.address or {}).get(k, "") for k in ADDRESS} if p.get("same_address", True) else p.get("address", {}))} for p in c],
             "rst_share": None if r.rst_share is None else str(r.rst_share), "share": str(share_of(r)), "default_share": str(default_share()), "notes": r.notes,
-            "sites": [{"id": s.pk, "name": s.name, "url": s.url} for s in r.sites.all()], "logins": [login_brief(x) for x in r.logins.all()], "created_at": r.created_at}
+            "sites": [{"id": s.pk, "name": s.name, "url": s.url} for s in r.sites.all()], "logins": [login_brief(x) for x in r.logins.all()], "created_at": r.created_at, **({"new_logins": r.new_logins} if getattr(r, "new_logins", None) else {})}
 
 
 def login_brief(x):
     return {"id": x.pk, "email": x.email, "name": x.name, "function": x.function, "phone": x.phone, "mobile": x.mobile, "access": x.access, "otp": x.otp, "all_sites": x.all_sites, "site_ids": x.site_ids or [], "host": x.host, "active": x.active, "created_at": x.created_at}
 
 
-def save(r, d):
-    """Make or change a reseller. -> the reseller. Raises ResellerError."""
+def save(r, d, site_url=""):
+    """Make or change a reseller. -> the reseller; r.new_logins = the logins that were made for persons with the switch "also make a login" [{email, password, sent}]. Raises ResellerError."""
     vals, err = clean(d)
     if r is None and not vals.get("name"):
         err.setdefault("name", "Vul de naam van de reseller in.")
@@ -161,6 +197,24 @@ def save(r, d):
     for k, v in vals.items():
         setattr(r, k, v)
     r.save()
+    r.new_logins = []
+    people = people_of(r.contacts)
+    for p in people:
+        if not p.get("make_login"):
+            continue
+        email = str(p.get("email") or "").lower()
+        if email and not ResellerLogin.objects.filter(reseller=r, email__iexact=email).exists():
+            x, password = add_login(r, email, {"name": p.get("name"), "function": p.get("function"), "phone": p.get("phone"), "mobile": p.get("mobile"), "access": "admin", "otp": "email", "all_sites": True, "host": True}, send=False)
+            try:
+                mail_password(x, password, site_url)
+                sent = True
+            except Exception:  # noqa: BLE001 - the login exists; the password is shown on the screen then
+                sent = False
+            r.new_logins.append({"email": x.email, "password": password, "sent": sent})
+        p["make_login"] = False  # (done, or it exists already)
+    if any("make_login" in p for p in people):
+        r.contacts = people
+        r.save(update_fields=["contacts"])
     return r
 
 
@@ -175,9 +229,16 @@ OTP = ("", "email", "sms")  # the code check at login: none, by e-mail, by SMS (
 def login_fields(d):
     """-> (values, errors) of a login from a form (everything but the e-mail address and the password)."""
     out, err = {}, {}
-    for k, n in (("name", 120), ("function", 100), ("phone", 30), ("mobile", 30)):
+    for k, n in (("name", 120), ("function", 100)):
         if k in d:
             out[k] = str(d[k] or "").strip()[:n]
+    if "name" in d and len(out["name"].split()) < 2:
+        err["name"] = "Vul de voornaam en de achternaam in."
+    for k in ("phone", "mobile"):
+        if k in d:
+            out[k], bad = _phone(d[k])
+            if bad:
+                err[k] = bad
     if "access" in d:
         if d["access"] not in ACCESS:
             err["access"] = "Kies user, admin of superadmin."
@@ -204,15 +265,20 @@ def add_login(r, email, d=None, password="", send=False, site_url=""):
         raise ResellerError({"email": "Dit e-mailadres is ongeldig."})
     if ResellerLogin.objects.filter(reseller=r, email__iexact=email).exists():
         raise ResellerError({"email": "Dit e-mailadres heeft al een login."})
-    vals, err = login_fields(d or {})
+    vals, err = login_fields({"name": "", **(d or {})})  # a login always has a first name and a last name
     if err:
         raise ResellerError(err)
     password = str(password or "").strip() or new_password()
     if len(password) < 8:
         raise ResellerError({"password": "Een wachtwoord heeft minstens 8 tekens."})
     x = ResellerLogin.objects.create(reseller=r, email=email, password_hash=make_password(password), **vals)
+    x.mail_sent = False
     if send:
-        mail_password(x, password, site_url)
+        try:
+            mail_password(x, password, site_url)
+            x.mail_sent = True
+        except Exception:  # noqa: BLE001 - the login exists; the password is shown on the screen then
+            pass
     sync_host()
     return x, password
 

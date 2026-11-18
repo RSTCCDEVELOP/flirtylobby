@@ -390,7 +390,7 @@ def reseller_admin(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
     if request.method == "PUT":
         try:
-            r = resellers.save(r, request.data if isinstance(request.data, dict) else {})
+            r = resellers.save(r, request.data if isinstance(request.data, dict) else {}, site_url=_site_url_of(r))
         except resellers.ResellerError as e:
             return _res_error(e)
         resellers.sync_host()  # (an inactive reseller: its logins go from this site)
@@ -415,7 +415,7 @@ def reseller_logins(request, pk):
         x, pw = resellers.add_login(r, d.get("email"), d, d.get("password"), bool(d.get("send")), _site_url_of(r))
     except resellers.ResellerError as e:
         return _res_error(e)
-    return Response({"login": resellers.login_brief(x), "password": pw, "sent": bool(d.get("send"))}, status=status.HTTP_201_CREATED)
+    return Response({"login": resellers.login_brief(x), "password": pw, "sent": getattr(x, "mail_sent", False)}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["PATCH", "DELETE"])

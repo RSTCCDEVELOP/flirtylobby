@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""Consent for the licence (last step of the set-up wizard): the person who agrees gets a code (000-0000) by e-mail or SMS (the services that are linked in the
+"""Consent for the licence (last step of the set-up wizard): the person who agrees gets a code (000-000) by e-mail or SMS (the services that are linked in the
 API keys) and fills it in. A code lives 10 minutes and may be tried 5 times. Once it is right, `ok(user)` is true for half an hour: the licence can then be made."""
 import hashlib
 import re
@@ -42,7 +42,7 @@ def methods():
 
 def normalize(code):
     d = re.sub(r"\D", "", str(code or ""))
-    return f"{d[:3]}-{d[3:]}" if len(d) == 7 else ""
+    return f"{d[:3]}-{d[3:]}" if len(d) == 6 else ""
 
 
 def start(user, method, to):
@@ -63,7 +63,7 @@ def start(user, method, to):
             raise ConsentError("Vul eerst een geldig mobiel nummer met landcode in (stap Contact).")
     else:
         raise ConsentError("Kies e-mail of SMS.")
-    code = f"{secrets.randbelow(1000):03d}-{secrets.randbelow(10000):04d}"
+    code = f"{secrets.randbelow(1000):03d}-{secrets.randbelow(1000):03d}"
     on_screen = sandbox.code_on_screen()
     if not on_screen:
         text = f"Je code voor akkoord met de licentie: {code}. Deze is 10 minuten geldig."

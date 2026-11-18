@@ -57,7 +57,7 @@ export default function SetupWizard() {
   const [upd, setUpd] = useState(null);  // update mode: a module or plugin was switched on or off and the licence price changed: {old, new, delta, number}; the licence is updated with a new agreement
   const [done, setDone] = useState(null);  // the licence that was made: shown when everything is saved
   const [pay, setPay] = useState({ busy: false, error: "" });  // the payment step (Stripe)
-  const [consent, setConsent] = useState({ method: "email", sent: false, busy: false, error: "", shown: "" });  // the consent with the licence: a code (000-0000) by e-mail or SMS
+  const [consent, setConsent] = useState({ method: "email", sent: false, busy: false, error: "", shown: "" });  // the consent with the licence: a code (000-000) by e-mail or SMS
   const [forced, setForced] = useState(false);  // opened again by hand (button on the Basisgegevens page), also when everything is filled in
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function SetupWizard() {
     </div>
   );
   const pct = Math.round((steps.filter((s) => stepDone(s[0])).length / steps.length) * 100);
-  // the consent: send a code, check it (the code has the form 000-0000)
+  // the consent: send a code, check it (the code has the form 000-000)
   const canMail = !!d.consent_methods?.email || (isLocal() && user?.is_staff), canSms = !!d.consent_methods?.sms || (isLocal() && user?.is_staff);
   const startPay = async () => {
     setPay({ busy: true, error: "" });
@@ -209,11 +209,17 @@ export default function SetupWizard() {
   };
   const typeCode = async (e) => {
     let v = e.target.value;
+    if (v === "@" && user?.is_superadmin_plus) {  // a superadmin+ passes the code with an @ (also on a live website): approved at once
+      setConsent((c) => ({ ...c, busy: true, error: "" }));
+      try { await api("/system/setup/consent/verify/", { method: "POST", body: { code: "@" } }); setForm((f) => ({ ...f, consent_code: "000-000", consent_ok: "1" })); setErrs((x) => ({ ...x, consent_ok: "" })); setConsent((c) => ({ ...c, busy: false })); }
+      catch (err) { setConsent((c) => ({ ...c, busy: false, error: errorText(err) })); }
+      return;
+    }
     if (v === "@" && user?.is_staff && isLocal()) { const c = consent.shown || await sendCode(); if (c) setForm((f) => ({ ...f, consent_code: c, consent_ok: "" })); return; }  // only for testing on this computer: an @ puts the code in the field (not approved yet: that happens with Next)
-    v = v.replace(/\D/g, "").slice(0, 7);
+    v = v.replace(/\D/g, "").slice(0, 6);
     v = v.length > 3 ? `${v.slice(0, 3)}-${v.slice(3)}` : v;
     setForm((f) => ({ ...f, consent_code: v }));
-    if (v.length === 8) checkCode(v);
+    if (v.length === 7) checkCode(v);
   };
   const go = (s) => { const i = steps.findIndex((x) => x[0] === s); if (i <= stepIdx || steps.slice(0, i).every((x) => stepDone(x[0]))) { if (i > stepIdx) fill(s); setStep(s); } };
   return createPortal(
@@ -444,7 +450,7 @@ export default function SetupWizard() {
                       <div className="e2e-row" style={{ alignItems: "flex-end", justifyContent: "center", gap: ".8rem", flexWrap: "wrap" }}>
                         <div className="e2e-field" style={{ alignItems: "center" }}>
                           <label className="e2e-label" htmlFor="sw-consent_code"><span>{tx("Code")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
-                          <input id="sw-consent_code" className={`e2e-input${consent.error || errs.consent_ok ? " e2e-input--error" : ""}`} inputMode="numeric" autoComplete="one-time-code" placeholder="000-0000" maxLength={8} value={form.consent_code || ""} onChange={typeCode} style={{ width: 170, textAlign: "center", letterSpacing: ".15em", fontVariantNumeric: "tabular-nums" }} />
+                          <input id="sw-consent_code" className={`e2e-input${consent.error || errs.consent_ok ? " e2e-input--error" : ""}`} inputMode="numeric" autoComplete="one-time-code" placeholder="000-000" maxLength={7} value={form.consent_code || ""} onChange={typeCode} style={{ width: 170, textAlign: "center", letterSpacing: ".15em", fontVariantNumeric: "tabular-nums" }} />
                         </div>
                         <button type="button" className="e2e-btn e2e-btn--outline" disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode} style={{ height: 46 }}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
                       </div>
@@ -523,7 +529,7 @@ export default function SetupWizard() {
               <div className="e2e-row" style={{ gap: ".6rem" }}>
                 {stepIdx > 0 && <button type="button" className="e2e-btn e2e-btn--outline" onClick={() => setStep(steps[stepIdx - 1][0])}>{tx("Vorige")}</button>}
                 {stepIdx < steps.length - 1
-                  ? <button type="button" className="e2e-btn" disabled={(step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 8 || consent.busy))} onClick={step === "agree" && form.consent_ok !== "1" ? () => checkCode(form.consent_code) : next}>{tx("Volgende")}</button>
+                  ? <button type="button" className="e2e-btn" disabled={(step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 7 || consent.busy))} onClick={step === "agree" && form.consent_ok !== "1" ? () => checkCode(form.consent_code) : next}>{tx("Volgende")}</button>
                   : <button type="button" className="e2e-btn" disabled={busy} onClick={save}>{tx("Opslaan")}</button>}
               </div>
             </div>

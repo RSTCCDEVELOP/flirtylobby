@@ -32,7 +32,11 @@ def post_json(url, headers, payload):
         with urllib.request.urlopen(req, timeout=10):
             return
     except urllib.error.HTTPError as e:
-        raise DeliveryError(f"Verzenden mislukt (HTTP {e.code}).")
+        try:  # the provider says why (Postmark: {"ErrorCode": 400, "Message": "Sender signature not found ..."})
+            why = str(json.loads(e.read(3000).decode("utf-8", "ignore")).get("Message") or "")[:200]
+        except Exception:  # noqa: BLE001
+            why = ""
+        raise DeliveryError(f"Verzenden mislukt (HTTP {e.code}){': ' + why if why else ''}.")
     except Exception as e:
         raise DeliveryError(f"Verzenden mislukt: {e}")
 

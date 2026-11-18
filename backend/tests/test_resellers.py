@@ -23,7 +23,7 @@ def plus(db):
 
 
 FORM = {"name": "Studio Test", "email": "info@studiotest.nl", "phone": "+31 301234567", "website": "www.studiotest.nl", "info": "html:<p>Hallo <script>x()</script><b>wereld</b></p>", "rst_share": "30",
-        "address": {"city": "Utrecht", "country": "Nederland"}, "contacts": [{"role": "sales", "name": "Sam", "email": "sales@studiotest.nl"}, {"role": "sales", "name": "Els", "email": "els@studiotest.nl"}, {"role": "financial", "email": "fin@studiotest.nl", "same_address": False, "address": {"city": "Breda"}}, {"role": "support", "email": "help@studiotest.nl"}]}
+        "address": {"city": "Utrecht", "country": "Nederland"}, "contacts": [{"role": "sales", "first_name": "Sam", "last_name": "Sales", "email": "sales@studiotest.nl"}, {"role": "sales", "first_name": "Els", "last_name": "Smit", "email": "els@studiotest.nl"}, {"role": "financial", "first_name": "Fien", "last_name": "Fin", "email": "fin@studiotest.nl", "same_address": False, "address": {"city": "Breda"}}, {"role": "support", "first_name": "Sup", "last_name": "Port", "email": "help@studiotest.nl"}]}
 
 
 @pytest.mark.django_db
@@ -31,10 +31,10 @@ def test_reseller_crud_and_validation(plus):
     r = plus.post("/api/system/resellers/", FORM, format="json")
     assert r.status_code == 201
     d = r.json()
-    assert len(d["contacts"]) == 4 and d["contacts"][1]["name"] == "Els"  # more persons of one kind
+    assert len(d["contacts"]) == 4 and d["contacts"][1]["name"] == "Els Smit"  # more persons of one kind
     assert d["contacts"][0]["full_address"]["city"] == "Utrecht" and d["contacts"][2]["full_address"]["city"] == "Breda"  # the main address unless an own one
-    old = plus.post("/api/system/resellers/", {"name": "Oud", "contacts": {"sales": {"name": "Piet", "email": "p@oud.nl"}, "support": {}}}, format="json").json()
-    assert [p["role"] for p in old["contacts"]] == ["sales"] and old["contacts"][0]["name"] == "Piet"  # the older form still works
+    old = plus.post("/api/system/resellers/", {"name": "Oud", "contacts": {"sales": {"name": "Piet Pols", "email": "p@oud.nl"}, "support": {}}}, format="json").json()
+    assert [p["role"] for p in old["contacts"]] == ["sales"] and old["contacts"][0]["name"] == "Piet Pols" and old["contacts"][0]["last_name"] == "Pols"  # the older form still works
     assert d["email"] == "info@studiotest.nl" and d["phone"] == "+31 301234567"
     assert plus.post("/api/system/resellers/", {"name": "X", "email": "nope"}, format="json").status_code == 400
     assert d["website"] == "https://www.studiotest.nl" and "<script" not in d["info"] and d["share"] == "30.00"  # cleaned, the own share
@@ -62,7 +62,7 @@ def test_login_with_mail(plus, monkeypatch):
 
     monkeypatch.setattr(sending, "send_email", lambda to, subject, body, **k: sent.append((to, body)))
     rid = plus.post("/api/system/resellers/", FORM, format="json").json()["id"]
-    r = plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "Piet@Studiotest.nl", "name": "Piet", "send": True}, format="json")
+    r = plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "Piet@Studiotest.nl", "name": "Piet Pols", "send": True}, format="json")
     assert r.status_code == 201 and len(r.json()["password"]) == 12 and r.json()["sent"]
     assert sent and sent[0][0] == "piet@studiotest.nl" and r.json()["password"] in sent[0][1]  # the mail has the password
     assert plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "piet@studiotest.nl"}, format="json").status_code == 400  # twice
@@ -96,7 +96,7 @@ def test_accounts_for_website_and_apply(plus):
     Role.objects.get_or_create(slug="admin", defaults={"name": "Admin"})
     sitemanager.set_server(True)
     rid = plus.post("/api/system/resellers/", FORM, format="json").json()["id"]
-    plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "piet@studiotest.nl", "name": "Piet", "password": "Wachtwoord-123"}, format="json")
+    plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "piet@studiotest.nl", "name": "Piet Pols", "password": "Wachtwoord-123"}, format="json")
     site, key, _ = sitemanager.register({"instance_id": "a" * 24, "name": "Klant", "url": "https://klant.nl"}, "")
     site.status = "active"
     site.save()
@@ -140,7 +140,7 @@ def test_login_details_otp_sites_and_host(plus):
         s.status = "active"
         s.save()
     plus.put(f"/api/system/resellers/{rid}/sites/", {"site_ids": [s1.pk, s2.pk]}, format="json")
-    r = plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "a@studiotest.nl", "name": "Anna", "function": "Sales", "mobile": "+31612345678", "password": "Wachtwoord-123"}, format="json").json()["login"]
+    r = plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "a@studiotest.nl", "name": "Anna Smit", "function": "Sales", "mobile": "+31612345678", "password": "Wachtwoord-123"}, format="json").json()["login"]
     assert r["otp"] == "email" and r["all_sites"] and r["host"] and r["access"] == "admin"  # by default: the code check, every website of the reseller, also this site
     assert plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "b@studiotest.nl", "otp": "sms"}, format="json").status_code == 400  # SMS needs a mobile number
     c = APIClient()
@@ -158,3 +158,36 @@ def test_login_details_otp_sites_and_host(plus):
     plus.patch(f"/api/system/resellers/{rid}/logins/{r['id']}/", {"host": True}, format="json")
     h = get_user_model().objects.get(username="a@studiotest.nl")
     assert not h.is_staff and not h.roles.exists()  # on the easy2edit site itself: no extra rights
+
+
+@pytest.mark.django_db
+def test_persons_need_first_and_last_name_and_a_valid_phone(plus):
+    def post(contacts, **kw):
+        return plus.post("/api/system/resellers/", {"name": "P", "contacts": contacts, **kw}, format="json")
+
+    r = post([{"role": "sales", "first_name": "Sam", "email": "s@x.nl"}])
+    assert r.status_code == 400 and "contact_name_0" in r.json()["errors"]  # no last name
+    assert post([{"role": "sales", "first_name": "Sam", "last_name": "Sales", "mobile": "+31 12"}]).status_code == 400  # not a phone number
+    ok = post([{"role": "sales", "first_name": "Sam", "last_name": "Sales", "phone": "+31", "mobile": "+31 612345678"}], phone="+31")
+    assert ok.status_code == 201 and ok.json()["contacts"][0]["name"] == "Sam Sales" and ok.json()["contacts"][0]["phone"] == "" and ok.json()["phone"] == ""  # a country code alone is empty
+    assert post([{"role": "other"}]).status_code == 201  # an empty person is kept empty
+    lg = plus.post(f"/api/system/resellers/{ok.json()['id']}/logins/", {"email": "a@x.nl", "name": "Anna"}, format="json")
+    assert lg.status_code == 400  # a login too: first and last name
+
+
+@pytest.mark.django_db
+def test_switch_also_make_a_login(plus, monkeypatch):
+    from apps.core import resellers
+
+    sent = []
+    monkeypatch.setattr(resellers, "mail_password", lambda x, pw, url="": sent.append((x.email, pw)))
+    p = {"role": "sales", "first_name": "Sam", "last_name": "Sales", "function": "CTO", "email": "sam@studiotest.nl", "mobile": "+31 612345678", "make_login": True}
+    bad = plus.post("/api/system/resellers/", {"name": "L", "contacts": [{**p, "email": ""}]}, format="json")
+    assert bad.status_code == 400 and "contact_0" in bad.json()["errors"]  # a login needs an e-mail address
+    r = plus.post("/api/system/resellers/", {"name": "L", "contacts": [p]}, format="json")
+    d = r.json()
+    assert r.status_code == 201 and d["new_logins"][0]["email"] == "sam@studiotest.nl" and sent and sent[0][0] == "sam@studiotest.nl"
+    assert d["logins"][0]["name"] == "Sam Sales" and d["logins"][0]["access"] == "admin" and d["logins"][0]["all_sites"]
+    assert d["contacts"][0]["has_login"] and not d["contacts"][0]["make_login"]  # the switch goes off, the person has a login
+    again = plus.put(f"/api/system/resellers/{d['id']}/", {"contacts": [{**p}]}, format="json").json()
+    assert len(again["logins"]) == 1 and "new_logins" not in again  # never twice

@@ -611,6 +611,9 @@ def system_setup_consent_verify(request):
 
     if not can_admin(request.user):
         return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    if str(request.data.get("code") or "").strip() == "@" and request.user.is_superplus:  # a superadmin+ passes the code with an @
+        setup_consent.mark_ok(request.user)
+        return Response({"ok": True, "bypass": True})
     try:
         setup_consent.verify(request.user, request.data.get("code"))
     except setup_consent.ConsentError as e:

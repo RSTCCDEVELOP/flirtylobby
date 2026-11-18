@@ -124,12 +124,12 @@ def test_consent_code_flow(monkeypatch):
     code = r.json()["code"]  # on localhost a superadmin gets the code back
     import re
 
-    assert re.fullmatch(r"\d{3}-\d{4}", code)
-    assert c.post("/api/system/setup/consent/verify/", {"code": "000-0000"}, format="json").status_code == 400
+    assert re.fullmatch(r"\d{3}-\d{3}", code)
+    assert c.post("/api/system/setup/consent/verify/", {"code": "000-000"}, format="json").status_code == 400
     assert not setup_consent.ok(u)
     assert c.post("/api/system/setup/consent/verify/", {"code": code.replace("-", "")}, format="json").status_code == 200
     assert setup_consent.ok(u)
-    assert setup_consent.normalize("123-4567") == "123-4567" and setup_consent.normalize("12") == ""
+    assert setup_consent.normalize("123-456") == "123-456" and setup_consent.normalize("12") == ""
 
 
 @pytest.mark.django_db
@@ -374,3 +374,20 @@ def test_user_payment_method_one_active():
     assert c.put("/api/system/license/", {"payment_method": "cash"}, format="json").status_code == 400
     r = c.put("/api/system/license/", {"payment_method": "invoice"}, format="json").json()
     assert r["billing"]["method"] == "invoice" and License.objects.get(pk=1).payment_method == "invoice"
+
+
+@pytest.mark.django_db
+def test_superadmin_plus_passes_the_code_with_an_at():
+    from rest_framework.test import APIClient
+
+    User = get_user_model()
+
+    from apps.core import setup_consent
+
+    staff = User.objects.create_user("st@demo.nl", "st@demo.nl", "x", is_staff=True, is_superuser=True)
+    plus = User.objects.create_user("pl@demo.nl", "pl@demo.nl", "x", is_staff=True, is_superuser=True, is_superadmin_plus=True)
+    c = APIClient()
+    c.force_authenticate(staff)
+    assert c.post("/api/system/setup/consent/verify/", {"code": "@"}, format="json").status_code == 400 and not setup_consent.ok(staff)
+    c.force_authenticate(plus)
+    assert c.post("/api/system/setup/consent/verify/", {"code": "@"}, format="json").status_code == 200 and setup_consent.ok(plus)
