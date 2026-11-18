@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "Every period the amount is collected automatically (a subscription).",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "The user gets an invoice and pays it themselves.",
   "Online betalen per periode": "Pay online per period",
-  "Automatische incasso (abonnement)": "Automatic collection (subscription)"
+  "Automatische incasso (abonnement)": "Automatic collection (subscription)",
+  "Betaal de wijziging": "Pay the change",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "The licence is paid on account: the new amount is on the invoice that is sent every 1st of the month.",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "The licence runs on a subscription: the new amount is charged through your subscription from now on, this month's difference pro rata.",
+  "Verschil tot einde van de maand": "Difference until end of month",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "Payment confirmed. You can continue to the overview.",
+  "Betaling bevestigen": "Confirm payment",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "You can only continue once the payment is confirmed, or choose Don't pay."
 }

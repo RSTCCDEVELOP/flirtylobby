@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "每期金额自动扣款（订阅）。",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "用户收到发票并自行付款。",
   "Online betalen per periode": "按期在线付款",
-  "Automatische incasso (abonnement)": "自动扣款（订阅）"
+  "Automatische incasso (abonnement)": "自动扣款（订阅）",
+  "Betaal de wijziging": "支付变更费用",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "许可证按发票付款：新金额列在每月1日发送的发票上。",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "许可证按订阅运行：新金额从现在起通过您的订阅扣款，本月差额按比例计算。",
+  "Verschil tot einde van de maand": "至月底的差额",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "付款已确认。您可以继续查看概览。",
+  "Betaling bevestigen": "确认付款",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "付款确认后才能继续，或选择“不付款”。"
 }

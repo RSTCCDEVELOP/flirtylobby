@@ -45,6 +45,8 @@ urlpatterns = [
     path("system/setup/pay/invoice/", views.system_setup_pay_invoice),
     path("system/setup/pdf/", views.system_setup_pdf),
     path("system/license/change/", views.license_change),
+    path("system/license/update/reset/", views.license_update_reset),
+    path("system/license/update/pay/", views.license_update_pay),
     path("system/license/update/", views.license_update_apply),
     path("system/setup/pay/test/", views.system_setup_pay_test),
     path("system/setup/pay/none/", views.system_setup_pay_none),

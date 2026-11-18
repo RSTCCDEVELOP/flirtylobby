@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "Кожен період сума списується автоматично (підписка).",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "Користувач отримує рахунок і сплачує його сам.",
   "Online betalen per periode": "Оплата онлайн за період",
-  "Automatische incasso (abonnement)": "Автоматичне списання (підписка)"
+  "Automatische incasso (abonnement)": "Автоматичне списання (підписка)",
+  "Betaal de wijziging": "Сплатити зміну",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "Ліцензія оплачується за рахунком: нова сума вказана в рахунку, який надсилається щомісяця 1-го числа.",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "Ліцензія працює за підпискою: нова сума стягується відтепер через вашу підписку, різниця за цей місяць — пропорційно.",
+  "Verschil tot einde van de maand": "Різниця до кінця місяця",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "Оплату підтверджено. Можна перейти до огляду.",
+  "Betaling bevestigen": "Підтвердити оплату",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "Продовжити можна лише після підтвердження оплати, або виберіть «Не платити»."
 }

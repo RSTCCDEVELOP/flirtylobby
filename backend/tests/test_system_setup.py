@@ -306,7 +306,15 @@ def test_licence_price_change_and_update(monkeypatch):
     r = c.get("/api/system/license/change/").json()
     assert r["changed"] and r["delta"] == "5.00"
     assert c.post("/api/system/license/update/", {}, format="json").status_code == 400  # no consent yet
+    assert c.post("/api/system/license/update/pay/", {"choice": "confirm"}, format="json").status_code == 400  # the payment step needs the consent first
     setup_consent.mark_ok(u)
+    assert c.post("/api/system/license/update/", {}, format="json").status_code == 400  # consent given, not paid yet
+    assert c.post("/api/system/license/update/pay/", {"choice": "x"}, format="json").status_code == 400
+    assert c.post("/api/system/license/update/pay/", {"choice": "confirm"}, format="json").status_code == 200
+    assert c.post("/api/system/license/update/reset/", {}, format="json").status_code == 200  # opened again: agreement and payment must be given again
+    assert c.post("/api/system/license/update/", {}, format="json").status_code == 400
+    setup_consent.mark_ok(u)
+    assert c.post("/api/system/license/update/pay/", {"choice": "confirm"}, format="json").status_code == 200
     ok = c.post("/api/system/license/update/", {}, format="json")
     assert ok.status_code == 200 and ok.json()["license"]["number"] == "AAAA-BBBB-CCCC-DDDD"  # the same licence
     assert not c.get("/api/system/license/change/").json()["changed"]

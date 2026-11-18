@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "हर अवधि राशि अपने आप वसूल की जाती है (सदस्यता)।",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "उपयोगकर्ता को चालान मिलता है और वह स्वयं उसका भुगतान करता है।",
   "Online betalen per periode": "प्रति अवधि ऑनलाइन भुगतान",
-  "Automatische incasso (abonnement)": "स्वचालित वसूली (सदस्यता)"
+  "Automatische incasso (abonnement)": "स्वचालित वसूली (सदस्यता)",
+  "Betaal de wijziging": "बदलाव का भुगतान करें",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "लाइसेंस का भुगतान चालान पर होता है: नई राशि हर महीने की 1 तारीख को भेजे जाने वाले चालान में है।",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "लाइसेंस सदस्यता पर चलता है: नई राशि अब से आपकी सदस्यता के माध्यम से ली जाएगी, इस महीने का अंतर अनुपात में।",
+  "Verschil tot einde van de maand": "महीने के अंत तक का अंतर",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "भुगतान की पुष्टि हो गई। आप सारांश पर जा सकते हैं।",
+  "Betaling bevestigen": "भुगतान की पुष्टि करें",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "आप भुगतान की पुष्टि के बाद ही आगे बढ़ सकते हैं, या भुगतान नहीं करें चुनें।"
 }

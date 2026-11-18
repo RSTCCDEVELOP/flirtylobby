@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "期間ごとに金額が自動的に引き落とされます（サブスクリプション）。",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "ユーザーは請求書を受け取り、自分で支払います。",
   "Online betalen per periode": "期間ごとにオンライン支払い",
-  "Automatische incasso (abonnement)": "自動引き落とし（サブスクリプション）"
+  "Automatische incasso (abonnement)": "自動引き落とし（サブスクリプション）",
+  "Betaal de wijziging": "変更分を支払う",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "ライセンスは請求書払いです。新しい金額は毎月1日に送られる請求書に記載されます。",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "ライセンスはサブスクリプションで動いています。新しい金額は今後サブスクリプションで請求され、今月の差額は日割りになります。",
+  "Verschil tot einde van de maand": "月末までの差額",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "支払いが確認されました。概要に進めます。",
+  "Betaling bevestigen": "支払いを確認する",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "支払いが確認されるまで進めません。または「支払わない」を選んでください。"
 }

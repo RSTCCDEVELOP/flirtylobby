@@ -683,14 +683,28 @@ def license_change(request):
     if item and c and request.query_params.get("enabled") in ("1", "0") and c["price"] > 0:
         step = c["price"] if request.query_params.get("enabled") == "1" else -c["price"]
         act = {"old": str(now - step), "new": str(now), "delta": str(step)}
-    return Response({"has": True, "item": item, "action": act, "billed": str(lic.billed_monthly), "changed": d != 0, "old": str(lic.billed_monthly), "new": str(now), "delta": str(d), "number": lic.number, "renew_months": lic.renew_months})
+    return Response({"has": True, "item": item, "action": act, "billed": str(lic.billed_monthly), "changed": d != 0, "old": str(lic.billed_monthly), "new": str(now), "delta": str(d), "number": lic.number, "renew_months": lic.renew_months, "payment_method": lic.payment_method or "", "sub_active": bool(lic.sub_ref)})
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def license_update_apply(request):
-    """Update mode, last step: the licence runs on with the new price (same number). Needs the consent with the code. A Stripe subscription collects the new amount from the next period."""
-    from . import license_price, licence_notify, license_stripe, setup_consent, system
+def license_update_reset(request):
+    """The update screen is opened (again): the agreement (code) and the payment start empty, they must be given again."""
+    from . import setup_consent, setup_pay
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    setup_consent.clear(request.user)
+    setup_pay.clear(request.user)
+    return Response({"ok": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def license_update_pay(request):
+    """Update mode, payment step (after the consent with the code): POST {choice: "confirm"|"none"}. confirm = the new amount is paid the way the licence is paid
+    (the Stripe subscription or the invoice on the 1st of the month); none = not paying: allowed, the licence then runs on with the new price, the warning is shown first."""
+    from . import setup_consent, setup_pay
     from .models import License
 
     if (bad := _setup_pay_guard(request)) is not None:
@@ -700,6 +714,32 @@ def license_update_apply(request):
         return Response({"detail": "Er is nog geen licentie."}, status=400)
     if not setup_consent.ok(request.user):
         return Response({"detail": "Geef akkoord met de code die je per e-mail of SMS krijgt.", "errors": {"consent": "Geef akkoord met de code die je per e-mail of SMS krijgt."}}, status=400)
+    choice = str(request.data.get("choice") or "")
+    if choice == "none":
+        setup_pay.mark_skipped(request.user)
+    elif choice == "confirm":
+        setup_pay.mark_ok(request.user)
+    else:
+        return Response({"detail": "Kies bevestigen of niet betalen."}, status=400)
+    return Response({"ok": True, "skipped": choice == "none"})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def license_update_apply(request):
+    """Update mode, last step: the licence runs on with the new price (same number). Needs the consent with the code. A Stripe subscription collects the new amount from the next period."""
+    from . import license_price, licence_notify, license_stripe, setup_consent, setup_pay, system
+    from .models import License
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.number:
+        return Response({"detail": "Er is nog geen licentie."}, status=400)
+    if not setup_consent.ok(request.user):
+        return Response({"detail": "Geef akkoord met de code die je per e-mail of SMS krijgt.", "errors": {"consent": "Geef akkoord met de code die je per e-mail of SMS krijgt."}}, status=400)
+    if not setup_pay.ok(request.user):
+        return Response({"detail": "Bevestig eerst de betaling.", "errors": {"pay": "Bevestig eerst de betaling."}}, status=400)
     old, now = lic.billed_monthly, license_price.monthly(lic)
     lic.billed_monthly = now
     lic.save(update_fields=["billed_monthly"])
@@ -710,6 +750,7 @@ def license_update_apply(request):
         pass
     system.license_changed()
     setup_consent.clear(request.user)
+    setup_pay.clear(request.user)
     licence_notify.notify("changed", [f"Prijs per maand (incl. btw): € {old} → € {now}"], by=request.user)
     return Response({"ok": True, "license": _license_brief(), "old": str(old), "new": str(now)})
 

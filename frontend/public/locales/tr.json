@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "Her dönem tutar otomatik olarak tahsil edilir (abonelik).",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "Kullanıcı bir fatura alır ve kendisi öder.",
   "Online betalen per periode": "Dönem başına çevrimiçi ödeme",
-  "Automatische incasso (abonnement)": "Otomatik tahsilat (abonelik)"
+  "Automatische incasso (abonnement)": "Otomatik tahsilat (abonelik)",
+  "Betaal de wijziging": "Değişikliği öde",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "Lisans fatura ile ödenir: yeni tutar her ayın 1'inde gönderilen faturadadır.",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "Lisans bir abonelikle çalışır: yeni tutar şimdiden aboneliğiniz üzerinden tahsil edilir, bu ayın farkı orantılı olarak.",
+  "Verschil tot einde van de maand": "Ay sonuna kadar fark",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "Ödeme onaylandı. Özete devam edebilirsin.",
+  "Betaling bevestigen": "Ödemeyi onayla",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "Ödeme onaylanınca devam edebilirsin veya Ödeme yapma seçeneğini seç."
 }

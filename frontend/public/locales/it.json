@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "A ogni periodo l'importo viene addebitato automaticamente (un abbonamento).",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "L'utente riceve una fattura e la paga da solo.",
   "Online betalen per periode": "Pagamento online per periodo",
-  "Automatische incasso (abonnement)": "Addebito automatico (abbonamento)"
+  "Automatische incasso (abonnement)": "Addebito automatico (abbonamento)",
+  "Betaal de wijziging": "Paga la modifica",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "La licenza è pagata su fattura: il nuovo importo è sulla fattura inviata ogni 1° del mese.",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "La licenza funziona con un abbonamento: il nuovo importo viene addebitato da ora tramite il tuo abbonamento, la differenza di questo mese in proporzione.",
+  "Verschil tot einde van de maand": "Differenza fino a fine mese",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "Pagamento confermato. Puoi continuare al riepilogo.",
+  "Betaling bevestigen": "Conferma il pagamento",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "Puoi continuare solo dopo la conferma del pagamento, oppure scegli Non pagare."
 }

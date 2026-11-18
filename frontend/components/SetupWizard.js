@@ -18,6 +18,7 @@ import { IconCheck, IconReceipt } from "./Icons";
 import PhoneInput from "./PhoneInput";
 import { confirmDialog } from "../lib/dialog";
 import CostsInfo from "./CostsInfo";
+import { revertSwitch } from "./LicenseChangePrompt";
 import { money } from "../lib/format";
 import KitScope from "../lib/ui-kit/KitScope";
 
@@ -67,7 +68,7 @@ export default function SetupWizard() {
 
   useEffect(() => {
     if (!allowed) return undefined;
-    const again = (to, detail) => api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
+    const again = (to, detail) => (detail?.mode === "update" ? api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}) : Promise.resolve()).then(() => api("/system/setup/")).then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
     const onOpen = (e) => again(undefined, e?.detail);
     window.addEventListener("open-setup-wizard", onOpen);
     try { // back from Stripe: is the session paid? Then the wizard goes on with the agreement
@@ -101,7 +102,7 @@ export default function SetupWizard() {
   }, [step, d, user, forced]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!allowed || closed || !(d?.needed || forced || done) || typeof document === "undefined") return null;
-  const steps = upd ? STEPS.filter((x) => ["costs", "agree", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
+  const steps = upd ? STEPS.filter((x) => ["costs", "agree", "pay", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
   const hostOpt = d.needs_license ? (d.hosting_options || []).find((o) => o.key === form.hosting) : null;  // the chosen hosting: a line of the price (not in the base price)
   const hostPrice = hostOpt ? Number(hostOpt.price) : 0;
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrs((x) => ({ ...x, [k]: "" })); };
@@ -120,7 +121,7 @@ export default function SetupWizard() {
   const saveUpdate = async () => {  // update mode: the licence runs on with the new price (same number)
     setBusy(true); setError("");
     try { const r = await api("/system/license/update/", { method: "POST", body: {} }); setForced(false); setUpd(null); window.dispatchEvent(new Event("setup-saved")); setDone({ ...r.license, updated: true, old: r.old, new: r.new }); }
-    catch (e) { setError(errorText(e)); if (e?.data?.errors?.consent) setStep("agree"); }
+    catch (e) { setError(errorText(e)); if (e?.data?.errors?.consent) setStep("agree"); else if (e?.data?.errors?.pay) setStep("pay"); }
     setBusy(false);
   };
   const save = async () => {
@@ -136,6 +137,10 @@ export default function SetupWizard() {
       if (first) setStep(first[0]);
     }
     setBusy(false);
+  };
+  const closeWizard = () => { // closing the update screen before it is finished: the decision is undone (the switched module or plugin goes back) and the code and payment are cleared
+    if (upd) { const c = upd; setUpd(null); api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}); revertSwitch(c); }
+    setForced(false); setClosed(true);
   };
   const skip = () => { try { sessionStorage.setItem(SKIP_KEY, "1"); } catch { /* no storage */ } setClosed(true); };
   // the fields are the form components of the set (ui-form-fields): e2e-field, e2e-label, e2e-input, e2e-error
@@ -171,9 +176,15 @@ export default function SetupWizard() {
     try { await api("/system/setup/pay/none/", { method: "POST", body: { hosting: form.hosting, renew_months: form.renew_months } }); setForm((f) => ({ ...f, pay_ok: "1", pay_none_done: "1", pay_invoice_done: "" })); setPay({ busy: false, error: "" }); }
     catch (e) { setPay({ busy: false, error: errorText(e) }); }
   };
+  const payUpdate = async (choice) => { // update mode: after the code, the new amount is confirmed (paid the way the licence is paid) or not paid
+    if (choice === "none" && !(await confirmDialog(tx("Als je niet betaalt, gaat je website binnenkort in free mode. Wil je toch doorgaan zonder te betalen?"), { okLabel: tx("Toch doorgaan"), cancelLabel: tx("Annuleren") }))) return;
+    setPay({ busy: true, error: "" });
+    try { await api("/system/license/update/pay/", { method: "POST", body: { choice } }); setForm((f) => ({ ...f, pay_ok: "1", pay_none_done: choice === "none" ? "1" : "" })); setPay({ busy: false, error: "" }); }
+    catch (e) { setPay({ busy: false, error: errorText(e) }); }
+  };
   const downloadPdf = async () => { // the licence overview as a PDF (with the easy2edit logo)
     setPay((p) => ({ ...p, error: "" }));
-    try { await downloadPost("/system/setup/pdf/", { ...form, lang: getLanguage(), pay: form.pay_none_done === "1" ? "none" : form.pay_invoice_done === "1" ? "invoice" : form.pay_ok === "1" ? "stripe" : "open" }, "easy2edit-licence.pdf"); }
+    try { await downloadPost("/system/setup/pdf/", { ...form, lang: getLanguage(), pay: form.pay_none_done === "1" ? "none" : form.pay_invoice_done === "1" ? "invoice" : form.pay_ok === "1" ? "stripe" : "open" }, `easy2edit-licence-${(upd ? upd.number : d.license_number) || ""}.pdf`.replace("-.pdf", ".pdf")); }
     catch (e) { setPay((p) => ({ ...p, error: errorText(e) })); }
   };
   const payInvoice = async () => { // a superadmin: the licence is paid on account (an invoice)
@@ -198,7 +209,7 @@ export default function SetupWizard() {
   };
   const typeCode = async (e) => {
     let v = e.target.value;
-    if (v === "@" && user?.is_staff && isLocal()) { const c = consent.shown || await sendCode(); if (c) { setForm((f) => ({ ...f, consent_code: c })); checkCode(c); } return; }  // only for testing on this computer: an @ gives the code
+    if (v === "@" && user?.is_staff && isLocal()) { const c = consent.shown || await sendCode(); if (c) setForm((f) => ({ ...f, consent_code: c, consent_ok: "" })); return; }  // only for testing on this computer: an @ puts the code in the field (not approved yet: that happens with Next)
     v = v.replace(/\D/g, "").slice(0, 7);
     v = v.length > 3 ? `${v.slice(0, 3)}-${v.slice(3)}` : v;
     setForm((f) => ({ ...f, consent_code: v }));
@@ -295,7 +306,35 @@ export default function SetupWizard() {
                   {errs.hosting && <span className="e2e-error">{errs.hosting}</span>}
                 </div>
               )}
-              {step === "pay" && (() => {
+              {step === "pay" && upd && (() => {
+                const now = new Date(), days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = days - now.getDate() + 1;
+                const diff = Math.round((Number(upd.delta) * left / days) * 100) / 100, invoice = upd.payment_method === "invoice";
+                return (
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: "1rem" }}>
+                    <div style={{ paddingBottom: "1rem", borderBottom: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.15)))" }}>
+                      <strong style={{ fontSize: "1.05rem" }}>{tx("Betaal de wijziging")}</strong>
+                      <p style={{ margin: ".3rem 0 0" }}>{invoice ? tx("De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.") : tx("De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.")}</p>
+                    </div>
+                    <div className="e2e-grid" style={{ "--e2e-min": "170px" }}>
+                      <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("Verschil tot einde van de maand")}</span><strong style={{ fontSize: "1.35rem" }}>{diff > 0 ? "+" : ""}{money(diff)}</strong></div>
+                      <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("Daarna per maand")}</span><strong style={{ fontSize: "1.35rem" }}>{money(upd.new)}</strong><span className="e2e-hint">{tx("incl. btw")}</span></div>
+                    </div>
+                    {form.pay_ok === "1" ? (
+                      form.pay_none_done === "1"
+                        ? <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Niet betaald. De licentie loopt maar kort; daarna gaat je website in free mode.")}</div></div>
+                        : <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{tx("Betaling bevestigd. Je kunt doorgaan naar het overzicht.")}</div></div>
+                    ) : (
+                      <div className="e2e-row" style={{ gap: ".7rem", alignItems: "center", flexWrap: "wrap" }}>
+                        <button type="button" className="e2e-btn" disabled={pay.busy} onClick={() => payUpdate("confirm")}>{invoice ? tx("Op rekening") : tx("Betaling bevestigen")}</button>
+                        <button type="button" className="e2e-btn e2e-btn--outline" disabled={pay.busy} onClick={() => payUpdate("none")}>{tx("Betaal niet")}</button>
+                      </div>
+                    )}
+                    {pay.error && <span className="e2e-error">{pay.error}</span>}
+                    {form.pay_ok !== "1" && <span className="e2e-hint">{tx("Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.")}</span>}
+                  </div>
+                );
+              })()}
+              {step === "pay" && !upd && (() => {
                 const mo = Number(costs?.monthly || 0), per = [1, 3, 12].includes(Number(form.renew_months)) ? Number(form.renew_months) : 12;
                 const pr = (costs?.periods || []).find((x) => Number(x.months) === per), disc = pr ? Number(pr.discount) : 0;
                 const price = (mo + hostPrice) * per * (1 - disc / 100), perMonth = price / per, now = new Date();
@@ -480,11 +519,11 @@ export default function SetupWizard() {
             </form>
             </div>
             <div className="e2e-row sw-foot" style={{ justifyContent: "space-between", gap: ".6rem", flexWrap: "wrap" }} data-easy2edit-tag="ui-button-variants">
-              <div>{forced ? <button type="button" className="e2e-btn e2e-btn--ghost" onClick={() => { setForced(false); setClosed(true); }}>{tx("Sluiten")}</button> : d.can_skip && <button type="button" className="e2e-btn e2e-btn--ghost" onClick={skip}>{tx("Nu niet invullen")}</button>}</div>
+              <div>{forced ? <button type="button" className="e2e-btn e2e-btn--ghost" onClick={closeWizard}>{tx("Sluiten")}</button> : d.can_skip && <button type="button" className="e2e-btn e2e-btn--ghost" onClick={skip}>{tx("Nu niet invullen")}</button>}</div>
               <div className="e2e-row" style={{ gap: ".6rem" }}>
                 {stepIdx > 0 && <button type="button" className="e2e-btn e2e-btn--outline" onClick={() => setStep(steps[stepIdx - 1][0])}>{tx("Vorige")}</button>}
                 {stepIdx < steps.length - 1
-                  ? <button type="button" className="e2e-btn" disabled={(step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1")} onClick={next}>{tx("Volgende")}</button>
+                  ? <button type="button" className="e2e-btn" disabled={(step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 8 || consent.busy))} onClick={step === "agree" && form.consent_ok !== "1" ? () => checkCode(form.consent_code) : next}>{tx("Volgende")}</button>
                   : <button type="button" className="e2e-btn" disabled={busy} onClick={save}>{tx("Opslaan")}</button>}
               </div>
             </div>

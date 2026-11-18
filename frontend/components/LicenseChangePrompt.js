@@ -18,6 +18,15 @@ import { useModules } from "./Modules";
 import { canAdmin } from "../lib/perms";
 import KitScope from "../lib/ui-kit/KitScope";
 
+// Undo the switch of a module or plugin (c: {which: "plugin:x"|"module:x", enabled}): it goes back to how it was, without reloading the page.
+export async function revertSwitch(c) {
+  const [kind, key] = String(c?.which || "").split(":");
+  if (!key) return;
+  window.__licenceRevert = true;  // (lib/api.js does not ask again for this change)
+  try { await api(kind === "plugin" ? `/plugins/${key}/` : `/modules/${key}/`, { method: "PATCH", body: { enabled: !c.enabled } }); window.__licenceRevert = false; window.dispatchEvent(new Event("licence-reverted")); }
+  catch (e) { window.__licenceRevert = false; alertDialog(errorText(e)); }
+}
+
 // A module or plugin was switched on or off (the event "licence-maybe-changed" of lib/api.js): when that changes the price of the licence, ask whether to update the licence
 // at the new price. Yes: the licence wizard opens in update mode (the costs with the new price, the agreement with a code, then the same licence runs on). No: nothing changes.
 export default function LicenseChangePrompt() {
@@ -46,15 +55,7 @@ export default function LicenseChangePrompt() {
   const up = Number(act ? act.delta : ch.delta) > 0;
   const old = act ? act.old : ch.old, nw = act ? act.new : ch.new, dl = act ? act.delta : ch.delta;
   // "Nu niet": the switch is undone (a plugin or module that was switched on goes off again, and the other way round)
-  const undo = async () => {
-    const c = ch;
-    setCh(null);
-    const [kind, key] = String(c.which || "").split(":");
-    if (!key) return;
-    window.__licenceRevert = true;  // (lib/api.js does not ask again for this change)
-    try { await api(kind === "plugin" ? `/plugins/${key}/` : `/modules/${key}/`, { method: "PATCH", body: { enabled: !c.enabled } }); window.__licenceRevert = false; window.dispatchEvent(new Event("licence-reverted")); }
-    catch (e) { window.__licenceRevert = false; alertDialog(errorText(e)); }
-  };
+  const undo = () => { const c = ch; setCh(null); revertSwitch(c); };
   const yes = () => { const c = ch; setCh(null); window.dispatchEvent(new CustomEvent("open-setup-wizard", { detail: { mode: "update", change: c } })); };
   return createPortal(
     <div className="overlay" style={{ zIndex: 3050 }} role="dialog" aria-modal="true" aria-label={tx("Licentie bijwerken")}>

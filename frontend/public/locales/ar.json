@@ -7261,5 +7261,12 @@
   "Elke periode wordt het bedrag automatisch geïncasseerd (een abonnement).": "يُحصَّل المبلغ تلقائيًا في كل فترة (اشتراك).",
   "De gebruiker krijgt een factuur en betaalt die zelf.": "يتلقى المستخدم فاتورة ويدفعها بنفسه.",
   "Online betalen per periode": "الدفع عبر الإنترنت لكل فترة",
-  "Automatische incasso (abonnement)": "التحصيل التلقائي (اشتراك)"
+  "Automatische incasso (abonnement)": "التحصيل التلقائي (اشتراك)",
+  "Betaal de wijziging": "ادفع التغيير",
+  "De licentie wordt op rekening betaald: het nieuwe bedrag staat op de factuur die iedere 1e van de maand wordt verstuurd.": "تُدفع الرخصة بفاتورة: المبلغ الجديد موجود في الفاتورة التي تُرسل في الأول من كل شهر.",
+  "De licentie loopt via een abonnement: het nieuwe bedrag wordt vanaf nu via je abonnement berekend, het verschil van deze maand naar rato.": "تعمل الرخصة باشتراك: يُحتسب المبلغ الجديد من الآن عبر اشتراكك، وفرق هذا الشهر بالتناسب.",
+  "Verschil tot einde van de maand": "الفرق حتى نهاية الشهر",
+  "Betaling bevestigd. Je kunt doorgaan naar het overzicht.": "تم تأكيد الدفع. يمكنك المتابعة إلى النظرة العامة.",
+  "Betaling bevestigen": "تأكيد الدفع",
+  "Je kunt pas verder als de betaling is bevestigd, of kies Betaal niet.": "لا يمكنك المتابعة إلا بعد تأكيد الدفع، أو اختر عدم الدفع."
 }
