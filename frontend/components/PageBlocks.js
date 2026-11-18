@@ -131,6 +131,7 @@ function PbButton({ it, c, editing }) {
 export default function PageBlocks({ pageKey, title = "" }) {
   const { editing, setEditMode } = useSession();
   const objOn = useModule("sysobjects");
+  const mediaOn = useModule("media");  // (a hook: it stays above the early returns)
   const [layout, setLayout] = useState(null);
   const [menu, setMenu] = useState(null); // cell id with the add-menu open
   const [objects, setObjects] = useState([]);
@@ -672,7 +673,6 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const objGroups = [];
   objects.forEach((o) => { const k = objGroupKey(o); let g = objGroups.find((x) => x.key === k); if (!g) { g = { key: k, label: objGroupLabel(o), items: [] }; objGroups.push(g); } g.items.push({ slug: o.slug, kind: o.kind, typeLabel: o.data?.type_label || "", mtype: o.data?.type || "", name: `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}` }); });
   objGroups.sort((a, b) => a.label.localeCompare(b.label));
-  const mediaOn = useModule("media");
   const addMediaKind = async (kind, label) => {  // a kind of media object that was not made yet (carousel, coverflow, mosaic ...): it is made now, with the pictures (or videos) of the library, and put on the page
     try {
       const v = await api("/mediaviews/", { method: "POST", body: { name: label, type: kind, source: { mode: "all", ids: [], tags: [], limit: 12 } } });
