@@ -7341,5 +7341,8 @@
   "Kies de codecontrole: e-mail, sms of geen.": "Kod doğrulamayı seç: e-posta, SMS veya yok.",
   "Op alle websites van de reseller": "Bayinin tüm web sitelerinde",
   "Op de easy2edit-site zelf (zonder extra rechten)": "easy2edit sitesinin kendisinde (ek yetki olmadan)",
-  "Waar mag deze persoon inloggen?": "Bu kişi nerede giriş yapabilir?"
+  "Waar mag deze persoon inloggen?": "Bu kişi nerede giriş yapabilir?",
+  "Activeren via API": "API ile etkinleştir",
+  "De verbinding is geactiveerd via de API.": "Bağlantı API üzerinden etkinleştirildi.",
+  "Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.": "easy2edit sunucusuyla yeni bir bağlantı anahtarı değiştirir; böylece sunucu bu web sitesini sorgulayabilir."
 }

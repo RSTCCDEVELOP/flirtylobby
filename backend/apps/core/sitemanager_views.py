@@ -183,6 +183,21 @@ def remote_action(request):
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def remote_activate(request):
+    """The easy2edit server asks this website to activate the connection: it exchanges a new callback key with its own server (with its own key). Harmless without a login: it only makes this website report
+    to the server that is set in its own settings; limited per address."""
+    from django.core.cache import cache
+
+    ck = f"sitemgr-act:{_seen_ip(request)}"
+    if cache.get(ck, 0) >= 10:
+        return Response({"detail": "Te vaak."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    cache.set(ck, cache.get(ck, 0) + 1, 600)
+    return Response(sitemanager.reactivate())
+
+
 def _plus_only(request):
     if not request.user.is_superplus:
         return Response({"detail": "Alleen een superadmin+."}, status=status.HTTP_403_FORBIDDEN)
@@ -203,6 +218,10 @@ def sites_admin(request):
             sitemanager.set_auto_approve(bool(request.data.get("on")))
         elif action == "check":  # a live check of the connection (this website as a client of the easy2edit server)
             return Response({"check": sitemanager.check(), "me": sitemanager.info()})
+        elif action == "activate":  # exchange a new callback key with the easy2edit server
+            result = sitemanager.reactivate()
+            if not result["ok"]:
+                return Response({"detail": f"Activeren is niet gelukt: {result['error']}", "info": sitemanager.info()}, status=status.HTTP_502_BAD_GATEWAY)
         elif action == "disconnect":
             sitemanager.disconnect()
         elif action == "connect":
@@ -291,6 +310,18 @@ def site_action(request, pk):
         return _remote_failed(e)
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def site_activate(request, pk):
+    """Superadmin+: activate the connection with a website through its API (a new callback key is exchanged)."""
+    if (deny := _plus_only(request)):
+        return deny
+    try:
+        return Response(sitemanager.activate_site(_site_or_404(pk)))
+    except sitemanager.RemoteError as e:
+        return _remote_failed(e)
 
 
 @api_view(["POST"])

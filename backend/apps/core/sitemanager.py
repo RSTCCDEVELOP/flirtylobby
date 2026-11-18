@@ -459,6 +459,36 @@ def call_site(site, path, params=None, body=None, allow_blocked=False):
         raise RemoteError("unreachable", "De website is niet bereikbaar via zijn API.")
 
 
+def activate_site(site):
+    """Superadmin+ on the easy2edit server: activate the connection with a website through its API. The website is asked (without a key: it only starts its own report) to exchange a new callback key
+    with this server, using its own key. -> {ok, has_callback}. RemoteError when the website cannot be reached or refuses."""
+    if site.instance_id == instance_id():
+        return {"ok": True, "has_callback": True}
+    if site.status not in ("active", "pending"):
+        raise RemoteError("pending", "Keur deze website eerst goed.")
+    url = f"{_safe_base(site)}/api/easy2edit/remote/activate/"
+    req = urllib.request.Request(url, data=b"{}", method="POST", headers={"Content-Type": "application/json", "User-Agent": "easy2edit-server"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            answer = json.loads(r.read(100_000).decode("utf-8", "ignore") or "{}")
+    except urllib.error.HTTPError as e:
+        raise RemoteError("refused", "De website weigert de activatie (HTTP %s)." % e.code)
+    except Exception:  # noqa: BLE001
+        raise RemoteError("unreachable", "De website is niet bereikbaar via zijn API.")
+    site.refresh_from_db()
+    if not answer.get("ok"):
+        raise RemoteError("refused", "De website kon zich niet bij deze server melden: %s" % str(answer.get("error") or "")[:150])
+    return {"ok": True, "has_callback": bool(site.callback_key_enc)}
+
+
+def reactivate():
+    """This website: ask the easy2edit server for a new callback key (with this website's own key) and report. -> {ok, error}."""
+    if server_enabled():
+        return {"ok": True, "error": ""}
+    _save(callback_key="")
+    return report("sync")
+
+
 def site_info(site, part):
     """The information of a website (part: status | users | reseller | ai), asked through its API; this installation's own website is read directly."""
     from . import remote_info

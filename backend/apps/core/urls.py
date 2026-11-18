@@ -94,6 +94,8 @@ urlpatterns = [
     path("system/sites/<int:pk>/", sitemanager_views.site_admin),
     path("system/sites/<int:pk>/info/", sitemanager_views.site_info),
     path("system/sites/<int:pk>/online/", sitemanager_views.site_online),
+    path("system/sites/<int:pk>/activate/", sitemanager_views.site_activate),
+    path("easy2edit/remote/activate/", sitemanager_views.remote_activate),
     path("system/sites/<int:pk>/action/", sitemanager_views.site_action),
     path("easy2edit/remote/action/", sitemanager_views.remote_action),
     path("easy2edit/remote/info/", sitemanager_views.remote_info),

@@ -7341,5 +7341,8 @@
   "Kies de codecontrole: e-mail, sms of geen.": "اختر التحقق: البريد أو الرسائل القصيرة أو بدون.",
   "Op alle websites van de reseller": "على جميع مواقع الموزّع",
   "Op de easy2edit-site zelf (zonder extra rechten)": "على موقع easy2edit نفسه (بدون صلاحيات إضافية)",
-  "Waar mag deze persoon inloggen?": "أين يمكن لهذا الشخص تسجيل الدخول؟"
+  "Waar mag deze persoon inloggen?": "أين يمكن لهذا الشخص تسجيل الدخول؟",
+  "Activeren via API": "التفعيل عبر واجهة API",
+  "De verbinding is geactiveerd via de API.": "تم تفعيل الاتصال عبر واجهة API.",
+  "Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.": "يتبادل مفتاح ربط جديدًا مع خادم easy2edit ليتمكن الخادم من الاستعلام عن هذا الموقع."
 }

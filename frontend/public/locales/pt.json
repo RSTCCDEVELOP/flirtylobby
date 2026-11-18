@@ -7341,5 +7341,8 @@
   "Kies de codecontrole: e-mail, sms of geen.": "Escolha a verificação: e-mail, SMS ou nenhuma.",
   "Op alle websites van de reseller": "Em todos os sites do revendedor",
   "Op de easy2edit-site zelf (zonder extra rechten)": "No próprio site easy2edit (sem direitos adicionais)",
-  "Waar mag deze persoon inloggen?": "Onde pode esta pessoa iniciar sessão?"
+  "Waar mag deze persoon inloggen?": "Onde pode esta pessoa iniciar sessão?",
+  "Activeren via API": "Ativar pela API",
+  "De verbinding is geactiveerd via de API.": "A ligação foi ativada pela API.",
+  "Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.": "Troca uma nova chave de ligação com o servidor easy2edit, para que o servidor possa consultar este site."
 }

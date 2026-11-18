@@ -8,7 +8,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { IconCheck, IconEdit, IconEye, IconGlobe, IconRefresh, IconSettings, IconTrash } from "../../../../components/Icons";
+import { IconCheck, IconEdit, IconEye, IconGlobe, IconKey, IconRefresh, IconSettings, IconTrash } from "../../../../components/Icons";
 import { SiteMaintenance, SiteOnline, SiteView } from "../../../../components/SiteDetails";
 import Tabs from "../../../../components/Tabs";
 import Loading from "../../../../components/Loading";
@@ -59,6 +59,7 @@ export default function SiteManager() {
     setCheck(null);
     await act({ action: "disconnect" }, tx("Deze website is ontkoppeld van de easy2edit-server."));
   };
+  const activate = async () => { await act({ action: "activate" }, tx("De verbinding is geactiveerd via de API.")); runCheck(); };
   const connect = async () => { await act({ action: "connect" }, tx("Gemeld bij de easy2edit-server.")); runCheck(); };
   const save = async () => {
     setBusy("edit");
@@ -110,6 +111,7 @@ export default function SiteManager() {
           </div>
           <div className="sm-buttons">
           {!me.server && !me.disconnected && <button type="button" className="btn" disabled={!!busy || checking} onClick={runCheck}><IconRefresh /> {checking ? tx("Bezig…") : tx("Verbinding testen")}</button>}
+          {!me.server && !me.disconnected && <button type="button" className="btn" disabled={!!busy || checking} onClick={activate} title={tx("Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.")}><IconKey /> {busy === "activate" ? tx("Bezig…") : tx("Activeren via API")}</button>}
           <button type="button" className="btn" disabled={!!busy || (!me.server && me.disconnected)} onClick={() => act({ action: "sync" }, tx("Gemeld bij de easy2edit-server."))}><IconRefresh /> {busy === "sync" ? tx("Bezig…") : tx("Nu melden")}</button>
           {!me.server && (me.disconnected
             ? <button type="button" className="btn primary" disabled={!!busy} onClick={connect}>{tx("Verbinden")}</button>

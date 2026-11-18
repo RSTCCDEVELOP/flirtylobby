@@ -127,3 +127,45 @@ def test_automatic_approval_is_a_choice_of_the_server(client):
     sitemanager.set_auto_approve(True)
     post(client, "/api/easy2edit/sites/register/", {"instance_id": IID, "name": "Blue"})
     assert EasySite.objects.get().status == "active"
+
+
+@pytest.mark.django_db
+def test_activate_through_the_api_both_sides(client, monkeypatch):
+    # this website: a new callback key is asked for (the old one is dropped) and reported
+    seen = []
+
+    def fake(url, body, key=""):
+        seen.append(body.get("callback"))
+        return {"key": "KEY1", "callback_key": "CB1"} if url.endswith("/register/") else {"ok": True, "callback_key": "CB2"}
+
+    monkeypatch.setattr(sitemanager, "_post", fake)
+    assert sitemanager.report("login", "admin")["ok"]
+    assert sitemanager.reactivate()["ok"]
+    assert seen[-1] == "missing" and sitemanager._state()["callback_key"] == "CB2"
+    # the server: only a superadmin+, and it asks the website (no key) to activate
+    plain = mk("a@example.com", is_staff=True, is_superuser=True)
+    plus = mk("p@example.com", is_staff=True, is_superuser=True, is_superadmin_plus=True)
+    sitemanager.set_server(True)
+    post(client, "/api/easy2edit/sites/register/", {"instance_id": IID, "name": "Blue"})
+    s = EasySite.objects.get(instance_id=IID)
+    s.status = "active"
+    s.save()
+    assert client.post(f"/api/system/sites/{s.pk}/activate/", **auth(plain)).status_code == 403
+    monkeypatch.setattr(sitemanager, "_safe_base", lambda site: "https://blue.example")
+
+    class R:
+        def __init__(self, data): self.data = data
+        def read(self, n=0): return json.dumps(self.data).encode()
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    monkeypatch.setattr(sitemanager.urllib.request, "urlopen", lambda req, timeout=0: R({"ok": True}))
+    r = client.post(f"/api/system/sites/{s.pk}/activate/", **auth(plus))
+    assert r.status_code == 200 and r.json()["ok"]
+    monkeypatch.setattr(sitemanager.urllib.request, "urlopen", lambda req, timeout=0: R({"ok": False, "error": "HTTP 403"}))
+    assert client.post(f"/api/system/sites/{s.pk}/activate/", **auth(plus)).status_code == 502
+    # the public trigger on the website is limited per address
+    sitemanager.set_server(False)
+    monkeypatch.setattr(sitemanager, "reactivate", lambda: {"ok": True, "error": ""})
+    codes = [client.post("/api/easy2edit/remote/activate/", REMOTE_ADDR="198.51.100.9").status_code for _ in range(12)]
+    assert codes[0] == 200 and codes[-1] == 429

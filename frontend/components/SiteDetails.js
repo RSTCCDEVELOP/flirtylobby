@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { LineChart, Donut } from "./Charts";
 import { ADVICE_STATUS, ADVICE_TEXT } from "./EnergyAdvice";
 import { fmtBytes, fmtG, Rating } from "./EnergyBlocks";
-import { IconBolt, IconBriefcase, IconChart, IconCheck, IconGlobe, IconInfo, IconLeaf, IconRefresh, IconUsers, IconX } from "./Icons";
+import { IconBolt, IconBriefcase, IconChart, IconCheck, IconGlobe, IconInfo, IconKey, IconLeaf, IconRefresh, IconUsers, IconX } from "./Icons";
 import { Kpi, KpiGrid } from "./AiCharts";
 import Loading from "./Loading";
 import Tabs from "./Tabs";
@@ -212,6 +212,13 @@ export function SiteView({ site, onClose }) {
     catch (e) { setNote({ ok: false, text: errText(e) }); }
     setBusy(false);
   };
+  // the website refuses or has no key for the server yet: the server asks it, through its API, to exchange a new key
+  const activate = async () => {
+    setBusy(true); setNote(null);
+    try { await api(`/system/sites/${site.id}/activate/`, { method: "POST" }); setNote({ ok: true, text: tx("De verbinding is geactiveerd via de API.") }); reload(tab); }
+    catch (e) { setNote({ ok: false, text: errText(e) }); }
+    setBusy(false);
+  };
   useEffect(() => {
     if (data[tab] || err[tab]) return;
     api(`/system/sites/${site.id}/info/?part=${tab}`).then((d) => setData((x) => ({ ...x, [tab]: d }))).catch((e) => setErr((x) => ({ ...x, [tab]: e })));
@@ -236,7 +243,12 @@ export function SiteView({ site, onClose }) {
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "1.1rem 1.5rem 1.5rem", display: "flex", flexDirection: "column", gap: ".9rem" }}>
         {note && <div className={note.ok ? "alert ok" : "alert"}>{note.text}</div>}
-        {err[tab] && <div className="alert">{errText(err[tab])}</div>}
+        {err[tab] && (
+          <div className="alert" style={{ display: "flex", gap: ".8rem", alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+            <span>{errText(err[tab])}</span>
+            {["refused", "nokey"].includes(err[tab]?.data?.reason) && <button type="button" className="btn sm" disabled={busy} onClick={activate}><IconKey /> {busy ? tx("Bezig…") : tx("Activeren via API")}</button>}
+          </div>
+        )}
         {!d && !err[tab] && <p className="muted"><Loading /></p>}
         {d && tab === "info" && <InfoPanel d={d} />}
         {d && tab === "users" && (

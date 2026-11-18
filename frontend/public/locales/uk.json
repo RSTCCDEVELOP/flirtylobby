@@ -7341,5 +7341,8 @@
   "Kies de codecontrole: e-mail, sms of geen.": "Виберіть перевірку: e-mail, SMS або без.",
   "Op alle websites van de reseller": "На всіх сайтах реселера",
   "Op de easy2edit-site zelf (zonder extra rechten)": "На самому сайті easy2edit (без додаткових прав)",
-  "Waar mag deze persoon inloggen?": "Де ця особа може входити?"
+  "Waar mag deze persoon inloggen?": "Де ця особа може входити?",
+  "Activeren via API": "Активувати через API",
+  "De verbinding is geactiveerd via de API.": "З'єднання активовано через API.",
+  "Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.": "Обмінюється новим ключем зв'язку із сервером easy2edit, щоб сервер міг опитувати цей сайт."
 }

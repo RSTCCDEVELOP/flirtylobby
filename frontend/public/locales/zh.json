@@ -7341,5 +7341,8 @@
   "Kies de codecontrole: e-mail, sms of geen.": "请选择验证方式：邮件、短信或无。",
   "Op alle websites van de reseller": "经销商的所有网站",
   "Op de easy2edit-site zelf (zonder extra rechten)": "easy2edit 网站本身（无额外权限）",
-  "Waar mag deze persoon inloggen?": "此人可以在哪里登录？"
+  "Waar mag deze persoon inloggen?": "此人可以在哪里登录？",
+  "Activeren via API": "通过 API 激活",
+  "De verbinding is geactiveerd via de API.": "已通过 API 激活连接。",
+  "Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.": "与 easy2edit 服务器交换新的链接密钥，使服务器可以查询此网站。"
 }

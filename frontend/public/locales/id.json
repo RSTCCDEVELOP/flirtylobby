@@ -7341,5 +7341,8 @@
   "Kies de codecontrole: e-mail, sms of geen.": "Pilih pemeriksaan: e-mail, SMS, atau tidak ada.",
   "Op alle websites van de reseller": "Di semua situs web reseller",
   "Op de easy2edit-site zelf (zonder extra rechten)": "Di situs easy2edit sendiri (tanpa hak tambahan)",
-  "Waar mag deze persoon inloggen?": "Di mana orang ini boleh login?"
+  "Waar mag deze persoon inloggen?": "Di mana orang ini boleh login?",
+  "Activeren via API": "Aktifkan lewat API",
+  "De verbinding is geactiveerd via de API.": "Koneksi sudah diaktifkan lewat API.",
+  "Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.": "Menukar kunci tautan baru dengan server easy2edit, agar server dapat meminta data situs ini."
 }

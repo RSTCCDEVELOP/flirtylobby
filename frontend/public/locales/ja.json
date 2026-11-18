@@ -7341,5 +7341,8 @@
   "Kies de codecontrole: e-mail, sms of geen.": "コード確認を選んでください: メール、SMS、またはなし。",
   "Op alle websites van de reseller": "リセラーのすべてのウェブサイト",
   "Op de easy2edit-site zelf (zonder extra rechten)": "easy2edit サイト自体 (追加権限なし)",
-  "Waar mag deze persoon inloggen?": "この人はどこにログインできますか？"
+  "Waar mag deze persoon inloggen?": "この人はどこにログインできますか？",
+  "Activeren via API": "APIで有効化",
+  "De verbinding is geactiveerd via de API.": "APIで接続を有効化しました。",
+  "Wisselt opnieuw een koppelsleutel uit met de easy2edit-server, zodat de server deze website kan opvragen.": "easy2editサーバーと新しい連携キーを交換し、サーバーがこのサイトに問い合わせできるようにします。"
 }
