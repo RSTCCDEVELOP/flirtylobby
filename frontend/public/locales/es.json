@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "Los accesos de este revendedor se crean en los sitios que vincules aquí.",
   "Nog geen logins": "Aún no hay accesos",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "Añade un acceso o activa «Crear también un acceso» en una persona de contacto.",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "La contraseña ya no se puede ver. Envía una nueva si la persona la ha perdido."
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "La contraseña ya no se puede ver. Envía una nueva si la persona la ha perdido.",
+  "Lettergrootte van de hele website": "Tamaño de letra de todo el sitio",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "Se aplica a todas las páginas, al panel y al resto del sitio.",
+  "Kleiner": "Más pequeño",
+  "Groter": "Más grande",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "Solo para ti: el tamaño de letra se recuerda en este navegador.",
+  "Instellen voor de hele website": "Establecer para todo el sitio",
+  "Voor iedereen ingesteld.": "Establecido para todos.",
+  "Lettergrootte-knop (Aa)": "Botón de tamaño de letra (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "Muestra el botón Aa junto al lápiz, para todos: en el sitio, el admin y el panel, también sin iniciar sesión. Cada visitante elige su tamaño, que se recuerda en su navegador. Quien pueda cambiar el tema también puede fijar el tamaño para todo el sitio. En el panel el botón siempre se queda para los administradores."
 }

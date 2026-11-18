@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "Les identifiants de ce revendeur sont créés dans les sites que vous liez ici.",
   "Nog geen logins": "Aucun identifiant pour l'instant",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "Ajoutez un identifiant, ou activez « Créer aussi un identifiant » pour une personne de contact.",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Le mot de passe n'est plus visible. Envoyez un nouveau mot de passe si la personne l'a perdu."
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Le mot de passe n'est plus visible. Envoyez un nouveau mot de passe si la personne l'a perdu.",
+  "Lettergrootte van de hele website": "Taille de la police de tout le site",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "S'applique à toutes les pages, au tableau de bord et au reste du site.",
+  "Kleiner": "Plus petit",
+  "Groter": "Plus grand",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "Rien que pour vous : la taille de police est mémorisée dans ce navigateur.",
+  "Instellen voor de hele website": "Définir pour tout le site",
+  "Voor iedereen ingesteld.": "Défini pour tout le monde.",
+  "Lettergrootte-knop (Aa)": "Bouton de taille de police (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "Affiche le bouton Aa à côté du crayon, pour tout le monde : sur le site, l'admin et le tableau de bord, même sans connexion. Chaque visiteur choisit sa taille, mémorisée dans son navigateur. Qui peut modifier le thème peut aussi définir la taille pour tout le site. Dans le tableau de bord, le bouton reste toujours présent pour les administrateurs."
 }

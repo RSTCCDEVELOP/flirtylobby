@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "Gli accessi di questo rivenditore vengono creati nei siti che colleghi qui.",
   "Nog geen logins": "Nessun accesso ancora",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "Aggiungi un accesso o attiva «Crea anche un accesso» per una persona di contatto.",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "La password non è più visibile. Invia una nuova password se la persona l'ha persa."
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "La password non è più visibile. Invia una nuova password se la persona l'ha persa.",
+  "Lettergrootte van de hele website": "Dimensione del testo di tutto il sito",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "Vale per tutte le pagine, la dashboard e il resto del sito.",
+  "Kleiner": "Più piccolo",
+  "Groter": "Più grande",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "Solo per te: la dimensione del testo viene ricordata in questo browser.",
+  "Instellen voor de hele website": "Imposta per tutto il sito",
+  "Voor iedereen ingesteld.": "Impostato per tutti.",
+  "Lettergrootte-knop (Aa)": "Pulsante dimensione testo (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "Mostra il pulsante Aa accanto alla matita, per tutti: sul sito, nell'admin e nella dashboard, anche senza login. Ogni visitatore sceglie la propria dimensione, ricordata nel suo browser. Chi può modificare il tema può impostare la dimensione anche per tutto il sito. Nella dashboard il pulsante resta sempre per gli amministratori."
 }

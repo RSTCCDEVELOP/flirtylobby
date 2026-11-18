@@ -362,6 +362,8 @@ SCHEMA = [
         choice("font_body", "Lettertype (tekst)", "System", "--font-body", FONTS),
         choice("font_heading", "Lettertype (koppen)", "System", "--font-heading", FONTS),
         number("font_size_base", "Basis lettergrootte (schaalt alles)", 16, "--fs-base", "px", 12, 22),
+        {**choice("font_tool", "Lettergrootte-knop (Aa)", "yes", None, YESNO), "switch": True,
+         "hint": "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan."},
         number("font_size_h1", "Grootte kop 1", 1.6, "--fs-h1", "rem", 1.2, 3.5, 0.05),
         number("font_size_h2", "Grootte kop 2", 1.05, "--fs-h2", "rem", 0.9, 2.2, 0.05),
         number("line_height", "Regelafstand", 1.5, "--lh", "", 1.2, 2, 0.05),

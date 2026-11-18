@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "此经销商的登录账号会创建在您在此关联的网站中。",
   "Nog geen logins": "暂无登录账号",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "添加登录账号，或在联系人处打开“同时创建登录账号”。",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "密码已无法查看。如果对方忘记了，请邮件发送新密码。"
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "密码已无法查看。如果对方忘记了，请邮件发送新密码。",
+  "Lettergrootte van de hele website": "整个网站的字体大小",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "适用于所有页面、仪表板和网站的其余部分。",
+  "Kleiner": "更小",
+  "Groter": "更大",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "仅对您有效：字体大小会保存在此浏览器中。",
+  "Instellen voor de hele website": "设为整个网站的默认值",
+  "Voor iedereen ingesteld.": "已为所有人设置。",
+  "Lettergrootte-knop (Aa)": "字体大小按钮（Aa）",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "在铅笔旁向所有人显示 Aa 按钮：网站、管理和仪表板，无需登录。访问者选择自己的大小，并保存在其浏览器中。有权更改主题的人也可以为整个网站设置大小。在仪表板中，该按钮始终对管理员显示。"
 }

@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "Bu bayinin girişleri burada bağladığınız web sitelerinde oluşturulur.",
   "Nog geen logins": "Henüz giriş yok",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "Bir giriş ekleyin veya bir ilgili kişide “Giriş de oluştur” anahtarını açın.",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Parola artık görüntülenemiyor. Kişi kaybettiyse yeni bir parola e-postayla gönderin."
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Parola artık görüntülenemiyor. Kişi kaybettiyse yeni bir parola e-postayla gönderin.",
+  "Lettergrootte van de hele website": "Tüm sitenin yazı boyutu",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "Tüm sayfalar, panel ve sitenin geri kalanı için geçerlidir.",
+  "Kleiner": "Daha küçük",
+  "Groter": "Daha büyük",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "Yalnızca sizin için: yazı boyutu bu tarayıcıda hatırlanır.",
+  "Instellen voor de hele website": "Tüm site için ayarla",
+  "Voor iedereen ingesteld.": "Herkes için ayarlandı.",
+  "Lettergrootte-knop (Aa)": "Yazı boyutu düğmesi (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "Aa düğmesini kalemin yanında herkese gösterir: sitede, yönetimde ve panelde, giriş yapmadan da. Ziyaretçi kendi boyutunu seçer ve tarayıcısında hatırlanır. Temayı değiştirebilen, boyutu tüm site için de ayarlayabilir. Panelde düğme yöneticiler için her zaman kalır."
 }

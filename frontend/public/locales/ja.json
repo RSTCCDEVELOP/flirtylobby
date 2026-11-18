@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "このリセラーのログインは、ここで連携したウェブサイトに作成されます。",
   "Nog geen logins": "ログインはまだありません",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "ログインを追加するか、担当者の「ログインも作成する」をオンにしてください。",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "パスワードはもう表示できません。紛失した場合は新しいパスワードをメールしてください。"
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "パスワードはもう表示できません。紛失した場合は新しいパスワードをメールしてください。",
+  "Lettergrootte van de hele website": "サイト全体の文字サイズ",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "すべてのページ、ダッシュボード、その他のサイト全体に適用されます。",
+  "Kleiner": "小さく",
+  "Groter": "大きく",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "あなた専用：文字サイズはこのブラウザに記憶されます。",
+  "Instellen voor de hele website": "サイト全体に設定",
+  "Voor iedereen ingesteld.": "全員に設定しました。",
+  "Lettergrootte-knop (Aa)": "文字サイズボタン（Aa）",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "鉛筆の横にAaボタンを全員に表示します（サイト、管理、ダッシュボード、ログインなしでも）。訪問者は自分のサイズを選び、ブラウザに記憶されます。テーマを変更できる人は、サイト全体のサイズも設定できます。ダッシュボードでは管理者に常に表示されます。"
 }

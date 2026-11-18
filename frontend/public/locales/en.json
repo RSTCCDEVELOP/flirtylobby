@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "The logins of this reseller are made in the websites you link here.",
   "Nog geen logins": "No logins yet",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "Add a login, or switch on “Also make a login” for a contact person.",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "The password can no longer be seen. E-mail a new password if the person lost it."
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "The password can no longer be seen. E-mail a new password if the person lost it.",
+  "Lettergrootte van de hele website": "Font size of the whole website",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "Applies to all pages, the dashboard and the rest of the website.",
+  "Kleiner": "Smaller",
+  "Groter": "Larger",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "Just for you: the font size is remembered in this browser.",
+  "Instellen voor de hele website": "Set for the whole website",
+  "Voor iedereen ingesteld.": "Set for everyone.",
+  "Lettergrootte-knop (Aa)": "Font size button (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "Shows the Aa button beside the pencil, for everybody: on the website, the admin and the dashboard, also without a login. A visitor picks their own size, which is remembered in their browser. Whoever may change the theme can also set the size for the whole website. In the dashboard the button always stays for administrators."
 }

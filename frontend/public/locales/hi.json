@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "इस रिसेलर के लॉगिन उन वेबसाइटों में बनते हैं जिन्हें आप यहाँ जोड़ते हैं।",
   "Nog geen logins": "अभी कोई लॉगिन नहीं",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "लॉगिन जोड़ें, या किसी संपर्क व्यक्ति पर “लॉगिन भी बनाएँ” चालू करें।",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "पासवर्ड अब दिखाई नहीं देता। यदि व्यक्ति उसे भूल गया हो तो नया पासवर्ड ई-मेल करें।"
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "पासवर्ड अब दिखाई नहीं देता। यदि व्यक्ति उसे भूल गया हो तो नया पासवर्ड ई-मेल करें।",
+  "Lettergrootte van de hele website": "पूरी वेबसाइट का फ़ॉन्ट आकार",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "सभी पेजों, डैशबोर्ड और बाकी वेबसाइट पर लागू होता है।",
+  "Kleiner": "छोटा",
+  "Groter": "बड़ा",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "केवल आपके लिए: फ़ॉन्ट आकार इस ब्राउज़र में याद रखा जाता है।",
+  "Instellen voor de hele website": "पूरी वेबसाइट के लिए सेट करें",
+  "Voor iedereen ingesteld.": "सभी के लिए सेट किया गया।",
+  "Lettergrootte-knop (Aa)": "फ़ॉन्ट आकार बटन (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "पेंसिल के पास Aa बटन सभी को दिखाता है: वेबसाइट, एडमिन और डैशबोर्ड पर, बिना लॉगिन के भी। विज़िटर अपना आकार चुनता है, जो उसके ब्राउज़र में याद रहता है। थीम बदल सकने वाला पूरी वेबसाइट के लिए भी आकार सेट कर सकता है। डैशबोर्ड में बटन प्रशासकों के लिए हमेशा रहता है।"
 }

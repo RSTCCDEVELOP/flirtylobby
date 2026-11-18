@@ -10,7 +10,7 @@
 import { tx } from "../lib/t";
 import { IconEdit, IconTrash } from "./Icons";
 import { alertDialog, confirmDialog } from "../lib/dialog";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api, apiBase, errorText, mediaUrl } from "../lib/api";
 import MediaPicker from "./MediaPicker";
@@ -23,6 +23,8 @@ import { pushUndo } from "../lib/undo";
 import { lorem } from "../lib/lorem";
 import { GripContext } from "./Movable";
 import { useSession } from "./Session";
+import { useUi } from "./Ui";
+import FontSizeControl from "./FontSizeControl";
 
 const ContentContext = createContext({ blocks: {}, setBlock: () => {}, defaultLang: "nl", languages: [] });
 
@@ -218,14 +220,21 @@ export function EditableText({ id, as: Tag = "p", fallback = "", fallbacks, clas
 }
 
 // Edit mode on/off: a pencil icon (no text). Used in the header of the website and of the dashboard (the private part).
+// Beside it the button "Aa" (the size of the letters) when the theme says so: for everybody, also without a login (see FontSizeControl).
 export function EditModeSwitch() {
   const { canEdit, editMode, setEditMode } = useSession();
-  if (!canEdit) return null;
+  const { font_tool } = useUi();
+  const onAdmin = (usePathname() || "").startsWith("/dashboard");  // with the switch off the Aa button is gone everywhere, except for people who may edit while they are in edit mode in the dashboard
   const label = editMode ? tx("Bewerkmodus uitzetten") : tx("Website in bewerkmodus zetten");
   return (
-    <button type="button" className={`icon-btn edit-toggle${editMode ? " on" : ""}`} onClick={() => setEditMode(!editMode)} aria-pressed={editMode} aria-label={label} title={label}>
-      <IconEdit width={20} height={20} />
-    </button>
+    <>
+      {canEdit && (
+        <button type="button" className={`icon-btn edit-toggle${editMode ? " on" : ""}`} onClick={() => setEditMode(!editMode)} aria-pressed={editMode} aria-label={label} title={label}>
+          <IconEdit width={20} height={20} />
+        </button>
+      )}
+      {(font_tool || (onAdmin && canEdit && editMode)) && <FontSizeControl canSave={canEdit} />}
+    </>
   );
 }
 

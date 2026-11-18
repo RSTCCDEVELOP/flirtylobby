@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "Логіни цього реселера створюються на сайтах, які ви прив'язуєте тут.",
   "Nog geen logins": "Логінів поки немає",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "Додайте логін або ввімкніть «Також створити логін» у контактної особи.",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Пароль більше не видно. Надішліть новий пароль, якщо людина його втратила."
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Пароль більше не видно. Надішліть новий пароль, якщо людина його втратила.",
+  "Lettergrootte van de hele website": "Розмір шрифту всього сайту",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "Діє для всіх сторінок, панелі керування та решти сайту.",
+  "Kleiner": "Менше",
+  "Groter": "Більше",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "Лише для вас: розмір шрифту запам'ятовується в цьому браузері.",
+  "Instellen voor de hele website": "Задати для всього сайту",
+  "Voor iedereen ingesteld.": "Задано для всіх.",
+  "Lettergrootte-knop (Aa)": "Кнопка розміру шрифту (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "Показує кнопку Aa поруч з олівцем усім: на сайті, в адмінці та в панелі, навіть без входу. Відвідувач обирає свій розмір, він запам'ятовується в його браузері. Хто може змінювати тему, може задати розмір і для всього сайту. У панелі кнопка завжди залишається для адміністраторів."
 }

@@ -7378,5 +7378,14 @@
   "De logins van deze reseller worden aangemaakt in de websites die je hier koppelt.": "Die Logins dieses Resellers werden in den hier verknüpften Websites angelegt.",
   "Nog geen logins": "Noch keine Logins",
   "Voeg een login toe, of zet bij een contactpersoon de schakelaar “Ook een login maken” aan.": "Fügen Sie einen Login hinzu oder schalten Sie bei einer Kontaktperson „Auch einen Login anlegen“ ein.",
-  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Das Passwort ist nicht mehr einsehbar. Senden Sie ein neues Passwort, wenn die Person es verloren hat."
+  "Het wachtwoord is niet meer te zien. Mail een nieuw wachtwoord als de persoon het kwijt is.": "Das Passwort ist nicht mehr einsehbar. Senden Sie ein neues Passwort, wenn die Person es verloren hat.",
+  "Lettergrootte van de hele website": "Schriftgröße der ganzen Website",
+  "Geldt voor alle pagina's, het dashboard en de rest van de website.": "Gilt für alle Seiten, das Dashboard und den Rest der Website.",
+  "Kleiner": "Kleiner",
+  "Groter": "Größer",
+  "Alleen voor jou: de lettergrootte wordt in deze browser onthouden.": "Nur für Sie: Die Schriftgröße wird in diesem Browser gespeichert.",
+  "Instellen voor de hele website": "Für die ganze Website festlegen",
+  "Voor iedereen ingesteld.": "Für alle festgelegt.",
+  "Lettergrootte-knop (Aa)": "Schaltfläche für die Schriftgröße (Aa)",
+  "Toont de knop Aa naast het potlood, voor iedereen: op de website, de admin en het dashboard, ook zonder login. Een bezoeker kiest zijn eigen grootte en die wordt in zijn browser onthouden. Wie het thema mag wijzigen kan de grootte ook voor de hele website instellen. In het dashboard blijft de knop voor beheerders altijd staan.": "Zeigt die Schaltfläche Aa neben dem Stift, für alle: auf der Website, im Admin und im Dashboard, auch ohne Login. Besucher wählen ihre eigene Größe, die im Browser gespeichert wird. Wer das Theme ändern darf, kann die Größe auch für die ganze Website festlegen. Im Dashboard bleibt die Schaltfläche für Administratoren immer sichtbar."
 }

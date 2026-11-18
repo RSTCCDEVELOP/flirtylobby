@@ -75,6 +75,16 @@ export function Field({ f, value, onChange }) {
         </span>
       </label>
     );
+  if (f.switch)  // a yes/no choice as a switch with a short explanation (the field has a "hint")
+    return (
+      <label className="check sec-toggle theme-field" style={{ gridColumn: "1 / -1", flexDirection: "row", alignItems: "flex-start", gap: ".8rem", padding: ".8rem 1rem", border: "1px solid var(--line)", borderRadius: "var(--radius, 12px)", background: "var(--card)", cursor: "pointer" }}>
+        <span className="switch" style={{ flex: "0 0 auto", marginTop: 2 }}><input type="checkbox" checked={value === "yes"} onChange={(e) => onChange(e.target.checked ? "yes" : "no")} /><span /></span>
+        <span style={{ display: "grid", gap: ".2rem" }}>
+          <strong>{tx(f.label)} <span className={`badge ${value === "yes" ? "ok" : ""}`} style={{ marginLeft: ".3rem" }}>{value === "yes" ? tx("Aan") : tx("Uit")}</span></strong>
+          {f.hint && <small className="muted" style={{ fontWeight: 400 }}>{tx(f.hint)}</small>}
+        </span>
+      </label>
+    );
   return (
     <label className="theme-field">
       {f.label}
@@ -116,9 +126,9 @@ export default function ThemeLook() {
   const tabStyle = values?.tab_style;
   const sysPopup = values?.system_popup;
   useEffect(() => {
-    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label, version_notice: versionNotice, tab_style: tabStyle, system_popup: sysPopup });
+    if (remember) previewUi({ remember_collapse: remember, sidebar_auto: sidebarAuto, chat_label: values?.chat_label, version_notice: versionNotice, tab_style: tabStyle, system_popup: sysPopup, font_tool: values?.font_tool });
     return () => previewUi(null);
-  }, [remember, sidebarAuto, versionNotice, tabStyle, sysPopup, values?.chat_label, previewUi]);
+  }, [remember, sidebarAuto, versionNotice, tabStyle, sysPopup, values?.chat_label, values?.font_tool, previewUi]);
 
   const preview = useCallback((next) => {
     clearTimeout(timer.current);
