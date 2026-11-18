@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "保存为标准页面",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "将页面保存在标准安装中，以便日后在那里恢复。",
   "De pagina is opgeslagen.": "页面已保存。",
-  "Kies een installatie": "选择安装"
+  "Kies een installatie": "选择安装",
+  "Tekst uitlijnen": "文本对齐",
+  "Uitvullen": "两端对齐",
+  "Voorbeeldtekst": "示例文本",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "文本在区块内的排布方式。自动将跟随区块或列的对齐方式。",
+  "Leeg is het lettertype en de grootte van het thema.": "留空即为主题的字体和大小。"
 }

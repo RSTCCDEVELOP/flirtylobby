@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "Simpan sebagai halaman standar",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "Menyimpan halaman di instalasi standar, sehingga kembali di sana nanti.",
   "De pagina is opgeslagen.": "Halaman sudah disimpan.",
-  "Kies een installatie": "Pilih instalasi"
+  "Kies een installatie": "Pilih instalasi",
+  "Tekst uitlijnen": "Rata teks",
+  "Uitvullen": "Rata kiri-kanan",
+  "Voorbeeldtekst": "Contoh teks",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "Bagaimana teks mengalir di blok. Auto mengikuti perataan blok atau kolom.",
+  "Leeg is het lettertype en de grootte van het thema.": "Kosong berarti font dan ukuran tema."
 }

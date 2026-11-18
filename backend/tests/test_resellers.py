@@ -214,3 +214,27 @@ def test_position_of_a_part_keeps_valign():
     st = layout._item_style({"align": "center", "valign": "bottom"})
     assert st.get("align") == "center" and st.get("valign") == "bottom"
     assert "valign" not in layout._item_style({"valign": "sideways"})  # only top, middle or bottom
+
+
+@pytest.mark.django_db
+def test_layout_keeps_size_and_position_of_text_heading_and_widget():
+    from apps.pages import layout
+
+    cell = {"id": "cell0001", "halign": "left", "valign": "top", "items": [
+        {"id": "item0001", "type": "text", "ref": "", "style": {"w": "50%", "align": "center", "talign": "justify"}},
+        {"id": "item0002", "type": "heading", "ref": "", "style": {"w": "320px", "valign": "bottom"}},
+        {"id": "item0003", "type": "widget", "widget": "quote", "data": {"text": "Hoi"}, "style": {"w": "50%", "align": "right"}}]}
+    out = layout.clean({"rows": [{"id": "row00001", "cols": 1, "cells": [cell]}]})
+    items = out["rows"][0]["cells"][0]["items"]
+    assert items[0]["style"] == {"w": "50%", "align": "center", "talign": "justify"}  # the text inside the box has its own alignment
+    assert items[1]["style"] == {"w": "320px", "valign": "bottom"}
+    assert items[2]["style"] == {"w": "50%", "align": "right"}  # a ready-made part (a quote) keeps its size and position too
+
+
+@pytest.mark.django_db
+def test_creator_rules_tell_the_ai_about_the_editor_positions():
+    from apps.core import sitecreator
+
+    text = sitecreator.rules({})
+    for word in ("EDITOR POSITIONS", "max-width", "justify", "align-self", "placeholder"):
+        assert word in text

@@ -4098,3 +4098,21 @@ html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.selected) > .pb-celltools { opac
 .pb-sb-savebtn:disabled { opacity: .7; cursor: default; }
 .pb-sb-savebtn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .pb-sb-savestate { flex: 0 0 auto; color: var(--muted); font-size: .78rem; min-width: 5rem; text-align: right; }
+
+/* a text, heading or quote with a size (% or px, the Position tab): the part is that wide, at the place of its cell; a ready-made kit or code part keeps the whole cell */
+.pb-cell > .pb-item.pb-item.sized { width: var(--iw); max-width: 100%; }
+.pb-cell > .pb-item.pb-item.sized:has(.pb-w-kit), .pb-cell > .pb-item.pb-item.sized:has(.pb-w-code) { width: 100%; }
+
+/* the Position tab of a ready-made part (a quote ...): its own font and size, otherwise it follows the theme */
+.pb-item.w-font, .pb-item.w-font * { font-family: var(--ti-font) !important; }
+.pb-item.w-size [class^="pb-w-"], .pb-item.w-size [class^="pb-w-"] * { font-size: var(--ti-size) !important; }
+.pb-item.w-size [class^="pb-w-"] figcaption { font-size: calc(var(--ti-size) * .8) !important; }
+/* in the left panel a row with a segmented choice: the label above, the choice over the whole width (nothing runs out of the panel) */
+.pb-sidebar .pb-stylerow.pb-stack { flex-direction: column; align-items: stretch; gap: .3rem; }
+.pb-sidebar .pb-stylerow.pb-stack > span:first-child { flex: 0 0 auto; }
+.pb-sidebar .pb-stylerow.pb-stack > .pb-seg { width: 100%; }
+.pb-sidebar .pb-stylerow.pb-stack > .pb-seg > button { padding-inline: .2rem; font-size: .8rem; white-space: nowrap; }
+
+/* the sample under the font choice, and the icon buttons of the text alignment (one colour, the colour of the theme) */
+.pb-fontsample { padding: .7rem .9rem; border: 1px dashed var(--line); border-radius: 10px; background: color-mix(in srgb, var(--blue) 5%, var(--card)); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pb-sidebar .pb-stylerow.pb-stack > .pb-seg > button svg { display: block; margin: 0 auto; }

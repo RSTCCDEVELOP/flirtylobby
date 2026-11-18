@@ -178,6 +178,8 @@ def _item_style(st):
         out["font"] = st["font"]
     if st.get("align") in ("left", "center", "right"):
         out["align"] = st["align"]
+    if st.get("talign") in ("left", "center", "right", "justify"):  # how the text inside a text box is aligned (the Position tab)
+        out["talign"] = st["talign"]
     if st.get("valign") in ("top", "middle", "bottom"):  # the position of any part in its cell, up and down (the Position tab)
         out["valign"] = st["valign"]
     if str(st.get("weight") or "") in ("400", "500", "600", "700", "800"):
@@ -412,7 +414,7 @@ def clean(data):
                 if t not in TYPES:
                     raise ValueError("Onbekend soort onderdeel.")
                 n_items += 1
-                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading", "spacer", "line", "button") and _item_style(it.get("style")) else {}), **({"widget": _widget(it)["widget"], "data": _widget(it)["data"]} if t == "widget" and _widget(it) else {}), **({"btn": _button(it.get("btn"))} if t == "button" and _button(it.get("btn")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
+                items.append({"id": uid(it.get("id")), "type": t, "ref": (str(it.get("ref") or "")[:80] if t == "object" or re.fullmatch(r"[a-z0-9._-]{1,80}", str(it.get("ref") or "")) else ""), **({"style": _item_style(it.get("style"))} if t in ("text", "image", "heading", "spacer", "line", "button", "widget") and _item_style(it.get("style")) else {}), **({"widget": _widget(it)["widget"], "data": _widget(it)["data"]} if t == "widget" and _widget(it) else {}), **({"btn": _button(it.get("btn"))} if t == "button" and _button(it.get("btn")) else {}), **({"layout": str(it.get("layout"))} if t == "object" and str(it.get("layout")) in ("2", "3", "4") else {})})
             cells.append({"id": uid(c.get("id")), "width": _pct(c.get("width"), 5, 100, "auto"), "halign": c.get("halign") if c.get("halign") in HALIGN else "left", "valign": c.get("valign") if c.get("valign") in VALIGN else "top", "items": items, **({"style": _cell_style(c.get("style"))} if _cell_style(c.get("style")) else {}), **({"gap": round(min(max(float(c["gap"]), 0), 4), 2)} if isinstance(c.get("gap"), (int, float)) and not isinstance(c.get("gap"), bool) else {})})
         while len(cells) < cols:
             cells.append({"id": new_id(), "width": "auto", "halign": "left", "valign": "top", "items": []})

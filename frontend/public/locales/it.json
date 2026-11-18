@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "Salva come pagina standard",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "Salva la pagina in un'installazione standard, così più tardi tornerà lì.",
   "De pagina is opgeslagen.": "La pagina è stata salvata.",
-  "Kies een installatie": "Scegli un'installazione"
+  "Kies een installatie": "Scegli un'installazione",
+  "Tekst uitlijnen": "Allinea il testo",
+  "Uitvullen": "Giustifica",
+  "Voorbeeldtekst": "Testo di esempio",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "Come scorre il testo nel blocco. Auto segue l'allineamento del blocco o della colonna.",
+  "Leeg is het lettertype en de grootte van het thema.": "Vuoto è il carattere e la dimensione del tema."
 }

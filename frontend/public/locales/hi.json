@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "मानक पेज के रूप में सहेजें",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "पेज को मानक इंस्टॉलेशन में सहेजता है, ताकि वह बाद में वहाँ वापस आ जाए।",
   "De pagina is opgeslagen.": "पेज सहेज लिया गया है।",
-  "Kies een installatie": "इंस्टॉलेशन चुनें"
+  "Kies een installatie": "इंस्टॉलेशन चुनें",
+  "Tekst uitlijnen": "टेक्स्ट संरेखित करें",
+  "Uitvullen": "जस्टिफ़ाई",
+  "Voorbeeldtekst": "नमूना पाठ",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "ब्लॉक में टेक्स्ट कैसे चलता है। ऑटो ब्लॉक या कॉलम के संरेखण का पालन करता है।",
+  "Leeg is het lettertype en de grootte van het thema.": "खाली का अर्थ थीम का फ़ॉन्ट और आकार है।"
 }

@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "حفظ كصفحة قياسية",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "يحفظ الصفحة في تثبيت قياسي لتعود هناك لاحقًا.",
   "De pagina is opgeslagen.": "تم حفظ الصفحة.",
-  "Kies een installatie": "اختر تثبيتًا"
+  "Kies een installatie": "اختر تثبيتًا",
+  "Tekst uitlijnen": "محاذاة النص",
+  "Uitvullen": "ضبط",
+  "Voorbeeldtekst": "نص تجريبي",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "كيف يسير النص داخل الكتلة. تلقائي يتبع محاذاة الكتلة أو العمود.",
+  "Leeg is het lettertype en de grootte van het thema.": "الفارغ هو خط وحجم السمة."
 }

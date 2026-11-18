@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "Zapisz jako stronę standardową",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "Zachowuje stronę w instalacji standardowej, aby później tam wróciła.",
   "De pagina is opgeslagen.": "Strona została zapisana.",
-  "Kies een installatie": "Wybierz instalację"
+  "Kies een installatie": "Wybierz instalację",
+  "Tekst uitlijnen": "Wyrównaj tekst",
+  "Uitvullen": "Wyjustuj",
+  "Voorbeeldtekst": "Tekst przykładowy",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "Jak tekst biegnie w bloku. Auto podąża za wyrównaniem bloku lub kolumny.",
+  "Leeg is het lettertype en de grootte van het thema.": "Puste oznacza czcionkę i rozmiar motywu."
 }

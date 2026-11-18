@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "Standart sayfa olarak kaydet",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "Sayfayı standart bir kurulumda saklar, böylece daha sonra orada geri gelir.",
   "De pagina is opgeslagen.": "Sayfa kaydedildi.",
-  "Kies een installatie": "Bir kurulum seç"
+  "Kies een installatie": "Bir kurulum seç",
+  "Tekst uitlijnen": "Metni hizala",
+  "Uitvullen": "İki yana yasla",
+  "Voorbeeldtekst": "Örnek metin",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "Metnin blok içinde nasıl aktığı. Auto, bloğun veya sütunun hizasını izler.",
+  "Leeg is het lettertype en de grootte van het thema.": "Boş, temanın yazı tipi ve boyutudur."
 }

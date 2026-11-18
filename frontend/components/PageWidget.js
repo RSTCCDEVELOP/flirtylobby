@@ -15,7 +15,7 @@ import { anchorStyle } from "../lib/anchor";
 import { Logo } from "./BrandingContext";
 import DesignFrame from "./DesignFrame";
 import CodeEditor from "./CodeEditor";
-import PositionTab from "./PositionTab";
+import PositionTab, { FontTab, TextAlignTab } from "./PositionTab";
 import Tabs from "./Tabs";
 import KitHtml from "../lib/ui-kit/KitHtml";
 
@@ -99,8 +99,8 @@ export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, posi
     <div className={host ? "pb-hdock" : anchor ? "pb-anchorback" : "overlay"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) onClose(); }}>
       <div className={host ? "pb-hdock-in form" : "card modal form"} role="dialog" aria-label={tx(WIDGET_NAMES[widget] || "")} style={host ? undefined : { maxWidth: 560, ...anchorStyle(anchor, 560) }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}><h2 style={{ margin: 0 }}>{tx(WIDGET_NAMES[widget] || "")}</h2>{host && <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button>}</div>
-        {onPosition && <Tabs tabs={[["settings", "Instellingen"], ["pos", "Position"]]} value={wtab} onChange={setWtab} />}
-        {onPosition && wtab === "pos" ? <PositionTab value={position} onChange={onPosition} /> : (<>
+        {onPosition && <Tabs tabs={[["settings", widget === "quote" ? "Tekst" : "Instellingen"], ["pos", "Position"], ["align", "Uitlijnen"], ["font", "Lettertype"]]} value={wtab} onChange={setWtab} />}
+        {onPosition && wtab === "pos" ? <PositionTab withSize value={position} onChange={onPosition} /> : onPosition && wtab === "align" ? <TextAlignTab value={position} onChange={onPosition} /> : onPosition && wtab === "font" ? <FontTab value={position} onChange={onPosition} /> : (<>
         {widget === "contact" && ["address", "phone", "email"].map((k) => (
           <label key={k} className="check"><span className="switch"><input type="checkbox" checked={data[k] !== false} onChange={(e) => set({ [k]: e.target.checked })} /><span /></span><span>{tx({ address: "Adres tonen", phone: "Telefoon tonen", email: "E-mailadres tonen" }[k])}</span></label>
         ))}

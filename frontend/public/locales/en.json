@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "Save as standard page",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "Keeps the page in a standard installation, so it comes back there later.",
   "De pagina is opgeslagen.": "The page has been saved.",
-  "Kies een installatie": "Choose an installation"
+  "Kies een installatie": "Choose an installation",
+  "Tekst uitlijnen": "Align text",
+  "Uitvullen": "Justify",
+  "Voorbeeldtekst": "Sample text",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "How the text runs in the block. Auto follows the alignment of the block or the column.",
+  "Leeg is het lettertype en de grootte van het thema.": "Empty is the font and size of the theme."
 }

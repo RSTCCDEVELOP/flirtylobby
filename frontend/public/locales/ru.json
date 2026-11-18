@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "Сохранить как стандартную страницу",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "Сохраняет страницу в стандартной установке, чтобы она позже вернулась там.",
   "De pagina is opgeslagen.": "Страница сохранена.",
-  "Kies een installatie": "Выберите установку"
+  "Kies een installatie": "Выберите установку",
+  "Tekst uitlijnen": "Выравнивание текста",
+  "Uitvullen": "По ширине",
+  "Voorbeeldtekst": "Образец текста",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "Как текст идёт в блоке. Авто следует выравниванию блока или колонки.",
+  "Leeg is het lettertype en de grootte van het thema.": "Пусто — шрифт и размер темы."
 }

@@ -7406,5 +7406,10 @@
   "Opslaan als standaardpagina": "Als Standardseite speichern",
   "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.": "Speichert die Seite in einer Standardinstallation, damit sie dort später wieder erscheint.",
   "De pagina is opgeslagen.": "Die Seite wurde gespeichert.",
-  "Kies een installatie": "Installation wählen"
+  "Kies een installatie": "Installation wählen",
+  "Tekst uitlijnen": "Text ausrichten",
+  "Uitvullen": "Blocksatz",
+  "Voorbeeldtekst": "Beispieltext",
+  "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "Wie der Text im Block läuft. Auto folgt der Ausrichtung des Blocks oder der Spalte.",
+  "Leeg is het lettertype en de grootte van het thema.": "Leer ist die Schriftart und -größe des Themes."
 }
