@@ -34,7 +34,7 @@ export default function SaveDefaults() {
     setBusy("");
   };
   return (
-    <SuperTile icon={IconArchive} label={tx("Standaard instellingen")} title={tx("Standaard opslaan")}
+    <SuperTile helpKey="save-default" icon={IconArchive} label={tx("Standaard instellingen")} title={tx("Standaard opslaan")}
       text={info?.exists ? `${tx("Opgeslagen op")} ${new Date(info.captured_at).toLocaleString()}` : tx("Nog niets opgeslagen")}
       footer={
         <>

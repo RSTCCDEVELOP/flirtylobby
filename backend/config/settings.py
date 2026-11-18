@@ -85,6 +85,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.core.middleware.SiteTimezoneMiddleware",
     "apps.core.middleware.MaintenanceMiddleware",
+    "apps.core.middleware.LicencePhaseMiddleware",
     "apps.core.middleware.ClosedSiteMiddleware",
     "apps.integrations.middleware.AiActorMiddleware",
 ]

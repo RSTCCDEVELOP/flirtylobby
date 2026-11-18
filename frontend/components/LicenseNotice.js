@@ -13,6 +13,9 @@ import { tx } from "../lib/t";
 // The system works without a licence, but every page then says so at the bottom.
 export default function LicenseNotice({ site }) {
   const path = usePathname() || "/";
-  if (!site?.license_missing || path.startsWith("/onderhoud")) return null;
+  if (path.startsWith("/onderhoud")) return null;
+  const ph = site?.license_phase;
+  if (ph?.phase >= 1 && ph.phase <= 3) return <div className="license-note" role="note">{tx("Licentie niet actief: verlopen")} · {ph.days_over} {tx("dagen")}</div>;  // an ended licence: a small bar at the bottom (days over)
+  if (!site?.license_missing) return null;
   return <div className="license-note" role="note">{tx("Er is geen easy2edit licentie in gebruik op deze website.")}</div>;
 }

@@ -37,7 +37,7 @@ export default function MaintenanceGate({ site }) {
       if (!has) { document.cookie = "maint_ok=1; path=/; max-age=43200; SameSite=Lax"; if (!path.startsWith("/onderhoud")) window.location.reload(); }
     } else if (has) document.cookie = "maint_ok=; path=/; max-age=0; SameSite=Lax";
   }, [site?.maintenance, ready, admin, path]);
-  if (site?.license_expired && admin && !onLogin) return <div className="maintenance-bar">{tx("De licentie is verlopen: bezoekers zien de onderhoudspagina.")} <Link href="/dashboard/license">{tx("Licentie verlengen")}</Link></div>;
+  if (site?.license_phase?.phase === 4 && admin && !onLogin) return <div className="maintenance-bar">{tx("De licentie is verlopen: bezoekers zien de onderhoudspagina.")} <Link href="/dashboard/license">{tx("Licentie verlengen")}</Link></div>;
   if (site?.maintenance && admin && !onLogin) return <div className="maintenance-bar">{tx("Onderhoudsmodus staat aan: bezoekers zien de onderhoudspagina.")}</div>;
   if (!blocked) return null;
   return (

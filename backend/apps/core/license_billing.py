@@ -102,6 +102,9 @@ def start_subscription(user=None, l=None):
     l.payment_method, l.sub_status, l.sub_provider, l.sub_ref, l.sub_started_at, l.payment_ref = "auto", "active", provider, p.ref, timezone.now(), p.ref
     l.save(update_fields=["payment_method", "sub_status", "sub_provider", "sub_ref", "sub_started_at", "payment_ref"])
     system.license_changed()
+    from . import licence_notify
+
+    licence_notify.notify("sub_started", by=user)
     return p
 
 
@@ -113,9 +116,14 @@ def stop_subscription(l=None):
         license_stripe.cancel_subscription(l)
     except license_stripe.StripeError as e:
         raise BillingError(f"Stoppen bij Stripe mislukt: {e}")
+    was = l.sub_status
     l.sub_status = "cancelled" if l.sub_status == "active" else l.sub_status
     l.save(update_fields=["sub_status"])
     system.license_changed()
+    if was == "active":
+        from . import licence_notify
+
+        licence_notify.notify("sub_stopped")
 
 
 def mark_invoice_paid(l=None):

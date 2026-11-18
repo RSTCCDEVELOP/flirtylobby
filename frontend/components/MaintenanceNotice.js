@@ -26,7 +26,7 @@ export default function MaintenanceNotice({ site }) {
     return () => window.removeEventListener("langchange", on);
   }, []);
   const m = site?.maintenance_messages || {};
-  const expired = !!site?.license_expired;
+  const expired = site?.license_phase?.phase === 4;  // the licence has been over for so long that the website is offline
   const text = expired ? tx("De licentie van deze website is verlopen. Neem contact op met de beheerder.") + (site?.contact_email ? ` ${site.contact_email}` : "") : m[lang] || m[(lang || "").split("-")[0]] || (lang === "nl" ? site?.maintenance_message : "") || m.nl || site?.maintenance_message || tx("We zijn bezig met onderhoud. Probeer het straks opnieuw.");
   return (
     <>

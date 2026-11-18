@@ -13,7 +13,7 @@ import { tx } from "../lib/t";
 
 // One tile of Super admin: an icon at the top left, the lock (superadmin+) at the top right, always at the same height; the text; and the button at the bottom, on one line for every tile.
 // href: the whole top of the tile is a link and the button opens it. footer: own buttons instead (tiles that do something themselves).
-export default function SuperTile({ href, onClick, icon: Icon, label, title, text, lock = false, footer, children }) {
+export default function SuperTile({ href, onClick, icon: Icon, label, title, text, lock = false, footer, children, helpKey }) {
   const head = (
     <>
       <span className="st-top">
@@ -26,7 +26,7 @@ export default function SuperTile({ href, onClick, icon: Icon, label, title, tex
     </>
   );
   return (
-    <div className={`st-tile${lock ? " locked" : ""}`}>
+    <div className={`st-tile${lock ? " locked" : ""}`} data-help-key={helpKey || href || undefined}>
       {href ? <Link href={href} onClick={onClick} className="st-main">{head}</Link> : <div className="st-main">{head}</div>}
       {children}
       <div className="st-foot">

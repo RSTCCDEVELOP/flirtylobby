@@ -66,6 +66,36 @@ class MaintenanceMiddleware:
         return bool(res and can_admin(res[0]))
 
 
+class LicencePhaseMiddleware:
+    """A licence that has ended (system.license_phase, set in Default and global settings): phase 2 = nobody changes pages (the page editor is closed); phase 3 and 4 = administrators
+    only get what they need to update the licence (everything else gives 403). Visitors and members are not affected (phase 4: the website is offline, see MaintenanceMiddleware)."""
+
+    EDITOR = ("/api/pages/", "/api/content/")
+    ADMIN_OK = ("/api/auth/", "/api/site/", "/api/system/license/", "/api/system/info/", "/api/system/setup/", "/api/easy2edit/", "/api/notify/", "/api/dashboard/", "/api/modules/", "/api/languages/", "/api/branding/",
+                "/api/theme/", "/api/security/public/", "/api/security/check/", "/api/sandbox/status/", "/api/pages/state/", "/api/pages/menu/", "/api/pages/aliases/", "/api/pages/backgrounds/", "/api/ai/me/", "/api/plugins/menu/", "/api/invite/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path
+        if path.startswith("/api/") and request.method != "OPTIONS" and not path.startswith("/api/easy2edit/"):
+            try:
+                from . import system
+
+                phase = system.license_phase()["phase"]
+            except Exception:  # noqa: BLE001
+                phase = 0
+            if phase >= 2:
+                from django.http import JsonResponse
+
+                if phase == 2 and request.method not in ("GET", "HEAD") and path.startswith(self.EDITOR):
+                    return JsonResponse({"detail": "De licentie is niet actief: de pagina-editor is gesloten. Werk de licentie bij.", "license_phase": phase}, status=403)
+                if phase >= 3 and request.META.get("HTTP_AUTHORIZATION") and not path.startswith(self.ADMIN_OK) and MaintenanceMiddleware._admin(request):
+                    return JsonResponse({"detail": "De licentie is niet actief: er is alleen nog toegang om de licentie bij te werken.", "license_phase": phase}, status=403)
+        return self.get_response(request)
+
+
 class ClosedSiteMiddleware:
     """Closed website (an intranet, Beveiliging -> Algemeen): without logging in nothing is answered, only what the login screen itself needs
     (the login and password steps, the look of the site, the languages and the module list). Everything else gives 401."""

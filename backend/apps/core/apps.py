@@ -55,6 +55,14 @@ class CoreConfig(AppConfig):
 
         post_migrate.connect(system_links, dispatch_uid="core.system_links")
 
+        try:  # a licence that has ended: one reminder e-mail a day to the administrator (checked every hour by the background controller)
+            from . import background, licence_reminder
+
+            background.register("licence-reminder", licence_reminder.run, every=3600, first=180)
+            background.start()
+        except Exception:  # noqa: BLE001
+            pass
+
         from apps.sandbox import service as sandbox
 
         from . import views

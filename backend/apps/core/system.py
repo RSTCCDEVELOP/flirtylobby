@@ -373,9 +373,56 @@ def currency():
     return c if c in CURRENCIES else "EUR"
 
 
+_grace = {"t": 0, "v": None}
+
+
+def _grace_days():
+    import time
+
+    if _grace["v"] is None or time.time() - _grace["t"] > 15:
+        from . import global_settings
+
+        try:
+            g = global_settings.get()
+            _grace.update(t=time.time(), v=[max(0, int(g[k])) for k in global_settings.GRACE])
+        except Exception:  # noqa: BLE001 (before the first migration)
+            _grace.update(t=time.time(), v=[14, 14, 14, 30])
+    return _grace["v"]
+
+
+def license_phase():
+    """The phases of a licence that has ended (set in Default and global settings): 0 = the licence is fine; 1 = full control (a notice only); 2 = no page editor;
+    3 = no administration, only updating the licence; 4 = the website is offline. {phase, days_over, days_left, plan, valid_until}. The easy2edit server itself has no phases."""
+    from datetime import date, datetime
+
+    li = license_info()
+    out = {"phase": 0, "days_over": 0, "days_left": None, "plan": _grace_days(), "valid_until": li.get("valid_until")}
+    if not li["expired"]:
+        return out
+    try:
+        from . import sitemanager
+
+        if sitemanager.server_enabled():
+            return out
+    except Exception:  # noqa: BLE001
+        pass
+    over = (date.today() - datetime.strptime(li["valid_until"], "%Y-%m-%d").date()).days
+    plan, end = out["plan"], 0
+    out["days_over"] = max(1, over)
+    for i, days in enumerate(plan[:3], start=1):
+        end += days
+        if over <= end:
+            return {**out, "phase": i, "days_left": end - over}
+    return {**out, "phase": 4}
+
+
+def grace_changed():
+    _grace["v"] = None
+
+
 def maintenance_on():
-    """Maintenance mode of Basisgegevens, or a licence that has run out: the website then shows the maintenance page (administrators keep working to renew it)."""
-    return bool(get()["maintenance"] or license_info()["expired"])
+    """Maintenance mode of Basisgegevens, or a licence that has been over for so long that the website goes offline (phase 4; administrators keep working to renew it)."""
+    return bool(get()["maintenance"] or license_phase()["phase"] == 4)
 
 
 def public():
@@ -383,7 +430,7 @@ def public():
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"], "currency": currency(),
-            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_columns": s["footer_columns"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
+            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_phase": license_phase(), "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_columns": s["footer_columns"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0),
             "easy2edit": __import__("apps.core.global_settings", fromlist=["get"]).get()}  # base domain and addresses of the default easy2edit server

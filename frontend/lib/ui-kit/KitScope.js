@@ -12,13 +12,24 @@ import { kitTokens, useKit } from "./kitDoc";
 
 // The components of the set in use (e2e-*) straight in the page of a module, without a frame: the css of the set is limited to this block (the global rules of the set for html, body, a, p ... stay out)
 // and the tokens come from the theme of the website. `tag` is the easy2edit_tag of the component that the markup inside follows.
+// the selectors of a rule, split at the commas that are not inside brackets (:is(h1, h2) is ONE selector): a broken selector made the browser drop every rule after it, also the colours of the theme
+const splitSel = (text) => {
+  const out = []; let depth = 0, cur = "";
+  for (const ch of text) {
+    if (ch === "(" || ch === "[") depth++;
+    else if (ch === ")" || ch === "]") depth--;
+    if (ch === "," && depth === 0) { out.push(cur.trim()); cur = ""; } else cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+};
 function scopedCss(css, scope) {
   if (typeof CSSStyleSheet === "undefined") return "";
   let sheet;
   try { sheet = new CSSStyleSheet(); sheet.replaceSync(css); } catch { return ""; }
   const rules = (list) => [...list].map((r) => {
     if (r.type === 1) { // a style rule: only what belongs to the components themselves, the tokens move to the scope
-      const sel = r.selectorText.split(",").map((s) => s.trim());
+      const sel = splitSel(r.selectorText);
       if (sel.every((s) => s === ":root" || s === "[data-e2e-theme]")) return `${scope}{${r.style.cssText}}`;
       const keep = sel.filter((s) => /^\.e2e|^\[data-e2e/.test(s)).map((s) => (s.startsWith("[data-e2e") ? `${scope}${s}` : `${scope} ${s}`));  // an attribute rule is about the block itself (tab style)
       return keep.length ? `${keep.join(",")}{${r.style.cssText}}` : "";
@@ -47,7 +58,9 @@ export default function KitScope({ tag, className = "", bridge = false, stage = 
   const css = useMemo(() => { // the stage (a preview of a component) is a card of the theme on the background of the theme: the component takes the card colour of the theme
     if (!kit) return "";
     const stageCss = ".e2e-scope.e2e-stage{--e2e-bg:var(--card);--e2e-surface:var(--bg);background:var(--card);border:1px solid var(--line);border-radius:var(--radius, 12px);padding:1.1rem}";
-    return `${scopedCss(kit.KIT_CSS, ".e2e-scope")}\n${kitTokens().replace(/^:root\{/, ".e2e-scope{")}\n${stageCss}`;
+    // in a screen (the dashboard, a pop-up) the cards are the colour of a card of the theme and the areas the colour of the page area; the page colour of the site (--page) can be the colour of the brand
+    const areas = ".e2e-scope{--e2e-bg:var(--card, #ffffff);--e2e-surface:var(--bg, #f4f6fa)}";
+    return `${scopedCss(kit.KIT_CSS, ".e2e-scope")}\n${kitTokens().replace(/^:root\{/, ".e2e-scope{")}\n${areas}\n${stageCss}`;
   }, [kit, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const [ready, setReady] = useState(false);
   const [tabs, setTabs] = useState("pills");  // the look of the tabs follows the theme (Thema > Vormgeving > Uiterlijk van tabbladen)

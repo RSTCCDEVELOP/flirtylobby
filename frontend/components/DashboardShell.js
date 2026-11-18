@@ -10,7 +10,7 @@
 import { useImported, IMPORTED_HREF } from "../lib/imported";
 import { tx } from "../lib/t";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import AiLiveCost from "./AiLiveCost";
@@ -18,6 +18,7 @@ import FaqDrawer from "./FaqDrawer";
 import DefaultInstallPrompt from "./DefaultInstallPrompt";
 import SystemUpdatePrompt from "./SystemUpdatePrompt";
 import SetupWizard from "./SetupWizard";
+import ItemHelp from "./ItemHelp";
 import TermsGate from "./TermsGate";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
@@ -35,6 +36,7 @@ import AiCreditGate from "./AiCreditGate";
 import AiWelcome from "./AiWelcome";
 import ApiLinksInstall from "./ApiLinksInstall";
 import ManualHelp from "./ManualHelp";
+import { useLicencePhase, PHASE_NOW } from "../lib/licencePhase";
 import SandboxFirstAsk from "./SandboxFirstAsk";
 import WelcomeFirstAsk from "./WelcomeFirstAsk";
 import ManualFirstAsk from "./ManualFirstAsk";
@@ -205,6 +207,8 @@ export default function DashboardShell({ children }) {
   const mods = useModules();
   const { sidebar_auto: auto } = useUi();
   const pathname = usePathname();
+  const router = useRouter();
+  const lic = useLicencePhase();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const [summary, setSummary] = useState(null); // default: collapsed, until the user opens it once
@@ -317,8 +321,12 @@ export default function DashboardShell({ children }) {
     );
   });
 
+  // a licence that has ended for some time (phase 3 and 4): administrators only get the licence screen
+  const locked = lic.phase >= 3 && !!user && (user.is_staff || canAdmin(user, mods));
+  useEffect(() => { if (locked && !pathname.startsWith("/dashboard/license")) router.replace("/dashboard/license"); }, [locked, pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <div className={`shell ${collapsed ? "collapsed" : ""}`}>
+    <div className={`shell ${collapsed ? "collapsed" : ""}${locked ? " lic-locked" : ""}`}>
       <header className="topbar">
         <button className="icon-btn menu-toggle" onClick={() => setOpen(!open)} aria-label={tx("Menu")}>
           <IconMenu />
@@ -408,11 +416,13 @@ export default function DashboardShell({ children }) {
         {user?.is_staff && <DefaultInstallPrompt />}
         {user && <SystemUpdatePrompt />}
         {user && <SetupWizard />}
+        <ItemHelp />
         {user && !user.is_staff && <AiCreditGate />}
         {user && <ApiLinksInstall />}
         {user && <AiWelcome />}
         {user && <AiLiveCost />}
         {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} />{(user?.is_staff || canAdmin(user, mods)) && <ManualHelp />}</div>}
+        {locked && <div className="alert" role="alert"><strong>{tx("Licentie niet actief")}</strong> · {tx(PHASE_NOW[lic.phase])}</div>}
         {children}
       </main>
     </div>

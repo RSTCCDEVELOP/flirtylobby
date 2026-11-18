@@ -24,7 +24,7 @@ export function EditOverride({ value, children }) {
 }
 
 // Who is logged in on the public site + the "bewerkmodus" (edit mode) switch for people with content.edit
-export function SessionProvider({ children }) {
+export function SessionProvider({ children, editClosed = false }) {  // editClosed: the licence has ended for some time: the page editor is closed (phase 2)
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [editMode, setEditModeState] = useState(false);
@@ -51,7 +51,7 @@ export function SessionProvider({ children }) {
   }, []);
 
   const editModule = useModule("edit_mode");
-  const canEdit = editModule && !preview && lvl(user, "edit_mode") >= 2;
+  const canEdit = editModule && !preview && !editClosed && lvl(user, "edit_mode") >= 2;
   // Editing is made for a big screen: on a phone it is off, and switching it on asks first (the answer counts for this visit).
   const [small, setSmall] = useState(false);
   const [mobileOk, setMobileOk] = useState(false);

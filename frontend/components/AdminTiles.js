@@ -19,8 +19,16 @@ import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import Paged from "./Paged";
 import PlusLock from "./PlusLock";
+import SuperTile from "./SuperTile";
+import { IconArchive, IconBell, IconBolt, IconCard, IconChart, IconChat, IconEdit, IconFlask, IconFolder, IconGlobe, IconGlobe2, IconGrid, IconGroup, IconHeart, IconHelp, IconImage, IconInfo, IconKey, IconLeaf, IconLock, IconMail, IconPalette, IconPaperclip, IconReceipt, IconRocket, IconSearch, IconSettings, IconShield, IconStar, IconUsers } from "./Icons";
 import ViewBar from "./ViewBar";
 import { useView } from "../lib/useView";
+
+// The icon of every tile (by the last part of its address), like the tiles of Super admin
+const ICONS = { users: IconUsers, ai: IconStar, "ai-kosten": IconChart, groups: IconGroup, roles: IconShield, languages: IconGlobe2, communication: IconMail, integrations: IconKey, notifications: IconBell, faq: IconHelp, templates: IconArchive,
+  components: IconGrid, helptips: IconInfo, media: IconImage, community: IconChat, seo: IconSearch, security: IconLock, subscriptions: IconReceipt, actions: IconRocket, donations: IconHeart, system: IconSettings, storage: IconFolder,
+  license: IconCard, statistieken: IconChart, energy: IconLeaf, backups: IconArchive, installaties: IconRocket, sandbox: IconFlask, pages: IconGlobe, sysobjects: IconPaperclip, siteimport: IconEdit, theme: IconPalette };
+const iconOf = (href) => ICONS[href.split("/").pop()] || IconBolt;
 
 // Only modules that are switched on are shown (switch them on/off at Super admin -> Modules).
 // `all`: every active tile (super admin). Otherwise only the modules this user has access to.
@@ -60,17 +68,21 @@ export default function AdminTiles({ all = false }) {
     <Paged id={all ? "admin-tiles-all" : "admin-tiles"} query={view.q}>
     <div className={`cards${view.cls}`} style={{ marginTop: 0 }}>
       {shown.map((t) => (
-        <div key={t.href} className={`card stat link-card tile-wrap ${all && !t.on ? "tile-off" : ""}`}>
-          <Link href={t.href} className="tile-link" onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}>
-            <span>{t.title}{all && t.modules.some((m) => state?.[m]?.owner_only) && <PlusLock />}</span>
-            <strong style={{ fontSize: "1.25rem" }}>{t.big}</strong>
-            <small>{t.small}</small>
-          </Link>
-          {all ? (
-            <label className="switch tile-switch" title={t.locked ? tx("Kernonderdeel: altijd aan") : t.on ? tx("Uitzetten") : tx("Aanzetten")}>
-              <input type="checkbox" checked={t.on} disabled={(t.locked || busy === t.href || !state) && !isLocked(t)} onChange={() => flip(t)} /><span />
-            </label>
-          ) : <span className="tile-level">{LEVEL_LABEL[t.level]}</span>}
+        <div key={t.href} className={all && !t.on ? "tile-off" : ""} style={{ display: "flex" }}>
+          <div style={{ flex: 1, display: "flex", minWidth: 0 }} className="st-wrap">
+            <SuperTile href={t.href} icon={iconOf(t.href)} label={tx(t.title)} title={tx(t.big)} text={tx(t.small)} lock={all && t.modules.some((m) => state?.[m]?.owner_only)}
+              onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}
+              footer={(
+                <>
+                  <Link href={t.href} className="btn sm primary" onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}>{tx("Open")}</Link>
+                  {all ? (
+                    <label className="switch tile-switch" style={{ position: "static", marginLeft: "auto" }} title={t.locked ? tx("Kernonderdeel: altijd aan") : t.on ? tx("Uitzetten") : tx("Aanzetten")}>
+                      <input type="checkbox" checked={t.on} disabled={(t.locked || busy === t.href || !state) && !isLocked(t)} onChange={() => flip(t)} /><span />
+                    </label>
+                  ) : <span style={{ marginLeft: "auto", padding: ".15rem .6rem", border: "1px solid var(--line)", borderRadius: 999, fontSize: ".72rem", fontWeight: 600, color: "var(--muted)", whiteSpace: "nowrap" }}>{tx(LEVEL_LABEL[t.level])}</span>}
+                </>
+              )} />
+          </div>
         </div>
       ))}
       {!tiles.length && <p className="muted">{tx("Je hebt nog geen toegang tot beheeronderdelen.")}</p>}

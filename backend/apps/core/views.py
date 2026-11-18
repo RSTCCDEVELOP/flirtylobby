@@ -674,7 +674,7 @@ def _reserved_number():
     return n
 
 
-def _make_license(until=None, months=None, hosting=None):
+def _make_license(until=None, months=None, hosting=None, user=None):
     """After the basic data are complete and there is no licence yet: it is made by itself (number, client, address, main address) and runs for the date the user chose (default one year)."""
     import secrets
     from datetime import date, timedelta
@@ -703,6 +703,9 @@ def _make_license(until=None, months=None, hosting=None):
     lic.main_url = lic.main_url or s.get("frontend_url", "")
     lic.save()
     system.license_changed()
+    from . import licence_notify
+
+    licence_notify.notify("created", by=user)
 
 
 @api_view(["GET", "PUT"])
@@ -763,7 +766,7 @@ def system_setup(request):
 
             until = _date.today() + _td(days=_sp.TRIAL_DAYS)
         system.save(cleaned)
-        _make_license(until, months, request.data.get("hosting"))
+        _make_license(until, months, request.data.get("hosting"), request.user)
         __import__("apps.core.setup_consent", fromlist=["x"]).clear(request.user)
         __import__("apps.core.setup_pay", fromlist=["x"]).clear(request.user)
     cur = system.split_contact(system.get())
@@ -1682,6 +1685,9 @@ def system_license(request):
     from . import system
 
     lic, _ = License.objects.get_or_create(pk=1)
+    from . import licence_notify
+
+    before = licence_notify.snapshot(lic)
     if request.method == "PUT":
         from datetime import date
 
@@ -1750,6 +1756,7 @@ def system_license(request):
     elif request.method == "DELETE":  # empty the licence (the reseller data stays: it says where a new one is bought)
         from .reset import clear_license
 
+        licence_notify.notify("removed", by=request.user)  # (told before it is emptied: the mail names the licence)
         clear_license()
         lic.refresh_from_db()
     elif request.method == "POST":
@@ -1757,7 +1764,13 @@ def system_license(request):
         lic.number = "-".join("".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(4))
         lic.issued_at = timezone.now()
         lic.save(update_fields=["number", "issued_at"])
+        licence_notify.notify("number", [f"Nieuw nummer: {lic.number}"], by=request.user)
     system.license_changed()
+    if request.method == "PUT":
+        lic.refresh_from_db()
+        changed = licence_notify.diff(before, licence_notify.snapshot(lic))
+        if changed:
+            licence_notify.notify("changed", changed, by=request.user)
     return Response(_license_out())
 
 
@@ -1862,6 +1875,9 @@ def extend_license(lic):
     lic.payment_ref = ""
     lic.save(update_fields=["valid_until", "payment_ref"])
     system.license_changed()
+    from . import licence_notify
+
+    licence_notify.notify("renewed", [f"Verlengd tot {lic.valid_until.strftime('%d-%m-%Y')}"])
 
 
 def on_license_payment(payment):

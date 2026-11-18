@@ -19,10 +19,22 @@ DEFAULTS = {
     "base_domain": "easy2edit.com",  # the websites of easy2edit are <name>.<base domain>
     "api_url": "https://api.easy2edit.com",  # the API of the default easy2edit server
     "site_url": "https://easy2edit.com",  # the website of easy2edit (information, credit link)
+    "grace_1": "14",  # a licence that is not active (ended): days of phase 1 (full control, a notice only), then phase 2 (no page editor), phase 3 (no administration, only updating the licence), phase 4 (website offline)
+    "grace_2": "14",
+    "grace_3": "14",
+    "grace_4": "30",
+    "grace_reminder": "1",
+    "notify_rstcc": "",  # who gets an e-mail when a licence changes (one or more addresses, separated by a comma): RST CC, the reseller, invoicing and support
+    "notify_reseller": "",  # empty: the reseller e-mail of the licence itself
+    "notify_invoicing": "",
+    "notify_support": "",  # a daily e-mail to the administrator while the licence has ended
     "source_mode": "local",  # where the library (the folder resource/: plugins, themes, languages, components) comes from: "local" = the folder of this installation, "easy2edit" = the easy2edit server (api address above)
 }
 SOURCE_MODES = ("local", "easy2edit")
-LABELS = {"base_domain": "Basisdomein", "api_url": "API van easy2edit", "site_url": "Website van easy2edit", "source_mode": "Bron"}
+GRACE = ("grace_1", "grace_2", "grace_3", "grace_4")
+NOTIFY = ("notify_rstcc", "notify_reseller", "notify_invoicing", "notify_support")
+EMAIL_RE = re.compile(r"^[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+$")
+LABELS = {"notify_rstcc": "RST CC", "notify_reseller": "Reseller", "notify_invoicing": "Invoicing", "notify_support": "Support", "grace_1": "Fase 1 (dagen)", "grace_2": "Fase 2 (dagen)", "grace_3": "Fase 3 (dagen)", "grace_4": "Fase 4 (dagen)", "grace_reminder": "Dagelijkse herinnering", "base_domain": "Basisdomein", "api_url": "API van easy2edit", "site_url": "Website van easy2edit", "source_mode": "Bron"}
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
 URL_RE = re.compile(r"^https://[a-z0-9]([a-z0-9.-]*[a-z0-9])?(:\d{2,5})?$")
 
@@ -39,7 +51,25 @@ def clean(incoming):
         if k not in incoming:
             continue
         v = str(incoming[k] or "").strip().lower()
-        if k == "source_mode":
+        if k in GRACE:
+            try:
+                n = int(float(v or 0))
+            except ValueError:
+                n = -1
+            if not 0 <= n <= 365:
+                errors[k] = "Geef een aantal dagen tussen 0 en 365."
+            v = str(max(0, min(365, n)))
+        elif k in NOTIFY:
+            items = [x.strip().lower() for x in re.split(r"[,;\s]+", str(incoming[k] or "")) if x.strip()]
+            bad = [x for x in items if not EMAIL_RE.match(x)]
+            if bad:
+                errors[k] = f"{LABELS[k]}: {bad[0]} is geen geldig e-mailadres."
+            if len(items) > 5:
+                errors[k] = f"{LABELS[k]}: maximaal 5 e-mailadressen."
+            v = ", ".join(dict.fromkeys(items))
+        elif k == "grace_reminder":
+            v = "1" if str(incoming[k]).strip().lower() in ("1", "true", "on", "yes") else "0"
+        elif k == "source_mode":
             if v not in SOURCE_MODES:
                 errors[k] = "Kies lokaal of de easy2edit-server als bron."
         elif k == "base_domain":
@@ -63,4 +93,10 @@ def save(values):
     data[KEY] = {k: v for k, v in {**(data.get(KEY) or {}), **values}.items() if k in DEFAULTS and v}
     obj.data = data
     obj.save()
+    try:
+        from . import system
+
+        system.grace_changed()
+    except Exception:  # noqa: BLE001
+        pass
     return get()

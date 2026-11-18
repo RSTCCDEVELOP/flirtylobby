@@ -160,7 +160,7 @@ export default async function RootLayout({ children }) {
         <SiteCurrency currency={site?.currency} />
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>
-        <SessionProvider>
+        <SessionProvider editClosed={(site?.license_phase?.phase || 0) >= 2}>
         <RefreshConfig seconds={site?.refresh_seconds} signals={site?.signal_seconds} />
         <PrefsSync />
         <SearchMemory />

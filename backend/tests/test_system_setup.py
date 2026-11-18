@@ -195,3 +195,90 @@ def test_overview_pdf():
     for lang in ("nl", "en", "xx"):  # a language without texts falls back to English
         r = c.post("/api/system/setup/pdf/", {**FULL, "hosting": "shared", "renew_months": 12, "license_until": "2027-11-17", "lang": lang, "pay": "stripe"}, format="json")
         assert r.status_code == 200 and r["Content-Type"] == "application/pdf" and r.content[:5] == b"%PDF-"
+
+
+@pytest.mark.django_db
+def test_licence_phases(monkeypatch):
+    from datetime import date, timedelta
+
+    from apps.core import global_settings, licence_reminder, system
+    from apps.core.models import License
+
+    system.license_changed()
+    system.grace_changed()
+    global_settings.save({"grace_1": "5", "grace_2": "5", "grace_3": "5", "grace_4": "30"})
+    lic, _ = License.objects.get_or_create(pk=1)
+    lic.number = "AAAA-BBBB-CCCC-DDDD"
+
+    def at(days_over):
+        lic.valid_until = date.today() - timedelta(days=days_over)
+        lic.save()
+        system.license_changed()
+        return system.license_phase()
+
+    assert at(-3)["phase"] == 0  # still valid
+    p = at(1)
+    assert p["phase"] == 1 and p["days_left"] == 4 and not system.maintenance_on()
+    assert at(5)["phase"] == 1 and at(6)["phase"] == 2 and at(11)["phase"] == 3
+    assert at(16)["phase"] == 4 and system.maintenance_on()
+    # the rules: phase 2 closes the page editor, phase 3 closes the administration (except the licence)
+    from rest_framework.authtoken.models import Token
+
+    c = APIClient()
+    u = get_user_model().objects.create_user("lp1", "lp1@x.nl", "pw12345678!", is_staff=True)
+    c.credentials(HTTP_AUTHORIZATION="Token " + Token.objects.get_or_create(user=u)[0].key)  # a real token: the middleware looks at the header
+    at(1)
+    assert c.get("/api/system/").status_code == 200  # phase 1: full control
+    at(7)
+    assert c.post("/api/pages/", {}, format="json").status_code == 403 and c.post("/api/pages/", {}, format="json").json()["license_phase"] == 2
+    assert c.get("/api/system/").status_code == 200  # phase 2: only the page editor is closed
+    at(12)
+    r = c.get("/api/system/")
+    assert r.status_code == 403 and r.json()["license_phase"] == 3  # phase 3: no administration
+    assert c.get("/api/system/license/usage/").status_code == 200 and c.get("/api/system/setup/").status_code == 200  # ... only the licence
+    at(2)
+    assert system.public()["license_phase"]["phase"] == 1
+    # the daily reminder: once a day
+    sent = []
+    from apps.communication import sending
+
+    monkeypatch.setattr(sending, "send_email", lambda to, subject, body, **k: sent.append((to, subject, body)))
+    s = system.get()
+    from apps.core.models import SystemSettings
+
+    SystemSettings.objects.update_or_create(pk=1, defaults={"data": {**(SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}), "admin_email": "boss@x.nl"}})
+    system.save({"admin_email": "boss@x.nl"})
+    assert licence_reminder.run() is True and len(sent) == 1 and sent[0][0] == "boss@x.nl" and "verlopen" in sent[0][1].lower()
+    assert licence_reminder.run() is False and len(sent) == 1  # not twice on one day
+    system.grace_changed()
+
+
+@pytest.mark.django_db
+def test_licence_change_mails(monkeypatch):
+    from apps.communication import sending
+    from apps.core import global_settings, licence_notify
+    from apps.core.models import License
+
+    sent = []
+    monkeypatch.setattr(sending, "send_email", lambda to, subject, body, **k: sent.append((to, subject, body)))
+    vals, errors = global_settings.clean({"notify_rstcc": "a@rstcc.net, b@rstcc.net", "notify_invoicing": "fin@rstcc.net;a@rstcc.net"})
+    assert not errors and vals["notify_invoicing"] == "fin@rstcc.net, a@rstcc.net"
+    assert global_settings.clean({"notify_support": "geen-adres"})[1] and global_settings.clean({"notify_support": "a@b.nl,b@b.nl,c@b.nl,d@b.nl,e@b.nl,f@b.nl"})[1]
+    global_settings.save(vals)
+    lic, _ = License.objects.get_or_create(pk=1)
+    lic.reseller_email = "res@partner.nl"
+    lic.number = "AAAA-BBBB-CCCC-DDDD"
+    lic.save()
+    assert licence_notify.recipients() == {"RST CC": ["a@rstcc.net", "b@rstcc.net"], "Reseller": ["res@partner.nl"], "Invoicing": ["fin@rstcc.net", "a@rstcc.net"]}  # reseller: the licence's own address
+    # a change through the licence screen: everybody once, with what changed
+    u = get_user_model().objects.create_user("lm", "lm@x.nl", "pw12345678!", is_staff=True)
+    u.is_superadmin_plus = True
+    u.save()
+    c = APIClient()
+    c.force_authenticate(u)
+    assert c.put("/api/system/license/", {"client": "Nieuwe klant"}, format="json").status_code == 200
+    assert sorted(x[0] for x in sent) == ["a@rstcc.net", "b@rstcc.net", "fin@rstcc.net", "res@partner.nl"]
+    assert "Licentie gewijzigd" in sent[0][1] and "Opdrachtgever" in sent[0][2] and "Nieuwe klant" in sent[0][2] and "lm@x.nl" in sent[0][2]
+    n = len(sent)
+    c.put("/api/system/license/", {"client": "Nieuwe klant"}, format="json")  # nothing changed: no mail
+    assert len(sent) == n
