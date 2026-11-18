@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
 import PageSettingsPanel from "./PageSettingsPanel";
+import { useSession } from "./Session";
 
 const I = (d) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
 const ICON = {
@@ -41,6 +42,7 @@ function startDrag(e) {
   window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
 }
 export default function EditorShell({ open, setOpen, view, setView, title, saving, onExit, setTarget, setPageTarget, elements, structure, hasSettings, actions }) {
+  const { user } = useSession();
   useEffect(() => { try { const w = parseInt(localStorage.getItem("pb-sb-w") || "", 10); if (w) setWidth(w); } catch {} }, []);
   if (typeof document === "undefined") return null;
   const views = [["elements", "Elementen", ICON.plus], ["structure", "Structuur", ICON.layers], ["page", "Pagina", ICON.sliders], ["settings", "Instellingen", ICON.gear]];
@@ -70,7 +72,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
           <div className="pb-sb-head">
             <strong>{tx(views.find(([k]) => k === view)?.[1] || "Elementen")}</strong>
             <span style={{ flex: 1 }} />
-            {view !== "elements" && <button type="button" className="pb-sb-link" onClick={() => setView("elements")}>{tx("+ Elementen")}</button>}
+            {view !== "elements" && <button type="button" className="pb-sb-add" onClick={() => setView("elements")} title={tx("Een element toevoegen aan de pagina")}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>{tx("Elementen toevoegen")}</button>}
             <button type="button" className="pb-sb-x" onClick={() => setOpen(false)} aria-label={tx("Sluiten")}>×</button>
           </div>
           <div className="pb-sb-body">
@@ -82,6 +84,13 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
               {actions}
               <div ref={setTarget} className="pb-sb-settings" />
             </div>
+          </div>
+          <div className="pb-sb-save">
+            <button type="button" className="pb-sb-savebtn" onClick={() => window.dispatchEvent(new Event(user?.is_staff ? "pb-save-ask" : "pb-flush"))} disabled={saving === "saving"}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v13a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /><path d="M7 3v6h8V3M7 21v-7h10v7" /></svg>
+              {saving === "saving" ? tx("Opslaan…") : tx("Opslaan")}
+            </button>
+            <small className="pb-sb-savestate">{saving === "saving" ? "" : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</small>
           </div>
           <div className="pb-sb-foot" id="pb-device-host" />
         </aside>

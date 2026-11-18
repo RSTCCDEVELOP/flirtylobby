@@ -178,6 +178,8 @@ def _item_style(st):
         out["font"] = st["font"]
     if st.get("align") in ("left", "center", "right"):
         out["align"] = st["align"]
+    if st.get("valign") in ("top", "middle", "bottom"):  # the position of any part in its cell, up and down (the Position tab)
+        out["valign"] = st["valign"]
     if str(st.get("weight") or "") in ("400", "500", "600", "700", "800"):
         out["weight"] = str(st["weight"])  # a heading: how bold
     for key in ("mb", "mt"):  # space below / above an item (rem): a heading, and every other item of an imported design

@@ -246,11 +246,11 @@ export function EditBanner() {
 
 // Edit mode: wrap any image so a content editor can swap it from the media library.
 // target: "block:<key>" | "asset:<slot>" | "photo:<id>"
-export function ImageEdit({ target, children, className = "", placement, onPlace, removable = false, extra = null }) {
+export function ImageEdit({ target, children, className = "", placement, onPlace, removable = false, extra = null, video = false }) {
   const { editing } = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { blocks: blocks0v } = useContext(ContentContext);
+  const { blocks: blocks0v, setBlock: setContentBlock } = useContext(ContentContext);
   const blocks0 = useRef(blocks0v);
   blocks0.current = blocks0v;
   const mediaOn = useModule("media");
@@ -264,7 +264,8 @@ export function ImageEdit({ target, children, className = "", placement, onPlace
     try {
       await api("/media/replace/", { method: "POST", body: { target, media_id: item?.id ?? null } });
       setOpen(false);
-      router.refresh();
+      if (bid && (!item || item.url)) setContentBlock(bid, "*", item ? item.url : "");  // a block of a page: it shows at once
+      else router.refresh();  // a logo or a photo of the home page comes from the server
     } catch (e) { (await alertDialog(errorText(e))); }
   }
   async function remove() {
@@ -278,7 +279,7 @@ export function ImageEdit({ target, children, className = "", placement, onPlace
       <button type="button" className="img-edit-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }} title={tx("Afbeelding wijzigen")}><IconEdit width={14} height={14} /> {tx("Wijzig")}</button>
       {extra}
       {removable && <button type="button" className="img-edit-btn img-del-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); remove(); }} title={tx("Afbeelding verwijderen")} aria-label={tx("Afbeelding verwijderen")}><IconTrash width={22} height={22} /></button>}
-      {open && <MediaPicker onPick={pick} onClose={() => setOpen(false)} />}
+      {open && <MediaPicker kind={video && target.startsWith("block:") ? "all" : "image"} onPick={pick} onClose={() => setOpen(false)} />}
     </span>
   );
 }
@@ -300,7 +301,7 @@ export const imgStyleCss = (st) => ({
   inner: { ...(st.w ? { width: st.w, maxWidth: "100%" } : {}), ...(st.opacity !== undefined ? { opacity: st.opacity / 100 } : {}), ...(st.radius !== undefined && st.radius !== "" ? { borderRadius: `${st.radius}px`, overflow: "hidden" } : {}), ...(st.shadow ? { boxShadow: shadowCss(st.shadow) } : {}), ...(st.zoom > 100 ? { overflow: "hidden" } : {}) },
 });
 
-function ImageStylePanel({ st, onChange }) {
+function ImageStylePanel({ st, onChange, position = null }) {
   const unit = (st.w || "").endsWith("%") ? "%" : "px";
   const [tab, setTab] = useState("look");
   const [pick, setPick] = useState(false);
@@ -309,7 +310,8 @@ function ImageStylePanel({ st, onChange }) {
   return (
     <div className="pb-stylebox img-style-panel" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
       <strong>{tx("Afbeeldingsinstellingen")}</strong>
-      <div className="pb-tabs" role="tablist">{[["look", "Weergave"], ["layout", "Layout"], ["effect", "Effect"], ["hover", "Mouse-over"]].map(([k, l]) => <button type="button" role="tab" aria-selected={tab === k} key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{tx(l)}</button>)}</div>
+      <div className="pb-tabs" role="tablist">{[["look", "Weergave"], ["layout", "Layout"], ["effect", "Effect"], ["hover", "Mouse-over"], ...(position ? [["pos", "Position"]] : [])].map(([k, l]) => <button type="button" role="tab" aria-selected={tab === k} key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{tx(l)}</button>)}</div>
+      {tab === "pos" && position}
       {tab === "hover" && <>
         <div className="pb-stylerow"><span>{tx("Effect")}</span>
           <span className="pb-seg">{[["", "Geen"], ["opacity", "Doorzichtigheid"], ["swap", "Andere afbeelding of video"]].map(([k, l]) => <button type="button" key={k} className={(hv.mode || "") === k ? "on" : ""} onClick={() => setHv(k ? { mode: k } : null)}>{tx(l)}</button>)}</span></div>
@@ -326,7 +328,8 @@ function ImageStylePanel({ st, onChange }) {
         <span className="pb-seg">{[["left", "⇤", "Links"], ["center", "↔", "Midden"], ["right", "⇥", "Rechts"]].map(([k, g, l]) => <button type="button" key={k} className={st.align === k ? "on" : ""} onClick={() => onChange({ align: st.align === k ? "" : k })}>{g} {tx(l)}</button>)}</span></div>
       <div className="pb-stylerow"><span>{tx("Grootte")}</span>
         <input type="number" min={1} max={4000} value={parseInt(st.w) || ""} placeholder={tx("Auto")} onChange={(e) => onChange({ w: e.target.value === "" ? "" : `${e.target.value}${unit}` })} style={{ width: "6rem" }} />
-        <select value={unit} onChange={(e) => st.w && onChange({ w: `${parseInt(st.w)}${e.target.value}` })}><option value="px">px</option><option value="%">%</option></select>
+        <select value={unit} onChange={(e) => st.w && onChange({ w: `${parseInt(st.w)}${e.target.value}` })}><option value="px">px</option><option value="%">%</option></select></div>
+      <div className="pb-stylerow pb-quick"><span />
         {[["25%", "Klein"], ["50%", "Middel"], ["75%", "Groot"], ["100%", "Volledig"]].map(([v, l]) => <button type="button" className={`btn sm${st.w === v ? " primary" : ""}`} key={v} onClick={() => onChange({ w: v })}>{tx(l)}</button>)}</div>
       <div className="pb-stylerow"><span>{tx("Doorzichtigheid")}</span>
         <input type="range" min={0} max={100} step={5} value={st.opacity ?? 100} onChange={(e) => onChange({ opacity: Number(e.target.value) })} style={{ width: 160 }} /><small className="muted">{st.opacity ?? 100}% {tx("zichtbaar")}</small></div>
@@ -374,8 +377,29 @@ function ImageStylePanel({ st, onChange }) {
   );
 }
 
+// The picture or video that sits in a block, as a thumbnail in the panel at the left (a video shows its first frame with a play mark). A click opens the library.
+export function MediaThumb({ id, onPick }) {
+  const { blocks } = useContext(ContentContext);
+  const url = blocks[id]?.["*"];
+  const video = !!url && VIDEO_RE.test(String(url).split("?")[0]);
+  let name = "";
+  try { name = url ? decodeURIComponent(String(url).split("?")[0].split("/").pop()) : ""; } catch { name = ""; }
+  return (
+    <button type="button" className={`pb-thumb${url ? "" : " empty"}`} onClick={onPick} title={tx("Media kiezen")}>
+      <span className="pb-thumb-box">
+        {!url
+          ? <svg viewBox="0 0 64 48" width="48" height="36" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="4" width="56" height="40" rx="5" /><circle cx="21" cy="18" r="5" /><path d="M4 36l15-13 11 10 9-8 21 17" /></svg>
+          : video
+            ? <><video src={`${mediaUrl(url)}#t=0.1`} muted playsInline preload="metadata" /><span className="pb-thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z" /></svg></span></>
+            : /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt="" />}
+      </span>
+      <small>{url ? `${name}${video ? ` · ${tx("Video")}` : ""}` : tx("Nog geen media")}</small>
+    </button>
+  );
+}
+
 // The same settings as the gear of the picture, but in the editor panel at the left: it reads and writes the style that is stored with the picture (<id>.st).
-export function ImageStyleSide({ id }) {
+export function ImageStyleSide({ id, position = null }) {
   const { blocks, setBlock, defaultLang } = useContext(ContentContext);
   const st = parseSt(blocks[`${id}.st`]?.[defaultLang]);
   const change = async (patch) => {
@@ -387,10 +411,11 @@ export function ImageStyleSide({ id }) {
     setBlock(key, defaultLang, v);
     try { await api("/content/save/", { method: "PUT", body: { key, lang: defaultLang, text: v } }); } catch (e) { (await alertDialog(errorText(e))); }
   };
-  return <ImageStylePanel st={st} onChange={change} />;
+  return <ImageStylePanel st={st} onChange={change} position={position} />;
 }
 
 // hover (mouse-over): lower opacity, or show another image / video over the picture
+const VIDEO_RE = /\.(mp4|webm|mov|m4v|ogv|ogg)$/i;
 const hoverWrap = (hv, img) => {
   if (!hv?.mode) return img;
   if (hv.mode === "opacity") return <span className="ei-hov h-opacity" style={{ "--hov-o": (hv.opacity ?? 60) / 100 }}>{img}</span>;
@@ -401,7 +426,7 @@ const hoverWrap = (hv, img) => {
 };
 
 // <EditableImage id="home.hero" fallback={<Logo />} />: image stored as a content block
-export function EditableImage({ id, fallback = null, alt = "", className = "", removable = true }) {
+export function EditableImage({ id, fallback = null, alt = "", className = "", removable = true, video = false }) {
   const [gone, setGone] = useGone(id);
   const { blocks, setBlock, defaultLang } = useContext(ContentContext);
   const { editing } = useSession();
@@ -430,11 +455,12 @@ export function EditableImage({ id, fallback = null, alt = "", className = "", r
   return (
     <div ref={anchorRef} className={`ei-wrap${st.align ? ` al al-${st.align}` : ""}${st.w ? " sized" : ""}`}>
       <div className={`ei-inner${st.w ? " sized" : ""}`} style={hasSt ? css.inner : undefined}>
-        <ImageEdit target={`block:${id}`} placement={placement} onPlace={url ? place : undefined} removable={!!url}
+        <ImageEdit target={`block:${id}`} video={video} placement={placement} onPlace={url ? place : undefined} removable={!!url}
           extra={editing && <>{grip}{removable && <Trash onClick={() => setGone("1", tx("Onderdeel verwijderd"))} />}<button type="button" ref={gearRef} className={`img-edit-btn img-set-btn${panel ? " on" : ""}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPanel(!panel); }} title={tx("Afbeeldingsinstellingen")} aria-label={tx("Afbeeldingsinstellingen")} aria-expanded={panel}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
           </button></>}>
-          {url ? hoverWrap(st.hover, /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} style={{ ...(placement && !st.w ? placeStyle(placement) : {}), ...(hasSt ? { width: "100%", height: "auto", opacity: st.opacity !== undefined ? st.opacity / 100 : undefined, borderRadius: st.radius !== undefined ? `${st.radius}px` : undefined, ...(st.zoom > 100 ? { transform: `scale(${Math.min(400, st.zoom) / 100})`, transformOrigin: `${st.fx ?? 50}% ${st.fy ?? 50}%` } : {}) } : {}) }} />) : fallback}
+          {url && VIDEO_RE.test(String(url).split("?")[0]) ? <video src={mediaUrl(url)} className={className} controls playsInline preload="metadata" style={{ width: "100%", height: "auto", display: "block", borderRadius: st.radius !== undefined ? `${st.radius}px` : "var(--radius, 12px)", opacity: st.opacity !== undefined ? st.opacity / 100 : undefined }} />  /* a video: the player */
+          : url ? hoverWrap(st.hover, /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(url)} alt={alt} className={className} style={{ ...(placement && !st.w ? placeStyle(placement) : {}), ...(hasSt ? { width: "100%", height: "auto", opacity: st.opacity !== undefined ? st.opacity / 100 : undefined, borderRadius: st.radius !== undefined ? `${st.radius}px` : undefined, ...(st.zoom > 100 ? { transform: `scale(${Math.min(400, st.zoom) / 100})`, transformOrigin: `${st.fx ?? 50}% ${st.fy ?? 50}%` } : {}) } : {}) }} />) : fallback}
         </ImageEdit>
         {editing && panel && <FloatPanel anchor={gearRef}><ImageStylePanel st={st} onChange={change} /></FloatPanel>}
       </div>

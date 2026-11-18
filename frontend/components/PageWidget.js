@@ -15,6 +15,8 @@ import { anchorStyle } from "../lib/anchor";
 import { Logo } from "./BrandingContext";
 import DesignFrame from "./DesignFrame";
 import CodeEditor from "./CodeEditor";
+import PositionTab from "./PositionTab";
+import Tabs from "./Tabs";
 import KitHtml from "../lib/ui-kit/KitHtml";
 
 // Ready-made parts for a page: contact data, social media, map, video, quote, figures, logo and opening hours.
@@ -84,7 +86,8 @@ export function PbWidget({ it, editing }) {
 }
 
 // The settings of a ready-made part (edit mode). data = what the item holds; onChange(data) after every change.
-export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor }) {
+export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, position = null, onPosition = null }) {
+  const [wtab, setWtab] = useState("settings");
   if (widget === "code") return <CodeEditor data={data} onChange={onChange} onClose={onClose} />;
   const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // in the panel of the editor, not a window
   const set = (patch) => onChange({ ...data, ...patch });
@@ -96,6 +99,8 @@ export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor }) {
     <div className={host ? "pb-hdock" : anchor ? "pb-anchorback" : "overlay"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) onClose(); }}>
       <div className={host ? "pb-hdock-in form" : "card modal form"} role="dialog" aria-label={tx(WIDGET_NAMES[widget] || "")} style={host ? undefined : { maxWidth: 560, ...anchorStyle(anchor, 560) }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}><h2 style={{ margin: 0 }}>{tx(WIDGET_NAMES[widget] || "")}</h2>{host && <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button>}</div>
+        {onPosition && <Tabs tabs={[["settings", "Instellingen"], ["pos", "Position"]]} value={wtab} onChange={setWtab} />}
+        {onPosition && wtab === "pos" ? <PositionTab value={position} onChange={onPosition} /> : (<>
         {widget === "contact" && ["address", "phone", "email"].map((k) => (
           <label key={k} className="check"><span className="switch"><input type="checkbox" checked={data[k] !== false} onChange={(e) => set({ [k]: e.target.checked })} /><span /></span><span>{tx({ address: "Adres tonen", phone: "Telefoon tonen", email: "E-mailadres tonen" }[k])}</span></label>
         ))}
@@ -124,6 +129,7 @@ export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor }) {
             </div>
           ))}
           {rows.length < (widget === "stats" ? 4 : 10) && <div><button type="button" className="btn sm" onClick={addRow}>+ {tx("Regel toevoegen")}</button></div>}
+        </>)}
         </>)}
         <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" onClick={onClose}>{tx("Klaar")}</button></div>
       </div>

@@ -4039,3 +4039,62 @@ html.item-help-on .faq-icon { color: #fff; background: var(--blue); border-color
 .side-search-list .ss-txt strong { font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .side-search-list .ss-txt small { color: var(--muted); font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shell.collapsed .side-search { display: none; }
+
+/* the settings of a picture in the left panel: nothing runs out of the panel. Rows with buttons wrap, the quick buttons sit under the label column, the tabs stay on one line each, and the inner box is flat (no box in a box). */
+.pb-sidebar .pb-stylerow:has(> .btn) { flex-wrap: wrap; }
+.pb-sidebar .pb-stylerow > .btn { flex: 1 1 auto; white-space: nowrap; }
+.pb-sidebar .pb-stylerow.pb-quick > .btn { flex: 1 1 4.2rem; }  /* the spacer keeps the buttons under the fields, in two lines when needed */
+.pb-sidebar .pb-stylerow > input[type="number"] { flex: 2 1 0; }
+.pb-sidebar .pb-stylerow > select { flex: 1 1 4.5rem; min-width: 4.5rem; }
+.pb-sidebar .img-style-panel { border: 0; padding: .2rem 0 0; background: transparent; box-shadow: none; }
+.pb-sidebar .img-style-panel .pb-tabs { flex-wrap: wrap; }
+.pb-sidebar .img-style-panel .pb-tabs button { white-space: nowrap; padding: .25rem .6rem; font-size: .82rem; }
+
+/* an image that is placed without a picture: a placeholder in the style of the theme (card colour, rounded corners of the theme, a picture icon) */
+.pb-ph.pb-ph-img { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; width: 100%; min-height: 160px; aspect-ratio: 16 / 9; padding: 1rem; box-sizing: border-box;
+  border: 1px dashed color-mix(in srgb, var(--blue) 35%, var(--line)); border-radius: var(--ii-r, var(--radius, 12px)); opacity: var(--ii-o, 1);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--blue) 9%, var(--card)), color-mix(in srgb, var(--accent, var(--blue)) 7%, var(--card))); color: color-mix(in srgb, var(--blue) 55%, var(--muted)); }
+.pb-ph.pb-ph-img svg { width: clamp(40px, 18%, 72px); height: auto; opacity: .85; }
+.pb-ph.pb-ph-img span { font-size: .85rem; color: var(--muted); text-align: center; }
+.pb-imgstyle.has-w .pb-ph-img { width: var(--ii-w); max-width: 100%; }
+
+/* a picture (or its placeholder) without its own alignment: the block is as big as the picture, so the outline, the bar and the buttons (pencil, cross) sit at the picture */
+.pb-cell > .pb-item.img-item, .pb-cell > .pb-item.edit.img-item { width: var(--ii-w, auto); max-width: 100%; }
+.pb-item.img-item > .pb-imgstyle { width: 100%; }
+.pb-item.img-item > .pb-imgstyle:not(.has-w) .pb-ph-img { width: min(480px, 100%); }
+.pb-item.img-item > .pb-imgstyle.has-w .pb-ph-img { width: 100%; }
+.pb-item.img-item > .pb-imgstyle.has-w .img-edit, .pb-item.img-item > .pb-imgstyle.has-w .ei-wrap, .pb-item.img-item > .pb-imgstyle.has-w .ei-inner { width: 100%; }  /* the item itself already has the chosen width */
+
+/* the picture or video of a block as a thumbnail in the left panel */
+.pb-thumb { display: grid; gap: 0; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); color: var(--muted); cursor: pointer; text-align: left; }
+.pb-thumb:hover { border-color: var(--blue); }
+.pb-thumb-box { position: relative; display: grid; place-items: center; height: 130px; background: color-mix(in srgb, var(--blue) 6%, var(--card)); }
+.pb-thumb-box img, .pb-thumb-box video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pb-thumb.empty .pb-thumb-box { border-bottom: 0; }
+.pb-thumb-play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; background: rgba(0, 0, 0, .22); pointer-events: none; }
+.pb-thumb-play svg { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .5)); }
+.pb-thumb small { padding: .35rem .6rem; font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-top: 1px solid var(--line); }
+
+/* "Elementen toevoegen" in the head of the left panel: a clear button (plus + text), not a small link */
+.pb-sb-add { display: inline-flex; align-items: center; gap: .4rem; padding: .38rem .8rem; border: 0; border-radius: 8px; background: var(--blue); color: #fff; font-weight: 700; font-size: .84rem; line-height: 1; cursor: pointer; white-space: nowrap; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
+.pb-sb-add:hover { filter: brightness(1.08); }
+.pb-sb-add:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* a button in the editor: the block is as big as the button (like a picture), with its bar and the pencil and cross at the button; several buttons in a row stand next to each other like on the live page */
+.pb-cell > .pb-item.edit.btnitem { width: fit-content; max-width: 100%; }
+.pb-item.edit.btnitem > .pb-itembar { right: auto; width: max-content; min-width: 100%; }
+
+/* the part that is selected (its settings are open in the panel): a clear outline around the part itself, with its bar and the pencil and cross at it */
+html[data-pbbar="1"] .pb-item.edit.selected { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 6px; }
+html[data-pbbar="1"] .pb-item.edit.selected > .pb-itembar { opacity: 1; pointer-events: auto; }
+html[data-pbbar="1"] .pb-item.edit.selected > .pb-pencil { opacity: 1; }
+html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.selected) { outline: 0; }
+html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.selected) > .pb-celltools { opacity: 0; pointer-events: none; }
+
+/* the save button at the bottom of the left panel: above the display switch */
+.pb-sb-save { flex: 0 0 auto; display: flex; align-items: center; gap: .7rem; padding: .6rem .8rem; border-top: 1px solid var(--line); background: var(--card); }
+.pb-sb-savebtn { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .6rem 1rem; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font-weight: 700; font-size: .92rem; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
+.pb-sb-savebtn:hover:not(:disabled) { filter: brightness(1.08); }
+.pb-sb-savebtn:disabled { opacity: .7; cursor: default; }
+.pb-sb-savebtn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.pb-sb-savestate { flex: 0 0 auto; color: var(--muted); font-size: .78rem; min-width: 5rem; text-align: right; }

@@ -14,7 +14,8 @@ import { tx } from "../lib/t";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
-import { EditableImage, EditableText, ImageStyleSide } from "./EditMode";
+import { EditableImage, EditableText, ImageStyleSide, MediaThumb, useSetBlock } from "./EditMode";
+import PositionTab from "./PositionTab";
 import { useModule } from "./Modules";
 import { Logo } from "./BrandingContext";
 import { useSession } from "./Session";
@@ -185,7 +186,13 @@ export default function PageBlocks({ pageKey, title = "" }) {
   }, [shell, sbOpen]);
   const sbPage = (node) => (shell && pageTarget ? createPortal(node, pageTarget) : node);  // the settings of the whole page go in the panel (tab Pagina)
   const sbHost = (node) => (shell && sbTarget ? createPortal(node, sbTarget) : node);  // the settings of a block or part go in the panel (when there is one)
-  const [imgPick, setImgPick] = useState(null);  // the picture part whose picture is being chosen (from the panel)
+  const setContent = useSetBlock();
+  // point a picture (or video) of the page at a library item or clear it: it shows at once, the page is not asked again
+  const putMedia = async (key, m) => {
+    await api("/media/replace/", { method: "POST", body: { target: `block:${key}`, media_id: m ? m.id : null } });
+    if (!m || m.url) setContent(key, "*", m ? m.url : ""); else softRefresh();
+  };
+  const [imgPick, setImgPick] = useState(null);  // the content key of the picture whose picture is being chosen (from the panel): the same key as the picture on the page uses (a fixed element has its own key)
   const [compPop, setCompPop] = useState(null); // {cell: id} while the component picker (UI-kit) is open
   const [objPop, setObjPop] = useState(null); // {cell: id} while the system objects popup is open
   const [objQ, setObjQ] = useState("");
@@ -307,6 +314,21 @@ export default function PageBlocks({ pageKey, title = "" }) {
     });
   }, [pageKey]);
 
+  // the save button of the edit mode asks for the page to be saved now ("pb-flush"): what waits in the delay goes out at once; the answer comes back through detail.done(ok)
+  useEffect(() => {
+    const flush = async (e) => {
+      clearTimeout(timer.current);
+      let ok = true;
+      if (layoutRef.current) {
+        try { setSaving("saving"); await api(`/pages/layout/${encodeURIComponent(pageKey)}/`, { method: "PUT", body: layoutRef.current }); setSaving("saved"); window.dispatchEvent(new Event("pb-saved")); setTimeout(() => setSaving(""), 1500); }
+        catch (err) { ok = false; setSaving(""); }
+      }
+      e.detail?.done?.(ok);
+    };
+    window.addEventListener("pb-flush", flush);
+    return () => window.removeEventListener("pb-flush", flush);
+  }, [pageKey]);
+
   const rowOf = (l, id) => l.rows.find((r) => r.cells.some((c) => c.id === id));
   const move = (itemId, toCell, before) => change((l) => {
     let item = null;
@@ -423,7 +445,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const targetCell = (l) => l.rows.flatMap((r) => r.cells).find((c) => c.id === curCell) || l.rows.filter((r) => !(heroOff && own(r))).slice(-1)[0]?.cells.slice(-1)[0];
   // a part dragged from the panel is dropped in a column (before a part), or on the line between two blocks (a new block)
   const itemFromPanel = (pd) => (pd.kind === "component" ? compItem(pd.comp) : pd.kind === "object" ? makeItem("object", pd.slug) : pd.kind === "media" ? makeItem("image") : makeItem(pd.type, "", pd.widget));
-  const afterPanelDrop = async (pd, it) => { if (pd.kind === "media") { try { await api("/media/replace/", { method: "POST", body: { target: `block:layout.${pageKey}.${it.id}`, media_id: pd.media.id } }); softRefresh(); } catch (e) { alertDialog(errorText(e)); } } };
+  const afterPanelDrop = async (pd, it) => { if (pd.kind === "media") { try { await putMedia(it.ref && it.type !== "object" ? it.ref : `layout.${pageKey}.${it.id}`, pd.media); } catch (e) { alertDialog(errorText(e)); } } };
   const dropPanel = (cid, beforeId) => {
     const pd = panelDrag(); setPanelDrag(null);
     if (!pd) return;
@@ -512,17 +534,23 @@ export default function PageBlocks({ pageKey, title = "" }) {
 
   const renderItem = (c, it) => {
     const key = it.ref && it.type !== "object" ? it.ref : `layout.${pageKey}.${it.id}`; // a fixed element that was dragged in keeps its own content key
+    const ha = it.style?.align || c.halign;  // the Position tab: sideways (an empty choice follows the cell)
+    const va = it.style?.valign;  // and up and down
+    const posStyle = { ...(it.style?.align && it.type !== "image" ? { alignSelf: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), ...(va === "top" ? { marginBottom: "auto" } : va === "middle" ? { marginTop: "auto", marginBottom: "auto" } : va === "bottom" ? { marginTop: "auto" } : {}) };
     const body = it.type === "text" ? <div className={`pb-tstyle${it.style?.tag ? ` ts-${it.style.tag}` : ""}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}`} style={{ padding: padCss(it.style?.pad), ...(it.style?.bg || it.style?.border ? { ...(it.style.bg ? { background: it.style.bg } : {}), ...(it.style.border ? { border: `1px solid ${it.style.border}` } : {}), borderRadius: `${it.style.radius ?? 999}px`, width: "fit-content", maxWidth: "100%", ...(it.style.minw ? { minWidth: it.style.minw, boxSizing: "border-box", textAlign: "center" } : {}) } : {}), ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}) }}><EditableText id={key} removable={false} as="div" rich fallback={editing ? tx("Klik om tekst te typen") : ""} className="pb-text" /></div>
       : it.type === "heading" ? <div className={`pb-tstyle ts-${it.style?.tag || "k2"}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}${it.style?.weight ? " ts-weight" : ""}`} style={{ padding: padCss(it.style?.pad), ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}), ...(it.style?.weight ? { "--ti-weight": it.style.weight } : {}), ...(it.style?.accent ? { "--ti-accent": it.style.accent } : {}), textAlign: it.style?.align || c.halign, ...(it.style?.mb !== undefined ? { marginBottom: `${it.style.mb}rem` } : {}) }}><EditableText id={key} removable={false} rich={!!it.style?.accent} as={{ k1: "h2", k2: "h3", k3: "h4", k4: "h5" }[it.style?.tag || "k2"] || "h3"} fallback={editing ? tx("Klik om een kop te typen") : ""} className="pb-text pb-heading" /></div>
-      : it.type === "button" ? <PbButton it={it} c={c} editing={editing} />
+      : it.type === "button" ? <PbButton it={it} c={{ ...c, halign: ha }} editing={editing} />
       : it.type === "widget" ? <PbWidget it={it} editing={editing} />
       : it.type === "spacer" ? <div className="pb-spacer" style={{ height: it.style?.h ?? 40 }} aria-hidden="true">{editing && <small className="muted">{it.style?.h ?? 40} px</small>}</div>
-      : it.type === "line" ? <div className="pb-line" style={{ padding: padCss(it.style?.pad), justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[c.halign] || "flex-start" }}><hr style={{ width: `${it.style?.lw ?? 100}%`, borderTopWidth: it.style?.th ?? 1, ...(it.style?.color ? { borderColor: colorOf(it.style.color) } : {}) }} /></div>
-      : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} removable={false} className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : editing ? <div className="pb-ph">{tx("Klik om een afbeelding te kiezen")}</div> : null} /></div>
+      : it.type === "line" ? <div className="pb-line" style={{ padding: padCss(it.style?.pad), justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[ha] || "flex-start" }}><hr style={{ width: `${it.style?.lw ?? 100}%`, borderTopWidth: it.style?.th ?? 1, ...(it.style?.color ? { borderColor: colorOf(it.style.color) } : {}) }} /></div>
+      : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} removable={false} video className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : <div className="pb-ph pb-ph-img" role="img" aria-label={tx("Afbeelding")}><svg viewBox="0 0 64 48" width="64" height="48" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="4" width="56" height="40" rx="5" /><circle cx="21" cy="18" r="5" /><path d="M4 36l15-13 11 10 9-8 21 17" /></svg>{editing && <span>{tx("Klik om een afbeelding te kiezen")}</span>}</div>} /></div>
       : <SysObjectBySlug slug={it.ref} layout={it.layout} />;
     const gapStyle = { ...(it.style?.mt ? { marginTop: `${it.style.mt}rem` } : {}), ...(it.style?.mb !== undefined && it.type !== "heading" ? { marginBottom: `${it.style.mb}rem` } : {}) }; // exact space above and below (an imported design)
     const tight = it.style?.mb !== undefined ? " pb-tight" : "";
-    if (!editing) return <div className={`pb-item${it.type === "object" ? " obj" : ""}${it.type === "button" ? " btnitem" : ""}${tight}`} key={it.id} style={{ textAlign: c.halign, ...gapStyle }}>{body}</div>;
+    const selected = !!(itemOpen[it.id] || btnEdit === it.id || widgetEdit === it.id);  // the part whose settings are open in the panel: its outline, bar and buttons stay visible
+    const imgItem = it.type === "image" && !it.style?.align ? " img-item" : "";  // a picture without its own alignment: the block is as big as the picture (also the outline and the buttons)
+    const imgVars = it.type === "image" ? { "--ii-w": it.style?.w || "auto" } : {};
+    if (!editing) return <div className={`pb-item${it.type === "object" ? " obj" : ""}${it.type === "button" ? " btnitem" : ""}${tight}${imgItem}`} key={it.id} style={{ textAlign: ha, ...gapStyle, ...posStyle, ...imgVars }}>{body}</div>;
     const label = it.type === "widget" ? tx(WIDGET_NAMES[it.widget] || "Onderdeel") : it.type === "button" ? tx("Knop") : it.type === "spacer" ? tx("Tussenruimte") : it.type === "line" ? tx("Lijn") : it.type === "heading" ? tx("Kop") : it.type === "text" ? tx("Tekst") : it.type === "image" ? tx("Afbeelding") : (objects.find((o) => o.slug === it.ref)?.data?.name || it.ref);
     const shown = over?.id === it.id ? ` drop-${over.pos}` : "";
     const hover = (e) => { // above the middle of the item = before it, below = after it
@@ -543,7 +571,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
       move(from, c.id, next === from ? null : next || null);
     };
     return (
-      <div data-iid={it.id} onClick={(e) => selectItem(it, c, e)} className={`pb-item edit${it.type === "object" ? " obj" : ""}${shown}${dragOn === it.id ? " dragging" : ""}`} key={it.id} style={{ textAlign: c.halign }}
+      <div data-iid={it.id} onClick={(e) => selectItem(it, c, e)} className={`pb-item edit${it.type === "object" ? " obj" : ""}${it.type === "button" ? " btnitem" : ""}${shown}${dragOn === it.id ? " dragging" : ""}${imgItem}${selected ? " selected" : ""}`} key={it.id} style={{ textAlign: ha, ...posStyle, ...imgVars }}
         onDragOver={hover} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver((o) => (o?.id === it.id ? null : o)); }} onDrop={drop}>
         {shell && <button type="button" className="pb-pencil" title={tx("Bewerken in het paneel")} aria-label={tx("Bewerken in het paneel")} onClick={(e) => { e.stopPropagation(); selectItem(it, c, { target: document.body }); }}>✎</button>}
         {shell && <button type="button" className="pb-pencil del" title={tx("Verwijderen")} aria-label={tx("Verwijderen")} onClick={(e) => { e.stopPropagation(); delItem(it.id); }}>×</button>}
@@ -571,22 +599,27 @@ export default function PageBlocks({ pageKey, title = "" }) {
         </div>
         {it.type === "image" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
-            {shell && <div className="pb-stylerow"><button type="button" className="btn sm primary" onClick={() => setImgPick(it.id)}>{tx("Afbeelding kiezen of vervangen")}</button></div>}
-            <ImageStyleSide id={key} />
+            {shell && <MediaThumb id={key} onPick={() => setImgPick(key)} />}
+            {shell && <div className="pb-stylerow pb-quick"><button type="button" className="btn sm primary" onClick={() => setImgPick(key)}>{tx("Media kiezen")}</button>
+              <button type="button" className="btn sm danger" onClick={async () => { if (!(await confirmDialog(tx("De afbeelding of video uit dit blok halen?"), { okLabel: tx("Wissen"), cancelLabel: tx("Annuleren") }))) return; try { await putMedia(key, null); } catch (e) { alertDialog(errorText(e)); } }}>{tx("Media wissen")}</button></div>}
+            <ImageStyleSide id={key} position={<PositionTab value={it.style} onChange={(p) => setItem(it.id, p)} />} />
           </div>
         )}
         {it.type === "spacer" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             <strong>{tx("Tussenruimte")}</strong>
+            <Tabs tabs={[["size", "Hoogte"], ["pos", "Position"]]} value={itemTab[it.id] || "size"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
+            {itemTab[it.id] === "pos" ? <PositionTab value={it.style} onChange={(p) => setItem(it.id, p)} /> : (<>
             <div className="pb-stylerow"><span>{tx("Hoogte")}</span>
               <input type="range" min={0} max={400} step={4} value={it.style?.h ?? 40} onChange={(e) => setItem(it.id, { h: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Hoogte")} />
               <input type="number" min={0} max={1000} value={it.style?.h ?? 40} onChange={(e) => setItem(it.id, { h: Math.min(1000, Math.max(0, Number(e.target.value) || 0)) })} style={{ width: "5.5rem" }} /><small className="muted">px</small></div>
+            </>)}
           </div>
         )}
         {it.type === "line" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             <strong>{tx("Lijn")}</strong>
-            <Tabs tabs={[["line", "Lijn"], ["space", "Ruimte"]]} value={itemTab[it.id] || "line"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
+            <Tabs tabs={[["line", "Lijn"], ["space", "Ruimte"], ["pos", "Position"]]} value={itemTab[it.id] || "line"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
             {(itemTab[it.id] || "line") === "line" && (
               <div className="pb-cols">
                 <div className="pb-stylerow"><span>{tx("Breedte")}</span>
@@ -597,6 +630,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
               </div>
             )}
             {itemTab[it.id] === "space" && <div className="pb-cols">{padControls(it)}</div>}
+            {itemTab[it.id] === "pos" && <PositionTab value={it.style} onChange={(p) => setItem(it.id, p)} />}
           </div>
         )}
         {(it.type === "text" || it.type === "heading") && itemOpen[it.id] && sbHost(
@@ -604,7 +638,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
             <strong>{it.type === "heading" ? tx("Titel setup") : tx("Tekstinstellingen")}</strong>
             {shell && <div className="pb-sb-content"><small className="muted">{tx("Inhoud")}</small>
               <EditableText id={key} removable={false} as="div" rich={it.type === "text" || !!it.style?.accent} fallback={tx("Klik om te typen")} className="pb-text pb-sb-text" /></div>}
-            <Tabs tabs={[["text", "Tekst"], ["color", "Kleur"], ["space", "Ruimte"]]} value={itemTab[it.id] || "text"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
+            <Tabs tabs={[["text", "Tekst"], ["color", "Kleur"], ["space", "Ruimte"], ["pos", "Position"]]} value={itemTab[it.id] || "text"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
             {(itemTab[it.id] || "text") === "text" && (
               <div className="pb-cols">
             <div className="pb-stylerow"><span>{it.type === "heading" ? tx("Niveau") : tx("Opmaak")}</span>
@@ -643,6 +677,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 )}
               </div>
             )}
+            {itemTab[it.id] === "pos" && <PositionTab value={it.style} onChange={(p) => setItem(it.id, p)} />}
             <div className="pb-stylerow">
               <button type="button" className="btn sm" disabled={!it.style} onClick={() => change((l) => { l.rows.forEach((r) => r.cells.forEach((c) => c.items.forEach((x) => { if (x.id === it.id) delete x.style; }))); return l; })}>{tx("Terug naar thema")}</button></div>
           </div>
@@ -683,7 +718,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const addMedia = async (m) => {  // a picture of the media library on the page: an image part that shows it
     const it = makeItem("image");
     addToPage(it);
-    try { await api("/media/replace/", { method: "POST", body: { target: `block:layout.${pageKey}.${it.id}`, media_id: m.id } }); softRefresh(); } catch (e) { alertDialog(errorText(e)); }
+    try { await putMedia(it.ref && it.type !== "object" ? it.ref : `layout.${pageKey}.${it.id}`, m); } catch (e) { alertDialog(errorText(e)); }
   };
   // what you can do with the picked block or part (the icons on the page are gone: everything is here, in the panel)
   const pickedId = Object.keys(itemOpen).find((k) => itemOpen[k]) || btnEdit || widgetEdit;
@@ -747,11 +782,11 @@ export default function PageBlocks({ pageKey, title = "" }) {
 
   return (
     <section ref={root} data-pad={layout.pad || undefined} data-t={layout.auto || heroTheme || undefined} className={`pb${editing ? " editing" : ""}${dragging ? " is-dragging" : ""}`}>
-      {shell && imgPick && <MediaPicker onClose={() => setImgPick(null)} onPick={async (m) => { const id = imgPick; setImgPick(null); try { await api("/media/replace/", { method: "POST", body: { target: `block:layout.${pageKey}.${id}`, media_id: m.id } }); softRefresh(); } catch (e) { alertDialog(errorText(e)); } }} />}
+      {shell && imgPick && <MediaPicker kind="all" onClose={() => setImgPick(null)} onPick={async (m) => { const id = imgPick; setImgPick(null); try { await putMedia(id, m); } catch (e) { alertDialog(errorText(e)); } }} />}
       {shell && <EditorShell open={sbOpen} setOpen={setSbOpen} view={sbView} setView={setSbView} title={title || h1 || pageKey} saving={saving} onExit={() => setEditMode(false)} setTarget={setSbTarget} setPageTarget={setPageTarget} actions={sbActions} elements={sbElements} structure={sbStructure} hasSettings={Object.values(barOpen).some(Boolean) || Object.values(itemOpen).some(Boolean)} />}
       {editing && compPop && <ComponentPicker onPick={(comp) => addComponent(compPop.cell, comp)} onClose={() => setCompPop(null)} />}
-      {editing && widgetEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === widgetEdit); return it ? <WidgetPopup anchor={anchor} widget={it.widget} data={it.data || {}} onChange={(d) => setWidgetData(it.id, d)} onClose={() => setWidgetEdit(null)} /> : null; })()}
-      {editing && btnEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === btnEdit); return it ? <PageButtonPopup anchor={anchor} btn={it.btn || {}} onChange={(b) => setBtn(it.id, b)} onClose={() => setBtnEdit(null)} /> : null; })()}
+      {editing && widgetEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === widgetEdit); return it ? <WidgetPopup anchor={anchor} widget={it.widget} data={it.data || {}} onChange={(d) => setWidgetData(it.id, d)} position={it.style} onPosition={(p) => setItem(it.id, p)} onClose={() => setWidgetEdit(null)} /> : null; })()}
+      {editing && btnEdit && (() => { const it = layout.rows.flatMap((r) => r.cells).flatMap((c) => c.items).find((x) => x.id === btnEdit); return it ? <PageButtonPopup anchor={anchor} btn={it.btn || {}} onChange={(b) => setBtn(it.id, b)} position={it.style} onPosition={(p) => setItem(it.id, p)} onClose={() => setBtnEdit(null)} /> : null; })()}
       {editing && !shell && (
         <button type="button" className={`pb-pagegear${pageOpen ? " on" : ""}`} onClick={() => setPageOpen(!pageOpen)} aria-expanded={pageOpen} title={pageOpen ? tx("Pagina-instellingen verbergen") : tx("Pagina-instellingen tonen")} aria-label={tx("Pagina-instellingen")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="var(--card)" /><circle cx="15" cy="12" r="2" fill="var(--card)" /><circle cx="8" cy="18" r="2" fill="var(--card)" /></svg>

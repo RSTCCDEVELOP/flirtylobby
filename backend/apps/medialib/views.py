@@ -211,7 +211,8 @@ def replace(request):
     target, media_id = str(request.data.get("target", "")), request.data.get("media_id")
     item = None
     if media_id is not None:
-        item = MediaItem.objects.filter(pk=media_id, kind="image").first()
+        kind_, _, _ = target.partition(":")
+        item = MediaItem.objects.filter(pk=media_id, kind__in=("image", "video") if kind_ == "block" else ("image",)).first()  # a block of a page can hold a video too (it gets a player); the rest only a picture
         if not item:
             return Response({"detail": "Afbeelding niet gevonden."}, status=status.HTTP_400_BAD_REQUEST)
     kind, _, ref = target.partition(":")

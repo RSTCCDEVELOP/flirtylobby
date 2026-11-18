@@ -10,7 +10,10 @@ const CONFIGURED = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Opened via a LAN address (phone, other computer)? Then "localhost" for the API would be that device itself: use the page's host.
 function base() {
-  if (typeof window === "undefined") return CONFIGURED;
+  if (typeof window === "undefined") {  // on the server (the first HTML of a page): the same address as the browser makes for localhost, or React reports a difference (a logo or picture with another src)
+    try { const u = new URL(CONFIGURED); if (u.hostname === "localhost") { u.hostname = "127.0.0.1"; return u.origin; } } catch {}
+    return CONFIGURED;
+  }
   try {
     const u = new URL(CONFIGURED);
     // Page on https but the configured backend is http (frontend started without the script)? The browser blocks that, and the https backend answers on the same address: use https.

@@ -191,3 +191,26 @@ def test_switch_also_make_a_login(plus, monkeypatch):
     assert d["contacts"][0]["has_login"] and not d["contacts"][0]["make_login"]  # the switch goes off, the person has a login
     again = plus.put(f"/api/system/resellers/{d['id']}/", {"contacts": [{**p}]}, format="json").json()
     assert len(again["logins"]) == 1 and "new_logins" not in again  # never twice
+
+
+@pytest.mark.django_db
+def test_media_replace_block_takes_a_video_but_a_slot_only_a_picture(plus):
+    from apps.core.models import ContentBlock
+    from apps.medialib.models import MediaItem
+
+    vid = MediaItem.objects.create(key="v/film.mp4", name="film.mp4", kind="video")
+    img = MediaItem.objects.create(key="v/foto.jpg", name="foto.jpg", kind="image")
+    ok = plus.post("/api/media/replace/", {"target": "block:layout.home.abc", "media_id": vid.id}, format="json")
+    assert ok.status_code == 200 and ContentBlock.objects.get(key="layout.home.abc", lang="*").text == f"media:{vid.id}"
+    assert plus.post("/api/media/replace/", {"target": "asset:logo", "media_id": vid.id}, format="json").status_code == 400  # a logo is never a video
+    assert plus.post("/api/media/replace/", {"target": "block:layout.home.abc", "media_id": img.id}, format="json").status_code == 200
+    assert plus.post("/api/media/replace/", {"target": "block:layout.home.abc", "media_id": None}, format="json").status_code == 200
+    assert not ContentBlock.objects.filter(key="layout.home.abc").exists()  # cleared
+
+
+def test_position_of_a_part_keeps_valign():
+    from apps.pages import layout
+
+    st = layout._item_style({"align": "center", "valign": "bottom"})
+    assert st.get("align") == "center" and st.get("valign") == "bottom"
+    assert "valign" not in layout._item_style({"valign": "sideways"})  # only top, middle or bottom

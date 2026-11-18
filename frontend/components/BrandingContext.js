@@ -45,9 +45,9 @@ export function Logo({ className = "", alt, header = false }) {
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={light} alt={alt} onError={fallbackLogo} className={`${className} logo-light ${dark ? "has-dark" : ""}`} />
+      <img src={light} alt={alt} suppressHydrationWarning onError={fallbackLogo} className={`${className} logo-light ${dark ? "has-dark" : ""}`} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {dark && <img src={dark} alt={alt} className={`${className} logo-dark`} />}
+      {dark && <img src={dark} alt={alt} suppressHydrationWarning className={`${className} logo-dark`} />}
     </>
   );
 }

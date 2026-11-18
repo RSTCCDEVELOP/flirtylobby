@@ -7,6 +7,7 @@
 
 "use client";
 
+import PositionTab from "./PositionTab";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
@@ -18,7 +19,7 @@ import Tabs from "./Tabs";
 
 // The settings of a button on a page (edit mode): its text per language (with Claude translating it into the installed languages), where it goes
 // (a page of the website or any link) and its look. `btn` is what the item holds; onChange(btn) after every change.
-export default function PageButtonPopup({ btn = {}, onChange, onClose, anchor }) {
+export default function PageButtonPopup({ btn = {}, onChange, onClose, anchor, position = null, onPosition = null }) {
   const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // in the panel of the editor, not a window
   const [tab, setTab] = useState("text");
   const [langs, setLangs] = useState([]);
@@ -51,7 +52,8 @@ export default function PageButtonPopup({ btn = {}, onChange, onClose, anchor })
     <div className={host ? "pb-hdock" : anchor ? "pb-anchorback" : "overlay"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) onClose(); }}>
       <div className={host ? "pb-hdock-in form" : "card modal form"} role="dialog" aria-label={tx("Knop")} style={host ? undefined : { maxWidth: 620, ...anchorStyle(anchor, 620) }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}><h2 style={{ margin: 0 }}>{tx("Knop")}</h2>{host && <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button>}</div>
-        <Tabs tabs={[["text", "Tekst"], ["link", "Link"], ["look", "Uiterlijk"]]} value={tab} onChange={setTab} />
+        <Tabs tabs={[["text", "Tekst"], ["link", "Link"], ["look", "Uiterlijk"], ...(onPosition ? [["pos", "Position"]] : [])]} value={tab} onChange={setTab} />
+        {tab === "pos" && onPosition && <PositionTab value={position} onChange={onPosition} />}
         {err && <div className="alert">{err}</div>}
         {tab === "text" && (
           <div className="stack-sm">
