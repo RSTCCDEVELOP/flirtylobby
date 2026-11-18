@@ -7411,5 +7411,8 @@
   "Uitvullen": "両端揃え",
   "Voorbeeldtekst": "サンプルテキスト",
   "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "ブロック内でのテキストの流れ。自動はブロックまたは列の配置に従います。",
-  "Leeg is het lettertype en de grootte van het thema.": "空欄はテーマのフォントとサイズです。"
+  "Leeg is het lettertype en de grootte van het thema.": "空欄はテーマのフォントとサイズです。",
+  "Aanhalingstekens": "引用符",
+  "Twee grote aanhalingstekens tonen": "大きな引用符を2つ表示する",
+  "Leeg is de kleur van het thema.": "空欄はテーマの色です。"
 }

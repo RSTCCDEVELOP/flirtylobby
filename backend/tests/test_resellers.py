@@ -238,3 +238,14 @@ def test_creator_rules_tell_the_ai_about_the_editor_positions():
     text = sitecreator.rules({})
     for word in ("EDITOR POSITIONS", "max-width", "justify", "align-self", "placeholder"):
         assert word in text
+
+
+def test_quote_keeps_marks_and_colours():
+    from apps.pages import layout
+
+    cell = {"id": "cell0001", "halign": "left", "valign": "top", "items": [
+        {"id": "item0001", "type": "widget", "widget": "quote", "data": {"text": "Hoi", "author": "Jan", "marks": False}, "style": {"color": "#112233", "qcolor": "#aa0000"}},
+        {"id": "item0002", "type": "widget", "widget": "quote", "data": {"text": "Hallo"}}]}
+    items = layout.clean({"rows": [{"id": "row00001", "cols": 1, "cells": [cell]}]})["rows"][0]["cells"][0]["items"]
+    assert items[0]["data"]["marks"] is False and items[0]["style"]["qcolor"] == "#aa0000" and items[0]["style"]["color"] == "#112233"
+    assert items[1]["data"]["marks"] is True  # the two big quotation marks are on by default

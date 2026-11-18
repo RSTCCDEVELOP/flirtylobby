@@ -7411,5 +7411,8 @@
   "Uitvullen": "ضبط",
   "Voorbeeldtekst": "نص تجريبي",
   "Hoe de tekst in het blok loopt. Auto volgt de uitlijning van het blok of de kolom.": "كيف يسير النص داخل الكتلة. تلقائي يتبع محاذاة الكتلة أو العمود.",
-  "Leeg is het lettertype en de grootte van het thema.": "الفارغ هو خط وحجم السمة."
+  "Leeg is het lettertype en de grootte van het thema.": "الفارغ هو خط وحجم السمة.",
+  "Aanhalingstekens": "علامات الاقتباس",
+  "Twee grote aanhalingstekens tonen": "إظهار علامتي اقتباس كبيرتين",
+  "Leeg is de kleur van het thema.": "الفارغ هو لون السمة."
 }

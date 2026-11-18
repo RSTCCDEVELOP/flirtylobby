@@ -4116,3 +4116,12 @@ html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.selected) > .pb-celltools { opac
 /* the sample under the font choice, and the icon buttons of the text alignment (one colour, the colour of the theme) */
 .pb-fontsample { padding: .7rem .9rem; border: 1px dashed var(--line); border-radius: 10px; background: color-mix(in srgb, var(--blue) 5%, var(--card)); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pb-sidebar .pb-stylerow.pb-stack > .pb-seg > button svg { display: block; margin: 0 auto; }
+
+/* a widget (a quote ...) with its own text colour; the two big quotation marks of a quote (coloured with the Kleur tab; the theme colour when empty) */
+.pb-item.w-color, .pb-item.w-color * { color: var(--ti-color) !important; }
+.pb-w-quote.has-marks { position: relative; padding: 2.6rem 1.8rem 2.2rem; }
+.pb-qm { position: absolute; font-family: Georgia, 'Times New Roman', serif; font-size: 4.5rem; line-height: 1; font-style: normal; font-weight: 700; color: var(--qm, var(--blue)); pointer-events: none; user-select: none; }
+.pb-qm.open { top: .15rem; left: 1rem; }
+.pb-qm.close { right: 1rem; bottom: -1.6rem; }
+.pb-item.w-color .pb-qm, .pb-item.w-size .pb-qm { color: var(--qm, var(--blue)) !important; }
+.pb-item.w-size .pb-qm { font-size: 4.5rem !important; }

@@ -169,6 +169,8 @@ def _item_style(st):
         pass
     if _col(st.get("color")):
         out["color"] = _col(st["color"])
+    if _col(st.get("qcolor")):  # a quote: the colour of the two big quotation marks
+        out["qcolor"] = _col(st["qcolor"])
     if HEX.fullmatch(str(st.get("bg") or "")):
         out["bg"] = st["bg"]  # a text with a background (a label in a pill)
     for k in ("border", "accent"):  # a label with a line around it; the colour of a marked word (<em>) in a heading
@@ -233,6 +235,7 @@ def _widget(raw):
             data["height"] = 320
     elif kind == "quote":
         data["text"], data["author"] = s("text", 500), s("author", 80)
+        data["marks"] = d.get("marks") is not False  # the two big quotation marks (on by default)
     elif kind == "stats":
         data["items"] = [{"value": str(i.get("value") or "").strip()[:12], "label": str(i.get("label") or "").strip()[:40]} for i in (d.get("items") or [])[:4] if isinstance(i, dict) and (i.get("value") or i.get("label"))]
     elif kind == "contact":

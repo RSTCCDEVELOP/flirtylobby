@@ -24,7 +24,7 @@ import KitHtml from "../lib/ui-kit/KitHtml";
 export const WIDGET_NAMES = { contact: "Contactgegevens", social: "Sociale media", map: "Kaart", video: "Video", quote: "Citaat", stats: "Cijfers", logo: "Logo", hours: "Openingstijden", code: "HTML / CSS-code" };
 export const WIDGET_DEFAULTS = {
   contact: { address: true, phone: true, email: true }, social: {}, map: { query: "", height: 320 }, video: { url: "" },
-  quote: { text: "Een mooi citaat van een klant of van jezelf.", author: "Naam" },
+  quote: { text: "Een mooi citaat van een klant of van jezelf.", author: "Naam", marks: true },
   stats: { items: [{ value: "10+", label: "jaar ervaring" }, { value: "500", label: "klanten" }, { value: "24/7", label: "bereikbaar" }] },
   code: { html: "", css: "" }, logo: { width: 160 }, hours: { lines: [{ day: "Maandag - vrijdag", time: "09:00 - 17:30" }, { day: "Zaterdag", time: "10:00 - 16:00" }, { day: "Zondag", time: "Gesloten" }] },
 };
@@ -76,7 +76,7 @@ export function PbWidget({ it, editing }) {
     const src = embedOf(d.url || "");
     return src ? <div className="pb-w pb-w-video"><iframe title={tx("Video")} loading="lazy" src={src} allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen /></div> : empty(tx("Geef een YouTube- of Vimeo-link op."));
   }
-  if (w === "quote") return <figure className="pb-w pb-w-quote"><blockquote>{d.text}</blockquote>{d.author && <figcaption>{d.author}</figcaption>}</figure>;
+  if (w === "quote") return <figure className={`pb-w pb-w-quote${d.marks === false ? "" : " has-marks"}`}>{d.marks !== false && <span className="pb-qm open" aria-hidden="true">“</span>}<blockquote>{d.text}</blockquote>{d.author && <figcaption>{d.author}</figcaption>}{d.marks !== false && <span className="pb-qm close" aria-hidden="true">”</span>}</figure>;
   if (w === "stats") return <div className="pb-w pb-w-stats">{(d.items || []).map((s, i) => <div key={i}><strong>{s.value}</strong><span>{s.label}</span></div>)}</div>;
   if (w === "logo") return <div className="pb-w pb-w-logo" style={{ "--wl-w": `${d.width || 160}px` }}><Logo /></div>;
   if (w === "code" && d.kit) return <div className="pb-w pb-w-code pb-w-kit"><KitHtml html={d.html} css={d.css} tag={d.tag} set={d.set || ""} /></div>;  // built into the page: the theme and the components work together (no frame)
@@ -86,7 +86,7 @@ export function PbWidget({ it, editing }) {
 }
 
 // The settings of a ready-made part (edit mode). data = what the item holds; onChange(data) after every change.
-export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, position = null, onPosition = null }) {
+export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, position = null, onPosition = null, renderColor = null }) {
   const [wtab, setWtab] = useState("settings");
   if (widget === "code") return <CodeEditor data={data} onChange={onChange} onClose={onClose} />;
   const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // in the panel of the editor, not a window
@@ -99,8 +99,17 @@ export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, posi
     <div className={host ? "pb-hdock" : anchor ? "pb-anchorback" : "overlay"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) onClose(); }}>
       <div className={host ? "pb-hdock-in form" : "card modal form"} role="dialog" aria-label={tx(WIDGET_NAMES[widget] || "")} style={host ? undefined : { maxWidth: 560, ...anchorStyle(anchor, 560) }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}><h2 style={{ margin: 0 }}>{tx(WIDGET_NAMES[widget] || "")}</h2>{host && <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button>}</div>
-        {onPosition && <Tabs tabs={[["settings", widget === "quote" ? "Tekst" : "Instellingen"], ["pos", "Position"], ["align", "Uitlijnen"], ["font", "Lettertype"]]} value={wtab} onChange={setWtab} />}
-        {onPosition && wtab === "pos" ? <PositionTab withSize value={position} onChange={onPosition} /> : onPosition && wtab === "align" ? <TextAlignTab value={position} onChange={onPosition} /> : onPosition && wtab === "font" ? <FontTab value={position} onChange={onPosition} /> : (<>
+        {onPosition && <Tabs tabs={[["settings", widget === "quote" ? "Tekst" : "Instellingen"], ["pos", "Position"], ["align", "Uitlijnen"], ["font", "Lettertype"], ...(renderColor && ["contact", "quote", "stats", "hours", "social"].includes(widget) ? [["color", "Kleur"]] : [])]} value={wtab} onChange={setWtab} />}
+        {onPosition && wtab === "pos" ? <PositionTab withSize value={position} onChange={onPosition} /> : onPosition && wtab === "align" ? <TextAlignTab value={position} onChange={onPosition} /> : onPosition && wtab === "font" ? <FontTab value={position} onChange={onPosition} /> : onPosition && wtab === "color" && renderColor ? (
+          <div className="pb-cols">
+            <div className="pb-stylerow"><span>{tx("Kleur")}</span>{renderColor("color")}</div>
+            {widget === "quote" && <>
+              <div className="pb-stylerow"><span>{tx("Aanhalingstekens")}</span>{renderColor("qcolor")}</div>
+              <label className="check"><span className="switch"><input type="checkbox" checked={data.marks !== false} onChange={(e) => set({ marks: e.target.checked })} /><span /></span><span>{tx("Twee grote aanhalingstekens tonen")}</span></label>
+            </>}
+            <small className="muted">{tx("Leeg is de kleur van het thema.")}</small>
+          </div>
+        ) : (<>
         {widget === "contact" && ["address", "phone", "email"].map((k) => (
           <label key={k} className="check"><span className="switch"><input type="checkbox" checked={data[k] !== false} onChange={(e) => set({ [k]: e.target.checked })} /><span /></span><span>{tx({ address: "Adres tonen", phone: "Telefoon tonen", email: "E-mailadres tonen" }[k])}</span></label>
         ))}
