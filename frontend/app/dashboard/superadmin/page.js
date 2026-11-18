@@ -19,6 +19,7 @@ import AdminTiles from "../../../components/AdminTiles";
 import Collapsible from "../../../components/Collapsible";
 import LicenseAdmin from "../../../components/LicenseAdmin";
 import GlobalSettings from "../../../components/GlobalSettings";
+import ResellerManagement from "../../../components/ResellerManagement";
 import SaveDefaults from "../../../components/SaveDefaults";
 import PresetPicker from "../../../components/PresetPicker";
 import ProfileThemeSwitches from "../../../components/ProfileThemeSwitches";
@@ -46,6 +47,7 @@ export default function SuperAdminHome() {
           <SuperTile href="/dashboard/superadmin/prijzen" icon={IconReceipt} label={tx("Prijzen")} title={tx("Prijslijst bewerken")} text={tx("Per maand, kwartaal en jaar, ex btw")} lock onClick={deny} />
           <SuperTile href="/dashboard/superadmin/sites" icon={IconGlobe} label={tx("Site manager")} title={tx("Alle easy2edit-websites")} text={tx("Adressen, IP-adressen en inlogs van beheerders")} lock onClick={deny} />
           <GlobalSettings />
+          <ResellerManagement />
           <SaveDefaults />
         </div>
       </Collapsible>

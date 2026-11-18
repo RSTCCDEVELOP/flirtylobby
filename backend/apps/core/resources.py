@@ -162,7 +162,7 @@ def _folders(kind, site=True, product=True):
 
 
 def remote():
-    """True when the library comes from the easy2edit server (Super admin+ -> easy2edit settings -> Settings): then the folder resource/ of this installation is not read. The server itself always uses its own folder."""
+    """True when the library comes from the easy2edit server (Super admin+ -> easy2edit management -> Settings): then the folder resource/ of this installation is not read. The server itself always uses its own folder."""
     from . import global_settings, sitemanager
 
     try:

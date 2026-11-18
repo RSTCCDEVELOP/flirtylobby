@@ -71,7 +71,7 @@ export default function GlobalSettings() {
   // the data of the easy2edit server: shown to every superadmin with a lock; only a superadmin+ opens it
   return (
     <>
-      <SuperTile helpKey="global-settings" icon={IconSettings} label={tx("Standaard en globale instellingen")} title={tx("easy2edit instellingen")} lock
+      <SuperTile helpKey="global-settings" icon={IconSettings} label={tx("Standaard en globale instellingen")} title={tx("easy2edit beheer")} lock
         text={v ? `*.${v.base_domain} · ${v.api_url.replace(/^https?:\/\//, "")}` : ""}
         footer={
           <button type="button" className="btn sm primary" onClick={() => { if (!plus) return alertDialog(tx("Dit onderdeel is alleen voor een superadmin+.")); setOpen(true); setMsg(null); setTab("server"); if (data) setForm(data.values); }}>{tx("Instellingen")}</button>

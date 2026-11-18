@@ -303,3 +303,154 @@ def site_online(request, pk):
         return Response(sitemanager.set_site_online(_site_or_404(pk), bool(request.data.get("online")), str(request.data.get("message") or "")))
     except sitemanager.RemoteError as e:
         return _remote_failed(e)
+
+
+# ── resellers ────────────────────────────────────────────────────────────────
+def _reseller_guard(request):
+    """Resellers are managed by a superadmin+ on the installation that is the easy2edit server only."""
+    if (deny := _plus_only(request)):
+        return deny
+    if not sitemanager.server_enabled():
+        return Response({"detail": "Alleen op de easy2edit-server."}, status=status.HTTP_403_FORBIDDEN)
+    return None
+
+
+def _reseller_or_404(pk):
+    from .models import Reseller
+
+    r = Reseller.objects.filter(pk=pk).first()
+    if not r:
+        raise Http404
+    return r
+
+
+def _res_error(e):
+    return Response({"detail": str(e), "errors": getattr(e, "errors", {})}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "POST"])
+def resellers_admin(request):
+    """Superadmin+: the list of resellers (GET) or a new one (POST)."""
+    from . import resellers
+    from .models import Reseller
+
+    if (deny := _reseller_guard(request)):
+        return deny
+    if request.method == "POST":
+        try:
+            r = resellers.save(None, request.data if isinstance(request.data, dict) else {})
+        except resellers.ResellerError as e:
+            return _res_error(e)
+        return Response(resellers.brief(r), status=status.HTTP_201_CREATED)
+    return Response({"resellers": [resellers.brief(r) for r in Reseller.objects.prefetch_related("sites", "logins")], "default_share": str(resellers.default_share()),
+                     "sites": [{"id": s.pk, "name": s.name, "url": s.url, "reseller": s.reseller_id} for s in EasySite.objects.all()]})
+
+
+@api_view(["GET", "PUT", "DELETE"])
+def reseller_admin(request, pk):
+    from . import resellers
+
+    if (deny := _reseller_guard(request)):
+        return deny
+    r = _reseller_or_404(pk)
+    if request.method == "DELETE":
+        r.delete()
+        resellers.sync_host()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    if request.method == "PUT":
+        try:
+            r = resellers.save(r, request.data if isinstance(request.data, dict) else {})
+        except resellers.ResellerError as e:
+            return _res_error(e)
+        resellers.sync_host()  # (an inactive reseller: its logins go from this site)
+    return Response(resellers.brief(r))
+
+
+def _site_url_of(r):
+    s = r.sites.exclude(url="").first()
+    return s.url if s else ""
+
+
+@api_view(["POST"])
+def reseller_logins(request, pk):
+    """Superadmin+: a login for the reseller. POST {email, name, password (empty = made), send (e-mail with the password)} -> the login and the password (shown once)."""
+    from . import resellers
+
+    if (deny := _reseller_guard(request)):
+        return deny
+    r = _reseller_or_404(pk)
+    d = request.data if isinstance(request.data, dict) else {}
+    try:
+        x, pw = resellers.add_login(r, d.get("email"), d, d.get("password"), bool(d.get("send")), _site_url_of(r))
+    except resellers.ResellerError as e:
+        return _res_error(e)
+    return Response({"login": resellers.login_brief(x), "password": pw, "sent": bool(d.get("send"))}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["PATCH", "DELETE"])
+def reseller_login(request, pk, lid):
+    """Superadmin+: switch a login on or off, give it a new password (PATCH {active, new_password: true|"text", send}) or remove it."""
+    from . import resellers
+    from .models import ResellerLogin
+
+    if (deny := _reseller_guard(request)):
+        return deny
+    r = _reseller_or_404(pk)
+    x = ResellerLogin.objects.filter(pk=lid, reseller=r).first()
+    if not x:
+        raise Http404
+    if request.method == "DELETE":
+        x.delete()
+        resellers.sync_host()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    d = request.data if isinstance(request.data, dict) else {}
+    pw = None
+    try:
+        resellers.change_login(x, d)
+    except resellers.ResellerError as e:
+        return _res_error(e)
+    if d.get("new_password"):
+        try:
+            pw = resellers.set_password(x, "" if d["new_password"] is True else d["new_password"], bool(d.get("send")), _site_url_of(r))
+        except resellers.ResellerError as e:
+            return _res_error(e)
+    return Response({"login": resellers.login_brief(x), "password": pw, "sent": bool(d.get("send")) and pw is not None})
+
+
+@api_view(["PUT"])
+def reseller_sites(request, pk):
+    """Superadmin+: which websites belong to this reseller: PUT {site_ids: [..]} (the others of this reseller are let go)."""
+    if (deny := _reseller_guard(request)):
+        return deny
+    r = _reseller_or_404(pk)
+    ids = [int(x) for x in (request.data.get("site_ids") or []) if str(x).isdigit()] if isinstance(request.data, dict) else []
+    EasySite.objects.filter(reseller=r).exclude(pk__in=ids).update(reseller=None)
+    EasySite.objects.filter(pk__in=ids).update(reseller=r)
+    from . import resellers
+
+    return Response(resellers.brief(r))
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def resellers_public(request):
+    """The public, searchable list of resellers (what may be public only): ?q="""
+    from . import resellers
+
+    return Response({"resellers": resellers.public_list(request.query_params.get("q", ""))})
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def reseller_accounts(request):
+    """A website asks (with its key) who sells it and which logins its reseller has: they are made in that website."""
+    from . import resellers
+
+    if not sitemanager.server_enabled():
+        raise Http404
+    site = sitemanager.site_for_key(request.META.get("HTTP_X_EASY2EDIT_KEY", ""))
+    if not site or site.status != "active":
+        return Response({"detail": "Onbekende of niet goedgekeurde website."}, status=status.HTTP_403_FORBIDDEN)
+    return Response(resellers.accounts_for(site))

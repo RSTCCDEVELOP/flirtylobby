@@ -184,6 +184,13 @@ export default function LicenseAdmin() {
           </div>
           <label>{tx("Licentie geldig tot")}<input type="date" value={lic.valid_until || ""} onChange={(e) => field("valid_until", e.target.value)} />
             <small className="muted" style={{ display: "block" }}>{tx("Leeg = geen einddatum. Na deze datum ziet iedereen de onderhoudspagina; superadmins kunnen nog inloggen om de licentie te verlengen.")}</small></label>
+          {(lic.billing?.methods || []).length > 0 && (
+            <label>{tx("Betaalwijze van deze licentie")}
+              <select value={lic.billing.method || ""} onChange={(e) => setMethod(e.target.value)}>
+                {lic.billing.methods.map((m) => <option key={m.key} value={m.key}>{tx(m.label)}</option>)}
+              </select>
+              <small className="muted" style={{ display: "block" }}>{tx(METHOD_HINT[lic.billing.method] || "")} {tx("Je kunt dit ook instellen op het tabblad Betalen.")}</small></label>
+          )}
           <div style={{ display: "flex", gap: ".6rem", alignItems: "end", flexWrap: "wrap" }}>
             <label style={{ flex: 1, minWidth: 180 }}>{tx("Licentienummer")}<input value={lic.number} readOnly placeholder={tx("Nog niet gemaakt")} style={{ fontFamily: "monospace", letterSpacing: ".05em" }} /></label>
             <button type="button" className="btn primary" onClick={make}>{lic.number ? tx("Nieuw nummer maken") : tx("Nummer maken")}</button>

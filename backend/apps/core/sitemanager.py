@@ -311,6 +311,9 @@ def report(event="login", role=""):
                 r = _post(f"{api}/api/easy2edit/sites/ping/", {**data, **({} if _state().get("callback_key") else {"callback": "missing"})}, key)
                 if r.get("callback_key"):  # the key for the calls of the easy2edit server to this website
                     _save(callback_key=str(r["callback_key"]))
+                from . import resellers
+
+                resellers.sync()  # who sells this website and which logins the reseller has (made here)
         _save(last_ok_at=timezone.now().isoformat(timespec="seconds"), last_error="", last_event=event)
         _released()
         return {"ok": True, "error": ""}

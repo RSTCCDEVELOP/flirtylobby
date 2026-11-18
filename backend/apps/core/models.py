@@ -97,6 +97,52 @@ class ModuleState(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class Reseller(models.Model):
+    """A reseller of easy2edit (kept on the installation that is the easy2edit server, Super admin+ -> Licence -> Resellers): company, three contact persons (sales, financial, support),
+    websites, more information, and the share of RST for the use of easy2edit (the rest is the margin of the reseller). Websites (EasySite) and logins belong to a reseller."""
+
+    name = models.CharField(max_length=150)
+    active = models.BooleanField(default=True)  # only active resellers are shown on the public page
+    website = models.CharField(max_length=300, blank=True)
+    email = models.EmailField(blank=True)  # the general e-mail address and phone number of the company (the contact persons have their own)
+    phone = models.CharField(max_length=30, blank=True)
+    websites = models.JSONField(default=list, blank=True)  # more websites: [{"label", "url"}]
+    info = models.TextField(blank=True)  # more information (small editor: "html:...")
+    address = models.JSONField(default=dict, blank=True)  # street, house_number, postal_code, city, country
+    kvk = models.CharField(max_length=40, blank=True)
+    vat_id = models.CharField(max_length=40, blank=True)
+    contacts = models.JSONField(default=list, blank=True)  # contact persons (a list; more than one of each kind): [{id, role: sales|financial|support|other, name, function, email, phone, mobile, same_address, address}]
+    rst_share = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # percent of the software price RST gets for the use of easy2edit (empty = the default of the price list)
+    notes = models.TextField(blank=True)  # internal, never public
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+
+class ResellerLogin(models.Model):
+    """A login of a reseller: an account that is made in the website of the customer (it is passed on to the website through the API) so the reseller can log in there."""
+
+    reseller = models.ForeignKey(Reseller, on_delete=models.CASCADE, related_name="logins")
+    email = models.EmailField()
+    name = models.CharField(max_length=120, blank=True)
+    password_hash = models.CharField(max_length=200, blank=True)  # the Django hash: the password itself is never kept
+    access = models.CharField(max_length=10, default="admin")  # the rights in the website of the customer: user | admin | superadmin
+    function = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    mobile = models.CharField(max_length=30, blank=True)  # also the number for the code by SMS
+    otp = models.CharField(max_length=5, default="email")  # the code check (two-step verification) at every login: email | sms | "" (none)
+    all_sites = models.BooleanField(default=True)  # may log in on every website of the reseller (otherwise only on site_ids)
+    site_ids = models.JSONField(default=list, blank=True)
+    host = models.BooleanField(default=True)  # may also log in on the easy2edit site itself (as a user without extra rights)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["email"]
+        constraints = [models.UniqueConstraint(fields=["reseller", "email"], name="uniq_reseller_login")]
+
+
 class EasySite(models.Model):
     """An easy2edit website that has reported itself to the easy2edit server (Super admin+ -> Site manager). Kept on the installation that is the site manager server."""
 
@@ -125,6 +171,7 @@ class EasySite(models.Model):
     last_login_role = models.CharField(max_length=20, blank=True)  # admin | superadmin | superadmin+
     login_count = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True)
+    reseller = models.ForeignKey("core.Reseller", null=True, blank=True, on_delete=models.SET_NULL, related_name="sites")  # who sells this website (its logins are made in that website)
 
     class Meta:
         ordering = ["-last_seen", "-first_seen"]
