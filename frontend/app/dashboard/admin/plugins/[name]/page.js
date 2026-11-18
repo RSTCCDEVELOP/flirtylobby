@@ -30,6 +30,7 @@ export default function PluginAdminPage() {
   const [msg, setMsg] = useState(null);
   const load = useCallback(() => api("/plugins/").then((d) => setP(d.plugins.find((x) => x.name === name) || false)).catch((e) => setMsg(errorText(e))), [name]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { const f = () => load(); window.addEventListener("licence-reverted", f); return () => window.removeEventListener("licence-reverted", f); }, [load]);  // "Nu niet" in the licence question undid a switch: read the state again
 
   async function toggle(on) {
     const off = on ? p.requires_off || [] : [];

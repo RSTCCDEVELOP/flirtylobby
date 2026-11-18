@@ -53,6 +53,7 @@ export default function SetupWizard() {
   const [closed, setClosed] = useState(false);
   const [costs, setCosts] = useState(null);
   const [costInfo, setCostInfo] = useState(false);
+  const [upd, setUpd] = useState(null);  // update mode: a module or plugin was switched on or off and the licence price changed: {old, new, delta, number}; the licence is updated with a new agreement
   const [done, setDone] = useState(null);  // the licence that was made: shown when everything is saved
   const [pay, setPay] = useState({ busy: false, error: "" });  // the payment step (Stripe)
   const [consent, setConsent] = useState({ method: "email", sent: false, busy: false, error: "", shown: "" });  // the consent with the licence: a code (000-0000) by e-mail or SMS
@@ -66,8 +67,9 @@ export default function SetupWizard() {
 
   useEffect(() => {
     if (!allowed) return undefined;
-    const again = (to) => api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setStep(typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
-    window.addEventListener("open-setup-wizard", again);
+    const again = (to, detail) => api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
+    const onOpen = (e) => again(undefined, e?.detail);
+    window.addEventListener("open-setup-wizard", onOpen);
     try { // back from Stripe: is the session paid? Then the wizard goes on with the agreement
       const qs = new URLSearchParams(window.location.search);
       if (qs.get("setup_paid") && qs.get("session_id")) {
@@ -76,7 +78,7 @@ export default function SetupWizard() {
       } else if (qs.get("setup_cancel")) { window.history.replaceState(null, "", window.location.pathname); again("pay"); }
     } catch { /* no address bar */ }
     try { if (sessionStorage.getItem("e2e_open_setup")) { sessionStorage.removeItem("e2e_open_setup"); again(); } } catch { /* no storage */ }  // asked for on another page (the licence question): open now
-    return () => window.removeEventListener("open-setup-wizard", again);
+    return () => window.removeEventListener("open-setup-wizard", onOpen);
   }, [allowed]);
 
   useEffect(() => { // the hosting options come from the price list: read them again when they are not there (an older answer of the server)
@@ -99,7 +101,7 @@ export default function SetupWizard() {
   }, [step, d, user, forced]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!allowed || closed || !(d?.needed || forced || done) || typeof document === "undefined") return null;
-  const steps = STEPS.filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
+  const steps = upd ? STEPS.filter((x) => ["costs", "agree", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
   const hostOpt = d.needs_license ? (d.hosting_options || []).find((o) => o.key === form.hosting) : null;  // the chosen hosting: a line of the price (not in the base price)
   const hostPrice = hostOpt ? Number(hostOpt.price) : 0;
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrs((x) => ({ ...x, [k]: "" })); };
@@ -115,7 +117,14 @@ export default function SetupWizard() {
   // what is known about the logged in person is read when you go to a step: only the fields that are still empty
   const fill = (key) => setForm((f) => { const o = { ...f }; steps.find((s) => s[0] === key)[2].forEach((k) => { if (!String(o[k] || "").trim() && d.suggest?.[k]) o[k] = d.suggest[k]; }); return o; });
   const next = () => { if (checkStep()) { const n = steps[stepIdx + 1][0]; fill(n); setStep(n); } };
+  const saveUpdate = async () => {  // update mode: the licence runs on with the new price (same number)
+    setBusy(true); setError("");
+    try { const r = await api("/system/license/update/", { method: "POST", body: {} }); setForced(false); setUpd(null); window.dispatchEvent(new Event("setup-saved")); setDone({ ...r.license, updated: true, old: r.old, new: r.new }); }
+    catch (e) { setError(errorText(e)); if (e?.data?.errors?.consent) setStep("agree"); }
+    setBusy(false);
+  };
   const save = async () => {
+    if (upd) return saveUpdate();
     if (!checkStep()) return;
     setBusy(true); setError("");
     try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); if (r.license?.number && d.needs_license) setDone(r.license); } }
@@ -203,12 +212,13 @@ export default function SetupWizard() {
         <KitScope tag="ui-alerts">
           <div className="e2e-stack" style={{ gap: "1.1rem", textAlign: "center", alignItems: "center" }}>
             <span className="e2e-alert__icon" style={{ width: 44, height: 44 }}><IconCheck width={22} height={22} /></span>
-            <h2 style={{ margin: 0 }}>{tx("Licentie aangemaakt")}</h2>
+            <h2 style={{ margin: 0 }}>{done.updated ? tx("Licentie bijgewerkt") : tx("Licentie aangemaakt")}</h2>
             <div style={{ width: "100%", padding: "1rem", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #f4f6fa)", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))" }}>
               <span className="e2e-hint">{tx("Licentienummer")}</span>
               <div style={{ fontFamily: "monospace", fontSize: "1.45rem", fontWeight: 700, letterSpacing: ".06em", userSelect: "all", wordBreak: "break-all" }}>{done.number}</div>
             </div>
             <div className="e2e-stack" style={{ gap: ".25rem" }}>
+              {done.updated && <span><strong>{money(done.old)} → {money(done.new)}</strong> {tx("per maand")} · {tx("incl. btw")}</span>}
               {done.client && <span>{done.client}</span>}
               {done.main_url && <span className="e2e-hint">{done.main_url.replace(/^https?:\/\//, "")}</span>}
               {done.valid_until && <span className="e2e-hint">{tx("Verlengdatum")}: {new Date(done.valid_until).toLocaleDateString(getLanguage(), { day: "numeric", month: "long", year: "numeric" })}</span>}
@@ -228,8 +238,8 @@ export default function SetupWizard() {
             <div className="sw-head">
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap" }}>
               <div style={{ minWidth: 0 }}>
-                <h2 style={{ margin: 0 }}>{tx("Licentiegegevens")}</h2>
-                <p className="e2e-hint" style={{ margin: ".3rem 0 0" }}>{tx("Vul de gegevens van deze website in. Alle velden zijn verplicht.")}</p>
+                <h2 style={{ margin: 0 }}>{upd ? tx("Licentie bijwerken") : tx("Licentiegegevens")}</h2>
+                <p className="e2e-hint" style={{ margin: ".3rem 0 0" }}>{upd ? tx("De prijs van de licentie is veranderd. Controleer de kosten en geef akkoord om de licentie bij te werken.") : tx("Vul de gegevens van deze website in. Alle velden zijn verplicht.")}</p>
               </div>
               {(() => { // where the licence comes from: the easy2edit licence server, or only this computer
                 const ls = d.license_server || { mode: "local" };
@@ -355,8 +365,8 @@ export default function SetupWizard() {
                   <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: "1rem" }}>
                     <div style={{ textAlign: "center", padding: ".9rem 1rem", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #f4f6fa)", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))" }} data-easy2edit-tag="ui-kpi">
                       <span className="e2e-hint">{tx("Licentienummer")}</span>
-                      <div style={{ fontFamily: "monospace", fontSize: "1.5rem", fontWeight: 700, letterSpacing: ".06em", userSelect: "all" }}>{d.license_number}</div>
-                      <span className="e2e-hint">{tx("Het nummer wordt actief zodra je opslaat.")}</span>
+                      <div style={{ fontFamily: "monospace", fontSize: "1.5rem", fontWeight: 700, letterSpacing: ".06em", userSelect: "all" }}>{upd ? upd.number : d.license_number}</div>
+                      <span className="e2e-hint">{upd ? tx("Dit is je bestaande licentie: het nummer blijft hetzelfde.") : tx("Het nummer wordt actief zodra je opslaat.")}</span>
                     </div>
                     <div className="e2e-table-wrap" data-easy2edit-tag="ui-data-table">
                       <table className="e2e-table"><tbody>
@@ -408,6 +418,7 @@ export default function SetupWizard() {
               {step === "costs" && (
                 <div className="e2e-stack sw-fit-costs" style={{ gridColumn: "1 / -1", gap: ".8rem" }}>
                   {!costs ? <span className="e2e-hint">{tx("Laden…")}</span> : <>
+                    {upd && <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div><strong>{Number(upd.delta) > 0 ? tx("De licentie wordt duurder") : tx("De licentie wordt goedkoper")}</strong><br />{money(upd.old)} → <strong>{money(upd.new)}</strong> {tx("per maand")} ({Number(upd.delta) > 0 ? "+" : ""}{money(upd.delta)}) · {tx("incl. btw")}</div></div>}
                     {(() => { // the subscription starts on the 1st: until the end of this month you pay in proportion, after that the full month price
                       const now = new Date(), lang = getLanguage(), mo = Number(costs.monthly || 0), per = [1, 3, 12].includes(Number(form.renew_months)) ? Number(form.renew_months) : 12;
                       const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), left = days - now.getDate() + 1;

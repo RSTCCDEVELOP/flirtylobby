@@ -196,6 +196,7 @@ def use(key, with_files=False):
     new.update({k: old[k] for k in KEEP if k in old} | {k: old[k] for k in old if k.startswith("chat_")})
     cur.theme = {k: v for k, v in new.items() if v != theme.DEFAULTS[k]}
     cur.save()
+    _remember(key, man)
     if man.get("menu"):  # the settings of the menu come with the theme
         from apps.pages import service as pages_service
         from apps.pages.models import MenuSettings
@@ -203,6 +204,62 @@ def use(key, with_files=False):
     with_files = with_files or key == "easy2edit"  # the default theme always brings its own logos: the logo of another site must not stay
     files = apply_files(key) if with_files and (key not in BUILTIN_KEYS() or man.get("customized")) else (0, 0)
     return files
+
+
+def _fingerprint(man):
+    import hashlib
+
+    return hashlib.sha256(json.dumps({"values": man.get("values"), "menu": man.get("menu")}, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def _remember(key, man):
+    """Which theme was made the look of the site and what it was like then: a later update sees whether the theme itself changed."""
+    from . import presets
+
+    d = presets._data()
+    d["theme_applied"] = {"key": key, "hash": _fingerprint(man)}
+    presets._save_data(d)
+
+
+def refresh_local():
+    """After a new version: the themes are read again and updated. 1) every theme package on this website (also the ones that were made here: by AI, from a website, uploaded, or a changed built-in theme)
+    is checked and written back clean (unknown or invalid settings go, the system version is brought up to date). 2) when the theme that is the look of the site has itself changed (a new version of
+    the system, a new version from the library, or a changed file) the site gets the new look again; what somebody changed by hand in the theme settings of an unchanged theme stays.
+    Returns {"checked", "updated": [keys], "applied": key|None, "problems": [...]}."""
+    from . import presets
+
+    found, problems = scan()
+    out = {"checked": 0, "updated": [], "applied": None, "problems": [p["folder"] + ": " + p["problem"] for p in problems if p["problem"] != "theme.json ontbreekt"]}  # (a folder without theme.json is no theme)
+    folders = [d for d in sorted(root().iterdir()) if d.is_dir() and not d.name.startswith(".") and d.name != "language" and (d / "theme.json").is_file()]
+    for d in folders:
+        f = d / "theme.json"
+        try:
+            raw = f.read_bytes()
+            man = parse(raw, builtin_ok=True)
+            doc = json.loads(raw)
+        except (OSError, ThemeError) as e:
+            out["problems"].append(f"{d.name}: {e}")
+            continue
+        out["checked"] += 1
+        new = dict(doc)
+        new["values"] = man["values"]  # only the known, valid settings
+        if man.get("menu"):
+            new["menu"] = man["menu"]
+        new["system_version"] = settings.SYSTEM_VERSION
+        if new != doc:
+            keep = ("key", "name", "description", "version", "system_version", "mode", "values", "home", "menu")
+            f.write_text(json.dumps({k: new[k] for k in keep if k in new}, indent=2, ensure_ascii=False) + "\n")
+            out["updated"].append(d.name)
+    if out["updated"]:
+        scan()
+    rec = (presets._data() or {}).get("theme_applied") or {}
+    key = rec.get("key")
+    if key:
+        man = manifest_of(key)
+        if man and _fingerprint(man) != rec.get("hash"):
+            use(key)  # (use() remembers the new state)
+            out["applied"] = key
+    return out
 
 
 def install_zip(data):

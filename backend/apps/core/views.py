@@ -650,6 +650,70 @@ def _license_server():
     return {"mode": mode, "url": global_settings.get().get("api_url", "") if mode in ("linked", "disconnected") else "", "last_ok_at": st.get("last_ok_at", "") if mode == "linked" else ""}
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def license_change(request):
+    """Did the price of the licence change since it was made or last updated (a module or plugin was switched on or off)? {changed, old, new, delta, has}.
+    A licence that has no price on record yet gets the current one as its starting point (nothing changed)."""
+    from decimal import Decimal
+
+    from . import license_price
+    from .models import License
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.number:
+        return Response({"has": False, "changed": False})
+    now = license_price.monthly(lic)
+    item = None
+    kind, _, key = str(request.query_params.get("item") or "").partition(":")  # the module or plugin that was just switched: what it is and what it costs (per month, incl. VAT)
+    if kind in ("plugin", "module") and key:
+        c = next((x for x in license_price.catalog() if x["kind"] == kind and x["key"] == key), None)
+        if c:
+            item = {"label": c["label"], "price": str(c["price"]), "kind": kind}
+    if lic.billed_monthly <= 0:  # a licence without a price on record: the price from before this switch is the starting point
+        before = now
+        if item and request.query_params.get("enabled") in ("1", "0"):
+            before = now - c["price"] if request.query_params.get("enabled") == "1" else now + c["price"]
+        lic.billed_monthly = before
+        lic.save(update_fields=["billed_monthly"])
+    d = (now - lic.billed_monthly).quantize(Decimal("0.01"))
+    act = None  # what this one switch did: switched on = more expensive, switched off = cheaper (by the price of that module or plugin), whatever the licence was made for
+    if item and c and request.query_params.get("enabled") in ("1", "0") and c["price"] > 0:
+        step = c["price"] if request.query_params.get("enabled") == "1" else -c["price"]
+        act = {"old": str(now - step), "new": str(now), "delta": str(step)}
+    return Response({"has": True, "item": item, "action": act, "billed": str(lic.billed_monthly), "changed": d != 0, "old": str(lic.billed_monthly), "new": str(now), "delta": str(d), "number": lic.number, "renew_months": lic.renew_months})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def license_update_apply(request):
+    """Update mode, last step: the licence runs on with the new price (same number). Needs the consent with the code. A Stripe subscription collects the new amount from the next period."""
+    from . import license_price, licence_notify, license_stripe, setup_consent, system
+    from .models import License
+
+    if (bad := _setup_pay_guard(request)) is not None:
+        return bad
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.number:
+        return Response({"detail": "Er is nog geen licentie."}, status=400)
+    if not setup_consent.ok(request.user):
+        return Response({"detail": "Geef akkoord met de code die je per e-mail of SMS krijgt.", "errors": {"consent": "Geef akkoord met de code die je per e-mail of SMS krijgt."}}, status=400)
+    old, now = lic.billed_monthly, license_price.monthly(lic)
+    lic.billed_monthly = now
+    lic.save(update_fields=["billed_monthly"])
+    license_price.refresh()
+    try:
+        license_stripe.sync_price(lic)
+    except license_stripe.StripeError:
+        pass
+    system.license_changed()
+    setup_consent.clear(request.user)
+    licence_notify.notify("changed", [f"Prijs per maand (incl. btw): € {old} → € {now}"], by=request.user)
+    return Response({"ok": True, "license": _license_brief(), "old": str(old), "new": str(now)})
+
+
 def _license_exists():
     from .models import License
 
@@ -701,6 +765,9 @@ def _make_license(until=None, months=None, hosting=None, user=None):
         lic.client_parts = {k: s.get(k, "") for k in system.ADDRESS_PARTS}
         lic.client_address = (s.get("address") or "")[:300]
     lic.main_url = lic.main_url or s.get("frontend_url", "")
+    from . import license_price
+
+    lic.billed_monthly = license_price.monthly(lic)
     lic.save()
     system.license_changed()
     from . import licence_notify
@@ -1735,6 +1802,21 @@ def system_license(request):
             lic.allowed_methods = lst
             if lic.payment_method not in lst:
                 lic.payment_method = lst[0]
+        if "payment_method" in d:  # the way the user pays: one of the three, only one is active
+            from . import license_billing
+
+            m = str(d.get("payment_method") or "")
+            if m not in license_billing.METHODS:
+                return Response({"detail": "Kies online betalen, automatische incasso of op rekening."}, status=400)
+            if m not in (lic.allowed_methods or []):
+                lic.allowed_methods = [*(lic.allowed_methods or []), m]
+            if m != "auto" and lic.sub_status == "active":
+                try:
+                    license_billing.stop_subscription(lic)  # collecting by itself ends when another way of paying is chosen
+                except license_billing.BillingError as e:
+                    return Response({"detail": str(e)}, status=400)
+                lic.refresh_from_db(fields=["sub_status"])
+            lic.payment_method = m
         if "backup_included" in d:
             try:
                 lic.backup_included = min(max(int(d["backup_included"]), 0), 1000)

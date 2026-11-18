@@ -79,6 +79,16 @@ def run(step, user):
                 bad = [r["name"] for r in resources.overview(user)["languages"] if r["state"] == "update" and r.get("installed_version")]
                 return _library("languages", user) if bad else {"ok": True, "message": "Alle talen zijn aanwezig."}
             r = _library(step, user)
+            if step == "themas":  # the themes of this website too (also the ones made here) and the look of the site when its theme changed
+                from . import themepacks
+
+                t = themepacks.refresh_local()
+                extra = f" {t['checked']} thema's op deze website gecontroleerd" + (f", {len(t['updated'])} bijgewerkt ({', '.join(t['updated'])})" if t["updated"] else "") + "."
+                if t["applied"]:
+                    extra += f" Het thema {t['applied']} was veranderd en staat nu opnieuw op de website."
+                r["message"] = (r.get("message") or "").rstrip() + extra
+                if t["problems"]:
+                    r = {"ok": False, "message": r["message"] + " Niet in orde: " + "; ".join(t["problems"][:3])}
             if step == "plugins":
                 from apps.plugins import runtime
 

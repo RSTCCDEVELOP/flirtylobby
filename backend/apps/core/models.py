@@ -180,6 +180,7 @@ class License(models.Model):
     stripe_config_encrypted = models.TextField(blank=True)  # the Stripe account of whoever sells the licence (keys encrypted): NOT the Stripe link of the website's own shop
     payment_ref = models.CharField(max_length=40, blank=True)  # the open renewal payment
     client_parts = models.JSONField(default=dict, blank=True)  # the address of the client in parts: street, house_number, postal_code, city, country (client_address is the same on one line)
+    billed_monthly = models.DecimalField(max_digits=9, decimal_places=2, default=0)  # the price per month (incl. VAT) the licence was made or last updated for: when modules or plugins are switched on or off the price changes and the licence can be updated (0 = not known yet)
     hosting = models.CharField(max_length=30, blank=True)  # the hosting that is paid with the licence (a key of the hosting options in the price list); empty = none / own hosting
     main_url = models.CharField(max_length=300, blank=True)  # the main address of the website (https://...): the licence is for this address
     reseller_name = models.CharField(max_length=120, blank=True)  # who sells the licence: shown to administrators when there is none

@@ -282,3 +282,87 @@ def test_licence_change_mails(monkeypatch):
     n = len(sent)
     c.put("/api/system/license/", {"client": "Nieuwe klant"}, format="json")  # nothing changed: no mail
     assert len(sent) == n
+
+
+@pytest.mark.django_db
+def test_licence_price_change_and_update(monkeypatch):
+    from decimal import Decimal
+
+    from apps.communication import sending
+    from apps.core import license_price, setup_consent
+    from apps.core.models import License, ModuleState
+
+    monkeypatch.setattr(sending, "send_email", lambda *a, **k: None)
+    u = get_user_model().objects.create_user("pc", "pc@x.nl", "pw12345678!", is_staff=True)
+    c = APIClient()
+    c.force_authenticate(u)
+    assert c.get("/api/system/license/change/").json() == {"has": False, "changed": False}
+    lic, _ = License.objects.get_or_create(pk=1)
+    lic.number = "AAAA-BBBB-CCCC-DDDD"
+    lic.save()
+    first = c.get("/api/system/license/change/").json()  # starting point: nothing changed
+    assert first["has"] and not first["changed"]
+    monkeypatch.setattr(license_price, "monthly", lambda l=None, _b=Decimal(first["new"]): _b + 5)  # a module that costs money was switched on
+    r = c.get("/api/system/license/change/").json()
+    assert r["changed"] and r["delta"] == "5.00"
+    assert c.post("/api/system/license/update/", {}, format="json").status_code == 400  # no consent yet
+    setup_consent.mark_ok(u)
+    ok = c.post("/api/system/license/update/", {}, format="json")
+    assert ok.status_code == 200 and ok.json()["license"]["number"] == "AAAA-BBBB-CCCC-DDDD"  # the same licence
+    assert not c.get("/api/system/license/change/").json()["changed"]
+
+
+@pytest.mark.django_db
+def test_update_refreshes_local_themes(tmp_path, settings):
+    import json
+
+    from apps.core import themepacks
+
+    settings.THEMES_DIR = tmp_path
+    d = tmp_path / "mijn-thema"
+    d.mkdir()
+    doc = {"key": "mijn-thema", "name": "Mijn thema", "description": "", "version": "1.0.0", "system_version": "0.0.1", "values": {"primary": "#112233", "light_line": "#aabbcc"}}
+    (d / "theme.json").write_text(json.dumps(doc))
+    r = themepacks.refresh_local()
+    assert r["checked"] == 1 and r["updated"] == ["mijn-thema"] and not r["problems"]
+    assert json.loads((d / "theme.json").read_text())["system_version"] == settings.SYSTEM_VERSION  # brought up to date
+    assert themepacks.refresh_local()["updated"] == []  # nothing left to do
+    themepacks.use("mijn-thema")
+    assert themepacks.refresh_local()["applied"] is None  # unchanged: the look stays as it is
+    doc["values"]["primary"] = "#445566"  # the theme itself changed (a new version / an edited file)
+    (d / "theme.json").write_text(json.dumps(doc))
+    r = themepacks.refresh_local()
+    assert r["applied"] == "mijn-thema" and themepacks.current_values()["primary"] == "#445566"
+    (d / "theme.json").write_text(json.dumps({**doc, "values": {"primary": "nope"}}))
+    assert themepacks.refresh_local()["problems"]  # a broken theme is reported, not lost
+
+
+@pytest.mark.django_db
+def test_first_switch_on_a_licence_without_a_price_is_not_swallowed():
+    from apps.core import license_price
+    from apps.core.models import License
+    from apps.plugins.models import Plugin
+
+    u = get_user_model().objects.create_user("fs", "fs@x.nl", "pw12345678!", is_staff=True)
+    c = APIClient()
+    c.force_authenticate(u)
+    lic, _ = License.objects.get_or_create(pk=1)
+    lic.number, lic.billed_monthly = "AAAA-BBBB-CCCC-DDDD", 0
+    lic.save()
+    Plugin.objects.update_or_create(name="agenda", defaults={"title": "Agenda", "enabled": True, "manifest": {"title": "Agenda"}})  # switched on just now; it costs money in the price list
+    r = c.get("/api/system/license/change/?item=plugin:agenda&enabled=1").json()
+    assert r["item"]["label"] == "Agenda" and float(r["item"]["price"]) > 0 and r["changed"] and float(r["delta"]) == float(r["item"]["price"])
+
+
+@pytest.mark.django_db
+def test_user_payment_method_one_active():
+    from apps.core.models import License
+
+    u = get_user_model().objects.create_user("pm", "pm@x.nl", "pw12345678!", is_staff=True)
+    u.is_superadmin_plus = True
+    u.save()
+    c = APIClient()
+    c.force_authenticate(u)
+    assert c.put("/api/system/license/", {"payment_method": "cash"}, format="json").status_code == 400
+    r = c.put("/api/system/license/", {"payment_method": "invoice"}, format="json").json()
+    assert r["billing"]["method"] == "invoice" and License.objects.get(pk=1).payment_method == "invoice"

@@ -19,6 +19,8 @@ import DefaultInstallPrompt from "./DefaultInstallPrompt";
 import SystemUpdatePrompt from "./SystemUpdatePrompt";
 import SetupWizard from "./SetupWizard";
 import ItemHelp from "./ItemHelp";
+import SidebarSearch from "./SidebarSearch";
+import LicenseChangePrompt from "./LicenseChangePrompt";
 import TermsGate from "./TermsGate";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
@@ -398,6 +400,7 @@ export default function DashboardShell({ children }) {
         )}
         {(canAdmin(user, mods) || user.is_staff) && (
           <div className="side-bottom">
+            <SidebarSearch onNavigate={() => setOpen(false)} />
             <NavGroup id="a-manage" title="Beheer" active={inAdmin || inSuper} badge={0}>
               {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
               {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}
@@ -417,6 +420,7 @@ export default function DashboardShell({ children }) {
         {user && <SystemUpdatePrompt />}
         {user && <SetupWizard />}
         <ItemHelp />
+        {user && <LicenseChangePrompt />}
         {user && !user.is_staff && <AiCreditGate />}
         {user && <ApiLinksInstall />}
         {user && <AiWelcome />}

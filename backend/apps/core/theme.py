@@ -432,6 +432,8 @@ def build(values):
             css_val, dark_val = f"{v}{f['unit']}", None
         else:
             css_val, dark_val = v, None
+        if f["css"] == "--line":  # lines and borders are mixed a little towards the text colour, in every theme, light and dark: fields and cards stay clearly visible
+            css_val = f"color-mix(in srgb, {css_val} 66%, var(--text))"
         decl = f"{f['css']}:{css_val};"
         {"light": light, "dark": dark}.get(f["mode"], root).append(decl)
         if dark_val:

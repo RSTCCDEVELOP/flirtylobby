@@ -42,6 +42,7 @@ export default function AdminTiles({ all = false }) {
   const [msg, setMsg] = useState("");
   const loadState = useCallback(() => (all ? api("/modules/all/").then((l) => setState(Object.fromEntries(l.map((m) => [m.key, m])))).catch(() => {}) : null), [all]);
   useEffect(() => { loadState(); }, [loadState]);
+  useEffect(() => { const f = () => { loadState(); router.refresh(); }; window.addEventListener("licence-reverted", f); return () => window.removeEventListener("licence-reverted", f); }, [loadState, router]);  // "Nu niet" in the licence question undid a switch
   const tiles = TILES.map((t) => {
     const on = all && state ? t.modules.every((m) => state[m]?.enabled !== false) : t.modules.some((m) => mods[m] !== false);
     const level = Math.max(...t.modules.map((m) => (mods[m] === false ? 0 : lvl(user, m))));

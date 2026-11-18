@@ -33,6 +33,7 @@ export default function PluginsPage() {
   const input = useRef(null);
   const load = useCallback(() => api("/plugins/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e), module: e?.data?.module })), []);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { const f = () => load(); window.addEventListener("licence-reverted", f); return () => window.removeEventListener("licence-reverted", f); }, [load]);  // "Nu niet" in the licence question undid a switch: read the state again
   const upd = (p) => setD((x) => ({ ...x, plugins: x.plugins.map((o) => (o.name === p.name ? p : o)) }));
 
   async function upload(file) {

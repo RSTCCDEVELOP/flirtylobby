@@ -37,6 +37,7 @@ function AccessModal({ module, onClose, onChange }) {
   const [error, setError] = useState("");
 
   const load = useCallback(() => api(`/module-grants/?module=${module.key}`).then(setGrants).catch((e) => setError(errorText(e))), [module.key]);
+  useEffect(() => { const f = () => load(); window.addEventListener("licence-reverted", f); return () => window.removeEventListener("licence-reverted", f); }, [load]);  // "Nu niet" in the licence question undid a switch
   useEffect(() => {
     load();
     api("/roles/").then(setRoles).catch(() => {});
