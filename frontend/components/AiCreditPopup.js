@@ -15,14 +15,14 @@ import { money } from "./AiCharts";
 
 // The offer to buy AI credit: a slider from a minimum to a maximum (it ends higher for someone who uses more) with a suggestion from the use of the last 30 days.
 // Paying goes through the payment link; when it is paid the credit is added. info = the answer of /ai/me/.
-export default function AiCreditPopup({ info, onClose }) {
+export default function AiCreditPopup({ info, onClose, amount: preset, beforePay }) {
   const p = info.proposal;
-  const [amount, setAmount] = useState(p.suggest);
+  const [amount, setAmount] = useState(preset || p.suggest);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const pay = async () => {
     setBusy(true); setErr("");
-    try { const r = await api("/ai/me/topup/", { method: "POST", body: { amount } }); window.location.href = r.url; }
+    try { if (beforePay) await beforePay(); const r = await api("/ai/me/topup/", { method: "POST", body: { amount } }); window.location.href = r.url; }
     catch (e) { setErr(errorText(e)); setBusy(false); }
   };
   const body = (

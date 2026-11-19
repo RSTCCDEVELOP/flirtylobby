@@ -14,12 +14,12 @@ import { manualLang } from "../lib/manualMap";
 import { tx } from "../lib/t";
 
 // The HTML manual in a large pop-up (a frame), at a chapter, in the language of the website; the switch EN | NL changes it (the same chapter in the other language).
-export default function ManualPopup({ page = "", lang: start, onClose }) {
+export default function ManualPopup({ page = "", lang: start, onClose, zIndex }) {
   const [lang, setLang] = useState(start || manualLang());
   const url = `${apiBase()}/api/manual/html/${lang}/${page}`;
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="overlay" style={zIndex ? { zIndex } : undefined} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="card modal manual-pop" role="dialog" aria-label={tx("Handleiding")} onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0 }}>{lang === "nl" ? "Handleiding" : "Manual"}</h2>

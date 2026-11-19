@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "بيانات {0} الواقعة وراء هذا الموقع وبيانات الشركات والمؤسسات الأخرى: الاسم والعنوان وجهة الاتصال والتسجيل. اختر صفًا لتعديله. يمكنك استخدامها في أي نص كمتغير، مثل {1}.",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "لا توجد كيانات بعد. أضف واحدًا بزر إضافة: مثل عميل أو صاحب عمل أو نادٍ ينتمي إليه المستخدمون.",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "اكتب متغيرًا في نص على صفحة (في وضع التحرير): يملؤه الموقع. إذا غيّرت شيئًا هنا فسيسري على جميع الصفحات. في وضع التحرير يبقى المتغير نفسه. وفي محرر الصفحات تتوفر أيضًا ككائن نظام (متغير).",
-  "De gebruiker die de pagina bekijkt": "المستخدم الذي يعرض الصفحة"
+  "De gebruiker die de pagina bekijkt": "المستخدم الذي يعرض الصفحة",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "هل تريد استخدام الذكاء الاصطناعي؟ يلزم حينها رصيد للذكاء الاصطناعي. هل تريد إعداده الآن؟",
+  "Ja, tegoed instellen": "نعم، إعداد الرصيد",
+  "Ja, tegoed opwaarderen": "نعم، شحن الرصيد",
+  "Nu niet, later": "ليس الآن، لاحقًا",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "هل تريد رؤية المساعدة؟ الدليل مع الشروحات ومقاطع الفيديو.",
+  "Help openen": "فتح المساعدة",
+  "Ja, tegoed kopen": "نعم، شراء الرصيد",
+  "AI-tegoed": "رصيد الذكاء الاصطناعي",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "يستخدم easy2edit الذكاء الاصطناعي (Claude) في الترجمة والنصوص واستيراد موقع وغيرها. لا يستطيع المستخدمون والمسؤولون استخدام الذكاء الاصطناعي إلا عند وجود رصيد. المشرفون الأعلى لا يحتاجون إلى رصيد.",
+  "AI staat niet aan in deze installatie.": "الذكاء الاصطناعي غير مفعّل في هذا التثبيت.",
+  "Ik wil AI-tegoed kopen": "أريد شراء رصيد الذكاء الاصطناعي",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "ستدفع بعد إنشاء الترخيص في صفحة الدفع. يمكنك أيضًا فعل ذلك لاحقًا.",
+  "te betalen na het aanmaken van de licentie": "يُدفع بعد إنشاء الترخيص",
+  "Even geduld, de wizard wordt voorbereid…": "لحظة من فضلك، يجري تجهيز المعالج…",
+  "Totaal nu te betalen": "الإجمالي المستحق الآن",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "تدفع رصيد الذكاء الاصطناعي بعد إنشاء الترخيص"
 }

@@ -33,6 +33,7 @@ const STEPS = [
   ["agree", "Voorwaarden", ["consent_ok"]],  // the terms of easy2edit: read to the end, then the consent with a code by e-mail or SMS (only when the licence is made now); a superadmin passes it with an @
   ["hosting", "Hosting", ["hosting"]],  // the hosting that goes with the licence (only when there is no licence yet): from the price list
   ["preset", "Standaard installatie", []],  // the standard installation decides what is in use and so what it costs: chosen between the hosting and the costs
+  ["ai", "AI-tegoed", []],  // optional: AI credit to buy once the licence is made (it is bought in the next screen, at the payment page); before the costs
   ["costs", "Kosten", ["license_until"]],
   ["pay", "Betalen", ["pay_ok"]],  // a Stripe subscription (test mode with test keys): the licence is made only after paying
   ["overview", "Overzicht", []],  // the last screen: everything of the licence together, with its number; Save makes it
@@ -110,6 +111,13 @@ export default function SetupWizard() {
     if (step !== "preset" || presetList) return;
     api("/system/presets/").then((l) => { const list = user?.is_staff ? l : l.filter((x) => x.admin); setPresetList(list); setForm((f) => ({ ...f, preset: f.preset || (list.find((x) => x.active) || list[0] || {}).key || "" })); /* the one in use; nothing known: the first one */ }).catch(() => setPresetList([]));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [aiInfo, setAiInfo] = useState(null); // the offer of AI credit (the slider): read when the step "AI-tegoed" is opened
+  useEffect(() => {
+    if (step !== "ai" || aiInfo) return;
+    api("/ai/me/").then(setAiInfo).catch(() => setAiInfo({ module: false }));
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  const setAiAmount = (v) => { setForm((f) => ({ ...f, ai_amount: v ? String(v) : "" })); try { if (v) sessionStorage.setItem("e2e_ai_amount", String(v)); else sessionStorage.removeItem("e2e_ai_amount"); } catch {} };
 
   useEffect(() => { // the costs of everything that is in use (read when the tab is opened)
     if ((step === "costs" || step === "pay" || step === "overview") && !costs) api("/system/license/usage/").then(setCosts).catch(() => setCosts({ items: [], error: true }));
@@ -353,6 +361,29 @@ export default function SetupWizard() {
                   <span className="e2e-hint">{tx("Prijzen per maand, exclusief btw. Een andere installatie kiezen haalt geen gegevens weg.")}</span>
                 </div>
               )}
+              {step === "ai" && (() => {
+                const p = aiInfo?.proposal, cur = aiInfo?.currency || "EUR", on = !!form.ai_amount;
+                return (
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".8rem" }}>
+                    <span className="e2e-hint">{tx("easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.")}</span>
+                    {!aiInfo ? <span className="e2e-hint">{tx("Bezig…")}</span> : aiInfo.module === false || !p ? <span className="e2e-hint">{tx("AI staat niet aan in deze installatie.")}</span> : (
+                      <>
+                        <label className="e2e-check" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".7rem", padding: ".7rem .9rem", border: `1px solid ${on ? "var(--e2e-primary)" : "var(--e2e-line, rgba(0,0,0,.15))"}`, borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer" }}>
+                          <input type="checkbox" checked={on} onChange={(e) => setAiAmount(e.target.checked ? p.suggest : 0)} />
+                          <span style={{ flex: 1 }}><strong>{tx("Ik wil AI-tegoed kopen")}</strong><br /><small className="e2e-hint">{tx("Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.")}</small></span>
+                        </label>
+                        {on && (
+                          <div className="ai-slider" style={{ padding: ".2rem .4rem" }}>
+                            <div className="ai-slider-val" style={{ fontWeight: 700, fontSize: "1.3rem" }}>{money(Number(form.ai_amount), cur)}</div>
+                            <input type="range" style={{ width: "100%" }} min={p.min} max={p.max} step={p.step} value={Number(form.ai_amount)} onChange={(e) => setAiAmount(Number(e.target.value))} aria-label={tx("Bedrag")} />
+                            <div style={{ display: "flex", justifyContent: "space-between" }}><small className="e2e-hint">{money(p.min, cur)}</small><small className="e2e-hint">{tx("Voorstel")}: {money(p.suggest, cur)}</small><small className="e2e-hint">{money(p.max, cur)}</small></div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
               {step === "hosting" && (
                 <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem" }} role="radiogroup" aria-label={tx("Hosting")}>
                   {(d.hosting_options || []).map((o) => (
@@ -409,6 +440,8 @@ export default function SetupWizard() {
                     {!costs ? <span className="e2e-hint">{tx("Laden…")}</span> : (
                       <div className="e2e-grid" style={{ "--e2e-min": "170px" }}>
                         <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("Nu tot einde van de maand")}</span><strong style={{ fontSize: "1.35rem" }}>{money(Math.round((perMonth * left / days) * 100) / 100)}</strong></div>
+                        {form.ai_amount && <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("AI-tegoed")}</span><strong style={{ fontSize: "1.35rem" }}><span style={{ color: "#f97316", marginRight: ".35rem" }} aria-hidden="true">+</span>{money(Number(form.ai_amount))}</strong><span className="e2e-hint">{tx("eenmalig")}</span></div>}
+                        {form.ai_amount && <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("Totaal nu te betalen")}</span><strong style={{ fontSize: "1.35rem" }}><span style={{ color: "var(--e2e-primary)", marginRight: ".35rem" }} aria-hidden="true">=</span>{money(Math.round((perMonth * left / days + Number(form.ai_amount)) * 100) / 100)}</strong><span className="e2e-hint">{tx("het AI-tegoed betaal je na het aanmaken van de licentie")}</span></div>}
                         <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx(perLabel)}</span><strong style={{ fontSize: "1.35rem" }}>{money(Math.round(price * 100) / 100)}</strong><span className="e2e-hint">{tx("incl. btw")}</span></div>
                       </div>
                     )}
@@ -457,6 +490,7 @@ export default function SetupWizard() {
                   ...(!upd && d.needs_license && form.contact_password ? [[tx("Wachtwoord contactpersoon"), form.contact_password]] : []),
                   [tx("Hosting"), hostOpt ? hostOpt.label : ""],
                   [tx("Standaard installatie"), (presetList || []).find((x) => x.key === form.preset)?.name ? tx((presetList || []).find((x) => x.key === form.preset).name) : ""],
+                  ...(!upd && form.ai_amount ? [[tx("AI-tegoed"), `${money(Number(form.ai_amount))} · ${tx("te betalen na het aanmaken van de licentie")}`]] : []),
                   [tx("Abonnement"), `${perLabel}${disc > 0 ? ` · ${tx("korting")} ${disc}%` : ""}`],
                   [tx("Prijs"), `${money(Math.round(price * 100) / 100)} ${perLabel.toLowerCase()} · ${tx("incl. btw")}`],
                   [tx("Verlengdatum"), form.license_until ? new Date(form.license_until).toLocaleDateString(getLanguage(), { day: "numeric", month: "long", year: "numeric" }) : ""],
@@ -549,13 +583,14 @@ export default function SetupWizard() {
                       const fmt = (d) => d.toLocaleDateString(lang, { day: "numeric", month: "long" });
                       const tiles = [
                         [tx("Nu tot einde van de maand"), money(Math.round((perMonth * left / days) * 100) / 100), `${fmt(now)} – ${fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0))}`],
+                        ...(form.ai_amount ? [[tx("AI-tegoed"), money(Number(form.ai_amount)), tx("eenmalig"), true]] : []),  // AI credit chosen in the step AI-tegoed: next to the first amount, with a + in another colour
                         [tx(per === 1 ? "Daarna per maand" : per === 3 ? "Daarna per kwartaal" : "Daarna per jaar"), money(Math.round(price * 100) / 100), `${tx("vanaf")} ${fmt(new Date(now.getFullYear(), now.getMonth() + 1, 1))}`],  // the price of the chosen subscription: the price per month times its months
                         [tx("Per maand"), money(Math.round(perMonth * 100) / 100), disc > 0 ? `${tx("korting")} ${disc}% · ${tx("incl. btw")}` : tx("incl. btw")],
                       ];
                       return (
                         <div className="e2e-grid" style={{ "--e2e-min": "150px" }}>
-                          {tiles.map(([l, v, sub]) => (
-                            <div key={l} className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{l}</span><strong style={{ fontSize: "1.35rem" }}>{v}</strong><span className="e2e-hint">{sub}</span></div>
+                          {tiles.map(([l, v, sub, plus]) => (
+                            <div key={l} className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{l}</span><strong style={{ fontSize: "1.35rem" }}>{plus && <span style={{ color: "#f97316", marginRight: ".35rem" }} aria-hidden="true">+</span>}{v}</strong><span className="e2e-hint">{sub}</span></div>
                           ))}
                         </div>
                       );

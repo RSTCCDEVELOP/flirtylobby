@@ -45,6 +45,9 @@ function install() {
   };
 }
 
+// Settings that change what is on the screen need a new draw; the last page someone was on does not (it only decides where "back to the backend" goes): no reload for it.
+const NO_RELOAD = new Set(["lastBackendUrl"]);
+
 export default function PrefsSync() {
   const { user } = useSession();
   const was = useRef(null);
@@ -62,7 +65,7 @@ export default function PrefsSync() {
       const server = d.prefs || {};
       let changed = false;
       for (const [k, v] of Object.entries(server)) {
-        try { if (localStorage.getItem(k) !== v) { orig.set.call(localStorage, k, v); changed = true; } } catch {}
+        try { if (localStorage.getItem(k) !== v) { orig.set.call(localStorage, k, v); if (!NO_RELOAD.has(k)) changed = true; } } catch {}
       }
       // first time on this account: what this browser already has goes to the server
       const seed = {};

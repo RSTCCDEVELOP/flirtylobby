@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Daten der {0} hinter dieser Website und anderer Unternehmen und Organisationen: Name, Adresse, Kontakt und Registrierung. Wähle eine Zeile zum Bearbeiten. Du kannst sie in jedem Text als Variable verwenden, zum Beispiel {1}.",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "Noch keine Einheiten. Füge mit der Schaltfläche Hinzufügen eine hinzu: zum Beispiel einen Kunden, einen Arbeitgeber oder einen Verein, zu dem Benutzer gehören.",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Schreibe eine Variable in einen Text auf einer Seite (im Bearbeitungsmodus): Die Website füllt sie aus. Änderst du hier etwas, gilt das auf allen Seiten. Im Bearbeitungsmodus bleibt die Variable selbst stehen. Im Seiteneditor gibt es sie auch als Systemobjekt (Variable).",
-  "De gebruiker die de pagina bekijkt": "Der Benutzer, der die Seite ansieht"
+  "De gebruiker die de pagina bekijkt": "Der Benutzer, der die Seite ansieht",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "Möchtest du KI nutzen? Dann ist KI-Guthaben nötig. Möchtest du es jetzt einrichten?",
+  "Ja, tegoed instellen": "Ja, Guthaben einrichten",
+  "Ja, tegoed opwaarderen": "Ja, Guthaben aufladen",
+  "Nu niet, later": "Jetzt nicht, später",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "Möchtest du die Hilfe sehen? Das Handbuch mit Erklärungen und Videos.",
+  "Help openen": "Hilfe öffnen",
+  "Ja, tegoed kopen": "Ja, Guthaben kaufen",
+  "AI-tegoed": "KI-Guthaben",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "easy2edit nutzt KI (Claude) unter anderem zum Übersetzen, für Texte und zum Importieren einer Website. Benutzer und Admins können KI erst nutzen, wenn KI-Guthaben vorhanden ist. Superadmins brauchen selbst kein Guthaben.",
+  "AI staat niet aan in deze installatie.": "KI ist in dieser Installation nicht aktiviert.",
+  "Ik wil AI-tegoed kopen": "Ich möchte KI-Guthaben kaufen",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "Du bezahlst es nach dem Erstellen der Lizenz auf der Zahlungsseite. Du kannst das auch später tun.",
+  "te betalen na het aanmaken van de licentie": "zu zahlen nach dem Erstellen der Lizenz",
+  "Even geduld, de wizard wordt voorbereid…": "Einen Moment, der Assistent wird vorbereitet…",
+  "Totaal nu te betalen": "Jetzt insgesamt zu zahlen",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "das KI-Guthaben bezahlst du nach dem Erstellen der Lizenz"
 }

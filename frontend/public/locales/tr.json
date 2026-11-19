@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Bu web sitesinin arkasındaki {0} ile diğer şirket ve kuruluşların bilgileri: ad, adres, iletişim ve kayıt. Düzenlemek için bir satır seç. Bunları her metinde değişken olarak kullanabilirsin, örneğin {1}.",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "Henüz varlık yok. Ekle düğmesiyle bir tane ekle: örneğin bir müşteri, bir işveren veya kullanıcıların ait olduğu bir kulüp.",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Bir sayfadaki metne (düzenleme modunda) bir değişken yaz: web sitesi onu doldurur. Burada bir şeyi değiştirirsen tüm sayfalara yansır. Düzenleme modunda değişkenin kendisi kalır. Sayfa düzenleyicide bunlar ayrıca sistem nesnesi (Değişken) olarak da bulunur.",
-  "De gebruiker die de pagina bekijkt": "Sayfayı görüntüleyen kullanıcı"
+  "De gebruiker die de pagina bekijkt": "Sayfayı görüntüleyen kullanıcı",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "Yapay zekâyı kullanmak ister misin? O zaman yapay zekâ kredisi gerekir. Şimdi ayarlamak ister misin?",
+  "Ja, tegoed instellen": "Evet, krediyi ayarla",
+  "Ja, tegoed opwaarderen": "Evet, krediyi yükle",
+  "Nu niet, later": "Şimdi değil, sonra",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "Yardımı görmek ister misin? Açıklamalar ve videolarla kılavuz.",
+  "Help openen": "Yardımı aç",
+  "Ja, tegoed kopen": "Evet, kredi satın al",
+  "AI-tegoed": "Yapay zekâ kredisi",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "easy2edit; çeviri, metin ve web sitesi içe aktarma gibi işler için yapay zekâ (Claude) kullanır. Kullanıcılar ve yöneticiler yapay zekâyı ancak yapay zekâ kredisi varsa kullanabilir. Süper yöneticilerin krediye ihtiyacı yoktur.",
+  "AI staat niet aan in deze installatie.": "Bu kurulumda yapay zekâ açık değil.",
+  "Ik wil AI-tegoed kopen": "Yapay zekâ kredisi satın almak istiyorum",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "Lisans oluşturulduktan sonra ödeme sayfasında ödersin. Bunu daha sonra da yapabilirsin.",
+  "te betalen na het aanmaken van de licentie": "lisans oluşturulduktan sonra ödenecek",
+  "Even geduld, de wizard wordt voorbereid…": "Bir saniye, sihirbaz hazırlanıyor…",
+  "Totaal nu te betalen": "Şimdi ödenecek toplam",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "yapay zekâ kredisini lisans oluşturulduktan sonra ödersin"
 }

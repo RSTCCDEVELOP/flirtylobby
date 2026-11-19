@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "このウェブサイトの背後にある{0}と、他の会社・組織の情報：名前、住所、連絡先、登録情報。行を選ぶと編集できます。{1}のように、どのテキストでも変数として使えます。",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "まだエンティティがありません。「追加」ボタンで追加してください。たとえば、顧客、雇用主、ユーザーが所属するクラブなどです。",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "ページのテキストに（編集モードで）変数を書くと、ウェブサイトが値を入れます。ここで変更すると、すべてのページに反映されます。編集モードでは変数そのものが残ります。ページエディタでは、システムオブジェクト（変数）としても使えます。",
-  "De gebruiker die de pagina bekijkt": "ページを見ているユーザー"
+  "De gebruiker die de pagina bekijkt": "ページを見ているユーザー",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "AIを使いますか？その場合はAIクレジットが必要です。今すぐ設定しますか？",
+  "Ja, tegoed instellen": "はい、クレジットを設定",
+  "Ja, tegoed opwaarderen": "はい、クレジットをチャージ",
+  "Nu niet, later": "今はしない、後で",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "ヘルプを見ますか？説明と動画付きのマニュアルです。",
+  "Help openen": "ヘルプを開く",
+  "Ja, tegoed kopen": "はい、クレジットを購入",
+  "AI-tegoed": "AIクレジット",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "easy2editは翻訳、文章作成、ウェブサイトのインポートなどにAI（Claude）を使います。ユーザーと管理者はAIクレジットがある場合のみAIを使えます。スーパー管理者にはクレジットは不要です。",
+  "AI staat niet aan in deze installatie.": "このインストールではAIがオンになっていません。",
+  "Ik wil AI-tegoed kopen": "AIクレジットを購入したい",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "ライセンス作成後、支払いページでお支払いいただきます。後で行うこともできます。",
+  "te betalen na het aanmaken van de licentie": "ライセンス作成後に支払い",
+  "Even geduld, de wizard wordt voorbereid…": "少々お待ちください。ウィザードを準備しています…",
+  "Totaal nu te betalen": "今のお支払い合計",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "AIクレジットはライセンス作成後にお支払い"
 }

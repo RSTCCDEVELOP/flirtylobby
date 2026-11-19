@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Datos de la {0} detrás de este sitio web y de otras empresas y organizaciones: nombre, dirección, contacto y registro. Elige una fila para editarla. Puedes usarlos en cualquier texto como variable, por ejemplo {1}.",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "Aún no hay entidades. Añade una con el botón Añadir: por ejemplo un cliente, un empleador o un club al que pertenezcan usuarios.",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Escribe una variable en un texto de una página (en modo de edición): el sitio web la rellena. Si cambias algo aquí, se aplica en todas las páginas. En modo de edición se mantiene la variable. En el editor de páginas también están como objeto del sistema (Variable).",
-  "De gebruiker die de pagina bekijkt": "El usuario que ve la página"
+  "De gebruiker die de pagina bekijkt": "El usuario que ve la página",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "¿Quieres usar IA? Entonces hace falta crédito de IA. ¿Quieres configurarlo ahora?",
+  "Ja, tegoed instellen": "Sí, configurar crédito",
+  "Ja, tegoed opwaarderen": "Sí, recargar crédito",
+  "Nu niet, later": "Ahora no, más tarde",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "¿Quieres ver la ayuda? El manual con explicaciones y vídeos.",
+  "Help openen": "Abrir ayuda",
+  "Ja, tegoed kopen": "Sí, comprar crédito",
+  "AI-tegoed": "Crédito de IA",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "easy2edit usa IA (Claude) para traducir, redactar textos e importar un sitio web, entre otras cosas. Los usuarios y administradores solo pueden usar IA si hay crédito de IA. Los superadministradores no necesitan crédito.",
+  "AI staat niet aan in deze installatie.": "La IA no está activada en esta instalación.",
+  "Ik wil AI-tegoed kopen": "Quiero comprar crédito de IA",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "Lo pagas después de crear la licencia, en la página de pago. También puedes hacerlo más tarde.",
+  "te betalen na het aanmaken van de licentie": "a pagar tras crear la licencia",
+  "Even geduld, de wizard wordt voorbereid…": "Un momento, se está preparando el asistente…",
+  "Totaal nu te betalen": "Total a pagar ahora",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "el crédito de IA lo pagas tras crear la licencia"
 }

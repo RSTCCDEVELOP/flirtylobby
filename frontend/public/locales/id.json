@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Data {0} di balik situs web ini dan perusahaan serta organisasi lain: nama, alamat, kontak, dan registrasi. Pilih satu baris untuk mengubahnya. Kamu dapat memakainya di teks mana pun sebagai variabel, misalnya {1}.",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "Belum ada entitas. Tambahkan dengan tombol Tambah: misalnya pelanggan, pemberi kerja, atau klub tempat pengguna bergabung.",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Tulis variabel di teks pada halaman (dalam mode edit): situs web mengisinya. Jika kamu mengubah sesuatu di sini, perubahan berlaku di semua halaman. Dalam mode edit, variabelnya sendiri tetap ada. Di editor halaman, variabel juga tersedia sebagai objek sistem (Variabel).",
-  "De gebruiker die de pagina bekijkt": "Pengguna yang melihat halaman"
+  "De gebruiker die de pagina bekijkt": "Pengguna yang melihat halaman",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "Ingin memakai AI? Maka diperlukan kredit AI. Ingin mengaturnya sekarang?",
+  "Ja, tegoed instellen": "Ya, atur kredit",
+  "Ja, tegoed opwaarderen": "Ya, isi ulang kredit",
+  "Nu niet, later": "Nanti saja",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "Ingin melihat bantuan? Panduan dengan penjelasan dan video.",
+  "Help openen": "Buka bantuan",
+  "Ja, tegoed kopen": "Ya, beli kredit",
+  "AI-tegoed": "Kredit AI",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "easy2edit memakai AI (Claude) antara lain untuk menerjemahkan, membuat teks, dan mengimpor situs web. Pengguna dan admin baru dapat memakai AI jika ada kredit AI. Superadmin tidak memerlukan kredit.",
+  "AI staat niet aan in deze installatie.": "AI tidak aktif di instalasi ini.",
+  "Ik wil AI-tegoed kopen": "Saya ingin membeli kredit AI",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "Kamu membayarnya setelah lisensi dibuat, di halaman pembayaran. Bisa juga dilakukan nanti.",
+  "te betalen na het aanmaken van de licentie": "dibayar setelah lisensi dibuat",
+  "Even geduld, de wizard wordt voorbereid…": "Sebentar, wizard sedang disiapkan…",
+  "Totaal nu te betalen": "Total yang dibayar sekarang",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "kredit AI dibayar setelah lisensi dibuat"
 }

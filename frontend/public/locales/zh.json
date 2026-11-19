@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "此网站背后的{0}以及其他公司和组织的信息：名称、地址、联系方式和注册信息。选择一行即可编辑。你可以在任何文本中将它们用作变量，例如 {1}。",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "还没有实体。用“添加”按钮添加一个：例如客户、雇主或用户所属的俱乐部。",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "在页面的文本中（编辑模式下）写入变量，网站会自动填入。在这里更改后，所有页面都会同步生效。在编辑模式下，变量本身会保留。在页面编辑器中，它们也可作为系统对象（变量）使用。",
-  "De gebruiker die de pagina bekijkt": "查看页面的用户"
+  "De gebruiker die de pagina bekijkt": "查看页面的用户",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "要使用 AI 吗？那就需要 AI 额度。现在要设置吗？",
+  "Ja, tegoed instellen": "是，设置额度",
+  "Ja, tegoed opwaarderen": "是，充值额度",
+  "Nu niet, later": "暂不，稍后",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "要查看帮助吗？包含说明和视频的手册。",
+  "Help openen": "打开帮助",
+  "Ja, tegoed kopen": "是，购买额度",
+  "AI-tegoed": "AI 额度",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "easy2edit 使用 AI（Claude）进行翻译、文本和网站导入等。只有在有 AI 额度时，用户和管理员才能使用 AI。超级管理员自己不需要额度。",
+  "AI staat niet aan in deze installatie.": "此安装中未启用 AI。",
+  "Ik wil AI-tegoed kopen": "我想购买 AI 额度",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "在许可证创建后于支付页面付款。你也可以稍后再做。",
+  "te betalen na het aanmaken van de licentie": "在许可证创建后付款",
+  "Even geduld, de wizard wordt voorbereid…": "请稍候，向导正在准备中…",
+  "Totaal nu te betalen": "现在应付总额",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "AI 额度在许可证创建后支付"
 }

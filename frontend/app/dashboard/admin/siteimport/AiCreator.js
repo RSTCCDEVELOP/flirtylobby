@@ -25,7 +25,7 @@ import { loadKit } from "../../../../lib/ui-kit/kitDoc";
 import Wizard from "./DesignWizard";
 import { BRIEF_STEPS, BriefStep, briefFilled, briefToText } from "./briefWizard";
 import StartPlanPopup from "./StartWizard";
-import { planAsked, planDone } from "../../../../lib/planFlag";
+import { planAsked, planDone, useAiWelcomeOpen, stopWizardLoading } from "../../../../lib/planFlag";
 
 export { ModulePicker, previewHtml };
 
@@ -208,14 +208,16 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
   const [busy, setBusy] = useState(false);
   const [conv, setConv] = useState(false);
   const [plan, setPlan] = useState(false);  // the popup with the step plan
+  const aiFirst = useAiWelcomeOpen();  // the AI explanation comes first
   const planShown = useRef(false);
   useEffect(() => { // the step plan opens by itself on an empty installation (no imports, no designs) and after a reset or a new installation, until it has been closed once
     if (!d || importsEmpty === null || planShown.current) return;
     planShown.current = true;
     const a = planAsked();
-    if (a.flag || (importsEmpty && !(d.designs || []).length && !a.off)) setPlan(true);
+    if (a.flag || (importsEmpty && !(d.designs || []).length && !a.off)) setPlan(true); else stopWizardLoading();  // no wizard: the loader goes
     if (a.flag) api("/system/onboarding/done/", { method: "POST", body: {} }).catch(() => {}); // the design wizard starts: the last step of the onboarding is reached, it is complete
   }, [d, importsEmpty]);
+  useEffect(() => { if (plan && !aiFirst) stopWizardLoading(); }, [plan, aiFirst]);  // the wizard is on the screen: the dark layer with the loader goes
   const closePlan = () => { setPlan(false); planDone(); };
   const load = useCallback(() => api("/sitecreator/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load, refreshKey]);
@@ -248,7 +250,7 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
         ].map(([Ic, label, go, off]) => <button type="button" key={label} className="btn" disabled={off} onClick={go} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: "2.8rem", width: "100%", background: "#1e293b", color: "#fff", borderColor: "#334155", fontWeight: 600 }}><Ic /> {tx(label)}</button>)}
       </div>
       {conv && <ConvertPromptPopup onClose={() => setConv(false)} designs={d?.designs || []} />}
-      {plan && <StartPlanPopup onClose={closePlan} onStart={startChat} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); }} />}
+      {plan && !aiFirst && <StartPlanPopup onClose={closePlan} onStart={startChat} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); }} />}
       {d?.ai === false && <div className="alert">{tx("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")}</div>}
       {superadmin && <DesignJsonDrop onDone={load} onErr={setErr} />}
       {d?.designs?.length > 0 && (

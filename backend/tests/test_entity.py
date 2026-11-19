@@ -634,3 +634,15 @@ def test_reset_does_not_ask_for_a_system_update_check(admin):
 
     reset.perform()
     assert sysupdate.status(None)["needed"] is False
+
+
+@pytest.mark.django_db
+def test_ai_credit_can_be_bought_in_the_sandbox_without_the_payments_plugin(admin, monkeypatch):
+    from apps.integrations import ai_views
+    from apps.integrations.models import AiAccount
+
+    monkeypatch.setattr(ai_views, "_sandbox_pays", lambda: True)
+    monkeypatch.setattr("apps.integrations.aiusage.pay_link", lambda user=None: None)
+    r = admin.post("/api/ai/me/topup/", {"amount": 5}, format="json")
+    assert r.status_code == 200 and r.json()["via"] == "sandbox" and "paid=1" in r.json()["url"]
+    assert float(AiAccount.objects.get().balance) == 5.0

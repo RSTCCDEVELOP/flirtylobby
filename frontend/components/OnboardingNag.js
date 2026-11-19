@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-import { markPlan } from "../lib/planFlag";
+import { markPlan, startWizardLoading } from "../lib/planFlag";
 import { tx } from "../lib/t";
 import { IconCheck } from "./Icons";
 
@@ -50,7 +50,8 @@ export default function OnboardingNag({ user }) {
       else if (st.next === "ai" && once("ai")) window.dispatchEvent(new Event("open-ai-welcome"));
       else if (st.next === "design" && once("design")) {
         markPlan();
-        if (!window.location.pathname.startsWith("/dashboard/admin/siteimport")) window.location.href = "/dashboard/admin/siteimport"; else window.location.reload();
+        if (!window.location.pathname.startsWith("/dashboard/admin/siteimport")) { startWizardLoading(); window.location.href = "/dashboard/admin/siteimport"; }
+        else if (!document.querySelector(`[aria-label="${tx("Wizard")}"]`)) { startWizardLoading(); window.location.reload(); }  // already there with the wizard open (the usual way here): no second load
       }
     }, 2500); // (a moment for the screens that are open to finish)
     return () => clearTimeout(t);
@@ -68,7 +69,7 @@ export default function OnboardingNag({ user }) {
     setOpen(false);
     if (next === "links") { window.dispatchEvent(new Event("open-syslinks")); return; }
     if (next === "ai") { window.dispatchEvent(new Event("open-ai-welcome")); return; }
-    if (next === "design") { markPlan(); window.location.href = "/dashboard/admin/siteimport"; return; }
+    if (next === "design") { markPlan(); startWizardLoading(); window.location.href = "/dashboard/admin/siteimport"; return; }
     if (next === "licence") { window.dispatchEvent(new Event("open-setup-wizard")); return; }
     window.location.reload(); // welcome, terms, manual, installation: the screens look at what is there and come again
   };

@@ -22,6 +22,7 @@ import ItemHelp from "./ItemHelp";
 import SidebarSearch from "./SidebarSearch";
 import LicenseChangePrompt from "./LicenseChangePrompt";
 import OnboardingNag from "./OnboardingNag";
+import WizardLoader from "./WizardLoader";
 import TermsGate from "./TermsGate";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
@@ -419,6 +420,7 @@ export default function DashboardShell({ children }) {
         <FindOnPage />
         {user && (user.is_staff || Object.values(user.module_levels || {}).some((v) => v >= 2)) && <TermsGate />}
         {user?.is_staff && <OnboardingNag user={user} />}
+        <WizardLoader />
         {user?.is_staff && <WelcomeFirstAsk />}
         {user?.is_staff && <SandboxFirstAsk />}
         {user && (user.is_staff || lvl(user, "system") >= 3) && <ManualFirstAsk />}

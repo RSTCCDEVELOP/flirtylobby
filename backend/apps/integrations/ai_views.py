@@ -546,7 +546,7 @@ def me(request):
     from apps.core import modules
 
     return Response({"module": modules.enabled("ai"), "credit_required": bool(cfg.credit_required and sub), "exempt": not sub, "own_system": cfg.tenant, "welcome": bool(aiusage.group_of(u) in ("super", "admin") and not (acc and acc.welcomed)), "is_staff": bool(u.is_staff), "balance": F(bal), "currency": st.currency, "low": bool(cfg.credit_required and sub and bal < max(1.0, float(cfg.topup_min) / 5)),
-                     "proposal": aiusage.proposal(st, u), "can_pay": stripe_on or commerce.can_pay_online(), "pay_via": "stripe" if stripe_on else "sandbox", "pay_name": (link["name"] if link else "") if u.is_staff else "", "month": {"calls": t["calls"], "tokens_in": t["tin"] or 0, "tokens_out": t["tout"] or 0, "charged": F(t["charged"])},
+                     "proposal": aiusage.proposal(st, u), "can_pay": stripe_on or commerce.can_pay_online() or _sandbox_pays(), "pay_via": "stripe" if stripe_on else "sandbox", "pay_name": (link["name"] if link else "") if u.is_staff else "", "month": {"calls": t["calls"], "tokens_in": t["tin"] or 0, "tokens_out": t["tout"] or 0, "charged": F(t["charged"])},
                      "ledger": [{"at": r.created_at.isoformat(), "kind": r.kind, "amount": F(r.amount), "balance": F(r.balance_after), "note": r.note} for r in AiLedger.objects.filter(user=u)[:30]],
                      "recent": [{"at": r.created_at.isoformat(), "source": r.source, "model": r.model, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out, "ok": r.ok, "charged": F(r.charged if r.billable else 0)} for r in qs[:20]]})
 
@@ -559,6 +559,16 @@ def welcome_done(request):
     acc.welcomed = True
     acc.save(update_fields=["welcomed"])
     return Response({"ok": True})
+
+
+def _sandbox_pays():
+    """The sandbox is on and simulates payments."""
+    try:
+        from apps.sandbox import service as sandbox
+
+        return bool(sandbox.active("payments"))
+    except Exception:  # noqa: BLE001
+        return False
 
 
 @api_view(["POST"])
@@ -593,6 +603,13 @@ def topup(request):
         AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, session_id=sid, via="stripe")
         return Response({"url": url, "ref": ref, "via": "stripe"})
     pay = commerce.payments()
+    if not (pay and pay.available()) and _sandbox_pays():  # sandbox on but the Payments plugin is not: the purchase is simulated here (no money moves), so credit can be bought during the onboarding
+        import uuid
+
+        ref = "ai_" + uuid.uuid4().hex[:20]
+        AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, via="sandbox")
+        aiusage.settle_topup(ref, True, "sandbox")
+        return Response({"url": f"/dashboard/ai?paid=1&ref={ref}", "ref": ref, "via": "sandbox"})
     if not (pay and pay.available()):
         return Response({"detail": "Betalen is nu niet mogelijk: de Stripe-koppeling van het systeem staat niet aan (Super admin → Licentie) en ook de sandbox niet."}, status=status.HTTP_400_BAD_REQUEST)
     back = "/dashboard/ai?paid=1"

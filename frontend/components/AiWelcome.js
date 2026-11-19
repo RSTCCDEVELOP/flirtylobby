@@ -16,7 +16,7 @@ import { useModules } from "./Modules";
 import Tabs from "./Tabs";
 import { useSandboxFirst } from "../lib/firstRun";
 import { lvl } from "../lib/perms";
-import { markPlan } from "../lib/planFlag";
+import { markPlan, setAiWelcomeOpen, startWizardLoading } from "../lib/planFlag";
 import AiCreditPopup from "./AiCreditPopup";
 import { money } from "./AiCharts";
 
@@ -42,17 +42,28 @@ export default function AiWelcome() {
     window.addEventListener("open-ai-welcome", open);
     return () => window.removeEventListener("open-ai-welcome", open);
   }, [user, mods.ai]);
+  const hidden = first.licenseOpen || first.licenseMessageOpen; // the licence screens (also "licence made") are closed first; then this one comes
+  useEffect(() => { setAiWelcomeOpen(!!me && !hidden); return () => setAiWelcomeOpen(false); }, [me, hidden]);
   useEffect(() => {
     if (!me?.is_staff) return;
     api("/admin/ai/credit/").then(setCr).catch(() => {});
     api("/admin/ai/pay-status/").then(setStripe).catch(() => setStripe({ via: "sandbox" }));
   }, [me]);
-  if (!me) return null;
+  useEffect(() => { // an amount was chosen in the licence screen: the purchase opens at once (the explanation counts as seen when someone leaves for the payment)
+    if (!me || hidden) return;
+    try { if (sessionStorage.getItem("e2e_ai_amount")) { setBuy(true); } } catch {}
+  }, [me, hidden]);
+  if (!me || hidden) return null;
   const done = async () => {
+    if (adm && mods.siteimport !== false) startWizardLoading();  // at once: the dark layer with the loader covers the wait until the design wizard is there
     try { await api("/ai/me/welcome/", { method: "POST", body: {} }); } catch {}
     setMe(null);
     try { sessionStorage.removeItem("e2e_design_next"); } catch {}
-    if (adm && mods.siteimport !== false) { markPlan(); if (!window.location.pathname.startsWith("/dashboard/admin/siteimport")) window.location.href = "/dashboard/admin/siteimport"; else window.location.reload(); }  // the last step of the onboarding: the design wizard (Website ontwerpen) starts
+    if (adm && mods.siteimport !== false) { markPlan(); startWizardLoading(); if (!window.location.pathname.startsWith("/dashboard/admin/siteimport")) window.location.href = "/dashboard/admin/siteimport"; else window.location.reload(); }  // the last step of the onboarding: the design wizard (Website ontwerpen) starts
+  };
+  const buyNow = async () => { // buying leaves for the payment page: the explanation counts as seen, so the onboarding goes on when someone comes back
+    try { await api("/ai/me/welcome/", { method: "POST", body: {} }); } catch {}
+    setBuy(true);
   };
   const save = async (body) => { try { setCr(await api("/admin/ai/credit/", { method: "POST", body })); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   const cur = me.currency;
@@ -62,6 +73,12 @@ export default function AiWelcome() {
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0 }}>{tx("Welkom: AI en AI-tegoed")}</h2>
           <button type="button" className="btn primary" onClick={done}>{tx("Klaar")}</button>
+        </div>
+        <div className="alert ok" role="group" aria-label={tx("AI-tegoed")} style={{ margin: ".4rem 0", display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
+          <strong style={{ flex: "1 1 220px" }}>{tx("Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?")}</strong>
+          <button type="button" className="btn primary" onClick={buyNow}>{tx("Ja, tegoed kopen")}</button>
+          {me.is_staff && <button type="button" className="btn" onClick={() => setTab("set")}>{tx("Tegoed instellen")}</button>}
+          <button type="button" className="btn" onClick={done}>{tx("Nu niet, later")}</button>
         </div>
         <Tabs value={tab} onChange={setTab} tabs={[["how", "Hoe werkt AI"], [me.is_staff ? "set" : "mine", me.is_staff ? "Tegoed instellen" : "Jouw tegoed"]]} />
         <div className="pgs-body">
@@ -78,7 +95,7 @@ export default function AiWelcome() {
           {tab === "mine" && !me.is_staff && (<>
             <p style={{ margin: 0 }}>{tx("Jouw AI-tegoed")}: <strong>{money(me.balance, cur)}</strong>. {me.credit_required ? tx("Je hebt tegoed nodig om AI te gebruiken.") : tx("Tegoed is nu niet verplicht.")}</p>
             <p className="muted" style={{ margin: 0 }}>{tx("De afgelopen 30 dagen gebruikte je")} {money(me.proposal.used_month, cur)}. {tx("Je kunt nu alvast opwaarderen.")}</p>
-            <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={() => setBuy(true)}>{tx("Opwaarderen")}</button></div>
+            <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" onClick={buyNow}>{tx("Opwaarderen")}</button></div>
           </>)}
           {tab === "set" && me.is_staff && (cr ? (<>
             <p className="muted" style={{ margin: 0 }}>{tx("Zo staat het AI-tegoed nu ingesteld. Alles is later aan te passen bij Super admin → AI.")}</p>
@@ -97,7 +114,7 @@ export default function AiWelcome() {
           </>) : <p className="muted"><Loading /></p>)}
         </div>
       </div>
-      {buy && <AiCreditPopup info={me} onClose={() => setBuy(false)} />}
+      {buy && <AiCreditPopup info={me} amount={(() => { try { return Number(sessionStorage.getItem("e2e_ai_amount")) || undefined; } catch { return undefined; } })()} onClose={() => { try { sessionStorage.removeItem("e2e_ai_amount"); } catch {} setBuy(false); }} beforePay={async () => { try { await api("/ai/me/welcome/", { method: "POST", body: {} }); } catch {} }} />}
     </div>
   );
 }

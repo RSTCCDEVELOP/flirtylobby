@@ -10,6 +10,9 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../../../../lib/t";
+import { manualPage } from "../../../../lib/manualMap";
+import ManualPopup from "../../../../components/ManualPopup";
+import { IconHelp } from "../../../../components/Icons";
 
 // A short step plan that helps to choose how to fill the website: a ready-to-use template, the AI-creator, or reading in a website, folder, ZIP or html files.
 // The wizard: questions that give the AI chat build a good start. At the end the chat starts with the choices. Someone who already has a website, a design or a ZIP is sent to the right place.
@@ -70,13 +73,19 @@ function ChooseWizard({ onPick, onStart }) {
 
 // The popup behind the button "Wizard": the questions for a good start of the AI chat build.
 export default function StartPlanPopup({ onClose, onPick, onStart }) {
+  const [help, setHelp] = useState(false);
   return createPortal(
     <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pb-objpop" role="dialog" aria-label={tx("Wizard")} style={{ width: "min(820px, 94vw)", maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="pb-objhead"><strong>{tx("Wizard: een goede start voor je website")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
         <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
+          <div className="alert ok" role="group" aria-label={tx("Help")} style={{ margin: 0, display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
+            <strong style={{ flex: "1 1 220px" }}>{tx("Wil je de help zien? De handleiding met uitleg en video's.")}</strong>
+            <button type="button" className="btn primary" onClick={() => setHelp(true)}><IconHelp /> {tx("Help openen")}</button>
+          </div>
           <ChooseWizard onPick={onPick} onStart={onStart} />
         </div>
       </div>
+      {help && <ManualPopup page={manualPage("/dashboard/admin/siteimport")} zIndex={1400} onClose={() => setHelp(false)} />}
     </div>, document.body);
 }

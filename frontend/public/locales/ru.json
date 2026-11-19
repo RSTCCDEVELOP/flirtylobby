@@ -7541,5 +7541,21 @@
   "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Данные {0}, стоящей за этим сайтом, и других компаний и организаций: название, адрес, контакты и регистрация. Выберите строку, чтобы изменить её. Их можно использовать в любом тексте как переменные, например {1}.",
   "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "Пока нет организаций. Добавьте её кнопкой «Добавить»: например, клиента, работодателя или клуб, к которому относятся пользователи.",
   "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Напишите переменную в тексте на странице (в режиме редактирования): сайт подставит значение. Если вы что-то измените здесь, это сработает на всех страницах. В режиме редактирования сама переменная сохраняется. В редакторе страниц они есть и как системный объект (Переменная).",
-  "De gebruiker die de pagina bekijkt": "Пользователь, который просматривает страницу"
+  "De gebruiker die de pagina bekijkt": "Пользователь, который просматривает страницу",
+  "Wil je AI gebruiken? Dan moet er AI-tegoed zijn. Wil je het nu instellen?": "Хотите использовать ИИ? Для этого нужен баланс ИИ. Настроить его сейчас?",
+  "Ja, tegoed instellen": "Да, настроить баланс",
+  "Ja, tegoed opwaarderen": "Да, пополнить баланс",
+  "Nu niet, later": "Не сейчас, позже",
+  "Wil je de help zien? De handleiding met uitleg en video's.": "Хотите посмотреть справку? Руководство с пояснениями и видео.",
+  "Help openen": "Открыть справку",
+  "Ja, tegoed kopen": "Да, купить баланс",
+  "AI-tegoed": "Баланс ИИ",
+  "easy2edit gebruikt AI (Claude) voor onder meer vertalen, teksten en het importeren van een website. Gebruikers en admins kunnen AI pas gebruiken als er AI-tegoed is. Superadmins hebben zelf geen tegoed nodig.": "easy2edit использует ИИ (Claude) в том числе для перевода, текстов и импорта сайта. Пользователи и администраторы могут использовать ИИ только при наличии баланса ИИ. Суперадминистраторам баланс не нужен.",
+  "AI staat niet aan in deze installatie.": "В этой установке ИИ не включён.",
+  "Ik wil AI-tegoed kopen": "Хочу купить баланс ИИ",
+  "Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.": "Вы оплатите после создания лицензии на странице оплаты. Это можно сделать и позже.",
+  "te betalen na het aanmaken van de licentie": "оплата после создания лицензии",
+  "Even geduld, de wizard wordt voorbereid…": "Минутку, мастер подготавливается…",
+  "Totaal nu te betalen": "Итого к оплате сейчас",
+  "het AI-tegoed betaal je na het aanmaken van de licentie": "баланс ИИ оплачивается после создания лицензии"
 }
