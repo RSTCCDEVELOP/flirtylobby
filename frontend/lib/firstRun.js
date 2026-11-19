@@ -15,7 +15,7 @@ const subs = new Set();
 // The messages come one after the other: licence, terms and conditions, sandbox, manual, update of the system, installation, AI. "Later" (or closing) on one only lets the next one come.
 const blockers = new Set(); // "license", "update": messages that are open or still to be asked; the ones after them wait
 const licSubs = new Set();
-const code = () => `${blockers.has("license") ? 1 : 0}${blockers.size > 0 ? 1 : 0}${blockers.has("update") ? 1 : 0}${blockers.has("terms") ? 1 : 0}`; // "<licence><anything><update><terms>": which messages are open
+const code = () => `${blockers.has("license") || blockers.has("setup") ? 1 : 0}${blockers.size > 0 ? 1 : 0}${blockers.has("update") ? 1 : 0}${blockers.has("terms") ? 1 : 0}${blockers.has("license") ? 1 : 0}`; // "<licence or set-up form><anything><update><terms><licence message only>": which messages are open (the set-up form, where the licence is made, counts as the licence: the terms and the rest wait for it)
 const tell = () => licSubs.forEach((f) => f(code()));
 export const setBlock = (name, v) => { if (v) blockers.add(name); else blockers.delete(name); tell(); };
 export const setLicenseOpen = (v) => setBlock("license", v);
@@ -32,9 +32,9 @@ export function useSandboxFirst(enabled = true) {
   const welcomeOpen = !!(st && st.welcome_asked === false);  // the very first question (language and light or dark) comes before everything
   const rawSandbox = !!(st && st.local && !st.asked), rawManual = !!(st && !st.manual_asked);
   // one after the other: licence, sandbox, manual; then the rest (installation, AI)
-  const licOpen = lic[0] === "1", anyBlock = lic[1] === "1", updOpen = lic[2] === "1", termsOpen = lic[3] === "1";
+  const licOpen = lic[0] === "1", licMsgOpen = lic[4] === "1", anyBlock = lic[1] === "1", updOpen = lic[2] === "1", termsOpen = lic[3] === "1";
   const first = welcomeOpen || licOpen || termsOpen; // licence and terms come before sandbox, manual, update, installation and AI
-  return { welcomeOpen, licenseOpen: licOpen, sandboxPending: !first && rawSandbox, manualPending: !first && !rawSandbox && rawManual, pendingBase: first || rawSandbox || rawManual, pendingInstall: first || updOpen || rawSandbox || rawManual, pending: anyBlock || rawSandbox || rawManual, known: st !== null, st };
+  return { welcomeOpen, licenseOpen: licOpen, licenseMessageOpen: licMsgOpen, sandboxPending: !first && rawSandbox, manualPending: !first && !rawSandbox && rawManual, pendingBase: first || rawSandbox || rawManual, pendingInstall: first || updOpen || rawSandbox || rawManual, pending: anyBlock || rawSandbox || rawManual, known: st !== null, st };
 }
 
 export const answerSandbox = async (on) => { try { set(await api("/system/sandbox-first/", { method: "POST", body: { on } })); } catch { set({ ...(state || { local: true }), asked: true }); } };

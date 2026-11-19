@@ -110,6 +110,10 @@ MODULES = [
      "desc": "Rollen en rechten. Uit = alleen superadmins hebben rechten."},
     # ── Kern (altijd aan) ──
     {"key": "users", "group": "Kern", "label": "Users", "desc": "Accounts aanmaken, blokkeren en verwijderen. Met een foto en openbaar profiel voor op de website.", "core": True},
+    {"key": "entities", "group": "Kern", "label": "Entiteit",
+     "desc": "De organisatie achter de website (bedrijf, organisatie, vereniging, club of een eigen naam): naam, adres, contact en registratie, lokaal in de site. De teksten van de website kunnen de gegevens als variabele gebruiken ({{organisatie.naam}}). Wat het is, bepaalt de standaard installatie.", "core": True},
+    {"key": "tags", "group": "Kern", "label": "Tags",
+     "desc": "Tags met een kleur die je aan alle onderdelen van easy2edit kunt hangen (gebruikers, groepen, entiteiten, pagina's, media, modules, plugins). Een tag geldt overal, voor één of meer modules of voor één of meer plugins.", "core": True},
     {"key": "dashboard", "group": "Kern", "label": "Dashboard & profiel", "desc": "Inloggen, dashboard en eigen profiel.", "core": True, "acl": False},
     {"key": "security_basic", "group": "Kern", "label": "Algemene beveiliging",
      "desc": "Inlogslot, sessieduur, wachtwoordregels en beveiligingsheaders.", "core": True},

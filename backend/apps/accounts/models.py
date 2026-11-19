@@ -104,6 +104,7 @@ class User(AbstractUser):
     otp_expires = models.DateTimeField(null=True, blank=True)
     otp_attempts = models.PositiveSmallIntegerField(default=0)
     otp_sent_at = models.DateTimeField(null=True, blank=True)
+    color = models.CharField(max_length=7, blank=True)  # a colour an administrator gives this user: a coloured dot before the name in the lists (#rrggbb)
     is_superadmin_plus = models.BooleanField(default=False)  # superadmin+: a superadmin who also sees and manages the easy2edit modules (see accounts/superplus.py)
 
     @property

@@ -30,6 +30,7 @@ export default function DefaultInstallPrompt() {
   const [pick, setPick] = useState("");
   const [demo, setDemo] = useState(false);
   const [run, setRun] = useState(null);
+  const [replayRun, setReplayRun] = useState(false); // this run is part of the onboarding done again: its last step is the design wizard
   const [error, setError] = useState("");
   const first = useSandboxFirst(!!user?.is_staff); // the question about the sandbox (on your own computer) comes first
   const [tab, setTab] = useState("install");
@@ -42,7 +43,7 @@ export default function DefaultInstallPrompt() {
     try { if (sessionStorage.getItem(KEY)) return; } catch {}
     setBlock("install", true); // the AI message comes after this one
     api("/ai/me/").then((i) => setAiOn(!!i.module)).catch(() => setAiOn(false));
-    api("/system/presets/setup/").then((r) => { if (r.needed) { setAsk(r); setPick(r.presets[0]?.key || ""); } }).catch(() => {}).finally(() => setChecked(true));
+    api("/system/presets/setup/").then((r) => { if (r.needed) { setAsk(r); setPick(r.active || r.presets[0]?.key || ""); } }).catch(() => {}).finally(() => setChecked(true));
   }, [user?.is_staff, first.known, first.pendingInstall]);
   useEffect(() => { // from the first moment: the AI message waits until it is known whether an installation must be asked, and it is answered
     if (!user?.is_staff) return;
@@ -64,10 +65,17 @@ export default function DefaultInstallPrompt() {
   };
   const install = async () => {
     const p = ask.presets.find((x) => x.key === pick) || ask.presets[0];
+    const replay = !!ask.replay; // the onboarding done again: pages that have content are never replaced and never asked about
+    setReplayRun(replay);
     setAsk(null); setError("");
-    const overwrite = await askOverwrite(p.key);
+    const overwrite = replay ? false : await askOverwrite(p.key);
     setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false });
     try {
+      if (replay && ask?.active === p.key) {  // the onboarding done again with the installation that is in use: only checked (what was switched off is switched on, no content is changed)
+        const u = await api(`/system/presets/${p.key}/update/`, { method: "POST", body: {} });
+        setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_apply" ? { ...st, status: "ok" } : st)), done: true, note: tx("De installatie {0} is gecontroleerd: {1} modules en {2} plugins zijn aangezet. Er is niets overschreven.", p.name, (u.modules_on || []).length, (u.plugins_on || []).length) }));
+        return;
+      }
       const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: { overwrite_pages: overwrite } });
       let note = tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.payments_warning ? ` ${tx(r.payments_warning)}` : "") + (r.plugins_installed?.length ? ` ${tx("Uit de bibliotheek geïnstalleerd:")} ${r.plugins_installed.join(", ")}.` : "") + (r.plugins_missing?.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "");
       setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_apply" ? { ...st, status: "ok" } : st)) }));
@@ -79,7 +87,18 @@ export default function DefaultInstallPrompt() {
 
   return (
     <>
-      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onClose={() => { const ok = run?.done && !run?.error; setRun(null); if (ok) setFillAsk(true); else window.location.reload(); }} />
+      <RunPopup run={run} onFix={() => resumeDemo(run, setRun)} onClose={() => {
+        const ok = run?.done && !run?.error; setRun(null);
+        if (ok && replayRun) {  // the onboarding done again: the AI credit explanation (when it is still to be shown), then the design wizard as the very last step
+          (async () => {
+            const me = await api("/ai/me/").catch(() => ({}));
+            if (me?.welcome) { try { sessionStorage.setItem("e2e_design_next", "1"); } catch {} window.location.reload(); } // AiWelcome opens; its "Klaar" starts the design wizard
+            else { markPlan(); window.location.href = "/dashboard/admin/siteimport"; }
+          })();
+          return;
+        }  // the onboarding done again: the last step is the design wizard (Website ontwerpen opens its wizard)
+        if (ok) setFillAsk(true); else window.location.reload();
+      }} />
       {fillAsk && <AiFillAsk linked={aiOn !== false} onNo={() => { markPlan(); window.location.href = "/dashboard/admin/siteimport"; }} />}
       {ask && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={later}>

@@ -9,6 +9,8 @@
 const SEC = ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_filter", "twofa"];
 
 export const TILES = [
+  { href: "/dashboard/admin/entity", title: "Bedrijf", big: "Over je bedrijf", small: "Naam, adres, contact en registratie; ook als variabele in je teksten", modules: ["entities"] },  // the title follows the standard installation (see components/AdminTiles.js)
+  { href: "/dashboard/admin/tags", title: "Tags", big: "Tags met een kleur", small: "Voor alle onderdelen: overal, per module of per plugin", modules: ["tags"] },
   { href: "/dashboard/admin/users", title: "Users", big: "Accounts en openbare profielen", small: "Aanmaken, blokkeren, foto en rollen", modules: ["users"] },
   { href: "/dashboard/admin/ai", title: "AI", big: "AI-gebruik van je gebruikers", small: "Wat zij en jij gebruiken en wat het kost, met een rapport per gebruiker", modules: ["ai"] },
   { href: "/dashboard/admin/ai-kosten", title: "AI-kosten", big: "Wat de AI kost", small: "Live per verzoek, overzichten per dag en maand en statistieken", modules: ["ai"] },

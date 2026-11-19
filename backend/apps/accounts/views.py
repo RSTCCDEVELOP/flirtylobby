@@ -311,7 +311,7 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [has_level_for("users", {"list": "use", "retrieve": "use", "create": "manage", "destroy": "manage"}, default="edit")]
 
     def get_queryset(self):
-        qs = User.objects.prefetch_related("roles", "user_groups").order_by("email")
+        qs = User.objects.prefetch_related("roles", "user_groups", "entities").order_by("email")
         # delegated managers cannot even see beheerders
         return qs if self.request.user.is_staff else qs.exclude(is_staff=True)
 

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText, downloadPost } from "../lib/api";
 import { tx, getLanguage } from "../lib/t";
@@ -21,6 +21,8 @@ import CostsInfo from "./CostsInfo";
 import { revertSwitch } from "./LicenseChangePrompt";
 import { money } from "../lib/format";
 import KitScope from "../lib/ui-kit/KitScope";
+import { RichText } from "./SmallEditor";
+import { setBlock, useSandboxFirst } from "../lib/firstRun";
 
 // The basic data (name, main address, address, contact person, e-mail and phone numbers) are required. Are they empty when an administrator logs in? Then this wizard opens.
 // Everybody who may administer can fill it in; only a superadmin may close it without filling it in (for this session).
@@ -28,9 +30,10 @@ const STEPS = [
   ["site", "Website", ["site_name", "company_name", "frontend_url"]],
   ["address", "Adres", ["street", "house_number", "postal_code", "city", "country"]],
   ["contact", "Contact", ["contact_first_name", "contact_last_name", "contact_email", "mobile"]],
+  ["agree", "Voorwaarden", ["consent_ok"]],  // the terms of easy2edit: read to the end, then the consent with a code by e-mail or SMS (only when the licence is made now); a superadmin passes it with an @
   ["hosting", "Hosting", ["hosting"]],  // the hosting that goes with the licence (only when there is no licence yet): from the price list
+  ["preset", "Standaard installatie", []],  // the standard installation decides what is in use and so what it costs: chosen between the hosting and the costs
   ["costs", "Kosten", ["license_until"]],
-  ["agree", "Akkoord", ["consent_ok"]],  // consent with a code by e-mail or SMS (only when the licence is made now): before paying
   ["pay", "Betalen", ["pay_ok"]],  // a Stripe subscription (test mode with test keys): the licence is made only after paying
   ["overview", "Overzicht", []],  // the last screen: everything of the licence together, with its number; Save makes it
    // what the website costs, from everything that is in use; the end date of the licence (only when there is no licence yet: it is made by itself)
@@ -38,12 +41,13 @@ const STEPS = [
 const SKIP_KEY = "e2e_setup_skipped";
 // Only for testing: on this computer (localhost) a superadmin who types a single @ in any field gets all fields filled with made-up data.
 const TEST_DATA = { site_name: "Testwebsite", company_name: "Testbedrijf BV", frontend_url: "www.testbedrijf.nl", street: "Teststraat", house_number: "12", postal_code: "1234 AB", city: "Utrecht", country: "Nederland",
-  contact_first_name: "Test", contact_last_name: "Gebruiker", contact_email: "test@testbedrijf.nl", phone: "+31 301234567", mobile: "+31 612345678" };
+  contact_first_name: "Test", contact_last_name: "Gebruiker", contact_email: "demo@easy2edit.com", phone: "+31 301234567", mobile: "+31 612345678" };
 const isLocal = () => typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 
 export default function SetupWizard() {
   const { user } = useAuth();
   const mods = useModules();
+  const first = useSandboxFirst(!!user?.is_staff); // the onboarding done again: the form comes after the first questions (welcome, licence check, terms, sandbox, manual)
   const allowed = !!user && (user.is_staff || canAdmin(user, mods));
   const [d, setD] = useState(null);
   const [form, setForm] = useState({});
@@ -53,6 +57,11 @@ export default function SetupWizard() {
   const [busy, setBusy] = useState(false);
   const [closed, setClosed] = useState(false);
   const [costs, setCosts] = useState(null);
+  const [termsDoc, setTermsDoc] = useState(null); // the terms and conditions of easy2edit (step Voorwaarden)
+  const [termsRead, setTermsRead] = useState(false); // read to the end: only then the consent is asked
+  const termsBox = useRef(null);
+  const [presetList, setPresetList] = useState(null); // the standard installations (read when the step is opened)
+  const [presetBusy, setPresetBusy] = useState(false);
   const [costInfo, setCostInfo] = useState(false);
   const [upd, setUpd] = useState(null);  // update mode: a module or plugin was switched on or off and the licence price changed: {old, new, delta, number}; the licence is updated with a new agreement
   const [done, setDone] = useState(null);  // the licence that was made: shown when everything is saved
@@ -86,6 +95,22 @@ export default function SetupWizard() {
     if (step === "hosting" && d && !(d.hosting_options || []).length) api("/system/setup/").then((r) => { setD(r); setForm((f) => ({ ...f, hosting: f.hosting || r.hosting_default || "shared" })); }).catch(() => {});
   }, [step, d]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => { // the terms of easy2edit for the step Voorwaarden
+    if (step !== "agree" || termsDoc) return;
+    api(`/system/terms/?lang=${getLanguage()}`).then(setTermsDoc).catch(() => setTermsDoc({ body: "", error: true }));
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { // a text that fits without scrolling counts as read
+    const el = termsBox.current;
+    if (step === "agree" && el && termsDoc && el.scrollHeight <= el.clientHeight + 8) setTermsRead(true);
+  }, [step, termsDoc]);
+  useEffect(() => { // the password of the contact person (made a user with admin rights when the licence is made): a new one for the overview
+    if (step === "overview" && d?.needs_license && !form.contact_password) api("/system/setup/password/").then((r) => setForm((f) => ({ ...f, contact_password: r.password }))).catch(() => {});
+  }, [step, d?.needs_license]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { // the standard installations with their price: for the step "Standaard installatie" (administrators see the ones that were released for them)
+    if (step !== "preset" || presetList) return;
+    api("/system/presets/").then((l) => { const list = user?.is_staff ? l : l.filter((x) => x.admin); setPresetList(list); setForm((f) => ({ ...f, preset: f.preset || (list.find((x) => x.active) || list[0] || {}).key || "" })); /* the one in use; nothing known: the first one */ }).catch(() => setPresetList([]));
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { // the costs of everything that is in use (read when the tab is opened)
     if ((step === "costs" || step === "pay" || step === "overview") && !costs) api("/system/license/usage/").then(setCosts).catch(() => setCosts({ items: [], error: true }));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -101,7 +126,13 @@ export default function SetupWizard() {
     });
   }, [step, d, user, forced]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!allowed || closed || !(d?.needed || forced || done) || typeof document === "undefined") return null;
+  const waiting = !forced && !done && (first.welcomeOpen || first.licenseMessageOpen || (user?.is_staff && !first.known)); // the very first question (colour) and the licence message come before the form
+  const shown = !!allowed && !closed && !!(d?.needed || forced || done) && typeof document !== "undefined" && !waiting;
+  useEffect(() => { // while the form (where the licence is made) or the screen "licence made" is open, the terms, the AI and the rest wait for it; they follow when it is closed
+    setBlock("setup", shown);
+    return () => setBlock("setup", false);
+  }, [shown]);
+  if (!shown) return null;
   const steps = upd ? STEPS.filter((x) => ["costs", "agree", "pay", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
   const hostOpt = d.needs_license ? (d.hosting_options || []).find((o) => o.key === form.hosting) : null;  // the chosen hosting: a line of the price (not in the base price)
   const hostPrice = hostOpt ? Number(hostOpt.price) : 0;
@@ -117,7 +148,16 @@ export default function SetupWizard() {
   };
   // what is known about the logged in person is read when you go to a step: only the fields that are still empty
   const fill = (key) => setForm((f) => { const o = { ...f }; steps.find((s) => s[0] === key)[2].forEach((k) => { if (!String(o[k] || "").trim() && d.suggest?.[k]) o[k] = d.suggest[k]; }); return o; });
-  const next = () => { if (checkStep()) { const n = steps[stepIdx + 1][0]; fill(n); setStep(n); } };
+  const next = async () => {
+    if (!checkStep()) return;
+    if (step === "preset" && form.preset && presetList && !(presetList.find((x) => x.key === form.preset) || {}).active) {  // another installation than the one in use: it is set now, so the costs follow it (no data is removed)
+      setPresetBusy(true); setError("");
+      try { await api(`/system/presets/${form.preset}/apply/`, { method: "POST", body: { overwrite_pages: false } }); setCosts(null); await api("/system/presets/").then((l) => setPresetList(user?.is_staff ? l : l.filter((x) => x.admin))).catch(() => {}); window.dispatchEvent(new Event("presets-changed")); }
+      catch (e) { setError(errorText(e)); setPresetBusy(false); return; }
+      setPresetBusy(false);
+    }
+    const n = steps[stepIdx + 1][0]; fill(n); setStep(n);
+  };
   const saveUpdate = async () => {  // update mode: the licence runs on with the new price (same number)
     setBusy(true); setError("");
     try { const r = await api("/system/license/update/", { method: "POST", body: {} }); setForced(false); setUpd(null); window.dispatchEvent(new Event("setup-saved")); setDone({ ...r.license, updated: true, old: r.old, new: r.new }); }
@@ -128,7 +168,7 @@ export default function SetupWizard() {
     if (upd) return saveUpdate();
     if (!checkStep()) return;
     setBusy(true); setError("");
-    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); if (r.license?.number && d.needs_license) setDone(r.license); } }
+    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); if (r.replay) { setTimeout(() => window.location.reload(), 300); return; }  /* the onboarding done again: the rest (terms, installation, AI, design wizard) follows after a reload */ if (r.license?.number && d.needs_license) setDone(r.license); } }
     catch (e) {
       const bad = Object.fromEntries(Object.entries(e?.data?.errors || {}).map(([k, v]) => [k, tx(v)]));  // each message in the chosen language
       setError(Object.keys(bad).length ? Object.values(bad).join(" ") : errorText(e));
@@ -209,7 +249,7 @@ export default function SetupWizard() {
   };
   const typeCode = async (e) => {
     let v = e.target.value;
-    if (v === "@" && user?.is_superadmin_plus) {  // a superadmin+ passes the code with an @ (also on a live website): approved at once
+    if (v === "@" && user?.is_staff) {  // a superadmin passes the code with an @ (also on a live website): approved at once
       setConsent((c) => ({ ...c, busy: true, error: "" }));
       try { await api("/system/setup/consent/verify/", { method: "POST", body: { code: "@" } }); setForm((f) => ({ ...f, consent_code: "000-000", consent_ok: "1" })); setErrs((x) => ({ ...x, consent_ok: "" })); setConsent((c) => ({ ...c, busy: false })); }
       catch (err) { setConsent((c) => ({ ...c, busy: false, error: errorText(err) })); }
@@ -238,17 +278,18 @@ export default function SetupWizard() {
               {done.updated && <span><strong>{money(done.old)} → {money(done.new)}</strong> {tx("per maand")} · {tx("incl. btw")}</span>}
               {done.client && <span>{done.client}</span>}
               {done.main_url && <span className="e2e-hint">{done.main_url.replace(/^https?:\/\//, "")}</span>}
+              {!done.updated && form.contact_password && <span className="e2e-hint">{tx("Wachtwoord contactpersoon")}: <code style={{ userSelect: "all" }}>{form.contact_password}</code> · {tx("per e-mail verstuurd naar {0}", form.contact_email)}</span>}
               {done.valid_until && <span className="e2e-hint">{tx("Verlengdatum")}: {new Date(done.valid_until).toLocaleDateString(getLanguage(), { day: "numeric", month: "long", year: "numeric" })}</span>}
             </div>
             <div className="e2e-row" style={{ gap: ".6rem", justifyContent: "center", flexWrap: "wrap" }}>
               <button type="button" className="e2e-btn e2e-btn--outline" onClick={downloadPdf} style={{ gap: ".5rem" }}><span style={{ display: "inline-flex", width: 18, height: 18 }}><IconReceipt /></span>{tx("Download PDF")}</button>
-              <button type="button" className="e2e-btn" onClick={() => { setDone(null); setClosed(true); window.dispatchEvent(new Event("setup-saved")); }}>{tx("Sluiten")}</button>
+              <button type="button" className="e2e-btn" onClick={() => { const updated = !!done?.updated; setDone(null); setClosed(true); window.dispatchEvent(new Event("setup-saved")); if (!updated) window.location.reload(); }}>{tx("Sluiten")}</button>  {/* a licence was made: the page loads again so the next screens of the onboarding follow (terms, AI, design wizard) */}
             </div>
           </div>
         </KitScope>
       </div>
       ) : (
-      <div className="card modal" style={{ maxWidth: 680, width: "100%", maxHeight: "94vh", padding: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}
+      <div className="card modal" style={{ maxWidth: 860, width: "100%", maxHeight: "94vh", padding: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}
         onInputCapture={(e) => { if (user?.is_staff && isLocal() && e.target?.tagName === "INPUT" && e.target.id !== "sw-consent_code" && e.target.value === "@") { setForm((f) => ({ ...f, ...TEST_DATA })); setErrs({}); setError(""); } }}>
         <KitScope tag="ui-form-fields" className="sw-col">
           <div className="sw-wrap">
@@ -299,6 +340,19 @@ export default function SetupWizard() {
                 {phoneField("phone", tx("Telefoon"), false)}
                 {phoneField("mobile", tx("Mobiel nummer"), true)}
               </>}
+              {step === "preset" && (
+                <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem" }} role="radiogroup" aria-label={tx("Standaard installatie")}>
+                  <span className="e2e-hint">{tx("Kies het soort website. De standaard installatie bepaalt welke modules en plugins aan staan en dus wat het kost.")}</span>
+                  {!presetList ? <span className="e2e-hint">{tx("Bezig…")}</span> : !presetList.length ? <span className="e2e-hint">{tx("Er zijn geen standaard installaties beschikbaar.")}</span> : presetList.map((o) => (
+                    <label key={o.key} className="e2e-check" style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: ".7rem", padding: ".7rem .9rem", border: `1px solid ${form.preset === o.key ? "var(--e2e-primary)" : "var(--e2e-line, rgba(0,0,0,.12))"}`, borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer" }}>
+                      <input type="radio" name="sw-preset" style={{ flex: "0 0 auto", marginTop: ".2rem" }} checked={form.preset === o.key} disabled={presetBusy} onChange={() => setForm((f) => ({ ...f, preset: o.key }))} />
+                      <span style={{ flex: 1 }}><strong>{tx(o.name)}</strong>{o.active && <span className="e2e-badge" style={{ marginLeft: ".5rem" }}>{tx("In gebruik")}</span>}<br /><small className="e2e-hint">{tx(o.desc)}</small></span>
+                      {o.price?.monthly != null && <span style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{money(o.price.monthly)} {tx("per maand")}</span>}
+                    </label>
+                  ))}
+                  <span className="e2e-hint">{tx("Prijzen per maand, exclusief btw. Een andere installatie kiezen haalt geen gegevens weg.")}</span>
+                </div>
+              )}
               {step === "hosting" && (
                 <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem" }} role="radiogroup" aria-label={tx("Hosting")}>
                   {(d.hosting_options || []).map((o) => (
@@ -400,7 +454,9 @@ export default function SetupWizard() {
                   [tx("Contactpersoon"), [form.contact_first_name, form.contact_last_name].filter(Boolean).join(" ")],
                   [tx("Contact e-mail"), form.contact_email],
                   [tx("Mobiel nummer"), form.mobile],
+                  ...(!upd && d.needs_license && form.contact_password ? [[tx("Wachtwoord contactpersoon"), form.contact_password]] : []),
                   [tx("Hosting"), hostOpt ? hostOpt.label : ""],
+                  [tx("Standaard installatie"), (presetList || []).find((x) => x.key === form.preset)?.name ? tx((presetList || []).find((x) => x.key === form.preset).name) : ""],
                   [tx("Abonnement"), `${perLabel}${disc > 0 ? ` · ${tx("korting")} ${disc}%` : ""}`],
                   [tx("Prijs"), `${money(Math.round(price * 100) / 100)} ${perLabel.toLowerCase()} · ${tx("incl. btw")}`],
                   [tx("Verlengdatum"), form.license_until ? new Date(form.license_until).toLocaleDateString(getLanguage(), { day: "numeric", month: "long", year: "numeric" }) : ""],
@@ -418,6 +474,16 @@ export default function SetupWizard() {
                         {rows.map(([l, v]) => <tr key={l}><td style={{ width: "38%", opacity: .75 }}>{l}</td><td><strong>{v}</strong></td></tr>)}
                       </tbody></table>
                     </div>
+                    {!upd && d.needs_license && (
+                      <div className="e2e-field" data-easy2edit-tag="ui-form-fields">
+                        <label className="e2e-label" htmlFor="sw-contact_password"><span>{tx("Wachtwoord van de contactpersoon")}</span></label>
+                        <div className="e2e-row" style={{ gap: ".5rem", flexWrap: "nowrap" }}>
+                          <input id="sw-contact_password" className="e2e-input" style={{ fontFamily: "monospace", flex: 1 }} value={form.contact_password || ""} onChange={(e) => setForm((f) => ({ ...f, contact_password: e.target.value }))} autoComplete="off" spellCheck={false} />
+                          <button type="button" className="e2e-btn e2e-btn--outline" onClick={() => api("/system/setup/password/").then((r) => setForm((f) => ({ ...f, contact_password: r.password }))).catch(() => {})} aria-label={tx("Nieuw wachtwoord")} title={tx("Nieuw wachtwoord")}>{tx("Vernieuwen")}</button>
+                        </div>
+                        <span className="e2e-hint">{tx("De contactpersoon wordt als gebruiker met beheerrechten aangemaakt, in de groep Admins en gekoppeld aan het bedrijf. Dit wachtwoord staat in het overzicht en de PDF en wordt per e-mail naar hem gestuurd.")}</span>
+                      </div>
+                    )}
                     {form.pay_none_done === "1" && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Niet betaald. De licentie loopt maar kort; daarna gaat je website in free mode.")}</div></div>}
                     <div className="e2e-row" style={{ justifyContent: "center" }}>
                       <button type="button" className="e2e-btn e2e-btn--outline" onClick={downloadPdf} data-easy2edit-tag="ui-button-variants" style={{ gap: ".5rem" }}><span style={{ display: "inline-flex", width: 18, height: 18 }}><IconReceipt /></span>{tx("Download PDF")}</button>
@@ -428,13 +494,24 @@ export default function SetupWizard() {
               })()}
               {step === "agree" && (
                 <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: "1rem" }}>
-                  <div style={{ paddingBottom: "1rem", borderBottom: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.15)))" }}>
-                    <strong style={{ fontSize: "1.05rem" }}>{tx("Akkoord met de licentie")}</strong>
-                    <p style={{ margin: ".3rem 0 0" }}>{tx("Je geeft akkoord op de licentie voor")} <strong>{form.company_name || form.site_name}</strong>. {tx("Je bevestigt dit met een code die je per e-mail of SMS krijgt.")}</p>
+                  <div style={{ paddingBottom: ".6rem", borderBottom: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.15)))" }}>
+                    <strong style={{ fontSize: "1.05rem" }}>{tx("Algemene voorwaarden van easy2edit")}</strong>
+                    <p style={{ margin: ".3rem 0 0" }}>{tx("Lees de voorwaarden helemaal door, tot het einde. Daarna vragen we je akkoord te geven met een code die je per e-mail of SMS krijgt.")}</p>
                   </div>
+                  {form.consent_ok !== "1" && !upd && (
+                    <div className="e2e-stack" style={{ gap: ".4rem" }}>
+                      <div ref={termsBox} tabIndex={0} role="region" aria-label={tx("Algemene voorwaarden van easy2edit")}
+                        onScroll={(e) => { const el = e.currentTarget; if (el.scrollTop + el.clientHeight >= el.scrollHeight - 12) setTermsRead(true); }}
+                        style={{ maxHeight: "34vh", overflowY: "auto", padding: ".8rem 1rem", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.2)))", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #fff)" }}>
+                        {termsDoc ? (termsDoc.title && <h3 style={{ marginTop: 0 }}>{termsDoc.title}</h3>) : null}
+                        {termsDoc ? <RichText value={termsDoc.body} /> : <span className="e2e-hint">{tx("Laden…")}</span>}
+                      </div>
+                      <span className="e2e-hint">{termsRead ? tx("Je hebt de voorwaarden tot het einde gelezen.") : tx("Scroll naar het einde van de voorwaarden om akkoord te kunnen geven.")}</span>
+                    </div>
+                  )}
                   {form.consent_ok === "1" ? (
                     <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{tx("Akkoord gegeven. Ga verder naar de betaling.")}</div></div>
-                  ) : (
+                  ) : (!termsRead && !upd) ? null : (
                     <div className="e2e-stack" style={{ gap: "1rem", alignItems: "center", textAlign: "center" }}>
                       {!canMail && !canSms && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Er is geen e-mail- of SMS-koppeling actief (API keys), dus er kan geen code worden verstuurd.")}</div></div>}
                       {canMail && canSms && (
@@ -529,7 +606,7 @@ export default function SetupWizard() {
               <div className="e2e-row" style={{ gap: ".6rem" }}>
                 {stepIdx > 0 && <button type="button" className="e2e-btn e2e-btn--outline" onClick={() => setStep(steps[stepIdx - 1][0])}>{tx("Vorige")}</button>}
                 {stepIdx < steps.length - 1
-                  ? <button type="button" className="e2e-btn" disabled={(step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 7 || consent.busy))} onClick={step === "agree" && form.consent_ok !== "1" ? () => checkCode(form.consent_code) : next}>{tx("Volgende")}</button>
+                  ? <button type="button" className="e2e-btn" disabled={presetBusy || (step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 7 || consent.busy))} onClick={step === "agree" && form.consent_ok !== "1" ? () => checkCode(form.consent_code) : next}>{tx("Volgende")}</button>
                   : <button type="button" className="e2e-btn" disabled={busy} onClick={save}>{tx("Opslaan")}</button>}
               </div>
             </div>

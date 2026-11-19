@@ -24,6 +24,11 @@ export default function ApiLinksInstall() {
     if (!user?.is_staff) return;
     api("/admin/integrations/syslinks/").then((s) => { if (s.needed) setOpen(true); }).catch(() => {});
   }, [user]);
+  useEffect(() => { // the onboarding says this is the next step
+    const again = () => { if (user?.is_staff) api("/admin/integrations/syslinks/").then((st) => { if (st.needed) setOpen(true); }).catch(() => {}); };
+    window.addEventListener("open-syslinks", again);
+    return () => window.removeEventListener("open-syslinks", again);
+  }, [user]);
   if (!open || typeof document === "undefined") return null;
   const go = async (e) => {
     e.preventDefault();

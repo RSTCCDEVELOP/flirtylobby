@@ -17,6 +17,10 @@ class CoreConfig(AppConfig):
 
         from . import sitemanager
 
+        from . import everyone
+
+        everyone.connect()  # a new user goes into the standard group "Everyone" (when it exists)
+
         user_logged_in.connect(sitemanager.on_login, dispatch_uid="easy2edit-sitemanager-login")  # an administrator logs in: the website reports itself to the easy2edit server (in the background)
 
         def allow_configured(sender, request, **kwargs):

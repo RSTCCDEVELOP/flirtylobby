@@ -26,6 +26,7 @@ import PriceCalculator from "./PriceCalculator";
 import MarketingTile from "./MarketingTile";
 import AiBlock from "./AiBlock";
 import EnergyBlock from "./EnergyBlocks";
+import { useEntity, variableValue } from "../lib/entity";
 
 let cache = null; // the list of objects is the same for every widget on the page
 const load = () => (cache ||= api("/sysobjects/").catch(() => { cache = null; return []; }));
@@ -34,12 +35,19 @@ export const resetSysObjects = () => { cache = null; };
 const langNow = () => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } };
 const PER = { week: "per week", month: "per maand", quarter: "per kwartaal", year: "per jaar", once: "eenmalig" };
 
+// A variable of the company ({{organisatie.*}}) or of the person who looks ({{user.*}}) as a piece of text in the page.
+function VariableValue({ name, user }) {
+  const ent = useEntity();
+  return <span className="sys-variable" data-variable={name}>{variableValue(name, ent, user)}</span>;
+}
+
 function Widget({ obj, layout = "1" }) {
   const { user } = useSession();
   const [open, setOpen] = useState(false);
   const lang = langNow();
   const d = obj.data;
   const route = usePageRoute();
+  if (obj.kind === "variable") return <VariableValue name={d.variable} user={user} />;
   if (obj.kind === "calculator") return <PriceCalculator layout={layout} />;
   if (obj.kind === "pricelist") return <PriceList />;
   if (obj.kind === "ai") return <AiBlock block={d.block} />;
@@ -85,7 +93,7 @@ export function SysObjectBySlug({ slug, layout = "1" }) {
   const [objs, setObjs] = useState([]);
   useEffect(() => { if (on) load().then(setObjs); }, [on]);
   const o = objs.find((x) => x.slug === slug);
-  const own = o && (o.kind === "marketing" || o.kind === "calculator" || o.kind === "pricelist" || o.kind === "installation" || o.kind === "ai" || o.kind === "energy");
+  const own = o && (o.kind === "marketing" || o.kind === "calculator" || o.kind === "pricelist" || o.kind === "installation" || o.kind === "ai" || o.kind === "energy" || o.kind === "variable");
   const n = ["1", "2", "3", "4"].includes(String(layout)) ? String(layout) : "1";
   return on && o ? <div className={`so so-${own ? "own" : n}`} data-layout={n}><Widget obj={o} layout={n} /></div> : null;
 }

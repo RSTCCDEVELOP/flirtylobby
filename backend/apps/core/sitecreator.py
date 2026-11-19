@@ -115,9 +115,21 @@ def rules(brief=None):
     out = out + ("\n\n" + comp if comp else "")
     if comp:
         out += COMPONENTS_ONLY.replace("@TEMPLATES@", componentpacks.templates_text((brief or {}).get("component_set") or None))
+    from . import entity
+
+    about = entity.creator_text()  # step "Over je organisatie": who the website is for (module Entiteit); texts, colours, the contact page and the footer follow it
+    if about:
+        out += ABOUT_ENTITY.replace("@ABOUT@", about)
     if (brief or {}).get("chat"):
         out += CHAT_PHOTO_RULES.replace("@MAX_IMAGES@", str(d["max_images"]))
     return out
+
+
+ABOUT_ENTITY = """
+
+ABOUT THE ORGANISATION (the entity of this website: use it for the texts, the colours and tone, the contact page and the footer; do not invent other data)
+@ABOUT@
+- Where the name, address, e-mail or phone of the organisation appears in a text, you may write the variable instead: {{organisatie.naam}}, {{organisatie.adres}}, {{organisatie.email}}, {{organisatie.telefoon}}, {{organisatie.website}}, {{organisatie.plaats}}, {{organisatie.kvk}}, {{organisatie.btw}}, {{organisatie.soort}}. The website fills them in, so a change of the data works through on every page."""
 
 
 COMPONENTS_ONLY = """
@@ -274,7 +286,10 @@ def catalog():
     from .models import Language
 
     langs = [{"code": l.code, "name": l.name, "native": l.native_name, "rtl": l.rtl, "enabled": l.enabled, "default": l.is_default} for l in Language.objects.all()]
-    return {"modules": mods, "objects": objs, "languages": langs, "rules": R.as_dict()}
+    from . import entity
+
+    return {"modules": mods, "objects": objs, "languages": langs, "rules": R.as_dict(),
+            "organisation": {"filled": entity.filled(), "label": entity.label(), "text": entity.creator_text()}}  # step "Over je organisatie" of the creator
 
 
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")

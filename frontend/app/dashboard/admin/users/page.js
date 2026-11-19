@@ -22,11 +22,14 @@ import UserInvites from "../../../../components/UserInvites";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
+import KitScope from "../../../../lib/ui-kit/KitScope";
+import { ColorDot, ColorField, TagChip, TagPicker, useTagMap } from "../../../../components/Tags";
+import { IconBriefcase } from "../../../../components/Icons";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { lvl } from "../../../../lib/perms";
 
-const EMPTY = { twofa_required: false, user_groups: [], email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
+const EMPTY = { twofa_required: false, user_groups: [], entity_ids: [], color: "", email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
 const initials = (u) => (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
 
 export default function Users() {
@@ -38,6 +41,9 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [groups, setGroups] = useState([]);
+  const tagMap = useTagMap("user"); // the tags of the users (chips after the name)
+  const [entities, setEntities] = useState([]); // the entities (companies, clubs ...) a user can belong to
+  useEffect(() => { api("/entities/").then(setEntities).catch(() => {}); }, []);
   const [error, setError] = useState("");
   const [modal, setModal] = useState(null); // null | form object (with id when editing)
 
@@ -58,7 +64,7 @@ export default function Users() {
 
   async function save(e) {
     e.preventDefault();
-    const { id, file, error: _e, image, ...body } = modal;
+    const { id, file, error: _e, image, entities: _en, ...body } = modal;
     if (id && !body.password) delete body.password;
     try {
       const saved = await (id ? api(`/users/${id}/`, { method: "PATCH", body }) : api("/users/", { method: "POST", body }));
@@ -124,10 +130,10 @@ export default function Users() {
 
       <Collapsible id="users-list" title={tx("Gebruikers")}>
       <ViewBar view={tv} />
-      <TableView view={tv}>
-        <table>
+      <KitScope tag="ui-data-table"><TableView view={tv}>
+        <table className="users-table">
           <thead>
-            <tr><th>{tx("Naam")}</th><th>{tx("E-mail")}</th><th>{tx("Functie")}</th><th>{tx("Rol")}</th><th>{tx("Verificatie")}</th><th>{tx("Status")}</th><th></th></tr>
+            <tr><th>{tx("Naam")}</th><th>{tx("E-mail")}</th><th>{tx("Rol")}</th><th>{tx("Verificatie")}</th><th>{tx("Status")}</th><th></th></tr>
           </thead>
           <tbody>
             {users.map((u) => (
@@ -135,35 +141,44 @@ export default function Users() {
                 <td>
                   <span className="user-cell">
                     {u.image ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={mediaUrl(u.image)} alt="" className="avatar-img" data-g={u.gender || undefined} /> : <span className="avatar" data-g={u.gender || undefined}>{initials(u)}</span>}
-                    {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
-                    {u.is_fake && <span className="badge off" title={tx("Nep-gebruiker voor testen")}>{tx("Nep")}</span>}
-                    {u.show_public && <span className="badge ok" title={tx("Wordt getoond op de website")}>{tx("Op website")}</span>}
+                    <span className="user-name">
+                      <strong><ColorDot color={u.color} size={11} title={tx("Kleur")} />{[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}</strong>
+                      {(tagMap.of(u.id).length > 0 || u.is_fake || u.show_public) && (
+                        <span className="cell-chips">
+                          {tagMap.of(u.id).map((t) => <TagChip key={t.id} tag={t} />)}
+                          {u.is_fake && <span className="badge off" title={tx("Nep-gebruiker voor testen")}>{tx("Nep")}</span>}
+                          {u.show_public && <span className="badge ok" title={tx("Wordt getoond op de website")}>{tx("Op website")}</span>}
+                        </span>
+                      )}
+                    </span>
                   </span>
                 </td>
-                <td>{u.email}</td>
-                <td>{u.function || "—"}</td>
+                <td><span className="cell-two"><span>{u.email}</span>{u.function && <small className="muted">{u.function}</small>}</span></td>
                 <td>
-                  {u.is_staff && <span className="badge ok" style={{ marginRight: ".3rem" }}>{u.is_superadmin_plus ? <>{tx("Superadmin+")}<PlusLock /></> : tx("Superadmin")}</span>}
-                  {u.roles.map((id) => <span key={id} className="chip" style={{ cursor: "default", marginRight: ".3rem" }}>{roles.find((r) => r.id === id)?.name || "…"}</span>)}
-                  {u.user_groups.map((id) => <span key={id} className="chip" style={{ cursor: "default", marginRight: ".3rem" }}>{groups.find((g) => g.id === id)?.name || "…"}</span>)}
-                  {!u.is_staff && !u.roles.length && !u.user_groups.length && <span className="muted">{tx("User")}</span>}
+                  <span className="cell-chips">
+                    {u.is_staff && <span className="badge ok">{u.is_superadmin_plus ? <>{tx("Superadmin+")}<PlusLock /></> : tx("Superadmin")}</span>}
+                    {(u.role_list || u.roles.map((id) => ({ id, name: roles.find((r) => r.id === id)?.name || "…" }))).map((r) => <span key={`r${r.id}`} className="chip" style={{ cursor: "default" }}>{r.name}</span>)}
+                    {u.user_groups.map((id) => <span key={id} className="chip" style={{ cursor: "default" }}>{groups.find((g) => g.id === id)?.name || "…"}</span>)}
+                    {(u.entities || []).map((e) => <span key={`e${e.id}`} className="chip" style={{ cursor: "default" }} title={tx("Entiteit")}><ColorDot color={e.color} size={9} />{!e.color && <IconBriefcase width={12} height={12} />} {e.name}</span>)}
+                    {!u.is_staff && !u.roles.length && !u.user_groups.length && !(u.entities || []).length && <span className="muted">{tx("User")}</span>}
+                  </span>
                 </td>
                 <td><VerifyBadge status={u.verification} label /></td>
                 <td><span className={`badge ${u.is_active ? "ok" : "off"}`}>{u.is_active ? tx("Actief") : tx("Geblokkeerd")}</span></td>
-                <td className="actions">
-                  {L >= 2 && <button className="btn sm" onClick={() => { setTab("account"); setModal({ ...EMPTY, ...u, password: "" }); }}>{tx("Wijzig")}</button>}
+                <td className="actions"><div className="cell-actions">
+                  {L >= 2 && <button className="btn sm" onClick={() => { setTab("account"); setModal({ ...EMPTY, ...u, password: "", entity_ids: (u.entities || []).map((x) => x.id) }); }}>{tx("Wijzig")}</button>}
                   {u.id !== me.id && (
                     <>
                       {L >= 2 && <button className="btn sm" onClick={() => toggleBlock(u)}>{u.is_active ? tx("Blokkeer") : tx("Deblokkeer")}</button>}
                       {L >= 3 && <button className="btn sm danger" onClick={() => remove(u)}>{tx("Verwijder")}</button>}
                     </>
                   )}
-                </td>
+                </div></td>
               </tr>
             ))}
           </tbody>
         </table>
-      </TableView>
+      </TableView></KitScope>
       </Collapsible>
 
       {L >= 3 && <UserInvites roles={roles} groups={groups} />}
@@ -197,7 +212,7 @@ export default function Users() {
             <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["media", "Media"], ["rights", "Rechten"]]} />
             {tab === "account" && (
             <div className="grid2">
-              <label>{tx("Voornaam")}<input value={modal.first_name} onChange={set("first_name")} /></label>
+              <label>{tx("Voornaam")}<span style={{ display: "flex", gap: ".6rem", alignItems: "center" }}><ColorField inline value={modal.color || ""} onChange={(v) => setModal({ ...modal, color: v })} disabled={L < 2} /><input style={{ flex: 1 }} value={modal.first_name} onChange={set("first_name")} /></span></label>
               <label>{tx("Achternaam")}<input value={modal.last_name} onChange={set("last_name")} /></label>
               <label>{tx("E-mailadres")}<input type="email" value={modal.email} onChange={set("email")} required /></label>
               <label>{modal.id ? tx("Nieuw wachtwoord (optioneel)") : tx("Wachtwoord")}
@@ -208,6 +223,7 @@ export default function Users() {
                   {Object.entries(VERIFY).map(([k, v]) => <option key={k} value={k}>{tx(v.label)}: {tx(v.hint)}</option>)}
                 </select>
               </label>
+              {modal.id && <div style={{ gridColumn: "1 / -1" }}><TagPicker kind="user" refId={modal.id} label={tx("Tags")} canEdit={L >= 2} /></div>}
               {modal.id && L >= 2 && (
                 <label className="check sec-toggle" style={{ alignSelf: "end" }} title={modal.id === me.id ? tx("Je kunt je eigen account niet uitschakelen") : undefined}>
                   <span className="switch"><input type="checkbox" checked={modal.is_active !== false} disabled={modal.id === me.id} onChange={(e) => setModal({ ...modal, is_active: e.target.checked })} /><span /></span>
@@ -265,6 +281,19 @@ export default function Users() {
                   </label>
                 ))}
                 {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
+              </div>
+            </div>
+            <div>
+              <strong style={{ fontSize: ".85rem" }}>{tx("Entiteiten")}</strong>
+              <div className="perm-list">
+                {entities.map((en) => (
+                  <label className="check sec-toggle" key={en.id}>
+                    <span className="switch"><input type="checkbox" checked={(modal.entity_ids || []).includes(en.id)}
+                      onChange={() => setModal({ ...modal, entity_ids: (modal.entity_ids || []).includes(en.id) ? modal.entity_ids.filter((x) => x !== en.id) : [...(modal.entity_ids || []), en.id] })} /><span /></span>
+                    <span>{en.name || tx("Naamloos")} <small className="muted">{tx(en.kind_label)}{en.city ? ` · ${en.city}` : ""}</small></span>
+                  </label>
+                ))}
+                {!entities.length && <span className="muted">{tx("Nog geen entiteiten.")}</span>}
               </div>
             </div>
             {me.is_superadmin_plus && <label className="check sec-toggle">

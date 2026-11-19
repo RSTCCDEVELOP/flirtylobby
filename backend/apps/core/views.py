@@ -384,7 +384,10 @@ from .models import ModuleState  # noqa: E402
 def modules_public(request):
     from apps.plugins.models import Plugin
 
-    return Response({**modules.states(), **{f"plugin:{n}": on for n, on in Plugin.objects.values_list("name", "enabled")}})  # plugins count as modules for the website
+    from . import presets
+
+    flags = presets.setup_flags()  # Setup of the standard installation: Users and Entiteit on the dashboard (left menu and tile) or not
+    return Response({**modules.states(), **{f"plugin:{n}": on for n, on in Plugin.objects.values_list("name", "enabled")}, "setup_users": flags["users"], "setup_entity": flags["entity"]})  # plugins count as modules for the website
 
 
 def _module_payload():
@@ -602,6 +605,19 @@ def system_setup_consent(request):
     return Response({"sent": True, "code": code if (on_screen or local) else None})
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def system_setup_password(request):
+    """A new password for the contact person (the refresh button of the set-up wizard): {password}."""
+    from apps.accounts.access import can_admin
+
+    from . import entity
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    return Response({"password": entity.generate_password()})
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def system_setup_consent_verify(request):
@@ -611,14 +627,29 @@ def system_setup_consent_verify(request):
 
     if not can_admin(request.user):
         return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
-    if str(request.data.get("code") or "").strip() == "@" and request.user.is_superplus:  # a superadmin+ passes the code with an @
+    from . import terms
+
+    if str(request.data.get("code") or "").strip() == "@" and request.user.is_staff:  # a superadmin passes the code with an @
         setup_consent.mark_ok(request.user)
+        _sign_terms_with_consent(request, "skipped")
         return Response({"ok": True, "bypass": True})
     try:
         setup_consent.verify(request.user, request.data.get("code"))
     except setup_consent.ConsentError as e:
         return Response({"detail": str(e)}, status=400)
+    _sign_terms_with_consent(request, "email")
     return Response({"ok": True})
+
+
+def _sign_terms_with_consent(request, method):
+    """Accepting the terms in the set-up wizard (read to the end, confirmed with a code) is the signature of the terms of this person too: the terms screen does not ask again."""
+    from . import terms
+
+    try:
+        if request.user.is_authenticated and terms.required(request.user) and not terms.signed(request.user, terms.current().version):
+            terms._record(request.user, request, str(request.data.get("lang") or "")[:10], method)
+    except Exception:  # noqa: BLE001
+        __import__("logging").getLogger(__name__).exception("terms signature after the consent")
 
 
 def _license_brief():
@@ -817,6 +848,15 @@ def _make_license(until=None, months=None, hosting=None, user=None):
     from . import licence_notify
 
     licence_notify.notify("created", by=user)
+    try:  # the licence makes the entity of the website (the company) and the contact person as a user, linked to it
+        from . import entity
+
+        entity.ensure_from_licence()
+        from . import everyone
+
+        everyone.ensure()  # the standard group "Everyone" with all users in it
+    except Exception:  # noqa: BLE001 - never stop the licence for this
+        __import__("logging").getLogger(__name__).exception("entity could not be made from the licence")
 
 
 @api_view(["GET", "PUT"])
@@ -876,7 +916,9 @@ def system_setup(request):
             from datetime import date as _date, timedelta as _td
 
             until = _date.today() + _td(days=_sp.TRIAL_DAYS)
+        __import__("apps.core.entity", fromlist=["x"]).set_pending_password(request.data.get("contact_password"))  # the password that the wizard showed for the contact person
         system.save(cleaned)
+        __import__("apps.core.reset", fromlist=["x"]).mark_form_done()  # (the form of the onboarding that was started again is done: the installation and the design wizard follow)
         _make_license(until, months, request.data.get("hosting"), request.user)
         __import__("apps.core.setup_consent", fromlist=["x"]).clear(request.user)
         __import__("apps.core.setup_pay", fromlist=["x"]).clear(request.user)
@@ -893,7 +935,8 @@ def system_setup(request):
     from datetime import date, timedelta
 
     needs_license = not _license_exists()
-    return Response({"license": _license_brief(), "needs_license": needs_license, "license_number": _reserved_number() if needs_license else None, "hosting_current": (__import__("apps.core.models", fromlist=["x"]).License.objects.filter(pk=1).values_list("hosting", flat=True).first() or ""), "pay": _pay_info(request.user), "license_server": _license_server(), "consent_methods": __import__("apps.core.setup_consent", fromlist=["x"]).methods(), "consent_ok": __import__("apps.core.setup_consent", fromlist=["x"]).ok(request.user), "renew_months": (__import__("apps.core.models", fromlist=["x"]).License.objects.filter(pk=1).values_list("renew_months", flat=True).first() or 12), "hosting_options": __import__("apps.core.license_price", fromlist=["x"]).hosting_options(), "hosting_default": ((__import__("apps.core.pricing", fromlist=["x"]).load().get("hosting") or {}).get("default") or "shared"), "license_until": (date.today() + timedelta(days=365)).isoformat(), "missing": missing, "needed": bool(missing), "can_skip": bool(request.user.is_staff), "fields": list(system.SETUP_FIELDS), "suggest": suggest,
+    replay = __import__("apps.core.reset", fromlist=["x"]).replay_pending()  # the onboarding was started again: the form opens as a check of what is there
+    return Response({"license": _license_brief(), "needs_license": needs_license, "license_number": _reserved_number() if needs_license else None, "hosting_current": (__import__("apps.core.models", fromlist=["x"]).License.objects.filter(pk=1).values_list("hosting", flat=True).first() or ""), "pay": _pay_info(request.user), "license_server": _license_server(), "consent_methods": __import__("apps.core.setup_consent", fromlist=["x"]).methods(), "consent_ok": __import__("apps.core.setup_consent", fromlist=["x"]).ok(request.user), "renew_months": (__import__("apps.core.models", fromlist=["x"]).License.objects.filter(pk=1).values_list("renew_months", flat=True).first() or 12), "hosting_options": __import__("apps.core.license_price", fromlist=["x"]).hosting_options(), "hosting_default": ((__import__("apps.core.pricing", fromlist=["x"]).load().get("hosting") or {}).get("default") or "shared"), "license_until": (date.today() + timedelta(days=365)).isoformat(), "missing": missing, "needed": bool(missing) or (replay and not __import__("apps.core.reset", fromlist=["x"]).replay_form_done()), "replay": replay, "can_skip": bool(request.user.is_staff), "fields": list(system.SETUP_FIELDS), "suggest": suggest,
                      "settings": {k: cur.get(k, "") for k in system.SETUP_FIELDS}})
 
 
@@ -919,11 +962,15 @@ def system_reset(request):
         return Response({"detail": "Alleen superadmins mogen het systeem resetten."}, status=status.HTTP_403_FORBIDDEN)
     if request.method == "GET":
         return Response(reset.summary())
-    if str(request.data.get("confirm", "")).strip() != "RESET":
-        return Response({"detail": "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
+    replay = request.data.get("mode") == "replay"  # the switch "Onboarding": do the onboarding again, nothing is removed (confirmed with REPLAY)
+    word = str(request.data.get("confirm", "")).strip()
+    if (word.upper() != "REPLAY") if replay else (word != "RESET"):  # (REPLAY removes nothing: upper or lower case is fine; RESET has to be typed exactly)
+        return Response({"detail": "Typ REPLAY om te bevestigen." if replay else "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
     if not request.user.check_password(str(request.data.get("password", ""))):
         return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
-    removed = reset.perform(request.user, ai=bool(request.data.get("ai")), delete_admins=bool(request.data.get("delete_admins")), delete_superadmins=bool(request.data.get("delete_superadmins")))
+    if replay:
+        return Response({"replay": reset.replay_onboarding()})
+    removed = reset.perform(request.user, ai=bool(request.data.get("ai")), delete_admins=bool(request.data.get("delete_admins")), delete_superadmins=bool(request.data.get("delete_superadmins")), keep_identity=bool(request.data.get("keep_identity")))
     applied = None
     if request.data.get("preset"):  # start straight from a standard installation
         from . import presets
@@ -1270,6 +1317,9 @@ def sandbox_first(request):
         return Response({"detail": "Alleen beheerders."}, status=status.HTTP_403_FORBIDDEN)
     host = (request.get_host() or "").split(":")[0].lower().strip("[]")
     obj, _ = SystemSettings.objects.get_or_create(pk=1)
+    if staff and not (obj.data or {}).get("welcome_asked") and not (obj.data or {}).get("onboarding_started"):  # the colour question is still open: this is a new installation, its onboarding starts now
+        obj.data = {**(obj.data or {}), "onboarding_started": True}
+        obj.save()
     if request.method == "POST":
         if staff and "on" in request.data and request.data.get("on"):
             ModuleState.objects.update_or_create(key="sandbox", defaults={"enabled": True})
@@ -1278,7 +1328,7 @@ def sandbox_first(request):
         if staff and "on" in request.data:
             obj.data = {**(obj.data or {}), "sandbox_asked": True}
         if staff and request.data.get("welcome"):  # the very first popup (language and light or dark) was answered
-            obj.data = {**(obj.data or {}), "welcome_asked": True}
+            obj.data = {**(obj.data or {}), "welcome_asked": True, "onboarding_started": True}  # (a new installation: its onboarding is not complete until the design wizard started)
         if request.data.get("manual"):  # the question whether to look at the manual (first start, or after the installation) was answered
             obj.data = {**(obj.data or {}), "manual_asked": True}
         obj.save()
@@ -1289,15 +1339,36 @@ def sandbox_first(request):
     return Response({"local": local, "asked": bool((obj.data or {}).get("sandbox_asked")), "manual_asked": bool((obj.data or {}).get("manual_asked")), "welcome_asked": bool((obj.data or {}).get("welcome_asked")) or not staff, "enabled": sandbox.active()})
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def onboarding_done(request):
+    """The onboarding that was started again has come to its last step (the design wizard starts): it does not come back at the next login."""
+    from apps.accounts.access import can_admin
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    __import__("apps.core.onboarding", fromlist=["x"]).mark_complete()  # (also ends the onboarding done again)
+    return Response({"ok": True})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def onboarding_status(request):
+    """Where the onboarding stands for this person (a superadmin; for everybody else it is complete): {complete, next, next_label, steps}."""
+    return Response(__import__("apps.core.onboarding", fromlist=["x"]).status(request.user))
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def presets_setup(request):
     """After logging in: is no standard installation set yet? Then a superadmin is asked which of the offered ones to install (one). {needed, presets: [{key, name, desc}]}."""
     from . import presets
 
-    if not request.user.is_staff or presets.active():
+    replay = __import__("apps.core.reset", fromlist=["x"]).replay_pending()  # the onboarding done again: the installation is shown as a check, with the one in use chosen
+    if not request.user.is_staff or (presets.active() and not replay):
         return Response({"needed": False})
-    return Response({"needed": True, "presets": [{"key": k, "name": presets.get(k)["name"], "desc": presets.get(k).get("desc", "")} for k in presets.default_keys()]})
+    keys = list(dict.fromkeys([*([presets.active()] if replay and presets.active() else []), *presets.default_keys()]))
+    return Response({"needed": True, "replay": replay, "active": presets.active() if replay else None, "presets": [{"key": k, "name": presets.get(k)["name"], "desc": presets.get(k).get("desc", "")} for k in keys]})
 
 
 @api_view(["POST"])

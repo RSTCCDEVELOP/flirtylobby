@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { TILES } from "../lib/admin-tiles";
+import { useEntity } from "../lib/entity";
 import { pageAllowed, ADMIN_PAGES } from "../lib/perms";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
@@ -42,6 +43,7 @@ export default function GroupTiles({ id }) {
     api(admin ? "/plugins/menu/?scope=admin" : "/plugins/menu/").then(setPlugins).catch(() => setPlugins([]));
   }, [admin, mods.plugins]);
   const imported = useImported(mods.siteimport !== false);
+  const entity = useEntity(); // the tile of the Entiteit carries the name set in the standard installation
   if (!group) return <p className="muted">{tx("Deze groep bestaat niet.")}</p>;
 
   let items;
@@ -49,7 +51,7 @@ export default function GroupTiles({ id }) {
     const own = ADMIN_NAV.filter((n) => (ADMIN_GROUP_OF[n.href] === id || (ALSO_IN[n.href] || []).includes(id)) && (() => { const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); })());
     const fromPlugins = plugins.filter((x) => x.has_admin && (ADMIN_SECTION_GROUP[x.section] || "a-system") === id).flatMap((x) => [{ href: `/dashboard/admin/plugin/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true },
       ...(x.entries || []).map((e) => ({ href: e.href || `/dashboard/admin/plugin/${x.name}?tab=${e.tab}`, label: e.label, icon: <IconGrid />, plugin: true }))]);
-    items = [...own, ...fromPlugins].map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n));
+    items = [...own, ...fromPlugins].map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label, big: tx("Over je {0}", tx(entity.label).toLowerCase()) } : n));
   } else {
     const own = COMMUNITY.filter((n) => COMMUNITY_GROUP_OF[n.href] === id && (n.module === "any" ? ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false) : mods[n.module] !== false));
     const fromPlugins = plugins.filter((x) => (x.group === "mine" ? "c-mine" : x.group === "contact" ? "c-contact" : "") === id).map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true }));
@@ -67,7 +69,7 @@ export default function GroupTiles({ id }) {
               <span className="group-tile-ico">{n.icon}</span>
               {countOf(n) > 0 && <span className="cart-count group-tile-count" title={tx("Nieuw")}>{countOf(n)}</span>}
               <strong style={{ fontSize: "1.1rem" }}>{tx(n.label)}</strong>
-              {t && <small>{tx(t.big)}</small>}
+              {(n.big || t) && <small>{n.big || tx(t.big)}</small>}
             </Link>
           );
         })}

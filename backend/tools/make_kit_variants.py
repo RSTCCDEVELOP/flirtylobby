@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[2]
 LIB = ROOT / "resource" / "components"
 BASE = "easy2edit-ui-kit"
 
-SURFACES = ".e2e-card,.e2e-price,.e2e-panel,.e2e-chartcard,.e2e-detail,.e2e-recform,.e2e-login,.e2e-cart,.e2e-profile,.e2e-trend,.e2e-newsletter,.e2e-slide,.e2e-process li,.e2e-table-wrap,.e2e-accordion,.e2e-mini,.e2e-cal,.e2e-sched,.e2e-reclist,.e2e-notes,.e2e-sidemenu,.e2e-sechead,.e2e-statbox,.e2e-stat,.e2e-cal-toolbar,.e2e-filterbar,.e2e-alert,.e2e-modal"
+SURFACES = ".e2e-linklist,.e2e-tagadd,.e2e-colorpick__pop,.e2e-card,.e2e-price,.e2e-panel,.e2e-chartcard,.e2e-detail,.e2e-recform,.e2e-login,.e2e-cart,.e2e-profile,.e2e-trend,.e2e-newsletter,.e2e-slide,.e2e-process li,.e2e-table-wrap,.e2e-accordion,.e2e-mini,.e2e-cal,.e2e-sched,.e2e-reclist,.e2e-notes,.e2e-sidemenu,.e2e-sechead,.e2e-statbox,.e2e-stat,.e2e-cal-toolbar,.e2e-filterbar,.e2e-alert,.e2e-modal"
 FIELDS = ".e2e-input,.e2e-select,.e2e-textarea"
 BUTTONS = ".e2e-btn"
 BADGES = ".e2e-badge"
@@ -85,8 +85,8 @@ def main():
         for old in LIB.glob(f"{v['key']}-*.zip"):
             old.unlink()
         css_v = css.split("/* ===== VARIANT")[0].rstrip() + "\n" + v["css"]
-        m = {**man, "key": v["key"], "name": v["name"], "description": v["description"], "version": "1.0.4"}
-        out = LIB / f"{v['key']}-1.0.4.zip"
+        m = {**man, "key": v["key"], "name": v["name"], "description": v["description"], "version": "1.0.8"}
+        out = LIB / f"{v['key']}-1.0.8.zip"
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as w:
             w.writestr("components.json", json.dumps(m, indent=2, ensure_ascii=False))
             w.writestr("components.css", css_v)

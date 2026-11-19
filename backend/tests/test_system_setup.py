@@ -388,6 +388,7 @@ def test_superadmin_plus_passes_the_code_with_an_at():
     plus = User.objects.create_user("pl@demo.nl", "pl@demo.nl", "x", is_staff=True, is_superuser=True, is_superadmin_plus=True)
     c = APIClient()
     c.force_authenticate(staff)
-    assert c.post("/api/system/setup/consent/verify/", {"code": "@"}, format="json").status_code == 400 and not setup_consent.ok(staff)
+    assert c.post("/api/system/setup/consent/verify/", {"code": "@"}, format="json").status_code == 200 and setup_consent.ok(staff)  # a superadmin passes the code with an @ too
+    assert not setup_consent.ok(User.objects.create_user("n@demo.nl", "n@demo.nl", "x"))  # not for somebody else
     c.force_authenticate(plus)
     assert c.post("/api/system/setup/consent/verify/", {"code": "@"}, format="json").status_code == 200 and setup_consent.ok(plus)

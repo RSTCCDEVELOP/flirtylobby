@@ -5,6 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
+from django.conf import settings
 from django.db import models
 
 
@@ -345,3 +346,65 @@ def _remove_design_files(sender, instance, **kwargs):
 
 
 models.signals.post_delete.connect(_remove_design_files, sender=SiteDesignJob, dispatch_uid="sitedesign_files")
+
+
+class Entity(models.Model):
+    """An entity of this site (module Entiteit): the organisation behind the website (is_own, only one) and other organisations, companies, associations or clubs that users and
+    user groups of this site belong to. All local in the site; there is no link with the easy2edit server."""
+
+    KINDS = [("organisatie", "Organisatie"), ("bedrijf", "Bedrijf"), ("vereniging", "Vereniging"), ("club", "Club"), ("vrij", "Vrije naam")]
+
+    is_own = models.BooleanField(default=False)  # the entity of the website itself; its kind comes from the standard installation
+    kind = models.CharField(max_length=20, choices=KINDS, default="bedrijf")
+    kind_name = models.CharField(max_length=40, blank=True)  # the free name when kind is "vrij"
+    name = models.CharField(max_length=120, blank=True)
+    legal_name = models.CharField(max_length=160, blank=True)
+    description = models.TextField(blank=True)  # small editor: "html:<clean html>"
+    email = models.CharField(max_length=160, blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    website = models.CharField(max_length=200, blank=True)
+    street = models.CharField(max_length=120, blank=True)
+    house_number = models.CharField(max_length=20, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+    city = models.CharField(max_length=80, blank=True)
+    country = models.CharField(max_length=80, blank=True)
+    registration_no = models.CharField(max_length=40, blank=True)
+    vat_no = models.CharField(max_length=40, blank=True)
+    color = models.CharField(max_length=7, blank=True)  # a colour an administrator gives this entity: a coloured dot before the name in the lists (#rrggbb)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="entities")
+    groups = models.ManyToManyField("accounts.UserGroup", blank=True, related_name="entities")
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-is_own", "name", "id"]
+        constraints = [models.UniqueConstraint(fields=["is_own"], condition=models.Q(is_own=True), name="one_own_entity")]
+
+
+class Tag(models.Model):
+    """A tag with a colour that can be put on any part of easy2edit (users, groups, entities, pages, media, modules, plugins and what plugins make). Its scope decides what it may be put on:
+    global (everything), module (the parts of one or more modules) or plugin (the parts of one or more plugins)."""
+
+    SCOPES = [("global", "Overal"), ("module", "Modules"), ("plugin", "Plugins")]
+
+    name = models.CharField(max_length=60, unique=True)
+    color = models.CharField(max_length=7, default="#2563eb")  # #rrggbb
+    description = models.CharField(max_length=200, blank=True)
+    scope = models.CharField(max_length=10, choices=SCOPES, default="global")
+    modules = models.JSONField(default=list, blank=True)  # module keys, when the scope is "module"
+    plugins = models.JSONField(default=list, blank=True)  # plugin names, when the scope is "plugin"
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+
+class TagLink(models.Model):
+    """A tag on one thing: kind says what (user, group, entity, page, media, module, plugin, or plugin:<name>:<type> for what a plugin makes), ref which one."""
+
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="links")
+    kind = models.CharField(max_length=60)
+    ref = models.CharField(max_length=120)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["tag", "kind", "ref"], name="one_tag_per_thing")]
+        indexes = [models.Index(fields=["kind", "ref"])]

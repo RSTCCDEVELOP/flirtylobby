@@ -8,7 +8,7 @@
 from django.urls import path
 
 from . import component_views, backup_views, terms_views, dashboard, marketing, resource_views, sales, views, template_views
-from . import manual, sitemanager_views
+from . import entity_views, manual, sitemanager_views, tag_views
 
 urlpatterns = [
     path("components/", component_views.active),
@@ -50,6 +50,7 @@ urlpatterns = [
     path("system/license/update/", views.license_update_apply),
     path("system/setup/pay/test/", views.system_setup_pay_test),
     path("system/setup/pay/none/", views.system_setup_pay_none),
+    path("system/setup/password/", views.system_setup_password),
     path("system/setup/consent/verify/", views.system_setup_consent_verify),
     path("system/demo/", views.demo_data),
     path("system/pricing/", views.pricing_view),
@@ -114,6 +115,8 @@ urlpatterns = [
     path("system/presets/default/", views.presets_default),
     path("system/presets/<str:key>/ai/", views.presets_ai),
     path("system/presets/setup/", views.presets_setup),
+    path("system/onboarding/done/", views.onboarding_done),
+    path("system/onboarding/", views.onboarding_status),
     path("system/presets/<slug:key>/page/", views.presets_page),
     path("system/presets/<slug:key>/update/", views.presets_update),
     path("system/presets/<slug:key>/edit/", views.presets_edit),
@@ -150,6 +153,14 @@ urlpatterns = [
     path("modules/packages/", views.module_packages),
     path("modules/all/", views.modules_admin),
     path("modules/<str:key>/", views.module_update),
+    path("entity/", entity_views.entity_admin),
+    path("entity/public/", entity_views.entity_public),
+    path("tags/", tag_views.tag_list),
+    path("tags/links/", tag_views.tag_links),
+    path("tags/map/", tag_views.tag_map),
+    path("tags/<int:pk>/", tag_views.tag_item),
+    path("entities/", entity_views.entities),
+    path("entities/<int:pk>/", entity_views.entity_item),
     path("content/", views.content_public),
     path("content/save/", views.content_save),
     path("content/ai/", views.content_ai),

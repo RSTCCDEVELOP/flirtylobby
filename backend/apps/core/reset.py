@@ -19,6 +19,7 @@ from pathlib import Path
 
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +252,7 @@ def clean_site_folder(keep_user_ids=()):
     return removed
 
 
-def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
+def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, keep_identity=False):
     """Do the reset. Returns what was removed. keep = the superadmin who asks. The administrators (users with a role) and the other superadmins stay, unless delete_admins / delete_superadmins is asked; the standard superadmin always stays."""
     from apps.accounts.models import User
     from apps.core import modules, themepacks
@@ -280,6 +281,8 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
     except Exception:  # noqa: BLE001 - the reset below clears everything anyway
         logger.exception("Reset: demo data could not be removed one by one")
     keep_ids = set() if delete_admins else _admin_ids()  # the administrators stay (without their content) unless they are to be removed too
+    if keep_identity:  # asked: the licence, the entities and all users stay (with the links between them); their content (messages, files) goes like the rest
+        keep_ids = set(User.objects.filter(is_staff=False).values_list("pk", flat=True))
     files = _files_of_removed(keep_ids)
     gone_users = list(User.objects.filter(is_staff=False).exclude(pk__in=list(keep_ids)).values_list("pk", flat=True))
 
@@ -331,7 +334,11 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
         from apps.pages.models import MenuSettings
 
         MenuSettings.objects.all().delete()  # the look of the header menu (colours, size, form) goes back to the default too: an imported site leaves its own header colours there
-        clear_license()  # a clean system has no licence either
+        if not keep_identity:
+            from .models import Entity
+
+            Entity.objects.all().delete()  # the entities (the organisation behind the site, customers ...) go with the rest; their users went above
+            clear_license()  # a clean system has no licence either
 
     # plugins: all switched off (they stay installed; their files of data are cleared) and the theme packages of the site (their folders)
     from apps.plugins import runtime
@@ -367,7 +374,7 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False):
 
         row = SystemSettings.objects.filter(pk=1).first()
         if row:
-            row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids", "welcome_asked", *IDENTITY_KEYS)}  # also the name and the details of the website that was here: it is easy2edit again
+            row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids", "welcome_asked", "entity_contact_done", "onboarding_complete", "onboarding_started", *IDENTITY_KEYS)}  # also the name and the details of the website that was here: it is easy2edit again
             row.save()
     except Exception:  # noqa: BLE001
         logger.exception("Reset: the choice of the standard installation could not be cleared")
@@ -449,3 +456,89 @@ def read_file(doc, password):
     if not isinstance(st, dict) or not st.get("email") or not st.get("password_hash"):
         raise ValueError("Het bestand bevat geen standaard superadmin.")
     return st
+
+
+# ── the onboarding again (the switch "Onboarding" of the reset screen): nothing is removed ─────────────────────────────────────────────────────────
+REPLAY_KEY = "onboarding_replay"
+FIRST_RUN_KEYS = ("welcome_asked", "sandbox_asked", "manual_asked")  # the first questions after the installation (language and light or dark, sandbox, manual)
+
+
+def replay_pending():
+    from .models import SystemSettings
+
+    return bool((SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(REPLAY_KEY))
+
+
+def replay_since():
+    """When the onboarding was started again (a datetime), or None."""
+    from .models import SystemSettings
+
+    v = (SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(REPLAY_KEY)
+    if not v:
+        return None
+    from django.utils.dateparse import parse_datetime
+
+    return parse_datetime(v) if isinstance(v, str) else timezone.now()
+
+
+REPLAY_FORM_KEY = "onboarding_form_done"  # the set-up form (the licence screens) was saved during the onboarding
+
+
+def replay_form_done():
+    from .models import SystemSettings
+
+    return bool((SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(REPLAY_FORM_KEY))
+
+
+def mark_form_done():
+    """The set-up form was saved: it does not open again, but the onboarding goes on (installation, then the design wizard as the last step)."""
+    from .models import SystemSettings
+
+    row = SystemSettings.objects.filter(pk=1).first()
+    if row and (row.data or {}).get(REPLAY_KEY):
+        row.data = {**row.data, REPLAY_FORM_KEY: True}
+        row.save()
+
+
+def clear_replay():
+    """The onboarding is done (the last step, the design wizard, starts)."""
+    from .models import SystemSettings
+
+    row = SystemSettings.objects.filter(pk=1).first()
+    if row and ((row.data or {}).get(REPLAY_KEY) or (row.data or {}).get(REPLAY_FORM_KEY)):
+        row.data = {k: v for k, v in row.data.items() if k not in (REPLAY_KEY, REPLAY_FORM_KEY)}
+        row.save()
+
+
+def replay_onboarding():
+    """Do the onboarding again at the next login of an administrator or superadmin: the first questions come again (welcome, sandbox, manual) and the set-up form opens, filled with what is there
+    (only a check). All data stays: no user, page, setting, licence or installation is removed or overwritten. What is missing is made, so the system is complete: a standard superadmin when there is
+    no superadmin at all, and the entity of the website with its contact person (as a user) from the basic data when the entity is not set up yet. Returns what was done."""
+    from apps.accounts.models import User
+
+    from . import entity, system
+    from .models import SystemSettings
+
+    row, _ = SystemSettings.objects.get_or_create(pk=1)
+    row.data = {**{k: v for k, v in (row.data or {}).items() if k not in (*FIRST_RUN_KEYS, REPLAY_FORM_KEY, "onboarding_complete")}, REPLAY_KEY: timezone.now().isoformat()}  # (the moment it started: the terms must be signed again after it)
+    row.save()
+    out = {"admin_made": "", "entity": False, "user": ""}
+    try:  # the explanation of the AI credit comes again (only the flag of "shown": no credit, no history, no setting is changed)
+        from apps.integrations.models import AiAccount
+
+        AiAccount.objects.update(welcomed=False)
+    except Exception:  # noqa: BLE001
+        logger.exception("Replay: the AI welcome could not be set again")
+    if not User.objects.filter(is_staff=True).exists():
+        out["admin_made"] = standard_admin("keep")
+    from . import everyone
+
+    everyone.ensure()  # the standard group "Everyone" with all users in it
+    row.refresh_from_db()
+    row.data = {k: v for k, v in (row.data or {}).items() if k != entity.CONTACT_KEY}  # (the contact person is checked again: made when he is missing)
+    row.save()
+    made = entity.sync_from_system(system.get())
+    if not made["entity"] and not made["user"]:
+        made = entity.ensure_from_licence()  # (the licence makes it when the basic data have no company)
+    out["entity"], out["user"] = made["entity"], made["user"]
+    return out

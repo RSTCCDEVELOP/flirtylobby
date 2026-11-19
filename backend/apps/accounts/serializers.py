@@ -8,6 +8,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
+from apps.core.models import Entity
 from apps.security.words import validate_no_forbidden_words
 
 from .models import Role, User, UserGroup
@@ -25,15 +26,33 @@ class UserSerializer(serializers.ModelSerializer):
     roles = serializers.PrimaryKeyRelatedField(many=True, queryset=Role.objects.all(), required=False)
     user_groups = serializers.PrimaryKeyRelatedField(many=True, queryset=UserGroup.objects.all(), required=False)
     is_fake = serializers.SerializerMethodField()
+    entities = serializers.SerializerMethodField()  # the entities (organisations, companies, clubs ...) this user belongs to
+    entity_ids = serializers.PrimaryKeyRelatedField(many=True, queryset=Entity.objects.all(), required=False, write_only=True)  # the same links, to set them from the user
+
+    role_list = serializers.SerializerMethodField()  # the names of the roles (the list shows them even when the role list was not loaded)
+
+    def get_role_list(self, u):
+        return [{"id": r.id, "name": r.name} for r in u.roles.all()]
+
+    def get_entities(self, u):
+        return [{"id": e.id, "name": e.name, "color": e.color or ""} for e in u.entities.all()]
 
     def get_is_fake(self, u):
         return u.username.startswith("fake_")
 
     class Meta:
         model = User
-        fields = ["id", "is_fake", "email", "role", "roles", "user_groups", "is_active", "is_staff", "is_superadmin_plus", "last_login", "date_joined", "password", "otp_active", "twofa_method", "twofa_required", "image", "show_public", "verification"] + PROFILE_FIELDS
+        fields = ["id", "is_fake", "color", "role_list", "entities", "entity_ids", "email", "role", "roles", "user_groups", "is_active", "is_staff", "is_superadmin_plus", "last_login", "date_joined", "password", "otp_active", "twofa_method", "twofa_required", "image", "show_public", "verification"] + PROFILE_FIELDS
         read_only_fields = ["is_fake", "last_login", "date_joined", "otp_active", "twofa_method", "image"]
         extra_kwargs = {"email": {"required": True}, **WORD_KWARGS}
+
+    def validate_color(self, value):  # the colour of the dot before the name in the lists
+        from apps.core.tags import clean_color
+
+        try:
+            return clean_color(value)
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
 
     def validate_description(self, value):  # the small editor: a few safe tags only
         from apps.core.richtext import clean_small
@@ -77,6 +96,7 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         roles = validated_data.pop("roles", [])
         groups = validated_data.pop("user_groups", [])
+        entities = validated_data.pop("entity_ids", [])
         password = validated_data.pop("password", None)
         if not password:
             raise serializers.ValidationError({"password": "Wachtwoord is verplicht."})
@@ -85,11 +105,13 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
         user.roles.set(roles)
         user.user_groups.set(groups)
+        user.entities.set(entities)
         return user
 
     def update(self, instance, validated_data):
         roles = validated_data.pop("roles", None)
         groups = validated_data.pop("user_groups", None)
+        entities = validated_data.pop("entity_ids", None)
         password = validated_data.pop("password", None)
         if "email" in validated_data:
             instance.username = validated_data["email"]
@@ -100,6 +122,8 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         if roles is not None:
             instance.roles.set(roles)
+        if entities is not None:
+            instance.entities.set(entities)
         if groups is not None:
             instance.user_groups.set(groups)
         return instance
@@ -112,6 +136,11 @@ class ProfileSerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
     module_levels = serializers.SerializerMethodField()
+    company = serializers.SerializerMethodField()  # the company of this user: the page variable {{user.bedrijf}}
+
+    def get_company(self, obj):
+        e = obj.entities.exclude(name="").order_by("is_own", "name").first()  # a company he is linked to; the company of the website when he is linked to nothing else
+        return e.name if e else ""
 
     def get_module_levels(self, obj):
         from .access import levels
@@ -197,8 +226,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"] + PROFILE_FIELDS
-        read_only_fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification"]
+        fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"] + PROFILE_FIELDS
+        read_only_fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"]
         extra_kwargs = WORD_KWARGS
 
 
@@ -247,10 +276,15 @@ class UserGroupSerializer(serializers.ModelSerializer):
     roles = serializers.PrimaryKeyRelatedField(many=True, queryset=Role.objects.all(), required=False)
     members = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all(), required=False)
     member_count = serializers.IntegerField(read_only=True)
+    entities = serializers.SerializerMethodField()
+    entity_ids = serializers.PrimaryKeyRelatedField(many=True, queryset=Entity.objects.all(), required=False, write_only=True)
+
+    def get_entities(self, g):
+        return [{"id": e.id, "name": e.name} for e in g.entities.all()]
 
     class Meta:
         model = UserGroup
-        fields = ["id", "name", "slug", "description", "roles", "members", "member_count"]
+        fields = ["id", "name", "slug", "description", "roles", "members", "member_count", "entities", "entity_ids"]
         read_only_fields = ["slug"]
         extra_kwargs = {"name": {"validators": [validate_no_forbidden_words]}}
 
@@ -266,7 +300,7 @@ class UserGroupSerializer(serializers.ModelSerializer):
         return attrs
 
     def _save(self, instance, validated, create):
-        roles, members = validated.pop("roles", None), validated.pop("members", None)
+        roles, members, entities = validated.pop("roles", None), validated.pop("members", None), validated.pop("entity_ids", None)
         if create:
             from django.utils.text import slugify
 
@@ -283,6 +317,8 @@ class UserGroupSerializer(serializers.ModelSerializer):
             instance.roles.set(roles)
         if members is not None:
             instance.members.set(members)
+        if entities is not None:
+            instance.entities.set(entities)
         return instance
 
     def create(self, validated):

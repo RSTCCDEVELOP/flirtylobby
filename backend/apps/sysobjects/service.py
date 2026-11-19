@@ -69,7 +69,12 @@ def sync():
             SystemObject.objects.get_or_create(kind="energy", ref_id=1, ref_key=key, defaults={"slug": f"energy-{key}"})
         st.objects_seeded = True
         st.save(update_fields=["objects_seeded"])
-    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation", "ai", "energy")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
+    from apps.core import entity as _ent
+
+    for key in _ent.VARIABLES:  # the variables of the company and of the user: always there, they can be put on a page like any system object
+        SystemObject.objects.get_or_create(kind="variable", ref_id=1, ref_key=key, defaults={"slug": "var-" + key.replace(".", "-").replace("_", "-")})
+    SystemObject.objects.filter(kind="variable").exclude(ref_key__in=list(_ent.VARIABLES)).delete()
+    keep |= set(SystemObject.objects.filter(kind__in=("calculator", "marketing", "pricelist", "installation", "ai", "energy", "variable")).values_list("pk", flat=True))  # the calculation form (Super admin → Prijzen → Sales) is switched on there
     SystemObject.objects.exclude(pk__in=keep).delete()
 
 
@@ -78,7 +83,7 @@ def source_of(obj):
 
     DonationCampaign, Plan = facade.models("subscriptions", "DonationCampaign", "Plan")
 
-    if obj.kind in ("calculator", "marketing", "pricelist", "installation", "ai", "energy"):
+    if obj.kind in ("calculator", "marketing", "pricelist", "installation", "ai", "energy", "variable"):
         return obj
     if obj.kind == "media":
         from apps.medialib.models import MediaView

@@ -12,10 +12,13 @@ import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible from "../../../../components/Collapsible";
+import { IconBriefcase } from "../../../../components/Icons";
+import KitScope from "../../../../lib/ui-kit/KitScope";
+import { TagChip, TagPicker, useTagMap } from "../../../../components/Tags";
 import { api, errorText } from "../../../../lib/api";
 import { lvl } from "../../../../lib/perms";
 
-const EMPTY = { name: "", description: "", roles: [], members: [] };
+const EMPTY = { name: "", description: "", roles: [], members: [], entity_ids: [] };
 const LEVELS = [[0, "Geen toegang"], [1, "1. Gebruik"], [2, "2. Bewerken"], [3, "3. Beheer"]];
 const nameOf = (u) => [u.first_name, u.last_name].filter(Boolean).join(" ") || u.email;
 
@@ -25,6 +28,9 @@ export default function Groups() {
   const [groups, setGroups] = useState([]);
   const [roles, setRoles] = useState([]);
   const [users, setUsers] = useState([]);
+  const tagMap = useTagMap("group"); // the tags of the groups
+  const [entities, setEntities] = useState([]);
+  useEffect(() => { api("/entities/").then(setEntities).catch(() => {}); }, []);
   const [modules, setModules] = useState([]);
   const [error, setError] = useState("");
   const [modal, setModal] = useState(null);
@@ -49,7 +55,7 @@ export default function Groups() {
       } catch {}
     }
     setQ("");
-    setModal({ ...EMPTY, ...g, access, original: access });
+    setModal({ ...EMPTY, ...g, access, original: access, entity_ids: (g?.entities || []).map((x) => x.id) });
   }
 
   async function remove(g) {
@@ -59,11 +65,11 @@ export default function Groups() {
 
   async function save(e) {
     e.preventDefault();
-    const { id, name, description, roles: r, members } = modal;
+    const { id, name, description, roles: r, members, entity_ids } = modal;
     try {
       const saved = await (id
-        ? api(`/user-groups/${id}/`, { method: "PATCH", body: { name, description, roles: r, members } })
-        : api("/user-groups/", { method: "POST", body: { name, description, roles: r, members } }));
+        ? api(`/user-groups/${id}/`, { method: "PATCH", body: { name, description, roles: r, members, entity_ids } })
+        : api("/user-groups/", { method: "POST", body: { name, description, roles: r, members, entity_ids } }));
       if (user.is_staff) { // module access: only the differences
         for (const m of modules) {
           const now = modal.access[m.key]?.level || 0, before = modal.original[m.key]?.level || 0;
@@ -94,7 +100,7 @@ export default function Groups() {
       {error && <div className="alert">{error}</div>}
 
       <Collapsible id="groups-list" title={tx("User groups")}>
-        <div className="int-list">
+        <KitScope tag="ui-data-table"><div className="int-list">
           {groups.map((g) => (
             <div className="card int-item" key={g.id}>
               <div className="int-main">
@@ -102,6 +108,8 @@ export default function Groups() {
                 <span className="muted">{g.description || "—"}</span>
                 <span className="chips" style={{ margin: ".4rem 0 0" }}>
                   {g.roles.length ? g.roles.map((id) => <span key={id} className="chip" style={{ cursor: "default" }}>{roleName[id] || "…"}</span>) : <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Geen rollen gekoppeld")}</span>}
+                  {tagMap.of(g.id).map((t) => <TagChip key={`t${t.id}`} tag={t} />)}
+                  {(g.entities || []).map((e) => <span key={`e${e.id}`} className="chip" style={{ cursor: "default" }} title={tx("Entiteit")}><IconBriefcase width={12} height={12} /> {e.name}</span>)}
                 </span>
               </div>
               <div className="int-actions">
@@ -111,7 +119,7 @@ export default function Groups() {
             </div>
           ))}
           {!groups.length && <p className="muted">{tx("Nog geen groepen.")}</p>}
-        </div>
+        </div></KitScope>
       </Collapsible>
 
       {modal && (
@@ -132,6 +140,20 @@ export default function Groups() {
                   </label>
                 ))}
                 {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
+              </div>
+            </div>
+
+            {modal.id && <TagPicker kind="group" refId={modal.id} label={tx("Tags")} canEdit={L >= 2} />}
+
+            <div>
+              <strong style={{ fontSize: ".85rem" }}>{tx("Entiteiten")}</strong>
+              <div className="perm-list">
+                {entities.map((en) => (
+                  <label className="check" key={en.id}>
+                    <input type="checkbox" checked={(modal.entity_ids || []).includes(en.id)} onChange={() => toggle("entity_ids", en.id)} /> {en.name || tx("Naamloos")} <small className="muted">{tx(en.kind_label)}{en.city ? ` · ${en.city}` : ""}</small>
+                  </label>
+                ))}
+                {!entities.length && <span className="muted">{tx("Nog geen entiteiten.")}</span>}
               </div>
             </div>
 

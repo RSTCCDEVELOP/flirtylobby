@@ -30,13 +30,13 @@ export default function LicensePrompt({ site }) {
   const admin = !!user && (user.is_staff || canAdmin(user, mods));
   useEffect(() => {
     const ph = site?.license_phase?.phase || 0;  // a licence that has ended: every login the administrator is told where it stands, with a button to update it
-    if (!ready || !admin || !(site?.license_missing || ph > 0)) return undefined;
+    if (!ready || !admin || !(site?.license_missing || ph > 0 || site?.onboarding_replay)) return undefined;
     try { if (sessionStorage.getItem(keyOf())) return undefined; } catch { return undefined; }
     setLicenseOpen(true); // the other questions wait for this one, from the first moment
     if (ph > 0) { setLic({ ended: site.license_phase }); return () => setLicenseOpen(false); }
-    api("/system/license/status/").then((s) => { if (!s.has) setLic(s); else setLicenseOpen(false); }).catch(() => setLicenseOpen(false));
+    api("/system/license/status/").then((s) => { if (!s.has) setLic(s); else if (site?.onboarding_replay) setLic({ ...s, replay: true }); else setLicenseOpen(false); }).catch(() => setLicenseOpen(false));  // (the onboarding done again: a licence that exists is shown as a check)
     return () => setLicenseOpen(false);
-  }, [ready, admin, site?.license_missing, site?.license_phase?.phase]);
+  }, [ready, admin, site?.license_missing, site?.license_phase?.phase, site?.onboarding_replay]);
   const dismiss = () => { try { sessionStorage.setItem(keyOf(), "1"); } catch {} setLic(null); setLicenseOpen(false); }; // asked once per login
   // "Licentie regelen" starts the set-up wizard (basic data, costs and the licence); on a page outside the dashboard it is opened there
   const arrange = () => {
@@ -57,6 +57,24 @@ export default function LicensePrompt({ site }) {
           <div className="row" style={{ flexWrap: "nowrap", gap: ".5rem", justifyContent: "flex-end" }}>
             {ph.phase < 3 && <button type="button" className="btn" onClick={dismiss}>{tx("Later")}</button>}
             <Link className="btn primary" href="/dashboard/license" onClick={dismiss}>{tx("Licentie bijwerken")}</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (lic.replay) {  // the onboarding done again: the licence that is there, to check
+    const fmt = (v) => (v ? new Date(v).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }) : "");
+    return (
+      <div className="overlay" onClick={dismiss}>
+        <div className="card modal" role="dialog" aria-label={tx("Licentie controleren")} onClick={(e) => e.stopPropagation()} style={{ display: "grid", gap: ".8rem", maxWidth: 500 }}>
+          <h2 style={{ margin: 0 }}>{tx("Licentie controleren")}</h2>
+          <p className="muted" style={{ margin: 0 }}>{tx("Dit is de licentie van deze website. Controleer de gegevens; er verandert niets als je niets wijzigt.")}</p>
+          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "auto 1fr", gap: ".3rem 1rem" }}>
+            {[[tx("Nummer"), lic.number], [tx("Klant"), lic.client], [tx("Hoofd-URL"), lic.main_url], [tx("Geldig tot"), fmt(lic.valid_until)], [tx("Prijs per maand"), lic.monthly ? `€ ${Number(lic.monthly).toFixed(2).replace(".", ",")}` : ""]].filter((x) => x[1]).map(([k, v]) => (<span key={k} style={{ display: "contents" }}><dt className="muted">{k}</dt><dd style={{ margin: 0, fontWeight: 600 }}>{v}</dd></span>))}
+          </dl>
+          <div className="row" style={{ flexWrap: "nowrap", gap: ".5rem", justifyContent: "flex-end" }}>
+            <Link className="btn" href="/dashboard/license" onClick={dismiss}>{tx("Licentie bekijken")}</Link>
+            <button type="button" className="btn primary" onClick={dismiss}>{tx("Klopt, verder")}</button>
           </div>
         </div>
       </div>

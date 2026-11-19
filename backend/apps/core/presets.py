@@ -63,6 +63,8 @@ for _p in PRESETS:  # a part that became a plugin (SEO, FAQ, Statistieken, Site 
     _own = {m["key"]: m["plugin"] for m in modules.MODULES if m.get("plugin")}
     _p["plugins"] = list(dict.fromkeys([*_p.get("plugins", []), *[_own[k] for k in _p["modules"] if k in _own], *DEFAULT_PLUGINS]))
     _p["modules"] = [k for k in _p["modules"] if k not in _own]
+for _p in PRESETS:  # what the entity of the site is called in this installation (module Entiteit): organisatie, bedrijf, vereniging, club or vrij (a free name); a superadmin changes it per installation
+    _p.setdefault("entity_kind", "bedrijf")
 BY_KEY = {p["key"]: p for p in PRESETS}
 DEMO_PARTS = {"media": "Voorbeeldplaatjes", "heroes": "Hero-achtergronden", "users": "Gebruikers met profiel", "plans": "Abonnementen", "money": "Donatie-acties met giften", "faq": "FAQ-vragen", "pages": "Pagina's",
               "views": "Media-systeemobjecten"}
@@ -86,6 +88,18 @@ def get(key):
         out[field] = [x for x in [*base[field], *(d.get("add") or [])] if x not in (d.get("remove") or [])]
         out[field] = list(dict.fromkeys(out[field]))
     return out
+
+
+def setup_of(key):
+    """The set-up options of an installation (tab Setup): {users, entity}: whether Users and the Entiteit are shown on the dashboard (left menu and tile). Both are on unless the superadmin switched them off."""
+    d = edits(key).get("setup") or {}
+    return {"users": not d.get("users_off"), "entity": not d.get("entity_off")}
+
+
+def setup_flags():
+    """The set-up options of the active installation (everything on when none is set)."""
+    k = active()
+    return setup_of(k) if k else {"users": True, "entity": True}
 
 
 def demo_config(key):
@@ -125,7 +139,11 @@ def edit_options(key):
     dc = demo_config(key)
     parts = _demo_parts(key, ignore_drop=True)
     titles = {p.name: p.title or p.name for p in Plugin.objects.all()}
-    return {"key": key, "name": base["name"], "modules": mods, "plugins": plugs, "pages": pages, "page_edits": pe, "edited": bool(edits(key)),
+    from . import entity
+
+    ent = entity.kind_setting() if active() == key else {"kind": (edits(key).get("entity") or {}).get("kind") or base.get("entity_kind", entity.DEFAULT_KIND), "name": (edits(key).get("entity") or {}).get("name", "")}
+    ent_out = {"kind": ent["kind"], "name": ent["name"], "default": base.get("entity_kind", entity.DEFAULT_KIND), "kinds": [{"key": k, "label": lb} for k, lb in entity.KINDS]}
+    return {"key": key, "name": base["name"], "setup": setup_of(key), "entity": ent_out, "modules": mods, "plugins": plugs, "pages": pages, "page_edits": pe, "edited": bool(edits(key)),
             "demo": {"parts": [{"key": x, "label": DEMO_PARTS.get(x) or ("Demo van " + titles.get(x[7:], x[7:]) if x.startswith("plugin:") else x), "on": x not in dc["drop"]} for x in parts], "media": dc["media"], "heroes": dc["heroes"], "users": dc["users"]}}
 
 
@@ -168,6 +186,19 @@ def save_edits(key, body):
         drop = [str(x) for x in d.get("drop", []) if x in DEMO_PARTS or str(x).startswith("plugin:")]
         num = lambda k, hi: max(0, min(hi, int(d.get(k, DEMO_DEFAULT[k]) or 0)))  # noqa: E731
         out["demo"] = {"drop": drop, "media": num("media", 80), "heroes": num("heroes", 24), "users": num("users", 200)}
+    if isinstance(body.get("setup"), dict):  # only what is switched OFF is kept (the default is on)
+        st = body["setup"]
+        out["setup"] = {**({"users_off": True} if st.get("users") is False else {}), **({"entity_off": True} if st.get("entity") is False else {})}
+    if isinstance(body.get("entity"), dict):
+        from . import entity
+
+        kind, name = str(body["entity"].get("kind") or ""), str(body["entity"].get("name") or "").strip()[:entity.FREE_MAX]
+        if kind not in entity.KIND_KEYS:
+            raise ValueError("Kies een soort: organisatie, bedrijf, vereniging, club of een vrije naam.")
+        if kind == entity.FREE and not name:
+            raise ValueError("Geef de vrije naam een naam.")
+        base_kind = base.get("entity_kind", entity.DEFAULT_KIND)
+        out["entity"] = {} if kind == base_kind and kind != entity.FREE else {"kind": kind, **({"name": name} if kind == entity.FREE else {})}
     data = _data()
     allx = dict(data.get("preset_edits") or {})
     cur = dict(allx.get(key) or {})

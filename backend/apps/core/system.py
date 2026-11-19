@@ -11,6 +11,7 @@ contact data. Server settings (secret key, database, hosts) live in the environm
 generated as a ready-made .env / Coolify list from the addresses entered here.
 """
 import os
+import logging
 import re
 from urllib.parse import urlparse
 
@@ -210,6 +211,12 @@ def save(cleaned):
         except Exception:  # noqa: BLE001
             pass
     _sync_seo(old, get())
+    try:  # "Bedrijf en contact" becomes the entity of the website and the contact person a user (only the first time, see entity.sync_from_system)
+        from . import entity
+
+        entity.sync_from_system(get())
+    except Exception:  # noqa: BLE001 - never stop a save for this
+        logging.getLogger(__name__).exception("entity could not be made from the basic data")
     try:
         from apps.integrations import aiusage
 
@@ -430,7 +437,7 @@ def public():
     s = get()
     return {"site_name": site_name(), "tagline": s["tagline"], "company_name": s["company_name"], "frontend_url": s["frontend_url"], "backend_url": s["backend_url"],
             "primary_host": primary_host(), "aliases": s["aliases"], "redirect_aliases": s["redirect_aliases"], "timezone": s["timezone"], "currency": currency(),
-            "maintenance": maintenance_on(), "license_expired": license_info()["expired"], "license_phase": license_phase(), "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_columns": s["footer_columns"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
+            "maintenance": maintenance_on(), "onboarding_replay": __import__("apps.core.reset", fromlist=["x"]).replay_pending(), "license_expired": license_info()["expired"], "license_phase": license_phase(), "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_columns": s["footer_columns"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0),
             "easy2edit": __import__("apps.core.global_settings", fromlist=["get"]).get()}  # base domain and addresses of the default easy2edit server

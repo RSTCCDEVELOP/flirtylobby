@@ -21,6 +21,7 @@ import SetupWizard from "./SetupWizard";
 import ItemHelp from "./ItemHelp";
 import SidebarSearch from "./SidebarSearch";
 import LicenseChangePrompt from "./LicenseChangePrompt";
+import OnboardingNag from "./OnboardingNag";
 import TermsGate from "./TermsGate";
 import InfoDialog from "./InfoDialog";
 import { useFaqSettings } from "../lib/faq-settings";
@@ -32,6 +33,7 @@ import UserMenu from "./UserMenu";
 import { ChatButton, DirectIndicator, useChat } from "./Chat";
 import NotificationBell from "./NotificationBell";
 import SandboxPill from "./SandboxPill";
+import { useEntity } from "../lib/entity";
 import { ADMIN_PAGES, canAdmin, lvl, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
 import AiCreditGate from "./AiCreditGate";
@@ -51,7 +53,7 @@ import { useNavMode } from "../lib/navmode";
 import { useSession } from "./Session";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
+import { IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
 
 import { useUpdates } from "../lib/updates";
 
@@ -95,6 +97,8 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin", label: "Overzicht", icon: <IconHome /> },
   { href: "/dashboard/admin/users", label: "Users", icon: <IconUsers />, perm: "users.manage" },
   { href: "/dashboard/admin/groups", label: "User groups", icon: <IconGroup /> },
+  { href: "/dashboard/admin/entity", label: "Bedrijf", icon: <IconBriefcase /> },  // the label follows the standard installation (Bedrijf, Organisatie, Vereniging, Club or a free name)
+  { href: "/dashboard/admin/tags", label: "Tags", icon: <IconTag /> },
   { href: "/dashboard/admin/roles", label: "Rollen", icon: <IconShield />, perm: "roles.manage" },
   { href: "/dashboard/admin/languages", label: "Talen", icon: <IconGlobe />, perm: "languages.manage" },
   { href: "/dashboard/admin/pages", label: "Pagina's", icon: <IconFolder /> },
@@ -142,7 +146,7 @@ const ADMIN_GROUPS = [
   { id: "a-shop", title: "Webshop" }, { id: "a-subs", title: "Subscription" }, { id: "a-system", title: "Systeem" },
 ];
 const ADMIN_GROUP_OF = {
-  "/dashboard/admin/users": "a-people", "/dashboard/admin/ai": "a-people", "/dashboard/admin/ai-kosten": "a-system", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
+  "/dashboard/admin/users": "a-people", "/dashboard/admin/entity": "a-people", "/dashboard/admin/tags": "a-system", "/dashboard/admin/ai": "a-people", "/dashboard/admin/ai-kosten": "a-system", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-system", "/dashboard/admin/theme": "a-system", "/dashboard/admin/themes": "a-system", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-system", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site", "/dashboard/admin/components": "a-site", "/dashboard/admin/templates": "a-site",
@@ -207,6 +211,7 @@ export default function DashboardShell({ children }) {
   const { user, logout } = useAuth();
   const chat = useChat();
   const mods = useModules();
+  const entity = useEntity(); // the label of the Entiteit in the left menu
   const { sidebar_auto: auto } = useUi();
   const pathname = usePathname();
   const router = useRouter();
@@ -281,7 +286,7 @@ export default function DashboardShell({ children }) {
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const faqSet = useFaqSettings(); // Admin → FAQ → Instellingen: is the Help link shown in the left menus
   const imported = useImported(mods.siteimport !== false);
-  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n)).filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
+  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label } : n)).filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
     <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={closeMenu}>
@@ -413,6 +418,7 @@ export default function DashboardShell({ children }) {
       <main className="content">
         <FindOnPage />
         {user && (user.is_staff || Object.values(user.module_levels || {}).some((v) => v >= 2)) && <TermsGate />}
+        {user?.is_staff && <OnboardingNag user={user} />}
         {user?.is_staff && <WelcomeFirstAsk />}
         {user?.is_staff && <SandboxFirstAsk />}
         {user && (user.is_staff || lvl(user, "system") >= 3) && <ManualFirstAsk />}

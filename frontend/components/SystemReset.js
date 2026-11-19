@@ -11,6 +11,7 @@ import { useState } from "react";
 import { usePresets } from "./PresetPicker";
 import { markPlan } from "../lib/planFlag";
 import ProgressBar from "./ProgressBar";
+import Tabs from "./Tabs";
 import { api, errorText, clearToken } from "../lib/api";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
@@ -41,6 +42,9 @@ export default function SystemReset() {
   const [preset, setPreset] = useState(""); // set up as this standard installation right after the reset
   const [adminsToo, setAdminsToo] = useState(false); // also remove the administrators (users with a role)? by default they stay
   const [superToo, setSuperToo] = useState(false); // also remove the other superadmins (the standard superadmin always stays)? by default they stay
+  const [rtab, setRtab] = useState("what"); // the tab of the confirm step: what goes · options · confirm
+  const [replay, setReplay] = useState(false); // the switch Onboarding: do the onboarding again, nothing is removed (confirmed with REPLAY)
+  const [keepId, setKeepId] = useState(false); // keep the licence, the entities and all users?
   const [aiToo, setAiToo] = useState(false); // also remove the AI data (calls, costs, credit and its history)?
 
   async function open() {
@@ -69,10 +73,19 @@ export default function SystemReset() {
     setBusy(false);
   }
 
+  async function startReplay() {
+    setBusy(true); setMsg(null);
+    try {
+      await api("/system/reset/", { method: "POST", body: { mode: "replay", confirm: word, password: pw } });
+      setStep(4);
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  }
+
   async function reset() {
     setBusy(true); setMsg(null); setFinished(false); setJob("reset");
     try {
-      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo, delete_admins: adminsToo, delete_superadmins: superToo } });
+      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo, delete_admins: adminsToo && !keepId, delete_superadmins: superToo, keep_identity: keepId } });
       setAdminMail(r?.admin || "");
       setFinished(true);
       await new Promise((r) => setTimeout(r, 700)); // the bar shows 100% for a moment
@@ -83,6 +96,17 @@ export default function SystemReset() {
     setJob(""); setFinished(false); setBusy(false);
   }
 
+  const localPlus = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname) && !!user?.is_superadmin_plus;
+  const atHint = localPlus ? <small className="muted" style={{ display: "block", marginTop: ".2rem" }}>{tx("Op localhost: typ een @ om je lokale wachtwoord in te vullen.")}</small> : null;
+  const tabNow = replay && rtab === "what" ? "options" : rtab;
+  const ONB = (
+    <label className="check sec-toggle" style={{ borderTop: "1px solid var(--e2e-line, rgba(0,0,0,.12))", paddingTop: ".7rem" }}>
+                  <span className="switch"><input type="checkbox" checked={replay} onChange={(e) => { setReplay(e.target.checked); setWord(""); setMsg(null); }} /><span /></span>
+      <span>{tx("Onboarding")}
+        <small className="muted" style={{ display: "block" }}>{tx("Aan: er wordt niets verwijderd. Bij het inloggen van een admin of superadmin komt de onboarding opnieuw. Bestaat alles al, dan is het alleen een controle; wat nog niet bestaat wordt aangemaakt.")}</small>
+      </span>
+    </label>
+  );
   const close = () => { if (!busy) { setStep(0); if (step === 3) { if (adminMail) { clearToken(); window.location.href = "/login"; } else window.location.href = "/dashboard/superadmin"; } } };
   return (
     <>
@@ -92,7 +116,7 @@ export default function SystemReset() {
 
       {step > 0 && (
         <div className="overlay" onClick={close}>
-          <div className="card modal form" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
+          <div className="card modal form" style={{ maxWidth: step === 2 ? 680 : 560, width: "100%" }} onClick={(e) => e.stopPropagation()}>
             {step === 1 && info && (
               <>
                 <h2 style={{ margin: 0 }}>{tx("Systeem resetten")}</h2>
@@ -103,17 +127,20 @@ export default function SystemReset() {
                 <div className="row" style={{ justifyContent: "flex-end" }}>
                   <button type="button" className="btn" disabled={busy} onClick={close}>{tx("Annuleren")}</button>
                   <button type="button" className="btn primary" disabled={busy} onClick={backup}>{busy ? tx("Bezig…") : saved ? tx("Opnieuw een back-up maken") : tx("Back-up downloaden")}</button>
-                  <button type="button" className="btn danger" disabled={busy} onClick={() => { setMsg(null); setStep(2); }}>{saved ? tx("Verder") : tx("Zonder back-up verder")}</button>
+                  <button type="button" className="btn danger" disabled={busy} onClick={() => { setMsg(null); setRtab("what"); setStep(2); }}>{saved ? tx("Verder") : tx("Zonder back-up verder")}</button>
                 </div>
               </>
             )}
             {step === 2 && info && (
               <form onSubmit={(e) => e.preventDefault()} style={{ display: "contents" }}>
-                <h2 style={{ margin: 0 }}>{tx("Weet je het zeker?")}</h2>
+                <h2 style={{ margin: 0 }}>{replay ? tx("Onboarding opnieuw doen") : tx("Weet je het zeker?")}</h2>
+                <Tabs value={tabNow} onChange={setRtab} tabs={replay ? [["options", tx("Opties")], ["confirm", tx("Bevestigen")]] : [["what", tx("Wat verdwijnt")], ["options", tx("Opties")], ["confirm", tx("Bevestigen")]]} />
+                <div className="stack" style={{ gap: ".8rem", minHeight: 330, maxHeight: "52vh", overflowY: "auto", alignContent: "start", paddingRight: ".2rem" }}>
+                  {tabNow === "what" && !replay && (<>
                 <div className="alert">
                   {tx("Dit verwijdert voorgoed:")}
                   <ul style={{ margin: ".4rem 0 0", paddingLeft: "1.2rem" }}>
-                    <li>{tx("{0} gebruikers met hun profielen, berichten en gegevens", Math.max(0, info.users - (adminsToo ? 0 : info.admins || 0)))}</li>
+                    {!keepId && <li>{tx("{0} gebruikers met hun profielen, berichten en gegevens", Math.max(0, info.users - (adminsToo ? 0 : info.admins || 0)))}</li>}
                     {adminsToo && info.admins > 0 && <li>{tx("{0} admins (gebruikers met een rol)", info.admins)}</li>}
                     {superToo && info.other_superadmins > 0 && <li>{tx("{0} andere superadmins", info.other_superadmins)}</li>}
                     <li>{tx("{0} afbeeldingen en video's uit de bibliotheek", info.media)}</li>
@@ -124,7 +151,19 @@ export default function SystemReset() {
                   </ul>
                 </div>
                 <small className="muted">{info.standard_admin ? tx("Blijft: de standaard superadmin {0} (met het standaardwachtwoord opnieuw gemaakt), de talen,", info.standard_admin) : tx("Blijft: {0} superadmin(s), de talen,", info.superadmins)}{" "}{tx("de instellingen van de installatie (adressen, beveiliging, e-mail, API keys) en de ingebouwde thema's. Daarna staan alle modules en plugins uit en is het thema easy2edit, in lichte weergave.")}{" "}{tx("In de map site blijven alleen de database, de backups, de instellingen en exports van de superadmin (content) en de plugins staan; de rest (geëxporteerde pagina's, imports, toegevoegde templates, bestanden in de mediamap) wordt opgeruimd.")}</small>
-                {info.admins > 0 && (
+                  </>)}
+                  {tabNow === "options" && (<>
+                    {ONB}
+                    {replay ? (
+                      <div className="alert ok">{tx("Alle gegevens blijven bestaan: gebruikers, pagina's, instellingen, de licentie en de installatie. De eerste vragen en het formulier met de basisgegevens komen opnieuw, ingevuld met wat er is. Ontbreekt er een superadmin, de entiteit van de website of de contactpersoon als gebruiker, dan wordt die aangemaakt.")}</div>
+                    ) : (<>
+                <label className="check sec-toggle">
+                  <span className="switch"><input type="checkbox" checked={keepId} onChange={(e) => setKeepId(e.target.checked)} /><span /></span>
+                  <span>{tx("Licentie, entiteiten en users behouden?")}
+                    <small className="muted" style={{ display: "block" }}>{tx("Aan: de licentie, alle entiteiten en alle users (met hun koppelingen) blijven bestaan. Hun berichten, bestanden en andere inhoud gaan wel weg. Uit: alles gaat weg.")}</small>
+                  </span>
+                </label>
+                {info.admins > 0 && !keepId && (
                   <label className="check sec-toggle">
                     <span className="switch"><input type="checkbox" checked={adminsToo} onChange={(e) => setAdminsToo(e.target.checked)} /><span /></span>
                     <span>{tx("Ook de admins verwijderen?")}
@@ -155,15 +194,32 @@ export default function SystemReset() {
                     </select>
                   </label>
                 )}
+                    </>)}
+                  </>)}
+                  {tabNow === "confirm" && (replay ? (<>
+                    <label>{tx("Typ REPLAY om te bevestigen")}<input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" /></label>
+                    <label>{tx("Je wachtwoord")}<input type="password" value={pw} onChange={(e) => devFill(e.target.value)} autoComplete="current-password" />{atHint}</label>
+                  </>) : (<>
                 <label>{tx("Typ RESET om te bevestigen")}<input value={word} onChange={(e) => setWord(e.target.value)} autoComplete="off" /></label>
-                <label>{tx("Je wachtwoord")}<input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} /><input type="password" name="password" value={pw} onChange={(e) => devFill(e.target.value)} autoComplete="current-password" /></label>
+                <label>{tx("Je wachtwoord")}<input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} /><input type="password" name="password" value={pw} onChange={(e) => devFill(e.target.value)} autoComplete="current-password" />{atHint}</label>
+                  </>))}
+                </div>
                 {msg && <div className="alert">{msg.text}</div>}
                 <ProgressBar running={job === "reset"} done={finished} label={tx("Het systeem wordt schoongemaakt…")} />
-                <div className="row" style={{ justifyContent: "flex-end" }}>
+                <div className="row" style={{ justifyContent: "flex-end", borderTop: "1px solid var(--e2e-line, rgba(0,0,0,.12))", paddingTop: ".8rem" }}>
                   <button type="button" className="btn" disabled={busy} onClick={close}>{tx("Annuleren")}</button>
-                  <button type="button" className="btn danger" disabled={busy || word !== "RESET" || !pw} onClick={reset}>{busy ? tx("Bezig…") : tx("Alles verwijderen")}</button>
+                  {replay
+                    ? <button type="button" className="btn primary" disabled={busy || word.trim().toUpperCase() !== "REPLAY" || !pw} onClick={startReplay}>{busy ? tx("Bezig…") : tx("Onboarding opnieuw starten")}</button>
+                    : <button type="button" className="btn danger" disabled={busy || word !== "RESET" || !pw} onClick={reset}>{busy ? tx("Bezig…") : tx("Alles verwijderen")}</button>}
                 </div>
               </form>
+            )}
+            {step === 4 && (
+              <>
+                <h2 style={{ margin: 0 }}>{tx("De onboarding komt opnieuw")}</h2>
+                <p style={{ margin: 0 }}>{tx("Er is niets verwijderd. Bij het inloggen van een admin of superadmin komen de eerste vragen en het formulier met de basisgegevens opnieuw. Wat al bestaat, hoef je alleen te controleren.")}</p>
+                <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" onClick={() => { setStep(0); window.location.reload(); }}>{tx("Sluiten")}</button></div>
+              </>
             )}
             {step === 3 && (
               <>

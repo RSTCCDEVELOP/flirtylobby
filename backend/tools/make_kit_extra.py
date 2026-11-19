@@ -293,7 +293,27 @@ COSTS = [
 <ul class="e2e-fold"><li><button class="e2e-fold__head" aria-expanded="false"><span>Systeem</span><b>€ 8,05</b></button></li><li><button class="e2e-fold__head" aria-expanded="false"><span>Website ontwerpen</span><b>€ 3,20</b></button></li></ul></div>
 <button class="e2e-floatwin__btn" aria-label="Kosten">€</button></div>"""),
 ]
-EXTRA += COSTS
+
+# ---- linked lists, tags and colours (users and groups of an entity, tags on things) ----
+LINKS = [
+    C("ui-link-list", "Gekoppelde lijst", "Een lijst van wie of wat gekoppeld is, met een + in de kop om iemand toe te voegen via een zoekveld, een rondje met initialen en een kruisje om te verwijderen.", "Database & lijsten", "Gekoppelde lijst", """
+<div class="e2e-linklist"><div class="e2e-linklist__head"><span class="e2e-linklist__title">Gebruikers</span><span class="e2e-linklist__count">2</span><button class="e2e-btn e2e-btn--sm e2e-linklist__add" aria-label="Toevoegen" aria-expanded="false">+</button></div>
+<div class="e2e-linklist__list"><div class="e2e-linklist__row"><span class="e2e-linklist__ico">TG</span><span class="e2e-linklist__txt"><strong>Test Gebruiker</strong><small>demo@easy2edit.com</small></span><button class="e2e-btn e2e-btn--ghost e2e-btn--sm e2e-linklist__x" aria-label="Verwijderen">&times;</button></div>
+<div class="e2e-linklist__row"><span class="e2e-linklist__ico">AB</span><span class="e2e-linklist__txt"><strong>Anna Bakker</strong><small>anna@voorbeeld.nl</small></span><button class="e2e-btn e2e-btn--ghost e2e-btn--sm e2e-linklist__x" aria-label="Verwijderen">&times;</button></div></div></div>"""),
+    C("ui-link-search", "Gekoppelde lijst met zoeken", "De lijst met geopende zoekbalk: typ om te zoeken, klik een resultaat om het toe te voegen.", "Database & lijsten", "Gekoppelde lijst", """
+<div class="e2e-linklist"><div class="e2e-linklist__head"><span class="e2e-linklist__title">Groepen</span><span class="e2e-linklist__count">1</span><button class="e2e-btn e2e-btn--sm e2e-btn--primary e2e-linklist__add" aria-label="Toevoegen" aria-expanded="true">+</button></div>
+<div class="e2e-linklist__search"><input class="e2e-input" placeholder="Zoek een groep" aria-label="Zoek een groep"><div class="e2e-linklist__results"><button class="e2e-linklist__row e2e-linklist__pick"><span class="e2e-linklist__ico">AD</span><span class="e2e-linklist__txt"><strong>Admins</strong></span><span class="e2e-linklist__plus">+</span></button><button class="e2e-linklist__row e2e-linklist__pick"><span class="e2e-linklist__ico">RE</span><span class="e2e-linklist__txt"><strong>Redactie</strong></span><span class="e2e-linklist__plus">+</span></button></div></div>
+<div class="e2e-linklist__list"><div class="e2e-linklist__row"><span class="e2e-linklist__ico">EV</span><span class="e2e-linklist__txt"><strong>Everyone</strong></span><button class="e2e-btn e2e-btn--ghost e2e-btn--sm e2e-linklist__x" aria-label="Verwijderen">&times;</button></div></div></div>"""),
+    C("ui-tag", "Tag", "Een tag met een gekleurd bolletje, als kleine chip; ook een rij tags met een + om er een toe te voegen.", "Basis", "Tag", """
+<div class="e2e-tags"><span class="e2e-tag"><i class="e2e-dot" style="background:#ef4444"></i>VIP</span><span class="e2e-tag"><i class="e2e-dot" style="background:#22c55e"></i>Klant<button class="e2e-tag__x" aria-label="Verwijderen">&times;</button></span><span class="e2e-tag"><i class="e2e-dot" style="background:#2563eb"></i>Intern<button class="e2e-tag__x" aria-label="Verwijderen">&times;</button></span><button class="e2e-btn e2e-btn--sm e2e-tags__add" aria-label="Tag toevoegen">+</button></div>"""),
+    C("ui-color-field", "Kleurkiezer", "Alleen een rondje met de gekozen kleur; een klik opent een klein venster met de kleuren, een eigen kleur en een knop om de kleur weg te halen. De keuze wordt een bolletje voor een naam in de lijsten.", "Basis", "Kleurkiezer", """
+<div class="e2e-colorpick"><button class="e2e-colorpick__btn" style="background:#2563eb" aria-label="Kleur kiezen" aria-haspopup="dialog" aria-expanded="true"></button>
+<div class="e2e-colorpick__pop" role="dialog" aria-label="Kleur"><button class="e2e-swatch" style="background:#2563eb" aria-pressed="true" aria-label="#2563eb"></button><button class="e2e-swatch" style="background:#0ea5e9" aria-label="#0ea5e9"></button><button class="e2e-swatch" style="background:#14b8a6" aria-label="#14b8a6"></button><button class="e2e-swatch" style="background:#22c55e" aria-label="#22c55e"></button><button class="e2e-swatch" style="background:#eab308" aria-label="#eab308"></button><button class="e2e-swatch" style="background:#f97316" aria-label="#f97316"></button><button class="e2e-swatch" style="background:#ef4444" aria-label="#ef4444"></button><button class="e2e-swatch" style="background:#ec4899" aria-label="#ec4899"></button><button class="e2e-swatch" style="background:#a855f7" aria-label="#a855f7"></button><button class="e2e-swatch" style="background:#64748b" aria-label="#64748b"></button>
+<div class="e2e-colorpick__more"><input type="color" value="#2563eb" aria-label="Eigen kleur"><button class="e2e-btn e2e-btn--sm">Geen kleur</button></div></div></div>"""),
+    C("ui-name-color", "Naam met kleur", "Een naamveld met links het kleurrondje: een klik opent het kleurenvenster; de kleur wordt een bolletje naast de naam in de lijsten.", "Basis", "Kleurkiezer", """
+<div class="e2e-field"><label class="e2e-label"><span>Naam</span></label><div class="e2e-namecolor"><div class="e2e-colorpick"><button class="e2e-colorpick__btn" style="background:#22c55e" aria-label="Kleur kiezen" aria-haspopup="dialog" aria-expanded="false"></button></div><input class="e2e-input" value="Testbedrijf BV" aria-label="Naam"></div></div>"""),
+]
+EXTRA += LINKS
 
 CSS = r'''
 /* ===== TABS VOLGEN HET THEMA: data-e2e-tabstyle="pills|underline|segmented|folder" op html, body of het blok (easy2edit zet hem uit Thema > Vormgeving > Uiterlijk van tabbladen) ===== */
@@ -509,6 +529,47 @@ CSS = r'''
 .e2e-fold__run span{flex:1;min-width:0}.e2e-fold__run small{display:block;color:var(--e2e-muted)}.e2e-fold__run b{font-variant-numeric:tabular-nums}
 .e2e-live__dot.is-busy{animation:e2e-pulse 1.1s ease-in-out infinite}
 @keyframes e2e-pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--e2e-success) 45%,transparent)}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--e2e-success) 0%,transparent)}}
+/* ===== GEKOPPELDE LIJST, TAGS EN KLEUREN ===== */
+.e2e-linklist{border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);background:var(--e2e-surface);overflow:hidden;min-width:0}
+.e2e-linklist__head{display:flex;align-items:center;gap:.5rem;padding:.5rem .7rem;border-bottom:1px solid var(--e2e-border)}
+.e2e-linklist__title{display:inline-flex;align-items:center;gap:.4rem;font-weight:600}
+.e2e-linklist__count{font-size:.8rem;color:var(--e2e-muted);padding:0 .45rem;border-radius:999px;border:1px solid var(--e2e-border)}
+.e2e-linklist__add{margin-left:auto;padding:.15rem .55rem}
+.e2e-linklist__search{padding:.5rem .7rem .3rem;border-bottom:1px solid var(--e2e-border);background:color-mix(in srgb,var(--e2e-text) 4%,transparent)}
+.e2e-linklist__search .e2e-input{width:100%}
+.e2e-linklist__results{margin:.4rem -.7rem 0;max-height:210px;overflow:auto;border-top:1px solid var(--e2e-border);background:var(--e2e-surface)}
+.e2e-linklist__list{max-height:300px;overflow:auto}
+.e2e-linklist__row{display:flex;align-items:center;gap:.65rem;padding:.45rem .7rem;min-width:0;border-bottom:1px solid color-mix(in srgb,var(--e2e-border) 60%,transparent)}
+.e2e-linklist__row:last-child{border-bottom:0}
+.e2e-linklist__pick{width:100%;background:none;border:0;border-bottom:1px solid color-mix(in srgb,var(--e2e-border) 60%,transparent);text-align:left;cursor:pointer;color:inherit;font:inherit}
+.e2e-linklist__pick:hover,.e2e-linklist__pick:focus-visible{background:var(--e2e-primary-soft)}
+.e2e-linklist__ico{flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--e2e-text) 12%,transparent);font-size:.72rem;font-weight:700}
+.e2e-linklist__txt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.e2e-linklist__txt strong{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e2e-linklist__txt small{color:var(--e2e-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e2e-linklist__plus{color:var(--e2e-muted);display:inline-flex}
+.e2e-linklist__x{margin-left:auto}
+.e2e-linklist__empty{padding:.8rem .7rem;color:var(--e2e-muted);font-size:.9rem}
+.e2e-dot{display:inline-block;flex:0 0 auto;width:.7rem;height:.7rem;border-radius:50%;margin-right:.35rem;vertical-align:middle;box-shadow:0 0 0 1px color-mix(in srgb,var(--e2e-text) 25%,transparent)}
+.e2e-tags{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.e2e-tag{display:inline-flex;align-items:center;padding:.1rem .5rem .1rem .45rem;border-radius:999px;border:1px solid var(--e2e-border);font-size:.82rem;background:color-mix(in srgb,var(--e2e-text) 5%,transparent);white-space:nowrap}
+.e2e-tag__x{display:inline-flex;border:0;background:none;cursor:pointer;color:inherit;opacity:.6;padding:0 0 0 .3rem;font-size:1rem;line-height:1}
+.e2e-tag__x:hover{opacity:1}
+.e2e-tagadd{margin-top:.4rem;border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);overflow:hidden;background:var(--e2e-surface)}
+.e2e-tagadd .e2e-input{width:100%;border:0;border-bottom:1px solid var(--e2e-border);border-radius:0}
+.e2e-tagadd__hits{max-height:200px;overflow:auto;display:grid}
+.e2e-tagadd__hit{display:flex;align-items:center;gap:.3rem;padding:.45rem .7rem;border:0;border-bottom:1px solid color-mix(in srgb,var(--e2e-border) 60%,transparent);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.e2e-tagadd__hit:hover,.e2e-tagadd__hit:focus-visible{background:var(--e2e-primary-soft)}
+.e2e-tagadd__hit small{margin-left:auto;color:var(--e2e-muted)}
+.e2e-tagadd__new{display:flex;gap:.5rem;align-items:center;padding:.5rem .7rem;flex-wrap:wrap}.e2e-tagadd__new .e2e-input{flex:1;min-width:120px;border:1px solid var(--e2e-border);border-radius:var(--e2e-radius)}
+.e2e-namecolor{display:flex;gap:.6rem;align-items:center}.e2e-namecolor .e2e-input{flex:1;min-width:0}
+.e2e-colorpick{position:relative;display:inline-block}
+.e2e-colorpick__btn{width:28px;height:28px;border-radius:50%;border:2px solid var(--e2e-surface);box-shadow:0 0 0 1px color-mix(in srgb,var(--e2e-text) 35%,transparent);cursor:pointer;padding:0}
+.e2e-colorpick__btn.is-empty{background:transparent;border:2px dashed color-mix(in srgb,var(--e2e-text) 45%,transparent);box-shadow:none}
+.e2e-colorpick__pop{position:absolute;z-index:30;top:calc(100% + .45rem);left:0;display:grid;grid-template-columns:repeat(5,28px);gap:.5rem;padding:.75rem;background:var(--e2e-surface);border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);box-shadow:0 12px 32px color-mix(in srgb,var(--e2e-text) 22%,transparent)}
+.e2e-colorpick__pop.is-fixed{position:fixed}
+.e2e-colorpick__more{grid-column:1/-1;display:flex;gap:.5rem;align-items:center;justify-content:space-between;border-top:1px solid var(--e2e-border);padding-top:.55rem;margin-top:.1rem}
+.e2e-colorpick__more input[type=color]{width:34px;height:30px;padding:0;border:1px solid var(--e2e-border);border-radius:var(--e2e-radius);background:none;cursor:pointer}
 '''
 
 JS = r'''

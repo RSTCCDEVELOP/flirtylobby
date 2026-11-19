@@ -214,6 +214,7 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
     planShown.current = true;
     const a = planAsked();
     if (a.flag || (importsEmpty && !(d.designs || []).length && !a.off)) setPlan(true);
+    if (a.flag) api("/system/onboarding/done/", { method: "POST", body: {} }).catch(() => {}); // the design wizard starts: the last step of the onboarding is reached, it is complete
   }, [d, importsEmpty]);
   const closePlan = () => { setPlan(false); planDone(); };
   const load = useCallback(() => api("/sitecreator/").then(setD).catch((e) => setErr(errorText(e))), []);

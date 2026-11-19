@@ -12,6 +12,7 @@ import { IconEdit, IconTrash } from "./Icons";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { fillVars, hasVars, useEntity } from "../lib/entity";
 import { api, apiBase, errorText, mediaUrl } from "../lib/api";
 import MediaPicker from "./MediaPicker";
 import { useModule } from "./Modules";
@@ -128,7 +129,7 @@ const anyText = (b) => b && Object.values(b).find((v) => typeof v === "string" &
 export function EditableText({ id, as: Tag = "p", fallback = "", fallbacks, className, rich = false, removable = true }) {
   const [gone, setGone] = useGone(id);
   const { blocks, setBlock, defaultLang } = useContext(ContentContext);
-  const { editing } = useSession();
+  const { editing, user: me } = useSession();
   const lang = useLang();
   const ref = useRef(null);
   const richRef = useRef(null);
@@ -181,10 +182,12 @@ export function EditableText({ id, as: Tag = "p", fallback = "", fallbacks, clas
     }
   }
 
+  const ent = useEntity(); // {{organisatie.naam}} ... are filled with the data of the entity when the text is shown (not in edit mode)
+  const shown = hasVars(text) ? fillVars(text, ent, me) : text;
   const display = isHtml ? (
-    <RichHtml className={`rich-text ${className || ""}`} html={toDisplay(text.slice(5))} />
+    <RichHtml className={`rich-text ${className || ""}`} html={toDisplay(shown.slice(5))} />
   ) : (
-    <Tag className={className}>{text}</Tag>
+    <Tag className={className}>{shown}</Tag>
   );
 
   if (removable && gone) return null; // removed with the trash icon: gone from the page; only the undo arrow (top right) brings it back

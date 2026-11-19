@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
@@ -29,7 +29,27 @@ export default function PresetSettings({ p, manage, adminOnly, demo, onRelease, 
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setSaving(false);
   };
-  const tabs = [["general", "Algemeen"], ...(manage ? [["ai", "AI"]] : []), ["modules", "Modules"], ["plugins", "Plugins"], ...(demo ? [["demo", "Demo-gegevens"]] : [])];
+  // Setup: what the dashboard of this installation shows (Users, Entiteit); saved with the content of the installation (PUT .../edit/)
+  const canSetup = manage && !adminOnly;
+  const [su, setSu] = useState(null); // { users, entity, kind, name, kinds }
+  const [suBase, setSuBase] = useState(null);
+  const [suBusy, setSuBusy] = useState(false);
+  useEffect(() => {
+    if (!canSetup || tab !== "setup" || su) return;
+    api(`/system/presets/${p.key}/edit/`).then((o) => { const v = { users: o.setup.users, entity: o.setup.entity, kind: o.entity.kind, name: o.entity.name || "", kinds: o.entity.kinds }; setSu(v); setSuBase(JSON.stringify([v.users, v.entity, v.kind, v.name])); }).catch((e) => setMsg({ ok: false, text: errorText(e) }));
+  }, [canSetup, tab, su, p.key]);
+  const saveSetup = async () => {
+    setSuBusy(true); setMsg(null);
+    try {
+      const o = await api(`/system/presets/${p.key}/edit/`, { method: "PUT", body: { setup: { users: su.users, entity: su.entity }, entity: { kind: su.kind, name: su.name } } });
+      const v = { users: o.setup.users, entity: o.setup.entity, kind: o.entity.kind, name: o.entity.name || "", kinds: o.entity.kinds };
+      setSu(v); setSuBase(JSON.stringify([v.users, v.entity, v.kind, v.name]));
+      setMsg({ ok: true, text: tx("Opgeslagen. De dashboard-opties gelden voor deze installatie.") });
+      window.dispatchEvent(new Event("presets-changed")); window.dispatchEvent(new Event("entity-changed"));
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setSuBusy(false);
+  };
+  const tabs = [["general", "Algemeen"], ...(canSetup ? [["setup", "Setup"]] : []), ...(manage ? [["ai", "AI"]] : []), ["modules", "Modules"], ["plugins", "Plugins"], ...(demo ? [["demo", "Demo-gegevens"]] : [])];
   const num = (k) => (e) => setAi({ ...ai, [k]: e.target.value });
   const body = (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -55,6 +75,30 @@ export default function PresetSettings({ p, manage, adminOnly, demo, onRelease, 
               </label>
             )}
             {p.active && manage && <div><button type="button" className="btn danger" disabled={!!busy} onClick={() => { onClose(); onUnapply(p); }}>{tx("Installatie verwijderen")}</button></div>}
+          </>)}
+          {tab === "setup" && canSetup && (<>
+            <h3 style={{ margin: 0 }}>{tx("Opties")}</h3>
+            <p className="muted" style={{ margin: 0 }}>{tx("Wat het dashboard van deze installatie laat zien. Staat een optie aan, dan staat hij in het linker menu en als tegel.")}</p>
+            {!su ? <p className="muted">{tx("Bezig…")}</p> : (<>
+              <label className="check sec-toggle">
+                <span className="switch"><input type="checkbox" checked={su.users} onChange={(e) => setSu({ ...su, users: e.target.checked })} /><span /></span>
+                <span>{tx("Users op het dashboard")}<small className="muted" style={{ display: "block" }}>{tx("Users en User groups staan in het linker menu en als tegel.")}</small></span>
+              </label>
+              <label className="check sec-toggle">
+                <span className="switch"><input type="checkbox" checked={su.entity} onChange={(e) => setSu({ ...su, entity: e.target.checked })} /><span /></span>
+                <span>{tx("Entiteit op het dashboard")}<small className="muted" style={{ display: "block" }}>{tx("Geef de entiteit een naam: die naam staat in het linker menu en op de tegel. Standaard: Bedrijf.")}</small></span>
+              </label>
+              {su.entity && (
+                <div className="grid2">
+                  <label>{tx("Naam van de entiteit")}
+                    <select value={su.kind} onChange={(e) => setSu({ ...su, kind: e.target.value })}>{su.kinds.map((k) => <option key={k.key} value={k.key}>{tx(k.label)}</option>)}</select>
+                  </label>
+                  {su.kind === "vrij" && <label>{tx("Vrije naam")}<input value={su.name} maxLength={40} placeholder={tx("Bijvoorbeeld: Stichting")} onChange={(e) => setSu({ ...su, name: e.target.value })} /></label>}
+                </div>
+              )}
+              {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
+              <div className="row" style={{ justifyContent: "flex-start" }}><button type="button" className="btn primary" disabled={suBusy || JSON.stringify([su.users, su.entity, su.kind, su.name]) === suBase || (su.entity && su.kind === "vrij" && !su.name.trim())} onClick={saveSetup}>{suBusy ? tx("Bezig…") : tx("Opslaan")}</button></div>
+            </>)}
           </>)}
           {tab === "ai" && manage && (<>
             <p className="muted" style={{ margin: 0 }}>{tx("De AI van deze installatie. Deze instellingen worden gezet zodra de installatie wordt ingesteld. De AI-koppeling zelf (API key) staat bij API keys; het gebruik en de prijzen staan bij Super admin → AI.")}</p>

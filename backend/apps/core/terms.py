@@ -97,7 +97,11 @@ def publish(user):
 
 
 def signed(user, version):
-    return TermsSignature.objects.filter(user=user, version=version).exists()
+    qs = TermsSignature.objects.filter(user=user, version=version)
+    from . import reset
+
+    since = reset.replay_since()  # the onboarding was started again: the terms are shown and signed once more (the earlier signatures stay)
+    return (qs.filter(signed_at__gte=since) if since else qs).exists()
 
 
 def _hash(user, code):

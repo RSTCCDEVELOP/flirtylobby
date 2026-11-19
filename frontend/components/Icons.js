@@ -44,6 +44,7 @@ export const IconCamera = I(<><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z" /><circle 
 export const IconEdit = I(<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />);
 export const IconCheck = I(<path d="M4.5 12.5l5 5 10-11" />);
 export const IconX = I(<path d="M6 6l12 12M18 6L6 18" />);
+export const IconPlus = I(<path d="M12 5v14M5 12h14" />);
 export const IconCart = I(<><path d="M3 4h2.5l2 11h10l2-8H7" /><circle cx="9" cy="19.5" r="1.2" /><circle cx="17" cy="19.5" r="1.2" /></>);
 export const IconSend = I(<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z" />);
 export const IconGlobe2 = I(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.6 2.7 4 5.7 4 9s-1.4 6.3-4 9c-2.6-2.7-4-5.7-4-9s1.4-6.3 4-9z" /></>);
@@ -83,6 +84,7 @@ export const PRESET_ICONS = {
   gamepad: <><rect x="2.5" y="7" width="19" height="11" rx="5" /><path d="M7.5 10.5v4M5.5 12.5h4M15.5 11.5h.01M18 13.5h.01" /></>,
 };
 export const PresetIcon = ({ name, size = 26 }) => PRESET_ICONS[name] ? <svg {...p} width={size} height={size}>{PRESET_ICONS[name]}</svg> : null;
+export const IconTag = I(<><path d="M3 12V4a1 1 0 011-1h8l9 9-9 9z" /><circle cx="8" cy="8" r="1.3" /></>);
 export const IconTrash = I(<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />);
 export const IconChart = I(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />);
 export const IconLeaf = I(<><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15" /><path d="M5 19c3-5 6-8 11-10" /></>);

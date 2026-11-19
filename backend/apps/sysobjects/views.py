@@ -53,6 +53,13 @@ def _row(o, public=False):
         if not lay or (o.ref_key == "network" and not mods.enabled("energy_network")):
             return None
         data, names, button = {"layout": o.ref_key, "title": "Energie: " + lay["label"], "enabled": True}, {"": "Energie: " + lay["label"]}, {}
+    elif o.kind == "variable":
+        from apps.core import entity as ent
+
+        label = ent.VARIABLES.get(o.ref_key)
+        if not label:
+            return None
+        data, names, button = {"variable": o.ref_key, "title": "Variabele: " + label, "enabled": True}, {"": "Variabele: " + label}, {}
     elif o.kind == "marketing":
         from apps.core import modules as mods
 
@@ -89,7 +96,7 @@ def _row(o, public=False):
     row = {"id": o.id, "slug": o.slug, "kind": o.kind, "enabled": o.enabled, "names": names, "button": button, "data": data}
     if not public:
         row.update(kind_label=dict(SystemObject.KINDS)[o.kind], used_on=service.usage(o.slug), source_id=o.ref_id,
-                   edit_url={"donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen", "ai": "/dashboard/superadmin/ai", "pricelist": "/dashboard/superadmin/prijzen", "installation": "/dashboard/superadmin/prijzen", "energy": "/dashboard/admin/energy"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
+                   edit_url={"variable": "/dashboard/admin/entity", "donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen", "ai": "/dashboard/superadmin/ai", "pricelist": "/dashboard/superadmin/prijzen", "installation": "/dashboard/superadmin/prijzen", "energy": "/dashboard/admin/energy"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
     return row
 
 

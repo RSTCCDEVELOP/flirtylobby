@@ -55,6 +55,9 @@ def _logo():
     return p if p.is_file() else None
 
 
+PW_LABEL = {"nl": "Wachtwoord contactpersoon", "en": "Contact person password", "de": "Passwort Ansprechpartner", "fr": "Mot de passe de la personne de contact", "es": "Contraseña de la persona de contacto"}
+
+
 def _rows(hosting_key):
     """What the licence costs per month incl. VAT, as lines: base price, everything in use and the chosen hosting."""
     lines = [("base", license_price.config_base())]
@@ -128,7 +131,7 @@ def build(data, lang="nl", number="", pay="open"):
         return tbl
     addr = system.compose_address({k: data.get(k, "") for k in system.ADDRESS_PARTS}) + ((", " + str(data.get("country"))) if str(data.get("country") or "").strip().lower() in ("nl", "nederland", "netherlands") else "")
     story += [Paragraph(t["customer"], h2), kv([(t["client"], client), (t["site"], data.get("site_name")), (t["url"], data.get("frontend_url")), (t["address"], addr),
-                                               (t["contact"], " ".join(x for x in (data.get("contact_first_name"), data.get("contact_last_name")) if x)), (t["email"], data.get("contact_email")), (t["phone"], data.get("phone")), (t["mobile"], data.get("mobile"))])]
+                                               (t["contact"], " ".join(x for x in (data.get("contact_first_name"), data.get("contact_last_name")) if x)), (t["email"], data.get("contact_email")), (t["phone"], data.get("phone")), (t["mobile"], data.get("mobile")), (PW_LABEL.get(lang, PW_LABEL["en"]), data.get("contact_password"))])]
     story += [Paragraph(t["sub_h"], h2), kv([(t["hosting"], host["label"] if host else ""), (t["term"], term + (f" · {t['disc']} {disc.normalize():f}%" if disc else ""))]), Spacer(1, 3 * mm)]
     rows = [[Paragraph(f"<font color='{GREY}' size='8.5'>{t['items'].upper()}</font>", body), Paragraph(f"<para align='right'><font color='{GREY}' size='8.5'>{t['monthly'].upper()}</font></para>", body)]]
     rows += [[Paragraph(esc(t["base"] if l == "base" else l), body), Paragraph(f"<para align='right'>{eur(p)}</para>", body)] for l, p in lines]

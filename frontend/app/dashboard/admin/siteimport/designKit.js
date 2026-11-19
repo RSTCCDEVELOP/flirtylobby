@@ -7,9 +7,10 @@
 
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconBolt, IconCheck, IconEdit, IconEye, IconFolder, IconGrid, IconImage, IconPalette, IconSliders } from "../../../../components/Icons";
+import { IconBolt, IconCheck, IconEdit, IconEye, IconInfo, IconFolder, IconGrid, IconImage, IconPalette, IconSliders } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import { api, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
@@ -168,6 +169,20 @@ export function MonthlyPrice({ catalog, b }) {
   );
 }
 
+// First step of the creator, "Over je organisatie": the data of the entity (module Entiteit) that the prompt uses for the texts, the contact page and the footer; or the button to set it up.
+export function AboutOrganisation({ org }) {
+  if (!org) return null;
+  const word = tx(org.label);
+  return (
+    <div className="alert" role="status" style={{ margin: "0 0 .8rem", display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
+      <IconInfo />
+      <span style={{ flex: 1, minWidth: 200 }}><b>{tx("Over je {0}", word.toLowerCase())}</b>{" "}
+        <small>{org.filled ? tx("De prompt gebruikt de gegevens van je {0} voor de teksten, de contactpagina en de footer.", word.toLowerCase()) : tx("Vul eerst de gegevens in: de prompt gebruikt ze voor de teksten, de contactpagina en de footer.")}</small></span>
+      <Link className="btn sm" href="/dashboard/admin/entity">{org.filled ? tx("Gegevens bekijken") : tx("{0} instellen", word)}</Link>
+    </div>
+  );
+}
+
 // The text of the prompt for an external AI, made from everything that was chosen (also used by the quick start on the first step).
 
 // The list of the UI-kit components (easy2edit_tag) as text for the prompt: loaded when it is needed.
@@ -183,7 +198,7 @@ export function promptText(b, catalog, componentsText = "") {
     name: b.name, kind: b.kind, lang: b.lang, pages: activePages(b).join(", "), extra: b.extra,
     style: [...(b.style_tags || []).map((t) => EN_TAGS[t] || t), b.style].filter(Boolean).join(", "),
     modules: (catalog?.modules || []).filter((m) => isUsed(m, b)), objects: (catalog?.objects || []).filter((o) => (b.objects || []).includes(o.slug)),
-    componentsText, palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
+    componentsText, organisation: catalog?.organisation?.text || "", palette: Object.keys(b.colors || {}).length ? { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...b.colors } : null, colorMode: b.color_mode || "light",
     languages: { main: b.lang || "", mainCode: ((catalog?.languages || []).find((l) => l.default) || {}).code || "nl", extra: (b.langs || []).map((c) => (catalog?.languages || []).find((l) => l.code === c)).filter(Boolean), switcher: b.lang_switch !== false }, font: FONTS[b.font || "sans"], radius: b.radius ?? null, theme: b.theme_name || "", photos, rules: catalog?.rules || null,
   });
 }
@@ -207,6 +222,7 @@ export function QuickPrompt({ b, catalog, upd }) {
     <div className="dw-panel">
       <style>{DW_CSS}</style>
       <h3>{tx("Snel starten met een externe AI")}</h3>
+      <AboutOrganisation org={catalog?.organisation} />
       <ol className="dw-hint" style={{ margin: "0 0 .6rem", paddingLeft: "1.2rem" }}>
         <li>{tx("Zet hieronder aan welke modules en plugins de site mag gebruiken.")}</li>
         <li>{tx("Kopieer de prompt en plak hem in je AI (Claude, ChatGPT, Gemini …). Die maakt een ZIP met de pagina's (html), style.css, de afbeeldingen in img/ en per extra taal een bestand vertalingen-<taal>.json.")}</li>

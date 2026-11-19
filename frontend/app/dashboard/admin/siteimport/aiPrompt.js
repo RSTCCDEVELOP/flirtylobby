@@ -27,7 +27,7 @@ const KIND_HINT = {
 
 // modules: [{label, how}] the modules that the website uses; objects: [{slug, name, kind_label}] the system objects (live blocks of the system) that have to be placed on the pages.
 // From the step plan (the design) it also gets: palette {primary, secondary, bg, card, text, dark, dbg, dcard, dtext} (exact colours; dbg/dcard/dtext are the dark mode), colorMode "light" | "dark" | "both", languages {main, extra: [{code, native, rtl}], switcher}, font (css stack), radius (px), theme (name of the chosen theme) and photos [{file, note}] that the user has uploaded.
-export function buildPrompt({ name, kind, lang, pages, style, colors, extra, modules = [], objects = [], palette = null, font = "", radius = null, theme = "", photos = [], colorMode = "light", languages = null, rules = null, componentsText = "" }) {
+export function buildPrompt({ name, kind, lang, pages, style, colors, extra, modules = [], objects = [], palette = null, font = "", radius = null, theme = "", photos = [], colorMode = "light", languages = null, rules = null, componentsText = "", organisation = "" }) {
   const RL = { max_pages: 12, max_images: 40, max_image_mb: 5, name_max: 40, ...(rules || {}) }; // the numbers of the importer (served by /sitecreator/catalog/)
   const mainLang = (languages && languages.main) || lang || "Dutch";
   const extraLangs = (languages && languages.extra) || [];
@@ -39,7 +39,7 @@ export function buildPrompt({ name, kind, lang, pages, style, colors, extra, mod
   return `You are a senior web designer. Create a complete, professional website for "${n}" as plain static files that can be imported into the website system easy2edit. Follow every rule below exactly: the importer reads the html and css and rebuilds each page with the blocks of the easy2edit page editor, so a clean, predictable structure is more important than clever tricks.
 
 ## 1. The website
-- Type: ${KIND_HINT[kind] || KIND_HINT.company}.
+- Type: ${KIND_HINT[kind] || KIND_HINT.company}.${organisation ? `\n- About the organisation (the entity behind this website; use these real data for the texts, the tone, the contact page and the footer, and do not invent other data):\n${organisation}\n  Where the name, address, e-mail or phone of the organisation appears in a text you may write the variable {{organisatie.naam}}, {{organisatie.adres}}, {{organisatie.email}}, {{organisatie.telefoon}}, {{organisatie.website}}, {{organisatie.plaats}}, {{organisatie.kvk}}, {{organisatie.btw}}: the website fills them in.` : ""}
 - Language of all texts: ${lang || "Dutch"}. Write real, convincing copy (no "lorem ipsum"), with concrete headings, short paragraphs and clear calls to action.
 - Pages (one html file each, in this order): ${list.map((p, i) => `${p} (${files[i]})`).join(", ")}.
 - Style: ${(style || "").trim() || "modern, clean, lots of white space, friendly and professional"}.${theme ? `\n- Base the look on the theme "${theme}" of the easy2edit system: its colours and rounded corners are given below.` : ""}

@@ -14,18 +14,19 @@ import { useCallback, useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 import { TILES, LEVEL_LABEL } from "../lib/admin-tiles";
-import { lvl } from "../lib/perms";
+import { lvl, setupHidden } from "../lib/perms";
+import { useEntity } from "../lib/entity";
 import { useAuth } from "./AuthContext";
 import { useModules } from "./Modules";
 import Paged from "./Paged";
 import PlusLock from "./PlusLock";
 import SuperTile from "./SuperTile";
-import { IconArchive, IconBell, IconBolt, IconCard, IconChart, IconChat, IconEdit, IconFlask, IconFolder, IconGlobe, IconGlobe2, IconGrid, IconGroup, IconHeart, IconHelp, IconImage, IconInfo, IconKey, IconLeaf, IconLock, IconMail, IconPalette, IconPaperclip, IconReceipt, IconRocket, IconSearch, IconSettings, IconShield, IconStar, IconUsers } from "./Icons";
+import { IconArchive, IconBell, IconBolt, IconBriefcase, IconTag, IconCard, IconChart, IconChat, IconEdit, IconFlask, IconFolder, IconGlobe, IconGlobe2, IconGrid, IconGroup, IconHeart, IconHelp, IconImage, IconInfo, IconKey, IconLeaf, IconLock, IconMail, IconPalette, IconPaperclip, IconReceipt, IconRocket, IconSearch, IconSettings, IconShield, IconStar, IconUsers } from "./Icons";
 import ViewBar from "./ViewBar";
 import { useView } from "../lib/useView";
 
 // The icon of every tile (by the last part of its address), like the tiles of Super admin
-const ICONS = { users: IconUsers, ai: IconStar, "ai-kosten": IconChart, groups: IconGroup, roles: IconShield, languages: IconGlobe2, communication: IconMail, integrations: IconKey, notifications: IconBell, faq: IconHelp, templates: IconArchive,
+const ICONS = { entity: IconBriefcase, tags: IconTag, users: IconUsers, ai: IconStar, "ai-kosten": IconChart, groups: IconGroup, roles: IconShield, languages: IconGlobe2, communication: IconMail, integrations: IconKey, notifications: IconBell, faq: IconHelp, templates: IconArchive,
   components: IconGrid, helptips: IconInfo, media: IconImage, community: IconChat, seo: IconSearch, security: IconLock, subscriptions: IconReceipt, actions: IconRocket, donations: IconHeart, system: IconSettings, storage: IconFolder,
   license: IconCard, statistieken: IconChart, energy: IconLeaf, backups: IconArchive, installaties: IconRocket, sandbox: IconFlask, pages: IconGlobe, sysobjects: IconPaperclip, siteimport: IconEdit, theme: IconPalette };
 const iconOf = (href) => ICONS[href.split("/").pop()] || IconBolt;
@@ -43,12 +44,14 @@ export default function AdminTiles({ all = false }) {
   const loadState = useCallback(() => (all ? api("/modules/all/").then((l) => setState(Object.fromEntries(l.map((m) => [m.key, m])))).catch(() => {}) : null), [all]);
   useEffect(() => { loadState(); }, [loadState]);
   useEffect(() => { const f = () => loadState(); window.addEventListener("licence-reverted", f); return () => window.removeEventListener("licence-reverted", f); }, [loadState]);  // "Nu niet" in the licence question undid a switch
-  const tiles = TILES.map((t) => {
+  const ent = useEntity(); // the title of the tile follows the standard installation: Bedrijf, Organisatie, Vereniging, Club or a free name
+  const tiles = TILES.map((t0) => {
+    const t = t0.href.endsWith("/entity") && ent ? { ...t0, title: ent.label, big: tx("Over je {0}", tx(ent.label).toLowerCase()), open: ent.filled ? "" : tx("{0} instellen", tx(ent.label)) } : t0;
     const on = all && state ? t.modules.every((m) => state[m]?.enabled !== false) : t.modules.some((m) => mods[m] !== false);
     const level = Math.max(...t.modules.map((m) => (mods[m] === false ? 0 : lvl(user, m))));
     const locked = t.modules.every((m) => state?.[m]?.core);
     return { ...t, on, level, locked };
-  }).filter((t) => (all ? true : t.on && t.level >= 1));
+  }).filter((t) => (all ? true : t.on && t.level >= 1 && !setupHidden(t.href, mods)));
   const isLocked = (t) => all && !user?.is_superadmin_plus && t.modules.some((m) => state?.[m]?.owner_only);  // an easy2edit module is shown with a lock; a click gives a message
   const deny = () => alertDialog(tx("Dit onderdeel is alleen voor een superadmin+."));
   const flip = async (t) => {
@@ -75,7 +78,7 @@ export default function AdminTiles({ all = false }) {
               onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}
               footer={(
                 <>
-                  <Link href={t.href} className="btn sm primary" onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}>{tx("Open")}</Link>
+                  <Link href={t.href} className="btn sm primary" onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}>{t.open || tx("Open")}</Link>
                   {all ? (
                     <label className="switch tile-switch" style={{ position: "static", marginLeft: "auto" }} title={t.locked ? tx("Kernonderdeel: altijd aan") : t.on ? tx("Uitzetten") : tx("Aanzetten")}>
                       <input type="checkbox" checked={t.on} disabled={(t.locked || busy === t.href || !state) && !isLocked(t)} onChange={() => flip(t)} /><span />

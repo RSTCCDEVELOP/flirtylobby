@@ -16,6 +16,7 @@ import { useModules } from "./Modules";
 import Tabs from "./Tabs";
 import { useSandboxFirst } from "../lib/firstRun";
 import { lvl } from "../lib/perms";
+import { markPlan } from "../lib/planFlag";
 import AiCreditPopup from "./AiCreditPopup";
 import { money } from "./AiCharts";
 
@@ -36,13 +37,23 @@ export default function AiWelcome() {
     if (!user || mods.ai === false || (adm && (!first.known || first.pending))) return;
     api("/ai/me/").then((i) => { if (i.welcome) setMe(i); }).catch(() => {});
   }, [user, mods.ai, first.known, first.pending]);
+  useEffect(() => { // the onboarding says the AI explanation is the next step: it opens now (also when other first screens are still counted as open)
+    const open = () => { if (!user || mods.ai === false) return; api("/ai/me/").then((i) => { if (i.welcome) setMe(i); }).catch(() => {}); };
+    window.addEventListener("open-ai-welcome", open);
+    return () => window.removeEventListener("open-ai-welcome", open);
+  }, [user, mods.ai]);
   useEffect(() => {
     if (!me?.is_staff) return;
     api("/admin/ai/credit/").then(setCr).catch(() => {});
     api("/admin/ai/pay-status/").then(setStripe).catch(() => setStripe({ via: "sandbox" }));
   }, [me]);
   if (!me) return null;
-  const done = async () => { try { await api("/ai/me/welcome/", { method: "POST", body: {} }); } catch {} setMe(null); };
+  const done = async () => {
+    try { await api("/ai/me/welcome/", { method: "POST", body: {} }); } catch {}
+    setMe(null);
+    try { sessionStorage.removeItem("e2e_design_next"); } catch {}
+    if (adm && mods.siteimport !== false) { markPlan(); if (!window.location.pathname.startsWith("/dashboard/admin/siteimport")) window.location.href = "/dashboard/admin/siteimport"; else window.location.reload(); }  // the last step of the onboarding: the design wizard (Website ontwerpen) starts
+  };
   const save = async (body) => { try { setCr(await api("/admin/ai/credit/", { method: "POST", body })); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   const cur = me.currency;
   return (

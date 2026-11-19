@@ -12,6 +12,8 @@ export const can = (user, perm) => !!user && (user.is_staff || (user.permissions
 
 // Admin pages: module whose access level decides, or superadmin-only
 export const ADMIN_PAGES = [
+  { href: "/dashboard/admin/entity", module: "entities" },
+  { href: "/dashboard/admin/tags", module: "tags", anyAdmin: true },
   { href: "/dashboard/admin/users", module: "users" },
   { href: "/dashboard/admin/groups", module: "users" },
   { href: "/dashboard/admin/roles", module: "roles" },
@@ -49,7 +51,12 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/ai-kosten", module: "ai", perm: "ai.manage" },
 ];
 
+// The Setup of the standard installation: Users (and User groups) and the Entiteit can be taken off the dashboard (left menu and tile). The modules map has setup_users / setup_entity.
+export const setupHidden = (href, mods = {}) => (mods.setup_users === false && (href === "/dashboard/admin/users" || href === "/dashboard/admin/groups")) || (mods.setup_entity === false && href === "/dashboard/admin/entity");
+
 export const pageAllowed = (user, page, mods = {}) => {
+  if (setupHidden(page.href, mods)) return false;
+  if (page.anyAdmin) return !!user && (user.is_staff || Object.values(user.module_levels || {}).some((v) => v >= 2));  // everybody who administers (an administrator up to a superadmin+)
   if (page.superadmin) return !!user?.is_staff;
   if (page.perm) return mods[page.module] !== false && (!!user?.is_staff || can(user, page.perm));  // a page that a right from a role opens (Rollen)
   if (page.always) return !!user?.is_staff || lvl(user, "system") >= 1;  // not tied to a module that an installation can switch off (the page that sets the installations)
