@@ -7536,5 +7536,10 @@
   "Naam van de tag": "Etiket adı",
   "Nieuwe tag maken": "Yeni etiket oluştur",
   "Nieuwe tag maken: {0}": "Yeni etiket oluştur: {0}",
-  "Zoek of maak een tag": "Etiket ara veya oluştur"
+  "Zoek of maak een tag": "Etiket ara veya oluştur",
+  "Terug naar de lijst": "Listeye dön",
+  "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Bu web sitesinin arkasındaki {0} ile diğer şirket ve kuruluşların bilgileri: ad, adres, iletişim ve kayıt. Düzenlemek için bir satır seç. Bunları her metinde değişken olarak kullanabilirsin, örneğin {1}.",
+  "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "Henüz varlık yok. Ekle düğmesiyle bir tane ekle: örneğin bir müşteri, bir işveren veya kullanıcıların ait olduğu bir kulüp.",
+  "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Bir sayfadaki metne (düzenleme modunda) bir değişken yaz: web sitesi onu doldurur. Burada bir şeyi değiştirirsen tüm sayfalara yansır. Düzenleme modunda değişkenin kendisi kalır. Sayfa düzenleyicide bunlar ayrıca sistem nesnesi (Değişken) olarak da bulunur.",
+  "De gebruiker die de pagina bekijkt": "Sayfayı görüntüleyen kullanıcı"
 }

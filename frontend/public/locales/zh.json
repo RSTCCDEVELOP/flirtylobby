@@ -7536,5 +7536,10 @@
   "Naam van de tag": "标签名称",
   "Nieuwe tag maken": "创建新标签",
   "Nieuwe tag maken: {0}": "创建新标签：{0}",
-  "Zoek of maak een tag": "搜索或创建标签"
+  "Zoek of maak een tag": "搜索或创建标签",
+  "Terug naar de lijst": "返回列表",
+  "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "此网站背后的{0}以及其他公司和组织的信息：名称、地址、联系方式和注册信息。选择一行即可编辑。你可以在任何文本中将它们用作变量，例如 {1}。",
+  "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "还没有实体。用“添加”按钮添加一个：例如客户、雇主或用户所属的俱乐部。",
+  "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "在页面的文本中（编辑模式下）写入变量，网站会自动填入。在这里更改后，所有页面都会同步生效。在编辑模式下，变量本身会保留。在页面编辑器中，它们也可作为系统对象（变量）使用。",
+  "De gebruiker die de pagina bekijkt": "查看页面的用户"
 }

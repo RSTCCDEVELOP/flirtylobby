@@ -7536,5 +7536,10 @@
   "Naam van de tag": "タグの名前",
   "Nieuwe tag maken": "新しいタグを作成",
   "Nieuwe tag maken: {0}": "新しいタグを作成：{0}",
-  "Zoek of maak een tag": "タグを検索または作成"
+  "Zoek of maak een tag": "タグを検索または作成",
+  "Terug naar de lijst": "一覧に戻る",
+  "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "このウェブサイトの背後にある{0}と、他の会社・組織の情報：名前、住所、連絡先、登録情報。行を選ぶと編集できます。{1}のように、どのテキストでも変数として使えます。",
+  "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "まだエンティティがありません。「追加」ボタンで追加してください。たとえば、顧客、雇用主、ユーザーが所属するクラブなどです。",
+  "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "ページのテキストに（編集モードで）変数を書くと、ウェブサイトが値を入れます。ここで変更すると、すべてのページに反映されます。編集モードでは変数そのものが残ります。ページエディタでは、システムオブジェクト（変数）としても使えます。",
+  "De gebruiker die de pagina bekijkt": "ページを見ているユーザー"
 }

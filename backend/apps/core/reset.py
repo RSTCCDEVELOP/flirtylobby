@@ -375,6 +375,9 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, 
         row = SystemSettings.objects.filter(pk=1).first()
         if row:
             row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids", "welcome_asked", "entity_contact_done", "onboarding_complete", "onboarding_started", *IDENTITY_KEYS)}  # also the name and the details of the website that was here: it is easy2edit again
+            from . import sysupdate
+
+            row.data["checked_build"] = sysupdate.build()  # a cleared site holds nothing from an older build: no "new version, check your site" question during the onboarding
             row.save()
     except Exception:  # noqa: BLE001
         logger.exception("Reset: the choice of the standard installation could not be cleared")

@@ -129,7 +129,8 @@ ABOUT_ENTITY = """
 
 ABOUT THE ORGANISATION (the entity of this website: use it for the texts, the colours and tone, the contact page and the footer; do not invent other data)
 @ABOUT@
-- Where the name, address, e-mail or phone of the organisation appears in a text, you may write the variable instead: {{organisatie.naam}}, {{organisatie.adres}}, {{organisatie.email}}, {{organisatie.telefoon}}, {{organisatie.website}}, {{organisatie.plaats}}, {{organisatie.kvk}}, {{organisatie.btw}}, {{organisatie.soort}}. The website fills them in, so a change of the data works through on every page."""
+- Where the name, address, e-mail or phone of the organisation appears in a text, you may write the variable instead: {{organisatie.naam}}, {{organisatie.adres}}, {{organisatie.email}}, {{organisatie.telefoon}}, {{organisatie.website}}, {{organisatie.plaats}}, {{organisatie.kvk}}, {{organisatie.btw}}, {{organisatie.soort}}. The website fills them in, so a change of the data works through on every page.
+- The person who looks at the page has variables too: {{user.naam}}, {{user.voornaam}}, {{user.achternaam}}, {{user.email}}, {{user.functie}}, {{user.bedrijf}}. They are filled in for a logged-in visitor and stay empty for others, so use them only in text meant for logged-in people (a welcome line on a dashboard or account page), never in the main text of a public page. Variables are pieces of text: write them inside a sentence, never as a section or as a <div data-sysobject>."""
 
 
 COMPONENTS_ONLY = """
@@ -274,7 +275,7 @@ def catalog():
     objs = []
     try:
         sos.sync()
-        for o in SystemObject.objects.filter(enabled=True):
+        for o in SystemObject.objects.filter(enabled=True).exclude(kind="variable"):  # variables are pieces of text, never a section to place
             r = sov._row(o, public=True)
             if not r:
                 continue

@@ -7536,5 +7536,10 @@
   "Naam van de tag": "Name of the tag",
   "Nieuwe tag maken": "Make a new tag",
   "Nieuwe tag maken: {0}": "Make a new tag: {0}",
-  "Zoek of maak een tag": "Search or make a tag"
+  "Zoek of maak een tag": "Search or make a tag",
+  "Terug naar de lijst": "Back to the list",
+  "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Details of the {0} behind this website and of other companies and organisations: name, address, contact and registration. Choose a row to edit it. You can use them in any text as a variable, such as {1}.",
+  "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "No entities yet. Add one with the Add button: for example a customer, an employer or a club that users belong to.",
+  "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Write a variable in a text on a page (in edit mode): the website fills it in. If you change something here, it works through on all pages. In edit mode the variable itself stays. In the page editor they are also available as a system object (Variable).",
+  "De gebruiker die de pagina bekijkt": "The user who views the page"
 }

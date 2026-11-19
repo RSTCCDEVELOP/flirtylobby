@@ -7536,5 +7536,10 @@
   "Naam van de tag": "اسم الوسم",
   "Nieuwe tag maken": "إنشاء وسم جديد",
   "Nieuwe tag maken: {0}": "إنشاء وسم جديد: {0}",
-  "Zoek of maak een tag": "ابحث عن وسم أو أنشئه"
+  "Zoek of maak een tag": "ابحث عن وسم أو أنشئه",
+  "Terug naar de lijst": "العودة إلى القائمة",
+  "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "بيانات {0} الواقعة وراء هذا الموقع وبيانات الشركات والمؤسسات الأخرى: الاسم والعنوان وجهة الاتصال والتسجيل. اختر صفًا لتعديله. يمكنك استخدامها في أي نص كمتغير، مثل {1}.",
+  "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "لا توجد كيانات بعد. أضف واحدًا بزر إضافة: مثل عميل أو صاحب عمل أو نادٍ ينتمي إليه المستخدمون.",
+  "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "اكتب متغيرًا في نص على صفحة (في وضع التحرير): يملؤه الموقع. إذا غيّرت شيئًا هنا فسيسري على جميع الصفحات. في وضع التحرير يبقى المتغير نفسه. وفي محرر الصفحات تتوفر أيضًا ككائن نظام (متغير).",
+  "De gebruiker die de pagina bekijkt": "المستخدم الذي يعرض الصفحة"
 }

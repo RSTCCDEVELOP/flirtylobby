@@ -7536,5 +7536,10 @@
   "Naam van de tag": "Название тега",
   "Nieuwe tag maken": "Создать новый тег",
   "Nieuwe tag maken: {0}": "Создать новый тег: {0}",
-  "Zoek of maak een tag": "Найти или создать тег"
+  "Zoek of maak een tag": "Найти или создать тег",
+  "Terug naar de lijst": "Назад к списку",
+  "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "Данные {0}, стоящей за этим сайтом, и других компаний и организаций: название, адрес, контакты и регистрация. Выберите строку, чтобы изменить её. Их можно использовать в любом тексте как переменные, например {1}.",
+  "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "Пока нет организаций. Добавьте её кнопкой «Добавить»: например, клиента, работодателя или клуб, к которому относятся пользователи.",
+  "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "Напишите переменную в тексте на странице (в режиме редактирования): сайт подставит значение. Если вы что-то измените здесь, это сработает на всех страницах. В режиме редактирования сама переменная сохраняется. В редакторе страниц они есть и как системный объект (Переменная).",
+  "De gebruiker die de pagina bekijkt": "Пользователь, который просматривает страницу"
 }

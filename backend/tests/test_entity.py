@@ -619,3 +619,18 @@ def test_variables_are_system_objects_for_the_page_editor(admin):
     slugs = set(SystemObject.objects.filter(kind="variable").values_list("slug", flat=True))
     assert "var-organisatie-naam" in slugs and "var-user-email" in slugs
     assert SystemObject.objects.filter(kind="variable").count() == len(entity.VARIABLES)
+
+
+@pytest.mark.django_db
+def test_creator_knows_user_variables_and_leaves_variable_objects_out(admin):
+    admin.put("/api/entity/", {"name": "Studio Test BV"}, format="json")
+    assert "{{user.naam}}" in sitecreator.rules()
+    assert not [o for o in sitecreator.catalog()["objects"] if o["kind"] == "variable"]  # a variable is text, not a section to place
+
+
+@pytest.mark.django_db
+def test_reset_does_not_ask_for_a_system_update_check(admin):
+    from apps.core import reset, sysupdate
+
+    reset.perform()
+    assert sysupdate.status(None)["needed"] is False

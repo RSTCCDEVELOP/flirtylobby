@@ -7536,5 +7536,10 @@
   "Naam van de tag": "टैग का नाम",
   "Nieuwe tag maken": "नया टैग बनाएँ",
   "Nieuwe tag maken: {0}": "नया टैग बनाएँ: {0}",
-  "Zoek of maak een tag": "टैग खोजें या बनाएँ"
+  "Zoek of maak een tag": "टैग खोजें या बनाएँ",
+  "Terug naar de lijst": "सूची पर वापस जाएँ",
+  "Gegevens van de {0} achter deze website en van andere bedrijven en organisaties: naam, adres, contact en registratie. Kies een rij om te bewerken. Je kunt ze in elke tekst gebruiken als variabele, zoals {1}.": "इस वेबसाइट के पीछे की {0} और अन्य कंपनियों व संगठनों का विवरण: नाम, पता, संपर्क और पंजीकरण। संपादित करने के लिए कोई पंक्ति चुनें। आप इन्हें किसी भी टेक्स्ट में वेरिएबल की तरह इस्तेमाल कर सकते हैं, जैसे {1}.",
+  "Nog geen entiteiten. Voeg er een toe met de knop Toevoegen: bijvoorbeeld een klant, een werkgever of een club waar gebruikers bij horen.": "अभी कोई इकाई नहीं है। जोड़ें बटन से एक जोड़ें: उदाहरण के लिए कोई ग्राहक, नियोक्ता या क्लब जिससे उपयोगकर्ता जुड़े हों।",
+  "Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).": "किसी पेज के टेक्स्ट में (संपादन मोड में) एक वेरिएबल लिखें: वेबसाइट उसे भर देती है। यहाँ कुछ बदलने पर वह सभी पेजों पर लागू होता है। संपादन मोड में वेरिएबल जैसा है वैसा ही रहता है। पेज एडिटर में ये सिस्टम ऑब्जेक्ट (वेरिएबल) के रूप में भी उपलब्ध हैं।",
+  "De gebruiker die de pagina bekijkt": "पेज देखने वाला उपयोगकर्ता"
 }
