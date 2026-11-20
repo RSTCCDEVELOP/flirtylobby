@@ -2117,6 +2117,32 @@ def system_info(request):
                      "site": {k: sysdata.get(k, "") for k in ("site_name", "company_name", "frontend_url", "contact_person", "mobile", "contact_email", "support_email", "phone", "address", "kvk", "vat_id")}})
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def system_overview(request):
+    """The page /easy2edit_version: name, version, build, the modules, the licence and the administrators (open to everybody, the owner asked for it).
+    Only the prices are kept for a logged-in superadmin."""
+    from django.conf import settings as dj
+
+    from apps.accounts.models import User
+
+    from . import modules
+
+    on = modules.states()
+    owner = modules.owner_only_keys()
+    mods = [{"key": m["key"], "group": m["group"], "label": m["label"], "enabled": bool(on.get(m["key"], True)), "core": bool(m.get("core")), "plugin": bool(m.get("plugin"))}
+            for m in modules.MODULES if not m.get("hidden") and (m["key"] not in owner or getattr(request.user, "is_superplus", False))]
+    out = {"name": "easy2edit", "version": dj.SYSTEM_VERSION, "build": _build_number(dj), "modules": mods, "admins": None, "license": None}
+    lic = _license_out()  # the licence itself is open to everybody; the prices only to a superadmin
+    keys = ("number", "client", "main_url", "issued_at", "valid_until", "expired", "has", "renew_months", "reseller")
+    staff = request.user.is_authenticated and request.user.is_staff
+    out["license"] = {k: lic.get(k) for k in keys + (("price", "monthly", "quarterly", "yearly") if staff else ())}
+    if True:  # the administrators are open to everybody too (the owner asked for it)
+        out["admins"] = [{"email": u.email, "name": u.get_full_name() or u.display_name, "superadmin_plus": bool(u.is_superadmin_plus), "active": u.is_active}
+                         for u in User.objects.filter(is_staff=True).order_by("-is_superadmin_plus", "email")]
+    return Response(out)
+
+
 # ── Licence for the administrator: costs and how to pay ─────────────────────
 def _admin_only(request):
     from apps.accounts.access import can_admin

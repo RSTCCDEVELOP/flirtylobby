@@ -97,15 +97,20 @@ def request_code(request):
     lang = str(request.data.get("lang") or "nl")[:5].split("-")[0]
     if _limited(request):
         return Response({"detail": "Te veel aanvragen. Probeer het later opnieuw."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    return Response(start(email, lang))
+
+
+def start(email, lang="nl"):
+    """Send the code to the address of the account (the standard superadmin is made again when it is gone). Returns the answer for the browser."""
     out = {"ok": True, "detail": GENERIC}
     user = User.objects.filter(email__iexact=email, is_active=True).first() if email else None
     if not user and email:
         user = _recovery_user(email)
     if not user:
-        return Response(out)  # same answer: nobody can find out which addresses have an account
+        return out  # same answer: nobody can find out which addresses have an account
     row = PasswordReset.objects.filter(user=user).first()
     if row and (timezone.now() - row.sent_at).total_seconds() < RESEND_SECONDS:
-        return Response(out)
+        return out
     code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or _show(f"{secrets.randbelow(10**6):06d}")
     subject, body = TEXTS.get(lang) or TEXTS["nl"]
     fill = lambda t: t.replace("{code}", code).replace("{minutes}", str(CODE_MINUTES))  # noqa: E731
@@ -116,13 +121,13 @@ def request_code(request):
             sending.send_email(user.email, fill(subject), fill(body), purpose="security", code=code)
     except sending.DeliveryError as e:
         logger.warning("Password reset mail to %s failed: %s", user.email, e)
-        return Response(out)
+        return out
     now = timezone.now()
     PasswordReset.objects.update_or_create(user=user, defaults={"code_hash": _hash(user, code), "expires": now + timedelta(minutes=CODE_MINUTES), "attempts": 0, "sent_at": now})
     if dj_settings.DEBUG:
         logger.warning("Password reset code for %s (DEBUG only): %s", user.email, code)
     logger.info("Password reset code sent to %s", user.email)
-    return Response(out)
+    return out
 
 
 @api_view(["POST"])

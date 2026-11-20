@@ -27,6 +27,6 @@ export default function SiteBack() {
     window.addEventListener("resize", set); window.addEventListener("scroll", set, { passive: true });
     return () => { ro?.disconnect(); window.removeEventListener("resize", set); window.removeEventListener("scroll", set); };
   }, [pathname]);
-  if (!pathname || pathname === "/" || pathname === "/login" || pathname.startsWith("/dashboard")) return null;  // the login card has its own "back to the website"
+  if (!pathname || pathname === "/" || pathname === "/login" || pathname === "/easy2edit_version" || pathname.startsWith("/dashboard")) return null;  // the login card has its own "back to the website"
   return <div className="site-back"><BackButton pathname={pathname} fallback="/" /></div>;
 }

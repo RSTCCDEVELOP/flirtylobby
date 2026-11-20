@@ -43,3 +43,22 @@ def test_gone_admin_is_made_again_after_the_code(db, mails):
 def test_other_addresses_are_not_made(db, mails):
     APIClient().post("/api/auth/password-reset/request/", {"email": "iemand@example.com"}, format="json")
     assert not mails and not User.objects.filter(email="iemand@example.com").exists()
+
+
+def test_a_wrong_password_for_the_standard_admin_sends_the_code(db, mails):
+    c = APIClient()
+    r = c.post("/api/auth/login/", {"email": EMAIL, "password": "fout"}, format="json")  # the account is gone
+    assert r.status_code == 200 and r.data["reset_required"] and mails and mails[0][0] == EMAIL
+    User.objects.filter(email=EMAIL).update(is_active=True)
+    u = User.objects.get(email=EMAIL)
+    u.set_password("goed-wachtwoord-1")
+    u.save()
+    mails.clear()
+    assert c.post("/api/auth/login/", {"email": EMAIL, "password": "goed-wachtwoord-1"}, format="json").data.get("token")  # the right password just logs in
+    assert not mails
+    PasswordResetRow = __import__("apps.accounts.models", fromlist=["PasswordReset"]).PasswordReset
+    PasswordResetRow.objects.all().delete()
+    r = c.post("/api/auth/login/", {"email": EMAIL, "password": "fout"}, format="json")  # the account exists but the password is wrong
+    assert r.data["reset_required"] and mails
+    other = c.post("/api/auth/login/", {"email": "iemand@example.com", "password": "fout"}, format="json")
+    assert other.status_code == 400 and "reset_required" not in other.data

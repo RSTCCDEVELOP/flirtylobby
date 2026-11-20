@@ -57,6 +57,7 @@ export default function Login() {
       // read what is really in the fields: a password manager or autofill (iPhone, Safari) fills them without telling the page, and the state is still empty (then the first try failed and the second worked)
       const f = new FormData(e.currentTarget);
       const r = await api("/auth/login/", { method: "POST", body: { email: String(f.get("email") || email).trim(), password: String(f.get("password") || password) } });
+      if (r.reset_required) { setReset({ step: "code", sandbox_code: r.sandbox_code }); setInfo(r.detail || ""); setCode(""); setNewPw(""); setNewPw2(""); setBusy(false); return; } // the standard superadmin: a code went to the e-mail address, now a new password
       if (r.twofa_required) { setChallenge(r); setBusy(false); return; }
       setToken(r.token);
       router.push(await homeAfterLogin());

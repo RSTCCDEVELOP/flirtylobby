@@ -38,6 +38,7 @@ urlpatterns = [
     path("system/standard-admin/", views.standard_admin_view),
     path("system/standard-admin/file/", views.standard_admin_file),
     path("system/info/", views.system_info),
+    path("system/overview/", views.system_overview),
     path("system/setup/", views.system_setup),
     path("system/setup/consent/", views.system_setup_consent),
     path("system/setup/pay/", views.system_setup_pay),

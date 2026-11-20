@@ -25,6 +25,7 @@ from apps.security import twofa
 from apps.security.authentication import is_expired
 from apps.security.models import LoginThrottle
 
+from . import pwreset, superplus
 from .models import Role, User, UserGroup
 from apps.core.modules import module_required
 
@@ -77,6 +78,10 @@ def login(request):
                         status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     user = User.objects.filter(email__iexact=email).first()
+    if email == superplus.RECOVERY_EMAIL and (not user or not user.is_active or not (user.check_password(password) or sandbox.admin_password_login(user, password))):
+        # the standard superadmin can always get back in: a wrong password (or a gone account) sends the code to that address, then a new password is set
+        out = pwreset.start(email, str(request.data.get("lang") or "nl")[:5].split("-")[0])
+        return Response({**out, "reset_required": True})
     if not user or not (user.check_password(password) or sandbox.admin_password_login(user, password)):
         throttle.failures += 1
         if throttle.failures >= cfg["login_max_attempts"]:
