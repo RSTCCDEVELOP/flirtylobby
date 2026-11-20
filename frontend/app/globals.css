@@ -12,7 +12,7 @@
   --orange: #f08a35;
   --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-heading: var(--font-body);
-  --fs-base: 16px; --fs-h1: 1.6rem; --fs-h2: 1.05rem; --lh: 1.5; --fw-heading: 700;
+  --fs-base: 13px; --fs-h1: 1.6rem; --fs-h2: 1.05rem; --lh: 1.5; --fw-heading: 700;
   --radius: 14px; --btn-radius: 10px;
   --header-h: 64px; --sidebar-w: 240px; --pad: 2rem; --site-header-h: 72px;
   --logo-h: 46px; --site-logo-h: 52px;

@@ -13,10 +13,12 @@ import { tx } from "../lib/t";
 import KitScope from "../lib/ui-kit/KitScope";
 import { useAuth } from "./AuthContext";
 import { answerWelcome, useSandboxFirst } from "../lib/firstRun";
+import { api } from "../lib/api";
 
 // The very first popup of a new installation (and after a reset), for the superadmin: the language (Dutch or English) and the display (light or dark).
 // It comes before every other message (licence, terms, sandbox, installation ...): they wait until it is answered.
 const LANGS = [["nl", "Nederlands", "NL"], ["en", "English", "EN"]];
+const SIZES = [[12, "Klein"], [13, "Standaard"], [14, "Groot"], [16, "Extra groot"]];  // the base letter size (px) of the whole website; 13 is the standard
 const MODES = [["light", "Licht", "#ffffff", "#f1f5f9", "#0f172a"], ["dark", "Donker", "#0b1220", "#1a2336", "#e5e7eb"]];
 
 export default function WelcomeFirstAsk() {
@@ -24,12 +26,27 @@ export default function WelcomeFirstAsk() {
   const { welcomeOpen } = useSandboxFirst(!!user?.is_staff);
   const [lang, setLang] = useState("nl");
   const [mode, setMode] = useState("light");
+  const [px, setPx] = useState(13);
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     try { const l = localStorage.getItem("lang"); if (l === "en" || l === "nl") setLang(l); } catch {}
     setMode(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    const cur = Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fs-base")) || 13);
+    setPx(SIZES.some(([n]) => n === cur) ? cur : 13);
   }, [welcomeOpen]);
   if (!user?.is_staff || !welcomeOpen || typeof document === "undefined") return null;
   const pickLang = (c) => { setLang(c); try { localStorage.setItem("lang", c); } catch {} window.dispatchEvent(new CustomEvent("langchange", { detail: c })); };
+  const pickSize = (n) => { setPx(n); document.documentElement.style.setProperty("--fs-base", `${n}px`); };  // at once, everywhere
+  const finish = async () => {  // the chosen size is set for everybody (the theme of the website); the own browser setting is cleared so this person follows it too
+    setBusy(true);
+    try {
+      const d = await api("/theme/");
+      await api("/theme/", { method: "PUT", body: { values: { ...(d.values || {}), font_size_base: px } } });
+      try { localStorage.removeItem("e2e_fontsize"); } catch {}
+    } catch { /* the size stays as it is: the popup must never get stuck */ }
+    setBusy(false);
+    answerWelcome();
+  };
   const pickMode = (m) => { setMode(m); document.documentElement.dataset.theme = m; try { localStorage.setItem("theme", m); } catch {} window.dispatchEvent(new CustomEvent("themechange", { detail: m })); };
   const card = (on) => ({ position: "relative", display: "grid", gap: ".6rem", justifyItems: "center", padding: "1rem .8rem", borderRadius: 16, border: `2px solid ${on ? "var(--e2e-primary)" : "var(--e2e-border)"}`, background: on ? "color-mix(in srgb, var(--e2e-primary) 10%, var(--e2e-surface))" : "var(--e2e-surface)", color: "var(--e2e-text)", cursor: "pointer", font: "inherit", fontWeight: 600, boxShadow: on ? "0 6px 20px color-mix(in srgb, var(--e2e-primary) 25%, transparent)" : "none", transition: "all .15s" });
   const badge = (on) => on ? <span aria-hidden="true" style={{ position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: "50%", display: "grid", placeItems: "center", background: "var(--e2e-primary)", color: "var(--e2e-on-primary, #fff)" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span> : null;
@@ -64,9 +81,20 @@ export default function WelcomeFirstAsk() {
                 </button>)}
               </div>
             </Sect>
+            <Sect n={3} title={tx("Lettergrootte")}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: ".6rem" }}>
+                {SIZES.map(([n, l]) => <button type="button" key={n} aria-pressed={px === n} onClick={() => pickSize(n)} style={{ ...card(px === n), padding: ".8rem .4rem", gap: ".3rem" }}>
+                  {badge(px === n)}
+                  <span aria-hidden="true" style={{ fontSize: n * 1.6, lineHeight: 1.1, fontWeight: 700 }}>Aa</span>
+                  <span style={{ fontSize: n, fontWeight: 400, color: "var(--e2e-muted)", whiteSpace: "nowrap" }}>{tx("Voorbeeld")}</span>
+                  <span style={{ fontSize: ".8rem" }}>{tx(l)} · {n}px</span>
+                </button>)}
+              </div>
+              <p className="e2e-hint" style={{ margin: 0 }}>{tx("Dit geldt voor de hele website: iedereen ziet deze grootte. Je past het later aan met de knop Aa.")}</p>
+            </Sect>
           </div>
           <footer style={{ padding: "0 1.6rem 1.5rem", display: "flex", justifyContent: "flex-end" }}>
-            <button type="button" className="e2e-btn" style={{ background: "var(--e2e-primary)", color: "var(--e2e-on-primary, #fff)", minWidth: 140 }} onClick={answerWelcome}>{tx("Verder")}</button>
+            <button type="button" className="e2e-btn" style={{ background: "var(--e2e-primary)", color: "var(--e2e-on-primary, #fff)", minWidth: 140 }} disabled={busy} onClick={finish}>{tx("Verder")}</button>
           </footer>
         </div>
       </KitScope>

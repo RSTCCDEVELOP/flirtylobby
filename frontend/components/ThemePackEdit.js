@@ -41,7 +41,7 @@ function FontPreview({ vals, fonts }) {
     if (!document.querySelector(`link[href="${url}"]`)) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = url; document.head.appendChild(l); }
   }, [body, head, fonts]);
   const fam = (n) => (n && n !== "System" ? `"${n}", system-ui, sans-serif` : "system-ui, sans-serif");
-  const base = Number(vals.font_size_base) || 16, h1 = Number(vals.font_size_h1) || 1.6, h2 = Number(vals.font_size_h2) || 1.05, lh = Number(vals.line_height) || 1.5;
+  const base = Number(vals.font_size_base) || 13, h1 = Number(vals.font_size_h1) || 1.6, h2 = Number(vals.font_size_h2) || 1.05, lh = Number(vals.line_height) || 1.5;
   return (
     <div className="font-preview" style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "1rem 1.2rem", margin: ".2rem 0 1rem", background: "var(--card)" }}>
       <div style={{ fontFamily: fam(head), fontWeight: vals.heading_weight || 700, fontSize: `${h1 * base}px`, lineHeight: 1.2 }}>{tx("Zo ziet een kop eruit")}</div>

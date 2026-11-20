@@ -15,7 +15,7 @@ import { tx } from "../lib/t";
 // The button "Aa": the size of the letters of the whole website (pages, admin and dashboard), for everybody, also without a login (the theme setting "font_tool").
 // The size a person picks is theirs: it is kept in this browser and shows at once everywhere (the base size --fs-base, 12 to 22 px; everything in rem follows it).
 // A person who may change the theme can also set it as the standard for the whole website.
-const MIN = 12, MAX = 22, DEFAULT = 16, KEY = "e2e_fontsize";
+const MIN = 12, MAX = 22, DEFAULT = 13, KEY = "e2e_fontsize";
 const readOwn = () => { try { const v = Number(localStorage.getItem(KEY)); return v >= MIN && v <= MAX ? v : null; } catch { return null; } };
 const writeOwn = (v) => { try { v == null ? localStorage.removeItem(KEY) : localStorage.setItem(KEY, String(v)); } catch {} };
 
