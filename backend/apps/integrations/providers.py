@@ -114,6 +114,12 @@ def test_bird(c):
     return _http_get(f"https://api.bird.com/workspaces/{ws}/channels", {"Authorization": f"AccessKey {c['access_key']}"})
 
 
+def test_spryng(c):
+    from . import spryng
+
+    return spryng.test(c)
+
+
 def test_s3(c):
     import boto3
     from botocore.config import Config
@@ -242,6 +248,12 @@ PROVIDERS = {
     "mollie": {"label": "Mollie", "test": test_mollie, "fields": [f("api_key", "API-sleutel (live_ of test_)", secret=True)]},
     "postmark": {"label": "Postmark", "test": test_postmark, "fields": [f("server_token", "Server-token", secret=True), f("from_email", "Afzender (e-mailadres, gevalideerd bij Postmark)", required=False)]},
     "bird": {"label": "Bird", "test": test_bird, "fields": [f("workspace_id", "Workspace-ID"), f("access_key", "Access key", secret=True), f("sms_channel_id", "SMS-kanaal-ID (voor het versturen van codes)", required=False)]},
+    "spryng": {"label": "Spryng (sms)", "test": test_spryng, "fields": [
+        f("api_key", "API-sleutel (Spryng, Developer Tools → API Keys)", secret=True),
+        f("account_reference", "Account-nummer (accountReference, Spryng → Mijn account)"),
+        f("originator", "Afzender (max. 11 letters of cijfers; leeg = de afzender van je Spryng-account)", default="", required=False),
+        f("usage", "Gebruik van deze koppeling", kind="select", default="verification",
+          options=[{"value": "verification", "label": "Alleen voor verificatiecodes (inloggen, aanmelden, akkoord, wachtwoord vergeten)"}, {"value": "messages", "label": "Voor verificatiecodes én berichten (meldingen, herinneringen)"}], required=False)]},
     "smtp": {"label": "E-mail (SMTP)", "test": test_smtp, "fields": [
         f("host", "Server"), f("port", "Poort", default="587"),
         f("security", "Beveiliging", kind="select", default="starttls",

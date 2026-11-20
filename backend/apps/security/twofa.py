@@ -5,7 +5,7 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
-"""Two-step verification: code generation, delivery (e-mail via Postmark/SMTP, SMS via Bird) and checking."""
+"""Two-step verification: code generation, delivery (e-mail via Postmark/SMTP, SMS via Spryng or Bird) and checking."""
 import hashlib
 import hmac
 import json
@@ -56,7 +56,7 @@ def availability():
     mails/sms are simulated and count as available. Nothing is offered for a service that is not in use."""
     from apps.sandbox import service as sandbox
 
-    email, sms = _integration(["postmark", "smtp"]), _integration(["bird"])
+    email, sms = _integration(["postmark", "smtp"]), _integration(SMS_PROVIDERS)
     return {"email": email.name if email else ("Sandbox" if sandbox.active("email") else None),
             "sms": sms.name if sms else ("Sandbox" if sandbox.active("sms") else None)}
 
@@ -217,18 +217,42 @@ def _post_json(url, headers, payload):
         raise DeliveryError(f"Verzenden mislukt: {e}")
 
 
-def send_sms(phone, text):
+SMS_PROVIDERS = ["spryng", "bird"]  # the first one that is linked and on sends the text messages
+
+
+def sms_usage():
+    """{'provider': name or None, 'verification': bool, 'messages': bool}: what the linked SMS service may be used for (Spryng has a setting for it; Bird is for verification only)."""
+    from apps.integrations import spryng
+
+    obj = _integration(SMS_PROVIDERS)
+    if not obj:
+        return {"provider": None, "verification": False, "messages": False}
+    return {"provider": obj.name, "verification": True, "messages": obj.provider == "spryng" and spryng.usage(obj.config) == "messages"}
+
+
+def send_sms(phone, text, purpose="verification"):
+    """purpose: 'verification' (a code) or 'message' (any other text message: only when the link is set to that)."""
+    from apps.integrations import spryng
     from apps.sandbox import service as sandbox
 
     if sandbox.active("sms"):
         sandbox.capture("sms", phone, "", text)
         return
-    obj = _integration(["bird"])
+    obj = _integration(SMS_PROVIDERS)
     if not obj:
         if dj_settings.DEBUG:
             return
         raise DeliveryError("SMS is niet gekoppeld.")
     c = obj.config
+    if obj.provider == "spryng":
+        if not spryng.allows(c, purpose):
+            raise DeliveryError("Deze SMS-koppeling (Spryng) mag alleen voor verificatiecodes gebruikt worden. Zet het gebruik op berichten bij API keys.")
+        try:
+            return spryng.send(c, phone, text, purpose)
+        except spryng.SpryngError as e:
+            raise DeliveryError(str(e))
+    if purpose != "verification":
+        raise DeliveryError("Bird is alleen gekoppeld voor verificatiecodes.")
     if not c.get("sms_channel_id"):
         raise DeliveryError("Bird: SMS-kanaal-ID ontbreekt in de koppeling.")
     ws = urllib.parse.quote(c["workspace_id"], safe="")

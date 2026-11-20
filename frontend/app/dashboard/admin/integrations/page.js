@@ -36,6 +36,7 @@ export default function Integrations() {
   const [modal, setModal] = useState(null);
   const view = useView("integrations");
   const [browse, setBrowse] = useState(null); // S3 link whose files are being browsed
+  const [smsT, setSmsT] = useState(null); // the sms screens: {i, step: "phone" | "code" | "done", phone, token, code, sandbox_code, error, busy}
 
   const load = useCallback(() => {
     resetIntegrationsCache();
@@ -115,6 +116,24 @@ export default function Integrations() {
     setModal((m) => ({ ...m, config: { ...m.config, [k]: "__remove__" } }));
   };
 
+  // the SMS screens: 1. a test code is sent to a phone, 2. the code that arrived is entered (the same steps as a verification)
+  const smsSend = async (e) => {
+    e?.preventDefault();
+    setSmsT((t) => ({ ...t, busy: true, error: "" }));
+    try {
+      const r = await api(`/admin/integrations/${smsT.i.id}/sms-test/`, { method: "POST", body: { phone: smsT.phone } });
+      setSmsT((t) => ({ ...t, busy: false, step: "code", token: r.token, sandbox_code: r.sandbox_code || "", code: "" }));
+    } catch (err) { setSmsT((t) => ({ ...t, busy: false, error: errorText(err) })); }
+  };
+  const smsCheck = async (e) => {
+    e?.preventDefault();
+    setSmsT((t) => ({ ...t, busy: true, error: "" }));
+    try {
+      await api(`/admin/integrations/${smsT.i.id}/sms-verify/`, { method: "POST", body: { token: smsT.token, code: smsT.code } });
+      setSmsT((t) => ({ ...t, busy: false, step: "done" }));
+      load();
+    } catch (err) { setSmsT((t) => ({ ...t, busy: false, error: errorText(err) })); }
+  };
   const toggle = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "PATCH", body: { enabled: !i.enabled } }));
   const test = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/test/`, { method: "POST" }));
   const remove = async (i) => (await confirmDialog(tx("Koppeling \"{0}\" verwijderen? Functies die ervan afhangen stoppen.", i.name), { danger: true })) && act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "DELETE" }));
@@ -193,10 +212,12 @@ export default function Integrations() {
                   const label = mf.options?.find((o) => o.value === m)?.label;
                   return <span className="api-model" title={tx("Actief model")}>{tx("Model")}: <strong>{label || m}</strong>{label && label !== m && <code> {m}</code>}{!i.config?.model && <small className="muted"> ({tx("standaard")})</small>}</span>;
                 })()}
+                {i.provider === "spryng" && <span className="api-model" title={tx("Waarvoor deze koppeling gebruikt mag worden")}>{tx("Gebruik")}: <strong>{i.config?.usage === "messages" ? tx("verificatie en berichten") : tx("alleen verificatiecodes")}</strong></span>}
                 <span className={`int-msg ${st}`}>{i.last_test_message || STATUS_TEXT[st]}</span>
               </div>
               <div className="api-actions">
                 {i.provider === "s3" && L >= 3 && <button className="btn sm" onClick={() => setBrowse(i)} disabled={!i.enabled} title={i.enabled ? "" : tx("Zet de koppeling eerst aan")}>{tx("Bladeren")}</button>}
+                {L >= 2 && (i.provider === "spryng" || i.provider === "bird") && <button className="btn sm" onClick={() => setSmsT({ i, step: "phone", phone: user?.phone || "", own: !!user?.phone, token: "", code: "", sandbox_code: "", error: "", busy: false })} disabled={!i.enabled} title={i.enabled ? "" : tx("Zet de koppeling eerst aan")}>{tx("Sms-test")}</button>}
                 {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
                 {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
                 {L >= 3 && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
@@ -208,6 +229,32 @@ export default function Integrations() {
       </div>
       </Paged>
       </Collapsible>
+
+      {smsT && (
+        <div className="overlay" onClick={() => setSmsT(null)}>
+          <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={smsT.step === "phone" ? smsSend : smsCheck}>
+            <h2>{tx("Sms-test")}: {smsT.i.name}</h2>
+            {smsT.step === "phone" && (<>
+              <p className="muted" style={{ margin: 0, fontSize: ".9rem" }}>{tx("Er wordt een testcode per sms gestuurd. Vul die daarna in om te controleren dat de koppeling werkt.")}</p>
+              <label>{tx("Mobiel nummer")}<input type="tel" inputMode="tel" autoComplete="tel" placeholder="+31612345678" required autoFocus={!smsT.own} value={smsT.phone} onChange={(e) => setSmsT({ ...smsT, phone: e.target.value, own: false })} /></label>
+              <span className="muted" style={{ fontSize: ".85rem" }}>{smsT.own ? tx("Dit is het nummer van je eigen profiel. Pas het aan om een ander nummer te testen.") : user?.phone ? tx("Je kunt ook het nummer van je profiel gebruiken: {0}", user.phone) : tx("Je hebt geen mobiel nummer in je profiel: vul hier het nummer in waarmee je wilt testen.")}</span>
+            </>)}
+            {smsT.step === "code" && (<>
+              <p className="muted" style={{ margin: 0, fontSize: ".9rem" }}>{tx("De code is verstuurd naar {0}. Vul hem hieronder in (geldig 10 minuten).", smsT.phone)}</p>
+              {smsT.sandbox_code && <div className="alert">{tx("Sandbox: er is niets verstuurd. De code is")} <strong>{smsT.sandbox_code}</strong></div>}
+              <label>{tx("Code")}<input inputMode="numeric" autoComplete="one-time-code" placeholder="123-456" maxLength={7} required autoFocus value={smsT.code} onChange={(e) => setSmsT({ ...smsT, code: e.target.value })} /></label>
+              <button type="button" className="btn sm" onClick={smsSend} disabled={smsT.busy}>{tx("Code opnieuw versturen")}</button>
+            </>)}
+            {smsT.step === "done" && <div className="alert ok">{tx("De sms is aangekomen en de code klopt: de koppeling werkt.")}</div>}
+            {smsT.error && <div className="alert">{smsT.error}</div>}
+            <div className="row">
+              <button type="button" className="btn" onClick={() => setSmsT(null)}>{smsT.step === "done" ? tx("Sluiten") : tx("Annuleren")}</button>
+              {smsT.step === "phone" && <button className="btn primary" disabled={smsT.busy}>{smsT.busy ? tx("Versturen…") : tx("Stuur testcode")}</button>}
+              {smsT.step === "code" && <button className="btn primary" disabled={smsT.busy}>{smsT.busy ? tx("Controleren…") : tx("Controleer code")}</button>}
+            </div>
+          </form>
+        </div>
+      )}
 
       {browse && <S3Browser integration={browse} onClose={() => setBrowse(null)} />}
 

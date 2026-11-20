@@ -14,6 +14,7 @@ ENV_LINKS = {
     "postmark": ("postmark-easy2edit", "Postmark easy2edit", {"server_token": "EASY2EDIT_POSTMARK_TOKEN", "from_email": "EASY2EDIT_POSTMARK_FROM"}),
     "stripe": ("stripe-easy2edit", "Stripe easy2edit", {"secret_key": "EASY2EDIT_STRIPE_KEY"}),
     "anthropic": ("claude-easy2edit", "Claude easy2edit", {"api_key": "EASY2EDIT_ANTHROPIC_KEY"}),
+    "spryng": ("spryng-easy2edit", "Spryng easy2edit", {"api_key": "EASY2EDIT_SPRYNG_KEY", "account_reference": "EASY2EDIT_SPRYNG_ACCOUNT", "originator": "EASY2EDIT_SPRYNG_FROM", "usage": "EASY2EDIT_SPRYNG_USAGE"}),  # sms: made when the key is set in the environment
 }
 SECRETS = ("api_key", "secret_key", "server_token", "access_key", "access_key_id", "secret_access_key", "token", "password")
 

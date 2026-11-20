@@ -73,6 +73,73 @@ class IntegrationViewSet(viewsets.ModelViewSet):
         logger.info("Integration test %s: %s", obj.slug, "ok" if ok else "failed")
         return Response(self.get_serializer(obj).data)
 
+    # ── the SMS screens: send a test code to a phone and enter it (the same steps as a verification), for the SMS links ──
+    SMS_SALT = "integration-sms-test"
+
+    @action(detail=True, methods=["post"], url_path="sms-test")
+    def sms_test(self, request, pk=None):
+        """Step 1: send a test code by SMS through this link. {phone} -> {token, sandbox_code?}. The token (valid 10 minutes) goes back with the code in sms-verify."""
+        import hashlib
+        import secrets
+
+        from django.core import signing
+        from django.core.cache import cache
+
+        from apps.sandbox import service as sandbox
+        from apps.security import twofa
+
+        from . import spryng
+
+        obj = self.get_object()
+        if obj.provider not in ("spryng", "bird"):
+            return Response({"detail": "Deze koppeling verstuurt geen sms."}, status=400)
+        if cache.get(f"smstest:{request.user.pk}"):
+            return Response({"detail": "Wacht even voordat je opnieuw een code laat versturen."}, status=429)
+        phone = str(request.data.get("phone") or "").strip()
+        try:
+            spryng.number(phone)
+        except spryng.SpryngError as e:
+            return Response({"detail": str(e)}, status=400)
+        code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
+        shown = f"{code[:3]}-{code[3:]}" if len(code) == 6 and code.isdigit() else code
+        text = f"easy2edit testcode: {shown}"
+        out = {}
+        try:
+            if sandbox.code_on_screen():
+                out["sandbox_code"] = shown  # nothing is sent: the screen shows the code
+            elif obj.provider == "spryng":
+                spryng.send(obj.config, phone, text)
+            else:
+                twofa.send_sms(phone, text)
+        except (spryng.SpryngError, twofa.DeliveryError) as e:
+            return Response({"detail": str(e)}, status=502)
+        cache.set(f"smstest:{request.user.pk}", 1, 30)
+        digest = hashlib.sha256(f"{pk}:{code}:{request.user.pk}".encode()).hexdigest()
+        out["token"] = signing.dumps({"id": obj.pk, "h": digest}, salt=self.SMS_SALT)
+        logger.info("SMS test code sent through %s", obj.slug)
+        return Response(out)
+
+    @action(detail=True, methods=["post"], url_path="sms-verify")
+    def sms_verify(self, request, pk=None):
+        """Step 2: the code that arrived. {token, code} -> {ok}. Marks the link as tested when the code is right."""
+        import hashlib
+        import hmac
+
+        from django.core import signing
+
+        obj = self.get_object()
+        try:
+            data = signing.loads(str(request.data.get("token") or ""), salt=self.SMS_SALT, max_age=600)
+        except signing.BadSignature:
+            return Response({"detail": "De code is verlopen. Vraag een nieuwe aan."}, status=400)
+        code = str(request.data.get("code") or "").replace("-", "").replace(" ", "").strip()
+        want = hashlib.sha256(f"{pk}:{code}:{request.user.pk}".encode()).hexdigest()
+        if data.get("id") != obj.pk or not hmac.compare_digest(str(data.get("h")), want):
+            return Response({"detail": "De code is onjuist."}, status=400)
+        obj.last_test_ok, obj.last_test_message, obj.last_test_at = True, "Sms-test gelukt: de code kwam aan.", timezone.now()
+        obj.save(update_fields=["last_test_ok", "last_test_message", "last_test_at"])
+        return Response({"ok": True, **{"integration": self.get_serializer(obj).data}})
+
 
 @api_view(["POST"])
 @permission_classes([has_level("integrations", "edit"), module_required("integrations")])
