@@ -26,7 +26,7 @@ class IntegrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Integration
-        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "in_installation", "config",
+        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "in_installation", "always_on", "config",
                   "last_test_ok", "last_test_at", "last_test_message"]
         read_only_fields = ["last_test_ok", "last_test_at", "last_test_message"]
 
@@ -45,6 +45,19 @@ class IntegrationSerializer(serializers.ModelSerializer):
         if req is not None and not req.user.is_staff:
             return self.instance.in_installation if self.instance is not None else False
         return value
+
+    def validate_always_on(self, value):
+        """Only a superadmin+ may say that a link is always on (or take that off): it is what keeps the installation working."""
+        req = self.context.get("request")
+        if req is not None and not getattr(req.user, "is_superplus", False):
+            return self.instance.always_on if self.instance is not None else False
+        return value
+
+    def validate(self, attrs):
+        inst = self.instance
+        if inst is not None and attrs.get("enabled") is False and attrs.get("always_on", inst.always_on):
+            raise serializers.ValidationError({"enabled": "Deze koppeling staat altijd aan (nodig voor de installatie). Zet eerst Altijd aan uit."})
+        return super().validate(attrs)
 
     def get_provider_label(self, obj):
         return providers.PROVIDERS.get(obj.provider, {}).get("label", obj.provider)

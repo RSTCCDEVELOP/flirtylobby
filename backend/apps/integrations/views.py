@@ -51,6 +51,10 @@ class IntegrationViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         obj = self.get_object()
+        if obj.enabled:
+            return Response({"detail": "Zet de koppeling eerst uit (Wijzig) voordat je hem verwijdert."}, status=400)
+        if (obj.always_on or obj.in_installation) and not getattr(request.user, "is_superplus", False):
+            return Response({"detail": "Alleen een superadmin+ kan een systeemkoppeling verwijderen."}, status=403)
         if obj.provider == "s3":
             from apps.medialib.models import MediaItem
 
@@ -91,28 +95,40 @@ class IntegrationViewSet(viewsets.ModelViewSet):
         from . import spryng
 
         obj = self.get_object()
-        if obj.provider not in ("spryng", "bird"):
+        if obj.provider not in ("spryng", "seven", "bird"):
             return Response({"detail": "Deze koppeling verstuurt geen sms."}, status=400)
         if cache.get(f"smstest:{request.user.pk}"):
             return Response({"detail": "Wacht even voordat je opnieuw een code laat versturen."}, status=429)
         phone = str(request.data.get("phone") or "").strip()
         try:
-            spryng.number(phone)
+            phone = spryng.number(phone)  # +31612345678
         except spryng.SpryngError as e:
             return Response({"detail": str(e)}, status=400)
+        saved = ""
+        if not str(getattr(request.user, "phone", "") or "").strip():  # a number that is typed here is kept in the profile of the login (only when there is none yet), so it is filled in next time
+            request.user.phone = phone[:20]
+            request.user.save(update_fields=["phone"])
+            saved = request.user.phone
         code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
         shown = f"{code[:3]}-{code[3:]}" if len(code) == 6 and code.isdigit() else code
         text = f"easy2edit testcode: {shown}"
-        out = {}
+        out = {"phone_saved": saved} if saved else {}
         try:
             if sandbox.code_on_screen():
                 out["sandbox_code"] = shown  # nothing is sent: the screen shows the code
-            elif obj.provider == "spryng":
-                spryng.send(obj.config, phone, text)
             else:
-                twofa.send_sms(phone, text)
+                sent = twofa.send_via(obj, phone, text)  # this very link (not the first one that is on)
+                if obj.provider == "seven" and isinstance(sent, dict):
+                    from . import seven
+
+                    state, err_code = seven.delivery(obj.config, sent.get("id"))
+                    if state in ("REJECTED", "FAILED", "EXPIRED", "NOTDELIVERED", "UNDELIVERED"):
+                        raise twofa.DeliveryError(f"seven.io heeft het bericht aangenomen, maar de operator heeft het niet bezorgd ({state}, foutcode {err_code or '?'}). Het tegoed kan toch afgeschreven zijn. Neem contact op met seven.io (support@seven.io) en noem het nummer {phone}.")
         except (spryng.SpryngError, twofa.DeliveryError) as e:
-            return Response({"detail": str(e)}, status=502)
+            # the reason is kept on the link too: the card shows it (red dot and the message)
+            obj.last_test_ok, obj.last_test_message, obj.last_test_at = False, f"Sms-test mislukt: {e}"[:300], timezone.now()
+            obj.save(update_fields=["last_test_ok", "last_test_message", "last_test_at"])
+            return Response({"detail": str(e), **({"phone_saved": saved} if saved else {})}, status=502)
         cache.set(f"smstest:{request.user.pk}", 1, 30)
         digest = hashlib.sha256(f"{pk}:{code}:{request.user.pk}".encode()).hexdigest()
         out["token"] = signing.dumps({"id": obj.pk, "h": digest}, salt=self.SMS_SALT)

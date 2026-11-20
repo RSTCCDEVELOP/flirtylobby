@@ -63,7 +63,7 @@ def apply(force=False):
     if force or any(slug not in existing or any(not str((existing[slug].config or {}).get(k) or "").strip() for k in _secret_fields(str(r.get("provider") or ""))) for slug, r in rows.items()):
         remote = _remote()  # the keys: only asked when a link is missing or has a key that is still empty
     for slug, r in remote.items():
-        rows.setdefault(slug, {k: r.get(k) for k in ("slug", "provider", "name", "superadmin_only")})
+        rows.setdefault(slug, {k: r.get(k) for k in ("slug", "provider", "name", "superadmin_only", "always_on")})
     out = []
     for slug, row in rows.items():
         prov = str(row.get("provider") or "")
@@ -85,6 +85,8 @@ def apply(force=False):
             if not changed and not force:
                 continue
             obj.config, obj.in_installation = cfg, True
+            if row.get("always_on"):
+                obj.always_on, obj.enabled = True, True  # needed to finish the installation: on, without a password
             if force:
                 obj.enabled = True
             obj.save()
@@ -100,6 +102,6 @@ def capture():
     (an account name, a bucket): all of that comes from the easy2edit server. Returns the slugs."""
     from .models import Integration
 
-    rows = [{"slug": o.slug, "provider": o.provider, "name": o.name, "superadmin_only": o.superadmin_only} for o in Integration.objects.filter(in_installation=True).order_by("id")]
+    rows = [{"slug": o.slug, "provider": o.provider, "name": o.name, "superadmin_only": o.superadmin_only, **({"always_on": True} if o.always_on else {})} for o in Integration.objects.filter(in_installation=True).order_by("id")]  # (always_on only when it is on)
     PATH.write_text(json.dumps({"format": "default-links", "version": 2, "note": "Only the shape of the links. No keys and no settings in here: they come from the easy2edit server (Site manager).", "links": rows}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     return [r["slug"] for r in rows]

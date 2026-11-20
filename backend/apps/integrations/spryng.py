@@ -36,7 +36,10 @@ def allows(c, purpose):
 
 def number(phone):
     """International number with a + (+31612345678). Raises SpryngError when it is not a usable number."""
-    n = re.sub(r"\D", "", str(phone or ""))
+    raw = str(phone or "").strip()
+    n = re.sub(r"\D", "", raw)
+    if not (raw.startswith("+") or n.startswith("00")):  # a number without a country code (06 12345678) cannot be sent: it would go nowhere
+        raise SpryngError("Begin het nummer met + en het landnummer, bijvoorbeeld +31612345678.")
     if n.startswith("00"):
         n = n[2:]
     if len(n) < 8 or len(n) > 15:
@@ -106,5 +109,10 @@ def test(c):
     except SpryngError as e:
         return False, str(e)
     bal = (d.get("available") if isinstance(d, dict) else None) or ((d.get("data") or {}).get("available") if isinstance(d, dict) else None)
+    try:
+        if bal not in (None, "") and float(bal) <= 0:
+            return False, "Geen tegoed meer: waardeer het account op, anders worden er geen sms-berichten aangeboden."
+    except (TypeError, ValueError):
+        pass
     what = "alleen verificatiecodes" if usage(c) == "verification" else "verificatie en berichten"
     return True, f"Verbinding gelukt{f' (tegoed {bal})' if bal not in (None, '') else ''}. Gebruik: {what}."

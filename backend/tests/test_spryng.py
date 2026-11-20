@@ -32,6 +32,13 @@ class FakeRes:
         return json.dumps(self.body).encode()
 
 
+@pytest.fixture(autouse=True)
+def fresh_cache():
+    from django.core.cache import cache
+
+    cache.clear()  # (the wait of 30 seconds between two test codes)
+
+
 @pytest.fixture
 def calls(monkeypatch):
     sent = []
@@ -44,9 +51,10 @@ def calls(monkeypatch):
     return sent
 
 
-def link(db, usage="verification", enabled=True):
+def link(db, usage="verification", enabled=True, tested=True):
     o = Integration(slug="spryng", name="Spryng", provider="spryng", enabled=enabled)
     o.config = {"api_key": "sk-test", "account_reference": "123456", "originator": "Mijn Bedrijf!", "usage": usage}
+    o.last_test_ok = True if tested else None  # SMS is only offered for a link that passed its online test
     o.save()
     return o
 
@@ -120,3 +128,39 @@ def test_an_unverified_account_gets_a_clear_message(db, monkeypatch):
     with pytest.raises(spryng.SpryngError) as e:
         spryng.send(link(db).config, "+31612345678", "x")
     assert "proefaccount" in str(e.value)
+
+
+def test_a_link_that_is_always_on_is_switched_on_at_start_and_cannot_be_switched_off(db):
+    from apps.integrations import activation
+
+    o = link(db, enabled=False)
+    assert activation.ensure_always_on() == []  # not marked: nothing happens
+    Integration.objects.filter(pk=o.pk).update(always_on=True)
+    assert activation.ensure_always_on() == ["spryng"]
+    o.refresh_from_db()
+    assert o.enabled
+    admin = User.objects.create(username="a", email="a@example.com", is_staff=True, is_superuser=True, is_superadmin_plus=True)
+    c = APIClient()
+    c.force_authenticate(admin)
+    off = c.patch(f"/api/admin/integrations/{o.pk}/", {"enabled": False}, format="json")
+    assert off.status_code == 400
+    ok = c.patch(f"/api/admin/integrations/{o.pk}/", {"always_on": False, "enabled": False}, format="json")  # first take Altijd aan off
+    assert ok.status_code == 200
+    Integration.objects.filter(pk=o.pk).update(always_on=True, enabled=False, config_encrypted="")
+    assert activation.ensure_always_on() == []  # without a key there is nothing to switch on
+
+
+def test_delete_needs_the_link_off_and_a_system_link_needs_a_superadmin_plus(db):
+    o = link(db, enabled=True)
+    plain = User.objects.create(username="s", email="s@example.com", is_staff=True, is_superuser=True)
+    plus = User.objects.create(username="p", email="p@example.com", is_staff=True, is_superuser=True, is_superadmin_plus=True)
+    c = APIClient()
+    c.force_authenticate(plus)
+    assert c.delete(f"/api/admin/integrations/{o.pk}/").status_code == 400  # on: first switch it off
+    Integration.objects.filter(pk=o.pk).update(enabled=False, always_on=True)
+    c.force_authenticate(plain)
+    assert c.delete(f"/api/admin/integrations/{o.pk}/").status_code == 403  # a system link: superadmin+ only
+    assert c.patch(f"/api/admin/integrations/{o.pk}/", {"always_on": False}, format="json").data["always_on"] is True  # a superadmin cannot take it off
+    c.force_authenticate(plus)
+    assert c.patch(f"/api/admin/integrations/{o.pk}/", {"always_on": False}, format="json").status_code == 200
+    assert c.delete(f"/api/admin/integrations/{o.pk}/").status_code == 204

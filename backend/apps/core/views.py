@@ -2143,6 +2143,15 @@ def system_overview(request):
     return Response(out)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def system_sms_ready(request):
+    """Is SMS offered at all (a link that is on, passed its online test and has credit)? The screens show nothing about SMS when it is not."""
+    from apps.security import twofa
+
+    return Response({"sms": bool(twofa.availability()["sms"]), "messages": bool(twofa.sms_usage()["messages"])})
+
+
 # ── Licence for the administrator: costs and how to pay ─────────────────────
 def _admin_only(request):
     from apps.accounts.access import can_admin

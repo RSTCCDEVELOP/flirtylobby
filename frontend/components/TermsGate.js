@@ -16,6 +16,7 @@ import { useAuth } from "./AuthContext";
 import { Logo } from "./BrandingContext";
 import { RichText } from "./SmallEditor";
 import Tabs from "./Tabs";
+import CodeInput from "./CodeInput";
 
 import Loading from "./Loading";
 // Admins and superadmins must sign the terms and conditions: read them, ask for a code by e-mail and type it. Comes right after the licence message, before the rest.
@@ -114,9 +115,7 @@ export default function TermsGate() {
               <div className="info-logo"><Logo /></div>
               <h3 style={{ margin: 0, fontSize: "1.25rem", lineHeight: 1.3 }}>{tx("Je code voor het ondertekenen van de algemene voorwaarden")}</h3>
               <p className="muted" style={{ margin: 0, maxWidth: 520 }}>{tx("Je ondertekent versie {0} met een code die naar je e-mailadres wordt gestuurd: {1}.", doc?.version || st.version, st.email)}</p>
-              <input value={shown} onChange={(e) => onCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={8} placeholder="000-000" aria-label={tx("Code")} autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter" && code.length === 6 && !busy) sign(); }}
-                style={{ width: "min(17rem, 100%)", textAlign: "center", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "2.2rem", fontWeight: 800, letterSpacing: ".16em", color: "var(--blue)", padding: ".55rem .4rem", borderRadius: 14, border: "1px solid color-mix(in srgb, var(--blue) 35%, var(--line))", background: "color-mix(in srgb, var(--blue) 9%, var(--card))" }} />
+              <div onKeyDown={(e) => { if (e.key === "Enter" && code.length === 6 && !busy) sign(); }}><CodeInput value={code} onChange={(c) => onCode(c)} onAt={user?.is_staff ? () => onCode("@") : undefined} autoFocus /></div>
               <small className="muted">{tx("De code is 15 minuten geldig. Heb je dit niet zelf gevraagd, negeer dit bericht dan.")}</small>
               <div className="row" style={{ justifyContent: "center", gap: ".6rem" }}>
                 <button type="button" className="btn" disabled={busy} onClick={ask}>{sent ? tx("Nieuwe code sturen") : tx("Code sturen")}</button>

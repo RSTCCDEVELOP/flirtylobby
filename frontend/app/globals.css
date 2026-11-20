@@ -524,6 +524,9 @@ html[data-theme="dark"] img.logo-light.has-dark { display: none !important; }
 .audit { display: flex; flex-direction: column; gap: .5rem; }
 .audit-row { display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: var(--btn-radius); }
 .audit-row > span:nth-child(2) { flex: 1; min-width: 0; }
+.dot.wait { background: #f59e0b; animation: dotpulse 1s ease-in-out infinite; }
+@keyframes dotpulse { 50% { opacity: .35; } }
+.int-msg.wait { color: var(--muted); }
 .dot.warn { background: #f59e0b; box-shadow: 0 0 0 4px color-mix(in srgb, #f59e0b 22%, transparent); }
 .serp { padding: 1rem; border: 1px solid var(--line); border-radius: var(--btn-radius); background: #fff; color: #202124; font-family: Arial, sans-serif; max-width: 640px; }
 .serp small { color: #4d5156; }
@@ -911,6 +914,12 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
 .api-card { display: flex; flex-direction: column; gap: .7rem; padding: 1.1rem 1.25rem; min-height: 9.5rem; }
 .api-head { display: flex; align-items: center; gap: .6rem; }
 .api-head strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.05rem; }
+.api-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .3rem; }
+.api-title strong { flex: none; }
+.api-chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+.api-chip { display: inline-flex; align-items: center; gap: .25rem; padding: .08rem .5rem; border-radius: 999px; font-size: .7rem; font-weight: 600; letter-spacing: .02em; color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); border: 1px solid var(--line); white-space: nowrap; }
+.api-chip-ico { display: inline-flex; width: 11px; height: 11px; }
+.api-head .switch { flex: none; }
 .api-body { flex: 1; display: flex; flex-direction: column; gap: .25rem; min-width: 0; font-size: .9rem; }
 .api-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-start; margin-top: auto; padding-top: .75rem; border-top: 1px solid var(--line); }
 /* forms in a modal: every field is an equal block, inputs line up on the bottom of the row */
@@ -1554,6 +1563,8 @@ html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-h
 .view-list > .api-card { display: grid !important; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) auto; align-items: center !important; gap: .4rem 1.5rem !important; }
 .view-list > .api-card .api-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .6rem; }
 .view-list > .api-card .api-head strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.view-list > .api-card .api-title { flex-direction: row; align-items: center; flex-wrap: wrap; gap: .2rem .6rem; }
+.view-list > .api-card .api-actions { border-top: 0; padding-top: 0; }
 .view-list > .api-card .api-body { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .view-list > .api-card .api-actions { justify-content: flex-end; flex-wrap: nowrap; margin-left: 0 !important; }
 @media (max-width: 900px) { .view-list > .api-card { grid-template-columns: 1fr; } .view-list > .api-card .api-actions { justify-content: flex-start; flex-wrap: wrap; } }
@@ -1619,13 +1630,16 @@ html .direct-pop[data-size="l"] .chat-msgs { min-height: 460px !important; max-h
 .save-status.error { color: var(--danger); font-weight: 600; }
 
 /* verification code: a box per digit (components/CodeInput.js) */
-.code-boxes { display: flex; gap: .5rem; justify-content: center; align-items: center; margin: .6rem 0; }
-.code-boxes .code-box { width: 3rem; height: 3.6rem; padding: 0; text-align: center; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; border: 2px solid var(--line); border-radius: 12px; background: var(--card); color: var(--text); caret-color: var(--blue); transition: border-color .15s, box-shadow .15s, transform .15s; }
-.code-boxes .code-cell { display: inline-flex; align-items: center; gap: .5rem; }
+.code-boxes { display: flex; gap: .9rem; justify-content: center; align-items: center; margin: .6rem 0; flex-wrap: nowrap; }
+.code-boxes .code-group-wrap { display: inline-flex; align-items: center; gap: .9rem; }
+.code-boxes .code-group { display: inline-flex; gap: .4rem; padding: .55rem; border-radius: 16px; background: color-mix(in srgb, var(--text) 4%, var(--card)); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(16, 24, 40, .06); }
+.code-boxes .code-group.bad { border-color: var(--danger); }
+.code-boxes .code-box { width: 2.7rem; height: 3.3rem; padding: 0; text-align: center; font-size: 1.55rem; font-weight: 700; font-variant-numeric: tabular-nums; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); caret-color: var(--blue); transition: border-color .15s, box-shadow .15s; }
 .code-boxes .code-dash { font-size: 1.6rem; font-weight: 700; color: var(--muted); line-height: 1; }
-.code-boxes .code-box:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 22%, transparent); transform: translateY(-1px); }
+.code-boxes .code-box:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 24%, transparent); }
 .code-boxes .code-box.filled { border-color: color-mix(in srgb, var(--blue) 55%, var(--line)); background: color-mix(in srgb, var(--blue) 8%, var(--card)); }
 .code-boxes .code-box.bad { border-color: var(--danger); }
+@media (max-width: 420px) { .code-boxes { gap: .5rem; } .code-boxes .code-group-wrap { gap: .5rem; } .code-boxes .code-group { padding: .35rem; gap: .25rem; } .code-boxes .code-box { width: 2.2rem; height: 2.9rem; font-size: 1.3rem; } }
 .code-field { display: flex; flex-direction: column; gap: .2rem; align-items: center; text-align: center; }
 .code-field > span { font-weight: 600; font-size: .9rem; }
 @media (max-width: 420px) { .code-boxes { gap: .2rem; } .code-boxes .code-cell { gap: .2rem; } .code-boxes .code-box { width: 2.3rem; height: 3.1rem; font-size: 1.3rem; } .code-boxes .code-dash { font-size: 1.2rem; } }

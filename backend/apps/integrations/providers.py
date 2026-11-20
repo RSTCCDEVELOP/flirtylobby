@@ -120,6 +120,12 @@ def test_spryng(c):
     return spryng.test(c)
 
 
+def test_seven(c):
+    from . import seven
+
+    return seven.test(c)
+
+
 def test_s3(c):
     import boto3
     from botocore.config import Config
@@ -252,6 +258,11 @@ PROVIDERS = {
         f("api_key", "API-sleutel (Spryng, Developer Tools → API Keys)", secret=True),
         f("account_reference", "Account-nummer (accountReference, Spryng → Mijn account)"),
         f("originator", "Afzender (max. 11 letters of cijfers; leeg = de afzender van je Spryng-account)", default="", required=False),
+        f("usage", "Gebruik van deze koppeling", kind="select", default="verification",
+          options=[{"value": "verification", "label": "Alleen voor verificatiecodes (inloggen, aanmelden, akkoord, wachtwoord vergeten)"}, {"value": "messages", "label": "Voor verificatiecodes én berichten (meldingen, herinneringen)"}], required=False)]},
+    "seven": {"label": "seven.io (sms)", "test": test_seven, "fields": [
+        f("api_key", "API-sleutel (seven.io, Instellingen → API)", secret=True),
+        f("originator", "Afzender (max. 11 letters of cijfers, of max. 16 cijfers; leeg = de standaardafzender van je account)", default="", required=False),
         f("usage", "Gebruik van deze koppeling", kind="select", default="verification",
           options=[{"value": "verification", "label": "Alleen voor verificatiecodes (inloggen, aanmelden, akkoord, wachtwoord vergeten)"}, {"value": "messages", "label": "Voor verificatiecodes én berichten (meldingen, herinneringen)"}], required=False)]},
     "smtp": {"label": "E-mail (SMTP)", "test": test_smtp, "fields": [

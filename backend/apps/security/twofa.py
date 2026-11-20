@@ -39,16 +39,26 @@ class DeliveryError(Exception):
 
 
 # ── which methods can actually deliver ──────────────────────────────────────
-def _integration(providers):
+def _integration(providers, tested_only=False):
+    """The first link of these providers that is on. tested_only: it must also have passed its online test (and so has credit): see sms_link()."""
     from apps.core import modules
 
     if not modules.enabled("integrations"):
         return None
     for p in providers:
-        obj = Integration.objects.filter(enabled=True, provider=p).first()
+        qs = Integration.objects.filter(enabled=True, provider=p)
+        if tested_only:
+            qs = qs.filter(last_test_ok=True)
+        obj = qs.first()
         if obj:
             return obj
     return None
+
+
+def sms_link(tested_only=True):
+    """THE standard rule for SMS: SMS (a code by SMS, or messages) is only offered or allowed when an SMS link is on AND its last online test passed (the test also checks that there is
+    credit). Without that nothing about SMS is shown anywhere. tested_only=False is only for sending a code to a person who already uses SMS (so nobody is locked out)."""
+    return _integration(SMS_PROVIDERS, tested_only=tested_only)
 
 
 def availability():
@@ -56,7 +66,7 @@ def availability():
     mails/sms are simulated and count as available. Nothing is offered for a service that is not in use."""
     from apps.sandbox import service as sandbox
 
-    email, sms = _integration(["postmark", "smtp"]), _integration(SMS_PROVIDERS)
+    email, sms = _integration(["postmark", "smtp"]), sms_link()  # (SMS: only a link that is on and tested online, with credit)
     return {"email": email.name if email else ("Sandbox" if sandbox.active("email") else None),
             "sms": sms.name if sms else ("Sandbox" if sandbox.active("sms") else None)}
 
@@ -217,39 +227,31 @@ def _post_json(url, headers, payload):
         raise DeliveryError(f"Verzenden mislukt: {e}")
 
 
-SMS_PROVIDERS = ["spryng", "bird"]  # the first one that is linked and on sends the text messages
+SMS_PROVIDERS = ["spryng", "seven", "bird"]  # the first one that is linked and on sends the text messages
 
 
 def sms_usage():
-    """{'provider': name or None, 'verification': bool, 'messages': bool}: what the linked SMS service may be used for (Spryng has a setting for it; Bird is for verification only)."""
+    """{'provider': name or None, 'verification': bool, 'messages': bool}: what the linked SMS service may be used for (Spryng and seven.io have a setting for it; Bird is for verification only)."""
     from apps.integrations import spryng
 
-    obj = _integration(SMS_PROVIDERS)
+    obj = sms_link()
     if not obj:
         return {"provider": None, "verification": False, "messages": False}
-    return {"provider": obj.name, "verification": True, "messages": obj.provider == "spryng" and spryng.usage(obj.config) == "messages"}
+    return {"provider": obj.name, "verification": True, "messages": obj.provider in ("spryng", "seven") and spryng.usage(obj.config) == "messages"}
 
 
-def send_sms(phone, text, purpose="verification"):
-    """purpose: 'verification' (a code) or 'message' (any other text message: only when the link is set to that)."""
-    from apps.integrations import spryng
-    from apps.sandbox import service as sandbox
+def send_via(obj, phone, text, purpose="verification"):
+    """Send through one SMS link (also used by the SMS test screens). Raises DeliveryError."""
+    from apps.integrations import seven, spryng
 
-    if sandbox.active("sms"):
-        sandbox.capture("sms", phone, "", text)
-        return
-    obj = _integration(SMS_PROVIDERS)
-    if not obj:
-        if dj_settings.DEBUG:
-            return
-        raise DeliveryError("SMS is niet gekoppeld.")
     c = obj.config
-    if obj.provider == "spryng":
-        if not spryng.allows(c, purpose):
-            raise DeliveryError("Deze SMS-koppeling (Spryng) mag alleen voor verificatiecodes gebruikt worden. Zet het gebruik op berichten bij API keys.")
+    if obj.provider in ("spryng", "seven"):
+        mod, err = (spryng, spryng.SpryngError) if obj.provider == "spryng" else (seven, seven.SevenError)
+        if not mod.allows(c, purpose):
+            raise DeliveryError(f"Deze SMS-koppeling ({obj.name}) mag alleen voor verificatiecodes gebruikt worden. Zet het gebruik op berichten bij API keys.")
         try:
-            return spryng.send(c, phone, text, purpose)
-        except spryng.SpryngError as e:
+            return mod.send(c, phone, text, purpose)
+        except err as e:
             raise DeliveryError(str(e))
     if purpose != "verification":
         raise DeliveryError("Bird is alleen gekoppeld voor verificatiecodes.")
@@ -261,6 +263,28 @@ def send_sms(phone, text, purpose="verification"):
                {"Authorization": f"AccessKey {c['access_key']}"},
                {"receiver": {"contacts": [{"identifierKey": "phonenumber", "identifierValue": phone}]},
                 "body": {"type": "text", "text": {"text": text}}})
+
+
+def send_sms(phone, text, purpose="verification"):
+    """purpose: 'verification' (a code) or 'message' (any other text message: only when the link is set to that)."""
+    from apps.sandbox import service as sandbox
+
+    if sandbox.active("sms"):
+        sandbox.capture("sms", phone, "", text)
+        return
+    obj = sms_link() or (sms_link(tested_only=False) if purpose == "verification" else None)  # a code still goes out to someone who uses SMS already; messages need a tested link
+    if not obj:
+        if dj_settings.DEBUG:
+            return
+        raise DeliveryError("SMS is niet gekoppeld of niet getest." if purpose != "verification" else "SMS is niet gekoppeld.")
+    try:
+        send_via(obj, phone, text, purpose)
+    except DeliveryError as e:
+        # a real send that fails takes the link out of the offer until it is tested again (red on the card)
+        from django.utils import timezone
+
+        Integration.objects.filter(pk=obj.pk).update(last_test_ok=False, last_test_message=f"Verzenden mislukt: {e}"[:300], last_test_at=timezone.now())
+        raise
 
 
 def deliver(user, subject, email_body, sms_body, force_email=False, code=None):

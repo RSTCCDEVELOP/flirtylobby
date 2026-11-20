@@ -9,12 +9,13 @@
 
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
 import { IconKey, IconLock, IconSettings } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
+import CodeInput from "../../../../components/CodeInput";
 import { api, errorText } from "../../../../lib/api";
 import { alertDialog } from "../../../../lib/dialog";
 import Paged from "../../../../components/Paged";
@@ -24,10 +25,10 @@ import S3Browser from "../../../../components/S3Browser";
 import { resetIntegrationsCache } from "../../../../lib/integrations";
 
 const statusOf = (i) => (i.last_test_ok === true ? "ok" : i.last_test_ok === false ? "fail" : "none");
-const STATUS_TEXT = { ok: "Verbinding OK", fail: "Test mislukt", none: "Nog niet getest" };
+const STATUS_TEXT = { ok: "Verbinding OK", fail: "Test mislukt", none: "Nog niet getest", wait: "Testen…" };
 
 export default function Integrations() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const L = lvl(user, "integrations");
   const [items, setItems] = useState([]);
   const [providers, setProviders] = useState([]);
@@ -49,6 +50,26 @@ export default function Integrations() {
   }, [load]);
 
   const spec = (p) => providers.find((x) => x.provider === p);
+
+  // links that are always on are tested when the page loads (once per link): the result shows at once (green when the API answers)
+  const [checking, setChecking] = useState([]);
+  const checked = useRef(new Set());
+  useEffect(() => {
+    if (L < 2) return;
+    const todo = items.filter((i) => i.always_on && i.enabled && !checked.current.has(i.id));
+    if (!todo.length) return;
+    todo.forEach((i) => checked.current.add(i.id));
+    setChecking((c) => [...c, ...todo.map((i) => i.id)]);
+    (async () => {
+      for (const i of todo) {
+        try {
+          const r = await api(`/admin/integrations/${i.id}/test/`, { method: "POST" });
+          setItems((list) => list.map((x) => (x.id === i.id ? r : x)));
+        } catch { /* the card keeps its old status */ }
+        setChecking((c) => c.filter((id) => id !== i.id));
+      }
+    })();
+  }, [items, L]);
 
   async function act(id, fn) {
     setBusy(id);
@@ -122,8 +143,12 @@ export default function Integrations() {
     setSmsT((t) => ({ ...t, busy: true, error: "" }));
     try {
       const r = await api(`/admin/integrations/${smsT.i.id}/sms-test/`, { method: "POST", body: { phone: smsT.phone } });
+      if (r.phone_saved) setUser((u) => ({ ...u, phone: r.phone_saved }));  // the number is now in the profile
       setSmsT((t) => ({ ...t, busy: false, step: "code", token: r.token, sandbox_code: r.sandbox_code || "", code: "" }));
-    } catch (err) { setSmsT((t) => ({ ...t, busy: false, error: errorText(err) })); }
+    } catch (err) {
+      if (err?.data?.phone_saved) setUser((u) => ({ ...u, phone: err.data.phone_saved }));  // (also when the sending failed: the number was typed and is kept)
+      setSmsT((t) => ({ ...t, busy: false, error: errorText(err) }));
+    }
   };
   const smsCheck = async (e) => {
     e?.preventDefault();
@@ -159,9 +184,15 @@ export default function Integrations() {
     e.preventDefault();
     const { id, error: _e, models: _m, notice: _n, loadingModels: _l, tab: _t, ...body } = modal;
     try {
-      await (id ? api(`/admin/integrations/${id}/`, { method: "PATCH", body }) : api("/admin/integrations/", { method: "POST", body }));
+      const saved = await (id ? api(`/admin/integrations/${id}/`, { method: "PATCH", body }) : api("/admin/integrations/", { method: "POST", body }));
       setModal(null);
-      load();
+      await load();
+      // a saved link is always tested again at once (new key, new settings): the card shows the new result
+      if (saved?.id) {
+        checked.current.add(saved.id);
+        setChecking((c) => [...c, saved.id]);  // the card shows "Testen…" while it runs
+        try { await act(saved.id, () => api(`/admin/integrations/${saved.id}/test/`, { method: "POST" })); } finally { setChecking((c) => c.filter((x) => x !== saved.id)); }
+      }
     } catch (err) {
       if (err.status === 404) { setModal(null); await load(); setError(tx("Deze koppeling bestaat niet meer; de lijst is ververst. Probeer het opnieuw.")); return; }
       setModal({ ...modal, error: errorText(err) });
@@ -192,14 +223,21 @@ export default function Integrations() {
       <Paged id="integrations" query={view.q}>
       <div className={`api-grid${view.cls}`}>
         {items.filter((i) => view.match(i.name, i.slug, i.provider_label, i.last_test_message)).map((i) => {
-          const st = statusOf(i);
+          const st = checking.includes(i.id) ? "wait" : statusOf(i);
           return (
             <div className="card api-card" key={i.id}>
               <div className="api-head">
                 <span className={`dot ${st}`} title={STATUS_TEXT[st]} />
-                <strong>{i.name}</strong>{i.in_installation && <span title={tx("Systeemkoppeling: gaat mee met elke installatie")} aria-label={tx("Systeemkoppeling: gaat mee met elke installatie")} style={{ marginLeft: ".4rem", display: "inline-flex", verticalAlign: "middle", width: 16, height: 16 }}><IconLock /></span>}{i.superadmin_only && <span className="badge" style={{ marginLeft: ".4rem" }}>{tx("Superadmin")}</span>}
-                <label className="switch" title={i.enabled ? tx("Actief") : tx("Uit")}>
-                  <input type="checkbox" checked={i.enabled} disabled={L < 2} onChange={() => toggle(i)} />
+                <div className="api-title">
+                  <strong title={i.name}>{i.name}</strong>
+                  <span className="api-chips">
+                    {i.superadmin_only && <span className="api-chip" title={tx("Alleen superadmins zien en wijzigen deze koppeling")}>{tx("Superadmin")}</span>}
+                    {i.in_installation && <span className="api-chip" title={tx("Systeemkoppeling: gaat mee met elke installatie")}><span className="api-chip-ico" aria-hidden="true"><IconLock /></span>{tx("Standaard")}</span>}
+                    {i.always_on && <span className="api-chip" title={tx("Altijd aan: nodig voor de installatie")}>{tx("Altijd aan")}</span>}
+                  </span>
+                </div>
+                <label className="switch" title={i.always_on ? tx("Altijd aan: nodig voor de installatie") : i.enabled ? tx("Actief") : tx("Uit")}>
+                  <input type="checkbox" checked={i.enabled} disabled={L < 2 || !!i.always_on} onChange={() => toggle(i)} />
                   <span />
                 </label>
               </div>
@@ -212,15 +250,15 @@ export default function Integrations() {
                   const label = mf.options?.find((o) => o.value === m)?.label;
                   return <span className="api-model" title={tx("Actief model")}>{tx("Model")}: <strong>{label || m}</strong>{label && label !== m && <code> {m}</code>}{!i.config?.model && <small className="muted"> ({tx("standaard")})</small>}</span>;
                 })()}
-                {i.provider === "spryng" && <span className="api-model" title={tx("Waarvoor deze koppeling gebruikt mag worden")}>{tx("Gebruik")}: <strong>{i.config?.usage === "messages" ? tx("verificatie en berichten") : tx("alleen verificatiecodes")}</strong></span>}
-                <span className={`int-msg ${st}`}>{i.last_test_message || STATUS_TEXT[st]}</span>
+                {(i.provider === "spryng" || i.provider === "seven") && <span className="api-model" title={tx("Waarvoor deze koppeling gebruikt mag worden")}>{tx("Gebruik")}: <strong>{i.config?.usage === "messages" ? tx("verificatie en berichten") : tx("alleen verificatiecodes")}</strong></span>}
+                <span className={`int-msg ${st}`}>{st === "wait" ? tx(STATUS_TEXT.wait) : i.last_test_message || tx(STATUS_TEXT[st])}</span>
               </div>
               <div className="api-actions">
                 {i.provider === "s3" && L >= 3 && <button className="btn sm" onClick={() => setBrowse(i)} disabled={!i.enabled} title={i.enabled ? "" : tx("Zet de koppeling eerst aan")}>{tx("Bladeren")}</button>}
-                {L >= 2 && (i.provider === "spryng" || i.provider === "bird") && <button className="btn sm" onClick={() => setSmsT({ i, step: "phone", phone: user?.phone || "", own: !!user?.phone, token: "", code: "", sandbox_code: "", error: "", busy: false })} disabled={!i.enabled} title={i.enabled ? "" : tx("Zet de koppeling eerst aan")}>{tx("Sms-test")}</button>}
+                {L >= 2 && (i.provider === "spryng" || i.provider === "seven" || i.provider === "bird") && <button className="btn sm" onClick={() => setSmsT({ i, step: "phone", phone: user?.phone || "", own: !!user?.phone, token: "", code: "", sandbox_code: "", error: "", busy: false })}>{tx("Sms-test")}</button>}
                 {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
                 {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
-                {L >= 3 && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
+                {L >= 3 && !i.enabled && (!(i.always_on || i.in_installation) || user?.is_superadmin_plus) && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
               </div>
             </div>
           );
@@ -242,7 +280,7 @@ export default function Integrations() {
             {smsT.step === "code" && (<>
               <p className="muted" style={{ margin: 0, fontSize: ".9rem" }}>{tx("De code is verstuurd naar {0}. Vul hem hieronder in (geldig 10 minuten).", smsT.phone)}</p>
               {smsT.sandbox_code && <div className="alert">{tx("Sandbox: er is niets verstuurd. De code is")} <strong>{smsT.sandbox_code}</strong></div>}
-              <label>{tx("Code")}<input inputMode="numeric" autoComplete="one-time-code" placeholder="123-456" maxLength={7} required autoFocus value={smsT.code} onChange={(e) => setSmsT({ ...smsT, code: e.target.value })} /></label>
+              <div className="code-field"><span>{tx("Code")}</span><CodeInput value={smsT.code} onChange={(c) => setSmsT({ ...smsT, code: c })} autoFocus invalid={!!smsT.error} /></div>
               <button type="button" className="btn sm" onClick={smsSend} disabled={smsT.busy}>{tx("Code opnieuw versturen")}</button>
             </>)}
             {smsT.step === "done" && <div className="alert ok">{tx("De sms is aangekomen en de code klopt: de koppeling werkt.")}</div>}
@@ -250,7 +288,7 @@ export default function Integrations() {
             <div className="row">
               <button type="button" className="btn" onClick={() => setSmsT(null)}>{smsT.step === "done" ? tx("Sluiten") : tx("Annuleren")}</button>
               {smsT.step === "phone" && <button className="btn primary" disabled={smsT.busy}>{smsT.busy ? tx("Versturen…") : tx("Stuur testcode")}</button>}
-              {smsT.step === "code" && <button className="btn primary" disabled={smsT.busy}>{smsT.busy ? tx("Controleren…") : tx("Controleer code")}</button>}
+              {smsT.step === "code" && <button className="btn primary" disabled={smsT.busy || String(smsT.code).replace(/\D/g, "").length < 6}>{smsT.busy ? tx("Controleren…") : tx("Controleer code")}</button>}
             </div>
           </form>
         </div>
@@ -302,6 +340,8 @@ export default function Integrations() {
                   <span>{tx("Superadmin-koppeling")}<small className="muted" style={{ display: "block" }}>{tx("Alleen superadmins zien en wijzigen deze koppeling, bijvoorbeeld de AI-koppeling die de reseller betaalt.")}</small></span></label>
                   <label className="check sec-toggle" style={{ alignItems: "flex-start" }}><span className="switch"><input type="checkbox" checked={!!modal.in_installation} onChange={(e) => setModal({ ...modal, in_installation: e.target.checked })} /><span /></span>
                   <span>{tx("In elke installatie meenemen")}<small className="muted" style={{ display: "block" }}>{tx("Deze koppeling gaat met haar sleutel mee met elke nieuwe installatie, staat aan en is meteen beschikbaar zonder instellen. Gebruik dit alleen voor een sleutel die elke installatie mag delen.")}</small></span></label>
+                  {user?.is_superadmin_plus && <label className="check sec-toggle" style={{ alignItems: "flex-start" }}><span className="switch"><input type="checkbox" checked={!!modal.always_on} onChange={(e) => setModal({ ...modal, always_on: e.target.checked })} /><span /></span>
+                  <span>{tx("Altijd aan bij opstarten")}<small className="muted" style={{ display: "block" }}>{tx("Nodig om de installatie af te maken: de koppeling wordt bij elke start vanzelf aangezet en kan niet uit. Er is geen wachtwoord nodig om hem te activeren (de sleutel komt uit de omgeving van de server of van de easy2edit-server). Alleen een superadmin+ kan dit instellen.")}</small></span></label>}
                 </div>
               )}
             </div>

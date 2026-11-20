@@ -383,7 +383,7 @@ export default function Security() {
             </label>
           </div>
         )}
-        {avail.sms && <Toggle label={tx("Code per sms toestaan")} hint={avail.sms ? `via ${avail.sms}` : tx("niet beschikbaar: koppel Spryng of Bird bij API keys")} checked={data.twofa.allow_sms} onChange={(v) => set("twofa")("allow_sms", v)} />}
+        {avail.sms && <Toggle label={tx("Code per sms toestaan")} hint={avail.sms ? `via ${avail.sms}` : tx("niet beschikbaar: koppel Spryng, seven.io of Bird bij API keys")} checked={data.twofa.allow_sms} onChange={(v) => set("twofa")("allow_sms", v)} />}
         {(avail.email || avail.sms) && (
           <>
             <h3>{tx("Teksten")} <small className="muted">{tx("gebruik")} {tx("{code}")} {tx("en")} {tx("{minutes}")}</small></h3>

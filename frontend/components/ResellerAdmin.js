@@ -436,6 +436,8 @@ function ResellerDialog({ start, sites, defShare, onClose }) {
 // One login as a tile (also the new one): all data, the rights in the websites, the code check (OTP) at login and where the person may log in.
 function LoginTile({ l, isNew = false, sites, lines, onSave, onRemove }) {
   const [d, setD] = useState(() => { const [f, ...rest] = String(l.name || "").trim().split(/\s+/); return { ...l, first_name: f || "", last_name: rest.join(" "), password: "", send: true }; });
+  const [smsReady, setSmsReady] = useState(false);  // SMS is only offered when an SMS link is on, tested online and has credit
+  useEffect(() => { api("/system/sms-ready/").then((r) => setSmsReady(!!r.sms)).catch(() => {}); }, []);
   const set = (k, v) => setD((x) => ({ ...x, [k]: v }));
   const picked = new Set(d.site_ids || []);
   const body = { name: `${(d.first_name || "").trim()} ${(d.last_name || "").trim()}`.trim(), function: d.function, phone: d.phone, mobile: d.mobile, access: d.access, otp: d.otp, all_sites: d.all_sites, site_ids: d.site_ids, host: d.host, active: d.active, ...(isNew ? { email: d.email, password: d.password, send: d.send } : {}) };
@@ -454,7 +456,7 @@ function LoginTile({ l, isNew = false, sites, lines, onSave, onRemove }) {
         {lines("Telefoon", <PhoneInput value={d.phone || ""} onChange={(v) => set("phone", v)} />, "l-p")}
         {lines("Mobiel", <PhoneInput value={d.mobile || ""} onChange={(v) => set("mobile", v)} />, "l-m")}
         {lines("Rechten", <><select className="e2e-input" value={d.access} onChange={(e) => set("access", e.target.value)}>{ACCESS.map(([k, label]) => <option key={k} value={k}>{tx(label)}</option>)}</select><span className="e2e-hint">{tx(ACCESS_HINT[d.access])}</span></>, "l-a")}
-        {lines("Codecontrole bij inloggen (OTP)", <><select className="e2e-input" value={d.otp} onChange={(e) => set("otp", e.target.value)}><option value="email">{tx("Code per e-mail")}</option><option value="sms">{tx("Code per sms")}</option><option value="">{tx("Geen codecontrole")}</option></select><span className="e2e-hint">{tx("De code wordt gevraagd bij elke login. Dit werkt als de tweestapsverificatie van de website aan staat.")}</span></>, "l-o")}
+        {lines("Codecontrole bij inloggen (OTP)", <><select className="e2e-input" value={d.otp} onChange={(e) => set("otp", e.target.value)}><option value="email">{tx("Code per e-mail")}</option>{(smsReady || d.otp === "sms") && <option value="sms">{tx("Code per sms")}</option>}<option value="">{tx("Geen codecontrole")}</option></select><span className="e2e-hint">{tx("De code wordt gevraagd bij elke login. Dit werkt als de tweestapsverificatie van de website aan staat.")}</span></>, "l-o")}
       </div>
       <div className="e2e-stack" style={{ gap: ".4rem" }}>
         <strong>{tx("Waar mag deze persoon inloggen?")}</strong>

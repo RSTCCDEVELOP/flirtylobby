@@ -22,4 +22,12 @@ class Command(BaseCommand):
         if o["action"] == "capture":
             return self.stdout.write("default_links: " + (", ".join(default_links.capture()) or "niets gemarkeerd"))
         res = default_links.apply(force=o["force"])
+        from apps.integrations import activation
+
+        on = activation.ensure_always_on()  # the links that are always on: switched on at every start, no password needed
+        if on:
+            self.stdout.write("default_links: altijd aan: " + ", ".join(on))
+        tested = activation.retest_sms()  # SMS is only offered for a link that passed its online test now
+        if tested:
+            self.stdout.write("default_links: sms getest: " + ", ".join(f"{s}={'ok' if ok else 'fout'}" for s, ok in tested))
         self.stdout.write("default_links: " + (", ".join(f"{r['key']}={'ok' if r['ok'] else 'fout'}" for r in res) or "niets te doen"))
