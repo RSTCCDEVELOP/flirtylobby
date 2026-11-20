@@ -15,7 +15,7 @@ import Tabs from "../../../../components/Tabs";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import { SITE_KINDS } from "./aiPrompt";
-import { COLOR_ROLES, contrast, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DesignPromptPopup, DEVICES, QuickPrompt, DW_CSS, Field, FONT_NAMES, FONTS, LAST, MODES, ModulePicker, effOff, PAGE_EXTRA, PAGE_SUGGEST, pagesOf, previewHtml, STEPS, STYLE_TAGS, styleTile, THEME_DARK, THEME_MAP } from "./designKit";
+import { COLOR_ROLES, contrast, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DesignPromptPopup, DEVICES, HexField, QuickPrompt, DW_CSS, Field, FONT_NAMES, FONTS, LAST, MODES, ModulePicker, effOff, PAGE_EXTRA, PAGE_SUGGEST, pagesOf, previewHtml, STEPS, STYLE_TAGS, styleTile, THEME_DARK, THEME_MAP } from "./designKit";
 
 // The title and the explanation above every step.
 const META = [
@@ -184,7 +184,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
     <div key={k} className="dw-color">
       <input type="color" value={colors[k]} aria-label={tx(l)} onChange={(e) => upd({ colors: { ...colors, [k]: e.target.value } })} />
       <span><b>{tx(l)}</b></span>
-      <input type="text" value={colors[k]} maxLength={7} onChange={(e) => /^#[0-9a-fA-F]{6}$/.test(e.target.value) && upd({ colors: { ...colors, [k]: e.target.value } })} />
+      <HexField value={colors[k]} onChange={(v) => upd({ colors: { ...colors, [k]: v } })} label={`${tx(l)} (${tx("hex-code")})`} />
     </div>
   );
   const ratio = (l, a, c) => { const r = contrast(a, c); return <span key={l} className={r >= 4.5 ? "badge ok" : "badge off"} title={tx("Leesbaarheid (minimaal 4,5)")}>{tx(l)}: {r.toFixed(1)}</span>; };

@@ -186,6 +186,8 @@ def _item_style(st):
         out["valign"] = st["valign"]
     if str(st.get("weight") or "") in ("400", "500", "600", "700", "800"):
         out["weight"] = str(st["weight"])  # a heading: how bold
+    if st.get("italic") in (True, 1, "1", "true", "yes"):
+        out["italic"] = True  # the Lettertype tab: italic (off = the key is not there: the theme decides)
     for key in ("mb", "mt"):  # space below / above an item (rem): a heading, and every other item of an imported design
         try:
             if st.get(key) not in (None, ""):

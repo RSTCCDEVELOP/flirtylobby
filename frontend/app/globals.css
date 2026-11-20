@@ -3613,6 +3613,8 @@ main.doc[data-bare="1"] { padding-top: 0; padding-bottom: 0; margin-top: 0; marg
 /* the page moves aside: the bar is above it, the panel at its left */
 html[data-pbbar="1"] body { padding-top: var(--pb-bar-h); }
 html[data-pbbar="1"] .site-header { top: var(--pb-bar-h); }
+/* the page scrolls under the sticky header: the line between blocks (z-index 25, with + edit and delete) and the pencil and cross of a hero (40) lay above the header (20) and cut through the menu bar. The header lies above them (but under the panel, the dock and the pop-ups). */
+html[data-pbbar="1"] .site-header { z-index: 45; }
 html[data-pbsb="1"] body { padding-left: var(--pb-sb-w); }
 html[data-pbbar="1"] .edit-banner { display: none; }
 @media (max-width: 900px) { html[data-pbsb="1"] body { padding-left: 0; } .pb-sidebar { width: min(var(--pb-sb-w), 92vw); } }
@@ -4161,3 +4163,22 @@ html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.selected) > .pb-celltools { opac
 
 
 .kit-inline { display: inline-flex; flex: 0 0 auto; }
+
+/* edit mode has a bar of its own at the top (--pb-bar-h) and the header lies under it: the icons at the top right (save, undo, help, the list of blocks) and the message "saved" keep their place under the header, so they no longer lie over it (and over the name of the person) */
+html[data-pbbar="1"] .edit-help-btn, html[data-pbbar="1"] .edit-undo-btn, html[data-pbbar="1"] .edit-save-preset-btn, html[data-pbbar="1"] .block-nav { top: calc(var(--pb-bar-h) + 4.75rem); }
+html[data-pbbar="1"] .edit-save-preset-msg { top: calc(var(--pb-bar-h) + 8rem); }
+
+/* Tekststijlen: a block per level; the labels are on one line and the value is only in the number box, so the grid never changes height while you slide or type */
+.ts-level { border: 1px solid var(--line); border-radius: 12px; padding: .9rem 1rem 1rem; margin-top: .9rem; background: color-mix(in srgb, var(--text) 2%, var(--card)); }
+.ts-level > h4 { margin: 0 0 .7rem; font-size: 1rem; }
+.ts-level-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem 1.2rem; align-items: end; }
+.theme-field.compact > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+
+/* the Lettertype tab: italic for a heading, a text and a ready-made part (it follows the theme when it is not set) */
+.pb-tstyle.ts-italic .pb-text, .pb-tstyle.ts-italic .pb-text * { font-style: italic !important; }
+.pb-item.w-italic, .pb-item.w-italic * { font-style: italic !important; }
+.pb-italic { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+
+/* a colour typed or pasted as hex (HexField in siteimport/designKit.js): next to the colour picker, narrow enough for the side panel */
+.hexfield { flex: 1; min-width: 0; width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; padding: .3rem .45rem; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text); }
+.hexfield[aria-invalid="true"] { border-color: var(--danger); }

@@ -118,7 +118,9 @@ function RichEditorInner({ initialHtml, title = tx("Tekst bewerken"), onSave, on
   const B = ({ c, v, label, title: t }) => <button type="button" className="rt-btn" onMouseDown={keep} onClick={() => cmd(c, v)} title={t || label}>{label}</button>;
 
   return (
-    <div className="overlay" onMouseDown={onClose}>
+    // (the editor is a portal: React lets a click in it bubble to the parts it was opened from, for instance the settings panel of the page editor, which then selected another block and
+    // took this editor away. The editor stops the click at its own root, wherever it is opened from.)
+    <div className="overlay" onMouseDown={onClose} onClick={(e) => e.stopPropagation()}>
       <div className="card modal rich-modal" onMouseDown={(e) => e.stopPropagation()}>
         <h2 style={{ margin: 0 }}>{title}</h2>
         <div className="rt-toolbar" onMouseDown={keep}>

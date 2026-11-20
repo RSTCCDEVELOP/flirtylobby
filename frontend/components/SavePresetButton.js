@@ -29,6 +29,11 @@ export default function SavePresetButton() {
     window.addEventListener("pb-save-ask", ask);
     return () => window.removeEventListener("pb-save-ask", ask);
   }, []);
+  useEffect(() => {  // the message goes away by itself: "saved" after 3 seconds, an error after 8 (a new message starts its own time; the timer is cleared when the message changes or the button goes)
+    if (!msg) return undefined;
+    const t = setTimeout(() => setMsg(null), msg.ok ? 3000 : 8000);
+    return () => clearTimeout(t);
+  }, [msg]);
   if (!editing || !user?.is_staff || path.startsWith("/dashboard")) return null;
 
   const close = () => { setOpen(false); setStep("choose"); setState(null); setErr(""); };

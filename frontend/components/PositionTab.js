@@ -97,8 +97,10 @@ export function FontTab({ value, onChange, withWeight = false }) {
             <option value="">{tx("Zoals het thema")}</option><option value="400">{tx("Normaal")}</option><option value="500">{tx("Medium")}</option><option value="600">{tx("Halfvet")}</option><option value="700">{tx("Vet")}</option><option value="800">{tx("Extra vet")}</option>
           </select></div>
       )}
-      <div className="pb-fontsample" aria-hidden="true" style={{ fontFamily: FONT_CSS[v.font || ""], fontSize: v.size ? `${v.size}rem` : undefined, fontWeight: v.weight || undefined }}>Aa — {tx("Voorbeeldtekst")}</div>
-      {(v.font || v.size || (withWeight && v.weight)) && <div className="pb-stylerow pb-quick"><span /><button type="button" className="btn sm" onClick={() => onChange({ font: "", size: "", ...(withWeight ? { weight: "" } : {}) })}>{tx("Zoals het thema")}</button></div>}
+      <label className="pb-stylerow pb-italic"><span>{tx("Cursief")}</span>
+        <span className="switch"><input type="checkbox" checked={!!v.italic} onChange={(e) => onChange({ italic: e.target.checked ? true : "" })} aria-label={tx("Cursief")} /><span /></span></label>
+      <div className="pb-fontsample" aria-hidden="true" style={{ fontFamily: FONT_CSS[v.font || ""], fontSize: v.size ? `${v.size}rem` : undefined, fontWeight: v.weight || undefined, fontStyle: v.italic ? "italic" : undefined }}>Aa — {tx("Voorbeeldtekst")}</div>
+      {(v.font || v.size || v.italic || (withWeight && v.weight)) && <div className="pb-stylerow pb-quick"><span /><button type="button" className="btn sm" onClick={() => onChange({ font: "", size: "", italic: "", ...(withWeight ? { weight: "" } : {}) })}>{tx("Zoals het thema")}</button></div>}
       <small className="muted">{tx("Leeg is het lettertype en de grootte van het thema.")}</small>
     </div>
   );

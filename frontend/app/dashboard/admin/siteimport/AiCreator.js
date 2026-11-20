@@ -18,7 +18,7 @@ import { useAuth } from "../../../../components/AuthContext";
 import { setActiveDesign } from "../../../../lib/activeDesign";
 import Loading from "../../../../components/Loading";
 import { captureFrame, saveAsJpg, saveAsPdf } from "../../../../lib/screenshot";
-import { COLOR_ROLES, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DEVICES, DW_CSS, FONT_NAMES, MODES, ModulePicker, previewHtml, STEPS } from "./designKit";
+import { COLOR_ROLES, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DEVICES, DW_CSS, FONT_NAMES, HexField, MODES, ModulePicker, previewHtml, STEPS } from "./designKit";
 import { analyseDesign, buildConvertPrompt } from "./aiPrompt";
 import { componentListText } from "../../../../lib/ui-kit/componentList";
 import { loadKit } from "../../../../lib/ui-kit/kitDoc";
@@ -950,10 +950,13 @@ function ThemeBlock({ job, onChanged }) {
       <div style={{ display: "grid", gap: ".6rem", marginTop: ".5rem" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".45rem .8rem" }}>
           {roles.map(([k, l]) => (
-            <label key={k} style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".85rem", minWidth: 0 }}>
-              <input type="color" value={vals.colors[k] || "#000000"} onChange={(e) => setColor(k, e.target.value)} aria-label={tx(l)} style={{ flex: "none", width: 34, height: 28, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+            <div key={k} style={{ display: "grid", gap: ".25rem", fontSize: ".85rem", minWidth: 0 }}>
               <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(l)}</span>
-            </label>
+              <span style={{ display: "flex", alignItems: "center", gap: ".4rem", minWidth: 0 }}>
+                <input type="color" value={vals.colors[k] || "#000000"} onChange={(e) => setColor(k, e.target.value)} aria-label={tx(l)} style={{ flex: "none", width: 34, height: 28, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+                <HexField value={vals.colors[k] || ""} onChange={(v) => setColor(k, v)} label={`${tx(l)} (${tx("hex-code")})`} />
+              </span>
+            </div>
           ))}
         </div>
         <label style={{ display: "grid", gap: ".2rem", fontSize: ".85rem" }}>{tx("Weergave")}

@@ -44,7 +44,16 @@ export default function HeaderEdit() {
   const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // the panel of the editor
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
   const save = async (values) => { try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
-  const setLook = (key, v) => { const values = { ...theme.values, [key]: v }; setTheme({ ...theme, values }); setDirty(true); save(values); };
+  // The header reads these choices from attributes on <html> that the server sets when the page loads (layout.js): without this the header only changed after closing the panel (a reload). They are put there at once, with the same defaults as the server.
+  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
+  const setLook = (key, v) => {
+    const values = { ...theme.values, [key]: v };
+    setTheme({ ...theme, values });
+    setDirty(true);
+    const a = LOOK_ATTR[key];
+    if (a && typeof document !== "undefined") document.documentElement.dataset[a[0]] = key === "mode_switch" ? (v === "hide" ? "hide" : "show") : (v || a[1]);  // the switch light/dark shows or hides at once
+    save(values);
+  };
   // the logo follows the slider at once; it is saved a moment after the last move
   const setLogo = (px) => {
     const values = { ...theme.values, site_logo_h: px };

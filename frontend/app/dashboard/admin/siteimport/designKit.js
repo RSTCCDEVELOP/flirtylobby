@@ -136,6 +136,30 @@ export function Swatches({ colors, size = 22 }) {
   return <span style={{ display: "inline-flex" }}>{colors.filter(Boolean).map((c, i) => <i key={i} title={c} style={{ width: size, height: size, borderRadius: 6, background: c, border: "1px solid var(--line)", marginRight: -4, boxShadow: "0 0 0 2px var(--card)" }} />)}</span>;
 }
 
+// A colour typed or pasted as hex: #RRGGBB (or without the #, in capitals or not) applies at once; #RGB is made #RRGGBB when the field is left or Enter is pressed; anything else is not accepted
+// (the field goes back to the colour that is set). The picker and this field always show the same colour. Only 3 and 6 digits: a transparency is chosen with a slider or in the editor.
+export const normHex = (t) => {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(t || "").trim());
+  if (!m) return null;
+  const h = m[1].length === 3 ? m[1].split("").map((c) => c + c).join("") : m[1];
+  return `#${h.toLowerCase()}`;
+};
+export function HexField({ value, onChange, label, className = "", style }) {
+  const [t, setT] = useState(value || "");
+  const [bad, setBad] = useState(false);
+  useEffect(() => { setT(value || ""); setBad(false); }, [value]);  // the picker (or the AI) changed the colour: the field follows
+  const type = (e) => {
+    const v = e.target.value.replace(/[^#0-9a-fA-F]/g, "").slice(0, 7);
+    setT(v);
+    const n = normHex(v);
+    setBad(!!v && !n && !/^#?[0-9a-f]{1,5}$/i.test(v.replace(/^#/, "")) ? true : false);
+    if (n && v.replace(/^#/, "").length === 6) onChange(n);  // six digits: at once; three: when the field is left
+  };
+  const done = () => { const n = normHex(t); if (n) { if (n !== value) onChange(n); setT(n); setBad(false); } else { setT(value || ""); setBad(false); } };  // not a colour: back to the colour that is set
+  return <input type="text" className={`hexfield ${className}`} value={t} maxLength={7} inputMode="text" autoCapitalize="off" spellCheck={false} aria-label={label} aria-invalid={bad || undefined} placeholder="#RRGGBB"
+    onChange={type} onBlur={done} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); done(); } }} style={style} />;
+}
+
 export function Field({ label, hint, children }) { return <label className="dw-f">{tx(label)}{hint && <> <small className="muted">{tx(hint)}</small></>}{children}</label>; }
 
 export const EN_TAGS = { modern: "modern", warm: "warm", zakelijk: "business-like", speels: "playful", minimalistisch: "minimalist", luxe: "luxurious", natuurlijk: "natural", technisch: "technical", creatief: "creative", klassiek: "classic" };
@@ -377,7 +401,7 @@ export const DW_CSS = `
 .dw-mod-t small{color:var(--muted);font-size:.8rem;line-height:1.35}.dw-tags{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.25rem}
 .dw-tags i{font-style:normal;font-size:.68rem;padding:.08rem .5rem;border-radius:99px;border:1px solid var(--line);color:var(--muted)}.dw-tags i.ok{color:var(--ok-fg);background:var(--ok-bg);border-color:transparent}
 .dw-mode svg{width:34px;height:34px;margin-bottom:.2rem}
-.dw-color{display:flex;align-items:center;gap:.7rem;border:1px solid var(--line);border-radius:12px;padding:.5rem .65rem}.dw-color input[type=color]{width:44px;height:38px;padding:0;border:0;background:none;cursor:pointer}.dw-color span{flex:1;min-width:0}.dw-color b{display:block;font-size:.82rem}.dw-color input[type=text]{max-width:104px;font-family:ui-monospace,Menlo,monospace}
+.hexfield{flex:1;min-width:0;width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;padding:.3rem .45rem;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text)}.hexfield[aria-invalid="true"]{border-color:var(--danger)}.dw-color{display:flex;align-items:center;gap:.7rem;border:1px solid var(--line);border-radius:12px;padding:.5rem .65rem}.dw-color input[type=color]{width:44px;height:38px;padding:0;border:0;background:none;cursor:pointer}.dw-color span{flex:1;min-width:0}.dw-color b{display:block;font-size:.82rem}.dw-color input[type=text]{max-width:104px;font-family:ui-monospace,Menlo,monospace}
 .dw-drop{border:2px dashed var(--line);border-radius:14px;padding:1.6rem;text-align:center;color:var(--muted);cursor:pointer;transition:all .15s}.dw-drop:hover{border-color:var(--blue);color:var(--text)}
 .dw-photo{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);display:flex;flex-direction:column}.dw-photo img{width:100%;height:140px;object-fit:cover;display:block}.dw-photo div{padding:.6rem;display:flex;flex-direction:column;gap:.4rem}
 .dw-page{display:flex;gap:.6rem;align-items:center;border:1px solid var(--line);border-radius:12px;padding:.45rem .6rem;background:var(--card)}.dw-page>b{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--hover);font-size:.75rem;color:var(--muted);flex:none}

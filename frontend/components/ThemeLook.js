@@ -67,8 +67,8 @@ export function Field({ f, value, onChange }) {
     );
   if (f.type === "number")
     return (
-      <label className="theme-field">
-        <span>{f.label} <em>{value}{f.unit}</em></span>
+      <label className={`theme-field${f.compact ? " compact" : ""}`}>
+        <span title={f.label}>{f.label}{!f.compact && <> <em>{value}{f.unit}</em></>}</span>
         <span className="color-row">
           <input type="range" min={f.min} max={f.max} step={f.step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
           <input type="number" min={f.min} max={f.max} step={f.step} value={value} onChange={(e) => e.target.value !== "" && onChange(Number(e.target.value))} style={{ width: 90 }} />
@@ -86,13 +86,35 @@ export function Field({ f, value, onChange }) {
       </label>
     );
   return (
-    <label className="theme-field">
-      {f.label}
+    <label className={`theme-field${f.compact ? " compact" : ""}`}>
+      <span title={f.label}>{f.label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         {f.choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
       </select>
     </label>
   );
+}
+
+// Tekststijlen: one block per level (Kop 1 to Kop 4 and Alinea) with all its settings together. The fields come as ts_<level>_<setting>; the label is "<level>: <setting>" (already in the chosen language).
+const TS_ORDER = ["size", "lh", "weight", "track", "color", "font"];
+function TextStyles({ g, values, change }) {
+  const levels = [];
+  g.fields.forEach((f) => {
+    const m = /^ts_([a-z0-9]+)_([a-z]+)$/.exec(f.key);
+    if (!m) return;
+    let l = levels.find((x) => x.k === m[1]);
+    if (!l) { l = { k: m[1], title: f.label.includes(":") ? f.label.split(":")[0].trim() : m[1], fields: {} }; levels.push(l); }
+    l.fields[m[2]] = f;
+  });
+  const short = (label) => { const i = label.indexOf(":"); const t = i > 0 ? label.slice(i + 1).trim() : label; return t.charAt(0).toUpperCase() + t.slice(1); };
+  return levels.map((l) => (
+    <section className="ts-level" key={l.k} aria-label={l.title}>
+      <h4>{l.title}</h4>
+      <div className="ts-level-grid">
+        {TS_ORDER.filter((o) => l.fields[o]).map((o) => { const f = l.fields[o]; return <Field key={f.key} f={{ ...f, label: short(f.label), compact: true }} value={values[f.key]} onChange={(v) => change(f.key, v)} />; })}
+      </div>
+    </section>
+  ));
 }
 
 export default function ThemeLook() {
@@ -169,6 +191,18 @@ export default function ThemeLook() {
   }
 
   async function save() {
+    // the automatic save reloads the preview and the server layout: the page must stay where it is, with the field you were using
+    const y = window.scrollY, active = document.activeElement;
+    let moved = false;
+    const stop = () => { moved = true; };
+    ["wheel", "touchmove", "keydown", "mousedown"].forEach((e) => window.addEventListener(e, stop, { passive: true, once: true }));
+    const keep = () => {
+      if (moved) return;  // the person scrolled or typed in the meantime: leave it
+      if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y);
+      if (active && active.isConnected && document.activeElement !== active && (!document.activeElement || document.activeElement === document.body)) active.focus({ preventScroll: true });
+    };
+    [80, 300, 800].forEach((t) => setTimeout(keep, t));
+    setTimeout(() => ["wheel", "touchmove", "keydown", "mousedown"].forEach((e) => window.removeEventListener(e, stop)), 900);
     try {
       const d = await api("/theme/", { method: "PUT", body: { values } });
       applyPreview(d);
@@ -273,9 +307,9 @@ export default function ThemeLook() {
 
       {schema.filter((g) => g.key !== "defaults" && g.key !== "devices" && g.key !== "interface_look" && g.key !== "page_layout" && g.key !== "loader").map((g) => (
         <Collapsible key={g.key} id={`theme-${g.key}`} title={g.label} className="theme-group">
-          <div className="theme-grid">
+          {g.key === "textstyles" ? <TextStyles g={g} values={values} change={change} /> : <div className="theme-grid">
             {g.fields.map((f) => <Field key={f.key} f={f} value={values[f.key]} onChange={(v) => change(f.key, v)} />)}
-          </div>
+          </div>}
         </Collapsible>
       ))}
     </>
