@@ -176,7 +176,7 @@ export default function SetupWizard() {
     if (upd) return saveUpdate();
     if (!checkStep()) return;
     setBusy(true); setError("");
-    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); if (r.replay) { setTimeout(() => window.location.reload(), 300); return; }  /* the onboarding done again: the rest (terms, installation, AI, design wizard) follows after a reload */ if (r.license?.number && d.needs_license) setDone(r.license); } }
+    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); /* the last screen: "Voltooid" with "Afronden en verder gaan" (also when the licence was there already or the onboarding is done again); the reload that follows brings the next steps (terms, installation, AI, design wizard) */ setDone(r.license?.number && d.needs_license ? r.license : { finished: true, number: r.license?.number || "", client: form.company_name, main_url: form.frontend_url, valid_until: r.license?.valid_until }); } }
     catch (e) {
       const bad = Object.fromEntries(Object.entries(e?.data?.errors || {}).map(([k, v]) => [k, tx(v)]));  // each message in the chosen language
       setError(Object.keys(bad).length ? Object.values(bad).join(" ") : errorText(e));
@@ -277,11 +277,11 @@ export default function SetupWizard() {
         <KitScope tag="ui-alerts">
           <div className="e2e-stack" style={{ gap: "1.1rem", textAlign: "center", alignItems: "center" }}>
             <span className="e2e-alert__icon" style={{ width: 44, height: 44 }}><IconCheck width={22} height={22} /></span>
-            <h2 style={{ margin: 0 }}>{done.updated ? tx("Licentie bijgewerkt") : tx("Licentie aangemaakt")}</h2>
-            <div style={{ width: "100%", padding: "1rem", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #f4f6fa)", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))" }}>
+            <h2 style={{ margin: 0 }}>{done.updated ? tx("Licentie bijgewerkt") : done.finished ? tx("Voltooid") : tx("Licentie aangemaakt")}</h2>
+            {done.number && <div style={{ width: "100%", padding: "1rem", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #f4f6fa)", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))" }}>
               <span className="e2e-hint">{tx("Licentienummer")}</span>
               <div style={{ fontFamily: "monospace", fontSize: "1.45rem", fontWeight: 700, letterSpacing: ".06em", userSelect: "all", wordBreak: "break-all" }}>{done.number}</div>
-            </div>
+            </div>}
             <div className="e2e-stack" style={{ gap: ".25rem" }}>
               {done.updated && <span><strong>{money(done.old)} → {money(done.new)}</strong> {tx("per maand")} · {tx("incl. btw")}</span>}
               {done.client && <span>{done.client}</span>}
@@ -291,7 +291,7 @@ export default function SetupWizard() {
             </div>
             <div className="e2e-row" style={{ gap: ".6rem", justifyContent: "center", flexWrap: "wrap" }}>
               <button type="button" className="e2e-btn e2e-btn--outline" onClick={downloadPdf} style={{ gap: ".5rem" }}><span style={{ display: "inline-flex", width: 18, height: 18 }}><IconReceipt /></span>{tx("Download PDF")}</button>
-              <button type="button" className="e2e-btn" onClick={() => { const updated = !!done?.updated; setDone(null); setClosed(true); window.dispatchEvent(new Event("setup-saved")); if (!updated) window.location.reload(); }}>{tx("Sluiten")}</button>  {/* a licence was made: the page loads again so the next screens of the onboarding follow (terms, AI, design wizard) */}
+              <button type="button" className="e2e-btn" onClick={() => { const updated = !!done?.updated; setDone(null); setClosed(true); window.dispatchEvent(new Event("setup-saved")); if (!updated) window.location.reload(); }}>{tx("Afronden en verder gaan")}</button>  {/* a licence was made: the page loads again so the next screens of the onboarding follow (terms, AI, design wizard) */}
             </div>
           </div>
         </KitScope>
