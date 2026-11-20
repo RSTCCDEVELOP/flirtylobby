@@ -317,6 +317,8 @@ select { font: inherit; padding: .6rem .7rem; border: 1px solid var(--line); bor
 img.logo-dark { display: none !important; }
 html[data-theme="dark"] img.logo-dark { display: block !important; }
 html[data-theme="dark"] img.logo-light.has-dark { display: none !important; }
+/* a logo without a version for the dark mode (the customer's own, maybe dark or transparent) stays visible on a dark background: a light plate behind it, that takes no room */
+html[data-theme="dark"] img.logo-light:not(.has-dark) { background: rgba(255, 255, 255, .94); border-radius: 6px; box-shadow: 0 0 0 .3rem rgba(255, 255, 255, .94); }
 
 /* ── Home photos ───────────────────────────────────────── */
 .home-photos { display: grid; gap: 1rem; width: min(100%, 960px); margin-top: 1.5rem; }

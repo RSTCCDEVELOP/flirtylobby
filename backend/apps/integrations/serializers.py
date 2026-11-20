@@ -9,7 +9,7 @@ import re
 
 from rest_framework import serializers
 
-from . import providers
+from . import lock, providers
 from .models import Integration
 
 MASK = "••••"
@@ -26,9 +26,10 @@ class IntegrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Integration
-        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "in_installation", "always_on", "config",
+        fields = ["id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "in_installation", "always_on", "locked", "lock_password", "config",
                   "last_test_ok", "last_test_at", "last_test_message"]
         read_only_fields = ["last_test_ok", "last_test_at", "last_test_message"]
+        extra_kwargs = {"lock_password": {"write_only": True, "required": False, "allow_blank": True}}
 
     def validate_superadmin_only(self, value):
         """Only a superadmin may make a link a superadmin link (or take that off)."""
@@ -53,8 +54,28 @@ class IntegrationSerializer(serializers.ModelSerializer):
             return self.instance.always_on if self.instance is not None else False
         return value
 
+    def _is_plus(self):
+        req = self.context.get("request")
+        return req is None or bool(getattr(req.user, "is_superplus", False))
+
+    def validate_locked(self, value):
+        """Only a superadmin+ says that a link has to be opened with a password first."""
+        if not self._is_plus():
+            return self.instance.locked if self.instance is not None else False
+        return value
+
+    def validate_lock_password(self, value):
+        if value and not self._is_plus():
+            raise serializers.ValidationError("Alleen een superadmin+ kan het wachtwoord instellen.")
+        if value and len(value) < 8:
+            raise serializers.ValidationError("Kies een wachtwoord van minstens 8 tekens.")
+        return value
+
     def validate(self, attrs):
         inst = self.instance
+        locked = attrs.get("locked", inst.locked if inst is not None else False)
+        if locked and not attrs.get("lock_password") and not (inst is not None and inst.lock_password):
+            raise serializers.ValidationError({"lock_password": "Kies een wachtwoord om de koppeling mee te openen."})
         if inst is not None and attrs.get("enabled") is False and attrs.get("always_on", inst.always_on):
             raise serializers.ValidationError({"enabled": "Deze koppeling staat altijd aan (nodig voor de installatie). Zet eerst Altijd aan uit."})
         return super().validate(attrs)
@@ -74,6 +95,12 @@ class IntegrationSerializer(serializers.ModelSerializer):
 
     def to_representation(self, obj):
         data = super().to_representation(obj)
+        req = self.context.get("request")
+        data["locked"] = bool(obj.locked)
+        data["unlocked"] = bool(req is not None and lock.is_open(req.user, obj))
+        if obj.locked and not data["unlocked"]:  # a closed card: nothing of the link is shown until it is opened with its password
+            return {k: data[k] for k in ("id", "name", "slug", "provider", "provider_label", "enabled", "superadmin_only", "in_installation", "always_on", "locked", "unlocked")} | {
+                "config": {}, "last_test_ok": data.get("last_test_ok"), "last_test_at": None, "last_test_message": ""}
         spec = providers.PROVIDERS.get(obj.provider)
         stored = obj.config
         # Secrets never leave the server: only a masked hint
@@ -95,8 +122,17 @@ class IntegrationSerializer(serializers.ModelSerializer):
             new[fl["key"]] = v
         return new
 
+    def _lock(self, validated, obj=None):
+        """The typed password is kept as a hash; a link that is no longer locked loses its password."""
+        raw = validated.pop("lock_password", "")
+        if raw:
+            validated["lock_password"] = lock.hash_password(raw)
+        if validated.get("locked") is False:
+            validated["lock_password"] = ""
+
     def create(self, validated):
         config = validated.pop("config", {})
+        self._lock(validated)
         obj = Integration(**validated)
         obj.config = self._merge(obj.provider, {}, config)
         obj.save()
@@ -104,6 +140,7 @@ class IntegrationSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated):
         config = validated.pop("config", None)
+        self._lock(validated, instance)
         for k, v in validated.items():
             setattr(instance, k, v)
         if config is not None:

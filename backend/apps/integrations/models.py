@@ -19,6 +19,8 @@ class Integration(models.Model):
     provider = models.CharField(max_length=30)
     enabled = models.BooleanField(default=False)
     superadmin_only = models.BooleanField(default=False)  # a link of the superadmins: only they see and change it (for example the AI link that the reseller pays for)
+    locked = models.BooleanField(default=False)  # superadmin+ setting: this link is only shown (details, test, change) after it was opened with its password (see lock.py)
+    lock_password = models.CharField(max_length=128, blank=True)  # hashed (never stored or shown as typed)
     always_on = models.BooleanField(default=False)  # superadmin setting: needed to finish the installation: switched on at every start (and cannot be switched off), no password needed (see activation.py)
     in_installation = models.BooleanField(default=False)  # superadmin setting: this link (with its key) goes with every installation and is available at once (see default_links.py)
     config_encrypted = models.TextField(blank=True)  # all settings incl. secrets, encrypted at rest

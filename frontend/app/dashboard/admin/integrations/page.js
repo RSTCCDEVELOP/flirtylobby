@@ -37,6 +37,7 @@ export default function Integrations() {
   const [modal, setModal] = useState(null);
   const view = useView("integrations");
   const [browse, setBrowse] = useState(null); // S3 link whose files are being browsed
+  const [pw, setPw] = useState(null); // opening a locked link: {i, password, error, busy}
   const [smsT, setSmsT] = useState(null); // the sms screens: {i, step: "phone" | "code" | "done", phone, token, code, sandbox_code, error, busy}
 
   const load = useCallback(() => {
@@ -56,7 +57,7 @@ export default function Integrations() {
   const checked = useRef(new Set());
   useEffect(() => {
     if (L < 2) return;
-    const todo = items.filter((i) => i.always_on && i.enabled && !checked.current.has(i.id));
+    const todo = items.filter((i) => i.always_on && i.enabled && (!i.locked || i.unlocked) && !checked.current.has(i.id));
     if (!todo.length) return;
     todo.forEach((i) => checked.current.add(i.id));
     setChecking((c) => [...c, ...todo.map((i) => i.id)]);
@@ -159,6 +160,17 @@ export default function Integrations() {
       load();
     } catch (err) { setSmsT((t) => ({ ...t, busy: false, error: errorText(err) })); }
   };
+  // a link that has to be opened with a password first: until then it is a closed card
+  const openLink = async (e) => {
+    e?.preventDefault();
+    setPw((p) => ({ ...p, busy: true, error: "" }));
+    try {
+      const r = await api(`/admin/integrations/${pw.i.id}/unlock/`, { method: "POST", body: { password: pw.password } });
+      setItems((list) => list.map((x) => (x.id === r.id ? r : x)));
+      setPw(null);
+    } catch (err) { setPw((p) => ({ ...p, busy: false, error: errorText(err) })); }
+  };
+  const closeLink = async (i) => { try { const r = await api(`/admin/integrations/${i.id}/lock/`, { method: "POST" }); setItems((list) => list.map((x) => (x.id === r.id ? r : x))); } catch (err) { setError(errorText(err)); } };
   const toggle = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "PATCH", body: { enabled: !i.enabled } }));
   const test = (i) => act(i.id, () => api(`/admin/integrations/${i.id}/test/`, { method: "POST" }));
   const remove = async (i) => (await confirmDialog(tx("Koppeling \"{0}\" verwijderen? Functies die ervan afhangen stoppen.", i.name), { danger: true })) && act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "DELETE" }));
@@ -234,14 +246,19 @@ export default function Integrations() {
                     {i.superadmin_only && <span className="api-chip" title={tx("Alleen superadmins zien en wijzigen deze koppeling")}>{tx("Superadmin")}</span>}
                     {i.in_installation && <span className="api-chip" title={tx("Systeemkoppeling: gaat mee met elke installatie")}><span className="api-chip-ico" aria-hidden="true"><IconLock /></span>{tx("Standaard")}</span>}
                     {i.always_on && <span className="api-chip" title={tx("Altijd aan: nodig voor de installatie")}>{tx("Altijd aan")}</span>}
+                    {i.locked && <span className="api-chip" title={tx("Eerst met een wachtwoord openen")}><span className="api-chip-ico" aria-hidden="true"><IconKey /></span>{i.unlocked ? tx("Geopend") : tx("Vergrendeld")}</span>}
                   </span>
                 </div>
                 <label className="switch" title={i.always_on ? tx("Altijd aan: nodig voor de installatie") : i.enabled ? tx("Actief") : tx("Uit")}>
-                  <input type="checkbox" checked={i.enabled} disabled={L < 2 || !!i.always_on} onChange={() => toggle(i)} />
+                  <input type="checkbox" checked={i.enabled} disabled={L < 2 || !!i.always_on || (i.locked && !i.unlocked)} onChange={() => toggle(i)} />
                   <span />
                 </label>
               </div>
               <div className="api-body">
+                {i.locked && !i.unlocked ? (<>
+                  <span className="muted">{i.provider_label}</span>
+                  <span className="int-msg none">{tx("Deze koppeling is vergrendeld. Open hem met het wachtwoord om hem te zien.")}</span>
+                </>) : (<>
                 <span className="muted">{i.provider_label} · <code>{i.slug}</code></span>
                 {(() => {
                   const mf = spec(i.provider)?.fields.find((x) => x.type === "model");
@@ -252,13 +269,19 @@ export default function Integrations() {
                 })()}
                 {(i.provider === "spryng" || i.provider === "seven") && <span className="api-model" title={tx("Waarvoor deze koppeling gebruikt mag worden")}>{tx("Gebruik")}: <strong>{i.config?.usage === "messages" ? tx("verificatie en berichten") : tx("alleen verificatiecodes")}</strong></span>}
                 <span className={`int-msg ${st}`}>{st === "wait" ? tx(STATUS_TEXT.wait) : i.last_test_message || tx(STATUS_TEXT[st])}</span>
+                </>)}
               </div>
               <div className="api-actions">
-                {i.provider === "s3" && L >= 3 && <button className="btn sm" onClick={() => setBrowse(i)} disabled={!i.enabled} title={i.enabled ? "" : tx("Zet de koppeling eerst aan")}>{tx("Bladeren")}</button>}
-                {L >= 2 && (i.provider === "spryng" || i.provider === "seven" || i.provider === "bird") && <button className="btn sm" onClick={() => setSmsT({ i, step: "phone", phone: user?.phone || "", own: !!user?.phone, token: "", code: "", sandbox_code: "", error: "", busy: false })}>{tx("Sms-test")}</button>}
-                {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
-                {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
-                {L >= 3 && !i.enabled && (!(i.always_on || i.in_installation) || user?.is_superadmin_plus) && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
+                {i.locked && !i.unlocked ? (
+                  L >= 2 && <button className="btn sm primary" onClick={() => setPw({ i, password: "", error: "", busy: false })}>{tx("Openen")}</button>
+                ) : (<>
+                  {i.provider === "s3" && L >= 3 && <button className="btn sm" onClick={() => setBrowse(i)} disabled={!i.enabled} title={i.enabled ? "" : tx("Zet de koppeling eerst aan")}>{tx("Bladeren")}</button>}
+                  {L >= 2 && (i.provider === "spryng" || i.provider === "seven" || i.provider === "bird") && <button className="btn sm" onClick={() => setSmsT({ i, step: "phone", phone: user?.phone || "", own: !!user?.phone, token: "", code: "", sandbox_code: "", error: "", busy: false })}>{tx("Sms-test")}</button>}
+                  {L >= 2 && <button className="btn sm" onClick={() => test(i)} disabled={busy === i.id}>{busy === i.id ? tx("Testen…") : tx("Test")}</button>}
+                  {L >= 2 && <button className="btn sm" onClick={() => setModal({ ...i })}>{tx("Wijzig")}</button>}
+                  {L >= 3 && !i.enabled && (!(i.always_on || i.in_installation) || user?.is_superadmin_plus) && <button className="btn sm danger" onClick={() => remove(i)}>{tx("Verwijder")}</button>}
+                  {i.locked && L >= 2 && <button className="btn sm" onClick={() => closeLink(i)}>{tx("Vergrendelen")}</button>}
+                </>)}
               </div>
             </div>
           );
@@ -267,6 +290,21 @@ export default function Integrations() {
       </div>
       </Paged>
       </Collapsible>
+
+      {pw && (
+        <div className="overlay" onClick={() => setPw(null)}>
+          <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={openLink}>
+            <h2>{tx("Koppeling openen")}: {pw.i.name}</h2>
+            <p className="muted" style={{ margin: 0, fontSize: ".9rem" }}>{tx("Deze koppeling is vergrendeld. Vul het wachtwoord in om hem 30 minuten te openen.")}</p>
+            <label>{tx("Wachtwoord")}<input type="password" autoComplete="off" autoFocus required value={pw.password} onChange={(e) => setPw({ ...pw, password: e.target.value })} /></label>
+            {pw.error && <div className="alert">{pw.error}</div>}
+            <div className="row">
+              <button type="button" className="btn" onClick={() => setPw(null)}>{tx("Annuleren")}</button>
+              <button className="btn primary" disabled={pw.busy || !pw.password}>{pw.busy ? tx("Openen…") : tx("Openen")}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {smsT && (
         <div className="overlay" onClick={() => setSmsT(null)}>
@@ -340,6 +378,9 @@ export default function Integrations() {
                   <span>{tx("Superadmin-koppeling")}<small className="muted" style={{ display: "block" }}>{tx("Alleen superadmins zien en wijzigen deze koppeling, bijvoorbeeld de AI-koppeling die de reseller betaalt.")}</small></span></label>
                   <label className="check sec-toggle" style={{ alignItems: "flex-start" }}><span className="switch"><input type="checkbox" checked={!!modal.in_installation} onChange={(e) => setModal({ ...modal, in_installation: e.target.checked })} /><span /></span>
                   <span>{tx("In elke installatie meenemen")}<small className="muted" style={{ display: "block" }}>{tx("Deze koppeling gaat met haar sleutel mee met elke nieuwe installatie, staat aan en is meteen beschikbaar zonder instellen. Gebruik dit alleen voor een sleutel die elke installatie mag delen.")}</small></span></label>
+                  {user?.is_superadmin_plus && <label className="check sec-toggle" style={{ alignItems: "flex-start" }}><span className="switch"><input type="checkbox" checked={!!modal.locked} onChange={(e) => setModal({ ...modal, locked: e.target.checked })} /><span /></span>
+                  <span>{tx("Eerst met wachtwoord openen")}<small className="muted" style={{ display: "block" }}>{tx("De koppeling is een gesloten kaart tot iemand hem met het wachtwoord opent (30 minuten). Dan pas zijn instellingen, test en wijzigen zichtbaar.")}</small>
+                    {modal.locked && <input type="password" autoComplete="new-password" minLength={8} placeholder={modal.id && !modal.lock_password ? tx("Nieuw wachtwoord (leeg = ongewijzigd)") : tx("Kies een wachtwoord (minstens 8 tekens)")} value={modal.lock_password || ""} onChange={(e) => setModal({ ...modal, lock_password: e.target.value })} style={{ marginTop: ".4rem" }} />}</span></label>}
                   {user?.is_superadmin_plus && <label className="check sec-toggle" style={{ alignItems: "flex-start" }}><span className="switch"><input type="checkbox" checked={!!modal.always_on} onChange={(e) => setModal({ ...modal, always_on: e.target.checked })} /><span /></span>
                   <span>{tx("Altijd aan bij opstarten")}<small className="muted" style={{ display: "block" }}>{tx("Nodig om de installatie af te maken: de koppeling wordt bij elke start vanzelf aangezet en kan niet uit. Er is geen wachtwoord nodig om hem te activeren (de sleutel komt uit de omgeving van de server of van de easy2edit-server). Alleen een superadmin+ kan dit instellen.")}</small></span></label>}
                 </div>

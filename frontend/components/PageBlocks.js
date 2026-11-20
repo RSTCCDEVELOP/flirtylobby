@@ -48,10 +48,20 @@ const PALETTE = [["primary", "Primair"], ["secondary", "Secundair"], ["card", "K
 const FONT_VAR = { body: "var(--font-body)", heading: "var(--font-heading)", serif: "Georgia, 'Times New Roman', serif", mono: "ui-monospace, Menlo, Consolas, monospace" };
 const colorOf = (v) => (TOKEN_VAR[v] || v || "");
 // the look of a block or hero as CSS
+// a block with a solid background and no text colour of its own: white text on a dark colour, the theme text on a light one (black or white, or a hex colour; other colours are left to the theme)
+const autoFg = (st) => {
+  if (!st || st.color || !st.bg || (st.bg_a ?? 100) < 60) return "";
+  const hex = st.bg === "black" ? "#000000" : st.bg === "white" ? "#ffffff" : /^#[0-9a-f]{6}$/i.test(st.bg) ? st.bg : "";
+  if (!hex) return "";
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.18 ? "#ffffff" : "";
+};
 const styleCss = (st) => {
   if (!st) return {};
   const out = {};
   if (st.bg) out.background = `color-mix(in srgb, ${colorOf(st.bg)} ${st.bg_a ?? 100}%, transparent)`;
+  const fg = autoFg(st);
+  if (fg) { out.color = fg; out["--text"] = fg; }
   if (st.color) { out.color = colorOf(st.color); out["--text"] = colorOf(st.color); }
   if (st.font) out.fontFamily = FONT_VAR[st.font];
   if (st.radius !== undefined && st.radius !== "") out.borderRadius = `${st.radius}px`;
@@ -185,7 +195,8 @@ export default function PageBlocks({ pageKey, title = "" }) {
     return () => { delete root.dataset.pbbar; delete root.dataset.pbsb; };
   }, [shell, sbOpen]);
   const sbPage = (node) => (shell && pageTarget ? createPortal(node, pageTarget) : node);  // the settings of the whole page go in the panel (tab Pagina)
-  const sbHost = (node) => (shell && sbTarget ? createPortal(node, sbTarget) : node);  // the settings of a block or part go in the panel (when there is one)
+  // (React lets a click in a portal bubble to the parents of the portal: without the stop, a click in the panel on a label, in the content field or on empty space selected the block again, and the panel jumped from the part to the block)
+  const sbHost = (node) => (shell && sbTarget ? createPortal(<div className="pb-sbhost" style={{ display: "contents" }} onClick={(e) => e.stopPropagation()}>{node}</div>, sbTarget) : node);  // the settings of a block or part go in the panel (when there is one)
   const setContent = useSetBlock();
   // point a picture (or video) of the page at a library item or clear it: it shows at once, the page is not asked again
   const putMedia = async (key, m) => {
@@ -808,7 +819,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
       {editing && insertBar(null)}
       {layout.rows.filter((r) => !(heroOff && own(r))).map((r, ri) => (
         <Fragment key={r.id}>
-        <div id={rowNavId(r, ri)} onClick={(e) => selectRow(r, e)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.inner ? " inner" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color ? " tcolor" : ""}${r.cells.some((c) => c.style?.shadow) ? " has-shadow" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
+        <div id={rowNavId(r, ri)} onClick={(e) => selectRow(r, e)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.inner ? " inner" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color || autoFg(r.style) ? " tcolor" : ""}${r.cells.some((c) => c.style?.shadow) ? " has-shadow" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOverRow((o) => (o?.id === r.id ? null : o)); }}
           onDrop={(e) => { if (!rowDrag.current) return; e.preventDefault(); e.stopPropagation(); const pos = overRow?.id === r.id ? overRow.pos : "before"; dropRow(r.id, pos); rowDrag.current = null; setOverRow(null); setDragging(false); }}
           data-screen={r.screen ? "1" : undefined} data-sqm={r.sq_mobile ? "1" : undefined} data-glow={r.glow === false ? "off" : undefined} data-balign={!r.screen ? r.balign || undefined : undefined} data-pad={r.pad || undefined} data-fx={r.fx || undefined} data-v={r.v || undefined} data-touch={r.top === "touch" ? "1" : undefined} data-prev={r.top === "prev" ? "1" : undefined} style={{ ...styleCss(r.style), ...(r.mt !== undefined && r.mt !== null && r.top !== "touch" ? { marginTop: `calc(${r.mt}px - var(--pbg, 1.2rem))` } : {}), ...(r.padding ? { ...(r.padding.t != null ? { paddingTop: `${r.padding.t}px` } : {}), ...(r.padding.r != null ? { paddingRight: `${r.padding.r}px` } : {}), ...(r.padding.b != null ? { paddingBottom: `${r.padding.b}px` } : {}), ...(r.padding.l != null ? { paddingLeft: `${r.padding.l}px` } : {}) } : {}), ...(r.screen ? (() => { const w = Number(r.width && r.width !== "default" ? r.width : 100) || 100, al = r.balign || "center"; /* a block that is a part of the screen width: centred (or left / right when chosen), not stuck to the left edge */ return { width: `${w}vw`, maxWidth: "none", marginLeft: al === "left" ? "calc(50% - 50vw)" : al === "right" ? `calc(50% + 50vw - ${w}vw)` : `calc(50% - ${w / 2}vw)`, marginRight: "0", paddingLeft: 0, paddingRight: 0 }; })() : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>

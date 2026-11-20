@@ -14,6 +14,7 @@ import { LOGO_SETS } from "../lib/logos";
 import { ImageEdit } from "./EditMode";
 
 const BrandingContext = createContext({ assets: {}, photos: [], previewLogoSet: () => {} });
+const LOGO_KEYS = ["logo", "logo_dark", "header_logo", "header_logo_dark"]; // the pictures of the logo itself (the favicon and the app icon are not)
 const assetUrl = (p) => (p.startsWith("/logos/") ? p : mediaUrl(p)); // built-in sets are served by the frontend
 
 // Branding comes from the server layout, so logos render without flashing the default.
@@ -24,7 +25,10 @@ export function BrandingProvider({ value, logoSet, siteName, children }) {
   const ctx = useMemo(() => {
     const base = value || { assets: {}, photos: [] };
     const set = LOGO_SETS[active] || (base.assets?.logo ? null : LOGO_SETS.easy2edit);  // no own logo and no known set: the logo of the default theme (easy2edit)
-    return { ...base, assets: set ? (preview !== undefined ? { ...base.assets, ...set.assets } : { ...set.assets, ...base.assets }) : base.assets, // a logo that was uploaded (Logo's & beeld) wins over the logo set of the theme; the set only fills in what is missing, and in the preview of Vormgeving it wins
+    // a site with its own uploaded logo never gets a logo of the set in the dark mode: the set would fill in its own dark logo (easy2edit) next to the customer's light logo
+    const own = !!(base.assets?.logo || base.assets?.header_logo);
+    const setAssets = set && own && preview === undefined ? Object.fromEntries(Object.entries(set.assets).filter(([k]) => !LOGO_KEYS.includes(k))) : set?.assets;
+    return { ...base, assets: set ? (preview !== undefined ? { ...base.assets, ...set.assets } : { ...setAssets, ...base.assets }) : base.assets, // a logo that was uploaded (Logo's & beeld) wins over the logo set of the theme; the set only fills in what is missing, and in the preview of Vormgeving it wins
     alt: siteName || set?.alt, previewLogoSet: (v) => setPreview(v === null ? undefined : v) };
   }, [value, active, siteName]);
   return <BrandingContext.Provider value={ctx}>{children}</BrandingContext.Provider>;

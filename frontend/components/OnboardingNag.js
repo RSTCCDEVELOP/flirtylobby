@@ -46,8 +46,7 @@ export default function OnboardingNag({ user }) {
     if (!st || st.complete || !user?.is_staff) return undefined;
     const once = (k) => { if (autoDone[k]) return false; autoDone[k] = true; return true; };
     const t = setTimeout(() => {
-      if (st.next === "links" && once("links")) window.dispatchEvent(new Event("open-syslinks"));
-      else if (st.next === "ai" && once("ai")) window.dispatchEvent(new Event("open-ai-welcome"));
+      if (st.next === "ai" && once("ai")) window.dispatchEvent(new Event("open-ai-welcome"));
       else if (st.next === "design" && once("design")) {
         markPlan();
         if (!window.location.pathname.startsWith("/dashboard/admin/siteimport")) { startWizardLoading(); window.location.href = "/dashboard/admin/siteimport"; }
@@ -67,7 +66,6 @@ export default function OnboardingNag({ user }) {
       sessionStorage.setItem(LAST, String(Date.now()));
     } catch { /* no storage */ }
     setOpen(false);
-    if (next === "links") { window.dispatchEvent(new Event("open-syslinks")); return; }
     if (next === "ai") { window.dispatchEvent(new Event("open-ai-welcome")); return; }
     if (next === "design") { markPlan(); startWizardLoading(); window.location.href = "/dashboard/admin/siteimport"; return; }
     if (next === "licence") { window.dispatchEvent(new Event("open-setup-wizard")); return; }

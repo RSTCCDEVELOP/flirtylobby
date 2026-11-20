@@ -164,3 +164,41 @@ def test_delete_needs_the_link_off_and_a_system_link_needs_a_superadmin_plus(db)
     c.force_authenticate(plus)
     assert c.patch(f"/api/admin/integrations/{o.pk}/", {"always_on": False}, format="json").status_code == 200
     assert c.delete(f"/api/admin/integrations/{o.pk}/").status_code == 204
+
+
+def test_a_locked_link_is_closed_until_it_is_opened_with_its_password(db):
+    o = link(db)
+    plus = User.objects.create(username="p", email="p@example.com", is_staff=True, is_superuser=True, is_superadmin_plus=True)
+    other = User.objects.create(username="o", email="o@example.com", is_staff=True, is_superuser=True)
+    c = APIClient()
+    c.force_authenticate(plus)
+    no = c.patch(f"/api/admin/integrations/{o.pk}/", {"locked": True}, format="json")
+    assert no.status_code == 400 and "lock_password" in no.data  # a password is needed
+    ok = c.patch(f"/api/admin/integrations/{o.pk}/", {"locked": True, "lock_password": "geheim-wachtwoord"}, format="json")
+    assert ok.status_code == 200 and "lock_password" not in ok.data
+    o.refresh_from_db()
+    assert o.locked and o.lock_password and o.lock_password != "geheim-wachtwoord"  # kept as a hash
+    # a superadmin that did not open it sees a closed card: no settings, no test message, no change, no test
+    c.force_authenticate(other)
+    r = c.get(f"/api/admin/integrations/{o.pk}/")
+    assert r.data["locked"] and not r.data["unlocked"] and r.data["config"] == {} and r.data["last_test_message"] == ""
+    assert c.patch(f"/api/admin/integrations/{o.pk}/", {"name": "x"}, format="json").status_code == 403
+    assert c.post(f"/api/admin/integrations/{o.pk}/test/").status_code == 403
+    assert c.delete(f"/api/admin/integrations/{o.pk}/").status_code == 403
+    assert c.post(f"/api/admin/integrations/{o.pk}/unlock/", {"password": "fout"}, format="json").status_code == 400
+    opened = c.post(f"/api/admin/integrations/{o.pk}/unlock/", {"password": "geheim-wachtwoord"}, format="json")
+    assert opened.status_code == 200 and opened.data["unlocked"] and opened.data["config"]["usage"] == "verification"
+    assert c.patch(f"/api/admin/integrations/{o.pk}/", {"name": "Nieuw"}, format="json").status_code == 200  # open: it can be changed
+    assert c.post(f"/api/admin/integrations/{o.pk}/lock/").data["unlocked"] is False  # closed again
+    # only a superadmin+ can lock or unlock the setting
+    assert c.patch(f"/api/admin/integrations/{o.pk}/", {"locked": False}, format="json").status_code == 403
+
+
+def test_too_many_wrong_passwords_block_for_a_while(db):
+    o = link(db)
+    Integration.objects.filter(pk=o.pk).update(locked=True, lock_password=__import__("apps.integrations.lock", fromlist=["x"]).hash_password("geheim-wachtwoord"))
+    u = User.objects.create(username="s", email="s@example.com", is_staff=True, is_superuser=True)
+    c = APIClient()
+    c.force_authenticate(u)
+    codes = [c.post(f"/api/admin/integrations/{o.pk}/unlock/", {"password": "x"}, format="json").status_code for _ in range(6)]
+    assert codes[:5] == [400] * 5 and codes[5] == 429

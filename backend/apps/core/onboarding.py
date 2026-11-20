@@ -21,7 +21,6 @@ STEPS = [
     ("terms", "Voorwaarden accepteren met de e-mailcode"),
     ("manual", "Handleiding"),
     ("install", "Standaard installatie"),
-    ("links", "API-koppelingen installeren (Stripe, e-mail, Claude)"),
     ("ai", "AI-tegoed uitleggen en instellen"),
     ("design", "Website ontwerpen: de wizard starten"),
 ]
@@ -59,21 +58,12 @@ def status(user):
     if d.get(COMPLETE_KEY) and not replay:  # the design wizard was started: done, whatever was skipped on the way
         return {"complete": True, "next": "", "next_label": "", "steps": [{"key": k, "label": lb, "done": True} for k, lb in STEPS]}
     has_lic = bool(system.license_info()["has"]) and not system.setup_missing()
-    links_done = True
-    try:  # the easy2edit API links (Stripe, e-mail, Claude) come from a password-locked file: until they are installed the AI cannot work, so the AI screens wait for them
-        from . import syslinks
-
-        links_done = not syslinks.file_status()["needed"]
-    except Exception:  # noqa: BLE001
-        links_done = True
     ai_done = True
     try:
         from . import modules
         from apps.integrations.models import AiAccount
 
-        if not links_done:
-            ai_done = False
-        elif modules.enabled("ai"):
+        if modules.enabled("ai"):
             acc = AiAccount.objects.filter(user=user).first()
             ai_done = bool(acc and acc.welcomed)  # (no account yet: the explanation was not shown yet)
     except Exception:  # noqa: BLE001
@@ -84,7 +74,6 @@ def status(user):
         "terms": bool(terms.signed(user, terms.current().version)),
         "manual": bool(d.get("manual_asked")) and not replay,
         "install": bool(presets.active()) and not replay,
-        "links": links_done,
         "ai": ai_done,
         "design": bool(d.get(COMPLETE_KEY)) and not replay,
     }

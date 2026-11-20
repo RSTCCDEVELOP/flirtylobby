@@ -391,9 +391,6 @@ def test_onboarding_makes_the_group_everyone_with_all_users(admin):
 
 @pytest.mark.django_db
 def test_onboarding_status_remembers_where_it_is(admin, monkeypatch):
-    from apps.core import syslinks
-
-    monkeypatch.setattr(syslinks, "file_status", lambda: {"file": False, "missing": [], "needed": False})  # (the links are not part of this test)
     from apps.core import onboarding, presets, reset
     from apps.core.models import License, SystemSettings, TermsSignature
     from apps.core import system, terms
@@ -504,18 +501,11 @@ def test_a_new_installation_is_marked_started_when_the_colour_question_is_asked(
 
 
 @pytest.mark.django_db
-def test_onboarding_waits_for_the_api_links_before_the_ai_screens(admin, monkeypatch):
-    from apps.core import syslinks
-
-    monkeypatch.setattr(syslinks, "file_status", lambda: {"file": True, "missing": ["anthropic"], "needed": True})
+def test_onboarding_has_no_step_for_installing_the_api_links(admin):
+    """The API links that must be on come from the environment / the easy2edit server (always on); nothing is installed with a password in the onboarding any more."""
     s = admin.get("/api/system/onboarding/").json()
     keys = [x["key"] for x in s["steps"]]
-    assert keys.index("links") < keys.index("ai") < keys.index("design")
-    done = {x["key"]: x["done"] for x in s["steps"]}
-    assert done["links"] is False and done["ai"] is False  # the AI waits for the links, also when the AI module is off for now
-    monkeypatch.setattr(syslinks, "file_status", lambda: {"file": True, "missing": [], "needed": False})
-    done = {x["key"]: x["done"] for x in admin.get("/api/system/onboarding/").json()["steps"]}
-    assert done["links"] is True
+    assert "links" not in keys and keys.index("ai") < keys.index("design")
 
 
 @pytest.mark.django_db

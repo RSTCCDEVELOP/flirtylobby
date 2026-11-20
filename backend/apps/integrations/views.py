@@ -10,14 +10,15 @@ import logging
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny
 
 from apps.accounts.permissions import has_level, has_level_for
 from apps.core import modules
 from apps.core.modules import module_required
 from rest_framework.response import Response
 
-from . import providers
+from . import lock, providers
 from .models import Integration
 from .serializers import IntegrationSerializer
 
@@ -43,6 +44,34 @@ class IntegrationViewSet(viewsets.ModelViewSet):
     queryset = Integration.objects.all()
     serializer_class = IntegrationSerializer
     permission_classes = [has_level_for("integrations", {"list": "use", "retrieve": "use", "create": "manage", "destroy": "manage"}, default="edit"), module_required("integrations")]
+
+    def get_object(self):
+        obj = super().get_object()
+        # a link that is locked is closed to everything (change, test, sms test, delete) until it was opened with its password
+        if obj.locked and self.action not in ("retrieve", "unlock", "lock") and not lock.is_open(self.request.user, obj):
+            raise PermissionDenied("Open de koppeling eerst met het wachtwoord.")
+        return obj
+
+    @action(detail=True, methods=["post"])
+    def unlock(self, request, pk=None):
+        """Open a locked link with its password (30 minutes, only for this person)."""
+        obj = self.get_object()
+        if not obj.locked:
+            return Response(self.get_serializer(obj).data)
+        res = lock.try_open(request.user, obj, request.data.get("password"))
+        if res == "blocked":
+            return Response({"detail": "Te veel pogingen. Probeer het over 10 minuten opnieuw."}, status=429)
+        if res != "ok":
+            return Response({"detail": "Het wachtwoord is onjuist."}, status=400)
+        logger.info("Link %s opened by %s", obj.slug, request.user.email)
+        return Response(self.get_serializer(obj).data)
+
+    @action(detail=True, methods=["post"])
+    def lock(self, request, pk=None):
+        """Close a locked link again (before the 30 minutes are over)."""
+        obj = self.get_object()
+        lock.close(request.user, obj)
+        return Response(self.get_serializer(obj).data)
 
     def get_queryset(self):
         """A link of the superadmins is only seen and changed by superadmins."""
@@ -165,7 +194,7 @@ def model_list(request):
     cfg = {}
     if request.data.get("id"):
         obj = Integration.objects.filter(pk=request.data["id"], provider=provider, **({} if request.user.is_staff else {"superadmin_only": False})).first()
-        cfg = dict(obj.config) if obj else {}
+        cfg = dict(obj.config) if obj and lock.is_open(request.user, obj) else {}  # (a locked link only gives its key once it was opened)
     typed = str(request.data.get("api_key") or "")
     if typed and not typed.startswith("•"):
         cfg["api_key"] = typed
@@ -185,6 +214,8 @@ def export_all(request):
     if len(pw) < 8:
         return Response({"detail": "Kies een wachtwoord van minstens 8 tekens om het bestand te beveiligen."}, status=400)
     rows = backup._export({"include_secrets": True, "hide_superadmin": not request.user.is_staff})
+    closed = {o.slug for o in Integration.objects.filter(locked=True) if not lock.is_open(request.user, o)}  # a link that is locked is not exported before it was opened
+    rows = [r for r in rows if r.get("slug") not in closed]
     logger.info("API links exported by %s (%s links)", request.user.email, len(rows))
     return Response(transfer.pack(rows, pw))
 
@@ -205,27 +236,3 @@ def import_all(request):
     msg = backup._apply(rows, None)
     logger.info("API links imported by %s (%s links)", request.user.email, len(rows))
     return Response({"detail": msg, "count": len(rows)})
-
-
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def syslinks_status(request):
-    """For a superadmin: is the locked file with the easy2edit links there and are Stripe, Postmark and Claude still missing?"""
-    from apps.core import syslinks
-
-    return Response(syslinks.file_status())
-
-
-@api_view(["POST"])
-@permission_classes([IsAdminUser])
-def syslinks_install(request):
-    """Install and switch on Stripe, Postmark and Claude from resource/api with the password; a wrong password installs nothing."""
-    from apps.core import syslinks
-
-    try:
-        done = syslinks.install_from_file(str(request.data.get("password") or ""))
-    except ValueError as e:
-        logger.warning("easy2edit API links: install refused for %s", request.user.email)
-        return Response({"detail": str(e)}, status=400)
-    logger.info("easy2edit API links installed by %s (%s)", request.user.email, ", ".join(done))
-    return Response({"installed": done, **syslinks.file_status()})
