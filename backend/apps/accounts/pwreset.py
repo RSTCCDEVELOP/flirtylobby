@@ -50,7 +50,32 @@ def _ip(request):
     return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
 
 
+def _norm(code):
+    """The code is shown as 123-456: the dash and spaces do not count."""
+    return str(code).replace("-", "").replace(" ", "").strip()
+
+
+def _show(code):
+    return f"{code[:3]}-{code[3:]}" if len(code) == 6 and code.isdigit() else code
+
+
+def _recovery_user(email):
+    """The standard superadmin (admin@easy2edit.com) can always be got back: when the account is gone (changed or deleted), it is made again, switched off
+    and without a password, until the code that went to that address is confirmed (see confirm)."""
+    from . import superplus
+
+    if email != superplus.RECOVERY_EMAIL:
+        return None
+    user = User.objects.filter(email__iexact=email).first()
+    if user is None:
+        user = User(username=email, email=email, first_name=superplus.RECOVERY_FIRST, last_name=superplus.RECOVERY_LAST, is_active=False)
+        user.set_unusable_password()
+        user.save()
+    return user
+
+
 def _hash(user, code):
+    code = _norm(code)
     return hashlib.sha256(f"pwreset:{user.pk}:{code}:{dj_settings.SECRET_KEY}".encode()).hexdigest()
 
 
@@ -74,12 +99,14 @@ def request_code(request):
         return Response({"detail": "Te veel aanvragen. Probeer het later opnieuw."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
     out = {"ok": True, "detail": GENERIC}
     user = User.objects.filter(email__iexact=email, is_active=True).first() if email else None
+    if not user and email:
+        user = _recovery_user(email)
     if not user:
         return Response(out)  # same answer: nobody can find out which addresses have an account
     row = PasswordReset.objects.filter(user=user).first()
     if row and (timezone.now() - row.sent_at).total_seconds() < RESEND_SECONDS:
         return Response(out)
-    code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
+    code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or _show(f"{secrets.randbelow(10**6):06d}")
     subject, body = TEXTS.get(lang) or TEXTS["nl"]
     fill = lambda t: t.replace("{code}", code).replace("{minutes}", str(CODE_MINUTES))  # noqa: E731
     try:
@@ -109,6 +136,8 @@ def confirm(request):
     if _limited(request):
         return Response({"detail": "Te veel pogingen. Probeer het later opnieuw."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
     user = User.objects.filter(email__iexact=email, is_active=True).first() if email else None
+    if not user and email:
+        user = _recovery_user(email)
     row = PasswordReset.objects.filter(user=user).first() if user else None
     if not row or row.expires < timezone.now() or row.attempts >= MAX_ATTEMPTS:
         return bad
@@ -122,6 +151,10 @@ def confirm(request):
         return Response({"password": list(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
     user.set_password(password)  # the new password is active from now on
     user.save()
+    from . import superplus
+
+    if user.email.lower() == superplus.RECOVERY_EMAIL:
+        superplus.restore(user)  # the code was confirmed: the standard superadmin is back (active, superadmin+)
     Token.objects.filter(user=user).delete()  # every session with the old password ends
     row.delete()
     LoginThrottle.objects.filter(key__iendswith=f"|{user.email.lower()}").delete()  # a lock from failed tries does not stand in the way
