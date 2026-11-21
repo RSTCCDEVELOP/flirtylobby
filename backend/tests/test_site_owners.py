@@ -67,3 +67,19 @@ def test_unique_ids_exist_on_every_user_and_entity(db):
     a, b = get_user_model().objects.create(username="a"), get_user_model().objects.create(username="b")
     assert a.uid != b.uid and not a.remote_id
     assert Entity.objects.create(name="x").uid != Entity.objects.create(name="y").uid
+
+
+def test_on_the_master_site_itself_the_own_id_is_the_easy2edit_id(db, monkeypatch):
+    from apps.core import entity, sitemanager
+
+    e = entity.own()
+    Entity.objects.filter(pk=e.pk).update(name="Master BV")
+    u = get_user_model().objects.create(username="o@master.nl", email="o@master.nl")
+    monkeypatch.setattr(sitemanager, "server_enabled", lambda: True)
+    monkeypatch.setattr(siteowners, "payload", lambda: {"url": "https://api.easy2edit.com"})
+    monkeypatch.setattr(siteowners, "owner_user", lambda: u)
+    monkeypatch.setattr(sitemanager, "payload", lambda ev, role="": {"url": "https://api.easy2edit.com"})
+    assert siteowners.push()["ok"]
+    u.refresh_from_db()
+    e.refresh_from_db()
+    assert u.remote_id == str(u.uid) and e.remote_id == str(e.uid) and "api.easy2edit.com" in u.domains and "api.easy2edit.com" in e.domains

@@ -100,8 +100,8 @@ def push(force=False, fresh=False):
     """Make or find the owner and the company on the master site and keep their ids here. Never raises. -> {ok, skipped, error}. This installation being the master itself: nothing to do.
     After a reset that removed them from the master site nothing is sent again (also not at the next login) until a new licence is made (fresh)."""
     try:
-        if sitemanager.server_enabled():
-            return {"ok": True, "skipped": "server", "error": ""}
+        if sitemanager.server_enabled():  # this installation IS the master site: the owner and the company are the records of the master, their id is the easy2edit id
+            return _own_ids_here()
         if fresh:
             sitemanager._save(owner_removed=False)
         elif sitemanager._state().get("owner_removed"):
@@ -128,6 +128,18 @@ def push(force=False, fresh=False):
     except Exception as ex:  # noqa: BLE001 - the licence never fails because of this
         logger.warning("site owner not sent to the master site: %s", ex)
         return {"ok": False, "skipped": "", "error": str(ex)[:200]}
+
+
+def _own_ids_here():
+    """On the master site itself there is no other server: the owner and the company of this website already live here, so their own id is also their easy2edit id."""
+    data = payload()
+    if not data:
+        return {"ok": False, "skipped": "no-data", "error": ""}
+    u, e = owner_user(), entity.own()
+    get_user_model().objects.filter(pk=u.pk).update(remote_id=str(u.uid))
+    Entity.objects.filter(pk=e.pk).update(remote_id=str(e.uid))
+    mark_local()
+    return {"ok": True, "skipped": "", "error": ""}
 
 
 def push_async(fresh=False):
