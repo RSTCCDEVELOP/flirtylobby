@@ -115,6 +115,10 @@ export default function EntityList({ canEdit, canManage }) {
   );
 }
 
+// A value that is shown and can not be changed (the unique id, the easy2edit id, the websites): selectable text, no input.
+export function ReadOnly({ label, value, empty = "", wide = false }) {
+  return <div className="e2e-field" style={wide ? { gridColumn: "1 / -1" } : undefined}><label className="e2e-label"><span>{label}</span></label><div className="e2e-input" style={{ opacity: .85, userSelect: "all", fontFamily: "ui-monospace, monospace", fontSize: ".85rem", overflowWrap: "anywhere" }} aria-readonly="true">{value || <span className="muted">{empty}</span>}</div></div>;
+}
 export const EMPTY_ENTITY = EMPTY;
 const VARS = [["naam", "Naam"], ["juridische_naam", "Juridische naam"], ["omschrijving", "Omschrijving"], ["email", "E-mail"], ["telefoon", "Telefoon"], ["website", "Website"], ["adres", "Adres"], ["plaats", "Plaats"], ["postcode", "Postcode"], ["land", "Land"], ["kvk", "Registratienummer (KvK)"], ["btw", "Btw-nummer"], ["soort", "Soort"]];
 const USER_VARS = [["naam", "Naam"], ["voornaam", "Voornaam"], ["achternaam", "Achternaam"], ["email", "E-mail"], ["functie", "Functie"], ["bedrijf", "Bedrijf"]];
@@ -141,7 +145,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
     if (Object.keys(x).length) { setTab(x.name || x.kind_name ? "general" : "contact"); return; }
     setBusy(true); setErr(null);
     try {
-      const body = { ...f }; delete body.users0; delete body.groups0; delete body.own; delete body.id;
+      const body = { ...f }; delete body.users0; delete body.groups0; delete body.own; delete body.id; delete body.ids;
       await api(f.id ? `/entities/${f.id}/` : "/entities/", { method: f.id ? "PUT" : "POST", body });
       onSaved();
     } catch (e) { setErr(errorText(e)); }
@@ -192,7 +196,12 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
               {field("street", "Straat", { max: 120 })}{field("house_number", "Huisnummer", { max: 20 })}{field("postal_code", "Postcode", { max: 20 })}{field("city", "Plaats", { max: 80 })}{field("country", "Land", { max: 80 })}
             </div>
           )}
-          {tab === "registration" && <div style={grid}>{field("registration_no", "Registratienummer (KvK)", { max: 40 })}{field("vat_no", "Btw-nummer", { max: 40 })}</div>}
+          {tab === "registration" && <div style={grid}>{field("registration_no", "Registratienummer (KvK)", { max: 40 })}{field("vat_no", "Btw-nummer", { max: 40 })}
+            {f.id && f.ids && <>
+              <ReadOnly label={tx("Id")} value={f.ids.uid} />
+              <ReadOnly label={tx("easy2edit id")} value={f.ids.remote_id} empty={tx("Nog niet aangemaakt op de easy2edit server")} />
+              <ReadOnly label={tx("Websites")} value={(f.ids.domains || []).join(", ")} empty={tx("(geen)")} wide />
+            </>}</div>}
           {tab === "variables" && (
             <div>
               <p className="muted" style={{ marginTop: 0 }}>{tx("Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).")}</p>

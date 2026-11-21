@@ -552,7 +552,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
       : it.type === "heading" ? <div className={`pb-tstyle ts-${it.style?.tag || "k2"}${it.style?.size ? " ts-size" : ""}${it.style?.color ? " ts-color" : ""}${it.style?.font ? " ts-font" : ""}${it.style?.weight ? " ts-weight" : ""}${it.style?.italic ? " ts-italic" : ""}`} style={{ padding: padCss(it.style?.pad), ...(it.style?.size ? { "--ti-size": `${it.style.size}rem` } : {}), ...(it.style?.color ? { "--ti-color": colorOf(it.style.color) } : {}), ...(it.style?.font ? { "--ti-font": FONT_VAR[it.style.font] } : {}), ...(it.style?.weight ? { "--ti-weight": it.style.weight } : {}), ...(it.style?.accent ? { "--ti-accent": it.style.accent } : {}), textAlign: it.style?.align || c.halign, ...(it.style?.mb !== undefined ? { marginBottom: `${it.style.mb}rem` } : {}) }}><EditableText id={key} removable={false} rich={!!it.style?.accent} as={{ k1: "h2", k2: "h3", k3: "h4", k4: "h5" }[it.style?.tag || "k2"] || "h3"} fallback={editing ? tx("Klik om een kop te typen") : ""} className="pb-text pb-heading" /></div>
       : it.type === "button" ? <PbButton it={it} c={{ ...c, halign: ha }} editing={editing} />
       : it.type === "widget" ? <PbWidget it={it} editing={editing} />
-      : it.type === "spacer" ? <div className="pb-spacer" style={{ height: it.style?.h ?? 40 }} aria-hidden="true">{editing && <small className="muted">{it.style?.h ?? 40} px</small>}</div>
+      : it.type === "spacer" ? <div className="pb-spacer" style={{ height: it.style?.hu === "pct" ? `${it.style?.h ?? 10}vh` : (it.style?.h ?? 40) }} aria-hidden="true">{editing && <small className="muted">{it.style?.h ?? (it.style?.hu === "pct" ? 10 : 40)} {it.style?.hu === "pct" ? "%" : "px"}</small>}</div>
       : it.type === "line" ? <div className="pb-line" style={{ padding: padCss(it.style?.pad), justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[ha] || "flex-start" }}><hr style={{ width: `${it.style?.lw ?? 100}%`, borderTopWidth: it.style?.th ?? 1, ...(it.style?.color ? { borderColor: colorOf(it.style.color) } : {}) }} /></div>
       : it.type === "image" ? <div className={`pb-imgstyle${it.style?.w ? " has-w" : ""}`} style={{ ...(it.style?.align ? { justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[it.style.align] } : {}), "--ii-w": it.style?.w || "auto", "--ii-o": (it.style?.opacity ?? 100) / 100, "--ii-r": it.style?.radius !== undefined ? `${it.style.radius}px` : "inherit" }}><EditableImage id={key} removable={false} video className="pb-img" fallback={it.ref === "home.hero" ? <Logo /> : <div className="pb-ph pb-ph-img" role="img" aria-label={tx("Afbeelding")}><svg viewBox="0 0 64 48" width="64" height="48" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="4" width="56" height="40" rx="5" /><circle cx="21" cy="18" r="5" /><path d="M4 36l15-13 11 10 9-8 21 17" /></svg>{editing && <span>{tx("Klik om een afbeelding te kiezen")}</span>}</div>} /></div>
       : <SysObjectBySlug slug={it.ref} layout={it.layout} />;
@@ -625,9 +625,13 @@ export default function PageBlocks({ pageKey, title = "" }) {
             <strong>{tx("Tussenruimte")}</strong>
             <Tabs tabs={[["size", "Hoogte"], ["pos", "Position"]]} value={itemTab[it.id] || "size"} onChange={(k) => setItemTab((s) => ({ ...s, [it.id]: k }))} />
             {itemTab[it.id] === "pos" ? <PositionTab value={it.style} onChange={(p) => setItem(it.id, p)} /> : (<>
-            <div className="pb-stylerow"><span>{tx("Hoogte")}</span>
-              <input type="range" min={0} max={400} step={4} value={it.style?.h ?? 40} onChange={(e) => setItem(it.id, { h: Number(e.target.value) })} style={{ width: 200 }} aria-label={tx("Hoogte")} />
-              <input type="number" min={0} max={1000} value={it.style?.h ?? 40} onChange={(e) => setItem(it.id, { h: Math.min(1000, Math.max(0, Number(e.target.value) || 0)) })} style={{ width: "5.5rem" }} /><small className="muted">px</small></div>
+            {(() => { const pct = it.style?.hu === "pct", cur = it.style?.h ?? (pct ? 10 : 40), top = pct ? 100 : 800; return (
+            <div style={{ display: "grid", gap: ".5rem" }}>
+              <div className="pb-stylerow"><span>{tx("Hoogte")}</span>
+                <input type="number" min={0} max={top} value={cur} onChange={(e) => setItem(it.id, { h: Math.min(top, Math.max(0, Number(e.target.value) || 0)) })} style={{ width: "5rem" }} />
+                <select value={pct ? "pct" : "px"} onChange={(e) => setItem(it.id, e.target.value === "pct" ? { hu: "pct", h: 10 } : { hu: "", h: 40 })} aria-label={tx("Eenheid")} style={{ width: "auto", minWidth: "4.5rem" }}><option value="px">px</option><option value="pct">{tx("% van het scherm")}</option></select></div>
+              <input type="range" min={0} max={top} step={pct ? 1 : 4} value={Math.min(cur, top)} onChange={(e) => setItem(it.id, { h: Number(e.target.value) })} style={{ width: "100%", minWidth: 0 }} aria-label={tx("Hoogte")} />
+            </div>); })()}
             </>)}
           </div>
         )}

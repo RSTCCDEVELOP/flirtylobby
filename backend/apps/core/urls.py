@@ -83,6 +83,8 @@ urlpatterns = [
     path("easy2edit/sites/register/", sitemanager_views.site_register),
     path("easy2edit/sites/ping/", sitemanager_views.site_ping),
     path("easy2edit/sites/disconnect/", sitemanager_views.site_disconnect),
+    path("easy2edit/sites/owner/", sitemanager_views.site_owner),
+    path("easy2edit/sites/owner/remove/", sitemanager_views.site_owner_remove),
     path("easy2edit/default-links/", sitemanager_views.default_links),
     path("easy2edit/source/", sitemanager_views.source_list),
     path("easy2edit/source/file/", sitemanager_views.source_file),

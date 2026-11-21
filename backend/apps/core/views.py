@@ -857,6 +857,13 @@ def _make_license(until=None, months=None, hosting=None, user=None):
         everyone.ensure()  # the standard group "Everyone" with all users in it
     except Exception:  # noqa: BLE001 - never stop the licence for this
         __import__("logging").getLogger(__name__).exception("entity could not be made from the licence")
+    try:  # the owner and the company also go to the easy2edit master site (invoices are linked to them); in the background, never in the way of the licence
+        from . import siteowners
+
+        siteowners.mark_local()
+        siteowners.push_async(fresh=True)
+    except Exception:  # noqa: BLE001
+        __import__("logging").getLogger(__name__).exception("site owner could not be sent")
 
 
 @api_view(["GET", "PUT"])
@@ -970,7 +977,7 @@ def system_reset(request):
         return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
     if replay:
         return Response({"replay": reset.replay_onboarding()})
-    removed = reset.perform(request.user, ai=bool(request.data.get("ai")), delete_admins=bool(request.data.get("delete_admins")), delete_superadmins=bool(request.data.get("delete_superadmins")), keep_identity=bool(request.data.get("keep_identity")))
+    removed = reset.perform(request.user, ai=bool(request.data.get("ai")), delete_admins=bool(request.data.get("delete_admins")), delete_superadmins=bool(request.data.get("delete_superadmins")), keep_identity=bool(request.data.get("keep_identity")), remove_remote=bool(request.data.get("remove_remote")))
     applied = None
     if request.data.get("preset"):  # start straight from a standard installation
         from . import presets

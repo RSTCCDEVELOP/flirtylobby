@@ -81,6 +81,60 @@ export function stripKitRules(css) {
   return walk(sheet.cssRules);
 }
 
+// A system object in the preview of a design: a MOCKUP that works like the real object (arrows, dots, thumbnails) but is not connected to the database: it only uses the photos of the design.
+// The preview frame runs no scripts, so every style works with css only (hidden radio buttons + labels). The real object, with the real content, appears when the website is made.
+const objectName = (slug) => { const w = String(slug || "").replace(/^(media|plugin)-/, "").replace(/^standaard-/, "").replace(/-/g, " "); return w.charAt(0).toUpperCase() + w.slice(1); };
+const MOCK_KIND = [["coverflow", "coverflow"], ["slideshow", "fade"], ["filmstrip", "filmstrip"], ["vcarousel", "vertical"], ["book", "fade"], ["stack", "fade"], ["mosaic", "grid"], ["wall", "grid"], ["album", "grid"], ["videogrid", "grid"], ["playlist", "filmstrip"]];
+let objSeq = 0;
+const CHEV = (d) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d === "l" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"}"/></svg>`;
+function objectPreview(slug, photos, none) {
+  const name = esc(objectName(slug)), id = `mo${++objSeq}`;
+  const tag = `<div style="font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin:.5rem 0 0">Systeemobject: ${name} (voorbeeld)</div>`;
+  if (!/^media-/.test(slug)) {
+    return `<div data-sysobject-preview="${esc(slug)}" style="border:1px dashed var(--line,#cbd5e1);border-radius:var(--radius,10px);padding:1.6rem 1rem;text-align:center"><b>${name}</b><div style="opacity:.65;font-size:.85rem;margin-top:.25rem">Dit onderdeel van easy2edit komt hier, met de echte inhoud.</div></div>`;
+  }
+  const real = (photos || []).filter((x) => x && x.url && !/\.(mp4|webm)$/i.test(x.url || "")).slice(0, 6).map((x) => mediaUrl(x.url));
+  const urls = real.length ? real : [none, none, none, none].filter(Boolean);
+  const n = urls.length || 4, kind = (MOCK_KIND.find(([k]) => slug.includes(k)) || [0, "slide"])[1];
+  const img = (u, k, st = "") => (u ? `<img src="${esc(u)}" alt="" style="${st}">` : `<i class="${id}-ph" style="${st}"></i>`);
+  const list = urls.length ? urls : Array.from({ length: n }, () => null);
+  const radios = list.map((_, k) => `<input type="radio" name="${id}" id="${id}-${k}" class="${id}-r"${k === 0 ? " checked" : ""}>`).join("");
+  const dots = `<div class="${id}-dots">${list.map((_, k) => `<label for="${id}-${k}" aria-label="${k + 1}"></label>`).join("")}</div>`;
+  const arrows = list.map((_, k) => `<label for="${id}-${(k + n - 1) % n}" class="${id}-a ${id}-p${k}">${CHEV("l")}</label><label for="${id}-${(k + 1) % n}" class="${id}-a ${id}-n${k} ${id}-nx">${CHEV("r")}</label>`).join("");
+  let css = `.${id}{position:relative}.${id}-r{position:absolute;opacity:0;pointer-events:none}.${id}-view{position:relative;overflow:hidden;border-radius:var(--radius,10px);aspect-ratio:16/9;background:var(--line,#e2e8f0)}.${id}-view img,.${id}-ph{display:block;width:100%;height:100%;object-fit:cover}.${id}-ph{background:var(--line,#e2e8f0)}`
+    + `.${id}-a{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.9);color:#111;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:5;box-shadow:0 2px 8px #0004}.${id}-a:not(.${id}-nx){left:10px}.${id}-nx{right:10px}`
+    + `.${id}-dots{display:flex;justify-content:center;gap:8px;margin-top:.6rem}.${id}-dots label{width:10px;height:10px;border-radius:50%;background:var(--line,#cbd5e1);cursor:pointer}`;
+  list.forEach((_, k) => { css += `#${id}-${k}:checked~.${id}-view .${id}-p${k},#${id}-${k}:checked~.${id}-view .${id}-n${k}{display:flex}#${id}-${k}:checked~.${id}-dots label:nth-child(${k + 1}){background:var(--primary,#2563eb)}`; });
+  let body;
+  if (kind === "grid") {
+    css += `.${id}-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.${id}-grid>*{aspect-ratio:1;overflow:hidden;border-radius:var(--radius,10px)}.${id}-grid>*:nth-child(1){grid-column:span 2;grid-row:span 2}.${id}-grid img,.${id}-grid .${id}-ph{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}.${id}-grid>*:hover img{transform:scale(1.06)}`;
+    return `<div data-sysobject-preview="${esc(slug)}"><style>${css}</style><div class="${id}-grid">${list.map((u) => `<div>${img(u)}</div>`).join("")}</div>${tag}</div>`;
+  }
+  if (kind === "filmstrip") {
+    css += `.${id}-slide{position:absolute;inset:0;opacity:0;transition:opacity .4s}.${id}-strip{display:flex;gap:8px;margin-top:.6rem;overflow-x:auto}.${id}-strip label{flex:0 0 22%;aspect-ratio:16/10;border-radius:6px;overflow:hidden;opacity:.55;cursor:pointer;outline:2px solid transparent}.${id}-strip img,.${id}-strip .${id}-ph{width:100%;height:100%;object-fit:cover;display:block}`;
+    list.forEach((_, k) => { css += `#${id}-${k}:checked~.${id}-view .${id}-s${k}{opacity:1}#${id}-${k}:checked~.${id}-strip label:nth-child(${k + 1}){opacity:1;outline-color:var(--primary,#2563eb)}`; });
+    body = `<div class="${id}-view">${list.map((u, k) => `<div class="${id}-slide ${id}-s${k}">${img(u)}</div>`).join("")}${arrows}</div><div class="${id}-strip">${list.map((u, k) => `<label for="${id}-${k}">${img(u)}</label>`).join("")}</div>`;
+    return `<div data-sysobject-preview="${esc(slug)}" class="${id}"><style>${css}</style>${radios}${body}${tag}</div>`;
+  }
+  if (kind === "coverflow") {
+    css += `.${id}-view{aspect-ratio:21/9;background:transparent;overflow:visible;perspective:1100px}.${id}-slide{position:absolute;top:0;bottom:0;left:50%;width:48%;margin-left:-24%;transition:transform .5s,opacity .5s;opacity:0;border-radius:var(--radius,10px);overflow:hidden;box-shadow:0 12px 30px #0005}`;
+    list.forEach((_, k) => list.forEach((__, i) => { let o = i - k; if (o > n / 2) o -= n; if (o < -n / 2) o += n; css += `#${id}-${k}:checked~.${id}-view .${id}-s${i}{transform:translateX(${o * 62}%) rotateY(${-o * 42}deg) scale(${o === 0 ? 1 : 0.78});opacity:${Math.abs(o) > 1 ? 0 : 1};z-index:${10 - Math.abs(o)}}`; }));
+    body = `<div class="${id}-view">${list.map((u, i) => `<div class="${id}-slide ${id}-s${i}">${img(u)}</div>`).join("")}${arrows}</div>`;
+    return `<div data-sysobject-preview="${esc(slug)}" class="${id}"><style>${css}</style>${radios}${body}${dots}${tag}</div>`;
+  }
+  if (kind === "fade") {
+    css += `.${id}-slide{position:absolute;inset:0;opacity:0;transition:opacity .6s}`;
+    list.forEach((_, k) => { css += `#${id}-${k}:checked~.${id}-view .${id}-s${k}{opacity:1}`; });
+    body = `<div class="${id}-view">${list.map((u, k) => `<div class="${id}-slide ${id}-s${k}">${img(u)}</div>`).join("")}${arrows}</div>`;
+    return `<div data-sysobject-preview="${esc(slug)}" class="${id}"><style>${css}</style>${radios}${body}${dots}${tag}</div>`;
+  }
+  const vert = kind === "vertical";  // carousel (slides sliding next to each other) and vertical carousel
+  css += `.${id}-track{display:flex;${vert ? "flex-direction:column;height:100%" : "height:100%"};transition:transform .5s}.${id}-track>*{flex:0 0 100%;min-height:0}`;
+  list.forEach((_, k) => { css += `#${id}-${k}:checked~.${id}-view .${id}-track{transform:translate${vert ? "Y" : "X"}(-${k * 100}%)}`; });
+  body = `<div class="${id}-view"><div class="${id}-track">${list.map((u) => `<div>${img(u)}</div>`).join("")}</div>${arrows}</div>`;
+  return `<div data-sysobject-preview="${esc(slug)}" class="${id}"><style>${css}</style>${radios}${body}${dots}${tag}</div>`;
+}
+
 // The page as one html text for the preview: the stylesheet, the svg pictures and the uploaded photos are put into it (the frame has no access to the other files).
 export function previewHtml(files, name, photos = [], theme = "", placeholders = false, kit = null) {
   let h = files[name] || "";
@@ -98,6 +152,7 @@ export function previewHtml(files, name, photos = [], theme = "", placeholders =
   const at = (p) => find(p) || (none && /\.(?:jpe?g|png|webp|gif)(?:\?.*)?$/i.test(p) && !/^(?:https?:)?\/\//i.test(p) ? none : null);
   h = h.replace(/(src=["'])([^"']+\.(?:svg|jpe?g|png|webp|gif|mp4|webm))(["'])/gi, (m, a, p, b) => (at(p) ? a + at(p) + b : m));
   h = h.replace(/url\((["']?)([^)"']+\.(?:svg|jpe?g|png|webp|gif))\1\)/gi, (m, q, p) => (at(p) ? `url(${q}${at(p)}${q})` : m));
+  h = h.replace(/<div\b[^>]*data-sysobject=["']([^"']+)["'][^>]*>\s*<\/div>/gi, (m, slug) => objectPreview(slug, photos, none));  // a system object is shown as itself (a slider, a list ...), not as an empty place
   return h;
 }
 

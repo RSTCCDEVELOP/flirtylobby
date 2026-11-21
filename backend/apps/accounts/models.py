@@ -5,6 +5,8 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -73,6 +75,9 @@ class ModuleGrant(models.Model):
 
 
 class User(AbstractUser):
+    uid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)  # the unique id of this person: never changes, shown in the user data
+    domains = models.JSONField(default=list, blank=True)  # the websites (domains) this person belongs to: on the easy2edit server one person can own several sites
+    remote_id = models.CharField(max_length=40, blank=True, editable=False)  # the id of this person on the easy2edit server (site owner): set by the system, never changed by hand
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     user_groups = models.ManyToManyField("UserGroup", blank=True, related_name="members")
     function = models.CharField(max_length=255, blank=True)

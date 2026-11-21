@@ -622,7 +622,8 @@ def test_every_section_gets_the_same_width(job):
     html = sitecreator._page_html({"name": "X"}, plan_page, "<nav></nav>", [("hero", '<section class="e2e-hero"><div class="e2e-container">a</div></section>'), ("over", '<div data-easy2edit-tag="ui-features"><section>b</section></div>'),
                                                                         ("kolommen", '<section class="band"><div class="container"><div class="cols">c</div></div></section>')], "<p>f</p>")
     assert html.count('<div class="container">') == 2  # the band has its own, the hero has e2e-container: only the features section is wrapped
-    assert '<div id="over">\n<div class="container">' in html
+    assert '<div id="over" class="sec-plain">\n<div class="container">' in html  # a section without a band gets the same breathing space
+    assert '<div id="hero">' in html and '<div id="kolommen">' in html  # heroes and bands bring their own space
     assert "margin: 0 auto" in sitecreator.layout_css({"max_width": 1100})
 
 
@@ -810,3 +811,54 @@ def test_photos_together_become_the_gallery_markup_of_easy2edit():
     # real logos (svg) stay a logos row
     logos = "".join(f'<img src="img/logo-{n}.svg" alt="l">' for n in range(1, 5))
     assert S.normalise_galleries(f'<div class="e2e-logos">{logos}</div>') == f'<div class="e2e-logos">{logos}</div>'
+
+
+def test_section_heading_is_written_by_the_system():
+    h = sitecreator._with_heading({"title": "Onze diensten", "eyebrow": "Wat we doen", "intro": "Drie manieren <b>x</b>"}, '<div data-easy2edit-tag="ui-cards">c</div>')
+    assert h.index("<h2>Onze diensten</h2>") < h.index("ui-cards") and 'data-easy2edit-tag="ui-section-heading"' in h
+    assert h.count('<div class="container">') == 2 and "<b>" not in h  # heading and section have the same width, no html from the plan
+    assert sitecreator._with_heading({}, "<div>x</div>") == "<div>x</div>"
+    assert sitecreator._heading_of({"title": "  "}) == {}
+
+
+def test_tinted_band_is_visible_when_surface_equals_bg():
+    assert "color-mix(in srgb, var(--primary)" in sitecreator.LAYOUT_CSS and "background: var(--soft)" in sitecreator.LAYOUT_CSS
+
+
+def test_auto_objects_offer_media_objects_and_skip_checkout(db, monkeypatch):
+    cat = [{"slug": "media-standaard-carousel", "kind": "media", "kind_label": "Media", "name": "Carousel"}, {"slug": "plugin-webshop-cart", "kind": "plugin_part", "kind_label": "Plugin", "name": "Cart"},
+           {"slug": "plugin-agenda-upcoming", "kind": "plugin_part", "kind_label": "Plugin", "name": "Upcoming"}]
+    monkeypatch.setattr(sitecreator, "catalog", lambda: {"objects": cat})
+    monkeypatch.setattr(sitecreator, "module_items", lambda: [{"key": "agenda"}, {"key": "webshop"}])
+    got = {o["slug"] for o in sitecreator.auto_objects({})}
+    assert got == {"media-standaard-carousel", "plugin-agenda-upcoming"}  # every media object, the parts of the modules that are on, never the cart or checkout by itself
+    assert "plugin-webshop-cart" in {o["slug"] for o in sitecreator.auto_objects({"objects": ["plugin-webshop-cart"]})}  # unless the customer chose it
+
+
+def test_object_section_has_container_and_heading():
+    h = sitecreator._object_section({"title": "Onze foto's"}, "media-standaard-coverflow")
+    assert h.index("<h2>Onze foto&#x27;s</h2>" if "&#x27;" in h else "<h2>Onze foto's</h2>") < h.index('data-sysobject="media-standaard-coverflow"')
+    assert h.count('class="container"') == 2
+    assert sitecreator._object_section({}, "media-standaard-carousel").startswith('<div class="container">')
+
+
+def test_chat_asks_for_a_slider_and_gets_a_media_object(job, monkeypatch):
+    """The whole chat change: 'make an image slider' becomes a system object in the page, also when the plan says ui-gallery."""
+    html = ('<!doctype html><html><head><title>x</title></head><body><header><div data-easy2edit-tag="ui-navbar">n</div></header><main>\n<div id="hero"><div data-easy2edit-tag="ui-hero-split"><div class="e2e-container">h</div></div></div>\n'
+            '<div id="about"><div class="container"><div data-easy2edit-tag="ui-split">a</div></div></div>\n</main><footer>f</footer></body></html>')
+    SiteDesignJob.objects.filter(pk=job.pk).update(files={"index.html": html, "style.css": ""}, brief={"chat": True, "name": "Chat", "sectioned": True})
+    job.refresh_from_db()
+    cat = [{"slug": "media-standaard-carousel", "kind": "media", "kind_label": "Media", "name": "Carousel"}, {"slug": "media-standaard-coverflow", "kind": "media", "kind_label": "Media", "name": "Coverflow"}]
+    monkeypatch.setattr(sitecreator, "catalog", lambda: {"objects": cat})
+    monkeypatch.setattr(sitecreator, "module_items", lambda: [])
+    seen = {}
+
+    def fake_ask(system, prompt, **k):
+        seen["prompt"] = prompt
+        return json.dumps({"reply": "Ik voeg een slider toe.", "changes": [{"op": "add", "file": "index.html", "after": 1, "tag": "ui-gallery", "goal": "image slider", "title": "Onze projecten"}]})
+
+    monkeypatch.setattr(sitecreator, "_ask", fake_ask)
+    files, _b, _reply, _changes = sitecreator._revise_sections(job.pk, job, "maak een image slider", "index.html", None)
+    assert "media-standaard-carousel: Carousel" in seen["prompt"]  # the planner is told about the objects
+    assert '<div data-sysobject="media-standaard-carousel"></div>' in files["index.html"] and "ui-gallery" not in files["index.html"]
+    assert files["index.html"].index("Onze projecten") < files["index.html"].index("data-sysobject")

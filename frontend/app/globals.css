@@ -4182,3 +4182,21 @@ html[data-pbbar="1"] .edit-save-preset-msg { top: calc(var(--pb-bar-h) + 8rem); 
 /* a colour typed or pasted as hex (HexField in siteimport/designKit.js): next to the colour picker, narrow enough for the side panel */
 .hexfield { flex: 1; min-width: 0; width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem; padding: .3rem .45rem; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text); }
 .hexfield[aria-invalid="true"] { border-color: var(--danger); }
+
+/* hero / row background that rotates: more pictures and videos take turns (time, animation and speed are set in the Achtergrond tab, tab Rouleren) */
+.sec-bg.has-slides > .sec-bg-slide { position: absolute; inset: 0; opacity: 0; transition: none; }
+.sec-bg.has-slides > .sec-bg-slide.on { opacity: 1; }
+.sec-bg.has-slides.fx-fade > .sec-bg-slide.on, .sec-bg.has-slides.fx-fade > .sec-bg-slide.out { transition: opacity var(--sl-ms, 800ms) ease; }
+.sec-bg.has-slides.fx-fade > .sec-bg-slide.out { opacity: 0; }
+.sec-bg.has-slides.fx-slide > .sec-bg-slide { opacity: 1; transform: translateX(100%); }
+.sec-bg.has-slides.fx-slide > .sec-bg-slide.on { transform: translateX(0); transition: transform var(--sl-ms, 800ms) ease; }
+.sec-bg.has-slides.fx-slide > .sec-bg-slide.out { transform: translateX(-100%); transition: transform var(--sl-ms, 800ms) ease; }
+.sec-bg.has-slides.fx-zoom > .sec-bg-slide { transform: scale(1); }
+.sec-bg.has-slides.fx-zoom > .sec-bg-slide.on { transform: scale(1.12); transition: opacity var(--sl-ms, 800ms) ease, transform calc(var(--sl-sec, 5) * 1s + 1s) linear; }
+.sec-bg.has-slides.fx-zoom > .sec-bg-slide.out { opacity: 0; transform: scale(1.12); transition: opacity var(--sl-ms, 800ms) ease; }
+@media (prefers-reduced-motion: reduce) { .sec-bg.has-slides > .sec-bg-slide { transition: none !important; transform: none !important; } }
+.sec-bg-slides { display: grid; gap: .5rem; min-width: 0; }
+.sec-bg-list { display: grid; gap: .35rem; }
+.sec-bg-item { display: flex; align-items: center; gap: .4rem; }
+.sec-bg-item img, .sec-bg-item video { width: 64px; height: 40px; object-fit: cover; border-radius: 6px; flex: none; }
+.sec-bg-item b { min-width: 1.2rem; text-align: center; }

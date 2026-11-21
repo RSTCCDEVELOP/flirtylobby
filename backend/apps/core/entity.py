@@ -144,6 +144,7 @@ def serialize(e, detail=False, actor=None):
            "city": e.city, "email": e.email, "color": e.color or "", "user_count": e.users.count(), "group_count": e.groups.count()}
     if detail:
         out["data"] = {k: str(getattr(e, k) or "") for k in FIELDS}
+        out["ids"] = {"uid": str(e.uid), "remote_id": e.remote_id or "", "domains": list(e.domains or [])}  # read only: the unique id, the "easy2edit id" and the websites
         users = e.users.order_by("email")
         if actor is not None and not actor.is_staff:  # a delegated manager never sees the beheerders (like the users list)
             users = users.exclude(is_staff=True)

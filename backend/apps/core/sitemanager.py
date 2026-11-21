@@ -314,6 +314,9 @@ def report(event="login", role=""):
                 from . import resellers
 
                 resellers.sync()  # who sells this website and which logins the reseller has (made here)
+                from . import siteowners
+
+                siteowners.push()  # the owner and the company of this website on this server (once; a website that was not approved yet tries again at the next login)
         _save(last_ok_at=timezone.now().isoformat(timespec="seconds"), last_error="", last_event=event)
         _released()
         return {"ok": True, "error": ""}

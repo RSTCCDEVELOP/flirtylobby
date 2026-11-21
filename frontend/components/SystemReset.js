@@ -45,6 +45,7 @@ export default function SystemReset() {
   const [rtab, setRtab] = useState("what"); // the tab of the confirm step: what goes · options · confirm
   const [replay, setReplay] = useState(false); // the switch Onboarding: do the onboarding again, nothing is removed (confirmed with REPLAY)
   const [keepId, setKeepId] = useState(false); // keep the licence, the entities and all users?
+  const [remoteToo, setRemoteToo] = useState(false); // also remove the owner and the company from the easy2edit master site?
   const [aiToo, setAiToo] = useState(false); // also remove the AI data (calls, costs, credit and its history)?
 
   async function open() {
@@ -85,7 +86,7 @@ export default function SystemReset() {
   async function reset() {
     setBusy(true); setMsg(null); setFinished(false); setJob("reset");
     try {
-      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo, delete_admins: adminsToo && !keepId, delete_superadmins: superToo, keep_identity: keepId } });
+      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo, delete_admins: adminsToo && !keepId, delete_superadmins: superToo, keep_identity: keepId, remove_remote: remoteToo && !!info.remote_owner } });
       setAdminMail(r?.admin || "");
       setFinished(true);
       await new Promise((r) => setTimeout(r, 700)); // the bar shows 100% for a moment
@@ -168,6 +169,14 @@ export default function SystemReset() {
                     <span className="switch"><input type="checkbox" checked={adminsToo} onChange={(e) => setAdminsToo(e.target.checked)} /><span /></span>
                     <span>{tx("Ook de admins verwijderen?")}
                       <small className="muted" style={{ display: "block" }}>{tx("{0} admins (gebruikers met een rol of eigen rechten). Uit: ze blijven bestaan met hun rol en kunnen blijven inloggen; hun inhoud gaat wel weg.", info.admins)}</small>
+                    </span>
+                  </label>
+                )}
+                {info.remote_owner && (
+                  <label className="check sec-toggle">
+                    <span className="switch"><input type="checkbox" checked={remoteToo} onChange={(e) => setRemoteToo(e.target.checked)} /><span /></span>
+                    <span>{tx("Ook de eigenaar en het bedrijf van de easy2edit server verwijderen?")}
+                      <small className="muted" style={{ display: "block" }}>{tx("Bij het aanmaken van de licentie zijn de eigenaar en het bedrijf van deze website ook op de easy2edit server gemaakt (voor de facturen). Aan: ze worden daar weer verwijderd, of alleen het adres van deze website, als ze ook voor een andere website van jou gelden. Uit: ze blijven daar staan.")}</small>
                     </span>
                   </label>
                 )}

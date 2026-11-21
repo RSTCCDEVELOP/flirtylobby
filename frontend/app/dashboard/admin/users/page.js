@@ -215,6 +215,11 @@ export default function Users() {
               <label>{tx("Voornaam")}<span style={{ display: "flex", gap: ".6rem", alignItems: "center" }}><ColorField inline value={modal.color || ""} onChange={(v) => setModal({ ...modal, color: v })} disabled={L < 2} /><input style={{ flex: 1 }} value={modal.first_name} onChange={set("first_name")} /></span></label>
               <label>{tx("Achternaam")}<input value={modal.last_name} onChange={set("last_name")} /></label>
               <label>{tx("E-mailadres")}<input type="email" value={modal.email} onChange={set("email")} required /></label>
+              {modal.id && <>
+                <label>{tx("Id")}<input value={modal.uid || ""} readOnly aria-readonly="true" style={{ opacity: .85 }} onFocus={(e) => e.target.select()} /></label>
+                <label>{tx("easy2edit id")}<input value={modal.remote_id || ""} readOnly aria-readonly="true" placeholder={tx("Nog niet aangemaakt op de easy2edit server")} style={{ opacity: .85 }} onFocus={(e) => e.target.select()} /></label>
+                {(modal.domains || []).length > 0 && <label style={{ gridColumn: "1 / -1" }}>{tx("Websites")}<input value={(modal.domains || []).join(", ")} readOnly aria-readonly="true" style={{ opacity: .85 }} /></label>}
+              </>}
               <label>{modal.id ? tx("Nieuw wachtwoord (optioneel)") : tx("Wachtwoord")}
                 <input type="password" value={modal.password} onChange={set("password")} required={!modal.id} autoComplete="new-password" />
               </label>

@@ -34,6 +34,17 @@ def _pct(v, lo, hi, default):
     return str(max(lo, min(hi, n)))
 
 
+MAX_SLIDES = 12
+SLIDE_FX = ("fade", "slide", "zoom", "none")
+
+
+def _int_in(v, lo, hi, default):
+    try:
+        return int(min(max(float(v), lo), hi))
+    except (TypeError, ValueError):
+        return default
+
+
 def clean_bg(bg):
     """The background of a row or hero: {type: image|video, media: id of the media library, overlay 0-0.9}; {} = none."""
     from apps.medialib.models import MediaItem
@@ -56,6 +67,15 @@ def clean_bg(bg):
         out["zoom"] = zoom  # the picture smaller or bigger than the block (percent)
     if bg.get("pos") in ("top", "bottom"):  # where the picture is held when the block is smaller than the picture (centre is the default)
         out["pos"] = bg["pos"]
+    more = []  # more pictures and videos that take turns behind the block (the first one is the background itself): [{type, media}]
+    for m in (bg.get("more") if isinstance(bg.get("more"), list) else [])[:MAX_SLIDES - 1]:
+        o = MediaItem.objects.filter(pk=m.get("media") if isinstance(m, dict) else None, kind__in=("image", "video")).first()
+        if o:
+            more.append({"type": o.kind, "media": o.id})
+    if more:
+        out["more"] = more
+        sl = bg.get("slide") if isinstance(bg.get("slide"), dict) else {}
+        out["slide"] = {"sec": _int_in(sl.get("sec"), 2, 60, 5), "fx": sl.get("fx") if sl.get("fx") in SLIDE_FX else "fade", "ms": _int_in(sl.get("ms"), 200, 3000, 800)}  # seconds per picture, the way it changes, how long the change takes
     hv = bg.get("hover")
     if isinstance(hv, dict) and hv.get("mode") in ("opacity", "swap"):
         try:
@@ -89,6 +109,9 @@ def with_urls(data):
         other = MediaItem.objects.filter(pk=hv.get("media")).first() if isinstance(hv, dict) and hv.get("media") else None
         if other:
             out_bg["hover"] = {**hv, "url": default_storage.url(other.key)}
+        if bg.get("more"):
+            have = {i.pk: i for i in MediaItem.objects.filter(pk__in=[m.get("media") for m in bg["more"] if isinstance(m, dict)])}
+            out_bg["more"] = [{**m, "url": default_storage.url(have[m["media"]].key)} for m in bg["more"] if m.get("media") in have]
         return out_bg
 
     out = {**data, "rows": [{**r, "bg": one(r.get("bg"))} for r in data.get("rows", [])]}
@@ -212,6 +235,10 @@ def _item_style(st):
                 out[key] = min(max(int(st[key]), lo), hi)
             except (TypeError, ValueError):
                 pass
+    if st.get("hu") == "pct":  # a spacer whose height is a percentage of the screen height (default: pixels)
+        out["hu"] = "pct"
+        if "h" in out:
+            out["h"] = min(out["h"], 100)
     return out
 
 

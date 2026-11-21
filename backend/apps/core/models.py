@@ -5,6 +5,8 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
+import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -355,6 +357,9 @@ class Entity(models.Model):
     KINDS = [("organisatie", "Organisatie"), ("bedrijf", "Bedrijf"), ("vereniging", "Vereniging"), ("club", "Club"), ("vrij", "Vrije naam")]
 
     is_own = models.BooleanField(default=False)  # the entity of the website itself; its kind comes from the standard installation
+    uid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)  # the unique id of this company: never changes, shown in the company data
+    domains = models.JSONField(default=list, blank=True)  # the websites (domains) of this company: on the easy2edit server one company can own several sites
+    remote_id = models.CharField(max_length=40, blank=True, editable=False)  # the id of this company on the easy2edit server: set by the system, never changed by hand
     kind = models.CharField(max_length=20, choices=KINDS, default="bedrijf")
     kind_name = models.CharField(max_length=40, blank=True)  # the free name when kind is "vrij"
     name = models.CharField(max_length=120, blank=True)

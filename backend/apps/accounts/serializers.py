@@ -42,8 +42,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "is_fake", "color", "role_list", "entities", "entity_ids", "email", "role", "roles", "user_groups", "is_active", "is_staff", "is_superadmin_plus", "last_login", "date_joined", "password", "otp_active", "twofa_method", "twofa_required", "image", "show_public", "verification"] + PROFILE_FIELDS
-        read_only_fields = ["is_fake", "last_login", "date_joined", "otp_active", "twofa_method", "image"]
+        fields = ["id", "uid", "remote_id", "domains", "is_fake", "color", "role_list", "entities", "entity_ids", "email", "role", "roles", "user_groups", "is_active", "is_staff", "is_superadmin_plus", "last_login", "date_joined", "password", "otp_active", "twofa_method", "twofa_required", "image", "show_public", "verification"] + PROFILE_FIELDS
+        read_only_fields = ["uid", "remote_id", "domains", "is_fake", "last_login", "date_joined", "otp_active", "twofa_method", "image"]  # uid = the unique id, remote_id = the "easy2edit id" (set by the system), domains = the websites: never changed by hand
         extra_kwargs = {"email": {"required": True}, **WORD_KWARGS}
 
     def validate_color(self, value):  # the colour of the dot before the name in the lists

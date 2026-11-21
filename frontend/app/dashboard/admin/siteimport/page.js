@@ -795,7 +795,7 @@ export default function SiteImport() {
               <button className="btn" onClick={() => setOpen(open === i.id ? null : i.id)}>{open === i.id ? tx("Sluiten") : tx("Pagina's en afbeeldingen")}</button>
               {canManage && i.apply?.resumable && i.apply?.state !== "done" && <button className="btn primary" disabled={!!busy || !!prog} title={`${i.apply.resumable.pages} ${tx("pagina's geanalyseerd")}, ${i.apply.resumable.blocks} ${tx("blokken opgebouwd")}`} onClick={() => { cancelRef.current = { requested: false, importId: i.id, phase: "apply", abort: null, drop: false }; runApply(i, null, { resume: true }); }}>{tx("Verder gaan waar je gebleven was")}</button>}
               {canManage && i.apply?.pending && <button className="btn primary" disabled={!!busy || !!prog} onClick={() => applyImport(i)}>{i.apply?.state === "done" ? tx("Opnieuw toepassen") : tx("Toepassen")}</button>}
-              {(i.paths || []).map((x) => <button key={x.path} className="btn" onClick={() => setShown(x)}>{tx("Pagina bekijken")}: {x.title}</button>)}
+              {(i.paths || []).map((x, k) => <button key={`${x.path}-${k}`} className="btn" onClick={() => setShown(x)}>{tx("Pagina bekijken")}: {x.title}</button>)}
               {canManage && <button className="btn danger" disabled={!!busy} onClick={() => remove(i)}>{tx("Verwijderen")}</button>}
             </div>
             {open === i.id && <Detail imp={i} onChanged={load} onApply={runApply} busy={!!busy || !!prog} />}

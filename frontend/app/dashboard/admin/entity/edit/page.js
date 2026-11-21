@@ -34,7 +34,7 @@ function Edit() {
         setMeta(m);
         if (!id) { setInit({ ...EMPTY_ENTITY, user_ids: [], group_ids: [] }); return; }
         const d = await api(`/entities/${id}/`);
-        setInit({ id: d.id, own: d.is_own, ...EMPTY_ENTITY, ...d.data, color: d.color || "", kind: d.kind, kind_name: d.kind_name, user_ids: d.users.map((u) => u.id), group_ids: d.groups.map((g) => g.id) });
+        setInit({ id: d.id, own: d.is_own, ...EMPTY_ENTITY, ...d.data, color: d.color || "", kind: d.kind, kind_name: d.kind_name, ids: d.ids, user_ids: d.users.map((u) => u.id), group_ids: d.groups.map((g) => g.id) });
       } catch (e) { setErr(errorText(e)); }
     })();
   }, [id]);

@@ -90,7 +90,7 @@ export default function AiLiveCost() {
   return (
     <div style={{ position: "fixed", ...(pos[0] === "t" ? { top: "5rem" } : { bottom: "1.1rem" }), ...(pos[1] === "l" ? { left: "1.1rem" } : { right: "1.1rem" }), zIndex: 1200, display: "flex", flexDirection: pos[0] === "t" ? "column-reverse" : "column", alignItems: pos[1] === "l" ? "flex-start" : "flex-end", gap: ".6rem" }}>
       {open && (
-        <KitScope><div role="dialog" aria-label={tx("AI-kosten live")} className="e2e-floatwin__panel" data-easy2edit-tag="ui-cost-widget">
+        <KitScope><div role="dialog" aria-label={tx("AI-kosten live")} className="e2e-floatwin__panel" style={{ overflow: "hidden", maxWidth: "calc(100vw - 2.2rem)", boxSizing: "border-box" }} data-easy2edit-tag="ui-cost-widget">
           <header className="e2e-live__head" style={{ background: "var(--e2e-primary)", color: "var(--e2e-on-primary, #fff)", borderBottom: 0 }}>
             <b style={{ fontSize: ".78rem", letterSpacing: ".06em", textTransform: "uppercase", fontWeight: 600 }}>{tx("AI-kosten live")}</b>
             <span className="e2e-live__tools">
@@ -100,23 +100,23 @@ export default function AiLiveCost() {
           </header>
           <CostSummary solid now={money(tot, sym)} today={sums ? money(sums.today.charged + busyCost, sym) : "—"} month={sums ? money(sums.month.charged + busyCost, sym) : "—"} subs={[`${rows.length} ${tx("verzoeken")} · ${short(tokens)} ${tx("tokens")}${failed ? ` · ${failed} ${tx("mislukt")}` : ""}`, sums ? `${sums.today.calls} ${tx("verzoeken")}` : "", sums ? `${sums.month.calls} ${tx("verzoeken")}` : ""]} />
           {dlist.length > 0 && (
-            <div data-easy2edit-tag="ui-cost-widget" style={{ padding: ".5rem .9rem", borderBottom: "1px solid var(--e2e-border)", display: "grid", gap: ".35rem" }}>
+            <div data-easy2edit-tag="ui-cost-widget" style={{ padding: ".5rem .9rem", borderBottom: "1px solid var(--e2e-border)", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: ".35rem", minWidth: 0 }}>
               <small className="e2e-hint" style={{ textTransform: "uppercase", letterSpacing: ".06em" }}>{tx("Kosten per ontwerp")}</small>
               {dlist.map((d) => (
                 <div key={d.id} style={{ display: "flex", alignItems: "center", gap: ".5rem", fontWeight: design?.id === d.id ? 600 : 400 }}>
                   <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={d.name}>{d.name}<small className="e2e-hint"> · {d.calls} {tx("verzoeken")}</small></span>
-                  <b style={{ fontVariantNumeric: "tabular-nums" }}>{money(d.charged, sym)}</b>
-                  <button type="button" className="e2e-btn e2e-btn--sm" onClick={() => resetDesign(d.id)} title={tx("Teller van dit ontwerp op nul zetten")}>{tx("Reset")}</button>
+                  <b style={{ fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{money(d.charged, sym)}</b>
+                  <button type="button" className="e2e-btn e2e-btn--sm" style={{ flexShrink: 0 }} onClick={() => resetDesign(d.id)} title={tx("Teller van dit ontwerp op nul zetten")}>{tx("Reset")}</button>
                 </div>
               ))}
             </div>
           )}
           {design?.id && (
-            <div data-easy2edit-tag="ui-cost-widget" style={{ padding: ".6rem .9rem", borderBottom: "1px solid var(--e2e-border)", display: "grid", gap: ".4rem" }}>
+            <div data-easy2edit-tag="ui-cost-widget" style={{ padding: ".6rem .9rem", borderBottom: "1px solid var(--e2e-border)", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: ".4rem", minWidth: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: ".6rem" }}>
-                <span style={{ minWidth: 0 }}><small className="e2e-hint" style={{ display: "block" }}>{tx("Kosten van dit ontwerp")}{design.name ? `: ${design.name}` : ""}</small>
+                <span style={{ minWidth: 0, flex: 1 }}><small className="e2e-hint" style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={design.name || ""}>{tx("Kosten van dit ontwerp")}{design.name ? `: ${design.name}` : ""}</small>
                   <b style={{ fontSize: "1.25rem", fontVariantNumeric: "tabular-nums" }}>{money(dcost?.charged || 0, sym)}</b></span>
-                <button type="button" className="e2e-btn e2e-btn--sm" onClick={() => resetDesign()} title={tx("Teller van dit ontwerp op nul zetten")}>{tx("Reset")}</button>
+                <button type="button" className="e2e-btn e2e-btn--sm" style={{ flexShrink: 0 }} onClick={() => resetDesign()} title={tx("Teller van dit ontwerp op nul zetten")}>{tx("Reset")}</button>
               </div>
               <small className="e2e-hint">{dcost ? `${dcost.calls} ${tx("verzoeken")} · ${short(dcost.tokens)} ${tx("tokens")}` : tx("Bezig…")}</small>
               {dcost?.items?.length > 0 && <Columns values={dcost.items.map((i) => i.charged)} labels={dcost.items.map((_, k) => String(k + 1))} />}

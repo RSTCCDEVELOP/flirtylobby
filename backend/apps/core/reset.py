@@ -79,7 +79,13 @@ def summary():
         imports = m.objects.count() if m else 0
     except Exception:  # noqa: BLE001
         pass
-    return {**ai, "designs": designs, "imports": imports, "users": User.objects.filter(is_staff=False).count(), "admins": len(_admin_ids()), "superadmins": User.objects.filter(is_staff=True).count(), "other_superadmins": User.objects.filter(is_staff=True).exclude(email__iexact=standard_email() or "-").count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
+    try:
+        from . import siteowners
+
+        remote_owner = siteowners.has_remote()
+    except Exception:  # noqa: BLE001
+        remote_owner = False
+    return {**ai, "remote_owner": remote_owner, "designs": designs, "imports": imports, "users": User.objects.filter(is_staff=False).count(), "admins": len(_admin_ids()), "superadmins": User.objects.filter(is_staff=True).count(), "other_superadmins": User.objects.filter(is_staff=True).exclude(email__iexact=standard_email() or "-").count(), "standard_admin": standard_email(), "media": MediaItem.objects.count(),
             "pages": Page.objects.exclude(kind="system").count(), "plugins": Plugin.objects.count(), "themes": ThemePack.objects.count()}
 
 
@@ -252,7 +258,7 @@ def clean_site_folder(keep_user_ids=()):
     return removed
 
 
-def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, keep_identity=False):
+def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, keep_identity=False, remove_remote=False):
     """Do the reset. Returns what was removed. keep = the superadmin who asks. The administrators (users with a role) and the other superadmins stay, unless delete_admins / delete_superadmins is asked; the standard superadmin always stays."""
     from apps.accounts.models import User
     from apps.core import modules, themepacks
@@ -281,6 +287,11 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, 
     except Exception:  # noqa: BLE001 - the reset below clears everything anyway
         logger.exception("Reset: demo data could not be removed one by one")
     keep_ids = set() if delete_admins else _admin_ids()  # the administrators stay (without their content) unless they are to be removed too
+    remote = {}
+    if remove_remote:  # asked: the owner and the company of this website are also removed from the easy2edit master site (first: the local ids are needed for it)
+        from . import siteowners
+
+        remote = siteowners.remove_remote()
     if keep_identity:  # asked: the licence, the entities and all users stay (with the links between them); their content (messages, files) goes like the rest
         keep_ids = set(User.objects.filter(is_staff=False).values_list("pk", flat=True))
     files = _files_of_removed(keep_ids)
@@ -404,6 +415,8 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, 
             pass
     from apps.accounts.models import User as _U
 
+    if remove_remote:
+        removed["remote"] = remote  # {ok, error}: whether the owner and the company are gone from the easy2edit master site
     removed["site_folder"] = clean_site_folder([u.pk for u in _U.objects.filter(is_staff=True)] + list(keep_ids))  # the site folder: only back-ups, database, settings and plugins stay
     logger.warning("System reset: %s", removed)
     return removed

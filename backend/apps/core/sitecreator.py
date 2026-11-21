@@ -533,8 +533,6 @@ def clean_brief(patch, old):
 def create(user, name=""):
     if not ai.available():
         raise ValueError("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")
-    for old in SiteDesignJob.objects.filter(created_at__lt=timezone.now() - timezone.timedelta(days=60)):
-        old.delete()
     brief = {"name": str(name or "")[:120], "kind": "company", "lang": "Dutch", "mode": "new", "step": 0, "font": "sans"}
     return SiteDesignJob.objects.create(user=user, status="draft", name=brief["name"] or "Nieuw ontwerp", brief=brief)
 
@@ -1026,7 +1024,8 @@ def theme_root_css(b):
 LAYOUT_COLS = {"1": "1fr", "2": "repeat(2, 1fr)", "3": "repeat(3, 1fr)", "4": "repeat(4, 1fr)", "2-1": "2fr 1fr", "1-2": "1fr 2fr", "3-1": "3fr 1fr", "1-3": "1fr 3fr"}
 LAYOUT_CSS = """/* LAYOUT (written by the system): bands (rows) with columns */
 .band { padding: 4rem 0; }
-.band--soft { background: var(--surface); --e2e-bg: var(--surface); --e2e-surface: var(--bg); }
+.band--soft { --soft: color-mix(in srgb, var(--primary) 7%, var(--surface)); background: var(--soft); --e2e-bg: var(--soft); --e2e-surface: var(--surface); }  /* a tint of the primary colour: surface and bg are often the same colour, so a plain surface band would not show */
+.sec-plain { padding: 2.5rem 0; }  /* a section without a band gets the same breathing space */
 .band--screen { min-height: 100vh; display: flex; align-items: center; }
 .band--screen > .container { width: 100%; }
 .band .container { max-width: __MAXW__; margin: 0 auto; padding: 0 1.25rem; }
@@ -1338,6 +1337,9 @@ def _site_plan(pk, job, pages):
     tags = [c["easy2edit_tag"] for c in componentpacks.get(b.get("component_set") or None)["components"]]
     lst = componentpacks.rules_text(b.get("component_set") or None).split("Tags:\n", 1)[-1]
     objs = ", ".join(b.get("objects") or [])
+    avail = auto_objects(b)
+    known = {o["slug"] for o in avail}
+    obj_list = "\n".join(f"- {o['slug']}: {o['name']} ({o['kind_label']})" for o in avail)
     prompt = (f"{_brief_text(b)}\n\nPlan the pages. The pages (file = title): " + "; ".join(f"{f} = {t}" for f, t in pages) + ".\n"
               + ("This is a ONE PAGER: there is only ONE page, so give 7 to 10 sections for it that together make the complete website (hero, about, services/offer, benefits, showcase or gallery, reviews, contact ... as fits the business; only the functions that the customer chose, see FUNCTIONS above). Give a short \"menu\" label (max 20 characters, in the language of the website) ONLY to the sections that the customer asked for: about us, services, contact, and showcase/portfolio, FAQ, blog or documents ONLY when the customer chose them. Sections such as reviews, results or how it works get NO menu label (leave it empty): a menu has at most 5 items. Every section gets a unique lowercase \"id\" (about, services, ...). "
                  if len(pages) == 1 else "For EVERY page give 4 to 8 sections, each ONE component, in the order of the page.")
@@ -1345,8 +1347,12 @@ def _site_plan(pk, job, pages):
               "The first section of the start page is a hero; every page ends with a call to action or contact section. Do NOT include the navbar and footer (they are added to every page). "
               "Besides a single component a section can be a BAND with COLUMNS (a full-width row of the page editor with 1-4 columns side by side, each column holding one component): "
               '{"layout": "band", "id": "x", "bg": "none"|"soft" (a tinted band), "cols": "1"|"2"|"3"|"4"|"2-1"|"1-2"|"3-1"|"1-3" (width ratios of the columns), "valign": "top"|"center", "screen": false|true (true = a full-screen-height band, for a hero), "cells": [{"tag": "ui-...", "goal": "..."}, ...one cell per column]}. '
+              "HEADINGS: a section whose component has no heading of its own (cards, features, steps, stats, gallery, testimonials, team, pricing, timeline, FAQ, files) gets \"title\" (max 60 characters, a real heading, not the component name), optionally \"eyebrow\" (max 3 words) and \"intro\" (one sentence), on the section or on the band; the system puts it above the section. Heroes, split text+picture, contact and call-to-action sections and sections that already tell their own story get none. Never give two neighbouring sections the same title. "
               "Use bands where two or three things belong side by side (for example text next to a form, a stats block next to a testimonial, two cards of different kinds) and vary the rhythm of the page: a tinted band, a full-screen hero, wide and narrow columns; not every section the same. "
               + (f"System objects that must be placed as a section: {objs} (use {{\"sysobject\": \"slug\"}} for them). " if objs else "")
+              + (f"SYSTEM OBJECTS (live parts of easy2edit that work by themselves; a section is {{\"sysobject\": \"slug\", \"id\": \"x\", \"title\": \"heading above it\"}}):\n{obj_list}\n"
+                 "USE THEM: photos together (a gallery, slider, carousel, a row or collage of pictures) are ALWAYS a media object, never a ui-gallery or a row of images: choose the style that fits the content (carousel, slideshow, coverflow, mosaic, wall, filmstrip, album ...) and use a different style where there are several. "
+                 "Events or an agenda, a product overview, documents or a showcase are the object of that module when it is in the list. Use at least one fitting system object on a page when the list has one that fits; never invent a slug, use only the slugs above. " if obj_list else "")
               + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-hero-split", "id": "hero", "menu": "", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
               f"Available tags:\n{lst}")
     plan = {}
@@ -1372,9 +1378,15 @@ def _site_plan(pk, job, pages):
                 if cells:
                     cols = str(s.get("cols") or len(cells))
                     cols = cols if cols in LAYOUT_COLS and (cols.isdigit() and int(cols) == len(cells) or "-" in cols and len(cells) == 2) else str(len(cells))
-                    secs.append({"layout": "band", "id": clean_id(s.get("id")), "bg": "soft" if s.get("bg") == "soft" else "none", "cols": cols, "valign": "center" if s.get("valign") == "center" else "top", "screen": bool(s.get("screen")), "cells": cells, "goal": str(s.get("goal") or "")[:200], "menu": str(s.get("menu") or "")[:30]})
+                    secs.append({"layout": "band", **_heading_of(s), "id": clean_id(s.get("id")), "bg": "soft" if s.get("bg") == "soft" else "none", "cols": cols, "valign": "center" if s.get("valign") == "center" else "top", "screen": bool(s.get("screen")), "cells": cells, "goal": str(s.get("goal") or "")[:200], "menu": str(s.get("menu") or "")[:30]})
+            elif s.get("sysobject") and clean_id(s.get("sysobject")) not in {clean_id(x) for x in known}:
+                continue  # an invented system object is never placed
             elif s.get("sysobject") or s.get("tag") in tags:
-                secs.append({"tag": s.get("tag"), "sysobject": clean_id(s.get("sysobject")), "id": clean_id(s.get("id")), "goal": str(s.get("goal") or "")[:300], "menu": str(s.get("menu") or "")[:30]})
+                secs.append({"tag": s.get("tag"), "sysobject": clean_id(s.get("sysobject")), "id": clean_id(s.get("id")), "goal": str(s.get("goal") or "")[:300], "menu": str(s.get("menu") or "")[:30], **_heading_of(s)})
+        media = [o["slug"] for o in avail if o["kind"] == "media"]
+        for k, x in enumerate(secs):  # a photo gallery is a media object (carousel, slideshow ...), in a rotating style
+            if x.get("tag") == "ui-gallery" and media:
+                secs[k] = {**x, "tag": None, "sysobject": media[k % len(media)]}
         if not secs and len(pages) == 1:  # a one pager always gets a complete standard plan
             secs = [{"tag": "ui-hero-split", "id": "hero", "goal": f"Introduce {title}", "menu": ""}, {"tag": "ui-split", "id": "about", "goal": "Who we are and what we stand for", "menu": "About us"},
                     {"tag": "ui-features", "id": "services", "goal": "The services or the offer", "menu": "Services"}, {"tag": "ui-testimonials", "id": "reviews", "goal": "What customers say", "menu": "Reviews"},
@@ -1400,6 +1412,59 @@ def _site_plan(pk, job, pages):
     return {"brand": str(plan.get("brand") or (b.get("name") or "Website"))[:40], "pages": out_pages}
 
 
+AUTO_OBJECT_SKIP = re.compile(r"cart|checkout|upload|product$")  # parts that need a customer action or one chosen item: only placed when the customer chose them
+
+
+def auto_objects(b):
+    """The system objects that the planner may choose by itself: every media object (carousel, slideshow, coverflow, mosaic ...) and the parts of the modules that this design uses
+    (events, products, documents, showcase), plus the ones the customer chose. [{slug, kind, name}]"""
+    try:
+        cat = catalog()["objects"]
+    except Exception:  # noqa: BLE001
+        logger.warning("sitecreator auto objects", exc_info=True)
+        return []
+    chosen = set(b.get("objects") or [])
+    active = {i["key"].lower() for i in module_items() if i["key"] not in effective_off(b)}
+    out = []
+    for o in cat:
+        slug_ = o["slug"]
+        if slug_ in chosen or o["kind"] == "media":
+            out.append(o)
+        elif o["kind"] == "plugin_part":
+            plug = slug_.split("-")[1] if slug_.count("-") >= 2 else ""
+            if plug and any(k == plug or k.startswith(plug) or plug.startswith(k) for k in active) and not AUTO_OBJECT_SKIP.search(slug_):
+                out.append(o)
+    return out
+
+
+def _heading_of(s):
+    """The heading above a section that has none of its own (cards, steps, stats, gallery, FAQ ...): {"title", "eyebrow", "intro"} from the plan, or nothing."""
+    t = re.sub(r"[<>]", "", str(s.get("title") or "")).strip()[:70]
+    if not t:
+        return {}
+    return {"title": t, "eyebrow": re.sub(r"[<>]", "", str(s.get("eyebrow") or "")).strip()[:40], "intro": re.sub(r"[<>]", "", str(s.get("intro") or "")).strip()[:200]}
+
+
+def _heading_html(s):
+    """The ui-section-heading component for the heading of a section, written by the system (no extra AI call)."""
+    if not s.get("title"):
+        return ""
+    esc = lambda x: str(x or "").replace("&", "&amp;").replace("<", "&lt;")  # noqa: E731
+    return ('<div data-easy2edit-tag="ui-section-heading">\n<header class="e2e-sechead">' + (f'<span class="e2e-eyebrow">{esc(s["eyebrow"])}</span>' if s.get("eyebrow") else "")
+            + f'<h2>{esc(s["title"])}</h2>' + (f'<p class="e2e-lead">{esc(s["intro"])}</p>' if s.get("intro") else "") + "</header>\n</div>")
+
+
+def _in_container(h):
+    """The html in the container of the site, unless it has one of its own."""
+    return h if ("e2e-container" in h or 'class="container"' in h or "class='container'" in h) else f'<div class="container">\n{h}\n</div>'
+
+
+def _with_heading(s, h):
+    """A section with its heading above it: both in the container (so the heading has the same width as the section)."""
+    head = _heading_html(s)
+    return f'<div class="container">\n{head}\n</div>\n{_in_container(h)}' if head else h
+
+
 def _band_html(s, cells):
     """A band (a full-width row of the page editor) with columns; every column holds one component. The css for it is the layout vocabulary of the system."""
     cls = "band" + (" band--soft" if s.get("bg") == "soft" else "") + (" band--screen" if s.get("screen") else "")
@@ -1415,7 +1480,8 @@ def _page_html(brief, plan_page, header, sections, footer):
     title = esc(plan_page["title"] + (f" | {name}" if name and name.lower() not in plan_page["title"].lower() else ""))
     wide = lambda h: h if ("e2e-container" in h or 'class="container"' in h or "class='container'" in h) else f'<div class="container">\n{h}\n</div>'  # noqa: E731 - every section has the same width: a component without a container of its own gets the container of the site
     sections = [(s_id, wide(h)) for s_id, h in sections]
-    body = "\n".join(f'<div id="{s_id}">\n{h}\n</div>' if s_id else h for s_id, h in sections)
+    plain = lambda h: not re.search(r'class="band\b|e2e-hero|data-sysobject', h)  # noqa: E731 - bands and heroes bring their own space
+    body = "\n".join((f'<div id="{s_id}"' + (' class="sec-plain"' if plain(h) else "") + f'>\n{h}\n</div>') if s_id else h for s_id, h in sections)
     return (f'<!doctype html>\n<html lang="{lang}">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>{title[:80]}</title>\n<meta name="description" content="{esc(plan_page["description"])}">\n<link rel="stylesheet" href="style.css">\n</head>\n'
             f"<body>\n<header>\n{header}\n</header>\n<main>\n{body}\n</main>\n<footer>\n{footer}\n</footer>\n</body>\n</html>\n")
 
@@ -1458,12 +1524,12 @@ def _generate_sections(pk, job):
             label = f"{pg['title']}: sectie {n + 1} van {len(pg['sections'])}"
             if s.get("layout") == "band":
                 cells = [one(pg, n, s, c["tag"], c["goal"] or s.get("goal", ""), f"{label} (kolom {k + 1} van {len(s['cells'])})") for k, c in enumerate(s["cells"])]
-                secs.append((s.get("id") or "", _band_html(s, cells)))
+                secs.append((s.get("id") or "", _with_heading(s, _band_html(s, cells))))
             elif s.get("sysobject"):
                 step(label)
-                secs.append((s.get("id") or "", f'<div data-sysobject="{s["sysobject"]}"></div>'))
+                secs.append((s.get("id") or "", _with_heading(s, f'<div data-sysobject="{s["sysobject"]}"></div>')))
             else:
-                secs.append((s.get("id") or "", one(pg, n, s, s["tag"], s["goal"], f"{label} ({s['tag'].replace('ui-', '')})")))
+                secs.append((s.get("id") or "", _with_heading(s, one(pg, n, s, s["tag"], s["goal"], f"{label} ({s['tag'].replace('ui-', '')})"))))
             files[pg["file"]] = normalise_galleries(_without_missing_svgs(_page_html(b, pg, header, secs, footer), files))  # the page is complete after every piece: the preview shows it growing
             _set(pk, files=files)
     return files
@@ -2974,6 +3040,11 @@ def _main_parts(html):
     return html[:m1.end()], out, html[m2:]
 
 
+def _object_section(c, slug_):
+    """A system object as a part of the page (in the container of the site), with the heading of the change above it when there is one."""
+    return _with_heading(_heading_of(c), _in_container(f'<div data-sysobject="{slug_}"></div>'))
+
+
 def _band_cells(h):
     """[(start, end)] of the inner html of the columns (<div class="col">) of a band; [] when it is not a band."""
     cells, depth, open_at, inner_at = [], 0, [], []
@@ -3020,11 +3091,17 @@ def _revise_sections(pk, job, instruction, page, shots):
     outline = _outline(files)
     focus = f"The user is looking at the page {page}.\n" if page in files else ""
     look = "The user attached a screenshot of how the page looks to him now (see the picture): use it to understand what he means.\n" if shots else ""
+    avail = auto_objects(b)
+    known_obj = {o["slug"] for o in avail}
+    obj_list = "\n".join(f"- {o['slug']}: {o['name']} ({o['kind_label']})" for o in avail)
+    media_objs = [o["slug"] for o in avail if o["kind"] == "media"]
     plan_prompt = (f"{focus}{look}Here are the pages of the website as a list of parts (index. component - first heading):\n{outline}\n\nThe user asks: {instruction}\n\n"
                    "Decide what has to change and answer with ONE JSON object: "
                    '{"reply": "one or two friendly sentences for the user about what you will do", "changes": [{"op": "edit", "file": "index.html", "index": 2, "goal": "what the part must become"}, {"op": "add", "file": "index.html", "after": 1, "tag": "ui-cta", "goal": "what the new part says"}, {"op": "delete", "file": "index.html", "index": 3}, {"op": "menu", "goal": "..."}, {"op": "footer", "goal": "..."}, '
                    '{"op": "theme", "colors": {"primary": "#rrggbb", "secondary": "#rrggbb", "bg": "#rrggbb", "card": "#rrggbb", "text": "#rrggbb"}, "font": "sans|serif|round", "radius": 14}]}\n'
-                   "Rules: change as little as possible, at most 14 changes; a change of colours, font or corners is ONE theme change (no part is redone for it); a change of the menu or footer is one menu/footer change (it goes to every page). Use only tags of the component set for add.")
+                   + (f"SYSTEM OBJECTS (live parts of easy2edit): {{\"op\": \"add\", \"file\": \"index.html\", \"after\": 1, \"sysobject\": \"slug\", \"title\": \"heading above it (optional)\"}} places one, and {{\"op\": \"edit\", \"file\": \"index.html\", \"index\": 4, \"sysobject\": \"slug\"}} replaces a part by one.\n{obj_list}\n"
+                      "An image slider, carousel, slideshow, coverflow, photo gallery or a row of pictures that the user asks for is ALWAYS one of these media objects (never ui-gallery): choose the style that fits what he says. Use only the slugs above.\n" if obj_list else "")
+                   + "Rules: change as little as possible, at most 14 changes; a change of colours, font or corners is ONE theme change (no part is redone for it); a change of the menu or footer is one menu/footer change (it goes to every page). Use only tags of the component set for add.")
     out = _ask(SECTION_JSON, plan_prompt, max_tokens=4000, pk=pk, images=shots or None)
     m = re.search(r"\{.*\}", out or "", re.S)
     try:
@@ -3065,7 +3142,11 @@ def _revise_sections(pk, job, instruction, page, shots):
                     parts[fn] = _main_parts(files[fn])
         elif f in parts and parts[f]:
             before, secs, after = parts[f]
-            if op == "edit":
+            if op == "edit" and c.get("sysobject") in known_obj:  # a part becomes a system object (a slider, an agenda ...)
+                i = int(c.get("index", -1)) if str(c.get("index", "")).lstrip("-").isdigit() else -1
+                if 0 <= i < len(secs):
+                    secs[i] = (secs[i][0], _object_section(c, c["sysobject"]))
+            elif op == "edit":
                 i = int(c.get("index", -1)) if str(c.get("index", "")).lstrip("-").isdigit() else -1
                 if 0 <= i < len(secs) and 'class="band' in secs[i][1] and _band_cells(secs[i][1]):  # a column of a band: only that column is redone
                     band = secs[i][1]
@@ -3085,6 +3166,10 @@ def _revise_sections(pk, job, instruction, page, shots):
                         new = _piece(pk, b, sysm, f"Component: {tag}. Change this part: {c.get('goal') or instruction}\nPage: {f}. Menu (label -> file): " + "; ".join(f"{t} -> {fi}" for fi, t in pages_of(b)) + f"\n\n{_brief_text(b)[:1500]}\n\nCURRENT html (keep what does not change, same structure and classes):\n{cur}", tag)
                         if new != _fallback_component(b, tag):
                             secs[i] = (secs[i][0], new)
+            elif op == "add" and (c.get("sysobject") in known_obj or (c.get("tag") == "ui-gallery" and media_objs)):
+                slug_ = c.get("sysobject") if c.get("sysobject") in known_obj else media_objs[0]  # a gallery is a media object
+                at = int(c.get("after", len(secs) - 1)) if str(c.get("after", "")).lstrip("-").isdigit() else len(secs) - 1
+                secs.insert(max(0, min(len(secs), at + 1)), ("", _object_section(c, slug_)))
             elif op == "add":
                 tag = str(c.get("tag") or "")
                 from . import componentpacks
