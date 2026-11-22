@@ -74,12 +74,16 @@ def _heal(dumped_tables):
                         cur.execute(f'DELETE FROM "{t}" WHERE {cond}')
 
 
-def load(raw):
+def load(raw, only=None, skip=None):
     """Put the tables back: what is in the backup replaces what is in these tables now (the rows are given their old id again). Returns the number of rows."""
     import os
     import tempfile
 
     rows = json.loads(raw)
+    if only:  # only the tables of these models (e.g. the licence)
+        rows = [r for r in rows if r["model"] in only]
+    if skip:  # everything except these models
+        rows = [r for r in rows if r["model"] not in skip]
     labels = []
     for r in rows:
         if r["model"] not in labels:

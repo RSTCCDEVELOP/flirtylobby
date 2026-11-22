@@ -166,8 +166,23 @@ def collect_site(only=None):
 
 
 # ── create ──────────────────────────────────────────────────────────────────
+LICENSE_LABEL = "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze"
+LICENSE_MODELS = {"core.license"}
+
+
+def with_license(parts):
+    """The licence can be put back on its own: also for a backup that was made before this part existed (when it holds the system data)."""
+    parts = list(parts or [])
+    keys = {p.get("key") for p in parts}
+    if "data" in keys and "license" not in keys:
+        i = next(n for n, p in enumerate(parts) if p.get("key") == "data")
+        parts.insert(i + 1, {"key": "license", "label": LICENSE_LABEL})
+    return parts
+
+
 def parts_of(bundle_sections, site):
     parts = [{"key": "data", "label": "Alle gegevens van het systeem: gebruikers, rollen en groepen, mediabibliotheek, licentie, instellingen"},
+             {"key": "license", "label": LICENSE_LABEL},
              {"key": "files", "label": "Alle bestanden: afbeeldingen, video's, foto's van gebruikers en logo's"},
              {"key": "site", "label": "Pagina's, menu's, indelingen, teksten en afbeeldingen"}]
     parts += [{"key": f"settings:{k}", "label": v.get("label") or k} for k, v in bundle_sections.items()]
@@ -325,9 +340,16 @@ def restore(b, parts=None, user=None):
             except Exception as e:  # noqa: BLE001
                 logger.exception("restore of the files failed")
                 results.append({"key": "files", "label": "Alle bestanden", "ok": False, "message": f"Niet teruggezet: {e}"})
+        if want is not None and "license" in want and "data" not in want and "data.json" in names:  # only the licence
+            try:
+                n = full.load(zf.read("data.json").decode("utf-8"), only=LICENSE_MODELS)
+                results.append({"key": "license", "label": "Licentiegegevens", "ok": True, "message": f"{n} rij(en) teruggezet." if n else "Deze backup bevat geen licentiegegevens."})
+            except Exception as e:  # noqa: BLE001
+                logger.exception("restore of the licence failed")
+                results.append({"key": "license", "label": "Licentiegegevens", "ok": False, "message": f"Niet teruggezet: {e}"})
         if (want is None or "data" in want) and "data.json" in names:
             try:
-                n = full.load(zf.read("data.json").decode("utf-8"))
+                n = full.load(zf.read("data.json").decode("utf-8"), skip=None if (want is None or "license" in want) else LICENSE_MODELS)
                 results.append({"key": "data", "label": "Alle gegevens van het systeem", "ok": True, "message": f"{n} rij(en) teruggezet (gebruikers, bibliotheek, licentie, instellingen). Iedereen moet opnieuw inloggen."})
             except Exception as e:  # noqa: BLE001
                 logger.exception("restore of the data failed")

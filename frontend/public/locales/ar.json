@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "إلى لوحة التحكم الخاصة بي",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "تمت إضافة النسخة الاحتياطية. هل تريد استعادتها الآن؟",
   "Mijn bijdrage": "مساهمتي",
-  "Bijdragen": "المساهمات"
+  "Bijdragen": "المساهمات",
+  "Backup terugzetten (.zip)": "استعادة نسخة احتياطية (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "تم تحميل النسخة الاحتياطية. هل تريد استعادتها الآن أم حفظها فقط ضمن النسخ الاحتياطية؟",
+  "Opslaan bij de backups": "حفظ ضمن النسخ الاحتياطية",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "بيانات الترخيص: الرقم والعميل والصلاحية والأسعار وطريقة الدفع"
 }

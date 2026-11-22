@@ -7048,7 +7048,7 @@
   "Daarna per maand": "Then per month",
   "Het abonnement gaat altijd in op de 1e van de maand. Voor de rest van deze maand betaal je naar rato van het aantal dagen; vanaf de 1e van de volgende maand betaal je de volledige maandprijs.": "The subscription always starts on the 1st of the month. For the rest of this month you pay in proportion to the number of days; from the 1st of next month you pay the full monthly price.",
   "Verlengdatum": "Renew date",
-  "Licentiegegevens": "License data",
+  "Licentiegegevens": "Licence data",
   "Daarna per kwartaal": "Then per quarter",
   "Daarna per jaar": "Then per year",
   "Abonnementen en korting": "Subscriptions and discount",
@@ -8206,5 +8206,9 @@
   "Nee, ik vul ze zelf in": "No, I will fill them in myself",
   "Nieuw wachtwoord (leeg = ongewijzigd)": "New password (empty = unchanged)",
   "Mijn bijdrage": "My contribution",
-  "Bijdragen": "Contributions"
+  "Bijdragen": "Contributions",
+  "Backup terugzetten (.zip)": "Restore backup (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "The backup is loaded. Do you want to restore it now or only save it with the backups?",
+  "Opslaan bij de backups": "Save with the backups",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "Licence data: number, client, validity, prices and payment method"
 }

@@ -7048,7 +7048,7 @@
   "Daarna per maand": "それ以降は月額",
   "Het abonnement gaat altijd in op de 1e van de maand. Voor de rest van deze maand betaal je naar rato van het aantal dagen; vanaf de 1e van de volgende maand betaal je de volledige maandprijs.": "サブスクリプションは常に毎月1日から始まります。今月の残りは日数に応じた日割りで、翌月1日からは月額の全額をお支払いいただきます。",
   "Verlengdatum": "更新日",
-  "Licentiegegevens": "ライセンスデータ",
+  "Licentiegegevens": "ライセンス情報",
   "Daarna per kwartaal": "それ以降は四半期ごと",
   "Daarna per jaar": "それ以降は年額",
   "Abonnementen en korting": "サブスクリプションと割引",
@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "マイダッシュボードへ",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "バックアップが追加されました。今すぐ復元しますか？",
   "Mijn bijdrage": "私の貢献",
-  "Bijdragen": "貢献"
+  "Bijdragen": "貢献",
+  "Backup terugzetten (.zip)": "バックアップを復元 (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "バックアップを読み込みました。今すぐ復元しますか、それともバックアップ一覧に保存するだけにしますか？",
+  "Opslaan bij de backups": "バックアップに保存",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "ライセンス情報：番号、顧客、有効期限、価格、支払い方法"
 }

@@ -33,7 +33,7 @@ def _out(b):
     import os
 
     return {"id": b.id, "frequency": b.frequency, "file": b.file, "size": b.size, "created_at": b.created_at, "created_by": (b.created_by.email if b.created_by_id else ""), "note": b.note,
-            "parts": b.parts, "stats": b.stats, "system_version": b.system_version, "exists": (service.backups_dir() / b.file).is_file()}
+            "parts": service.with_license(b.parts), "stats": b.stats, "system_version": b.system_version, "exists": (service.backups_dir() / b.file).is_file()}
 
 
 def _job(frequency):

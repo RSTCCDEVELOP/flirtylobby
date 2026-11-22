@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "मेरे डैशबोर्ड पर जाएं",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "बैकअप जोड़ा गया है। क्या आप इसे अभी पुनर्स्थापित करना चाहते हैं?",
   "Mijn bijdrage": "मेरा योगदान",
-  "Bijdragen": "योगदान"
+  "Bijdragen": "योगदान",
+  "Backup terugzetten (.zip)": "बैकअप रीस्टोर करें (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "बैकअप लोड हो गया है। क्या आप इसे अभी रीस्टोर करना चाहते हैं या केवल बैकअप में सहेजना चाहते हैं?",
+  "Opslaan bij de backups": "बैकअप में सहेजें",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "लाइसेंस डेटा: नंबर, ग्राहक, वैधता, कीमतें और भुगतान का तरीका"
 }

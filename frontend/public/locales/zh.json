@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "前往我的仪表板",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "备份已添加。要现在还原吗？",
   "Mijn bijdrage": "我的贡献",
-  "Bijdragen": "贡献"
+  "Bijdragen": "贡献",
+  "Backup terugzetten (.zip)": "恢复备份 (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "备份已加载。现在恢复，还是只保存到备份列表？",
+  "Opslaan bij de backups": "保存到备份",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "许可证数据：编号、客户、有效期、价格和付款方式"
 }

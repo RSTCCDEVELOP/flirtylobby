@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "Перейти до моєї панелі",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "Резервну копію додано. Бажаєте відновити її зараз?",
   "Mijn bijdrage": "Мій внесок",
-  "Bijdragen": "Внески"
+  "Bijdragen": "Внески",
+  "Backup terugzetten (.zip)": "Відновити резервну копію (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "Копію завантажено. Відновити її зараз чи лише зберегти серед копій?",
+  "Opslaan bij de backups": "Зберегти серед копій",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "Дані ліцензії: номер, замовник, термін дії, ціни та спосіб оплати"
 }

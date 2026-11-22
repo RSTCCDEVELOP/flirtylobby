@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "Vai alla mia dashboard",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "Il backup è stato aggiunto. Vuoi ripristinarlo ora?",
   "Mijn bijdrage": "Il mio contributo",
-  "Bijdragen": "Contributi"
+  "Bijdragen": "Contributi",
+  "Backup terugzetten (.zip)": "Ripristina backup (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "Il backup è caricato. Vuoi ripristinarlo ora o salvarlo solo tra i backup?",
+  "Opslaan bij de backups": "Salva tra i backup",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "Dati della licenza: numero, cliente, validità, prezzi e metodo di pagamento"
 }

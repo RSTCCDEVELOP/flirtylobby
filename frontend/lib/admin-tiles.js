@@ -39,7 +39,7 @@ export const TILES = [
   { href: "/dashboard/admin/cache", title: "Cache en snelheid", big: "Sneller en groener", small: "De website bewaart antwoorden even: minder rekenwerk, minder stroom", modules: ["system"] },
   { href: "/dashboard/admin/bomen", title: "Bomen en giften", big: "Bomen planten voor je website", small: "Je eigen maandelijkse bijdrage en giften, met easy2edit", modules: ["ecologi_admin"], needs: "ecologi_admin" },  // only while the API Ecologi is on and the superadmin allowed it
   { href: "/dashboard/admin/energy", title: "Energie & uitstoot", big: "Paginagewicht en CO2 per bezoek", small: "Meting, weergaven voor op een pagina en een API voor andere websites", modules: ["energy"] },
-  { href: "/dashboard/admin/backups", title: "Backup", big: "Backups per dag, week of maand", small: "Maken, downloaden en terugzetten", modules: ["backups"] },
+  { href: "/dashboard/admin/backups", title: "Backup", big: "Backups per dag, week of maand", small: "Maken, downloaden en terugzetten", find: "restore remote herstel herstellen terug zetten terugzetten importeren upload back-up backup restore", modules: ["backups"] },
   { href: "/dashboard/admin/installaties", title: "Standaard installaties", big: "Alles in één keer instellen", small: "Modules, plugins en thema voor een soort website; de superadmin bepaalt welke je ziet", modules: ["system"] },
   { href: "/dashboard/admin/sandbox", title: "Sandbox", big: "Testomgeving", small: "Betalingen, e-mail en sms simuleren", modules: ["sandbox"] },
   { href: "/dashboard/admin/pages", title: "Pagina's", big: "Pagina's en header-menu", small: "Overzicht, menu-editor, eigen pagina's en links", modules: ["pages"] },

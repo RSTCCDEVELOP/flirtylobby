@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "Ke dasbor saya",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "Cadangan telah ditambahkan. Apakah Anda ingin memulihkannya sekarang?",
   "Mijn bijdrage": "Kontribusi saya",
-  "Bijdragen": "Kontribusi"
+  "Bijdragen": "Kontribusi",
+  "Backup terugzetten (.zip)": "Pulihkan cadangan (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "Cadangan sudah dimuat. Mau dipulihkan sekarang atau hanya disimpan di daftar cadangan?",
+  "Opslaan bij de backups": "Simpan di cadangan",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "Data lisensi: nomor, klien, masa berlaku, harga, dan cara pembayaran"
 }

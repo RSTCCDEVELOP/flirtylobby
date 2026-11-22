@@ -7048,7 +7048,7 @@
   "Daarna per maand": "Sonrasında aylık",
   "Het abonnement gaat altijd in op de 1e van de maand. Voor de rest van deze maand betaal je naar rato van het aantal dagen; vanaf de 1e van de volgende maand betaal je de volledige maandprijs.": "Abonelik her zaman ayın 1'inde başlar. Bu ayın geri kalanı için gün sayısı oranında ödersiniz; sonraki ayın 1'inden itibaren tam aylık fiyatı ödersiniz.",
   "Verlengdatum": "Yenileme tarihi",
-  "Licentiegegevens": "Lisans verileri",
+  "Licentiegegevens": "Lisans bilgileri",
   "Daarna per kwartaal": "Sonrasında üç aylık",
   "Daarna per jaar": "Sonrasında yıllık",
   "Abonnementen en korting": "Abonelikler ve indirim",
@@ -8078,5 +8078,9 @@
   "Naar mijn dashboard": "Kontrol paneline git",
   "De backup is toegevoegd. Wil je hem nu terugzetten?": "Yedek eklendi. Şimdi geri yüklemek ister misiniz?",
   "Mijn bijdrage": "Katkım",
-  "Bijdragen": "Katkılar"
+  "Bijdragen": "Katkılar",
+  "Backup terugzetten (.zip)": "Yedeği geri yükle (.zip)",
+  "De backup is geladen. Wil je hem nu terugzetten of alleen opslaan bij de backups?": "Yedek yüklendi. Şimdi geri yüklemek mi yoksa yalnızca yedekler arasına kaydetmek mi istersin?",
+  "Opslaan bij de backups": "Yedeklere kaydet",
+  "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze": "Lisans bilgileri: numara, müşteri, geçerlilik, fiyatlar ve ödeme yöntemi"
 }

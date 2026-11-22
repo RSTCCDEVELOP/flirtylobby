@@ -65,7 +65,7 @@ export default function AdminTiles({ all = false }) {
     catch (e) { setMsg(errorText(e)); }
     setBusy("");
   };
-  const shown = tiles.filter((t) => view.match(tx(t.title), tx(t.big), tx(t.small)));
+  const shown = tiles.filter((t) => view.match(tx(t.title), tx(t.big), tx(t.small), t.find || ""));
 
   return (
     <>

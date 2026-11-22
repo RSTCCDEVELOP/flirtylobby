@@ -41,7 +41,7 @@ export default function SidebarSearch({ onNavigate }) {
     if (!words.length) return [];
     const has = (hay) => words.every((w) => hay.includes(w));
     const out = [];
-    TILES.forEach((t) => { if (t.href.startsWith("/dashboard/admin") && allowed(t.href) && has(norm(`${tx(t.title)} ${t.title} ${tx(t.big)} ${t.big} ${tx(t.small)} ${t.small} ${t.modules.join(" ")} module`))) out.push({ kind: "tile", label: tx(t.title), sub: tx(t.big), href: t.href, key: t.href }); });
+    TILES.forEach((t) => { if (t.href.startsWith("/dashboard/admin") && allowed(t.href) && has(norm(`${tx(t.title)} ${t.title} ${tx(t.big)} ${t.big} ${tx(t.small)} ${t.small} ${t.find || ""} ${t.modules.join(" ")} module`))) out.push({ kind: "tile", label: tx(t.title), sub: tx(t.big), href: t.href, key: t.href }); });
     return out.slice(0, 14);
   }, [q, user, mods]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => setCur(0), [q]);
