@@ -8075,5 +8075,6 @@
   "Inloggen en code versturen": "تسجيل الدخول وإرسال الرمز",
   "Log in met je account op easy2edit.com (de master-server). Daarna krijgt dat account een code om te bevestigen.": "سجّل الدخول بحسابك على easy2edit.com (الخادم الرئيسي). بعد ذلك سيتلقى هذا الحساب رمزاً للتأكيد.",
   "Dit onderdeel is alleen voor een superadmin van deze website.": "هذا القسم متاح فقط لمشرف عام (superadmin) لهذا الموقع.",
-  "Naar mijn dashboard": "إلى لوحة التحكم الخاصة بي"
+  "Naar mijn dashboard": "إلى لوحة التحكم الخاصة بي",
+  "De backup is toegevoegd. Wil je hem nu terugzetten?": "تمت إضافة النسخة الاحتياطية. هل تريد استعادتها الآن؟"
 }

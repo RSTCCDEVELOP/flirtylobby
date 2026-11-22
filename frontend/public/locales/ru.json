@@ -8075,5 +8075,6 @@
   "Inloggen en code versturen": "Войти и отправить код",
   "Log in met je account op easy2edit.com (de master-server). Daarna krijgt dat account een code om te bevestigen.": "Войдите в свою учётную запись на easy2edit.com (главном сервере). После этого на эту учётную запись будет отправлен код для подтверждения.",
   "Dit onderdeel is alleen voor een superadmin van deze website.": "Этот раздел доступен только суперадминистратору этого сайта.",
-  "Naar mijn dashboard": "Перейти в мою панель"
+  "Naar mijn dashboard": "Перейти в мою панель",
+  "De backup is toegevoegd. Wil je hem nu terugzetten?": "Резервная копия добавлена. Хотите восстановить её сейчас?"
 }

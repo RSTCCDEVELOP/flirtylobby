@@ -99,7 +99,9 @@ export default function BackupsAdmin() {
   async function upload(file) {
     if (!file) return;
     const fd = new FormData(); fd.append("file", file);
-    await run("upload", () => api("/backups/upload/", { method: "POST", body: fd }), tx("De backup is toegevoegd aan de lijst."));
+    const r = await run("upload", () => api("/backups/upload/", { method: "POST", body: fd }), tx("De backup is toegevoegd aan de lijst."));
+    // uploaded: ask at once whether to put it back now
+    if (r?.made && canManage && r.made.exists !== false && (r.made.parts || []).length && await confirmDialog(tx("De backup is toegevoegd. Wil je hem nu terugzetten?"), { okLabel: tx("Terugzetten"), cancelLabel: tx("Niet nu") })) setRestoring({ backup: r.made, parts: new Set(r.made.parts.map((p) => p.key)) });
   }
   async function doRestore() {
     const { backup, parts } = restoring;

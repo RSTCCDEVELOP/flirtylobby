@@ -26,6 +26,9 @@ def _export(opts):
 def _apply(data, ctx):
     data = data or {}
     n = 0
+    if "note" not in data and ctx.get("mode") != "add":  # the logos of the backup are THE logos: one that this website has but the backup has not (a header logo of another design) is taken away, else it keeps winning over the restored one
+        keep = {a.get("slot") for a in data.get("assets", []) if a.get("slot") and a.get("b64")}
+        SiteAsset.objects.exclude(slot__in=keep).delete()
     for a in data.get("assets", []):
         if not (a.get("slot") and a.get("b64")):
             continue

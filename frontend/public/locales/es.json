@@ -8075,5 +8075,6 @@
   "Inloggen en code versturen": "Iniciar sesión y enviar código",
   "Log in met je account op easy2edit.com (de master-server). Daarna krijgt dat account een code om te bevestigen.": "Inicia sesión con tu cuenta en easy2edit.com (el servidor maestro). Después, esa cuenta recibirá un código para confirmar.",
   "Dit onderdeel is alleen voor een superadmin van deze website.": "Esta sección es solo para un superadmin de este sitio web.",
-  "Naar mijn dashboard": "Ir a mi panel"
+  "Naar mijn dashboard": "Ir a mi panel",
+  "De backup is toegevoegd. Wil je hem nu terugzetten?": "Se ha añadido la copia de seguridad. ¿Quieres restaurarla ahora?"
 }

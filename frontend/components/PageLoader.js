@@ -228,8 +228,8 @@ export function Busy({ full = false, page = false, label = "Laden…" }) {
   const ui = useUi() || {};
   const on = ui.loader_on === "yes";
   const kind = ui.loader_style || "tree";
-  if (!on) return <div className={full || page ? "ld-float" : "busy"} role="status" aria-label={label}><LoaderArt kind={kind} size={Math.min(Number(ui.loader_size) || 56, full ? 72 : 56)} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} /></div>;
+  if (!on) return <div className={full || page ? "ld-float" : "busy"} role="status" aria-label={label}><LoaderArt kind={kind} size={Math.min(Number(ui.loader_size) || 56, full || page ? 96 : 56)} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} /></div>;
   if (full) return <LoaderLayers look={ui} percent={ui.loader_percent === "yes"} />;
-  if (page) return <div className="ld-float" role="status" aria-label={label}><LoaderArt kind={kind} size={Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div>;
+  if (page) return <div className="ld-float" role="status" aria-label={label}><LoaderArt kind={kind} size={Math.min(Number(ui.loader_size) || 56, 96)} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div>;
   return <div className="busy" role="status" aria-label={label}><LoaderArt kind={ui.loader_style || "tree"} size={Math.min(Number(ui.loader_size) || 56, 96)} /></div>;
 }

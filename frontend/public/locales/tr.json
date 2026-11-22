@@ -8075,5 +8075,6 @@
   "Inloggen en code versturen": "Giriş yap ve kod gönder",
   "Log in met je account op easy2edit.com (de master-server). Daarna krijgt dat account een code om te bevestigen.": "easy2edit.com (ana sunucu) üzerindeki hesabınızla giriş yapın. Ardından bu hesap onaylamak için bir kod alır.",
   "Dit onderdeel is alleen voor een superadmin van deze website.": "Bu bölüm yalnızca bu web sitesinin süper yöneticisi içindir.",
-  "Naar mijn dashboard": "Kontrol paneline git"
+  "Naar mijn dashboard": "Kontrol paneline git",
+  "De backup is toegevoegd. Wil je hem nu terugzetten?": "Yedek eklendi. Şimdi geri yüklemek ister misiniz?"
 }

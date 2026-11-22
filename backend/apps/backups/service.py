@@ -347,9 +347,10 @@ def restore(b, parts=None, user=None):
             results += [{**r, "key": f"settings:{r['key']}"} for r in sb.load(bundle, keys)]
     finally:
         zf.close()
-    from apps.core import modules
+    from apps.core import modules, syscache
 
     modules.invalidate()
+    syscache.clear()  # the settings and every public answer that the system cache kept (theme, base data, menu ...): nothing of before the restore is shown any more
     return results, safety
 
 

@@ -8075,5 +8075,6 @@
   "Inloggen en code versturen": "लॉग इन करें और कोड भेजें",
   "Log in met je account op easy2edit.com (de master-server). Daarna krijgt dat account een code om te bevestigen.": "easy2edit.com (मास्टर सर्वर) पर अपने खाते से लॉग इन करें। इसके बाद उस खाते को पुष्टि के लिए एक कोड मिलेगा।",
   "Dit onderdeel is alleen voor een superadmin van deze website.": "यह भाग केवल इस वेबसाइट के सुपरएडमिन के लिए है।",
-  "Naar mijn dashboard": "मेरे डैशबोर्ड पर जाएं"
+  "Naar mijn dashboard": "मेरे डैशबोर्ड पर जाएं",
+  "De backup is toegevoegd. Wil je hem nu terugzetten?": "बैकअप जोड़ा गया है। क्या आप इसे अभी पुनर्स्थापित करना चाहते हैं?"
 }

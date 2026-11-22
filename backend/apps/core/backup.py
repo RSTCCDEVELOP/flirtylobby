@@ -125,7 +125,7 @@ register("dashboard", "Standaard dashboard", _dash_export, _dash_apply, descript
 def _system_export(opts):
     from . import system
 
-    return system.get()
+    return system._read()  # (straight from the database: a backup never holds what the system cache kept for a few minutes)
 
 
 def _system_apply(data, ctx):

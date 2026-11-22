@@ -4693,3 +4693,9 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .e2e-floatwin__btn { opacity: .55; transition: opacity .2s, box-shadow .4s; touch-action: none; cursor: grab; }
 .e2e-floatwin__btn:hover, .e2e-floatwin__btn:focus-visible, .e2e-floatwin__btn[aria-expanded="true"] { opacity: 1; }
 .content { padding-bottom: calc(var(--pad) + 4.5rem); }
+/* a loader of the back office is a small animation: whatever the size of the website loader, it never grows over the page, and an animation never paints outside its own box */
+.ld-float .ld, .ui-loading .ld { max-width: 120px; max-height: 120px; overflow: visible; }
+.ld-float, .ui-loading { overflow: hidden; contain: paint; }
+
+/* a switch is always its own containing block: its track (an absolute span) can never stretch over the whole page */
+.switch { position: relative !important; flex: none; }

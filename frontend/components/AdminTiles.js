@@ -82,7 +82,7 @@ export default function AdminTiles({ all = false }) {
                 <>
                   <Link href={t.href} className="btn sm primary" onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}>{t.open || tx("Open")}</Link>
                   {all ? (
-                    <label className="switch tile-switch" style={{ position: "static", marginLeft: "auto" }} title={t.locked ? tx("Kernonderdeel: altijd aan") : t.on ? tx("Uitzetten") : tx("Aanzetten")}>
+                    <label className="switch tile-switch" style={{ position: "relative", marginLeft: "auto", flex: "none" }} title={t.locked ? tx("Kernonderdeel: altijd aan") : t.on ? tx("Uitzetten") : tx("Aanzetten")}>
                       <input type="checkbox" checked={t.on} disabled={(t.locked || busy === t.href || !state) && !isLocked(t)} onChange={() => flip(t)} /><span />
                     </label>
                   ) : <span style={{ marginLeft: "auto", padding: ".15rem .6rem", border: "1px solid var(--line)", borderRadius: 999, fontSize: ".72rem", fontWeight: 600, color: "var(--muted)", whiteSpace: "nowrap" }}>{tx(LEVEL_LABEL[t.level])}</span>}
