@@ -17,7 +17,7 @@ export default function Loading({ size = 30, fill = false, compact = false }) {
   const ui = useUi() || {};
   const kind = ui.loader_style || "tree";
   return (
-    <span role="status" aria-live="polite" aria-label={tx("Laden…")} data-easy2edit-tag="ui-loading" className={`ui-loading${fill ? " fill" : ""}${compact ? " compact" : ""}`}>
+    <span role="status" aria-live="polite" aria-label={tx("Laden…")} data-easy2edit-tag="ui-loading" className={`ui-loading${fill ? " fill ld-float" : ""}${compact ? " compact" : ""}`}>
       <LoaderArt kind={kind} size={kind === "image" ? Number(ui.loader_image_size) || size * 1.5 : size} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />
     </span>
   );

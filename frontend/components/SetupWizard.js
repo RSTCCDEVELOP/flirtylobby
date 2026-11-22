@@ -36,6 +36,7 @@ const STEPS = [
   ["hosting", "Hosting", ["hosting"]],  // the hosting that goes with the licence (only when there is no licence yet): from the price list
   ["preset", "Standaard installatie", []],  // the standard installation decides what is in use and so what it costs: chosen between the hosting and the costs
   ["ai", "AI-tegoed", []],  // optional: AI credit to buy once the licence is made (it is bought in the next screen, at the payment page); before the costs
+  ["trees", "Bomen planten", []],  // easy2edit plants trees with every website (the link with Ecologi is mandatory and always on); the choice and the cost; before the costs
   ["costs", "Kosten", ["license_until"]],
   ["pay", "Betalen", ["pay_ok"]],  // a Stripe subscription (test mode with test keys): the licence is made only after paying
   ["overview", "Overzicht", []],  // the last screen: everything of the licence together, with its number; Save makes it
@@ -61,6 +62,7 @@ export default function SetupWizard() {
   const [closed, setClosed] = useState(false);
   const [costs, setCosts] = useState(null);
   const [termsDoc, setTermsDoc] = useState(null); // the terms and conditions of easy2edit (step Voorwaarden)
+  const [termsErr, setTermsErr] = useState(false);
   const [termsRead, setTermsRead] = useState(false); // read to the end: only then the consent is asked
   const termsBox = useRef(null);
   const [presetList, setPresetList] = useState(null); // the standard installations (read when the step is opened)
@@ -98,9 +100,20 @@ export default function SetupWizard() {
     if (step === "hosting" && d && !(d.hosting_options || []).length) api("/system/setup/").then((r) => { setD(r); setForm((f) => ({ ...f, hosting: f.hosting || r.hosting_default || "shared" })); }).catch(() => {});
   }, [step, d]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The terms: the chosen language, then Dutch and English when that one is empty. A failed or empty answer is never kept: it is asked again (a few times by itself, or with the button).
+  const loadTerms = async () => {
+    setTermsErr(false);
+    for (let i = 0; i < 3; i += 1) {
+      for (const lang of [...new Set([getLanguage(), "nl", "en"])]) {
+        try { const r = await api(`/system/terms/?lang=${lang}`); if (r?.body) { setTermsDoc(r); return; } } catch { /* try the next one */ }
+      }
+      await new Promise((r) => setTimeout(r, 800));
+    }
+    setTermsDoc(null); setTermsErr(true);
+  };
   useEffect(() => { // the terms of easy2edit for the step Voorwaarden
-    if (step !== "agree" || termsDoc) return;
-    api(`/system/terms/?lang=${getLanguage()}`).then(setTermsDoc).catch(() => setTermsDoc({ body: "", error: true }));
+    if (step !== "agree" || termsDoc?.body) return;
+    loadTerms();
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { // a text that fits without scrolling counts as read
     const el = termsBox.current;
@@ -119,6 +132,13 @@ export default function SetupWizard() {
     if (step !== "ai" || aiInfo) return;
     api("/ai/me/").then(setAiInfo).catch(() => setAiInfo({ module: false }));
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [treesInfo, setTreesInfo] = useState(null);
+  const [treesOn, setTreesOn] = useState(true);
+  useEffect(() => {
+    if (step !== "trees" || treesInfo) return;
+    api("/ecologi/onboarding/").then((r) => { setTreesInfo(r); setTreesOn(!r.asked || r.linked); }).catch(() => setTreesInfo({ error: true, per_tree: 0.8, service_fee: 0, currency: "EUR", examples: [] }));
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  const chooseTrees = async (on) => { setTreesOn(on); try { await api("/ecologi/onboarding/", { method: "POST", body: { choice: on ? "yes" : "no" } }); } catch { /* shown again at the next login (onboarding) */ } };
   const setAiAmount = (v) => { setForm((f) => ({ ...f, ai_amount: v ? String(v) : "" })); try { if (v) sessionStorage.setItem("e2e_ai_amount", String(v)); else sessionStorage.removeItem("e2e_ai_amount"); } catch {} };
 
   useEffect(() => { // the costs of everything that is in use (read when the tab is opened)
@@ -143,7 +163,7 @@ export default function SetupWizard() {
     return () => setBlock("setup", false);
   }, [shown]);
   if (!shown) return null;
-  const steps = upd ? STEPS.filter((x) => ["costs", "agree", "pay", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
+  const steps = upd ? STEPS.filter((x) => ["costs", "agree", "pay", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "trees" || user?.is_staff)).filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
   const hostOpt = d.needs_license ? (d.hosting_options || []).find((o) => o.key === form.hosting) : null;  // the chosen hosting: a line of the price (not in the base price)
   const hostPrice = hostOpt ? Number(hostOpt.price) : 0;
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrs((x) => ({ ...x, [k]: "" })); };
@@ -363,6 +383,23 @@ export default function SetupWizard() {
                   <span className="e2e-hint">{tx("Prijzen per maand, exclusief btw. Een andere installatie kiezen haalt geen gegevens weg.")}</span>
                 </div>
               )}
+              {step === "trees" && (
+                <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".8rem" }}>
+                  <span className="e2e-hint">{tx("Laat je website bomen planten. Bezoekers, het energiegebruik en jouw eigen bijdrage planten samen bomen met Ecologi; easy2edit plant er zelf ook elke maand één voor je website. Bezoekers zien het resultaat in het energievenster onderaan de website.")}</span>
+                  <label className="e2e-check" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".7rem", padding: ".7rem .9rem", border: `1px solid ${treesOn ? "var(--e2e-primary, var(--blue))" : "var(--e2e-line, var(--line))"}`, borderRadius: "var(--e2e-radius, 10px)" }}>
+                    <input type="checkbox" checked={treesOn} onChange={(e) => chooseTrees(e.target.checked)} />
+                    <span style={{ flex: 1 }}><strong>{tx("Bomen planten met easy2edit")}</strong><br /><small className="e2e-hint">{tx("Begint in testmodus: er wordt niets gekocht totdat jij dat zelf aanzet.")}</small></span>
+                  </label>
+                  <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{tx("De koppeling met Ecologi (API) is verplicht en staat altijd aan. De sleutel komt van de easy2edit-server; je hoeft niets in te vullen.")}</div></div>
+                  {treesInfo && !treesInfo.error && (
+                    <div className="e2e-row" style={{ gap: "1.4rem", flexWrap: "wrap" }}>
+                      <div className="e2e-field"><span className="e2e-hint">{tx("Prijs per boom")}</span><strong>{money(treesInfo.per_tree, treesInfo.currency)}</strong></div>
+                      <div className="e2e-field"><span className="e2e-hint">{tx("Beheer en overzicht")}</span><strong>{money(treesInfo.service_fee, treesInfo.currency)}</strong><small className="e2e-hint">{tx("per maand, ex btw (bij je licentie)")}</small></div>
+                      {treesInfo.examples?.map((x) => <div key={x.trees} className="e2e-field"><span className="e2e-hint">{x.trees} {tx("bomen per maand")}</span><strong>{money(x.amount, treesInfo.currency)}</strong></div>)}
+                    </div>
+                  )}
+                </div>
+              )}
               {step === "ai" && (() => {
                 const p = aiInfo?.proposal, cur = aiInfo?.currency || "EUR", on = !!form.ai_amount;
                 return (
@@ -540,7 +577,7 @@ export default function SetupWizard() {
                         onScroll={(e) => { const el = e.currentTarget; if (el.scrollTop + el.clientHeight >= el.scrollHeight - 12) setTermsRead(true); }}
                         style={{ maxHeight: "34vh", overflowY: "auto", padding: ".8rem 1rem", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.2)))", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #fff)" }}>
                         {termsDoc ? (termsDoc.title && <h3 style={{ marginTop: 0 }}>{termsDoc.title}</h3>) : null}
-                        {termsDoc ? <RichText value={termsDoc.body} /> : <span className="e2e-hint">{<Loading compact />}</span>}
+                        {termsDoc ? <RichText value={termsDoc.body} /> : termsErr ? <span className="e2e-hint" role="alert">{tx("De voorwaarden konden niet worden geladen.")} <button type="button" className="e2e-btn e2e-btn--sm" onClick={loadTerms}>{tx("Opnieuw laden")}</button></span> : <span className="e2e-hint">{<Loading compact />}</span>}
                       </div>
                       <span className="e2e-hint">{termsRead ? tx("Je hebt de voorwaarden tot het einde gelezen.") : tx("Scroll naar het einde van de voorwaarden om akkoord te kunnen geven.")}</span>
                     </div>

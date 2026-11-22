@@ -224,11 +224,12 @@ export function PageTransition({ children }) {
 
 // A "loading" in a screen (dashboard, admin, a list): ALWAYS an animation (never text), in the style the theme sets (Admin > Website > Thema > loader; the standard is the ring).
 // The switch "page loader on/off" only decides about the loader over the page of the website itself.
-export function Busy({ full = false, label = "Laden…" }) {
+export function Busy({ full = false, page = false, label = "Laden…" }) {
   const ui = useUi() || {};
   const on = ui.loader_on === "yes";
   const kind = ui.loader_style || "tree";
-  if (!on) return <div className={full ? "busy busy-full" : "busy"} role="status" aria-label={label}><LoaderArt kind={kind} size={Math.min(Number(ui.loader_size) || 56, full ? 72 : 56)} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} /></div>;
+  if (!on) return <div className={full || page ? "ld-float" : "busy"} role="status" aria-label={label}><LoaderArt kind={kind} size={Math.min(Number(ui.loader_size) || 56, full ? 72 : 56)} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} /></div>;
   if (full) return <LoaderLayers look={ui} percent={ui.loader_percent === "yes"} />;
+  if (page) return <div className="ld-float" role="status" aria-label={label}><LoaderArt kind={kind} size={Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div>;
   return <div className="busy" role="status" aria-label={label}><LoaderArt kind={ui.loader_style || "tree"} size={Math.min(Number(ui.loader_size) || 56, 96)} /></div>;
 }

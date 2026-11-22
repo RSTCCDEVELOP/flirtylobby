@@ -372,6 +372,68 @@ def site_info(request, pk):
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# ── a superadmin of a website proves who he is with his account on THIS server (the master): password first, then the verification of that account ──
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def verify_login(request):
+    """Step 1: {email, password} of an account on this server (a superadmin) -> a verification code goes to that account (its own method) and a challenge comes back."""
+    import secrets
+
+    from django.core.cache import cache
+
+    from apps.security import twofa
+
+    site, refusal = _approved(request)
+    if refusal:
+        return refusal
+    from django.contrib.auth import get_user_model
+
+    email = str(request.data.get("email") or "").strip().lower()[:254]
+    tk = f"mverify:try:{site.pk}:{email}"
+    if (cache.get(tk) or 0) >= 5:
+        return Response({"detail": "Te veel pogingen. Probeer het over 10 minuten opnieuw."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    cache.set(tk, (cache.get(tk) or 0) + 1, 600)
+    user = get_user_model().objects.filter(email__iexact=email).first()
+    if not user or not user.is_active or not user.is_staff or not user.check_password(str(request.data.get("password") or "")):
+        return Response({"detail": "E-mailadres of wachtwoord klopt niet, of dit account is geen superadmin."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        twofa.issue_code(user, force_email=user.twofa_method != "sms")
+    except twofa.DeliveryError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    token = secrets.token_urlsafe(24)
+    cache.set(f"mverify:ch:{token}", {"user": user.pk, "site": site.pk, "tries": 0}, 600)
+    return Response({"challenge": token, "hint": twofa.destination_hint(user) if user.twofa_method == "sms" else twofa.mask_email(user.email)})
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def verify_code(request):
+    """Step 2: {challenge, code} -> ok when the code of that account is right. Only for the website that started it."""
+    from django.core.cache import cache
+
+    from apps.security import twofa
+
+    site, refusal = _approved(request)
+    if refusal:
+        return refusal
+    from django.contrib.auth import get_user_model
+
+    key = f"mverify:ch:{request.data.get('challenge') or ''}"
+    ch = cache.get(key)
+    if not ch or ch["site"] != site.pk or ch["tries"] >= 5:
+        cache.delete(key)
+        return Response({"detail": "De verificatie is verlopen. Begin opnieuw."}, status=status.HTTP_400_BAD_REQUEST)
+    ch["tries"] += 1
+    cache.set(key, ch, 600)
+    user = get_user_model().objects.filter(pk=ch["user"]).first()
+    if not user or not twofa.check_code(user, str(request.data.get("code") or "").strip()):
+        return Response({"detail": "De code klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
+    cache.delete(key)
+    return Response({"ok": True, "email": user.email})
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def sites_trees(request):

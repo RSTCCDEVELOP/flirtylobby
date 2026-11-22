@@ -58,6 +58,7 @@ services:
       EASY2EDIT_POSTMARK_FROM: ${EASY2EDIT_POSTMARK_FROM:-}
       EASY2EDIT_STRIPE_KEY: ${EASY2EDIT_STRIPE_KEY:-}
       EASY2EDIT_ANTHROPIC_KEY: ${EASY2EDIT_ANTHROPIC_KEY:-}
+      EASY2EDIT_LINKS_PASSPHRASE: ${EASY2EDIT_LINKS_PASSPHRASE:-}  # the password of apps/integrations/default_links.enc: the API links with their keys are installed and updated from it
       CACHE_REDIS_DEFAULT: ${CACHE_REDIS_DEFAULT:-redis://redis:6379/1}  # Redis of this compose file: the standard cache when nothing else is chosen (Admin -> Basisgegevens -> Cache)
       DB_ENGINE: postgres
       POSTGRES_DB: ${POSTGRES_DB:-app}

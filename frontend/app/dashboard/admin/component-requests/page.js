@@ -31,7 +31,7 @@ export default function ComponentRequestsPage() {
     try { const d = await api(`/component-requests/${open.id}/`, { method: "PATCH", body: { status, note, tag } }); setOpen(d); setMsg({ ok: true, text: tx("Opgeslagen.") }); load(); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
-  if (!data) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
+  if (!data) return msg ? <div className="alert">{msg.text}</div> : <Busy page />;
   const label = Object.fromEntries(data.statussen);
   return (
     <>

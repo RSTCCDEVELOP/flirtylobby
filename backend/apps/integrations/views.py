@@ -241,12 +241,47 @@ def import_all(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def links_check(request):
-    """Superadmin only: GET = look at the API links of the easy2edit server and compare them with this installation (keys are never shown). POST = bring them up to date (keys arrive encrypted)."""
+    """Superadmin only. Before anything with the keys of the easy2edit server a code by e-mail or SMS is needed (the gate, 15 minutes open):
+    GET = the gate state, or (gate open) the comparison with the easy2edit server (keys are never shown); POST {gate: send, method} | {gate: verify, code} | {check} | {seal, password} | {password} (update)."""
     if not request.user.is_staff:
         return Response({"detail": "Alleen voor een superadmin."}, status=403)
-    from . import default_links
+    from . import default_links, keygate
 
+    d = request.data if request.method == "POST" else {}
+    if d.get("gate") == "send":
+        try:
+            return Response(keygate.send(request.user, str(d.get("method") or "email")))
+        except keygate.GateError as e:
+            return Response({"detail": str(e)}, status=400)
+    if d.get("gate") == "master_login":
+        try:
+            return Response(keygate.master_login(request.user, d.get("email"), d.get("password")))
+        except keygate.GateError as e:
+            return Response({"detail": str(e)}, status=400)
+    if d.get("gate") == "master_verify":
+        try:
+            keygate.master_verify(request.user, d.get("challenge"), d.get("code"))
+        except keygate.GateError as e:
+            return Response({"detail": str(e)}, status=400)
+        return Response({"granted": True})
+    if d.get("gate") == "verify":
+        try:
+            keygate.verify(request.user, d.get("code"))
+        except keygate.GateError as e:
+            return Response({"detail": str(e)}, status=400)
+        return Response({"granted": True})
+    if not keygate.granted(request.user):
+        return Response({"gate": True, "granted": False, "methods": keygate.methods(request.user), "detail": "Eerst een code bevestigen."}, status=403)
+    pw = str(d.get("password") or "") if request.method == "POST" else ""
     if request.method == "POST":
-        done = default_links.apply(refresh_keys=True)
-        return Response({**default_links.check(), "results": done})
+        if d.get("check"):
+            return Response(default_links.check(pw or None))
+        if d.get("seal"):  # make the installation file (links with keys, locked with this password)
+            try:
+                slugs = default_links.seal_file(pw)
+            except ValueError as e:
+                return Response({"detail": str(e)}, status=400)
+            return Response({"sealed": slugs})
+        done = default_links.apply(refresh_keys=True, password=pw or None)
+        return Response({**default_links.check(pw or None), "results": done})
     return Response(default_links.check())

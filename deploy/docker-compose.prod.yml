@@ -40,6 +40,7 @@ services:
     restart: unless-stopped
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
     environment:
+      EASY2EDIT_LINKS_PASSPHRASE: ${EASY2EDIT_LINKS_PASSPHRASE:-}  # the password of apps/integrations/default_links.enc: the API links with their keys are installed and updated from it
       CACHE_REDIS_DEFAULT: ${CACHE_REDIS_DEFAULT:-redis://redis:6379/1}  # Redis of this compose file: the standard cache when nothing else is chosen (Admin -> Basisgegevens -> Cache)
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: "False"

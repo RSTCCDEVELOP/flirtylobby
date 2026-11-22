@@ -15,12 +15,18 @@ class Command(BaseCommand):
     help = "capture: write the links that are marked 'in every installation' to the file. apply: make the links that are missing (--force: also switch them on)."
 
     def add_arguments(self, parser):
-        parser.add_argument("action", choices=["capture", "apply"])
+        parser.add_argument("action", choices=["capture", "apply", "seal"])
+        parser.add_argument("--password-env", default="", help="seal: the name of the environment variable that holds the password of the installation file")
         parser.add_argument("--force", action="store_true")
 
     def handle(self, *args, **o):
         if o["action"] == "capture":
             return self.stdout.write("default_links: " + (", ".join(default_links.capture()) or "niets gemarkeerd"))
+        if o["action"] == "seal":
+            import os
+
+            slugs = default_links.seal_file(os.environ.get(o["password_env"] or "EASY2EDIT_SEAL_PASSWORD", ""))
+            return self.stdout.write("default_links: installatiebestand gemaakt: " + ", ".join(slugs))
         res = default_links.apply(force=o["force"])
         from apps.integrations import activation
 

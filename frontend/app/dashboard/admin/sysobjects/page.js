@@ -36,7 +36,7 @@ export default function SysObjectsAdmin() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
 
-  if (!items) return msg ? <div className="alert">{msg.text}</div> : <Busy />;
+  if (!items) return msg ? <div className="alert">{msg.text}</div> : <Busy page />;
   const lang = (() => { try { return localStorage.getItem("lang") || "nl"; } catch { return "nl"; } })();
   return (
     <>

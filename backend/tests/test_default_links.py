@@ -134,6 +134,11 @@ def test_check_and_update_of_the_api_links_by_a_superadmin(monkeypatch, admin_cl
     c.force_authenticate(user)
     other.force_authenticate(plain)
     assert other.get("/api/admin/integrations/links/").status_code == 403
+    from apps.integrations import keygate
+
+    g = c.get("/api/admin/integrations/links/")  # the gate: first a code by e-mail or SMS
+    assert g.status_code == 403 and g.json()["gate"] is True
+    keygate.grant(user)
     chk = c.get("/api/admin/integrations/links/").json()
     states = {x["slug"]: x["state"] for x in chk["links"]}
     assert states == {"anthropic": "update", "pexels": "missing"} and chk["need_update"] and "NEW" not in str(chk)
@@ -142,3 +147,83 @@ def test_check_and_update_of_the_api_links_by_a_superadmin(monkeypatch, admin_cl
     assert ant.config == {"api_key": "NEW", "model": "claude-sonnet-5-5"} and ant.name == "Claude Easy2edit"
     assert Integration.objects.filter(slug="pexels").exists()
     assert not r["need_update"]
+
+
+@pytest.mark.django_db
+def test_installation_file_locks_the_keys_and_installs_them_at_the_destination(tmp_path, monkeypatch):
+    """The keys go with the installation as an encrypted file; without the password nothing is readable, with it the links are installed and updated."""
+    from apps.integrations import default_links
+    from apps.integrations.models import Integration
+
+    monkeypatch.setattr(default_links, "SEALED", tmp_path / "links.enc")
+    Integration.objects.create(slug="anthropic", provider="anthropic", name="Claude", superadmin_only=True, enabled=True, in_installation=True, always_on=True, config={"api_key": "SECRET-ABC", "model": "claude-sonnet-5-5"})
+    with pytest.raises(ValueError):
+        default_links.seal_file("kort")  # too short
+    assert default_links.seal_file("een-lang-wachtwoord-123") == ["anthropic"]
+    raw = (tmp_path / "links.enc").read_text()
+    assert "SECRET-ABC" not in raw and "anthropic" not in raw.split('"data"')[0].replace('"provider"', "")  # the keys are not in the file
+    assert default_links.sealed_links("een-lang-wachtwoord-123")["anthropic"]["config"]["api_key"] == "SECRET-ABC"
+    with pytest.raises(ValueError):
+        default_links.sealed_links("verkeerd-wachtwoord-1")
+    Integration.objects.all().delete()  # the destination: nothing there yet
+    monkeypatch.setenv(default_links.PASSPHRASE_ENV, "een-lang-wachtwoord-123")
+    monkeypatch.setattr(default_links, "_read", lambda: [])
+    monkeypatch.setattr(default_links, "_remote", lambda strict=False: {})
+    default_links.apply()
+    o = Integration.objects.get(slug="anthropic")
+    assert o.config["api_key"] == "SECRET-ABC" and o.always_on and o.enabled
+
+
+@pytest.mark.django_db
+def test_gate_sends_a_code_and_opens_for_the_right_one(monkeypatch):
+    from django.core.cache import cache
+    from django.contrib.auth import get_user_model
+    from rest_framework.test import APIClient
+
+    from apps.integrations import keygate
+
+    cache.clear()
+    u = get_user_model().objects.create_user(username="gt", email="gt@x.nl", password="x", is_staff=True)
+    c = APIClient()
+    c.force_authenticate(u)
+    sent = {}
+    monkeypatch.setattr("apps.security.twofa.availability", lambda: {"email": "Postmark", "sms": None})
+    monkeypatch.setattr("apps.communication.sending.send_email", lambda to, subj, body, **k: sent.update(to=to, body=body))
+    assert c.post("/api/admin/integrations/links/", {"gate": "send", "method": "sms"}, format="json").status_code == 400  # no SMS available
+    r = c.post("/api/admin/integrations/links/", {"gate": "send", "method": "email"}, format="json")
+    assert r.status_code == 200 and sent["to"] == "gt@x.nl"
+    code = sent["body"].split("is: ")[1][:6]
+    assert c.post("/api/admin/integrations/links/", {"gate": "verify", "code": "000000"}, format="json").status_code == 400
+    assert not keygate.granted(u)
+    assert c.post("/api/admin/integrations/links/", {"gate": "verify", "code": code}, format="json").json() == {"granted": True}
+    assert keygate.granted(u)
+
+
+@pytest.mark.django_db
+def test_verify_with_an_account_on_the_master_server(client, monkeypatch):
+    """A superadmin of a website proves who he is with his account on the master server: password first, then the code of that account; only for an approved website."""
+    import json
+
+    from django.contrib.auth import get_user_model
+    from django.core.cache import cache
+
+    from apps.core import sitemanager
+    from apps.core.models import EasySite
+
+    cache.clear()
+    sitemanager.set_server(True)
+    key = client.post("/api/easy2edit/sites/register/", json.dumps({"instance_id": "d" * 20, "name": "Shop"}), content_type=JSON).json()["key"]
+    me = get_user_model().objects.create_user(username="ms", email="ms@easy2edit.com", password="goed-wachtwoord-1", is_staff=True)
+    sent = {}
+    monkeypatch.setattr("apps.security.twofa.issue_code", lambda u, force_email=False: sent.update(user=u.pk, code="123456"))
+    monkeypatch.setattr("apps.security.twofa.check_code", lambda u, c: c == "123456")
+    H = {"HTTP_X_EASY2EDIT_KEY": key}
+    assert client.post("/api/easy2edit/verify/login/", json.dumps({"email": "ms@easy2edit.com", "password": "x"}), content_type=JSON, **H).status_code == 403  # the website is not approved yet
+    EasySite.objects.update(status="active")
+    assert client.post("/api/easy2edit/verify/login/", json.dumps({"email": "ms@easy2edit.com", "password": "fout"}), content_type=JSON, **H).status_code == 400
+    r = client.post("/api/easy2edit/verify/login/", json.dumps({"email": "ms@easy2edit.com", "password": "goed-wachtwoord-1"}), content_type=JSON, **H)
+    assert r.status_code == 200 and sent["user"] == me.pk
+    ch = r.json()["challenge"]
+    assert client.post("/api/easy2edit/verify/code/", json.dumps({"challenge": ch, "code": "000000"}), content_type=JSON, **H).status_code == 400
+    assert client.post("/api/easy2edit/verify/code/", json.dumps({"challenge": ch, "code": "123456"}), content_type=JSON, **H).json()["ok"] is True
+    assert client.post("/api/easy2edit/verify/code/", json.dumps({"challenge": ch, "code": "123456"}), content_type=JSON, **H).status_code == 400  # a challenge is used once

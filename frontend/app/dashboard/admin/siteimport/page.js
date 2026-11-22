@@ -167,7 +167,7 @@ function Detail({ imp, onChanged, onApply, busy }) {
   const savePage = async (key, patch) => {
     try { setD(await api(`/siteimport/${imp.id}/page/`, { method: "POST", body: { key, ...patch } })); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
-  if (!d) return <Busy />;
+  if (!d) return <Busy page />;
   return (
     <div className="si-detail">
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}

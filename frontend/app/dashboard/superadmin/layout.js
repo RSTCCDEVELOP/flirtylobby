@@ -7,16 +7,22 @@
 
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "../../../components/AuthContext";
+import { tx } from "../../../lib/t";
 
-// Super admin area: superadmins only
+// Super admin area: superadmins only. Anybody else gets a clear "no access" screen (never the home page or a silent jump somewhere else).
 export default function SuperAdminLayout({ children }) {
   const { user } = useAuth();
-  const router = useRouter();
-  useEffect(() => {
-    if (!user.is_staff) router.replace("/dashboard");
-  }, [user, router]);
-  return user.is_staff ? children : null;
+  if (user?.is_staff) return children;
+  return (
+    <div className="card" role="alert" style={{ maxWidth: 560, margin: "3rem auto", display: "grid", gap: ".8rem", textAlign: "center" }}>
+      <h1 style={{ margin: 0 }}>{tx("Geen toegang")}</h1>
+      <p className="muted" style={{ margin: 0 }}>{tx("Dit onderdeel is alleen voor een superadmin van deze website.")}</p>
+      <div className="row" style={{ justifyContent: "center", gap: ".6rem", flexWrap: "wrap" }}>
+        <Link className="btn primary" href="/dashboard">{tx("Naar mijn dashboard")}</Link>
+        <Link className="btn" href="/">{tx("Naar de website")}</Link>
+      </div>
+    </div>
+  );
 }

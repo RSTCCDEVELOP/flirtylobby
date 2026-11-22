@@ -4681,3 +4681,15 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .ld-bar { min-width: calc(var(--ld, 56px) * 4); }
 .dl-progress { display: grid; gap: .5rem; justify-items: stretch; }
 .dl-anim { display: grid; place-items: center; padding: .4rem 0; }
+
+/* a whole page that is loading: the animation stands in the middle of the whole browser window (fixed, on top of everything, never in the corner of a block) */
+.ld-float, .ui-loading.fill { position: fixed !important; inset: 0 !important; z-index: 2147482000; display: grid !important; place-items: center; align-content: center; gap: .7rem; width: auto !important; min-height: 0 !important; padding: 0 !important; pointer-events: none; background: transparent; }
+
+/* the round picture or the initials of the user: always a circle, never squeezed into an oval by a narrow header */
+.avatar, .avatar-img { flex: 0 0 auto !important; width: 34px; height: 34px; min-width: 34px; min-height: 34px; max-width: 34px; max-height: 34px; aspect-ratio: 1 / 1; border-radius: 50% !important; overflow: hidden; }
+.user-trigger .avatar, .user-trigger .avatar-img { flex: 0 0 auto !important; }
+
+/* the round cost button: see-through until it is pointed at (and it can be dragged to another corner), and the page keeps room under its content */
+.e2e-floatwin__btn { opacity: .55; transition: opacity .2s, box-shadow .4s; touch-action: none; cursor: grab; }
+.e2e-floatwin__btn:hover, .e2e-floatwin__btn:focus-visible, .e2e-floatwin__btn[aria-expanded="true"] { opacity: 1; }
+.content { padding-bottom: calc(var(--pad) + 4.5rem); }

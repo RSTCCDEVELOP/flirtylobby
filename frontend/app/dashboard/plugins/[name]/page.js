@@ -23,7 +23,7 @@ export default function PluginPage() {
   useEffect(() => { setQuery(Object.fromEntries(new URLSearchParams(window.location.search))); }, []); // e.g. ?with=12: a plugin can start from the address
   useEffect(() => { api("/plugins/menu/").then((list) => setP(list.find((x) => x.name === name) || false)).catch((e) => setError(errorText(e))); }, [name]);
   if (error) return <div className="alert">{error}</div>;
-  if (p === null) return <Busy />;
+  if (p === null) return <Busy page />;
   if (p === false) return <p className="muted">{tx("Deze plugin bestaat niet, staat uit of is niet voor jou.")}</p>;
   return (
     <>

@@ -39,6 +39,7 @@ export default function AiLiveCost() {
   const [openG, setOpenG] = useState({});  // which groups are unfolded
   const [pos, setPos] = useState("br");  // where the icon sits: tl, tr, bl, br; remembered per user on the server (PrefsSync keeps "aiLivePos")
   useEffect(() => { try { const v = localStorage.getItem("aiLivePos"); if (["tl", "tr", "bl", "br"].includes(v)) setPos(v); } catch {} }, [allowed]);
+  const drag = useRef({ x: null, moved: false });  // the icon can be dragged: it jumps to the nearest corner (so it never blocks what is under it)
   const place = (v) => { setPos(v); try { localStorage.setItem("aiLivePos", v); } catch {} };
   const [design, setDesign] = useState(getActiveDesign());  // the design of the AI creator that is open: its own counter
   const [dcost, setDcost] = useState(null);
@@ -168,7 +169,9 @@ export default function AiLiveCost() {
         </div></KitScope>
       )}
       <KitScope>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label={tx("AI-kosten live")} title={tx("AI-kosten live")}
+      <button type="button" onClick={() => { if (drag.current.moved) { drag.current.moved = false; return; } setOpen((o) => !o); }} onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, moved: false }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch {} }}
+        onPointerMove={(e) => { const d = drag.current; if (d.x == null) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (Math.abs(dx) + Math.abs(dy) > 6) { d.moved = true; e.currentTarget.style.transform = `translate(${dx}px, ${dy}px)`; } }}
+        onPointerUp={(e) => { const d = drag.current; e.currentTarget.style.transform = ""; if (d.moved) { const v = (e.clientY < window.innerHeight / 2 ? "t" : "b") + (e.clientX < window.innerWidth / 2 ? "l" : "r"); place(v); } d.x = null; }} aria-expanded={open} aria-label={tx("AI-kosten live")} title={tx("AI-kosten live")}
         className="e2e-floatwin__btn" data-easy2edit-tag="ui-cost-widget" style={{ position: "relative", display: "grid", placeItems: "center", padding: 0, boxShadow: pulse ? "0 0 0 8px color-mix(in srgb, var(--e2e-primary) 30%, transparent), 0 8px 24px rgba(0,0,0,.4)" : undefined, transition: "box-shadow .4s" }}>
         <span aria-hidden="true">{symbol}</span>
         {fresh > 0 && !open && <span style={{ position: "absolute", top: -6, right: -6, minWidth: 20, height: 20, padding: "0 5px", borderRadius: 999, background: "var(--danger, #dc2626)", color: "#fff", fontSize: ".72rem", display: "grid", placeItems: "center" }}>{fresh > 99 ? "99+" : fresh}</span>}

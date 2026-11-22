@@ -22,6 +22,8 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 PATH = Path(settings.BASE_DIR) / "apps" / "integrations" / "default_links.json"
+SEALED = Path(settings.BASE_DIR) / "apps" / "integrations" / "default_links.enc"  # the links WITH their keys, locked with a password (PBKDF2 + Fernet): it goes with the installation, the password does not
+PASSPHRASE_ENV = "EASY2EDIT_LINKS_PASSPHRASE"  # the password of that file on the destination (a secret of the server or of Coolify)
 
 
 def _read():
@@ -37,6 +39,34 @@ def secret_fields(provider):
     from .providers import PROVIDERS
 
     return {fl["key"] for fl in PROVIDERS.get(provider, {}).get("fields", []) if fl.get("secret")}
+
+
+def seal_file(password):
+    """Write the installation file: every link marked "in every installation", with all its settings and keys, locked with `password`. -> the slugs. The password is never stored."""
+    from . import transfer
+    from .models import Integration
+
+    if len(str(password or "")) < 12:
+        raise ValueError("Kies een wachtwoord van minstens 12 tekens.")
+    rows = [{"slug": o.slug, "provider": o.provider, "name": o.name, "superadmin_only": o.superadmin_only, "always_on": o.always_on, "config": {k: v for k, v in (o.config or {}).items() if isinstance(v, str) and v.strip()}}
+            for o in Integration.objects.filter(in_installation=True).order_by("id")]
+    if not rows:
+        raise ValueError("Er zijn geen koppelingen gemarkeerd met 'In elke installatie meenemen'.")
+    SEALED.write_text(json.dumps(transfer.pack(rows, str(password)), indent=1), encoding="utf-8")
+    return [r["slug"] for r in rows]
+
+
+def sealed_links(password=None):
+    """{slug: row} from the installation file, opened with the password (or the one of the environment); {} when there is no file or no password. Raises ValueError for a wrong password."""
+    import os
+
+    from . import transfer
+
+    pw = password or os.environ.get(PASSPHRASE_ENV, "")
+    if not pw or not SEALED.is_file():
+        return {}
+    rows = transfer.unpack(json.loads(SEALED.read_text(encoding="utf-8")), pw)
+    return {str(r["slug"]): r for r in rows if isinstance(r, dict) and r.get("slug")}
 
 
 def _remote(strict=False):
@@ -67,7 +97,7 @@ def _remote(strict=False):
     return out
 
 
-def apply(force=False, refresh_keys=False):
+def apply(force=False, refresh_keys=False, password=None):
     """Make the default links. force=True also switches them on. refresh_keys=True (an update): the keys of the links of the easy2edit server (the superadmin+ links) are brought up to date
     when they are different there. Returns [{key, label, ok, message}]."""
     from .models import Integration
@@ -75,9 +105,18 @@ def apply(force=False, refresh_keys=False):
 
     rows = {str(r.get("slug") or ""): r for r in _read()}
     existing = {o.slug: o for o in Integration.objects.filter(slug__in=[x for x in rows if x])}
+    try:
+        bundle = sealed_links(password)  # the installation file: opened here, at the destination
+    except ValueError as e:
+        logger.warning("Installation file of the API links: %s", e)
+        bundle = {}
+    for slug, r in bundle.items():
+        rows.setdefault(slug, {k: r.get(k) for k in ("slug", "provider", "name", "superadmin_only", "always_on")})
+    existing = {o.slug: o for o in Integration.objects.filter(slug__in=[x for x in rows if x])}
     remote = {}
     if force or refresh_keys or any(slug not in existing or any(not str((existing[slug].config or {}).get(k) or "").strip() for k in secret_fields(str(r.get("provider") or ""))) for slug, r in rows.items()):
         remote = _remote()  # the keys: only asked when a link is missing or has a key that is still empty
+    remote = {**remote, **bundle}  # what the installation file says goes before what the server says
     for slug, r in remote.items():
         rows.setdefault(slug, {k: r.get(k) for k in ("slug", "provider", "name", "superadmin_only", "always_on")})
     out = []
@@ -133,21 +172,27 @@ def capture():
 
 
 
-def check():
+def check(password=None):
     """Look at the API links of the easy2edit server and compare them with this installation, without changing anything (the keys are never shown, only that they differ).
     -> {ok, error, links: [{slug, name, provider, state: ok | update | missing | local, fields: [{field, secret, differs}]}]}"""
     from apps.core import resources, sitemanager
 
     from .models import Integration
 
-    if sitemanager.server_enabled():
+    if sitemanager.server_enabled() and not SEALED.is_file():
         return {"ok": False, "server": True, "error": "Deze installatie is zelf de easy2edit-server: de koppelingen staan hier al.", "links": []}
     if sitemanager.disabled():
         return {"ok": False, "error": "Het melden bij de easy2edit-server staat uit.", "links": []}
     try:
-        remote = _remote(strict=True)
+        bundle = sealed_links(password)
+    except ValueError as e:
+        return {"ok": False, "error": str(e), "links": []}
+    try:
+        remote = {**_remote(strict=True), **bundle}
     except (resources.ResourceError, ValueError) as e:
-        return {"ok": False, "error": str(e)[:200] or "De easy2edit-server geeft de koppelingen niet (is de website goedgekeurd?).", "links": []}
+        if not bundle:
+            return {"ok": False, "error": str(e)[:200] or "De easy2edit-server geeft de koppelingen niet (is de website goedgekeurd?).", "links": []}
+        remote = dict(bundle)  # (the installation file is enough)
     local = {o.slug: o for o in Integration.objects.filter(in_installation=True) | Integration.objects.filter(slug__in=list(remote))}
     out = []
     for slug, r in remote.items():
