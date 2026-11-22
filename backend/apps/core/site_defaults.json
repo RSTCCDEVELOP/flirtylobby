@@ -1,11 +1,11 @@
 {
  "format": "site-defaults",
  "version": 1,
- "captured_at": "2026-11-22T06:33:35+00:00",
+ "captured_at": "2026-11-22T09:55:06+00:00",
  "bundle": {
   "format": "easy2edit-settings",
   "version": 1,
-  "exported_at": "2026-11-22T06:33:35+00:00",
+  "exported_at": "2026-11-22T09:55:06+00:00",
   "secrets_included": false,
   "files_included": false,
   "sections": {
@@ -730,6 +730,16 @@
   "reseller_city": "Utrecht",
   "reseller_country": "Nederland",
   "reseller_website": "https://www.studio2.nl",
+  "energy_badge": "1",
+  "energy_badge_show": "rating,co2,size,views,compare,live,energy",
+  "trees_auto": "0",
+  "trees_visitors": "0",
+  "trees_machine": "0",
+  "trees_show": "1",
+  "trees_test": "1",
+  "trees_e2e": "1",
+  "trees_cap": "20",
+  "trees_name": "site",
   "source_mode": "local"
  },
  "push": {

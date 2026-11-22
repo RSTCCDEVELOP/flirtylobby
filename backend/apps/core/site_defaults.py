@@ -26,7 +26,7 @@ PATH = Path(settings.BASE_DIR) / "apps" / "core" / "site_defaults.json"
 
 
 TABS = {  # the tabs of Standaard en globale instellingen and the settings that belong to each (twofa: the two-step verification and blocking of the security settings)
-    "server": ("base_domain", "api_url", "site_url"), "settings": ("source_mode", "energy_badge", "energy_badge_show"), "licence": ("grace_1", "grace_2", "grace_3", "grace_4", "grace_reminder"),
+    "server": ("base_domain", "api_url", "site_url"), "settings": ("source_mode", "energy_badge", "energy_badge_show", "trees_auto", "trees_visitors", "trees_machine", "trees_show", "trees_test", "trees_e2e", "trees_cap", "trees_name"), "licence": ("grace_1", "grace_2", "grace_3", "grace_4", "grace_reminder"),
     "mails": ("notify_rstcc", "notify_reseller", "notify_invoicing", "notify_support"),
     "reseller": ("reseller_company", "reseller_contact", "reseller_email", "reseller_phone", "reseller_mobile", "reseller_street", "reseller_house_number", "reseller_postal_code", "reseller_city", "reseller_country", "reseller_website"),
     "twofa": (),
@@ -190,3 +190,53 @@ def push(data=None, tabs=None, force=False):
             out["applied"].append(t)
             out["results"].append({"key": t, "ok": True, "message": "Bijgewerkt."})
     return out
+
+
+
+# ── websites that are NOT updated with the standard settings (on the easy2edit server): {site id: up to and including this build}. A website whose own build is that one or lower
+# (so also every lower version) is skipped; from the next build (N + 1) it is updated again. ──
+SKIP_KEY = "defaults_skip"
+
+
+def skip_map():
+    from .models import SystemSettings
+
+    raw = (SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(SKIP_KEY) or {}
+    out = {}
+    for k, v in raw.items():
+        try:
+            out[str(k)] = int(v)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def set_skip(site_id, max_build):
+    """max_build None / empty = take the website off the list."""
+    from .models import SystemSettings
+
+    row, _ = SystemSettings.objects.get_or_create(pk=1)
+    data = dict(row.data or {})
+    m = skip_map()
+    if max_build in (None, "", 0):
+        m.pop(str(site_id), None)
+    else:
+        m[str(site_id)] = max(1, min(10_000_000, int(max_build)))
+    data[SKIP_KEY] = m
+    row.data = data
+    row.save()
+    return m
+
+
+def build_of(value):
+    import re
+
+    m = re.search(r"\d+", str(value or ""))
+    return int(m.group(0)) if m else 0
+
+
+def is_skipped(site, m=None):
+    """Is this website skipped now: it is on the list and its own build is not above the build that was given."""
+    m = skip_map() if m is None else m
+    lim = m.get(str(site.pk))
+    return bool(lim) and build_of(site.build) <= lim

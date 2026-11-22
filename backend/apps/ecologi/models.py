@@ -27,7 +27,7 @@ class EcologiSettings(models.Model):
     visitors_per = models.PositiveIntegerField(default=1000)
     machine_on = models.BooleanField(default=False)  # 2. the machine (energy use of the page views): trees to compensate the estimated CO2, one tree per `machine_kg` kg
     machine_kg = models.PositiveIntegerField(default=22)
-    e2e_trees = models.PositiveIntegerField(default=0)  # 3. use of easy2edit, paid by easy2edit: trees per month that easy2edit plants for this website (only shown here: it is planted by easy2edit itself)
+    e2e_trees = models.PositiveIntegerField(default=1)  # 3. use of easy2edit, paid by easy2edit: trees per month that easy2edit plants for this website (only shown here: it is planted by easy2edit itself)
     admin_enabled = models.BooleanField(default=False)  # 4. use of easy2edit, paid by the user: the administrator may set his own monthly gift and give trees (Admin -> Systeem -> Bomen en giften)
     admin_trees = models.PositiveIntegerField(default=0)  # the monthly gift of the administrator
     admin_max_trees = models.PositiveIntegerField(default=25)  # the most trees the administrator may give per gift and per month

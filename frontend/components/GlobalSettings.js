@@ -20,6 +20,7 @@ import { alertDialog, confirmDialog } from "../lib/dialog";
 import { showSourceNotice } from "../lib/sourceNotice";
 import { tx } from "../lib/t";
 import Loading from "./Loading";
+import { useEcologiOn } from "../lib/ecologi";
 
 const FIELDS = [
   ["base_domain", "Basisdomein", "easy2edit.com", "De websites van easy2edit zijn naam.basisdomein, bijvoorbeeld siten.easy2edit.com."],
@@ -75,13 +76,21 @@ const TAB_NAME = { server: "Easy2edit-server", settings: "Instellingen", licence
 function WebsitesTab({ setMsg }) {
   const [d, setD] = useState(null);
   const [busy, setBusy] = useState("");
-  const [pick, setPick] = useState({});  // the tabs that are put on the websites (all when none is ticked)
+  const [pick, setPick] = useState({});  // the tabs that are NOT put on the websites (none ticked = all tabs are)
+  const [adding, setAdding] = useState(false);  // the plus: add a website to the list "not updated"
+  const [addSite, setAddSite] = useState("");
+  const [addBuild, setAddBuild] = useState("");
   const [sel, setSel] = useState({});  // the websites that are ticked (all when none is ticked)
   const [res, setRes] = useState([]);
   const load = () => api("/system/sites-defaults/").then(setD).catch((e) => setMsg({ ok: false, text: errorText(e) }));
   useEffect(() => { load(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
-  const tabs = Object.keys(pick).filter((k) => pick[k]);
+  const left = Object.keys(pick).filter((k) => pick[k]);  // the tabs that are left alone
+  const tabs = left.length ? Object.keys(TAB_NAME).filter((k) => !pick[k]) : [];  // what is sent: the tabs that are updated (empty = all)
+  const allLeft = left.length === Object.keys(TAB_NAME).length;
   const ready = (d?.sites || []).filter((x) => x.status === "active" && x.has_callback);
+  const skipped = (d?.sites || []).filter((x) => x.skip_until);
+  const canAdd = (d?.sites || []).filter((x) => !x.skip_until);
+  const setSkip = async (id, build) => { try { setD(await api("/system/sites-defaults/", { method: "POST", body: { action: "skip", site_id: id, max_build: build } })); setAdding(false); setAddSite(""); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   const chosen = ready.filter((x) => sel[x.id]);
   const target = chosen.length ? chosen.map((x) => x.id) : "all";
   const count = chosen.length || ready.length;
@@ -99,21 +108,50 @@ function WebsitesTab({ setMsg }) {
   return (
     <div className="e2e-stack" style={{ gap: "1.4rem" }}>
       <p style={{ margin: 0 }}>{tx("De websites van de easy2edit-server. Per website zie je welke tabs van de standaard instellingen niet worden overschreven. Bijwerken zet de standaard instellingen op de website, behalve op de tabs die de website niet wil overschrijven. Forceren overschrijft ook die.")}</p>
-      <Sec title="Wat wordt bijgewerkt" hint="Vink tabs aan om alleen die bij te werken. Niets aangevinkt: alle tabs.">
-        <div className="gs-switches">
-          <label className="e2e-switch gs-sw">
-            <input type="checkbox" ref={(el) => { if (el) el.indeterminate = tabs.length > 0 && tabs.length < Object.keys(TAB_NAME).length; }} checked={tabs.length === Object.keys(TAB_NAME).length} onChange={(e) => setPick(Object.fromEntries(Object.keys(TAB_NAME).map((t) => [t, e.target.checked])))} />
-            <span><strong>{tx("Alles selecteren")}</strong><br /><span className="e2e-hint">{tabs.length === 0 ? tx("Niets aangevinkt: alle tabs worden bijgewerkt.") : `${tabs.length} ${tx("van")} ${Object.keys(TAB_NAME).length}`}</span></span>
-          </label>
+      <div className="gs-two gs-equal">
+      <Sec title="Wat wordt NIET bijgewerkt" hint="Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.">
+        <div className="gs-switchgrid gs-tabsw">
+          <Sw checked={allLeft} onChange={(v) => setPick(Object.fromEntries(Object.keys(TAB_NAME).map((t) => [t, v])))} title="Alle tabs overslaan" hint={left.length === 0 ? "Niets aan: alle tabs worden bijgewerkt." : ""} />
           {Object.keys(TAB_NAME).map((t) => <Sw key={t} checked={!!pick[t]} onChange={(v) => setPick((p) => ({ ...p, [t]: v }))} title={TAB_NAME[t]} />)}
         </div>
+      </Sec>
+      <Sec title="Websites die niet worden bijgewerkt" hint="Deze websites krijgen de ingestelde standaard niet, tot en met de build die je opgeeft (en dus ook niet met alle lagere versies). Vanaf de volgende build worden ze weer bijgewerkt.">
+        <div style={{ display: "grid", gap: ".6rem" }}>
+          {!skipped.length && !adding && <span className="e2e-hint">{tx("Geen websites uitgesloten.")}</span>}
+          {skipped.map((x) => (
+            <div key={x.id} className="gs-skip">
+              <span style={{ minWidth: 0 }}><strong>{x.name}</strong><br /><span className="e2e-hint">{tx("build")} {x.build || "?"} · {tx("niet bijgewerkt tot en met build")} {x.skip_until} · {tx("weer bijgewerkt vanaf build")} {x.skip_until + 1}</span></span>
+              <span className="gs-site-btns">
+                <input className="e2e-input" type="number" min={1} defaultValue={x.skip_until} style={{ width: 90 }} aria-label={tx("Tot en met build")} onBlur={(e) => { if (Number(e.target.value) && Number(e.target.value) !== x.skip_until) setSkip(x.id, e.target.value); }} />
+                <button type="button" className="e2e-btn e2e-btn--sm e2e-btn--outline" onClick={() => setSkip(x.id, "")} aria-label={tx("Weghalen")} title={tx("Weghalen")}>×</button>
+              </span>
+            </div>
+          ))}
+          {adding ? (
+            <div className="gs-skip-add">
+              <select className="e2e-input" value={addSite} onChange={(e) => { setAddSite(e.target.value); const sx = canAdd.find((c) => String(c.id) === e.target.value); setAddBuild(String(sx?.build || d.build || "")); }}>
+                <option value="">{tx("Kies een website")}</option>
+                {canAdd.map((c) => <option key={c.id} value={c.id}>{c.name} {c.build ? `(build ${c.build})` : ""}</option>)}
+              </select>
+              <label className="gs-unit"><span className="e2e-hint">{tx("t/m build")}</span><input className="e2e-input" type="number" min={1} value={addBuild} onChange={(e) => setAddBuild(e.target.value)} style={{ width: 100 }} /></label>
+              <button type="button" className="e2e-btn e2e-btn--sm" disabled={!addSite || !Number(addBuild)} onClick={() => setSkip(addSite, addBuild)}>{tx("Toevoegen")}</button>
+              <button type="button" className="e2e-btn e2e-btn--sm e2e-btn--outline" onClick={() => setAdding(false)}>{tx("Annuleren")}</button>
+            </div>
+          ) : (
+            <div><button type="button" className="e2e-btn e2e-btn--sm" onClick={() => { setAdding(true); setAddBuild(String(d.build || "")); }} disabled={!canAdd.length}>+ {tx("Website toevoegen")}</button></div>
+          )}
+          <span className="e2e-hint">{tx("Huidige build van de server")}: {d.build || "?"}</span>
+        </div>
+      </Sec>
+      </div>
+      <Sec title="Bijwerken" hint="Bijwerken zet de standaard instellingen op de websites, behalve op de tabs die je hierboven hebt overgeslagen en websites die niet worden bijgewerkt.">
         <div className="e2e-row" style={{ gap: ".8rem 1.2rem", flexWrap: "wrap", alignItems: "center" }}>
         <label className="e2e-switch gs-sw" style={{ flex: "0 1 auto" }}>
           <input type="checkbox" ref={(el) => { if (el) el.indeterminate = chosen.length > 0 && chosen.length < ready.length; }} checked={ready.length > 0 && chosen.length === ready.length} disabled={!ready.length} onChange={(e) => setSel(Object.fromEntries(ready.map((x) => [x.id, e.target.checked])))} />
           <span><strong>{tx("Alle websites selecteren")}</strong><br /><span className="e2e-hint">{chosen.length ? `${chosen.length} ${tx("van")} ${ready.length} ${tx("geselecteerd")}` : tx("Niets geselecteerd: alle websites worden bijgewerkt.")}</span></span>
         </label>
-          <button type="button" className="e2e-btn" disabled={!!busy || !count} onClick={() => run(target, false)}>{busy === `${target}-false` ? tx("Bezig…") : `${tx("Bijwerken")} (${count})`}</button>
-          <button type="button" className="e2e-btn e2e-btn--outline" disabled={!!busy || !count} onClick={() => run(target, true)}>{busy === `${target}-true` ? tx("Bezig…") : `${tx("Forceren")} (${count})`}</button>
+          <button type="button" className="e2e-btn" disabled={!!busy || !count || allLeft} onClick={() => run(target, false)}>{busy === `${target}-false` ? tx("Bezig…") : `${tx("Bijwerken")} (${count})`}</button>
+          <button type="button" className="e2e-btn e2e-btn--outline" disabled={!!busy || !count || allLeft} onClick={() => run(target, true)}>{busy === `${target}-true` ? tx("Bezig…") : `${tx("Forceren")} (${count})`}</button>
         </div>
       </Sec>
       <Sec title="Websites" hint={d.captured_at ? `${tx("Standaard instellingen opgeslagen op")} ${new Date(d.captured_at).toLocaleString()}` : "Er zijn nog geen standaard instellingen opgeslagen."}>
@@ -129,7 +167,7 @@ function WebsitesTab({ setMsg }) {
                     <div className="gs-site-head">
                       <label className="e2e-switch gs-sw" style={{ flex: "1 1 auto", minWidth: 0 }}>
                         <input type="checkbox" checked={!!sel[s.id]} disabled={!can} onChange={(e) => setSel((x) => ({ ...x, [s.id]: e.target.checked }))} />
-                        <span style={{ minWidth: 0 }}><strong>{s.name}</strong><br /><span className="e2e-hint">{(s.url || "").replace(/^https?:\/\//, "")}{s.build ? ` · build ${s.build}` : ""}{s.status !== "active" ? ` · ${tx(s.status === "pending" ? "wacht op goedkeuring" : "geblokkeerd")}` : !s.has_callback ? ` · ${tx("nog geen koppelsleutel")}` : ""}</span></span>
+                        <span style={{ minWidth: 0 }}><strong>{s.name}</strong><br /><span className="e2e-hint">{(s.url || "").replace(/^https?:\/\//, "")}{s.build ? ` · build ${s.build}` : ""}{s.skip_until ? ` · ${tx("niet bijgewerkt tot en met build")} ${s.skip_until}` : ""}{s.status !== "active" ? ` · ${tx(s.status === "pending" ? "wacht op goedkeuring" : "geblokkeerd")}` : !s.has_callback ? ` · ${tx("nog geen koppelsleutel")}` : ""}</span></span>
                       </label>
                       <span className="gs-site-btns">
                         <button type="button" className="e2e-btn e2e-btn--sm" disabled={!!busy || !can} onClick={() => run([s.id], false)}>{tx("Bijwerken")}</button>
@@ -154,6 +192,7 @@ function WebsitesTab({ setMsg }) {
 
 // Super admin: the data of the default easy2edit server. They go with every installation (together with the default settings).
 export default function GlobalSettings() {
+  const ecoOn = useEcologiOn();  // the tree planting standard is only there while easy2edit: bomen planten is on
   const { user } = useAuth();
   const plus = !!user?.is_superadmin_plus;
   const [open, setOpen] = useState(false);
@@ -249,6 +288,7 @@ export default function GlobalSettings() {
                       <p style={{ margin: 0 }}>{tx("Deze gegevens gaan standaard mee met elke nieuwe installatie en worden bij elke update bijgewerkt, samen met de standaard instellingen. Een nieuwe installatie, een reset en Standaard toepassen zetten ze terug. Per tab kun je kiezen dat iets alleen lokaal blijft.")}</p>
                       <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{info?.exists ? `${tx("Standaard instellingen opgeslagen op")} ${new Date(info.captured_at).toLocaleString()}` : tx("Nog niets opgeslagen")}</div></div>
                       <div className="gs-two">
+                        <div className="gs-col">
                         <Sec title="Bron van de bibliotheek">
                         <label className="e2e-switch" style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: ".75rem" }}>
                         <input type="checkbox" checked={form.source_mode === "easy2edit"} onChange={(e) => { setForm({ ...form, source_mode: e.target.checked ? "easy2edit" : "local" }); setTest(null); }} />
@@ -257,15 +297,39 @@ export default function GlobalSettings() {
                       <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{tx("Bron nu")}: <strong>{form.source_mode === "easy2edit" ? tx("easy2edit-server ({0})", (form.api_url || "").replace(/^https?:\/\//, "")) : tx("Lokaal (de map resource van deze installatie)")}</strong></div></div>
                       {test && <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">{test.ok ? <IconCheck width={14} height={14} /> : "!"}</span><div>{test.text}</div></div>}
                         </Sec>
+                        {ecoOn && (
+                        <Sec title="Bomen planten" hint="De standaard voor alle websites en nieuwe installaties.">
+                          <div className="gs-e2e">
+                            <div className="e2e-field"><label className="e2e-label" htmlFor="trees-e2e">{tx("Bomen per maand voor easy2edit")}</label>
+                              <div className="gs-unit"><input id="trees-e2e" className="e2e-input" type="number" min={0} value={form.trees_e2e ?? ""} onChange={(e) => setForm((f) => ({ ...f, trees_e2e: e.target.value }))} style={{ maxWidth: 110 }} /><span className="e2e-hint">{tx("bomen per website per maand")}</span></div>
+                              <div className="gs-presets">{[0, 1, 2, 5, 10].map((n) => <button key={n} type="button" className={`e2e-btn e2e-btn--sm${Number(form.trees_e2e) === n ? " e2e-btn--primary" : ""}`} onClick={() => setForm((f) => ({ ...f, trees_e2e: String(n) }))}>{n === 0 ? tx("Uit") : n}</button>)}</div>
+                            </div>
+                            <div className="gs-e2e-cost"><small className="e2e-hint">{tx("Kosten voor easy2edit")}</small><strong>€ {(0.8 * (Number(form.trees_e2e) || 0)).toFixed(2).replace(".", ",")}</strong><small className="e2e-hint">{tx("per website per maand")} · {Number(form.trees_e2e) || 0} × € 0,80</small></div>
+                          </div>
+                          <p className="e2e-hint" style={{ margin: "0 0 .8rem" }}>{tx("Deze bomen plant easy2edit zelf voor elke website: de kosten zijn voor easy2edit en komen niet op de rekening van de website. Het aantal kun je altijd aanpassen.")}</p>
+                          <div className="gs-switchgrid">
+                            <Sw checked={form.trees_auto === "1"} onChange={(v) => setForm((f) => ({ ...f, trees_auto: v ? "1" : "0" }))} title="Automatisch planten" hint="Elke maand de vorige maand afrekenen." />
+                            <Sw checked={form.trees_visitors === "1"} onChange={(v) => setForm((f) => ({ ...f, trees_visitors: v ? "1" : "0" }))} title="Bijdrage van bezoekers" />
+                            <Sw checked={form.trees_machine === "1"} onChange={(v) => setForm((f) => ({ ...f, trees_machine: v ? "1" : "0" }))} title="Bijdrage van energiegebruik" />
+                            <Sw checked={form.trees_show === "1"} onChange={(v) => setForm((f) => ({ ...f, trees_show: v ? "1" : "0" }))} title="Tonen in het energievenster" />
+                            <Sw checked={form.trees_test === "1"} onChange={(v) => setForm((f) => ({ ...f, trees_test: v ? "1" : "0" }))} title="Testmodus" hint="Er wordt niets gekocht." />
+                          </div>
+                          <div className="gs-cols2">
+                            <Num id="trees-cap" label="Maximum per maand" unit="bomen" hint="0 = geen limiet" min={0} value={form.trees_cap ?? ""} onChange={(e) => setForm((f) => ({ ...f, trees_cap: e.target.value }))} />
+                            <div className="e2e-field"><label className="e2e-label" htmlFor="trees-name">{tx("Naam bij de bomen")}</label>
+                              <select id="trees-name" className="e2e-input" value={form.trees_name === "easy2edit" ? "easy2edit" : "site"} onChange={(e) => setForm((f) => ({ ...f, trees_name: e.target.value }))}><option value="site">{tx("Naam van de website")}</option><option value="easy2edit">easy2edit</option></select></div>
+                          </div>
+                        </Sec>
+                        )}
+                        </div>
                         <Sec title="Energie-label op de website" hint="De groene energie-info van deze website.">
                         <Sw checked={form.energy_badge === "1"} onChange={(v) => setForm((f) => ({ ...f, energy_badge: v ? "1" : "0" }))} title="Energie-label tonen op de website" hint="Een groene boom naast “© easy2edit” onderaan elke pagina. Een klik toont de inzichten en de groene status. Uit: bezoekers zien niets." />
                         {form.energy_badge === "1" && (
-                          <div className="gs-checklist">
-                            <small className="e2e-hint">{tx("De groene status staat er altijd. Kies wat daarnaast te zien is.")}</small>
-                            {[["rating", "Label (A+ t/m F)"], ["co2", "CO2 per paginabezoek"], ["size", "Gemiddeld paginagewicht"], ["energy", "Stroom per paginabezoek"], ["views", "Aantal paginabezoeken"], ["live", "Grafiek stroomgebruik (24 uur)"], ["compare", "Vergelijking met een gemiddelde webpagina"]].map(([k, l]) => {
-                              const on = (form.energy_badge_show || "").split(",").includes(k);
-                              return <label key={k} className="gs-check"><input type="checkbox" checked={on} onChange={(e) => setForm((f) => { const cur = (f.energy_badge_show || "").split(",").filter(Boolean); const next = e.target.checked ? [...cur, k] : cur.filter((x) => x !== k); return { ...f, energy_badge_show: next.join(",") }; })} /><span>{tx(l)}</span></label>;
-                            })}
+                          <div className="gs-checklist gs-switchgrid">
+                            <small className="e2e-hint" style={{ gridColumn: "1 / -1" }}>{tx("De groene status staat er altijd. Kies wat daarnaast te zien is.")}</small>
+                            {[["rating", "Label (A+ t/m F)"], ["co2", "CO2 per paginabezoek"], ["size", "Gemiddeld paginagewicht"], ["energy", "Stroom per paginabezoek"], ["views", "Aantal paginabezoeken"], ["live", "Grafiek stroomgebruik (24 uur)"], ["compare", "Vergelijking met een gemiddelde webpagina"]].map(([k, l]) => (
+                              <Sw key={k} checked={(form.energy_badge_show || "").split(",").includes(k)} title={l} onChange={(on) => setForm((f) => { const cur = (f.energy_badge_show || "").split(",").filter(Boolean); const next = on ? [...cur, k] : cur.filter((x) => x !== k); return { ...f, energy_badge_show: next.join(",") }; })} />
+                            ))}
                           </div>
                         )}
                         </Sec>

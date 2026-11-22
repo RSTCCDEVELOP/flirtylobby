@@ -4575,3 +4575,39 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 @keyframes ldtreetrunk { 0% { transform: scaleY(.4); } 40%, 85% { transform: scaleY(1); } 100% { transform: scaleY(1); } }
 @keyframes ldtreesway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
 @media (prefers-reduced-motion: reduce) { .ld-tree-ring, .ld-tree-crown, .ld-tree-trunk, .ld-tree-plant { animation-duration: 6s; } }
+
+/* Super admin: plant trees now, in two blocks (the choices and the summary with the button) */
+.eco-plant { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: 1rem; align-items: start; }
+.eco-plant-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 1.4rem; align-items: start; }
+.eco-plant-fields .span { grid-column: 1 / -1; }
+.eco-plant-fields .sec-toggle { align-items: flex-start; }
+.eco-plant-sum { display: grid; gap: .45rem; justify-items: start; position: sticky; top: 1rem; background: linear-gradient(135deg, #eef5ea, #e3efe4) !important; }
+.eco-plant-total { font-size: 2.2rem; line-height: 1; color: #214c3d; font-weight: 600; }
+.eco-plant-sum .btn { margin-top: .5rem; width: 100%; justify-content: center; }
+@media (max-width: 860px) { .eco-plant, .eco-plant-fields { grid-template-columns: 1fr; } }
+
+/* Standaard en globale instellingen: columns and switches */
+.gs-col { display: grid; gap: 1.4rem; align-content: start; }
+.gs-switchgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem 1.2rem; align-items: start; }
+.gs-switchgrid .gs-sw { align-items: flex-start; }
+.gs-cols2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.2rem; align-items: end; margin-top: .9rem; }
+.gs-presets { display: flex; gap: .35rem; flex-wrap: wrap; }
+@media (max-width: 700px) { .gs-switchgrid, .gs-cols2 { grid-template-columns: 1fr; } }
+.gs-sec > .gs-sw:first-of-type { padding-bottom: .8rem; margin-bottom: .8rem; border-bottom: 1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12))); }
+.gs-switchgrid > .gs-sw { padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
+.gs-e2e { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: end; margin-bottom: .6rem; }
+.gs-e2e-cost { display: grid; gap: .1rem; justify-items: end; padding: .6rem .9rem; border-radius: 12px; background: linear-gradient(135deg, #eef5ea, #e3efe4); color: #214c3d; text-align: right; }
+.gs-e2e-cost strong { font-size: 1.5rem; line-height: 1.1; }
+@media (max-width: 700px) { .gs-e2e { grid-template-columns: 1fr; } }
+.gs-skip { display: flex; align-items: center; justify-content: space-between; gap: .8rem; padding: .5rem .7rem; border: 1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12))); border-radius: 10px; }
+.gs-skip-add { display: flex; gap: .6rem; flex-wrap: wrap; align-items: end; }
+
+/* Websites tab: two equal cards, a master switch with a line under it, tidy rows */
+.gs-two.gs-equal { align-items: stretch; }
+.gs-two.gs-equal .gs-sec { display: flex; flex-direction: column; gap: .9rem; }
+.gs-tabsw > .gs-sw:first-child { grid-column: 1 / -1; padding-bottom: .8rem; margin-bottom: .1rem; border-bottom: 1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12))); }
+.gs-tabsw .gs-sw { align-items: center; padding: .15rem 0; }
+.gs-skip { background: color-mix(in srgb, var(--e2e-line, #888) 6%, transparent); }
+.gs-skip strong { display: block; }
+.gs-skip-add { padding: .7rem; border: 1px dashed var(--e2e-line, var(--line, rgba(0,0,0,.2))); border-radius: 10px; }
+.gs-skip-add select { flex: 1 1 200px; min-width: 0; }

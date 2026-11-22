@@ -35,9 +35,13 @@ DEFAULTS = {
     "keep_server": "0", "keep_settings": "0", "keep_licence": "0", "keep_mails": "0", "keep_reseller": "0", "keep_twofa": "0",
     "energy_badge": "0",  # the energy label at the bottom of the website ("1" = on): a click shows the insights and the green status (module Energie)
     "energy_badge_show": "rating,co2,size,views",  # what its window shows: rating, co2, size, energy, views, live, compare
+    # tree planting (module easy2edit: bomen planten): the standard for every website and new installation; "1" = on. e2e = trees per month that easy2edit plants, cap = the monthly maximum of the automatic settlement
+    "trees_auto": "1", "trees_visitors": "1", "trees_machine": "1", "trees_show": "1", "trees_test": "1", "trees_e2e": "1", "trees_cap": "20", "trees_name": "site",
     "source_mode": "local",  # where the library (the folder resource/: plugins, themes, languages, components) comes from: "local" = the folder of this installation, "easy2edit" = the easy2edit server (api address above)
 }
 SOURCE_MODES = ("local", "easy2edit")
+TREES = ("trees_auto", "trees_visitors", "trees_machine", "trees_show", "trees_test", "trees_e2e", "trees_cap", "trees_name")
+TREE_FIELDS = {"trees_auto": "auto_on", "trees_visitors": "visitors_on", "trees_machine": "machine_on", "trees_show": "show_on_site", "trees_test": "test_mode"}
 LOCAL = ("keep_server", "keep_settings", "keep_licence", "keep_mails", "keep_reseller", "keep_twofa")
 GRACE = ("grace_1", "grace_2", "grace_3", "grace_4")
 NOTIFY = ("notify_rstcc", "notify_reseller", "notify_invoicing", "notify_support")
@@ -53,8 +57,44 @@ URL_RE = re.compile(r"^https://[a-z0-9]([a-z0-9.-]*[a-z0-9])?(:\d{2,5})?$")
 def get():
     stored = (SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(KEY) or {}
     out = {k: (str(stored.get(k)).strip() if isinstance(stored, dict) and str(stored.get(k) or "").strip() else v) for k, v in DEFAULTS.items()}
+    out.update(_trees_live())
     out.update(_energy_badge_live())  # the label is kept in the settings of the module Energie: that is what this installation really does
     return out
+
+
+def _trees_live():
+    """The tree planting settings as this installation has them now (the module easy2edit: bomen planten); empty when it has no settings yet."""
+    try:
+        from apps.ecologi.models import EcologiSettings
+
+        row = EcologiSettings.objects.filter(pk=1).first()
+        if not row:
+            return {}
+        out = {k: "1" if getattr(row, f) else "0" for k, f in TREE_FIELDS.items()}
+        out.update({"trees_e2e": str(row.e2e_trees), "trees_cap": str(row.cap_trees_month), "trees_name": "easy2edit" if row.name == "easy2edit" else "site"})
+        return out
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def apply_trees(values):
+    """Put the tree planting standard on this installation. Never raises."""
+    try:
+        from apps.ecologi.models import EcologiSettings
+
+        st = EcologiSettings.load()
+        for k, f in TREE_FIELDS.items():
+            if k in values:
+                setattr(st, f, str(values[k]) == "1")
+        if "trees_e2e" in values:
+            st.e2e_trees = int(values["trees_e2e"])
+        if "trees_cap" in values:
+            st.cap_trees_month = int(values["trees_cap"])
+        if "trees_name" in values:
+            st.name = "easy2edit" if values["trees_name"] == "easy2edit" else "site"
+        st.save()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _energy_badge_live():
@@ -133,6 +173,17 @@ def clean(incoming):
 
             raw = incoming[k] if isinstance(incoming[k], list) else str(incoming[k] or "").split(",")
             v = ",".join(dict.fromkeys(x.strip() for x in raw if x.strip() in BADGE_ITEMS))
+        elif k in TREE_FIELDS:
+            v = "1" if str(incoming[k]).strip().lower() in ("1", "true", "on", "yes") else "0"
+        elif k in ("trees_e2e", "trees_cap"):
+            try:
+                n = int(float(str(incoming[k] or "0").strip()))
+            except ValueError:
+                n = 0
+                errors[k] = "Geef een aantal."
+            v = str(max(0, min(1000 if k == "trees_e2e" else 250000, n)))
+        elif k == "trees_name":
+            v = "easy2edit" if str(incoming[k]).strip().lower() == "easy2edit" else "site"
         elif k in LOCAL:
             v = "1" if str(incoming[k]).strip().lower() in ("1", "true", "on", "yes") else "0"
         elif k == "grace_reminder":
@@ -163,6 +214,8 @@ def save(values):
     obj.save()
     if "energy_badge" in values or "energy_badge_show" in values:
         apply_energy_badge(values)
+    if any(k in values for k in TREES):
+        apply_trees(values)
     try:
         from . import system
 

@@ -565,7 +565,10 @@ def reseller_accounts(request):
 
 def _defaults_row(s):
     st = s.defaults_state or {}
-    return {"id": s.pk, "name": s.name, "url": s.url, "status": s.status, "version": s.version, "build": s.build, "own": s.instance_id == sitemanager.instance_id(), "keep": st.get("keep") or [], "reported_at": st.get("reported_at", ""),
+    from . import site_defaults
+
+    lim = site_defaults.skip_map().get(str(s.pk))
+    return {"id": s.pk, "name": s.name, "url": s.url, "status": s.status, "version": s.version, "build": s.build, "skip_until": lim or None, "skipped": site_defaults.is_skipped(s), "own": s.instance_id == sitemanager.instance_id(), "keep": st.get("keep") or [], "reported_at": st.get("reported_at", ""),
             "pushed_at": st.get("pushed_at", ""), "forced": bool(st.get("forced")), "applied": st.get("applied") or [], "kept": st.get("kept") or [], "error": st.get("error", ""), "has_callback": bool(s.callback_key_enc) or s.instance_id == sitemanager.instance_id()}
 
 
@@ -581,13 +584,28 @@ def defaults_sites(request):
     if not sitemanager.server_enabled():
         return Response({"server": False, "tabs": list(site_defaults.TABS), "sites": []})
     results = []
-    if request.method == "POST":
+    if request.method == "POST" and request.data.get("action") == "skip":  # put a website on the list "not updated" (up to and including a build), or take it off (max_build empty)
+        site = EasySite.objects.filter(pk=request.data.get("site_id")).first()
+        if not site:
+            return Response({"detail": "Website niet gevonden."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            lim = request.data.get("max_build")
+            site_defaults.set_skip(site.pk, int(lim) if str(lim or "").strip() else None)
+        except (TypeError, ValueError):
+            return Response({"detail": "Geef een build als getal."}, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == "POST":
         ids, force = request.data.get("site_ids"), bool(request.data.get("force"))
         tabs = [t for t in (request.data.get("tabs") or []) if t in site_defaults.TABS]
         qs = EasySite.objects.filter(status="active") if ids == "all" else EasySite.objects.filter(status="active", pk__in=[int(i) for i in (ids or []) if str(i).isdigit()])
         data = site_defaults.shipped()
+        skips = site_defaults.skip_map()
+        single = ids != "all" and isinstance(ids, list) and len(ids) == 1
         for s in qs:
             row = {"id": s.pk, "name": s.name}
+            if site_defaults.is_skipped(s, skips) and not (force and single):  # on the list "not updated": left alone (only Forceren on that one website overrides it)
+                row.update(ok=True, skipped=True, applied=[], kept=[], errors=[])
+                results.append(row)
+                continue
             try:
                 r = sitemanager.site_action(s, {"action": "defaults_push", "force": force, "tabs": tabs, "data": data})
                 row.update(ok=True, applied=r.get("applied") or [], kept=r.get("kept") or [], errors=r.get("errors") or [])
@@ -598,4 +616,4 @@ def defaults_sites(request):
             s.save(update_fields=["defaults_state"])
             results.append(row)
     info = site_defaults.info()
-    return Response({"server": True, "tabs": list(site_defaults.TABS), "captured_at": info.get("captured_at"), "sites": [_defaults_row(s) for s in EasySite.objects.all()], "results": results})
+    return Response({"server": True, "tabs": list(site_defaults.TABS), "captured_at": info.get("captured_at"), "build": sitemanager.build_number(), "sites": [_defaults_row(s) for s in EasySite.objects.all()], "results": results})

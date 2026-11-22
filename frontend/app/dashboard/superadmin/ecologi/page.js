@@ -119,17 +119,27 @@ function Plant({ d, onDone }) {
     setBusy(false);
   };
   return (
-    <div className="card eco-form" style={{ marginTop: "1rem" }}>
-      <label>{tx("Aantal bomen")}
-        <input type="number" min="1" max={s.max_per_order} value={f.number} onChange={(e) => setF({ ...f, number: e.target.value })} />
-        <span className="row" style={{ justifyContent: "flex-start", gap: ".4rem", marginTop: ".4rem" }}>{[1, 10, 50, 100].map((n) => <button key={n} type="button" className="btn sm" onClick={() => setF({ ...f, number: n })}>{n}</button>)}</span>
-      </label>
-      <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={f.local} onChange={(e) => setF({ ...f, local: e.target.checked })} /><span /></span><span>{tx("Lokaal planten")} <small className="muted">{tx("In een land van je keuze, duurder dan de standaard.")}</small></span></label>
-      {f.local && <label>{tx("Land")}<select value={f.country} onChange={(e) => setF({ ...f, country: e.target.value })}>{Object.entries(d.countries).map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>}
-      <label>{tx("Naam bij de bomen")} <small className="muted">{tx("(zichtbaar bij Ecologi)")}</small><select value={f.name === "easy2edit" ? "easy2edit" : "site"} onChange={(e) => setF({ ...f, name: e.target.value })}><option value="site">{tx("Naam van de website")}</option><option value="easy2edit">easy2edit</option></select></label>
-      <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={f.test} onChange={(e) => setF({ ...f, test: e.target.checked })} /><span /></span><span>{tx("Testbestelling")} <small className="muted">{tx("Ecologi antwoordt als bij een echte bestelling, maar er wordt niets gekocht.")}</small></span></label>
-      <div className="alert" role="status" style={{ margin: 0 }}>{tx("Indicatie")}: {nf(Number(f.number) || 0)} × {money(per)} = <strong>{money(total)}</strong>. {tx("Ecologi factureert de echte prijs, per maand.")}</div>
-      <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" disabled={busy || !(Number(f.number) > 0)} onClick={go}>{busy ? tx("Bezig…") : f.test ? tx("Testbestelling doen") : tx("Bomen planten")}</button></div>
+    <div className="eco-plant" style={{ marginTop: "1rem" }}>
+      <div className="card eco-plant-fields">
+        <label>{tx("Aantal bomen")}
+          <input type="number" min="1" max={s.max_per_order} value={f.number} onChange={(e) => setF({ ...f, number: e.target.value })} />
+          <span className="row" style={{ justifyContent: "flex-start", gap: ".4rem", marginTop: ".2rem" }}>{[1, 10, 50, 100].map((n) => <button key={n} type="button" className={`btn sm${Number(f.number) === n ? " primary" : ""}`} onClick={() => setF({ ...f, number: n })}>{n}</button>)}</span>
+        </label>
+        <label>{tx("Naam bij de bomen")} <small className="muted">{tx("(zichtbaar bij Ecologi)")}</small>
+          <select value={f.name === "easy2edit" ? "easy2edit" : "site"} onChange={(e) => setF({ ...f, name: e.target.value })}><option value="site">{tx("Naam van de website")}</option><option value="easy2edit">easy2edit</option></select>
+        </label>
+        <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={f.local} onChange={(e) => setF({ ...f, local: e.target.checked })} /><span /></span><span>{tx("Lokaal planten")}<br /><small className="muted">{tx("In een land van je keuze, duurder dan de standaard.")}</small></span></label>
+        {f.local ? <label>{tx("Land")}<select value={f.country} onChange={(e) => setF({ ...f, country: e.target.value })}>{Object.entries(d.countries).map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label> : <span />}
+        <label className="check sec-toggle span"><span className="switch"><input type="checkbox" checked={f.test} onChange={(e) => setF({ ...f, test: e.target.checked })} /><span /></span><span>{tx("Testbestelling")}<br /><small className="muted">{tx("Ecologi antwoordt als bij een echte bestelling, maar er wordt niets gekocht.")}</small></span></label>
+      </div>
+      <div className="card eco-plant-sum">
+        <small className="muted">{tx("Indicatie")}</small>
+        <strong className="eco-plant-total">{money(total)}</strong>
+        <span className="muted">{nf(Number(f.number) || 0)} × {money(per)}</span>
+        <small className="muted">{tx("Ecologi factureert de echte prijs, per maand.")}</small>
+        {f.test && <span className="badge">{tx("Testmodus")}</span>}
+        <button type="button" className="btn primary" disabled={busy || !(Number(f.number) > 0)} onClick={go}>{busy ? tx("Bezig…") : f.test ? tx("Testbestelling doen") : tx("Bomen planten")}</button>
+      </div>
     </div>
   );
 }
@@ -211,6 +221,10 @@ function Sources({ d, onSaved, setMsg }) {
       </Card>
       <Card n="3" title="Gebruik van easy2edit, door easy2edit">
         <Num label={tx("Bomen per maand die easy2edit voor deze website plant")} unit={tx("bomen")} hint={tx("Dit plant easy2edit zelf, met een eigen Ecologi-account: het komt niet van jouw koppeling en telt niet mee in het maximum. Het wordt hier en in de cijfers getoond.")} value={f.e2e_trees} onChange={ch("e2e_trees")} onBlur={blur("e2e_trees")} />
+        <span className="row" style={{ justifyContent: "flex-start", gap: ".4rem", flexWrap: "wrap" }}>
+          {[0, 1, 2, 5, 10].map((n) => <button key={n} type="button" className={`btn sm${Number(f.e2e_trees) === n ? " primary" : ""}`} onClick={() => save({ e2e_trees: n })}>{n === 0 ? tx("Uit") : n === 1 ? `1 ${tx("boom per maand")}` : `${n} ${tx("bomen per maand")}`}</button>)}
+        </span>
+        <small className="muted">{tx("Standaard plant easy2edit 1 boom per maand voor elke website. Je kunt het aantal altijd aanpassen.")}</small>
       </Card>
       <Card n="4" title="Gebruik van easy2edit, door de gebruiker">
         <Num label={tx("Vast aantal bomen per maand (door jou ingesteld)")} unit={tx("bomen")} value={f.monthly_trees} onChange={ch("monthly_trees")} onBlur={blur("monthly_trees")} />

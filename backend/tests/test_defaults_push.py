@@ -84,3 +84,18 @@ def test_footer_width_is_a_theme_value_like_the_header():
     keys = {f["key"]: f for g in T.SCHEMA for f in g["fields"]}
     assert keys["footer_width"]["default"] == "content" and [c["value"] for c in keys["footer_width"]["choices"]] == ["content", "full"]
     assert "footer_width" in themepacks.COMPLETE_KEYS  # goes with a theme pack and a design
+
+
+@pytest.mark.django_db
+def test_sites_on_the_not_updated_list_are_skipped_up_to_their_build(monkeypatch):
+    from apps.core import site_defaults, sitemanager
+    from apps.core.models import EasySite
+
+    a = EasySite.objects.create(instance_id="a1", name="A", url="https://a.nl", status="active", build="150", token_hash="")
+    b = EasySite.objects.create(instance_id="b1", name="B", url="https://b.nl", status="active", build="158", token_hash="")
+    site_defaults.set_skip(a.pk, 150)
+    site_defaults.set_skip(b.pk, 157)  # B is already above that build: updated
+    assert site_defaults.is_skipped(a) and not site_defaults.is_skipped(b)
+    assert site_defaults.build_of("build 159") == 159
+    site_defaults.set_skip(a.pk, None)
+    assert not site_defaults.is_skipped(a)

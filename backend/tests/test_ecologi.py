@@ -262,3 +262,18 @@ def test_onboarding_answer_links_and_switches_on(monkeypatch):
     eco.onboarding_answer("yes")
     st = EcologiSettings.load()
     assert st.auto_on and st.visitors_on and st.test_mode and called == ["trees"]  # still a test order until the owner switches that off
+
+
+@pytest.mark.django_db
+def test_tree_defaults_go_with_the_standard_settings():
+    """Standaard en globale instellingen carries the tree planting standard: it is put on the installation and read back live."""
+    from apps.core import global_settings
+    from apps.ecologi.models import EcologiSettings
+
+    vals, errors = global_settings.clean({"trees_auto": "1", "trees_visitors": "0", "trees_e2e": "2", "trees_cap": "30", "trees_name": "easy2edit", "trees_test": "1"})
+    assert not errors
+    global_settings.save(vals)
+    st = EcologiSettings.load()
+    assert st.auto_on and not st.visitors_on and st.e2e_trees == 2 and st.cap_trees_month == 30 and st.name == "easy2edit"
+    live = global_settings.get()
+    assert live["trees_e2e"] == "2" and live["trees_visitors"] == "0" and live["trees_name"] == "easy2edit"

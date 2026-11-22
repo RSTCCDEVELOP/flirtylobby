@@ -40,7 +40,8 @@
    "slug": "unsplash",
    "provider": "unsplash",
    "name": "Unsplash",
-   "superadmin_only": true
+   "superadmin_only": true,
+   "always_on": true
   },
   {
    "slug": "spryng",
@@ -54,6 +55,13 @@
    "provider": "seven",
    "name": "seven.io (sms)",
    "superadmin_only": true
+  },
+  {
+   "slug": "ecologi",
+   "provider": "ecologi",
+   "name": "Ecologi (bomen planten)",
+   "superadmin_only": true,
+   "always_on": true
   }
  ]
 }
