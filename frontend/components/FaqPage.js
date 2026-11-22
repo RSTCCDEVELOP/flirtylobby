@@ -14,6 +14,7 @@ import { setDeepLink } from "../lib/deeplink";
 import { api, errorText } from "../lib/api";
 import { getLanguage, tx } from "../lib/t";
 import FaqArt from "./FaqArt";
+import HelpMedia from "./HelpMedia";
 import Tabs from "./Tabs";
 import { useSession } from "./Session";
 
@@ -37,7 +38,7 @@ export default function FaqPage({ withTitle = true, layer: first = "user", singl
   const norm = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   const items = useMemo(() => {
     const w = norm(q).split(/\s+/).filter(Boolean);
-    return (data?.items || []).filter((i) => (!group || i.group === group) && w.every((x) => norm(`${i.q} ${i.a}`).includes(x)));
+    return (data?.items || []).filter((i) => (!group || i.group === group) && w.every((x) => norm(`${i.q} ${String(i.a).replace(/\{\{[a-z]+:[a-z0-9-]+\}\}/g, "")}`).includes(x)));
   }, [data, q, group]);
   if (err) return <div className="alert">{err}</div>;
   if (!data) return <Busy />;
@@ -60,7 +61,7 @@ export default function FaqPage({ withTitle = true, layer: first = "user", singl
             {items.filter((i) => i.group === g.id).map((i) => (
               <details key={i.id} className="faq-item" open={open === i.id || !!q.trim()} onToggle={(e) => { if (e.currentTarget.open) setOpen(i.id); else if (open === i.id) setOpen(""); }}>
                 <summary>{i.q}</summary>
-                <p>{i.a}</p>
+                <HelpMedia text={i.a} />
                 {i.go && <button type="button" className="btn sm primary faq-go" onClick={() => go(i.go)} title={tx("Ga naar deze instelling")}>{tx("GO")} →</button>}
               </details>
             ))}

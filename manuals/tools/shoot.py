@@ -27,6 +27,8 @@ User.objects.filter(email=EMAIL).delete()
 u = User.objects.create(email=EMAIL, first_name="Alex", last_name="Admin", is_active=True, is_staff=True, is_superuser=True)
 u.set_unusable_password()
 u.save()
+# no screen of "set up two-step verification" or "confirm your e-mail" over the pictures
+User.objects.filter(pk=u.pk).update(otp_active=True, email_verified=True)
 tok = Token.objects.create(user=u).key
 # since build 157 admins and superadmins must sign the terms of easy2edit before the screens show: the temporary superadmin gets a signature (it goes away with the user, nothing is sent)
 from apps.core import terms as _terms
@@ -34,6 +36,11 @@ from apps.core.models import TermsSignature
 _cur = _terms.current()
 if _cur:
     TermsSignature.objects.create(user=u, version=_cur.version if hasattr(_cur, "version") else _cur["version"], role="superadmin", name="Alex Admin", email=EMAIL, lang="en", method="skipped")
+try:  # the notices that come on their own would sit in every picture: the explanation of the AI credit is "seen" for this temporary user
+    from apps.integrations.models import AiAccount
+    AiAccount.objects.update_or_create(user=u, defaults={"welcomed": True})
+except Exception:  # noqa: BLE001
+    pass
 en = Language.objects.filter(code="en").first()
 was = (en.enabled if en else None)
 # for the pictures every module and plugin is switched on for a moment (a site with a small installation would show nothing of most pages): the state of this site is put back afterwards
@@ -48,12 +55,30 @@ try:
     modules.invalidate()
     if en and not en.enabled:
         Language.objects.filter(pk=en.pk).update(enabled=True)
+    # the pages about trees need the Ecologi link and the tile for the administrator: made for a moment (only when there is none) and put back
+    from apps.ecologi.models import EcologiSettings
+    from apps.ecologi.service import PROVIDER as _ECO
+    from apps.integrations.models import Integration as _Int
+    _eco_made = None
+    if not _Int.objects.filter(provider=_ECO, enabled=True).exists():
+        _eco_made = _Int.objects.create(provider=_ECO, name="Ecologi", enabled=True)
+    _eco_set = EcologiSettings.load()
+    _eco_prev = _eco_set.admin_enabled
+    if not _eco_prev:
+        EcologiSettings.objects.filter(pk=_eco_set.pk).update(admin_enabled=True)
     showcase_demo = dict(runtime.providers("demo")).get("showcase")  # the Showcase pictures need projects: its demo content is made for a moment (only when there is none) and removed again
     made_demo = bool(showcase_demo) and not any(showcase_demo.counts().values()) and bool(showcase_demo.create())
     for lang in os.environ.get("SHOTS_LANGS", "en,nl").split(","):  # the pictures of the English manual are in English, those of the Dutch manual in Dutch
-        r = subprocess.run(["node", str(ROOT / "manuals" / "tools" / "screenshots.mjs"), "--lang", lang, *os.environ.get("SHOTS_ARGS", "").split()], env={**os.environ, "E2E_TOKEN": tok}, capture_output=True, text=True, timeout=1500)
+        r = subprocess.run(["node", str(ROOT / "manuals" / "tools" / "screenshots.mjs"), "--lang", lang, "--mode", os.environ.get("SHOTS_MODE", "both"), *os.environ.get("SHOTS_ARGS", "").split()], env={**os.environ, "E2E_TOKEN": tok}, capture_output=True, text=True, timeout=1500)
         print(lang, r.stdout[-2500:], r.stderr[-1200:])
 finally:
+    try:
+        if _eco_made is not None:
+            _eco_made.delete()
+        if not _eco_prev:
+            EcologiSettings.objects.filter(pk=_eco_set.pk).update(admin_enabled=False)
+    except NameError:
+        pass
     try:
         if made_demo:
             showcase_demo.remove()

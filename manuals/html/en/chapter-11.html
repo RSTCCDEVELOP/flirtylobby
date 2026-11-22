@@ -39,7 +39,7 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color
 @media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
 @media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
 @media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
-</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Manual</a><a href="videos.html" class="">Videos</a></nav><span class="ver">Manual &middot; version 1.1.0 build 158</span><span class="sp"></span><input id="q" type="search" placeholder="Search chapters" aria-label="Search chapters"><span class="langsw"><b>EN</b><a href="../nl/chapter-11.html" hreflang="nl" title="Nederlands">NL</a></span><a class="btn" id="pdf" href="../../pdf/manual_en.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Manual</h4><a href="index.html" data-t="contents" class=""><span>&#9776;</span>Contents</a><a href="chapter-1.html" data-t="introduction welcome to easy2edit, a simple, modular management system (cms) for building and running portals, websites, webshops and communities. this manual explains how the system works and how to manage it from the admin screens.
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Manual</a><a href="videos.html" class="">Videos</a></nav><span class="ver">Manual &middot; version 1.1.0 build 165</span><span class="sp"></span><input id="q" type="search" placeholder="Search chapters" aria-label="Search chapters"><span class="langsw"><b>EN</b><a href="../nl/chapter-11.html" hreflang="nl" title="Nederlands">NL</a></span><a class="btn" id="pdf" href="../../pdf/manual_en.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Manual</h4><a href="index.html" data-t="contents" class=""><span>&#9776;</span>Contents</a><a href="chapter-1.html" data-t="introduction welcome to easy2edit, a simple, modular management system (cms) for building and running portals, websites, webshops and communities. this manual explains how the system works and how to manage it from the admin screens.
 
 ## what is easy2edit
 
@@ -84,89 +84,83 @@ this chapter covers three related tools that help you understand and improve how
 
 ## how ai is switched on
 
-ai is a core module. it becomes active automatically as soon as an ai link" class=""><span>10</span>AI and AI credit</a><a href="chapter-11.html" data-t="plugins, backups, licence and deployment this chapter explains how to extend easy2edit with plugins, how to keep your data safe with backups, how the licence and pricing work, how the system is deployed, and how easy2edit&#x27;s tree-planting feature supports a greener internet.
+ai is a core module. it becomes active automatically as soon as an ai link" class=""><span>10</span>AI and AI credit</a><a href="chapter-11.html" data-t="plugins, backups, licence and deployment this chapter explains how to manage plugins, protect your site with backups, understand your licence and pricing, and deploy and maintain easy2edit, including the system&#x27;s built-in tree-planting features.
 
 ## plugins
 
-plugins are signed packages that live in the /plugins folder. you manage them in admin &gt; plugins.
+plugins are managed from admin &gt; plugins. they are signed packages stored in /plugins and can be installed from the library (resource/plugins), switched on or off, and updated.
 
-- install a plugin from the library (resource/plugins)" class="on"><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 11</div><h1>11. Plugins, backups, licence and deployment</h1>
-<p class="lead">This chapter explains how to extend easy2edit with plugins, how to keep your data safe with backups, how the licence and pricing work, how the system is deployed, and how easy2edit&#x27;s tree-planting feature supports a greener internet.</p>
-<div class="video"><video controls preload="metadata" poster="../../video/en/backup-restore.jpg" width="1280" height="800"><source src="../../video/en/backup-restore.mp4" type="video/mp4"></video><p>Video: Backup and restore <span>(English voice-over also in <a href="../../video/nl/backup-restore.mp4" target="_blank" rel="noopener">Nederlands</a>)</span></p></div>
-<div class="video"><video controls preload="metadata" poster="../../video/en/plugins-license.jpg" width="1280" height="800"><source src="../../video/en/plugins-license.mp4" type="video/mp4"></video><p>Video: Plugins and licence <span>(English voice-over also in <a href="../../video/nl/plugins-license.mp4" target="_blank" rel="noopener">Nederlands</a>)</span></p></div>
-<figure><a href="images/integrations.jpg" target="_blank" rel="noopener"><img src="images/integrations.jpg" alt="Admin &gt; API keys: the links to external systems, with the Superadmin label." width="1440" height="900" loading="lazy"></a><figcaption>Figure 1. Admin &gt; API keys: the links to external systems, with the Superadmin label.</figcaption></figure>
+a pl" class="on"><span>11</span>Plugins, backups, licence and deployment</a></nav><main><article><div class="crumb"><a href="index.html">Manual</a> / Chapter 11</div><h1>11. Plugins, backups, licence and deployment</h1>
+<p class="lead">This chapter explains how to manage plugins, protect your site with backups, understand your licence and pricing, and deploy and maintain easy2edit, including the system&#x27;s built-in tree-planting features.</p>
+<div class="video"><video controls preload="metadata" poster="../../video/en/backup-restore.jpg" width="1280" height="800" data-dark="../../video/en/backup-restore-dark.mp4" data-dark-poster="../../video/en/backup-restore-dark.jpg"><source src="../../video/en/backup-restore.mp4" type="video/mp4"></video><p>Video: Backup and restore <span>(English voice-over also in <a href="../../video/nl/backup-restore.mp4" target="_blank" rel="noopener">Nederlands</a>)</span></p></div>
+<div class="video"><video controls preload="metadata" poster="../../video/en/plugins-license.jpg" width="1280" height="800" data-dark="../../video/en/plugins-license-dark.mp4" data-dark-poster="../../video/en/plugins-license-dark.jpg"><source src="../../video/en/plugins-license.mp4" type="video/mp4"></video><p>Video: Plugins and licence <span>(English voice-over also in <a href="../../video/nl/plugins-license.mp4" target="_blank" rel="noopener">Nederlands</a>)</span></p></div>
+<figure><a href="images/integrations.jpg" target="_blank" rel="noopener"><picture><source srcset="images/integrations-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/integrations.jpg" alt="Admin &gt; API keys: the links to external systems, with the Superadmin label." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 1. Admin &gt; API keys: the links to external systems, with the Superadmin label.</figcaption></figure>
 <h2 id="plugins">Plugins<a class="anc" href="#plugins" aria-label="Link to this section">#</a></h2>
-<p>Plugins are signed packages that live in the /plugins folder. You manage them in Admin &gt; Plugins.</p>
+<p>Plugins are managed from Admin &gt; Plugins. They are signed packages stored in /plugins and can be installed from the library (resource/plugins), switched on or off, and updated.</p>
+<p>A plugin can bring its own pages, modules, translations (44 languages) and admin screens. If a plugin has demo content, its page in Admin &gt; Plugins (tab Overview) shows a button:</p>
 <ul>
-<li>Install a plugin from the library (resource/plugins).</li>
-<li>Switch a plugin on or off at any time.</li>
-<li>Update a plugin when a new version is available.</li>
+<li>&#x27;Make demo content&#x27; when no demo content exists yet.</li>
+<li>&#x27;Remove demo content&#x27; once it has been created, letting you take it away again.</li>
 </ul>
-<p>A plugin can bring its own pages, modules, translations (all 44 languages) and admin screens, so it integrates into the site like a native feature.</p>
-<p>If a plugin includes demo content, its page in Admin &gt; Plugins (tab Overview) shows a button labelled &#x27;Make demo content&#x27;. Once the demo content has been created, the same button changes to &#x27;Remove demo content&#x27;, letting you take it away again. Resetting the system also removes any demo content that plugins have created.</p>
-<p>A few plugin-related details are worth knowing:</p>
-<ul>
-<li>The module API keys is always switched on in every standard installation.</li>
-<li>The superadmin links (AI, Stripe, mail, storage) are switched on automatically when an installation is set up, so they keep working. The secret keys themselves are never stored in the installations file.</li>
-<li>A link marked Superadmin link can only be seen and changed by superadmins.</li>
-</ul>
-<figure><a href="images/plugins.jpg" target="_blank" rel="noopener"><img src="images/plugins.jpg" alt="Admin &gt; Plugins: install, switch on and update plugins." width="1440" height="900" loading="lazy"></a><figcaption>Figure 2. Admin &gt; Plugins: install, switch on and update plugins.</figcaption></figure>
+<p>Resetting the system also removes any demo content.</p>
+<p>The module API keys is always on in every standard installation. The superadmin links (AI, Stripe, mail, storage) are switched on automatically when an installation is set up, so they keep working, but the secret keys themselves are never stored in the installations file. A link marked Superadmin link is only visible and editable by superadmins.</p>
+<p>Resetting the system (Super admin &gt; System &gt; Reset) asks whether AI data in the database should be removed too, meaning all AI calls with costs plus the credit history and credit of superadmins (the AI settings themselves stay). The credit of normal users disappears automatically when those users are removed.</p>
+<figure><a href="images/plugins.jpg" target="_blank" rel="noopener"><picture><source srcset="images/plugins-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/plugins.jpg" alt="Admin &gt; Plugins: install, switch on and update plugins." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 2. Admin &gt; Plugins: install, switch on and update plugins.</figcaption></figure>
+<h2 id="importing-a-site">Importing a site<a class="anc" href="#importing-a-site" aria-label="Link to this section">#</a></h2>
+<p>Admin lets you import another website from an address, folder, ZIP file or a single HTML file, bringing in its theme, pages, home page, icons and images. When importing a single HTML file, Claude builds the theme, pages and content, and switches on the modules that are needed. An imported site can be removed again, together with everything that came with it.</p>
+<figure><a href="images/backups.jpg" target="_blank" rel="noopener"><picture><source srcset="images/backups-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/backups.jpg" alt="Admin &gt; Backups: back up and restore the site." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 3. Admin &gt; Backups: back up and restore the site.</figcaption></figure>
 <h2 id="backups">Backups<a class="anc" href="#backups" aria-label="Link to this section">#</a></h2>
-<p>Admin &gt; Backups creates backups per day, week or month, covering pages, menus, texts, images, the theme, and the settings of modules and plugins.</p>
-<p>From the same screen you can:</p>
-<ul>
-<li>Restore a backup.</li>
-<li>Download a backup.</li>
-</ul>
-<p>The standard installations basis (installations.json) is part of the system itself, and as with plugin installations, secret keys are never included in it.</p>
-<figure><a href="images/backups.jpg" target="_blank" rel="noopener"><img src="images/backups.jpg" alt="Admin &gt; Backups: back up and restore the site." width="1440" height="900" loading="lazy"></a><figcaption>Figure 3. Admin &gt; Backups: back up and restore the site.</figcaption></figure>
-<h2 id="site-import">Site import<a class="anc" href="#site-import" aria-label="Link to this section">#</a></h2>
-<p>A whole other website can be imported: an address, a folder, a ZIP file, or a single HTML file. Importing brings in the theme, pages, start page, icons and images.</p>
-<p>When you import a single HTML file, Claude builds the theme, the pages and the content, and switches on whichever modules are needed to support it.</p>
-<p>An imported site can be removed again, together with everything that came with it.</p>
-<h2 id="statistics">Statistics<a class="anc" href="#statistics" aria-label="Link to this section">#</a></h2>
-<p>Statistics gather graphs and numbers for the whole website: visitors, SEO, bots and AI calls, plus a separate tab for each module and plugin. Modules and plugins write their own figures here. If a plugin is switched off, nothing is counted for it.</p>
-<h2 id="seo">SEO<a class="anc" href="#seo" aria-label="Link to this section">#</a></h2>
-<p>SEO settings help search engines, bots and AI agents understand your site: robots.txt, sitemap, llms.txt, page titles, descriptions and structured data.</p>
-<h2 id="licence">Licence<a class="anc" href="#licence" aria-label="Link to this section">#</a></h2>
-<p>Admin &gt; Licence shows the cost and payment method of your licence, either by Stripe or by invoice. The price follows directly from the modules and plugins you have switched on.</p>
-<p>Super admin &gt; Prices holds the broader pricing tools:</p>
-<ul>
-<li>The price list per month, quarter and year.</li>
-<li>Quotations that can be generated as PDF.</li>
-<li>Marketing tiles.</li>
-<li>Sales calculation.</li>
-</ul>
+<p>Backups are available in Admin &gt; Backups, with daily, weekly and monthly backups covering pages, menus, texts, images, the theme and the settings of modules and plugins.</p>
+<p>Practical steps:</p>
+<ol start="1">
+<li>In the backup list, click Download to download a backup at once; progress is shown with a progress bar.</li>
+<li>Click Make backup now to create a fresh backup. You will then be asked whether to download it, keep it locally, or both.</li>
+<li>After uploading a backup file, easy2edit immediately asks whether you want to restore it.</li>
+</ol>
+<p>A restore brings back the logo, base data, theme and licence data exactly, and shows them right away. Back office loaders stay small during these actions; the large loader appears as its own layer in the middle of the window only for bigger operations.</p>
+<p>The standard installations basis (installations.json) is part of the system itself. As with plugins and API keys, secret keys are never stored in this file.</p>
+<figure><a href="images/cache.jpg" target="_blank" rel="noopener"><picture><source srcset="images/cache-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/cache.jpg" alt="The Cache page: where the cache is kept (database, memory or Redis), how many seconds it lasts and a restart button." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 4. The Cache page: where the cache is kept (database, memory or Redis), how many seconds it lasts and a restart button.</figcaption></figure>
+<h2 id="licence-and-pricing">Licence and pricing<a class="anc" href="#licence-and-pricing" aria-label="Link to this section">#</a></h2>
+<p>Admin &gt; Licence shows the cost and payment method of your licence, either Stripe or invoice. The price follows directly from the modules and plugins that are switched on.</p>
+<p>Super admin &gt; Prices holds the full price list per month, quarter and year, together with quotations as PDF, marketing tiles and the sales calculation used to work out pricing.</p>
+<figure><a href="images/trees-gifts.jpg" target="_blank" rel="noopener"><picture><source srcset="images/trees-gifts-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/trees-gifts.jpg" alt="Trees and gifts: your own monthly contribution, one tree per N for each easy2edit function, a maximum per month and the button to give trees now." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 5. Trees and gifts: your own monthly contribution, one tree per N for each easy2edit function, a maximum per month and the button to give trees now.</figcaption></figure>
 <h2 id="deployment">Deployment<a class="anc" href="#deployment" aria-label="Link to this section">#</a></h2>
-<p>easy2edit is deployed with Docker, using separate compose files for development and production. A reverse proxy handles routing and certificates. On start, the backend automatically runs its database migrations.</p>
-<p>Every installation displays its version, as &#x27;easy2edit version 1.0.0 build X&#x27;, sourced from one central place: backend/BUILD.</p>
-<h2 id="planting-trees-with-ecologi">Planting trees with Ecologi<a class="anc" href="#planting-trees-with-ecologi" aria-label="Link to this section">#</a></h2>
-<p>easy2edit can plant real trees through Ecologi. This is handled by the module &#x27;ecologi&#x27;, accessible from the Super admin menu item &#x27;easy2edit&#x27;. The page Super admin &gt; easy2edit has the tabs Overview, Plant trees, Contributions, Costs, History and Settings. The Super admin overview also shows the block &#x27;easy2edit: trees and contributions&#x27;, with a growing tree, tiles, charts and costs.</p>
-<p>To use this feature, add the Ecologi link in Admin &gt; API keys (an Impact API key, plus optionally a username for the public figures).</p>
-<p>There are four contribution sources:</p>
+<p>easy2edit is deployed with Docker, using separate compose files for development and production. A reverse proxy and certificates handle secure access, and the backend runs database migrations automatically on start.</p>
+<p>Every installation shows its version in the format &#x27;easy2edit version 1.0.0 build X&#x27;, sourced from one central place: backend/BUILD.</p>
+<figure><a href="images/ecologi.jpg" target="_blank" rel="noopener"><picture><source srcset="images/ecologi-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/ecologi.jpg" alt="Super admin &gt; easy2edit: the trees that are planted, the contributions per source, the costs and the history." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 6. Super admin &gt; easy2edit: the trees that are planted, the contributions per source, the costs and the history.</figcaption></figure>
+<h2 id="seo-and-site-visibility">SEO and site visibility<a class="anc" href="#seo-and-site-visibility" aria-label="Link to this section">#</a></h2>
+<p>easy2edit helps search engines, bots and AI agents understand your site through robots.txt, a sitemap, llms.txt, page titles, descriptions and structured data.</p>
+<figure><a href="images/sites-trees.jpg" target="_blank" rel="noopener"><picture><source srcset="images/sites-trees-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/sites-trees.jpg" alt="Plant trees: all websites, per company and per website, with totals." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 7. Plant trees: all websites, per company and per website, with totals.</figcaption></figure>
+<h2 id="statistics">Statistics<a class="anc" href="#statistics" aria-label="Link to this section">#</a></h2>
+<p>Admin statistics show graphs and figures for the whole website: visitors, SEO, bots and AI calls, plus a separate tab per module and plugin. Modules and plugins write their own figures here; if a plugin is switched off, nothing is counted for it.</p>
+<figure><a href="images/energy-advice.jpg" target="_blank" rel="noopener"><picture><source srcset="images/energy-advice-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/energy-advice.jpg" alt="The energy page with advice in two columns, a switch per advice and the energy label of the website." width="1440" height="900" loading="lazy"></picture></a><figcaption>Figure 8. The energy page with advice in two columns, a switch per advice and the energy label of the website.</figcaption></figure>
+<h2 id="trees-and-gifts">Trees and gifts<a class="anc" href="#trees-and-gifts" aria-label="Link to this section">#</a></h2>
+<p>easy2edit can plant trees through Ecologi, reflecting the site&#x27;s own energy and growth.</p>
+<p>At superadmin level, the module &#x27;ecologi&#x27; adds a Super admin menu item &#x27;easy2edit&#x27; with a page containing the tabs Overview, Plant trees, Contributions, Costs, History and Settings, plus a block &#x27;easy2edit: trees and contributions&#x27; on the Super admin overview, showing a growing tree, tiles, charts and costs. This requires an Ecologi link in Admin &gt; API keys (Impact API key, with an optional username for public figures).</p>
+<p>Four sources contribute trees:</p>
 <ul>
-<li>Website visitors: one tree per N page views.</li>
-<li>Machine and energy use: trees to offset the estimated CO2.</li>
-<li>Use of easy2edit by the user: a fixed number of trees per month.</li>
+<li>Website visitors, one tree per N page views.</li>
+<li>Machine and energy use, offsetting estimated CO2.</li>
+<li>Use of easy2edit by the user, a fixed number of trees per month.</li>
 <li>Trees planted by easy2edit itself.</li>
 </ul>
-<p>A monthly maximum limits the automatic settlement. Test mode is switched on by default, so nothing is actually purchased until you turn it off. Trees are planted in the name of the website, or of easy2edit if no website name applies.</p>
-<h2 id="trees-and-gifts-administrator-settings">Trees and gifts (administrator settings)<a class="anc" href="#trees-and-gifts-administrator-settings" aria-label="Link to this section">#</a></h2>
-<p>Admin &gt; System &gt; &#x27;Trees and gifts&#x27; (module &#x27;ecologi_admin&#x27;) lets the administrator set a personal monthly contribution. For each easy2edit function, you choose whether to plant trees using a &#x27;one tree per N&#x27; rule:</p>
-<ul>
-<li>Visitors</li>
-<li>New users</li>
-<li>AI use</li>
-<li>Energy use</li>
-</ul>
-<p>You also set a maximum amount per month, and you can give trees immediately if you wish.</p>
-<p>The tab &#x27;Costs and result&#x27; shows the expected cost per part and the total cost per month. The tab History lists everything that has been done.</p>
-<h2 id="trees-on-the-website-and-in-the-site-manager">Trees on the website and in the Site manager<a class="anc" href="#trees-on-the-website-and-in-the-site-manager" aria-label="Link to this section">#</a></h2>
-<p>At the bottom of the website, next to &#x27;powered by (c) easy2edit &lt;year&gt;&#x27;, a leaf icon opens an energy window with two tabs. &#x27;Plant trees&#x27; shows a tree filling up towards the next milestone, the amount donated, the contribution this month, the sources, a chart, and a &#x27;More info&#x27; link to https://easy2edit.com/#groen. The second tab is &#x27;Energy&#x27;.</p>
-<p>On the easy2edit server, the Site manager gives every website its own Trees tab, showing status, trees, expected cost per part, cost per month, switches and the monthly maximum. From the Site manager page you can also reach the overview &#x27;Plant trees: all websites&#x27;, broken down per company and per website, with totals. The Site manager&#x27;s Websites tab lets you update websites or force an update.</p>
-<h2 id="cache-and-reseller-defaults">Cache and reseller defaults<a class="anc" href="#cache-and-reseller-defaults" aria-label="Link to this section">#</a></h2>
-<p>The cache is shared across the system, using the database by default, or redis or memory as alternatives. It is configured in a block in Admin &gt; System, alongside a system cache for speed; an energy advice is given along with the cache settings.</p>
-<p>Standard parts of the settings also include a default reseller tab, where phone numbers are always entered with a country code, and default settings tabs offering a &#x27;do not overwrite&#x27; option per tab.</p><div class="pager"><a href="chapter-10.html"><small>Previous</small><strong>&larr; AI and AI credit</strong></a><span></span></div><footer>easy2edit manual &middot; version 1.1.0 build 158 &middot; English</footer></article></main><aside class="toc"><h4>On this page</h4><a href="#plugins">Plugins</a><a href="#backups">Backups</a><a href="#site-import">Site import</a><a href="#statistics">Statistics</a><a href="#seo">SEO</a><a href="#licence">Licence</a><a href="#deployment">Deployment</a><a href="#planting-trees-with-ecologi">Planting trees with Ecologi</a><a href="#trees-and-gifts-administrator-settings">Trees and gifts (administrator settings)</a><a href="#trees-on-the-website-and-in-the-site-manager">Trees on the website and in the Site manager</a><a href="#cache-and-reseller-defaults">Cache and reseller defaults</a></aside></div><script>
+<p>A monthly maximum limits automatic settlement, and test mode is on by default, so nothing is actually purchased until switched off. Trees are named after the website or after easy2edit.</p>
+<p>At site level, Admin &gt; System &gt; Trees and gifts (module &#x27;ecologi_admin&#x27;) lets an administrator set a monthly contribution, choose per function, visitors, new users, AI use, energy use, a &#x27;one tree per N&#x27; rate, set a maximum per month, and give trees immediately. Its tabs are My contribution, Costs and result, and History.</p>
+<p>On the easy2edit server, the Site manager shows a Trees tab per website (status, trees, expected costs per part, costs per month, switches and monthly maximum), and an overview &#x27;Plant trees: all websites&#x27; reachable from the Site manager page, listing figures per company and per website with totals. The Site manager also has a Websites tab to update websites or force an update.</p>
+<p>On the public website, next to &#x27;powered by (c) easy2edit &lt;year&gt;&#x27;, a leaf icon opens an energy window with two tabs: &#x27;Plant trees&#x27; (showing a tree filling toward its next milestone, the donated amount, this month&#x27;s figures, sources, a chart and a &#x27;More info&#x27; link to https://easy2edit.com/#groen) and &#x27;Energy&#x27;.</p>
+<p>The installation wizard includes a step &#x27;Plant trees&#x27;; the Ecologi link to easy2edit is always on.</p>
+<h2 id="cache-and-energy-advice">Cache and energy advice<a class="anc" href="#cache-and-energy-advice" aria-label="Link to this section">#</a></h2>
+<p>The cache can be shared across the system, using the database by default, or Redis or memory, configured in Admin &gt; System, alongside a system cache for speed and related energy advice.</p>
+<p>Admin &gt; Cache lets you choose where the cache is kept (database, memory or Redis), set how many seconds the system cache lasts (5 minutes by default), and restart the cache with a button. Redis is installed by the deployment script as a service and is used by default when it responds; if Redis is unavailable, the system falls back to the database.</p>
+<p>Admin &gt; Energy shows the website&#x27;s energy label, energy advice in two columns with a switch per piece of advice, a run window with progress, cache advice, and AI prompt buttons for every open point. The energy label can also be shown on the website itself.</p>
+<h2 id="api-keys-and-reseller-defaults">API keys and reseller defaults<a class="anc" href="#api-keys-and-reseller-defaults" aria-label="Link to this section">#</a></h2>
+<p>In Admin &gt; API keys, a super admin has an Update button that checks keys against the easy2edit server and updates them when needed. This requires either a code sent by e-mail or SMS, or an account on easy2edit.com, the master server. During installation, keys travel encrypted inside an installation file locked with a password, and are unpacked and installed at the destination.</p>
+<p>The default reseller tab always requires phone numbers with a country code, and the default settings tabs include a &#x27;do not overwrite&#x27; option per tab, both standard parts of the settings.</p>
+<h2 id="website-design">Website design<a class="anc" href="#website-design" aria-label="Link to this section">#</a></h2>
+<p>Admin &gt; Website &gt; Design is always present in the menu and as a tile. If a part of it is not installed or switched on, easy2edit prompts you to install and switch it on, showing the cost and the steps with progress. This section cannot be switched off.</p>
+<h2 id="light-and-dark-mode">Light and dark mode<a class="anc" href="#light-and-dark-mode" aria-label="Link to this section">#</a></h2>
+<p>Screenshots, videos and help content in easy2edit exist in both light and dark mode. The HTML manual and Help show whichever mode the reader is using, while the PDF manual is always shown in light mode.</p><div class="pager"><a href="chapter-10.html"><small>Previous</small><strong>&larr; AI and AI credit</strong></a><span></span></div><footer>easy2edit manual &middot; version 1.1.0 build 165 &middot; English</footer></article></main><aside class="toc"><h4>On this page</h4><a href="#plugins">Plugins</a><a href="#importing-a-site">Importing a site</a><a href="#backups">Backups</a><a href="#licence-and-pricing">Licence and pricing</a><a href="#deployment">Deployment</a><a href="#seo-and-site-visibility">SEO and site visibility</a><a href="#statistics">Statistics</a><a href="#trees-and-gifts">Trees and gifts</a><a href="#cache-and-energy-advice">Cache and energy advice</a><a href="#api-keys-and-reseller-defaults">API keys and reseller defaults</a><a href="#website-design">Website design</a><a href="#light-and-dark-mode">Light and dark mode</a></aside></div><script>
+document.querySelectorAll("video[data-dark]").forEach(function(v){var q=window.matchMedia("(prefers-color-scheme: dark)");function pick(){var d=q.matches;var u=d?v.dataset.dark:v.querySelector("source").getAttribute("src");if(d){var t=v.currentTime,p=v.paused;v.poster=v.dataset.darkPoster;v.src=u;v.currentTime=t||0;if(!p)v.play()}}pick();q.addEventListener&&q.addEventListener("change",pick)});
 (function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
 var cards=[].slice.call(document.querySelectorAll('.vcard[data-t]')),none=document.getElementById('vnone');
 if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=0;links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)});cards.forEach(function(c){var h=!!v&&c.getAttribute('data-t').indexOf(v)<0;c.classList.toggle('hide',h);if(!h)n++});if(none)none.classList.toggle('show',cards.length>0&&n===0)});

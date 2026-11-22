@@ -38,5 +38,10 @@
  "editor-components": "Elementen > Componenten: de kant-en-klare componenten van de componentenset, in groepen met een zoekveld.",
  "components": "Admin > Componenten: de componenten van de set in de kleuren van het thema, in groepen, met HTML kopiëren en easy2edit_tag kopiëren.",
  "templates": "Admin > Website > Templates: complete startwebsites met voorbeeldplaatjes; kies er één en gebruik hem.",
- "prompt-wizard": "De wizard voor de AI-prompt: stappen met vragen over de website, een thema en een componentenset. Elk antwoord gaat in de prompt."
+ "prompt-wizard": "De wizard voor de AI-prompt: stappen met vragen over de website, een thema en een componentenset. Elk antwoord gaat in de prompt.",
+ "cache": "De pagina Cache: waar de cache staat (database, geheugen of Redis), hoelang hij blijft staan en een knop om opnieuw te starten.",
+ "trees-gifts": "Bomen en giften: je eigen maandelijkse bijdrage, één boom per N bij elke functie van easy2edit, een maximum per maand en de knop om nu bomen te geven.",
+ "ecologi": "Super admin > easy2edit: de bomen die zijn geplant, de bijdragen per bron, de kosten en de geschiedenis.",
+ "sites-trees": "Bomen planten: alle websites, per bedrijf en per website, met totalen.",
+ "energy-advice": "De energiepagina met adviezen in twee kolommen, een schakelaar per advies en het energielabel van de website."
 }

@@ -8,6 +8,7 @@
 """Translate the Dutch help texts (apps/faq/source.py) into every language of the system with Claude and store them in data/faq.json.
 Only what is missing is translated; --all redoes everything."""
 import json
+import re
 
 from django.core.management.base import BaseCommand
 
@@ -35,7 +36,7 @@ class Command(BaseCommand):
         FILE.parent.mkdir(parents=True, exist_ok=True)
         only = {x.strip() for x in o["only"].split(",") if x.strip()}
         jobs = [("group", g, {"title": t}) for g, _lay, t, _art in GROUPS if (g in only) if only] if only else [("group", g, {"title": t}) for g, _lay, t, _art in GROUPS if o["all"] or len(data["groups"].get(g, {})) < len(langs)]
-        jobs += [("item", i, {"q": q, "a": a}) for i, _lay, _g, _n, q, a in ITEMS if (i in only if only else (o["all"] or len((data["items"].get(i, {}).get("a") or {})) < len(langs)))]
+        jobs += [("item", i, {"q": q, "a": re.sub(r"\s*\{\{(?:image|video):[a-z0-9-]{1,60}\}\}", "", a)}) for i, _lay, _g, _n, q, a in ITEMS if (i in only if only else (o["all"] or len((data["items"].get(i, {}).get("a") or {})) < len(langs)))]
         system = ("You translate help texts of a website management system (easy2edit) from Dutch. Keep the meaning, a friendly clear tone, and keep product terms and menu names understandable. "
                   "Menu names in the interface such as 'Admin → Pagina's' stay as written. Answer with ONE JSON object only, no text around it: {id: {field: {code: translation}}} for every id and field given.")
         # small requests (2 texts x 11 languages) so an answer is never cut off; four at a time

@@ -4699,3 +4699,4 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 
 /* a switch is always its own containing block: its track (an absolute span) can never stretch over the whole page */
 .switch { position: relative !important; flex: none; }
+.help-media { display: block; max-width: 100%; border-radius: 10px; border: 1px solid var(--border, rgba(128,128,128,.3)); margin: .6rem 0; }

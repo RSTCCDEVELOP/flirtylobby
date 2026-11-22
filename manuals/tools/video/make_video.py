@@ -38,6 +38,8 @@ args = os.environ.get("VIDEO_ARGS", "").split()
 opt = lambda n, d="": args[args.index(n) + 1] if n in args else d  # noqa: E731
 LANGS = [x for x in opt("--lang", "en,nl").split(",") if x in ("en", "nl")]
 ONLY = [x for x in opt("--only").split(",") if x]
+MODE = os.environ.get("VIDEO_MODE", opt("--mode", "light"))  # light | dark | both: <id>.mp4 is light, <id>-dark.mp4 is dark
+MODES = ["light", "dark"] if MODE == "both" else ["dark" if MODE == "dark" else "light"]
 REFRESH, PREVIEW = "--refresh" in args, "--preview" in args
 W, H = 1280, 800
 videos = [v for v in json.loads((TOOLS / "videos.json").read_text()) if not ONLY or v["id"] in ONLY]
@@ -139,7 +141,20 @@ User.objects.filter(email=EMAIL).delete()
 u = User.objects.create(email=EMAIL, first_name="Alex", last_name="Admin", is_active=True, is_staff=True, is_superuser=True)
 u.set_unusable_password()
 u.save()
+# no screen of "set up two-step verification" or "confirm your e-mail" over the pictures
+User.objects.filter(pk=u.pk).update(otp_active=True, email_verified=True)
 token = Token.objects.create(user=u).key
+# since build 157 admins and superadmins must sign the terms of easy2edit before the screens show: the temporary superadmin gets a signature (it goes away with the user, nothing is sent)
+from apps.core import terms as _terms
+from apps.core.models import TermsSignature
+_cur = _terms.current()
+if _cur:
+    TermsSignature.objects.create(user=u, version=_cur.version if hasattr(_cur, "version") else _cur["version"], role="superadmin", name="Alex Admin", email=EMAIL, lang="en", method="skipped")
+try:  # the notices that come on their own would sit in every picture: the explanation of the AI credit is "seen" for this temporary user
+    from apps.integrations.models import AiAccount
+    AiAccount.objects.update_or_create(user=u, defaults={"welcomed": True})
+except Exception:  # noqa: BLE001
+    pass
 prev_modules = list(ModuleState.objects.values_list("key", "enabled"))
 prev_plugins = list(Plugin.objects.values_list("pk", "enabled"))
 en = Language.objects.filter(code="en").first()
@@ -160,12 +175,13 @@ try:
         Language.objects.filter(pk=en.pk).update(enabled=True)
     for lang in LANGS:
         (OUT / lang).mkdir(parents=True, exist_ok=True)
-        for v in videos:
-            final = OUT / lang / f"{v['id']}.mp4"
+        for v, mode in [(v, m) for v in videos for m in MODES]:
+            sfx = "-dark" if mode == "dark" else ""
+            final = OUT / lang / f"{v['id']}{sfx}.mp4"
             if final.is_file() and not REFRESH:
-                print("exists ", lang, v["id"])
+                print("exists ", lang, v["id"], mode)
                 continue
-            work = TMP / f"{lang}-{v['id']}"
+            work = TMP / f"{lang}-{v['id']}{sfx}"
             shutil.rmtree(work, ignore_errors=True)
             work.mkdir(parents=True)
             steps, audios = [], []
@@ -173,7 +189,7 @@ try:
                 a = speak(s["say"][lang], lang, el)
                 audios.append(a)
                 steps.append({**{k: s[k] for k in s if k not in ("say",)}, "duration": round(max(4.0, seconds(a) + 0.9), 2)})
-            plan = {"base": "https://localhost:5173", "token": token, "lang": lang, "width": W, "height": H, "outDir": str(work), "steps": steps}
+            plan = {"base": "https://localhost:5173", "token": token, "lang": lang, "mode": mode, "width": W, "height": H, "outDir": str(work), "steps": steps}
             (work / "plan.json").write_text(json.dumps(plan))
             r = subprocess.run(["node", str(TOOLS / "record.mjs"), str(work / "plan.json")], capture_output=True, text=True, timeout=1500)
             print(r.stdout[-600:], r.stderr[-400:])
@@ -188,8 +204,8 @@ try:
                 segs.append(work / f"seg-{n}.mp4")
             (work / "list.txt").write_text("".join(f"file '{p}'\n" for p in segs))
             run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(work / "list.txt"), "-c", "copy", "-movflags", "+faststart", str(final)])
-            run(["ffmpeg", "-y", "-ss", "4", "-i", str(final), "-frames:v", "1", "-q:v", "3", str(OUT / lang / f"{v['id']}.jpg")])
-            print("made   ", lang, v["id"], f"{seconds(final):.0f}s", f"{final.stat().st_size // 1024} KB")
+            run(["ffmpeg", "-y", "-ss", "4", "-i", str(final), "-frames:v", "1", "-q:v", "3", str(OUT / lang / f"{v['id']}{sfx}.jpg")])
+            print("made   ", lang, v["id"], mode, f"{seconds(final):.0f}s", f"{final.stat().st_size // 1024} KB")
 finally:
     ModuleState.objects.all().delete()
     ModuleState.objects.bulk_create([ModuleState(key=k, enabled=v) for k, v in prev_modules])

@@ -30,7 +30,9 @@ async function go(url) { const loaded = new Promise((r) => { const f = (d) => { 
 await send("Page.enable"); await send("Runtime.enable");
 await send("Emulation.setDeviceMetricsOverride", { width: plan.width, height: plan.height, deviceScaleFactor: 1, mobile: false });
 await go(`${plan.base}/login`); await sleep(800);
-await ev(`localStorage.setItem("token", ${JSON.stringify(plan.token)}); localStorage.setItem("lang", ${JSON.stringify(plan.lang)});`);
+const MODE = plan.mode === "dark" ? "dark" : "light";  // the video in light or dark mode
+await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: MODE }] });
+await ev(`localStorage.setItem("token", ${JSON.stringify(plan.token)}); localStorage.setItem("lang", ${JSON.stringify(plan.lang)}); localStorage.setItem("theme", ${JSON.stringify(MODE)});`);
 
 const ANON = `(()=>{const re=/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g;const w=document.createTreeWalker(document.body,4);const ns=[];while(w.nextNode())ns.push(w.currentNode);ns.forEach(n=>{re.lastIndex=0;if(re.test(n.nodeValue)){re.lastIndex=0;n.nodeValue=n.nodeValue.replace(re,"name@example.com")}})})()`;
 const HIDE = `(()=>{let s=document.getElementById("rec-hide");if(!s){s=document.createElement("style");s.id="rec-hide";document.head.appendChild(s)}s.textContent=".overlay{display:none!important}"})()`;

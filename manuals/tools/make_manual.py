@@ -141,6 +141,12 @@ Admin > System > 'Trees and gifts' (module 'ecologi_admin'): the administrator s
 At the bottom of the website, next to 'powered by (c) easy2edit <year>', a leaf opens an energy window with two tabs: 'Plant trees' (a tree that fills up towards the next milestone, the donated amount, this month, sources, a chart and a 'More info' link to https://easy2edit.com/#groen) and 'Energy'.
 On the easy2edit server (the Site manager) every website has a tab 'Trees' (status, trees, expected costs per part, costs per month, switches and the monthly maximum). The overview 'Plant trees: all websites' (per company and per website, with totals) is reachable from the Site manager page. The Site manager also has a Websites tab to update websites or force an update.
 Shared cache and system cache: the cache is shared (database as standard, redis or memory), with a block in Admin > System and a system cache for speed; an energy advice goes with it. The default reseller tab (phone numbers always with a country code) and the default settings tabs with 'do not overwrite' per tab are standard parts of the settings.
+Cache page (Admin > Cache, screenshot 'cache'): choose where the cache is kept (database, memory or Redis), how many seconds the system cache lasts (standard 5 minutes) and restart it with a button. Redis is installed by the deployment script as a service and used as the standard when it answers; when Redis is down the system falls back to the database. Energy page (Admin > Energy, screenshot 'energy-advice'): the energy label of the website, energy advice in two columns with a switch per advice, a run window with progress, cache advice and AI prompt buttons for every open point. The label can be shown on the website.
+Trees and gifts (Admin > System > Trees and gifts, screenshot 'trees-gifts'): the tabs My contribution, Costs and result, History; the monthly contribution (trees per month), one tree per N for visitors, new users, AI use and energy, a maximum per month, and 'Give trees now'. Super admin > easy2edit (screenshot 'ecologi') and the Site manager overview 'Plant trees: all websites' (screenshot 'sites-trees') show all trees, contributions per source, costs and history. The installation wizard has a step 'Plant trees' (the Ecologi/easy2edit link is always on).
+API keys (Admin > API keys): a super admin has the button Update, which checks the keys against the easy2edit server and updates them when needed. First a code by e-mail or SMS, or an account on easy2edit.com (the master server), is asked. At an installation the keys travel encrypted in an installation file (locked with a password) and are unpacked and installed at the destination.
+Website design (Admin > Website > Design) is always in the menu and on the tile; when a part is not installed or switched on, easy2edit asks to install and switch it on, shows the cost and the steps with progress. It cannot be switched off.
+Backups (Admin > Backup, screenshot 'backups'): the button Download in the list downloads at once with a progress bar; after Make backup now the question follows whether to download, keep locally or both. After uploading a backup easy2edit asks at once whether to restore it. A restore brings back the logo, the base data, the theme and the licence data exactly and shows them at once. Loaders of the back office stay small; the big loader is its own layer in the middle of the whole window.
+Light and dark mode: the screenshots, the videos and the help of easy2edit exist in light and dark mode; the HTML manual and the Help show the one that the reader uses (the PDF is light).
 """),
 ]
 
@@ -400,6 +406,7 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color
 """
 
 JS = """
+document.querySelectorAll("video[data-dark]").forEach(function(v){var q=window.matchMedia("(prefers-color-scheme: dark)");function pick(){var d=q.matches;var u=d?v.dataset.dark:v.querySelector("source").getAttribute("src");if(d){var t=v.currentTime,p=v.paused;v.poster=v.dataset.darkPoster;v.src=u;v.currentTime=t||0;if(!p)v.play()}}pick();q.addEventListener&&q.addEventListener("change",pick)});
 (function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
 var cards=[].slice.call(document.querySelectorAll('.vcard[data-t]')),none=document.getElementById('vnone');
 if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=0;links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)});cards.forEach(function(c){var h=!!v&&c.getAttribute('data-t').indexOf(v)<0;c.classList.toggle('hide',h);if(!h)n++});if(none)none.classList.toggle('show',cards.length>0&&n===0)});
@@ -476,7 +483,10 @@ home = (f'<div class="hero"><h1>{UI["title"]}</h1><p>{UI["hero"]}</p></div><div 
 (HD / "index.html").write_text(page(0, UI["contents"], home, [], 0, 1 if out else 0), encoding="utf-8")
 def fig_html(file, caption, no):
     c = _h.escape(caption, quote=True)
-    return f'<figure><a href="images/{file}.jpg" target="_blank" rel="noopener"><img src="images/{file}.jpg" alt="{c}" width="1440" height="900" loading="lazy"></a><figcaption>{UI["figure"]} {no}. {_h.escape(caption)}</figcaption></figure>'
+    dark = (IMG / f"{file}-dark.jpg").is_file()  # a picture in dark mode too: shown when the reader has dark mode on (the manual follows the colour scheme of the reader)
+    pic = (f'<picture><source srcset="images/{file}-dark.jpg" media="(prefers-color-scheme: dark)"><img src="images/{file}.jpg" alt="{c}" width="1440" height="900" loading="lazy"></picture>' if dark
+           else f'<img src="images/{file}.jpg" alt="{c}" width="1440" height="900" loading="lazy">')
+    return f'<figure><a href="images/{file}.jpg" target="_blank" rel="noopener">{pic}</a><figcaption>{UI["figure"]} {no}. {_h.escape(caption)}</figcaption></figure>'
 
 def video_html(vid, title_en, title_nl, has_nl):
     """The video in the language of this manual (English or Dutch voice-over); a link to the other language when that one exists."""
@@ -485,7 +495,7 @@ def video_html(vid, title_en, title_nl, has_nl):
     title = title_nl if mine == "nl" else title_en
     olink = f' {UI["also"]} <a href="../../video/{other}/{vid}.mp4" target="_blank" rel="noopener">{"Nederlands" if other == "nl" else "English"}</a>' if (other == "en" or has_nl) else ""
     voice = "Nederlandse voice-over" if mine == "nl" else "English voice-over"
-    return (f'<div class="video"><video controls preload="metadata" poster="../../video/{mine}/{vid}.jpg" width="1280" height="800"><source src="../../video/{mine}/{vid}.mp4" type="video/mp4"></video>'
+    return (f'<div class="video"><video controls preload="metadata" poster="../../video/{mine}/{vid}.jpg" width="1280" height="800" data-dark="../../video/{mine}/{vid}-dark.mp4" data-dark-poster="../../video/{mine}/{vid}-dark.jpg"><source src="../../video/{mine}/{vid}.mp4" type="video/mp4"></video>'
             f'<p>{UI["video"]}: {_h.escape(title)} <span>({voice}{olink})</span></p></div>')
 
 

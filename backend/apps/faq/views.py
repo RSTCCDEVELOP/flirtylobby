@@ -6,6 +6,7 @@
 # website https://rstcc.net
 
 import json
+import re
 from pathlib import Path
 
 from rest_framework.decorators import api_view, permission_classes
@@ -57,6 +58,20 @@ def pick(d, lang):
 
 
 LAYERS = ("user", "admin", "super")
+
+# pictures and videos of the manual shown under a help answer (the file name without .jpg / .mp4; the dark variant "<name>-dark" is picked by the screen)
+MEDIA = {"adminbackup": ("backups", "backup-restore"), "supermenu": ("superadmin-home", None), "adminmenu": ("admin-home", None)}
+
+
+MARK = re.compile(r"\s*\{\{(?:image|video):[a-z0-9-]{1,60}\}\}")
+
+
+def media(item_id, a_nl):
+    """The pictures and videos of an answer: the markers of the Dutch text, plus those of MEDIA; a translation never keeps its own (they are put back from the Dutch)."""
+    img, vid = MEDIA.get(item_id, (None, None))
+    own = "".join(MARK.findall(a_nl))
+    extra = "".join(f" {{{{{k}:{v}}}}}" for k, v in (("image", img), ("video", vid)) if v and f"{{{{{k}:{v}}}}}" not in own)
+    return own + extra
 
 
 def _social():
@@ -115,7 +130,7 @@ def help_view(request):
         if lay != layer:
             continue
         tr = t["items"].get(i, {})
-        items.append({"id": i, "group": group, "q": q_nl if lang == "nl" else pick(tr.get("q"), lang) or q_nl, "a": a_nl if lang == "nl" else pick(tr.get("a"), lang) or a_nl, "go": go_of(i)})
+        items.append({"id": i, "group": group, "q": q_nl if lang == "nl" else pick(tr.get("q"), lang) or q_nl, "a": MARK.sub("", a_nl if lang == "nl" else pick(tr.get("a"), lang) or a_nl) + media(i, a_nl), "go": go_of(i)})
     used = {i["group"] for i in items}
     groups = [{"id": g, "art": art, "title": title if lang == "nl" else pick(t["groups"].get(g), lang) or title} for g, lay, title, art in GROUPS if lay == layer and g in used]
     return Response({"layer": layer, "layers": layers, "groups": groups, "items": items})

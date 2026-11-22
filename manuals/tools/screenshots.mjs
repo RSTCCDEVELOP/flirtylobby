@@ -20,6 +20,7 @@ const args = process.argv.slice(2);
 const flag = (n) => args.includes(n), opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
 const base = opt("--base", "https://localhost:5173"), lang = opt("--lang", "en"), token = process.env.E2E_TOKEN || "", refresh = flag("--refresh");
 const only = (opt("--only", "") || "").split(",").filter(Boolean);
+const MODES = opt("--mode", "light") === "both" ? ["light", "dark"] : [opt("--mode", "light") === "dark" ? "dark" : "light"];  // light and dark mode: <file>.jpg (light) and <file>-dark.jpg (dark)
 if (!token) { console.error("Set E2E_TOKEN (the token of a superadmin)."); process.exit(1); }
 const shots = JSON.parse(readFileSync(join(here, "shots.json"), "utf8")).filter((s) => !only.length || only.includes(s.id));
 out = join(here, "..", "html", lang, "images");  // the pictures of the English manual are in English, those of the Dutch manual in Dutch
@@ -50,6 +51,7 @@ async function go(url) { const loaded = new Promise((r) => { const f = (d) => { 
 await send("Page.enable"); await send("Runtime.enable");
 await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
 await go(`${base}/login`); await sleep(800);
+const setMode = async (m) => { await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: m }] }); await ev(`localStorage.setItem("theme", ${JSON.stringify(m)}); document.documentElement.dataset.theme = ${JSON.stringify(m)}; window.dispatchEvent(new CustomEvent("themechange", { detail: ${JSON.stringify(m)} }))`); };
 await ev(`localStorage.setItem("token", ${JSON.stringify(token)}); localStorage.setItem("sandbox-banner-off","1"); localStorage.setItem("lang", ${JSON.stringify(lang)});`);
 
 const ANON = `(()=>{const re=/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g;const w=document.createTreeWalker(document.body,4);const ns=[];while(w.nextNode())ns.push(w.currentNode);ns.forEach(n=>{re.lastIndex=0;if(re.test(n.nodeValue)){re.lastIndex=0;n.nodeValue=n.nodeValue.replace(re,"name@example.com")}});document.querySelectorAll("input,textarea").forEach(i=>{re.lastIndex=0;if(i.type!=="password"&&re.test(i.value||"")){i.value="name@example.com"}})})()`;
@@ -59,11 +61,13 @@ const HIDE_OTHERS = `(()=>{const o=[...document.querySelectorAll(".overlay")];o.
 const clickText = (t, sel = "button,a,[role=tab],label,summary") => `(()=>{const t=${JSON.stringify(t)}.toLowerCase();const e=[...document.querySelectorAll(${JSON.stringify(sel)})].find(x=>x.offsetParent!==null&&(x.textContent||"").trim().toLowerCase()===t)||[...document.querySelectorAll(${JSON.stringify(sel)})].find(x=>x.offsetParent!==null&&(x.textContent||"").trim().toLowerCase().startsWith(t));if(e){e.click();return true}return false})()`;
 
 const made = [];
+for (const mode of MODES) {
+await setMode(mode);
 for (const s of shots) {
-  const file = join(out, `${s.file}.jpg`);
-  if (existsSync(file) && !refresh) { console.log("exists ", s.id); continue; }
+  const file = join(out, `${s.file}${mode === "dark" ? "-dark" : ""}.jpg`);
+  if (existsSync(file) && !refresh) { console.log("exists ", s.id, mode); continue; }
   try {
-    await go(`${base}${s.path}`); await sleep(s.settle || 4500);
+    await go(`${base}${s.path}`); await setMode(mode); await sleep(s.settle || 4500);
     const here = await ev("location.pathname"); const want = s.path.split("?")[0];
     if (!here.startsWith(want)) { console.warn("skipped", s.id, "(the page opened", here + ": module or plugin is off)"); continue; }
     for (const st of s.steps || []) {
@@ -72,11 +76,13 @@ for (const s of shots) {
       if (st.eval) await ev(st.eval);
       await sleep(st.wait || 900);
     }
+    if (process.env.SHOT_DEBUG) console.log("  debug", s.id, JSON.stringify(await ev("location.pathname+\" | \"+document.body.innerText.slice(0,300)")));
     await ev(s.keep ? HIDE_OTHERS : HIDE); await ev(ANON); await sleep(300);
     const clip = s.height ? { x: 0, y: 0, width: 1440, height: s.height, scale: 1 } : undefined;
     const r = await send("Page.captureScreenshot", { format: "jpeg", quality: 82, ...(clip ? { clip } : {}) });
-    writeFileSync(file, Buffer.from(r.data, "base64")); made.push(s.id); console.log("made   ", s.id);
+    writeFileSync(file, Buffer.from(r.data, "base64")); made.push(s.id + (mode === "dark" ? " (dark)" : "")); console.log("made   ", s.id, mode);
   } catch (e) { console.error("failed ", s.id, e.message); }
+}
 }
 console.log(`done: ${made.length} images`);
 stop(); process.exit(0);

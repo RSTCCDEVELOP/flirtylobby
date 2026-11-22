@@ -481,5 +481,45 @@
     "wait": 1500
    }
   ]
+ },
+ {
+  "id": "cache",
+  "file": "cache",
+  "path": "/dashboard/admin/cache",
+  "chapter": 11,
+  "settle": 6000,
+  "caption": "The Cache page: where the cache is kept (database, memory or Redis), how many seconds it lasts and a restart button."
+ },
+ {
+  "id": "trees-gifts",
+  "file": "trees-gifts",
+  "path": "/dashboard/admin/bomen",
+  "chapter": 11,
+  "settle": 6000,
+  "caption": "Trees and gifts: your own monthly contribution, one tree per N for each easy2edit function, a maximum per month and the button to give trees now."
+ },
+ {
+  "id": "ecologi",
+  "file": "ecologi",
+  "path": "/dashboard/superadmin/ecologi",
+  "chapter": 11,
+  "settle": 6000,
+  "caption": "Super admin > easy2edit: the trees that are planted, the contributions per source, the costs and the history."
+ },
+ {
+  "id": "sites-trees",
+  "file": "sites-trees",
+  "path": "/dashboard/superadmin/sites/bomen",
+  "chapter": 11,
+  "settle": 6000,
+  "caption": "Plant trees: all websites, per company and per website, with totals."
+ },
+ {
+  "id": "energy-advice",
+  "file": "energy-advice",
+  "path": "/dashboard/admin/energy",
+  "chapter": 11,
+  "settle": 6000,
+  "caption": "The energy page with advice in two columns, a switch per advice and the energy label of the website."
  }
 ]
