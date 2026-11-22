@@ -229,6 +229,6 @@ export function Busy({ full = false, label = "Laden…" }) {
   const on = ui.loader_on === "yes";
   const kind = ui.loader_style || "tree";
   if (!on) return <div className={full ? "busy busy-full" : "busy"} role="status" aria-label={label}><LoaderArt kind={kind} size={Math.min(Number(ui.loader_size) || 56, full ? 72 : 56)} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} /></div>;
-  if (full) return <div className={`page-loader bd-${ui.loader_backdrop || "page"}`} style={{ "--ldo": ui.loader_opacity ?? 100 }} role="status" aria-label={label}><div className="ld-stack"><LoaderArt kind={ui.loader_style || "tree"} size={ui.loader_style === "image" ? Number(ui.loader_image_size) || 80 : Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div></div>;
-  return <div className="busy" role="status" aria-label={label}><LoaderArt kind={ui.loader_style || "tree"} size={Math.min(Number(ui.loader_size) || 56, 56)} /></div>;
+  if (full) return <LoaderLayers look={ui} percent={ui.loader_percent === "yes"} />;
+  return <div className="busy" role="status" aria-label={label}><LoaderArt kind={ui.loader_style || "tree"} size={Math.min(Number(ui.loader_size) || 56, 96)} /></div>;
 }

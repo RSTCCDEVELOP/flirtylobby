@@ -14,6 +14,9 @@ class SwitchError(ValueError):
     pass
 
 
+ALWAYS_ON = ("siteimport",)  # Website ontwerpen: how a website gets its pages; it is always there
+
+
 def set_enabled(p, want, with_requires=False):
     """Switch the plugin on or off. Raises SwitchError with a message that can be shown. -> the plugin (fresh from the database)."""
     if want:
@@ -30,6 +33,8 @@ def set_enabled(p, want, with_requires=False):
                 Plugin.objects.filter(pk=dep.pk).update(error=err, enabled=False)
                 raise SwitchError(f"{dep.title} kon niet worden gestart: {err}")
             Plugin.objects.filter(pk=dep.pk).update(enabled=True, error="")
+    if not want and p.name in ALWAYS_ON:
+        raise SwitchError("Website ontwerpen is een vast onderdeel en kan niet worden uitgezet.")
     if not want and (need := runtime.dependents(p.name)):
         names = dict(Plugin.objects.filter(name__in=need).values_list("name", "title"))
         raise SwitchError("Eerst deze plugins uitzetten: " + ", ".join(names.get(n, n) for n in need) + ". Zij hebben deze plugin nodig.")

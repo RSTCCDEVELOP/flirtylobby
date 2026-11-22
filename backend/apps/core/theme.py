@@ -302,7 +302,7 @@ SCHEMA = [
         choice("loader_style", "Soort loader", "tree", None, LOADER_STYLES),
         choice("loader_when", "Wanneer", "first", None, LOADER_WHEN),
         choice("loader_backdrop", "Achtergrond", "page", None, LOADER_BACKDROP),
-        number("loader_size", "Grootte", 56, None, "px", 24, 120),
+        number("loader_size", "Grootte", 56, None, "px", 24, 400),
         number("loader_min", "Minimaal zichtbaar", 400, None, "ms", 0, 3000, 50),
         choice("loader_percent", "Percentage tonen onder de loader", "no", None, YESNO),
         number("loader_image_id", "Eigen afbeelding voor de loader (nummer uit de media)", 0, None, "", 0, 100000000),

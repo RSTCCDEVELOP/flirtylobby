@@ -14,6 +14,7 @@ import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import { api, apiBase, errorText, getToken } from "../../../../lib/api";
 import { alertDialog, confirmDialog } from "../../../../lib/dialog";
+import { LoaderArt } from "../../../../components/PageLoader";
 
 const KIND = { daily: "Per dag", weekly: "Per week", monthly: "Per maand", manual: "Handmatig", restore: "Voor terugzetten" };
 const WEEKDAYS = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
@@ -46,7 +47,7 @@ export default function BackupsAdmin() {
     try { const r = await fn(); if (r?.backups) take(r); if (okText) setMsg({ ok: true, text: okText }); return r; } catch (e) { setMsg({ ok: false, text: errorText(e) }); await alertDialog(errorText(e)); }
     finally { setBusy(""); }
   }
-  const makeNow = async () => { const r = await run("now", () => api("/backups/create/", { method: "POST", body: {} })); if (r?.made) await alertDialog(`${tx("Backup klaar")}\n${r.made.file} (${size(r.made.size)})\n${tx("Map")}: ${d.folder}`); };
+  const makeNow = async () => { const r = await run("now", () => api("/backups/create/", { method: "POST", body: {} })); if (r?.made) setDl({ b: r.made, ask: true }); };  // the backup is made: now the question what to do with it
   const saveJob = (j, patch) => run(`job-${j.frequency}`, () => api(`/backups/jobs/${j.frequency}/`, { method: "PUT", body: { ...j, ...patch } }));
   const runJob = async (j) => { const r = await run(`run-${j.frequency}`, () => api(`/backups/jobs/${j.frequency}/run/`, { method: "POST", body: {} })); if (r) await alertDialog(tx("Backup klaar")); };
   const saveLimits = () => run("limits", () => api("/backups/limits/", { method: "PUT", body: lim }), tx("Limieten opgeslagen. Oudere backups boven de limiet zijn verwijderd."));
@@ -60,13 +61,26 @@ export default function BackupsAdmin() {
     document.body.appendChild(a); a.click();
     setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
   };
-  async function doDownload(how) {
-    const b = dl.b;
-    setDl({ b, busy: true });
+  async function doDownload(how, item) {
+    const b = item || dl.b;
+    setDl({ b, busy: true, pct: 0, loaded: 0, total: b.size || 0, step: tx("Verbinden met de server…") });
     try {
       const res = await fetch(`${apiBase()}/api/backups/${b.id}/download/`, { headers: { Authorization: `Token ${getToken()}` } });
       if (!res.ok) { let t = tx("Downloaden mislukt."); try { t = (await res.json()).detail || t; } catch {} throw new Error(t); }
-      const blob = new Blob([await res.arrayBuffer()], { type: "application/zip" });
+      // read the file piece by piece: the bar and the percentage are real
+      const total = Number(res.headers.get("Content-Length")) || b.size || 0;
+      const chunks = []; let loaded = 0;
+      if (res.body?.getReader) {
+        const rd = res.body.getReader();
+        for (;;) {
+          const { done, value } = await rd.read();
+          if (done) break;
+          chunks.push(value); loaded += value.length;
+          setDl({ b, busy: true, loaded, total, pct: total ? Math.min(99, Math.round((loaded / total) * 100)) : 0, step: tx("Downloaden…") });
+        }
+      } else { chunks.push(new Uint8Array(await res.arrayBuffer())); loaded = chunks[0].length; }
+      setDl({ b, busy: true, loaded, total: total || loaded, pct: 100, step: how === "download" ? tx("Bewaren…") : tx("Kies waar je de backup bewaart…") });
+      const blob = new Blob(chunks, { type: "application/zip" });
       let saved = false;
       if (how === "local" || how === "both") {
         if (typeof window.showSaveFilePicker === "function") {
@@ -81,7 +95,7 @@ export default function BackupsAdmin() {
       setDl(null);
     } catch (e) { setDl(null); setMsg({ ok: false, text: errorText(e) }); await alertDialog(errorText(e)); }
   }
-  const download = (b) => setDl({ b });
+  const download = (b) => doDownload("download", b);  // the Download button of the list downloads at once
   async function upload(file) {
     if (!file) return;
     const fd = new FormData(); fd.append("file", file);
@@ -198,16 +212,24 @@ export default function BackupsAdmin() {
       {dl && (
         <div className="overlay" onClick={() => !dl.busy && setDl(null)}>
           <div className="card modal" role="dialog" aria-label={tx("Backup downloaden")} style={{ width: "min(480px, 94vw)", display: "grid", gap: ".8rem" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: 0 }}>{tx("Backup downloaden")}</h2>
+            <h2 style={{ margin: 0 }}>{dl.ask ? tx("Backup klaar") : tx("Backup downloaden")}</h2>
             <small className="muted">{dl.b.file} · {size(dl.b.size)}</small>
-            {dl.busy ? <p className="muted" role="status">{tx("Bezig…")}</p> : (
+            {dl.ask && !dl.busy && <p style={{ margin: 0 }}>{tx("De backup staat in de lijst. Wil je hem nu ook downloaden of lokaal opslaan?")}</p>}
+            {dl.busy ? (
+              <div className="dl-progress" role="status" aria-live="polite">
+                <div className="dl-anim" aria-hidden="true"><LoaderArt kind="tree" size={44} /></div>
+                <div className="adv-run-top"><span>{dl.step}</span><strong>{dl.pct || 0} %</strong></div>
+                <div className="adv-run-bar"><div style={{ width: `${Math.max(3, dl.pct || 0)}%` }} /></div>
+                <small className="muted">{size(dl.loaded || 0)}{dl.total ? ` / ${size(dl.total)}` : ""}</small>
+              </div>
+            ) : (
               <div className="sp-options">
                 {[["download", "Downloaden", "Naar de downloadmap van je browser."], ["local", "Lokaal opslaan", "Kies zelf de map en de naam op je computer."], ["both", "Allebei", "Downloaden én lokaal opslaan."]].map(([k, t, h]) => (
                   <button key={k} type="button" className="sp-option" onClick={() => doDownload(k)}><span style={{ display: "grid", gap: ".15rem" }}><strong>{tx(t)}</strong><small className="muted">{tx(h)}</small></span></button>
                 ))}
               </div>
             )}
-            {!dl.busy && <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setDl(null)}>{tx("Annuleren")}</button></div>}
+            {!dl.busy && <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setDl(null)}>{dl.ask ? tx("Niet nu") : tx("Annuleren")}</button></div>}
           </div>
         </div>
       )}

@@ -6,6 +6,7 @@
 # website https://rstcc.net
 
 import logging
+from decimal import Decimal
 
 from django.db import connection
 from rest_framework.decorators import api_view, permission_classes
@@ -988,6 +989,65 @@ def system_cache(request):
                 return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
     s = system.get()
     return Response({**syscache.info(), "system_cache": bool(s["system_cache"]), "system_cache_seconds": str(s["system_cache_seconds"])})
+
+
+GATED_PLUGINS = ("siteimport",)  # parts that are always in the menu: a click asks to install and switch them on when they are not
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def plugin_gate(request):
+    """A part that is always in the menu (Website ontwerpen / Webdesign): GET ?plugin=siteimport = is it installed and on, and what does switching it on cost (and the steps);
+    POST {plugin, step: install | enable | price} = do one step. For a superadmin, or someone with manage rights on the base data."""
+    from apps.accounts.access import level
+    from apps.plugins import installer, runtime, switch
+    from apps.plugins.models import Plugin
+
+    from . import pricing
+
+    name = str(request.query_params.get("plugin") or request.data.get("plugin") or "")
+    if name not in GATED_PLUGINS:
+        return Response({"detail": "Onbekend onderdeel."}, status=status.HTTP_400_BAD_REQUEST)
+    allowed = bool(request.user.is_staff or level(request.user, "system") >= 3)
+    p = Plugin.objects.filter(name=name).first()
+    installed = bool(p) and not installer.needs_install(name)
+    on = bool(p and p.enabled and installed and not (p.error or ""))
+    if request.method == "GET":
+        info = pricing.extra_for_plugin(name)
+        vat = Decimal(str(pricing.load()["vat_rate"]))
+        extra = Decimal(info["extra"])
+        steps = []
+        if not installed:
+            steps.append({"key": "install", "label": "Installeren uit de bibliotheek"})
+        if not on:
+            steps.append({"key": "enable", "label": "Inschakelen" + (" (met wat het nodig heeft)" if len(info["plugins"]) > 1 else "")})
+        steps.append({"key": "price", "label": "Prijs en licentie bijwerken"})
+        return Response({"plugin": name, "title": info["title"], "installed": installed, "on": on, "allowed": allowed, "needs": info["plugins"], "extra_ex": str(extra), "extra_inc": str((extra * (100 + vat) / 100).quantize(Decimal("0.01"))), "vat_rate": str(vat), "currency": "EUR",
+                         "steps": steps if not on else [], "error": (p.error if p else "") or ""})
+    if not allowed:
+        return Response({"detail": "Dit mag alleen een beheerder met rechten voor de basisgegevens of een superadmin."}, status=status.HTTP_403_FORBIDDEN)
+    step = str(request.data.get("step") or "")
+    try:
+        if step == "install":
+            if installed or installer.install_from_library(name) is not None:
+                pass
+            if installer.needs_install(name):
+                return Response({"detail": installer.LAST_ERROR.get("text") or "Installeren uit de bibliotheek is niet gelukt."}, status=status.HTTP_409_CONFLICT)
+        elif step == "enable":
+            p = Plugin.objects.filter(name=name).first()
+            if not p:
+                return Response({"detail": "De plugin is niet geïnstalleerd."}, status=status.HTTP_409_CONFLICT)
+            switch.set_enabled(p, True, with_requires=True)
+        elif step == "price":
+            pricing.apply_to_license()
+        else:
+            return Response({"detail": "Onbekende stap."}, status=status.HTTP_400_BAD_REQUEST)
+    except switch.SwitchError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_409_CONFLICT)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Plugin gate %s %s", name, step)
+        return Response({"detail": f"Het lukte niet: {str(e)[:200]}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({"ok": True, "step": step})
 
 
 @api_view(["GET", "POST"])

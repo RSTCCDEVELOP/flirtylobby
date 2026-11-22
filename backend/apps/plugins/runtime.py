@@ -321,6 +321,10 @@ def ensure_loaded(force=False):
             presets.repair_active()  # the plugins of the active standard installation stay (after an update they come back from the library)
         except Exception:  # noqa: BLE001
             logger.exception("Plugins of the active installation could not be repaired")
+    try:  # Website ontwerpen is always on (a standard installation or an update may have switched it off): it comes back
+        Plugin.objects.filter(name__in=("siteimport",), enabled=False, error="").update(enabled=True)
+    except Exception:  # noqa: BLE001
+        pass
     try:
         on = {p.name: p for p in Plugin.objects.filter(enabled=True)}
     except Exception:  # noqa: BLE001 - database not ready (migrations)

@@ -938,7 +938,7 @@ def unapply(key):
         if not m.get("core"):
             ModuleState.objects.update_or_create(key=m["key"], defaults={"enabled": m["key"] in keep})
     modules.invalidate()
-    Plugin.objects.filter(enabled=True).update(enabled=False)
+    Plugin.objects.filter(enabled=True).exclude(name__in=("siteimport",)).update(enabled=False)  # (Website ontwerpen stays on)
     runtime.ensure_loaded(True)
     try:
         from apps.pages.models import Page

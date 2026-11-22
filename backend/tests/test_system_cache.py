@@ -142,3 +142,23 @@ def test_a_redis_that_does_not_answer_falls_back_to_the_database(tmp_path, monke
     assert cacheconf._configured(tmp_path, {})["backend"] == "redis"  # the saved choice stays
     monkeypatch.setattr(cacheconf, "redis_reachable", lambda url=cacheconf.AUTO_REDIS: True)
     assert cacheconf.configured(tmp_path, {})["backend"] == "redis"
+
+
+@pytest.mark.django_db
+def test_plugin_gate_shows_cost_and_steps_and_runs_them(monkeypatch):
+    from django.contrib.auth import get_user_model
+    from rest_framework.test import APIClient
+
+    from apps.plugins.models import Plugin
+
+    plain = APIClient()
+    plain.force_authenticate(get_user_model().objects.create_user(username="g", email="g@x.nl", password="x"))
+    assert plain.post("/api/system/plugin-gate/", {"plugin": "siteimport", "step": "price"}, format="json").status_code == 403
+    su = APIClient()
+    su.force_authenticate(get_user_model().objects.create_user(username="gs", email="gs@x.nl", password="x", is_staff=True))
+    assert su.get("/api/system/plugin-gate/?plugin=nope").status_code == 400
+    Plugin.objects.filter(name="siteimport").update(enabled=False)
+    d = su.get("/api/system/plugin-gate/?plugin=siteimport").json()
+    assert d["allowed"] and not d["on"] and {"extra_ex", "extra_inc", "steps", "title"} <= set(d)
+    assert any(x["key"] == "enable" for x in d["steps"]) and d["steps"][-1]["key"] == "price"
+    assert su.post("/api/system/plugin-gate/", {"plugin": "siteimport", "step": "price"}, format="json").json() == {"ok": True, "step": "price"}

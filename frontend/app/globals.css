@@ -4672,3 +4672,12 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .st-busy .adv-dot { border-color: var(--blue); color: var(--blue); }
 .adv-err { color: var(--danger, #dc2626); }
 .adv-prompt { display: inline-flex; align-items: center; gap: .3rem; margin-left: auto; }
+
+/* the loader is its own layer on top of everything: fixed to the screen, always on top and never squeezed (the animation keeps the size that is set) */
+.page-loader-root { position: fixed; inset: 0; z-index: 2147483000; contain: layout; isolation: isolate; width: 100vw; height: 100vh; height: 100dvh; }
+.page-loader-art { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: max-content; max-width: none; height: auto; flex: none; }
+.page-loader-art .ld-stack { width: max-content; flex: none; }
+.ld { flex: none; flex-shrink: 0; min-width: var(--ld, 56px); min-height: var(--ld, 56px); max-width: none; }
+.ld-bar { min-width: calc(var(--ld, 56px) * 4); }
+.dl-progress { display: grid; gap: .5rem; justify-items: stretch; }
+.dl-anim { display: grid; place-items: center; padding: .4rem 0; }

@@ -21,6 +21,8 @@ import { IconGrid } from "./Icons";
 import { useChat } from "./Chat";
 import { useModules } from "./Modules";
 import TileSearch from "./TileSearch";
+import { useRouter } from "next/navigation";
+import { gateClick } from "../lib/pluginGate";
 
 import { useUpdates } from "../lib/updates";
 
@@ -44,6 +46,7 @@ export default function GroupTiles({ id }) {
     api(admin ? "/plugins/menu/?scope=admin" : "/plugins/menu/").then(setPlugins).catch(() => setPlugins([]));
   }, [admin, mods.plugins]);
   const imported = useImported(mods.siteimport !== false);
+  const router = useRouter();
   const entity = useEntity(); // the tile of the Entiteit carries the name set in the standard installation
   if (!group) return <p className="muted">{tx("Deze groep bestaat niet.")}</p>;
 
@@ -58,6 +61,7 @@ export default function GroupTiles({ id }) {
     const fromPlugins = plugins.filter((x) => (x.group === "mine" ? "c-mine" : x.group === "contact" ? "c-contact" : "") === id).map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true }));
     items = [...own, ...fromPlugins];
   }
+  if (admin && id === "a-site" && !items.some((n) => n.href === IMPORTED_HREF)) items = [{ href: IMPORTED_HREF, label: imported ? "Webdesign" : "Website ontwerpen", icon: <IconGrid />, big: "Ontwerpen of een andere site inlezen" }, ...items];  // always there: a click asks to install and switch it on when it is not
   return (
     <>
       <h1>{tx(group.title)}</h1>
@@ -67,7 +71,7 @@ export default function GroupTiles({ id }) {
         {items.map((n) => {
           const t = TILES.find((x) => x.href === n.href);
           return (
-            <Link key={n.href} href={n.href} className="card stat link-card group-tile">
+            <Link key={n.href} href={n.href} className="card stat link-card group-tile" onClick={(e) => gateClick(e, n.href, router)}>
               <span className="group-tile-ico">{n.icon}</span>
               {countOf(n) > 0 && <span className="cart-count group-tile-count" title={tx("Nieuw")}>{countOf(n)}</span>}
               <strong style={{ fontSize: "1.1rem" }}>{tx(n.label)}</strong>

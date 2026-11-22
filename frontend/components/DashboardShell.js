@@ -41,6 +41,8 @@ import { useEcologiAdminOn, useEcologiOn } from "../lib/ecologi";
 import AiCreditGate from "./AiCreditGate";
 import AiWelcome from "./AiWelcome";
 import TreesWelcome from "./TreesWelcome";
+import PluginGate from "./PluginGate";
+import { gateClick } from "../lib/pluginGate";
 import ManualHelp from "./ManualHelp";
 import { useLicencePhase, PHASE_NOW } from "../lib/licencePhase";
 import SandboxFirstAsk from "./SandboxFirstAsk";
@@ -293,10 +295,10 @@ export default function DashboardShell({ children }) {
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const faqSet = useFaqSettings(); // Admin → FAQ → Instellingen: is the Help link shown in the left menus
   const imported = useImported(mods.siteimport !== false);
-  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label } : n)).filter((n) => !n.needs || ecoAdmin).filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
+  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label } : n)).filter((n) => !n.needs || ecoAdmin).filter((n) => { if (n.href === IMPORTED_HREF) return true; if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
-    <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={closeMenu}>
+    <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={(e) => { if (!gateClick(e, n.href, router)) closeMenu(); }}>
       {n.icon}
       <span className="label">{n.badge === "direct_active" && n.badgeCount > 0 ? (chat?.directActive || []).map((x) => x.name).join(", ") : tx(n.label)}</span>
       {n.badgeCount > 0 && (n.badge === "direct_active" ? <span className="nav-live" title={tx("Directe verbinding actief")}><span className="live-dot" />{n.badgeCount}</span> : <span className="cart-count" style={{ marginLeft: "auto" }}>{n.badgeCount}</span>)}
@@ -438,6 +440,7 @@ export default function DashboardShell({ children }) {
         {user && !user.is_staff && <AiCreditGate />}
         {user && <AiWelcome />}
         {user?.is_staff && <TreesWelcome />}
+        {user && <PluginGate />}
         {user && <AiLiveCost />}
         {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} />{(user?.is_staff || canAdmin(user, mods)) && <ManualHelp />}</div>}
         {locked && <div className="alert" role="alert"><strong>{tx("Licentie niet actief")}</strong> · {tx(PHASE_NOW[lic.phase])}</div>}
