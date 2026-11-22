@@ -25,12 +25,13 @@ export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // only on your own computer (localhost): "@" in the e-mail field fills in the login of DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD (backend/.env); the backend gives it only to localhost in DEBUG
+  // only on your own computer (localhost): "@" in the e-mail field logs in at once as the superadmin+ that is in the database (else it fills in DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD of backend/.env); the backend gives it only to localhost in DEBUG
   const devFill = async (value) => {
     if (value !== "@" || typeof window === "undefined" || !["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
     try {
       const d = await api("/auth/dev-login/");
-      if (d?.configured) { setEmail(d.email); setPassword(d.password); setError(""); }
+      if (d?.token) { setToken(d.token); router.push(await homeAfterLogin()); } // the superadmin+ that is in the database now (it can differ after an import)
+      else if (d?.configured) { setEmail(d.email); setPassword(d.password); setError(""); }
       else setError(tx("Zet DEV_LOGIN_EMAIL en DEV_LOGIN_PASSWORD in backend/.env om met @ in te vullen."));
     } catch {}
   };

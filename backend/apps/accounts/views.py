@@ -47,7 +47,7 @@ def client_ip(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def dev_login(request):
-    """Only for testing on your own computer: the e-mail address and password of DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD (backend/.env), for the login screen ("@" in the e-mail field).
+    """Only for testing on your own computer ("@" in the e-mail field of the login screen): logs in as the superadmin+ that is in the database (a token); without one the e-mail address and password of DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD (backend/.env).
     It is there only while the backend runs in DEBUG, for a request that comes from this computer itself, for localhost: on a real site this does not exist (404)."""
     import os
 
@@ -57,6 +57,17 @@ def dev_login(request):
     from_here = request.META.get("REMOTE_ADDR", "") in ("127.0.0.1", "::1") and not request.META.get("HTTP_X_FORWARDED_FOR")
     if not (settings.DEBUG and from_here and request.get_host().split(":")[0] in ("localhost", "127.0.0.1")):
         raise Http404
+    # the superadmin+ that is in the database NOW (after an import it can differ from the standard one): the account of DEV_LOGIN_EMAIL when it is one, else the standard one, else the first
+    wanted = [os.getenv("DEV_LOGIN_EMAIL", "").strip().lower(), *[e.lower() for e in superplus.DEFAULT_EMAILS]]
+    plus = User.objects.filter(is_active=True, is_superuser=True, is_superadmin_plus=True)
+    user = next((u for e in wanted if e for u in plus.filter(email__iexact=e)[:1]), None) or plus.order_by("id").first()
+    if user:
+        token, _ = Token.objects.get_or_create(user=user)
+        if is_expired(token):
+            token.delete()
+            token = Token.objects.create(user=user)
+        logger.info("Dev login (localhost, DEBUG): %s", user.email)
+        return Response({"configured": True, "token": token.key, "email": user.email})
     email, password = os.getenv("DEV_LOGIN_EMAIL", ""), os.getenv("DEV_LOGIN_PASSWORD", "")
     if not (email and password):
         return Response({"configured": False})
