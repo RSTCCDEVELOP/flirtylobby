@@ -123,18 +123,17 @@ def split_name(full):
 
 
 def phone_ok(v):
-    """A phone number as the phone field makes it ("+31 612345678"): a country code and 6 to 15 digits. A country code alone is empty."""
-    digits = re.sub(r"\D", "", str(v or ""))
-    return bool(re.fullmatch(r"[+\d][\d\s().-]*", str(v or "").strip())) and 6 <= len(digits) <= 15
+    """A phone number as the phone field makes it ("+31 612345678"): always with a country code (see phone.py)."""
+    from . import phone
+
+    return phone.valid(v) and 6 <= len(re.sub(r"\D", "", str(v or ""))) <= 15
 
 
 def _phone(v, n=30):
     """-> (the number or "", an error text or ""). Only a country code (no number) counts as empty."""
-    v = str(v or "").strip()[:n]
-    digits = re.sub(r"\D", "", v)
-    if not v or (v.startswith("+") and len(digits) <= 3):
-        return "", ""
-    return v, ("" if phone_ok(v) else "Dit telefoonnummer is ongeldig.")
+    from . import phone
+
+    return phone.check(v, n)
 
 
 def clean_people(raw):
@@ -439,3 +438,28 @@ def sync():
         return {"ok": True, "made": made, "removed": removed}
     except Exception:  # noqa: BLE001
         return {"ok": False, "made": 0, "removed": 0}
+
+
+def default_reseller():
+    """The standard reseller (Standaard en globale instellingen -> Standaard reseller) as a record on this easy2edit server: found by its company name, made from the settings when it is not there yet.
+    A new website on the server gets it as its reseller. None when no company is filled in. Never raises."""
+    from . import global_settings
+
+    try:
+        d = global_settings.reseller()
+        name = (d["company"] or d["contact"]).strip()
+        if not name:
+            return None
+        r = Reseller.objects.filter(name__iexact=name).first()
+        if r:
+            return r if r.active else None
+        first, last = split_name(d["contact"])
+        person = {"id": secrets.token_hex(4), "role": "sales", "first_name": first, "last_name": last, "function": "", "email": d["email"], "phone": d["phone"], "mobile": d["mobile"]}
+        vals, err = clean({"name": name, "website": d["website"], "email": d["email"], "phone": d["phone"],
+                           "address": {"street": d["street"], "house_number": d["house_number"], "postal_code": d["postal_code"], "city": d["city"], "country": d["country"]},
+                           "contacts": [person] if first and last else []})
+        vals = {k: v for k, v in vals.items() if k not in err}  # (a detail that does not pass the check is left out: the reseller is still made)
+        vals["name"] = name[:150]
+        return Reseller.objects.create(**vals)
+    except Exception:  # noqa: BLE001
+        return None

@@ -15,6 +15,7 @@ import { api, errorText } from "../../../../lib/api";
 import { useAutoSave } from "../../../../lib/autosave";
 import SaveStatus from "../../../../components/SaveStatus";
 import PhoneInput from "../../../../components/PhoneInput";
+import CacheBlock from "./CacheBlock";
 
 const CURRENCY_NAME = { EUR: "Euro", USD: "US dollar", GBP: "Brits pond", CHF: "Zwitserse frank", SEK: "Zweedse kroon", NOK: "Noorse kroon", DKK: "Deense kroon", PLN: "Poolse zloty", CZK: "Tsjechische kroon", HUF: "Hongaarse forint", RON: "Roemeense leu", BGN: "Bulgaarse lev", TRY: "Turkse lira", CAD: "Canadese dollar", AUD: "Australische dollar", NZD: "Nieuw-Zeelandse dollar", JPY: "Japanse yen", CNY: "Chinese yuan", INR: "Indiase roepie", BRL: "Braziliaanse real", MXN: "Mexicaanse peso", ZAR: "Zuid-Afrikaanse rand", AED: "VAE-dirham", SAR: "Saoedische riyal", ILS: "Israëlische shekel", SGD: "Singaporese dollar", HKD: "Hongkongse dollar", KRW: "Zuid-Koreaanse won", THB: "Thaise baht", IDR: "Indonesische roepie" };
 const TIMEZONES = ["Europe/Amsterdam", "Europe/Brussels", "Europe/Berlin", "Europe/Paris", "Europe/London", "Europe/Madrid", "Europe/Lisbon", "Europe/Rome", "Europe/Vienna", "Europe/Zurich", "Europe/Athens", "Europe/Istanbul", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "UTC"];
@@ -190,6 +191,7 @@ export default function SystemPage() {
             );
           })()}
         </Collapsible>
+        <CacheBlock form={form} setForm={setForm} />
         <Collapsible id="sys-limits" title={tx("Uploadlimieten")}>
           <div className="grid2">
             <label>{tx("Afbeelding in de bibliotheek (MB)")}<input type="number" min="1" max="200" value={form.max_image_mb} onChange={set("max_image_mb")} /></label>

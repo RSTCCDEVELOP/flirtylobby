@@ -17,12 +17,15 @@ class Command(BaseCommand):
     help = "capture: de instellingen van deze site als standaard opslaan. apply: de standaard instellingen toepassen (--if-new: alleen op een nieuwe, nog niet ingestelde site)."
 
     def add_arguments(self, parser):
-        parser.add_argument("action", choices=["capture", "apply"])
+        parser.add_argument("action", choices=["capture", "apply", "push"])
         parser.add_argument("--if-new", action="store_true")
 
     def handle(self, *a, **o):
         if o["action"] == "capture":
             return self.stdout.write(str(site_defaults.capture()))
+        if o["action"] == "push":  # at every start: the settings of the tabs that are carried (not the tabs marked "only local")
+            res = site_defaults.push()
+            return self.stdout.write("site_defaults push: " + (", ".join(f"{r['key']}={'ok' if r['ok'] else 'fout'}" for r in res["results"]) or "niets te doen") + (f" · niet overschreven: {', '.join(res['kept'])}" if res["kept"] else ""))
         if o["if_new"] and (SiteSettings.objects.exists() or SecuritySettings.objects.exists()):
             return self.stdout.write("site_defaults: deze site is al ingesteld, overgeslagen.")
         res = site_defaults.apply()

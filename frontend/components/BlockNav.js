@@ -11,9 +11,11 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
 import { useSession } from "./Session";
+import { useToolbarHost } from "./TbSlot";
 
 // A list icon among the icons at the top right with a floating list (it stays open until it is closed) of the blocks of the page (their titles); a click goes to that block.
 export default function BlockNav({ items }) {
+  const host = useToolbarHost();
   const { canEdit, editing } = useSession();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState("");
@@ -54,5 +56,5 @@ export default function BlockNav({ items }) {
           {items.map((i) => <a key={i.id} href={`#${i.id}`} className={active === i.id ? "on" : ""} onClick={(e) => { e.preventDefault(); go(i.id); }}>{i.title}</a>)}
         </nav>
       )}
-    </div>, document.body);
+    </div>, host || document.body);
 }

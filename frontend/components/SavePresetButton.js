@@ -8,24 +8,27 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { useSession } from "./Session";
+import TbSlot from "./TbSlot";
 
 // Edit mode, superadmins only: save this page as it is now in a standard installation (the active one or another one). Setting that installation later puts the page back.
 export default function SavePresetButton() {
   const { user, editing } = useSession();
   const path = usePathname() || "/";
   const [open, setOpen] = useState(false);   // the pop-up
+  const [choice, setChoice] = useState("page");  // page: this page on this website | standard: in a standard installation
   const [step, setStep] = useState("choose");  // choose: save this page or as the standard page | pick: the standard installations (the menu)
   const [state, setState] = useState(null); // {page, presets}
   const [pick, setPick] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState(null);
+  const askRef = useRef(null);
   useEffect(() => {  // the save button at the bottom of the left panel asks the same question
-    const ask = () => { setMsg(null); setStep("choose"); setOpen(true); };
+    const ask = () => askRef.current?.();
     window.addEventListener("pb-save-ask", ask);
     return () => window.removeEventListener("pb-save-ask", ask);
   }, []);
@@ -36,6 +39,14 @@ export default function SavePresetButton() {
   }, [msg]);
   if (!editing || !user?.is_staff || path.startsWith("/dashboard")) return null;
 
+  // Saving: the choice (this page on this website, or in a standard installation) is only shown to a superadmin+ while the sandbox mode is on; everybody else just saves the page for the website
+  async function askSave() {
+    setMsg(null); setStep("choose");
+    let choose = false;
+    if (user?.is_superadmin_plus) { try { choose = !!(await api("/sandbox/status/"))?.enabled; } catch { choose = false; } }
+    if (choose) setOpen(true); else savePage();
+  }
+  askRef.current = askSave;
   const close = () => { setOpen(false); setStep("choose"); setState(null); setErr(""); };
   function savePage() {  // the page as it is now, on this website (what waits in the delay of the editor goes out at once)
     close(); setBusy(true); setMsg(null);
@@ -67,9 +78,9 @@ export default function SavePresetButton() {
   const optionStyle = { display: "grid", gap: ".15rem", textAlign: "left", padding: ".8rem 1rem" };
   return (
     <>
-      <button type="button" className="edit-save-preset-btn" onClick={() => { setMsg(null); setStep("choose"); setOpen(true); }} disabled={busy && !open} title={tx("Opslaan")} aria-label={tx("Opslaan")}>
+      <TbSlot><button type="button" className="edit-save-preset-btn" onClick={askSave} disabled={busy && !open} title={tx("Opslaan")} aria-label={tx("Opslaan")}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v13a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /><path d="M7 3v5h8V3M7 21v-7h10v7" /></svg>
-      </button>
+      </button></TbSlot>
       {msg && <div className={`edit-save-preset-msg ${msg.ok ? "ok" : "err"}`} role="status" onClick={() => setMsg(null)}>{msg.text}</div>}
       {open && (
         <div className="overlay" onClick={close}>
@@ -77,17 +88,18 @@ export default function SavePresetButton() {
             {step === "choose" ? (
               <>
                 <h2 style={{ marginTop: 0 }}>{tx("Waar wil je de pagina opslaan?")}</h2>
-                <div style={{ display: "grid", gap: ".6rem" }}>
-                  <button type="button" className="btn primary" style={optionStyle} onClick={savePage} autoFocus>
-                    <strong>{tx("Deze pagina opslaan")}</strong>
-                    <small style={{ fontWeight: 400, opacity: 0.9 }}>{tx("Bewaart de pagina zoals hij nu is op deze website.")}</small>
-                  </button>
-                  <button type="button" className="btn" style={optionStyle} onClick={showMenu}>
-                    <strong>{tx("Opslaan als standaardpagina")}</strong>
-                    <small className="muted" style={{ fontWeight: 400 }}>{tx("Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt.")}</small>
-                  </button>
+                <div className="sp-options" role="radiogroup" aria-label={tx("Waar wil je de pagina opslaan?")}>
+                  {[["page", "Deze pagina opslaan", "Bewaart de pagina zoals hij nu is op deze website."], ["standard", "Opslaan als standaardpagina", "Bewaart de pagina in een standaard installatie, zodat hij daar later terugkomt."]].map(([k, title, hint]) => (
+                    <button type="button" key={k} role="radio" aria-checked={choice === k} className={`sp-option${choice === k ? " on" : ""}`} onClick={() => setChoice(k)} onDoubleClick={() => (k === "page" ? savePage() : showMenu())} autoFocus={k === "page"}>
+                      <span className="sp-check" aria-hidden="true">{choice === k && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+                      <span className="sp-text"><strong>{tx(title)}</strong><small>{tx(hint)}</small></span>
+                    </button>
+                  ))}
                 </div>
-                <div className="row" style={{ marginTop: "1rem", justifyContent: "flex-end" }}><button type="button" className="btn" onClick={close}>{tx("Annuleren")}</button></div>
+                <div className="row" style={{ marginTop: "1.1rem", gap: ".5rem", justifyContent: "flex-end" }}>
+                  <button type="button" className="btn" onClick={close}>{tx("Annuleren")}</button>
+                  <button type="button" className="btn primary" onClick={() => (choice === "page" ? savePage() : showMenu())}>{choice === "page" ? tx("Opslaan") : tx("Verder")}</button>
+                </div>
               </>
             ) : (
               <>
@@ -96,12 +108,18 @@ export default function SavePresetButton() {
                 {!state && busy && <p className="muted">{tx("Laden…")}</p>}
                 {err && <div className="alert">{err}</div>}
                 {state && (
-                  <div style={{ display: "grid", gap: ".4rem" }} role="radiogroup" aria-label={tx("Kies een installatie")}>
+                  <div className="sp-options" role="radiogroup" aria-label={tx("Kies een installatie")}>
                     {active && (
-                      <label className="check"><input type="radio" name="presetpick" checked={pick === active.key} onChange={() => setPick(active.key)} /><span><strong>{tx("De actieve installatie")}</strong>: {tx(active.name)}{active.saved_pages?.includes(state.page.key) ? <small className="muted"> · {tx("heeft deze pagina al (wordt vervangen)")}</small> : null}</span></label>
+                      <button type="button" role="radio" aria-checked={pick === active.key} className={`sp-option${pick === active.key ? " on" : ""}`} onClick={() => setPick(active.key)}>
+                        <span className="sp-check" aria-hidden="true">{pick === active.key && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+                        <span className="sp-text"><strong>{tx("De actieve installatie")}</strong>: {tx(active.name)}{active.saved_pages?.includes(state.page.key) ? <small className="muted"> · {tx("heeft deze pagina al (wordt vervangen)")}</small> : null}</span>
+                      </button>
                     )}
                     {state.presets.filter((p) => !p.active).map((p) => (
-                      <label className="check" key={p.key}><input type="radio" name="presetpick" checked={pick === p.key} onChange={() => setPick(p.key)} /><span>{tx(p.name)}{p.saved_pages?.includes(state.page.key) ? <small className="muted"> · {tx("heeft deze pagina al (wordt vervangen)")}</small> : null}</span></label>
+                      <button type="button" key={p.key} role="radio" aria-checked={pick === p.key} className={`sp-option${pick === p.key ? " on" : ""}`} onClick={() => setPick(p.key)}>
+                        <span className="sp-check" aria-hidden="true">{pick === p.key && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+                        <span className="sp-text">{tx(p.name)}{p.saved_pages?.includes(state.page.key) ? <small className="muted"> · {tx("heeft deze pagina al (wordt vervangen)")}</small> : null}</span>
+                      </button>
                     ))}
                   </div>
                 )}

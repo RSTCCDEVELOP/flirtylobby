@@ -28,11 +28,20 @@ DEFAULTS = {
     "notify_reseller": "",  # empty: the reseller e-mail of the licence itself
     "notify_invoicing": "",
     "notify_support": "",  # a daily e-mail to the administrator while the licence has ended
+    # the standard reseller (who sells easy2edit): goes with every installation, is noted in the licence and is the reseller of a new website on the easy2edit server
+    "reseller_company": "Studio2 Communications BV", "reseller_contact": "Ronald Stolk", "reseller_email": "", "reseller_phone": "+31 85 201 77 85", "reseller_mobile": "",
+    "reseller_street": "Ambachtsweg", "reseller_house_number": "46", "reseller_postal_code": "3542 DH", "reseller_city": "Utrecht", "reseller_country": "Nederland", "reseller_website": "https://www.studio2.nl",
+    # per tab of Standaard en globale instellingen: "1" = do not overwrite on THIS installation: the settings are carried with new installations, but an update (or the website list of the easy2edit server) leaves this tab alone unless it is forced
+    "keep_server": "0", "keep_settings": "0", "keep_licence": "0", "keep_mails": "0", "keep_reseller": "0", "keep_twofa": "0",
     "source_mode": "local",  # where the library (the folder resource/: plugins, themes, languages, components) comes from: "local" = the folder of this installation, "easy2edit" = the easy2edit server (api address above)
 }
 SOURCE_MODES = ("local", "easy2edit")
+LOCAL = ("keep_server", "keep_settings", "keep_licence", "keep_mails", "keep_reseller", "keep_twofa")
 GRACE = ("grace_1", "grace_2", "grace_3", "grace_4")
 NOTIFY = ("notify_rstcc", "notify_reseller", "notify_invoicing", "notify_support")
+RESELLER = ("reseller_company", "reseller_contact", "reseller_email", "reseller_phone", "reseller_mobile", "reseller_street", "reseller_house_number", "reseller_postal_code", "reseller_city", "reseller_country", "reseller_website")
+RESELLER_MAX = {"reseller_company": 120, "reseller_contact": 100, "reseller_email": 254, "reseller_phone": 30, "reseller_mobile": 30, "reseller_street": 100, "reseller_house_number": 12, "reseller_postal_code": 12,
+                "reseller_city": 100, "reseller_country": 60, "reseller_website": 300}
 EMAIL_RE = re.compile(r"^[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+$")
 LABELS = {"notify_rstcc": "RST CC", "notify_reseller": "Reseller", "notify_invoicing": "Invoicing", "notify_support": "Support", "grace_1": "Fase 1 (dagen)", "grace_2": "Fase 2 (dagen)", "grace_3": "Fase 3 (dagen)", "grace_4": "Fase 4 (dagen)", "grace_reminder": "Dagelijkse herinnering", "base_domain": "Basisdomein", "api_url": "API van easy2edit", "site_url": "Website van easy2edit", "source_mode": "Bron"}
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
@@ -49,6 +58,22 @@ def clean(incoming):
     out, errors = {}, {}
     for k in DEFAULTS:
         if k not in incoming:
+            continue
+        if k in RESELLER:  # (typed as it is: names and addresses keep their capitals)
+            v = " ".join(str(incoming[k] or "").split())[:RESELLER_MAX[k]]
+            if k == "reseller_email" and v and not EMAIL_RE.match(v):
+                errors[k] = "Het e-mailadres van de reseller is ongeldig."
+            if k == "reseller_website" and v:
+                v = v if "://" in v else "https://" + v
+                if not re.match(r"^https?://[^\s]{3,290}$", v):
+                    errors[k] = "Gebruik een adres als https://www.voorbeeld.nl."
+            if k in ("reseller_phone", "reseller_mobile"):
+                from . import phone
+
+                v, bad = phone.check(v)
+                if bad:
+                    errors[k] = bad
+            out[k] = v
             continue
         v = str(incoming[k] or "").strip().lower()
         if k in GRACE:
@@ -67,6 +92,8 @@ def clean(incoming):
             if len(items) > 5:
                 errors[k] = f"{LABELS[k]}: maximaal 5 e-mailadressen."
             v = ", ".join(dict.fromkeys(items))
+        elif k in LOCAL:
+            v = "1" if str(incoming[k]).strip().lower() in ("1", "true", "on", "yes") else "0"
         elif k == "grace_reminder":
             v = "1" if str(incoming[k]).strip().lower() in ("1", "true", "on", "yes") else "0"
         elif k == "source_mode":
@@ -100,3 +127,31 @@ def save(values):
     except Exception:  # noqa: BLE001
         pass
     return get()
+
+
+def reseller():
+    """The standard reseller: {company, contact, email, phone, mobile, street, house_number, postal_code, city, country, website, address (one line)}."""
+    g = get()
+    r = {k[len("reseller_"):]: g[k] for k in RESELLER}
+    r["address"] = ", ".join(x for x in (f"{r['street']} {r['house_number']}".strip(), f"{r['postal_code']} {r['city']}".strip(), r["country"]) if x)
+    return r
+
+
+def apply_reseller_to_licence(force=False):
+    """The licence of this installation notes the standard reseller when it has none yet (force: always). Never raises. -> True when it was filled."""
+    try:
+        from .models import License
+
+        r = reseller()
+        if not r["company"] and not r["contact"]:
+            return False
+        lic, _ = License.objects.get_or_create(pk=1)
+        if lic.reseller_name and not force:
+            return False
+        lic.reseller_name = (r["company"] or r["contact"])[:120]
+        lic.reseller_email = r["email"] or lic.reseller_email
+        lic.reseller_url = r["website"][:300]
+        lic.save(update_fields=["reseller_name", "reseller_email", "reseller_url"])
+        return True
+    except Exception:  # noqa: BLE001
+        return False

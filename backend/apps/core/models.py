@@ -174,6 +174,7 @@ class EasySite(models.Model):
     last_login_role = models.CharField(max_length=20, blank=True)  # admin | superadmin | superadmin+
     login_count = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True)
+    defaults_state = models.JSONField(default=dict, blank=True)  # the standard settings on this website: {"keep": [tabs it does not want overwritten], "reported_at", "pushed_at", "forced", "applied": [], "kept": [], "error"}
     reseller = models.ForeignKey("core.Reseller", null=True, blank=True, on_delete=models.SET_NULL, related_name="sites")  # who sells this website (its logins are made in that website)
 
     class Meta:
@@ -184,6 +185,12 @@ class SystemSettings(models.Model):
     """Singleton (pk=1): basic data of this installation (name, addresses, contact). Secrets and server settings stay in the environment."""
 
     data = models.JSONField(default=dict, blank=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from . import system
+
+        system.forget_cache()  # (the system cache keeps a copy of these settings)
 
 
 class SalesVerification(models.Model):

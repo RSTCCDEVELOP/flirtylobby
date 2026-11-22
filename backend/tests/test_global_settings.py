@@ -15,7 +15,7 @@ from apps.core import global_settings, site_defaults
 
 @pytest.mark.django_db
 def test_standard_and_saving():
-    assert {k: v for k, v in global_settings.get().items() if k not in global_settings.GRACE + global_settings.NOTIFY and k != "grace_reminder"} == {"base_domain": "easy2edit.com", "api_url": "https://api.easy2edit.com", "site_url": "https://easy2edit.com", "source_mode": "local"}
+    assert {k: v for k, v in global_settings.get().items() if k not in global_settings.GRACE + global_settings.NOTIFY + global_settings.RESELLER + global_settings.LOCAL and k != "grace_reminder"} == {"base_domain": "easy2edit.com", "api_url": "https://api.easy2edit.com", "site_url": "https://easy2edit.com", "source_mode": "local"}
     assert [global_settings.get()[k] for k in global_settings.GRACE] == ["14", "14", "14", "30"]  # the standard phases of a licence that has ended
     vals, errors = global_settings.clean({"base_domain": ".Example.com", "api_url": "api.example.com/"})
     assert not errors and vals == {"base_domain": "example.com", "api_url": "https://api.example.com"}  # ".example.com" and a bare host are completed

@@ -181,6 +181,14 @@ def app_start(user):
     return secret, totp.uri(secret, user.email, issuer)
 
 
+def _blocked(user, cfg):
+    """The last allowed wrong code was just used: the code is blocked, the administrator gets a mail (once)."""
+    if user.otp_attempts == cfg["max_attempts"]:
+        from . import lockout
+
+        lockout.notify(user.email, "", "code", cfg["code_minutes"])
+
+
 def check_app_code(user, code):
     """Check an authenticator code against the user's secret; a code can be used once."""
     cfg = service.get()["twofa"]
@@ -191,6 +199,7 @@ def check_app_code(user, code):
         user.otp_attempts += 1
         user.otp_expires = user.otp_expires if user.otp_expires and user.otp_expires > timezone.now() else timezone.now() + timedelta(minutes=cfg["code_minutes"])
         user.save(update_fields=["otp_attempts", "otp_expires"])
+        _blocked(user, cfg)
         return False
     user.totp_last_step, user.otp_attempts, user.otp_expires = step, 0, None
     user.save(update_fields=["totp_last_step", "otp_attempts", "otp_expires"])
@@ -211,6 +220,7 @@ def check_code(user, code):
     else:
         user.otp_attempts += 1
         user.save(update_fields=["otp_attempts"])
+        _blocked(user, cfg)
     return ok
 
 

@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 FONT_BYTES = 18_000  # one weight of one Google font (woff2, latin): an estimate
 IMG_DEFAULTS = {"threshold_kb": 300, "max_edge": 2000, "quality": 82, "keep_originals": True}
 IMG_LIMIT_MB = 2
+SYSCACHE_SECONDS = 300  # the system cache the energy advice switches on (on, and kept this long)
 GZIP_SAVES = 0.7  # compressing text (scripts, styles, html) saves about 70%
 DEV_SAVES = 0.8  # a production build of the scripts is about 80% smaller than a development build (after compression)
 
@@ -119,6 +120,15 @@ def analyse(params=None):
     else:
         items.append({"key": "image_limit", "status": "todo" if cur > 5 else "ok", "applicable": True, "saving": 0, "params": {"mb": IMG_LIMIT_MB}, "detail": [f"{cur} MB"]})
 
+    # 3b. the system cache (Admin -> Basisgegevens -> Cache): fewer database questions per visit
+    sc = system.get()
+    if "system_cache" in done:
+        items.append({"key": "system_cache", "status": "applied", "applicable": True, "saving": 0, "applied": done["system_cache"], "params": {"seconds": SYSCACHE_SECONDS}, "detail": []})
+    else:
+        on = bool(sc["system_cache"])
+        items.append({"key": "system_cache", "status": "ok" if on and int(sc["system_cache_seconds"] or 0) >= 30 else "todo", "applicable": True, "saving": 0, "params": {"seconds": SYSCACHE_SECONDS},
+                      "detail": [f"{'aan' if on else 'uit'}, {sc['system_cache_seconds']} s"]})
+
     # 4. compression and 5. a production build (outside the system)
     plain = [s["breakdown"].get("plain_text", 0) for s in scans]
     script = [s["breakdown"].get("script", 0) for s in scans]
@@ -197,6 +207,19 @@ def apply_limit(st, mb):
     return {"from": cur, "to": mb}
 
 
+def apply_system_cache(st, seconds=None):
+    from apps.core import system
+
+    cur = system.get()
+    secs = max(30, min(3600, int(seconds or SYSCACHE_SECONDS)))
+    clean, errors = system.clean({"system_cache": True, "system_cache_seconds": str(secs)})
+    if errors:
+        raise ValueError(list(errors.values())[0])
+    system.save(clean)
+    _save_applied(st, "system_cache", {"at": timezone.now().isoformat(), "before": {"on": bool(cur["system_cache"]), "seconds": str(cur["system_cache_seconds"])}, "after": secs})
+    return {"on": True, "seconds": secs}
+
+
 def apply_images(st, params, limit=80):
     """Makes the heavy pictures of the library lighter: at most `max_edge` px on the long side and a lighter file. The original is kept (originals/…) so it can be put back."""
     from PIL import Image
@@ -256,6 +279,8 @@ def apply(selection):
         out["fonts"] = apply_fonts(st)
     if selection.get("image_limit"):
         out["image_limit"] = apply_limit(st, (selection["image_limit"] or {}).get("mb") if isinstance(selection["image_limit"], dict) else None)
+    if selection.get("system_cache"):
+        out["system_cache"] = apply_system_cache(st, (selection["system_cache"] or {}).get("seconds") if isinstance(selection["system_cache"], dict) else None)
     if selection.get("images"):
         out["images"] = apply_images(st, selection["images"] if isinstance(selection["images"], dict) else {})
     return out
@@ -278,6 +303,11 @@ def revert(key):
         from apps.core import system
 
         clean, _ = system.clean({"max_image_mb": str(rec["before"])})
+        system.save(clean)
+    elif key == "system_cache":
+        from apps.core import system
+
+        clean, _ = system.clean({"system_cache": bool(rec["before"]["on"]), "system_cache_seconds": str(rec["before"]["seconds"])})
         system.save(clean)
     elif key == "images":
         from apps.medialib.models import MediaItem

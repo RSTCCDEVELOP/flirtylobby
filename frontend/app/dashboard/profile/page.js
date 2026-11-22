@@ -11,6 +11,7 @@ import { tx } from "../../../lib/t";
 import SmallEditor from "../../../components/SmallEditor";
 import Link from "next/link";
 import { useState } from "react";
+import PhoneInput from "../../../components/PhoneInput";
 import VerifyBadge from "../../../components/VerifyBadge";
 import MyPhotos from "../../../components/MyPhotos";
 import PhotoDrop from "../../../components/PhotoDrop";
@@ -122,7 +123,7 @@ export default function Profile() {
 
       <ProfileBlock id="p-contact" icon={<IconPin />} title={tx("Contact & adres")} hint={tx("Telefoon en woonplaats.")}>
         <div className="grid2">
-          <label>{tx("Telefoon")}<input type="tel" value={form.phone} onChange={set("phone")} maxLength={20} placeholder="+31612345678" autoComplete="tel" /></label>
+          <label>{tx("Telefoon")}<PhoneInput value={form.phone || ""} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} /></label>
           <label>{tx("Adres")}<input value={form.address} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} autoComplete="street-address" /></label>
           <label>{tx("Postcode")}<input value={form.postal_code} onChange={set("postal_code")} maxLength={12} autoComplete="postal-code" /></label>
           <label>{tx("Plaats")}<input value={form.city} onChange={set("city")} maxLength={100} autoComplete="address-level2" /></label>

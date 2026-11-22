@@ -959,6 +959,32 @@ def system_settings(request):
                      "request_origin": f"{request.scheme}://{request.get_host()}"})
 
 
+@api_view(["GET", "PUT", "POST"])
+@permission_classes([IsAuthenticated])
+def system_cache(request):
+    """Admin -> Basisgegevens -> Cache. GET: the cache in use + the system cache settings. PUT {backend, redis_url, system_cache, system_cache_seconds}: save (the cache itself takes effect after a restart).
+    POST: clear the system cache now."""
+    from . import syscache
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins mogen de cache instellen."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "POST":
+        syscache.clear()
+    elif request.method == "PUT":
+        part = {k: request.data[k] for k in ("system_cache", "system_cache_seconds") if k in request.data}
+        if part:
+            cleaned, errors = system.clean(part)
+            if errors:
+                return Response({"detail": " ".join(errors.values()), "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+            system.save(cleaned)
+        if "backend" in request.data:
+            _, err = syscache.save_backend({"backend": request.data.get("backend"), "redis_url": request.data.get("redis_url")})
+            if err:
+                return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
+    s = system.get()
+    return Response({**syscache.info(), "system_cache": bool(s["system_cache"]), "system_cache_seconds": str(s["system_cache_seconds"])})
+
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def system_reset(request):
@@ -1235,6 +1261,14 @@ def wizard_view(request):
     if request.method == "GET":
         return Response({"email": pricing.email_config(), "default_email": 0, "hosting": pricing.hosting_options(), "default_hosting": (cfg.get("hosting") or {}).get("default", "shared"), "questions": [{k: q.get(k) for k in ("key", "label", "help", "requires", "type") } for q in cfg["wizard"] if q.get("type") != "choice"], "periods": cfg["periods"], "vat_rate": cfg["vat_rate"], "reseller": pricing.reseller_of({}), "installations": _wizard_installations(), "defaults_available": __import__("apps.core.site_defaults", fromlist=["PATH"]).PATH.is_file(), "settings": {"site_name": system.get().get("site_name", ""), "client": License.objects.filter(pk=1).values_list("client", flat=True).first() or ""}})
     d = request.data if isinstance(request.data, dict) else {}
+    if d.get("apply") or d.get("config"):  # every phone number of the customer and the reseller has a country code
+        from . import phone as _phone
+
+        for who in ("customer", "reseller"):
+            for f in ("phone", "mobile"):
+                bad = _phone.check(((d.get(who) or {}) if isinstance(d.get(who), dict) else {}).get(f))[1]
+                if bad:
+                    return Response({"detail": f"{bad} ({'klant' if who == 'customer' else 'reseller'}: {f})"}, status=status.HTTP_400_BAD_REQUEST)
     plan = pricing.plan({k: (v if k in ("hosting", "email") else bool(v)) for k, v in (d.get("answers") or {}).items()})
     if d.get("config"):  # only the document, to download
         return Response(pricing.build_config(d))

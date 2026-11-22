@@ -13,6 +13,7 @@ import LanguageSwitcher from "../../components/LanguageSwitcher";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import PhoneInput from "../../components/PhoneInput";
 import { Logo } from "../../components/BrandingContext";
 import ThemeToggle from "../../components/ThemeToggle";
 import { api, setToken, errorText } from "../../lib/api";
@@ -216,7 +217,7 @@ export default function Register() {
           <button type="button" className="btn sm" onClick={() => setShowPw(!showPw)} aria-pressed={showPw}>{showPw ? tx("Verberg wachtwoorden") : tx("Toon wachtwoorden")}</button>
           {pwCopied && <span className="badge ok">{tx("Gekopieerd naar het klembord")}</span>}
         </div>
-        {(phoneNeeded || f.phone) && <label>{tx("Telefoon")}<input type="tel" value={f.phone} onChange={set("phone")} required={phoneNeeded} placeholder="+31612345678" autoComplete="tel" />{err("phone")}</label>}
+        {(phoneNeeded || f.phone) && <label>{tx("Telefoon")}<PhoneInput value={f.phone || ""} required={phoneNeeded} onChange={(v) => setF((x) => ({ ...x, phone: v }))} />{err("phone")}</label>}
         {cfg.twofa_methods?.length > 0 && (
           <label>{tx("Verificatiecode ontvangen via")}
             <select value={f.method} onChange={set("method")}>{cfg.twofa_methods.map((m) => <option key={m} value={m}>{m === "sms" ? tx("Sms") : tx("E-mail")}</option>)}</select>

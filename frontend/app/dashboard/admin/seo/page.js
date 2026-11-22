@@ -10,6 +10,7 @@
 import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
 import { useCallback, useEffect, useState } from "react";
+import PhoneInput from "../../../../components/PhoneInput";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import MediaPicker from "../../../../components/MediaPicker";
@@ -263,7 +264,7 @@ export default function Seo() {
           </label>
           <label>{tx("Officiële naam")}<input value={data.schema.legal_name} onChange={(e) => sc("legal_name", e.target.value)} /></label>
           <label>{tx("E-mail")}<input value={data.schema.email} onChange={(e) => sc("email", e.target.value)} /></label>
-          <label>{tx("Telefoon")}<input value={data.schema.phone} placeholder="+31…" onChange={(e) => sc("phone", e.target.value)} /></label>
+          <label>{tx("Telefoon")}<PhoneInput value={data.schema.phone || ""} onChange={(v) => sc("phone", v)} /></label>
         </div>
         <label>{tx("Omschrijving")}<textarea rows={2} value={data.schema.description} onChange={(e) => sc("description", e.target.value)} /></label>
         <label>{tx("Sociale profielen (één URL per regel)")}

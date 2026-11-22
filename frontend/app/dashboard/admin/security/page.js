@@ -230,6 +230,7 @@ export default function Security() {
         <div className="grid2">
           <Num label={tx("Max. foutieve inlogpogingen")} min={1} max={20} value={basic.login_max_attempts} onChange={(v) => set("basic")("login_max_attempts", v)} />
           <Num label={tx("Blokkeertijd na te veel pogingen")} suffix={tx("minuten")} min={1} max={1440} value={basic.lockout_minutes} onChange={(v) => set("basic")("lockout_minutes", v)} />
+          <p className="muted" style={{ gridColumn: "1 / -1", margin: 0, fontSize: ".85rem" }}>{tx("Wordt een account geblokkeerd (te veel foute wachtwoorden of codes), dan krijgt de beheerder altijd een e-mail (het beheer-adres bij Basisgegevens).")}</p>
           <Num label={tx("Sessie verloopt na")} suffix={tx("uren, 0 = nooit")} min={0} max={8760} value={basic.token_lifetime_hours} onChange={(v) => set("basic")("token_lifetime_hours", v)} />
           <Num label={tx("Minimale wachtwoordlengte")} min={6} max={64} value={basic.password_min_length} onChange={(v) => set("basic")("password_min_length", v)} />
         </div>

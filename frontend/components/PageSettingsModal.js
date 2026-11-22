@@ -8,12 +8,13 @@
 "use client";
 
 import { tx } from "../lib/t";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
 import { IconImage, IconSearch, IconSliders, IconUser } from "./Icons";
 import LayoutPresets from "./LayoutPresets";
 import MediaPicker from "./MediaPicker";
 import Tabs from "./Tabs";
+import ThemeFields from "./ThemeFields";
 import PageImportTab from "./PageImportTab";
 import { translateName } from "../lib/translate-name";
 import { alertDialog, confirmDialog } from "../lib/dialog";
@@ -23,9 +24,9 @@ const BG = [["none", "Geen"], ["image", "Afbeelding"], ["video", "Video"]];
 const emptySeo = { title: "", description: "", og_media: null, og_image: null, noindex: false, canonical: "" };
 
 // Pop-up with the basics of one page: name, audience, SEO per language and a background (picture or video) from the media library.
-export default function PageSettingsModal({ ai, page, languages, defaultLang, onClose, onSaved, canSeo, docked = false }) {  // docked: in the panel of the editor, not a window
+export default function PageSettingsModal({ ai, page, languages, defaultLang, onClose, onSaved, canSeo, docked = false, lead = null }) {  // docked: in the panel of the editor, not a window; lead: the layout settings of the page (first tab "Indeling")
   const langs = languages.length ? languages : [{ code: "nl", native_name: "Nederlands" }];
-  const [tab, setTab] = useState("general");
+  const [tab, setTab] = useState(lead ? "layout" : "general");
   const [imp, setImp] = useState(null); // did this page come from Website ontwerpen? (then it has a tab Import)
   useEffect(() => { api(`/siteimport/page/${page.key}/`).then((i) => setImp(i?.imported ? i : null)).catch(() => {}); }, [page.key]);
   const [form, setForm] = useState({ slugs: { ...(page.slugs || {}) }, title: { ...page.title }, audience: page.audience, new_tab: !!page.new_tab, url: page.url || "" });
@@ -116,8 +117,28 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
   const setCur = (patch) => setSeo({ ...seo, [seoLang]: { ...cur, ...patch } });
   const isEmpty = (s) => !s || (!s.title && !s.description && !s.og_media && !s.noindex && !s.canonical);
 
+  // in the panel of the editor: a changed page setting is saved by itself (the background after a moment) and by the Opslaan of the panel, so nothing is lost
+  const dirty = useRef(false);
+  const mounted = useRef(false);
+  const bgKey = JSON.stringify([bg.type, bg.media || null, bg.overlay]);
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return undefined; }
+    if (!docked) return undefined;
+    dirty.current = true;
+    const t = setTimeout(() => { if (!busy) save(); }, 700);
+    return () => clearTimeout(t);
+  }, [bgKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!docked) return undefined;
+    const mark = () => { dirty.current = true; };
+    const flush = () => { if (dirty.current && !busy) save(); };
+    window.addEventListener("pb-flush", flush);
+    return () => window.removeEventListener("pb-flush", flush);
+  }, [docked, busy, form, setup, mo, bg, seo, acc]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (docked && mounted.current) dirty.current = true; }, [form, setup, mo, seo, acc]); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function save(e) {
-    e.preventDefault();
+    e?.preventDefault?.();
     setBusy(true); setError("");
     try {
       const body = { title: form.title, background: bg.type === "none" || !bg.media ? {} : { type: bg.type, media: bg.media, overlay: bg.overlay } };
@@ -136,18 +157,21 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
           await api("/seo/pages/", { method: "PUT", body: { path: page.path, lang: l.code, title: now.title, description: now.description, noindex: now.noindex, canonical: now.canonical, og_media: now.og_media } });
         }
       }
+      dirty.current = false;
+      if (docked) setBusy(false);
       onSaved();
     } catch (err) { setError(errorText(err)); setBusy(false); }
   }
 
-  const tabs = [["general", "Algemeen", <IconSliders key="g" />], ...(imp ? [["import", "Import", <IconSliders key="i" />]] : []), ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
+  const tabs = [...(lead ? [["layout", "Indeling", <IconSliders key="l" />]] : []), ["general", "Algemeen", <IconSliders key="g" />], ...(imp ? [["import", "Import", <IconSliders key="i" />]] : []), ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ["footer", "Footer", <IconSliders key="f" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
   return (
     <div className={docked ? "pgs-dockwrap" : "overlay"} onClick={docked ? undefined : onClose}>
       <form className={docked ? "pgs form docked" : "card modal pgs form"} onClick={(e) => e.stopPropagation()} onSubmit={save}>
         {docked ? <strong>{form.title[defaultLang] || page.key}</strong> : <h2 style={{ margin: 0 }}>{tx("Pagina-instellingen")}: {form.title[defaultLang] || page.key}</h2>}
         <Tabs tabs={tabs} value={tab} onChange={setTab} />
 
-        <div className="pgs-body">
+        {lead && <div hidden={tab !== "layout"}>{lead}</div>}
+        <div className="pgs-body" hidden={tab === "layout"}>
           {tab === "import" && imp && <PageImportTab pageKey={page.key} path={page.key === "home" ? "/" : page.path || `/p/${page.key}`} info={imp} onInfo={setImp} />}
           {tab === "general" && (
             <>
@@ -248,9 +272,17 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
             </>
           )}
 
+          {tab === "footer" && (
+            <>
+              <p className="muted" style={{ margin: 0 }}>{tx("De footer van de hele website (onderaan elke pagina). Wijzigingen zie je meteen. De teksten en het logo bewerk je met de knop Bewerken in de footer zelf.")}</p>
+              <ThemeFields fields={[["footer_width", "Breedte van de footer", "width"], ["page_footer", "Footer tonen op pagina's", "toggle"], ["footer_layout", "Indeling"], ["footer_tone", "Kleur"], ["footer_brand", "Logo en naam"], ["footer_social", "Sociale media"], ["footer_meta", "Bedrijfsgegevens"], ["footer_size", "Ruimte"]]} />
+            </>
+          )}
+
           {tab === "menu" && (
             <>
               <p className="muted" style={{ margin: 0 }}>{tx("Hoe dit item in het menu van de header staat. De vorm van het menu zelf stel je in bij Pagina's → Menu-editor → Instellingen.")}</p>
+              <ThemeFields fields={[["header_width", "Breedte van het menu (de header)", "width"]]} />
               <strong style={{ fontSize: ".85rem" }}>{tx("Zichtbaar op")}</strong>
               <div className="theme-grid">
                 {[["desktop", "Computer"], ["tablet", "Tablet"], ["mobile", "Telefoon"]].map(([k, l]) => (
@@ -356,7 +388,7 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
         </div>
 
         {error && <div className="alert">{error}</div>}
-        <div className="row">{!docked && <button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button>}<button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>
+        <div className="row" hidden={tab === "layout" || tab === "footer"}>{!docked && <button type="button" className="btn" onClick={onClose}>{tx("Annuleren")}</button>}<button className="btn primary" disabled={busy}>{busy ? tx("Bezig…") : tx("Opslaan")}</button></div>
       </form>
       {picker && (
         <div onClick={(e) => e.stopPropagation()}>

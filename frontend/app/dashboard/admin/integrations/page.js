@@ -10,6 +10,7 @@
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
+import PhoneInput from "../../../../components/PhoneInput";
 import { useAuth } from "../../../../components/AuthContext";
 import { lvl } from "../../../../lib/perms";
 import Collapsible from "../../../../components/Collapsible";
@@ -312,7 +313,7 @@ export default function Integrations() {
             <h2>{tx("Sms-test")}: {smsT.i.name}</h2>
             {smsT.step === "phone" && (<>
               <p className="muted" style={{ margin: 0, fontSize: ".9rem" }}>{tx("Er wordt een testcode per sms gestuurd. Vul die daarna in om te controleren dat de koppeling werkt.")}</p>
-              <label>{tx("Mobiel nummer")}<input type="tel" inputMode="tel" autoComplete="tel" placeholder="+31612345678" required autoFocus={!smsT.own} value={smsT.phone} onChange={(e) => setSmsT({ ...smsT, phone: e.target.value, own: false })} /></label>
+              <label>{tx("Mobiel nummer")}<PhoneInput value={smsT.phone || ""} onChange={(v) => setSmsT((x) => ({ ...x, phone: v, own: false }))} /></label>
               <span className="muted" style={{ fontSize: ".85rem" }}>{smsT.own ? tx("Dit is het nummer van je eigen profiel. Pas het aan om een ander nummer te testen.") : user?.phone ? tx("Je kunt ook het nummer van je profiel gebruiken: {0}", user.phone) : tx("Je hebt geen mobiel nummer in je profiel: vul hier het nummer in waarmee je wilt testen.")}</span>
             </>)}
             {smsT.step === "code" && (<>

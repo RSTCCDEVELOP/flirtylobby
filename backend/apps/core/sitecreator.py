@@ -51,7 +51,7 @@ FILES
 - One html file per page (the start page is index.html), ONE shared style.css, and optional illustrations as svg files in img/ (img/hero.svg). No other file types, no JavaScript, no external fonts/scripts/frameworks, no data: urls, no photos or hotlinks.
 - File rules of the importer (they are checked, anything else is skipped): at most @MAX_PAGES@ html pages and at most @MAX_IMAGES@ pictures in total, each picture at most @MAX_IMAGE_MB@ MB; file names only a-z, 0-9, - and _ (at most @NAME_MAX@ characters before the extension); everything in the root of the ZIP plus the folder img/ (no other folders, so never en/index.html).
 - Every html file is a complete document (<!doctype html>, <html lang>, <meta charset>, <meta name=viewport>, <title>, <meta name=description>, <link rel="stylesheet" href="style.css">). Links between pages are relative (about.html); "#id" for places on the same page.
-- HEADER WIDTH: by default the header is exactly as wide as the content (the maximum width of the pages: the same width as the content and the footer; it is not full screen). A header that is wider than the content is made ONLY when the customer asks for it (brief header_wide, theme value header_width = full).
+- HEADER WIDTH: by default the header is exactly as wide as the content (the maximum width of the pages: the same width as the content and the footer; it is not full screen). A header that is wider than the content is made ONLY when the customer asks for it (brief header_wide / footer_wide, theme value header_width = full). The FOOTER follows the same rule: as wide as the content (the maximum width) unless the customer asks for a footer over the whole screen (theme value footer_width = full, 100% of the screen); in the editor both are chosen per website in the page panel (tabs Menu and Footer).
 - ONE PHOTO, ONE PLACE: when the website has several photos, a photo is NEVER used twice (not in the hero and again lower down, not on two pages, not twice in a row of cards): every picture place gets a different photo that fits it, and the photos that are left go into a slider or gallery. Only a logo may come back. Two large pictures directly under each other are never placed either.
 - Pictures: svg illustrations in img/ (simple, single or two-colour flat shapes in the palette of the site) or inline <svg>, with <img src="img/x.svg" alt="..." width height>. Photos are added later by the user, so where a photo belongs make a tasteful svg illustration or a gradient shape instead.
 
@@ -494,6 +494,8 @@ def clean_brief(patch, old):
         b["locked"] = [k for k in (p["locked"] if isinstance(p["locked"], list) else []) if k in ("name", "kind", "pages", "style", "style_tags", "layouts", "max_width", "lang", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search")][:20]
     if "header_wide" in p:  # a header that is wider than the content: only when the customer asks for it
         b["header_wide"] = bool(p["header_wide"]) and p["header_wide"] not in ("false", "0", "no", "nee")
+    if "footer_wide" in p:  # the same for the footer (over the whole screen: only when the customer asks for it)
+        b["footer_wide"] = bool(p["footer_wide"]) and p["footer_wide"] not in ("false", "0", "no", "nee")
     if "max_width" in p:
         try:
             b["max_width"] = int(p["max_width"]) if int(p["max_width"]) in MAX_WIDTHS else 1100
@@ -1007,6 +1009,7 @@ def theme_values(b):
         "default_mode": {"light": "light", "dark": "dark", "both": "system"}.get(b.get("color_mode") or "light", "light"),
         "content_w": max_width_of(b) or 1600,  # the width of the content of the pages of the website (0 = the whole screen: the widest the theme allows)
         "header_width": "full" if b.get("header_wide") else "content",  # the header is as wide as the content unless the customer asked for more
+        "footer_width": "full" if b.get("footer_wide") else "content",  # the same for the footer
     }
     clean, _errors = T.validate(TI._complete(v))
     return clean
@@ -1084,7 +1087,7 @@ GALLERY_CSS = """.e2e-gallery { display: flex; gap: 12px; overflow-x: auto; scro
 def layout_css(b):
     w = max_width_of(b)
     mw = f"{w}px" if w else "none"
-    return LAYOUT_CSS.replace("__MAXW__", mw) + f"body {{ background: var(--page, var(--bg)); }}  /* the page colour: the whole page, 100% wide */\nbody > main {{ max-width: {mw}; margin-left: auto; margin-right: auto; background: var(--bg); }}  /* the frontend: the column up to the maximum width, with its own colour: the elements, blocks and heroes stand in it. The header has the same width as the column (and the footer too), unless the customer asked for a wider header (brief header_wide) */\n" + ("" if (b or {}).get("header_wide") else f"body > header {{ max-width: {mw}; margin-left: auto; margin-right: auto; box-sizing: border-box; }}\n") + f"body > footer {{ max-width: {mw}; margin-left: auto; margin-right: auto; box-sizing: border-box; }}\n" + f".container, .band .container {{ max-width: {mw}; margin: 0 auto; padding: 0 1.25rem; box-sizing: border-box; width: 100%; }}\n" + GALLERY_CSS
+    return LAYOUT_CSS.replace("__MAXW__", mw) + f"body {{ background: var(--page, var(--bg)); }}  /* the page colour: the whole page, 100% wide */\nbody > main {{ max-width: {mw}; margin-left: auto; margin-right: auto; background: var(--bg); }}  /* the frontend: the column up to the maximum width, with its own colour: the elements, blocks and heroes stand in it. The header has the same width as the column (and the footer too), unless the customer asked for a wider header / footer (brief header_wide, footer_wide) */\n" + ("" if (b or {}).get("header_wide") else f"body > header {{ max-width: {mw}; margin-left: auto; margin-right: auto; box-sizing: border-box; }}\n") + ("" if (b or {}).get("footer_wide") else f"body > footer {{ max-width: {mw}; margin-left: auto; margin-right: auto; box-sizing: border-box; }}\n") + f".container, .band .container {{ max-width: {mw}; margin: 0 auto; padding: 0 1.25rem; box-sizing: border-box; width: 100%; }}\n" + GALLERY_CSS
 
 
 def themed(files, b):
@@ -3385,7 +3388,7 @@ def _chat(pk, text, has, shots=None):
             if raw_pages and isinstance(br, dict):
                 br = {**br, "one_pager_pages": raw_pages}
         if d.get("ready") and str(br.get("name") or "").strip():
-            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width", "header_wide", "contact", "extras", "one_pager_pages", "unanswered", "no_cta") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
+            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width", "header_wide", "footer_wide", "contact", "extras", "one_pager_pages", "unanswered", "no_cta") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
             patch["chat"] = True
             _set(pk, brief=clean_brief(patch, job.brief), name=str(((job.brief or {}).get("name") if "name" in ((job.brief or {}).get("locked") or []) else "") or br["name"]).strip()[:120], messages=msgs, progress=6, step="De website ontwerpen")
             if patch.get("istock_search"):
@@ -3542,7 +3545,7 @@ def _revise_sections(pk, job, instruction, page, shots):
     plan_prompt = (f"{focus}{look}Here are the pages of the website as a list of parts (index. component - first heading):\n{outline}\n\nThe user asks: {instruction}\n\n"
                    "Decide what has to change and answer with ONE JSON object: "
                    '{"reply": "one or two friendly sentences for the user about what you will do", "changes": [{"op": "edit", "file": "index.html", "index": 2, "goal": "what the part must become"}, {"op": "add", "file": "index.html", "after": 1, "tag": "ui-cta", "goal": "what the new part says"}, {"op": "delete", "file": "index.html", "index": 3}, {"op": "menu", "goal": "..."}, {"op": "footer", "goal": "..."}, '
-                   '{"op": "theme", "colors": {"primary": "#rrggbb", "secondary": "#rrggbb", "bg": "#rrggbb", "card": "#rrggbb", "text": "#rrggbb"}, "font": "sans|serif|round", "radius": 14, "header_wide": true|false (true only when the user asks for a header that is wider than the content), "max_width": 960|1100|1280|1440|0}]}\n'
+                   '{"op": "theme", "colors": {"primary": "#rrggbb", "secondary": "#rrggbb", "bg": "#rrggbb", "card": "#rrggbb", "text": "#rrggbb"}, "font": "sans|serif|round", "radius": 14, "header_wide": true|false (true only when the user asks for a header that is wider than the content), "footer_wide": true|false (the same for the footer: true only when the user asks for a footer over the whole screen), "max_width": 960|1100|1280|1440|0}]}\n'
                    + (f"SYSTEM OBJECTS (live parts of easy2edit): {{\"op\": \"add\", \"file\": \"index.html\", \"after\": 1, \"sysobject\": \"slug\", \"title\": \"heading above it (optional)\"}} places one, and {{\"op\": \"edit\", \"file\": \"index.html\", \"index\": 4, \"sysobject\": \"slug\"}} replaces a part by one.\n{obj_list}\n"
                       "An image slider, carousel, slideshow, coverflow, photo gallery or a row of pictures that the user asks for is ALWAYS one of these media objects (never ui-gallery): choose the style that fits what he says. Use only the slugs above.\n" if obj_list else "")
                    + "Rules: change as little as possible, at most 14 changes; a change of colours, font or corners is ONE theme change (no part is redone for it); a change of the menu or footer is one menu/footer change (it goes to every page). Use only tags of the component set for add.")
@@ -3563,7 +3566,7 @@ def _revise_sections(pk, job, instruction, page, shots):
         _set(pk, progress=min(95, 8 + int(85 * n / total)), step=f"Onderdeel {n} van {total} aanpassen")
         f = str(c.get("file") or "")
         if op == "theme":
-            patch = {k: c.get(k) for k in ("colors", "font", "radius", "header_wide", "max_width") if c.get(k) not in (None, "", {})}
+            patch = {k: c.get(k) for k in ("colors", "font", "radius", "header_wide", "footer_wide", "max_width") if c.get(k) not in (None, "", {})}
             if patch:
                 b = clean_brief(patch, b)
                 files = themed(files, b)

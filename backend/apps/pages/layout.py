@@ -15,6 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from apps.accounts.permissions import has_level
+from apps.core import richtext
 from apps.core.modules import module_required
 
 from .models import PageLayout
@@ -278,6 +279,7 @@ def _widget(raw):
         data["html"], data["css"] = s("html", 60000), s("css", 30000)
         if d.get("kit"):  # a component of the easy2edit UI-kit: drawn with the kit and the colours of the theme (easy2edit_tag = which component)
             data["kit"] = True
+            data["html"] = richtext.clean_kit(data["html"])  # drawn straight into the page (not in a frame): cleaned here as well as in the browser
             tag = str(d.get("tag") or "").strip()[:60]
             if re.fullmatch(r"[a-z0-9][a-z0-9_-]*", tag):
                 data["tag"] = tag

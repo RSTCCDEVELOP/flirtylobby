@@ -569,7 +569,13 @@ RESELLER_KEYS = CUSTOMER_KEYS[:2] + ("last_name", "email", "phone", "mobile", "s
 
 def reseller_of(d):
     """The reseller (seller) of the installation: what the wizard sends, completed with the defaults (Studio2) from pricing.json."""
-    base = load().get("reseller") or {}
+    base = dict(load().get("reseller") or {})
+    from . import global_settings, resellers
+
+    g = global_settings.reseller()  # the standard reseller of Standaard en globale instellingen wins over pricing.json
+    first, last = resellers.split_name(g["contact"])
+    base.update({k: v for k, v in {"company": g["company"], "first_name": first, "last_name": last, "email": g["email"], "phone": g["phone"], "mobile": g["mobile"], "street": " ".join(x for x in (g["street"], g["house_number"]) if x),
+                                   "postal_code": g["postal_code"], "city": g["city"], "country": g["country"], "website": g["website"]}.items() if v})
     sent = d.get("reseller") if isinstance(d.get("reseller"), dict) else {}
     out = {k: str(sent.get(k, base.get(k, "")) or "").strip()[:200] for k in RESELLER_KEYS}
     out["contact"] = " ".join(x for x in (out["first_name"], out["last_name"]) if x)

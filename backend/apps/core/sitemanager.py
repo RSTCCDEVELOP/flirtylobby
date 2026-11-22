@@ -134,11 +134,20 @@ def licence_and_installation():
     return {"license": {"state": state, "until": lic["valid_until"] or ""}, "installation": {"state": "installed" if installed else "empty", "name": str(s["installation_name"] or active or "")[:100]}}
 
 
+def _kept_tabs():
+    try:
+        from . import site_defaults
+
+        return site_defaults.kept_tabs()
+    except Exception:  # noqa: BLE001
+        return set()
+
+
 def payload(event, role=""):
     s = system.get()
     url = system.origin(s["frontend_url"]) or live_url()
     name = str(s["site_name"] or "").strip() or url or system.site_name()  # a website that has no name yet (not set up) is shown by its address
-    return {"instance_id": instance_id(), "name": name, "url": url, "api_url": system.origin(s["backend_url"]), "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else "", **licence_and_installation()}
+    return {"instance_id": instance_id(), "name": name, "url": url, "api_url": system.origin(s["backend_url"]), "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else "", **licence_and_installation(), "defaults": {"keep": sorted(_kept_tabs())}}
 
 
 # ── the server side: the list of websites ───────────────────────────────────
@@ -192,6 +201,9 @@ def _fill(site, data, seen_ip):
         site.license_state, site.license_until = lic["state"], str(lic.get("until") or "")[:10]
     if isinstance(ins, dict) and ins.get("state") in ("installed", "empty"):
         site.install_state, site.install_name = ins["state"], str(ins.get("name") or "")[:100]
+    df = data.get("defaults")
+    if isinstance(df, dict) and isinstance(df.get("keep"), list):  # the tabs of the standard settings that this website does not want overwritten
+        site.defaults_state = {**(site.defaults_state or {}), "keep": [str(t)[:20] for t in df["keep"]][:10], "reported_at": timezone.now().isoformat(timespec="seconds")}
     site.last_seen = timezone.now()
 
 
@@ -213,6 +225,10 @@ def register(data, seen_ip):
     site.status = "active" if _state().get("auto_approve") else "pending"  # a new website waits for approval (unless that is switched on): registering is open to the world
     _fill(site, data, seen_ip)
     callback = _new_callback(site)
+    if not site.reseller_id:  # a new website is sold by the standard reseller (Standaard en globale instellingen), until the server says otherwise
+        from . import resellers
+
+        site.reseller = resellers.default_reseller()
     site.save()
     logger.info("Site manager: new website %s (%s)", site.name, site.url)
     return site, key, callback

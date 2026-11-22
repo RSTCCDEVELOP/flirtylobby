@@ -88,6 +88,7 @@ def login(request):
             throttle.locked_until = timezone.now() + timedelta(minutes=cfg["lockout_minutes"])
             throttle.failures = 0
             logger.warning("Login locked for %s", email)
+            __import__("apps.security.lockout", fromlist=["notify"]).notify(email, client_ip(request), "password", cfg["lockout_minutes"])  # the administrator always gets a mail
         throttle.save()
         logger.warning("Failed login for %s", email)
         __import__("apps.plugins.facade", fromlist=["stats"]).stats.record("users", "login_failed")

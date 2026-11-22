@@ -7,7 +7,8 @@
    "slug": "postmark",
    "provider": "postmark",
    "name": "Postmark Easy2edit",
-   "superadmin_only": true
+   "superadmin_only": true,
+   "always_on": true
   },
   {
    "slug": "s3",
@@ -19,24 +20,39 @@
    "slug": "donatie",
    "provider": "stripe",
    "name": "Stripe Donatie Easy2edit",
-   "superadmin_only": true
+   "superadmin_only": true,
+   "always_on": true
   },
   {
    "slug": "anthropic",
    "provider": "anthropic",
    "name": "Claude Easy2edit",
-   "superadmin_only": true
+   "superadmin_only": true,
+   "always_on": true
   },
   {
    "slug": "elevenlabs-easy2edit",
    "provider": "elevenlabs",
    "name": "ElevenLabs Easy2edit",
-   "superadmin_only": false
+   "superadmin_only": true
   },
   {
    "slug": "unsplash",
    "provider": "unsplash",
    "name": "Unsplash",
+   "superadmin_only": true
+  },
+  {
+   "slug": "spryng",
+   "provider": "spryng",
+   "name": "Spryng (sms)",
+   "superadmin_only": true,
+   "always_on": true
+  },
+  {
+   "slug": "seven",
+   "provider": "seven",
+   "name": "seven.io (sms)",
    "superadmin_only": true
   }
  ]

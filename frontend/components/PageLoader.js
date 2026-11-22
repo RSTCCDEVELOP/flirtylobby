@@ -44,6 +44,24 @@ export function LoaderArt({ kind = "ring", size = 56, image = "", anim = "pulse"
   return <span className="ld ld-ring" style={st}><i /></span>;
 }
 
+
+// The loader in two separate layers: the colour (backdrop) over the whole screen, and on top of it, in its own div, the animation: always on top and exactly in the middle of the screen
+// (fixed to the screen, so nothing of the page, the percentage or the fade of the backdrop moves it).
+function LoaderLayers({ look, percent, onClick, test = false }) {
+  const style = look.loader_style || "ring";
+  return (
+    <div className="page-loader-root" role="status" aria-live="polite" aria-label="Laden" onClick={onClick} style={test ? { cursor: "pointer" } : undefined}>
+      <div className={`page-loader bd-${look.loader_backdrop || "page"}`} style={{ "--ldo": look.loader_opacity ?? 100 }} aria-hidden="true" />
+      <div className="page-loader-art">
+        <div className="ld-stack">
+          <LoaderArt kind={style} size={style === "image" ? Number(look.loader_image_size) || 80 : Number(look.loader_size) || 56} image={look.loader_image_url} anim={look.loader_image_anim} look={look} />
+          {percent && <Percent />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // The loader over the page: at the first load, or also between pages. Server-rendered, so it is there before the page is.
 export default function PageLoader() {
   const ui = useUi() || {};
@@ -87,11 +105,7 @@ export default function PageLoader() {
   }, [on, always]);
   useEffect(() => { if (on && always && loaded.current) hideSoon(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!on || !show) return null;
-  return (
-    <div className={`page-loader bd-${ui.loader_backdrop || "page"}`} style={{ "--ldo": ui.loader_opacity ?? 100 }} role="status" aria-live="polite" aria-label="Laden">
-      <div className="ld-stack"><LoaderArt kind={ui.loader_style || "ring"} size={ui.loader_style === "image" ? Number(ui.loader_image_size) || 80 : Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div>
-    </div>
-  );
+  return <LoaderLayers look={ui} percent={ui.loader_percent === "yes"} />;
 }
 
 // Lazy load: pictures below the first screen are loaded when they are needed (the page opens faster)
@@ -115,11 +129,7 @@ export function LoaderTest({ values, onClose, ms = 3000 }) {
   const [on, setOn] = useState(true);
   useEffect(() => { const t = setTimeout(() => { setOn(false); onClose?.(); }, ms); return () => clearTimeout(t); }, [onClose, ms]);
   if (!on) return null;
-  return (
-    <div className={`page-loader bd-${values.loader_backdrop || "page"}`} style={{ cursor: "pointer", "--ldo": values.loader_opacity ?? 100 }} onClick={() => { setOn(false); onClose?.(); }} role="status">
-      <div className="ld-stack"><LoaderArt kind={values.loader_style || "ring"} size={values.loader_style === "image" ? Number(values.loader_image_size) || 80 : Number(values.loader_size) || 56} image={values.loader_image_url} anim={values.loader_image_anim} look={values} />{values.loader_percent === "yes" && <Percent />}</div>
-    </div>
-  );
+  return <LoaderLayers look={values} percent={values.loader_percent === "yes"} test onClick={() => { setOn(false); onClose?.(); }} />;
 }
 
 // Effects while scrolling: parts of the page appear when they come into view, backgrounds move slower, a progress bar and a button to go back up

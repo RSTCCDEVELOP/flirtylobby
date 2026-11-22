@@ -37,6 +37,8 @@ DEFAULTS = {
 
     "idle_minutes": "5",  # how long someone may stay logged in without doing anything: minutes; 0 = never logged out for being idle
     "idle_action": "ask",  # at the end of that time: "ask" (the person is asked first: a countdown with "Ingelogd blijven") or "logout" (logged out at once)
+    "system_cache": True,  # the system cache (Admin -> Basisgegevens -> Cache): the settings and the public answers that every visitor asks are kept for a moment, so the site is faster and uses less energy
+    "system_cache_seconds": "60",  # how long (seconds); a change by an administrator clears the cache at once
     "footer_text": "",
     "footer_columns": [],  # link columns in the footer: [{title, links: [{label, url}]}] (a design brings its own)
     "footer_logo_height": "0",  # height of the logo in the footer in px (0 = the standard, 36)
@@ -49,7 +51,7 @@ SETUP_FIELDS = ("site_name", "company_name", "frontend_url", "street", "house_nu
 PHONE_FIELDS = ("phone", "mobile")
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
-INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200), "idle_minutes": (0, 1440)}
+INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200), "idle_minutes": (0, 1440), "system_cache_seconds": (5, 3600)}
 ENVIRONMENTS = ["production", "staging", "development"]
 CURRENCIES = ["EUR", "USD", "GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "BGN", "TRY", "CAD", "AUD", "NZD", "JPY", "CNY", "INR", "BRL", "MXN", "ZAR", "AED", "SAR", "ILS", "SGD", "HKD", "KRW", "THB", "IDR"]
 URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
@@ -74,7 +76,46 @@ def setup_missing():
     return [k for k in SETUP_FIELDS if not str(s.get(k) or "").strip()]
 
 
+SETTINGS_CACHE_KEY = "sys:settings"
+
+
 def get():
+    """The system settings. With the system cache on they are kept in the shared cache for `system_cache_seconds` (save() and every change of the record clear them at once)."""
+    from django.core.cache import cache
+
+    try:
+        hit = cache.get(SETTINGS_CACHE_KEY)
+    except Exception:  # noqa: BLE001 - a cache that is down must never take the website down
+        hit = None
+    if hit is not None:
+        return hit
+    d = _read()
+    if d["system_cache"]:
+        try:
+            cache.set(SETTINGS_CACHE_KEY, d, cache_seconds(d))
+        except Exception:  # noqa: BLE001
+            pass
+    return d
+
+
+def cache_seconds(d):
+    try:
+        return max(5, min(3600, int(d.get("system_cache_seconds"))))
+    except (TypeError, ValueError):
+        return 60
+
+
+def forget_cache():
+    """The settings changed: the kept copy goes (every worker sees this, the cache is shared)."""
+    from django.core.cache import cache
+
+    try:
+        cache.delete(SETTINGS_CACHE_KEY)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _read():
     stored = SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
     d = {**DEFAULTS, **{k: v for k, v in stored.items() if k in DEFAULTS}}
     if d["address"] and not any(d[k] for k in ADDRESS_PARTS):  # an address that was typed as one text: split it (once it is saved again, it is saved in parts)
@@ -128,6 +169,12 @@ def clean(incoming):
             if v and not URL_RE.match(v):
                 errors[k] = "Gebruik een adres als www.voorbeeld.nl (zonder pad of slash erachter)."
             out[k] = v
+        elif k in PHONE_FIELDS:  # always with a country code (+31 ...): see phone.py
+            from . import phone
+
+            out[k], bad = phone.check(v)
+            if bad:
+                errors[k] = bad
         elif k in ("contact_email", "support_email", "admin_email"):
             v = str(v or "").strip()
             if v and not EMAIL_RE.match(v):
@@ -143,7 +190,7 @@ def clean(incoming):
             if bad:
                 errors[k] = f"Ongeldige domeinnaam: {bad[0]} (bv. voorbeeld.nl, zonder https://)."
             out[k] = list(dict.fromkeys(items))[:20]
-        elif k in ("redirect_aliases", "maintenance", "show_credit"):
+        elif k in ("redirect_aliases", "maintenance", "show_credit", "system_cache"):
             out[k] = bool(v)
         elif k == "currency":
             c = str(v or "").strip().upper()
@@ -205,6 +252,7 @@ def save(cleaned):
     old = get()
     obj.data = {**(obj.data or {}), **cleaned}
     obj.save()
+    forget_cache()
     if "frontend_url" in cleaned:  # the main address is also on the licence (Super admin -> Licentie): it follows, unless the licence has an address of its own
         try:
             from .models import License

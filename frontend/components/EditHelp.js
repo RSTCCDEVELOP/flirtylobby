@@ -12,6 +12,7 @@ import { api } from "../lib/api";
 import I18N from "../lib/help-i18n.json";
 import { getLanguage, tx } from "../lib/t";
 import { useSession } from "./Session";
+import TbSlot from "./TbSlot";
 
 // Help mode in edit mode: a "?" at the top right. When it is on, the page is dimmed and every control that is pointed at tells what it does.
 const HELP = [
@@ -86,12 +87,20 @@ export const HELP_ENTRIES = HELP.map(([key, sel, text]) => ({ key, sel, text }))
 export default function EditHelp() {
   const { editing } = useSession();
   const [on, setOn] = useState(false);
+  const [hint, setHint] = useState(false);
+  const [noHint, setNoHint] = useState(() => { try { return localStorage.getItem("e2e_help_esc_off") === "1"; } catch { return false; } }); // "do not show this notice again" // the first 10 seconds: a clear notice in the middle of the screen that ESC stops the help
   const [tip, setTip] = useState(null); // the text of the control that is pointed at
   const tipEl = useRef(null);
   const custom = useRef({}); // texts that an administrator changed: {key: {lang: text}}
   const pos = useRef({ x: 0, y: 0 });
   const place = () => { const el = tipEl.current; if (!el) return; const x = Math.min(pos.current.x + 16, window.innerWidth - el.offsetWidth - 12), y = Math.min(pos.current.y + 18, window.innerHeight - el.offsetHeight - 12); el.style.transform = `translate(${Math.max(8, x)}px, ${Math.max(8, y)}px)`; };
   useEffect(() => { if (!editing) setOn(false); }, [editing]);
+  useEffect(() => {  // help on: for 10 seconds the overlay says that ESC (or the button) stops it
+    if (!on || noHint) { setHint(false); return undefined; }
+    setHint(true);
+    const t = setTimeout(() => setHint(false), 10000);
+    return () => clearTimeout(t);
+  }, [on, noHint]);
   useEffect(() => { if (on) api("/help/tips/").then((d) => { custom.current = d || {}; }).catch(() => {}); }, [on]);
   useEffect(() => {
     if (!on) { setTip(null); document.querySelectorAll(".help-target").forEach((e) => e.classList.remove("help-target")); return undefined; }
@@ -109,17 +118,34 @@ export default function EditHelp() {
       setTip(hit ? (custom.current[hit[0]]?.[getLanguage()] || custom.current[hit[0]]?.nl || I18N[hit[0]]?.[getLanguage()] || tx(hit[2])) : null);
     };
     const key = (e) => { if (e.key === "Escape") setOn(false); };
+    const click = (e) => {  // a click on a part only explains it (nothing happens); the help button itself and the notice stay as they are
+      if (e.target.closest?.(".edit-help-btn, .edit-help-esc")) return;
+      const t = e.target.closest?.(SELECTOR);
+      if (!t) return;
+      e.preventDefault(); e.stopPropagation();
+      over(e);
+    };
+    document.addEventListener("click", click, true);
     document.addEventListener("mousemove", over);
     document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("mousemove", over); document.removeEventListener("keydown", key); last?.classList.remove("help-target"); };
+    return () => { document.removeEventListener("mousemove", over); document.removeEventListener("click", click, true); document.removeEventListener("keydown", key); last?.classList.remove("help-target"); };
   }, [on]);
   if (!editing) return null;
   return (
     <>
-      <button type="button" className={`edit-help-btn${on ? " on" : ""}`} onClick={() => setOn(!on)} aria-pressed={on} title={on ? (I18N._on?.[getLanguage()] || tx("Help uit")) : (I18N._off?.[getLanguage()] || tx("Help aan: wijs een icoon aan voor uitleg"))} aria-label={tx("Help")}>
+      <TbSlot><button type="button" className={`edit-help-btn${on ? " on" : ""}`} onClick={() => setOn(!on)} aria-pressed={on} title={on ? (I18N._on?.[getLanguage()] || tx("Help uit")) : (I18N._off?.[getLanguage()] || tx("Help aan: wijs een icoon aan voor uitleg"))} aria-label={tx("Help")}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></svg>
-      </button>
+      </button></TbSlot>
       {on && <div className="edit-help-dim" aria-hidden="true"><span>{I18N._dim?.[getLanguage()] || tx("Help: wijs een icoon of onderdeel aan voor uitleg. Druk op Esc of op ? om te sluiten.")}</span></div>}
+      {on && hint && (
+        <div className="edit-help-esc" role="status" aria-live="polite">
+          <kbd>ESC</kbd>
+          <span>{I18N._esc?.[getLanguage()] || tx("Druk op ESC om de help te stoppen")}</span>
+          <small>{I18N._esc2?.[getLanguage()] || tx("Wijs een knop of onderdeel aan, of klik erop: je ziet wat het doet zonder dat er iets verandert.")}</small>
+          <label className="edit-help-esc-no"><input type="checkbox" onChange={(e) => { if (!e.target.checked) return; try { localStorage.setItem("e2e_help_esc_off", "1"); } catch {} setNoHint(true); }} />{I18N._escno?.[getLanguage()] || tx("Deze melding niet meer tonen")}</label>
+          <i className="edit-help-esc-bar" aria-hidden="true" />
+        </div>
+      )}
       {on && tip && <div className="edit-help-tip" role="tooltip" ref={(el) => { tipEl.current = el; if (el) requestAnimationFrame(place); }}>{tip}</div>}
     </>
   );

@@ -7,6 +7,7 @@
 
 """The API of the site manager: the calls of the websites (register, ping) and the list for a superadmin+ (see sitemanager.py)."""
 from django.http import Http404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -549,3 +550,41 @@ def reseller_accounts(request):
     if not site or site.status != "active":
         return Response({"detail": "Onbekende of niet goedgekeurde website."}, status=status.HTTP_403_FORBIDDEN)
     return Response(resellers.accounts_for(site))
+
+
+def _defaults_row(s):
+    st = s.defaults_state or {}
+    return {"id": s.pk, "name": s.name, "url": s.url, "status": s.status, "version": s.version, "build": s.build, "own": s.instance_id == sitemanager.instance_id(), "keep": st.get("keep") or [], "reported_at": st.get("reported_at", ""),
+            "pushed_at": st.get("pushed_at", ""), "forced": bool(st.get("forced")), "applied": st.get("applied") or [], "kept": st.get("kept") or [], "error": st.get("error", ""), "has_callback": bool(s.callback_key_enc) or s.instance_id == sitemanager.instance_id()}
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def defaults_sites(request):
+    """Superadmin+, on the easy2edit server: the websites and the state of their standard settings (the tabs of Standaard en globale instellingen), loaded from the server.
+    GET: the list. POST {site_ids: [..] | "all", tabs: [..], force: bool}: put the standard settings on those websites now. A tab that a website marks "do not overwrite" stays, unless `force`."""
+    from . import site_defaults
+
+    if (deny := _plus_only(request)):
+        return deny
+    if not sitemanager.server_enabled():
+        return Response({"server": False, "tabs": list(site_defaults.TABS), "sites": []})
+    results = []
+    if request.method == "POST":
+        ids, force = request.data.get("site_ids"), bool(request.data.get("force"))
+        tabs = [t for t in (request.data.get("tabs") or []) if t in site_defaults.TABS]
+        qs = EasySite.objects.filter(status="active") if ids == "all" else EasySite.objects.filter(status="active", pk__in=[int(i) for i in (ids or []) if str(i).isdigit()])
+        data = site_defaults.shipped()
+        for s in qs:
+            row = {"id": s.pk, "name": s.name}
+            try:
+                r = sitemanager.site_action(s, {"action": "defaults_push", "force": force, "tabs": tabs, "data": data})
+                row.update(ok=True, applied=r.get("applied") or [], kept=r.get("kept") or [], errors=r.get("errors") or [])
+                s.defaults_state = {**(s.defaults_state or {}), "pushed_at": timezone.now().isoformat(timespec="seconds"), "forced": force, "applied": row["applied"], "kept": row["kept"], "error": " ".join(row["errors"])}
+            except (sitemanager.RemoteError, ValueError) as e:
+                row.update(ok=False, errors=[str(e)])
+                s.defaults_state = {**(s.defaults_state or {}), "pushed_at": timezone.now().isoformat(timespec="seconds"), "forced": force, "applied": [], "kept": [], "error": str(e)[:300]}
+            s.save(update_fields=["defaults_state"])
+            results.append(row)
+    info = site_defaults.info()
+    return Response({"server": True, "tabs": list(site_defaults.TABS), "captured_at": info.get("captured_at"), "sites": [_defaults_row(s) for s in EasySite.objects.all()], "results": results})

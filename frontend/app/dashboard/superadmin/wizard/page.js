@@ -8,6 +8,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import PhoneInput from "../../../../components/PhoneInput";
 import { api, errorText, apiBase, getToken } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
 import { PresetIcon } from "../../../../components/Icons";
@@ -21,7 +22,7 @@ export default function Wizard() {
   const [conf, setConf] = useState(null);
   const [step, setStep] = useState(0);
   const [cu, setCu] = useState({ company: "", first_name: "", last_name: "", email: "", phone: "", mobile: "", street: "", postal_code: "", city: "", country: "Nederland", kvk: "", vat_id: "" });
-  const [rs, setRs] = useState({ company: "Studio2", first_name: "Ronald", last_name: "Stolk", email: "info@studio2.nl", phone: "085 201 77 85", mobile: "", street: "Ambachtsweg 46", postal_code: "3542 DH", city: "Utrecht", country: "Nederland", website: "https://www.studio2.nl" });
+  const [rs, setRs] = useState({ company: "Studio2", first_name: "Ronald", last_name: "Stolk", email: "info@studio2.nl", phone: "+31 85 201 77 85", mobile: "", street: "Ambachtsweg 46", postal_code: "3542 DH", city: "Utrecht", country: "Nederland", website: "https://www.studio2.nl" });
   const setR = (k) => (e) => setRs({ ...rs, [k]: e.target.value });
   const [tab0, setTab0] = useState("customer");
   const setC = (k) => (e) => setCu({ ...cu, [k]: e.target.value });
@@ -96,8 +97,8 @@ export default function Wizard() {
             <label>{tx("Plaats")}<input value={cu.city} onChange={setC("city")} autoComplete="address-level2" /></label>
             <label>{tx("Land")}<input value={cu.country} onChange={setC("country")} autoComplete="country-name" /></label>
             <label>{tx("E-mailadres")}<input type="email" value={cu.email} onChange={setC("email")} maxLength={200} autoComplete="email" /></label>
-            <label>{tx("Telefoonnummer")}<input type="tel" value={cu.phone} onChange={setC("phone")} autoComplete="tel" /></label>
-            <label>{tx("Mobiel")}<input type="tel" value={cu.mobile} onChange={setC("mobile")} autoComplete="tel" /></label>
+            <label>{tx("Telefoonnummer")}<PhoneInput value={cu.phone || ""} onChange={(v) => setCu((x) => ({ ...x, phone: v }))} /></label>
+            <label>{tx("Mobiel")}<PhoneInput value={cu.mobile || ""} onChange={(v) => setCu((x) => ({ ...x, mobile: v }))} /></label>
           </div>
           ) : (
           <div className="pe-cols">
@@ -109,8 +110,8 @@ export default function Wizard() {
             <label>{tx("Plaats")}<input value={rs.city} onChange={setR("city")} autoComplete="address-level2" /></label>
             <label>{tx("Land")}<input value={rs.country} onChange={setR("country")} autoComplete="country-name" /></label>
             <label>{tx("E-mailadres")}<input type="email" value={rs.email} onChange={setR("email")} maxLength={200} autoComplete="email" /></label>
-            <label>{tx("Telefoonnummer")}<input type="tel" value={rs.phone} onChange={setR("phone")} autoComplete="tel" /></label>
-            <label>{tx("Mobiel")}<input type="tel" value={rs.mobile} onChange={setR("mobile")} autoComplete="tel" /></label>
+            <label>{tx("Telefoonnummer")}<PhoneInput value={rs.phone || ""} onChange={(v) => setRs((x) => ({ ...x, phone: v }))} /></label>
+            <label>{tx("Mobiel")}<PhoneInput value={rs.mobile || ""} onChange={(v) => setRs((x) => ({ ...x, mobile: v }))} /></label>
                       <label>{tx("Website")}<input value={rs.website} onChange={setR("website")} placeholder="https://" /></label>
           </div>
           )}

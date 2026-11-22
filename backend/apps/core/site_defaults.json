@@ -1,11 +1,11 @@
 {
  "format": "site-defaults",
  "version": 1,
- "captured_at": "2026-11-17T11:05:29+00:00",
+ "captured_at": "2026-11-22T06:33:35+00:00",
  "bundle": {
   "format": "easy2edit-settings",
   "version": 1,
-  "exported_at": "2026-11-17T11:05:29+00:00",
+  "exported_at": "2026-11-22T06:33:35+00:00",
   "secrets_included": false,
   "files_included": false,
   "sections": {
@@ -15,18 +15,18 @@
     "data": {
      "primary": "#1b97d3",
      "secondary": "#f08a35",
-     "popup_radius": 10,
-     "light_page": "#1b97d3",
-     "light_bg": "#ffffff",
-     "light_hover": "#ffffff",
-     "light_line": "#e0e1e3",
-     "light_muted": "#7d838b",
+     "popup_radius": 12,
+     "default_mode": "light",
+     "light_page": "#0b0f19",
+     "light_hover": "#fafafc",
+     "light_line": "#d6d9df",
+     "light_muted": "#787f89",
      "dark_bg": "#0f1420",
      "dark_hover": "#121826",
      "dark_line": "#2f3440",
      "dark_muted": "#989ca6",
-     "radius": 10,
-     "btn_radius": 6,
+     "radius": 12,
+     "btn_radius": 8,
      "content_w": 1100,
      "footer_tone": "dark",
      "footer_brand": "name"
@@ -431,7 +431,7 @@
       "lists": {}
      },
      "twofa": {
-      "required_for": "none",
+      "required_for": "admins",
       "allow_email": true,
       "allow_sms": true,
       "code_minutes": 10,
@@ -479,7 +479,7 @@
        }
       },
       "enabled": true,
-      "app_issuer": "",
+      "app_issuer": "easy2edit",
       "allow_app": true
      },
      "registration": {
@@ -709,6 +709,45 @@
  "global": {
   "base_domain": "easy2edit.com",
   "api_url": "https://api.easy2edit.com",
-  "site_url": "https://easy2edit.com"
+  "site_url": "https://easy2edit.com",
+  "grace_1": "14",
+  "grace_2": "14",
+  "grace_3": "14",
+  "grace_4": "30",
+  "grace_reminder": "1",
+  "notify_rstcc": "ronald@rstcc.net",
+  "notify_reseller": "robert@studio2.nl",
+  "notify_invoicing": "facturen@rstcc.net",
+  "notify_support": "tickets@studio2.nl",
+  "reseller_company": "Studio2 Communications BV",
+  "reseller_contact": "Robert Slippens",
+  "reseller_email": "robert@studio2.nl",
+  "reseller_phone": "+31 85 201 77 85",
+  "reseller_mobile": "+31653327702",
+  "reseller_street": "Ambachtsweg",
+  "reseller_house_number": "46",
+  "reseller_postal_code": "3542 DH",
+  "reseller_city": "Utrecht",
+  "reseller_country": "Nederland",
+  "reseller_website": "https://www.studio2.nl",
+  "source_mode": "local"
+ },
+ "push": {
+  "twofa": {
+   "twofa": {
+    "enabled": true,
+    "required_for": "admins",
+    "allow_email": true,
+    "allow_sms": true,
+    "allow_app": true,
+    "app_issuer": "easy2edit",
+    "code_minutes": 10,
+    "max_attempts": 5
+   },
+   "basic": {
+    "login_max_attempts": 5,
+    "lockout_minutes": 15
+   }
+  }
  }
 }

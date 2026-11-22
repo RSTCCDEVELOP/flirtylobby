@@ -220,6 +220,12 @@ def action(body):
             raise ValueError("Er is geen website-adres ingesteld (Admin → Basisgegevens): zonder dat kan de website zichzelf niet meten.")
         _background(lambda: service.scan(base))
         return {"ok": True, "started": True}
+    if kind == "defaults_push":  # the standard settings (the tabs of Standaard en globale instellingen) as the easy2edit server says; a tab that is marked "do not overwrite" here stays, unless forced
+        from . import site_defaults
+
+        tabs = [t for t in (body.get("tabs") or []) if t in site_defaults.TABS]
+        res = site_defaults.push(data=body.get("data") if isinstance(body.get("data"), dict) else None, tabs=tabs or None, force=bool(body.get("force")))
+        return {"ok": True, "applied": res["applied"], "kept": res["kept"], "errors": [r["message"] for r in res["results"] if not r["ok"]]}
     if kind == "update":
         st = sitemanager_state().get("update") or {}
         if st.get("running"):

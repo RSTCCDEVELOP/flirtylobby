@@ -86,7 +86,7 @@ DEFAULTS = {
     "social": {"google": True, "apple": True},  # show "Inloggen met Google / Apple" on the login page (when the keys are filled in at Admin -> API keys)
     "email_verify": {"enabled": False},  # make every user confirm the e-mail address with a code at login
     "twofa": {
-        "enabled": True, "required_for": "none", "allow_email": True, "allow_sms": False, "allow_app": True, "app_issuer": "",
+        "enabled": True, "required_for": "admins", "allow_email": True, "allow_sms": False, "allow_app": True, "app_issuer": "",
         "code_minutes": 10, "max_attempts": 5,
         "texts": {
             "nl": {"email_subject": "Je verificatiecode", "email_body": "Je verificatiecode is {code}. Deze is {minutes} minuten geldig. Heb je dit niet aangevraagd? Negeer dit bericht dan.",

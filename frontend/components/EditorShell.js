@@ -44,6 +44,7 @@ function startDrag(e) {
 export default function EditorShell({ open, setOpen, view, setView, title, saving, onExit, setTarget, setPageTarget, elements, structure, hasSettings, actions }) {
   const { user } = useSession();
   useEffect(() => { try { const w = parseInt(localStorage.getItem("pb-sb-w") || "", 10); if (w) setWidth(w); } catch {} }, []);
+  useEffect(() => { window.dispatchEvent(new Event("pb-bar-ready")); return () => window.dispatchEvent(new Event("pb-bar-ready")); }, []);  // the tools (save, undo, help, blocks) go in the bar
   if (typeof document === "undefined") return null;
   const views = [["elements", "Elementen", ICON.plus], ["structure", "Structuur", ICON.layers], ["page", "Pagina", ICON.sliders], ["settings", "Instellingen", ICON.gear]];
   const pick = (k) => { if (open && view === k) setOpen(false); else { setView(k); setOpen(true); } };
@@ -56,6 +57,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
         </div>
         <div className="pb-tb-mid"><strong>{title || tx("Pagina")}</strong></div>
         <div className="pb-tb-right">
+          <div id="pb-tb-tools" className="pb-tb-tools" />
           <span className="pb-tb-save">{saving === "saving" ? tx("Opslaan…") : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</span>
           <button type="button" className="pb-tb-btn primary" onClick={onExit} title={tx("Bewerken afsluiten en de pagina bekijken")}>{ICON.eye}<span>{tx("Klaar")}</span></button>
         </div>
@@ -78,7 +80,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
           <div className="pb-sb-body">
             <div className="pb-sb-pane" hidden={view !== "elements"}>{elements}</div>
             <div className="pb-sb-pane" hidden={view !== "structure"}>{structure}</div>
-            <div className="pb-sb-pane" hidden={view !== "page"}><div ref={setPageTarget} className="pb-sb-page" /><PageSettingsPanel /></div>
+            <div className="pb-sb-pane" hidden={view !== "page"}><PageSettingsPanel lead={<div ref={setPageTarget} className="pb-sb-page" />} /></div>
             <div className="pb-sb-pane" hidden={view !== "settings"}>
               {!hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
               {actions}

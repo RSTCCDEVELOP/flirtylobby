@@ -87,6 +87,7 @@ MIDDLEWARE = [
     "apps.core.middleware.MaintenanceMiddleware",
     "apps.core.middleware.LicencePhaseMiddleware",
     "apps.core.middleware.ClosedSiteMiddleware",
+    "apps.core.syscache.SystemCacheMiddleware",  # after the maintenance and closed-site checks: a kept answer is only given to a request that passed them
     "apps.integrations.middleware.AiActorMiddleware",
 ]
 
@@ -171,6 +172,14 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["apps.security.authentication.ExpiringTokenAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
 }
+
+# ── Cache ───────────────────────────────────────────────────────────────────
+from config import cacheconf  # noqa: E402
+
+CACHE_CONF = cacheconf.configured(SITE_DIR, os.environ)  # standard: "database" (shared by all workers); Admin -> Basisgegevens -> Cache changes it (site/cache.json, after a restart)
+if "pytest" in __import__("sys").modules and CACHE_CONF["source"] != "env":  # the tests clear the cache outside a database transaction: they use the memory cache
+    CACHE_CONF = {"backend": "memory", "redis_url": "", "source": "standard"}
+CACHES = cacheconf.caches(CACHE_CONF)
 
 # ── CORS / CSRF ─────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")

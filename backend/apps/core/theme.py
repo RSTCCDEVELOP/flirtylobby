@@ -109,7 +109,7 @@ def _opts(*pairs):
 TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"), ("zoom", "Inzoomen"), ("blur", "Scherp worden"))
 REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
-HEADER_WIDTHS = [{"value": "content", "label": "Even breed als de inhoud (standaard)", "css": ""}, {"value": "full", "label": "Hele breedte van het scherm", "css": ""}]
+HEADER_WIDTHS = [{"value": "content", "label": "Maximale breedte van de inhoud (standaard)", "css": ""}, {"value": "full", "label": "Hele breedte van het scherm (100%)", "css": ""}]  # (also for the footer: footer_width)
 
 NAV_DEFAULT = [
     {"value": "tiles", "label": "Tegels: per menugroep een pagina met tegels", "css": ""},
@@ -280,6 +280,7 @@ SCHEMA = [
         choice("footer_social", "Footer: sociale media", "show", None, SHOWHIDE),
         choice("footer_meta", "Footer: bedrijfsgegevens", "show", None, SHOWHIDE),
         choice("footer_size", "Footer: ruimte", "normal", None, FOOTER_SIZES),
+        choice("footer_width", "Footer: breedte", "content", None, HEADER_WIDTHS),
         choice("page_header", "Header op pagina's (standaard)", "show", None, SHOWHIDE),
         choice("page_footer", "Footer op pagina's (standaard)", "show", None, SHOWHIDE),
         choice("mode_switch", "Schakelaar licht/donker op de website", "show", None, SHOWHIDE),

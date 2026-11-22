@@ -16,9 +16,9 @@ sys.path.insert(0, os.path.abspath(PLUGIN))
 
 @pytest.fixture(autouse=True)
 def _never_touch_the_real_site(settings, tmp_path):
-    """No test may read or empty the real media library or site folder (a reset test used to wipe backend/media)."""
+    """No test may read or empty the real media library, site, plugins or themes folder (a reset test used to wipe backend/media; a test that installs a plugin swapped folders of the running dev server and switched its plugins off)."""
     base = tmp_path / "isolated"
-    for name, sub in (("MEDIA_ROOT", "media"), ("SITE_DIR", "site"), ("SITE_IMPORT_DIR", "imports"), ("TEMPLATES_DIR", "templates"), ("COMPONENTS_DIR", "components")):
+    for name, sub in (("MEDIA_ROOT", "media"), ("PLUGINS_DIR", "plugins"), ("THEMES_DIR", "themes"), ("SITE_DIR", "site"), ("SITE_IMPORT_DIR", "imports"), ("TEMPLATES_DIR", "templates"), ("COMPONENTS_DIR", "components")):
         if hasattr(settings, name):
             (base / sub).mkdir(parents=True, exist_ok=True)
             setattr(settings, name, base / sub)
@@ -43,6 +43,29 @@ def _forget_the_licence_cache():
     system.license_changed()
     yield
     system.license_changed()
+
+
+@pytest.fixture(autouse=True)
+def _forget_the_system_cache():
+    """The system cache (the settings and the public answers) lives in the cache, not in the database: a test must not see what the previous test left."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def _twofa_not_required_in_tests(request, monkeypatch):
+    """The standard asks admins and superadmins for two-step verification (they get a set-up screen, API calls say 403 until it is on). The other tests do not test that: it is off for them,
+    unless the test is marked `real_twofa_default`."""
+    from apps.security import defaults, service
+
+    if not request.node.get_closest_marker("real_twofa_default"):
+        monkeypatch.setitem(defaults.DEFAULTS["twofa"], "required_for", "none")
+    service._cache.update(t=0, data=None)  # (the security settings are kept for a few seconds: start clean)
+    yield
+    service._cache.update(t=0, data=None)
 
 
 @pytest.fixture

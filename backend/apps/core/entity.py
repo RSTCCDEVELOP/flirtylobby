@@ -79,8 +79,11 @@ def clean(incoming):
         raise ValueError("Het e-mailadres is niet geldig.")
     if out["website"] and not URL_RE.match(out["website"]):
         raise ValueError("Het websiteadres moet beginnen met http:// of https://.")
-    if out["phone"] and not re.fullmatch(r"[+\d][\d\s().-]{5,}", out["phone"]):
-        raise ValueError("Het telefoonnummer is niet geldig.")
+    from . import phone as _phone
+
+    out["phone"], bad = _phone.check(out["phone"], 40)
+    if bad:
+        raise ValueError(bad)
     return out
 
 

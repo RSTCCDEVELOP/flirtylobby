@@ -19,6 +19,7 @@ const TEXT = {
   fonts: ["Gebruik het systeemlettertype", "Lettertypen van Google worden bij elk paginabezoek van een ander adres opgehaald. Het systeemlettertype kost geen data en staat meteen op het scherm. Het uiterlijk van de letters kan daardoor veranderen."],
   images: ["Maak zware afbeeldingen lichter", "Foto's in de bibliotheek die zwaarder zijn dan nodig worden verkleind en lichter opgeslagen. De originelen blijven bewaard, zodat je ze kunt terugzetten. Namen en adressen van de foto's blijven gelijk."],
   image_limit: ["Beperk de grootte van nieuwe uploads", "Een lagere limiet voorkomt dat er weer zware foto's op de website komen."],
+  system_cache: ["Zet de systeemcache aan", "De instellingen en de openbare antwoorden die elke bezoeker vraagt worden even bewaard, zodat de website minder database-vragen doet: sneller en zuiniger. Een wijziging van een beheerder wist de cache meteen. Je stelt dit af bij Admin → Basisgegevens → Cache."],
   compression: ["Zet compressie aan op de server", "Tekstbestanden (scripts, stijlen, html) worden zonder compressie verstuurd. Met gzip of brotli worden ze ongeveer 70% lichter. Dit stel je in op de server, niet hier."],
   production: ["Meet op de echte website, niet op de ontwikkelversie", "De ontwikkelserver stuurt veel zwaarder JavaScript dan de echte website. Zet de website in productie en meet daar: het cijfer is dan veel lager."],
   heavy: ["Zwaarste pagina's", "Deze pagina's wegen meer dan 80% van een gemiddelde webpagina. Kijk er naar de afbeeldingen, video's en blokken."],
@@ -45,7 +46,7 @@ export default function EnergyAdvice({ onChanged, onMeasure, measuring }) {
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
-  const [sel, setSel] = useState({ fonts: true, images: true, image_limit: true });
+  const [sel, setSel] = useState({ fonts: true, images: true, image_limit: true, system_cache: true });
   const [img, setImg] = useState({ threshold_kb: 300, max_edge: 2000, quality: 82, keep_originals: true });
   const [mb, setMb] = useState(2);
   const timer = useRef(null);
@@ -73,6 +74,7 @@ export default function EnergyAdvice({ onChanged, onMeasure, measuring }) {
       if (r.done.fonts) bits.push(`${tx("Lettertypen")}: ${r.done.fonts.changed} ${tx("instellingen gewijzigd")}`);
       if (r.done.images) bits.push(`${tx("Afbeeldingen")}: ${r.done.images.files} ${tx("verkleind")}, ${fmtBytes(r.done.images.saved)} ${tx("minder")}${r.done.images.remaining ? ` (${r.done.images.remaining} ${tx("nog te doen: klik nog eens")})` : ""}`);
       if (r.done.image_limit) bits.push(`${tx("Uploadlimiet")}: ${r.done.image_limit.from} → ${r.done.image_limit.to} MB`);
+      if (r.done.system_cache) bits.push(`${tx("Systeemcache")}: ${tx("aan")}, ${r.done.system_cache.seconds} s`);
       setMsg({ ok: true, text: `${tx("Toegepast")}. ${bits.join(" · ")}. ${tx("Meet daarna opnieuw om de nieuwe score te zien.")}` });
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); } finally { setBusy(""); }
   };
@@ -125,7 +127,8 @@ export default function EnergyAdvice({ onChanged, onMeasure, measuring }) {
               <div style={{ display: "flex", alignItems: "center", gap: ".8rem", flexWrap: "wrap" }}>
                 <small className="muted" style={{ flex: 1 }}>{tx("Toegepast op")} {new Date(i.applied.at).toLocaleString()}
                   {i.key === "images" && ` · ${(i.applied.files || []).length} ${tx("afbeeldingen")}, ${fmtBytes(i.applied.saved || 0)} ${tx("minder")}${i.applied.originals ? ` · ${tx("originelen bewaard")}` : ""}${i.applied.remaining ? ` · ${i.applied.remaining} ${tx("nog te doen")}` : ""}`}
-                  {i.key === "image_limit" && ` · ${i.applied.before} → ${i.applied.after} MB`}</small>
+                  {i.key === "image_limit" && ` · ${i.applied.before} → ${i.applied.after} MB`}
+                  {i.key === "system_cache" && ` · ${i.applied.before?.on ? tx("aan") : tx("uit")}, ${i.applied.before?.seconds} s → ${i.applied.after} s`}</small>
                 {i.key === "images" && i.applied.remaining > 0 && <small className="muted">{tx("Zet eerst terug om de rest te kunnen verkleinen, of verwijder de oude actie.")}</small>}
                 <button type="button" className="btn sm" disabled={!!busy} onClick={() => revert(i)}>{busy === "rev" + i.key ? tx("Bezig…") : tx("Terugzetten")}</button>
               </div>

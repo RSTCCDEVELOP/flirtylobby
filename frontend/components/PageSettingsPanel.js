@@ -18,7 +18,7 @@ import { useSession } from "./Session";
 
 // The settings of the page that you are editing (name, address, menu, page layout, security, SEO, background ...), in the panel at the left of the editor:
 // the same screen as Admin > Pagina's, without the window.
-export default function PageSettingsPanel() {
+export default function PageSettingsPanel({ lead = null }) {
   const { user, editing } = useSession();
   const mods = useModules();
   const path = usePathname() || "/";
@@ -37,11 +37,12 @@ export default function PageSettingsPanel() {
     }).catch((e) => live && setMsg(errorText(e)));
     return () => { live = false; };
   }, [allowed, path]);
-  if (!allowed) return null;
+  if (!allowed) return lead;  // (no rights for the page settings: only the layout settings)
   return (
     <div className="pgs-panel">
       {msg && <p className="muted">{msg}</p>}
-      {data && <PageSettingsModal docked key={data.page.key} page={data.page} languages={data.langs.languages} defaultLang={data.langs.default} canSeo={mods?.seo !== false && lvl(user, "seo") >= 1} onClose={() => {}} onSaved={() => router.refresh()} />}
+      {!data && lead}
+      {data && <PageSettingsModal docked lead={lead} key={data.page.key} page={data.page} languages={data.langs.languages} defaultLang={data.langs.default} canSeo={mods?.seo !== false && lvl(user, "seo") >= 1} onClose={() => {}} onSaved={() => router.refresh()} />}
     </div>
   );
 }

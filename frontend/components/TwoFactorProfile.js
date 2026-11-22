@@ -9,6 +9,7 @@
 
 import { tx } from "../lib/t";
 import { useState } from "react";
+import PhoneInput from "./PhoneInput";
 import QRCode from "qrcode";
 import { api, errorText } from "../lib/api";
 import { useAuth } from "./AuthContext";
@@ -81,8 +82,8 @@ export default function TwoFactorProfile() {
       {panel === "enable" && !sentTo && !app && (
         <div className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
           {tf.available.includes("sms") && (
-            <label style={{ flex: 1, maxWidth: 260 }}>{tx("Telefoon (met landcode)")}
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+31612345678" />
+            <label style={{ flex: 1, maxWidth: 320 }}>{tx("Telefoon")}
+              <PhoneInput value={phone || ""} onChange={setPhone} />
             </label>
           )}
           {tf.available.includes("email") && <button type="button" className="btn primary" disabled={busy} onClick={() => start("email")}>{tx("Code per e-mail")}</button>}

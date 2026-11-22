@@ -10,6 +10,7 @@
 import { tx } from "../../../../lib/t";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useCallback, useEffect, useState } from "react";
+import PhoneInput from "../../../../components/PhoneInput";
 import { useAuth } from "../../../../components/AuthContext";
 import Collapsible, { CollapseAll } from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
@@ -110,7 +111,7 @@ export default function Communication() {
             <div className="grid2">
               <label>{tx("Naam")}<input value={modal.label} onChange={set("label")} required maxLength={100} placeholder={tx("bv. Systeem")} /></label>
               <label>{modal.kind === "mobile" ? tx("Mobiel nummer") : tx("E-mailadres")}
-                <input value={modal.value} onChange={set("value")} required placeholder={SECTIONS.find((s) => s.kind === modal.kind).valuePlaceholder} />
+                {modal.kind === "mobile" ? <PhoneInput value={modal.value || ""} onChange={(v) => setModal((m) => ({ ...m, value: v }))} /> : <input value={modal.value} onChange={set("value")} required placeholder={SECTIONS.find((s) => s.kind === modal.kind).valuePlaceholder} />}
               </label>
               <label>{tx("Doel")}
                 <select value={modal.purpose} onChange={set("purpose")}>{PURPOSES.map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select>
