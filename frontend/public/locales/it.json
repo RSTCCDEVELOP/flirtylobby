@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Attiva le schede che vuoi lasciare intatte durante un aggiornamento. Niente attivo: tutte le schede vengono aggiornate.",
   "niet bijgewerkt tot en met build": "non aggiornato fino al build incluso",
   "t/m build": "fino al build",
-  "weer bijgewerkt vanaf build": "aggiornato di nuovo dal build"
+  "weer bijgewerkt vanaf build": "aggiornato di nuovo dal build",
+  "API-koppelingen bijwerken": "Aggiorna i collegamenti API",
+  "Alleen hier": "Solo qui",
+  "Alles is actueel": "Tutto è aggiornato",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "Controlla e aggiorna i collegamenti API tramite il server easy2edit",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "I collegamenti che il server easy2edit fornisce per ogni sito web (superadmin+). Qui vedi quali sono cambiati sul server. Le chiavi e le impostazioni vengono trasferite cifrate; non vengono mai mostrate qui.",
+  "Koppeling": "Collegamento",
+  "Verandert": "Cambia",
+  "Wat verandert": "Cosa cambia",
+  "{0} koppelingen bijgewerkt.": "{0} collegamenti aggiornati."
 }

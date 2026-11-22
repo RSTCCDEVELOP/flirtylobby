@@ -164,7 +164,7 @@ export default function AiImprove() {
   const nChanges = res?.changes?.length;
   return (
     <>
-      <TbSlot><button type="button" className="ai-improve-btn" onClick={start} title={tx("Pagina verbeteren met AI")} aria-label={tx("Pagina verbeteren met AI")}><IconSparkle width={18} height={18} /><span>{tx("AI")}</span></button></TbSlot>
+      <TbSlot host="pb-tb-ai"><button type="button" className="ai-improve-btn" onClick={start} title={tx("Pagina verbeteren met AI")} aria-label={tx("Pagina verbeteren met AI")}><IconSparkle width={18} height={18} /><span>{tx("AI")}</span></button></TbSlot>
       {open && createPortal(
         <div className="overlay" onClick={() => !busy && setOpen(false)}>
           <div className="card modal ai-improve" role="dialog" aria-label={tx("Pagina verbeteren met AI")} onClick={(e) => e.stopPropagation()}>

@@ -4611,3 +4611,17 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .gs-skip strong { display: block; }
 .gs-skip-add { padding: .7rem; border: 1px dashed var(--e2e-line, var(--line, rgba(0,0,0,.2))); border-radius: 10px; }
 .gs-skip-add select { flex: 1 1 200px; min-width: 0; }
+
+/* the AI button sits right next to "Klaar" */
+.pb-tb-ai { display: inline-flex; align-items: center; }
+.pb-tb-ai .ai-improve-btn { height: 34px; padding: 0 .9rem; border-radius: 999px; box-shadow: 0 2px 10px rgba(124, 92, 255, .35); letter-spacing: .02em; }
+.pb-tb-ai .ai-improve-btn svg { filter: drop-shadow(0 0 2px rgba(255,255,255,.5)); }
+
+/* help notice: calmer, tidier; the tick stands next to its text */
+.edit-help-esc { gap: .6rem; padding: 1.5rem 2rem 1.3rem; min-width: min(440px, 92vw); border-radius: 20px; background: linear-gradient(180deg, var(--card), color-mix(in srgb, var(--blue) 5%, var(--card))); }
+.edit-help-esc kbd { font-size: 1.35rem; padding: .3rem 1rem; border-radius: 9px; box-shadow: 0 3px 0 var(--line); }
+.edit-help-esc > span { font-size: 1.05rem; font-weight: 700; }
+.edit-help-esc small { max-width: 36ch; }
+.edit-help-esc .edit-help-esc-no { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: .55rem; width: auto; margin-top: .5rem; padding-top: .75rem; border-top: 1px solid var(--line); font-size: .85rem; font-weight: 500; color: var(--muted); }
+.edit-help-esc .edit-help-esc-no input { margin: 0; width: 16px; height: 16px; flex: none; accent-color: var(--blue); }
+.edit-help-esc .edit-help-esc-no span { font-size: .85rem; font-weight: 500; }

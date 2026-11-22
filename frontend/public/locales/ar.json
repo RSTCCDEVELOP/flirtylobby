@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "فعّل علامات التبويب التي تريد تركها دون تغيير عند التحديث. لا شيء مفعّل: يتم تحديث كل علامات التبويب.",
   "niet bijgewerkt tot en met build": "لا يتم التحديث حتى الإصدار (build) ضمنه",
   "t/m build": "حتى build",
-  "weer bijgewerkt vanaf build": "يُحدَّث مجددًا ابتداءً من build"
+  "weer bijgewerkt vanaf build": "يُحدَّث مجددًا ابتداءً من build",
+  "API-koppelingen bijwerken": "تحديث روابط API",
+  "Alleen hier": "هنا فقط",
+  "Alles is actueel": "كل شيء محدّث",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "فحص روابط API وتحديثها عبر خادم easy2edit",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "الروابط التي يوفرها خادم easy2edit لكل موقع (superadmin+). هنا ترى أيها تغيّر على الخادم. تُنقل المفاتيح والإعدادات مشفّرة ولا تُعرض هنا أبدًا.",
+  "Koppeling": "الرابط",
+  "Verandert": "يتغيّر",
+  "Wat verandert": "ما الذي يتغيّر",
+  "{0} koppelingen bijgewerkt.": "تم تحديث {0} من الروابط."
 }

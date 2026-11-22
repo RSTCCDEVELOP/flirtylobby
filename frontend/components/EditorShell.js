@@ -59,6 +59,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
         <div className="pb-tb-right">
           <div id="pb-tb-tools" className="pb-tb-tools" />
           <span className="pb-tb-save">{saving === "saving" ? tx("Opslaan…") : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</span>
+          <div id="pb-tb-ai" className="pb-tb-ai" />
           <button type="button" className="pb-tb-btn primary" onClick={onExit} title={tx("Bewerken afsluiten en de pagina bekijken")}>{ICON.eye}<span>{tx("Klaar")}</span></button>
         </div>
       </div>

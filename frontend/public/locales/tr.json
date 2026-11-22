@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Güncelleme sırasında dokunulmamasını istediğin sekmeleri aç. Hiçbiri açık değilse: tüm sekmeler güncellenir.",
   "niet bijgewerkt tot en met build": "build dahil olmak üzere güncellenmez",
   "t/m build": "build'e kadar",
-  "weer bijgewerkt vanaf build": "build'den itibaren yeniden güncellenir"
+  "weer bijgewerkt vanaf build": "build'den itibaren yeniden güncellenir",
+  "API-koppelingen bijwerken": "API bağlantılarını güncelle",
+  "Alleen hier": "Yalnızca burada",
+  "Alles is actueel": "Her şey güncel",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "API bağlantılarını easy2edit sunucusu üzerinden kontrol et ve güncelle",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "easy2edit sunucusunun her web sitesi için sağladığı bağlantılar (superadmin+). Burada sunucuda hangilerinin değiştiğini görürsün. Anahtarlar ve ayarlar şifreli olarak alınır; burada asla gösterilmez.",
+  "Koppeling": "Bağlantı",
+  "Verandert": "Değişir",
+  "Wat verandert": "Ne değişir",
+  "{0} koppelingen bijgewerkt.": "{0} bağlantı güncellendi."
 }

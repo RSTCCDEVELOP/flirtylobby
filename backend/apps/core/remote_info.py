@@ -241,7 +241,13 @@ def action(body):
 
         tabs = [t for t in (body.get("tabs") or []) if t in site_defaults.TABS]
         res = site_defaults.push(data=body.get("data") if isinstance(body.get("data"), dict) else None, tabs=tabs or None, force=bool(body.get("force")))
-        return {"ok": True, "applied": res["applied"], "kept": res["kept"], "errors": [r["message"] for r in res["results"] if not r["ok"]]}
+        try:  # the keys of the superadmin+ API links follow the server too (they come encrypted and are opened here), when they changed
+            from apps.integrations import default_links
+
+            renewed = [r["label"] for r in default_links.apply(refresh_keys=True) if r.get("ok")]
+        except Exception:  # noqa: BLE001 - never breaks the push of the settings
+            renewed = []
+        return {"ok": True, "applied": res["applied"], "kept": res["kept"], "errors": [r["message"] for r in res["results"] if not r["ok"]], "links": renewed}
     if kind == "update":
         st = sitemanager_state().get("update") or {}
         if st.get("running"):

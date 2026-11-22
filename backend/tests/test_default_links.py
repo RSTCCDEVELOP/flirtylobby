@@ -84,6 +84,61 @@ def test_the_server_gives_the_keys_to_an_approved_website_only(client):
     assert p.status_code == 403 and p.json()["reason"] == "pending" and "SECRETKEY" not in p.content.decode()
     EasySite.objects.update(status="active")
     ok = client.get("/api/easy2edit/default-links/", HTTP_X_EASY2EDIT_KEY=key)
-    assert ok.status_code == 200 and ok.json()["links"][0]["config"]["api_key"] == "SECRETKEY"
+    from apps.integrations import linkcrypt
+
+    link = ok.json()["links"][0]
+    assert ok.status_code == 200 and "SECRETKEY" not in ok.content.decode() and "api_key" not in link["config"]  # the key is not in the clear
+    assert linkcrypt.unseal(link["secret_enc"], linkcrypt.hash_of(key)) == {"api_key": "SECRETKEY"}  # only this website can open it
     EasySite.objects.update(status="blocked")
     assert client.get("/api/easy2edit/default-links/", HTTP_X_EASY2EDIT_KEY=key).status_code == 403
+
+
+@pytest.mark.django_db
+def test_keys_travel_sealed_and_are_renewed_in_an_update(monkeypatch):
+    """The server seals the keys for one website only; the website opens them at the installation and, in an update, renews a changed key of a superadmin+ link."""
+    from apps.integrations import default_links, linkcrypt
+    from apps.integrations.models import Integration
+
+    th = linkcrypt.hash_of("token-of-site-A")
+    blob = linkcrypt.seal({"api_key": "NEW-KEY"}, th)
+    assert "NEW-KEY" not in blob and linkcrypt.unseal(blob, th) == {"api_key": "NEW-KEY"}
+    assert linkcrypt.unseal(blob, linkcrypt.hash_of("token-of-site-B")) == {}  # another website can not open it
+    Integration.objects.create(slug="unsplash", provider="unsplash", name="Unsplash", superadmin_only=True, enabled=True, config={"api_key": "OLD-KEY"})
+    monkeypatch.setattr(default_links, "_read", lambda: [{"slug": "unsplash", "provider": "unsplash", "name": "Unsplash", "superadmin_only": True}])
+    monkeypatch.setattr(default_links, "_remote", lambda: {"unsplash": {"slug": "unsplash", "provider": "unsplash", "superadmin_only": True, "config": {"api_key": "NEW-KEY"}}})
+    default_links.apply()  # a normal start leaves a key that is there as it is
+    assert Integration.objects.get(slug="unsplash").config["api_key"] == "OLD-KEY"
+    res = default_links.apply(refresh_keys=True)  # an update renews it
+    assert Integration.objects.get(slug="unsplash").config["api_key"] == "NEW-KEY" and res[0]["message"] == "Sleutel vernieuwd."
+
+
+@pytest.mark.django_db
+def test_check_and_update_of_the_api_links_by_a_superadmin(monkeypatch, admin_client_factory=None):
+    """The check compares with the easy2edit server without showing keys; the update (superadmin only) takes along every changed setting."""
+    from django.contrib.auth import get_user_model
+    from rest_framework.test import APIClient
+
+    from apps.integrations import default_links
+    from apps.integrations.models import Integration
+
+    Integration.objects.create(slug="anthropic", provider="anthropic", name="Claude", superadmin_only=True, enabled=True, in_installation=True, config={"api_key": "OLD", "model": "claude-sonnet-4"})
+    remote = {"anthropic": {"slug": "anthropic", "provider": "anthropic", "name": "Claude Easy2edit", "superadmin_only": True, "config": {"api_key": "NEW", "model": "claude-sonnet-5-5"}},
+              "pexels": {"slug": "pexels", "provider": "pexels", "name": "Pexels", "superadmin_only": True, "config": {"api_key": "P"}}}
+    monkeypatch.setattr(default_links, "_remote", lambda strict=False: remote)
+    monkeypatch.setattr(default_links, "_read", lambda: [])
+    monkeypatch.setattr("apps.core.sitemanager.server_enabled", lambda: False)
+    monkeypatch.setattr("apps.core.sitemanager.disabled", lambda: False)
+    user = get_user_model().objects.create_user(username="su", email="su@x.nl", password="x", is_staff=True)
+    plain = get_user_model().objects.create_user(username="pl", email="pl@x.nl", password="x")
+    c, other = APIClient(), APIClient()
+    c.force_authenticate(user)
+    other.force_authenticate(plain)
+    assert other.get("/api/admin/integrations/links/").status_code == 403
+    chk = c.get("/api/admin/integrations/links/").json()
+    states = {x["slug"]: x["state"] for x in chk["links"]}
+    assert states == {"anthropic": "update", "pexels": "missing"} and chk["need_update"] and "NEW" not in str(chk)
+    r = c.post("/api/admin/integrations/links/", {}, format="json").json()
+    ant = Integration.objects.get(slug="anthropic")
+    assert ant.config == {"api_key": "NEW", "model": "claude-sonnet-5-5"} and ant.name == "Claude Easy2edit"
+    assert Integration.objects.filter(slug="pexels").exists()
+    assert not r["need_update"]

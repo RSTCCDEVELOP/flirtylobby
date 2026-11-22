@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "जिन टैब को अपडेट के दौरान अछूता रखना है उन्हें चालू करें। कुछ भी चालू नहीं: सभी टैब अपडेट होते हैं।",
   "niet bijgewerkt tot en met build": "build तक (शामिल) अपडेट नहीं",
   "t/m build": "build तक",
-  "weer bijgewerkt vanaf build": "build से फिर अपडेट"
+  "weer bijgewerkt vanaf build": "build से फिर अपडेट",
+  "API-koppelingen bijwerken": "API लिंक अपडेट करें",
+  "Alleen hier": "केवल यहाँ",
+  "Alles is actueel": "सब कुछ अद्यतन है",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "easy2edit सर्वर के माध्यम से API लिंक जाँचें और अपडेट करें",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "वे लिंक जो easy2edit सर्वर हर वेबसाइट के लिए देता है (superadmin+). यहाँ आप देखते हैं कि सर्वर पर कौन से बदले हैं। कुंजियाँ और सेटिंग्स एन्क्रिप्टेड रूप में ली जाती हैं; वे यहाँ कभी नहीं दिखाई जातीं।",
+  "Koppeling": "लिंक",
+  "Verandert": "बदलता है",
+  "Wat verandert": "क्या बदलता है",
+  "{0} koppelingen bijgewerkt.": "{0} लिंक अपडेट किए गए।"
 }

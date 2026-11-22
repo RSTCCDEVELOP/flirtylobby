@@ -8019,5 +8019,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Turn on tabs that you want to leave alone during an update. Nothing on: all tabs are updated.",
   "niet bijgewerkt tot en met build": "not updated up to and including build",
   "t/m build": "up to build",
-  "weer bijgewerkt vanaf build": "updated again from build"
+  "weer bijgewerkt vanaf build": "updated again from build",
+  "API-koppelingen bijwerken": "Update API links",
+  "Alleen hier": "Only here",
+  "Alles is actueel": "Everything is up to date",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "Check and update the API links via the easy2edit server",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "The links that the easy2edit server provides for every website (superadmin+). Here you see which ones have changed on the server. Keys and settings are taken over encrypted; they are never shown here.",
+  "Koppeling": "Link",
+  "Verandert": "Changes",
+  "Wat verandert": "What changes",
+  "{0} koppelingen bijgewerkt.": "{0} links updated."
 }

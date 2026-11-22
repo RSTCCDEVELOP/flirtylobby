@@ -21,6 +21,7 @@ STEPS = [
     ("themas", "Thema's controleren en bijwerken"),
     ("languages", "Talen controleren"),
     ("pages", "Pagina's en menu controleren"),
+    ("links", "API-koppelingen van de easy2edit-server bijwerken (sleutels versleuteld)"),
     ("finish", "Afronden"),
 ]
 
@@ -99,6 +100,11 @@ def run(step, user):
                     r["message"] += " Teruggezet voor de installatie: " + ", ".join(back) + "."
                 runtime.ensure_loaded(True)  # (the plugins that were updated run again)
             return r
+        if step == "links":  # the superadmin+ API links: the keys follow the easy2edit server when they changed there (they arrive encrypted and are opened here)
+            from apps.integrations import default_links
+
+            done = [r for r in default_links.apply(refresh_keys=True) if r.get("ok")]
+            return {"ok": True, "message": ("Bijgewerkt: " + ", ".join(r["label"].replace("API-koppeling ", "") for r in done)) if done else "Alle sleutels zijn actueel."}
         if step == "pages":
             from apps.pages import layout as page_layout
             from apps.pages import service as pages_service

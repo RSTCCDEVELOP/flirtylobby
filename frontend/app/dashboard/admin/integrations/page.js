@@ -23,6 +23,7 @@ import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { useView } from "../../../../lib/useView";
 import S3Browser from "../../../../components/S3Browser";
+import ApiLinksUpdate from "../../../../components/ApiLinksUpdate";
 import { resetIntegrationsCache } from "../../../../lib/integrations";
 
 const statusOf = (i) => (i.last_test_ok === true ? "ok" : i.last_test_ok === false ? "fail" : "none");
@@ -231,6 +232,7 @@ export default function Integrations() {
           <p className="muted" style={{ margin: 0 }}>{tx("Koppel externe systemen. Staat een koppeling uit, dan is de bijbehorende functie in de portal niet actief.")}</p>
         </div>
         <div className="head-actions">
+          {L >= 3 && <ApiLinksUpdate onChanged={load} />}
           {L >= 3 && <button className="btn" onClick={() => setXfer({ mode: "export", password: "" })}>{tx("Exporteren")}</button>}
           {L >= 3 && <button className="btn" onClick={() => setXfer({ mode: "import", password: "", bundle: null })}>{tx("Importeren")}</button>}
           {L >= 3 && <button className="btn primary" onClick={openNew} disabled={!providers.length}>{tx("+ Nieuwe koppeling")}</button>}

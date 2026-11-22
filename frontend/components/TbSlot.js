@@ -11,18 +11,18 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 // The place in the top bar of the editor (EditorShell) where the tools go: save, undo, help and the list of blocks. Without the bar (no panel) they stay where they were: floating at the right.
-export function useToolbarHost() {
+export function useToolbarHost(id = "pb-tb-tools") {
   const [host, setHost] = useState(null);
   useEffect(() => {
-    const find = () => setHost(document.getElementById("pb-tb-tools"));
+    const find = () => setHost(document.getElementById(id));
     find();
     window.addEventListener("pb-bar-ready", find);
     return () => window.removeEventListener("pb-bar-ready", find);
-  }, []);
+  }, [id]);
   return host;
 }
 
-export default function TbSlot({ children }) {
-  const host = useToolbarHost();
+export default function TbSlot({ children, host: hostId = "pb-tb-tools" }) {
+  const host = useToolbarHost(hostId);
   return host ? createPortal(children, host) : children;
 }

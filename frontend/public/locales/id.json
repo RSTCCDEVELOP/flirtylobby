@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Aktifkan tab yang ingin kamu biarkan saat pembaruan. Tidak ada yang aktif: semua tab diperbarui.",
   "niet bijgewerkt tot en met build": "tidak diperbarui hingga dan termasuk build",
   "t/m build": "s/d build",
-  "weer bijgewerkt vanaf build": "diperbarui lagi mulai build"
+  "weer bijgewerkt vanaf build": "diperbarui lagi mulai build",
+  "API-koppelingen bijwerken": "Perbarui tautan API",
+  "Alleen hier": "Hanya di sini",
+  "Alles is actueel": "Semuanya sudah terbaru",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "Periksa dan perbarui tautan API melalui server easy2edit",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "Tautan yang disediakan server easy2edit untuk setiap situs web (superadmin+). Di sini kamu melihat mana yang berubah di server. Kunci dan pengaturan diambil dalam bentuk terenkripsi; tidak pernah ditampilkan di sini.",
+  "Koppeling": "Tautan",
+  "Verandert": "Berubah",
+  "Wat verandert": "Apa yang berubah",
+  "{0} koppelingen bijgewerkt.": "{0} tautan diperbarui."
 }

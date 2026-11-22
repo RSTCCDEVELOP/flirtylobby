@@ -195,10 +195,19 @@ def default_links(request):
     site, refusal = _approved(request)
     if refusal:
         return refusal
+    from apps.integrations import default_links, linkcrypt
     from apps.integrations.models import Integration
 
-    return Response({"links": [{"slug": o.slug, "provider": o.provider, "name": o.name, "superadmin_only": o.superadmin_only, "config": {k: v for k, v in (o.config or {}).items() if isinstance(v, str) and v.strip()}}
-                               for o in Integration.objects.filter(in_installation=True).order_by("id")]})
+    out = []
+    for o in Integration.objects.filter(in_installation=True).order_by("id"):
+        secret_keys = default_links.secret_fields(o.provider)
+        cfg = o.config or {}
+        plain = {k: v for k, v in cfg.items() if isinstance(v, str) and v.strip() and k not in secret_keys}
+        secrets = {k: v for k, v in cfg.items() if isinstance(v, str) and v.strip() and k in secret_keys}
+        # the keys are sealed for THIS website (encrypted with a key made from its registration key): never in the clear in the answer
+        out.append({"slug": o.slug, "provider": o.provider, "name": o.name, "superadmin_only": o.superadmin_only, "always_on": o.always_on, "config": plain,
+                    "secret_enc": linkcrypt.seal(secrets, site.token_hash), "keys_rev": linkcrypt.revision(secrets), "encrypted": True})
+    return Response({"links": out})
 
 
 # ── this website, asked by the easy2edit server (with the callback key) ─────

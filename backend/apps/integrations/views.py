@@ -11,7 +11,7 @@ from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from apps.accounts.permissions import has_level, has_level_for
 from apps.core import modules
@@ -236,3 +236,17 @@ def import_all(request):
     msg = backup._apply(rows, None)
     logger.info("API links imported by %s (%s links)", request.user.email, len(rows))
     return Response({"detail": msg, "count": len(rows)})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def links_check(request):
+    """Superadmin only: GET = look at the API links of the easy2edit server and compare them with this installation (keys are never shown). POST = bring them up to date (keys arrive encrypted)."""
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen voor een superadmin."}, status=403)
+    from . import default_links
+
+    if request.method == "POST":
+        done = default_links.apply(refresh_keys=True)
+        return Response({**default_links.check(), "results": done})
+    return Response(default_links.check())

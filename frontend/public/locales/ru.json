@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Включите вкладки, которые нужно оставить без изменений при обновлении. Ничего не включено: обновляются все вкладки.",
   "niet bijgewerkt tot en met build": "не обновляется до сборки включительно",
   "t/m build": "до сборки",
-  "weer bijgewerkt vanaf build": "снова обновляется со сборки"
+  "weer bijgewerkt vanaf build": "снова обновляется со сборки",
+  "API-koppelingen bijwerken": "Обновить API-подключения",
+  "Alleen hier": "Только здесь",
+  "Alles is actueel": "Всё актуально",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "Проверить и обновить API-подключения через сервер easy2edit",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "Подключения, которые сервер easy2edit предоставляет для каждого сайта (superadmin+). Здесь видно, какие из них изменились на сервере. Ключи и настройки переносятся в зашифрованном виде и здесь никогда не показываются.",
+  "Koppeling": "Подключение",
+  "Verandert": "Меняется",
+  "Wat verandert": "Что меняется",
+  "{0} koppelingen bijgewerkt.": "Обновлено подключений: {0}."
 }

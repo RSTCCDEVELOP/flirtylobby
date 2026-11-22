@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Active les onglets que tu veux laisser tranquilles lors d'une mise à jour. Rien d'activé : tous les onglets sont mis à jour.",
   "niet bijgewerkt tot en met build": "non mis à jour jusqu'au build inclus",
   "t/m build": "jusqu'au build",
-  "weer bijgewerkt vanaf build": "de nouveau mis à jour à partir du build"
+  "weer bijgewerkt vanaf build": "de nouveau mis à jour à partir du build",
+  "API-koppelingen bijwerken": "Mettre à jour les liaisons API",
+  "Alleen hier": "Seulement ici",
+  "Alles is actueel": "Tout est à jour",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "Vérifier et mettre à jour les liaisons API via le serveur easy2edit",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "Les liaisons que le serveur easy2edit fournit pour chaque site web (superadmin+). Tu vois ici lesquelles ont changé sur le serveur. Les clés et paramètres sont repris chiffrés ; ils ne sont jamais affichés ici.",
+  "Koppeling": "Liaison",
+  "Verandert": "Change",
+  "Wat verandert": "Ce qui change",
+  "{0} koppelingen bijgewerkt.": "{0} liaisons mises à jour."
 }

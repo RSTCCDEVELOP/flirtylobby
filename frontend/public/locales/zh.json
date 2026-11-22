@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "开启你希望在更新时保持不变的标签页。全部关闭：所有标签页都会更新。",
   "niet bijgewerkt tot en met build": "截至 build（含）不更新",
   "t/m build": "截至 build",
-  "weer bijgewerkt vanaf build": "从 build 起重新更新"
+  "weer bijgewerkt vanaf build": "从 build 起重新更新",
+  "API-koppelingen bijwerken": "更新 API 链接",
+  "Alleen hier": "仅此处",
+  "Alles is actueel": "一切都是最新的",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "通过 easy2edit 服务器检查并更新 API 链接",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "easy2edit 服务器为每个网站提供的链接（superadmin+）。在这里可以看到服务器上哪些发生了变化。密钥和设置以加密方式接收，绝不会在此显示。",
+  "Koppeling": "链接",
+  "Verandert": "会变化",
+  "Wat verandert": "变化内容",
+  "{0} koppelingen bijgewerkt.": "已更新 {0} 个链接。"
 }

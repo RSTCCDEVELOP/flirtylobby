@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Ative os separadores que quer deixar em paz durante uma atualização. Nada ativo: todos os separadores são atualizados.",
   "niet bijgewerkt tot en met build": "não atualizado até ao build inclusive",
   "t/m build": "até ao build",
-  "weer bijgewerkt vanaf build": "atualizado novamente a partir do build"
+  "weer bijgewerkt vanaf build": "atualizado novamente a partir do build",
+  "API-koppelingen bijwerken": "Atualizar as ligações API",
+  "Alleen hier": "Apenas aqui",
+  "Alles is actueel": "Tudo está atualizado",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "Verificar e atualizar as ligações API através do servidor easy2edit",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "As ligações que o servidor easy2edit fornece para cada site (superadmin+). Aqui vê quais mudaram no servidor. As chaves e as definições são transferidas cifradas; nunca são mostradas aqui.",
+  "Koppeling": "Ligação",
+  "Verandert": "Muda",
+  "Wat verandert": "O que muda",
+  "{0} koppelingen bijgewerkt.": "{0} ligações atualizadas."
 }

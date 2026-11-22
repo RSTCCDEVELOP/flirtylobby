@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "更新時にそのままにしておきたいタブをオンにします。何もオンでない場合:すべてのタブが更新されます。",
   "niet bijgewerkt tot en met build": "ビルドまで更新されない",
   "t/m build": "ビルドまで",
-  "weer bijgewerkt vanaf build": "ビルドから再び更新"
+  "weer bijgewerkt vanaf build": "ビルドから再び更新",
+  "API-koppelingen bijwerken": "APIリンクを更新",
+  "Alleen hier": "ここだけ",
+  "Alles is actueel": "すべて最新です",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "easy2editサーバー経由でAPIリンクを確認・更新",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "easy2editサーバーが各ウェブサイトに提供するリンク(superadmin+)。サーバーで変更されたものがここで分かります。キーと設定は暗号化されて引き継がれ、ここには表示されません。",
+  "Koppeling": "リンク",
+  "Verandert": "変更あり",
+  "Wat verandert": "変更内容",
+  "{0} koppelingen bijgewerkt.": "{0}件のリンクを更新しました。"
 }

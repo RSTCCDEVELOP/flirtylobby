@@ -33,13 +33,13 @@ def _read():
         return []
 
 
-def _secret_fields(provider):
+def secret_fields(provider):
     from .providers import PROVIDERS
 
     return {fl["key"] for fl in PROVIDERS.get(provider, {}).get("fields", []) if fl.get("secret")}
 
 
-def _remote():
+def _remote(strict=False):
     """{slug: row} of the links of the easy2edit server, with their keys; {} when this installation is the server itself, when the server does not give them (not approved) or cannot be reached."""
     from apps.core import resources, sitemanager
 
@@ -47,20 +47,36 @@ def _remote():
         return {}
     try:
         data = json.loads(resources._remote_call("", {}, prefix="default-links/").decode("utf-8"))
-    except (resources.ResourceError, ValueError):
+    except (resources.ResourceError, ValueError) as e:
+        if strict:
+            raise
         return {}
-    return {str(r.get("slug")): r for r in (data.get("links") or []) if isinstance(r, dict) and r.get("slug")}
+    from apps.core import sitemanager
+
+    from . import linkcrypt
+
+    th = linkcrypt.hash_of(sitemanager._state().get("token") or "")  # the keys come sealed: they are opened here, at the installation
+    out = {}
+    for r in (data.get("links") or []):
+        if not (isinstance(r, dict) and r.get("slug")):
+            continue
+        r = dict(r)
+        opened = linkcrypt.unseal(r.pop("secret_enc", ""), th)
+        r["config"] = {**(r.get("config") or {}), **opened}  # (an older server that sends the keys in the clear still works)
+        out[str(r["slug"])] = r
+    return out
 
 
-def apply(force=False):
-    """Make the default links. force=True also switches them on. Returns [{key, label, ok, message}]."""
+def apply(force=False, refresh_keys=False):
+    """Make the default links. force=True also switches them on. refresh_keys=True (an update): the keys of the links of the easy2edit server (the superadmin+ links) are brought up to date
+    when they are different there. Returns [{key, label, ok, message}]."""
     from .models import Integration
     from .providers import PROVIDERS
 
     rows = {str(r.get("slug") or ""): r for r in _read()}
     existing = {o.slug: o for o in Integration.objects.filter(slug__in=[x for x in rows if x])}
     remote = {}
-    if force or any(slug not in existing or any(not str((existing[slug].config or {}).get(k) or "").strip() for k in _secret_fields(str(r.get("provider") or ""))) for slug, r in rows.items()):
+    if force or refresh_keys or any(slug not in existing or any(not str((existing[slug].config or {}).get(k) or "").strip() for k in secret_fields(str(r.get("provider") or ""))) for slug, r in rows.items()):
         remote = _remote()  # the keys: only asked when a link is missing or has a key that is still empty
     for slug, r in remote.items():
         rows.setdefault(slug, {k: r.get(k) for k in ("slug", "provider", "name", "superadmin_only", "always_on")})
@@ -74,6 +90,7 @@ def apply(force=False):
             obj = existing.get(slug) or Integration.objects.filter(slug=slug).first()
             if obj and not force and not remote.get(slug):
                 continue
+            refresh = bool(refresh_keys and obj and remote.get(slug) and (remote[slug].get("superadmin_only") or obj.superadmin_only))  # a link of the server: its keys follow the server
             fields = {k: v for k, v in {**(row.get("config") or {}), **((remote.get(slug) or {}).get("config") or {})}.items() if isinstance(v, str) and v.strip()}
             new = obj is None
             if new:
@@ -82,6 +99,14 @@ def apply(force=False):
             for k, v in fields.items():
                 if not str(cfg.get(k) or "").strip():
                     cfg[k], changed = v, True
+                elif refresh and cfg.get(k) != v:  # the setting (a key, an account, a model) changed on the server: it is taken along here (only when it is different)
+                    cfg[k], changed = v, True
+            if refresh:  # the shape too (name, who may see it, always on) when the server says something else
+                rem = remote.get(slug) or {}
+                for attr in ("name", "superadmin_only", "always_on"):
+                    if attr in rem and rem[attr] is not None and getattr(obj, attr) != (str(rem[attr])[:100] if attr == "name" else bool(rem[attr])):
+                        setattr(obj, attr, str(rem[attr])[:100] if attr == "name" else bool(rem[attr]))
+                        changed = True
             if not changed and not force:
                 continue
             obj.config, obj.in_installation = cfg, True
@@ -90,7 +115,7 @@ def apply(force=False):
             if force:
                 obj.enabled = True
             obj.save()
-            out.append({"key": f"api_{slug}", "label": label, "ok": True, "message": "Aan." if force or new else "Aangevuld."})
+            out.append({"key": f"api_{slug}", "label": label, "ok": True, "message": "Aan." if force or new else ("Sleutel vernieuwd." if refresh else "Aangevuld.")})
         except Exception as e:  # noqa: BLE001
             logger.exception("Default link %s could not be set", slug)
             out.append({"key": f"api_{slug}", "label": label, "ok": False, "message": str(e)[:200]})
@@ -105,3 +130,38 @@ def capture():
     rows = [{"slug": o.slug, "provider": o.provider, "name": o.name, "superadmin_only": o.superadmin_only, **({"always_on": True} if o.always_on else {})} for o in Integration.objects.filter(in_installation=True).order_by("id")]  # (always_on only when it is on)
     PATH.write_text(json.dumps({"format": "default-links", "version": 2, "note": "Only the shape of the links. No keys and no settings in here: they come from the easy2edit server (Site manager).", "links": rows}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     return [r["slug"] for r in rows]
+
+
+
+def check():
+    """Look at the API links of the easy2edit server and compare them with this installation, without changing anything (the keys are never shown, only that they differ).
+    -> {ok, error, links: [{slug, name, provider, state: ok | update | missing | local, fields: [{field, secret, differs}]}]}"""
+    from apps.core import resources, sitemanager
+
+    from .models import Integration
+
+    if sitemanager.server_enabled():
+        return {"ok": False, "server": True, "error": "Deze installatie is zelf de easy2edit-server: de koppelingen staan hier al.", "links": []}
+    if sitemanager.disabled():
+        return {"ok": False, "error": "Het melden bij de easy2edit-server staat uit.", "links": []}
+    try:
+        remote = _remote(strict=True)
+    except (resources.ResourceError, ValueError) as e:
+        return {"ok": False, "error": str(e)[:200] or "De easy2edit-server geeft de koppelingen niet (is de website goedgekeurd?).", "links": []}
+    local = {o.slug: o for o in Integration.objects.filter(in_installation=True) | Integration.objects.filter(slug__in=list(remote))}
+    out = []
+    for slug, r in remote.items():
+        prov = str(r.get("provider") or "")
+        secrets_ = secret_fields(prov)
+        obj = local.get(slug)
+        fields = []
+        for k, v in (r.get("config") or {}).items():
+            if isinstance(v, str) and v.strip():
+                fields.append({"field": k, "secret": k in secrets_, "differs": (obj is None) or str((obj.config or {}).get(k) or "") != v})
+        shape = obj is not None and any(getattr(obj, a) != (str(r[a])[:100] if a == "name" else bool(r[a])) for a in ("name", "superadmin_only", "always_on") if r.get(a) is not None)
+        state = "missing" if obj is None else "update" if shape or any(f["differs"] for f in fields) else "ok"
+        out.append({"slug": slug, "name": str(r.get("name") or slug), "provider": prov, "state": state, "fields": fields})
+    for slug, o in local.items():
+        if slug not in remote and o.in_installation:
+            out.append({"slug": slug, "name": o.name, "provider": o.provider, "state": "local", "fields": []})
+    return {"ok": True, "error": "", "links": out, "need_update": any(x["state"] in ("update", "missing") for x in out)}

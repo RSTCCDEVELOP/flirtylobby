@@ -7971,5 +7971,14 @@
   "Zet tabs aan die je met een update met rust wilt laten. Niets aan: alle tabs worden bijgewerkt.": "Włącz karty, które chcesz zostawić w spokoju podczas aktualizacji. Nic nie włączone: wszystkie karty są aktualizowane.",
   "niet bijgewerkt tot en met build": "nie aktualizowane do buildu włącznie",
   "t/m build": "do buildu",
-  "weer bijgewerkt vanaf build": "znów aktualizowane od buildu"
+  "weer bijgewerkt vanaf build": "znów aktualizowane od buildu",
+  "API-koppelingen bijwerken": "Zaktualizuj połączenia API",
+  "Alleen hier": "Tylko tutaj",
+  "Alles is actueel": "Wszystko jest aktualne",
+  "De API-koppelingen controleren en bijwerken via de easy2edit-server": "Sprawdź i zaktualizuj połączenia API przez serwer easy2edit",
+  "De koppelingen die de easy2edit-server voor elke website meegeeft (superadmin+). Hier zie je welke zijn veranderd op de server. Sleutels en instellingen worden versleuteld overgenomen; ze worden hier nooit getoond.": "Połączenia, które serwer easy2edit udostępnia dla każdej strony (superadmin+). Tutaj widzisz, które zmieniły się na serwerze. Klucze i ustawienia są przejmowane w formie zaszyfrowanej; nigdy nie są tu pokazywane.",
+  "Koppeling": "Połączenie",
+  "Verandert": "Zmienia się",
+  "Wat verandert": "Co się zmienia",
+  "{0} koppelingen bijgewerkt.": "Zaktualizowano połączenia: {0}."
 }
