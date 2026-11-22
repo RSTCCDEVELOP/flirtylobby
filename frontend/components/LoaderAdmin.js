@@ -19,7 +19,7 @@ import MediaPicker from "./MediaPicker";
 import SaveStatus from "./SaveStatus";
 
 // Page loaders: lazy load, the look of the loader (in the style of the theme) and a test button. Saved by itself, with the theme.
-const NAMES = { ring: "Ring", dots: "Stippen", bar: "Voortgangsbalk", pulse: "Pulserende bol", orbit: "Baantjes", squares: "Blokjes", wave: "Golf", skeleton: "Pagina-schets", logo: "Logo", image: "Eigen afbeelding" };
+const NAMES = { tree: "Groene boom (standaard)", ring: "Ring", dots: "Stippen", bar: "Voortgangsbalk", pulse: "Pulserende bol", orbit: "Baantjes", squares: "Blokjes", wave: "Golf", skeleton: "Pagina-schets", logo: "Logo", image: "Eigen afbeelding" };
 const ANIMS = [["pulse", "Pulseren"], ["spin", "Draaien"], ["bounce", "Springen"], ["none", "Stilstaand"]];
 const WHEN = [["first", "Alleen bij het eerste laden van de site"], ["always", "Ook tussen pagina's"]];
 const BACKDROP = [["page", "Achtergrond van de pagina"], ["glass", "Glas (vervaagd)"], ["dim", "Donker gedimd"]];

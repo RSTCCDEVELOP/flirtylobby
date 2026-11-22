@@ -37,8 +37,10 @@ import SandboxPill from "./SandboxPill";
 import { useEntity } from "../lib/entity";
 import { ADMIN_PAGES, canAdmin, lvl, pageAllowed } from "../lib/perms";
 import { useModules } from "./Modules";
+import { useEcologiAdminOn, useEcologiOn } from "../lib/ecologi";
 import AiCreditGate from "./AiCreditGate";
 import AiWelcome from "./AiWelcome";
+import TreesWelcome from "./TreesWelcome";
 import ManualHelp from "./ManualHelp";
 import { useLicencePhase, PHASE_NOW } from "../lib/licencePhase";
 import SandboxFirstAsk from "./SandboxFirstAsk";
@@ -53,7 +55,7 @@ import { useNavMode } from "../lib/navmode";
 import { useSession } from "./Session";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
+import { IconTree, IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
 
 import { useUpdates } from "../lib/updates";
 
@@ -126,6 +128,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/storage", label: "Mappenstructuur", icon: <IconFolder />, perm: "storage.manage" },
   { href: "/dashboard/admin/statistieken", label: "Statistieken", icon: <IconGrid />, perm: "stats.use" },
   { href: "/dashboard/admin/energy", label: "Energie & uitstoot", icon: <IconBolt /> },
+  { href: "/dashboard/admin/bomen", label: "Bomen en giften", icon: <IconTree />, needs: "ecologi_admin" },  // only while the API Ecologi is on and the superadmin allowed it
   { href: "/dashboard/admin/backups", label: "Backup", icon: <IconArchive />, perm: "backups.manage" },
   { href: "/dashboard/admin/settings-backup", label: "Instellingen back-up", icon: <IconArchive /> }, // always available: no module, no extra right
   { href: "/dashboard/admin/license", label: "Licentie", icon: <IconKey />, perm: "system.manage" },
@@ -152,7 +155,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site", "/dashboard/admin/components": "a-site", "/dashboard/admin/templates": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/energy": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/settings-backup": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/btw": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/energy": "a-system", "/dashboard/admin/bomen": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/settings-backup": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/btw": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };
 
 export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };
@@ -212,6 +215,8 @@ export default function DashboardShell({ children }) {
   const { user, logout } = useAuth();
   const chat = useChat();
   const mods = useModules();
+  const ecoOn = useEcologiOn();
+  const ecoAdmin = useEcologiAdminOn();  // Ecologi: the screens are only in the menu while the API is on
   const entity = useEntity(); // the label of the Entiteit in the left menu
   const { sidebar_auto: auto } = useUi();
   const pathname = usePathname();
@@ -287,7 +292,7 @@ export default function DashboardShell({ children }) {
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const faqSet = useFaqSettings(); // Admin → FAQ → Instellingen: is the Help link shown in the left menus
   const imported = useImported(mods.siteimport !== false);
-  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label } : n)).filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
+  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label } : n)).filter((n) => !n.needs || ecoAdmin).filter((n) => { if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
     <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={closeMenu}>
@@ -386,7 +391,7 @@ export default function DashboardShell({ children }) {
           <>
             <Link href="/dashboard" className="back" title={tx("Terug naar dashboard")} onClick={closeMenu}><IconBack /> <span className="label">{tx("Terug naar dashboard")}</span></Link>
             <div className="side-title">{tx("Super admin")}</div>
-            {SUPER_NAV.filter((n) => !n.href.endsWith("/help") || faqSet.nav_link).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/superadmin"} />)}
+            {[...SUPER_NAV.slice(0, -1), ...(ecoOn ? [{ href: "/dashboard/superadmin/ecologi", label: "easy2edit", icon: <IconTree /> }] : []), SUPER_NAV[SUPER_NAV.length - 1]].filter((n) => !n.href.endsWith("/help") || faqSet.nav_link).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard/superadmin"} />)}
             <div className="side-title">{tx("Alle beheerpagina's")}</div>
             {renderGroups(allowedAdminNav.filter((n) => n.href !== "/dashboard/admin"), ADMIN_GROUPS, ADMIN_GROUP_OF)}
           </>
@@ -431,6 +436,7 @@ export default function DashboardShell({ children }) {
         {user && <LicenseChangePrompt />}
         {user && !user.is_staff && <AiCreditGate />}
         {user && <AiWelcome />}
+        {user?.is_staff && <TreesWelcome />}
         {user && <AiLiveCost />}
         {pathname !== "/dashboard" && <div className="back-row"><BackButton pathname={pathname} fallback={backFallback} />{(user?.is_staff || canAdmin(user, mods)) && <ManualHelp />}</div>}
         {locked && <div className="alert" role="alert"><strong>{tx("Licentie niet actief")}</strong> · {tx(PHASE_NOW[lic.phase])}</div>}

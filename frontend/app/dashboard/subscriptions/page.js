@@ -14,6 +14,7 @@ import { api, errorText } from "../../../lib/api";
 import { confirmDialog } from "../../../lib/dialog";
 import DashHero from "../../../components/DashHero";
 import { money } from "../../../lib/format";
+import Loading from "../../../components/Loading";
 
 const BADGE = { pending: "off", trial: "ok", active: "ok", past_due: "off", canceled: "off", expired: "off" };
 
@@ -32,7 +33,7 @@ export default function MySubscriptions() {
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   }
 
-  if (!d) return <p className="muted">{msg?.text || tx("Laden…")}</p>;
+  if (!d) return <p className="muted">{msg?.text || <Loading compact />}</p>;
   const list = d.subscriptions.filter((s) => s.status !== "expired" || s.period_end);
   const nextPay = list.filter((s) => s.recurring && ["trial", "active", "past_due"].includes(s.status) && !s.cancel_at_period_end && s.period_end).map((s) => s.period_end).sort()[0];
   return (

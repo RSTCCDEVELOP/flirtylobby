@@ -33,6 +33,8 @@ DEFAULTS = {
     "reseller_street": "Ambachtsweg", "reseller_house_number": "46", "reseller_postal_code": "3542 DH", "reseller_city": "Utrecht", "reseller_country": "Nederland", "reseller_website": "https://www.studio2.nl",
     # per tab of Standaard en globale instellingen: "1" = do not overwrite on THIS installation: the settings are carried with new installations, but an update (or the website list of the easy2edit server) leaves this tab alone unless it is forced
     "keep_server": "0", "keep_settings": "0", "keep_licence": "0", "keep_mails": "0", "keep_reseller": "0", "keep_twofa": "0",
+    "energy_badge": "0",  # the energy label at the bottom of the website ("1" = on): a click shows the insights and the green status (module Energie)
+    "energy_badge_show": "rating,co2,size,views",  # what its window shows: rating, co2, size, energy, views, live, compare
     "source_mode": "local",  # where the library (the folder resource/: plugins, themes, languages, components) comes from: "local" = the folder of this installation, "easy2edit" = the easy2edit server (api address above)
 }
 SOURCE_MODES = ("local", "easy2edit")
@@ -50,7 +52,39 @@ URL_RE = re.compile(r"^https://[a-z0-9]([a-z0-9.-]*[a-z0-9])?(:\d{2,5})?$")
 
 def get():
     stored = (SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(KEY) or {}
-    return {k: (str(stored.get(k)).strip() if isinstance(stored, dict) and str(stored.get(k) or "").strip() else v) for k, v in DEFAULTS.items()}
+    out = {k: (str(stored.get(k)).strip() if isinstance(stored, dict) and str(stored.get(k) or "").strip() else v) for k, v in DEFAULTS.items()}
+    out.update(_energy_badge_live())  # the label is kept in the settings of the module Energie: that is what this installation really does
+    return out
+
+
+def _energy_badge_live():
+    """{energy_badge, energy_badge_show} as this installation has them now (empty when the module has no settings yet)."""
+    try:
+        from apps.energy import service as es
+        from apps.energy.models import EnergySettings
+
+        row = EnergySettings.objects.filter(pk=1).first()
+        if not row:
+            return {}
+        return {"energy_badge": "1" if row.badge_on else "0", "energy_badge_show": ",".join(es.badge_items(row))}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def apply_energy_badge(values):
+    """Put the energy label settings on this installation (module Energie). Never raises."""
+    try:
+        from apps.energy import service as es
+        from apps.energy.models import EnergySettings
+
+        st = EnergySettings.load()
+        if "energy_badge" in values:
+            st.badge_on = str(values["energy_badge"]) == "1"
+        if "energy_badge_show" in values:
+            st.badge_show = [k for k in str(values["energy_badge_show"]).split(",") if k in es.BADGE_ITEMS]
+        st.save()
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def clean(incoming):
@@ -92,6 +126,13 @@ def clean(incoming):
             if len(items) > 5:
                 errors[k] = f"{LABELS[k]}: maximaal 5 e-mailadressen."
             v = ", ".join(dict.fromkeys(items))
+        elif k == "energy_badge":
+            v = "1" if str(incoming[k]).strip().lower() in ("1", "true", "on", "yes") else "0"
+        elif k == "energy_badge_show":
+            from apps.energy.service import BADGE_ITEMS
+
+            raw = incoming[k] if isinstance(incoming[k], list) else str(incoming[k] or "").split(",")
+            v = ",".join(dict.fromkeys(x.strip() for x in raw if x.strip() in BADGE_ITEMS))
         elif k in LOCAL:
             v = "1" if str(incoming[k]).strip().lower() in ("1", "true", "on", "yes") else "0"
         elif k == "grace_reminder":
@@ -120,6 +161,8 @@ def save(values):
     data[KEY] = {k: v for k, v in {**(data.get(KEY) or {}), **values}.items() if k in DEFAULTS and v}
     obj.data = data
     obj.save()
+    if "energy_badge" in values or "energy_badge_show" in values:
+        apply_energy_badge(values)
     try:
         from . import system
 

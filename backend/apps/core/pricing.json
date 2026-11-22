@@ -37,7 +37,8 @@
     "plugin:games": 6,
     "plugin:orders": 0,
     "plugin:finance": 0,
-    "plugin:documents": 6
+    "plugin:documents": 6,
+    "module:ecologi": 1
   },
   "wizard": [
     {
@@ -197,6 +198,15 @@
       "modules": [
         "word_filter",
         "twofa"
+      ]
+    },
+    {
+      "key": "trees",
+      "label": "Wil je bomen planten met easy2edit?",
+      "help": "Bezoekers, energiegebruik en jouw eigen bijdrage planten samen bomen (Ecologi). De bomen zelf kosten ongeveer € 0,80 per stuk en worden per maand achteraf gefactureerd; je stelt zelf het maximum in.",
+      "modules": [
+        "ecologi",
+        "ecologi_admin"
       ]
     },
     {

@@ -29,6 +29,7 @@ urlpatterns = [
     path("api/", include("apps.notifications.urls")),
     path("api/", include("apps.backups.urls")),
     path("api/", include("apps.energy.urls")),
+    path("api/", include("apps.ecologi.urls")),
     re_path(r"^api/(?P<rest>.+)$", plugin_mount.dispatch),  # the routes of plugins that bring a part of the system (Community, Abonnementen): last, so the system itself wins
 ]
 

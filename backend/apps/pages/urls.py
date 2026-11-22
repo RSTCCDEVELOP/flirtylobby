@@ -30,6 +30,7 @@ urlpatterns = [
     path("pages/import/", views.import_page),
     path("pages/export/", views.export_pages),
     path("pages/<int:pk>/export/", views.export_page),
+    path("pages/improve/<str:key>/", views.improve_page),
     path("pages/<int:pk>/translate-all/", views.translate_page),
     path("pages/<int:pk>/reset/", views.reset_page),
     path("pages/", views.pages),

@@ -13,6 +13,7 @@ import { tx } from "../../lib/t";
 import Tabs from "../../components/Tabs";
 import ThemeToggle from "../../components/ThemeToggle";
 import { IconGrid, IconInfo, IconKey, IconShield } from "../../components/Icons";
+import Loading from "../../components/Loading";
 
 // /easy2edit_version: version, build, modules and administrators. Open to everybody; only the prices need a superadmin login.
 export default function Easy2editVersion() {
@@ -33,7 +34,7 @@ export default function Easy2editVersion() {
 
   const shell = { maxWidth: 960, margin: "0 auto", padding: "2rem 1rem 7rem" }; // room under the fixed Beheer bar
   if (err) return <main style={shell}><div className="card"><p>{err}</p></div></main>;
-  if (!d) return <main style={shell}><p className="muted">{tx("Laden…")}</p></main>;
+  if (!d) return <main style={shell}><p className="muted">{<Loading compact />}</p></main>;
 
   const on = d.modules.filter((m) => m.enabled).length;
   return (

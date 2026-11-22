@@ -15,6 +15,7 @@ import { api, errorText } from "../lib/api";
 import { money } from "../lib/format";
 import { useSession } from "./Session";
 import KitScope from "../lib/ui-kit/KitScope";
+import Loading from "./Loading";
 
 const PER = { week: "per week", month: "per maand", quarter: "per kwartaal", year: "per jaar", once: "eenmalig" };
 
@@ -38,7 +39,7 @@ export default function Plans() {
     setBusy(0);
   }
 
-  if (!data) return <p className="muted">{msg?.text || tx("Laden…")}</p>;
+  if (!data) return <p className="muted">{msg?.text || <Loading compact />}</p>;
   return (
     <>
       {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("locked") && <div className="alert">{data.site_message}</div>}

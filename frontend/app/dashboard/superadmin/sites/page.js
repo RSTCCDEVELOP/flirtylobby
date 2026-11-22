@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconCheck, IconEdit, IconEye, IconGlobe, IconKey, IconRefresh, IconSettings, IconTrash } from "../../../../components/Icons";
+import Link from "next/link";
 import { SiteMaintenance, SiteOnline, SiteView } from "../../../../components/SiteDetails";
 import Tabs from "../../../../components/Tabs";
 import Loading from "../../../../components/Loading";
@@ -82,6 +83,7 @@ export default function SiteManager() {
   return (
     <>
       <h1>{tx("Site manager")}<PlusLock /></h1>
+      <p style={{ margin: "0 0 .6rem" }}><Link className="btn sm" href="/dashboard/superadmin/sites/bomen">{tx("Bomen planten: alle websites")}</Link></p>
       <p className="muted">{tx("Elke easy2edit-website meldt zich de eerste keer bij de easy2edit-server en daarna bij elke keer dat een beheerder, superadmin of superadmin+ inlogt. De server houdt de lijst bij.")}</p>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
 

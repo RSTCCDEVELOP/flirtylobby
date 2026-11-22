@@ -97,7 +97,7 @@ LOGOS = [
 ]
 
 LOADER_STYLES = [{"value": v, "label": l, "css": ""} for v, l in (
-    ("ring", "Ring"), ("dots", "Stippen"), ("bar", "Voortgangsbalk"), ("pulse", "Pulserende bol"), ("orbit", "Baantjes"), ("squares", "Blokjes"),
+    ("tree", "Groene boom (standaard)"), ("ring", "Ring"), ("dots", "Stippen"), ("bar", "Voortgangsbalk"), ("pulse", "Pulserende bol"), ("orbit", "Baantjes"), ("squares", "Blokjes"),
     ("wave", "Golf"), ("skeleton", "Pagina-schets"), ("logo", "Logo"), ("image", "Eigen afbeelding"))]
 LOADER_ANIM = [{"value": v, "label": l, "css": ""} for v, l in (("pulse", "Pulseren"), ("spin", "Draaien"), ("bounce", "Springen"), ("none", "Stilstaand"))]
 LOADER_WHEN = [{"value": "first", "label": "Alleen bij het eerste laden van de site", "css": ""}, {"value": "always", "label": "Ook tussen pagina's", "css": ""}]
@@ -299,7 +299,7 @@ SCHEMA = [
     ]},
     {"key": "loader", "label": "Paginaloader", "fields": [
         choice("loader_on", "Paginaloader tonen", "no", None, YESNO),
-        choice("loader_style", "Soort loader", "ring", None, LOADER_STYLES),
+        choice("loader_style", "Soort loader", "tree", None, LOADER_STYLES),
         choice("loader_when", "Wanneer", "first", None, LOADER_WHEN),
         choice("loader_backdrop", "Achtergrond", "page", None, LOADER_BACKDROP),
         number("loader_size", "Grootte", 56, None, "px", 24, 120),

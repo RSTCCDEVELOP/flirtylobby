@@ -1,4 +1,4 @@
-<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Plugins, back-ups, licentie en implementatie - easy2edit handleiding</title><style>
+<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Plugins, back-ups, licentie en uitrol - easy2edit handleiding</title><style>
 :root{--bg:#fff;--fg:#1f1f24;--mut:#6b6b76;--acc:#d9631a;--acc2:#fff3ea;--line:#e6e6ea;--side:#f7f7f9;--card:#fff;--shadow:0 1px 2px rgba(20,20,30,.06),0 8px 24px rgba(20,20,30,.06)}
 @media (prefers-color-scheme:dark){:root{--bg:#14111a;--fg:#eceaf2;--mut:#a09cad;--acc:#ff9a55;--acc2:#2a1f1a;--line:#2b2635;--side:#1a1621;--card:#1c1823;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
@@ -39,34 +39,32 @@ footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color
 @media(max-width:1180px){.wrap{grid-template-columns:272px minmax(0,1fr)}aside.toc{display:none}}
 @media(max-width:820px){.wrap{display:block}.menu{display:inline-block}nav.side{display:none;position:fixed;inset:60px 0 0 0;z-index:15;height:auto;background:var(--bg);border-right:0}body.open nav.side{display:block}.top .ver{display:none}.top input{width:100%;flex:1}.pager{grid-template-columns:1fr}}
 @media print{.top,nav.side,aside.toc,.pager{display:none}.wrap{display:block}main{padding:0}}
-</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Handleiding</a><a href="videos.html" class="">Video's</a></nav><span class="ver">Handleiding &middot; versie 1.0.0 build 114</span><span class="sp"></span><input id="q" type="search" placeholder="Zoek in hoofdstukken" aria-label="Zoek in hoofdstukken"><span class="langsw"><b>NL</b><a href="../en/chapter-11.html" hreflang="en" title="English">EN</a></span><a class="btn" id="pdf" href="../../pdf/manual_nl.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Handleiding</h4><a href="index.html" data-t="inhoud" class=""><span>&#9776;</span>Inhoud</a><a href="chapter-1.html" data-t="introductie welkom bij easy2edit, een eenvoudig, modulair beheersysteem (cms) voor het bouwen en runnen van portals, websites, webshops en communities. deze handleiding legt uit hoe het systeem werkt en hoe je het beheert vanuit de adminschermen.
+</style></head><body><header class="top"><button class="menu" id="menu" aria-label="Menu">&#9776;</button><a class="brand" href="index.html">easy2<b>edit</b></a><nav class="tabs"><a href="index.html" class="on">Handleiding</a><a href="videos.html" class="">Video's</a></nav><span class="ver">Handleiding &middot; versie 1.1.0 build 158</span><span class="sp"></span><input id="q" type="search" placeholder="Zoek in hoofdstukken" aria-label="Zoek in hoofdstukken"><span class="langsw"><b>NL</b><a href="../en/chapter-11.html" hreflang="en" title="English">EN</a></span><a class="btn" id="pdf" href="../../pdf/manual_nl.pdf" download>PDF</a></header><div class="wrap"><nav class="side"><h4>Handleiding</h4><a href="index.html" data-t="inhoud" class=""><span>&#9776;</span>Inhoud</a><a href="chapter-1.html" data-t="introductie welkom bij easy2edit, een eenvoudig, modulair beheersysteem (cms) voor het bouwen en runnen van portals, websites, webshops en communities. deze handleiding legt uit hoe het systeem werkt en hoe je het beheert vanuit de adminschermen.
 
 ## wat is easy2edit
 
-met easy2edit bouw je een website uit blokken. in plaats van code te schrijven, zet je modules en plugins aan of uit, en rangschik je blokken o" class=""><span>1</span>Introductie</a><a href="chapter-2.html" data-t="aan de slag ## eerste keer inloggen
+met easy2edit bouw je een website uit blokken. in plaats van code te schrijven, zet je modules en plugins aan of uit, en rangschik je blokken o" class=""><span>1</span>Introductie</a><a href="chapter-2.html" data-t="aan de slag ## voor het eerst inloggen
 
-log voor de eerste keer in op easy2edit als superadmin. het superadmin-account heeft volledige toegang tot elke module en instelling, dus dit is de rol die je gebruikt om de website op te zetten en te laten draaien.
+de allereerste keer dat je easy2edit opent, log je in als superadmin. dit account heeft volledige toegang tot alle instellingen en is het account waarmee je de website inricht.
 
-als je easy2edit op je eigen computer (localhost) draait, vraagt het systeem meteen of je de sandbox wilt aanzetten. dit is het overwegen waard voordat je ver" class=""><span>2</span>Aan de slag</a><a href="chapter-3.html" data-t="pagina&#x27;s, menu en bewerkmodus met easy2edit bouw en beheer je elke pagina van je site vanuit admin &gt; pagina&#x27;s. dit hoofdstuk legt uit hoe pagina&#x27;s zijn georganiseerd, hoe het menu werkt en hoe je de bewerkmodus gebruikt om je pagina&#x27;s vorm te geven.
+als de site op je eigen computer draait (localhost), vraagt het systeem eerst of je de sandbox wilt aanzetten. met de sandbox aan worden betalingen, e-mail, sms en tests van api-koppelingen alle" class=""><span>2</span>Aan de slag</a><a href="chapter-3.html" data-t="pagina&#x27;s, menu en edit mode dit hoofdstuk legt uit hoe pagina&#x27;s in easy2edit zijn georganiseerd, hoe het menu werkt, en hoe je pagina-inhoud opbouwt en bewerkt met edit mode en de pagina-editor.
 
 ## overzicht van pagina&#x27;s
 
-in admin &gt; pagina&#x27;s vind je verschillende soorten pagina&#x27;s:
+ga naar admin &gt; pagina&#x27;s om alle pagina&#x27;s op jouw site te zien. er zijn verschillende soorten pagina&#x27;s:
 
-- systeempagina&#x27;s, zoals home en producten, die onderdeel zijn van het systeem.
-- eigen pag" class=""><span>3</span>Pagina&#x27;s, menu en bewerkmodus</a><a href="chapter-4.html" data-t="een website importeren (site import) met site import zet je een bestaande website, een set html-bestanden of een prompt die je hebt gemaakt met een externe ai om in een kant-en-klare easy2edit-site. er wordt niets op je website aangemaakt voordat je het voorstel hebt gezien en goedgekeurd.
+- systeempagina&#x27;s, zoals home of producten, die bij het systeem zelf horen.
+- eigen pagina&#x27;s: tekstp" class=""><span>3</span>Pagina&#x27;s, menu en edit mode</a><a href="chapter-4.html" data-t="een website importeren (site import) met site import zet je een bestaande website, een set html-bestanden of een prompt die je hebt gemaakt met een externe ai om in een kant-en-klare easy2edit-site. er wordt niets op je website aangemaakt voordat je het voorstel hebt gezien en goedgekeurd.
 
 je vindt deze functie onder admin &gt; geïmporteerd. de knop heet &#x27;site import&#x27; totdat je voor het eerst een site hebt geïmporteerd; daarna heet hij" class=""><span>4</span>Een website importeren (Site import)</a><a href="chapter-5.html" data-t="media, thema, talen en branding ## media bibliotheek
 
-de media bibliotheek is de plek waar je alle afbeeldingen en video&#x27;s beheert die op je website worden gebruikt. bestanden kunnen lokaal of op s3 worden opgeslagen, en je kunt ze organiseren met tags zodat je ze later makkelijk terugvindt.
+de media bibliotheek is de plek waar je alle afbeeldingen en video&#x27;s voor je website beheert, of ze nu lokaal zijn opgeslagen of op amazon s3. je kunt tags toevoegen aan je bestanden om ze georganiseerd en makkelijk vindbaar te houden.
 
-zodra een afbeelding is geüpload, kun je deze vanuit elke pop-up in het systeem kiezen uit de media bibliotheek, zodat je nooit dezelfde a" class=""><span>5</span>Media, thema, talen en branding</a><a href="chapter-6.html" data-t="gebruikers, rollen en beveiliging dit hoofdstuk legt uit hoe easy2edit omgaat met accounts, rechten en de beveiligingsinstellingen die je website en de bezoekers ervan beschermen.
+zodra een bestand in de media bibliotheek staat, is het overal in het systeem beschikbaar. wanneer je een pop-up open om een afbeelding te ki" class=""><span>5</span>Media, thema, talen en branding</a><a href="chapter-6.html" data-t="gebruikers, rollen en beveiliging easy2edit geeft je fijnmazige controle over wie toegang heeft tot je site, wat ze mogen doen zodra ze binnen zijn, én hoe de site zichzelf en haar bezoekers beschermt. dit hoofdstuk legt gebruikers, groepen van users, rollen en de beveiligingstools in het adminpaneel uit.
 
-## dashboard en profiel
+## gebruikers
 
-elke beheerder logt in via het inlogscherm en komt terecht op het dashboard, het centrale startpunt voor het beheren van de website. vanaf hier open je ook je eigen profiel om je gegevens bij te werken.
-
-ga naar admin &gt; dashboar" class=""><span>6</span>Gebruikers, rollen en beveiliging</a><a href="chapter-7.html" data-t="webwinkel, bestellingen, betalingen, abonnementen en donaties easy2edit biedt een reeks onderling verbonden plugins die samen van je website een volledig werkende webwinkel, ledensysteem of donatieplatform maken. afhankelijk van wat je wilt bereiken, combineer je de plugins webwinkel, bestellingen, financieel en abonnementen. dit hoofdstuk legt uit wat elke plugin doet en hoe ze samenwerken.
+iedere persoon die toegang nodig heeft tot het adminpaneel of een persoonlijke aanwezigheid op de website heeft" class=""><span>6</span>Gebruikers, rollen en beveiliging</a><a href="chapter-7.html" data-t="webwinkel, bestellingen, betalingen, abonnementen en donaties easy2edit biedt een reeks onderling verbonden plugins die samen van je website een volledig werkende webwinkel, ledensysteem of donatieplatform maken. afhankelijk van wat je wilt bereiken, combineer je de plugins webwinkel, bestellingen, financieel en abonnementen. dit hoofdstuk legt uit wat elke plugin doet en hoe ze samenwerken.
 
 ## hoe de plugins met elkaar samenhangen
 
@@ -78,67 +76,82 @@ de community-plugin bundelt alles wat je nodig hebt voor een " class=""><span>8<
 
 dit hoofdstuk behandelt drie gerelateerde tools die je helpen te begrijpen en verbeteren hoe je website presteert: seo-instellingen, de faq-module en het statistieken-dashboard. samen helpen ze zoekmachines, bots en ai-agents om je content te vinden en te begrijpen, laten ze je veelgestelde vragen van bezoekers direct op je site beantwoorden, en geven ze je inzicht in hoe je site daa" class=""><span>9</span>SEO, FAQ en statistieken</a><a href="chapter-10.html" data-t="ai en ai-tegoed easy2edit gebruikt kunstmatige intelligentie, aangedreven door claude (anthropic), door het hele systeem heen. het helpt bij het vertalen van content, het schrijven van paginateksten, het importeren van websites, het opzoeken van prijzen en meer. omdat ai-aanroepen echte kosten met zich meebrengen, wordt elke aanroep gelogd en in de meeste gevallen betaald met ai-tegoed.
 
-## hoe ai wordt ingeschak" class=""><span>10</span>AI en AI-tegoed</a><a href="chapter-11.html" data-t="plugins, back-ups, licentie en implementatie dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je je gegevens kunt beschermen met back-ups, hoe de licentiekosten worden berekend en wat je kunt verwachten wanneer het systeem wordt geïmplementeerd en bijgewerkt.
+## hoe ai wordt ingeschak" class=""><span>10</span>AI en AI-tegoed</a><a href="chapter-11.html" data-t="plugins, back-ups, licentie en uitrol dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je jouw data veilig kunt houden met back-ups, hoe de licentie en de prijzen werken, hoe het systeem wordt uitgerold, en hoe de boomplantfunctie van easy2edit bijdraagt aan een groener internet.
 
 ## plugins
 
-plugins zijn ondertekende pakketten die zich in de map /plugins bevinden. je beheert ze via admin &gt; plugins.
+plugins zijn ondertekende pakketten die in de map /plugins staan. jij beheert ze in admin &gt; plugins.
 
-- je kunt een plugin installeren vanui" class="on"><span>11</span>Plugins, back-ups, licentie en implementatie</a></nav><main><article><div class="crumb"><a href="index.html">Handleiding</a> / Hoofdstuk 11</div><h1>11. Plugins, back-ups, licentie en implementatie</h1>
-<p class="lead">Dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je je gegevens kunt beschermen met back-ups, hoe de licentiekosten worden berekend en wat je kunt verwachten wanneer het systeem wordt geïmplementeerd en bijgewerkt.</p>
+- installeer een p" class="on"><span>11</span>Plugins, back-ups, licentie en uitrol</a></nav><main><article><div class="crumb"><a href="index.html">Handleiding</a> / Hoofdstuk 11</div><h1>11. Plugins, back-ups, licentie en uitrol</h1>
+<p class="lead">Dit hoofdstuk legt uit hoe je easy2edit kunt uitbreiden met plugins, hoe je jouw data veilig kunt houden met back-ups, hoe de licentie en de prijzen werken, hoe het systeem wordt uitgerold, en hoe de boomplantfunctie van easy2edit bijdraagt aan een groener internet.</p>
 <div class="video"><video controls preload="metadata" poster="../../video/nl/backup-restore.jpg" width="1280" height="800"><source src="../../video/nl/backup-restore.mp4" type="video/mp4"></video><p>Video: Back-up en terugzetten <span>(Nederlandse voice-over ook in <a href="../../video/en/backup-restore.mp4" target="_blank" rel="noopener">English</a>)</span></p></div>
 <div class="video"><video controls preload="metadata" poster="../../video/nl/plugins-license.jpg" width="1280" height="800"><source src="../../video/nl/plugins-license.mp4" type="video/mp4"></video><p>Video: Plugins en licentie <span>(Nederlandse voice-over ook in <a href="../../video/en/plugins-license.mp4" target="_blank" rel="noopener">English</a>)</span></p></div>
 <figure><a href="images/integrations.jpg" target="_blank" rel="noopener"><img src="images/integrations.jpg" alt="Admin &gt; API keys: de koppelingen met externe systemen, met het label Superadmin." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 1. Admin &gt; API keys: de koppelingen met externe systemen, met het label Superadmin.</figcaption></figure>
 <h2 id="plugins">Plugins<a class="anc" href="#plugins" aria-label="Link to this section">#</a></h2>
-<p>Plugins zijn ondertekende pakketten die zich in de map /plugins bevinden. Je beheert ze via Admin &gt; Plugins.</p>
+<p>Plugins zijn ondertekende pakketten die in de map /plugins staan. Jij beheert ze in Admin &gt; Plugins.</p>
 <ul>
-<li>Je kunt een plugin installeren vanuit de bibliotheek (resource/plugins).</li>
-<li>Zodra een plugin is geïnstalleerd, kun je hem op elk moment aan- of uitzetten.</li>
-<li>Updates worden vanuit hetzelfde scherm toegepast.</li>
+<li>Installeer een plugin uit de bibliotheek (resource/plugins).</li>
+<li>Zet een plugin op elk moment aan of uit.</li>
+<li>Update een plugin wanneer er een nieuwe versie beschikbaar is.</li>
 </ul>
-<p>Een plugin kan zijn eigen pagina&#x27;s, modules, vertalingen (beschikbaar in 44 talen) en adminschermen meebrengen. Alles wat een plugin nodig heeft, wordt gezamenlijk geïnstalleerd, zodat je deze onderdelen niet apart hoeft te configureren.</p>
-<p>Sommige plugins bevatten demo content. Als een plugin demo content heeft, toont de pagina ervan in Admin &gt; Plugins (tab Overzicht) een knop met de tekst &#x27;Maak demo content&#x27;. Zodra de demo content is aangemaakt, verandert dezelfde knop in &#x27;Verwijder demo content&#x27;, zodat je deze met één klik weer kunt verwijderen. Het resetten van het systeem verwijdert ook alle demo content die door plugins is aangemaakt.</p>
-<p>Enkele technische opmerkingen over plugins en systeemkoppelingen:</p>
+<p>Een plugin kan zijn eigen pagina&#x27;s, modules, vertalingen (alle 44 talen) en adminschermen meebrengen, waardoor hij net als een ingebouwde functie in de site integreert.</p>
+<p>Als een plugin demo content bevat, toont de pagina in Admin &gt; Plugins (tab Overzicht) een knop met de tekst &#x27;Maak demo content&#x27;. Zodra de demo content is aangemaakt, verandert dezelfde knop in &#x27;Verwijder demo content&#x27;, zodat je het weer kunt weghalen. Het resetten van het systeem verwijdert ook alle demo content die door plugins is aangemaakt.</p>
+<p>Een paar details over plugins zijn goed om te weten:</p>
 <ul>
-<li>De module API-sleutels staat in elke standaardinstallatie altijd aan.</li>
-<li>De superadmin-koppelingen voor AI, Stripe, mail en opslag worden automatisch ingeschakeld zodra een installatie wordt opgezet, zodat deze verbindingen zonder extra stappen blijven werken.</li>
-<li>De geheime sleutels achter deze koppelingen worden om veiligheidsredenen nooit opgeslagen in het installatiebestand.</li>
-<li>Een link die is gemarkeerd als Superadmin-koppeling kan alleen door superadmins worden bekeken en gewijzigd; andere beheerders zien deze instellingen niet.</li>
+<li>De module API keys staat in elke standaardinstallatie altijd aan.</li>
+<li>De superadmin-koppelingen (AI, Stripe, mail, opslag) worden automatisch aangezet wanneer een installatie wordt opgezet, zodat ze blijven werken. De geheime sleutels zelf worden nooit opgeslagen in het installatiebestand.</li>
+<li>Een link met het label Superadmin-koppeling kan alleen door superadmins worden gezien en gewijzigd.</li>
 </ul>
 <figure><a href="images/plugins.jpg" target="_blank" rel="noopener"><img src="images/plugins.jpg" alt="Admin &gt; Plugins: plugins installeren, aanzetten en updaten." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 2. Admin &gt; Plugins: plugins installeren, aanzetten en updaten.</figcaption></figure>
-<h2 id="het-systeem-resetten">Het systeem resetten<a class="anc" href="#het-systeem-resetten" aria-label="Link to this section">#</a></h2>
-<p>Via Super admin &gt; Systeem &gt; Reset kun je het systeem resetten. Tijdens een reset wordt gevraagd of de AI-gegevens in de database ook verwijderd moeten worden. Dit omvat alle AI-aanroepen met hun kosten, evenals de credit-geschiedenis en het resterende credit van superadmins. De AI-instellingen zelf blijven behouden, zodat je deze daarna niet opnieuw hoeft in te stellen.</p>
-<p>Let op: er wordt niet apart gevraagd naar het credit van gewone gebruikers, omdat dit automatisch verdwijnt wanneer die gebruikers als onderdeel van de reset worden verwijderd.</p>
-<figure><a href="images/backups.jpg" target="_blank" rel="noopener"><img src="images/backups.jpg" alt="Admin &gt; Back-ups: de site back-uppen en herstellen." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 3. Admin &gt; Back-ups: de site back-uppen en herstellen.</figcaption></figure>
 <h2 id="back-ups">Back-ups<a class="anc" href="#back-ups" aria-label="Link to this section">#</a></h2>
-<p>Admin &gt; Back-ups geeft je back-ups op dagelijkse, wekelijkse of maandelijkse basis. Een back-up omvat:</p>
+<p>Admin &gt; Back-ups maakt back-ups per dag, week of maand, van pagina&#x27;s, menu&#x27;s, teksten, afbeeldingen, het thema, en de instellingen van modules en plugins.</p>
+<p>Vanaf hetzelfde scherm kun je:</p>
 <ul>
-<li>Pagina&#x27;s</li>
-<li>Menu&#x27;s</li>
-<li>Teksten</li>
-<li>Afbeeldingen</li>
-<li>Thema</li>
-<li>Instellingen van modules en plugins</li>
+<li>Een back-up terugzetten.</li>
+<li>Een back-up downloaden.</li>
 </ul>
-<p>Vanuit hetzelfde scherm kun je een back-up herstellen of downloaden om elders veilig te bewaren.</p>
-<p>De standaard installatiebasis (installations.json) maakt deel uit van het systeem zelf en hoef je niet apart te back-uppen. Net als bij pluginkoppelingen worden geheime sleutels nooit in dit bestand opgeslagen, zodat een back-up of download je geheime gegevens nooit blootlegt.</p>
+<p>De standaard installatiebasis (installations.json) maakt deel uit van het systeem zelf, en net als bij plugin-installaties worden geheime sleutels hier nooit in opgenomen.</p>
+<figure><a href="images/backups.jpg" target="_blank" rel="noopener"><img src="images/backups.jpg" alt="Admin &gt; Back-ups: de site back-uppen en herstellen." width="1440" height="900" loading="lazy"></a><figcaption>Afbeelding 3. Admin &gt; Back-ups: de site back-uppen en herstellen.</figcaption></figure>
+<h2 id="site-import">Site-import<a class="anc" href="#site-import" aria-label="Link to this section">#</a></h2>
+<p>Een hele andere website kan worden geïmporteerd: een adres, een map, een ZIP-bestand, of een los HTML-bestand. Importeren brengt het thema, de pagina&#x27;s, de startpagina, iconen en afbeeldingen mee.</p>
+<p>Wanneer je een los HTML-bestand importeert, bouwt Claude het thema, de pagina&#x27;s en de content, en zet hij de modules aan die nodig zijn om dit te ondersteunen.</p>
+<p>Een geïmporteerde site kan weer worden verwijderd, samen met alles wat erbij hoorde.</p>
+<h2 id="statistieken">Statistieken<a class="anc" href="#statistieken" aria-label="Link to this section">#</a></h2>
+<p>Statistieken verzamelt grafieken en cijfers voor de hele website: bezoekers, SEO, bots en AI-aanroepen, plus een apart tabblad voor elke module en plugin. Modules en plugins schrijven hier hun eigen cijfers naartoe. Als een plugin is uitgezet, wordt er niets voor geteld.</p>
+<h2 id="seo">SEO<a class="anc" href="#seo" aria-label="Link to this section">#</a></h2>
+<p>SEO-instellingen helpen zoekmachines, bots en AI-agents om jouw site te begrijpen: robots.txt, sitemap, llms.txt, paginatitels, beschrijvingen en structured data.</p>
 <h2 id="licentie">Licentie<a class="anc" href="#licentie" aria-label="Link to this section">#</a></h2>
-<p>Admin &gt; Licentie toont de kosten en de betaalmethode van je licentie, die je via Stripe of op factuur kunt afrekenen. De prijs van je licentie volgt direct uit de modules en plugins die je hebt aangezet, dus iets uitzetten verlaagt de kosten en iets aanzetten verhoogt ze navenant.</p>
-<p>Voor superadmins biedt Super admin &gt; Prijzen een breder scala aan tools:</p>
-<ul>
-<li>De volledige prijslijst, uitgesplitst per maand, kwartaal en jaar.</li>
-<li>Offertes die als PDF gegenereerd kunnen worden.</li>
-<li>Marketingtegels om prijzen aan klanten te presenteren.</li>
-<li>Verkoopberekeningen ter ondersteuning van commerciële beslissingen.</li>
-</ul>
-<h2 id="gerelateerde-tools-seo-statistieken-en-site-import">Gerelateerde tools: SEO, statistieken en site-import<a class="anc" href="#gerelateerde-tools-seo-statistieken-en-site-import" aria-label="Link to this section">#</a></h2>
-<p>Een aantal andere tools in het systeem werken nauw samen met de hierboven beschreven plugins en modules.</p>
-<p>SEO-instellingen bepalen hoe je site wordt gevonden en gelezen door zoekmachines, bots en AI-agents, waaronder robots.txt, de sitemap, llms.txt, paginatitels, beschrijvingen en gestructureerde data.</p>
-<p>Met de tool voor site-import kun je een andere website inlezen, of dat nu vanaf een adres, een map, een ZIP-bestand of een los html-bestand is, waarbij het thema, de pagina&#x27;s, de startpagina, iconen en afbeeldingen worden overgenomen. Wanneer je een los html-bestand importeert, bouwt Claude het thema, de pagina&#x27;s en de inhoud, en zet hij welke modules dan ook aan die nodig zijn om deze te ondersteunen. Een geïmporteerde site kan op elk moment weer worden verwijderd, samen met alles wat erbij hoorde.</p>
-<p>Statistieken verzamelen grafieken en cijfers voor de hele website: bezoekers, SEO-prestaties, en bot- en AI-aanroepen, met een apart tabblad voor elke module en plugin. Modules en plugins schrijven hun eigen cijfers naar dit gedeelte. Als een bepaalde plugin uitgezet is, wordt daar niets voor geteld, dus statistieken geven alleen de actieve onderdelen van je installatie weer.</p>
+<p>Admin &gt; Licentie toont de kosten en de betaalmethode van jouw licentie, via Stripe of via factuur. De prijs volgt rechtstreeks uit de modules en plugins die je hebt aangezet.</p>
 <h2 id="deployment">Deployment<a class="anc" href="#deployment" aria-label="Link to this section">#</a></h2>
-<p>easy2edit wordt gedeployed met Docker, met aparte compose-bestanden voor ontwikkel- en productieomgevingen. Een reverse proxy en certificaten zorgen voor veilige toegang. Wanneer de backend opstart, voert deze automatisch eventuele openstaande migraties uit, zodat je installatie up-to-date blijft met de huidige datastructuur.</p>
-<p>Elke installatie toont zijn versie als &#x27;easy2edit versie 1.0.0 build X&#x27;. Deze informatie komt uit één centrale plek, backend/BUILD, zodat je altijd precies kunt controleren welke build er draait.</p><div class="pager"><a href="chapter-10.html"><small>Vorige</small><strong>&larr; AI en AI-tegoed</strong></a><span></span></div><footer>easy2edit handleiding &middot; versie 1.0.0 build 114 &middot; Nederlands</footer></article></main><aside class="toc"><h4>Op deze pagina</h4><a href="#plugins">Plugins</a><a href="#het-systeem-resetten">Het systeem resetten</a><a href="#back-ups">Back-ups</a><a href="#licentie">Licentie</a><a href="#gerelateerde-tools-seo-statistieken-en-site-import">Gerelateerde tools: SEO, statistieken en site-import</a><a href="#deployment">Deployment</a></aside></div><script>
+<p>easy2edit wordt gedeployed met Docker, met aparte compose-bestanden voor ontwikkeling en productie. Een reverse proxy regelt de routing en certificaten. Bij het opstarten voert de backend automatisch zijn database-migraties uit.</p>
+<p>Elke installatie toont zijn versie, als &#x27;easy2edit version 1.0.0 build X&#x27;, afkomstig uit één centrale plek: backend/BUILD.</p>
+<h2 id="bomen-planten-met-ecologi">Bomen planten met Ecologi<a class="anc" href="#bomen-planten-met-ecologi" aria-label="Link to this section">#</a></h2>
+<p>easy2edit kan echte bomen planten via Ecologi. Dit wordt geregeld door de module &#x27;ecologi&#x27;, toegankelijk via het Super admin-menu-item &#x27;easy2edit&#x27;. De pagina Super admin &gt; easy2edit heeft de tabbladen Overzicht, Bomen planten, Bijdragen, Kosten, Geschiedenis en Instellingen. Het Super admin-overzicht toont ook het blok &#x27;easy2edit: bomen en bijdragen&#x27;, met een groeiende boom, tegels, grafieken en kosten.</p>
+<p>Om deze functie te gebruiken, voeg je de Ecologi-link toe in Admin &gt; API-sleutels (een Impact API-sleutel, plus optioneel een gebruikersnaam voor de publieke cijfers).</p>
+<p>Er zijn vier bronnen van bijdragen:</p>
+<ul>
+<li>Bezoekers van de website: één boom per N paginabezoeken.</li>
+<li>Machine- en energiegebruik: bomen om de geschatte CO2 te compenseren.</li>
+<li>Gebruik van easy2edit door de gebruiker: een vast aantal bomen per maand.</li>
+<li>Bomen geplant door easy2edit zelf.</li>
+</ul>
+<p>Een maandelijks maximum begrenst de automatische afrekening. Testmodus staat standaard aan, zodat er niets echt wordt aangekocht totdat je het uitzet. Bomen worden geplant in naam van de website, of van easy2edit als er geen websitenaam van toepassing is.</p>
+<h2 id="bomen-en-giften-instellingen-voor-de-administrator">Bomen en giften (instellingen voor de administrator)<a class="anc" href="#bomen-en-giften-instellingen-voor-de-administrator" aria-label="Link to this section">#</a></h2>
+<p>Admin &gt; Systeem &gt; &#x27;Bomen en giften&#x27; (module &#x27;ecologi_admin&#x27;) laat de administrator een persoonlijke maandelijkse bijdrage instellen. Voor elke easy2edit-functie kies je of er bomen worden geplant volgens een &#x27;één boom per N&#x27;-regel:</p>
+<ul>
+<li>Bezoekers</li>
+<li>Nieuwe gebruikers</li>
+<li>AI-gebruik</li>
+<li>Energiegebruik</li>
+</ul>
+<p>Je stelt ook een maximumbedrag per maand in, en je kunt desgewenst direct bomen schenken.</p>
+<p>Het tabblad &#x27;Kosten en resultaat&#x27; toont de verwachte kosten per onderdeel en de totale kosten per maand. Het tabblad Geschiedenis toont alles wat er is gedaan.</p>
+<h2 id="bomen-op-de-website-en-in-de-site-manager">Bomen op de website en in de Site manager<a class="anc" href="#bomen-op-de-website-en-in-de-site-manager" aria-label="Link to this section">#</a></h2>
+<p>Onderaan de website, naast &#x27;powered by (c) easy2edit &lt;jaar&gt;&#x27;, opent een blad-icoontje een energievenster met twee tabbladen. &#x27;Bomen planten&#x27; toont een boom die zich vult richting de volgende mijlpaal, het gedoneerde bedrag, de bijdrage deze maand, de bronnen, een grafiek, en een &#x27;Meer info&#x27;-link naar https://easy2edit.com/#groen. Het tweede tabblad is &#x27;Energie&#x27;.</p>
+<p>Op de easy2edit-server geeft de Site manager elke website zijn eigen tabblad Bomen, met status, bomen, verwachte kosten per onderdeel, kosten per maand, schakelaars en het maandelijkse maximum. Vanaf de pagina van de Site manager kun je ook het overzicht &#x27;Bomen planten: alle websites&#x27; bereiken, uitgesplitst per bedrijf en per website, met totalen. Het tabblad Websites van de Site manager laat je websites bijwerken of een update forceren.</p>
+<h2 id="cache-n-reseller-standaardinstellingen">Cache én reseller-standaardinstellingen<a class="anc" href="#cache-n-reseller-standaardinstellingen" aria-label="Link to this section">#</a></h2>
+<p>De cache wordt gedeeld over het systeem, waarbij standaard de database wordt gebruikt, of redis of memory als alternatieven. Het wordt geconfigureerd in een blokkeren in Admin &gt; Systeem, samen met een systeemcache voor snelheid; er wordt een energieadvies gegeven samen met de cache-instellingen.</p>
+<p>Standaardonderdelen van de instellingen omvatten ook een standaard reseller-tabblad, waar telefoonnummers altijd met een landcode worden ingevoerd, én standaard instellingen-tabbladen die een optie &#x27;niet overschrijven&#x27; per tabblad bieden.</p><div class="pager"><a href="chapter-10.html"><small>Vorige</small><strong>&larr; AI en AI-tegoed</strong></a><span></span></div><footer>easy2edit handleiding &middot; versie 1.1.0 build 158 &middot; Nederlands</footer></article></main><aside class="toc"><h4>Op deze pagina</h4><a href="#plugins">Plugins</a><a href="#back-ups">Back-ups</a><a href="#site-import">Site-import</a><a href="#statistieken">Statistieken</a><a href="#seo">SEO</a><a href="#licentie">Licentie</a><a href="#deployment">Deployment</a><a href="#bomen-planten-met-ecologi">Bomen planten met Ecologi</a><a href="#bomen-en-giften-instellingen-voor-de-administrator">Bomen en giften (instellingen voor de administrator)</a><a href="#bomen-op-de-website-en-in-de-site-manager">Bomen op de website en in de Site manager</a><a href="#cache-n-reseller-standaardinstellingen">Cache én reseller-standaardinstellingen</a></aside></div><script>
 (function(){var q=document.getElementById('q'),links=[].slice.call(document.querySelectorAll('nav.side a[data-t]'));
 var cards=[].slice.call(document.querySelectorAll('.vcard[data-t]')),none=document.getElementById('vnone');
 if(q)q.addEventListener('input',function(){var v=q.value.toLowerCase().trim(),n=0;links.forEach(function(a){a.classList.toggle('hide',!!v&&a.getAttribute('data-t').indexOf(v)<0)});cards.forEach(function(c){var h=!!v&&c.getAttribute('data-t').indexOf(v)<0;c.classList.toggle('hide',h);if(!h)n++});if(none)none.classList.toggle('show',cards.length>0&&n===0)});

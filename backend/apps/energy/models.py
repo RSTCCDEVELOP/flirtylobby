@@ -74,6 +74,8 @@ class EnergySettings(models.Model):
     last_error = models.CharField(max_length=300, blank=True)
     instance_id = models.CharField(max_length=40, blank=True)  # a random id of this installation: the collector uses it to see that a connected site is this site itself (so it is not counted twice)
     advice = models.JSONField(default=dict, blank=True)  # what the advice tab applied: {"applied": {"fonts": {"at", "before", "result"}, ...}}
+    badge_on = models.BooleanField(default=False)  # the energy label at the bottom of the website (next to "© easy2edit"): a click shows the insights and the green status
+    badge_show = models.JSONField(default=list, blank=True)  # what the pop-up of that label shows: rating | co2 | size | energy | views | live | compare (empty = the standard)
     objects_seeded = models.BooleanField(default=False)  # the layouts (system objects) were made once; after that Admin → Energie decides which exist
 
     @classmethod

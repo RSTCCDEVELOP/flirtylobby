@@ -87,4 +87,7 @@ export const PresetIcon = ({ name, size = 26 }) => PRESET_ICONS[name] ? <svg {..
 export const IconTag = I(<><path d="M3 12V4a1 1 0 011-1h8l9 9-9 9z" /><circle cx="8" cy="8" r="1.3" /></>);
 export const IconTrash = I(<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />);
 export const IconChart = I(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />);
+export const IconTree = I(<><path d="M12 22v-6" /><path d="M12 16c-4 0-7-2.6-7-6 0-1.7.8-3.1 2-4 .3-2.6 2.5-4.5 5-4.5s4.7 1.9 5 4.5c1.2.9 2 2.3 2 4 0 3.4-3 6-7 6z" /></>);
 export const IconLeaf = I(<><path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15" /><path d="M5 19c3-5 6-8 11-10" /></>);
+
+export const IconSparkle = I(<><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></>);

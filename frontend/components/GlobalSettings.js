@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import PhoneInput from "./PhoneInput";
+import Tabs from "./Tabs";
 import { IconBriefcase, IconCheck, IconLock, IconUsers, IconGlobe, IconMail, IconSettings, IconShield, IconSliders, IconX } from "./Icons";
 import KitScope from "../lib/ui-kit/KitScope";
 import SuperTile from "./SuperTile";
@@ -18,6 +19,7 @@ import { api, errorText } from "../lib/api";
 import { alertDialog, confirmDialog } from "../lib/dialog";
 import { showSourceNotice } from "../lib/sourceNotice";
 import { tx } from "../lib/t";
+import Loading from "./Loading";
 
 const FIELDS = [
   ["base_domain", "Basisdomein", "easy2edit.com", "De websites van easy2edit zijn naam.basisdomein, bijvoorbeeld siten.easy2edit.com."],
@@ -91,7 +93,7 @@ function WebsitesTab({ setMsg }) {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy("");
   };
-  if (!d) return <p className="e2e-hint">{tx("Laden…")}</p>;
+  if (!d) return <p className="e2e-hint">{<Loading compact />}</p>;
   if (!d.server) return <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{tx("Dit overzicht staat alleen op de easy2edit-server. Zet bij Super admin+ → Site manager de installatie als server aan om de websites hier te beheren.")}</div></div>;
   const stateOf = (s, t) => (s.keep.includes(t) ? "keep" : "update");
   return (
@@ -156,6 +158,8 @@ export default function GlobalSettings() {
   const plus = !!user?.is_superadmin_plus;
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("server");
+  const [rsTab, setRsTab] = useState("company");  // the parts of the standard reseller and of the two-step tab: one at a time, so nothing has to be scrolled
+  const [tfTab, setTfTab] = useState("verify");
   const [data, setData] = useState(null);  // {values, defaults}
   const [form, setForm] = useState({});
   const [info, setInfo] = useState(null);  // the saved default settings
@@ -244,12 +248,28 @@ export default function GlobalSettings() {
                     <div className="e2e-stack" style={{ gap: "1rem" }}>
                       <p style={{ margin: 0 }}>{tx("Deze gegevens gaan standaard mee met elke nieuwe installatie en worden bij elke update bijgewerkt, samen met de standaard instellingen. Een nieuwe installatie, een reset en Standaard toepassen zetten ze terug. Per tab kun je kiezen dat iets alleen lokaal blijft.")}</p>
                       <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{info?.exists ? `${tx("Standaard instellingen opgeslagen op")} ${new Date(info.captured_at).toLocaleString()}` : tx("Nog niets opgeslagen")}</div></div>
-                      <label className="e2e-switch" style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: ".75rem" }}>
+                      <div className="gs-two">
+                        <Sec title="Bron van de bibliotheek">
+                        <label className="e2e-switch" style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: ".75rem" }}>
                         <input type="checkbox" checked={form.source_mode === "easy2edit"} onChange={(e) => { setForm({ ...form, source_mode: e.target.checked ? "easy2edit" : "local" }); setTest(null); }} />
                         <span><strong>{tx("Bron: easy2edit-server gebruiken")}</strong><br /><span className="e2e-hint">{tx("Uit: de bibliotheek (plugins, thema's, talen en componenten) komt uit de map resource van deze installatie. Aan: ze komt van de easy2edit-server (het API-adres hiervoor), zodat die map niet in elke installatie hoeft te staan.")}</span></span>
                       </label>
                       <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{tx("Bron nu")}: <strong>{form.source_mode === "easy2edit" ? tx("easy2edit-server ({0})", (form.api_url || "").replace(/^https?:\/\//, "")) : tx("Lokaal (de map resource van deze installatie)")}</strong></div></div>
                       {test && <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">{test.ok ? <IconCheck width={14} height={14} /> : "!"}</span><div>{test.text}</div></div>}
+                        </Sec>
+                        <Sec title="Energie-label op de website" hint="De groene energie-info van deze website.">
+                        <Sw checked={form.energy_badge === "1"} onChange={(v) => setForm((f) => ({ ...f, energy_badge: v ? "1" : "0" }))} title="Energie-label tonen op de website" hint="Een groene boom naast “© easy2edit” onderaan elke pagina. Een klik toont de inzichten en de groene status. Uit: bezoekers zien niets." />
+                        {form.energy_badge === "1" && (
+                          <div className="gs-checklist">
+                            <small className="e2e-hint">{tx("De groene status staat er altijd. Kies wat daarnaast te zien is.")}</small>
+                            {[["rating", "Label (A+ t/m F)"], ["co2", "CO2 per paginabezoek"], ["size", "Gemiddeld paginagewicht"], ["energy", "Stroom per paginabezoek"], ["views", "Aantal paginabezoeken"], ["live", "Grafiek stroomgebruik (24 uur)"], ["compare", "Vergelijking met een gemiddelde webpagina"]].map(([k, l]) => {
+                              const on = (form.energy_badge_show || "").split(",").includes(k);
+                              return <label key={k} className="gs-check"><input type="checkbox" checked={on} onChange={(e) => setForm((f) => { const cur = (f.energy_badge_show || "").split(",").filter(Boolean); const next = e.target.checked ? [...cur, k] : cur.filter((x) => x !== k); return { ...f, energy_badge_show: next.join(",") }; })} /><span>{tx(l)}</span></label>;
+                            })}
+                          </div>
+                        )}
+                        </Sec>
+                      </div>
                       <LocalOnly tab="settings" form={form} setForm={setForm} />
                     </div>
                   )}
@@ -297,27 +317,29 @@ export default function GlobalSettings() {
                   )}
                   {tab === "reseller" && (
                     <div className="e2e-stack" style={{ gap: "1.6rem" }}>
-                      <p style={{ margin: 0 }}>{tx("De standaard reseller: wie easy2edit verkoopt. De gegevens gaan mee met elke nieuwe installatie en worden in de licentie genoteerd. Bij de easy2edit-server wordt de reseller de reseller van een nieuwe website; daar worden ook de logins van de reseller gecontroleerd en aangemaakt.")}</p>
-                      <Sec title="Bedrijf">
+                      <Tabs tabs={[["company", "Bedrijf"], ["contact", "Contactpersoon"], ["address", "Adres"]]} value={rsTab} onChange={setRsTab} />
+                      <p className="e2e-hint" style={{ margin: 0 }}>{tx("De standaard reseller: wie easy2edit verkoopt. De gegevens gaan mee met elke nieuwe installatie en worden in de licentie genoteerd. Bij de easy2edit-server wordt de reseller de reseller van een nieuwe website; daar worden ook de logins van de reseller gecontroleerd en aangemaakt.")}</p>
+                      {rsTab === "company" && <Sec title="Bedrijf">
                         <div className="e2e-grid" style={{ "--e2e-min": "260px" }}>{rsField("reseller_company", "Bedrijf", form, setForm)}{rsField("reseller_website", "Website", form, setForm)}</div>
-                      </Sec>
-                      <Sec title="Contactpersoon" hint="Telefoonnummers altijd met landnummer.">
+                      </Sec>}
+                      {rsTab === "contact" && <Sec title="Contactpersoon" hint="Telefoonnummers altijd met landnummer.">
                         <div className="e2e-grid" style={{ "--e2e-min": "260px" }}>{rsField("reseller_contact", "Naam", form, setForm)}{rsField("reseller_email", "E-mail", form, setForm)}{rsField("reseller_phone", "Telefoon", form, setForm)}{rsField("reseller_mobile", "Mobiel", form, setForm)}</div>
-                      </Sec>
-                      <Sec title="Adres">
+                      </Sec>}
+                      {rsTab === "address" && <Sec title="Adres">
                         <div className="gs-addr">
                           {rsField("reseller_street", "Straat", form, setForm)}{rsField("reseller_house_number", "Huisnummer", form, setForm)}{rsField("reseller_postal_code", "Postcode", form, setForm)}{rsField("reseller_city", "Plaats", form, setForm)}{rsField("reseller_country", "Land", form, setForm)}
                         </div>
-                      </Sec>
+                      </Sec>}
                       <LocalOnly tab="reseller" form={form} setForm={setForm} />
                     </div>
                   )}
                   {tab === "websites" && <WebsitesTab setMsg={setMsg} />}
                   {tab === "twofa" && (
                     <div className="e2e-stack" style={{ gap: "1.6rem" }}>
-                      {!sec ? <p className="e2e-hint">{tx("Laden…")}</p> : (
+                      {!sec ? <p className="e2e-hint">{<Loading compact />}</p> : (
                         <>
-                          <Sec title="Twee-staps verificatie" hint="De standaard voor elke nieuwe installatie en elke update.">
+                          <Tabs tabs={[["verify", "Verificatie"], ["methods", "Hoe de code komt"], ["block", "Blokkeren"]]} value={tfTab} onChange={setTfTab} />
+                          {tfTab === "verify" && <Sec title="Twee-staps verificatie" hint="De standaard voor elke nieuwe installatie en elke update.">
                             <Sw checked={sec.twofa.enabled} onChange={(v) => setTf("enabled", v)} title="Twee-staps verificatie ingeschakeld" hint="Inloggen met een code per e-mail of een authenticator-app." />
                             <Sw checked={sec.twofa.required_for === "admins" || sec.twofa.required_for === "all"} onChange={(v) => setTf("required_for", v ? "admins" : "none")} title="Verplicht voor admins en superadmins" hint="Standaard aan. Wie het nog niet aan heeft, krijgt bij elke login het scherm om het te activeren en kan pas verder als het aan staat." />
                             <Sw checked={sec.twofa.required_for === "all"} onChange={(v) => setTf("required_for", v ? "all" : "admins")} title="Ook verplicht voor alle andere gebruikers" hint="Ook bij het aanmelden. Admins en superadmins blijven dan verplicht." />
@@ -325,21 +347,21 @@ export default function GlobalSettings() {
                               <Num id="gs-tf-code" label="Code geldig" unit="minuten" min="1" max="60" value={sec.twofa.code_minutes} onChange={(e) => setTf("code_minutes", e.target.value)} />
                               <div className="e2e-field"><label className="e2e-label" htmlFor="gs-tf-iss">{tx("Naam in de authenticator-app")}</label><input id="gs-tf-iss" className="e2e-input" maxLength={60} placeholder="easy2edit" value={sec.twofa.app_issuer || ""} onChange={(e) => setTf("app_issuer", e.target.value)} /></div>
                             </div>
-                          </Sec>
-                          <Sec title="Hoe de code komt" hint="Wat een gebruiker mag kiezen. Sms staat er alleen als een sms-koppeling is getest en tegoed heeft.">
+                          </Sec>}
+                          {tfTab === "methods" && <Sec title="Hoe de code komt" hint="Wat een gebruiker mag kiezen. Sms staat er alleen als een sms-koppeling is getest en tegoed heeft.">
                             <div className="gs-switches">
                               <Sw checked={sec.twofa.allow_app} onChange={(v) => setTf("allow_app", v)} title="Authenticator-app" hint="Werkt ook zonder internet." />
                               <Sw checked={sec.twofa.allow_email} onChange={(v) => setTf("allow_email", v)} title="Code per e-mail" />
                               {sec.avail.sms && <Sw checked={sec.twofa.allow_sms} onChange={(v) => setTf("allow_sms", v)} title="Code per sms" />}
                             </div>
-                          </Sec>
-                          <Sec title="Account blokkeren" hint="Na te veel fouten wordt een account tijdelijk geblokkeerd. De beheerder krijgt dan altijd een e-mail.">
+                          </Sec>}
+                          {tfTab === "block" && <Sec title="Account blokkeren" hint="Na te veel fouten wordt een account tijdelijk geblokkeerd. De beheerder krijgt dan altijd een e-mail.">
                             <div className="e2e-grid" style={{ "--e2e-min": "260px" }}>
                               <Num id="gs-lg-max" label="Foute wachtwoorden" unit="keer" hint="Daarna wordt het account geblokkeerd." min="1" max="20" value={sec.basic.login_max_attempts} onChange={(e) => setBasic("login_max_attempts", e.target.value)} />
                               <Num id="gs-tf-max" label="Foute codes" unit="keer" hint="Daarna is de code ongeldig." min="1" max="10" value={sec.twofa.max_attempts} onChange={(e) => setTf("max_attempts", e.target.value)} />
                               <Num id="gs-lg-min" label="Blokkeertijd" unit="minuten" hint="Hoe lang het account dicht blijft." min="1" max="1440" value={sec.basic.lockout_minutes} onChange={(e) => setBasic("lockout_minutes", e.target.value)} />
                             </div>
-                          </Sec>
+                          </Sec>}
                         </>
                       )}
                       <LocalOnly tab="twofa" form={form} setForm={setForm} />

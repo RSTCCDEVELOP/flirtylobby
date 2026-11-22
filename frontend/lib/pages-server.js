@@ -73,3 +73,13 @@ export async function getMoved(key) {
     return [];
   }
 }
+
+// The energy label at the bottom of the website (only when the administrator switched it on in Admin -> Energie): drawn on the server, so it is in the page at once
+export async function getEnergyBadge() {
+  try {
+    const res = await fetch(`${base()}/api/energy/badge/`, { cache: "no-store" });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}

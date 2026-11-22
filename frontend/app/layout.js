@@ -23,9 +23,10 @@ import DialogHost from "../components/DialogHost";
 import DomTranslate from "../components/DomTranslate";
 import PageLoader, { LazyImages, PageTransition, ScrollFx } from "../components/PageLoader";
 import { MenuProvider } from "../components/SiteMenu";
-import { getBackgrounds, getMenu } from "../lib/pages-server";
+import { getBackgrounds, getEnergyBadge, getMenu } from "../lib/pages-server";
 import PageBackdrop from "../components/PageBackdrop";
 import UndoButton from "../components/UndoButton";
+import AiImprove from "../components/AiImprove";
 import SavePresetButton from "../components/SavePresetButton";
 import EditHelp from "../components/EditHelp";
 import PageSettingsButton from "../components/PageSettingsButton";
@@ -146,7 +147,7 @@ async function getLanguages() {
 }
 
 export default async function RootLayout({ children }) {
-  const [theme, langs, branding, security, content, modules, seo, sandbox, menu, backgrounds, site] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox(), getMenu(), getBackgrounds(), getSite()]);
+  const [theme, langs, branding, security, content, modules, seo, sandbox, menu, backgrounds, site, energyBadge] = await Promise.all([getTheme(), getLanguages(), getBranding(), getSecurity(), getContent(), getModules(), getSeo(), getSandbox(), getMenu(), getBackgrounds(), getSite(), getEnergyBadge()]);
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
@@ -174,10 +175,11 @@ export default async function RootLayout({ children }) {
               <PageBackdrop map={backgrounds} />
               <SiteBack />
               <PageTransition>{children}</PageTransition>
-              <SiteCredit show={site?.show_credit !== false} url={site?.easy2edit?.site_url} />
+              <SiteCredit show={site?.show_credit !== false} url={site?.easy2edit?.site_url} badge={energyBadge} />
               <EditBanner />
               <PageSettingsButton />
               <EditHelp />
+              <AiImprove />
               <UndoButton />
               <SavePresetButton />
               </DirectHostProvider>

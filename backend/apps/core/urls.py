@@ -99,6 +99,7 @@ urlpatterns = [
     path("easy2edit/reseller/accounts/", sitemanager_views.reseller_accounts),
     path("system/sites/", sitemanager_views.sites_admin),
     path("system/sites-defaults/", sitemanager_views.defaults_sites),
+    path("system/sites-trees/", sitemanager_views.sites_trees),
     path("system/sites/<int:pk>/", sitemanager_views.site_admin),
     path("system/sites/<int:pk>/info/", sitemanager_views.site_info),
     path("system/sites/<int:pk>/online/", sitemanager_views.site_online),

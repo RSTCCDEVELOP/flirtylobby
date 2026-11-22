@@ -11,7 +11,8 @@ import { useEffect, useState } from "react";
 import { LineChart, Donut } from "./Charts";
 import { ADVICE_STATUS, ADVICE_TEXT } from "./EnergyAdvice";
 import { fmtBytes, fmtG, Rating } from "./EnergyBlocks";
-import { IconBolt, IconBriefcase, IconChart, IconCheck, IconGlobe, IconInfo, IconKey, IconLeaf, IconRefresh, IconUsers, IconX } from "./Icons";
+import { IconBolt, IconBriefcase, IconChart, IconCheck, IconGlobe, IconInfo, IconKey, IconLeaf, IconRefresh, IconTree, IconUsers, IconX } from "./Icons";
+import EcologiTree from "./EcologiTree";
 import { Kpi, KpiGrid } from "./AiCharts";
 import Loading from "./Loading";
 import Tabs from "./Tabs";
@@ -131,6 +132,49 @@ function Stats({ d, run, busy }) {
   );
 }
 
+
+const eur = (v, cur = "EUR") => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: cur || "EUR" }).format(v || 0); } catch { return `${cur} ${v}`; } };
+const TREE_SWITCHES = [["auto_on", "Automatisch planten (maandafrekening)"], ["visitors_on", "Bijdrage van bezoekers"], ["machine_on", "Bijdrage van energiegebruik"], ["admin_enabled", "Beheerder mag zelf bijdragen"], ["show_on_site", "Tonen in het energievenster"], ["test_mode", "Testmodus (er wordt niets gekocht)"]];
+// Tree planting of this website (easy2edit: bomen planten): what is on, the trees, the expected costs per part, and the switches the easy2edit server can set.
+export function SiteTrees({ d, run, busy }) {
+  const c = d.costs || {};
+  const cur = d.currency || "EUR";
+  const [cap, setCap] = useState(d.settings?.cap_trees_month ?? 0);
+  const set = (settings, text) => run({ action: "trees", settings }, text || tx("Opgeslagen."), "trees");
+  return (
+    <div className="eco" style={{ display: "grid", gap: ".9rem" }}>
+      {!d.linked && <div className="alert">{tx("Deze website heeft nog geen koppeling met Ecologi (Admin → API keys): er wordt niets geplant, ook al staat het hier aan.")}</div>}
+      <div className="eco-treebox"><EcologiTree value={d.totals?.trees || 0} size={90} caption={false} />
+        <div className="eco-treebox-text"><span className="eco-treebox-num">{num(d.totals?.trees)}</span><strong>{tx("Bomen geplant")}</strong><small><span className={`badge ${d.enabled ? "ok" : ""}`}>{d.enabled ? tx("Bomen planten staat aan") : tx("Bomen planten staat uit")}</span>{d.chosen ? "" : ` · ${tx("onboarding nog niet beantwoord")}`}</small></div></div>
+      <div className="eco-tiles">
+        <div className="eco-tile t-green"><span>{tx("Geschatte kosten deze maand")}</span><strong>{eur(c.month_estimate, cur)}</strong><small>{tx("al betaald")}: {eur(c.this_month_paid, cur)}</small></div>
+        <div className="eco-tile t-sun"><span>{tx("Geschat per jaar")}</span><strong>{eur(c.year_estimate, cur)}</strong></div>
+        <div className="eco-tile t-sand"><span>{tx("Betaald, laatste 12 maanden")}</span><strong>{eur(c.total_12, cur)}</strong></div>
+        <div className="eco-tile t-sea"><span>{tx("Totaal gedoneerd")}</span><strong>{eur(d.totals?.donated, cur)}</strong><small>{num(d.totals?.orders)} {tx("donaties")}</small></div>
+      </div>
+      {!!(c.parts || []).length && (
+        <div className="eco-panel"><strong>{tx("Verwachte kosten deze maand, per onderdeel")}</strong>
+          <div className="eco-rows">{c.parts.filter((x) => x.on).map((x) => (
+            <div key={x.key} className="eco-part"><span className="eco-part-name">{tx(x.name.startsWith("Beheerder: ") ? x.name.slice(11) : x.name)}</span>
+              <span className="eco-part-bar"><i style={{ width: `${c.month_estimate ? Math.max(3, (x.amount / c.month_estimate) * 100) : 0}%` }} /></span><span className="eco-part-trees">{x.trees} {tx("bomen")}</span><b>{eur(x.amount, cur)}</b></div>
+          ))}</div>
+        </div>
+      )}
+      <div className="eco-panel"><strong>{tx("Beheren vanaf de easy2edit-server")}</strong>
+        <div style={{ display: "grid", gap: ".5rem" }}>
+          {TREE_SWITCHES.map(([k, l]) => (
+            <label key={k} className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!d.settings?.[k]} disabled={busy} onChange={(e) => set({ [k]: e.target.checked })} /><span /></span><span>{tx(l)}</span></label>
+          ))}
+          <label style={{ display: "inline-flex", alignItems: "center", gap: ".5rem" }}>{tx("Maximum per maand")} <input type="number" min="0" value={cap} onChange={(e) => setCap(e.target.value)} onBlur={() => set({ cap_trees_month: Number(cap) || 0 })} style={{ width: 100 }} /> <small className="muted">{tx("bomen, 0 = geen limiet")}</small></label>
+        </div>
+      </div>
+      <div className="eco-panel"><strong>{tx("Kosten per maand")}</strong>
+        <div className="eco-rows">{[...(d.months || [])].reverse().map((m, i) => <div key={m.month} className="eco-row eco-month"><span>{new Date(`${m.month}-01T00:00:00`).toLocaleDateString([], { month: "long", year: "numeric" })}</span><span className="muted">{num(m.trees)} {tx("bomen")}</span><b>{i === 0 ? `${eur(Math.max(m.cost, c.month_estimate || 0), cur)} (${tx("geschat")})` : eur(m.cost, cur)}</b></div>)}</div>
+      </div>
+    </div>
+  );
+}
+
 // The energy use of the website (the module Energy): the score now and after the advice, the course per day, and the advice with what it is expected to give.
 function Energy({ d, run, busy, reload }) {
   const [sub, setSub] = useState("overview");  // overview | course | advice: no scrolling
@@ -198,8 +242,8 @@ function Energy({ d, run, busy, reload }) {
 }
 
 // Super admin+ -> Site manager -> view: what the website itself says when the easy2edit server asks it through its API (users, statistics, energy, reseller, AI).
-export function SiteView({ site, onClose }) {
-  const [tab, setTab] = useState("info");
+export function SiteView({ site, onClose, initialTab = "info" }) {
+  const [tab, setTab] = useState(initialTab);
   const [data, setData] = useState({});
   const [err, setErr] = useState({});
   const [busy, setBusy] = useState(false);
@@ -239,7 +283,7 @@ export function SiteView({ site, onClose }) {
             </div>
             <button type="button" className="btn sm" aria-label={tx("Sluiten")} title={tx("Sluiten")} onClick={onClose} style={{ flex: "0 0 auto", padding: ".35rem .5rem" }}><span style={{ display: "inline-flex", width: 18, height: 18 }}><IconX /></span></button>
           </div>
-          <Tabs value={tab} onChange={(k) => { setTab(k); setNote(null); }} tabs={[["info", "Info", <IconInfo key="i" />], ["users", "Gebruikers", <IconUsers key="u" />], ["stats", "Statistieken", <IconChart key="s" />], ["energy", "Energie", <IconLeaf key="e" />], ["reseller", "Reseller", <IconBriefcase key="r" />], ["ai", "AI-gebruik", <IconBolt key="a" />]]} />
+          <Tabs value={tab} onChange={(k) => { setTab(k); setNote(null); }} tabs={[["info", "Info", <IconInfo key="i" />], ["users", "Gebruikers", <IconUsers key="u" />], ["stats", "Statistieken", <IconChart key="s" />], ["energy", "Energie", <IconLeaf key="e" />], ["trees", "Bomen", <IconTree key="t" />], ["reseller", "Reseller", <IconBriefcase key="r" />], ["ai", "AI-gebruik", <IconBolt key="a" />]]} />
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: "1.1rem 1.5rem 1.5rem", display: "flex", flexDirection: "column", gap: ".9rem" }}>
         {note && <div className={note.ok ? "alert ok" : "alert"}>{note.text}</div>}
@@ -276,6 +320,7 @@ export function SiteView({ site, onClose }) {
         )}
         {d && tab === "stats" && <Stats d={d} run={run} busy={busy} />}
         {d && tab === "energy" && <Energy d={d} run={run} busy={busy} reload={reload} />}
+        {d && tab === "trees" && <SiteTrees d={d} run={run} busy={busy} />}
         {d && tab === "reseller" && (
           <Panels>
             <Panel title={tx("Reseller")}>

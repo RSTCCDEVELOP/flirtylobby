@@ -13,6 +13,7 @@ import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { useSession } from "./Session";
 import TbSlot from "./TbSlot";
+import Loading from "./Loading";
 
 // Edit mode, superadmins only: save this page as it is now in a standard installation (the active one or another one). Setting that installation later puts the page back.
 export default function SavePresetButton() {
@@ -105,7 +106,7 @@ export default function SavePresetButton() {
               <>
                 <h2 style={{ marginTop: 0 }}>{tx("Opslaan als standaardpagina")}</h2>
                 <p className="muted" style={{ marginTop: 0 }}>{tx("De blokken en teksten van deze pagina worden bewaard bij de gekozen installatie. Stel je die installatie later in, dan komt de pagina zo terug.")}</p>
-                {!state && busy && <p className="muted">{tx("Laden…")}</p>}
+                {!state && busy && <p className="muted">{<Loading compact />}</p>}
                 {err && <div className="alert">{err}</div>}
                 {state && (
                   <div className="sp-options" role="radiogroup" aria-label={tx("Kies een installatie")}>

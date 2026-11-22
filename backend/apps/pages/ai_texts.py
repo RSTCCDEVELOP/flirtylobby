@@ -131,3 +131,47 @@ def run(page, code, seo=True):
             SeoPage.objects.update_or_create(path=page.path, lang=code, defaults={"title": t, "description": desc})
             out["seo"] = True
     return out
+
+
+IMPROVE_SYSTEM = """You improve the texts of ONE web page of a website made with easy2edit. You work like the page creator of easy2edit, but only on the words that are already there.
+- Follow the INSTRUCTION of the owner. When it is empty: better copy in general (clear, concrete, convincing, natural, correct spelling and grammar).
+- Keep the language of every text. Keep the meaning, facts, numbers, names, prices, e-mail addresses, phone numbers and links exactly; never invent facts, offers or claims.
+- Texts may be HTML: keep every tag and attribute (also data-media and data-sysobject) exactly as it is; change only the visible words. Plain texts stay plain.
+- Real, concrete copy that fits the business; no lorem ipsum, no clich\u00e9s, no exclamation marks in a row, no emoji unless there already are.
+- A text that is already good stays exactly as it is (leave it out of the answer). A short title stays a short title.
+- Answer with ONE JSON object only, no text around it: {"_": "ok", key: improved text}: always the entry "_", and an entry only for the texts that you changed (none when everything is fine)."""
+
+
+def improve(page, instruction=""):
+    """A proposal to improve the texts of this page (nothing is saved): [{key, old, new}]. The page keeps working as it is; the editor applies the chosen ones, with undo."""
+    src, blocks = source_blocks(page)
+    if not blocks:
+        raise AiTextError("Er zijn nog geen teksten op deze pagina om te verbeteren.")
+    instruction = re.sub(r"\s+", " ", str(instruction or "")).strip()[:500]
+    if find_forbidden(instruction):
+        raise AiTextError("Deze opdracht kan niet worden uitgevoerd.")
+    old = dict(blocks)
+    out, batch, size = [], {}, 0
+    for key, text in blocks + [(None, None)]:
+        if key is None or (batch and size + len(text) > MAX_CHARS):
+            if batch:
+                got = _ask(IMPROVE_SYSTEM, {"language": src, "instruction": instruction, "texts": batch}, need=("_",))
+                for k, v in got.items():
+                    if k not in batch or not isinstance(v, str) or v.strip() == batch[k].strip():
+                        continue
+                    rich = batch[k].startswith(richtext.PREFIX)
+                    if rich:
+                        body = v[len(richtext.PREFIX):] if v.startswith(richtext.PREFIX) else v
+                        body = richtext.clean(body)
+                        new = richtext.PREFIX + body
+                        visible = richtext.plain(body)
+                    else:
+                        new = visible = v[:5000]
+                    if not visible.strip() or find_forbidden(visible) or new.strip() == old[k].strip():
+                        continue
+                    out.append({"key": k, "old": old[k], "new": new})
+            batch, size = {}, 0
+        if key is not None:
+            batch[key] = text
+            size += len(text)
+    return {"lang": src, "changes": out, "texts": len(blocks)}

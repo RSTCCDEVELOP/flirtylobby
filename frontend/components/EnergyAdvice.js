@@ -13,6 +13,7 @@ import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 import { IconBolt, IconCheck } from "./Icons";
 import { fmtBytes, fmtG, Rating } from "./EnergyBlocks";
+import Loading from "./Loading";
 
 // The text of every piece of advice: what it is, and for the ones that cannot be applied here: how to do it.
 const TEXT = {
@@ -58,7 +59,7 @@ export default function EnergyAdvice({ onChanged, onMeasure, measuring }) {
     timer.current = setTimeout(() => api("/admin/energy/advice/", { method: "POST", body: { params: img } }).then(setD).catch(() => {}), 500);
     return () => clearTimeout(timer.current);
   }, [img.threshold_kb, img.max_edge, img.quality]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!d) return <p className="muted">{msg ? msg.text : tx("Laden…")}</p>;
+  if (!d) return <p className="muted">{msg ? msg.text : <Loading compact />}</p>;
   const items = d.items, todo = items.filter((i) => i.applicable && i.status === "todo");
   const chosen = todo.filter((i) => sel[i.key]);
   const open = items.filter((i) => ["todo", "manual", "info"].includes(i.status)).length;

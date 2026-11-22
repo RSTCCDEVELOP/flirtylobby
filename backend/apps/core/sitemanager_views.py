@@ -363,6 +363,17 @@ def site_info(request, pk):
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def sites_trees(request):
+    """Superadmin+ on the easy2edit server: tree planting of every website and company (costs, trees, what is on)."""
+    if (deny := _plus_only(request)):
+        return deny
+    if not sitemanager.server_enabled():
+        return Response({"detail": "Alleen op de easy2edit-server."}, status=status.HTTP_403_FORBIDDEN)
+    return Response(sitemanager.trees_overview(refresh=bool(request.query_params.get("refresh"))))
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def site_action(request, pk):

@@ -28,6 +28,12 @@ u = User.objects.create(email=EMAIL, first_name="Alex", last_name="Admin", is_ac
 u.set_unusable_password()
 u.save()
 tok = Token.objects.create(user=u).key
+# since build 157 admins and superadmins must sign the terms of easy2edit before the screens show: the temporary superadmin gets a signature (it goes away with the user, nothing is sent)
+from apps.core import terms as _terms
+from apps.core.models import TermsSignature
+_cur = _terms.current()
+if _cur:
+    TermsSignature.objects.create(user=u, version=_cur.version if hasattr(_cur, "version") else _cur["version"], role="superadmin", name="Alex Admin", email=EMAIL, lang="en", method="skipped")
 en = Language.objects.filter(code="en").first()
 was = (en.enabled if en else None)
 # for the pictures every module and plugin is switched on for a moment (a site with a small installation would show nothing of most pages): the state of this site is put back afterwards

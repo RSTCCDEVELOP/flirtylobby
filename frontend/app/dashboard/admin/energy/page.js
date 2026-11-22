@@ -15,6 +15,7 @@ import EnergySettingsPanel from "../../../../components/EnergySettings";
 import { IconBolt, IconCheck } from "../../../../components/Icons";
 import { api, errorText } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
+import Loading from "../../../../components/Loading";
 
 const PERIODS = [7, 30, 90, 365];
 
@@ -48,7 +49,7 @@ export default function EnergyAdmin() {
   };
   const toggleLayout = async (l) => { try { const r = await api("/admin/energy/objects/", { method: "POST", body: { key: l.key, on: !l.on } }); setD((o) => ({ ...o, layouts: r })); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
 
-  if (!d) return <p className="muted">{msg ? msg.text : tx("Laden…")}</p>;
+  if (!d) return <p className="muted">{msg ? msg.text : <Loading compact />}</p>;
   const st = d.settings, ep = d.endpoints;
   const sample = JSON.stringify({ site: d.site, period_days: d.period_days, summary: d.summary, series: d.series.slice(-2), pages: d.pages.slice(0, 2) }, null, 2);
   const embed = `<div id="energie"></div>\n<script>\nfetch("${ep.public}?days=30${st.api_key ? "&key=JOUW_SLEUTEL" : ""}")\n  .then((r) => r.json())\n  .then((d) => {\n    document.getElementById("energie").textContent =\n      "Paginagewicht " + (d.summary.avg_page_bytes / 1e6).toFixed(2) + " MB, " +\n      d.summary.avg_co2_g.toFixed(2) + " g CO2 per paginabezoek";\n  });\n</script>`;

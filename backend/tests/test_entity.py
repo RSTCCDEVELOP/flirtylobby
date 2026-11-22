@@ -420,6 +420,9 @@ def test_onboarding_status_remembers_where_it_is(admin, monkeypatch):
     d["active_preset"] = "sportclub"
     presets._save_data(d)
     s = admin.get("/api/system/onboarding/").json()
+    assert s["complete"] is False and s["next"] == "trees"  # the (optional) step "bomen planten" comes before the design wizard
+    assert admin.post("/api/ecologi/onboarding/", {"choice": "no"}, format="json").status_code == 200
+    s = admin.get("/api/system/onboarding/").json()
     assert s["complete"] is False and s["next"] == "design"  # a new installation: everything is done except the last step, the design wizard
     reset.replay_onboarding()  # started again: nothing is done until it is done again
     s = admin.get("/api/system/onboarding/").json()

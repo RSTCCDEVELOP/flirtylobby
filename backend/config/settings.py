@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.backups",
     "apps.energy",
+    "apps.ecologi",
 ]
 
 MIDDLEWARE = [

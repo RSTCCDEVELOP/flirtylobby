@@ -265,6 +265,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const timer = useRef(null);
 
   useEffect(() => { const ready = holdLoader(); api(`/pages/layout/${encodeURIComponent(pageKey)}/`).then(setLayout).catch(() => setLayout({ rows: [] })).finally(() => setTimeout(ready, 0)); return ready; }, [pageKey]); // the loader over the page waits for the design of the page
+  useEffect(() => { const f = () => api(`/pages/layout/${encodeURIComponent(pageKey)}/`).then(setLayout).catch(() => {}); window.addEventListener("pb-layout-reload", f); return () => window.removeEventListener("pb-layout-reload", f); }, [pageKey]); // the AI of the editor changed the layout
   const pageWide = layout?.page_width === "full";
   const pageSize = ["5", "10", "25", "100"].includes(String(layout?.page_size)) ? String(layout.page_size) : "all";
   const listView = layout?.list?.view === "rows" ? "rows" : "grid", listCenter = !!layout?.list?.center;

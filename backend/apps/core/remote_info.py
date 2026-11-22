@@ -14,7 +14,7 @@ from decimal import Decimal
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
-PARTS = ("info", "status", "users", "reseller", "ai", "stats", "energy", "maintenance")
+PARTS = ("info", "status", "users", "reseller", "ai", "stats", "energy", "trees", "maintenance")
 
 
 def _f(v):
@@ -162,8 +162,15 @@ def maintenance():
             "needs_update": bool(pending or lib or chk["needed"]), "online": status()["online"], "update": st}
 
 
+def trees():
+    """Tree planting of this website (easy2edit: bomen planten): on or off, the settings, the trees, what was given and the expected costs per part."""
+    from apps.ecologi import service
+
+    return service.remote_payload()
+
+
 def build(part):
-    return {"info": info, "status": status, "users": users, "reseller": reseller, "ai": ai, "stats": stats, "energy": energy, "maintenance": maintenance}[part]()
+    return {"info": info, "status": status, "users": users, "reseller": reseller, "ai": ai, "stats": stats, "energy": energy, "trees": trees, "maintenance": maintenance}[part]()
 
 
 def set_online(online, message=""):
@@ -220,6 +227,15 @@ def action(body):
             raise ValueError("Er is geen website-adres ingesteld (Admin → Basisgegevens): zonder dat kan de website zichzelf niet meten.")
         _background(lambda: service.scan(base))
         return {"ok": True, "started": True}
+    if kind == "trees":  # the easy2edit server switches tree planting on or off, or changes the contributions of this website
+        from apps.ecologi import service as eco
+
+        before = eco.snapshot()
+        try:
+            out = eco.apply_remote(body.get("settings") if isinstance(body.get("settings"), dict) else {})
+        except eco.EcologiError as e:
+            raise ValueError(str(e))
+        return {"ok": True, "trees": out}
     if kind == "defaults_push":  # the standard settings (the tabs of Standaard en globale instellingen) as the easy2edit server says; a tab that is marked "do not overwrite" here stays, unless forced
         from . import site_defaults
 

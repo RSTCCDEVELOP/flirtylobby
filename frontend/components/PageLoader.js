@@ -15,7 +15,7 @@ import { useUi } from "./Ui";
 import { loaderBusy } from "../lib/loading";
 
 // Page loaders in the style of the theme (colours, rounding and logo come from the theme): the pictures are CSS only
-export const LOADER_STYLES = ["ring", "dots", "bar", "pulse", "orbit", "squares", "wave", "skeleton", "logo", "image"];
+export const LOADER_STYLES = ["tree", "ring", "dots", "bar", "pulse", "orbit", "squares", "wave", "skeleton", "logo", "image"];
 
 // the number under the animation: it climbs while the page loads (slower and slower towards 90) and jumps to 100 when the loader ends
 export function Percent({ done = false, running = true }) {
@@ -30,8 +30,27 @@ export function Percent({ done = false, running = true }) {
   return <div className="ld-pct" aria-hidden="true">{n}%</div>;
 }
 
-export function LoaderArt({ kind = "ring", size = 56, image = "", anim = "pulse", look = {} }) {
+// The standard loader of easy2edit: a green tree in a circle. The ring runs round it, the crown grows and fades in again and again, and the leaves sway a little.
+function TreeLoader({ style }) {
+  return (
+    <span className="ld ld-tree" style={style}>
+      <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+        <circle className="ld-tree-bg" cx="50" cy="50" r="44" />
+        <circle className="ld-tree-ring" cx="50" cy="50" r="44" pathLength="100" />
+        <g className="ld-tree-plant">
+          <path className="ld-tree-trunk" d="M47 76h6l1.5 -17h-9z" />
+          <g className="ld-tree-crown">
+            <circle cx="50" cy="40" r="14" /><circle cx="39" cy="50" r="11" /><circle cx="61" cy="50" r="11" /><circle cx="50" cy="52" r="13" />
+          </g>
+        </g>
+      </svg>
+    </span>
+  );
+}
+
+export function LoaderArt({ kind = "tree", size = 56, image = "", anim = "pulse", look = {} }) {
   const st = { "--ld": `${size}px` };
+  if (kind === "tree") return <TreeLoader style={st} />;
   if (kind === "dots") return <span className="ld ld-dots" style={st}><i /><i /><i /></span>;
   if (kind === "bar") return <span className="ld ld-bar" style={st}><i /></span>;
   if (kind === "pulse") return <span className="ld ld-pulse" style={st}><i /><i /></span>;
@@ -48,7 +67,7 @@ export function LoaderArt({ kind = "ring", size = 56, image = "", anim = "pulse"
 // The loader in two separate layers: the colour (backdrop) over the whole screen, and on top of it, in its own div, the animation: always on top and exactly in the middle of the screen
 // (fixed to the screen, so nothing of the page, the percentage or the fade of the backdrop moves it).
 function LoaderLayers({ look, percent, onClick, test = false }) {
-  const style = look.loader_style || "ring";
+  const style = look.loader_style || "tree";
   return (
     <div className="page-loader-root" role="status" aria-live="polite" aria-label="Laden" onClick={onClick} style={test ? { cursor: "pointer" } : undefined}>
       <div className={`page-loader bd-${look.loader_backdrop || "page"}`} style={{ "--ldo": look.loader_opacity ?? 100 }} aria-hidden="true" />
@@ -203,11 +222,13 @@ export function PageTransition({ children }) {
   return <div key={pathname} className={`pt pt-${mode}`} style={{ "--ptd": `${ui.page_transition_ms ?? 350}ms` }}>{children}</div>;
 }
 
-// A "loading" in a screen (dashboard, admin, a list): the loader of the settings, or the plain text while the loader is off
+// A "loading" in a screen (dashboard, admin, a list): ALWAYS an animation (never text), in the style the theme sets (Admin > Website > Thema > loader; the standard is the ring).
+// The switch "page loader on/off" only decides about the loader over the page of the website itself.
 export function Busy({ full = false, label = "Laden…" }) {
   const ui = useUi() || {};
   const on = ui.loader_on === "yes";
-  if (!on) return full ? <div className="splash">{label}</div> : <p className="muted">{label}</p>;
-  if (full) return <div className={`page-loader bd-${ui.loader_backdrop || "page"}`} style={{ "--ldo": ui.loader_opacity ?? 100 }} role="status" aria-label={label}><div className="ld-stack"><LoaderArt kind={ui.loader_style || "ring"} size={ui.loader_style === "image" ? Number(ui.loader_image_size) || 80 : Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div></div>;
-  return <div className="busy" role="status" aria-label={label}><LoaderArt kind={ui.loader_style || "ring"} size={Math.min(Number(ui.loader_size) || 56, 56)} /></div>;
+  const kind = ui.loader_style || "tree";
+  if (!on) return <div className={full ? "busy busy-full" : "busy"} role="status" aria-label={label}><LoaderArt kind={kind} size={Math.min(Number(ui.loader_size) || 56, full ? 72 : 56)} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} /></div>;
+  if (full) return <div className={`page-loader bd-${ui.loader_backdrop || "page"}`} style={{ "--ldo": ui.loader_opacity ?? 100 }} role="status" aria-label={label}><div className="ld-stack"><LoaderArt kind={ui.loader_style || "tree"} size={ui.loader_style === "image" ? Number(ui.loader_image_size) || 80 : Number(ui.loader_size) || 56} image={ui.loader_image_url} anim={ui.loader_image_anim} look={ui} />{ui.loader_percent === "yes" && <Percent />}</div></div>;
+  return <div className="busy" role="status" aria-label={label}><LoaderArt kind={ui.loader_style || "tree"} size={Math.min(Number(ui.loader_size) || 56, 56)} /></div>;
 }

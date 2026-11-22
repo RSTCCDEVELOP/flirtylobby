@@ -76,7 +76,7 @@ class IntegrationSerializer(serializers.ModelSerializer):
         locked = attrs.get("locked", inst.locked if inst is not None else False)
         if locked and not attrs.get("lock_password") and not (inst is not None and inst.lock_password):
             raise serializers.ValidationError({"lock_password": "Kies een wachtwoord om de koppeling mee te openen."})
-        if inst is not None and attrs.get("enabled") is False and attrs.get("always_on", inst.always_on):
+        if inst is not None and inst.enabled and attrs.get("enabled") is False and attrs.get("always_on", inst.always_on):  # (a link that is off already and is saved as off again is no change: no error)
             raise serializers.ValidationError({"enabled": "Deze koppeling staat altijd aan (nodig voor de installatie). Zet eerst Altijd aan uit."})
         return super().validate(attrs)
 
@@ -136,6 +136,7 @@ class IntegrationSerializer(serializers.ModelSerializer):
         obj = Integration(**validated)
         obj.config = self._merge(obj.provider, {}, config)
         obj.save()
+        self._always_on(obj)
         return obj
 
     def update(self, instance, validated):
@@ -153,4 +154,14 @@ class IntegrationSerializer(serializers.ModelSerializer):
             instance.last_test_ok = None  # settings changed: needs a new test
             instance.last_test_message = ""
         instance.save()
+        if config is not None:  # the settings (the key) were saved: an always-on link with its key is on now
+            self._always_on(instance)
         return instance
+
+    def _always_on(self, obj):
+        """An "Altijd aan" link that has its key is on (it is needed to finish the installation): also right after it was made or changed, not only at the next start."""
+        from . import activation
+
+        if obj.always_on and not obj.enabled and activation._has_key(obj):
+            obj.enabled = True
+            obj.save(update_fields=["enabled"])

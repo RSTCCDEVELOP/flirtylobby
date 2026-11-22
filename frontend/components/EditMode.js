@@ -27,7 +27,7 @@ import { useSession } from "./Session";
 import { useUi } from "./Ui";
 import FontSizeControl from "./FontSizeControl";
 
-const ContentContext = createContext({ blocks: {}, setBlock: () => {}, defaultLang: "nl", languages: [] });
+export const ContentContext = createContext({ blocks: {}, setBlock: () => {}, defaultLang: "nl", languages: [] });
 
 // Editable website texts, loaded on the server and updated locally after a save
 export function ContentProvider({ initial, defaultLang, languages, children }) {

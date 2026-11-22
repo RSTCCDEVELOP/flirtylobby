@@ -28,6 +28,11 @@ import { resetIntegrationsCache } from "../../../../lib/integrations";
 const statusOf = (i) => (i.last_test_ok === true ? "ok" : i.last_test_ok === false ? "fail" : "none");
 const STATUS_TEXT = { ok: "Verbinding OK", fail: "Test mislukt", none: "Nog niet getest", wait: "Testen…" };
 
+
+// the groups of the picker ("+ Nieuwe koppeling"): which system belongs where
+const CATS = [["ai", "AI en stem"], ["pay", "Betalen"], ["msg", "E-mail en sms"], ["store", "Opslag"], ["media", "Foto's en video's"], ["login", "Inloggen"], ["green", "Duurzaamheid"], ["other", "Overig"]];
+const CAT_OF = { anthropic: "ai", gemini: "ai", openai: "ai", elevenlabs: "ai", stripe: "pay", mollie: "pay", postmark: "msg", smtp: "msg", bird: "msg", spryng: "msg", seven: "msg", s3: "store", pexels: "media", unsplash: "media", google_login: "login", apple_login: "login", ecologi: "green", custom: "other" };
+
 export default function Integrations() {
   const { user, setUser } = useAuth();
   const L = lvl(user, "integrations");
@@ -36,6 +41,7 @@ export default function Integrations() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(null);
   const [modal, setModal] = useState(null);
+  const [picker, setPicker] = useState(null);  // the "+": a searchable choice of the system to link: {q, cat}
   const view = useView("integrations");
   const [browse, setBrowse] = useState(null); // S3 link whose files are being browsed
   const [pw, setPw] = useState(null); // opening a locked link: {i, password, error, busy}
@@ -177,8 +183,9 @@ export default function Integrations() {
   const remove = async (i) => (await confirmDialog(tx("Koppeling \"{0}\" verwijderen? Functies die ervan afhangen stoppen.", i.name), { danger: true })) && act(i.id, () => api(`/admin/integrations/${i.id}/`, { method: "DELETE" }));
 
   function openNew() {
-    pick(providers[0].provider, { name: "", slug: "", config: {} });
+    setPicker({ q: "", cat: "" });
   }
+  const choose = (provider) => { setPicker(null); pick(provider, { name: "", slug: "", config: {} }); };
   // choose a system: fill in defaults and suggest a name/slug (unless already typed)
   function pick(provider, base) {
     const p = spec(provider);
@@ -357,18 +364,54 @@ export default function Integrations() {
         </div>
       )}
 
+      {picker && (
+        <div className="overlay" onClick={() => setPicker(null)}>
+          <div className="card modal int-picker" role="dialog" aria-label={tx("Koppeling toevoegen")} onClick={(e) => e.stopPropagation()}>
+            <div className="int-picker-head"><h2 style={{ margin: 0 }}>{tx("Koppeling toevoegen")}</h2><button type="button" className="pb-panelx" onClick={() => setPicker(null)} aria-label={tx("Sluiten")}>×</button></div>
+            <input className="int-picker-search" type="search" autoFocus placeholder={tx("Zoek een systeem, bv. Stripe, Claude of sms…")} value={picker.q} onChange={(e) => setPicker({ ...picker, q: e.target.value })} aria-label={tx("Zoeken")} />
+            <div className="int-picker-cats" role="tablist">
+              {[["", "Alles"], ...CATS].map(([k, l]) => <button type="button" key={k} role="tab" aria-selected={picker.cat === k} className={`int-chip${picker.cat === k ? " on" : ""}`} onClick={() => setPicker({ ...picker, cat: k })}>{tx(l)}</button>)}
+            </div>
+            <div className="int-picker-body">
+              {(() => {
+                const q = picker.q.trim().toLowerCase();
+                const list = providers.filter((p) => (!picker.cat || (CAT_OF[p.provider] || "other") === picker.cat) && (!q || `${p.label} ${p.provider}`.toLowerCase().includes(q)));
+                if (!list.length) return <p className="muted" style={{ margin: 0 }}>{tx("Geen systeem gevonden.")}</p>;
+                return CATS.map(([ck, cl]) => {
+                  const rows = list.filter((p) => (CAT_OF[p.provider] || "other") === ck);
+                  if (!rows.length) return null;
+                  return (
+                    <section key={ck}>
+                      {!picker.cat && <h4 className="int-picker-group">{tx(cl)}</h4>}
+                      <div className="int-picker-grid">
+                        {rows.map((p) => (
+                          <button type="button" key={p.provider} className="int-tile" onClick={() => choose(p.provider)}>
+                            <span className="int-ico" aria-hidden="true">{p.label.trim()[0]}</span>
+                            <span className="int-tile-text"><strong>{p.label}</strong>{items.some((i) => i.provider === p.provider) && <small className="muted">{tx("al gekoppeld")}</small>}</span>
+                            <span className="int-plus" aria-hidden="true">+</span>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
       {modal && fields && (
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save} onInvalidCapture={(e) => { const t = e.target.closest?.("[data-tab]")?.dataset.tab; if (tabbed && t && t !== itab) setModal((m) => ({ ...m, tab: t })); }}>
             <h2>{modal.id ? tx("Koppeling wijzigen") : tx("Nieuwe koppeling")}</h2>
             {tabbed && <Tabs value={itab} onChange={(k) => setModal({ ...modal, tab: k })} tabs={[["general", "Algemeen", <IconSettings key="g" />], ["fields", "Instellingen", <IconKey key="k" />]]} />}
             <div className="form-grid" data-tab="general" style={tabbed && itab !== "general" ? { display: "none" } : undefined}>
-              <label>{tx("Systeem")}
-                <select value={modal.provider} disabled={!!modal.id}
-                  onChange={(e) => pick(e.target.value, modal)}>
-                  {providers.map((p) => <option key={p.provider} value={p.provider}>{p.label}</option>)}
-                </select>
-              </label>
+              <div className="int-system">
+                <span className="muted">{tx("Systeem")}</span>
+                <span className="int-system-row"><span className="int-ico" aria-hidden="true">{(spec(modal.provider)?.label || "?").trim()[0]}</span><strong>{spec(modal.provider)?.label}</strong>
+                  {!modal.id && <button type="button" className="btn sm" onClick={() => { setModal(null); setPicker({ q: "", cat: "" }); }}>{tx("Ander systeem kiezen")}</button>}</span>
+              </div>
               <label>{tx("Naam")}<input value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} required /></label>
               <label>{tx("Sleutelnaam (slug)")}
                 <input value={modal.slug} onChange={(e) => setModal({ ...modal, slug: e.target.value.toLowerCase() })} pattern="[a-z0-9\-]+" required disabled={!!modal.id} placeholder={tx("bv. anthropic")} />

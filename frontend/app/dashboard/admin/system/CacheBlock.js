@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import Collapsible from "../../../../components/Collapsible";
 import { api, errorText } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
+import Loading from "../../../../components/Loading";
 
 // Admin -> Basisgegevens -> Cache. Two parts: the system cache (on/off and how long: saved with the form, like the other settings)
 // and the cache itself that the server uses (database = standard, memory, redis: saved apart, takes effect after a restart).
@@ -55,7 +56,7 @@ export default function CacheBlock({ form, setForm }) {
 
         <section style={{ display: "grid", gap: ".6rem" }}>
           <h4 style={{ margin: 0 }}>{tx("Welke cache de server gebruikt")}</h4>
-          {!c ? <p className="muted">{tx("Laden…")}</p> : (
+          {!c ? <p className="muted">{<Loading compact />}</p> : (
             <>
               <p className="muted" style={{ margin: 0 }}>{tx("In gebruik")}: <strong>{tx(NAMES[c.backend] || c.backend)}</strong> · {c.works ? tx("werkt") : tx("werkt niet")}{c.shared ? "" : ` · ${tx("niet gedeeld")}`}</p>
               <div role="radiogroup" aria-label={tx("Cache")} style={{ display: "grid", gap: ".5rem", opacity: c.locked_by_env ? .5 : 1 }}>

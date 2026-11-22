@@ -634,3 +634,57 @@ def auto_register():
         return ("registered" if first else "alive") if report("register" if first else "sync")["ok"] else "failed"
     except Exception:  # noqa: BLE001
         return "failed"
+
+
+
+# ── tree planting overview on the easy2edit server: every website and every company, with the costs ──
+def trees_overview(refresh=False):
+    """Per website what it says about tree planting (asked through its API, a few at the same time), and per company (the entity with the domain of the website) the totals.
+    -> {companies: [{id, name, sites: [...], totals}], totals, generated_at}. Kept for five minutes."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from django.core.cache import cache
+
+    from . import siteowners
+    from .models import Entity
+
+    if not refresh:
+        got = cache.get("sitemanager:trees")
+        if got:
+            return got
+    sites = list(EasySite.objects.exclude(status="blocked"))
+
+    def one(site):
+        row = {"id": site.pk, "name": site.name or site.url, "url": site.url, "status": site.status}
+        try:
+            d = site_info(site, "trees")
+            row.update({"ok": True, **d})
+        except Exception as e:  # noqa: BLE001 - a website that does not answer does not break the overview
+            row.update({"ok": False, "error": str(e)[:160], "enabled": False})
+        return row
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        rows = list(pool.map(one, sites))
+    companies = {}
+    doms = [(e, [str(x).lower() for x in (e.domains or [])]) for e in Entity.objects.filter(is_own=False)]
+    for r in rows:
+        host = siteowners.host_of(r.get("url"))
+        ent = next((e for e, d in doms if host and host in d), None)
+        key = ent.pk if ent else 0
+        c = companies.setdefault(key, {"id": key, "name": (ent.name or ent.legal_name) if ent else "", "sites": []})
+        c["sites"].append(r)
+
+    def sums(sites_):
+        on = [x for x in sites_ if x.get("ok") and x.get("enabled")]
+        return {"sites": len(sites_), "on": len(on), "trees": sum((x.get("totals") or {}).get("trees", 0) for x in sites_ if x.get("ok")),
+                "donated": round(sum((x.get("totals") or {}).get("donated", 0) for x in sites_ if x.get("ok")), 2),
+                "month_estimate": round(sum((x.get("costs") or {}).get("month_estimate", 0) for x in on), 2),
+                "year_estimate": round(sum((x.get("costs") or {}).get("year_estimate", 0) for x in on), 2),
+                "total_12": round(sum((x.get("costs") or {}).get("total_12", 0) for x in sites_ if x.get("ok")), 2)}
+
+    out = []
+    for c in sorted(companies.values(), key=lambda c: (c["id"] == 0, c["name"].lower())):
+        out.append({**c, "name": c["name"] or "Zonder bedrijf", "totals": sums(c["sites"])})
+    res = {"companies": out, "totals": sums(rows), "generated_at": timezone.now().isoformat(timespec="seconds")}
+    cache.set("sitemanager:trees", res, 300)
+    return res

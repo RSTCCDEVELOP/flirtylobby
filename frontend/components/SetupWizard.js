@@ -24,6 +24,7 @@ import KitScope from "../lib/ui-kit/KitScope";
 import { RichText } from "./SmallEditor";
 import CodeInput from "./CodeInput";
 import { setBlock, useSandboxFirst } from "../lib/firstRun";
+import Loading from "./Loading";
 
 // The basic data (name, main address, address, contact person, e-mail and phone numbers) are required. Are they empty when an administrator logs in? Then this wizard opens.
 // Everybody who may administer can fill it in; only a superadmin may close it without filling it in (for this session).
@@ -438,7 +439,7 @@ export default function SetupWizard() {
                       <strong style={{ fontSize: "1.05rem" }}>{tx("Betaal het abonnement")}</strong>
                       <p style={{ margin: ".3rem 0 0" }}>{tx("Je betaalt via Stripe. Het abonnement start op de 1e van de maand: eerst betaal je de dagen tot het einde van deze maand naar rato, daarna elke periode het volledige bedrag.")}</p>
                     </div>
-                    {!costs ? <span className="e2e-hint">{tx("Laden…")}</span> : (
+                    {!costs ? <span className="e2e-hint">{<Loading compact />}</span> : (
                       <div className="e2e-grid" style={{ "--e2e-min": "170px" }}>
                         <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("Nu tot einde van de maand")}</span><strong style={{ fontSize: "1.35rem" }}>{money(Math.round((perMonth * left / days) * 100) / 100)}</strong></div>
                         {form.ai_amount && <div className="e2e-field" data-easy2edit-tag="ui-kpi"><span className="e2e-hint">{tx("AI-tegoed")}</span><strong style={{ fontSize: "1.35rem" }}><span style={{ color: "#f97316", marginRight: ".35rem" }} aria-hidden="true">+</span>{money(Number(form.ai_amount))}</strong><span className="e2e-hint">{tx("eenmalig")}</span></div>}
@@ -539,7 +540,7 @@ export default function SetupWizard() {
                         onScroll={(e) => { const el = e.currentTarget; if (el.scrollTop + el.clientHeight >= el.scrollHeight - 12) setTermsRead(true); }}
                         style={{ maxHeight: "34vh", overflowY: "auto", padding: ".8rem 1rem", border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.2)))", borderRadius: "var(--e2e-radius, 10px)", background: "var(--e2e-surface, #fff)" }}>
                         {termsDoc ? (termsDoc.title && <h3 style={{ marginTop: 0 }}>{termsDoc.title}</h3>) : null}
-                        {termsDoc ? <RichText value={termsDoc.body} /> : <span className="e2e-hint">{tx("Laden…")}</span>}
+                        {termsDoc ? <RichText value={termsDoc.body} /> : <span className="e2e-hint">{<Loading compact />}</span>}
                       </div>
                       <span className="e2e-hint">{termsRead ? tx("Je hebt de voorwaarden tot het einde gelezen.") : tx("Scroll naar het einde van de voorwaarden om akkoord te kunnen geven.")}</span>
                     </div>
@@ -574,7 +575,7 @@ export default function SetupWizard() {
               )}
               {step === "costs" && (
                 <div className="e2e-stack sw-fit-costs" style={{ gridColumn: "1 / -1", gap: ".8rem" }}>
-                  {!costs ? <span className="e2e-hint">{tx("Laden…")}</span> : <>
+                  {!costs ? <span className="e2e-hint">{<Loading compact />}</span> : <>
                     {upd && <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div><strong>{Number(upd.delta) > 0 ? tx("De licentie wordt duurder") : tx("De licentie wordt goedkoper")}</strong><br />{money(upd.old)} → <strong>{money(upd.new)}</strong> {tx("per maand")} ({Number(upd.delta) > 0 ? "+" : ""}{money(upd.delta)}) · {tx("incl. btw")}</div></div>}
                     {(() => { // the subscription starts on the 1st: until the end of this month you pay in proportion, after that the full month price
                       const now = new Date(), lang = getLanguage(), mo = Number(costs.monthly || 0), per = [1, 3, 12].includes(Number(form.renew_months)) ? Number(form.renew_months) : 12;

@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
+import Loading from "./Loading";
 
 // The button "Aa": the size of the letters of the whole website (pages, admin and dashboard), for everybody, also without a login (the theme setting "font_tool").
 // The size a person picks is theirs: it is kept in this browser and shows at once everywhere (the base size --fs-base, 12 to 22 px; everything in rem follows it).
@@ -81,7 +82,7 @@ export default function FontSizeControl({ canSave = false }) {
       {open && pos && createPortal(
         <div ref={box} role="dialog" aria-label={title} style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 3200, width: 310, maxWidth: "calc(100vw - 16px)", padding: "1rem 1.1rem", background: "var(--card)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 14, boxShadow: "0 12px 34px rgba(0,0,0,.28)", display: "grid", gap: ".7rem" }}>
           <div><strong>{title}</strong><br /><span style={{ color: "var(--muted)", fontSize: ".82rem" }}>{tx("Alleen voor jou: de lettergrootte wordt in deze browser onthouden.")}</span></div>
-          {!ready ? <span style={{ color: "var(--muted)", fontSize: ".85rem" }}>{msg || tx("Laden…")}</span> : (
+          {!ready ? <span style={{ color: "var(--muted)", fontSize: ".85rem" }}>{msg || <Loading compact />}</span> : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: ".6rem" }}>
                 <button type="button" className="btn sm" aria-label={tx("Kleiner")} title={tx("Kleiner")} disabled={px <= MIN} onClick={() => apply(px - 1)} style={{ minWidth: 38 }}>A−</button>

@@ -47,6 +47,7 @@ export default function OnboardingNag({ user }) {
     const once = (k) => { if (autoDone[k]) return false; autoDone[k] = true; return true; };
     const t = setTimeout(() => {
       if (st.next === "ai" && once("ai")) window.dispatchEvent(new Event("open-ai-welcome"));
+      else if (st.next === "trees" && once("trees")) window.dispatchEvent(new Event("open-trees-welcome"));
       else if (st.next === "design" && once("design")) {
         markPlan();
         if (!window.location.pathname.startsWith("/dashboard/admin/siteimport")) { startWizardLoading(); window.location.href = "/dashboard/admin/siteimport"; }
@@ -67,6 +68,7 @@ export default function OnboardingNag({ user }) {
     } catch { /* no storage */ }
     setOpen(false);
     if (next === "ai") { window.dispatchEvent(new Event("open-ai-welcome")); return; }
+    if (next === "trees") { window.dispatchEvent(new Event("open-trees-welcome")); return; }
     if (next === "design") { markPlan(); startWizardLoading(); window.location.href = "/dashboard/admin/siteimport"; return; }
     if (next === "licence") { window.dispatchEvent(new Event("open-setup-wizard")); return; }
     window.location.reload(); // welcome, terms, manual, installation: the screens look at what is there and come again

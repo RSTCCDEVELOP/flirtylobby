@@ -15,6 +15,7 @@ import { IconBolt, IconCheck, IconTrash } from "./Icons";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
+import Loading from "./Loading";
 
 const Code = ({ children }) => <pre style={{ margin: 0, padding: ".8rem 1rem", background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 10, overflowX: "auto", fontSize: ".8rem", lineHeight: 1.5 }}><code>{children}</code></pre>;
 
@@ -93,7 +94,7 @@ export default function EnergyNetworkPanel() {
   const remove = async (s) => { if (!(await confirmDialog(tx("Deze website uit het totaalbeeld halen?"), { danger: true, title: tx("Website verwijderen"), okLabel: tx("Verwijderen") }))) return; await api(`/super/energy/sites/${s.id}/`, { method: "DELETE" }).catch(() => {}); load(); };
   const publish = async (body) => { try { const r = await api("/super/energy/settings/", { method: "POST", body }); setD((o) => ({ ...o, settings: r })); setMsg({ ok: true, text: tx("Opgeslagen.") }); } catch (x) { setMsg({ ok: false, text: errorText(x) }); } };
 
-  if (!d) return <p className="muted">{msg ? msg.text : tx("Laden…")}</p>;
+  if (!d) return <p className="muted">{msg ? msg.text : <Loading compact />}</p>;
   const snippet = `fetch("${d.endpoint}")\n  .then((r) => r.json())\n  .then((n) => {\n    // n.totals: avg_page_bytes, avg_requests, avg_co2_g, total_co2_kg, views\n    // n.sites[]: een regel per website\n    console.log(n.title, n.totals);\n  });`;
 
   return (

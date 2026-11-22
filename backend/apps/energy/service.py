@@ -419,3 +419,58 @@ def api_url(request):
 
     be = (system.get().get("backend_url") or "").rstrip("/")
     return (be or request.build_absolute_uri("/").rstrip("/")) + "/api/energy/public/"
+
+
+BADGE_ITEMS = ("rating", "co2", "size", "energy", "views", "live", "compare")  # what the energy label of the website can show (Admin -> Energie)
+BADGE_STANDARD = ["rating", "co2", "size", "views"]
+
+
+def badge_items(st=None):
+    st = st or EnergySettings.load()
+    shown = [k for k in (st.badge_show or []) if k in BADGE_ITEMS]
+    return shown or list(BADGE_STANDARD)
+
+
+def green_status(rating_letter):
+    """The green status of the website from its label: green (A+, A, B), orange (C, D: can be better), red (E, F) or "" (not measured yet)."""
+    return {"A+": "green", "A": "green", "B": "green", "C": "orange", "D": "orange", "E": "red", "F": "red"}.get(rating_letter or "", "")
+
+
+def badge(days=30):
+    """What the energy label of the website shows to a visitor: only totals (nothing personal), and only what the administrator chose to show."""
+    st = EnergySettings.load()
+    if not st.badge_on:
+        return {"enabled": False}
+    show = badge_items(st)
+    d = summary(days, st)
+    sm = d["summary"]
+    out = {"enabled": True, "show": show, "status": green_status(sm["rating"]), "rating": sm["rating"] if "rating" in show else "", "source": d["source"], "period_days": d["period_days"],
+           "site": own_name()}
+    if "co2" in show:
+        out["co2_g"] = sm["avg_co2_g"]
+    if "size" in show:
+        out["page_bytes"] = sm["avg_page_bytes"]
+    if "energy" in show:
+        out["page_wh"] = round(kwh(sm["avg_page_bytes"], st) * 1000, 3) if sm["avg_page_bytes"] else 0
+        out["total_kwh"] = sm["total_kwh"]
+    if "views" in show:
+        out["views"] = sm["views"]
+    if "compare" in show:
+        out["vs_pct"] = d["benchmark"].get("vs_pct")
+    try:  # the trees that were planted with Ecologi (Super admin -> Ecologi, "Tonen in het energievenster")
+        from apps.ecologi import service as eco
+        from apps.ecologi.models import EcologiSettings
+
+        if EcologiSettings.load().show_on_site and eco.api_on():
+            rep = eco.report()
+            if rep:
+                out["trees"] = rep["trees"]
+        pub = eco.public()
+        if pub:
+            out["eco"] = pub
+    except Exception:  # noqa: BLE001 - never breaks the label
+        pass
+    if "live" in show:
+        lv = live(24, st)
+        out["live"] = {"points": [{"t": p["t"], "w": p["w"]} for p in lv["points"]], "now_w": lv["now"]["w"]}
+    return out

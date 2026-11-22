@@ -14,6 +14,7 @@ import { api, errorText } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { useAutoSave } from "../../../../lib/autosave";
 import SaveStatus from "../../../../components/SaveStatus";
+import Loading from "../../../../components/Loading";
 
 const HINT = {
   users: "Foto's, chatbestanden en alles wat leden uploaden. Per lid een eigen submap, zodat alles van één lid bij elkaar staat en bij verwijderen in één keer weg is.",
@@ -45,7 +46,7 @@ export default function StoragePage() {
     setMsg(r.failed.length ? { ok: false, text: `${r.changed} ${tx("aangepast")}, ${r.failed.length} ${tx("mislukt")}: ${r.failed.map((f) => f.key).join(", ")}` } : { ok: true, text: `${r.changed} ${tx("bestanden aangepast.")}` });
   });
 
-  if (!s) return <p className="muted">{msg?.text || tx("Laden…")}</p>;
+  if (!s) return <p className="muted">{msg?.text || <Loading compact />}</p>;
   const label = { users: "Gebruikers", site: "Website", other: "Overig" };
   return (
     <>

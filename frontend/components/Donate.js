@@ -15,6 +15,7 @@ import { money } from "../lib/format";
 import { placeStyle } from "./ImagePlace";
 import { useSession } from "./Session";
 import KitScope from "../lib/ui-kit/KitScope";
+import Loading from "./Loading";
 
 export function Campaign({ c, currency, user, onClose }) {
   const [amount, setAmount] = useState(Number(c.default));
@@ -86,7 +87,7 @@ export default function Donate() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   useEffect(() => { if (ready) api("/donations/campaigns/").then(setData).catch((e) => setErr(errorText(e))); }, [ready]);
-  if (!data) return <p className="muted">{err || tx("Laden…")}</p>;
+  if (!data) return <p className="muted">{err || <Loading compact />}</p>;
   const thanks = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("bedankt");
   return (
     <div className="don-grid">

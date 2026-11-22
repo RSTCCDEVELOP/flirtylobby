@@ -57,6 +57,16 @@ def test_openai(c):
     return _http_get("https://api.openai.com/v1/models", {"Authorization": f"Bearer {c['api_key']}"})
 
 
+def test_ecologi(c):
+    """Ecologi (planting trees): a test order of one tree with the key; nothing is bought."""
+    key = (c.get("api_key") or "").strip()
+    if not key:
+        return False, "API-sleutel ontbreekt."
+    from apps.ecologi import service
+
+    return service.check_key(key)
+
+
 def test_stripe(c):
     """A full key can read the balance. A restricted key (rk_…) only has the rights its owner ticked, so we try the endpoints a shop or
     donations need (payments, checkout) and say which right is missing when none works."""
@@ -250,6 +260,9 @@ PROVIDERS = {
         f("encryption_key", "Hoofdsleutel", secret=True, required=False)]},
     "pexels": {"label": "Pexels (gratis foto's en video's)", "test": test_pexels, "fields": [f("api_key", "API-sleutel (gratis aan te vragen op pexels.com/api)", secret=True)]},
     "unsplash": {"label": "Unsplash (gratis foto's, geen video's)", "test": test_unsplash, "fields": [f("api_key", "Access Key (gratis aan te vragen op unsplash.com/developers)", secret=True)]},
+    "ecologi": {"label": "Ecologi (bomen planten)", "test": test_ecologi, "fields": [
+        f("api_key", "API-sleutel (Ecologi → Integrations → API keys)", secret=True),
+        f("username", "Ecologi-gebruikersnaam (voor de openbare cijfers van je bomen, optioneel)", required=False)]},
     "stripe": {"label": "Stripe", "test": test_stripe, "fields": [f("secret_key", "Secret key", secret=True)]},
     "mollie": {"label": "Mollie", "test": test_mollie, "fields": [f("api_key", "API-sleutel (live_ of test_)", secret=True)]},
     "postmark": {"label": "Postmark", "test": test_postmark, "fields": [f("server_token", "Server-token", secret=True), f("from_email", "Afzender (e-mailadres, gevalideerd bij Postmark)", required=False)]},

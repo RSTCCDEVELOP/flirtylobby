@@ -73,7 +73,7 @@ export default function ResellerAdmin() {
           <button type="button" className="e2e-btn" onClick={() => setEdit({ ...EMPTY })}>{tx("Reseller toevoegen")}</button>
         </div>
         {error && <span className="e2e-error">{error}</span>}
-        {!list ? <span className="e2e-hint">{tx("Laden…")}</span> : shown.length === 0 ? <span className="e2e-hint">{tx("Nog geen resellers.")}</span> : (
+        {!list ? <span className="e2e-hint">{<Loading compact />}</span> : shown.length === 0 ? <span className="e2e-hint">{tx("Nog geen resellers.")}</span> : (
           <div className="e2e-grid" style={{ "--e2e-min": "300px", gap: ".8rem" }}>
             {shown.map((r) => (
               <div key={r.id} className="e2e-field" data-easy2edit-tag="ui-kpi" style={{ gap: ".35rem", padding: "1rem 1.1rem", border: "1px solid var(--line)", borderRadius: "var(--radius, 12px)", background: "var(--card)" }}>

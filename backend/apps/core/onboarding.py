@@ -22,6 +22,7 @@ STEPS = [
     ("manual", "Handleiding"),
     ("install", "Standaard installatie"),
     ("ai", "AI-tegoed uitleggen en instellen"),
+    ("trees", "Bomen planten met easy2edit (kies aan of uit)"),
     ("design", "Website ontwerpen: de wizard starten"),
 ]
 
@@ -68,6 +69,12 @@ def status(user):
             ai_done = bool(acc and acc.welcomed)  # (no account yet: the explanation was not shown yet)
     except Exception:  # noqa: BLE001
         ai_done = True
+    try:  # the step only exists while the module is there (an installation without it skips it)
+        from . import modules as _m
+
+        trees_possible = _m.enabled("ecologi") or _m.enabled("ecologi_admin")
+    except Exception:  # noqa: BLE001
+        trees_possible = False
     done = {
         "welcome": bool(d.get("welcome_asked")) and not replay,
         "licence": has_lic and not (replay and not reset.replay_form_done()),
@@ -75,6 +82,7 @@ def status(user):
         "manual": bool(d.get("manual_asked")) and not replay,
         "install": bool(presets.active()) and not replay,
         "ai": ai_done,
+        "trees": (bool(d.get("trees_asked")) and not replay) or not trees_possible,
         "design": bool(d.get(COMPLETE_KEY)) and not replay,
     }
     if not replay and not d.get(STARTED_KEY):

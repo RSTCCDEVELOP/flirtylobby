@@ -421,6 +421,42 @@ def export_pages(request):
 
 
 @api_view(["POST"])
+@permission_classes([has_level("edit_mode", "edit"), module_required("edit_mode")])
+def improve_page(request, key):
+    """AI in the editor (derived from the page creator): improve the page itself (layout and look), suggest pictures and videos, search stock, apply (with the way back for undo).
+    action: check | suggest | apply | stock | use (| texts: the older proposal for the words)."""
+    from apps.integrations import ai
+
+    from . import ai_improve, ai_texts
+
+    d = request.data
+    act = str(d.get("action") or "suggest")
+    try:
+        if act == "check":
+            return Response({"ai": ai.available()})
+        if act == "stock":
+            return Response({"items": ai_improve.stock(str(d.get("query") or "")[:80], "video" if d.get("kind") == "video" else "image")})
+        if act == "start":
+            return Response(ai_improve.start(key, d.get("instruction"), request.user))
+        if act == "status":
+            return Response(ai_improve.status(str(d.get("job") or "")))
+        if act == "apply":
+            return Response(ai_improve.apply(key, d.get("ops")))
+        if act == "use":
+            return Response(ai_improve.use_stock(key, d.get("id"), d.get("item") if isinstance(d.get("item"), dict) else {}, request.user))
+        if not ai.available():
+            return bad("Claude is niet gekoppeld. Koppel Claude bij Admin → API keys.")
+        if act == "texts":
+            p = Page.objects.filter(key=key).first()
+            if not p:
+                return bad("Niet gevonden.", status.HTTP_404_NOT_FOUND)
+            return Response(ai_texts.improve(p, d.get("instruction")))
+        return Response(ai_improve.suggest(key, d.get("instruction")))
+    except (ai_improve.ImproveError, ai_texts.AiTextError, ValueError) as e:
+        return bad(str(e))
+
+
+@api_view(["POST"])
 @permission_classes([has_level("pages", "edit"), module_required("pages")])
 def translate_page(request, pk):
     """Claude makes or updates all texts of this page and its SEO in every language: {"list": true} gives the languages, {"lang": "de"} does one language."""

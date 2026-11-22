@@ -99,6 +99,13 @@ def live(request):
 
 @api_view(["GET"])
 @permission_classes([AllowAny, module_required("energy")])
+def badge(request):
+    """Public: the figures of the energy label at the bottom of the website (only when the administrator switched it on, and only what was chosen to show)."""
+    return _open(Response(service.badge()), 120)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny, module_required("energy")])
 def public(request):
     """For other websites: the figures of this website. On by default; an API key can be required (Admin → Energie → API)."""
     st = EnergySettings.load()
@@ -128,7 +135,8 @@ def _settings(st, request=None):
     return {"auto_scan": st.auto_scan, "scan_every": st.scan_every, "scan_hour": st.scan_hour, "scan_weekday": st.scan_weekday, "scan_sites": st.scan_sites,
             "last_run_at": st.last_run_at.isoformat() if st.last_run_at else None, "last_status": st.last_status, "last_error": st.last_error, "next_run": scheduler.next_run(st, now).isoformat() if st.auto_scan else None,
             "api_url": service.api_url(request) if request else "", "kwh_per_gb": float(st.kwh_per_gb), "g_per_kwh": float(st.g_per_kwh), "api_public": st.api_public, "api_key": st.api_key, "scan_paths": st.scan_paths or ["/"], "retention_days": st.retention_days, "prune_old": st.prune_old,
-            "network_public": st.network_public, "network_title": st.network_title}
+            "network_public": st.network_public, "network_title": st.network_title,
+            "badge_on": st.badge_on, "badge_show": service.badge_items(st), "badge_items": list(service.BADGE_ITEMS)}
 
 
 @api_view(["GET", "PATCH"])
@@ -163,6 +171,10 @@ def settings(request):
             st.prune_old = bool(d["prune_old"])
         if "api_public" in d:
             st.api_public = bool(d["api_public"])
+        if "badge_on" in d:
+            st.badge_on = bool(d["badge_on"])
+        if isinstance(d.get("badge_show"), list):
+            st.badge_show = [k for k in dict.fromkeys(d["badge_show"]) if k in service.BADGE_ITEMS]
         if d.get("new_key"):
             st.api_key = secrets.token_urlsafe(24)
         elif "api_key" in d:

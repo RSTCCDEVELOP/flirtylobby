@@ -12,6 +12,7 @@ import { IconCheck } from "./Icons";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { resetEnergy } from "./EnergyBlocks";
+import Loading from "./Loading";
 
 // The settings of the green measurements (module Energie): the calculation model, the pages that are scanned, how long measurements are kept and, with showApi, the API for other websites.
 export default function EnergySettingsPanel({ showApi = false, onSaved }) {
@@ -25,12 +26,28 @@ export default function EnergySettingsPanel({ showApi = false, onSaved }) {
     try { const r = await api("/admin/energy/settings/", { method: "PATCH", body }); setSt(r); setForm({ ...r, scan_paths: r.scan_paths.join("\n") }); resetEnergy(); setMsg({ ok: true, text: okText || tx("Opgeslagen.") }); onSaved?.(r); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
-  if (!st || !form) return <p className="muted">{msg ? msg.text : tx("Laden…")}</p>;
+  if (!st || !form) return <p className="muted">{msg ? msg.text : <Loading compact />}</p>;
   const set = (k, v) => setForm((o) => ({ ...o, [k]: v }));
   const when = (iso) => { try { return new Date(iso).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
   return (
     <div style={{ display: "grid", gap: "1rem", maxWidth: 820 }}>
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
+      <div className="card" style={{ display: "grid", gap: ".9rem" }}>
+        <div><strong>{tx("Energie-label op de website")}</strong>
+          <p className="muted" style={{ margin: ".25rem 0 0" }}>{tx("Een klein energie-label naast “© easy2edit” onderaan de website. Een klik erop toont de inzichten van de website en de groene status.")}</p></div>
+        <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!form.badge_on} onChange={(e) => save({ badge_on: e.target.checked }, tx("Opgeslagen."))} /><span /></span><span>{tx("Energie-label tonen op de website")} <small className="muted">{tx("Uit (standaard): bezoekers zien niets.")}</small></span></label>
+        {form.badge_on && (
+          <>
+            <strong style={{ fontSize: ".85rem" }}>{tx("Wat laten zien in het venster")}</strong>
+            <small className="muted" style={{ marginTop: "-.5rem" }}>{tx("De groene status staat er altijd. Kies wat daarnaast te zien is.")}</small>
+            <div className="grid2">
+              {[["rating", "Label (A+ t/m F)"], ["co2", "CO2 per paginabezoek"], ["size", "Gemiddeld paginagewicht"], ["energy", "Stroom per paginabezoek"], ["views", "Aantal paginabezoeken"], ["live", "Grafiek stroomgebruik (24 uur)"], ["compare", "Vergelijking met een gemiddelde webpagina"]].filter(([k]) => (form.badge_items || []).includes(k)).map(([k, l]) => (
+                <label key={k} className="check sec-toggle"><span className="switch"><input type="checkbox" checked={(form.badge_show || []).includes(k)} onChange={(e) => save({ badge_show: e.target.checked ? [...(form.badge_show || []), k] : (form.badge_show || []).filter((x) => x !== k) }, tx("Opgeslagen."))} /><span /></span><span>{tx(l)}</span></label>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
       <form className="card form" style={{ display: "grid", gap: "1rem" }} onSubmit={(e) => { e.preventDefault(); save({ kwh_per_gb: Number(form.kwh_per_gb), g_per_kwh: Number(form.g_per_kwh), retention_days: Number(form.retention_days), prune_old: !!form.prune_old, scan_paths: form.scan_paths, auto_scan: form.auto_scan, scan_every: form.scan_every, scan_hour: Number(form.scan_hour), scan_weekday: Number(form.scan_weekday), scan_sites: form.scan_sites }); }}>
         <div><strong>{tx("Rekenmodel")}</strong>
           <p className="muted" style={{ margin: ".25rem 0 0" }}>{tx("De uitstoot is een schatting: het paginagewicht (data) wordt omgerekend naar energie voor de hele keten (servers, netwerk en apparaat) en daarna naar CO2. Het model heet Sustainable Web Design.")}</p></div>

@@ -14,6 +14,7 @@ import { WIDGET_NAMES } from "./PageWidget";
 import Tabs from "./Tabs";
 import { loadKit } from "../lib/ui-kit/kitDoc";
 import MediaLibraryPanel from "./MediaLibraryPanel";
+import Loading from "./Loading";
 
 // One-colour icons (they follow the colour of the text)
 const I = (d) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -104,7 +105,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
   const compList = (
     <div className="pb-compcats">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center", margin: ".1rem 0 .4rem" }}>
-        <small className="muted">{comps.length ? `${comps.length} ${tx("componenten in de kleuren van je thema")}` : tx("Laden…")}</small>
+        <small className="muted">{comps.length ? `${comps.length} ${tx("componenten in de kleuren van je thema")}` : <Loading compact />}</small>
         {onComponents && <button type="button" className="btn sm" onClick={onComponents}>{tx("Voorbeelden bekijken")}</button>}
       </div>
       {compGroups.length > 1 && (

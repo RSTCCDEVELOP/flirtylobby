@@ -26,7 +26,7 @@ PATH = Path(settings.BASE_DIR) / "apps" / "core" / "site_defaults.json"
 
 
 TABS = {  # the tabs of Standaard en globale instellingen and the settings that belong to each (twofa: the two-step verification and blocking of the security settings)
-    "server": ("base_domain", "api_url", "site_url"), "settings": ("source_mode",), "licence": ("grace_1", "grace_2", "grace_3", "grace_4", "grace_reminder"),
+    "server": ("base_domain", "api_url", "site_url"), "settings": ("source_mode", "energy_badge", "energy_badge_show"), "licence": ("grace_1", "grace_2", "grace_3", "grace_4", "grace_reminder"),
     "mails": ("notify_rstcc", "notify_reseller", "notify_invoicing", "notify_support"),
     "reseller": ("reseller_company", "reseller_contact", "reseller_email", "reseller_phone", "reseller_mobile", "reseller_street", "reseller_house_number", "reseller_postal_code", "reseller_city", "reseller_country", "reseller_website"),
     "twofa": (),

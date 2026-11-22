@@ -13,6 +13,7 @@ urlpatterns = [
     path("energy/beacon/", views.beacon),
     path("energy/view/", views.view),
     path("energy/live/", views.live),
+    path("energy/badge/", views.badge),
     path("energy/public/", views.public),
     path("energy/network/", views.network_view),
     path("admin/energy/", views.overview),
