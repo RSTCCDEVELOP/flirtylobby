@@ -25,8 +25,9 @@ frontend/.env
 frontend/dist/
 frontend/build/
 
-# video promos
-/Users/ronald/DATA/STUDIO2/DEVELOPMENT/GITHUB/easy2edit/manuals/promo
+# ── promo media ───────────────────────────────────────────────────────────────
+manuals/promo
+
 # ── backend media ───────────────────────────────────────────────────────────────
 backend/media/images/
 backend/media/videos/
