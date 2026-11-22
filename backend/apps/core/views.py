@@ -2807,6 +2807,22 @@ def sitecreator_prefill(request, pk):
     return Response(sitecreator.public(sitecreator.SiteDesignJob.objects.get(pk=job.pk)))
 
 
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_failed(request, pk):
+    """The choice for a design that failed: {mode: "retry" | "continue"}: do the last order again, or go on with what is there."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.failed_choice(job, str(request.data.get("mode") or ""))
+    except ValueError as e:
+        return _bad(str(e))
+    return Response(sitecreator.public(sitecreator.SiteDesignJob.objects.get(pk=job.pk)))
+
+
 @api_view(["GET"])
 @permission_classes(DESIGN_PERM)
 def sitecreator_controle(request, pk):

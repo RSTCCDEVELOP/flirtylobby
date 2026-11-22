@@ -1016,3 +1016,25 @@ def test_photo_names_in_the_pages_are_the_exact_names_of_the_library(db):
     assert 'src="img/sunrise.jpg"' in fixed["index.html"] and "img/NietEen.jpg" in fixed["index.html"]  # others stay as they are
     repaired, _left = sitecreator.repair_design(files, b)
     assert "tR7rwqdv5M4" not in repaired["index.html"]  # the repair after every design and change does it too
+
+
+def test_a_failed_design_asks_to_redo_or_go_on(django_user_model, monkeypatch):
+    u = django_user_model.objects.create_user("f@example.com", "f@example.com", "x")
+    ran = []
+    monkeypatch.setattr(sitecreator.threading, "Thread", lambda target, args, daemon: type("T", (), {"start": lambda self: ran.append((target, args))})())
+    monkeypatch.setattr(sitecreator, "_generate", lambda pk: None)
+    failed = sitecreator.SiteDesignJob.objects.create(user=u, status="error", error="afgebroken", name="X", brief={"name": "X", "run": {"fn": "_generate", "args": []}}, files={"index.html": "<html></html>"})
+    sitecreator.failed_choice(failed, "continue")  # go on with what is there: no new work, the error is gone
+    failed.refresh_from_db()
+    assert failed.status == "done" and failed.error == "" and not ran
+    again = sitecreator.SiteDesignJob.objects.create(user=u, status="error", error="afgebroken", name="Y", brief={"name": "Y", "run": {"fn": "_generate", "args": []}})
+    sitecreator.failed_choice(again, "retry")  # the last order is done again
+    again.refresh_from_db()
+    assert again.status == "running" and again.error == "" and len(ran) == 1
+    with pytest.raises(ValueError):
+        sitecreator.failed_choice(again, "retry")  # only a failed design can be asked about
+    empty = sitecreator.SiteDesignJob.objects.create(user=u, status="error", error="x", name="Z", brief={})
+    with pytest.raises(ValueError):
+        sitecreator.failed_choice(empty, "retry")  # nothing to redo
+    empty.refresh_from_db()
+    assert empty.status == "error"

@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { IconBolt, IconCamera, IconCheck, IconChat, IconImage, IconMenu, IconPalette, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import { api, apiUpload, errorText, mediaUrl } from "../../../../lib/api";
+import { useBusy } from "../../../../lib/busy";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx, getLanguage } from "../../../../lib/t";
 import { useAuth } from "../../../../components/AuthContext";
@@ -238,6 +239,19 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
       const a = document.createElement("a"); a.href = url; a.download = `${(x.name || "ontwerp").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ontwerp"}.design.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     } catch (e) { setErr(errorText(e)); }
   };
+  // A design that failed: opening it asks first: do the last order again, or go on with what is there
+  const openDesign = async (x) => {
+    if (x.status !== "error") return onOpen(x.id);
+    const what = await confirmDialog(tx("Het ontwerpen van dit ontwerp is mislukt. Wil je de opdracht opnieuw laten doen, of verdergaan met wat er al is?"), {
+      title: tx("Ontwerp mislukt"), okLabel: tx("Doorgaan"), cancelLabel: tx("Annuleren"),
+      choices: [{ value: "retry", label: tx("Opdracht opnieuw doen"), hint: tx("De laatste opdracht wordt opnieuw uitgevoerd. Wat er al is, blijft bewaard.") },
+        { value: "continue", label: tx("Verder gaan met wat er is"), hint: tx("Het ontwerp gaat open zoals het nu is. Je gaat verder in de chat.") }],
+    });
+    if (!what) return;
+    setErr("");
+    try { await api(`/sitecreator/${x.id}/failed/`, { method: "POST", body: { mode: what } }); } catch (e) { setErr(errorText(e)); return; }
+    onOpen(x.id);
+  };
   const del = async (x) => { if (!(await confirmDialog(tx("Dit ontwerp verwijderen? Wat je hebt ingevuld en gemaakt gaat verloren, ook de geüploade documenten."), { danger: true, title: tx("Ontwerp verwijderen"), okLabel: tx("Verwijderen") }))) return; await api(`/sitecreator/${x.id}/`, { method: "DELETE" }).catch(() => {}); load(); };
   return (
     <div style={{ marginTop: ".75rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
@@ -260,7 +274,7 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
             <div key={x.id} className="card" style={{ display: "flex", gap: ".7rem", alignItems: "center", padding: ".6rem .8rem" }}>
               <span style={{ flex: 1, minWidth: 0 }}><strong>{x.name}</strong> {x.pages > 0 && <span title={tx("De pagina's zijn gemaakt")} aria-label={tx("De pagina's zijn gemaakt")} style={{ display: "inline-flex", verticalAlign: "middle", color: "var(--muted)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg></span>} <span className={x.live || (x.status === "done" && !x.applied) ? "badge ok" : "badge off"}>{x.live ? tx("Live") : x.applied && x.status === "done" ? tx("Concept") : tx(STATUS[x.status] || x.status)}</span>
                 <small className="muted" style={{ display: "block" }}>{x.chat && x.status === "draft" ? tx("AI chat build") : x.status === "draft" ? `${tx("Stap")} ${x.step + 1} ${tx("van")} ${STEPS.length}: ${tx(STEPS[x.step]?.[1] || "")}` : `${x.pages} ${tx("pagina's")}`} · {new Date(x.updated_at).toLocaleString()}</small></span>
-              <button type="button" className="btn sm primary" onClick={() => onOpen(x.id)}>{x.status === "draft" ? tx("Verder gaan") : tx("Openen")}</button>
+              <button type="button" className="btn sm primary" onClick={() => openDesign(x)}>{x.status === "draft" ? tx("Verder gaan") : tx("Openen")}</button>
               {superadmin && <button type="button" className="btn sm" onClick={() => exportOne(x)} title={tx("Exporteren als json")} aria-label={tx("Exporteren als json")}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11" /><path d="M7.5 10.5L12 15l4.5-4.5" /><path d="M5 19h14" /></svg></button>}
               <button type="button" className="btn sm danger" onClick={() => del(x)} aria-label={tx("Verwijderen")}><IconTrash /></button>
             </div>
@@ -1180,6 +1194,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
     } catch { /* the frame is not reachable: nothing to do */ }
   };
   const running = job?.status === "running" || job?.status === "stopping";
+  useBusy("design", running); // a design is being made: the idle logout never logs out now, it asks first
   const act = async (what, path, body) => { setBusy(what); setErr(""); try { merge(await api(`/sitecreator/${jobId}/${path}/`, { method: "POST", body: body || {} })); return true; } catch (x) { setErr(errorText(x)); return false; } finally { setBusy(""); } };
   const stop = () => act("stop", "stop");
   const toSteps = async () => { if (running) { setBack(true); await stop(); } else setAgain(true); };
@@ -1343,9 +1358,9 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 style={{ position: "absolute", top: 10, left: 10, zIndex: 6, display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".4rem .7rem", borderRadius: 999, border: 0, background: "var(--blue)", color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(0,0,0,.3)", font: "inherit", fontSize: ".82rem" }}><IconChat /> {tx("Chat")}</button>}
               {ready && <div style={{ padding: ".5rem .8rem 0", display: "flex", alignItems: "flex-end", gap: ".8rem", flexWrap: "wrap", ...(side.shut ? { paddingLeft: "5.6rem" } : {}) }}>
                 <Tabs value={view} onChange={(v) => { setView(v); if (v === "live") setLiveKey((n) => n + 1); }} tabs={job.applied ? [["creator", tx("Creator")], ["live", tx("Live")]] : [["creator", tx("Creator")]]} />
-                {view === "creator" && <Tabs value={cur} onChange={setPage} tabs={pages.filter((p) => job.files[p.file]).map((p) => [p.file, p.title])} />}
+                {view === "creator" && <div style={{ marginLeft: "auto", minWidth: 0 }}><Tabs value={cur} onChange={setPage} tabs={pages.filter((p) => job.files[p.file]).map((p) => [p.file, p.title])} /></div>}  {/* the tabs of the design (Creator, Live) stay on the left, the pages of the design go to the right */}
                 {view === "creator" && job.brief?.color_mode === "both" && (
-                  <span role="group" aria-label={tx("Weergave")} data-easy2edit-tag="ui-mode-switch" style={{ marginLeft: "auto", display: "inline-flex", border: "1px solid var(--line)", borderRadius: 999, overflow: "hidden", marginBottom: ".3rem" }}>
+                  <span role="group" aria-label={tx("Weergave")} data-easy2edit-tag="ui-mode-switch" style={{ display: "inline-flex", border: "1px solid var(--line)", borderRadius: 999, overflow: "hidden", marginBottom: ".3rem" }}>
                     {[["light", "Licht"], ["dark", "Donker"]].map(([k, l]) => <button key={k} type="button" aria-pressed={prevMode === k} onClick={() => setPrevMode(k)} style={{ border: 0, padding: ".25rem .8rem", cursor: "pointer", font: "inherit", fontSize: ".82rem", background: prevMode === k ? "var(--blue)" : "var(--card)", color: prevMode === k ? "#fff" : "inherit" }}>{tx(l)}</button>)}
                   </span>
                 )}

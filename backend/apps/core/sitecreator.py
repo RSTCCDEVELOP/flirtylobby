@@ -2680,9 +2680,29 @@ def is_stalled(job):
     return job.status in ("running", "stopping") and job.pk not in ACTIVE and timezone.now() - job.updated_at > timezone.timedelta(seconds=60)
 
 
-def resume(job):
+def failed_choice(job, mode):
+    """A design that failed (status error) is opened: the user chooses. "retry" = the last order is done again (the same work as going on with a stuck design); "continue" = go on with what is there:
+    the design gets the status of what it has (done with pages, else a concept) and the error is gone; the user continues in the chat. Never touches a design that is not failed."""
+    if job.status != "error":
+        raise ValueError("Dit ontwerp is niet mislukt.")
+    if mode == "continue":
+        has = any(n.endswith(".html") for n in (job.files or {}))
+        SiteDesignJob.objects.filter(pk=job.pk).update(status="done" if has else "draft", error="", step="", progress=100 if has else 0, updated_at=timezone.now())
+        return
+    if mode != "retry":
+        raise ValueError("Onbekende keuze.")
+    SiteDesignJob.objects.filter(pk=job.pk).update(status="running", error="", updated_at=timezone.now())
+    job.refresh_from_db()
+    try:
+        resume(job, force=True)
+    except ValueError:
+        SiteDesignJob.objects.filter(pk=job.pk).update(status="error", updated_at=timezone.now())  # nothing to redo: it stays failed (the message says why)
+        raise
+
+
+def resume(job, force=False):
     """Go on with what was running when it got stuck."""
-    if not is_stalled(job):
+    if not force and not is_stalled(job):
         raise ValueError("Het ontwerpen loopt nog.")
     run = (job.brief or {}).get("run") or {}
     fns = {"_generate": _generate, "_chat": _chat, "_revise": _revise, "_more_photos": _more_photos, "_read_document": _read_document}

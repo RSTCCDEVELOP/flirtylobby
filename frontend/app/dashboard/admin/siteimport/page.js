@@ -18,6 +18,7 @@ import { AiCreatorHome, AiCreatorPopup } from "./AiCreator";
 import Tabs from "../../../../components/Tabs";
 import { createPortal } from "react-dom";
 import DesignFrame from "../../../../components/DesignFrame";
+import { useBusy } from "../../../../lib/busy";
 import { api, apiUpload, errorText, mediaUrl } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { lvl } from "../../../../lib/perms";
@@ -534,6 +535,7 @@ export default function SiteImport() {
   const cancelRef = useRef({ requested: false, importId: null, phase: "", abort: null, drop: false }); // Annuleren: what is going on, so it can be stopped and (for a new import) removed again
   const resumeProg = () => { const id = cancelRef.current.importId; if (id) runApply({ id, name: prog?.name }, null, { resume: true }); }; // go on where the work stopped: the results that were ready are used again
   const [prog, setProg] = useState(null); // {name, percent, step, error, built}: the progress of an application (Toepassen)
+  useBusy("import", !!prog && !prog.error && !prog.built && prog.percent < 100); // an import or an application is running: no automatic logout
   const applyImport = (i) => { // the columns to link the pages are in the details of the import
     setOpen(i.id);
     setTimeout(() => document.getElementById(`si-map-${i.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 250);

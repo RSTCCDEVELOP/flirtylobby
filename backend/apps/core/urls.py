@@ -212,6 +212,7 @@ urlpatterns = [
     path("sitecreator/<uuid:pk>/export/", views.sitecreator_export),
     path("sitecreator/<uuid:pk>/costs/", views.sitecreator_costs),
     path("sitecreator/<uuid:pk>/controle/", views.sitecreator_controle),
+    path("sitecreator/<uuid:pk>/failed/", views.sitecreator_failed),
     path("sitecreator/<uuid:pk>/prefill/", views.sitecreator_prefill),
     path("sitecreator/<uuid:pk>/missing/", views.sitecreator_missing),
     path("component-requests/", views.component_requests),
