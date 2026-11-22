@@ -51,6 +51,7 @@ FILES
 - One html file per page (the start page is index.html), ONE shared style.css, and optional illustrations as svg files in img/ (img/hero.svg). No other file types, no JavaScript, no external fonts/scripts/frameworks, no data: urls, no photos or hotlinks.
 - File rules of the importer (they are checked, anything else is skipped): at most @MAX_PAGES@ html pages and at most @MAX_IMAGES@ pictures in total, each picture at most @MAX_IMAGE_MB@ MB; file names only a-z, 0-9, - and _ (at most @NAME_MAX@ characters before the extension); everything in the root of the ZIP plus the folder img/ (no other folders, so never en/index.html).
 - Every html file is a complete document (<!doctype html>, <html lang>, <meta charset>, <meta name=viewport>, <title>, <meta name=description>, <link rel="stylesheet" href="style.css">). Links between pages are relative (about.html); "#id" for places on the same page.
+- HEADER WIDTH: by default the header is exactly as wide as the content (the maximum width of the pages: the same width as the content and the footer; it is not full screen). A header that is wider than the content is made ONLY when the customer asks for it (brief header_wide, theme value header_width = full).
 - ONE PHOTO, ONE PLACE: when the website has several photos, a photo is NEVER used twice (not in the hero and again lower down, not on two pages, not twice in a row of cards): every picture place gets a different photo that fits it, and the photos that are left go into a slider or gallery. Only a logo may come back. Two large pictures directly under each other are never placed either.
 - Pictures: svg illustrations in img/ (simple, single or two-colour flat shapes in the palette of the site) or inline <svg>, with <img src="img/x.svg" alt="..." width height>. Photos are added later by the user, so where a photo belongs make a tasteful svg illustration or a gradient shape instead.
 
@@ -1004,6 +1005,8 @@ def theme_values(b):
         "font_body": SYSTEM_FONT.get(b.get("font") or "sans", "System"), "font_heading": SYSTEM_FONT.get(b.get("font") or "sans", "System"),
         "radius": r, "btn_radius": max(0, r - 4), "popup_radius": r,
         "default_mode": {"light": "light", "dark": "dark", "both": "system"}.get(b.get("color_mode") or "light", "light"),
+        "content_w": max_width_of(b) or 1600,  # the width of the content of the pages of the website (0 = the whole screen: the widest the theme allows)
+        "header_width": "full" if b.get("header_wide") else "content",  # the header is as wide as the content unless the customer asked for more
     }
     clean, _errors = T.validate(TI._complete(v))
     return clean
@@ -1650,6 +1653,24 @@ def unique_ids(html):
     return re.sub(r"""(<[a-z0-9]+\b[^>]*?)\sid=["']([^"']+)["']([^>]*>)""", fix, html or "")
 
 
+IMG_REF_RE = re.compile(r"""(\b(?:img|video)/)([A-Za-z0-9_.-]+\.(?:jpe?g|png|webp|gif|svg|mp4|webm))""")
+
+
+def fix_photo_names(files, b):
+    """A photo is written in the pages with the file name that the AI saw (an iStock or Unsplash id with capitals: unsplash-tR7rwqdv5M4.jpg), while the library of the design keeps it in lower case
+    (unsplash-tr7rwqdv5m4.jpg). The preview does not care, but the import matches names exactly and loses the picture (the hero then has no picture on the live page). Every reference
+    (img/..., video/..., in html and css) gets the exact name of the library. -> the files."""
+    names = {}
+    for p in [*(b.get("photos") or []), *(b.get("videos") or [])]:
+        f = str(p.get("file") or "")
+        if f:
+            names[f.lower()] = f
+    if not names:
+        return files
+    fix = lambda m: m.group(1) + names.get(m.group(2).lower(), m.group(2))  # noqa: E731
+    return {n: (IMG_REF_RE.sub(fix, v) if (n.endswith((".html", ".css")) and isinstance(v, str)) else v) for n, v in files.items()}
+
+
 def different_pictures(files, b):
     """The same picture is not used twice in the design: a repeated picture gets a photo that is not used yet (the best fitting description first). Returns the number of pictures changed."""
     photos = _photo_files(b)
@@ -1736,7 +1757,7 @@ def check_design(files, b):
 
 def repair_design(files, b):
     """Mends what can be mended (a repeated id, a repeated picture) and returns (files, the problems that are left)."""
-    fixed = {n: (unique_ids(h) if n.endswith(".html") else h) for n, h in files.items()}
+    fixed = fix_photo_names({n: (unique_ids(h) if n.endswith(".html") else h) for n, h in files.items()}, b)
     fixed, _n = different_pictures(fixed, b)
     return fixed, check_design(fixed, b)
 
@@ -1849,6 +1870,7 @@ def _generate(pk):
                 auto_previews(pk)  # while the status is still "running": the real example photos come in the preview
             b2 = {k: v for k, v in (SiteDesignJob.objects.get(pk=pk).brief or {}).items() if k not in ("improve_now", "focus")}
             b2["sectioned"] = True
+            files = fix_photo_names(SiteDesignJob.objects.get(pk=pk).files or files, b2)  # (after the example photos came into the library: the names in the pages are the names of the library)
             _set(pk, status="done", progress=100, step="Klaar", files=files, brief=b2, messages=list(SiteDesignJob.objects.get(pk=pk).messages or []) + [{"role": "ai", "text": "Je website is ontworpen. Bekijk de pagina's en zeg wat er anders moet. Daarna kun je alles aanmaken of eerst importeren om te controleren."}])
             _notify_done(pk, "Ontwerp klaar")
             return
@@ -3654,7 +3676,7 @@ def _stale(job):
 def public(job, files=False):
     job = _stale(job)
     b = job.brief or {}
-    return {"id": str(job.pk), "name": name_of(job), "stalled": is_stalled(job), "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": (job.files or {}) if files else {}, "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
+    return {"id": str(job.pk), "name": name_of(job), "stalled": is_stalled(job), "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": fix_photo_names(job.files or {}, b) if files else {},  # (the files that the screen takes for the import: the names of the photos are the exact names of the library, also for a design that was made before) "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(), "files_sig": f"{len(job.files or {})}-{sum(len(str(v)) for v in (job.files or {}).values())}", "chat": bool(b.get("chat")), "istock_tried": bool(b.get("istock_tried")), "photo_slots": photo_slots(job) if b.get("chat") else [],
             "docs": [_doc_public(d) for d in job.docs or []]}
 

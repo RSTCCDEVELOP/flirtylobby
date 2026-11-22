@@ -1744,6 +1744,8 @@ html body .site-footer:has(.foot-cols) > :not(.foot-brand):not(.foot-cols) { gri
 
 /* ── Page layout templates (Thema → Layout): header, menu, footer and blocks of the website. The theme sets them as data attributes on <html>. ── */
 html[data-hsticky="no"] .site-header { position: relative; }
+/* the header is as wide as the content (the maximum width of the pages) unless the theme says "full": the same width as the footer and the blocks */
+html:not([data-hwidth="full"]) .site-header { width: 100%; max-width: var(--content-w, 1100px); margin-left: auto; margin-right: auto; box-sizing: border-box; }
 html[data-hstyle="solid"] .site-header { background: var(--card); --hblur: 0px; border-bottom: 1px solid var(--line); box-shadow: none; }
 html[data-hstyle="shadow"] .site-header { background: var(--card); --hblur: 0px; border-bottom: 0; box-shadow: var(--shadow); }
 html[data-hstyle="glass"] .site-header { background: color-mix(in srgb, var(--card) 70%, transparent); --hblur: 14px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }

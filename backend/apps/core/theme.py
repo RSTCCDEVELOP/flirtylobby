@@ -109,6 +109,7 @@ def _opts(*pairs):
 TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"), ("zoom", "Inzoomen"), ("blur", "Scherp worden"))
 REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
+HEADER_WIDTHS = [{"value": "content", "label": "Even breed als de inhoud (standaard)", "css": ""}, {"value": "full", "label": "Hele breedte van het scherm", "css": ""}]
 
 NAV_DEFAULT = [
     {"value": "tiles", "label": "Tegels: per menugroep een pagina met tegels", "css": ""},
@@ -270,6 +271,7 @@ SCHEMA = [
         choice("header_layout", "Header: indeling", "classic", None, HEADER_LAYOUTS),
         choice("header_style", "Header: uiterlijk", "solid", None, HEADER_STYLES),
         choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, YESNO),
+        choice("header_width", "Header: breedte", "content", None, HEADER_WIDTHS),
         choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
         choice("menu_case", "Menu: letters", "normal", None, MENU_CASES),
         choice("footer_layout", "Footer: indeling", "brand", None, FOOTER_LAYOUTS),

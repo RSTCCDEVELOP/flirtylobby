@@ -134,3 +134,15 @@ def test_gallery_tag_becomes_the_photo_carousel_item():
     assert out[0]["cells"][0]["items"] == [{"type": "gallery", "imgs": [0, 1, 2]}]
     one = DR.expand_native(rows, parse_html('<div data-easy2edit-tag="ui-gallery"><div class="e2e-gallery"><img src="img/a.jpg"></div></div>'), {"img/a.jpg": 0}, COLORS)
     assert one == rows  # one picture is no gallery
+
+
+def test_the_hero_keeps_its_picture_when_the_photo_has_capitals_in_its_name(db):
+    """End result of the creator: the library keeps a photo in lower case, the page had the name with capitals: the import then lost the picture of the hero. The creator makes the names exact."""
+    from apps.core import sitecreator
+
+    hero = HERO.replace("img/hero.jpg", "img/unsplash-tR7rwqdv5M4.jpg")
+    imgs = {"img/unsplash-tr7rwqdv5m4.jpg": 3}  # what the import knows: the exact names of the library
+    assert len(DR.native_component_rows(_node(hero), imgs)[0]["cells"]) == 1  # (the old end result: text only, no picture on the live page)
+    fixed = sitecreator.fix_photo_names({"index.html": hero}, {"photos": [{"id": 3, "file": "unsplash-tr7rwqdv5m4.jpg"}]})["index.html"]
+    rows = DR.native_component_rows(_node(fixed), imgs)
+    assert len(rows[0]["cells"]) == 2 and rows[0]["cells"][1]["items"][0]["img"] == 3  # the picture is in its own cell, like in the Creator tab

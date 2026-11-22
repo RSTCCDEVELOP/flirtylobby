@@ -997,3 +997,22 @@ def test_a_design_made_by_the_designer_gets_the_name_of_the_website(django_user_
     sitecreator.answer_prefill(sitecreator.SiteDesignJob.objects.get(pk=job.pk), True)
     job.refresh_from_db()
     assert job.name == "Porbandar Open Water Swimming Association"  # the assumed name is the name of the design at once
+
+
+def test_the_theme_of_a_design_has_a_header_as_wide_as_the_content_unless_asked(db):
+    v = sitecreator.theme_values({"max_width": 1280})
+    assert v["header_width"] == "content" and v["content_w"] == 1280
+    assert sitecreator.theme_values({"header_wide": True})["header_width"] == "full"
+    assert sitecreator.theme_values({"max_width": 0})["content_w"] == 1600
+    assert "HEADER WIDTH" in sitecreator.rules({}) and "header_wide" in sitecreator.rules({})  # the standard rule is in the creator rules
+
+
+def test_photo_names_in_the_pages_are_the_exact_names_of_the_library(db):
+    b = {"photos": [{"id": 1, "file": "unsplash-tr7rwqdv5m4.jpg", "note": "swimmer"}, {"id": 2, "file": "sunrise.jpg", "note": "x"}], "name": "X"}
+    files = {"index.html": '<div class="e2e-hero__visual" role="img"><img src="img/unsplash-tR7rwqdv5M4.jpg" alt="a"></div><img src="img/sunrise.jpg" alt="b"><p>img/NietEen.jpg</p>',
+             "style.css": ".x { background: url(img/Unsplash-TR7rwqdv5M4.jpg); }"}
+    fixed = sitecreator.fix_photo_names(files, b)
+    assert 'src="img/unsplash-tr7rwqdv5m4.jpg"' in fixed["index.html"] and "url(img/unsplash-tr7rwqdv5m4.jpg)" in fixed["style.css"]  # the import matches names exactly: the hero keeps its picture
+    assert 'src="img/sunrise.jpg"' in fixed["index.html"] and "img/NietEen.jpg" in fixed["index.html"]  # others stay as they are
+    repaired, _left = sitecreator.repair_design(files, b)
+    assert "tR7rwqdv5M4" not in repaired["index.html"]  # the repair after every design and change does it too
