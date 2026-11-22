@@ -23,11 +23,24 @@ services:
       interval: 5s
       retries: 10
 
+  # Redis: the fastest cache that all workers share (the system cache, the limits per hour, the idle logout). The backend finds it by itself (CACHE_REDIS_DEFAULT);
+  # when it does not answer, the backend uses the database as the cache, so nothing breaks.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     image: ${IMAGE_PREFIX}/backend:latest
     restart: unless-stopped
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
     environment:
+      CACHE_REDIS_DEFAULT: ${CACHE_REDIS_DEFAULT:-redis://redis:6379/1}  # Redis of this compose file: the standard cache when nothing else is chosen (Admin -> Basisgegevens -> Cache)
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: "False"
       DJANGO_ALLOWED_HOSTS: api.${DOMAIN}
@@ -56,6 +69,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
 
   frontend:
     image: ${IMAGE_PREFIX}/frontend:latest

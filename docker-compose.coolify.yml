@@ -23,6 +23,18 @@ services:
       retries: 5
       start_period: 10s
 
+  # Redis: the fastest cache that all workers share (the system cache, the limits per hour, the idle logout). The backend finds it by itself (CACHE_REDIS_DEFAULT);
+  # when it does not answer, the backend uses the database as the cache, so nothing breaks.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: .
@@ -46,6 +58,7 @@ services:
       EASY2EDIT_POSTMARK_FROM: ${EASY2EDIT_POSTMARK_FROM:-}
       EASY2EDIT_STRIPE_KEY: ${EASY2EDIT_STRIPE_KEY:-}
       EASY2EDIT_ANTHROPIC_KEY: ${EASY2EDIT_ANTHROPIC_KEY:-}
+      CACHE_REDIS_DEFAULT: ${CACHE_REDIS_DEFAULT:-redis://redis:6379/1}  # Redis of this compose file: the standard cache when nothing else is chosen (Admin -> Basisgegevens -> Cache)
       DB_ENGINE: postgres
       POSTGRES_DB: ${POSTGRES_DB:-app}
       POSTGRES_USER: ${POSTGRES_USER:-app}
@@ -63,6 +76,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
 
   frontend:
     build:

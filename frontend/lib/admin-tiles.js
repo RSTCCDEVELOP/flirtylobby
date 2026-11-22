@@ -36,6 +36,7 @@ export const TILES = [
   { href: "/dashboard/admin/storage", title: "Mappenstructuur", big: "Waar bestanden staan", small: "Mappen, lokaal of S3 en versleuteling per gebruiker", modules: ["storage"] },
   { href: "/dashboard/admin/license", title: "Licentie", big: "Kosten en betaalmethode", small: "Wat is in gebruik, wat het kost en hoe je betaalt", modules: ["system"] },
   { href: "/dashboard/admin/statistieken", title: "Statistieken", big: "Bezoekers, SEO, bots en gebruik", small: "Grafieken per module en plugin", modules: ["stats"] },
+  { href: "/dashboard/admin/cache", title: "Cache en snelheid", big: "Sneller en groener", small: "De website bewaart antwoorden even: minder rekenwerk, minder stroom", modules: ["system"] },
   { href: "/dashboard/admin/bomen", title: "Bomen en giften", big: "Bomen planten voor je website", small: "Je eigen maandelijkse bijdrage en giften, met easy2edit", modules: ["ecologi_admin"], needs: "ecologi_admin" },  // only while the API Ecologi is on and the superadmin allowed it
   { href: "/dashboard/admin/energy", title: "Energie & uitstoot", big: "Paginagewicht en CO2 per bezoek", small: "Meting, weergaven voor op een pagina en een API voor andere websites", modules: ["energy"] },
   { href: "/dashboard/admin/backups", title: "Backup", big: "Backups per dag, week of maand", small: "Maken, downloaden en terugzetten", modules: ["backups"] },

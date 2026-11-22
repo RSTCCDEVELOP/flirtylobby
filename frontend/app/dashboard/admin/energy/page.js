@@ -38,10 +38,29 @@ export default function EnergyAdmin() {
   useEffect(() => { load(); }, [load]);
   const refresh = () => { resetEnergy(); setStamp((x) => x + 1); return load(); };
 
+  // Measuring in a window: the pages are measured one by one, so the bar and the percentage are real (the page that is being opened, and the result of each)
+  const [meas, setMeas] = useState(null);
   const scan = async () => {
+    const paths = (d?.settings?.scan_paths?.length ? d.settings.scan_paths : ["/"]).slice(0, 20);
     setBusy("scan"); setMsg(null);
-    try { const r = await api("/admin/energy/scan/", { method: "POST", body: {} }); await refresh(); setMsg(r.failed?.length ? { ok: false, text: r.failed.map((f) => `${f.path}: ${f.error}`).join(" ") } : { ok: true, text: `${r.scanned} ${tx("pagina's gemeten.")}` }); }
-    catch (e) { setMsg({ ok: false, text: errorText(e) }); } finally { setBusy(""); }
+    setMeas({ steps: [{ key: "_start", label: tx("De website controleren"), status: "busy" }, ...paths.map((p) => ({ key: p, label: p === "/" ? tx("Startpagina") : p, status: "wait" })), { key: "_calc", label: tx("Score berekenen"), status: "wait" }], busy: true, t0: Date.now() });
+    const upd = (k, patch) => setMeas((m) => (m ? { ...m, steps: m.steps.map((x) => (x.key === k ? { ...x, ...patch } : x)) } : m));
+    const failed = [];
+    try {
+      upd("_start", { status: "ok", text: tx("Gereed om te meten") });
+      for (const pth of paths) {
+        upd(pth, { status: "busy" });
+        try {
+          const r = await api("/admin/energy/scan/", { method: "POST", body: { paths: [pth] } });
+          const f = r.failed?.[0];
+          if (f) { failed.push(f); upd(pth, { status: "err", text: f.error }); } else upd(pth, { status: "ok", text: tx("Gemeten") });
+        } catch (e) { failed.push({ path: pth, error: errorText(e) }); upd(pth, { status: "err", text: errorText(e) }); }
+      }
+      upd("_calc", { status: "busy" });
+      await refresh();
+      upd("_calc", { status: "ok", text: tx("Klaar") });
+      setMsg(failed.length ? { ok: false, text: failed.map((f) => `${f.path}: ${f.error}`).join(" ") } : { ok: true, text: `${paths.length} ${tx("pagina's gemeten.")}` });
+    } catch (e) { setMsg({ ok: false, text: errorText(e) }); } finally { setBusy(""); setMeas((m) => (m ? { ...m, busy: false } : m)); }
   };
   const patch = async (body, okText) => {
     try { const r = await api("/admin/energy/settings/", { method: "PATCH", body }); setD((o) => ({ ...o, settings: r })); resetEnergy(); setMsg({ ok: true, text: okText || tx("Opgeslagen.") }); }
@@ -137,6 +156,28 @@ export default function EnergyAdmin() {
       )}
 
       {tab === "settings" && <div style={{ marginTop: "1rem" }}><EnergySettingsPanel onSaved={() => { resetEnergy(); setStamp((x) => x + 1); load(); }} /></div>}
+      {meas && (() => {
+        const total = meas.steps.length, done = meas.steps.filter((x) => x.status === "ok" || x.status === "err").length, pct = Math.round((done / total) * 100);
+        const cur = meas.steps.find((x) => x.status === "busy");
+        return (
+          <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Meten")}>
+            <div className="card modal adv-run">
+              <h2 style={{ margin: 0 }}>{tx("De pagina's meten")}</h2>
+              <div className="adv-run-top"><span>{meas.busy ? (cur ? `${tx("Bezig")}: ${cur.label}` : tx("Bezig…")) : tx("Klaar")}</span><strong>{pct} %</strong></div>
+              <div className="adv-run-bar"><div style={{ width: `${Math.max(3, pct)}%` }} /></div>
+              <ol className="adv-steps">
+                {meas.steps.map((x) => (
+                  <li key={x.key} className={`st-${x.status}`}>
+                    <span className="adv-dot">{x.status === "ok" ? "✓" : x.status === "err" ? "!" : x.status === "busy" ? "…" : ""}</span>
+                    <span><strong>{x.label}</strong>{x.text && <small className={x.status === "err" ? "adv-err" : "muted"}>{x.text}</small>}</span>
+                  </li>
+                ))}
+              </ol>
+              <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" disabled={meas.busy} onClick={() => setMeas(null)}>{tx("Sluiten")}</button></div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }

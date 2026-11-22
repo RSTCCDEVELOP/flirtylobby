@@ -38,7 +38,7 @@ DEFAULTS = {
     "idle_minutes": "5",  # how long someone may stay logged in without doing anything: minutes; 0 = never logged out for being idle
     "idle_action": "ask",  # at the end of that time: "ask" (the person is asked first: a countdown with "Ingelogd blijven") or "logout" (logged out at once)
     "system_cache": True,  # the system cache (Admin -> Basisgegevens -> Cache): the settings and the public answers that every visitor asks are kept for a moment, so the site is faster and uses less energy
-    "system_cache_seconds": "60",  # how long (seconds); a change by an administrator clears the cache at once
+    "system_cache_seconds": "300",  # how long (seconds); a change by an administrator clears the cache at once
     "footer_text": "",
     "footer_columns": [],  # link columns in the footer: [{title, links: [{label, url}]}] (a design brings its own)
     "footer_logo_height": "0",  # height of the logo in the footer in px (0 = the standard, 36)
@@ -102,7 +102,7 @@ def cache_seconds(d):
     try:
         return max(5, min(3600, int(d.get("system_cache_seconds"))))
     except (TypeError, ValueError):
-        return 60
+        return 300
 
 
 def forget_cache():

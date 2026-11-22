@@ -51,12 +51,37 @@ export default function BackupsAdmin() {
   const runJob = async (j) => { const r = await run(`run-${j.frequency}`, () => api(`/backups/jobs/${j.frequency}/run/`, { method: "POST", body: {} })); if (r) await alertDialog(tx("Backup klaar")); };
   const saveLimits = () => run("limits", () => api("/backups/limits/", { method: "PUT", body: lim }), tx("Limieten opgeslagen. Oudere backups boven de limiet zijn verwijderd."));
   const remove = async (b) => { if (await confirmDialog(tx("Backup \"{0}\" verwijderen?", b.file), { danger: true })) run("del", () => api(`/backups/${b.id}/`, { method: "DELETE" })); };
-  async function download(b) {
-    const res = await fetch(`${apiBase()}/api/backups/${b.id}/download/`, { headers: { Authorization: `Token ${getToken()}` } });
-    if (!res.ok) return setMsg({ ok: false, text: tx("Downloaden mislukt.") });
+  // Download: ask what to do: 1. download (to the download folder), 2. save locally (choose the folder and name on this computer), 3. both
+  const [dl, setDl] = useState(null);
+  const saveBlob = (blob, name) => {  // (the link must be in the page: Safari and Firefox ignore a click on a link that is not)
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(await res.blob()); a.download = b.file; a.click();
+    a.href = url; a.download = name; a.style.display = "none";
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
+  };
+  async function doDownload(how) {
+    const b = dl.b;
+    setDl({ b, busy: true });
+    try {
+      const res = await fetch(`${apiBase()}/api/backups/${b.id}/download/`, { headers: { Authorization: `Token ${getToken()}` } });
+      if (!res.ok) { let t = tx("Downloaden mislukt."); try { t = (await res.json()).detail || t; } catch {} throw new Error(t); }
+      const blob = new Blob([await res.arrayBuffer()], { type: "application/zip" });
+      let saved = false;
+      if (how === "local" || how === "both") {
+        if (typeof window.showSaveFilePicker === "function") {
+          try { const h = await window.showSaveFilePicker({ suggestedName: b.file, types: [{ description: "Backup (.zip)", accept: { "application/zip": [".zip"] } }] }); const w = await h.createWritable(); await w.write(blob); await w.close(); saved = true; }
+          catch (e) { if (e?.name === "AbortError" && how === "local") { setDl(null); return; } }
+        }
+        if (!saved && how === "local") { saveBlob(blob, b.file); saved = true; setMsg({ ok: true, text: tx("Deze browser kan geen map kiezen: de backup is gedownload.") }); }
+      }
+      if (how === "download" || how === "both") saveBlob(blob, b.file);
+      if (!(how === "local" && !saved) && !(how === "local")) setMsg({ ok: true, text: tx("De backup is gedownload.") });
+      else if (saved && typeof window.showSaveFilePicker === "function") setMsg({ ok: true, text: tx("De backup is lokaal opgeslagen.") });
+      setDl(null);
+    } catch (e) { setDl(null); setMsg({ ok: false, text: errorText(e) }); await alertDialog(errorText(e)); }
   }
+  const download = (b) => setDl({ b });
   async function upload(file) {
     if (!file) return;
     const fd = new FormData(); fd.append("file", file);
@@ -167,6 +192,22 @@ export default function BackupsAdmin() {
               <button type="button" className="btn" onClick={() => setRestoring(null)}>{tx("Annuleren")}</button>
               <button type="button" className="btn primary" disabled={!restoring.parts.size} onClick={doRestore}>{tx("Terugzetten")}</button>
             </div>
+          </div>
+        </div>
+      )}
+      {dl && (
+        <div className="overlay" onClick={() => !dl.busy && setDl(null)}>
+          <div className="card modal" role="dialog" aria-label={tx("Backup downloaden")} style={{ width: "min(480px, 94vw)", display: "grid", gap: ".8rem" }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: 0 }}>{tx("Backup downloaden")}</h2>
+            <small className="muted">{dl.b.file} · {size(dl.b.size)}</small>
+            {dl.busy ? <p className="muted" role="status">{tx("Bezig…")}</p> : (
+              <div className="sp-options">
+                {[["download", "Downloaden", "Naar de downloadmap van je browser."], ["local", "Lokaal opslaan", "Kies zelf de map en de naam op je computer."], ["both", "Allebei", "Downloaden én lokaal opslaan."]].map(([k, t, h]) => (
+                  <button key={k} type="button" className="sp-option" onClick={() => doDownload(k)}><span style={{ display: "grid", gap: ".15rem" }}><strong>{tx(t)}</strong><small className="muted">{tx(h)}</small></span></button>
+                ))}
+              </div>
+            )}
+            {!dl.busy && <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setDl(null)}>{tx("Annuleren")}</button></div>}
           </div>
         </div>
       )}

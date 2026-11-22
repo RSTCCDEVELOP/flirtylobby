@@ -966,8 +966,13 @@ def system_cache(request):
     POST: clear the system cache now."""
     from . import syscache
 
-    if not request.user.is_staff:
-        return Response({"detail": "Alleen superadmins mogen de cache instellen."}, status=status.HTTP_403_FORBIDDEN)
+    from apps.accounts.access import level
+
+    is_super = request.user.is_staff
+    if not (is_super or level(request.user, "system") >= 3):  # an administrator (manage rights on the base data) may switch the system cache and clear it; the kind of cache is for a superadmin
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "PUT" and "backend" in request.data and not is_super:
+        return Response({"detail": "Alleen superadmins mogen kiezen welke cache de server gebruikt."}, status=status.HTTP_403_FORBIDDEN)
     if request.method == "POST":
         syscache.clear()
     elif request.method == "PUT":
@@ -983,6 +988,22 @@ def system_cache(request):
                 return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
     s = system.get()
     return Response({**syscache.info(), "system_cache": bool(s["system_cache"]), "system_cache_seconds": str(s["system_cache_seconds"])})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def system_restart(request):
+    """Superadmin: GET = can this server be restarted from here (and how); POST = restart it (a graceful reload; the screen waits until the server answers again)."""
+    from . import restart
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins mogen de server herstarten."}, status=status.HTTP_403_FORBIDDEN)
+    if request.method == "GET":
+        return Response({"mode": restart.mode()})
+    res = restart.restart()
+    if not res["ok"]:
+        return Response({"detail": "Herstarten kan niet vanuit hier op deze server: herstart de service of de container zelf.", "mode": res["mode"]}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(res)
 
 
 @api_view(["GET", "POST"])

@@ -59,7 +59,7 @@ def info():
     from config import cacheconf
 
     now = settings.CACHE_CONF
-    saved = cacheconf.configured(settings.SITE_DIR, {}) if now["source"] != "env" else now
+    saved = cacheconf._configured(settings.SITE_DIR, {}) if now["source"] != "env" else now
     backend = now["backend"]
     live = "?"
     try:
@@ -69,7 +69,7 @@ def info():
         live = "fail"
     return {"backend": backend, "source": now["source"], "shared": backend != "memory", "redis_url": now["redis_url"] and "(ingesteld)", "saved": {"backend": saved["backend"], "redis_url": saved["redis_url"]},
             "restart_needed": saved["backend"] != backend or (saved["backend"] == "redis" and saved["redis_url"] != now["redis_url"]), "standard": cacheconf.STANDARD, "backends": list(cacheconf.BACKENDS), "works": live == "ok",
-            "locked_by_env": now["source"] == "env"}
+            "locked_by_env": now["source"] == "env", "fallback": now["source"] == "fallback", "fallback_from": now.get("fallback_from", "")}
 
 
 def save_backend(conf):

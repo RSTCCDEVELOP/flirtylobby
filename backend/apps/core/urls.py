@@ -26,6 +26,7 @@ urlpatterns = [
     path("system/", views.system_settings),
     path("system/reset/", views.system_reset),
     path("system/cache/", views.system_cache),
+    path("system/restart/", views.system_restart),
     path("system/terms/", terms_views.text),
     path("system/terms/status/", terms_views.status_view),
     path("system/terms/code/", terms_views.code),

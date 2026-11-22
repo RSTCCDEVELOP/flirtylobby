@@ -13,6 +13,7 @@ import { useAuth } from "../../../components/AuthContext";
 import { api } from "../../../lib/api";
 import { lvl } from "../../../lib/perms";
 import AdminTiles from "../../../components/AdminTiles";
+import TileSearch from "../../../components/TileSearch";
 import Collapsible from "../../../components/Collapsible";
 import PresetPicker, { usePresets } from "../../../components/PresetPicker";
 import AdminAiBlock from "../../../components/AdminAiBlock";
@@ -38,6 +39,7 @@ export default function AdminHome() {
     <>
       <h1>{tx("Admin")}</h1>
       <p className="muted">{tx("Alleen de onderdelen waar jij toegang toe hebt. Het niveau (gebruik, bewerken of beheer) staat op de tegel.")}</p>
+      <TileSearch />
       <Collapsible id="admin-overview" title={tx("Mijn beheeronderdelen")}>
         <AdminTiles />
       </Collapsible>

@@ -20,6 +20,7 @@ import { ADMIN_GROUP_OF, ADMIN_GROUPS, ADMIN_NAV, ADMIN_SECTION_GROUP, COMMUNITY
 import { IconGrid } from "./Icons";
 import { useChat } from "./Chat";
 import { useModules } from "./Modules";
+import TileSearch from "./TileSearch";
 
 import { useUpdates } from "../lib/updates";
 
@@ -61,6 +62,7 @@ export default function GroupTiles({ id }) {
     <>
       <h1>{tx(group.title)}</h1>
       <p className="muted">{tx("Kies een onderdeel. Liever het menu links? Wissel bovenin het menu.")}</p>
+      <TileSearch />
       <div className="cards" style={{ marginTop: 0 }}>
         {items.map((n) => {
           const t = TILES.find((x) => x.href === n.href);

@@ -29,6 +29,7 @@ import SettingsBackup from "../../../components/SettingsBackup";
 import TermsAdmin from "../../../components/TermsAdmin";
 import SystemReset from "../../../components/SystemReset";
 import StandardAdmin from "../../../components/StandardAdmin";
+import TileSearch from "../../../components/TileSearch";
 
 export default function SuperAdminHome() {
   const { user } = useAuth();
@@ -39,6 +40,7 @@ export default function SuperAdminHome() {
     <>
       <h1>{tx("Super admin")}</h1>
       <p className="muted">{tx("Alles op één plek, inclusief het aan- en uitzetten van modules en wie ze mag gebruiken.")}</p>
+      <TileSearch />
       <Collapsible id="super-system" title={tx("Systeem")}>
         <div className="cards" style={{ marginTop: 0 }}>
           <SuperTile href="/dashboard/superadmin/modules" icon={IconGrid} label={tx("Modules")} title={tx("Aan en uit zetten")} text={tx("En bepaal wie ze mag gebruiken")} />

@@ -7,7 +7,7 @@
 
 """Which cache the system uses (read at start, before the database is there): the environment (CACHE_BACKEND, CACHE_REDIS_URL) first, then site/cache.json (made by Admin -> Basisgegevens -> Cache), else the standard.
 
-The standard is "database": one cache that all workers share (the limits per hour, the idle logout and the system cache need that), without a service of its own. "memory" is per process (fine for one worker / development).
+The standard is the fastest shared cache that is there: Redis when a Redis server answers on this machine (redis://localhost:6379/1), otherwise "database": one cache that all workers share (the limits per hour, the idle logout and the system cache need that), without a service of its own. "memory" is per process (fine for one worker / development).
 "redis" is a shared cache in a Redis server (fastest; needs the address)."""
 import json
 import re
@@ -15,6 +15,9 @@ from pathlib import Path
 
 BACKENDS = ("database", "memory", "redis")
 STANDARD = "database"
+import os
+
+AUTO_REDIS = os.environ.get("CACHE_REDIS_DEFAULT") or "redis://localhost:6379/1"  # the Redis on this same server: the address when none is filled in, and where the standard looks for one (the fastest shared cache)
 REDIS_RE = re.compile(r"^rediss?://[^\s]+$")
 
 
@@ -24,6 +27,8 @@ def valid(conf):
     url = str((conf or {}).get("redis_url") or "").strip()
     if backend not in BACKENDS:
         return {"backend": STANDARD, "redis_url": ""}, "Onbekende cache."
+    if backend == "redis" and not url:
+        url = AUTO_REDIS  # no address filled in: the Redis on this same server
     if backend == "redis" and not REDIS_RE.match(url):
         return {"backend": STANDARD, "redis_url": ""}, "Een Redis-cache heeft een adres nodig, bv. redis://localhost:6379/1."
     return {"backend": backend, "redis_url": url if backend == "redis" else ""}, ""
@@ -46,7 +51,20 @@ def write_file(site_dir, conf):
     p.write_text(json.dumps(conf, indent=1), encoding="utf-8")
 
 
-def configured(site_dir, env):
+def redis_reachable(url=AUTO_REDIS):
+    """Does a Redis server accept connections at this address (a quick check at start, 0.3 seconds at most)?"""
+    import socket
+    from urllib.parse import urlparse
+
+    try:
+        u = urlparse(url)
+        with socket.create_connection((u.hostname or "localhost", u.port or 6379), timeout=0.3):
+            return True
+    except OSError:
+        return False
+
+
+def _configured(site_dir, env):
     """The cache choice that is in force: {"backend", "redis_url", "source": "env" | "file" | "standard"}."""
     if env.get("CACHE_BACKEND"):
         conf, err = valid({"backend": env.get("CACHE_BACKEND"), "redis_url": env.get("CACHE_REDIS_URL", "")})
@@ -55,6 +73,8 @@ def configured(site_dir, env):
     if f:
         conf, err = valid(f)
         return {**conf, "source": "file" if not err else "standard"}
+    if env.get("CACHE_AUTO", "1") != "0" and redis_reachable():  # nothing chosen: the fastest shared cache that is there
+        return {"backend": "redis", "redis_url": AUTO_REDIS, "source": "standard"}
     return {"backend": STANDARD, "redis_url": "", "source": "standard"}
 
 
@@ -64,3 +84,12 @@ def caches(conf):
     if conf["backend"] == "memory":
         return {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "easy2edit"}}
     return {"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": "django_cache"}}
+
+
+def configured(site_dir, env):
+    """The cache choice in force. A Redis that does not answer at start (not installed, not running) does not take the whole site down: the server falls back to the database
+    and says so (`fallback_from`), the saved choice stays."""
+    conf = _configured(site_dir, env)
+    if conf["backend"] == "redis" and conf.get("source") != "standard" and not redis_reachable(conf["redis_url"]):
+        return {"backend": STANDARD, "redis_url": "", "source": "fallback", "fallback_from": conf["redis_url"]}
+    return conf

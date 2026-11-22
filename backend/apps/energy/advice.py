@@ -126,8 +126,21 @@ def analyse(params=None):
         items.append({"key": "system_cache", "status": "applied", "applicable": True, "saving": 0, "applied": done["system_cache"], "params": {"seconds": SYSCACHE_SECONDS}, "detail": []})
     else:
         on = bool(sc["system_cache"])
-        items.append({"key": "system_cache", "status": "ok" if on and int(sc["system_cache_seconds"] or 0) >= 30 else "todo", "applicable": True, "saving": 0, "params": {"seconds": SYSCACHE_SECONDS},
-                      "detail": [f"{'aan' if on else 'uit'}, {sc['system_cache_seconds']} s"]})
+        items.append({"key": "system_cache", "status": "ok" if on and int(sc["system_cache_seconds"] or 0) >= SYSCACHE_SECONDS else "todo", "applicable": True, "saving": 0, "params": {"seconds": SYSCACHE_SECONDS},
+                      "detail": [f"{'aan' if on else 'uit'}, {sc['system_cache_seconds']} s", f"advies: aan, {SYSCACHE_SECONDS} s"]})
+    # 3c. the fastest cache that is there (Redis): shared by all workers and faster than the database; only when a Redis server answers on this machine
+    from config import cacheconf
+    from django.conf import settings as dj_settings
+
+    now = dj_settings.CACHE_CONF
+    if "cache_backend" in done:
+        items.append({"key": "cache_backend", "status": "applied", "applicable": True, "saving": 0, "applied": done["cache_backend"], "params": {}, "detail": []})
+    elif now["backend"] == "redis":
+        items.append({"key": "cache_backend", "status": "ok", "applicable": True, "saving": 0, "params": {}, "detail": ["Redis"]})
+    elif cacheconf.redis_reachable():
+        items.append({"key": "cache_backend", "status": "todo", "applicable": True, "saving": 0, "params": {}, "detail": [f"nu: {now['backend']}", "Redis draait op deze server en is sneller"]})
+    else:
+        items.append({"key": "cache_backend", "status": "info", "applicable": False, "saving": 0, "params": {}, "detail": [f"nu: {now['backend']}", "Er draait geen Redis op deze server. Installeer Redis voor de snelste cache."]})
 
     # 4. compression and 5. a production build (outside the system)
     plain = [s["breakdown"].get("plain_text", 0) for s in scans]
@@ -220,6 +233,23 @@ def apply_system_cache(st, seconds=None):
     return {"on": True, "seconds": secs}
 
 
+def apply_cache_backend(st):
+    """Switch the cache of the server to the Redis on this machine (a restart makes it take effect)."""
+    from django.conf import settings as dj_settings
+
+    from apps.core import syscache
+    from config import cacheconf
+
+    if not cacheconf.redis_reachable():
+        raise ValueError("Er draait geen Redis op deze server.")
+    before = cacheconf._configured(dj_settings.SITE_DIR, {})
+    _, err = syscache.save_backend({"backend": "redis", "redis_url": cacheconf.AUTO_REDIS})
+    if err:
+        raise ValueError(err)
+    _save_applied(st, "cache_backend", {"at": timezone.now().isoformat(), "before": {"backend": before["backend"], "redis_url": before.get("redis_url", "")}, "after": "redis"})
+    return {"backend": "redis", "restart_needed": True}
+
+
 def apply_images(st, params, limit=80):
     """Makes the heavy pictures of the library lighter: at most `max_edge` px on the long side and a lighter file. The original is kept (originals/…) so it can be put back."""
     from PIL import Image
@@ -281,6 +311,8 @@ def apply(selection):
         out["image_limit"] = apply_limit(st, (selection["image_limit"] or {}).get("mb") if isinstance(selection["image_limit"], dict) else None)
     if selection.get("system_cache"):
         out["system_cache"] = apply_system_cache(st, (selection["system_cache"] or {}).get("seconds") if isinstance(selection["system_cache"], dict) else None)
+    if selection.get("cache_backend"):
+        out["cache_backend"] = apply_cache_backend(st)
     if selection.get("images"):
         out["images"] = apply_images(st, selection["images"] if isinstance(selection["images"], dict) else {})
     return out
@@ -309,6 +341,10 @@ def revert(key):
 
         clean, _ = system.clean({"system_cache": bool(rec["before"]["on"]), "system_cache_seconds": str(rec["before"]["seconds"])})
         system.save(clean)
+    elif key == "cache_backend":
+        from apps.core import syscache
+
+        syscache.save_backend(rec["before"])
     elif key == "images":
         from apps.medialib.models import MediaItem
 

@@ -1,0 +1,69 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { tx } from "../lib/t";
+import { useAuth } from "./AuthContext";
+
+// What can be found besides the tiles: the settings inside a screen (where they are, in plain words). staff: only for a superadmin.
+const INDEX = [
+  { href: "/dashboard/admin/cache", label: "Cache en snelheid", where: "Admin → Systeem", words: "cache snelheid sneller groener zuinig bewaren wissen systeemcache" },
+  { href: "/dashboard/admin/system", label: "Welke cache de server gebruikt (database, geheugen, Redis)", where: "Admin → Basisgegevens → Cache", words: "cache database redis geheugen opslag server herstart basisgegevens", staff: true },
+  { href: "/dashboard/admin/system", label: "Basisgegevens", where: "Admin → Systeem", words: "basisgegevens naam adres website api contact licentiegegevens deployment" },
+  { href: "/dashboard/admin/integrations", label: "API keys", where: "Admin → Systeem", words: "api keys koppelingen claude stripe postmark ecologi pexels unsplash sleutel update" },
+  { href: "/dashboard/admin/energy", label: "Energie & uitstoot", where: "Admin → Systeem", words: "energie uitstoot co2 paginagewicht groen label" },
+  { href: "/dashboard/admin/bomen", label: "Bomen en giften", where: "Admin → Systeem", words: "bomen planten giften ecologi donatie groen" },
+  { href: "/dashboard/superadmin/ecologi", label: "easy2edit: bomen planten", where: "Super admin", words: "bomen planten ecologi bijdragen kosten maximum", staff: true },
+  { href: "/dashboard/admin/security", label: "Beveiliging", where: "Admin → Systeem", words: "beveiliging twee stap verificatie 2fa landen cookies verboden woorden blokkeren" },
+  { href: "/dashboard/admin/theme", label: "Thema en loader", where: "Admin → Website", words: "thema loader laden kleuren logo lettertype boom" },
+  { href: "/dashboard/admin/backups", label: "Backup", where: "Admin → Systeem", words: "backup back-up terugzetten kopie" },
+  { href: "/dashboard/admin/languages", label: "Talen", where: "Admin → Systeem", words: "talen taal vertalen standaardtaal" },
+  { href: "/dashboard/superadmin/wizard", label: "Installatie en licentie", where: "Super admin", words: "installatie wizard licentie prijs modules plugins", staff: true },
+  { href: "/dashboard/superadmin/sites", label: "Site manager", where: "Super admin+", words: "site manager websites easy2edit server bijwerken uitsluiten bomen planten", staff: true },
+  { href: "/dashboard/superadmin/prijzen", label: "Prijslijst", where: "Super admin+", words: "prijzen prijslijst btw", staff: true },
+  { href: "/dashboard/superadmin/modules", label: "Modules aan en uit", where: "Super admin", words: "modules aan uit zetten plugins", staff: true },
+];
+
+// A search field above the tiles of Admin and Super admin: tiles that do not match the words are hidden (the name, the text and the label of a tile are searched).
+// `selector` says what a tile is; it works on the page as it is, so every tile (also the ones that plugins add) is found.
+export default function TileSearch({ selector = ".st-tile, .group-tile, .tile-card" }) {
+  const [q, setQ] = useState("");
+  const [n, setN] = useState(null);
+  const box = useRef(null);
+  const { user } = useAuth();
+  useEffect(() => {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const root = box.current?.closest("main") || document;
+    const tiles = [...root.querySelectorAll(selector)];
+    let shown = 0;
+    tiles.forEach((t) => {
+      const hit = !words.length || words.every((w) => (t.textContent || "").toLowerCase().includes(w));
+      t.style.display = hit ? "" : "none";
+      if (hit) shown += 1;
+    });
+    // a block of tiles in which nothing matches is hidden too
+    root.querySelectorAll(".collapsible, [data-tile-block]").forEach((b) => { const has = [...b.querySelectorAll(selector)]; if (has.length) b.style.display = !words.length || has.some((t) => t.style.display !== "none") ? "" : "none"; });
+    setN(words.length ? shown : null);
+    return () => { tiles.forEach((t) => { t.style.display = ""; }); };
+  }, [q, selector]);
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const found = words.length ? INDEX.filter((x) => (!x.staff || user?.is_staff) && words.every((w) => `${x.label} ${x.words}`.toLowerCase().includes(w))) : [];
+  return (
+    <div ref={box} className="tile-search">
+      <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek een onderdeel…")} aria-label={tx("Zoek een onderdeel…")} />
+      {n !== null && <small className="muted">{n} {tx("gevonden")}</small>}
+      {found.length > 0 && (
+        <div className="tile-search-hits" role="list">
+          {found.map((x) => <Link key={x.href + x.label} href={x.href} className="tile-search-hit" role="listitem"><strong>{tx(x.label)}</strong><small className="muted">{tx(x.where)}</small></Link>)}
+        </div>
+      )}
+    </div>
+  );
+}

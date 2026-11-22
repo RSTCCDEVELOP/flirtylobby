@@ -27,7 +27,7 @@ import ViewBar from "./ViewBar";
 import { useView } from "../lib/useView";
 
 // The icon of every tile (by the last part of its address), like the tiles of Super admin
-const ICONS = { bomen: IconTree, entity: IconBriefcase, tags: IconTag, users: IconUsers, ai: IconStar, "ai-kosten": IconChart, groups: IconGroup, roles: IconShield, languages: IconGlobe2, communication: IconMail, integrations: IconKey, notifications: IconBell, faq: IconHelp, templates: IconArchive,
+const ICONS = { cache: IconLeaf, bomen: IconTree, entity: IconBriefcase, tags: IconTag, users: IconUsers, ai: IconStar, "ai-kosten": IconChart, groups: IconGroup, roles: IconShield, languages: IconGlobe2, communication: IconMail, integrations: IconKey, notifications: IconBell, faq: IconHelp, templates: IconArchive,
   components: IconGrid, helptips: IconInfo, media: IconImage, community: IconChat, seo: IconSearch, security: IconLock, subscriptions: IconReceipt, actions: IconRocket, donations: IconHeart, system: IconSettings, storage: IconFolder,
   license: IconCard, statistieken: IconChart, energy: IconLeaf, backups: IconArchive, installaties: IconRocket, sandbox: IconFlask, pages: IconGlobe, sysobjects: IconPaperclip, siteimport: IconEdit, theme: IconPalette };
 const iconOf = (href) => ICONS[href.split("/").pop()] || IconBolt;
