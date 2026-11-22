@@ -29,6 +29,8 @@ export default function IdleGuard({ idle, onLogout }) {
   const sent = useRef(0);
   const asking = useRef(false);
   const done = useRef(false);
+  const serverBusy = useRef(false); // a design is being made on the server (also when its window is closed): asked from the server shortly before the idle time ends
+  const checked = useRef(0);
 
   const ping = useCallback(() => { sent.current = now(); api("/auth/activity/", { method: "POST" }).catch(() => {}); }, []);
   const active = useCallback(() => {
@@ -50,7 +52,12 @@ export default function IdleGuard({ idle, onLogout }) {
     ping();
     EVENTS.forEach((e) => window.addEventListener(e, active, { passive: true }));
     const t = setInterval(() => {
-      const busy = isBusy(); // a page is being made (or an import runs): never logged out now, always asked first, and the question waits for the answer
+      const idleNow = now() - Math.max(last.current, read());
+      if (idleNow >= minutes * 60000 - 20000 && now() - checked.current > 15000) {  // shortly before the end and while the question is open: is a design still being made?
+        checked.current = now();
+        api("/sitecreator/").then((r) => { serverBusy.current = (r?.designs || []).some((d) => d.status === "running" || d.status === "stopping"); }).catch(() => { serverBusy.current = false; });
+      }
+      const busy = isBusy() || serverBusy.current; // a page is being made (or an import runs): never logged out now, always asked first, and the question waits for the answer
       if (busy && now() - sent.current > 30000) ping(); // (the server keeps the login alive while something is busy)
       const idleMs = now() - Math.max(last.current, read()); // (activity in another tab counts too)
       if (!asking.current && idleMs >= minutes * 60000) {
