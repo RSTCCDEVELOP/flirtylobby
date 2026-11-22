@@ -22,6 +22,12 @@ logger = logging.getLogger(__name__)
 mod = module_required("sandbox")
 
 
+def modules_on():
+    from apps.core import modules
+
+    return modules.enabled("sandbox")
+
+
 def _payment(p):
     return {"ref": p.ref, "provider": p.provider, "amount": str(p.amount), "currency": p.currency, "description": p.description,
             "status": p.status, "events": p.events, "created_at": p.created_at, "checkout_path": f"/sandbox/checkout/{p.ref}"}
@@ -35,7 +41,13 @@ def public_status(request):
     from apps.core.models import SystemSettings
 
     epoch = int((SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get("ui_epoch") or 0)
-    return Response({"enabled": on, "banner": on and s["banner"], "epoch": epoch})
+    from apps.accounts.access import level
+    from apps.accounts.permissions import LEVEL
+
+    u = request.user
+    can = bool(modules_on() and getattr(u, "is_authenticated", False) and level(u, "sandbox") >= LEVEL["edit"])  # who may switch it
+    # "button": the label stays visible (also when the sandbox is off, as a button to switch it on and off, to test live too) for the people who may switch it, until the setting is turned off
+    return Response({"enabled": on, "banner": on and s["banner"], "epoch": epoch, "button": bool(can and s.get("button", True)), "can_toggle": can})
 
 
 @api_view(["GET", "PUT"])

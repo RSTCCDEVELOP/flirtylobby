@@ -56,6 +56,26 @@ def site_ping(request):
     return Response({"ok": True, "url": site.url, "status": site.status, **({"callback_key": callback} if callback else {})})
 
 
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def site_component_request(request):
+    """An approved website (with its key) sends a component request: merged with an open one or made here (see componentrequests.py)."""
+    from . import componentrequests
+
+    if not sitemanager.server_enabled():
+        raise Http404
+    site = sitemanager.site_for_key(request.META.get("HTTP_X_EASY2EDIT_KEY", ""))
+    if not site:
+        return Response({"detail": "Onbekende of geblokkeerde website."}, status=status.HTTP_403_FORBIDDEN)
+    if not sitemanager.rate_ok(_seen_ip(request), 10):
+        return Response({"detail": "Te veel aanvragen."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    try:
+        return Response({"ok": True, **componentrequests.register_remote(site, request.data if isinstance(request.data, dict) else {})})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 def _site_by_key(request):
     from . import siteowners  # noqa: F401
 

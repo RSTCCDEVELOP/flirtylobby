@@ -1,0 +1,97 @@
+{
+  "formaat": "easy2edit-pagina@1",
+  "set": {
+    "sleutel": "easy2edit-ui-kit",
+    "versie": "1.1.17"
+  },
+  "pagina": {
+    "titel": "Bakkerij De Gouden Korst",
+    "slug": "index",
+    "taal": "nl",
+    "type": "home",
+    "seo": {
+      "titel": "Bakkerij De Gouden Korst | Vers brood",
+      "omschrijving": "Ambachtelijke bakkerij met vers brood en gebak, elke dag.",
+      "og_afbeelding": ""
+    }
+  },
+  "header": null,
+  "footer": null,
+  "inhoud": [
+    {
+      "id": "hero",
+      "type": "ui-hero-split",
+      "versie": "1.1.17",
+      "props": {
+        "eyebrow": "Bakkerij De Gouden Korst",
+        "lead": "Vers brood <script>alert(1)</script>",
+        "knop": {
+          "label": "Bekijk ons assortiment",
+          "href": "javascript:alert(1)"
+        },
+        "knop2": {
+          "label": "Neem contact op",
+          "href": "#contact"
+        },
+        "afbeelding": {
+          "src": "img/bakkerij-etalage.jpg",
+          "alt": ""
+        }
+      },
+      "children": [],
+      "anker": "hero"
+    },
+    {
+      "id": "aanbod",
+      "type": "ui-prijstabel",
+      "versie": "1.1.17",
+      "props": {
+        "eyebrow": "Waarom kiezen voor ons",
+        "kop2": "Alles wat je nodig hebt",
+        "lead": "Lean, slim en snel — zonder overbodige ballast.",
+        "items": [
+          {
+            "kop3": "Razendsnel",
+            "tekst": "Pagina's laden direct, ook op mobiel."
+          },
+          {
+            "kop3": "Veilig",
+            "tekst": "Geen plugins van derden, wel continue updates."
+          },
+          {
+            "kop3": "Live bewerken",
+            "tekst": "Wat je ziet is wat je bewerkt."
+          },
+          {
+            "kop3": "Alles inbegrepen",
+            "tekst": "Hosting, support en onderhoud per maand."
+          }
+        ]
+      },
+      "children": [],
+      "anker": "aanbod"
+    },
+    {
+      "id": "hero",
+      "type": "ui-cta",
+      "versie": "1.1.17",
+      "props": {
+        "kop2": "Klaar om te starten?",
+        "tekst": "Binnen een week staat je nieuwe website online.",
+        "knop": {
+          "label": "Neem contact op",
+          "href": "#"
+        },
+        "kop22": "Gratis adviesgesprek",
+        "tekst2": "Vrijblijvend, binnen 24 uur reactie.",
+        "knop2": {
+          "label": "Plan in",
+          "href": "#"
+        }
+      },
+      "children": [],
+      "anker": "contact"
+    }
+  ],
+  "ontbrekende_componenten": []
+}

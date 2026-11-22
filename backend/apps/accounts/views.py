@@ -256,6 +256,17 @@ def logout(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(["POST"])
+def activity(request):
+    """The screen says that the person is doing something (at most every half minute): the login stays alive for the idle time of the website."""
+    from apps.security.authentication import touch
+
+    key = getattr(getattr(request, "auth", None), "key", "")
+    if key:
+        touch(key)
+    return Response({"ok": True})
+
+
 @api_view(["GET", "PATCH"])
 def me(request):
     if request.method == "PATCH":

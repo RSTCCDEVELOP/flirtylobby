@@ -2739,6 +2739,119 @@ def sitecreator_answers(request, pk):
     return Response({"ok": True})
 
 
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_missing(request, pk):
+    """The choice for ONE missing component of a design: {type, actie: vervangen|weglaten|laten_staan|aanvragen, tag}. See componentrequests.py."""
+    from . import componentrequests, sitecreator, system
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    if job.status in ("running", "stopping"):
+        return _bad("Er wordt nog gewerkt aan dit ontwerp.")
+    try:
+        job, msg = componentrequests.apply_choice(job, str(request.data.get("type") or ""), str(request.data.get("actie") or ""), str(request.data.get("tag") or ""), request.user, (system.origin(system.get()["frontend_url"]) or "").split("//")[-1])
+    except ValueError as e:
+        return _bad(str(e))
+    return Response({"melding": msg, "ontwerp": sitecreator.public(job, files=True)})  # (with the files: the preview shows the change at once)
+
+
+@api_view(["GET"])
+@permission_classes([IsSuperPlus])
+def component_requests(request):
+    """The component requests (superadmin+): the list with the status filter."""
+    from . import componentrequests
+    from .models import ComponentRequest
+
+    qs = ComponentRequest.objects.all()
+    if request.query_params.get("status"):
+        qs = qs.filter(status=request.query_params["status"])
+    return Response({"verzoeken": [componentrequests.public(r) for r in qs[:300]], "statussen": [[k, v] for k, v in ComponentRequest.STATUS]})
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([IsSuperPlus])
+def component_request_item(request, pk):
+    """One request with the building instruction; PATCH {status, note, tag} is the judgement (tag = the type of the component when it is built)."""
+    from . import componentrequests
+    from .models import ComponentRequest
+
+    r = ComponentRequest.objects.filter(pk=pk).first()
+    if not r:
+        return Response({"detail": "Onbekend verzoek."}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "PATCH":
+        try:
+            componentrequests.review(r, str(request.data.get("status") or ""), request.data.get("note") or "", request.data.get("tag") or "")
+        except ValueError as e:
+            return _bad(str(e))
+        if "extends" in request.data:
+            r.extends = str(request.data.get("extends") or "")[:60]
+            r.save(update_fields=["extends"])
+    return Response(componentrequests.public(r, detail=True))
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_prefill(request, pk):
+    """Answer to "may I fill in the first questions with assumptions (AI)?": {yes: true|false}. The first request is handled after it."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        sitecreator.answer_prefill(job, bool(request.data.get("yes")))
+    except ValueError as e:
+        return _bad(str(e))
+    return Response(sitecreator.public(sitecreator.SiteDesignJob.objects.get(pk=job.pk)))
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def sitecreator_controle(request, pk):
+    """The check of a design in the page format (all pages), made again now and kept in the design: {geldig, fouten, waarschuwingen, paginas}."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    sitecreator._store_controle(job.pk)
+    job.refresh_from_db()
+    return Response((job.brief or {}).get("controle") or {"geldig": True, "fouten": 0, "waarschuwingen": 0, "paginas": []})
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
+def pagina_catalogus(request):
+    """The component catalogue of the page format, made from the component set: type, version, purpose, props, nesting and an example."""
+    from . import pagevalidate
+
+    return Response({"formaat": "easy2edit-pagina@1", "componenten": pagevalidate.catalogus(request.query_params.get("set") or None)})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def pagina_valideer(request):
+    """A dry run: the validation report of a page design (format easy2edit-pagina@1); nothing is saved."""
+    from . import pagevalidate
+
+    reports, _fixed = pagevalidate.validate_many(pagevalidate.documents_of(request.data))
+    return Response({"geldig": bool(reports) and all(r["geldig"] for r in reports), "rapporten": reports})
+
+
+@api_view(["POST"])
+@permission_classes(DESIGN_PERM)
+def pagina_import(request):
+    """Imports page designs: validated again here; only without errors it becomes a design (a concept, all or nothing). 422 with the reports when there are errors."""
+    from . import pagevalidate
+
+    reports, job = pagevalidate.import_documents(request.user, request.data, (request.data.get("naam") if isinstance(request.data, dict) else "") or "")
+    if not job:
+        return Response({"geldig": False, "rapporten": reports}, status=422)
+    return Response({"geldig": True, "rapporten": reports, "ontwerp": str(job.pk)}, status=status.HTTP_201_CREATED)
+
+
 @api_view(["POST", "DELETE"])
 @permission_classes(DESIGN_PERM)
 def sitecreator_slot(request, pk):

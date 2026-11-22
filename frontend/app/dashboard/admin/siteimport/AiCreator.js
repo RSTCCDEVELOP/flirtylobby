@@ -309,9 +309,68 @@ function ImprovePopup({ onClose, onStart, busy }) {
     </div>, document.body);
 }
 
+// The check of a design: the report of the validator (the same one the import uses) grouped by severity; errors block the import, warnings do not. Missing components get their own block.
+function CheckReport({ rep, checking, onRecheck, job, onDesign }) {
+  const [pick, setPick] = useState({});
+  const [busy, setBusy] = useState("");
+  const [msg, setMsg] = useState(null);
+  const choose = async (type, actie, tag = "") => { setBusy(type + actie); setMsg(null); try { const r = await api(`/sitecreator/${job.id}/missing/`, { method: "POST", body: { type, actie, tag } }); setMsg({ ok: true, text: tx(r.melding) }); onDesign && onDesign(r.ontwerp); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } setBusy(""); };
+  if (!rep) return <p className="muted">{checking ? tx("Bezig met controleren…") : tx("Nog niet gecontroleerd.")}</p>;
+  const all = (rep.paginas || []).flatMap((p) => (p.meldingen || []).map((m) => ({ ...m, file: p.file })));
+  const missing = (rep.paginas || []).flatMap((p) => (p.ontbrekende_componenten || []).map((m) => ({ ...m, file: p.file })));
+  const fixes = (rep.paginas || []).flatMap((p) => (p.reparaties || []).map((m) => ({ ...m, file: p.file })));
+  const groups = [["fout", "Fouten", "Deze blokkeren het aanmaken"], ["waarschuwing", "Waarschuwingen", "Het aanmaken kan doorgaan"], ["info", "Info", ""]];
+  return (
+    <div style={{ display: "grid", gap: ".8rem" }}>
+      <div className={rep.fouten ? "alert" : "alert ok"}>{rep.fouten ? `${rep.fouten} ${tx("fouten")} · ${rep.waarschuwingen} ${tx("waarschuwingen")}` : `${tx("Geen fouten")} · ${rep.waarschuwingen || 0} ${tx("waarschuwingen")}`}</div>
+      {groups.map(([k, l, h]) => {
+        const list = all.filter((m) => m.ernst === k);
+        return list.length > 0 && (
+          <div key={k}><strong>{tx(l)}</strong> <small className="muted">{tx(h)}</small>
+            <ul style={{ margin: ".3rem 0 0", paddingLeft: "1.1rem", display: "grid", gap: ".3rem" }}>
+              {list.map((m, i) => <li key={i}><span>{m.melding}</span> <small className="muted">{m.file} {m.pad}{m.component ? ` · ${m.component}` : ""}</small>{m.suggestie && <small className="muted" style={{ display: "block" }}>{m.suggestie}</small>}</li>)}
+            </ul>
+          </div>
+        );
+      })}
+      {missing.length > 0 && (
+        <div><strong>{tx("Ontbrekende componenten")}</strong> <small className="muted">{tx("Hier staat een placeholder: kies een bestaand component of vraag het component aan.")}</small>
+          <ul style={{ margin: ".3rem 0 0", paddingLeft: "1.1rem", display: "grid", gap: ".3rem" }}>
+            {missing.map((m, i) => {
+              const near = m.dichtstbijzijnde_bestaande || [], ready = (job?.brief?.component_klaar || {})[m.voorgesteld_type], asked = (job?.brief?.aangevraagd || {})[m.voorgesteld_type], sel = pick[m.voorgesteld_type] || near[0] || "";
+              return (
+                <li key={i} style={{ display: "grid", gap: ".35rem" }}>
+                  <span><b>{m.naam}</b> <small className="muted">({m.voorgesteld_type})</small> {m.doel}</span>
+                  {ready && <div className="alert ok">{tx("Het component is klaar")}: <b>{ready}</b> <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => choose(m.voorgesteld_type, "vervangen", ready)}>{tx("Placeholder vervangen")}</button></div>}
+                  {asked && !ready && <small className="muted">{tx("Aangevraagd: je ziet hier wanneer het component klaar is.")}</small>}
+                  <span className="row" style={{ gap: ".4rem", flexWrap: "wrap", alignItems: "center" }}>
+                    {near.length > 0 && <><select value={sel} onChange={(e) => setPick({ ...pick, [m.voorgesteld_type]: e.target.value })} aria-label={tx("Bestaand component")}>{near.map((t) => <option key={t} value={t}>{t}</option>)}</select>
+                      <button type="button" className="btn sm" disabled={!!busy} onClick={() => choose(m.voorgesteld_type, "vervangen", sel)}>{tx("Vervangen door dit component")}</button></>}
+                    <button type="button" className="btn sm" disabled={!!busy} onClick={() => choose(m.voorgesteld_type, "weglaten")}>{tx("Weglaten")}</button>
+                    <button type="button" className="btn sm" disabled={!!busy || !!asked} onClick={() => choose(m.voorgesteld_type, "aanvragen")} title={tx("Het verzoek wordt beoordeeld en door de ontwikkelaars gebouwd. Een bestaand component uitbreiden gaat voor een nieuw component.")}>{asked ? tx("Aangevraagd") : tx("Component aanvragen")}</button>
+                  </span>
+                  <small className="muted">{tx("Of laat de placeholder staan: het ontwerp blijft dan een concept met een waarschuwing.")}</small>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+      {msg && <div className={msg.ok ? "alert ok" : "alert"} role="status">{msg.text}</div>}
+      {fixes.length > 0 && <div><strong>{tx("Automatisch hersteld")}</strong><ul style={{ margin: ".3rem 0 0", paddingLeft: "1.1rem" }}>{fixes.map((m, i) => <li key={i}>{m.melding} <small className="muted">{m.file} {m.pad}</small></li>)}</ul></div>}
+      <div><button type="button" className="btn" disabled={checking} onClick={onRecheck}>{checking ? tx("Bezig met controleren…") : tx("Opnieuw controleren")}</button></div>
+    </div>
+  );
+}
+
 // Alles aanmaken: when the design is good, the pages are made and filled at once. Choices: how, and which parts.
-function CreatePopup({ job, onClose, onCreate, onReview }) {
+function CreatePopup({ job, onClose, onCreate, onReview, onDesign }) {
   const [tab, setTab] = useState("choices");
+  const [rep, setRep] = useState(job.brief?.controle || null); // the check of the design in the page format (easy2edit-pagina@1): errors block "Alles aanmaken", warnings do not
+  const [checking, setChecking] = useState(false);
+  const recheck = useCallback(() => { setChecking(true); api(`/sitecreator/${job.id}/controle/`).then(setRep).catch(() => {}).finally(() => setChecking(false)); }, [job.id]);
+  useEffect(() => { recheck(); }, [recheck]);
+  const blocked = (rep?.fouten || 0) > 0;
   const own = !job.brief?.theme; // an own style: a theme is made of it (named after the website)
   const [o, setO] = useState({ render: "blocks", theme: true, useTheme: true, modules: true, translate: (job.brief?.langs || []).length > 0 });
   const n = Object.keys(job.files || {}).filter((f) => f.endsWith(".html")).length;
@@ -323,7 +382,7 @@ function CreatePopup({ job, onClose, onCreate, onReview }) {
       <div className="pb-objpop" role="dialog" aria-label={tx("Alles aanmaken")} style={{ width: "min(640px, 94vw)", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="pb-objhead"><strong>{tx("Alles aanmaken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
         <div style={{ padding: "1rem 1.3rem 1.3rem", overflowY: "auto", display: "grid", gap: ".9rem" }}>
-          <Tabs value={tab} onChange={setTab} tabs={[["choices", "Keuzes"], ["what", "Wat wordt er gemaakt?"]]} />
+          <Tabs value={tab} onChange={setTab} tabs={[["choices", "Keuzes"], ["check", `${tx("Controle")}${rep ? ` (${rep.fouten || 0}/${rep.waarschuwingen || 0})` : ""}`], ["what", "Wat wordt er gemaakt?"]]} />
           {tab === "choices" && (
             <div className="form" style={{ display: "grid", gap: ".9rem" }}>
               <div className="dw-grid" style={{ display: "grid", gap: ".7rem", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
@@ -339,10 +398,11 @@ function CreatePopup({ job, onClose, onCreate, onReview }) {
               {(job.brief?.langs || []).length > 0 && sw("translate", "Ook vertalen", "Naar de andere talen van het ontwerp")}
               <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
                 <button type="button" className="btn" onClick={onReview}>{tx("Eerst controleren")}</button>
-                <button type="button" className="btn primary" disabled={!(job.brief?.name || "").trim()} onClick={() => onCreate(o)} title={!(job.brief?.name || "").trim() ? tx("De naam van de website is verplicht") : undefined}><IconCheck /> {tx("Alles aanmaken")}</button>
+                <button type="button" className="btn primary" disabled={!(job.brief?.name || "").trim() || blocked} onClick={() => onCreate(o)} title={blocked ? tx("Er zijn fouten in het ontwerp: zie het tabblad Controle") : !(job.brief?.name || "").trim() ? tx("De naam van de website is verplicht") : undefined}><IconCheck /> {tx("Alles aanmaken")}</button>
               </div>
             </div>
           )}
+          {tab === "check" && <CheckReport rep={rep} checking={checking} onRecheck={recheck} job={job} onDesign={(d) => { onDesign && onDesign(d); recheck(); }} />}
           {tab === "what" && (
             <div className="muted" style={{ display: "grid", gap: ".6rem" }}>
               <p style={{ margin: 0 }}>{`${n} ${tx("pagina's")} · ${photos} ${tx("foto's")}`}</p>
@@ -707,6 +767,18 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
   }, [topic?.go]); // eslint-disable-line react-hooks/exhaustive-deps
   const text = (list) => list.length ? `${tx("Gekozen")} (${tx("in mijn lijst gezet")}): ` + list.map((c) => `${c.src} ${c.id}${c.title ? ` "${c.title}"` : ""}${c.kind === "video" ? ` (${tx("video")})` : ""}`).join(", ") : "";
   const unpick = async (file) => { setBusy(file); setErr(""); try { onJob?.(await api(`/sitecreator/${jobId}/slot/`, { method: "DELETE", body: { file } })); } catch (x) { setErr(errorText(x)); } finally { setBusy(""); } };
+  // pictures were found: "Alles selecteren?" (once per search); yes puts every picture that is not chosen yet in the list, one after the other
+  const [askAll, setAskAll] = useState(true);
+  useEffect(() => { setAskAll(true); }, [found]);
+  const left = (found || []).filter((it) => !chosen.some((c) => c.id === it.id && c.src === srcLabel(it.source)));
+  const chooseAll = async () => {
+    setAskAll(false); setErr("");
+    for (const it of left) {
+      setBusy(it.id);
+      try { onJob?.(await api(`/sitecreator/${jobId}/slot/`, { method: "POST", body: { add: it } })); } catch (x) { setErr(errorText(x)); break; }
+    }
+    setBusy("");
+  };
   const choose = async (it) => {
     if (chosen.some((c) => c.id === it.id && c.src === (srcLabel(it.source)))) return;
     setBusy(it.id); setErr("");
@@ -742,6 +814,13 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
       </div>}
       {err && <div className="alert">{err}</div>}
       {found && !found.length && <small className="muted">{tx("Niets gevonden. Probeer een ander zoekwoord (Engels werkt het best).")}</small>}
+      {found && left.length > 1 && askAll && !disabled && (
+        <div className="row" style={{ gap: ".5rem", flexWrap: "wrap", alignItems: "center" }} role="group" aria-label={tx("Alles selecteren?")}>
+          <strong>{tx("Alles selecteren?")}</strong> <small className="muted">{left.length} {tx("gevonden")}</small>
+          <button type="button" className="btn sm primary" disabled={!!busy} onClick={chooseAll}>{tx("Ja, alles selecteren")}</button>
+          <button type="button" className="btn sm" disabled={!!busy} onClick={() => setAskAll(false)}>{tx("Nee, ik kies zelf")}</button>
+        </div>
+      )}
       {found && found.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: ".4rem" }}>
           {found.map((it) => { const on = chosen.some((c) => c.id === it.id && c.src === (srcLabel(it.source))); return (
@@ -1186,7 +1265,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
             : <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => onImport(job)}>{tx("Importeren in easy2edit")}</button>)}
           <button type="button" className="pb-panelx" onClick={requestClose} aria-label={tx("Sluiten")}>×</button></div>
         {improveOpen && <ImprovePopup onClose={() => setImproveOpen(false)} onStart={improve} busy={busy === "improve"} />}
-        {createOpen && job && <CreatePopup job={job} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
+        {createOpen && job && <CreatePopup job={job} onDesign={merge} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
         {!job && <p className="muted" style={{ padding: "1rem" }}>{err || <Loading />}</p>}
         {wizard && <Wizard key={job.id + (again ? "a" : "")} job={job} onJob={merge} onReload={() => reload(true)} onApply={onApply ? (o) => onApply(job, o) : undefined} onImprove={() => setImproveOpen(true)} onWorkspace={ready && job.status !== "draft" ? () => setAgain(false) : undefined} onGenerate={(j) => { setAgain(false); merge(j); }} />}
         {job && !wizard && (
@@ -1197,6 +1276,17 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 {(job.messages || []).map((m, i) => (
                   <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} picked={job.brief?.picked} colors={job.brief?.colors} mode={job.brief?.color_mode} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
                 ))}
+                {(() => { // the first request: may the designer fill in the first questions with assumptions (AI)? Two buttons; the answer is kept
+                  const last = (job.messages || [])[(job.messages || []).length - 1];
+                  if (running || !last || last.ask !== "prefill" || last.answered) return null;
+                  const answer = async (yes) => { setErr(""); try { merge(await api(`/sitecreator/${jobId}/prefill/`, { method: "POST", body: { yes } })); } catch (x) { setErr(errorText(x)); } };
+                  return (
+                    <div className="row" style={{ gap: ".5rem", flexWrap: "wrap" }}>
+                      <button type="button" className="btn sm primary" disabled={!!busy} onClick={() => answer(true)}>{tx("Ja, vul de vragen in")}</button>
+                      <button type="button" className="btn sm" disabled={!!busy} onClick={() => answer(false)}>{tx("Nee, ik vul ze zelf in")}</button>
+                    </div>
+                  );
+                })()}
                 {!running && ready && thinSections < 5 && thinOff !== jobId && (
                   <div className="card" data-easy2edit-tag="ui-notice" style={{ padding: ".7rem .9rem", display: "grid", gap: ".5rem" }}>
                     <span>{tx("Deze onepager heeft maar {0} secties, dus er mist content. Zal ik de pagina aanvullen (over ons, diensten, voordelen, reviews, FAQ en contact) en het menu naar die secties laten linken?", String(thinSections))}</span>

@@ -385,6 +385,33 @@ class Entity(models.Model):
         constraints = [models.UniqueConstraint(fields=["is_own"], condition=models.Q(is_own=True), name="one_own_entity")]
 
 
+class ComponentRequest(models.Model):
+    """A component that a design needs and the component set does not have, asked for by a user of the creator (see componentrequests.py). It is never put in a site directly: it is judged first,
+    then built in the code by the easy2edit developers. The same request from several designs or websites is ONE row (votes, designs, sites)."""
+
+    STATUS = [("nieuw", "Nieuw"), ("beoordeling", "In beoordeling"), ("goedgekeurd", "Goedgekeurd"), ("afgewezen", "Afgewezen"), ("gebouwd", "Gebouwd")]
+
+    uid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status = models.CharField(max_length=12, choices=STATUS, default="nieuw")
+    voorgesteld_type = models.CharField(max_length=60)
+    naam = models.CharField(max_length=80)
+    doel = models.TextField(blank=True)
+    spec = models.JSONField(default=dict, blank=True)  # the full specification (props, example content, the closest existing components)
+    extends = models.CharField(max_length=60, blank=True)  # "extend" is better than "new": the existing component that gets a variant instead
+    votes = models.PositiveIntegerField(default=1)  # how many times it was asked for (merged requests)
+    designs = models.JSONField(default=list, blank=True)  # [{"design": id, "site": domain}] the designs that wait for it
+    sites = models.JSONField(default=list, blank=True)  # the domains that asked
+    note = models.TextField(blank=True)  # the judgement
+    built_tag = models.CharField(max_length=60, blank=True)  # the type of the component when it is built (ui-...)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    remote_id = models.CharField(max_length=40, blank=True)  # the id of the request on the easy2edit server (when it was sent there)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-votes", "-created"]
+
+
 class Tag(models.Model):
     """A tag with a colour that can be put on any part of easy2edit (users, groups, entities, pages, media, modules, plugins and what plugins make). Its scope decides what it may be put on:
     global (everything), module (the parts of one or more modules) or plugin (the parts of one or more plugins)."""

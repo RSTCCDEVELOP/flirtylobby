@@ -40,6 +40,8 @@ export default function Login() {
   const [canRegister, setCanRegister] = useState(false);
   const [hydrated, setHydrated] = useState(false); // before the page is alive a submit would reload it (the person then has to log in again)
   useEffect(() => setHydrated(true), []);
+  const [idleOut, setIdleOut] = useState(""); // logged out for doing nothing (see components/IdleGuard.js): said once on the login page
+  useEffect(() => { try { const m = sessionStorage.getItem("e2e-idle-out"); if (m) { setIdleOut(m); sessionStorage.removeItem("e2e-idle-out"); } } catch { /* ok */ } }, []);
   const [challenge, setChallenge] = useState(null); // {challenge, method, destination} after the password step
   const [code, setCode] = useState("");
   const [info, setInfo] = useState("");
@@ -124,6 +126,7 @@ export default function Login() {
             <label>{tx("E-mailadres")}
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="username" autoCapitalize="none" />
             </label>
+            {idleOut && !error && <div className="alert" role="status">{tx("Je bent uitgelogd omdat je {0} minuten niets hebt gedaan.", idleOut)}</div>}
             {error && <div className="alert">{error}</div>}
             <button className="btn primary" disabled={busy || !email.trim()}>{busy ? tx("Bezig…") : tx("Code sturen")}</button>
             <button type="button" className="muted center" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setReset(null); setError(""); setInfo(""); }}>{tx("← Terug")}</button>

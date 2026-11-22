@@ -23,7 +23,7 @@ from .models import SandboxMessage, SandboxPayment, SandboxSettings
 logger = logging.getLogger(__name__)
 
 DEFAULTS = {
-    "enabled": False, "banner": True, "fixed_code": "", "geo_country": "NL", "auto_pay": False, "override_emails": [], "override_always": False, "override_on": True, "code_on_screen": False,
+    "enabled": False, "banner": True, "button": True, "fixed_code": "", "geo_country": "NL", "auto_pay": False, "override_emails": [], "override_always": False, "override_on": True, "code_on_screen": False,
     "simulate": {"email": True, "sms": True, "payments": True, "integrations": True, "geo": False, "geocoding": True},
 }
 OUTCOMES = {"paid", "failed", "canceled", "expired"}
@@ -50,7 +50,7 @@ def save(incoming):
     for k, v in (incoming or {}).items():
         if k == "simulate" and isinstance(v, dict):
             cur["simulate"].update({a: bool(b) for a, b in v.items() if a in cur["simulate"]})
-        elif k in ("enabled", "banner", "auto_pay", "override_always", "override_on", "code_on_screen"):
+        elif k in ("enabled", "banner", "button", "auto_pay", "override_always", "override_on", "code_on_screen"):
             cur[k] = bool(v)
         elif k == "override_emails":
             import re

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://easy2edit.com/schemas/easy2edit-pagina-1.schema.json",
+  "title": "easy2edit-pagina@1",
+  "description": "A page design: a tree of components of the easy2edit component set. The props of a component are derived from the component set itself (see GET /api/pagina-import/catalogus/): this schema describes the structure; the validator (apps/core/pagevalidate.py) is the single source of truth and also checks the props, links, media, variables and safety.",
+  "type": "object",
+  "required": ["formaat", "pagina", "inhoud"],
+  "properties": {
+    "formaat": {"const": "easy2edit-pagina@1"},
+    "set": {"type": "object", "properties": {"sleutel": {"type": "string"}, "versie": {"type": "string"}}},
+    "pagina": {
+      "type": "object",
+      "required": ["titel", "slug", "taal"],
+      "properties": {
+        "titel": {"type": "string", "minLength": 1, "maxLength": 120},
+        "slug": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "taal": {"type": "string", "minLength": 2, "maxLength": 10},
+        "type": {"enum": ["home", "standaard", "over-ons", "contact", "diensten", "blog", "faq", "product", "overig"]},
+        "seo": {"type": "object", "properties": {"titel": {"type": "string", "maxLength": 80}, "omschrijving": {"type": "string", "maxLength": 160}, "og_afbeelding": {"type": "string"}}}
+      }
+    },
+    "header": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/knoop"}]},
+    "footer": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/knoop"}]},
+    "inhoud": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/knoop"}},
+    "ontbrekende_componenten": {"type": "array", "items": {"$ref": "#/$defs/ontbrekend"}}
+  },
+  "$defs": {
+    "knoop": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,40}$", "description": "Unique in the design."},
+        "type": {"type": "string", "description": "A component of the set (ui-...), or band, kolom, sysobject, placeholder."},
+        "versie": {"type": "string", "description": "The version of the component set the design was made for."},
+        "anker": {"type": "string", "description": "The id of the section on the page: a link #anker goes to it."},
+        "props": {"type": "object", "description": "band: {cols, bg, valign, screen}; sysobject: {slug}; placeholder: {voorgesteld_type}; a component: its props (text, link {label,href}, afbeelding {src,alt}, lijst)."},
+        "children": {"type": "array", "items": {"$ref": "#/$defs/knoop"}, "description": "Only a band (kolommen) and a kolom (components) have children."}
+      }
+    },
+    "ontbrekend": {
+      "type": "object",
+      "required": ["voorgesteld_type", "naam", "doel"],
+      "properties": {
+        "voorgesteld_type": {"type": "string"},
+        "naam": {"type": "string"},
+        "doel": {"type": "string"},
+        "gebruikt_op": {"type": "array", "items": {"type": "string", "description": "JSON Pointer"}},
+        "voorgestelde_props": {"type": "array", "items": {"type": "object", "required": ["naam", "type"], "properties": {"naam": {"type": "string"}, "type": {"type": "string"}, "verplicht": {"type": "boolean"}}}},
+        "voorbeeldinhoud": {"type": "object"},
+        "dichtstbijzijnde_bestaande": {"type": "array", "items": {"type": "string"}, "description": "Filled in by the validator from the catalogue."},
+        "visuele_referentie": {"type": "string"}
+      }
+    }
+  }
+}

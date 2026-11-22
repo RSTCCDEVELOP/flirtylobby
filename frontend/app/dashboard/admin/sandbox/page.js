@@ -87,6 +87,12 @@ export default function Sandbox() {
           <span className="switch"><input type="checkbox" checked={s.banner} disabled={!edit} onChange={(e) => save({ banner: e.target.checked })} /><span /></span>
           <span>{tx("Oranje label \"SANDBOX\" op elke pagina tonen")}</span>
         </label>
+        <label className="check sec-toggle">
+          <span className="switch"><input type="checkbox" checked={s.button !== false} disabled={!edit} onChange={(e) => save({ button: e.target.checked })} /><span /></span>
+          <span>{tx("Sandbox-knop in de kop tonen")}
+            <small className="muted" style={{ display: "block" }}>{tx("Het label blijft in de kop staan, ook als de sandbox uit is (dan staat er LIVE), en is een knop om de sandbox aan en uit te zetten, zodat je ook live kunt testen. Alleen voor wie de sandbox mag beheren. Zet dit uit om de knop weg te halen.")}</small>
+          </span>
+        </label>
         <h3>{tx("Wat wordt gesimuleerd")}</h3>
         <div className="bot-grid">
           {SIM.map(([k, label, hint]) => (

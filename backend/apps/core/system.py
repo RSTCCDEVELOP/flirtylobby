@@ -35,6 +35,8 @@ DEFAULTS = {
     "signal_seconds": "0",  # how often the browser asks for call signals (video and chat calls): 0 = 1.5 seconds
     "refresh_seconds": "0",  # how often the pages ask the server for news (messages, notifications, chat): 0 = every part at its own pace
 
+    "idle_minutes": "5",  # how long someone may stay logged in without doing anything: minutes; 0 = never logged out for being idle
+    "idle_action": "ask",  # at the end of that time: "ask" (the person is asked first: a countdown with "Ingelogd blijven") or "logout" (logged out at once)
     "footer_text": "",
     "footer_columns": [],  # link columns in the footer: [{title, links: [{label, url}]}] (a design brings its own)
     "footer_logo_height": "0",  # height of the logo in the footer in px (0 = the standard, 36)
@@ -47,7 +49,7 @@ SETUP_FIELDS = ("site_name", "company_name", "frontend_url", "street", "house_nu
 PHONE_FIELDS = ("phone", "mobile")
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
-INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200)}
+INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200), "idle_minutes": (0, 1440)}
 ENVIRONMENTS = ["production", "staging", "development"]
 CURRENCIES = ["EUR", "USD", "GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "BGN", "TRY", "CAD", "AUD", "NZD", "JPY", "CNY", "INR", "BRL", "MXN", "ZAR", "AED", "SAR", "ILS", "SGD", "HKD", "KRW", "THB", "IDR"]
 URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
@@ -131,6 +133,8 @@ def clean(incoming):
             if v and not EMAIL_RE.match(v):
                 errors[k] = "Dit is geen geldig e-mailadres."
             out[k] = v
+        elif k == "idle_action":
+            out[k] = v if v in ("ask", "logout") else "ask"
         elif k == "environment":
             out[k] = v if v in ENVIRONMENTS else "production"
         elif k == "aliases":
@@ -441,3 +445,16 @@ def public():
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0),
             "easy2edit": __import__("apps.core.global_settings", fromlist=["get"]).get()}  # base domain and addresses of the default easy2edit server
+
+
+IDLE_ASK_SECONDS = 60  # when the person is asked first: how long the question stays before he is logged out
+
+
+def idle():
+    """How long a logged-in person may do nothing: {"minutes": int (0 = never), "action": "ask" | "logout", "ask_seconds": int}. Standard: 5 minutes, ask first."""
+    d = get()
+    try:
+        minutes = max(0, min(1440, int(d.get("idle_minutes"))))
+    except (TypeError, ValueError):
+        minutes = 5
+    return {"minutes": minutes, "action": d.get("idle_action") if d.get("idle_action") in ("ask", "logout") else "ask", "ask_seconds": IDLE_ASK_SECONDS}

@@ -99,6 +99,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/groups", label: "User groups", icon: <IconGroup /> },
   { href: "/dashboard/admin/entity", label: "Bedrijf", icon: <IconBriefcase /> },  // the label follows the standard installation (Bedrijf, Organisatie, Vereniging, Club or a free name)
   { href: "/dashboard/admin/tags", label: "Tags", icon: <IconTag /> },
+  { href: "/dashboard/admin/component-requests", label: "Componentverzoeken", icon: <IconGrid /> },
   { href: "/dashboard/admin/roles", label: "Rollen", icon: <IconShield />, perm: "roles.manage" },
   { href: "/dashboard/admin/languages", label: "Talen", icon: <IconGlobe />, perm: "languages.manage" },
   { href: "/dashboard/admin/pages", label: "Pagina's", icon: <IconFolder /> },
@@ -146,7 +147,7 @@ const ADMIN_GROUPS = [
   { id: "a-shop", title: "Webshop" }, { id: "a-subs", title: "Subscription" }, { id: "a-system", title: "Systeem" },
 ];
 const ADMIN_GROUP_OF = {
-  "/dashboard/admin/users": "a-people", "/dashboard/admin/entity": "a-people", "/dashboard/admin/tags": "a-system", "/dashboard/admin/ai": "a-people", "/dashboard/admin/ai-kosten": "a-system", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
+  "/dashboard/admin/users": "a-people", "/dashboard/admin/entity": "a-people", "/dashboard/admin/component-requests": "a-system", "/dashboard/admin/tags": "a-system", "/dashboard/admin/ai": "a-people", "/dashboard/admin/ai-kosten": "a-system", "/dashboard/admin/groups": "a-people", "/dashboard/admin/roles": "a-people",
   "/dashboard/admin/pages": "a-site", "/dashboard/admin/siteimport": "a-site", "/dashboard/admin/sysobjects": "a-site", "/dashboard/admin/languages": "a-system", "/dashboard/admin/theme": "a-system", "/dashboard/admin/themes": "a-system", "/dashboard/admin/branding": "a-site", "/dashboard/admin/media": "a-system", "/dashboard/admin/seo": "a-site",
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site", "/dashboard/admin/components": "a-site", "/dashboard/admin/templates": "a-site",

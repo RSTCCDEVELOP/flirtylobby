@@ -112,6 +112,8 @@ MODULES = [
     {"key": "users", "group": "Kern", "label": "Users", "desc": "Accounts aanmaken, blokkeren en verwijderen. Met een foto en openbaar profiel voor op de website.", "core": True},
     {"key": "entities", "group": "Kern", "label": "Entiteit",
      "desc": "De organisatie achter de website (bedrijf, organisatie, vereniging, club of een eigen naam): naam, adres, contact en registratie, lokaal in de site. De teksten van de website kunnen de gegevens als variabele gebruiken ({{organisatie.naam}}). Wat het is, bepaalt de standaard installatie.", "core": True},
+    {"key": "component_requests", "group": "Systeem", "label": "Componentverzoeken", "acl": False,
+     "desc": "Componenten die een ontwerp van de creator nodig heeft en de component set niet heeft: verzoeken beoordelen (alleen superadmin+), de bouwinstructie en de ontwerpen die erop wachten opnieuw controleren."},
     {"key": "tags", "group": "Kern", "label": "Tags",
      "desc": "Tags met een kleur die je aan alle onderdelen van easy2edit kunt hangen (gebruikers, groepen, entiteiten, pagina's, media, modules, plugins). Een tag geldt overal, voor één of meer modules of voor één of meer plugins.", "core": True},
     {"key": "dashboard", "group": "Kern", "label": "Dashboard & profiel", "desc": "Inloggen, dashboard en eigen profiel.", "core": True, "acl": False},

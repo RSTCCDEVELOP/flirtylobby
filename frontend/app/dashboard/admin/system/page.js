@@ -38,6 +38,10 @@ function Env({ title, text }) {
   );
 }
 
+// The steps of the slider "Inlogtijd": minutes; 0 (the last step) = never logged out for being idle.
+const IDLE_ORDER = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 480, 720, 1440, 0];
+const idleLabel = (m) => (m >= 60 && m % 60 === 0 ? `${m / 60} ${tx("uur")}` : `${m} ${m === 1 ? tx("minuut") : tx("minuten")}`);
+
 export default function SystemPage() {
   const [d, setD] = useState(null);
   const [form, setForm] = useState({});
@@ -165,6 +169,26 @@ export default function SystemPage() {
               <label key={k}>{l}<input value={form[`social_${k}`] || ""} onChange={set(`social_${k}`)} placeholder="https://" /></label>
             ))}
           </div>
+        </Collapsible>
+        <Collapsible id="sys-idle" title={tx("Inlogtijd")}>
+          {(() => {
+            const cur = Number(form.idle_minutes ?? 5), never = cur === 0;  // the slider: the minutes in steps, the last step is "never"
+            const idx = never ? IDLE_ORDER.length - 1 : (IDLE_ORDER.findIndex((m) => m && m >= cur) === -1 ? IDLE_ORDER.length - 2 : IDLE_ORDER.findIndex((m) => m && m >= cur));
+            return (
+              <div style={{ display: "grid", gap: ".9rem" }}>
+                <p className="muted" style={{ margin: 0 }}>{tx("Hoe lang iemand ingelogd mag blijven zonder iets te doen. Daarna wordt hij uitgelogd, of eerst gevraagd of hij wil blijven. Standaard 5 minuten.")}</p>
+                <label>{tx("Uitloggen na")}: <strong>{never ? tx("Nooit uitloggen") : idleLabel(IDLE_ORDER[idx])}</strong>
+                  <input type="range" min={0} max={IDLE_ORDER.length - 1} step={1} value={idx} onChange={(e) => setForm({ ...form, idle_minutes: String(IDLE_ORDER[Number(e.target.value)]) })} aria-label={tx("Uitloggen na")} style={{ width: "100%" }} />
+                  <span style={{ display: "flex", justifyContent: "space-between" }}><small className="muted">{idleLabel(IDLE_ORDER[0])}</small><small className="muted">{tx("Nooit")}</small></span>
+                </label>
+                <div role="radiogroup" aria-label={tx("Wat gebeurt er")} style={{ display: "grid", gap: ".5rem", opacity: never ? .5 : 1 }}>
+                  {[["ask", "Eerst de vraag stellen", "De gebruiker krijgt een melding met een aftelling van 60 seconden en de knop \"Ingelogd blijven\". Doet hij niets, dan wordt hij uitgelogd."], ["logout", "Direct uitloggen", "Na deze tijd wordt de gebruiker meteen uitgelogd, zonder vraag."]].map(([k, l, h]) => (
+                    <label key={k} className="check sec-toggle"><span><input type="radio" name="idle_action" checked={(form.idle_action || "ask") === k} disabled={never} onChange={() => setForm({ ...form, idle_action: k })} /></span><span><strong>{tx(l)}</strong><small className="muted" style={{ display: "block" }}>{tx(h)}</small></span></label>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </Collapsible>
         <Collapsible id="sys-limits" title={tx("Uploadlimieten")}>
           <div className="grid2">

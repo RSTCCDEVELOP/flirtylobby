@@ -67,7 +67,10 @@ def test_chat_asks_first_then_designs(job, monkeypatch):
     monkeypatch.setattr(sitecreator.threading, "Thread", lambda target, args, daemon: type("T", (), {"start": lambda self: target(*args)})())
     sitecreator.chat(job, "Ik wil een website")
     job.refresh_from_db()
-    assert job.status == "done" and [m["role"] for m in job.messages] == ["user", "ai"] and not job.files
+    assert job.status == "done" and [m["role"] for m in job.messages] == ["user", "ai"] and not job.files and job.messages[-1]["ask"] == "prefill"  # first the customer is asked (no AI call yet)
+    sitecreator.answer_prefill(job, False)  # "no": he fills the questions in himself
+    job.refresh_from_db()
+    assert job.status == "done" and [m["role"] for m in job.messages] == ["user", "ai", "ai"] and job.brief["prefill"] is False and job.messages[1]["answered"] == "nee"
     sitecreator.chat(job, "Een kapsalon in Zwolle")
     job.refresh_from_db()
     assert job.name == "Kapper Zon" and seen["brief"]["chat"] is True and seen["brief"]["pages"] == "Home, Contact" and "kapsalon" in seen["brief"]["extra"]
@@ -278,7 +281,7 @@ def test_a_change_is_planned_and_only_the_changing_parts_are_redone(django_user_
     foot = '<div data-easy2edit-tag="ui-footer"><p>voet</p></div>'
     mk = lambda secs: sitecreator._page_html({"name": "X", "lang": "Dutch"}, {"title": "Home", "description": "d"}, nav, secs, foot)  # noqa: E731
     files = {"style.css": "/* x */", "index.html": mk([("hero", '<div data-easy2edit-tag="ui-hero-split"><section><h1>Oud</h1></section></div>'), ("", '<div data-easy2edit-tag="ui-faq"><p>vragen</p></div>')]), "contact.html": mk([("", '<div data-easy2edit-tag="ui-contact"><p>c</p></div>')])}
-    job = sitecreator.SiteDesignJob.objects.create(user=u, status="running", name="X", brief={"name": "X", "pages": "Home, Contact", "sectioned": True}, files=files)
+    job = sitecreator.SiteDesignJob.objects.create(user=u, status="running", name="X", brief={"name": "X", "pages": "Home, Contact", "sectioned": True, "props_mode": False}, files=files)  # (this test answers with html: the html way)
     asked = []
 
     def fake(system, prompt, max_tokens=24000, pk=None, images=None):
@@ -752,7 +755,7 @@ def test_page_background_and_frontend_colour_are_separate():
 def test_frontend_is_a_column_with_the_maximum_width_over_the_page_colour():
     css = sitecreator.layout_css({"max_width": 1100})
     assert "body { background: var(--page, var(--bg)); }" in css
-    assert "body > main { max-width: 1100px;" in css and "background: var(--bg)" in css and "body > header {" not in css and "body > footer { max-width: 1100px;" in css  # the header is full width; the footer has the width of the column
+    assert "body > main { max-width: 1100px;" in css and "background: var(--bg)" in css and "body > header { max-width: 1100px;" in css and "body > footer { max-width: 1100px;" in css  # the header and the footer have the width of the column (a wider header only when asked: header_wide)
     assert "max-width: none" in sitecreator.layout_css({"max_width": 0})
 
 
@@ -862,3 +865,135 @@ def test_chat_asks_for_a_slider_and_gets_a_media_object(job, monkeypatch):
     assert "media-standaard-carousel: Carousel" in seen["prompt"]  # the planner is told about the objects
     assert '<div data-sysobject="media-standaard-carousel"></div>' in files["index.html"] and "ui-gallery" not in files["index.html"]
     assert files["index.html"].index("Onze projecten") < files["index.html"].index("data-sysobject")
+
+
+def _asked_msgs():
+    return [{"role": "ai", "text": "Een paar vragen.", "questions": [{"id": "stijl", "q": "Welke stijl past bij jullie bedrijf?", "type": "choice", "options": ["Strak", "Warm"], "default": ""},
+                                                                      {"id": "doel", "q": "Wat is het hoofddoel van de website?", "type": "text", "options": [], "default": ""}],
+             "answers": {"ans": {"stijl": "Warm", "doel": ""}, "own": {}}}, {"role": "user", "text": "Klaar"}]
+
+
+def test_a_question_is_asked_once():
+    msgs = _asked_msgs()
+    qs = [{"id": "stijl", "q": "x", "type": "text"}, {"id": "q9", "q": "Wat is het hoofddoel van jullie website?", "type": "text"}, {"id": "budget", "q": "Wat is jullie budget?", "type": "text"}]
+    assert [q["id"] for q in sitecreator._drop_repeated(qs, msgs)] == ["budget"]  # same id and nearly the same words are dropped, a new question stays
+    txt = sitecreator._answered_text(msgs)
+    assert "Welke stijl past bij jullie bedrijf? -> Warm" in txt and "(skipped: you decide)" in txt  # the designer is told what was answered and what was skipped
+
+
+def test_chat_that_only_repeats_questions_goes_on_and_designs(job, monkeypatch):
+    SiteDesignJob.objects.filter(pk=job.pk).update(messages=_asked_msgs(), brief={"chat": True, "name": "Zwemschool"})
+    job.refresh_from_db()
+    answers = iter([
+        json.dumps({"reply": "Nog even checken.", "ready": False, "questions": [{"id": "stijl", "q": "Welke stijl past bij jullie bedrijf?", "type": "choice", "options": ["Strak", "Warm"], "default": ""}]}),
+        json.dumps({"reply": "Ik ontwerp het nu.", "ready": True, "brief": {"name": "Zwemschool", "kind": "company", "lang": "Dutch", "pages": "Home", "style": "warm"}}),
+    ])
+    monkeypatch.setattr(sitecreator.ai, "available", lambda: True)
+    monkeypatch.setattr(sitecreator, "_ask", lambda *a, **k: next(answers))
+    monkeypatch.setattr(sitecreator, "_generate", lambda pk: SiteDesignJob.objects.filter(pk=pk).update(status="done"))
+    monkeypatch.setattr(sitecreator, "auto_photos", lambda *a, **k: None)
+    sitecreator._chat(job.pk, "ok", False)
+    job.refresh_from_db()
+    ai = [m for m in job.messages if m["role"] == "ai"]
+    assert ai[-1]["text"] == "Ik ontwerp het nu." and not ai[-1].get("questions") and job.status == "done"  # no second round of the same question
+
+
+def test_check_and_repair_a_design(db):
+    b = {"photos": [{"file": f"istock-{n}.jpg", "note": note} for n, note in ((1, "coach in pool"), (2, "kids swimming"), (3, "poolside"))], "name": "X"}
+    page = ('<!doctype html><html><head><title>x</title></head><body><header><div data-easy2edit-tag="ui-navbar">n</div></header><main>'
+            '<div id="hero"><div data-easy2edit-tag="ui-hero-split"><section class="e2e-hero"><h1>Kop</h1><img src="img/istock-1.jpg" alt="coach in pool"></section></div></div>'
+            '<div id="about"><div class="container"><div data-easy2edit-tag="ui-split"><div class="e2e-split"><img src="img/istock-1.jpg" alt="kids swimming lesson"><h2 id="about">Over</h2></div></div></div></div>'
+            '</main><footer>f</footer></body></html>')
+    files = {"index.html": page, "style.css": ""}
+    before = " ".join(x["problem"] for x in sitecreator.check_design(files, b))
+    assert "The same id twice: about" in before and "The same picture more than once: istock-1.jpg" in before
+    fixed, left = sitecreator.repair_design(files, b)
+    assert sitecreator.check_design(fixed, b) == left and "twice" not in " ".join(x["problem"] for x in left) and "more than once" not in " ".join(x["problem"] for x in left)
+    srcs = [m.group(2) for m in sitecreator.IMG_RE.finditer(fixed["index.html"])]
+    assert len(set(srcs)) == 2 and srcs[0] == "img/istock-1.jpg" and srcs[1] == "img/istock-2.jpg"  # the second picture fits "kids swimming" best
+
+
+def test_one_photo_one_place_is_in_every_rule_set(db):
+    assert "ONE PHOTO, ONE PLACE" in sitecreator.rules({}) and "ONE PHOTO, ONE PLACE" in sitecreator.rules({"chat": True}) and "ONE PHOTO, ONE PLACE" in sitecreator.SECTION_SYSTEM
+
+
+def test_header_has_the_width_of_the_content_unless_asked(db):
+    assert "body > header { max-width: 1100px" in sitecreator.layout_css({}) and "body > header { max-width: 1280px" in sitecreator.layout_css({"max_width": 1280})
+    assert "body > header" not in sitecreator.layout_css({"header_wide": True})  # only wider when the customer asks
+    assert sitecreator.clean_brief({"header_wide": True}, {})["header_wide"] is True and sitecreator.clean_brief({"header_wide": False}, {"header_wide": True})["header_wide"] is False
+
+
+def test_sections_keep_their_id_and_spacing_when_split_and_joined():
+    html = '<html><body><header>h</header><main>\n<div id="about" class="sec-plain">\n<div class="container"><div data-easy2edit-tag="ui-split">a</div></div>\n</div>\n<div id="hero">\n<div data-easy2edit-tag="ui-hero-split"><section class="e2e-hero">x</section></div>\n</div>\n</main><footer>f</footer></body></html>'
+    before, secs, after = sitecreator._main_parts(html)
+    assert [i for i, _h in secs] == ["about", "hero"]  # the wrapper with the class is taken off too: the id is not lost
+    again = sitecreator._join_main(before, secs, after)
+    assert '<div id="about" class="sec-plain">' in again and '<div id="hero">' in again  # and put back the same way (a hero has its own space)
+
+
+def test_the_customer_is_asked_before_the_questions_are_filled_in_with_assumptions(job, monkeypatch):
+    prompts = []
+
+    def fake(system, prompt, **k):
+        prompts.append(prompt)
+        return json.dumps({"reply": "Ik heb alles ingevuld met mijn aannames.", "ready": False, "questions": [{"id": "doel", "q": "Wat is het hoofddoel?", "type": "text", "default": "Nieuwe leden werven"},
+                                                                                                          {"id": "pagina", "q": "Pagina's", "type": "multi", "options": ["Home", "Over ons"], "default": ["Home", "Over ons"]}]})
+
+    monkeypatch.setattr(sitecreator.ai, "available", lambda: True)
+    monkeypatch.setattr(sitecreator, "_ask", fake)
+    monkeypatch.setattr(sitecreator.threading, "Thread", lambda target, args, daemon: type("T", (), {"start": lambda self: target(*args)})())
+    sitecreator.chat(job, "maak een website voor een openwater zwemvereniging in Porbandar India")
+    job.refresh_from_db()
+    assert prompts == [] and job.messages[-1]["ask"] == "prefill"  # nothing is asked of the AI before the customer answered
+    sitecreator.answer_prefill(SiteDesignJob.objects.get(pk=job.pk), True)
+    with pytest.raises(ValueError):
+        sitecreator.answer_prefill(SiteDesignJob.objects.get(pk=job.pk), True)  # an answer is given once
+    job.refresh_from_db()
+    assert job.brief["prefill"] is True and "PREFILL WITH ASSUMPTIONS" in prompts[0] and "Porbandar" in prompts[0]  # yes: the designer fills in the defaults
+    q = [m for m in job.messages if m.get("questions")][-1]["questions"]
+    assert q[0]["default"] == "Nieuwe leden werven" and q[1]["default"] == ["Home", "Over ons"]  # the defaults survive: the screen starts from them
+    assert "PREFILL WITH ASSUMPTIONS" not in sitecreator.CHAT_SYSTEM  # (the rule is only added after a yes)
+
+
+def test_yes_to_filling_in_also_searches_the_photos_but_keeps_no_text(job, monkeypatch):
+    monkeypatch.setattr(sitecreator.ai, "available", lambda: True)
+    monkeypatch.setattr(sitecreator.threading, "Thread", lambda target, args, daemon: type("T", (), {"start": lambda self: target(*args)})())
+    seen = {}
+
+    def fake(system, prompt, **k):
+        if system == sitecreator.SECTION_JSON:  # the photo plan
+            seen["plan"] = prompt
+            return json.dumps({"searches": [{"query": "open water swimmers sea", "purpose": "hero", "kind": "photo"}]})
+        return json.dumps({"reply": "Ingevuld.", "ready": False, "questions": [{"id": "name", "q": "Naam?", "type": "text", "default": "Porbandar Open Water Swimming Association"}]})
+
+    monkeypatch.setattr(sitecreator, "_ask", fake)
+    monkeypatch.setattr(sitecreator, "search_photos", lambda j, q, skip=(), video=False: [{"id": "123", "source": "istock", "title": "Swimmers", "url": "https://x/p.jpg"}])
+    sitecreator.chat(job, "maak een website voor een openwater zwemvereniging in Porbandar India")
+    sitecreator.answer_prefill(SiteDesignJob.objects.get(pk=job.pk), True)
+    job.refresh_from_db()
+    assert "Porbandar" in seen["plan"] and "Porbandar Open Water Swimming Association" in seen["plan"]  # the search knows the request and the assumed name
+    assert list(job.brief["picked"]) == ["istock-123.jpg"] and "extra" not in job.brief and job.brief["name"] == "Chat"  # only the selection is kept (the name of the request is not)
+    assert job.status == "done" and [m for m in job.messages if m.get("questions")]  # and the questionnaire is there
+
+
+def test_a_design_made_by_the_designer_gets_the_name_of_the_website(django_user_model, monkeypatch):
+    u = django_user_model.objects.create_user("n@example.com", "n@example.com", "x")
+    new = sitecreator.SiteDesignJob.objects.create(user=u, status="done", name="Nieuw ontwerp", brief={"name": "Zwemvereniging De Fuut"})
+    assert sitecreator.name_of(new) == "Zwemvereniging De Fuut" and sitecreator.listing(u)[0]["name"] == "Zwemvereniging De Fuut" and sitecreator.public(new)["name"] == "Zwemvereniging De Fuut"
+    sitecreator._set(new.pk, brief={"name": "Zwemvereniging De Fuut"})  # saving: the name goes to the design itself
+    new.refresh_from_db()
+    assert new.name == "Zwemvereniging De Fuut"
+    own = sitecreator.SiteDesignJob.objects.create(user=u, status="done", name="Mijn eigen naam", brief={"name": "Iets anders"})
+    sitecreator._set(own.pk, brief={"name": "Iets anders"})
+    own.refresh_from_db()
+    assert own.name == "Mijn eigen naam" and sitecreator.name_of(own) == "Mijn eigen naam"  # a name that was chosen is never replaced
+
+    monkeypatch.setattr(sitecreator.ai, "available", lambda: True)
+    monkeypatch.setattr(sitecreator.threading, "Thread", lambda target, args, daemon: type("T", (), {"start": lambda self: target(*args)})())
+    monkeypatch.setattr(sitecreator, "_prefill_photos", lambda pk, msgs: None)
+    monkeypatch.setattr(sitecreator, "_ask", lambda *a, **k: json.dumps({"reply": "Ingevuld.", "ready": False, "questions": [{"id": "name", "q": "Naam?", "type": "text", "default": "Porbandar Open Water Swimming Association"}]}))
+    job = sitecreator.SiteDesignJob.objects.create(user=u, status="draft", name="Nieuw ontwerp", brief={"chat": True})
+    sitecreator.chat(job, "een website voor een zwemvereniging")
+    sitecreator.answer_prefill(sitecreator.SiteDesignJob.objects.get(pk=job.pk), True)
+    job.refresh_from_db()
+    assert job.name == "Porbandar Open Water Swimming Association"  # the assumed name is the name of the design at once

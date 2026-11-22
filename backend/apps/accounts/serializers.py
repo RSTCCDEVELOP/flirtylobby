@@ -137,6 +137,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     module_levels = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()  # the company of this user: the page variable {{user.bedrijf}}
+    idle = serializers.SerializerMethodField()  # how long this person may do nothing before he is asked / logged out (the setting of the website)
+
+    def get_idle(self, obj):
+        from apps.core import system
+
+        return system.idle()
 
     def get_company(self, obj):
         e = obj.entities.exclude(name="").order_by("is_own", "name").first()  # a company he is linked to; the company of the website when he is linked to nothing else
@@ -226,8 +232,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"] + PROFILE_FIELDS
-        read_only_fields = ["id", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"]
+        fields = ["id", "idle", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"] + PROFILE_FIELDS
+        read_only_fields = ["id", "idle", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"]
         extra_kwargs = WORD_KWARGS
 
 
