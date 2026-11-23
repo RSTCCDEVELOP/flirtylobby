@@ -90,3 +90,30 @@ def test_own_company_of_the_master_is_never_found(site, person):
     own = Entity.objects.create(kind="bedrijf", is_own=True, name="Master BV")
     own.users.add(person)
     assert ownerlookup.lookup_company(site, "Master BV")["exists"] is False
+
+
+def test_search_finds_part_of_name_address_postcode_and_email_without_giving_addresses_back(site, person):
+    for q in ("shop", "Hoofdstr", "3511 aa", "3511AA", "utrecht", "jan@example"):
+        r = ownerlookup.search(site, q)["results"]
+        assert [x["name"] for x in r] == ["Shop BV"], q
+        assert set(r[0]) == {"id", "name", "city"}
+    assert ownerlookup.search(site, "ab")["results"] == [] and ownerlookup.search(site, "zzzz")["results"] == []
+    assert ownerlookup.lookup_company(site, "shop")["exists"]  # a part of the name is enough when it is only one company
+
+
+def test_contact_person_is_chosen_from_the_linked_names_and_gets_the_code(site, person, monkeypatch):
+    sent = {}
+    monkeypatch.setattr("apps.security.twofa.issue_code", lambda user, force_email=False: sent.update(user=user))
+    monkeypatch.setattr("apps.security.twofa.check_code", lambda user, code: code == "123456")
+    other = get_user_model().objects.create_user(username="els@example.com", email="els@example.com", password="x", first_name="Els", last_name="Bakker")
+    ent = Entity.objects.get(name="Shop BV")
+    ent.users.add(other)
+    c = ownerlookup.contacts(site, ent.pk)["contacts"]
+    assert [x["name"] for x in c] == ["Els Bakker", "Jan Jansen"] and all(set(x) == {"id", "name"} for x in c)
+    els = [x for x in c if x["name"] == "Els Bakker"][0]
+    r = ownerlookup.send(site, "", entity=ent.pk, user_id=els["id"])
+    assert sent["user"] == other and "els" not in r["hint"].split("@")[0][1:]
+    out = ownerlookup.fetch(site, r["challenge"], "123456")["fields"]
+    assert out["contact_first_name"] == "Els" and out["company_name"] == "Shop BV"
+    with pytest.raises(ValueError):
+        ownerlookup.send(site, "", entity=ent.pk, user_id=99999)

@@ -118,8 +118,12 @@ def _owner_step(request, step):
             return Response(ownerlookup.lookup(site, d.get("email")))
         if step == "company":
             return Response(ownerlookup.lookup_company(site, str(d.get("name") or "")[:120]))
+        if step == "search":
+            return Response(ownerlookup.search(site, str(d.get("q") or "")[:80]))
+        if step == "contacts":
+            return Response(ownerlookup.contacts(site, d.get("entity")))
         if step == "send":
-            return Response(ownerlookup.send(site, d.get("email"), str(d.get("company") or "")[:120]))
+            return Response(ownerlookup.send(site, d.get("email"), str(d.get("company") or "")[:120], d.get("entity"), d.get("user")))
         return Response(ownerlookup.fetch(site, d.get("challenge"), d.get("code")))
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -137,6 +141,20 @@ def owner_lookup(request):
 @permission_classes([AllowAny])
 def owner_company(request):
     return _owner_step(request, "company")
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def owner_search(request):
+    return _owner_step(request, "search")
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def owner_contacts(request):
+    return _owner_step(request, "contacts")
 
 
 @api_view(["POST"])

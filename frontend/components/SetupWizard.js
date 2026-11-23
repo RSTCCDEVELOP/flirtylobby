@@ -71,6 +71,7 @@ export default function SetupWizard() {
   const [upd, setUpd] = useState(null);  // update mode: a module or plugin was switched on or off and the licence price changed: {old, new, delta, number}; the licence is updated with a new agreement
   const [done, setDone] = useState(null);  // the licence that was made: shown when everything is saved
   const [pay, setPay] = useState({ busy: false, error: "" });  // the payment step (Stripe)
+  const [finder, setFinder] = useState({ q: "", busy: false, results: null, entity: null, contacts: null, error: "" });  // the search for a company that is known on the easy2edit server (name, address, postcode or e-mail)
   const [owner, setOwner] = useState({ source: "email", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });  // the contact e-mail is known on the easy2edit server: "" | "found" | "code" | "done"
   const [consent, setConsent] = useState({ method: "email", sent: false, busy: false, error: "", shown: "" });  // the consent with the licence: a code (000-000) by e-mail or SMS
   const [forced, setForced] = useState(false);  // opened again by hand (button on the Basisgegevens page), also when everything is filled in
@@ -299,14 +300,24 @@ export default function SetupWizard() {
     setOwner({ source: "email", checked: email, status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
     try { const r = await api("/system/setup/owner/lookup/", { method: "POST", body: { email } }); if (r.exists) setOwner((o) => (o.checked === email ? { ...o, status: "found" } : o)); } catch { /* the form never waits for this */ }
   };
-  const checkCompany = async () => {  // the button Controleer after the company name: is this company known on the easy2edit server?
-    const name = String(form.company_name || "").trim();
-    if (name.length < 3) return;
-    setOwner({ source: "company", checked: name, status: "", challenge: "", hint: "", code: "", busy: true, error: "" });
-    try {
-      const r = await api("/system/setup/owner/company/", { method: "POST", body: { name } });
-      setOwner((o) => (o.checked === name ? { ...o, busy: false, status: r.exists ? "found" : "none", hint: r.hint || "" } : o));
-    } catch (e) { setOwner((o) => ({ ...o, busy: false, status: "none", error: errorText(e) })); }
+  const searchCompanies = async () => {  // the search field next to the company name: name, address, postcode or e-mail address (a part is enough)
+    const q = String(finder.q || "").trim();
+    if (q.length < 3) return;
+    setOwner({ source: "entity", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
+    setFinder((f) => ({ ...f, busy: true, results: null, entity: null, contacts: null, error: "" }));
+    try { const r = await api("/system/setup/owner/search/", { method: "POST", body: { q } }); setFinder((f) => ({ ...f, busy: false, results: r.results || [] })); }
+    catch (e) { setFinder((f) => ({ ...f, busy: false, results: [], error: errorText(e) })); }
+  };
+  const pickCompany = async (c) => {  // a company of the results: who is the contact person? (the names that are linked to it)
+    setOwner({ source: "entity", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
+    setFinder((f) => ({ ...f, entity: c, contacts: null, busy: true, error: "" }));
+    try { const r = await api("/system/setup/owner/contacts/", { method: "POST", body: { entity: String(c.id) } }); setFinder((f) => ({ ...f, busy: false, contacts: r.contacts || [] })); }
+    catch (e) { setFinder((f) => ({ ...f, busy: false, contacts: [], error: errorText(e) })); }
+  };
+  const pickContact = async (c, u) => {  // the contact person is chosen: the code goes to that person
+    setOwner({ source: "entity", checked: String(c.id), entity: c.id, user: u.id, status: "found", challenge: "", hint: "", code: "", busy: true, error: "" });
+    try { const r = await api("/system/setup/owner/send/", { method: "POST", body: { entity: String(c.id), user: String(u.id) } }); setOwner((o) => ({ ...o, busy: false, status: "code", challenge: r.challenge, hint: r.hint, code: "" })); }
+    catch (e) { setOwner((o) => ({ ...o, busy: false, status: "found", error: errorText(e) })); }
   };
   const sendOwnerCode = async () => {
     setOwner((o) => ({ ...o, busy: true, error: "" }));
@@ -326,11 +337,12 @@ export default function SetupWizard() {
       setOwner((o) => ({ ...o, busy: false, status: "done" }));
     } catch (e) { setOwner((o) => ({ ...o, busy: false, code: "", error: errorText(e) })); }
   };
-  const co = owner.source === "company";
+  const co = owner.source !== "email";
   const ownerBox = owner.status ? (
     <div className="e2e-stack" data-easy2edit-tag="ui-alerts" style={{ gridColumn: "1 / -1", gap: ".6rem", padding: ".75rem .9rem", border: "1px solid var(--e2e-border, #e5e0d8)", borderRadius: "var(--e2e-radius, 10px)" }}>
       {owner.status === "none" && <span className="e2e-hint">{owner.error || tx("Dit bedrijf is niet gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
-      {owner.status === "found" && <>
+      {owner.status === "found" && owner.source === "entity" && (owner.error ? <span className="e2e-error">{owner.error}</span> : <span className="e2e-hint">{tx("Bezig…")}</span>)}
+      {owner.status === "found" && owner.source !== "entity" && <>
         <strong>{co ? tx("Dit bedrijf is al bekend bij easy2edit.") : tx("Dit e-mailadres is al bekend bij easy2edit.")}</strong>
         <span className="e2e-hint">{co ? `${tx("Wil je alle gegevens overnemen? Je krijgt eerst een code per e-mail, die gaat naar")} ${owner.hint}.` : tx("Wil je de gegevens downloaden en laten invullen? Je krijgt eerst een code per e-mail.")}</span>
         {owner.error && <span className="e2e-error">{owner.error}</span>}
@@ -407,13 +419,41 @@ export default function SetupWizard() {
                 {field("site_name", tx("Naam van de website"), { span: "1 / -1" })}
                 <div className="e2e-field" style={{ gridColumn: "1 / -1" }}>
                   <label className="e2e-label" htmlFor="sw-company_name"><span>{tx("Bedrijfsnaam")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
-                  <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
-                    <input id="sw-company_name" className={`e2e-input${errs.company_name ? " e2e-input--error" : ""}`} style={{ flex: 1, minWidth: 0 }} value={form.company_name || ""} onChange={set("company_name")} autoComplete="organization" aria-invalid={errs.company_name ? "true" : undefined} aria-required="true" />
-                    {d?.license_server?.mode === "linked" && <button type="button" className="btn" disabled={owner.busy || String(form.company_name || "").trim().length < 3} onClick={checkCompany}>{owner.busy && owner.source === "company" ? tx("Bezig…") : tx("Controleer")}</button>}
-                  </div>
+                  <input id="sw-company_name" className={`e2e-input${errs.company_name ? " e2e-input--error" : ""}`} value={form.company_name || ""} onChange={set("company_name")} autoComplete="organization" aria-invalid={errs.company_name ? "true" : undefined} aria-required="true" />
                   {errs.company_name && <span className="e2e-error">{errs.company_name}</span>}
                 </div>
-                {owner.source === "company" && ownerBox}
+                {d?.license_server?.mode === "linked" && (
+                  <div className="e2e-field" style={{ gridColumn: "1 / -1" }}>
+                    <label className="e2e-label" htmlFor="sw-company_find"><span>{tx("Bestaand bedrijf zoeken bij easy2edit")}</span></label>
+                    <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
+                      <input id="sw-company_find" type="search" className="e2e-input" style={{ flex: 1, minWidth: 0 }} value={finder.q} placeholder={tx("Naam, adres, postcode of e-mailadres (een deel is genoeg)")} onChange={(e) => setFinder((f) => ({ ...f, q: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); searchCompanies(); } }} autoComplete="off" />
+                      <button type="button" className="btn" disabled={finder.busy || finder.q.trim().length < 3} onClick={searchCompanies}>{finder.busy && !finder.entity ? tx("Bezig…") : tx("Zoeken")}</button>
+                    </div>
+                  </div>
+                )}
+                {finder.results && (
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".5rem" }}>
+                    {finder.error && <span className="e2e-error">{finder.error}</span>}
+                    {!finder.results.length && !finder.error && <span className="e2e-hint">{tx("Geen bedrijf gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
+                    {finder.results.length > 0 && <span className="e2e-hint">{tx("Kies je bedrijf:")}</span>}
+                    {finder.results.map((c) => (
+                      <button key={c.id} type="button" onClick={() => pickCompany(c)} aria-pressed={finder.entity?.id === c.id} style={{ textAlign: "left", display: "flex", justifyContent: "space-between", gap: ".6rem", padding: ".6rem .85rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: `1px solid ${finder.entity?.id === c.id ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: finder.entity?.id === c.id ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 10%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}>
+                        <strong>{c.name}</strong><span className="e2e-hint">{c.city}</span>
+                      </button>
+                    ))}
+                    {finder.entity && finder.contacts && (
+                      <div className="e2e-stack" style={{ gap: ".4rem", marginTop: ".3rem" }}>
+                        <strong>{tx("Wie ben jij? Kies de contactpersoon van {0}", finder.entity.name)}</strong>
+                        {!finder.contacts.length && <span className="e2e-hint">{tx("Er zijn geen personen aan dit bedrijf gekoppeld.")}</span>}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                          {finder.contacts.map((u) => <button key={u.id} type="button" className="btn" disabled={owner.busy} onClick={() => pickContact(finder.entity, u)} aria-pressed={owner.user === u.id && owner.source === "entity"}>{u.name}</button>)}
+                        </div>
+                        <span className="e2e-hint">{tx("De code gaat naar het e-mailadres van de gekozen persoon.")}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {owner.source === "entity" && ownerBox}
                 {field("frontend_url", tx("Hoofd-URL"), { placeholder: "www.voorbeeld.nl", inputMode: "url", span: "1 / -1" })}
                 <span className="e2e-hint" style={{ gridColumn: "1 / -1" }}>{tx("Het hoofdadres van de website, zonder pad of slash erachter. Dit staat ook op het licentiescherm.")}</span>
               </>}

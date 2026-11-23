@@ -619,9 +619,9 @@ def system_setup_owner(request, step):
 
     if not can_admin(request.user):
         return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
-    if step not in ("lookup", "company", "send", "fetch"):
+    if step not in ("lookup", "company", "search", "contacts", "send", "fetch"):
         return Response({"detail": "Onbekende stap."}, status=404)
-    body = {k: str(request.data.get(k) or "")[:300] for k in ("email", "name", "company", "challenge", "code")}
+    body = {k: str(request.data.get(k) or "")[:300] for k in ("email", "name", "company", "challenge", "code", "q", "entity", "user")}
     try:
         return Response(ownerlookup.ask(step, body))
     except ValueError as e:
