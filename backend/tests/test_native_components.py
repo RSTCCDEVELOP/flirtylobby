@@ -75,6 +75,18 @@ def _kit(tag):
 COLORS = {"primary": "#1b97d3", "secondary": "#f08a35", "card": "#f5f4f0", "muted": "#777777"}
 
 
+@pytest.fixture
+def taken_apart(monkeypatch):
+    """The old behaviour (a component of the UI-kit taken apart into blocks): the default is that it stays one component, exactly like the design."""
+    monkeypatch.setattr(DR, "KEEP_KIT_COMPONENTS", False)
+
+
+def test_kit_components_stay_components_by_default():
+    root = parse_html(_kit("ui-testimonials"))
+    rows = [{"title": "x", "cells": [{"items": [{"type": "code", "kit": True, "tag": "ui-testimonials"}]}]}]
+    assert DR.expand_native(rows, root, {}, COLORS) == rows  # the review cards with their avatars are not turned into plain texts
+
+
 def _expand(tag):
     root = parse_html(_kit(tag))
     rows = [{"title": "x", "anchor": "sec", "cells": [{"items": [{"type": "code", "kit": True, "tag": tag}]}]}]
@@ -85,7 +97,7 @@ def _types(rows):
     return [it["type"] for r in rows for c in r["cells"] for it in c["items"]]
 
 
-def test_features_become_separate_objects_with_icons():
+def test_features_become_separate_objects_with_icons(taken_apart):
     rows = _expand("ui-features")
     assert rows[0]["anchor"] == "sec" and "code" not in _types(rows)  # no component block is left
     t = _types(rows)
@@ -93,7 +105,7 @@ def test_features_become_separate_objects_with_icons():
     assert len(rows[1]["cells"]) == 4
 
 
-def test_testimonials_faq_stats_cta_pricing_become_blocks():
+def test_testimonials_faq_stats_cta_pricing_become_blocks(taken_apart):
     rows = _expand("ui-testimonials")
     assert len(rows[0]["cells"]) == 2 and rows[0]["cells"][0]["card"]["bg"] == "#f5f4f0" and "code" not in _types(rows)
     faq = _expand("ui-faq")
@@ -106,7 +118,7 @@ def test_testimonials_faq_stats_cta_pricing_become_blocks():
     assert len(price[0]["cells"]) == 3 and "code" not in _types(price) and _types(price).count("button") == 3
 
 
-def test_a_row_with_more_than_the_component_stays_as_it_is():
+def test_a_row_with_more_than_the_component_stays_as_it_is(taken_apart):
     root = parse_html(_kit("ui-faq"))
     rows = [{"cells": [{"items": [{"type": "code", "kit": True, "tag": "ui-faq"}, {"type": "text", "html": "<p>x</p>"}]}]}]
     assert DR.expand_native(rows, root, {}, COLORS) == rows
@@ -127,7 +139,7 @@ def test_icon_item_becomes_a_picture_file_of_its_own():
     assert ctx["images"][items[0]["ref"]]  # a media item (the svg file) belongs to the icon
 
 
-def test_gallery_tag_becomes_the_photo_carousel_item():
+def test_gallery_tag_becomes_the_photo_carousel_item(taken_apart):
     root = parse_html('<div data-easy2edit-tag="ui-gallery"><div class="e2e-gallery"><img src="img/a.jpg"><img src="img/b.jpg"><img src="img/c.jpg"></div></div>')
     rows = [{"title": "g", "cells": [{"items": [{"type": "code", "kit": True, "tag": "ui-gallery"}]}]}]
     out = DR.expand_native(rows, root, {"img/a.jpg": 0, "img/b.jpg": 1, "img/c.jpg": 2}, COLORS)
@@ -146,3 +158,12 @@ def test_the_hero_keeps_its_picture_when_the_photo_has_capitals_in_its_name(db):
     fixed = sitecreator.fix_photo_names({"index.html": hero}, {"photos": [{"id": 3, "file": "unsplash-tr7rwqdv5m4.jpg"}]})["index.html"]
     rows = DR.native_component_rows(_node(fixed), imgs)
     assert len(rows[0]["cells"]) == 2 and rows[0]["cells"][1]["items"][0]["img"] == 3  # the picture is in its own cell, like in the Creator tab
+
+
+def test_two_components_of_the_same_kind_in_one_section_each_keep_their_own_html():
+    """A section with two call to action boxes: the second item must not get the html of the first (or the other way round)."""
+    root = parse_html('<section><div data-easy2edit-tag="ui-cta"><div class="e2e-cta"><h2>Eerste</h2></div></div><div data-easy2edit-tag="ui-cta"><div class="e2e-cta"><h2>Tweede</h2></div></div></section>')
+    rows = [{"cells": [{"items": [{"type": "code", "kit": True, "tag": "ui-cta"}, {"type": "code", "kit": True, "tag": "ui-cta"}]}]}]
+    out = DR.fill_components(rows, root, {})
+    items = out[0]["cells"][0]["items"]
+    assert "Eerste" in items[0]["html"] and "Tweede" not in items[0]["html"] and "Tweede" in items[1]["html"]
