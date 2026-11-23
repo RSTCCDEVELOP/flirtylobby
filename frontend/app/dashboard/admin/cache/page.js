@@ -13,6 +13,7 @@ import { tx } from "../../../../lib/t";
 import { useAuth } from "../../../../components/AuthContext";
 import Loading from "../../../../components/Loading";
 import { IconLeaf } from "../../../../components/Icons";
+import { SpeedRuns, SpeedTestPopup } from "../../../../components/SpeedTest";
 
 const SECONDS = [15, 30, 60, 120, 300, 600, 1800, 3600];
 const label = (s) => (s >= 60 ? `${s / 60} ${s === 60 ? tx("minuut") : tx("minuten")}` : `${s} ${tx("seconden")}`);
@@ -24,6 +25,8 @@ export default function CachePage() {
   const [c, setC] = useState(null);
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
+  const [speed, setSpeed] = useState(false);  // the pop-up with the live speed test
+  const [runKey, setRunKey] = useState(0);  // a new recording: the list is read again
   useEffect(() => { api("/system/cache/").then(setC).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
   const send = async (name, method, body, ok) => {
     setBusy(name); setMsg(null);
@@ -57,7 +60,7 @@ export default function CachePage() {
               <small className="muted">{tx("Elke wijziging die je opslaat maakt de paginacache meteen weer vers.")}</small>
             </label>
           </div>
-          <div><button type="button" className="btn" disabled={!!busy} onClick={() => send("clear", "POST", {}, tx("De cache is gewist."))}>{busy === "clear" ? tx("Bezig…") : tx("Cache nu wissen")}</button></div>
+          <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", flexWrap: "wrap" }}><button type="button" className="btn" disabled={!!busy} onClick={() => send("clear", "POST", {}, tx("De cache is gewist."))}>{busy === "clear" ? tx("Bezig…") : tx("Cache nu wissen")}</button><button type="button" className="btn primary" onClick={() => setSpeed(true)}>{tx("Snelheidstest starten")}</button></div>
         </div>
         <div className="card eco-treebox" style={{ display: "grid", gap: ".5rem", alignContent: "start" }}>
           <span className="eco-ic" style={{ position: "static" }} aria-hidden="true"><IconLeaf /></span>
@@ -66,6 +69,8 @@ export default function CachePage() {
           <small className="muted">{tx("Gebruikte opslag")}: {tx(NAMES[c.backend] || c.backend)}{user?.is_staff ? ` · ${tx("Wijzigen kan bij Basisgegevens.")}` : ""} · {c.live === "ok" ? tx("werkt") : tx("probleem")}</small>
         </div>
       </div>
+      <SpeedRuns refreshKey={runKey} />
+      {speed && <SpeedTestPopup onClose={() => setSpeed(false)} onSaved={() => setRunKey((n) => n + 1)} />}
     </div>
   );
 }

@@ -193,6 +193,22 @@ class SystemSettings(models.Model):
         system.forget_cache()  # (the system cache keeps a copy of these settings)
 
 
+class SpeedRun(models.Model):
+    """A recorded speed test (Admin -> Cache -> Snelheidstest): the measurements every second, with a summary and the cache settings of that moment, to analyse later."""
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    by = models.CharField(max_length=150, blank=True)  # who ran it (e-mail)
+    label = models.CharField(max_length=120, blank=True)
+    seconds = models.PositiveIntegerField(default=0)
+    samples = models.JSONField(default=list, blank=True)  # [{t (second), html, api, db, mbps, server}] in ms (mbps in Mbit/s)
+    summary = models.JSONField(default=dict, blank=True)  # per metric {avg, min, max, p95, n}
+    settings = models.JSONField(default=dict, blank=True)  # page cache and system cache on/off and seconds at that moment, the build
+    host = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
 class SalesVerification(models.Model):
     """E-mail confirmation of the calculation form by a link: the visitor opens the link in the mail, the form (waiting for it) then gets its proof."""
 
