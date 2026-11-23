@@ -94,6 +94,7 @@ export default function SetupWizard() {
   const [costInfo, setCostInfo] = useState(false);
   const [upd, setUpd] = useState(null);  // update mode: a module or plugin was switched on or off and the licence price changed: {old, new, delta, number}; the licence is updated with a new agreement
   const [done, setDone] = useState(null);  // the licence that was made: shown when everything is saved
+  const [invCode, setInvCode] = useState("");  // the code that confirms paying on account (like the terms)
   const [pay, setPay] = useState({ busy: false, error: "" });  // the payment step (Stripe)
   const [finder, setFinder] = useState({ q: "", busy: false, results: null, entity: null, contacts: null, error: "" });  // the search for a company that is known on the easy2edit server (name, address, postcode or e-mail)
   const [owner, setOwner] = useState({ source: "email", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });  // the contact e-mail is known on the easy2edit server: "" | "found" | "code" | "done"
@@ -185,6 +186,9 @@ export default function SetupWizard() {
   useEffect(() => {  // a superadmin: the code is filled in at once (nothing is sent, nothing is pressed)
     if (step === "agree" && user?.is_staff && !upd && form.consent_ok !== "1" && !form.consent_code) setForm((f) => ({ ...f, consent_code: "000-000" }));
   }, [step, user?.is_staff, upd, form.consent_ok, form.consent_code]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {  // a superadmin: the code for paying on account is filled in at once
+    if (step === "pay" && user?.is_staff && form.pay_invoice === "1" && form.pay_ok !== "1" && !invCode) setInvCode("000-000");
+  }, [step, user?.is_staff, form.pay_invoice, form.pay_ok, invCode]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {  // everything that is filled in is kept (also when the form is stopped)
     if (!allowed || !d || closed || done || upd) return undefined;
     const t = setTimeout(() => saveDraft(uid, form, step), 400);
@@ -307,6 +311,13 @@ export default function SetupWizard() {
     setPay({ busy: true, error: "" });
     try { await api("/system/setup/pay/invoice/", { method: "POST", body: { hosting: form.hosting, renew_months: form.renew_months } }); setForm((f) => ({ ...f, pay_ok: "1", pay_invoice_done: "1", pay_none_done: "" })); setPay({ busy: false, error: "" }); }
     catch (e) { setPay({ busy: false, error: errorText(e) }); }
+  };
+  const typeInvCode = (raw) => { let v = String(raw || "").replace(/\D/g, "").slice(0, 6); v = v.length > 3 ? `${v.slice(0, 3)}-${v.slice(3)}` : v; setInvCode(v); setPay((p) => ({ ...p, error: "" })); };
+  const confirmInvoice = async (bypass) => {  // paying on account must be confirmed with a code, like the terms; a superadmin can bypass (the code is filled in already)
+    setPay({ busy: true, error: "" });
+    try { await api("/system/setup/consent/verify/", { method: "POST", body: { code: bypass || (user?.is_staff && invCode === "000-000") ? "@" : invCode } }); }
+    catch (e) { setPay({ busy: false, error: errorText(e) }); return; }
+    await payInvoice();
   };
   const method = canMail && (consent.method === "email" || !canSms) ? "email" : "sms";  // SMS only when the SMS service (API keys) is on
   const sendCode = async () => {
@@ -677,10 +688,27 @@ export default function SetupWizard() {
                     ) : (
                       <>
                         {form.pay_invoice === "1" && <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{tx("De factuur wordt iedere 1e van de maand verstuurd.")}</div></div>}
+                        {form.pay_invoice === "1" && (
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: "1rem 1.6rem", alignItems: "start", padding: ".9rem 1rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 25%, var(--e2e-line, var(--line)))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, #fff))" }}>
+                            <div className="e2e-stack" style={{ gap: ".6rem", alignItems: "flex-start" }}>
+                              <strong>{tx("Bevestig op rekening met een code")}</strong>
+                              <span className="e2e-hint">{consent.sent ? tx("De code is verstuurd. Die is 10 minuten geldig.") : `${tx("De code gaat naar")} ${method === "email" ? form.contact_email : form.mobile}`}{consent.shown ? ` · ${tx("Code")}: ${consent.shown}` : ""}</span>
+                              <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap" }}>
+                                <button type="button" className="e2e-btn e2e-btn--outline" style={{ height: 42, margin: 0 }} disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
+                                {user?.is_staff && <button type="button" className="e2e-btn e2e-btn--outline" style={{ height: 42, margin: 0 }} disabled={pay.busy} onClick={() => confirmInvoice(true)}>{tx("Bypass (superadmin)")}</button>}
+                              </div>
+                              {consent.error && <span className="e2e-error">{consent.error}</span>}
+                            </div>
+                            <div className="e2e-field" style={{ alignItems: "flex-start" }}>
+                              <label className="e2e-label" htmlFor="sw-inv_code"><span>{tx("Code")}</span></label>
+                              <CodeInput value={invCode} onChange={typeInvCode} invalid={!!pay.error} label={tx("Code")} />
+                            </div>
+                          </div>
+                        )}
                         {!d.pay?.provider && form.pay_invoice !== "1" && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Stripe is niet gekoppeld voor de licentie (Super admin → Licentie → Betalen). Kies Op rekening om door te gaan.")}</div></div>}
                         <div className="e2e-row" style={{ gap: ".7rem", alignItems: "center", flexWrap: "wrap" }}>
                           {form.pay_invoice === "1"
-                            ? <button type="button" className="e2e-btn" disabled={pay.busy} onClick={payInvoice}>{tx("Op rekening")}</button>
+                            ? <button type="button" className="e2e-btn" disabled={pay.busy || invCode.length !== 7} onClick={() => confirmInvoice(false)}>{tx("Op rekening")}</button>
                             : d.pay?.provider
                               ? <button type="button" className="e2e-btn" disabled={pay.busy} onClick={startPay}>{pay.busy ? tx("Je wordt doorgestuurd naar Stripe…") : tx("Betalen met Stripe")}</button>
                               : isLocal() && user?.is_staff ? <button type="button" className="e2e-btn" disabled={pay.busy} onClick={payTest}>{tx("Betaal (test)")}</button> : null}
