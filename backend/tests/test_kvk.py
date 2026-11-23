@@ -45,8 +45,11 @@ def test_search_and_profile_are_mapped_and_the_test_environment_needs_no_key(mon
     r = kvk.search("RST")
     assert r == [{"kvk": "12345678", "naam": "RST Coaching en Consultancy BV", "straat": "Dorpsstraat", "postcode": "1234AB", "plaats": "Hilversum", "type": "hoofdvestiging"}]
     assert seen[0][1]["naam"] == "RST"
-    kvk.search("12345678"); kvk.search("1234 ab")
-    assert seen[1][1]["kvkNummer"] == "12345678" and seen[2][1]["postcode"] == "1234AB"
+    kvk.search("12345678"); kvk.search("1234 ab 12a")
+    assert seen[1][1]["kvkNummer"] == "12345678" and seen[2][1]["postcode"] == "1234AB" and seen[2][1]["huisnummer"] == "12" and seen[2][1]["huisletter"] == "A"
+    assert seen[0][1]["type"] == ["hoofdvestiging", "rechtspersoon"] and "resultatenPerPagina" in seen[0][1]
+    with pytest.raises(ValueError):
+        kvk.search("1234AB")  # the KVK wants a house number with a postcode
     assert kvk.search("ab") == []
     f = kvk.profile("12345678")["fields"]
     assert f["registration_no"] == "12345678" and f["street"] == "Dorpsstraat" and f["house_number"] == "1A" and f["postal_code"] == "1234AB" and f["city"] == "Hilversum" and f["country"] == "Nederland"

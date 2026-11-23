@@ -41,7 +41,7 @@ def _get(path, params, cfg=None):
     cfg = cfg or settings()
     if not cfg:
         raise ValueError("De koppeling met de KVK is niet ingesteld (Admin → API keys).")
-    url = f"{BASES[cfg['omgeving']]}{path}" + ("?" + urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "")}) if params else "")
+    url = f"{BASES[cfg['omgeving']]}{path}" + ("?" + urllib.parse.urlencode({k: v for k, v in params.items() if v not in (None, "", [])}, doseq=True) if params else "")
     req = urllib.request.Request(url, headers={"apikey": cfg["api_key"], "Accept": "application/json", "User-Agent": "easy2edit"})
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
@@ -65,24 +65,27 @@ def _addr(a):
     street = str(b.get("straatnaam") or b.get("straatHuisnummer") or "").strip()
     nr = (str(b.get("huisnummer") or "") + str(b.get("huisletter") or "")).strip()
     toev = str(b.get("huisnummerToevoeging") or "").strip()
-    return {"street": street, "house_number": (nr + ("-" + toev if toev else "")).strip(), "postal_code": str(b.get("postcode") or "").strip(), "city": str(b.get("plaats") or "").strip(),
+    return {"street": street, "house_number": (nr + (" " + toev if toev else "")).strip(), "postal_code": str(b.get("postcode") or "").strip(), "city": str(b.get("plaats") or "").strip(),
             "country": str(b.get("land") or "").strip()}
 
 
-def search(q, limit=10):
+def search(q, limit=10, cfg=None):
     """Companies that match a name, a KVK number (8 digits) or a postcode (1234AB). Only the main establishments, one line per company."""
     q = re.sub(r"\s+", " ", str(q or "")).strip()[:80]
     if len(re.sub(r"\s", "", q)) < 3:
         return []
+    types = ["hoofdvestiging", "rechtspersoon"]  # one line per company: the main establishment, or the legal person when there is no establishment
+    m = re.match(r"^(\d{4})\s*([A-Za-z]{2})(?:\s+(\d{1,5})\s*([A-Za-z]?))?$", q)
     if re.fullmatch(r"\d{8}", q):
         params = {"kvkNummer": q}
-    elif POSTCODE_RE.match(q):
-        m = POSTCODE_RE.match(q)
-        params = {"postcode": m.group(1) + m.group(2).upper(), "type": "hoofdvestiging"}
+    elif m:
+        if not m.group(3):
+            raise ValueError("Geef bij een postcode ook het huisnummer (bijvoorbeeld 1234AB 12), zo vraagt de KVK het.")
+        params = {"postcode": m.group(1) + m.group(2).upper(), "huisnummer": m.group(3), "huisletter": (m.group(4) or "").upper(), "type": types}
     else:
-        params = {"naam": q, "type": "hoofdvestiging"}
-    params["resultaatPerPagina"] = str(max(1, min(int(limit), 20)))
-    cfg = settings()
+        params = {"naam": q, "type": types}
+    params["resultatenPerPagina"] = str(max(1, min(int(limit) * 2, 20)))  # (a company can come twice: as establishment and as legal person)
+    cfg = cfg or settings()
     try:
         d = _get("/v2/zoeken", params, cfg)
     except LookupError:
@@ -98,27 +101,33 @@ def search(q, limit=10):
     return out[:limit]
 
 
-def profile(kvk):
+def profile(kvk, cfg=None):
     """The data of one company (Basisprofiel) in the field names of the licence form / entity. Costs a few cents: only for a chosen company."""
     kvk = re.sub(r"\D", "", str(kvk or ""))
     if len(kvk) != 8:
         raise ValueError("Een KVK-nummer heeft 8 cijfers.")
     try:
-        d = _get(f"/v1/basisprofielen/{kvk}", {"geoData": "false"})
+        d = _get(f"/v1/basisprofielen/{kvk}", {"geoData": "False"}, cfg)
     except LookupError as e:
         raise ValueError("Dit KVK-nummer is niet gevonden.") from e
     emb = d.get("_embedded") or d.get("embedded") or {}
     main = emb.get("hoofdvestiging") or {}
+    owner = emb.get("eigenaar") or {}
     adres = None
-    for x in main.get("adressen") or []:
-        if x.get("type") == "bezoekadres":
-            adres = x
+    for block in (main, owner):  # the visiting address of the main establishment; a foundation without establishment has it at the owner
+        for kind in ("bezoekadres", None):
+            for x in block.get("adressen") or []:
+                if (kind is None and x.get("postbusnummer") is None) or x.get("type") == kind:
+                    adres = x
+                    break
+            if adres:
+                break
+        if adres:
             break
-    adres = adres or ((main.get("adressen") or [None])[0]) or {}
+    adres = adres or {}
     a = _addr(adres)
     names = [str(h.get("naam") or "").strip() for h in (d.get("handelsnamen") or main.get("handelsnamen") or []) if h.get("naam")]
-    owner = emb.get("eigenaar") or {}
     fields = {"company_name": str(d.get("naam") or (names[0] if names else "")).strip(), "legal_name": str(d.get("naam") or "").strip(), "registration_no": kvk,
               "street": a["street"], "house_number": a["house_number"], "postal_code": a["postal_code"], "city": a["city"], "country": a["country"] or "Nederland",
-              "website": str((main.get("websites") or [""])[0] or "").strip(), "legal_form": str(owner.get("rechtsvorm") or owner.get("uitgebreideRechtsvorm") or "").strip(), "trade_names": names[:10]}
+              "website": str(((main.get("websites") or owner.get("websites") or [""])[0]) or "").strip(), "legal_form": str(owner.get("rechtsvorm") or owner.get("uitgebreideRechtsvorm") or "").strip(), "trade_names": names[:10]}
     return {"fields": {k: v for k, v in fields.items() if v}}
