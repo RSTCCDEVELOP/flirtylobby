@@ -412,7 +412,7 @@ def build_from_site(key, name, description="", author="", version="1.0.0", previ
     version = str(version or "1.0.0").strip()
     if not re.fullmatch(r"\d{1,4}\.\d{1,4}\.\d{1,4}", version):
         raise TemplateError("De versie moet er zo uitzien: 1.0.0.")
-    description = richtext.plain(richtext.clean_small(description, 1500)) if description else ""
+    description = __import__("html").unescape(richtext.plain(richtext.clean_small(description, 1500))) if description else ""  # (plain text: no &amp; in the description)
     bundle = sb.export(list(SYSTEM_SECTIONS), False, True, {"include_data": False})  # (no secrets, and no rows of the tables of plugins: those are data of users)
     chosen = set(pages) if pages else {p["key"] for p in site_pages() if p["default"]}
     only = chosen | (_menu_keys() if chosen else set())
@@ -512,7 +512,7 @@ def build_from_backup(backup, key, name, description="", author="", version="1.0
     version = str(version or "1.0.0").strip()
     if not re.fullmatch(r"\d{1,4}\.\d{1,4}\.\d{1,4}", version):
         raise TemplateError("De versie moet er zo uitzien: 1.0.0.")
-    description = richtext.plain(richtext.clean_small(description, 1500)) if description else ""
+    description = __import__("html").unescape(richtext.plain(richtext.clean_small(description, 1500))) if description else ""  # (plain text: no &amp; in the description)
     try:
         zf, bman = bs._open(bs.path_of(backup))
     except bs.BackupError as e:

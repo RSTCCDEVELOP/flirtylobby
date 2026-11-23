@@ -16,6 +16,7 @@ import Loading from "../../../../components/Loading";
 // The templates in the pop-up of the wizard: a gallery with the example pictures, a detail view (big picture with thumbnails, what is in it, how to use it) and the installation from the pop-up itself.
 const MODES = [["copy", "Naast mijn pagina's zetten", "De pagina's van de template komen erbij. Jouw bestaande pagina's blijven staan."], ["replace", "In plaats van mijn pagina's", "Een pagina met hetzelfde adres wordt vervangen door die van de template."]];
 const tint = (n = 12) => `color-mix(in srgb, var(--eco-leaf, #7cc59a) ${n}%, transparent)`;
+const plain = (t) => { try { const a = document.createElement("textarea"); a.innerHTML = String(t || ""); return a.value; } catch { return String(t || ""); } };  // (older templates have &amp; in their description)
 const img = (t, n) => `${apiBase()}/api/templates/${t.key}/preview/${n}/`;
 
 const Badge = ({ children, warm }) => <span style={{ fontSize: ".72rem", fontWeight: 600, padding: ".15rem .55rem", borderRadius: 99, background: warm ? "color-mix(in srgb, #d98f2b 24%, transparent)" : tint(22) }}>{children}</span>;
@@ -29,7 +30,7 @@ function Card({ t, onOpen }) {
       </span>
       <span style={{ display: "grid", gap: ".3rem", padding: "0 .9rem .9rem" }}>
         <strong>{t.name}</strong>
-        <small className="muted" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.description || `v${t.version}`}</small>
+        <small className="muted" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{plain(t.description) || `v${t.version}`}</small>
         <span style={{ display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
           {t.system && <Badge>{tx("Volledig systeem")}</Badge>}
           {t.has_theme && <Badge>{tx("Met eigen thema")}</Badge>}
@@ -41,7 +42,7 @@ function Card({ t, onOpen }) {
   );
 }
 
-function Detail({ t, can, manage, onBack, onInstalled }) {
+function Detail({ t, can, manage, onBack, onInstalled }) {  // eslint-disable-line
   const [n, setN] = useState(0);
   const [mode, setMode] = useState("copy");
   const [scope, setScope] = useState(t.system && !t.has_pages ? "system" : "pages");
@@ -76,8 +77,8 @@ function Detail({ t, can, manage, onBack, onInstalled }) {
   return (
     <div style={{ display: "grid", gap: ".9rem" }}>
       <div><button type="button" className="btn sm" onClick={onBack}>‹ {tx("Alle templates")}</button></div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.1rem", alignItems: "start" }}>
-        <div style={{ display: "grid", gap: ".5rem", minWidth: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.3rem", alignItems: "start" }}>
+        <div style={{ display: "grid", gap: ".6rem", minWidth: 0, position: "sticky", top: 0 }}>
           <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: tint(18), aspectRatio: "16 / 10", boxShadow: "0 8px 26px rgba(0,0,0,.15)" }}>
             {t.previews > 0 && <img src={img(t, n)} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />}
             {t.previews > 1 && <>
@@ -88,8 +89,8 @@ function Detail({ t, can, manage, onBack, onInstalled }) {
           {t.previews > 1 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{Array.from({ length: t.previews }, (_, i) => <button type="button" key={i} onClick={() => setN(i)} aria-label={`${tx("Voorbeeld")} ${i + 1}`} style={{ width: 74, aspectRatio: "16 / 10", padding: 0, borderRadius: 8, overflow: "hidden", cursor: "pointer", border: `2px solid ${n === i ? "var(--eco-green, #2f7d5b)" : "transparent"}`, opacity: n === i ? 1 : .7 }}><img src={img(t, i)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} /></button>)}</div>}
         </div>
         <div style={{ display: "grid", gap: ".7rem", minWidth: 0 }}>
-          <div><strong style={{ fontSize: "1.2rem" }}>{t.name}</strong><br /><small className="muted">v{t.version}{t.author ? ` · ${t.author}` : ""}</small></div>
-          {t.description && <p style={{ margin: 0 }}>{t.description}</p>}
+          <div style={{ display: "grid", gap: ".25rem" }}><strong style={{ fontSize: "1.35rem", lineHeight: 1.2 }}>{t.name}</strong><small className="muted">v{t.version}{t.author ? ` · ${t.author}` : ""}{t.size ? ` · ${(t.size / 1048576).toFixed(1)} MB` : ""}{t.previews ? ` · ${t.previews} ${tx("voorbeelden")}` : ""}</small></div>
+          {t.description && <p style={{ margin: 0, padding: ".7rem .9rem", borderRadius: 12, background: tint(10), lineHeight: 1.55, maxHeight: 190, overflowY: "auto" }}>{plain(t.description)}</p>}
           <div style={{ display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
             {t.system && <Badge>{tx("Volledig systeem")}</Badge>}{t.has_theme && <Badge>{tx("Met eigen thema")}</Badge>}{t.components && <Badge>{tx("Met componentenset")}</Badge>}
             {t.update && <Badge warm>{tx("Nieuwe versie beschikbaar")}</Badge>}{t.applied_version && !t.update && <Badge>{tx("In gebruik")}: v{t.applied_version}</Badge>}
@@ -103,7 +104,7 @@ function Detail({ t, can, manage, onBack, onInstalled }) {
               {scope !== "system" && <div style={{ display: "grid", gap: ".4rem" }}><strong>{tx("Hoe installeren?")}</strong>{MODES.map(([k, l, h]) => <span key={k} style={{ display: "contents" }}>{pick(mode === k, () => setMode(k), l, h)}</span>)}</div>}
               {(t.has_theme || t.components) && <small className="muted">{t.has_theme ? tx("Het thema van de template wordt in gebruik genomen. ") : ""}{t.components ? tx("De componentenset van de template wordt in gebruik genomen.") : ""}</small>}
               {err && <div className="alert" role="alert">{err}</div>}
-              <button type="button" className="btn primary" disabled={busy} onClick={install} style={{ justifySelf: "start", padding: ".6rem 1.2rem" }}>{busy ? tx("Bezig met installeren…") : t.update ? tx("Bijwerken") : tx("Deze template installeren")}</button>
+              <button type="button" className="btn primary" disabled={busy} onClick={install} style={{ width: "100%", padding: ".75rem 1.2rem", fontSize: "1rem" }}>{busy ? tx("Bezig met installeren…") : t.update ? tx("Bijwerken") : tx("Deze template installeren")}</button>
               {busy && <div className="imp-bar imp-wait" role="progressbar" aria-label={tx("Bezig met installeren…")}><span /></div>}
             </div>
           ) : <small className="muted">{tx("Je hebt geen rechten om templates te gebruiken, dus je kunt ze alleen bekijken.")}</small>}
@@ -113,7 +114,7 @@ function Detail({ t, can, manage, onBack, onInstalled }) {
   );
 }
 
-export default function TemplateGallery({ onInstalled }) {
+export default function TemplateGallery({ onInstalled, onDetail }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [q, setQ] = useState("");
@@ -121,9 +122,10 @@ export default function TemplateGallery({ onInstalled }) {
   const load = useCallback(() => api("/templates/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load]);
   const list = useMemo(() => (d?.templates || []).filter((t) => !q.trim() || `${t.name} ${t.description} ${t.author}`.toLowerCase().includes(q.trim().toLowerCase())), [d, q]);
+  const cur = open && d?.templates?.find((t) => t.key === open);
+  useEffect(() => { onDetail?.(!!cur); }, [!!cur]);  // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="alert">{err}</div>;
   if (!d) return <Loading compact />;
-  const cur = open && d.templates.find((t) => t.key === open);
   if (cur) return <Detail key={cur.key} t={cur} can={d.can_use} manage={d.manage} onBack={() => { setOpen(null); load(); }} onInstalled={onInstalled} />;
   return (
     <div style={{ display: "grid", gap: ".8rem" }}>
