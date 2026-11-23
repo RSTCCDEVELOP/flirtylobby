@@ -5,6 +5,14 @@
 # is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 # website https://rstcc.net
 
+# Compression of the text files (HTML, CSS, JavaScript, JSON, SVG): the pages are much lighter and load faster (the static files of the front end are not compressed by the web server itself)
+gzip on;
+gzip_vary on;
+gzip_comp_level 5;
+gzip_min_length 512;
+gzip_proxied any;
+gzip_types text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml font/ttf;
+
 # HTTP: ACME challenge + force HTTPS
 server {
     listen 80;

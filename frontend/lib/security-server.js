@@ -5,12 +5,13 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 import { cache } from "react";
+import { cachedFetch } from "./render-cache";
 
 // Server-side helpers (SSR pages and layout)
 async function getSecurityRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
-    const res = await fetch(`${base}/api/security/public/`, { cache: "no-store" });
+    const res = await cachedFetch(`${base}/api/security/public/`);
     return res.ok ? await res.json() : null;
   } catch {
     return null;

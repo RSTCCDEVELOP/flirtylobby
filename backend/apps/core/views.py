@@ -1138,7 +1138,7 @@ def system_cache(request):
     if request.method == "POST":
         syscache.clear()
     elif request.method == "PUT":
-        part = {k: request.data[k] for k in ("system_cache", "system_cache_seconds") if k in request.data}
+        part = {k: request.data[k] for k in ("system_cache", "system_cache_seconds", "page_cache", "page_cache_seconds") if k in request.data}
         if part:
             cleaned, errors = system.clean(part)
             if errors:
@@ -1149,7 +1149,7 @@ def system_cache(request):
             if err:
                 return Response({"detail": err}, status=status.HTTP_400_BAD_REQUEST)
     s = system.get()
-    return Response({**syscache.info(), "system_cache": bool(s["system_cache"]), "system_cache_seconds": str(s["system_cache_seconds"])})
+    return Response({**syscache.info(), "system_cache": bool(s["system_cache"]), "system_cache_seconds": str(s["system_cache_seconds"]), "page_cache": bool(s["page_cache"]), "page_cache_seconds": str(s["page_cache_seconds"])})
 
 
 GATED_PLUGINS = ("siteimport",)  # parts that are always in the menu: a click asks to install and switch them on when they are not

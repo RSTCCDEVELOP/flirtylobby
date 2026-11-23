@@ -56,6 +56,7 @@ import ThemeFallback from "../components/ThemeFallback";
 import SandboxBadge from "../components/SandboxBadge";
 import { absoluteUrl, getSeo } from "../lib/seo";
 import { cache } from "react";
+import { cachedFetch } from "../lib/render-cache";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const absolute = (p) => (p ? (p.startsWith("http") || p.startsWith("/logos/") ? p : API + p) : undefined);
@@ -75,7 +76,7 @@ const themeScript = (mode, forced, fontTool) => `${fontTool ? 'try{var f=+localS
 async function getThemeRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
-    const res = await fetch(`${base}/api/theme/`, { cache: "no-store" });
+    const res = await cachedFetch(`${base}/api/theme/`);
     return res.ok ? await res.json() : null;
   } catch {
     return null;
@@ -85,7 +86,7 @@ async function getThemeRaw() {
 async function getBrandingRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
-    const res = await fetch(`${base}/api/branding/`, { cache: "no-store" });
+    const res = await cachedFetch(`${base}/api/branding/`);
     return res.ok ? await res.json() : null;
   } catch {
     return null;
@@ -120,7 +121,7 @@ export async function generateMetadata() {
 async function getSandboxRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
-    const res = await fetch(`${base}/api/sandbox/status/`, { cache: "no-store" });
+    const res = await cachedFetch(`${base}/api/sandbox/status/`);
     return res.ok ? await res.json() : null;
   } catch {
     return null;
@@ -130,7 +131,7 @@ async function getSandboxRaw() {
 async function getContentRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
-    const res = await fetch(`${base}/api/content/`, { cache: "no-store" });
+    const res = await cachedFetch(`${base}/api/content/`);
     return res.ok ? await res.json() : {};
   } catch {
     return {};
@@ -140,7 +141,7 @@ async function getContentRaw() {
 async function getLanguagesRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
-    const res = await fetch(`${base}/api/languages/`, { cache: "no-store" });
+    const res = await cachedFetch(`${base}/api/languages/`);
     return res.ok ? await res.json() : null;
   } catch {
     return null;

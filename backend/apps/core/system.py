@@ -38,6 +38,8 @@ DEFAULTS = {
     "idle_minutes": "5",  # how long someone may stay logged in without doing anything: minutes; 0 = never logged out for being idle
     "idle_action": "ask",  # at the end of that time: "ask" (the person is asked first: a countdown with "Ingelogd blijven") or "logout" (logged out at once)
     "system_cache": True,  # the system cache (Admin -> Basisgegevens -> Cache): the settings and the public answers that every visitor asks are kept for a moment, so the site is faster and uses less energy
+    "page_cache": True,  # the page cache of the web server (Admin -> Cache): the public answers a page needs are kept a moment by the front end, so a page needs fewer calls; a change clears it at once
+    "page_cache_seconds": "60",  # how long at most (seconds)
     "system_cache_seconds": "300",  # how long (seconds); a change by an administrator clears the cache at once
     "footer_text": "",
     "footer_columns": [],  # link columns in the footer: [{title, links: [{label, url}]}] (a design brings its own)
@@ -51,7 +53,7 @@ SETUP_FIELDS = ("site_name", "company_name", "frontend_url", "street", "house_nu
 PHONE_FIELDS = ("phone", "mobile")
 SOCIAL = ["facebook", "instagram", "x", "linkedin", "youtube", "tiktok"]
 HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
-INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200), "idle_minutes": (0, 1440), "system_cache_seconds": (5, 3600)}
+INT_LIMITS = {"max_image_mb": (1, 200), "max_video_mb": (1, 2000), "max_photo_mb": (1, 50), "refresh_seconds": (0, 600), "signal_seconds": (0, 30), "footer_logo_height": (0, 200), "idle_minutes": (0, 1440), "system_cache_seconds": (5, 3600), "page_cache_seconds": (5, 3600)}
 ENVIRONMENTS = ["production", "staging", "development"]
 CURRENCIES = ["EUR", "USD", "GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "BGN", "TRY", "CAD", "AUD", "NZD", "JPY", "CNY", "INR", "BRL", "MXN", "ZAR", "AED", "SAR", "ILS", "SGD", "HKD", "KRW", "THB", "IDR"]
 URL_RE = re.compile(r"^https?://[A-Za-z0-9.\-]+(:\d{2,5})?$")
@@ -190,7 +192,7 @@ def clean(incoming):
             if bad:
                 errors[k] = f"Ongeldige domeinnaam: {bad[0]} (bv. voorbeeld.nl, zonder https://)."
             out[k] = list(dict.fromkeys(items))[:20]
-        elif k in ("redirect_aliases", "maintenance", "show_credit", "system_cache"):
+        elif k in ("redirect_aliases", "maintenance", "show_credit", "system_cache", "page_cache"):
             out[k] = bool(v)
         elif k == "currency":
             c = str(v or "").strip().upper()
@@ -492,6 +494,7 @@ def public():
             "maintenance": maintenance_on(), "onboarding_replay": __import__("apps.core.reset", fromlist=["x"]).replay_pending(), "license_expired": license_info()["expired"], "license_phase": license_phase(), "license_missing": not license_info()["has"], "license_client": license_info()["client"], "maintenance_message": s["maintenance_message"], "maintenance_messages": s["maintenance_messages"], "footer_text": s["footer_text"], "footer_columns": s["footer_columns"], "footer_logo_height": int(s["footer_logo_height"] or 0), "footer_logo_link": s["footer_logo_link"], "show_credit": s["show_credit"],
             "contact_email": s["contact_email"], "phone": s["phone"], "kvk": s["kvk"], "vat_id": s["vat_id"], "address": s["address"], **{k: s[k] for k in ADDRESS_PARTS},
             "social": {k: s[f"social_{k}"] for k in SOCIAL if s[f"social_{k}"]}, "refresh_seconds": int(s["refresh_seconds"] or 0), "signal_seconds": int(s["signal_seconds"] or 0),
+            "page_cache": bool(s["page_cache"]), "page_cache_seconds": max(5, min(3600, int(s["page_cache_seconds"] or 60))), "cache_gen": __import__("apps.core.syscache", fromlist=["x"]).generation(),  # (the front end keeps its answers until this number changes)
             "easy2edit": __import__("apps.core.global_settings", fromlist=["get"]).get()}  # base domain and addresses of the default easy2edit server
 
 

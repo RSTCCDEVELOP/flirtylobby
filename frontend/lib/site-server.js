@@ -5,15 +5,11 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 import { cache } from "react";
+import { renderConfig } from "./render-cache";
 
 // The website's own data (name, domains, footer, maintenance) from Systeem -> Basisgegevens.
 async function getSiteRaw() {
-  try {
-    const res = await fetch(`${process.env.API_URL_INTERNAL || "http://localhost:8000"}/api/site/`, { cache: "no-store" });
-    return res.ok ? await res.json() : null;
-  } catch {
-    return null;
-  }
+  return renderConfig();  // the fresh call of this page view (it also tells the page cache what to do)
 }
 
 export const getSite = cache(getSiteRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once

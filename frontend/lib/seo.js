@@ -7,6 +7,7 @@
 
 import { headers } from "next/headers";
 import { detectLang } from "./i18n";
+import { cachedFetch } from "./render-cache";
 
 const API_INTERNAL = process.env.API_URL_INTERNAL || "http://localhost:8000";
 const API_PUBLIC = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -21,7 +22,7 @@ export async function siteOrigin() {
 export async function getSeo() {
   try {
     const origin = await siteOrigin();
-    const res = await fetch(`${API_INTERNAL}/api/seo/public/?base=${encodeURIComponent(origin)}`, { cache: "no-store" });
+    const res = await cachedFetch(`${API_INTERNAL}/api/seo/public/?base=${encodeURIComponent(origin)}`);
     return res.ok ? await res.json() : null;
   } catch {
     return null;

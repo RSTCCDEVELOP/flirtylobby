@@ -177,3 +177,21 @@ def test_twofa_is_on_by_default_in_every_implementation(db):
     assert "twofa" in presets.ALWAYS_ON and "communication" in presets.ALWAYS_ON
     service.invalidate()
     assert service.get()["twofa"]["enabled"] is True
+
+
+@pytest.mark.django_db
+def test_page_cache_of_the_front_end_is_on_by_default_and_follows_the_generation(django_user_model):
+    s = system.get()
+    assert s["page_cache"] is True and int(s["page_cache_seconds"]) == 60
+    c = APIClient()
+    pub = c.get("/api/site/").json()
+    assert pub["page_cache"] is True and pub["page_cache_seconds"] == 60 and isinstance(pub["cache_gen"], int)
+    boss = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    c.force_authenticate(boss)
+    r = c.put("/api/system/cache/", {"page_cache": False, "page_cache_seconds": "30"}, format="json").json()
+    assert r["page_cache"] is False and r["page_cache_seconds"] == "30"
+    assert int(c.put("/api/system/cache/", {"page_cache_seconds": "2"}, format="json").json()["page_cache_seconds"]) >= 5  # never below 5 seconds
+    gen = APIClient().get("/api/site/").json()
+    assert gen["page_cache"] is False
+    c.post("/api/system/cache/", {}, format="json")  # clear: a new generation
+    assert APIClient().get("/api/site/").json()["cache_gen"] != pub["cache_gen"]

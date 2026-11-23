@@ -33,6 +33,8 @@ export default function CachePage() {
   if (!c) return msg ? <div className="alert">{msg.text}</div> : <Loading compact />;
   const on = !!c.system_cache;
   const secs = Number(c.system_cache_seconds) || 60;
+  const pon = c.page_cache !== false;
+  const psecs = Number(c.page_cache_seconds) || 60;
   return (
     <div className="eco">
       <h1>{tx("Cache en snelheid")}</h1>
@@ -47,6 +49,13 @@ export default function CachePage() {
           </label>
           <div className="row" style={{ justifyContent: "flex-start", gap: ".6rem", flexWrap: "wrap" }}>
             {[[15, "Altijd vers"], [60, "Gebalanceerd"], [600, "Groen"]].map(([n, l]) => <button key={n} type="button" className={`btn sm${on && secs === n ? " primary" : ""}`} disabled={!!busy} onClick={() => send("pre", "PUT", { system_cache: true, system_cache_seconds: String(n) }, tx("Opgeslagen."))}>{tx(l)} · {label(n)}</button>)}
+          </div>
+          <div style={{ borderTop: "1px solid var(--line)", paddingTop: ".9rem", display: "grid", gap: ".7rem" }}>
+            <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={pon} disabled={!!busy} onChange={(e) => send("pon", "PUT", { page_cache: e.target.checked }, e.target.checked ? tx("De paginacache staat aan.") : tx("De paginacache staat uit."))} /><span /></span><span>{tx("Snelle pagina's (paginacache)")}<br /><small className="muted">{tx("De webserver onthoudt de gegevens die elke pagina nodig heeft (thema, menu, talen, modules). Zo hoeft een pagina ze niet steeds opnieuw bij de backend te vragen en staat hij sneller op het scherm. Aanbevolen.")}</small></span></label>
+            <label style={{ opacity: pon ? 1 : .5 }}>{tx("Paginacache bewaren gedurende")}
+              <select value={[10, 30, 60, 300, 600].includes(psecs) ? psecs : 60} disabled={!pon || !!busy} onChange={(e) => send("psecs", "PUT", { page_cache_seconds: e.target.value }, tx("Opgeslagen."))}>{[10, 30, 60, 300, 600].map((s) => <option key={s} value={s}>{label(s)}</option>)}</select>
+              <small className="muted">{tx("Elke wijziging die je opslaat maakt de paginacache meteen weer vers.")}</small>
+            </label>
           </div>
           <div><button type="button" className="btn" disabled={!!busy} onClick={() => send("clear", "POST", {}, tx("De cache is gewist."))}>{busy === "clear" ? tx("Bezig…") : tx("Cache nu wissen")}</button></div>
         </div>

@@ -5,11 +5,12 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 import { cache } from "react";
+import { cachedFetch } from "./render-cache";
 
 async function getModulesRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
-    const res = await fetch(`${base}/api/modules/`, { cache: "no-store" });
+    const res = await cachedFetch(`${base}/api/modules/`);
     return res.ok ? await res.json() : {};
   } catch {
     return {};
