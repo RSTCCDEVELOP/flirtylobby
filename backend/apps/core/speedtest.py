@@ -22,7 +22,7 @@ from . import syscache, system
 from .models import SpeedRun
 
 METRICS = ("html", "api", "db", "mbps", "server")
-MAX_SAMPLES = 400
+MAX_SAMPLES = 600
 MAX_RUNS = 100
 
 
@@ -88,14 +88,11 @@ def runs(request):
         return _deny()
     if request.method == "POST":
         d = request.data
-        samples = []
-        for s in (d.get("samples") or [])[:MAX_SAMPLES]:
-            if isinstance(s, dict):
-                samples.append({"t": int(s.get("t") or 0), **{m: (round(float(s[m]), 2) if isinstance(s.get(m), (int, float)) else None) for m in METRICS}})
+        samples = _clean_samples(d.get("samples"))
         if len(samples) < 3:
             return Response({"detail": "Neem minstens drie metingen op."}, status=status.HTTP_400_BAD_REQUEST)
         st = system.get()
-        run = SpeedRun.objects.create(by=request.user.email, label=str(d.get("label") or "")[:120], seconds=max(0, min(3600, int(d.get("seconds") or len(samples)))), samples=samples, summary=summarize(samples),
+        run = SpeedRun.objects.create(by=request.user.email, label=str(d.get("label") or "")[:120], seconds=max(0, min(10 ** 6, int(d.get("seconds") or len(samples)))), samples=samples, summary=summarize(samples),
                                       settings={"page_cache": bool(st["page_cache"]), "page_cache_seconds": str(st["page_cache_seconds"]), "system_cache": bool(st["system_cache"]), "system_cache_seconds": str(st["system_cache_seconds"]),
                                                 "gen": syscache.generation()}, host=request.get_host()[:200])
         for old in SpeedRun.objects.order_by("-created_at")[MAX_RUNS:]:
@@ -104,7 +101,15 @@ def runs(request):
     return Response({"runs": [_brief(r) for r in SpeedRun.objects.all()[:MAX_RUNS]]})
 
 
-@api_view(["GET", "DELETE"])
+def _clean_samples(raw):
+    out = []
+    for s in (raw or [])[:MAX_SAMPLES]:
+        if isinstance(s, dict):
+            out.append({"t": int(s.get("t") or 0), **{m: (round(float(s[m]), 2) if isinstance(s.get(m), (int, float)) else None) for m in METRICS}})
+    return out
+
+
+@api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated])
 def run_detail(request, pk):
     if not _allowed(request.user):
@@ -115,4 +120,13 @@ def run_detail(request, pk):
     if request.method == "DELETE":
         r.delete()
         return Response({"ok": True})
+    if request.method == "PUT":  # a long run is saved while it runs (and once more at the end): the new measurements replace the old ones
+        samples = _clean_samples(request.data.get("samples"))
+        if len(samples) < 3:
+            return Response({"detail": "Neem minstens drie metingen op."}, status=status.HTTP_400_BAD_REQUEST)
+        r.samples, r.summary = samples, summarize(samples)
+        r.seconds = max(0, min(10 ** 6, int(request.data.get("seconds") or r.seconds)))
+        if "label" in request.data:
+            r.label = str(request.data.get("label") or "")[:120]
+        r.save()
     return Response({**_brief(r), "samples": r.samples})

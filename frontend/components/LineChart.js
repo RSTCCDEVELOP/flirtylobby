@@ -7,7 +7,7 @@
 
 // A small line chart in SVG (no library): one or more series over seconds, with a grid, the last value as a dot and the unit in the title.
 // series: [{ label, color, points: [number | null, ...] }] (one point per second)
-export default function LineChart({ title, unit = "", series, height = 150, decimals = 0 }) {
+export default function LineChart({ title, unit = "", series, height = 150, decimals = 0, span }) {
   const W = 600, H = height, L = 44, R = 12, T = 10, B = 22;
   const all = series.flatMap((s) => s.points.filter((v) => typeof v === "number"));
   const n = Math.max(2, ...series.map((s) => s.points.length));
@@ -15,6 +15,8 @@ export default function LineChart({ title, unit = "", series, height = 150, deci
   const x = (i) => L + (i / (n - 1)) * (W - L - R);
   const y = (v) => T + (1 - v / max) * (H - T - B);
   const fmt = (v) => Number(v).toLocaleString(undefined, { maximumFractionDigits: decimals });
+  const total = span ?? n - 1;
+  const long = (v) => (v >= 3600 ? `${(v / 3600).toLocaleString(undefined, { maximumFractionDigits: 1 })} u` : v >= 120 ? `${Math.round(v / 60)} min` : `${v} s`);
   const ticks = [0, 0.5, 1].map((f) => f * max);
   return (
     <figure style={{ margin: 0, display: "grid", gap: ".3rem" }}>
@@ -30,7 +32,7 @@ export default function LineChart({ title, unit = "", series, height = 150, deci
           </g>
         ))}
         <text x={L} y={H - 6} fontSize="11" fill="currentColor" opacity=".6">0 s</text>
-        <text x={W - R} y={H - 6} fontSize="11" fill="currentColor" opacity=".6" textAnchor="end">{n - 1} s</text>
+        <text x={W - R} y={H - 6} fontSize="11" fill="currentColor" opacity=".6" textAnchor="end">{long(total)}</text>
         {series.map((s) => {
           const pts = s.points.map((v, i) => (typeof v === "number" ? `${x(i).toFixed(1)},${y(v).toFixed(1)}` : null)).filter(Boolean);
           const last = [...s.points].map((v, i) => [v, i]).reverse().find(([v]) => typeof v === "number");

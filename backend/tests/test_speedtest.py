@@ -46,6 +46,10 @@ def test_a_run_is_recorded_summarized_listed_and_removed(django_user_model):
     lst = c.get("/api/system/speedtest/runs/").json()["runs"]
     assert [x["label"] for x in lst] == ["Voor de cache"] and "samples" not in lst[0]
     assert len(c.get(f"/api/system/speedtest/runs/{run['id']}/").json()["samples"]) == 10
+    longer = samples + [{"t": 10 + i, "html": 900, "api": 40, "db": 12, "mbps": 50, "server": 3} for i in range(5)]
+    upd = c.put(f"/api/system/speedtest/runs/{run['id']}/", {"seconds": 15, "samples": longer, "label": "Lang"}, format="json").json()  # a long run is saved while it runs
+    assert upd["label"] == "Lang" and len(upd["samples"]) == 15 and upd["summary"]["html"]["n"] == 15 and upd["seconds"] == 15
+    assert c.put(f"/api/system/speedtest/runs/{run['id']}/", {"samples": samples[:1]}, format="json").status_code == 400
     assert p.get("/api/system/speedtest/runs/").status_code == 403 and p.get(f"/api/system/speedtest/runs/{run['id']}/").status_code == 403
     assert c.delete(f"/api/system/speedtest/runs/{run['id']}/").json() == {"ok": True} and SpeedRun.objects.count() == 0
     assert c.get("/api/system/speedtest/runs/9999/").status_code == 404
