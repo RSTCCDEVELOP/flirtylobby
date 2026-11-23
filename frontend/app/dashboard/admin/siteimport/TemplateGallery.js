@@ -12,7 +12,7 @@ import Link from "next/link";
 import { api, apiBase, errorText } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
 import Loading from "../../../../components/Loading";
-import { IconSearch } from "../../../../components/Icons";
+import { IconHelp, IconSearch } from "../../../../components/Icons";
 
 // The templates in the pop-up of the wizard: a gallery with the example pictures, a detail view (big picture with thumbnails, what is in it, how to use it) and the installation from the pop-up itself.
 const MODES = [["copy", "Naast mijn pagina's zetten", "De pagina's van de template komen erbij. Jouw bestaande pagina's blijven staan."], ["replace", "In plaats van mijn pagina's", "Een pagina met hetzelfde adres wordt vervangen door die van de template."]];
@@ -126,7 +126,7 @@ const SORTS = [["name", "Naam A–Z"], ["name-desc", "Naam Z–A"], ["size", "Gr
 const verNum = (v) => String(v || "0").split(".").reduce((n, x) => n * 1000 + (parseInt(x, 10) || 0), 0);
 const match = (t, f) => (f === "system" ? t.system : f === "pages" ? t.has_pages && !t.system : f === "theme" ? t.has_theme : f === "kit" ? !!t.components : f === "update" ? t.update : f === "used" ? !!t.applied_version : true);
 
-export default function TemplateGallery({ onInstalled, onDetail, subtitle }) {
+export default function TemplateGallery({ onInstalled, onDetail, subtitle, onHelp }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [q, setQ] = useState("");
@@ -161,44 +161,59 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle }) {
     <div style={{ display: "grid", gap: "1rem" }}>
       <div style={{ display: "grid", gap: ".2rem" }}>
         <strong style={{ fontSize: "1.3rem" }}>{tx("Kies een template")}</strong>
-        <span className="muted" style={{ maxWidth: 720 }}>{subtitle ? tx(subtitle) : tx("Klik op een template voor een groot voorbeeld en installeer hem vanuit hier.")}</span>
+        <span className="muted" style={{ maxWidth: 760 }}>{subtitle ? tx(subtitle) : tx("Klik op een template voor een groot voorbeeld en installeer hem vanuit hier.")}</span>
       </div>
-      <div role="search" style={{ display: "grid", gap: ".7rem", padding: ".8rem .9rem", borderRadius: 14, background: tint(9), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
-        <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "center" }}>
-          <label style={{ position: "relative", flex: "1 1 260px", minWidth: 0 }}>
-            <span aria-hidden="true" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", display: "inline-flex", width: 16, height: 16, opacity: .6 }}><IconSearch /></span>
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek op naam, omschrijving of maker…")} aria-label={tx("Zoeken")} style={{ width: "100%", paddingLeft: 34, height: 40, borderRadius: 10, boxSizing: "border-box" }} />
-          </label>
-          {makers.length > 1 && <select value={maker} onChange={(e) => setMaker(e.target.value)} aria-label={tx("Maker")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}><option value="">{tx("Alle makers")}</option>{makers.map((m) => <option key={m} value={m}>{m}</option>)}</select>}
-          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={tx("Sorteren")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{tx("Sorteren")}: {tx(l)}</option>)}</select>
-        </div>
-        <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", alignItems: "center" }}>
-          <small className="muted" style={{ marginRight: ".2rem" }}>{tx("Filter")}:</small>
-          {FILTERS.filter(([k]) => avail[k] || on[k]).map(([k, l]) => chip(k, l))}
-          {active > 0 && <button type="button" className="btn sm" onClick={clear} style={{ marginLeft: "auto" }}>{tx("Filters wissen")}</button>}
+      <div style={{ display: "grid", gridTemplateColumns: onHelp ? "repeat(auto-fit, minmax(300px, 1fr))" : "1fr", gap: "1rem", alignItems: "stretch" }}>
+        {onHelp && (
+          <div style={{ display: "grid", gap: ".6rem", alignContent: "center", padding: "1rem 1.1rem", borderRadius: 14, background: tint(14), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
+            <strong>{tx("Hulp nodig?")}</strong>
+            <span className="muted" style={{ lineHeight: 1.5 }}>{tx("De handleiding met uitleg en video's laat zien hoe je een template kiest, installeert en daarna aanpast.")}</span>
+            <div><button type="button" className="btn primary" onClick={onHelp}><span style={{ display: "inline-flex", width: 16, height: 16, marginRight: ".4rem", verticalAlign: "middle" }}><IconHelp /></span>{tx("Help openen")}</button></div>
+          </div>
+        )}
+        <div role="search" style={{ display: "grid", gap: ".7rem", alignContent: "center", padding: ".9rem 1rem", borderRadius: 14, background: tint(9), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
+          <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "center" }}>
+            <label style={{ position: "relative", flex: "1 1 200px", minWidth: 0 }}>
+              <span aria-hidden="true" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", display: "inline-flex", width: 16, height: 16, opacity: .6 }}><IconSearch /></span>
+              <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek op naam, omschrijving of maker…")} aria-label={tx("Zoeken")} style={{ width: "100%", paddingLeft: 34, height: 40, borderRadius: 10, boxSizing: "border-box" }} />
+            </label>
+            {makers.length > 1 && <select value={maker} onChange={(e) => setMaker(e.target.value)} aria-label={tx("Maker")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}><option value="">{tx("Alle makers")}</option>{makers.map((m) => <option key={m} value={m}>{m}</option>)}</select>}
+            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={tx("Sorteren")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{tx("Sorteren")}: {tx(l)}</option>)}</select>
+          </div>
+          <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", alignItems: "center" }}>
+            <small className="muted" style={{ marginRight: ".2rem" }}>{tx("Filter")}:</small>
+            {FILTERS.filter(([k]) => avail[k] || on[k]).map(([k, l]) => chip(k, l))}
+            {active > 0 && <button type="button" className="btn sm" onClick={clear} style={{ marginLeft: "auto" }}>{tx("Filters wissen")}</button>}
+          </div>
         </div>
       </div>
       <small className="muted" role="status" aria-live="polite">{list.length === d.templates.length ? `${d.templates.length} ${d.templates.length === 1 ? tx("template") : tx("templates")}` : `${list.length} ${tx("van")} ${d.templates.length} ${tx("templates")}`}</small>
       {!list.length && <div style={{ padding: "1.6rem", textAlign: "center", borderRadius: 14, border: "1px dashed var(--line, rgba(0,0,0,.2))" }}><strong>{d.templates.length ? tx("Geen template gevonden") : tx("Er zijn nog geen templates")}</strong><p className="muted" style={{ margin: ".3rem 0 .6rem" }}>{d.templates.length ? tx("Pas de zoekterm of de filters aan.") : tx("Een superadmin kan er een toevoegen (zip) of zet hem in resource/templates.")}</p>{d.templates.length > 0 && <button type="button" className="btn sm" onClick={clear}>{tx("Filters wissen")}</button>}</div>}
       {list.length > 0 && (() => {
-        const per = 2, pages = Math.max(1, Math.ceil(list.length / per)), pg = Math.min(page, pages - 1), shown = list.slice(pg * per, pg * per + per);
-        const arrow = (dir, label) => <button type="button" className="btn" disabled={dir < 0 ? pg === 0 : pg >= pages - 1} onClick={() => setPage(pg + dir)} aria-label={tx(label)} style={{ minWidth: 118, display: "inline-flex", justifyContent: "center", gap: ".4rem" }}>{dir < 0 ? "‹" : ""} {tx(label)} {dir > 0 ? "›" : ""}</button>;
+        const per = 2, pages = Math.max(1, Math.ceil(list.length / per)), pg = Math.min(page, pages - 1);
+        const slides = Array.from({ length: pages }, (_, i) => list.slice(i * per, i * per + per));
+        const side = (dir, label) => pages > 1 && (dir < 0 ? pg > 0 : pg < pages - 1) ? <button type="button" onClick={() => setPage(pg + dir)} aria-label={tx(label)} style={{ position: "absolute", top: "40%", [dir < 0 ? "left" : "right"]: 6, zIndex: 2, width: 42, height: 42, borderRadius: "50%", border: "1px solid var(--line, rgba(0,0,0,.2))", background: "var(--card, #fff)", boxShadow: "0 6px 18px rgba(0,0,0,.25)", cursor: "pointer", fontSize: "1.4rem", lineHeight: 1, display: "grid", placeItems: "center", color: "var(--text)" }}>{dir < 0 ? "‹" : "›"}</button> : null;
         return (
-          <>
-            <div style={{ display: "grid", gridTemplateColumns: list.length === 1 ? "minmax(0, 520px)" : "repeat(auto-fit, minmax(max(300px, calc(50% - .6rem)), 1fr))", gap: "1.2rem", alignItems: "stretch" }}>
-              {shown.map((t) => <Card key={t.key} t={t} onOpen={() => setOpen(t.key)} />)}
+          <section aria-roledescription="carousel" aria-label={tx("Templates")} style={{ display: "grid", gap: ".8rem", width: "100%" }}>
+            <div style={{ position: "relative", width: "100%" }}>
+              {side(-1, "Vorige")}{side(1, "Volgende")}
+              <div style={{ overflow: "hidden", borderRadius: 16, padding: "6px 0" }}>
+                <div style={{ display: "flex", width: "100%", transform: `translateX(-${pg * 100}%)`, transition: "transform .4s cubic-bezier(.4,0,.2,1)" }}>
+                  {slides.map((row, i) => (
+                    <div key={i} role="group" aria-roledescription="slide" aria-label={`${i + 1} / ${pages}`} aria-hidden={i !== pg} style={{ flex: "0 0 100%", minWidth: 0, display: "grid", gridTemplateColumns: list.length === 1 ? "minmax(0, 520px)" : "repeat(auto-fit, minmax(max(300px, calc(50% - .6rem)), 1fr))", gap: "1.2rem", alignItems: "stretch", padding: "0 2px", boxSizing: "border-box" }}>
+                      {row.map((t) => <Card key={t.key} t={t} onOpen={() => setOpen(t.key)} />)}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             {pages > 1 && (
-              <nav aria-label={tx("Pagina's met templates")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap" }}>
-                {arrow(-1, "Vorige")}
-                <span style={{ display: "inline-flex", alignItems: "center", gap: ".5rem" }}>
-                  {Array.from({ length: pages }, (_, i) => <button type="button" key={i} onClick={() => setPage(i)} aria-label={`${tx("Pagina")} ${i + 1}`} aria-current={i === pg ? "page" : undefined} style={{ width: i === pg ? 26 : 10, height: 10, borderRadius: 99, border: 0, padding: 0, cursor: "pointer", background: i === pg ? "var(--eco-green, #2f7d5b)" : "var(--line, rgba(0,0,0,.25))", transition: "width .2s, background .2s" }} />)}
-                  <small className="muted" style={{ marginLeft: ".4rem" }}>{tx("Pagina")} {pg + 1} / {pages}</small>
-                </span>
-                {arrow(1, "Volgende")}
+              <nav aria-label={tx("Pagina's met templates")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}>
+                {Array.from({ length: pages }, (_, i) => <button type="button" key={i} onClick={() => setPage(i)} aria-label={`${tx("Pagina")} ${i + 1}`} aria-current={i === pg ? "page" : undefined} style={{ width: i === pg ? 26 : 10, height: 10, borderRadius: 99, border: 0, padding: 0, cursor: "pointer", background: i === pg ? "var(--eco-green, #2f7d5b)" : "var(--line, rgba(0,0,0,.25))", transition: "width .2s, background .2s" }} />)}
+                <small className="muted" style={{ marginLeft: ".5rem" }}>{tx("Pagina")} {pg + 1} / {pages}</small>
               </nav>
             )}
-          </>
+          </section>
         );
       })()}
     </div>

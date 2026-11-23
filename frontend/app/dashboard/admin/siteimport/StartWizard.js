@@ -34,7 +34,7 @@ const Q = {
 // A new website with the AI: the chat opens at once and the AI asks the questions there (a questionnaire with ready-made answers).
 const NEW_TEXT = "Ik wil een nieuwe website maken met de AI. Stel me de vragen die je nodig hebt voor een goede start.";
 
-function ChooseWizard({ onPick, onStart, onInstalled, onCompact }) {
+function ChooseWizard({ onPick, onStart, onInstalled, onCompact, onHelp }) {
   const [path, setPath] = useState([]);  // the answers so far: [label, next]
   const cur = path.length ? path[path.length - 1][1] : "start";
   const way = cur.startsWith("=") ? WAYS[cur.slice(1)] : null;
@@ -61,7 +61,7 @@ function ChooseWizard({ onPick, onStart, onInstalled, onCompact }) {
       {way && cur === "=templates" && (
         <div className="stack-sm" style={{ gap: ".8rem" }}>
 
-          <TemplateGallery onInstalled={onInstalled} onDetail={() => {}} subtitle={way.text} />
+          <TemplateGallery onInstalled={onInstalled} onDetail={() => {}} subtitle={way.text} onHelp={onHelp} />
           <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap", paddingTop: ".4rem", borderTop: "1px solid var(--line, rgba(0,0,0,.1))" }}>
             <button type="button" className="btn" onClick={() => setPath(path.slice(0, -1))}>{tx("Vorige vraag")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Opnieuw beginnen")}</button>
@@ -100,7 +100,7 @@ export default function StartPlanPopup({ onClose, onPick, onStart, onInstalled }
             <strong style={{ flex: "1 1 220px" }}>{tx("Wil je de help zien? De handleiding met uitleg en video's.")}</strong>
             <button type="button" className="btn primary" onClick={() => setHelp(true)}><IconHelp /> {tx("Help openen")}</button>
           </div>}
-          <ChooseWizard onPick={onPick} onStart={onStart} onInstalled={onInstalled} onCompact={setCompact} />
+          <ChooseWizard onPick={onPick} onStart={onStart} onInstalled={onInstalled} onCompact={setCompact} onHelp={() => setHelp(true)} />
         </div>
       </div>
       {help && <ManualPopup page={manualPage("/dashboard/admin/siteimport")} zIndex={1400} onClose={() => setHelp(false)} />}
