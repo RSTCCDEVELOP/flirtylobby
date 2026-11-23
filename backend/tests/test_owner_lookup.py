@@ -84,12 +84,15 @@ def test_company_is_found_by_name_and_the_code_goes_to_its_contact(site, person,
     assert out["company_name"] == "Shop BV" and out["city"] == "Utrecht" and out["contact_first_name"] == "Jan"
 
 
-def test_own_company_of_the_master_is_never_found(site, person):
+def test_own_company_of_the_master_is_found_too_and_the_code_is_the_check(site, person):
     from apps.core.models import Entity
 
-    own = Entity.objects.create(kind="bedrijf", is_own=True, name="Master BV")
+    own = Entity.objects.create(kind="bedrijf", is_own=True, name="RST Coaching en Consultancy BV", city="Hilversum")
     own.users.add(person)
     assert ownerlookup.lookup_company(site, "Master BV")["exists"] is False
+    r = ownerlookup.search(site, "RST")["results"]
+    assert [x["name"] for x in r] == ["RST Coaching en Consultancy BV"] and r[0]["city"] == "Hilversum"
+
 
 
 def test_search_finds_part_of_name_address_postcode_and_email_without_giving_addresses_back(site, person):

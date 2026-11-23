@@ -53,7 +53,7 @@ def _contact_of(e):
 
 
 def find_company(name):
-    """(company, contact user) of a company that has this name (or when only one company has this word in its name) and a person with a login; (None, None) when there is none. The own company of the master site is never found."""
+    """(company, contact user) of a company that has this name (or when only one company has this word in its name) and a person with a login; (None, None) when there is none. The company of the master site itself is found too (the code goes to the contact person, that is the check)."""
     from .models import Entity
 
     key = _norm(name)
@@ -61,7 +61,7 @@ def find_company(name):
         return None, None
     word = re.sub(r"[^A-Za-z0-9]", "", str(name or "").split()[0])[:4]
     part = []
-    for e in Entity.objects.filter(is_own=False, name__icontains=word).order_by("pk")[:200]:
+    for e in Entity.objects.filter(name__icontains=word).order_by("pk")[:200]:
         n = _norm(e.name)
         if n == key:
             u = _contact_of(e)
@@ -86,11 +86,11 @@ def search(site, q):
         return {"results": []}
     found = {}
     cond = Q(name__icontains=q) | Q(legal_name__icontains=q) | Q(street__icontains=q) | Q(city__icontains=q) | Q(postal_code__icontains=q) | Q(email__icontains=q) | Q(users__email__icontains=q)
-    for e in Entity.objects.filter(is_own=False).filter(cond).distinct().order_by("name")[:60]:
+    for e in Entity.objects.filter(cond).distinct().order_by("name")[:60]:
         found[e.pk] = e
     key = _norm(q)
     if len(key) >= 3:  # spelling, spaces and the legal form do not matter ("rstcc", "1234ab")
-        for e in Entity.objects.filter(is_own=False).order_by("name")[:2000]:
+        for e in Entity.objects.order_by("name")[:2000]:
             if e.pk not in found and (key in _norm(e.name) or key in _norm(e.legal_name) or key in re.sub(r"[^a-z0-9]", "", str(e.postal_code or "").lower())):
                 found[e.pk] = e
     out = []
@@ -107,7 +107,7 @@ def contacts(site, entity_id):
     from .models import Entity
 
     try:
-        e = Entity.objects.filter(pk=int(entity_id), is_own=False).first()
+        e = Entity.objects.filter(pk=int(entity_id)).first()
     except (TypeError, ValueError):
         e = None
     if not e:
@@ -140,7 +140,7 @@ def send(site, email, company="", entity=None, user_id=None):
         from .models import Entity
 
         try:
-            comp = Entity.objects.filter(pk=int(entity), is_own=False).first()
+            comp = Entity.objects.filter(pk=int(entity)).first()
             user = comp.users.filter(pk=int(user_id), is_active=True).exclude(email="").first() if comp else None
         except (TypeError, ValueError):
             comp, user = None, None
@@ -173,7 +173,7 @@ def send(site, email, company="", entity=None, user_id=None):
 def fields_of(user, entity_pk=None):
     """The data of the person and of the company (the chosen one, else the first of the person), in the field names of the licence form."""
     out = {"contact_first_name": user.first_name, "contact_last_name": user.last_name, "contact_email": user.email, "mobile": user.phone}
-    comp = (user.entities.filter(pk=entity_pk, is_own=False).first() if entity_pk else None) or Entity_of(user)
+    comp = (user.entities.filter(pk=entity_pk).first() if entity_pk else None) or Entity_of(user)
     if comp:
         for src, dst in FORM_COMPANY.items():
             out[dst] = str(getattr(comp, src) or "")
@@ -181,7 +181,7 @@ def fields_of(user, entity_pk=None):
 
 
 def Entity_of(user):  # noqa: N802 - the company of this person: the first one that is not the own entity of the master site
-    return user.entities.filter(is_own=False).order_by("pk").first() if hasattr(user, "entities") else None
+    return user.entities.order_by("is_own", "pk").first() if hasattr(user, "entities") else None
 
 
 def fetch(site, challenge, code):

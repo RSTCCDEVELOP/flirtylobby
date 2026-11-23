@@ -4791,3 +4791,8 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .pb-edge.e-left .ar::before, .pb-edge.e-right .ar::before { top: -3.5px; } .pb-edge.e-left .ar::before { left: 1px; transform: rotate(-45deg); } .pb-edge.e-right .ar::before { right: 1px; transform: rotate(135deg); }
 .pb-edge.e-left .a1, .pb-edge.e-right .a1 { top: 12px; } .pb-edge.e-left .a2, .pb-edge.e-right .a2 { bottom: 12px; }
 @media (hover: none) { .pb-edge { opacity: .7; } }
+
+/* The entity screen: every field takes the whole width of its column */
+.entity-form .e2e-field { min-width: 0; }
+.entity-form .e2e-input, .entity-form input:not([type=checkbox]):not([type=radio]):not([type=color]), .entity-form select, .entity-form textarea { width: 100%; box-sizing: border-box; min-height: 2.6rem; }
+.entity-form .e2e-label { font-weight: 600; margin-bottom: .3rem; display: block; }

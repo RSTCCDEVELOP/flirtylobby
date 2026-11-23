@@ -175,9 +175,9 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
       {errs[k] && <span className="e2e-error">{errs[k]}</span>}
     </div>
   );
-  const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: ".8rem 1rem" };
+  const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 26rem), 1fr))", gap: "1rem 1.4rem" };  // two columns, one on a narrow screen
   return (
-      <div className="card" style={{ padding: "1rem" }}>
+      <div className="card entity-form" style={{ padding: "1.2rem 1.4rem" }}>
         <Tabs value={tab} onChange={setTab} tabs={[["general", tx("Algemeen"), <IconBriefcase key="g" />], ["contact", tx("Contact en adres"), <IconMail key="c" />], ["registration", tx("Registratie"), <IconInfo key="r" />], ...(f.id && canEdit ? [["payments", tx("Betaalgegevens"), <IconCard key="p" />]] : []), ["links", `${tx("Gekoppeld")} (${f.user_ids.length + f.group_ids.length})`, <IconUsers key="l" />], ...(f.own ? [["variables", tx("Tekstvariabelen"), <IconCheck key="v" />]] : [])]} />
         {err && <div className="alert">{err}</div>}
         <div style={{ paddingTop: ".8rem" }}>
