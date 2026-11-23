@@ -26,7 +26,7 @@ export default function TwoFactorProfile() {
   const [panel, setPanel] = useState(""); // "" | "enable" | "disable"
   const [sentTo, setSentTo] = useState("");
   const [sandbox, setSandbox] = useState(null); // {code}: the sandbox is on: nothing was really sent (the code is shown when "toon de code in het scherm" is on)
-  const [phone, setPhone] = useState(user.phone || tf.phone || "");  // the number of the login (or of the contact data of the website) is filled in; it can be changed
+  const [phone, setPhone] = useState(user.mobile || tf.phone || "");  // the number of the login (or of the contact data of the website) is filled in; it can be changed
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [app, setApp] = useState(null); // {secret, uri, qr} while the authenticator app is being set up
@@ -94,7 +94,7 @@ export default function TwoFactorProfile() {
           <strong style={{ fontSize: ".9rem" }}>{changing ? tx("Kies een andere methode") : tx("Kies hoe je de code wilt ontvangen")}</strong>
           {tf.available.includes("sms") && (
             <div className="e2e-field" style={{ maxWidth: 380 }}>
-              <label className="e2e-label" htmlFor="tf-phone"><span>{tx("Telefoonnummer voor sms")}</span></label>
+              <label className="e2e-label" htmlFor="tf-phone"><span>{tx("Mobiel nummer voor sms")}</span></label>
               <PhoneInput id="tf-phone" value={phone || ""} onChange={setPhone} />
             </div>
           )}

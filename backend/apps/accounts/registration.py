@@ -293,7 +293,7 @@ def _finish(request, p):
     d = p.data
     user = User(username=p.email, email=p.email, first_name=d["first_name"], last_name=d["last_name"], display_name=unique_display_name(d["display_name"]),
                 gender=d["gender"], birth_date=date.fromisoformat(d["birth_date"]) if d["birth_date"] else None,
-                phone=d["phone"], password=d["password"], is_active=True)
+                mobile=d["phone"], password=d["password"], is_active=True)
     user.email_verified = bool(p.twofa_method == "email" or security.get()["registration"]["verify_email"] or sandbox.skips_verification(p.email))
     if p.twofa_method:
         user.otp_active, user.twofa_method = True, p.twofa_method

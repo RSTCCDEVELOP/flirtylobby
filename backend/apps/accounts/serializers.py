@@ -172,9 +172,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         value = re.sub(r"[ \-()]", "", value or "")
         if value and not PHONE_RE.match(value):
             raise serializers.ValidationError("Geef een telefoonnummer met landcode, bv. +31612345678.")
-        u = self.instance
-        if u and u.otp_active and u.twofa_method == "sms" and value != u.phone:
-            raise serializers.ValidationError("Dit nummer is je 2-stapsverificatie-nummer. Wijzig het via je beveiligingsinstellingen.")
         return value
 
     def validate_mobile(self, value):
@@ -185,6 +182,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         value = re.sub(r"[ \-()]", "", value or "")
         if value and not PHONE_RE.match(value):
             raise serializers.ValidationError("Geef een mobiel nummer met landcode, bv. +31612345678.")
+        u = self.instance
+        if u and u.otp_active and u.twofa_method == "sms" and value != u.mobile:
+            raise serializers.ValidationError("Dit nummer is je 2-stapsverificatie-nummer. Wijzig het via je beveiligingsinstellingen.")
         return value
 
     def validate_country(self, value):

@@ -139,17 +139,17 @@ def test_a_typed_number_is_kept_in_the_profile_when_there_is_none(db, calls):
     r = c.post(f"/api/admin/integrations/{o.pk}/sms-test/", {"phone": "06 53646056"}, format="json")
     assert r.status_code == 400  # not an international number: nothing is kept
     admin.refresh_from_db()
-    assert admin.phone == ""
+    assert admin.mobile == ""
     r = c.post(f"/api/admin/integrations/{o.pk}/sms-test/", {"phone": "+31 6 53646056"}, format="json")
     assert r.status_code == 200 and r.data["phone_saved"] == "+31653646056"
     admin.refresh_from_db()
-    assert admin.phone == "+31653646056"
+    assert admin.mobile == "+31653646056"
     from django.core.cache import cache
 
     cache.clear()
     r = c.post(f"/api/admin/integrations/{o.pk}/sms-test/", {"phone": "+31611111111"}, format="json")
     admin.refresh_from_db()
-    assert "phone_saved" not in r.data and admin.phone == "+31653646056"  # a number in the profile is never replaced by a test number
+    assert "phone_saved" not in r.data and admin.mobile == "+31653646056"  # a number in the profile is never replaced by a test number
 
 
 def test_sms_is_only_offered_for_a_link_that_is_on_tested_online_and_has_credit(db, calls):

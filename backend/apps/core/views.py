@@ -1118,7 +1118,7 @@ def system_setup(request):
     m = re.match(r"^(.+?)\s+(\d+\s?[A-Za-z]?(?:[-/ ]?\d+[A-Za-z]?)?)$", street)  # "Talmastraat 24" -> street + house number
     if m:
         street, nr = m.group(1), m.group(2)
-    suggest = {"contact_first_name": me.first_name, "contact_last_name": me.last_name, "contact_email": me.email, "mobile": me.phone,
+    suggest = {"contact_first_name": me.first_name, "contact_last_name": me.last_name, "contact_email": me.email, "mobile": me.mobile,
                "street": street, "house_number": nr, "postal_code": getattr(me, "postal_code", ""), "city": getattr(me, "city", ""), "country": getattr(me, "country", "")}
     suggest = {k: str(v).strip() for k, v in suggest.items() if str(v or "").strip() and not str(cur.get(k) or "").strip()}
     from datetime import date, timedelta

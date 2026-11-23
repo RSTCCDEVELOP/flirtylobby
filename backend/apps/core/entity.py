@@ -363,7 +363,7 @@ def ensure_contact_user(s=None, force=False):
             return ""
         password = _pending["password"] or generate_password()
         u = User(username=email, email=email, first_name=str(s.get("contact_first_name") or "")[:60], last_name=str(s.get("contact_last_name") or "")[:60],
-                 phone=re.sub(r"[^\d+]", "", str(s.get("mobile") or s.get("phone") or ""))[:20])  # (E.164: digits and +, at most 20)
+                 mobile=re.sub(r"[^\d+]", "", str(s.get("mobile") or s.get("phone") or ""))[:20])  # (E.164: digits and +, at most 20; the mobile number is the number for SMS codes)
         u.set_password(password)
         u.save()
         ensure_admins_group(u)
@@ -425,7 +425,7 @@ def apply_system_changes(s, owner=None):
         owner.last_name = str(s.get("contact_last_name") or owner.last_name or "")[:60]
         phone = re.sub(r"[^\d+]", "", str(s.get("mobile") or s.get("phone") or ""))[:20]
         if phone:
-            owner.phone = phone
+            owner.mobile = phone
         owner.save()
         out["user"] = True
     return out

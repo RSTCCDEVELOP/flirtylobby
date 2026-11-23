@@ -199,7 +199,7 @@ def send(site, email, company="", entity=None, user_id=None):
 
 def fields_of(user, entity_pk=None):
     """The data of the person and of the company (the chosen one, else the first of the person), in the field names of the licence form."""
-    out = {"contact_first_name": user.first_name, "contact_last_name": user.last_name, "contact_email": user.email, "mobile": user.phone}
+    out = {"contact_first_name": user.first_name, "contact_last_name": user.last_name, "contact_email": user.email, "mobile": user.mobile}
     comp = (user.entities.filter(pk=entity_pk).first() if entity_pk else None) or Entity_of(user)
     if comp:
         for src, dst in FORM_COMPANY.items():

@@ -50,7 +50,7 @@ def methods(user):
     from apps.security import twofa
 
     av = twofa.availability()
-    phone = str(getattr(user, "phone", "") or "").strip()
+    phone = str(getattr(user, "mobile", "") or "").strip()
     return {"email": bool(av["email"]), "sms": bool(av["sms"] and phone), "email_hint": twofa.mask_email(user.email) if user.email else "", "sms_hint": (f"{phone[:3]}{'•' * 5}{phone[-2:]}" if phone else "")}
 
 
@@ -115,7 +115,7 @@ def send(user, method):
     if not on_screen:
         try:
             if method == "sms":
-                twofa.send_sms(user.phone, text.split("\n")[0])
+                twofa.send_sms(user.mobile, text.split("\n")[0])
             else:
                 from apps.communication import sending
 

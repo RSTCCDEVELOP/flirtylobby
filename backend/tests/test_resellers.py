@@ -152,7 +152,7 @@ def test_login_details_otp_sites_and_host(plus):
     data = c.get("/api/easy2edit/reseller/accounts/", HTTP_X_EASY2EDIT_KEY=k1).json()
     resellers.apply_accounts(data)
     u = get_user_model().objects.get(username="a@studiotest.nl")  # (made here on the easy2edit server by sync_host first: now with the rights of the website)
-    assert u.otp_active and u.twofa_method == "email" and u.phone == "+31612345678" and u.role == "Sales"
+    assert u.otp_active and u.twofa_method == "email" and u.mobile == "+31612345678" and u.role == "Sales"
     plus.patch(f"/api/system/resellers/{rid}/logins/{r['id']}/", {"host": False}, format="json")
     assert not get_user_model().objects.filter(username="a@studiotest.nl").exists()  # not allowed on this site: gone here
     plus.patch(f"/api/system/resellers/{rid}/logins/{r['id']}/", {"host": True}, format="json")

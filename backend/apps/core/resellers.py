@@ -381,8 +381,8 @@ def apply_accounts(data):
         u.role = str(a.get("function") or "")[:255]
         phone = re.sub(r"[^\d+]", "", str(a.get("mobile") or a.get("phone") or ""))[:20]
         if phone.startswith("+"):
-            u.phone = phone
-        otp = a.get("otp") if a.get("otp") in ("email", "sms") and (a.get("otp") == "email" or u.phone) else ""
+            u.mobile = phone
+        otp = a.get("otp") if a.get("otp") in ("email", "sms") and (a.get("otp") == "email" or u.mobile) else ""
         u.otp_active, u.twofa_method = bool(otp), otp  # the code check at every login (needs the two-step verification of the website to be on)
         access = a.get("access") if a.get("access") in ACCESS else "admin"
         u.is_staff = access == "superadmin"  # superadmin: the rights of a superadmin; admin: the Admin role; user: a normal user without extra rights

@@ -217,7 +217,7 @@ export default function Register() {
           <button type="button" className="btn sm" onClick={() => setShowPw(!showPw)} aria-pressed={showPw}>{showPw ? tx("Verberg wachtwoorden") : tx("Toon wachtwoorden")}</button>
           {pwCopied && <span className="badge ok">{tx("Gekopieerd naar het klembord")}</span>}
         </div>
-        {(phoneNeeded || f.phone) && <label>{tx("Telefoon")}<PhoneInput value={f.phone || ""} required={phoneNeeded} onChange={(v) => setF((x) => ({ ...x, phone: v }))} />{err("phone")}</label>}
+        {(phoneNeeded || f.phone) && <label>{tx("Mobiel")}<PhoneInput value={f.phone || ""} required={phoneNeeded} onChange={(v) => setF((x) => ({ ...x, phone: v }))} />{err("phone")}</label>}
         {cfg.twofa_methods?.length > 0 && (
           <label>{tx("Verificatiecode ontvangen via")}
             <select value={f.method} onChange={set("method")}>{cfg.twofa_methods.map((m) => <option key={m} value={m}>{m === "sms" ? tx("Sms") : tx("E-mail")}</option>)}</select>

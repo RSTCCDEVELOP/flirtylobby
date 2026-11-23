@@ -158,9 +158,9 @@ def required_for(user):
 
 
 def suggested_phone(user):
-    """The phone number the sms code can go to, taken from the system: the number of the login itself, else (when this is the contact person of the website) the mobile number of the licence data."""
-    if getattr(user, "phone", ""):
-        return user.phone
+    """The mobile number the sms code can go to, taken from the system: the mobile number of the login itself, else (when this is the contact person of the website) the mobile number of the licence data."""
+    if getattr(user, "mobile", ""):
+        return user.mobile
     try:
         from apps.core import system
 
@@ -197,7 +197,7 @@ def destination_hint(user):
     if user.twofa_method == "app":
         return "Authenticator"
     if user.twofa_method == "sms":
-        return f"{user.phone[:3]}{'•' * 5}{user.phone[-2:]}" if user.phone else ""
+        return f"{user.mobile[:3]}{'•' * 5}{user.mobile[-2:]}" if user.mobile else ""
     return mask_email(user.email)
 
 
@@ -361,7 +361,7 @@ def deliver(user, subject, email_body, sms_body, force_email=False, code=None):
     from apps.sandbox import service as sandbox
 
     if user.twofa_method == "sms" and not force_email:
-        return send_sms(user.phone, sms_body)
+        return send_sms(user.mobile, sms_body)
 
     try:
         sending.send_email(user.email, subject, email_body, purpose="security", code=code)

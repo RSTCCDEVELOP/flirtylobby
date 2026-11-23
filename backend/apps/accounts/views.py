@@ -236,17 +236,17 @@ def twofa_start(request):
     if method == "sms" and not twofa.PHONE_RE.match(phone):
         return Response({"detail": "Geef een telefoonnummer met landcode, bv. +31612345678."}, status=status.HTTP_400_BAD_REQUEST)
     if change:
-        if method == user.twofa_method and (method != "sms" or phone == user.phone):
+        if method == user.twofa_method and (method != "sms" or phone == user.mobile):
             return Response({"detail": "Dit is al jouw methode."}, status=status.HTTP_400_BAD_REQUEST)
         user.twofa_method = method  # (in memory only: it is saved when the code is confirmed)
         if method == "sms":
-            user.phone = phone
+            user.mobile = phone
         cache.set(_change_key(user), {"method": method, "phone": phone if method == "sms" else ""}, 900)
     else:
         user.twofa_method = method
         if method == "sms":
-            user.phone = phone
-        user.save(update_fields=["twofa_method", "phone"])
+            user.mobile = phone
+        user.save(update_fields=["twofa_method", "mobile"])
     try:
         shown = twofa.issue_code(user)
     except twofa.DeliveryError as e:
@@ -274,10 +274,10 @@ def twofa_confirm(request):
             return Response({"detail": "Onjuiste of verlopen code."}, status=status.HTTP_400_BAD_REQUEST)
         user.twofa_method = method
         if method == "sms":
-            user.phone = pending.get("phone") or user.phone
+            user.mobile = pending.get("phone") or user.mobile
         if method == "email":
             user.email_verified = True
-        user.save(update_fields=["twofa_method", "phone", "email_verified"])
+        user.save(update_fields=["twofa_method", "mobile", "email_verified"])
         cache.delete(_change_key(user))
         logger.info("2FA method changed for %s: %s", user.email, method)
         return Response(ProfileSerializer(user).data)
@@ -430,8 +430,8 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def reset_2fa(self, request, pk=None):
         user = self.get_object()
-        user.otp_active, user.twofa_method, user.otp_token, user.phone, user.totp_secret = False, "", "", "", ""
-        user.save(update_fields=["otp_active", "twofa_method", "otp_token", "phone", "totp_secret"])
+        user.otp_active, user.twofa_method, user.otp_token, user.mobile, user.totp_secret = False, "", "", "", ""
+        user.save(update_fields=["otp_active", "twofa_method", "otp_token", "mobile", "totp_secret"])
         Token.objects.filter(user=user).delete()
         logger.info("2FA reset for %s by %s", user.email, request.user.email)
         return Response(self.get_serializer(user).data)

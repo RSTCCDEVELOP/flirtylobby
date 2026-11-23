@@ -127,7 +127,7 @@ export default function Profile() {
       <ProfileBlock id="p-contact" icon={<IconPin />} title={tx("Contact & adres")} hint={tx("Telefoon en woonplaats.")}>
         <div className="grid2">
           <label>{tx("Telefoon")}<PhoneInput value={form.phone || ""} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} /></label>
-          <label>{tx("Mobiel")}<PhoneInput value={form.mobile || ""} onChange={(v) => setForm((f) => ({ ...f, mobile: v }))} /></label>
+          <label>{tx("Mobiel")}<PhoneInput value={form.mobile || ""} onChange={(v) => setForm((f) => ({ ...f, mobile: v }))} /><small className="muted">{tx("Hierheen gaan codes per sms (tweestapsverificatie en bevestigingen).")}</small></label>
           <label>{tx("Adres")}<input value={form.address} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} autoComplete="street-address" /></label>
           <label>{tx("Postcode")}
             <span style={{ display: "flex", gap: ".5rem", alignItems: "stretch", flexWrap: "wrap" }}>

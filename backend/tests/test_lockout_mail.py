@@ -102,8 +102,10 @@ def test_phone_for_the_sms_code_comes_from_the_login_or_the_contact_data(django_
     assert twofa.suggested_phone(u) == ""
     system.save({"contact_email": "ph@x.nl", "mobile": "+31 612345678"})
     assert twofa.suggested_phone(u) == "+31 612345678"  # the contact person of the website
-    u.phone = "+31611111111"
-    assert twofa.suggested_phone(u) == "+31611111111" and twofa.state(u)["phone"] == "+31611111111"  # the number of the login wins
+    u.phone = "+31200000000"
+    assert twofa.suggested_phone(u) == "+31 612345678"  # the phone number is not the number for SMS codes
+    u.mobile = "+31611111111"
+    assert twofa.suggested_phone(u) == "+31611111111" and twofa.state(u)["phone"] == "+31611111111"  # the mobile number of the login wins
     other = django_user_model.objects.create_user("o2", "o2@x.nl", "pw12345678!")
     assert twofa.suggested_phone(other) == ""
 
@@ -166,7 +168,7 @@ def test_method_can_be_changed_but_only_after_the_new_one_is_proven(django_user_
     r = c.post("/api/auth/2fa/confirm/", {"change": True, "code": code}, format="json")
     assert r.status_code == 200
     u.refresh_from_db()
-    assert u.twofa_method == "sms" and u.phone == "+31612345678" and u.otp_active
+    assert u.twofa_method == "sms" and u.mobile == "+31612345678" and u.otp_active
     # the same method again is refused; a change needs two-step verification to be on
     assert c.post("/api/auth/2fa/start/", {"method": "sms", "phone": "+31612345678", "change": True}, format="json").status_code == 400
     plain = django_user_model.objects.create_user("pn", "pn@x.nl", "pw12345678!")

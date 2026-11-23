@@ -65,7 +65,7 @@ def payload():
     if not u:
         return None
     url = sitemanager.payload("sync")["url"]
-    return {"url": url, "user": {"uid": str(u.uid), "remote_id": str(u.remote_id or ""), "email": u.email, "first_name": u.first_name, "last_name": u.last_name, "phone": u.phone},
+    return {"url": url, "user": {"uid": str(u.uid), "remote_id": str(u.remote_id or ""), "email": u.email, "first_name": u.first_name, "last_name": u.last_name, "phone": u.phone, "mobile": u.mobile},
             "company": {"uid": str(e.uid), "remote_id": str(e.remote_id or ""), **{k: str(getattr(e, k) or "") for k in entity.FIELDS if k != "description"}}}
 
 
@@ -217,13 +217,16 @@ def register(site, data):
             cand.last_name = _clean(ud.get("last_name"), 60) or cand.last_name
             phone = re.sub(r"[^\d+]", "", str(ud.get("phone") or ""))[:20]
             cand.phone = phone or cand.phone
+            mobile = re.sub(r"[^\d+]", "", str(ud.get("mobile") or ""))[:20]
+            cand.mobile = mobile or cand.mobile
             cand.save()
     if user is None:
         user = User.objects.filter(email__iexact=email).first()
     user_new = user is None
     if user_new:
         password = entity.generate_password()
-        user = User(username=email[:150], email=email, first_name=_clean(ud.get("first_name"), 60), last_name=_clean(ud.get("last_name"), 60), phone=re.sub(r"[^\d+]", "", str(ud.get("phone") or ""))[:20])
+        user = User(username=email[:150], email=email, first_name=_clean(ud.get("first_name"), 60), last_name=_clean(ud.get("last_name"), 60), phone=re.sub(r"[^\d+]", "", str(ud.get("phone") or ""))[:20],
+                    mobile=re.sub(r"[^\d+]", "", str(ud.get("mobile") or ""))[:20])
         user.set_password(password)
         user.save()  # an ordinary user with a login: no roles, no admin rights on the master site
         entity._mail_account(user, password, system.get())

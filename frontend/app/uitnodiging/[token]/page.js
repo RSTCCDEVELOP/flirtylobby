@@ -85,7 +85,7 @@ export default function Invite() {
     e.preventDefault();
     setError(""); setBusy(true);
     try {
-      await api("/auth/me/", { method: "PATCH", body: { display_name: p.display_name, phone: p.phone, gender: p.gender, birth_date: p.birth_date || null } });
+      await api("/auth/me/", { method: "PATCH", body: { display_name: p.display_name, mobile: p.phone, gender: p.gender, birth_date: p.birth_date || null } });
       let pr = null;
       try { pr = await api("/notify/prefs/"); } catch {}
       if (pr?.kinds?.length) { setPrefs(pr); setStep("prefs"); } else router.push("/dashboard");
@@ -146,7 +146,7 @@ export default function Invite() {
       <label>{tx("Naam die anderen zien")}<input value={p.display_name} onChange={(e) => setP({ ...p, display_name: e.target.value })} required maxLength={60} /></label>
       <label>{tx("Geboortedatum")}{p.birth_date.endsWith("-01") && <small className="muted"> {tx("Maand en jaar komen uit de leeftijdscheck; vul de dag aan.")}</small>}<input type="date" value={p.birth_date} onChange={(e) => setP({ ...p, birth_date: e.target.value })} /></label>
       <label>{tx("Geslacht")}<select value={p.gender} onChange={(e) => setP({ ...p, gender: e.target.value })}><option value="">—</option>{genders.map((g) => <option key={g} value={g}>{tx(GENDER_LABELS[g])}</option>)}</select></label>
-      <label>{tx("Telefoon")}<PhoneInput value={p.phone || ""} onChange={(v) => setP((x) => ({ ...x, phone: v }))} /></label>
+      <label>{tx("Mobiel")}<PhoneInput value={p.phone || ""} onChange={(v) => setP((x) => ({ ...x, phone: v }))} /></label>
       <label>{tx("Taal van de website")}<span style={{ display: "block" }}><LanguageSwitcher flags /></span></label>
       {error && <div className="alert">{error}</div>}
       <button className="btn primary" disabled={busy || !p.display_name.trim()}>{tx("Volgende")}</button>

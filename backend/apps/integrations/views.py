@@ -134,10 +134,10 @@ class IntegrationViewSet(viewsets.ModelViewSet):
         except spryng.SpryngError as e:
             return Response({"detail": str(e)}, status=400)
         saved = ""
-        if not str(getattr(request.user, "phone", "") or "").strip():  # a number that is typed here is kept in the profile of the login (only when there is none yet), so it is filled in next time
-            request.user.phone = phone[:20]
-            request.user.save(update_fields=["phone"])
-            saved = request.user.phone
+        if not str(getattr(request.user, "mobile", "") or "").strip():  # a number that is typed here is kept in the profile of the login (only when there is none yet), so it is filled in next time
+            request.user.mobile = phone[:20]
+            request.user.save(update_fields=["mobile"])
+            saved = request.user.mobile
         code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
         shown = f"{code[:3]}-{code[3:]}" if len(code) == 6 and code.isdigit() else code
         text = f"easy2edit testcode: {shown}"

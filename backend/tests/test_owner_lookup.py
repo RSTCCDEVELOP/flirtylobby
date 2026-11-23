@@ -22,7 +22,7 @@ def site(db):
 
 @pytest.fixture
 def person(db):
-    u = get_user_model().objects.create_user(username="jan@example.com", email="jan@example.com", password="x", first_name="Jan", last_name="Jansen", phone="+31612345678")
+    u = get_user_model().objects.create_user(username="jan@example.com", email="jan@example.com", password="x", first_name="Jan", last_name="Jansen", mobile="+31612345678")
     e = Entity.objects.create(kind="bedrijf", is_own=False, name="Shop BV", street="Hoofdstraat", house_number="1", postal_code="3511AA", city="Utrecht", country="Nederland")
     e.users.add(u)
     return u
