@@ -120,7 +120,13 @@ export default function EntityList({ canEdit, canManage }) {
 }
 
 // A value that is shown and can not be changed (the unique id, the easy2edit id, the websites): selectable text, no input.
-export function ReadOnly({ label, value, empty = "", wide = false }) {
+export function ReadOnly({ label, value, empty = "", wide = false, boxed = false }) {
+  if (boxed) return (
+    <div className="e2e-field" style={{ ...(wide ? { gridColumn: "1 / -1" } : {}), border: "1px solid var(--line)", borderRadius: "var(--radius, 12px)", padding: ".7rem .9rem", background: "var(--card)" }}>
+      <small className="muted" style={{ display: "block", fontWeight: 600, marginBottom: ".25rem" }}>{label}</small>
+      <div style={{ userSelect: "all", fontFamily: "ui-monospace, monospace", fontSize: ".85rem", overflowWrap: "anywhere" }}>{value || <span className="muted">{empty}</span>}</div>
+    </div>
+  );
   return <div className="e2e-field" style={wide ? { gridColumn: "1 / -1" } : undefined}><label className="e2e-label"><span>{label}</span></label><div className="e2e-input" style={{ opacity: .85, userSelect: "all", fontFamily: "ui-monospace, monospace", fontSize: ".85rem", overflowWrap: "anywhere" }} aria-readonly="true">{value || <span className="muted">{empty}</span>}</div></div>;
 }
 export const EMPTY_ENTITY = EMPTY;
@@ -251,12 +257,18 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
               </section>
             </div>
           )}
-          {tab === "registration" && <div style={grid}>{field("registration_no", "Registratienummer (KvK)", { max: 40 })}{field("vat_no", "Btw-nummer", { max: 40 })}
-            {f.id && f.ids && <>
-              <ReadOnly label={tx("Id")} value={f.ids.uid} />
-              <ReadOnly label={tx("easy2edit id")} value={f.ids.remote_id} empty={tx("Nog niet aangemaakt op de easy2edit server")} />
-              <ReadOnly label={tx("Websites")} value={(f.ids.domains || []).join(", ")} empty={tx("(geen)")} wide />
-            </>}</div>}
+          {tab === "registration" && (
+            <div style={{ display: "grid", gap: "1rem" }}>
+              <div style={{ display: "grid", gap: ".8rem", maxWidth: "30rem" }}>{field("registration_no", "Registratienummer (KvK)", { max: 40 })}{field("vat_no", "Btw-nummer", { max: 40 })}</div>
+              {f.id && f.ids && (
+                <div style={{ display: "grid", gap: ".8rem", gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))" }}>
+                  <ReadOnly boxed label={tx("Id")} value={f.ids.uid} />
+                  <ReadOnly boxed label={tx("easy2edit id")} value={f.ids.remote_id} empty={tx("Nog niet aangemaakt op de easy2edit server")} />
+                  <ReadOnly boxed label={tx("Websites")} value={(f.ids.domains || []).join(", ")} empty={tx("(geen)")} wide />
+                </div>
+              )}
+            </div>
+          )}
           {tab === "payments" && f.id && <PaymentDetails base={`/entities/${f.id}/payments/`} canEdit={canEdit} />}
           {tab === "variables" && (
             <div>
