@@ -50,6 +50,8 @@ export default function BackupsAdmin() {
     finally { setBusy(""); }
   }
   const makeNow = async () => { const r = await run("now", () => api("/backups/create/", { method: "POST", body: {} })); if (r?.made) setDl({ b: r.made, ask: true }); };  // the backup is made: now the question what to do with it
+  const fresh = (b) => Date.now() - new Date(b.created_at).getTime() < 30 * 60 * 1000;  // a template is only made of a backup that was just made
+  const makeForTemplate = async () => { const r = await run("now", () => api("/backups/create/", { method: "POST", body: {} })); if (r?.made) setAsTemplate(r.made); };
   const saveJob = (j, patch) => run(`job-${j.frequency}`, () => api(`/backups/jobs/${j.frequency}/`, { method: "PUT", body: { ...j, ...patch } }));
   const runJob = async (j) => { const r = await run(`run-${j.frequency}`, () => api(`/backups/jobs/${j.frequency}/run/`, { method: "POST", body: {} })); if (r) await alertDialog(tx("Backup klaar")); };
   const saveLimits = () => run("limits", () => api("/backups/limits/", { method: "PUT", body: lim }), tx("Limieten opgeslagen. Oudere backups boven de limiet zijn verwijderd."));
@@ -126,6 +128,7 @@ export default function BackupsAdmin() {
       <Collapsible id="backup-now" title={tx("Nu een backup maken")}>
         <div className="row" style={{ justifyContent: "flex-start" }}>
           <button type="button" className="btn primary" disabled={!canEdit || !!busy} onClick={makeNow}>{busy === "now" ? tx("Bezig…") : tx("Backup maken")}</button>
+          {d.superadmin && <button type="button" className="btn" disabled={!canEdit || !!busy} onClick={makeForTemplate}>{tx("Backup maken en opslaan als template")}</button>}
           {canManage && <>
             <button type="button" className="btn" disabled={!!busy} onClick={() => fileIn.current?.click()}>{tx("Backup uploaden (.zip)")}</button>
             <button type="button" className="btn" disabled={!!busy} onClick={() => fileIn.current?.click()}>{tx("Backup terugzetten (.zip)")}</button>
@@ -170,7 +173,7 @@ export default function BackupsAdmin() {
                 <small className="muted" style={{ minWidth: 0, overflowWrap: "anywhere" }}>{tx("{0} pagina's, {1} indelingen, {2} teksten, {3} bestanden", b.stats?.pages ?? 0, b.stats?.layouts ?? 0, b.stats?.texts ?? 0, b.stats?.files ?? 0)}{b.stats?.skipped?.length ? ` · ${tx("{0} overgeslagen (te groot)", b.stats.skipped.length)}` : ""}</small>
                 <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", gridColumn: "1 / -1", justifyContent: "flex-end" }}>
                   {canEdit && <button type="button" className="btn sm" disabled={!b.exists} onClick={() => download(b)}>{tx("Download")}</button>}
-                  {d.superadmin && <button type="button" className="btn sm" disabled={!b.exists || !!busy} onClick={() => setAsTemplate(b)}>{tx("Opslaan als template")}</button>}
+                  {d.superadmin && <button type="button" className="btn sm" disabled={!b.exists || !!busy || !fresh(b)} title={fresh(b) ? undefined : tx("Een template kan alleen van een net gemaakte backup worden gemaakt: maak eerst een nieuwe backup")} onClick={() => setAsTemplate(b)}>{tx("Opslaan als template")}</button>}
                   {canManage && <button type="button" className="btn sm primary" disabled={!b.exists || !!busy} onClick={() => setRestoring({ backup: b, parts: new Set(b.parts.map((p) => p.key)) })}>{tx("Terugzetten")}</button>}
                   {canManage && <button type="button" className="btn sm danger" disabled={!!busy} onClick={() => remove(b)}>{tx("Verwijder")}</button>}
                 </div>

@@ -52,3 +52,25 @@ def test_only_a_superadmin_and_pages_list(setup, django_user_model):
     plain = APIClient(); plain.force_authenticate(django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!"))
     assert plain.post("/api/templates/", {"action": "create_from_backup", "backup": b.id, "key": "x1", "demo_only": "true"}, format="json").status_code in (400, 403)
     assert isinstance(c.get(f"/api/templates/?backup_pages={b.id}").json()["pages"], list)
+
+
+@pytest.mark.django_db
+def test_only_a_just_made_backup_of_an_unchanged_site(setup, monkeypatch, tmp_path):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.pages.models import Page
+
+    c, boss, b, tp = setup
+    monkeypatch.setattr(tp, "library_dir", lambda: tmp_path / "lib")
+    body = {"action": "create_from_backup", "backup": b.id, "key": "vers", "name": "Vers", "demo_only": "true"}
+    type(b).objects.filter(pk=b.pk).update(created_at=timezone.now() - timedelta(minutes=45))
+    r = c.post("/api/templates/", body, format="json")
+    assert r.status_code == 400 and "net gemaakte backup" in r.json()["detail"]
+    assert c.get(f"/api/templates/?backup_pages={b.id}").status_code == 400
+    type(b).objects.filter(pk=b.pk).update(created_at=timezone.now())
+    Page.objects.filter(key="home").update(title={"nl": "Veranderd"})  # a change after the backup
+    Page.objects.filter(key="home").first().save()
+    r = c.post("/api/templates/", body, format="json")
+    assert r.status_code == 400 and "veranderd" in r.json()["detail"]

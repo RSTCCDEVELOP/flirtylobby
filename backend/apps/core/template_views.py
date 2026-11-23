@@ -37,7 +37,11 @@ def templates(request):
 
             b = Backup.objects.filter(pk=request.GET["backup_pages"]).first()
             try:
+                if b:
+                    tp.ensure_fresh(b)
                 return Response({"pages": tp.backup_pages(b) if b else []})
+            except tp.TemplateError as e:
+                return _bad(str(e))
             except Exception as e:  # noqa: BLE001
                 return _bad(str(e))
         return Response({"templates": tp.listing(), "manage": bool(request.user.is_staff), "can_use": lvl >= 3})

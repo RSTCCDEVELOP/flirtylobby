@@ -431,6 +431,25 @@ def build_from_site(key, name, description="", author="", version="1.0.0", previ
     return {**m, "skipped": skipped, "errors": bundle.get("errors") or {}}
 
 
+FRESH_MINUTES = 30  # a template can only be made of a backup that was just made
+
+
+def ensure_fresh(backup):
+    """A template is only made from a backup that was just made, of a website that has not been changed since: then the example pictures (screenshots of the website) show exactly what is in the template."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.pages.models import Page, PageLayout
+
+    from .models import ContentBlock
+
+    if timezone.now() - backup.created_at > timedelta(minutes=FRESH_MINUTES):
+        raise TemplateError(f"Een template kan alleen van een net gemaakte backup worden gemaakt (niet ouder dan {FRESH_MINUTES} minuten). Maak eerst een nieuwe backup.")
+    if any(m.objects.filter(updated_at__gt=backup.created_at).exists() for m in (Page, PageLayout, ContentBlock)):
+        raise TemplateError("De website is veranderd sinds deze backup. Maak eerst een nieuwe backup.")
+
+
 def backup_pages(backup):
     """The own pages in a backup (for the example pictures): [{key, title, path}]."""
     from apps.backups import service as bs
@@ -463,6 +482,7 @@ def build_from_backup(backup, key, name, description="", author="", version="1.0
     from . import richtext
     from .models import SiteSettings
 
+    ensure_fresh(backup)
     key = str(key or "").strip().lower()
     if not KEY_RE.match(key):
         raise TemplateError("De key van de template is ongeldig (2-60 tekens: a-z, 0-9, - en _).")

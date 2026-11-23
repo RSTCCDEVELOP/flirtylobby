@@ -92,7 +92,7 @@ export default function BackupTemplate({ backup, onClose }) {
         ) : (<>
           <div role="alert" style={{ display: "grid", gap: ".4rem", padding: ".8rem 1rem", borderRadius: 12, background: "color-mix(in srgb, #d98f2b 18%, transparent)" }}>
             <strong>{tx("Let op: een template mag alleen demo-gegevens bevatten")}</strong>
-            <span>{tx("Gebruik hiervoor een backup die niet gebruikt is: zonder echte teksten, klanten, bestellingen of persoonlijke gegevens. Gebruikers, gegevens van plugins, sleutels en bestanden van mensen komen niet in de template, maar pagina's, teksten en afbeeldingen wel.")}</span>
+            <span>{tx("Een template kan alleen van een net gemaakte backup worden gemaakt, van een website die sindsdien niet is veranderd. Gebruik een website die niet gebruikt is: zonder echte teksten, klanten, bestellingen of persoonlijke gegevens. Gebruikers, gegevens van plugins, sleutels en bestanden van mensen komen niet in de template, maar pagina's, teksten en afbeeldingen wel.")}</span>
             <label className="e2e-switch" style={{ display: "flex", gap: ".6rem", alignItems: "center", cursor: "pointer" }}><span className="switch"><input type="checkbox" checked={demoOnly} onChange={(e) => setDemoOnly(e.target.checked)} /><span /></span><strong>{tx("Ik bevestig: deze backup bevat alleen demo-gegevens en is niet gebruikt")}</strong></label>
           </div>
           <Tabs value={tab} onChange={setTab} tabs={[["data", tx("Gegevens")], ["shots", tx("Voorbeelden")]]} />
@@ -110,7 +110,7 @@ export default function BackupTemplate({ backup, onClose }) {
           )}
           {tab === "shots" && (
             <div className="stack-sm" style={{ gap: ".6rem" }}>
-              <p className="muted" style={{ margin: 0 }}>{tx("De voorbeeldplaatjes worden gemaakt van de website zoals hij nu is. Ziet de website er nu anders uit dan deze backup? Zet de backup dan eerst terug, of kies hieronder eigen afbeeldingen. De voorbeelden worden getoond bij het kiezen van een template.")}</p>
+              <p className="muted" style={{ margin: 0 }}>{tx("De voorbeeldplaatjes worden gemaakt van de website zoals hij nu is: dat is precies deze net gemaakte backup. Je kunt ook eigen afbeeldingen kiezen. De voorbeelden worden getoond bij het kiezen van een template.")}</p>
               {pages === null && <p className="muted"><Loading /></p>}
               {pages && !pages.length && <p className="muted">{tx("Deze backup heeft geen eigen pagina's. Kies eigen afbeeldingen, of er wordt een voorbeeldplaatje getekend.")}</p>}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: ".4rem 1rem" }}>
