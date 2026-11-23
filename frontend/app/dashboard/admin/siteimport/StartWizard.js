@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../../../../lib/t";
 import { manualPage } from "../../../../lib/manualMap";
@@ -34,18 +34,20 @@ const Q = {
 // A new website with the AI: the chat opens at once and the AI asks the questions there (a questionnaire with ready-made answers).
 const NEW_TEXT = "Ik wil een nieuwe website maken met de AI. Stel me de vragen die je nodig hebt voor een goede start.";
 
-function ChooseWizard({ onPick, onStart, onInstalled, onCompact, onHelp }) {
+function ChooseWizard({ onPick, onStart, onInstalled, onHelp }) {
   const [path, setPath] = useState([]);  // the answers so far: [label, next]
   const cur = path.length ? path[path.length - 1][1] : "start";
   const way = cur.startsWith("=") ? WAYS[cur.slice(1)] : null;
   const node = !way ? Q[cur] : null;
   const reset = () => setPath([]);
-  const [compact, setCompactState] = useState(false);  // a template is open in the detail view: the advice makes room for the template
-  const setCompact = (v) => { setCompactState(v); onCompact?.(v); };
-  useEffect(() => { setCompact(cur === "=templates"); }, [cur]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const onTpl = cur === "=templates";  // on the templates step the gallery has the room: no help bar and no steps above it
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: ".8rem" }}>
-      {!compact && <div role="list" style={{ display: "flex", gap: ".4rem", alignItems: "center", flexWrap: "wrap" }}>
+      {!onTpl && <div className="alert ok" role="group" aria-label={tx("Help")} style={{ margin: 0, display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
+        <strong style={{ flex: "1 1 220px" }}>{tx("Wil je de help zien? De handleiding met uitleg en video's.")}</strong>
+        <button type="button" className="btn primary" onClick={onHelp}><IconHelp /> {tx("Help openen")}</button>
+      </div>}
+      {!onTpl && <div role="list" style={{ display: "flex", gap: ".4rem", alignItems: "center", flexWrap: "wrap" }}>
         {path.map(([label], i) => <button type="button" key={i} role="listitem" className="badge" style={{ cursor: "pointer", border: 0 }} title={tx("Terug naar deze vraag")} onClick={() => setPath(path.slice(0, i))}>{i + 1}. {tx(label)}</button>)}
         <span className="badge ok">{path.length + 1}. {way ? tx("Advies") : tx("Vraag")}</span>
       </div>}
@@ -90,17 +92,12 @@ function ChooseWizard({ onPick, onStart, onInstalled, onCompact, onHelp }) {
 // The popup behind the button "Wizard": the questions for a good start of the AI chat build.
 export default function StartPlanPopup({ onClose, onPick, onStart, onInstalled }) {
   const [help, setHelp] = useState(false);
-  const [compact, setCompact] = useState(false);
   return createPortal(
     <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pb-objpop" role="dialog" aria-label={tx("Wizard")} style={{ width: "min(1040px, 94vw)", maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="pb-objhead"><strong>{tx("Wizard: een goede start voor je website")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
         <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
-          {!compact && <div className="alert ok" role="group" aria-label={tx("Help")} style={{ margin: 0, display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
-            <strong style={{ flex: "1 1 220px" }}>{tx("Wil je de help zien? De handleiding met uitleg en video's.")}</strong>
-            <button type="button" className="btn primary" onClick={() => setHelp(true)}><IconHelp /> {tx("Help openen")}</button>
-          </div>}
-          <ChooseWizard onPick={onPick} onStart={onStart} onInstalled={onInstalled} onCompact={setCompact} onHelp={() => setHelp(true)} />
+          <ChooseWizard onPick={onPick} onStart={onStart} onInstalled={onInstalled} onHelp={() => setHelp(true)} />
         </div>
       </div>
       {help && <ManualPopup page={manualPage("/dashboard/admin/siteimport")} zIndex={1400} onClose={() => setHelp(false)} />}

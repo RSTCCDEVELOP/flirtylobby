@@ -159,10 +159,6 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle, onHel
   const chip = (k, label) => <button type="button" key={k} aria-pressed={!!on[k]} onClick={() => setOn((o) => ({ ...o, [k]: !o[k] }))} style={{ padding: ".3rem .8rem", borderRadius: 99, fontSize: ".82rem", fontWeight: 600, cursor: "pointer", font: "inherit", border: `1px solid ${on[k] ? "var(--eco-green, #2f7d5b)" : "var(--line, rgba(0,0,0,.18))"}`, background: on[k] ? "var(--eco-green, #2f7d5b)" : "var(--card, #fff)", color: on[k] ? "#fff" : "var(--text)", transition: "background .15s, border-color .15s" }}>{tx(label)}</button>;
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <div style={{ display: "grid", gap: ".2rem" }}>
-        <strong style={{ fontSize: "1.3rem" }}>{tx("Kies een template")}</strong>
-        <span className="muted" style={{ maxWidth: 760 }}>{subtitle ? tx(subtitle) : tx("Klik op een template voor een groot voorbeeld en installeer hem vanuit hier.")}</span>
-      </div>
       <div style={{ display: "grid", gridTemplateColumns: onHelp ? "repeat(auto-fit, minmax(300px, 1fr))" : "1fr", gap: "1rem", alignItems: "stretch" }}>
         {onHelp && (
           <div style={{ display: "grid", gap: ".6rem", alignContent: "center", padding: "1rem 1.1rem", borderRadius: 14, background: tint(14), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
