@@ -41,6 +41,7 @@ export default function DashboardHome() {
   const timer = useRef(null);
 
   useEffect(() => { api("/dashboard/layout/").then((s) => { setState(s); setMeta({ theme: s.theme || "normal", swipe: !!s.swipe }); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);
+  useEffect(() => { if (state) return undefined; const t = setTimeout(() => setMsg((m) => m || { ok: false, text: tx("Niet beschikbaar.") }), 15000); return () => clearTimeout(t); }, [state]);
   if (!state) return msg ? <div className="alert">{msg.text}</div> : <Busy page />;
 
   const columns = state.columns || 2;

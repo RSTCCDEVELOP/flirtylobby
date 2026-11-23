@@ -28,7 +28,12 @@ import { useUpdates } from "../lib/updates";
 const on = (mods, ...keys) => keys.every((k) => mods[k] !== false);
 const useData = (path, deps = []) => {
   const [d, setD] = useState(undefined);
-  useEffect(() => { api(path).then(setD).catch(() => setD(null)); }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { // a request that hangs ends in "Niet beschikbaar." after 12 s instead of a loader or an empty card for ever
+    let gone = false;
+    const t = setTimeout(() => { if (!gone) setD((v) => (v === undefined ? null : v)); }, 12000);
+    api(path).then((v) => { if (!gone) setD(v); }).catch(() => { if (!gone) setD(null); }).finally(() => clearTimeout(t));
+    return () => { gone = true; clearTimeout(t); };
+  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
   return d;
 };
 const Loading = ({ d }) => (d === undefined ? <Busy /> : d === null ? <p className="muted">{tx("Niet beschikbaar.")}</p> : null);

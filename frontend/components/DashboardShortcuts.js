@@ -7,7 +7,9 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Busy } from "./PageLoader";
 import { useShortcuts } from "../lib/shortcuts";
 import { tx } from "../lib/t";
 import { IconStar, IconX } from "./Icons";
@@ -15,7 +17,14 @@ import { IconStar, IconX } from "./Icons";
 // The shortcut tiles on the dashboard: pages you use a lot. Add them with the star (in the header or in the search results), remove them here.
 export default function DashboardShortcuts() {
   const sc = useShortcuts();
-  if (!sc.ready) return null;
+  const [late, setLate] = useState(false);
+  useEffect(() => { if (sc.ready) { setLate(false); return undefined; } const t = setTimeout(() => setLate(true), 12000); return () => clearTimeout(t); }, [sc.ready]);
+  if (!sc.ready) return (
+    <section className="shortcuts" aria-label={tx("Snelkoppelingen")}>
+      <h2 className="shortcuts-title">{tx("Snelkoppelingen")}</h2>
+      {late ? <p className="muted" style={{ margin: 0 }}>{tx("Niet beschikbaar.")}</p> : <Busy />}
+    </section>
+  );
   return (
     <section className="shortcuts" aria-label={tx("Snelkoppelingen")}>
       <h2 className="shortcuts-title">{tx("Snelkoppelingen")}</h2>

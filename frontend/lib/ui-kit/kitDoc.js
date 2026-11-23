@@ -63,7 +63,14 @@ export const kitTail = (kit) => `<script>document.documentElement.setAttribute("
 export function useKit(on = true, key = "") {
   const [kit, setKit] = useState(null);
   const [tick, setTick] = useState(0);
-  useEffect(() => { if (on) loadKit(key).then(setKit).catch(() => setKit(null)); }, [on, key]);
+  const [failed, setFailed] = useState(false); // the set did not arrive (error or no answer in 10 s): the screens show their content without the set instead of staying blank
+  useEffect(() => {
+    if (!on) return undefined;
+    let gone = false;
+    const t = setTimeout(() => { if (!gone) setFailed(true); }, 10000);
+    loadKit(key).then((k) => { if (!gone) { clearTimeout(t); setFailed(false); setKit(k); } }).catch(() => { if (!gone) { clearTimeout(t); setKit(null); setFailed(true); } });
+    return () => { gone = true; clearTimeout(t); };
+  }, [on, key]);
   useEffect(() => {
     if (!on) return undefined;
     const f = () => setTick((n) => n + 1);
@@ -79,5 +86,5 @@ export function useKit(on = true, key = "") {
     head.observe(document.head, { childList: true, subtree: true, characterData: true });
     return () => { window.removeEventListener("themechange", f); mo.disconnect(); head.disconnect(); cancelAnimationFrame(raf); };
   }, [on]);
-  return { kit, tick };
+  return { kit, tick, failed };
 }

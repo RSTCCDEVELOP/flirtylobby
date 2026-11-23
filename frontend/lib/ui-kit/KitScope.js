@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { kitTokens, useKit } from "./kitDoc";
+import { Busy } from "../../components/PageLoader";
 
 // The components of the set in use (e2e-*) straight in the page of a module, without a frame: the css of the set is limited to this block (the global rules of the set for html, body, a, p ... stay out)
 // and the tokens come from the theme of the website. `tag` is the easy2edit_tag of the component that the markup inside follows.
@@ -54,7 +55,7 @@ function putCss(css) {
 }
 
 export default function KitScope({ tag, className = "", bridge = false, stage = false, children }) {
-  const { kit, tick } = useKit(true, "");
+  const { kit, tick, failed } = useKit(true, "");
   const css = useMemo(() => { // the stage (a preview of a component) is a card of the theme on the background of the theme: the component takes the card colour of the theme
     if (!kit) return "";
     const stageCss = ".e2e-scope.e2e-stage{--e2e-bg:var(--card);--e2e-surface:var(--bg);background:var(--card);border:1px solid var(--line);border-radius:var(--radius, 12px);padding:1.1rem}";
@@ -76,9 +77,13 @@ export default function KitScope({ tag, className = "", bridge = false, stage = 
     mo.observe(el, { childList: true, subtree: true });
     return () => mo.disconnect();
   }, [bridge, ready]);
+  const shown = ready || failed; // never stay hidden: when the set does not arrive the content shows without it
   return (
-    <div ref={root} data-e2e-tabstyle={tabs} className={`e2e-scope${stage ? " e2e-stage" : ""}${className ? ` ${className}` : ""}`} data-easy2edit-tag={tag || undefined} style={{ color: "var(--e2e-text)", fontFamily: "var(--e2e-font-body)", visibility: ready ? "visible" : "hidden" }}>
+    <>
+    {!shown && bridge && <Busy />}
+    <div ref={root} data-e2e-tabstyle={tabs} className={`e2e-scope${stage ? " e2e-stage" : ""}${className ? ` ${className}` : ""}`} data-easy2edit-tag={tag || undefined} style={{ color: "var(--e2e-text)", fontFamily: "var(--e2e-font-body)", visibility: shown ? "visible" : "hidden", ...(shown ? {} : { height: 0, overflow: "hidden" }) }}>
       {children}
     </div>
+    </>
   );
 }
