@@ -44,6 +44,9 @@ const STEPS = [
 ];
 const SKIP_KEY = "e2e_setup_skipped";
 // Only for testing: on this computer (localhost) a superadmin who types a single @ in any field gets all fields filled with made-up data.
+// The main address as it is shown in the form: without https:// (the server adds it when it is saved); empty -> the address this website runs on (not on localhost).
+const bareUrl = (u) => String(u || "").replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+const hostOfSite = () => (typeof window === "undefined" || /^(localhost|127\.|\[::1\])/.test(window.location.hostname) ? "" : window.location.host);
 const TEST_DATA = { site_name: "Testwebsite", company_name: "Testbedrijf BV", frontend_url: "www.testbedrijf.nl", street: "Teststraat", house_number: "12", postal_code: "1234 AB", city: "Utrecht", country: "Nederland",
   contact_first_name: "Test", contact_last_name: "Gebruiker", contact_email: "demo@easy2edit.com", phone: "+31 301234567", mobile: "+31 612345678" };
 const isLocal = () => typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
@@ -79,12 +82,12 @@ export default function SetupWizard() {
   useEffect(() => {
     if (!allowed) return;
     try { if (sessionStorage.getItem(SKIP_KEY)) { setClosed(true); return; } } catch { /* no storage */ }
-    api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); if (r.settings && !r.settings.frontend_url && typeof window !== "undefined") setForm((f) => ({ ...f, frontend_url: window.location.origin.includes("localhost") ? "" : window.location.origin })); }).catch(() => {});
+    api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); }).catch(() => {});
   }, [allowed]);
 
   useEffect(() => {
     if (!allowed) return undefined;
-    const again = (to, detail) => (detail?.mode === "update" ? api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}) : Promise.resolve()).then(() => api("/system/setup/")).then((r) => { setD(r); setForm({ ...(r.settings || {}), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
+    const again = (to, detail) => (detail?.mode === "update" ? api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}) : Promise.resolve()).then(() => api("/system/setup/")).then((r) => { setD(r); setForm({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
     const onOpen = (e) => again(undefined, e?.detail);
     window.addEventListener("open-setup-wizard", onOpen);
     try { // back from Stripe: is the session paid? Then the wizard goes on with the agreement
