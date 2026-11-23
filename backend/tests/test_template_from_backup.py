@@ -74,3 +74,40 @@ def test_only_a_just_made_backup_of_an_unchanged_site(setup, monkeypatch, tmp_pa
     Page.objects.filter(key="home").first().save()
     r = c.post("/api/templates/", body, format="json")
     assert r.status_code == 400 and "veranderd" in r.json()["detail"]
+
+
+@pytest.mark.django_db
+def test_templates_are_their_own_module_with_levels_and_an_update_notice(setup, django_user_model, monkeypatch, tmp_path):
+    """The module Templates: administrators use them (level 3), others do not see them; a newer version in the library is announced after the template was used."""
+    from apps.accounts.models import ModuleGrant, Role
+
+    c, boss, b, tp = setup
+    monkeypatch.setattr(tp, "library_dir", lambda: tmp_path / "lib")
+    f = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 40); f.name = "home.png"
+    assert c.post("/api/templates/", {"action": "create_from_backup", "backup": b.id, "key": "demo-site", "name": "Demo", "version": "1.0.0", "demo_only": "true", "previews": f}, format="multipart").status_code == 201
+    plain = APIClient(); plain.force_authenticate(django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!"))
+    assert plain.get("/api/templates/").status_code == 403  # no access to the module
+    adm_user = django_user_model.objects.create_user("ad", "ad@x.nl", "pw12345678!")
+    role = Role.objects.create(name="Sitebeheer", slug="sitebeheer")
+    ModuleGrant.objects.create(module="templates", role=role, level=1)
+    adm_user.roles.add(role)
+    adm = APIClient(); adm.force_authenticate(adm_user)
+    r = adm.get("/api/templates/").json()
+    assert [t["key"] for t in r["templates"]] == ["demo-site"] and r["can_use"] is False and r["manage"] is False  # level 1: look only
+    # a template that was used, and then a newer version arrives
+    tp.record_applied("demo-site", "1.0.0")
+    assert not c.get("/api/templates/").json()["templates"][0]["update"]
+    zf = zipfile.ZipFile(tmp_path / "lib" / "demo-site-1.0.0.zip")
+    new = io.BytesIO()
+    with zipfile.ZipFile(new, "w") as z:
+        for n in zf.namelist():
+            z.writestr(n, zf.read(n).replace(b'"version": "1.0.0"', b'"version": "1.1.0"') if n == "template.json" else zf.read(n))
+    tp.add_upload(io.BytesIO(new.getvalue()))
+    row = c.get("/api/templates/").json()["templates"][0]
+    assert row["version"] == "1.1.0" and row["applied_version"] == "1.0.0" and row["update"] is True
+
+
+def test_the_migration_copies_the_page_rights_to_the_templates():
+    from importlib import import_module
+
+    assert hasattr(import_module("apps.accounts.migrations.0031_templates_grants"), "copy")

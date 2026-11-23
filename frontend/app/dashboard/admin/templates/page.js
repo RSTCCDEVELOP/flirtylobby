@@ -77,6 +77,7 @@ export default function TemplatesPage() {
       <div className="page-head"><div><h1>{tx("Templates")}</h1>
         <p className="muted" style={{ margin: 0 }}>{tx("Een template is een complete website om mee te beginnen: pagina's, afbeeldingen en menu, soms met een eigen thema. Kies er een, bekijk de voorbeelden en gebruik hem. Daarna pas je alles zelf aan in de editor.")}</p></div></div>
       {err && <div className="alert">{err}</div>}
+      {d.templates.some((t) => t.update) && <div className="alert" role="status">{tx("Er is een nieuwe versie van:")} {d.templates.filter((t) => t.update).map((t) => `${t.name} (v${t.applied_version} → v${t.version})`).join(", ")}. {tx("Gebruik de template opnieuw om hem bij te werken.")}</div>}
       {done?.scope === "system" && (
         <div className={`alert ${done.check?.ok ? "ok" : ""}`}>
           <strong>{tx("Het systeem is ingesteld met de template.")}</strong> {tx("Een backup van daarvoor staat klaar")}: {done.safety_backup}.
@@ -111,13 +112,15 @@ export default function TemplatesPage() {
               {t.system && <span className="e2e-badge">{tx("Volledig systeem")}</span>}
               {t.has_theme && <span className="e2e-badge">{tx("Met eigen thema")}</span>}
               {t.components && <span className="e2e-badge">{tx("Met componentenset")}</span>}
+              {t.update && <span className="e2e-badge" style={{ background: "color-mix(in srgb, #d98f2b 22%, transparent)" }} title={`${tx("Gebruikt")}: v${t.applied_version}`}>{tx("Nieuwe versie beschikbaar")}</span>}
+              {t.applied_version && !t.update && <span className="e2e-badge">{tx("In gebruik")}: v{t.applied_version}</span>}
             </span>
             <span className="row" style={{ justifyContent: "space-between", gap: ".4rem", marginTop: "auto" }}>
               <button type="button" className="e2e-btn e2e-btn--sm e2e-btn--outline" onClick={() => setPick({ t, n: 0, mode: "copy", scope: t.system && !t.has_pages ? "system" : "pages" })}>{tx("Bekijken")}</button>
               <span className="row" style={{ gap: ".4rem" }}>
                 {d.manage && t.system && <button type="button" className="e2e-btn e2e-btn--sm e2e-btn--outline" disabled={!!busy} onClick={() => check(t)} title={tx("Controleer of de modules, plugins, het thema, de talen, de pagina's en de database kloppen")}>{tx("Controleren")}</button>}
                 {d.manage && <button type="button" className="e2e-btn e2e-btn--sm e2e-btn--outline" style={{ color: "var(--e2e-danger)" }} disabled={!!busy} onClick={() => remove(t)}>{tx("Verwijderen")}</button>}
-                {d.can_use && <button type="button" className="e2e-btn e2e-btn--sm" disabled={!!busy} onClick={() => setPick({ t, n: 0, mode: "copy", scope: t.system && !t.has_pages ? "system" : "pages" })}>{tx("Gebruiken")}</button>}
+                {d.can_use && <button type="button" className="e2e-btn e2e-btn--sm" disabled={!!busy} onClick={() => setPick({ t, n: 0, mode: "copy", scope: t.system && !t.has_pages ? "system" : "pages" })}>{t.update ? tx("Bijwerken") : tx("Gebruiken")}</button>}
               </span>
             </span>
           </div>

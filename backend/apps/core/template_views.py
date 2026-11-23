@@ -26,7 +26,11 @@ def _bad(text, code=status.HTTP_400_BAD_REQUEST):
 @parser_classes([JSONParser, FormParser, MultiPartParser])
 def templates(request):
     """GET: the templates. POST: {action: apply, key, mode: copy | replace | skip}; a superadmin also: a zip (file) to add one, or {action: remove, key}."""
-    lvl = access_level(request.user, "pages")
+    from apps.core import modules
+
+    if not modules.enabled("templates"):
+        return _bad("De module Templates staat uit.", status.HTTP_403_FORBIDDEN)
+    lvl = access_level(request.user, "templates")  # own module: 1 = look at them, 3 = use them (administrators); adding, making and removing is for superadmins
     if lvl < 1:
         return _bad("Geen toegang.", status.HTTP_403_FORBIDDEN)
     if request.method == "GET":

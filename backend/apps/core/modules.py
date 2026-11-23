@@ -110,6 +110,8 @@ MODULES = [
      "desc": "Grafieken en cijfers over de hele website: bezoekers, SEO, bots en AI-aanroepen, en per module en plugin een eigen tabblad. Modules en plugins schrijven hun cijfers hierheen."},
     {"key": "backups", "group": "Systeem", "label": "Backup",
      "desc": "Backups van de website per dag, week of maand (pagina's, menu's, teksten, afbeeldingen, thema en instellingen van modules en plugins), terugzetten en downloaden. De standaardgegevens van easy2edit zitten er niet in."},
+    {"key": "templates", "group": "Content", "label": "Templates",
+     "desc": "Complete websites om mee te beginnen (zip in resource/templates): beheerders kiezen en gebruiken ze, superadmins voegen ze toe, maken ze van een backup of van de website en verwijderen ze. Met een melding als er een nieuwe versie is."},
     {"key": "roles", "group": "Systeem", "label": "Rollen",
      "desc": "Rollen en rechten. Uit = alleen superadmins hebben rechten."},
     # ── Kern (altijd aan) ──

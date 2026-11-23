@@ -120,12 +120,33 @@ def all_templates():
     return out
 
 
+def applied():
+    """{key: {"version", "at"}}: the templates that were used on this website and with which version."""
+    from .models import SystemSettings
+
+    return dict((SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get("applied_templates") or {})
+
+
+def record_applied(key, version):
+    from django.utils import timezone
+
+    from .models import SystemSettings
+
+    obj, _ = SystemSettings.objects.get_or_create(pk=1)
+    data = dict(obj.data or {})
+    data["applied_templates"] = {**(data.get("applied_templates") or {}), key: {"version": str(version), "at": timezone.now().isoformat(timespec="seconds")}}
+    obj.data = data
+    obj.save()
+
+
 def listing():
     rows = []
+    used = applied()
     for k, (f, m, origin) in sorted(all_templates().items(), key=lambda kv: kv[1][1]["name"].lower()):
-        rows.append({"key": k, "name": m["name"], "description": m["description"], "version": m["version"], "author": m["author"], "origin": origin, "size": f.stat().st_size,
+        had = (used.get(k) or {}).get("version")
+        rows.append({"applied_version": had or "", "update": bool(had and _ver(m["version"]) > _ver(had)), **{"key": k, "name": m["name"], "description": m["description"], "version": m["version"], "author": m["author"], "origin": origin, "size": f.stat().st_size,
                      "previews": len(m["previews"]), "has_theme": bool(m["theme"]), "components": m["components"], "system": bool(m["system"]), "has_pages": bool(m["pages"]),
-                     "built_for": str((m["requires"] or {}).get("system_version") or "")})
+                     "built_for": str((m["requires"] or {}).get("system_version") or "")}})
     return rows
 
 
@@ -217,6 +238,7 @@ def apply(key, user, mode="copy", scope="pages"):
         out = portable.import_any(pages_bytes, user, None, mode, True)
     except portable.PortableError as e:
         raise TemplateError(str(e))
+    record_applied(key, m["version"])  # (so a newer version of this template can be announced)
     return {"template": key, "pages": out["pages"], "replaced": out["replaced"], "skipped": out["skipped"], "media": out["media"], "blocks": out["blocks"], "menu_items": out["menu_items"],
             "notes": notes + list(out["notes"])[:20], "warnings": out["warnings"]}
 
@@ -609,6 +631,10 @@ def apply_system(key, user):
         except componentpacks.ComponentError as e:
             notes.append(f"De componentenset kon niet worden gebruikt: {e}")
     modules.invalidate()
+    try:
+        record_applied(key, all_templates()[key][1]["version"])  # (after the system was put back: the record lives in the settings, which the template may have replaced)
+    except Exception:  # noqa: BLE001
+        pass
     return {"template": key, "scope": "system", "safety_backup": safety.file, "results": results, "notes": notes, "check": verify(key, user=user)}
 
 

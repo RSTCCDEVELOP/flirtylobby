@@ -36,7 +36,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/donations", module: "donations" },
   { href: "/dashboard/admin/faq", module: "faq" },
   { href: "/dashboard/admin/notifications", module: "notifications" },
-  { href: "/dashboard/admin/templates", module: "pages" },
+  { href: "/dashboard/admin/templates", module: "templates" },
   { href: "/dashboard/admin/components", module: "pages" },
   { href: "/dashboard/admin/helptips", module: "pages" },
   { href: "/dashboard/admin/actions", modules: ["subscriptions", "donations"] },
