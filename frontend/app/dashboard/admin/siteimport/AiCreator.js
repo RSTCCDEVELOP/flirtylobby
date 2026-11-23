@@ -9,11 +9,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconBolt, IconCamera, IconCheck, IconChat, IconImage, IconMenu, IconPalette, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
+import { IconBolt, IconCamera, IconCheck, IconChat, IconEdit, IconImage, IconMenu, IconPalette, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import { api, apiUpload, errorText, mediaUrl } from "../../../../lib/api";
 import { useBusy } from "../../../../lib/busy";
-import { confirmDialog } from "../../../../lib/dialog";
+import { confirmDialog, promptDialog } from "../../../../lib/dialog";
 import { tx, getLanguage } from "../../../../lib/t";
 import { useAuth } from "../../../../components/AuthContext";
 import { setActiveDesign } from "../../../../lib/activeDesign";
@@ -228,9 +228,18 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
     try {
       const j = await api("/sitecreator/", { method: "POST", body: {} });
       await api(`/sitecreator/${j.id}/`, { method: "PATCH", body: { ...brief, chat: true } });
+      let chatErr = null;
+      try { await api(`/sitecreator/${j.id}/chat/`, { method: "POST", body: { text: firstText, lang: getLanguage() } }); } catch (e) { chatErr = e; }  // first the first message is sent: the design is opened with it (opened earlier, the window kept showing an empty chat: the answer to the first message came after it had loaded)
       onOpen(j.id);
-      await api(`/sitecreator/${j.id}/chat/`, { method: "POST", body: { text: firstText, lang: getLanguage() } });
+      if (chatErr) setErr(errorText(chatErr));
     } catch (e) { setErr(errorText(e)); } finally { setBusy(false); }
+  };
+  const rename = async (x) => {  // a new name for the design
+    const n = await promptDialog(tx("Nieuwe naam van het ontwerp"), x.name || "", { title: tx("Naam wijzigen"), okLabel: tx("Opslaan"), cancelLabel: tx("Annuleren") });
+    if (n === null || n === undefined) return;
+    const name = String(n).trim().slice(0, 120);
+    if (!name || name === x.name) return;
+    try { await api(`/sitecreator/${x.id}/`, { method: "PATCH", body: { name } }); await load(); } catch (e) { setErr(errorText(e)); }
   };
   const exportOne = async (x) => {
     try {
@@ -275,6 +284,7 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
               <span style={{ flex: 1, minWidth: 0 }}><strong>{x.name}</strong> {x.pages > 0 && <span title={tx("De pagina's zijn gemaakt")} aria-label={tx("De pagina's zijn gemaakt")} style={{ display: "inline-flex", verticalAlign: "middle", color: "var(--muted)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg></span>} <span className={x.live || (x.status === "done" && !x.applied) ? "badge ok" : "badge off"}>{x.live ? tx("Live") : x.applied && x.status === "done" ? tx("Concept") : tx(STATUS[x.status] || x.status)}</span>
                 <small className="muted" style={{ display: "block" }}>{x.chat && x.status === "draft" ? tx("AI chat build") : x.status === "draft" ? `${tx("Stap")} ${x.step + 1} ${tx("van")} ${STEPS.length}: ${tx(STEPS[x.step]?.[1] || "")}` : `${x.pages} ${tx("pagina's")}`} · {new Date(x.updated_at).toLocaleString()}</small></span>
               <button type="button" className="btn sm primary" onClick={() => openDesign(x)}>{x.status === "draft" ? tx("Verder gaan") : tx("Openen")}</button>
+              <button type="button" className="btn sm" disabled={x.status === "running" || x.status === "stopping"} onClick={() => rename(x)} title={tx("Naam wijzigen")} aria-label={tx("Naam wijzigen")}><IconEdit /></button>
               {superadmin && <button type="button" className="btn sm" onClick={() => exportOne(x)} title={tx("Exporteren als json")} aria-label={tx("Exporteren als json")}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11" /><path d="M7.5 10.5L12 15l4.5-4.5" /><path d="M5 19h14" /></svg></button>}
               <button type="button" className="btn sm danger" onClick={() => del(x)} aria-label={tx("Verwijderen")}><IconTrash /></button>
             </div>
@@ -1148,6 +1158,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const reload = useCallback(async (full = true) => { try { const r = await api(`/sitecreator/${jobId}/${full ? "?files=1" : ""}`); merge(r); if (full) sig.current = r.files_sig || ""; else if (r.files_sig && r.files_sig !== sig.current) { const f = await api(`/sitecreator/${jobId}/?files=1`); sig.current = f.files_sig || ""; merge(f); } } catch (e) { setErr(errorText(e)); } }, [jobId, merge]); // while the AI works: as soon as a page is ready (the files changed) the preview is updated
   const was = useRef("");
   useEffect(() => { reload(true); }, [reload]);
+  useEffect(() => { const t = setTimeout(() => reload(false), 1500); return () => clearTimeout(t); }, [reload]);  // once more a moment after opening: a message that was sent while the window opened is shown too
   useEffect(() => { if (job?.status !== "running" && job?.status !== "stopping") return undefined; const t = setTimeout(() => reload(false), 2000); return () => clearTimeout(t); }, [job, reload]);
   const liveRev = useRef(false); // a change to a concept that is live: when it is made, the live pages are rebuilt from it
   const [liveGo, setLiveGo] = useState(false);

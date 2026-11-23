@@ -569,7 +569,8 @@ def save(job, patch):
     if isinstance(patch, dict) and any(k in patch for k in ("colors", "font", "radius", "color_mode")) and (job.files or {}).get("style.css"):
         upd["files"] = themed(job.files, b)  # new colours: the theme of the pages changes at once, without asking the AI
         job.files = upd["files"]
-    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, name=(b.get("name") or job.name)[:120], updated_at=timezone.now(), **upd)
+    job.name = (b.get("name") or job.name)[:120]
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, name=job.name, updated_at=timezone.now(), **upd)
     job.brief = b
     return job
 
