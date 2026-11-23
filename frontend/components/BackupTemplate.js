@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { captureFrame } from "../lib/screenshot";
+import { IconBolt } from "./Icons";
 import SmallEditor from "./SmallEditor";
 import Tabs from "./Tabs";
 import Loading from "./Loading";
@@ -52,9 +53,25 @@ export default function BackupTemplate({ backup, onClose }) {
   const [err, setErr] = useState("");
   const [made, setMade] = useState(null);
   const done = useRef(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const [langs, setLangs] = useState([]);  // the languages of the website: with more than one the AI asks in which one to write
+  const [aiLang, setAiLang] = useState("");
+  const [askLang, setAskLang] = useState(false);
+  useEffect(() => { api("/languages/").then((d) => { const l = (d.languages || []).filter((x) => x.enabled !== false); setLangs(l); setAiLang(d.default || l[0]?.code || "nl"); }).catch(() => {}); }, []);
   useEffect(() => { api(`/templates/?backup_pages=${backup.id}`).then((d) => { const l = d.pages || []; setPages(l); setOn(Object.fromEntries(l.slice(0, 3).map((p) => [p.key, true]))); }).catch((e) => { setPages([]); setErr(errorText(e)); }); }, [backup.id]);
   const set = (k, x) => setV((o) => ({ ...o, [k]: x, ...(k === "name" && !keyTouched ? { key: slug(x) } : {}) }));
   const ok = demoOnly && v.name.trim().length >= 2 && /^[a-z0-9][a-z0-9_-]{1,59}$/.test(v.key) && /^\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(v.version);
+  const fillAi = async () => {  // the AI looks at the website (this backup was just made: it is the same) and fills in name, file name, description and version
+    setAiBusy(true); setErr("");
+    try {
+      const d = await api("/templates/", { method: "POST", body: { action: "suggest", lang: aiLang } });
+      setKeyTouched(false);
+      setNote(d.source === "ai" ? tx("Bedacht door de AI op basis van je website.") : tx("Overgenomen uit je website (naam, slogan en pagina's). De AI gaf geen bruikbaar antwoord of is niet gekoppeld."));
+      setV((o) => ({ ...o, name: d.name, key: d.key, description: d.description, version: d.version }));
+    } catch (e) { setErr(errorText(e)); }
+    setAiBusy(false);
+  };
   const make = async () => {
     if (done.current) return;
     setErr("");
@@ -99,6 +116,18 @@ export default function BackupTemplate({ backup, onClose }) {
           {err && <div className="alert">{err}</div>}
           {tab === "data" && (
             <div className="stack-sm" style={{ gap: ".7rem" }}>
+              <div style={{ display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
+                <button type="button" className="btn sm" disabled={aiBusy || !!busy} onClick={() => (langs.length > 1 ? setAskLang((x) => !x) : fillAi())}><IconBolt /> {aiBusy ? tx("De AI kijkt naar je website…") : tx("Alles invullen met AI")}</button>
+                <small className="muted">{tx("De AI bekijkt de pagina's, het thema, de modules en de talen en bedenkt naam, bestandsnaam, omschrijving en versie. Je kunt alles aanpassen.")}</small>
+              </div>
+              {note && <small className="muted" role="status">{note}</small>}
+              {askLang && langs.length > 1 && (
+                <div className="card" style={{ padding: ".7rem .9rem", display: "grid", gap: ".5rem" }}>
+                  <strong>{tx("In welke taal moet de AI de gegevens schrijven?")}</strong>
+                  <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{langs.map((l) => <button type="button" key={l.code} aria-pressed={aiLang === l.code} onClick={() => setAiLang(l.code)} style={{ padding: ".25rem .8rem", borderRadius: 999, border: `1px solid ${aiLang === l.code ? "var(--blue)" : "var(--line)"}`, background: aiLang === l.code ? "color-mix(in srgb, var(--blue) 16%, var(--card))" : "var(--card)", cursor: "pointer", font: "inherit" }}>{l.native_name || l.name || l.code}</button>)}</div>
+                  <div><button type="button" className="btn sm primary" disabled={aiBusy} onClick={() => { setAskLang(false); fillAi(); }}><IconBolt /> {tx("Bedenken")}</button></div>
+                </div>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: ".7rem 1rem" }}>
                 <label className="field"><strong>{tx("Naam van de template")}</strong><input value={v.name} maxLength={80} onChange={(e) => set("name", e.target.value)} placeholder={tx("bv. Accountantskantoor")} autoFocus /></label>
                 <label className="field"><strong>{tx("Bestandsnaam")}</strong><input value={v.key} maxLength={60} onChange={(e) => { setKeyTouched(true); setV((o) => ({ ...o, key: slug(e.target.value) })); }} /><small className="muted">resource/templates/{v.key || "…"}-{v.version}.zip</small></label>
