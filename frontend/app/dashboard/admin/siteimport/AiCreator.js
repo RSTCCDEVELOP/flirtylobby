@@ -273,7 +273,7 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
         ].map(([Ic, label, go, off]) => <button type="button" key={label} className="btn" disabled={off} onClick={go} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: ".5rem", minHeight: "2.8rem", width: "100%", background: "#1e293b", color: "#fff", borderColor: "#334155", fontWeight: 600 }}><Ic /> {tx(label)}</button>)}
       </div>
       {conv && <ConvertPromptPopup onClose={() => setConv(false)} designs={d?.designs || []} />}
-      {plan && !aiFirst && <StartPlanPopup onClose={closePlan} onStart={startChat} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); }} />}
+      {plan && !aiFirst && <StartPlanPopup onClose={closePlan} onStart={startChat} onInstalled={() => load()} onPick={(a) => { closePlan(); if (a.href) { window.location.href = a.href; } else if (a.tab && a.tab !== "ai") onWay?.(a); else if (a.auto === "prompt") setConv(true); }} />}
       {d?.ai === false && <div className="alert">{tx("Koppel Claude eerst bij Admin → API keys (Anthropic) en zet de koppeling aan.")}</div>}
       {superadmin && <DesignJsonDrop onDone={load} onErr={setErr} />}
       {d?.designs?.length > 0 && (

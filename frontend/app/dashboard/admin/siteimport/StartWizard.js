@@ -13,6 +13,7 @@ import { tx } from "../../../../lib/t";
 import { manualPage } from "../../../../lib/manualMap";
 import ManualPopup from "../../../../components/ManualPopup";
 import { IconHelp } from "../../../../components/Icons";
+import TemplateGallery from "./TemplateGallery";
 
 // A short step plan that helps to choose how to fill the website: a ready-to-use template, the AI-creator, or reading in a website, folder, ZIP or html files.
 // The wizard: questions that give the AI chat build a good start. At the end the chat starts with the choices. Someone who already has a website, a design or a ZIP is sent to the right place.
@@ -33,7 +34,7 @@ const Q = {
 // A new website with the AI: the chat opens at once and the AI asks the questions there (a questionnaire with ready-made answers).
 const NEW_TEXT = "Ik wil een nieuwe website maken met de AI. Stel me de vragen die je nodig hebt voor een goede start.";
 
-function ChooseWizard({ onPick, onStart }) {
+function ChooseWizard({ onPick, onStart, onInstalled }) {
   const [path, setPath] = useState([]);  // the answers so far: [label, next]
   const cur = path.length ? path[path.length - 1][1] : "start";
   const way = cur.startsWith("=") ? WAYS[cur.slice(1)] : null;
@@ -54,7 +55,21 @@ function ChooseWizard({ onPick, onStart }) {
           {path.length > 0 && <div><button type="button" className="btn sm" onClick={() => setPath(path.slice(0, -1))}>{tx("Vorige vraag")}</button></div>}
         </>
       )}
-      {way && (
+      {way && cur === "=templates" && (
+        <div className="stack-sm" style={{ gap: ".8rem" }}>
+          <div className="alert ok" style={{ margin: 0 }}>
+            <strong>{tx("Mijn advies")}: {tx(way.title)}</strong>
+            <p style={{ margin: ".3rem 0 0" }}>{tx(way.text)}</p>
+          </div>
+          <TemplateGallery onInstalled={onInstalled} />
+          <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap" }}>
+            <button type="button" className="btn" onClick={() => setPath(path.slice(0, -1))}>{tx("Vorige vraag")}</button>
+            <button type="button" className="btn" onClick={reset}>{tx("Opnieuw beginnen")}</button>
+            <button type="button" className="btn" onClick={() => { onPick(way.action); reset(); }}>{tx("Alle templates beheren")}</button>
+          </div>
+        </div>
+      )}
+      {way && cur !== "=templates" && (
         <div className="stack-sm" style={{ gap: ".6rem" }}>
           <div className="alert ok" style={{ margin: 0 }}>
             <strong>{tx("Mijn advies")}: {tx(way.title)}</strong>
@@ -72,18 +87,18 @@ function ChooseWizard({ onPick, onStart }) {
 }
 
 // The popup behind the button "Wizard": the questions for a good start of the AI chat build.
-export default function StartPlanPopup({ onClose, onPick, onStart }) {
+export default function StartPlanPopup({ onClose, onPick, onStart, onInstalled }) {
   const [help, setHelp] = useState(false);
   return createPortal(
     <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="pb-objpop" role="dialog" aria-label={tx("Wizard")} style={{ width: "min(820px, 94vw)", maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="pb-objpop" role="dialog" aria-label={tx("Wizard")} style={{ width: "min(1040px, 94vw)", maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="pb-objhead"><strong>{tx("Wizard: een goede start voor je website")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
         <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
           <div className="alert ok" role="group" aria-label={tx("Help")} style={{ margin: 0, display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>
             <strong style={{ flex: "1 1 220px" }}>{tx("Wil je de help zien? De handleiding met uitleg en video's.")}</strong>
             <button type="button" className="btn primary" onClick={() => setHelp(true)}><IconHelp /> {tx("Help openen")}</button>
           </div>
-          <ChooseWizard onPick={onPick} onStart={onStart} />
+          <ChooseWizard onPick={onPick} onStart={onStart} onInstalled={onInstalled} />
         </div>
       </div>
       {help && <ManualPopup page={manualPage("/dashboard/admin/siteimport")} zIndex={1400} onClose={() => setHelp(false)} />}
