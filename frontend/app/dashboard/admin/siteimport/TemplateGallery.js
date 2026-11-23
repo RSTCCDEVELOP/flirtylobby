@@ -19,23 +19,29 @@ const tint = (n = 12) => `color-mix(in srgb, var(--eco-leaf, #7cc59a) ${n}%, tra
 const plain = (t) => { try { const a = document.createElement("textarea"); a.innerHTML = String(t || ""); return a.value; } catch { return String(t || ""); } };  // (older templates have &amp; in their description)
 const img = (t, n) => `${apiBase()}/api/templates/${t.key}/preview/${n}/`;
 
-const Badge = ({ children, warm }) => <span style={{ fontSize: ".72rem", fontWeight: 600, padding: ".15rem .55rem", borderRadius: 99, background: warm ? "color-mix(in srgb, #d98f2b 24%, transparent)" : tint(22) }}>{children}</span>;
+const Badge = ({ children, warm, solid }) => <span style={{ fontSize: ".7rem", fontWeight: 650, letterSpacing: ".03em", textTransform: "uppercase", padding: ".18rem .6rem", borderRadius: 99, background: solid ? (warm ? "#d98f2b" : "var(--eco-green, #2f7d5b)") : warm ? "color-mix(in srgb, #d98f2b 24%, transparent)" : tint(22), color: solid ? "#fff" : undefined, boxShadow: solid ? "0 2px 8px rgba(0,0,0,.25)" : "none" }}>{children}</span>;
 
 function Card({ t, onOpen }) {
+  const [hov, setHov] = useState(false);
   return (
-    <button type="button" onClick={onOpen} aria-label={t.name} style={{ textAlign: "left", display: "grid", gap: ".5rem", padding: 0, border: "1px solid var(--line, rgba(0,0,0,.12))", borderRadius: 14, overflow: "hidden", background: "var(--card, #fff)", cursor: "pointer", font: "inherit", color: "var(--text)", transition: "transform .15s, box-shadow .15s" }}
-      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,.16)"; }} onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}>
-      <span style={{ display: "block", aspectRatio: "16 / 10", background: tint(18), overflow: "hidden" }}>
-        {t.previews > 0 ? <img src={img(t, 0)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} /> : null}
+    <button type="button" onClick={onOpen} aria-label={t.name} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onFocus={() => setHov(true)} onBlur={() => setHov(false)}
+      style={{ textAlign: "left", display: "grid", gridTemplateRows: "auto 1fr", padding: 0, border: "1px solid var(--line, rgba(0,0,0,.12))", borderRadius: 16, overflow: "hidden", background: "var(--card, #fff)", cursor: "pointer", font: "inherit", color: "var(--text)", transition: "transform .18s, box-shadow .18s, border-color .18s", transform: hov ? "translateY(-4px)" : "none", boxShadow: hov ? "0 16px 36px rgba(0,0,0,.18)" : "0 2px 8px rgba(0,0,0,.06)", borderColor: hov ? "var(--eco-green, #2f7d5b)" : undefined }}>
+      <span style={{ position: "relative", display: "block", aspectRatio: "16 / 10", background: tint(18), overflow: "hidden", borderBottom: "1px solid var(--line, rgba(0,0,0,.08))" }}>
+        {t.previews > 0 ? <img src={img(t, 0)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block", transition: "transform .5s", transform: hov ? "scale(1.05)" : "none" }} /> : null}
+        <span style={{ position: "absolute", left: 10, top: 10, display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
+          {t.system && <Badge solid>{tx("Volledig systeem")}</Badge>}
+          {t.update && <Badge warm solid>{tx("Nieuwe versie")}</Badge>}
+        </span>
+        <span aria-hidden="true" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "end center", paddingBottom: 14, background: "linear-gradient(to top, rgba(0,0,0,.45), transparent 45%)", opacity: hov ? 1 : 0, transition: "opacity .2s" }}><span style={{ color: "#fff", fontWeight: 600, fontSize: ".9rem", letterSpacing: ".02em" }}>{tx("Bekijken en installeren")} ›</span></span>
       </span>
-      <span style={{ display: "grid", gap: ".3rem", padding: "0 .9rem .9rem" }}>
-        <strong>{t.name}</strong>
-        <small className="muted" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{plain(t.description) || `v${t.version}`}</small>
-        <span style={{ display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
-          {t.system && <Badge>{tx("Volledig systeem")}</Badge>}
-          {t.has_theme && <Badge>{tx("Met eigen thema")}</Badge>}
-          {t.update && <Badge warm>{tx("Nieuwe versie beschikbaar")}</Badge>}
-          {t.applied_version && !t.update && <Badge>{tx("In gebruik")}</Badge>}
+      <span style={{ display: "grid", gap: ".35rem", padding: ".9rem 1rem 1rem", alignContent: "start" }}>
+        <strong style={{ fontSize: "1.05rem", lineHeight: 1.25 }}>{t.name}</strong>
+        <small className="muted" style={{ letterSpacing: ".01em" }}>v{t.version}{t.author ? ` · ${t.author}` : ""}{t.applied_version && !t.update ? ` · ${tx("In gebruik")}` : ""}</small>
+        <small className="muted" style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.5 }}>{plain(t.description)}</small>
+        <span style={{ display: "flex", gap: ".3rem", flexWrap: "wrap", marginTop: ".2rem" }}>
+          {t.has_theme && <Badge>{tx("Eigen thema")}</Badge>}
+          {t.components && <Badge>{tx("Componentenset")}</Badge>}
+          {t.has_pages && <Badge>{tx("Pagina's")}</Badge>}
         </span>
       </span>
     </button>
@@ -128,10 +134,16 @@ export default function TemplateGallery({ onInstalled, onDetail }) {
   if (!d) return <Loading compact />;
   if (cur) return <Detail key={cur.key} t={cur} can={d.can_use} manage={d.manage} onBack={() => { setOpen(null); load(); }} onInstalled={onInstalled} />;
   return (
-    <div style={{ display: "grid", gap: ".8rem" }}>
+    <div style={{ display: "grid", gap: "1rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: ".8rem", flexWrap: "wrap" }}>
+        <div style={{ display: "grid", gap: ".15rem" }}>
+          <strong style={{ fontSize: "1.25rem" }}>{tx("Kies een template")}</strong>
+          <small className="muted">{d.templates.length} {d.templates.length === 1 ? tx("template") : tx("templates")} · {tx("klik voor een groot voorbeeld en installeer hem vanuit hier")}</small>
+        </div>
+      </div>
       {d.templates.length > 3 && <input type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoeken…")} aria-label={tx("Zoeken…")} style={{ maxWidth: 320 }} />}
       {!list.length && <p className="muted" style={{ margin: 0 }}>{d.templates.length ? tx("Niets gevonden.") : tx("Er zijn nog geen templates. Een superadmin kan er een toevoegen (zip) of zet hem in resource/templates.")}</p>}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: ".9rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${list.length <= 2 ? 340 : 250}px, ${list.length === 1 ? "460px" : "1fr"}))`, gap: "1.1rem" }}>
         {list.map((t) => <Card key={t.key} t={t} onOpen={() => setOpen(t.key)} />)}
       </div>
     </div>
