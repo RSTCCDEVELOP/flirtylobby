@@ -14,7 +14,7 @@ import { tx, getLanguage } from "../lib/t";
 import { useAuth } from "./AuthContext";
 import { canAdmin } from "../lib/perms";
 import { useModules } from "./Modules";
-import { IconCheck, IconReceipt } from "./Icons";
+import { IconCheck, IconLeaf, IconReceipt, IconTree } from "./Icons";
 import PhoneInput from "./PhoneInput";
 import { confirmDialog } from "../lib/dialog";
 import CostsInfo from "./CostsInfo";
@@ -510,20 +510,32 @@ export default function SetupWizard() {
                 </div>
               )}
               {step === "trees" && (
-                <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".8rem" }}>
-                  <span className="e2e-hint">{tx("Laat je website bomen planten. Bezoekers, het energiegebruik en jouw eigen bijdrage planten samen bomen met Ecologi; easy2edit plant er zelf ook elke maand één voor je website. Bezoekers zien het resultaat in het energievenster onderaan de website.")}</span>
-                  <label className="e2e-check" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".7rem", padding: ".7rem .9rem", border: `1px solid ${treesOn ? "var(--e2e-primary, var(--blue))" : "var(--e2e-line, var(--line))"}`, borderRadius: "var(--e2e-radius, 10px)" }}>
+                <div className="eco" style={{ gridColumn: "1 / -1", display: "grid", gap: ".9rem" }}>
+                  <p className="muted" style={{ margin: 0 }}>{tx("Laat je website bomen planten. Bezoekers, het energiegebruik en jouw eigen bijdrage planten samen bomen met Ecologi; easy2edit plant er zelf ook elke maand één voor je website. Bezoekers zien het resultaat in het energievenster onderaan de website.")}</p>
+                  <label className="eco-panel" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".8rem", cursor: "pointer", borderColor: treesOn ? "var(--eco-green)" : undefined }}>
                     <input type="checkbox" checked={treesOn} onChange={(e) => chooseTrees(e.target.checked)} />
-                    <span style={{ flex: 1 }}><strong>{tx("Bomen planten met easy2edit")}</strong><br /><small className="e2e-hint">{tx("Begint in testmodus: er wordt niets gekocht totdat jij dat zelf aanzet.")}</small></span>
+                    <span style={{ flex: 1 }}><strong style={{ color: "var(--eco-deep)" }}>{tx("Bomen planten met easy2edit")}</strong><br /><small className="muted">{tx("Begint in testmodus: er wordt niets gekocht totdat jij dat zelf aanzet.")}</small></span>
+                    <span className="eco-ic" style={{ position: "static", background: "color-mix(in srgb, var(--eco-leaf) 40%, transparent)" }}><IconTree /></span>
                   </label>
-                  <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">i</span><div>{tx("De koppeling met Ecologi (API) is verplicht en staat altijd aan. De sleutel komt van de easy2edit-server; je hoeft niets in te vullen.")}</div></div>
                   {treesInfo && !treesInfo.error && (
-                    <div className="e2e-row" style={{ gap: "1.4rem", flexWrap: "wrap" }}>
-                      <div className="e2e-field"><span className="e2e-hint">{tx("Prijs per boom")}</span><strong>{money(treesInfo.per_tree, treesInfo.currency)}</strong></div>
-                      <div className="e2e-field"><span className="e2e-hint">{tx("Beheer en overzicht")}</span><strong>{money(treesInfo.service_fee, treesInfo.currency)}</strong><small className="e2e-hint">{tx("per maand, ex btw (bij je licentie)")}</small></div>
-                      {treesInfo.examples?.map((x) => <div key={x.trees} className="e2e-field"><span className="e2e-hint">{x.trees} {tx("bomen per maand")}</span><strong>{money(x.amount, treesInfo.currency)}</strong></div>)}
-                    </div>
+                    <>
+                      <div className="eco-tiles">
+                        <div className="eco-tile t-green"><span>{tx("Prijs per boom")}</span><strong style={{ fontVariantNumeric: "tabular-nums" }}>{money(treesInfo.per_tree, treesInfo.currency)}</strong><span className="eco-ic"><IconLeaf /></span></div>
+                        <div className="eco-tile t-sea"><span>{tx("Beheer en overzicht")}</span><strong style={{ fontVariantNumeric: "tabular-nums" }}>{money(treesInfo.service_fee, treesInfo.currency)}</strong><small>{tx("per maand, ex btw (bij je licentie)")}</small></div>
+                      </div>
+                      {(treesInfo.examples || []).length > 0 && (
+                        <div className="eco-panel">
+                          <strong style={{ color: "var(--eco-deep)" }}>{tx("Wat kost het per maand?")}</strong>
+                          <div className="eco-rows">
+                            {treesInfo.examples.map((x) => (
+                              <div key={x.trees} className="eco-row"><span>{x.trees} {tx("bomen per maand")}</span><strong style={{ fontVariantNumeric: "tabular-nums", minWidth: "6rem", textAlign: "right" }}>{money(x.amount, treesInfo.currency)}</strong></div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
+                  <small className="muted">{tx("De koppeling met Ecologi (API) is verplicht en staat altijd aan. De sleutel komt van de easy2edit-server; je hoeft niets in te vullen.")}</small>
                 </div>
               )}
               {step === "ai" && (() => {
