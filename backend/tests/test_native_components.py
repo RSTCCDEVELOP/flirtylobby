@@ -167,3 +167,10 @@ def test_two_components_of_the_same_kind_in_one_section_each_keep_their_own_html
     out = DR.fill_components(rows, root, {})
     items = out[0]["cells"][0]["items"]
     assert "Eerste" in items[0]["html"] and "Tweede" not in items[0]["html"] and "Tweede" in items[1]["html"]
+
+
+def test_a_section_that_is_itself_a_component_stays_that_component():
+    """The band of figures of the creator is a component straight in the page (no band around it): it must not be taken apart into texts."""
+    root = parse_html('<div data-easy2edit-tag="ui-stats"><div class="e2e-stack"><div class="e2e-grid"><div class="e2e-stat"><div class="e2e-stat__value">4</div><div class="e2e-stat__label">Kernwaarden</div></div></div></div></div>')
+    rows = DR.rows_for(root, {}, {})
+    assert rows and len(rows) == 1 and rows[0]["cells"][0]["items"][0]["type"] == "code" and rows[0]["cells"][0]["items"][0]["tag"] == "ui-stats"
