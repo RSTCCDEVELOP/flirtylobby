@@ -134,6 +134,7 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle }) {
   const [on, setOn] = useState({});          // the filters that are on
   const [maker, setMaker] = useState("");
   const [sort, setSort] = useState("name");
+  const [page, setPage] = useState(0);       // two templates (two columns) per page
   const load = useCallback(() => api("/templates/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load]);
   const makers = useMemo(() => [...new Set((d?.templates || []).map((t) => t.author).filter(Boolean))].sort(), [d]);
@@ -147,6 +148,7 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle }) {
     const cmp = { name: (a, b) => a.name.localeCompare(b.name), "name-desc": (a, b) => b.name.localeCompare(a.name), size: (a, b) => (b.size || 0) - (a.size || 0), version: (a, b) => verNum(b.version) - verNum(a.version) }[sort];
     return rows.sort(cmp);
   }, [d, q, on, maker, sort]);
+  useEffect(() => { setPage(0); }, [q, on, maker, sort]);  // a new search or filter starts at the first page
   const cur = open && d?.templates?.find((t) => t.key === open);
   useEffect(() => { onDetail?.(!!cur); }, [!!cur]);  // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="alert">{err}</div>;
@@ -167,8 +169,8 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle }) {
             <span aria-hidden="true" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", display: "inline-flex", width: 16, height: 16, opacity: .6 }}><IconSearch /></span>
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek op naam, omschrijving of maker…")} aria-label={tx("Zoeken")} style={{ width: "100%", paddingLeft: 34, height: 40, borderRadius: 10, boxSizing: "border-box" }} />
           </label>
-          {makers.length > 1 && <select value={maker} onChange={(e) => setMaker(e.target.value)} aria-label={tx("Maker")} style={{ height: 40, borderRadius: 10 }}><option value="">{tx("Alle makers")}</option>{makers.map((m) => <option key={m} value={m}>{m}</option>)}</select>}
-          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={tx("Sorteren")} style={{ height: 40, borderRadius: 10 }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{tx("Sorteren")}: {tx(l)}</option>)}</select>
+          {makers.length > 1 && <select value={maker} onChange={(e) => setMaker(e.target.value)} aria-label={tx("Maker")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}><option value="">{tx("Alle makers")}</option>{makers.map((m) => <option key={m} value={m}>{m}</option>)}</select>}
+          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={tx("Sorteren")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{tx("Sorteren")}: {tx(l)}</option>)}</select>
         </div>
         <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", alignItems: "center" }}>
           <small className="muted" style={{ marginRight: ".2rem" }}>{tx("Filter")}:</small>
@@ -178,9 +180,27 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle }) {
       </div>
       <small className="muted" role="status" aria-live="polite">{list.length === d.templates.length ? `${d.templates.length} ${d.templates.length === 1 ? tx("template") : tx("templates")}` : `${list.length} ${tx("van")} ${d.templates.length} ${tx("templates")}`}</small>
       {!list.length && <div style={{ padding: "1.6rem", textAlign: "center", borderRadius: 14, border: "1px dashed var(--line, rgba(0,0,0,.2))" }}><strong>{d.templates.length ? tx("Geen template gevonden") : tx("Er zijn nog geen templates")}</strong><p className="muted" style={{ margin: ".3rem 0 .6rem" }}>{d.templates.length ? tx("Pas de zoekterm of de filters aan.") : tx("Een superadmin kan er een toevoegen (zip) of zet hem in resource/templates.")}</p>{d.templates.length > 0 && <button type="button" className="btn sm" onClick={clear}>{tx("Filters wissen")}</button>}</div>}
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${list.length <= 2 ? 340 : 250}px, ${list.length === 1 ? "460px" : "1fr"}))`, gap: "1.1rem" }}>
-        {list.map((t) => <Card key={t.key} t={t} onOpen={() => setOpen(t.key)} />)}
-      </div>
+      {list.length > 0 && (() => {
+        const per = 2, pages = Math.max(1, Math.ceil(list.length / per)), pg = Math.min(page, pages - 1), shown = list.slice(pg * per, pg * per + per);
+        const arrow = (dir, label) => <button type="button" className="btn" disabled={dir < 0 ? pg === 0 : pg >= pages - 1} onClick={() => setPage(pg + dir)} aria-label={tx(label)} style={{ minWidth: 118, display: "inline-flex", justifyContent: "center", gap: ".4rem" }}>{dir < 0 ? "‹" : ""} {tx(label)} {dir > 0 ? "›" : ""}</button>;
+        return (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: list.length === 1 ? "minmax(0, 520px)" : "repeat(auto-fit, minmax(max(300px, calc(50% - .6rem)), 1fr))", gap: "1.2rem", alignItems: "stretch" }}>
+              {shown.map((t) => <Card key={t.key} t={t} onOpen={() => setOpen(t.key)} />)}
+            </div>
+            {pages > 1 && (
+              <nav aria-label={tx("Pagina's met templates")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".8rem", flexWrap: "wrap" }}>
+                {arrow(-1, "Vorige")}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: ".5rem" }}>
+                  {Array.from({ length: pages }, (_, i) => <button type="button" key={i} onClick={() => setPage(i)} aria-label={`${tx("Pagina")} ${i + 1}`} aria-current={i === pg ? "page" : undefined} style={{ width: i === pg ? 26 : 10, height: 10, borderRadius: 99, border: 0, padding: 0, cursor: "pointer", background: i === pg ? "var(--eco-green, #2f7d5b)" : "var(--line, rgba(0,0,0,.25))", transition: "width .2s, background .2s" }} />)}
+                  <small className="muted" style={{ marginLeft: ".4rem" }}>{tx("Pagina")} {pg + 1} / {pages}</small>
+                </span>
+                {arrow(1, "Volgende")}
+              </nav>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }
