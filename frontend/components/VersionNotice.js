@@ -30,15 +30,16 @@ export default function VersionNotice({ current }) {
 
   if (!on || !fresh || hidden || typeof document === "undefined") return null;
   return createPortal(
-    <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Nieuwe versie beschikbaar")} onClick={() => setHidden(true)}>
-      <div className="card modal form" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: ".5rem" }}><IconBolt />{tx("Nieuwe versie beschikbaar")}</h2>
-        <p style={{ margin: 0 }}>{tx("Er staat een nieuwe versie van de website online. Ververs de pagina om de nieuwste versie te gebruiken.")}</p>
+    <div className="version-notice" role="status" aria-live="polite" aria-label={tx("Nieuwe versie beschikbaar")}>
+      <IconBolt />
+      <div className="version-notice-text">
+        <strong>{tx("Nieuwe versie beschikbaar")}</strong>
+        <span>{tx("Er staat een nieuwe versie van de website online. Ververs de pagina om de nieuwste versie te gebruiken.")}</span>
         <small className="muted">{tx("Sla eerst op waar je mee bezig bent: bij verversen gaan niet-opgeslagen wijzigingen verloren.")}</small>
-        <div className="row" style={{ justifyContent: "flex-end", gap: ".5rem" }}>
-          <button type="button" className="btn" onClick={() => setHidden(true)}>{tx("Later")}</button>
-          <button type="button" className="btn primary" onClick={() => window.location.reload()}>{tx("Nu verversen")}</button>
-        </div>
+      </div>
+      <div className="version-notice-actions">
+        <button type="button" className="btn" onClick={() => setHidden(true)}>{tx("Later")}</button>
+        <button type="button" className="btn primary" onClick={() => window.location.reload()}>{tx("Nu verversen")}</button>
       </div>
     </div>, document.body);
 }
