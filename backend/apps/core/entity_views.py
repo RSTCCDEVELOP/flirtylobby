@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from apps.accounts.permissions import has_level_for
 from apps.core.modules import module_required
 
-from . import entity
+from . import entity, entity_payments
 from .models import Entity
 
 
@@ -81,3 +81,42 @@ def entity_item(request, pk):
         except ValueError as x:
             return Response({"detail": str(x)}, status=status.HTTP_400_BAD_REQUEST)
     return Response(entity.serialize(e, True, request.user))
+
+
+PAY_PERM = [has_level_for("entities", {}, default="edit"), module_required("entities")]  # payment details: edit rights for everything, also for reading
+
+
+def _pay_answer(e, items=None, locked=False):
+    return Response({"items": entity_payments.masked(items or []), "locked": locked, "kinds": [{"key": k, "label": lb} for k, lb in entity_payments.KINDS], "max": entity_payments.MAX_ITEMS})
+
+
+@api_view(["GET", "PUT"])
+@permission_classes(PAY_PERM)
+def entity_payments_item(request, pk):
+    """The payment details of one company (encrypted in the database). GET = the list with the sensitive values masked, PUT {items} = replace the list."""
+    e = Entity.objects.filter(pk=pk).first()
+    if not e:
+        return Response({"detail": "Deze entiteit bestaat niet."}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "PUT":
+        try:
+            items = entity_payments.save(e, request.data.get("items"), request.user)
+        except ValueError as x:
+            return Response({"detail": str(x)}, status=status.HTTP_400_BAD_REQUEST)
+        return _pay_answer(e, items)
+    try:
+        return _pay_answer(e, entity_payments.unseal(e))
+    except entity_payments.Locked:
+        return _pay_answer(e, locked=True)
+
+
+@api_view(["POST"])
+@permission_classes(PAY_PERM)
+def entity_payments_reveal(request, pk):
+    """The full values of the payment details (the person pressed Tonen)."""
+    e = Entity.objects.filter(pk=pk).first()
+    if not e:
+        return Response({"detail": "Deze entiteit bestaat niet."}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        return Response({"items": entity_payments.reveal(e, request.user)})
+    except entity_payments.Locked as x:
+        return Response({"detail": str(x)}, status=status.HTTP_409_CONFLICT)

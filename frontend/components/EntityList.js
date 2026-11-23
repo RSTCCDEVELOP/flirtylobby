@@ -12,19 +12,23 @@ import { useRouter } from "next/navigation";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
-import { IconBriefcase, IconCheck, IconEdit, IconGroup, IconInfo, IconMail, IconPlus, IconTrash, IconUsers, IconX } from "./Icons";
+import { IconBriefcase, IconCard, IconCheck, IconEdit, IconGroup, IconInfo, IconMail, IconPin, IconPlus, IconTrash, IconUsers, IconX } from "./Icons";
 import KitScope from "../lib/ui-kit/KitScope";
 import PhoneInput from "./PhoneInput";
 import { ColorDot, ColorField, TagChip, TagPicker, useTagMap } from "./Tags";
 import SmallEditor from "./SmallEditor";
 import Tabs from "./Tabs";
+import PaymentDetails from "./PaymentDetails";
 
 // The other entities of the site (module Entiteit): companies, organisations, associations or clubs that users and user groups belong to.
 // Rows with edit and delete, "+" on top; the popup has tabs and a "Gekoppeld" tab where users and user groups are picked through a search.
 const ROW = { display: "grid", alignItems: "center", gap: ".7rem", padding: ".5rem .5rem", borderBottom: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))", gridTemplateColumns: "minmax(160px,2fr) minmax(110px,1fr) minmax(100px,1fr) 90px 90px 80px" };
+const SECTION = { border: "1px solid var(--e2e-line, var(--line, rgba(0,0,0,.12)))", borderRadius: "var(--e2e-radius, 10px)", padding: ".8rem .9rem", display: "grid", gap: ".7rem" };
+const SECTION_TITLE = { margin: 0, fontSize: ".9rem", display: "flex", alignItems: "center", gap: ".4rem" };
+const ADDR = { display: "grid", gridTemplateColumns: "repeat(12, minmax(0, 1fr))", gap: ".8rem 1rem" };
 const cut = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 };
 const nameOf = (u) => [u.first_name, u.last_name].filter(Boolean).join(" ") || u.email;
-const EMPTY = { name: "", color: "", kind: "bedrijf", kind_name: "", legal_name: "", description: "", email: "", phone: "", website: "", street: "", house_number: "", postal_code: "", city: "", country: "", registration_no: "", vat_no: "", user_ids: [], group_ids: [] };
+const EMPTY = { name: "", color: "", kind: "bedrijf", kind_name: "", legal_name: "", description: "", email: "", phone: "", website: "", street: "", house_number: "", postal_code: "", city: "", country: "", registration_no: "", vat_no: "", locations: [], user_ids: [], group_ids: [] };
 
 
 // A list of who is linked, with a "+" in its header: it opens a search; click a result to add it, the cross on a row removes it.
@@ -141,6 +145,11 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
     if (f.kind === "vrij" && !String(f.kind_name || "").trim() && !f.own) x.kind_name = tx("Geef de vrije naam een naam.");
     if (f.email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(f.email)) x.email = tx("Het e-mailadres is niet geldig.");
     if (f.website && !/^https?:\/\/\S{3,190}$/.test(f.website)) x.website = tx("Het websiteadres moet beginnen met http:// of https://.");
+    (f.locations || []).forEach((l, i) => {
+      const any = Object.values(l).some((v) => String(v || "").trim());
+      if (any && !String(l.name || "").trim()) x[`loc${i}`] = tx("Geef elke locatie een naam.");
+      else if (l.email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(l.email)) x[`loc${i}`] = tx("Het e-mailadres is niet geldig.");
+    });
     setErrs(x);
     if (Object.keys(x).length) { setTab(x.name || x.kind_name ? "general" : "contact"); return; }
     setBusy(true); setErr(null);
@@ -163,7 +172,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: ".8rem 1rem" };
   return (
       <div className="card" style={{ padding: "1rem" }}>
-        <Tabs value={tab} onChange={setTab} tabs={[["general", tx("Algemeen"), <IconBriefcase key="g" />], ["contact", tx("Contact en adres"), <IconMail key="c" />], ["registration", tx("Registratie"), <IconInfo key="r" />], ["links", `${tx("Gekoppeld")} (${f.user_ids.length + f.group_ids.length})`, <IconUsers key="l" />], ...(f.own ? [["variables", tx("Tekstvariabelen"), <IconCheck key="v" />]] : [])]} />
+        <Tabs value={tab} onChange={setTab} tabs={[["general", tx("Algemeen"), <IconBriefcase key="g" />], ["contact", tx("Contact en adres"), <IconMail key="c" />], ["registration", tx("Registratie"), <IconInfo key="r" />], ...(f.id && canEdit ? [["payments", tx("Betaalgegevens"), <IconCard key="p" />]] : []), ["links", `${tx("Gekoppeld")} (${f.user_ids.length + f.group_ids.length})`, <IconUsers key="l" />], ...(f.own ? [["variables", tx("Tekstvariabelen"), <IconCheck key="v" />]] : [])]} />
         {err && <div className="alert">{err}</div>}
         <div style={{ paddingTop: ".8rem" }}>
           {tab === "general" && (
@@ -191,9 +200,55 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
             </div>
           )}
           {tab === "contact" && (
-            <div style={grid}>
-              {field("email", "E-mail")}{field("phone", "Telefoon", { max: 40 })}{field("website", "Website", { max: 200, placeholder: "https://" })}
-              {field("street", "Straat", { max: 120 })}{field("house_number", "Huisnummer", { max: 20 })}{field("postal_code", "Postcode", { max: 20 })}{field("city", "Plaats", { max: 80 })}{field("country", "Land", { max: 80 })}
+            <div style={{ display: "grid", gap: "1rem" }}>
+              <section style={SECTION}>
+                <h4 style={SECTION_TITLE}><IconMail width={15} height={15} />{tx("Contact")}</h4>
+                <div style={grid}>{field("email", "E-mail")}{field("phone", "Telefoon", { max: 40 })}{field("website", "Website", { max: 200, placeholder: "https://" })}</div>
+              </section>
+              <section style={SECTION}>
+                <h4 style={SECTION_TITLE}><IconPin width={15} height={15} />{tx("Hoofdadres")}</h4>
+                <div style={ADDR}>
+                  <div style={{ gridColumn: "span 6" }}>{field("street", "Straat", { max: 120 })}</div>
+                  <div style={{ gridColumn: "span 2" }}>{field("house_number", "Huisnummer", { max: 20 })}</div>
+                  <div style={{ gridColumn: "span 4" }}>{field("postal_code", "Postcode", { max: 20 })}</div>
+                  <div style={{ gridColumn: "span 6" }}>{field("city", "Plaats", { max: 80 })}</div>
+                  <div style={{ gridColumn: "span 6" }}>{field("country", "Land", { max: 80 })}</div>
+                </div>
+              </section>
+              <section style={SECTION}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".6rem", flexWrap: "wrap" }}>
+                  <h4 style={SECTION_TITLE}><IconPin width={15} height={15} />{tx("Extra locaties")} <span className="muted" style={{ fontWeight: 500 }}>({(f.locations || []).length})</span></h4>
+                  {canEdit && (f.locations || []).length < 25 && <button type="button" className="e2e-btn e2e-btn--ghost e2e-btn--sm" onClick={() => set("locations", [...(f.locations || []), { name: "", street: "", house_number: "", postal_code: "", city: "", country: "", phone: "", email: "" }])}><IconPlus width={14} height={14} /> {tx("Locatie toevoegen")}</button>}
+                </div>
+                {!(f.locations || []).length && <p className="muted" style={{ margin: 0 }}>{tx("Heeft dit bedrijf meer vestigingen? Voeg ze toe met een naam, bijvoorbeeld Amsterdam of Magazijn.")}</p>}
+                {(f.locations || []).map((l, i) => {
+                  const setLoc = (k, v) => { set("locations", f.locations.map((x, j) => (j === i ? { ...x, [k]: v } : x))); setErrs((e) => ({ ...e, [`loc${i}`]: "" })); };
+                  const inp = (k, label, span, max = 120) => (
+                    <div className="e2e-field" style={{ gridColumn: `span ${span}` }}>
+                      <label className="e2e-label" htmlFor={`el-loc${i}-${k}`}><span>{tx(label)}</span></label>
+                      {k === "phone" ? <PhoneInput id={`el-loc${i}-${k}`} value={l[k] || ""} onChange={(v) => setLoc(k, v)} />
+                        : <input id={`el-loc${i}-${k}`} className="e2e-input" value={l[k] || ""} maxLength={max} disabled={!canEdit} onChange={(e) => setLoc(k, e.target.value)} />}
+                    </div>
+                  );
+                  return (
+                    <div key={i} style={{ ...SECTION, background: "color-mix(in srgb, var(--e2e-primary, #e8803f) 4%, transparent)" }}>
+                      <div style={{ display: "flex", gap: ".6rem", alignItems: "flex-end" }}>
+                        <div className="e2e-field" style={{ flex: 1 }}>
+                          <label className="e2e-label" htmlFor={`el-loc${i}-name`}><span>{tx("Naam van de locatie")}<span style={{ color: "var(--e2e-danger)" }}> *</span></span></label>
+                          <input id={`el-loc${i}-name`} className={`e2e-input${errs[`loc${i}`] ? " e2e-input--error" : ""}`} value={l.name || ""} maxLength={80} disabled={!canEdit} placeholder={tx("Bijvoorbeeld: Amsterdam")} onChange={(e) => setLoc("name", e.target.value)} />
+                        </div>
+                        {canEdit && <button type="button" className="e2e-btn e2e-btn--ghost e2e-btn--sm" aria-label={tx("Verwijderen")} title={tx("Verwijderen")} onClick={() => set("locations", f.locations.filter((_, j) => j !== i))}><IconTrash width={14} height={14} /></button>}
+                      </div>
+                      {errs[`loc${i}`] && <span className="e2e-error">{errs[`loc${i}`]}</span>}
+                      <div style={ADDR}>
+                        {inp("street", "Straat", 6)}{inp("house_number", "Huisnummer", 2, 20)}{inp("postal_code", "Postcode", 4, 20)}
+                        {inp("city", "Plaats", 6, 80)}{inp("country", "Land", 6, 80)}
+                        {inp("phone", "Telefoon", 6, 40)}{inp("email", "E-mail", 6, 160)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
             </div>
           )}
           {tab === "registration" && <div style={grid}>{field("registration_no", "Registratienummer (KvK)", { max: 40 })}{field("vat_no", "Btw-nummer", { max: 40 })}
@@ -202,6 +257,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
               <ReadOnly label={tx("easy2edit id")} value={f.ids.remote_id} empty={tx("Nog niet aangemaakt op de easy2edit server")} />
               <ReadOnly label={tx("Websites")} value={(f.ids.domains || []).join(", ")} empty={tx("(geen)")} wide />
             </>}</div>}
+          {tab === "payments" && f.id && <PaymentDetails base={`/entities/${f.id}/payments/`} canEdit={canEdit} />}
           {tab === "variables" && (
             <div>
               <p className="muted" style={{ marginTop: 0 }}>{tx("Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).")}</p>

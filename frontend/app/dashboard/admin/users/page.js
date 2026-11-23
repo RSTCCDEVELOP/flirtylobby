@@ -18,6 +18,7 @@ import VerifyBadge, { VERIFY } from "../../../../components/VerifyBadge";
 import Collapsible from "../../../../components/Collapsible";
 import SmallEditor from "../../../../components/SmallEditor";
 import Tabs from "../../../../components/Tabs";
+import PaymentDetails from "../../../../components/PaymentDetails";
 import UserInvites from "../../../../components/UserInvites";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
@@ -209,7 +210,7 @@ export default function Users() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save} onInvalidCapture={() => setTab("account")}>
             <h2>{modal.id ? tx("Gebruiker wijzigen") : tx("Nieuwe gebruiker")}</h2>
-            <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["media", "Media"], ["rights", "Rechten"]]} />
+            <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["media", "Media"], ["rights", "Rechten"], ...(modal.id && L >= 2 ? [["payments", "Betaalgegevens"]] : [])]} />
             {tab === "account" && (
             <div className="grid2">
               <label>{tx("Voornaam")}<span style={{ display: "flex", gap: ".6rem", alignItems: "center" }}><ColorField inline value={modal.color || ""} onChange={(v) => setModal({ ...modal, color: v })} disabled={L < 2} /><input style={{ flex: 1 }} value={modal.first_name} onChange={set("first_name")} /></span></label>
@@ -260,59 +261,55 @@ export default function Users() {
               </span>
             </div>
             )}
-            {tab === "rights" && (
-              <>
-            <div>
-              <strong style={{ fontSize: ".85rem" }}>{tx("Rollen")}</strong>
-              <div className="perm-list">
-                {roles.map((r) => (
-                  <label className="check sec-toggle" key={r.id}>
-                    <span className="switch"><input type="checkbox" checked={modal.roles.includes(r.id)}
-                      onChange={() => setModal({ ...modal, roles: modal.roles.includes(r.id) ? modal.roles.filter((x) => x !== r.id) : [...modal.roles, r.id] })} /><span /></span>
-                    <span>{r.name} <small className="muted">{r.description}</small></span>
-                  </label>
-                ))}
-                {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
-              </div>
-            </div>
-            <div>
-              <strong style={{ fontSize: ".85rem" }}>{tx("User groups")}</strong>
-              <div className="perm-list">
-                {groups.map((g) => (
-                  <label className="check sec-toggle" key={g.id}>
-                    <span className="switch"><input type="checkbox" checked={modal.user_groups.includes(g.id)}
-                      onChange={() => setModal({ ...modal, user_groups: modal.user_groups.includes(g.id) ? modal.user_groups.filter((x) => x !== g.id) : [...modal.user_groups, g.id] })} /><span /></span>
-                    <span>{g.name} <small className="muted">{g.description}</small></span>
-                  </label>
-                ))}
-                {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
-              </div>
-            </div>
-            <div>
-              <strong style={{ fontSize: ".85rem" }}>{tx("Entiteiten")}</strong>
-              <div className="perm-list">
-                {entities.map((en) => (
-                  <label className="check sec-toggle" key={en.id}>
-                    <span className="switch"><input type="checkbox" checked={(modal.entity_ids || []).includes(en.id)}
-                      onChange={() => setModal({ ...modal, entity_ids: (modal.entity_ids || []).includes(en.id) ? modal.entity_ids.filter((x) => x !== en.id) : [...(modal.entity_ids || []), en.id] })} /><span /></span>
-                    <span>{en.name || tx("Naamloos")} <small className="muted">{tx(en.kind_label)}{en.city ? ` · ${en.city}` : ""}</small></span>
-                  </label>
-                ))}
-                {!entities.length && <span className="muted">{tx("Nog geen entiteiten.")}</span>}
-              </div>
-            </div>
-            {me.is_superadmin_plus && <label className="check sec-toggle">
-              <span className="switch"><input type="checkbox" checked={!!modal.is_superadmin_plus} onChange={(e) => setModal({ ...modal, is_superadmin_plus: e.target.checked, ...(e.target.checked ? { is_staff: true } : {}) })} disabled={modal.id === me.id} /><span /></span><span>{tx("Superadmin+ (ziet en beheert ook de easy2edit-modules)")}</span>
-            </label>}
-            {me.is_staff && <label className="check sec-toggle">
-              <span className="switch"><input type="checkbox" checked={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} /><span /></span><span>{tx("Superadmin (alle rechten, beheert ook admins en superadmins)")}</span>
-            </label>}
-                <label className="check sec-toggle" title={tx("Staat tweestapsverificatie bij Admin → Beveiliging uit, dan kan niemand het instellen.")}>
-                  <span className="switch"><input type="checkbox" checked={!!modal.twofa_required} onChange={set("twofa_required")} disabled={L < 2} /><span /></span>
-                  <span>{tx("Tweestapsverificatie verplicht (instellen direct na de eerste keer inloggen)")}</span>
+            {tab === "payments" && modal.id && <PaymentDetails base={`/users/${modal.id}/payments/`} canEdit={L >= 2} forUser />}
+            {tab === "rights" && (() => {
+              const sec = { border: "1px solid var(--e2e-border, #e5e0d8)", borderRadius: "var(--e2e-radius, 10px)", padding: ".7rem .8rem", display: "grid", gap: ".55rem" };
+              const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: ".5rem" };
+              const item = (on) => ({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".7rem", padding: ".55rem .7rem", borderRadius: "var(--e2e-radius, 10px)", border: `1px solid ${on ? "var(--e2e-primary, #e8803f)" : "var(--e2e-border, #e5e0d8)"}`, background: on ? "color-mix(in srgb, var(--e2e-primary, #e8803f) 8%, transparent)" : "transparent", cursor: "pointer", minWidth: 0 });
+              const Card = ({ on, onChange, title, sub, disabled, hint }) => (
+                <label className="check sec-toggle" style={item(on)} title={hint}>
+                  <span style={{ display: "grid", minWidth: 0, gap: ".1rem" }}>
+                    <span style={{ fontWeight: 600, fontSize: ".85rem", overflowWrap: "anywhere" }}>{title}</span>
+                    {sub ? <small className="muted" style={{ overflowWrap: "anywhere" }}>{sub}</small> : null}
+                  </span>
+                  <span className="switch" style={{ flex: "0 0 auto" }}><input type="checkbox" checked={!!on} onChange={onChange} disabled={disabled} /><span /></span>
                 </label>
-              </>
-            )}
+              );
+              const toggle = (key, id) => setModal({ ...modal, [key]: (modal[key] || []).includes(id) ? modal[key].filter((x) => x !== id) : [...(modal[key] || []), id] });
+              return (
+              <div style={{ display: "grid", gap: ".8rem" }}>
+                <div style={sec}>
+                  <strong style={{ fontSize: ".85rem" }}>{tx("Rollen")}</strong>
+                  <div style={grid}>
+                    {roles.map((r) => <Card key={r.id} on={modal.roles.includes(r.id)} onChange={() => toggle("roles", r.id)} title={r.name} sub={r.description} />)}
+                    {!roles.length && <span className="muted">{tx("Geen rollen beschikbaar.")}</span>}
+                  </div>
+                </div>
+                <div style={sec}>
+                  <strong style={{ fontSize: ".85rem" }}>{tx("User groups")}</strong>
+                  <div style={grid}>
+                    {groups.map((g) => <Card key={g.id} on={modal.user_groups.includes(g.id)} onChange={() => toggle("user_groups", g.id)} title={g.name} sub={g.description} />)}
+                    {!groups.length && <span className="muted">{tx("Nog geen groepen.")}</span>}
+                  </div>
+                </div>
+                <div style={sec}>
+                  <strong style={{ fontSize: ".85rem" }}>{tx("Entiteiten")}</strong>
+                  <div style={grid}>
+                    {entities.map((en) => <Card key={en.id} on={(modal.entity_ids || []).includes(en.id)} onChange={() => toggle("entity_ids", en.id)} title={en.name || tx("Naamloos")} sub={`${tx(en.kind_label)}${en.city ? ` · ${en.city}` : ""}`} />)}
+                    {!entities.length && <span className="muted">{tx("Nog geen entiteiten.")}</span>}
+                  </div>
+                </div>
+                <div style={sec}>
+                  <strong style={{ fontSize: ".85rem" }}>{tx("Beheerrechten")}</strong>
+                  <div style={grid}>
+                    {me.is_superadmin_plus && <Card on={modal.is_superadmin_plus} onChange={(e) => setModal({ ...modal, is_superadmin_plus: e.target.checked, ...(e.target.checked ? { is_staff: true } : {}) })} disabled={modal.id === me.id} title="Superadmin+" sub={tx("Ziet en beheert ook de easy2edit-modules")} />}
+                    {me.is_staff && <Card on={modal.is_staff} onChange={set("is_staff")} disabled={modal.id === me.id} title="Superadmin" sub={tx("Alle rechten, beheert ook admins en superadmins")} />}
+                    <Card on={modal.twofa_required} onChange={set("twofa_required")} disabled={L < 2} title={tx("Tweestapsverificatie verplicht")} sub={tx("Instellen direct na de eerste keer inloggen")} hint={tx("Staat tweestapsverificatie bij Admin → Beveiliging uit, dan kan niemand het instellen.")} />
+                  </div>
+                </div>
+              </div>
+              );
+            })()}
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row">
               <button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button>

@@ -606,6 +606,25 @@ def system_setup_consent(request):
     return Response({"sent": True, "code": code if (on_screen or local) else None})
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_owner(request, step):
+    """Licence form: the contact e-mail address is known on the easy2edit server already. step = lookup ({email} -> {exists}), company ({name} -> {exists, hint}), send ({email} or {company} -> a code goes to that address), fetch ({challenge, code} -> {fields} to fill in)."""
+    from apps.accounts.access import can_admin
+
+    from . import ownerlookup
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    if step not in ("lookup", "company", "send", "fetch"):
+        return Response({"detail": "Onbekende stap."}, status=404)
+    body = {k: str(request.data.get(k) or "")[:300] for k in ("email", "name", "company", "challenge", "code")}
+    try:
+        return Response(ownerlookup.ask(step, body))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=400)
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def system_setup_password(request):

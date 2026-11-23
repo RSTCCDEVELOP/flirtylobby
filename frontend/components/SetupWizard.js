@@ -71,6 +71,7 @@ export default function SetupWizard() {
   const [upd, setUpd] = useState(null);  // update mode: a module or plugin was switched on or off and the licence price changed: {old, new, delta, number}; the licence is updated with a new agreement
   const [done, setDone] = useState(null);  // the licence that was made: shown when everything is saved
   const [pay, setPay] = useState({ busy: false, error: "" });  // the payment step (Stripe)
+  const [owner, setOwner] = useState({ source: "email", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });  // the contact e-mail is known on the easy2edit server: "" | "found" | "code" | "done"
   const [consent, setConsent] = useState({ method: "email", sent: false, busy: false, error: "", shown: "" });  // the consent with the licence: a code (000-000) by e-mail or SMS
   const [forced, setForced] = useState(false);  // opened again by hand (button on the Basisgegevens page), also when everything is filled in
 
@@ -291,6 +292,58 @@ export default function SetupWizard() {
     setForm((f) => ({ ...f, consent_code: v }));
     if (v.length === 7) checkCode(v);
   };
+  const OWNER_RE = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
+  const lookupOwner = async () => {  // the contact e-mail is left: is it known on the easy2edit server already?
+    const email = String(form.contact_email || "").trim().toLowerCase();
+    if (!OWNER_RE.test(email) || email === owner.checked || d?.license_server?.mode !== "linked") return;
+    setOwner({ source: "email", checked: email, status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
+    try { const r = await api("/system/setup/owner/lookup/", { method: "POST", body: { email } }); if (r.exists) setOwner((o) => (o.checked === email ? { ...o, status: "found" } : o)); } catch { /* the form never waits for this */ }
+  };
+  const checkCompany = async () => {  // the button Controleer after the company name: is this company known on the easy2edit server?
+    const name = String(form.company_name || "").trim();
+    if (name.length < 3) return;
+    setOwner({ source: "company", checked: name, status: "", challenge: "", hint: "", code: "", busy: true, error: "" });
+    try {
+      const r = await api("/system/setup/owner/company/", { method: "POST", body: { name } });
+      setOwner((o) => (o.checked === name ? { ...o, busy: false, status: r.exists ? "found" : "none", hint: r.hint || "" } : o));
+    } catch (e) { setOwner((o) => ({ ...o, busy: false, status: "none", error: errorText(e) })); }
+  };
+  const sendOwnerCode = async () => {
+    setOwner((o) => ({ ...o, busy: true, error: "" }));
+    try { const r = await api("/system/setup/owner/send/", { method: "POST", body: owner.source === "company" ? { company: owner.checked } : { email: owner.checked } }); setOwner((o) => ({ ...o, busy: false, status: "code", challenge: r.challenge, hint: r.hint, code: "" })); }
+    catch (e) { setOwner((o) => ({ ...o, busy: false, error: errorText(e) })); }
+  };
+  const typeOwnerCode = async (raw) => {
+    let v = String(raw || "").replace(/\D/g, "").slice(0, 6);
+    v = v.length > 3 ? `${v.slice(0, 3)}-${v.slice(3)}` : v;
+    setOwner((o) => ({ ...o, code: v, error: "" }));
+    if (v.length !== 7) return;
+    setOwner((o) => ({ ...o, busy: true }));
+    try {
+      const r = await api("/system/setup/owner/fetch/", { method: "POST", body: { challenge: owner.challenge, code: v } });
+      setForm((f) => ({ ...f, ...(r.fields || {}) }));  // the data of the person and the company fill the form
+      setErrs({});
+      setOwner((o) => ({ ...o, busy: false, status: "done" }));
+    } catch (e) { setOwner((o) => ({ ...o, busy: false, code: "", error: errorText(e) })); }
+  };
+  const co = owner.source === "company";
+  const ownerBox = owner.status ? (
+    <div className="e2e-stack" data-easy2edit-tag="ui-alerts" style={{ gridColumn: "1 / -1", gap: ".6rem", padding: ".75rem .9rem", border: "1px solid var(--e2e-border, #e5e0d8)", borderRadius: "var(--e2e-radius, 10px)" }}>
+      {owner.status === "none" && <span className="e2e-hint">{owner.error || tx("Dit bedrijf is niet gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
+      {owner.status === "found" && <>
+        <strong>{co ? tx("Dit bedrijf is al bekend bij easy2edit.") : tx("Dit e-mailadres is al bekend bij easy2edit.")}</strong>
+        <span className="e2e-hint">{co ? `${tx("Wil je alle gegevens overnemen? Je krijgt eerst een code per e-mail, die gaat naar")} ${owner.hint}.` : tx("Wil je de gegevens downloaden en laten invullen? Je krijgt eerst een code per e-mail.")}</span>
+        {owner.error && <span className="e2e-error">{owner.error}</span>}
+        <div><button type="button" className="btn primary" disabled={owner.busy} onClick={sendOwnerCode}>{co ? tx("Alles overnemen") : tx("Gegevens downloaden")}</button></div>
+      </>}
+      {owner.status === "code" && <>
+        <span className="e2e-hint">{tx("De code is verstuurd naar")} {owner.hint}. {tx("Vul de code in om de gegevens in te vullen.")}</span>
+        <CodeInput value={owner.code} onChange={typeOwnerCode} invalid={!!owner.error} label={tx("Code")} />
+        {owner.error && <span className="e2e-error">{owner.error}</span>}
+      </>}
+      {owner.status === "done" && <span className="e2e-hint"><IconCheck width={14} height={14} style={{ verticalAlign: "-2px", marginRight: ".3rem" }} />{tx("De gegevens zijn ingevuld. Controleer ze en pas ze zo nodig aan.")}</span>}
+    </div>
+  ) : null;
   const go = (s) => { const i = steps.findIndex((x) => x[0] === s); if (i <= stepIdx || steps.slice(0, i).every((x) => stepDone(x[0]))) { if (i > stepIdx) fill(s); setStep(s); } };
   return createPortal(
     <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Licentiegegevens")}>
@@ -352,7 +405,15 @@ export default function SetupWizard() {
             <form className="e2e-grid" style={{ "--e2e-min": "230px" }} onSubmit={(e) => { e.preventDefault(); if (stepIdx < steps.length - 1) next(); else save(); }}>
               {step === "site" && <>
                 {field("site_name", tx("Naam van de website"), { span: "1 / -1" })}
-                {field("company_name", tx("Bedrijfsnaam"), { autoComplete: "organization", span: "1 / -1" })}
+                <div className="e2e-field" style={{ gridColumn: "1 / -1" }}>
+                  <label className="e2e-label" htmlFor="sw-company_name"><span>{tx("Bedrijfsnaam")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
+                  <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
+                    <input id="sw-company_name" className={`e2e-input${errs.company_name ? " e2e-input--error" : ""}`} style={{ flex: 1, minWidth: 0 }} value={form.company_name || ""} onChange={set("company_name")} autoComplete="organization" aria-invalid={errs.company_name ? "true" : undefined} aria-required="true" />
+                    {d?.license_server?.mode === "linked" && <button type="button" className="btn" disabled={owner.busy || String(form.company_name || "").trim().length < 3} onClick={checkCompany}>{owner.busy && owner.source === "company" ? tx("Bezig…") : tx("Controleer")}</button>}
+                  </div>
+                  {errs.company_name && <span className="e2e-error">{errs.company_name}</span>}
+                </div>
+                {owner.source === "company" && ownerBox}
                 {field("frontend_url", tx("Hoofd-URL"), { placeholder: "www.voorbeeld.nl", inputMode: "url", span: "1 / -1" })}
                 <span className="e2e-hint" style={{ gridColumn: "1 / -1" }}>{tx("Het hoofdadres van de website, zonder pad of slash erachter. Dit staat ook op het licentiescherm.")}</span>
               </>}
@@ -366,7 +427,8 @@ export default function SetupWizard() {
               {step === "contact" && <>
                 {field("contact_first_name", tx("Voornaam contactpersoon"), { autoComplete: "given-name" })}
                 {field("contact_last_name", tx("Achternaam contactpersoon"), { autoComplete: "family-name" })}
-                {field("contact_email", tx("Contact e-mail"), { type: "email", autoComplete: "email", span: "1 / -1" })}
+                {field("contact_email", tx("Contact e-mail"), { type: "email", autoComplete: "email", span: "1 / -1", onBlur: lookupOwner })}
+                {owner.source === "email" && ownerBox}
                 {phoneField("phone", tx("Telefoon"), false)}
                 {phoneField("mobile", tx("Mobiel nummer"), true)}
               </>}

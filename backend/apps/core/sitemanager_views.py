@@ -103,6 +103,56 @@ def site_owner(request):
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+def _owner_step(request, step):
+    """The licence form asks the master site about a contact e-mail address that may be known already: lookup, send (a code), fetch (the data after the right code)."""
+    from . import ownerlookup
+
+    site, refusal = _approved(request)
+    if refusal:
+        return refusal
+    if not sitemanager.rate_ok(_seen_ip(request), 30):
+        return Response({"detail": "Te veel aanvragen."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    d = request.data if isinstance(request.data, dict) else {}
+    try:
+        if step == "lookup":
+            return Response(ownerlookup.lookup(site, d.get("email")))
+        if step == "company":
+            return Response(ownerlookup.lookup_company(site, str(d.get("name") or "")[:120]))
+        if step == "send":
+            return Response(ownerlookup.send(site, d.get("email"), str(d.get("company") or "")[:120]))
+        return Response(ownerlookup.fetch(site, d.get("challenge"), d.get("code")))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def owner_lookup(request):
+    return _owner_step(request, "lookup")
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def owner_company(request):
+    return _owner_step(request, "company")
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def owner_send(request):
+    return _owner_step(request, "send")
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def owner_fetch(request):
+    return _owner_step(request, "fetch")
+
+
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])

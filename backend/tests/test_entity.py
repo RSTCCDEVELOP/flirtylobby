@@ -639,3 +639,135 @@ def test_ai_credit_can_be_bought_in_the_sandbox_without_the_payments_plugin(admi
     r = admin.post("/api/ai/me/topup/", {"amount": 5}, format="json")
     assert r.status_code == 200 and r.json()["via"] == "sandbox" and "paid=1" in r.json()["url"]
     assert float(AiAccount.objects.get().balance) == 5.0
+
+
+def test_locations_are_cleaned_and_saved(db):
+    from apps.core import entity
+    from apps.core.models import Entity
+
+    e = entity.save_other(Entity(), {"name": "Shop BV", "locations": [
+        {"name": "Amsterdam", "street": "Damrak", "house_number": "1", "city": "Amsterdam"}, {"name": "", "street": ""}, {"name": "Magazijn", "email": "mag@shop.nl"}]})
+    e.refresh_from_db()
+    assert [x["name"] for x in e.locations] == ["Amsterdam", "Magazijn"] and e.locations[0]["city"] == "Amsterdam"
+    assert entity.serialize(e, True)["data"]["locations"][1]["email"] == "mag@shop.nl"
+    with pytest.raises(ValueError):
+        entity.save_other(e, {"locations": [{"street": "Zonder naam 1"}]})
+    with pytest.raises(ValueError):
+        entity.save_other(e, {"locations": [{"name": "X", "email": "geen-mail"}]})
+    entity.save_other(e, {"name": "Shop BV"})  # no locations sent: they stay
+    e.refresh_from_db()
+    assert len(e.locations) == 2
+
+
+# ── payment details: encrypted in the database ──
+IBAN = "NL91 ABNA 0417 1643 00"
+
+
+def _pay_entity(db):
+    from apps.core.models import Entity
+
+    return Entity.objects.create(kind="bedrijf", name="Shop BV")
+
+
+def test_payment_details_are_encrypted_and_masked(db):
+    from apps.core import entity_payments as ep
+
+    e = _pay_entity(db)
+    items = ep.save(e, [{"kind": "bank", "label": "Hoofdrekening", "holder": "Shop BV", "iban": "nl91abna0417164300", "bic": "ABNANL2A"},
+                        {"kind": "paypal", "label": "PayPal", "email": "pay@shop.nl"}])
+    e.refresh_from_db()
+    raw = e.payments_enc
+    assert raw and "NL91" not in raw and "Shop BV" not in raw and "pay@shop.nl" not in raw  # nothing readable in the database
+    assert items[0]["iban"] == IBAN and items[0]["default"] and not items[1]["default"]
+    m = ep.masked(ep.unseal(e))
+    assert m[0]["iban"] == "NL91 •••• •••• 00" and m[0]["holder"] == "Shop BV" and m[1]["email"] == "p•••@shop.nl"
+
+
+def test_masked_value_keeps_the_stored_one_and_bad_values_are_refused(db):
+    import pytest
+
+    from apps.core import entity_payments as ep
+
+    e = _pay_entity(db)
+    first = ep.save(e, [{"kind": "bank", "label": "A", "holder": "X", "iban": IBAN}])[0]
+    ep.save(e, [{**ep.masked([first])[0], "label": "A2"}])  # the screen sends the masked text back
+    got = ep.unseal(e)[0]
+    assert got["iban"] == IBAN and got["label"] == "A2" and got["id"] == first["id"]
+    for bad in ({"kind": "bank", "label": "B", "holder": "X", "iban": "NL91ABNA0417164301"}, {"kind": "bank", "label": "B", "holder": "", "iban": IBAN},
+                {"kind": "paypal", "label": "P", "email": "x"}, {"kind": "card", "label": "C"}, {"kind": "other", "label": "", "value": "x"}):
+        with pytest.raises(ValueError):
+            ep.save(e, [bad])
+    with pytest.raises(ValueError):
+        ep.save(e, [{"kind": "other", "label": str(i), "value": "v"} for i in range(ep.MAX_ITEMS + 1)])
+
+
+def test_blob_of_another_company_or_other_key_is_not_readable(db, settings):
+    import pytest
+
+    from apps.core import entity_payments as ep
+    from apps.core.models import Entity
+
+    a, b = _pay_entity(db), Entity.objects.create(kind="bedrijf", name="Other")
+    ep.save(a, [{"kind": "other", "label": "Tikkie", "value": "0612345678"}])
+    b.payments_enc = a.payments_enc
+    with pytest.raises(ep.Locked):
+        ep.unseal(b)
+    settings.PAYMENT_ENCRYPTION_KEY = "another key"
+    with pytest.raises(ep.Locked):
+        ep.unseal(a)
+
+
+def test_payment_api_needs_edit_rights(db):
+    from rest_framework.test import APIClient
+
+    client = APIClient()
+    from django.contrib.auth import get_user_model
+
+    from apps.core.models import Entity
+
+    e = Entity.objects.create(kind="bedrijf", name="Shop BV")
+    plain = get_user_model().objects.create_user(username="p@x.nl", email="p@x.nl", password="pw")
+    client.force_authenticate(plain)
+    assert client.get(f"/api/entities/{e.pk}/payments/").status_code in (401, 403)
+    boss = get_user_model().objects.create_user(username="b@x.nl", email="b@x.nl", password="pw", is_staff=True, is_superuser=True)
+    client.force_authenticate(boss)
+    r = client.put(f"/api/entities/{e.pk}/payments/", {"items": [{"kind": "bank", "label": "A", "holder": "X", "iban": IBAN}]}, format="json")
+    assert r.status_code == 200 and "0417" not in str(r.json())
+    assert "0417" in str(client.post(f"/api/entities/{e.pk}/payments/reveal/").json())
+
+
+# ── payment details of a user and the switch company / private ──
+def test_user_payments_switch_and_encryption(db):
+    from django.contrib.auth import get_user_model
+    from rest_framework.test import APIClient
+
+    from apps.accounts import payment_views
+    from apps.core import entity_payments as ep
+    from apps.core.models import Entity
+
+    U = get_user_model()
+    boss = U.objects.create_user(username="b@x.nl", email="b@x.nl", password="pw", is_staff=True, is_superuser=True)
+    u = U.objects.create_user(username="u@x.nl", email="u@x.nl", password="pw")
+    c = APIClient()
+    c.force_authenticate(boss)
+    url = f"/api/users/{u.pk}/payments/"
+    r = c.put(url, {"pays_via_company": True}, format="json")
+    assert r.status_code == 400  # no company yet
+    e = Entity.objects.create(kind="bedrijf", name="Shop BV")
+    e.users.add(u)
+    r = c.put(url, {"pays_via_company": True, "items": [{"kind": "bank", "label": "Privé", "holder": "U", "iban": IBAN}]}, format="json")
+    assert r.status_code == 200 and r.json()["pays_via_company"] and r.json()["billing_entity"] == e.pk  # one company: chosen by itself
+    assert "0417" not in str(r.json())
+    u.refresh_from_db()
+    assert IBAN.replace(" ", "")[:4] not in u.payments_enc and "U" != u.payments_enc
+    assert payment_views.billing_party(u) == {"mode": "company", "entity": e}
+    assert c.put(url, {"pays_via_company": False}, format="json").json()["pays_via_company"] is False
+    u.refresh_from_db()
+    assert payment_views.billing_party(u) == {"mode": "private"}
+    assert ep.unseal(u)[0]["iban"] == IBAN  # still there
+    e.payments_enc = u.payments_enc  # a blob of a person never opens as a company's blob
+    with __import__("pytest").raises(ep.Locked):
+        ep.unseal(e)
+    other = U.objects.create_user(username="m@x.nl", email="m@x.nl", password="pw")
+    c.force_authenticate(other)
+    assert c.get(url).status_code in (401, 403)

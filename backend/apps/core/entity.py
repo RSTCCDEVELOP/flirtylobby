@@ -68,6 +68,33 @@ def label(setting=None):
     return dict(KINDS)[s["kind"]]
 
 
+LOC_FIELDS = {"name": 80, "street": 120, "house_number": 20, "postal_code": 20, "city": 80, "country": 80, "phone": 40, "email": 160}
+LOC_MAX = 25  # more locations than this is not a company with a few addresses any more
+
+
+def clean_locations(value):
+    """The extra addresses of a company: a list of {name, street, house_number, postal_code, city, country, phone, email}. Empty rows are dropped; every location needs a name. Raises ValueError."""
+    from . import phone as _phone
+
+    if not isinstance(value, list):
+        return []
+    out = []
+    for row in value[:LOC_MAX]:
+        row = row if isinstance(row, dict) else {}
+        loc = {k: str(row.get(k) or "").strip()[:lim] for k, lim in LOC_FIELDS.items()}
+        if not any(loc.values()):
+            continue
+        if not loc["name"]:
+            raise ValueError("Geef elke locatie een naam.")
+        if loc["email"] and not EMAIL_RE.match(loc["email"]):
+            raise ValueError("Het e-mailadres is niet geldig.")
+        loc["phone"], bad = _phone.check(loc["phone"], 40)
+        if bad:
+            raise ValueError(bad)
+        out.append(loc)
+    return out
+
+
 def clean(incoming):
     """Validate what the screen sends. Returns the clean dict; raises ValueError with a message for the person."""
     out = {}
@@ -108,8 +135,8 @@ def get():
     e = Entity.objects.filter(is_own=True).first()
     if not e:
         old = _data().get(KEY) or {}
-        return {**{k: str(old.get(k, "") or "") for k in FIELDS}, "color": ""}
-    return {**{k: str(getattr(e, k) or "") for k in FIELDS}, "color": e.color or ""}
+        return {**{k: str(old.get(k, "") or "") for k in FIELDS}, "color": "", "locations": []}
+    return {**{k: str(getattr(e, k) or "") for k in FIELDS}, "color": e.color or "", "locations": list(e.locations or [])}
 
 
 def filled():
@@ -131,6 +158,8 @@ def save(incoming):
             e.color = clean_color(incoming.get("color"))
         except ValueError as x:
             raise ValueError(str(x))
+    if "locations" in incoming:
+        e.locations = clean_locations(incoming.get("locations"))
     e.save()
     return cleaned
 
@@ -146,7 +175,7 @@ def serialize(e, detail=False, actor=None):
     out = {"id": e.id, "is_own": e.is_own, "name": e.name, "kind": kind_setting()["kind"] if e.is_own else e.kind, "kind_name": kind_setting()["name"] if e.is_own else e.kind_name, "kind_label": kind_label(e),
            "city": e.city, "email": e.email, "color": e.color or "", "user_count": e.users.count(), "group_count": e.groups.count()}
     if detail:
-        out["data"] = {k: str(getattr(e, k) or "") for k in FIELDS}
+        out["data"] = {**{k: str(getattr(e, k) or "") for k in FIELDS}, "locations": list(e.locations or [])}
         out["ids"] = {"uid": str(e.uid), "remote_id": e.remote_id or "", "domains": list(e.domains or [])}  # read only: the unique id, the "easy2edit id" and the websites
         users = e.users.order_by("email")
         if actor is not None and not actor.is_staff:  # a delegated manager never sees the beheerders (like the users list)
@@ -180,6 +209,8 @@ def save_other(e, body, actor=None):
         from .tags import clean_color
 
         e.color = clean_color(body.get("color"))
+    if "locations" in body:
+        e.locations = clean_locations(body.get("locations"))
     e.save()
     if "user_ids" in body:
         ids = [int(x) for x in (body.get("user_ids") or []) if str(x).isdigit()]
@@ -238,6 +269,8 @@ def creator_text():
             lines.append(f"- {title}: {v}")
     if address(d):
         lines.append(f"- Address: {address(d)}")
+    for loc in d.get("locations") or []:
+        lines.append(f"- Location {loc['name']}: " + ", ".join(x for x in (" ".join(y for y in (loc['street'], loc['house_number']) if y), " ".join(y for y in (loc['postal_code'], loc['city']) if y), loc['country']) if x))
     for k, title in (("registration_no", "Chamber of commerce"), ("vat_no", "VAT")):
         if d[k]:
             lines.append(f"- {title}: {d[k]}")
