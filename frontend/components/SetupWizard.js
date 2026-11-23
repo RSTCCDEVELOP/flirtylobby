@@ -770,17 +770,19 @@ export default function SetupWizard() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "1rem 1.6rem", alignItems: "start", padding: ".9rem 1rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 25%, var(--e2e-line, var(--line)))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, #fff))" }}>
                       <div className="e2e-stack" style={{ gap: ".8rem", alignItems: "flex-start", textAlign: "left" }}>
                         {!canMail && !canSms && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Er is geen e-mail- of SMS-koppeling actief (API keys), dus er kan geen code worden verstuurd.")}</div></div>}
-                        {canMail && canSms && (
-                          <div className="e2e-field" style={{ alignItems: "flex-start" }}>
-                            <span className="e2e-label">{tx("Code versturen via")}</span>
-                            <div className="e2e-tabs e2e-pills" data-easy2edit-tag="ui-tabs-pills"><div className="e2e-tabs__list" role="radiogroup" aria-label={tx("Code versturen via")}>
-                              {[["email", "E-mail"], ["sms", "SMS"]].map(([m, l]) => (
-                                <button key={m} type="button" role="radio" className="e2e-tabs__tab" aria-checked={method === m} aria-selected={method === m} onClick={() => setConsent((c) => ({ ...c, method: m, sent: false, shown: "", error: "" }))}>{l}</button>
-                              ))}
-                            </div></div>
+                        <div className="e2e-field" style={{ alignItems: "flex-start" }}>
+                          {canMail && canSms && <span className="e2e-label">{tx("Code versturen via")}</span>}
+                          <div style={{ display: "flex", alignItems: "stretch", gap: ".6rem", flexWrap: "wrap" }}>
+                            {canMail && canSms && (
+                              <div className="e2e-tabs e2e-pills" data-easy2edit-tag="ui-tabs-pills" style={{ margin: 0 }}><div className="e2e-tabs__list" role="radiogroup" aria-label={tx("Code versturen via")} style={{ height: 42, alignItems: "stretch" }}>
+                                {[["email", "E-mail"], ["sms", "SMS"]].map(([m, l]) => (
+                                  <button key={m} type="button" role="radio" className="e2e-tabs__tab" aria-checked={method === m} aria-selected={method === m} onClick={() => setConsent((c) => ({ ...c, method: m, sent: false, shown: "", error: "" }))}>{l}</button>
+                                ))}
+                              </div></div>
+                            )}
+                            <button type="button" className="e2e-btn e2e-btn--outline" style={{ height: 42, margin: 0 }} disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
                           </div>
-                        )}
-                        <button type="button" className="e2e-btn e2e-btn--outline" disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
+                        </div>
                         <span className="e2e-hint">{consent.sent ? tx("De code is verstuurd. Die is 10 minuten geldig.") : `${tx("De code gaat naar")} ${method === "email" ? form.contact_email : form.mobile}`}{consent.shown ? ` · ${tx("Code")}: ${consent.shown}` : ""}</span>
                       </div>
                       <div className="e2e-field" style={{ alignItems: "flex-start" }}>
