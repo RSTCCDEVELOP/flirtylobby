@@ -197,7 +197,7 @@ export function ScrollFx() {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       setPct(max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0);
       setTop(window.scrollY > 500);
-      if (ui.scroll_parallax === "yes") document.querySelectorAll(".sec-bg img, .sec-bg video, .page-bg img, .page-bg video").forEach((el) => { const r = el.parentElement.getBoundingClientRect(); el.style.setProperty("--py", `${Math.round((r.top + r.height / 2 - window.innerHeight / 2) * -0.15)}px`); });
+      document.querySelectorAll(ui.scroll_parallax === "yes" ? ".sec-bg img, .sec-bg video, .page-bg img, .page-bg video" : '[data-bgpar="1"] .sec-bg img, [data-bgpar="1"] .sec-bg video').forEach((el) => { const r = el.parentElement.getBoundingClientRect(); el.style.setProperty("--py", `${Math.round((r.top + r.height / 2 - window.innerHeight / 2) * -0.15)}px`); });
     };
     on();
     window.addEventListener("scroll", on, { passive: true });

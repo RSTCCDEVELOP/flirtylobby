@@ -51,6 +51,7 @@ CODES = {  # code: what it means (the list of error codes of the documentation)
     "MEDIA_ALT": "Een afbeelding heeft geen alt-tekst.",
     "MEDIA_ONTBREEKT": "De verwijzing naar de afbeelding bestaat niet.",
     "MEDIA_BRON": "De bron van de afbeelding is niet toegestaan of ongeldig.",
+    "MEDIA_OPHALEN": "Een afbeelding van een https-adres kon niet worden opgehaald bij het importeren.",
     "MEDIA_DUBBEL": "Dezelfde afbeelding wordt meer dan één keer gebruikt.",
     "THEMA_HEX": "Een vaste kleur in een tekst: gebruik de kleuren van het thema.",
     "VARIABELE_ONBEKEND": "Een variabele bestaat niet.",
@@ -206,6 +207,8 @@ def _check_img(run, v, pad, comp):
             run.add("fout", "MEDIA_ONTBREEKT", pad + "/src", f"Het media-item {mid} bestaat niet.", comp)
     elif src.startswith("img/") or re.match(r"^[\w.-]+\.(jpe?g|png|webp|svg|gif)$", src, re.I):
         pass
+    elif src.lower().startswith("http://") and URL_RE.match(src):
+        run.add("fout", "MEDIA_BRON", pad + "/src", "Alleen https-adressen worden opgehaald.", comp, "Gebruik het https-adres van de afbeelding.")
     elif URL_RE.match(src):
         pass  # a source to import (https): the import fetches it
     else:
@@ -603,6 +606,100 @@ def validate_many(docs, ctx=None):
     return reports, fixed
 
 
+class _FetchFailed(Exception):
+    """One or more pictures could not be fetched: [(document index, pointer, message)]."""
+
+    def __init__(self, problems):
+        super().__init__("pictures")
+        self.problems = problems
+
+
+def _pictures(value, pad, out):
+    """Every picture value ({src, alt}) in a node, with the JSON Pointer of its src."""
+    if isinstance(value, dict):
+        if "src" in value and "alt" in value:
+            out.append((pad, value))
+            return
+        for k, v in value.items():
+            _pictures(v, f"{pad}/{k}", out)
+    elif isinstance(value, list):
+        for i, v in enumerate(value):
+            _pictures(v, f"{pad}/{i}", out)
+
+
+def _doc_pictures(doc):
+    out = []
+
+    def node(n, pad):
+        if not isinstance(n, dict):
+            return
+        _pictures(n.get("props"), pad + "/props", out)
+        for i, c in enumerate(n.get("children") or []):
+            node(c, f"{pad}/children/{i}")
+
+    for key in ("header", "footer"):
+        node(doc.get(key), f"/{key}")
+    for i, n in enumerate(doc.get("inhoud") or []):
+        node(n, f"/inhoud/{i}")
+    return out
+
+
+def fetch_pictures(docs, user, saved, fetch=None):
+    """Fetches the pictures that are given as an https address, puts them in the media library and points the document at them (img/<file>, the file is a photo of the design).
+    -> (documents, photos of the design). `saved` gets every MediaItem that was made (the caller removes them when the import fails). Raises _FetchFailed when a picture can not be fetched.
+    The same address is fetched once. All problems are collected, so the person sees them at once."""
+    from . import imagefetch
+    from . import sitecreator as sc
+    from django.core.files.storage import default_storage
+
+    fetch = fetch or imagefetch.fetch
+    docs = json.loads(json.dumps(docs))
+    done, photos, problems, total = {}, [], [], 0
+    for di, d in enumerate(docs):
+        for pad, v in _doc_pictures(d):
+            src = str(v.get("src") or "").strip()
+            if not src.lower().startswith("https://"):
+                continue
+            if src not in done:
+                if len(done) >= sc.MAX_PHOTOS:
+                    problems.append((di, pad + "/src", f"Er kunnen niet meer dan {sc.MAX_PHOTOS} afbeeldingen van een adres mee."))
+                    continue
+                try:
+                    data, ext = fetch(src)
+                    total += len(data)
+                    if total > imagefetch.MAX_TOTAL:
+                        raise imagefetch.FetchError("Samen zijn de afbeeldingen te groot (meer dan 40 MB).")
+                    base = re.sub(r"\.[a-z0-9]{2,5}$", "", src.split("?")[0].rstrip("/").split("/")[-1], flags=re.I) or "afbeelding"
+                    item = imagefetch.save(data, ext, base, user)
+                    saved.append(item)
+                except imagefetch.FetchError as e:
+                    problems.append((di, pad + "/src", str(e)))
+                    done[src] = None
+                    continue
+                file = f"import-{len(done) + 1}.{ext}"
+                done[src] = file
+                photos.append({"id": item.id, "file": file, "name": item.name[:120], "url": default_storage.url(item.key), "note": str(v.get("alt") or "")[:200]})
+            if done.get(src):
+                v["src"] = "img/" + done[src]
+            elif src in done:
+                problems.append((di, pad + "/src", "Deze afbeelding kon niet worden opgehaald."))
+    if problems:
+        raise _FetchFailed(problems)
+    return docs, photos
+
+
+
+def _remove_saved(items):
+    """The files of pictures that were saved for an import that did not succeed (storage is not part of the database transaction, which removes the items itself)."""
+    from django.core.files.storage import default_storage
+
+    for it in items:
+        try:
+            default_storage.delete(it.key)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def import_documents(user, body, name=""):
     """Validates AGAIN (a validation of the client is never trusted) and, only when there is no error, makes ONE design (a concept) from the documents, all or nothing.
     -> (reports, job or None). The design is a concept: it is checked in the creator and made into pages with 'Alles aanmaken'."""
@@ -620,12 +717,26 @@ def import_documents(user, body, name=""):
     pages = ", ".join(str((d.get("pagina") or {}).get("titel") or "")[:60] for d in fixed)
     first = fixed[0]
     brief = {"name": str(name or (first.get("pagina") or {}).get("titel") or "Ontwerp")[:120], "kind": "company", "lang": "Dutch", "mode": "new", "step": 6, "font": "sans", "pages": pages, "sectioned": True, "imported_document": True}
-    with transaction.atomic():
-        files = {}
-        for i, d in enumerate(fixed):
-            fn = "index.html" if i == 0 else f"{(d.get('pagina') or {}).get('slug') or 'pagina'}.html"
-            files[fn] = document_to_html(d, brief)
-        files = sc.themed({**files, "style.css": "/* the theme is written by the system */\n"}, sc.clean_brief({}, brief))
-        job = SiteDesignJob.objects.create(user=user, name=brief["name"], status="done", progress=100, brief=brief, files=files,
-                                           messages=[{"role": "ai", "text": f"Het ontwerp is geïmporteerd ({len(fixed)} pagina's) en gecontroleerd. Het staat als concept klaar."}])
+    saved = []
+    try:
+        with transaction.atomic():
+            fixed, photos = fetch_pictures(fixed, user, saved)
+            if photos:
+                brief["photos"] = photos
+            files = {}
+            for i, d in enumerate(fixed):
+                fn = "index.html" if i == 0 else f"{(d.get('pagina') or {}).get('slug') or 'pagina'}.html"
+                files[fn] = document_to_html(d, brief)
+            files = sc.themed({**files, "style.css": "/* the theme is written by the system */\n"}, sc.clean_brief({}, brief))
+            job = SiteDesignJob.objects.create(user=user, name=brief["name"], status="done", progress=100, brief=brief, files=files,
+                                               messages=[{"role": "ai", "text": f"Het ontwerp is geïmporteerd ({len(fixed)} pagina's) en gecontroleerd. Het staat als concept klaar."}])
+    except _FetchFailed as e:
+        _remove_saved(saved)
+        for di, pad, text in e.problems:
+            reports[di]["meldingen"].append({"ernst": "fout", "code": "MEDIA_OPHALEN", "pad": pad, "component": "", "melding": text, "suggestie": "Controleer het adres, of upload de afbeelding en gebruik media:<id>."})
+            reports[di]["geldig"] = False
+        return reports, None
+    except Exception:
+        _remove_saved(saved)
+        raise
     return reports, job

@@ -95,6 +95,30 @@ def clean_bg(bg):
     return out
 
 
+PLACEHOLDER_MARK = 'data-easy2edit-tag="placeholder"'
+
+
+def is_placeholder(it):
+    """A block that stands for a component that is missing (the creator puts it there): only the editor sees it, never a visitor."""
+    d = (it.get("data") or {}) if isinstance(it, dict) and it.get("widget") == "code" else None
+    return bool(d) and (d.get("tag") == "placeholder" or PLACEHOLDER_MARK in str(d.get("html") or ""))
+
+
+def strip_placeholders(data):
+    """The layout without the placeholders (for visitors). A block that only held placeholders goes away too, so no empty space is left."""
+    rows = []
+    for r in data.get("rows", []):
+        cells, gone = [], False
+        for c in r.get("cells", []):
+            items = [i for i in c.get("items", []) if not is_placeholder(i)]
+            gone = gone or len(items) != len(c.get("items", []))
+            cells.append({**c, "items": items})
+        if gone and not any(c["items"] for c in cells):
+            continue
+        rows.append({**r, "cells": cells})
+    return {**data, "rows": rows}
+
+
 def with_urls(data):
     """The layout for the page: every background gets its address (from the media library)."""
     from django.core.files.storage import default_storage
@@ -121,6 +145,10 @@ def with_urls(data):
 
 
 PADS = ("none", "sm", "md", "lg", "xl")
+FX_IN = ("none", "fade", "up", "down", "zoom", "left", "right", "blur", "flip", "rotate", "pop")  # how a block appears when it comes into view
+FX_EASE = ("ease", "linear", "ease-in", "ease-out", "ease-in-out", "bounce")
+FX_HOVER = ("none", "lift", "grow", "shrink", "glow", "tilt", "dim")  # the effect when the mouse is over a block
+FX_LOOP = ("none", "float", "pulse", "sway")  # a movement that goes on by itself
 HEIGHTS = ("px", "pct", "full")
 
 
@@ -263,6 +291,16 @@ def _widget(raw):
             data["height"] = int(min(max(float(d.get("height") or 320), 150), 800))
         except (TypeError, ValueError):
             data["height"] = 320
+        try:
+            data["zoom"] = int(min(max(float(d.get("zoom") or 15), 1), 21))
+        except (TypeError, ValueError):
+            data["zoom"] = 15
+        data["type"] = d.get("type") if d.get("type") in ("m", "k", "h", "p") else "m"  # map, satellite, satellite with names, terrain
+        for k in ("zoombar", "open", "round"):  # zoom buttons, "open in Google Maps", rounded corners (on by default)
+            data[k] = d.get(k) is not False
+        for k, dflt in (("zoompos", "right"), ("ctrlpos", "bottom")):  # on which side the zoom buttons and the route buttons stand
+            data[k] = d.get(k) if d.get(k) in ("top", "bottom", "left", "right") else dflt
+        data["route"] = d.get("route") is True  # the route form ("Jouw adres") for the visitor: only when it is switched on
     elif kind == "quote":
         data["text"], data["author"] = s("text", 500), s("author", 80)
         data["marks"] = d.get("marks") is not False  # the two big quotation marks (on by default)
@@ -370,8 +408,22 @@ def _row_extra(r):
             out["padding"] = clean
     if r.get("pad") in PADS:
         out["pad"] = r["pad"]
-    if r.get("fx") in ("none", "fade", "up", "down", "zoom", "left", "right", "blur"):
+    if r.get("fx") in FX_IN:
         out["fx"] = r["fx"]  # the scroll effect of this block ("" = what the theme says)
+    for k, lo, hi in (("fx_ms", 100, 3000), ("fx_delay", 0, 2000)):  # animation: how long it takes and how long it waits (ms)
+        try:
+            if r.get(k) not in (None, ""):
+                out[k] = int(min(max(float(r[k]), lo), hi))
+        except (TypeError, ValueError):
+            pass
+    if r.get("fx_ease") in FX_EASE:
+        out["fx_ease"] = r["fx_ease"]  # the speed curve of the animation
+    if r.get("hover") in FX_HOVER:
+        out["hover"] = r["hover"]  # what the block does when the mouse is over it
+    if r.get("loop") in FX_LOOP:
+        out["loop"] = r["loop"]  # a movement that goes on by itself
+    if r.get("bgpar"):
+        out["bgpar"] = True  # the background picture or video moves slower than the page (parallax)
     if r.get("inner"):
         out["inner"] = True  # a block that runs edge to edge: its content stands in the width of the page content (theme: content width)
     if r.get("screen"):
@@ -549,6 +601,12 @@ def layout(request, key):
 
         if not (request.user.is_authenticated and modules.enabled("edit_mode") and level(request.user, "edit_mode") >= 2):
             return Response({"detail": "Je hebt hier geen rechten voor."}, status=status.HTTP_403_FORBIDDEN)
+        from . import service as page_service
+        from .models import Page
+
+        pg = Page.objects.filter(key=key).first()
+        if pg and not page_service.can_do(request.user, pg, "edit"):
+            return Response({"detail": "Je hebt geen rechten voor deze pagina."}, status=status.HTTP_403_FORBIDDEN)  # the rights of this page narrow down the rights of editing
         try:
             data = clean(request.data)
         except (ValueError, TypeError) as e:
@@ -568,4 +626,10 @@ def layout(request, key):
         theme = facade.community.get()["profiles"]["theme"]
     except Exception:  # noqa: BLE001
         theme = "normal"
-    return Response({**(with_urls(obj.data) if obj else {"rows": [], "bg": {}}), "theme": theme})
+    from apps.accounts.access import level
+    from apps.core import modules
+
+    data = with_urls(obj.data) if obj else {"rows": [], "bg": {}}
+    if not (request.user.is_authenticated and modules.enabled("edit_mode") and level(request.user, "edit_mode") >= 2):
+        data = strip_placeholders(data)  # a visitor never sees a "component missing" block
+    return Response({**data, "theme": theme, "can_edit": page_service.can_do(request.user, pg, "edit") if pg else True})  # (the rights of the page: see apps/accounts/rights.py)

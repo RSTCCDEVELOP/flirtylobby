@@ -9,6 +9,7 @@
 
 import { softRefresh } from "../lib/softrefresh";
 import { holdLoader } from "../lib/loading";
+import BlockMotion, { fxVars } from "./BlockMotion";
 import Link from "next/link";
 import { tx } from "../lib/t";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
@@ -140,10 +141,11 @@ function PbButton({ it, c, editing }) {
 }
 
 export default function PageBlocks({ pageKey, title = "" }) {
-  const { editing, setEditMode } = useSession();
+  const { editing: editingSession, setEditMode } = useSession();
   const objOn = useModule("sysobjects");
   const mediaOn = useModule("media");  // (a hook: it stays above the early returns)
   const [layout, setLayout] = useState(null);
+  const editing = editingSession && layout?.can_edit !== false;  // the rights of this page: somebody who may not edit this page does not get the editor on it
   const [menu, setMenu] = useState(null); // cell id with the add-menu open
   const [objects, setObjects] = useState([]);
   const [saving, setSaving] = useState("");
@@ -422,6 +424,15 @@ export default function PageBlocks({ pageKey, title = "" }) {
     const r = l.rows.find((x) => x.id === rid);
     Object.assign(r, patch);
     if (patch.cols) { while (r.cells.length < r.cols) r.cells.push(newCell()); while (r.cells.length > r.cols) { const gone = r.cells.pop(); r.cells[r.cells.length - 1].items.push(...gone.items); } }
+    return l;
+  });
+  // split a block (a column) at one of its edges: left or right an empty column next to it; above or below an empty block in it (a column that is alone in its row: an empty row above or below)
+  const splitCell = (rid, cid, side) => change((l) => {
+    const i = l.rows.findIndex((x) => x.id === rid), r = l.rows[i], ci = r ? r.cells.findIndex((c) => c.id === cid) : -1;
+    if (ci < 0) return l;
+    if (side === "left" || side === "right") { if (r.cols < 4) { r.cells.splice(side === "left" ? ci : ci + 1, 0, newCell()); r.cols = r.cells.length; } }
+    else if (r.cells.length === 1) l.rows.splice(side === "top" ? i : i + 1, 0, makeRow(["auto"]));
+    else { const it = r.cells[ci].items; if (side === "top") it.unshift(makeItem("text")); else it.push(makeItem("text")); }
     return l;
   });
   const moveRow = (rid, d) => change((l) => { const i = l.rows.findIndex((x) => x.id === rid), j = i + d; if (j >= 0 && j < l.rows.length) [l.rows[i], l.rows[j]] = [l.rows[j], l.rows[i]]; return l; });
@@ -830,7 +841,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
         <div id={rowNavId(r, ri)} onClick={(e) => selectRow(r, e)} className={`pb-rowwrap${r.bg?.url ? " has-bg" : ""}${r.hero ? " hero" : r.cols > 1 ? " multi" : ""}${r.h_mode ? " sized" : ""}${r.hero === "custom" ? " custom" : ""}${r.hero === "plain" ? " plain" : ""}${r.inner ? " inner" : ""}${r.style?.bg || r.style?.radius !== undefined ? " styled" : ""}${r.style?.color || autoFg(r.style) ? " tcolor" : ""}${r.cells.some((c) => c.style?.shadow) ? " has-shadow" : ""}${overRow?.id === r.id ? ` row-drop-${overRow.pos}` : ""}`} data-t={r.hero || undefined} key={r.id} onDragOver={(e) => { if (!rowDrag.current || rowDrag.current === r.id) return; e.preventDefault(); const b = e.currentTarget.getBoundingClientRect(); const pos = e.clientY < b.top + b.height / 2 ? "before" : "after"; if (overRow?.id !== r.id || overRow.pos !== pos) setOverRow({ id: r.id, pos }); }}
           onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOverRow((o) => (o?.id === r.id ? null : o)); }}
           onDrop={(e) => { if (!rowDrag.current) return; e.preventDefault(); e.stopPropagation(); const pos = overRow?.id === r.id ? overRow.pos : "before"; dropRow(r.id, pos); rowDrag.current = null; setOverRow(null); setDragging(false); }}
-          data-screen={r.screen ? "1" : undefined} data-sqm={r.sq_mobile ? "1" : undefined} data-glow={r.glow === false ? "off" : undefined} data-balign={!r.screen ? r.balign || undefined : undefined} data-pad={r.pad || undefined} data-fx={r.fx || undefined} data-v={r.v || undefined} data-touch={r.top === "touch" ? "1" : undefined} data-prev={r.top === "prev" ? "1" : undefined} style={{ ...styleCss(r.style), ...(r.mt !== undefined && r.mt !== null && r.top !== "touch" ? { marginTop: `calc(${r.mt}px - var(--pbg, 1.2rem))` } : {}), ...(r.padding ? { ...(r.padding.t != null ? { paddingTop: `${r.padding.t}px` } : {}), ...(r.padding.r != null ? { paddingRight: `${r.padding.r}px` } : {}), ...(r.padding.b != null ? { paddingBottom: `${r.padding.b}px` } : {}), ...(r.padding.l != null ? { paddingLeft: `${r.padding.l}px` } : {}) } : {}), ...(r.screen ? (() => { const w = Number(r.width && r.width !== "default" ? r.width : 100) || 100, al = r.balign || "center"; /* a block that is a part of the screen width: centred (or left / right when chosen), not stuck to the left edge */ return { width: `${w}vw`, maxWidth: "none", marginLeft: al === "left" ? "calc(50% - 50vw)" : al === "right" ? `calc(50% + 50vw - ${w}vw)` : `calc(50% - ${w / 2}vw)`, marginRight: "0", paddingLeft: 0, paddingRight: 0 }; })() : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>
+          data-screen={r.screen ? "1" : undefined} data-sqm={r.sq_mobile ? "1" : undefined} data-glow={r.glow === false ? "off" : undefined} data-balign={!r.screen ? r.balign || undefined : undefined} data-pad={r.pad || undefined} data-fx={r.fx || undefined} data-hover={r.hover && r.hover !== "none" ? r.hover : undefined} data-loop={r.loop && r.loop !== "none" ? r.loop : undefined} data-bgpar={r.bgpar ? "1" : undefined} data-v={r.v || undefined} data-touch={r.top === "touch" ? "1" : undefined} data-prev={r.top === "prev" ? "1" : undefined} style={{ ...fxVars(r), ...styleCss(r.style), ...(r.mt !== undefined && r.mt !== null && r.top !== "touch" ? { marginTop: `calc(${r.mt}px - var(--pbg, 1.2rem))` } : {}), ...(r.padding ? { ...(r.padding.t != null ? { paddingTop: `${r.padding.t}px` } : {}), ...(r.padding.r != null ? { paddingRight: `${r.padding.r}px` } : {}), ...(r.padding.b != null ? { paddingBottom: `${r.padding.b}px` } : {}), ...(r.padding.l != null ? { paddingLeft: `${r.padding.l}px` } : {}) } : {}), ...(r.screen ? (() => { const w = Number(r.width && r.width !== "default" ? r.width : 100) || 100, al = r.balign || "center"; /* a block that is a part of the screen width: centred (or left / right when chosen), not stuck to the left edge */ return { width: `${w}vw`, maxWidth: "none", marginLeft: al === "left" ? "calc(50% - 50vw)" : al === "right" ? `calc(50% + 50vw - ${w}vw)` : `calc(50% - ${w / 2}vw)`, marginRight: "0", paddingLeft: 0, paddingRight: 0 }; })() : r.width && r.width !== "default" ? { width: `${r.width}%`, maxWidth: "none" } : {}), ...(r.h_mode ? { justifyContent: { top: "flex-start", center: "center", bottom: "flex-end" }[r.v || "center"], minHeight: r.h_mode === "px" ? `${r.h || 400}px` : r.h_mode === "pct" ? `${r.h || 50}vh` : "100svh" } : {}) }}>
           <BgLayer bg={r.bg} />
           {shell && <span className="pb-rowtools"><button type="button" className="pb-pencil" title={tx("Dit blok bewerken")} aria-label={tx("Dit blok bewerken")} onClick={(e) => { e.stopPropagation(); setItemOpen({}); setBarOpen({ [r.id]: true }); showSettings(); }}>✎</button><button type="button" className="pb-pencil del" title={tx("Dit blok verwijderen")} aria-label={tx("Dit blok verwijderen")} onClick={(e) => { e.stopPropagation(); removeRow(r); }}>×</button></span>}
           {editing && (
@@ -886,7 +897,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <div className="pb-panelhead"><strong>{r.hero === "plain" ? tx("Raster") : r.hero ? tx("Hero") : tx("Rij")}</strong>
                 <button type="button" className="icon-btn pb-panelx" onClick={() => toggleBar(r.id)} aria-label={tx("Sluiten")} title={tx("Sluiten")}>✕</button>
                 <span className="pb-seg pb-dockseg" role="group" aria-label={tx("Plaats van dit venster")} title={tx("Plaats van dit venster: aan de zijkant zie je de pagina terwijl je aanpast")}>{[["anchor", "Bij het tandwiel"], ["left", "Links"], ["right", "Rechts"], ["center", "Midden"]].map(([k, l]) => <button type="button" key={k} className={dock === k ? "on" : ""} aria-pressed={dock === k} onClick={() => chooseDock(k)}>{tx(l)}</button>)}</span>
-                <Tabs className="pb-paneltabs" value={panelTab[r.id] || "layout"} onChange={(v) => setPanelTab((t) => ({ ...t, [r.id]: v }))} tabs={[["layout", "Indeling"], ["size", "Afmetingen"], ["align", "Uitlijning"], ["pad", "Ruimte"], ["style", "Opmaak"], ["bg", "Achtergrond"]]} />
+                <Tabs className="pb-paneltabs" value={panelTab[r.id] || "layout"} onChange={(v) => setPanelTab((t) => ({ ...t, [r.id]: v }))} tabs={[["layout", "Indeling"], ["size", "Afmetingen"], ["align", "Uitlijning"], ["pad", "Ruimte"], ["style", "Opmaak"], ["motion", "Animatie"], ["bg", "Achtergrond"]]} />
               </div>
               {(panelTab[r.id] || "layout") === "layout" && (
                 <div className="pb-panelbody">
@@ -1027,13 +1038,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
                   <button type="button" className="btn sm" disabled={!r.style || !Object.keys(r.style).length} onClick={() => setRow(r.id, { style: {} })}>{tx("Terug naar thema")}</button>
                 </div>
               </div>
-              <label>{tx("Scrolleffect")}
-                <select value={r.fx || ""} onChange={(e) => setRow(r.id, { fx: e.target.value })}>
-                  <option value="">{tx("Zoals het thema")}</option><option value="none">{tx("Geen effect")}</option><option value="fade">{tx("Vervagen")}</option><option value="up">{tx("Omhoog schuiven")}</option><option value="down">{tx("Omlaag schuiven")}</option><option value="left">{tx("Van links")}</option><option value="right">{tx("Van rechts")}</option><option value="zoom">{tx("Inzoomen")}</option><option value="blur">{tx("Scherp worden")}</option>
-                </select>
-              </label>
                 </div>
               )}
+              {panelTab[r.id] === "motion" && <BlockMotion r={r} setRow={setRow} />}
               {panelTab[r.id] === "bg" && (
                 <div className="pb-panelbody">
               <BgControls bg={r.bg} onChange={(bg) => setRow(r.id, { bg })} />
@@ -1055,6 +1062,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <div className={`pb-cell${editing ? " edit" : ""}${!editing && (c.items || []).filter((x) => x.type === "button").length > 1 ? " btnrow" : ""}${c.style ? " card" : ""}${shell && curCell === c.id ? " sel" : ""}`} key={c.id} onMouseDown={editing ? () => setCurCell(c.id) : undefined} style={{ "--ha": AL_H[c.halign], "--jv": AL_V[c.valign], ...(c.gap !== undefined ? { "--cg": `${c.gap}rem` } : {}), textAlign: c.halign, ...(c.style && (c.valign === "center" || c.valign === "bottom") ? { alignSelf: c.valign === "center" ? "center" : "flex-end" } : {}), ...(c.style ? { ...(c.style.bg ? { background: c.style.bg } : {}), ...(c.style.radius != null ? { borderRadius: `${c.style.radius}px` } : {}), ...(c.style.pad != null ? { padding: `${c.style.pad}px` } : {}), ...(c.style.border ? { border: `1px solid ${c.style.border}` } : {}), boxShadow: c.style.shadow ? "0 12px 34px rgba(14, 6, 56, .14)" : "none" } : {}) }}
                 onDragOver={(e) => { if (drag.current || dragFixed() || panelDrag()) { e.preventDefault(); e.currentTarget.classList.add("drop-over"); } }} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove("drop-over"); }}
                 onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("drop-over"); if (panelDrag() && !drag.current) { dropPanel(c.id, null); return; } if (dragFixed() && !drag.current) { dropFixed(c.id, null); return; } if (drag.current) move(drag.current, c.id, null); drag.current = null; setOver(null); setDragOn(null); setDragging(false); }}>
+                {editing && ["top", "bottom", "left", "right"].filter((sd) => (sd === "top" || sd === "bottom" || r.cols < 4)).map((sd) => { const tip = tx({ top: "Leeg blok erboven toevoegen", bottom: "Leeg blok eronder toevoegen", left: "Leeg blok links ernaast toevoegen", right: "Leeg blok rechts ernaast toevoegen" }[sd]); return (
+                  <span key={sd} className={`pb-edge e-${sd}`}><button type="button" title={tip} aria-label={tip} onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); splitCell(r.id, c.id, sd); }}>+</button><i className="ar a1" /><i className="ar a2" /></span>
+                ); })}
                 {shell && <span className="pb-celltools"><button type="button" className="pb-pencil" title={tx("Deze kolom bewerken")} aria-label={tx("Deze kolom bewerken")} onClick={(e) => { e.stopPropagation(); setCurCell(c.id); setItemOpen({}); setBarOpen({ [r.id]: true }); showSettings(); }}>✎</button><button type="button" className="pb-pencil del" title={tx("Deze kolom verwijderen")} aria-label={tx("Deze kolom verwijderen")} onClick={(e) => { e.stopPropagation(); delCell(r, c); }}>×</button></span>}
                 {editing && (
                   <div className="pb-cellbar" onClick={(e) => e.stopPropagation()}>

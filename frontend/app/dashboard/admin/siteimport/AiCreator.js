@@ -19,7 +19,7 @@ import { useAuth } from "../../../../components/AuthContext";
 import { setActiveDesign } from "../../../../lib/activeDesign";
 import Loading from "../../../../components/Loading";
 import { captureFrame, saveAsJpg, saveAsPdf } from "../../../../lib/screenshot";
-import { COLOR_ROLES, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DEVICES, DW_CSS, FONT_NAMES, HexField, MODES, ModulePicker, previewHtml, STEPS } from "./designKit";
+import { COLOR_ROLES, DARK_ROLES, DEFAULT_COLORS, DEFAULT_DARK, DEVICES, DW_CSS, FONT_NAMES, HexField, MODES, ModulePicker, previewHtml, STEPS, elementOfPath } from "./designKit";
 import { analyseDesign, buildConvertPrompt } from "./aiPrompt";
 import { componentListText } from "../../../../lib/ui-kit/componentList";
 import { loadKit } from "../../../../lib/ui-kit/kitDoc";
@@ -324,7 +324,7 @@ function ImprovePopup({ onClose, onStart, busy }) {
 }
 
 // The check of a design: the report of the validator (the same one the import uses) grouped by severity; errors block the import, warnings do not. Missing components get their own block.
-function CheckReport({ rep, checking, onRecheck, job, onDesign }) {
+function CheckReport({ rep, checking, onRecheck, job, onDesign, onLocate }) {
   const [pick, setPick] = useState({});
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
@@ -342,7 +342,7 @@ function CheckReport({ rep, checking, onRecheck, job, onDesign }) {
         return list.length > 0 && (
           <div key={k}><strong>{tx(l)}</strong> <small className="muted">{tx(h)}</small>
             <ul style={{ margin: ".3rem 0 0", paddingLeft: "1.1rem", display: "grid", gap: ".3rem" }}>
-              {list.map((m, i) => <li key={i}><span>{m.melding}</span> <small className="muted">{m.file} {m.pad}{m.component ? ` · ${m.component}` : ""}</small>{m.suggestie && <small className="muted" style={{ display: "block" }}>{m.suggestie}</small>}</li>)}
+              {list.map((m, i) => <li key={i}><span>{m.melding}</span> <small className="muted">{m.file} {m.pad}{m.component ? ` · ${m.component}` : ""}</small>{onLocate && /^\/(inhoud|header|footer)/.test(m.pad || "") && <> <button type="button" className="btn sm" onClick={() => onLocate(m.file, m.pad)} title={tx("Toon deze plek in het voorbeeld")}>{tx("Toon in voorbeeld")}</button></>}{m.suggestie && <small className="muted" style={{ display: "block" }}>{m.suggestie}</small>}</li>)}
             </ul>
           </div>
         );
@@ -378,7 +378,7 @@ function CheckReport({ rep, checking, onRecheck, job, onDesign }) {
 }
 
 // Alles aanmaken: when the design is good, the pages are made and filled at once. Choices: how, and which parts.
-function CreatePopup({ job, onClose, onCreate, onReview, onDesign }) {
+function CreatePopup({ job, onClose, onCreate, onReview, onDesign, onLocate }) {
   const [tab, setTab] = useState("choices");
   const [rep, setRep] = useState(job.brief?.controle || null); // the check of the design in the page format (easy2edit-pagina@1): errors block "Alles aanmaken", warnings do not
   const [checking, setChecking] = useState(false);
@@ -416,7 +416,7 @@ function CreatePopup({ job, onClose, onCreate, onReview, onDesign }) {
               </div>
             </div>
           )}
-          {tab === "check" && <CheckReport rep={rep} checking={checking} onRecheck={recheck} job={job} onDesign={(d) => { onDesign && onDesign(d); recheck(); }} />}
+          {tab === "check" && <CheckReport rep={rep} checking={checking} onRecheck={recheck} job={job} onLocate={onLocate} onDesign={(d) => { onDesign && onDesign(d); recheck(); }} />}
           {tab === "what" && (
             <div className="muted" style={{ display: "grid", gap: ".6rem" }}>
               <p style={{ margin: 0 }}>{`${n} ${tx("pagina's")} · ${photos} ${tx("foto's")}`}</p>
@@ -1193,6 +1193,25 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
       doc.addEventListener("submit", (ev) => ev.preventDefault());
     } catch { /* the frame is not reachable: nothing to do */ }
   };
+  // A click on a message of the check ("Toon in voorbeeld"): close the window, open that page of the design in the preview and show the place (scrolled into view, with a frame around it for a moment).
+  const [find, setFind] = useState(null);
+  const locate = (file, pad) => { setCreateOpen(false); setView("creator"); if (file && filesRef.current[file]) setPage(file); setFind({ file, pad, n: Date.now() }); };
+  const showFind = () => {
+    try {
+      const doc = frame.current?.contentDocument;
+      if (!find || !doc || !doc.body || find.done) return;
+      if (find.file && find.file !== cur) return;  // the right page is not shown yet: it is tried again when it has loaded
+      find.done = true;
+      const el = elementOfPath(doc, find.pad);
+      if (!el) return;
+      doc.querySelectorAll("[data-found]").forEach((x) => { x.style.outline = ""; x.style.outlineOffset = ""; x.removeAttribute("data-found"); });
+      el.setAttribute("data-found", "1");
+      el.style.outline = "4px solid #e8833a"; el.style.outlineOffset = "-4px";
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => { try { el.style.outline = ""; el.style.outlineOffset = ""; el.removeAttribute("data-found"); } catch {} }, 5000);
+    } catch { /* the frame is not reachable: nothing to show */ }
+  };
+  useEffect(() => { if (find && !find.done) { const t = setTimeout(showFind, 150); return () => clearTimeout(t); } return undefined; }); // eslint-disable-line react-hooks/exhaustive-deps
   const running = job?.status === "running" || job?.status === "stopping";
   useBusy("design", running); // a design is being made: the idle logout never logs out now, it asks first
   const act = async (what, path, body) => { setBusy(what); setErr(""); try { merge(await api(`/sitecreator/${jobId}/${path}/`, { method: "POST", body: body || {} })); return true; } catch (x) { setErr(errorText(x)); return false; } finally { setBusy(""); } };
@@ -1280,7 +1299,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
             : <button type="button" className="btn primary sm" style={{ marginRight: ".6rem" }} onClick={() => onImport(job)}>{tx("Importeren in easy2edit")}</button>)}
           <button type="button" className="pb-panelx" onClick={requestClose} aria-label={tx("Sluiten")}>×</button></div>
         {improveOpen && <ImprovePopup onClose={() => setImproveOpen(false)} onStart={improve} busy={busy === "improve"} />}
-        {createOpen && job && <CreatePopup job={job} onDesign={merge} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
+        {createOpen && job && <CreatePopup job={job} onDesign={merge} onLocate={locate} onClose={() => setCreateOpen(false)} onReview={() => { setCreateOpen(false); onImport(job); }} onCreate={(o) => { setCreateOpen(false); onApply(job, { ...o, off: job.modules_off_effective || job.brief?.modules_off || [] }); }} />}
         {!job && <p className="muted" style={{ padding: "1rem" }}>{err || <Loading />}</p>}
         {wizard && <Wizard key={job.id + (again ? "a" : "")} job={job} onJob={merge} onReload={() => reload(true)} onApply={onApply ? (o) => onApply(job, o) : undefined} onImprove={() => setImproveOpen(true)} onWorkspace={ready && job.status !== "draft" ? () => setAgain(false) : undefined} onGenerate={(j) => { setAgain(false); merge(j); }} />}
         {job && !wizard && (
@@ -1375,7 +1394,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 ) : ready ? (
                   <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24, boxShadow: "0 12px 40px rgba(0,0,0,.35)" }), opacity: running ? .6 : 1, transition: "opacity .3s" }}>
                     <div style={{ width: `${100 / zoom}%`, height: `${100 / zoom}%`, transform: `scale(${zoom})`, transformOrigin: "0 0" }}>
-                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], job.brief?.color_mode === "both" ? prevMode : "", chatMode, kit)} onLoad={keepInPreview} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                      <iframe ref={frame} title={tx("Voorbeeld")} sandbox="allow-same-origin" srcDoc={previewHtml(job.files, cur, [...(job.brief?.photos || []), ...(job.brief?.videos || [])], job.brief?.color_mode === "both" ? prevMode : "", chatMode, kit)} onLoad={(e) => { keepInPreview(e); setTimeout(showFind, 100); }} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
                     </div>
                   </div>
                 ) : <p className="muted" style={{ alignSelf: "center", textAlign: "center", maxWidth: 360 }}>{running ? "" : chatMode ? tx("Hier verschijnt het voorbeeld van je website zodra het ontwerp klaar is.") : ""}</p>}

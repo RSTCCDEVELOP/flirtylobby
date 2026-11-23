@@ -10,6 +10,9 @@
 import { tx } from "../lib/t";
 import { useEffect, useRef, useState } from "react";
 import { api, errorText, mediaUrl } from "../lib/api";
+import { lvl } from "../lib/perms";
+import { useSession } from "./Session";
+import RightsEditor, { useRightsPeople } from "./RightsEditor";
 import { IconImage, IconSearch, IconSliders, IconUser } from "./Icons";
 import LayoutPresets from "./LayoutPresets";
 import MediaPicker from "./MediaPicker";
@@ -85,24 +88,10 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
     } catch (err) { setError(errorText(err)); }
     setTrProg(null); setBusy(false);
   }
-  const [acc, setAcc] = useState({ users: [...(page.access?.users || [])], groups: [...(page.access?.groups || [])] }); // who may open the page; both empty = everybody
-  const [pick, setPick] = useState({ type: "all", id: "" });
-  const [people, setPeople] = useState({ users: [], groups: [] });
-  useEffect(() => {
-    if (page.kind === "system") return;
-    api("/users/").then((u) => setPeople((x) => ({ ...x, users: u }))).catch(() => {});
-    api("/user-groups/").then((g) => setPeople((x) => ({ ...x, groups: g }))).catch(() => {});
-  }, [page.kind]);
-  const userName = (u) => [u.first_name, u.last_name].filter(Boolean).join(" ") || u.email;
-  const options = pick.type === "user" ? people.users.filter((u) => !acc.users.some((x) => x.id === u.id)).map((u) => ({ id: u.id, label: `${userName(u)} (${u.email})` }))
-    : pick.type === "group" ? people.groups.filter((g) => !acc.groups.some((x) => x.id === g.id)).map((g) => ({ id: g.id, label: g.name })) : [];
-  function addAccess() {
-    if (pick.type === "all") { setAcc({ users: [], groups: [] }); return; }
-    if (!pick.id) return;
-    const id = Number(pick.id), o = options.find((x) => x.id === id);
-    setAcc(pick.type === "user" ? { ...acc, users: [...acc.users, { id, name: o?.label || String(id) }] } : { ...acc, groups: [...acc.groups, { id, name: o?.label || String(id) }] });
-    setPick({ ...pick, id: "" });
-  }
+  const { user: me } = useSession();
+  const canRights = !!me && (me.is_staff || lvl(me, "pages") >= 3);  // the rights of a page are set by administrators and by those who manage the pages
+  const [rows, setRows] = useState(page.rights || []);  // who may view, edit and delete the page (see components/RightsEditor.js)
+  const people = useRightsPeople(canRights);
 
   useEffect(() => {
     if (!canSeo || !hasPath) return;
@@ -134,8 +123,8 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
     const flush = () => { if (dirty.current && !busy) save(); };
     window.addEventListener("pb-flush", flush);
     return () => window.removeEventListener("pb-flush", flush);
-  }, [docked, busy, form, setup, mo, bg, seo, acc]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (docked && mounted.current) dirty.current = true; }, [form, setup, mo, seo, acc]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [docked, busy, form, setup, mo, bg, seo, rows]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (docked && mounted.current) dirty.current = true; }, [form, setup, mo, seo, rows]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save(e) {
     e?.preventDefault?.();
@@ -143,7 +132,8 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
     try {
       const body = { title: form.title, background: bg.type === "none" || !bg.media ? {} : { type: bg.type, media: bg.media, overlay: bg.overlay } };
       if (canSetup) body.setup = setup;
-      if (page.kind !== "system") { body.audience = form.audience; body.new_tab = form.new_tab; body.access = { users: acc.users.map((x) => x.id), groups: acc.groups.map((x) => x.id) }; }
+      if (page.kind !== "system") { body.audience = form.audience; body.new_tab = form.new_tab; }
+      if (canRights) body.rights = rows;
       body.devices = mo.devices; body.cta = mo.cta; if (page.kind === "menu") body.label_link = mo.label_link;
       if (page.kind === "link") body.url = form.url;
       if (page.has_slugs) body.slugs = Object.fromEntries(langs.map((l) => [l.code, form.slugs?.[l.code] || ""])); // only the languages that are on are shown; the others get an address by themselves
@@ -163,7 +153,7 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
     } catch (err) { setError(errorText(err)); setBusy(false); }
   }
 
-  const tabs = [...(lead ? [["layout", "Indeling", <IconSliders key="l" />]] : []), ["general", "Algemeen", <IconSliders key="g" />], ...(imp ? [["import", "Import", <IconSliders key="i" />]] : []), ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ["footer", "Footer", <IconSliders key="f" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
+  const tabs = [...(lead ? [["layout", "Indeling", <IconSliders key="l" />]] : []), ["general", "Algemeen", <IconSliders key="g" />], ...(imp ? [["import", "Import", <IconSliders key="i" />]] : []), ...(page.has_slugs ? [["slugs", "Adres", <IconSearch key="a" />]] : []), ["menu", "Menu", <IconSliders key="m" />], ["footer", "Footer", <IconSliders key="f" />], ...(canSetup ? [["setup", "Pagina-opzet", <IconSliders key="o" />]] : []), ...(page.kind !== "system" ? [["security", "Beveiliging", <IconUser key="u" />]] : []), ["rights", "Rechten", <IconUser key="r" />], ["seo", "SEO", <IconSearch key="s" />], ["background", "Achtergrond", <IconImage key="b" />], ...(page.kind === "content" ? [["layout", "Opmaak", <IconSliders key="l" />]] : [])];
   return (
     <div className={docked ? "pgs-dockwrap" : "overlay"} onClick={docked ? undefined : onClose}>
       <form className={docked ? "pgs form docked" : "card modal pgs form"} onClick={(e) => e.stopPropagation()} onSubmit={save}>
@@ -250,26 +240,14 @@ export default function PageSettingsModal({ ai, page, languages, defaultLang, on
               <label>{tx("Voor wie")}
                     <select value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}>{Object.entries(AUDIENCE).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
                   </label>
-                <div className="form" style={{ gap: ".4rem" }}>
-                  <strong style={{ fontSize: ".85rem" }}>{tx("Rechten")}</strong>
-                  <div className="chips" style={{ marginBottom: 0 }}>
-                    {!acc.users.length && !acc.groups.length && <span className="chip" style={{ cursor: "default" }}>{tx("Iedereen")}</span>}
-                    {acc.groups.map((g) => <span key={`g${g.id}`} className="chip" style={{ cursor: "default" }}><b>{tx("Groep")}</b> {g.name}<button type="button" className="icon-btn" aria-label={tx("Verwijder")} title={tx("Verwijder")} onClick={() => setAcc({ ...acc, groups: acc.groups.filter((x) => x.id !== g.id) })}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button></span>)}
-                    {acc.users.map((u) => <span key={`u${u.id}`} className="chip" style={{ cursor: "default" }}><b>{tx("User")}</b> {u.name}<button type="button" className="icon-btn" aria-label={tx("Verwijder")} title={tx("Verwijder")} onClick={() => setAcc({ ...acc, users: acc.users.filter((x) => x.id !== u.id) })}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button></span>)}
-                  </div>
-                  <div className="grant-add" style={{ flexWrap: "nowrap" }}>
-                    <select value={pick.type} onChange={(e) => setPick({ type: e.target.value, id: "" })} style={{ flex: "0 0 auto" }}>
-                      <option value="all">{tx("Iedereen")}</option><option value="user">{tx("User")}</option><option value="group">{tx("User group")}</option>
-                    </select>
-                    <select value={pick.id} disabled={pick.type === "all"} onChange={(e) => setPick({ ...pick, id: e.target.value })}>
-                      <option value="">{pick.type === "group" ? tx("Kies een groep…") : pick.type === "user" ? tx("Kies een user…") : tx("Iedereen mag de pagina openen")}</option>
-                      {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-                    </select>
-                    <button type="button" className="btn" style={{ whiteSpace: "nowrap" }} disabled={pick.type !== "all" && !pick.id} onClick={addAccess}>{pick.type === "all" ? tx("Iedereen") : tx("Toevoegen")}</button>
-                  </div>
-                  <small className="muted">{tx("Zonder users of groepen mag iedereen de pagina openen (zie Voor wie). Met een lijst alleen die users en de leden van die groepen, plus beheerders van de pagina's.")}</small>
-                </div>
             </>
+          )}
+
+          {tab === "rights" && (
+            canRights
+              ? <RightsEditor entries={rows} onChange={setRows} people={people} emptyText="Geen beperkingen: iedereen met het recht van de module Pagina's."
+                  hint="Elk recht heeft een eigen lijst. Een recht zonder lijst heeft geen beperking. Staat er wel een lijst, dan mogen alleen zij het (en wie het hogere recht heeft): zonder lijst bij Bekijken mag iedereen de pagina openen. Beheerders en wie de pagina's beheert mogen altijd." />
+              : <p className="muted" style={{ margin: 0 }}>{tx("Alleen beheerders en wie de pagina's beheert kunnen de rechten van een pagina wijzigen.")}</p>
           )}
 
           {tab === "footer" && (

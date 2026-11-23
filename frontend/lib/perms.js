@@ -14,6 +14,7 @@ export const can = (user, perm) => !!user && (user.is_staff || (user.permissions
 export const ADMIN_PAGES = [
   { href: "/dashboard/admin/entity", module: "entities" },
   { href: "/dashboard/admin/component-requests", module: "component_requests" },
+  { href: "/dashboard/admin/rights", module: "rights" },
   { href: "/dashboard/admin/tags", module: "tags", anyAdmin: true },
   { href: "/dashboard/admin/users", module: "users" },
   { href: "/dashboard/admin/groups", module: "users" },

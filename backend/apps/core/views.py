@@ -2585,6 +2585,7 @@ def presets_update(request, key):
 
 # ── Website ontwerpen: the AI-creator (a step plan that is saved as a draft, then a website designed by Claude, adjusted in a chat, then imported with the html import) ──
 DESIGN_PERM = [has_level_for("siteimport", {"GET": "use"}, default="manage"), module_required("siteimport")]
+IMPORT_PERM = [has_level_for("page_import", {"GET": "use"}, default="manage"), module_required("siteimport")]  # importing page designs through the API has its own right (module page_import)
 
 
 def _design(request, pk):
@@ -2953,7 +2954,7 @@ def sitecreator_controle(request, pk):
 
 
 @api_view(["GET"])
-@permission_classes(DESIGN_PERM)
+@permission_classes(IMPORT_PERM)
 def pagina_catalogus(request):
     """The component catalogue of the page format, made from the component set: type, version, purpose, props, nesting and an example."""
     from . import pagevalidate
@@ -2962,7 +2963,7 @@ def pagina_catalogus(request):
 
 
 @api_view(["POST"])
-@permission_classes(DESIGN_PERM)
+@permission_classes(IMPORT_PERM)
 def pagina_valideer(request):
     """A dry run: the validation report of a page design (format easy2edit-pagina@1); nothing is saved."""
     from . import pagevalidate
@@ -2972,7 +2973,7 @@ def pagina_valideer(request):
 
 
 @api_view(["POST"])
-@permission_classes(DESIGN_PERM)
+@permission_classes(IMPORT_PERM)
 def pagina_import(request):
     """Imports page designs: validated again here; only without errors it becomes a design (a concept, all or nothing). 422 with the reports when there are errors."""
     from . import pagevalidate

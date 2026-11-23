@@ -1439,7 +1439,7 @@ body:has(.site) .sandbox-badge { top: calc(var(--site-header-h, 72px) / 2); }
 .pb-w.pb-w-kit { display: block; width: 100%; }  /* a block, not inline-flex: else the component shrinks to its narrowest part (the intro) and a grid of 4 becomes 2 */
 .pb-w-kit > .e2e-scope { width: 100%; }
 .pb-img { max-width: 100%; height: auto; border-radius: var(--radius, 12px); }
-.pb-cell.edit { border: 1px dashed var(--blue); border-radius: var(--radius, 12px); padding: .5rem; min-height: 140px; }
+.pb-cell.edit { position: relative; border: 1px dashed var(--blue); border-radius: var(--radius, 12px); padding: .5rem; min-height: 140px; }
 .pb-cellbar { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; align-self: stretch; padding-bottom: .4rem; border-bottom: 1px dashed var(--line); margin-bottom: .2rem; }
 .pb-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .pb-seg button { background: var(--card); border: 0; padding: .25rem .5rem; cursor: pointer; color: var(--muted); font-size: .9rem; }
@@ -2270,6 +2270,18 @@ html[data-hm="hide"] .site-header { transition: transform .25s; } html[data-hm-h
 .sr-pre { opacity: 0; transition: opacity var(--srd, 600ms) ease, transform var(--srd, 600ms) ease, filter var(--srd, 600ms) ease; }
 [data-srm="up"].sr-pre { transform: translateY(28px); } [data-srm="down"].sr-pre { transform: translateY(-28px); } [data-srm="zoom"].sr-pre { transform: scale(.94); } [data-srm="left"].sr-pre { transform: translateX(-32px); } [data-srm="right"].sr-pre { transform: translateX(32px); } [data-srm="blur"].sr-pre { filter: blur(8px); }
 .sr-in { transition: opacity var(--srd, 600ms) ease, transform var(--srd, 600ms) ease; }
+[data-srm="pop"].sr-pre { transform: scale(.6); } [data-srm="flip"].sr-pre { transform: perspective(700px) rotateX(-70deg); } [data-srm="rotate"].sr-pre { transform: rotate(-8deg) scale(.92); }
+.sr-pre { transition-delay: var(--srdelay, 0ms); transition-timing-function: var(--sre, ease); } .sr-in { transition-delay: var(--srdelay, 0ms); transition-timing-function: var(--sre, ease); }
+/* effects of a block: under the mouse and a movement that goes on (they use their own css properties, so they do not fight with the scroll effect) */
+.pb-rowwrap[data-hover], .pb-rowwrap[data-loop] { transition: opacity var(--srd, 600ms) var(--sre, ease) var(--srdelay, 0ms), transform var(--srd, 600ms) var(--sre, ease) var(--srdelay, 0ms), filter var(--srd, 600ms) var(--sre, ease) var(--srdelay, 0ms), translate .3s ease, scale .3s ease, rotate .3s ease, box-shadow .3s ease; }
+.pb-rowwrap[data-hover="lift"]:hover { translate: 0 -8px; box-shadow: 0 14px 30px rgba(0,0,0,.25); }
+.pb-rowwrap[data-hover="grow"]:hover { scale: 1.03; } .pb-rowwrap[data-hover="shrink"]:hover { scale: .97; }
+.pb-rowwrap[data-hover="glow"]:hover { box-shadow: 0 0 0 2px var(--primary, var(--orange)), 0 0 28px var(--primary, var(--orange)); }
+.pb-rowwrap[data-hover="tilt"]:hover { rotate: -1.2deg; scale: 1.01; } .pb-rowwrap[data-hover="dim"]:hover { opacity: .7; }
+@keyframes pb-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } } @keyframes pb-pulse { 0%, 100% { scale: 1; } 50% { scale: 1.035; } } @keyframes pb-sway { 0%, 100% { rotate: -1deg; } 50% { rotate: 1deg; } }
+.pb-rowwrap[data-loop="float"] { animation: pb-float 4s ease-in-out infinite; } .pb-rowwrap[data-loop="pulse"] { animation: pb-pulse 2.4s ease-in-out infinite; } .pb-rowwrap[data-loop="sway"] { animation: pb-sway 4s ease-in-out infinite; }
+[data-bgpar="1"] .sec-bg img, [data-bgpar="1"] .sec-bg video { transform: translateY(var(--py, 0)) scale(1.2); will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .pb-rowwrap[data-loop] { animation: none; } .pb-rowwrap[data-hover]:hover { translate: none; scale: none; rotate: none; } }
 .scroll-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 1500; pointer-events: none; } .scroll-progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--orange)); }
 .scroll-top { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 1400; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--blue); color: #fff; font-size: 1.3rem; cursor: pointer; box-shadow: var(--shadow); }
 html[data-parallax="1"] .sec-bg img, html[data-parallax="1"] .sec-bg video, html[data-parallax="1"] .page-bg img, html[data-parallax="1"] .page-bg video { transform: translateY(var(--py, 0)) scale(1.2); will-change: transform; }
@@ -3319,7 +3331,21 @@ html[data-modesw="hide"] .theme-toggle { display: none; }
 .pb-w-contact { display: flex; flex-direction: column; gap: .15rem; font-style: normal; }
 .pb-w-contact strong { color: var(--text); }
 .pb-w-social { display: flex; flex-wrap: wrap; gap: .5rem; }
-.pb-w-map { border: 0; border-radius: var(--radius, 12px); }
+.pb-w-map { border: 0; border-radius: var(--radius, 12px); width: 100%; display: block; }
+.pb-w-mapbox { display: grid; gap: .6rem; }
+.pb-w-mapbox.square .pb-w-map { border-radius: 0; }
+.pb-mapframe { position: relative; }
+.pb-mapzoom { position: absolute; right: .6rem; bottom: 1.6rem; z-index: 1; display: grid; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,.3); }
+.pb-mapzoom button { width: 2.4rem; height: 2.4rem; border: 0; background: #fff; color: #222; font-size: 1.3rem; line-height: 1; cursor: pointer; }
+.pb-mapzoom.zp-left { right: auto; left: .6rem; top: 50%; bottom: auto; transform: translateY(-50%); } .pb-mapzoom.zp-right { top: 50%; bottom: auto; transform: translateY(-50%); }
+.pb-mapzoom.zp-top, .pb-mapzoom.zp-bottom { right: auto; left: 50%; transform: translateX(-50%); grid-auto-flow: column; } .pb-mapzoom.zp-top { top: .6rem; bottom: auto; } .pb-mapzoom.zp-bottom { bottom: 1.6rem; }
+.pb-mapzoom.zp-top button + button, .pb-mapzoom.zp-bottom button + button { border-top: 0; border-left: 1px solid #ddd; }
+.pb-w-mapbox.cp-top .pb-maproute { order: -1; } .pb-w-mapbox.cp-left, .pb-w-mapbox.cp-right { grid-template-columns: minmax(0, 1fr) minmax(8rem, 14rem); align-items: start; }
+.pb-w-mapbox.cp-left .pb-mapframe { order: 2; } .pb-w-mapbox.cp-left .pb-maproute, .pb-w-mapbox.cp-right .pb-maproute { flex-direction: column; align-items: stretch; }
+.pb-mapzoom button + button { border-top: 1px solid #ddd; }
+.pb-mapzoom button:hover { background: #f1f1f1; }
+.pb-maproute { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.pb-maproute input { flex: 1 1 14rem; min-width: 0; }
 .pb-w-video { position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius, 12px); overflow: hidden; }
 .pb-w-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .pb-w-quote { margin: 0; padding: 1rem 1.2rem; border-left: 4px solid var(--blue); background: color-mix(in srgb, var(--blue) 6%, transparent); border-radius: 0 var(--radius, 12px) var(--radius, 12px) 0; }
@@ -4700,3 +4726,29 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 /* a switch is always its own containing block: its track (an absolute span) can never stretch over the whole page */
 .switch { position: relative !important; flex: none; }
 .help-media { display: block; max-width: 100%; border-radius: 10px; border: 1px solid var(--border, rgba(128,128,128,.3)); margin: .6rem 0; }
+
+/* edit mode: at an edge of a block a line with a round + (just outside the block) and three arrows in the direction shows up; a click adds an empty block (above, below) or column (left, right) there */
+.pb-edge { position: absolute; z-index: 7; opacity: 0; transition: opacity .12s; pointer-events: none; --ec: var(--primary, #e8833a); }
+.pb-edge:hover, .pb-edge:focus-within { opacity: 1; }
+.pb-edge::before { content: ""; position: absolute; background: var(--ec); border-radius: 2px; }
+.pb-edge::after { content: ""; position: absolute; pointer-events: auto; }
+.pb-edge button { position: absolute; pointer-events: auto; width: 22px; height: 22px; min-width: 22px; min-height: 22px; flex: none; aspect-ratio: 1 / 1; padding: 0; border: 0; border-radius: 50%; background: var(--ec); color: #fff; font-size: 17px; line-height: 1; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 5px rgba(0,0,0,.35); }
+.pb-edge .ar { position: absolute; background: var(--ec); pointer-events: none; }  /* an arrow: a stem that starts on the line and points away from the block, with a head at its tip */
+.pb-edge .ar::before { content: ""; position: absolute; width: 10px; height: 10px; border-top: 3px solid var(--ec); border-left: 3px solid var(--ec); box-sizing: border-box; }
+.pb-edge.e-top, .pb-edge.e-bottom { left: 20%; right: 20%; height: 25px; }
+.pb-edge.e-top { top: -25px; } .pb-edge.e-bottom { bottom: -25px; }
+.pb-edge.e-top::before, .pb-edge.e-bottom::before { left: 0; right: 0; height: 2px; } .pb-edge.e-top::before { bottom: -1px; } .pb-edge.e-bottom::before { top: -1px; }
+.pb-edge.e-top::after { left: 0; right: 0; top: 12px; bottom: -12px; } .pb-edge.e-bottom::after { left: 0; right: 0; bottom: 12px; top: -12px; }
+.pb-edge.e-top button, .pb-edge.e-bottom button { left: 50%; margin-left: -11px; } .pb-edge.e-top button { top: 0; } .pb-edge.e-bottom button { bottom: 0; }
+.pb-edge.e-top .ar, .pb-edge.e-bottom .ar { width: 3px; height: 22px; margin-left: -1px; } .pb-edge.e-top .ar { bottom: 0; } .pb-edge.e-bottom .ar { top: 0; }
+.pb-edge.e-top .ar::before, .pb-edge.e-bottom .ar::before { left: -3.5px; } .pb-edge.e-top .ar::before { top: 1px; transform: rotate(45deg); } .pb-edge.e-bottom .ar::before { bottom: 1px; transform: rotate(225deg); }
+.pb-edge.e-top .a1, .pb-edge.e-bottom .a1 { left: 12px; } .pb-edge.e-top .a2, .pb-edge.e-bottom .a2 { right: 12px; }  /* one arrow near each end of the line */
+.pb-edge.e-left, .pb-edge.e-right { top: 20%; bottom: 20%; width: 25px; }
+.pb-edge.e-left { left: -25px; } .pb-edge.e-right { right: -25px; }
+.pb-edge.e-left::before, .pb-edge.e-right::before { top: 0; bottom: 0; width: 2px; } .pb-edge.e-left::before { right: -1px; } .pb-edge.e-right::before { left: -1px; }
+.pb-edge.e-left::after { top: 0; bottom: 0; left: 12px; right: -12px; } .pb-edge.e-right::after { top: 0; bottom: 0; right: 12px; left: -12px; }
+.pb-edge.e-left button, .pb-edge.e-right button { top: 50%; margin-top: -11px; } .pb-edge.e-left button { left: 0; } .pb-edge.e-right button { right: 0; }
+.pb-edge.e-left .ar, .pb-edge.e-right .ar { height: 3px; width: 22px; margin-top: -1px; } .pb-edge.e-left .ar { right: 0; } .pb-edge.e-right .ar { left: 0; }
+.pb-edge.e-left .ar::before, .pb-edge.e-right .ar::before { top: -3.5px; } .pb-edge.e-left .ar::before { left: 1px; transform: rotate(-45deg); } .pb-edge.e-right .ar::before { right: 1px; transform: rotate(135deg); }
+.pb-edge.e-left .a1, .pb-edge.e-right .a1 { top: 12px; } .pb-edge.e-left .a2, .pb-edge.e-right .a2 { bottom: 12px; }
+@media (hover: none) { .pb-edge { opacity: .7; } }

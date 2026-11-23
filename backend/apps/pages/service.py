@@ -74,24 +74,42 @@ def available(page):
 
 
 def restricted(page):
-    return bool((page.access or {}).get("users") or (page.access or {}).get("groups"))
+    """Does the page have a list of users / groups that may open it?"""
+    from apps.accounts import rights
+
+    return rights.restricted(rights.of_page(page), "view")
 
 
 def can_see(user, page):
     """May this visitor open the page? A page without a list of users/groups is for everybody (the audience still decides who sees it in the menu).
-    With a list: only the listed users, the members of the listed groups, and those who manage the pages."""
+    With a list: only the listed users, the members of the listed groups (and those who may edit or delete it), and those who manage the pages."""
     if not restricted(page):
         return True
     if not user or not user.is_authenticated:
         return False
     if user.is_staff:
         return True
+    from apps.accounts import rights
     from apps.accounts.access import level
 
     if level(user, "pages") >= 2:
         return True
-    acc = page.access
-    return user.id in (acc.get("users") or []) or user.user_groups.filter(id__in=acc.get("groups") or []).exists()
+    return rights.listed(rights.of_page(page), user, "view")
+
+
+def can_do(user, page, action):
+    """May this person edit or delete this page? On top of the rights of the module Pagina's (the views check those): a list of the page for this right narrows it down.
+    Administrators and those who manage the pages (level 3) are never kept out."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff:
+        return True
+    from apps.accounts import rights
+    from apps.accounts.access import level
+
+    if level(user, "pages") >= 3:
+        return True
+    return rights.allowed(rights.of_page(page), user, action)
 
 
 def title_of(page, lang=None):

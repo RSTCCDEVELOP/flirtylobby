@@ -46,7 +46,13 @@ def _bg(p):
 def _out(p):
     return {"background": _bg(p), "id": p.id, "key": p.key, "kind": p.kind, "title": p.title, "path": p.path, "url": p.url, "module": p.module, "enabled": p.enabled,
             "scope": p.scope, "in_menu": p.in_menu, "new_tab": p.new_tab, "audience": p.audience, "parent": p.parent_id, "order": p.order,
-            "setup": p.setup or {}, "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "access": _access(p), "editable": p.kind == "content" or p.key in service.EDITABLE}
+            "setup": p.setup or {}, "slugs": p.slugs or {}, "has_slugs": service.has_slugs(p), "devices": p.devices or {}, "cta": p.cta, "label_link": p.label_link, "available": service.available(p), "locked": p.key in service.ALWAYS_ON, "access": _access(p), "rights": _rights(p), "editable": p.kind == "content" or p.key in service.EDITABLE}
+
+
+def _rights(p):
+    from apps.accounts import rights
+
+    return rights.entries_of(rights.of_page(p))
 
 
 def _access(p):
@@ -58,14 +64,14 @@ def _access(p):
             "groups": [{"id": g.id, "name": g.name} for g in UserGroup.objects.filter(pk__in=acc.get("groups") or [])]}
 
 
-def _clean_access(raw):
-    from apps.accounts.models import User, UserGroup
+def _clean_access(raw, page=None):
+    """The old list of who may open the page ({users, groups}); the lists for editing and deleting that the page has stay as they are."""
+    from apps.accounts import rights
 
-    raw = raw if isinstance(raw, dict) else {}
-    ids = lambda k: [int(x) for x in raw.get(k) or [] if str(x).isdigit()][:200]  # noqa: E731
-    users = sorted(User.objects.filter(pk__in=ids("users")).values_list("id", flat=True))
-    groups = sorted(UserGroup.objects.filter(pk__in=ids("groups")).values_list("id", flat=True))
-    return {"users": users, "groups": groups} if users or groups else {}
+    old = rights.of_page(page) if page is not None else {}
+    cur = rights.clean({"view": raw if isinstance(raw, dict) else {}})
+    rules = {**{k: v for k, v in old.items() if k in ("edit", "delete")}, **cur}
+    return rights.to_page_access(rules)
 
 
 @api_view(["GET"])
@@ -122,6 +128,8 @@ def design_save(request, key):
     html = request.data.get("design")
     if not p or not isinstance(html, str) or not html.strip():
         return bad("Pagina niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if not service.can_do(request.user, p, "edit"):
+        return bad("Je hebt geen rechten voor deze pagina.", status.HTTP_403_FORBIDDEN)
     if len(html) > 3_000_000:
         return bad("De pagina is te groot.")
     p.design = html
@@ -196,6 +204,10 @@ def pages(request):
         last = Page.objects.order_by("-order").first()
         p = Page.objects.create(key=key, kind=kind, title=title, url=url, scope=scope, audience="members" if scope == "private" else "all", in_menu=bool(d.get("in_menu", True)), order=(last.order + 1) if last else 0)
         service.fill_slugs(p)
+        if "rights" in d:  # the rights can be set when the page is made (the same lists as in the settings of the page)
+            from apps.accounts import rights as _rights_mod
+
+            p.access = _rights_mod.to_page_access(_rights_mod.rules_of_entries(d["rights"]))
         p.save()
         logger.info("Page '%s' created by %s", key, request.user.email)
         return Response(_out(p), status=status.HTTP_201_CREATED)
@@ -253,6 +265,8 @@ def page(request, pk):
     p = Page.objects.filter(pk=pk).first()
     if not p:
         return bad("Niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if not service.can_do(request.user, p, "delete" if request.method == "DELETE" else "edit"):
+        return bad("Je hebt geen rechten voor deze pagina.", status.HTTP_403_FORBIDDEN)
     if request.method == "DELETE":
         if p.kind == "system":
             return bad("Een systeempagina kun je niet verwijderen. Zet hem uit.")
@@ -302,8 +316,12 @@ def page(request, pk):
             err = service.fill_slugs(p, d.get("slugs") if isinstance(d.get("slugs"), dict) else None)
             if err:
                 return bad(err)
-    if "access" in d:
-        p.access = _clean_access(d["access"])
+    if "rights" in d or "access" in d:
+        from apps.accounts import rights as _rights_mod
+
+        if not (request.user.is_staff or level(request.user, "pages") >= 3):
+            return bad("Alleen wie de pagina's beheert mag de rechten van een pagina wijzigen.", status.HTTP_403_FORBIDDEN)
+        p.access = _rights_mod.to_page_access(_rights_mod.rules_of_entries(d["rights"])) if "rights" in d else _clean_access(d["access"], p)
     if "setup" in d:  # the setup of this page: its own theme, header and footer on or off (empty = follow the theme in use)
         from apps.core import themepacks
 

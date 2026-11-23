@@ -36,7 +36,7 @@ GO = {
     "objects": ("/dashboard/admin/sysobjects", [], []),
     # ── admin: edit mode (on the website) ──
     **{k: (EDIT, [], []) for k in ("editmode", "blocks", "layout", "hero", "lists", "imgsize", "bg", "heroblock", "padding", "columns", "fullwidth", "blockfx", "heroalign", "blockstyle",
-                                    "textsettings", "movefixed", "undo", "helpmode")},
+                                    "textsettings", "movefixed", "undo", "helpmode", "mapblock", "blocksplit", "editlogin")},
     "admineditmode": ("/dashboard", [], []),
     # ── admin: theme ──
     "theme": (f"{THEME}?tab=packs", ["packs"], []), "themepack": (f"{THEME}?tab=packs", ["packs"], ["theme-pack-all"]), "themeupload": (f"{THEME}?tab=packs", ["packs"], ["theme-pack-upload"]),
@@ -56,6 +56,8 @@ GO = {
     "security": ("/dashboard/admin/security", [], ["sec-basic"]),
     "maint": ("/dashboard/admin/system", [], ["sys-site"]),
     "apikeys": ("/dashboard/admin/integrations", [], ["integrations-list"]),
+    "creatorcheck": ("/dashboard/admin/siteimport", [], []), "pageimportapi": ("/dashboard/admin/rights", ["modules"], []),
+    "rightshelp": ("/dashboard/admin/rights", [], []), "recordrights": ("/dashboard/admin/rights", ["plugins"], []),
     "faqown": ("/dashboard/admin/faq", ["website"], []),
     "adminmenu": ("/dashboard/admin", [], ["admin-overview"]), "admintiles": ("/dashboard/admin/groep/a-system", [], []),
     "adminlangs": ("/dashboard/admin/languages", [], ["languages-packages"]),

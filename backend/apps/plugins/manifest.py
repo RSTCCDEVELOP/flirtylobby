@@ -40,6 +40,7 @@ def parse(raw):
         "requires": [str(x) for x in (d.get("requires") or []) if isinstance(x, str) and NAME_RE.match(str(x))][:10],  # plugins that must be installed and on for this one to run
         "admin_entries": _admin_entries(d.get("admin_entries")),
         "permissions": [str(x)[:60] for x in (d.get("permissions") or []) if isinstance(x, str)][:30],
+        "rights": _rights(d.get("rights")),
         "events": [str(x)[:40] for x in (d.get("events") or []) if isinstance(x, str)][:30],
         "section": _section(d.get("section")), "menu": None, "public_pages": _public_pages(d.get("public_pages")), "site_link": _site_link(d.get("site_link")), "provides": [x for x in (d.get("provides") or []) if x in PROVIDES],
         "content_dirs": [x for x in (d.get("content_dirs") or []) if isinstance(x, str) and re.fullmatch(r"[a-z][a-z0-9_-]{0,30}", x)][:5], "admin_label": str(d.get("admin_label") or "")[:30], "content_label": str(d.get("content_label") or "")[:30], "content_sdk": str(d.get("content_sdk") or "") if re.fullmatch(r"web/[A-Za-z0-9_.-]{1,60}\.js", str(d.get("content_sdk") or "")) else "", "content_item": str(d.get("content_item") or "")[:40] if re.fullmatch(r"[A-Za-z0-9_.-]{3,40}\.json", str(d.get("content_item") or "")) else "", "public_path": str(d.get("public_path") or "") if re.fullmatch(r"[a-z][a-z0-9-]{1,30}", str(d.get("public_path") or "")) and str(d.get("public_path")) not in RESERVED else "", "page_object": bool(d.get("page_object")) and bool(_file(d.get("web"), ".html")), "config": [], "parts": _parts(d.get("parts")),
@@ -58,6 +59,14 @@ def parse(raw):
         out["config"].append({"key": c["key"], "label": str(c.get("label") or c["key"])[:80], "type": t, "default": c.get("default", False if t == "bool" else ""),
                               "options": [str(o)[:60] for o in (c.get("options") or [])][:40] if t == "select" else [], "hint": str(c.get("hint") or "")[:200]})
     return out
+
+
+def _rights(v):
+    """The records of the plugin that can have rights (viewing, editing, deleting): {"models": ["product", ...]}. The plugin asks the rights system for them (apps.plugins.facade.rights)."""
+    if not isinstance(v, dict):
+        return {}
+    models = [str(x) for x in (v.get("models") or []) if isinstance(x, str) and re.fullmatch(r"[a-z][a-z0-9_-]{0,59}", x)][:20]
+    return {"models": models} if models else {}
 
 
 PROVIDES = ("catalog", "parts", "orders", "payments", "finance", "community", "subscriptions", "profilethemes", "demo", "stats", "age-gates", "statistics", "siteimport", "faq", "seo", "design_import")  # what a plugin may offer the system: catalog = the products that subscriptions can grant and the stock the dashboard shows; parts = blocks for pages that change while the plugin runs (the events of the agenda); demo = example data for "Demo-gegevens" (counts, create, remove); design_import = makes projects of the example cards of an imported design (create(cards))

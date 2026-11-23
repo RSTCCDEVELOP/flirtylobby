@@ -232,3 +232,32 @@ def test_the_planner_gets_the_catalogue_and_a_missing_section_is_kept(db, monkey
     secs = plan["pages"][0]["sections"]
     assert "ui-hero-split:" in seen["prompt"] and "props:" in seen["prompt"] and "MISSING COMPONENTS" in seen["prompt"]  # the catalogue (type, purpose, props) is made from the registry
     assert [x.get("id") for x in secs] == ["hero", "prijzen"] and secs[1]["missing"]["voorgesteld_type"] == "prijstabel"  # a missing part without a purpose is dropped
+
+
+def test_importing_pages_through_the_api_has_its_own_right(db):
+    """Website ontwerpen (siteimport) is not enough: the module page_import is needed (a superadmin has it always)."""
+    from django.contrib.auth import get_user_model
+    from rest_framework.test import APIClient
+
+    from apps.accounts.models import ModuleGrant
+    from apps.core import modules
+
+    if not modules.enabled("siteimport"):
+        pytest.skip("siteimport is off in this installation")
+    U = get_user_model()
+    plain = U.objects.create(username="p", email="p@x.nl")
+    ModuleGrant.objects.create(module="siteimport", user=plain, level=3)
+    c = APIClient()
+    c.force_authenticate(plain)
+    assert c.post("/api/pagina-import/valideer/", {"paginas": []}, format="json").status_code == 403
+    assert c.get("/api/pagina-import/catalogus/").status_code == 403
+    ModuleGrant.objects.create(module="page_import", user=plain, level=3)
+    plain._levels = None
+    del plain._levels
+    c2 = APIClient()
+    c2.force_authenticate(U.objects.get(pk=plain.pk))
+    assert c2.get("/api/pagina-import/catalogus/").status_code == 200
+    boss = U.objects.create(username="b", email="b@x.nl", is_staff=True)
+    c3 = APIClient()
+    c3.force_authenticate(boss)
+    assert c3.get("/api/pagina-import/catalogus/").status_code == 200

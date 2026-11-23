@@ -156,6 +156,36 @@ export function previewHtml(files, name, photos = [], theme = "", placeholders =
   return h;
 }
 
+// The place in a page (a DOM document of the design or of its preview) that a path of the check report points at, for example "/inhoud/2/children/0/props/titel".
+// The same walk as the validator makes over the html (pagevalidate._section_nodes): the top-level blocks of <main>, a band with its columns, the components in them.
+// Gives the element of the deepest part of the path that exists (a path into the props of a component gives that component), or null (paths of the page itself, like /pagina/slug, have no place).
+export function elementOfPath(doc, pad) {
+  const seg = String(pad || "").split("/").filter(Boolean).map((x) => x.replace(/~1/g, "/").replace(/~0/g, "~"));
+  if (!doc || !seg.length) return null;
+  if (seg[0] === "header" || seg[0] === "footer") return doc.querySelector(seg[0]);
+  if (seg[0] !== "inhoud") return null;
+  const main = doc.querySelector("main");
+  if (!main) return null;
+  const comp = (el) => el.getAttribute("data-easy2edit-tag") || el.getAttribute("data-sysobject") || el.getAttribute("data-sysobject-preview");  // (the preview draws a system object with the last one)
+  const walk = (el) => (comp(el) ? [{ el, kids: [] }] : [...el.children].flatMap(walk));
+  const nodes = (items) => items.flatMap((k) => {
+    if (k.tagName === "SECTION" && k.classList.contains("band")) {
+      const inner = k.classList.contains("cols") ? k : k.querySelector(".cols");
+      return [{ el: k, kids: [...(inner ? inner.children : [])].filter((c) => c.classList.contains("col")).map((c) => ({ el: c, kids: walk(c) })) }];
+    }
+    return walk(k);
+  });
+  const wrapper = (c) => c.hasAttribute("id") && (!c.hasAttribute("class") || c.getAttribute("class") === "sec-plain") && c.firstElementChild?.tagName === "DIV";  // the wrapper with the id of a section is taken off
+  const inhoud = [...main.children].filter((c) => c.tagName === "DIV").flatMap((c) => nodes(wrapper(c) ? [...c.children] : [c]));
+  let node = inhoud[Number(seg[1])], last = node ? node.el : null, k = 2;
+  while (node && seg[k] === "children" && seg[k + 1] !== undefined) {
+    node = node.kids[Number(seg[k + 1])];
+    if (node) last = node.el;
+    k += 2;
+  }
+  return last;
+}
+
 // An example website in the chosen colours, font, corners and photos: what the design will look like, before any content is made (the texts are examples).
 export function styleTile(b, mode = b.color_mode === "dark" ? "dark" : "light") {
   let c = { ...DEFAULT_COLORS, ...DEFAULT_DARK, ...(b.colors || {}) };

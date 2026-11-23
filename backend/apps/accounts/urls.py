@@ -8,7 +8,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import fakeusers, invitations, pwreset, registration, sso, views
+from . import fakeusers, invitations, pwreset, registration, rights_views, sso, views
 
 router = DefaultRouter()
 router.register("users", views.UserViewSet, basename="users")
@@ -16,6 +16,12 @@ router.register("roles", views.RoleViewSet, basename="roles")
 router.register("user-groups", views.UserGroupViewSet, basename="user-groups")
 
 urlpatterns = [
+    path("rights/people/", rights_views.people),
+    path("rights/overview/", rights_views.overview),
+    path("rights/module/<str:key>/", rights_views.module_rights),
+    path("rights/page/<str:key>/", rights_views.page_rights),
+    path("rights/plugin/<str:name>/", rights_views.plugin_rights),
+    path("rights/record/<str:plugin>/<str:model>/<str:pk>/", rights_views.record_rights),
     path("users/fake/", fakeusers.fake_users),
     path("profile/me/fill-test/", fakeusers.fill_own_profile),
     path("auth/login/", views.login),

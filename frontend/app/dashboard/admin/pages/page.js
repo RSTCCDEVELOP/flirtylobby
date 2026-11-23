@@ -29,6 +29,7 @@ import { useView } from "../../../../lib/useView";
 import { api, apiBase, errorText, getToken } from "../../../../lib/api";
 import { alertDialog, confirmDialog } from "../../../../lib/dialog";
 import { translateName } from "../../../../lib/translate-name";
+import RightsEditor, { useRightsPeople } from "../../../../components/RightsEditor";
 import { lvl } from "../../../../lib/perms";
 
 // the pages whose blocks can be looked at and edited right here: own pages, and the standard pages that have blocks
@@ -62,6 +63,8 @@ export default function PagesAdmin() {
   const [langs, setLangs] = useState({ languages: [], default: "nl" });
   const [msg, setMsg] = useState(null);
   const [modal, setModal] = useState(null);
+  const [modalTab, setModalTab] = useState("page");  // a new item: the tab Pagina or the tab Rechten (who may view, edit and delete it)
+  const rightsPeople = useRightsPeople(!!modal && !modal.id);
   const [ai, setAi] = useState(false); // Claude is connected: names are translated into every language
   const [drag, setDrag] = useState(null); // the page that is being dragged in the menu editor
   const [over, setOver] = useState(null); // the menu item it is above
@@ -317,7 +320,7 @@ export default function PagesAdmin() {
       {view && <PagePreview key={`${view.key}-${view.edit}`} pageKey={view.key} path={view.url} withTitle={view.withTitle} title={view.title} startEdit={view.edit} onClose={() => setView(null)} />}
       <Collapsible id={`pages-overview-${scope}`} title={priv ? tx("Overzicht van de dashboardpagina's") : tx("Overzicht van de pagina's")}>
         <ViewBar view={tv} count={shown.length}
-          after={L >= 3 && <button type="button" className="btn primary sm" onClick={() => setModal({ ...EMPTY })} title={tx("Nieuwe pagina")} aria-label={tx("Nieuwe pagina")}>{tx("+ Nieuwe pagina")}</button>}
+          after={L >= 3 && <button type="button" className="btn primary sm" onClick={() => { setModalTab("page"); setModal({ ...EMPTY }); }} title={tx("Nieuwe pagina")} aria-label={tx("Nieuwe pagina")}>{tx("+ Nieuwe pagina")}</button>}
           extra={<>
             <select value={fKind} onChange={(e) => setFKind(e.target.value)} aria-label={tx("Soort")}><option value="">{tx("Alle soorten")}</option>{Object.entries(KIND).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
             <select value={fState} onChange={(e) => setFState(e.target.value)} aria-label={tx("Status")}><option value="">{tx("Alle statussen")}</option><option value="on">{tx("Aan")}</option><option value="off">{tx("Uit")}</option></select>
@@ -372,7 +375,7 @@ export default function PagesAdmin() {
         <div>
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap" }}>
             <strong style={{ fontSize: ".85rem" }}>{tx("Zo ziet het menu eruit")}</strong>
-            {L >= 3 && <button type="button" className="btn primary sm" onClick={() => setModal({ ...EMPTY })}>{tx("+ Nieuw item")}</button>}
+            {L >= 3 && <button type="button" className="btn primary sm" onClick={() => { setModalTab("page"); setModal({ ...EMPTY }); }}>{tx("+ Nieuw item")}</button>}
           </div>
           {!priv && menuCfg && (
             <>
@@ -475,6 +478,13 @@ export default function PagesAdmin() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
             <h2>{modal.id ? tx("Pagina wijzigen") : tx("Nieuw item")}</h2>
+            {!modal.id && <Tabs tabs={[["page", "Pagina"], ["rights", "Rechten"]]} value={modalTab} onChange={setModalTab} />}
+            {!modal.id && modalTab === "rights" && (
+              <RightsEditor entries={modal.rights || []} onChange={(rows) => setModal({ ...modal, rights: rows })} people={rightsPeople}
+                emptyText="Geen beperkingen: iedereen met het recht van de module Pagina's."
+                hint="De rechten worden gezet als de pagina wordt gemaakt en kun je later wijzigen bij de instellingen van de pagina. Een recht zonder lijst heeft geen beperking." />
+            )}
+            {(modal.id || modalTab === "page") && <>
             {!modal.id && (
               <label>{tx("Soort")}
                 <select value={modal.kind} onChange={(e) => setModal({ ...modal, kind: e.target.value })}>
@@ -521,6 +531,7 @@ export default function PagesAdmin() {
                 {modal.kind !== "menu" && <Sw label={tx("Opent in een nieuw tabblad")} checked={!!modal.new_tab} onChange={(v) => setModal({ ...modal, new_tab: v })} />}
               </div>
             )}
+            </>}
             {modal.error && <div className="alert">{modal.error}</div>}
             <div className="row"><button type="button" className="btn" onClick={() => setModal(null)}>{tx("Annuleren")}</button><button className="btn primary">{tx("Opslaan")}</button></div>
           </form>

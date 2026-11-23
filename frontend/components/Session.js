@@ -10,7 +10,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api, clearToken, getToken } from "../lib/api";
 import { lvl } from "../lib/perms";
-import { confirmDialog } from "../lib/dialog";
+import { alertDialog, confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 import { useModule } from "./Modules";
 
@@ -73,6 +73,22 @@ export function SessionProvider({ children, editClosed = false }) {  // editClos
     try { localStorage.setItem("editMode", on ? "1" : "0"); } catch {}
   }, [small, mobileOk]);
   const allowed = !small || mobileOk;
+
+  // Editing only works while you are logged in and connected: when you log out, or the connection is gone, edit mode is switched off (and stays off after logging in again)
+  const editOff = useCallback(() => { setEditModeState(false); try { localStorage.setItem("editMode", "0"); } catch {} }, []);
+  useEffect(() => { if (ready && !user) editOff(); }, [ready, user, editOff]);
+  const editOn = editMode && !!user;
+  useEffect(() => {
+    if (!editOn) return undefined;
+    let told = false;
+    const lost = () => { editOff(); if (!told) { told = true; alertDialog(tx("De verbinding is verbroken. Bewerken is uitgezet. Je wijzigingen tot nu toe zijn opgeslagen; zet bewerken weer aan als de verbinding terug is.")); } };
+    const check = () => { if (navigator.onLine === false) return lost(); api("/auth/me/").catch((e) => { if (!e?.status) lost(); }); };  // no status = the server could not be reached
+    window.addEventListener("offline", lost);
+    const seen = () => { if (!document.hidden) check(); };
+    document.addEventListener("visibilitychange", seen);
+    const t = setInterval(check, 20000);
+    return () => { window.removeEventListener("offline", lost); document.removeEventListener("visibilitychange", seen); clearInterval(t); };
+  }, [editOn, editOff]);
 
   const logout = useCallback(async () => {
     try { await api("/auth/logout/", { method: "POST" }); } catch {}

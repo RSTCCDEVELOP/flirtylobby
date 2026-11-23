@@ -21,6 +21,7 @@ class Plugin(models.Model):
     config = models.JSONField(default=dict, blank=True)  # settings; secret fields are stored encrypted (see installer.py)
     schema_version = models.PositiveIntegerField(default=0)  # version of the plugin's tables in the system database
     error = models.TextField(blank=True)  # last problem while loading or running
+    rights_members = models.BooleanField(default=False)  # people who are no administrator may set the rights of their own records of this plugin (see accounts/rights.py)
     installed_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

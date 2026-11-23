@@ -113,9 +113,13 @@ MODULES = [
     {"key": "roles", "group": "Systeem", "label": "Rollen",
      "desc": "Rollen en rechten. Uit = alleen superadmins hebben rechten."},
     # ── Kern (altijd aan) ──
+    {"key": "rights", "group": "Kern", "label": "Rechten", "core": True, "acl": False,
+     "desc": "Wie mag wat: gebruikers en groepen krijgen rechten om te bekijken, te bewerken en te verwijderen. Voor alle modules, voor elke pagina en voor de records van plugins (een product, een document ...). Staat altijd aan. Rechten stel je in bij het aanmaken of later; per plugin bepaal je of ook gebruikers die geen admin zijn rechten mogen zetten."},
     {"key": "users", "group": "Kern", "label": "Users", "desc": "Accounts aanmaken, blokkeren en verwijderen. Met een foto en openbaar profiel voor op de website.", "core": True},
     {"key": "entities", "group": "Kern", "label": "Entiteit",
      "desc": "De organisatie achter de website (bedrijf, organisatie, vereniging, club of een eigen naam): naam, adres, contact en registratie, lokaal in de site. De teksten van de website kunnen de gegevens als variabele gebruiken ({{organisatie.naam}}). Wat het is, bepaalt de standaard installatie.", "core": True},
+    {"key": "page_import", "group": "Content", "label": "Pagina's importeren", "core": True,
+     "desc": "Het recht om paginaontwerpen te importeren via de API (formaat easy2edit-pagina@1): de componentcatalogus, controleren zonder opslaan en importeren als concept. Superadmins hebben het altijd; geef het aan een rol of groep om anderen te laten importeren. De creator zelf blijft bij Website ontwerpen horen."},
     {"key": "component_requests", "group": "Systeem", "label": "Componentverzoeken", "acl": False,
      "desc": "Componenten die een ontwerp van de creator nodig heeft en de component set niet heeft: verzoeken beoordelen (alleen superadmin+), de bouwinstructie en de ontwerpen die erop wachten opnieuw controleren."},
     {"key": "tags", "group": "Kern", "label": "Tags",

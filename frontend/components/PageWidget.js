@@ -23,7 +23,7 @@ import KitHtml from "../lib/ui-kit/KitHtml";
 // The data of the website itself (address, phone, social media) comes from Admin → Systeem → Basisgegevens.
 export const WIDGET_NAMES = { contact: "Contactgegevens", social: "Sociale media", map: "Kaart", video: "Video", quote: "Citaat", stats: "Cijfers", logo: "Logo", hours: "Openingstijden", code: "HTML / CSS-code" };
 export const WIDGET_DEFAULTS = {
-  contact: { address: true, phone: true, email: true }, social: {}, map: { query: "", height: 320 }, video: { url: "" },
+  contact: { address: true, phone: true, email: true }, social: {}, map: { query: "", height: 320, zoom: 15, type: "m", zoombar: true, zoompos: "right", ctrlpos: "bottom", route: false, open: true, round: true }, video: { url: "" },
   quote: { text: "Een mooi citaat van een klant of van jezelf.", author: "Naam", marks: true },
   stats: { items: [{ value: "10+", label: "jaar ervaring" }, { value: "500", label: "klanten" }, { value: "24/7", label: "bereikbaar" }] },
   code: { html: "", css: "" }, logo: { width: 160 }, hours: { lines: [{ day: "Maandag - vrijdag", time: "09:00 - 17:30" }, { day: "Zaterdag", time: "10:00 - 16:00" }, { day: "Zondag", time: "Gesloten" }] },
@@ -38,6 +38,38 @@ function embedOf(url) { // a YouTube or Vimeo address as an address that can be 
     if (/vimeo\.com$/.test(u.hostname)) return u.hostname.startsWith("player.") ? url : `https://player.vimeo.com/video/${u.pathname.split("/").filter(Boolean).pop()}`;
   } catch {}
   return "";
+}
+
+export const MAP_TYPES = { m: "Kaart", k: "Satelliet", h: "Satelliet met namen", p: "Terrein" };
+export const MAP_SIDES = { top: "Boven", bottom: "Onder", left: "Links", right: "Rechts" };
+export const MAP_DEFAULT = { query: "", height: 320, zoom: 15, type: "m", zoombar: true, zoompos: "right", ctrlpos: "bottom", route: false, open: true, round: true };
+const mapUrl = (q, z, t, from) => `https://www.google.com/maps?${from ? `saddr=${encodeURIComponent(from)}&daddr=${encodeURIComponent(q)}` : `q=${encodeURIComponent(q)}`}&z=${z}&t=${t}&output=embed`;
+
+// The map of a page: zoom in and out, the type of map, and (for the visitor) the route from an own address to this address. Google's embed, no key needed.
+function MapView({ d, q }) {
+  const [z, setZ] = useState(Number(d.zoom) || 15);
+  const [from, setFrom] = useState(""), [go, setGo] = useState("");
+  useEffect(() => { setZ(Number(d.zoom) || 15); }, [d.zoom]);
+  const t = MAP_TYPES[d.type] ? d.type : "m";
+  const zoom = (n) => setZ((v) => Math.min(21, Math.max(1, v + n)));
+  return (
+    <div className={`pb-w pb-w-mapbox cp-${MAP_SIDES[d.ctrlpos] ? d.ctrlpos : "bottom"}${d.round === false ? " square" : ""}`}>
+      <div className="pb-mapframe">
+        <iframe className="pb-w-map" title={tx("Kaart")} loading="lazy" referrerPolicy="no-referrer-when-downgrade" style={{ height: d.height || 320 }} src={mapUrl(q, z, t, go)} />
+        {d.zoombar !== false && <div className={`pb-mapzoom zp-${MAP_SIDES[d.zoompos] ? d.zoompos : "right"}`}><button type="button" onClick={() => zoom(1)} aria-label={tx("Inzoomen")}>+</button><button type="button" onClick={() => zoom(-1)} aria-label={tx("Uitzoomen")}>−</button></div>}
+      </div>
+      {(d.route === true || d.open !== false) && (
+        <form className="pb-maproute" onSubmit={(e) => { e.preventDefault(); setGo(from.trim()); }}>
+          {d.route === true && <>
+            <input value={from} onChange={(e) => setFrom(e.target.value)} placeholder={tx("Jouw adres")} aria-label={tx("Jouw adres")} maxLength={200} />
+            <button type="submit" className="btn sm primary">{tx("Route naar dit adres")}</button>
+            {go && <button type="button" className="btn sm" onClick={() => { setGo(""); setFrom(""); }}>{tx("Wissen")}</button>}
+          </>}
+          {d.open !== false && <a className="btn sm" target="_blank" rel="noopener noreferrer" href={go ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(go)}&destination=${encodeURIComponent(q)}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`}>{tx("Open in Google Maps")}</a>}
+        </form>
+      )}
+    </div>
+  );
 }
 
 export function PbWidget({ it, editing }) {
@@ -70,7 +102,7 @@ export function PbWidget({ it, editing }) {
   if (w === "map") {
     const q = d.query || (site ? [site.street, site.house_number, site.postal_code, site.city].filter(Boolean).join(" ") : "");
     if (!q) return site ? empty(tx("Geen adres: vul het in bij Basisgegevens of in de instellingen van de kaart.")) : null;
-    return <iframe className="pb-w pb-w-map" title={tx("Kaart")} loading="lazy" referrerPolicy="no-referrer-when-downgrade" style={{ height: d.height || 320 }} src={`https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`} />;
+    return <MapView d={d} q={q} />;
   }
   if (w === "video") {
     const src = embedOf(d.url || "");
@@ -79,6 +111,10 @@ export function PbWidget({ it, editing }) {
   if (w === "quote") return <figure className={`pb-w pb-w-quote${d.marks === false ? "" : " has-marks"}`}>{d.marks !== false && <span className="pb-qm open" aria-hidden="true">“</span>}<blockquote>{d.text}</blockquote>{d.author && <figcaption>{d.author}</figcaption>}{d.marks !== false && <span className="pb-qm close" aria-hidden="true">”</span>}</figure>;
   if (w === "stats") return <div className="pb-w pb-w-stats">{(d.items || []).map((s, i) => <div key={i}><strong>{s.value}</strong><span>{s.label}</span></div>)}</div>;
   if (w === "logo") return <div className="pb-w pb-w-logo" style={{ "--wl-w": `${d.width || 160}px` }}><Logo /></div>;
+  if (w === "code" && (d.tag === "placeholder" || /data-easy2edit-tag="placeholder"/.test(d.html || ""))) {  // a component that is missing: only the editor sees it (a visitor sees nothing)
+    const name = ((d.html || "").match(/Component ontbreekt:\s*([^<]+)/) || [])[1];
+    return editing ? <div className="pb-widget-empty pb-w-missing">{tx("Component ontbreekt")}{name ? `: ${name.trim()}` : ""}</div> : null;
+  }
   if (w === "code" && d.kit) return <div className="pb-w pb-w-code pb-w-kit"><KitHtml html={d.html} css={d.css} tag={d.tag} set={d.set || ""} /></div>;  // built into the page: the theme and the components work together (no frame)
   if (w === "code") return d.html || d.css ? <div className="pb-w pb-w-code"><DesignFrame title={tx("HTML / CSS-code")} html={`<!doctype html><meta charset="utf-8"><base target="_top"><style>body{margin:0;font-family:${font};line-height:1.5}${d.css || ""}</style>${d.html || ""}`} /></div> : empty(tx("Vul de HTML of CSS in bij de instellingen van dit blok."));
   if (w === "hours") return <dl className="pb-w pb-w-hours">{(d.lines || []).map((l, i) => <div key={i}><dt>{l.day}</dt><dd>{l.time}</dd></div>)}</dl>;
@@ -88,6 +124,7 @@ export function PbWidget({ it, editing }) {
 // The settings of a ready-made part (edit mode). data = what the item holds; onChange(data) after every change.
 export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, position = null, onPosition = null, renderColor = null }) {
   const [wtab, setWtab] = useState("settings");
+  const mt = onPosition ? wtab : "settings";  // (without tabs the map shows only the first part: the tabs are always there in the page editor)
   if (widget === "code") return <CodeEditor data={data} onChange={onChange} onClose={onClose} />;
   const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // in the panel of the editor, not a window
   const set = (patch) => onChange({ ...data, ...patch });
@@ -99,7 +136,7 @@ export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, posi
     <div className={host ? "pb-hdock" : anchor ? "pb-anchorback" : "overlay"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) onClose(); }}>
       <div className={host ? "pb-hdock-in form" : "card modal form"} role="dialog" aria-label={tx(WIDGET_NAMES[widget] || "")} style={host ? undefined : { maxWidth: 560, ...anchorStyle(anchor, 560) }} onMouseDown={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}><h2 style={{ margin: 0 }}>{tx(WIDGET_NAMES[widget] || "")}</h2>{host && <button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button>}</div>
-        {onPosition && <Tabs tabs={[["settings", widget === "quote" ? "Tekst" : "Instellingen"], ["pos", "Position"], ["align", "Uitlijnen"], ["font", "Lettertype"], ...(renderColor && ["contact", "quote", "stats", "hours", "social"].includes(widget) ? [["color", "Kleur"]] : [])]} value={wtab} onChange={setWtab} />}
+        {onPosition && <Tabs tabs={[...(widget === "map" ? [["settings", "Adres"], ["mapt", "Kaart"], ["zoomb", "Zoom"], ["route", "Route"]] : [["settings", widget === "quote" ? "Tekst" : "Instellingen"]]), ["pos", "Position"], ["align", "Uitlijnen"], ["font", "Lettertype"], ...(renderColor && ["contact", "quote", "stats", "hours", "social"].includes(widget) ? [["color", "Kleur"]] : [])]} value={wtab} onChange={setWtab} />}
         {onPosition && wtab === "pos" ? <PositionTab withSize value={position} onChange={onPosition} /> : onPosition && wtab === "align" ? <TextAlignTab value={position} onChange={onPosition} /> : onPosition && wtab === "font" ? <FontTab value={position} onChange={onPosition} /> : onPosition && wtab === "color" && renderColor ? (
           <div className="pb-cols">
             <div className="pb-stylerow"><span>{tx("Kleur")}</span>{renderColor("color")}</div>
@@ -115,8 +152,24 @@ export function WidgetPopup({ widget, data = {}, onChange, onClose, anchor, posi
         ))}
         {(widget === "contact" || widget === "social") && <p className="muted">{tx("De gegevens komen uit Admin → Systeem → Basisgegevens.")}</p>}
         {widget === "map" && (<>
-          <label>{tx("Adres op de kaart")}<input value={data.query || ""} placeholder={tx("Leeg: het adres van de website")} onChange={(e) => set({ query: e.target.value })} /></label>
-          <label>{tx("Hoogte")}: {data.height || 320} px<input type="range" min={150} max={800} step={10} value={data.height || 320} onChange={(e) => set({ height: Number(e.target.value) })} /></label>
+          {mt === "settings" && <>
+            <label>{tx("Adres op de kaart")}<input value={data.query || ""} placeholder={tx("Leeg: het adres van de website")} onChange={(e) => set({ query: e.target.value })} /></label>
+            <label>{tx("Hoogte")}: {data.height || 320} px<input type="range" min={150} max={800} step={10} value={data.height || 320} onChange={(e) => set({ height: Number(e.target.value) })} /></label>
+          </>}
+          {mt === "mapt" && <>
+            <label>{tx("Soort kaart")}<select value={data.type || "m"} onChange={(e) => set({ type: e.target.value })}>{Object.entries(MAP_TYPES).map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
+            <label>{tx("Zoom")}: {data.zoom || 15}<input type="range" min={1} max={21} step={1} value={data.zoom || 15} onChange={(e) => set({ zoom: Number(e.target.value) })} /></label>
+            <label className="check"><span className="switch"><input type="checkbox" checked={data.round !== false} onChange={(e) => set({ round: e.target.checked })} /><span /></span><span>{tx("Ronde hoeken")}</span></label>
+          </>}
+          {mt === "zoomb" && <>
+            <label className="check"><span className="switch"><input type="checkbox" checked={data.zoombar !== false} onChange={(e) => set({ zoombar: e.target.checked })} /><span /></span><span>{tx("Zoomknoppen tonen")}</span></label>
+            {data.zoombar !== false && <label>{tx("Positie van de zoomknoppen")}<select value={data.zoompos || "right"} onChange={(e) => set({ zoompos: e.target.value })}>{Object.entries(MAP_SIDES).map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>}
+          </>}
+          {mt === "route" && <>
+            <label className="check"><span className="switch"><input type="checkbox" checked={data.route === true} onChange={(e) => set({ route: e.target.checked })} /><span /></span><span>{tx("Bezoeker kan een route naar dit adres zoeken")}</span></label>
+            <label className="check"><span className="switch"><input type="checkbox" checked={data.open !== false} onChange={(e) => set({ open: e.target.checked })} /><span /></span><span>{tx("Knop 'Open in Google Maps' tonen")}</span></label>
+            {(data.route === true || data.open !== false) && <label>{tx("Positie van de routeknoppen")}<select value={data.ctrlpos || "bottom"} onChange={(e) => set({ ctrlpos: e.target.value })}>{Object.entries(MAP_SIDES).map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>}
+          </>}
         </>)}
         {widget === "video" && <label>{tx("Link naar een YouTube- of Vimeo-video")}<input value={data.url || ""} placeholder="https://www.youtube.com/watch?v=…" onChange={(e) => set({ url: e.target.value })} /></label>}
         {widget === "quote" && (<>

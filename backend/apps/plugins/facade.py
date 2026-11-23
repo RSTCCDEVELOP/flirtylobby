@@ -88,6 +88,46 @@ class _Stats:
 stats = _Stats()
 
 
+class _Rights:
+    """The rights system for the records of a plugin (see apps/accounts/rights.py). A plugin asks it next to its own checks:
+
+        from apps.plugins import facade
+        facade.rights.protect("documents", "document", doc.pk, owner=request.user, rules=...)   # when a record is made (or later): who may view, edit and delete it
+        facade.rights.can(request.user, "documents", "document", doc.pk, "edit")                 # may this user edit it?
+        facade.rights.exclude_hidden(Document.objects.all(), request.user, "documents", "document")  # a list without the records this user may not see
+        facade.rights.forget("documents", "document", doc.pk)                                    # the record is deleted: its rights go too
+
+    Rules: {"view": {"users": [ids], "groups": [ids]}, "edit": {...}, "delete": {...}}; a right without a list has no restriction; administrators and the owner can always do everything.
+    `members_may_set(plugin)` tells whether people who are no administrator may set the rights of their own records (a setting of the plugin in Admin > Rechten)."""
+
+    @staticmethod
+    def _m():
+        from apps.accounts import rights
+
+        return rights
+
+    def can(self, user, plugin, model, pk, action="view"):
+        return self._m().can(user, plugin, model, pk, action)
+
+    def protect(self, plugin, model, pk, owner=None, rules=None):
+        return self._m().protect(plugin, model, pk, owner=owner, rules=rules)
+
+    def forget(self, plugin, model, pk):
+        return self._m().forget(plugin, model, pk)
+
+    def exclude_hidden(self, qs, user, plugin, model, action="view"):
+        return self._m().exclude_hidden(qs, user, plugin, model, action)
+
+    def rules_of(self, plugin, model, pk):
+        return self._m().record_rules(plugin, model, pk)
+
+    def members_may_set(self, plugin):
+        return self._m().members_may_set(plugin)
+
+
+rights = _Rights()
+
+
 class _NullQS:
     """What a query on the model of a plugin that is off gives: nothing."""
     def __iter__(self):

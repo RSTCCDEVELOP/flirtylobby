@@ -74,6 +74,21 @@ class ModuleGrant(models.Model):
         ]
 
 
+class AccessTarget(models.Model):
+    """The rights of one record of a plugin (a product, a document ...): `plugin`, `model` and `pk_text` say which one. No row = no restriction (the plugin decides). See rights.py."""
+
+    plugin = models.CharField(max_length=40)
+    model = models.CharField(max_length=60)
+    pk_text = models.CharField(max_length=60)  # the key of the record (a number or a text)
+    owner = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")  # who made it: may always do everything with it
+    rules = models.JSONField(default=dict, blank=True)  # {"view": {"users": [], "groups": []}, "edit": {...}, "delete": {...}}
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["plugin", "model", "pk_text"], name="uniq_access_target")]
+        indexes = [models.Index(fields=["plugin", "model"])]
+
+
 class User(AbstractUser):
     uid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)  # the unique id of this person: never changes, shown in the user data
     domains = models.JSONField(default=list, blank=True)  # the websites (domains) this person belongs to: on the easy2edit server one person can own several sites

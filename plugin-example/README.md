@@ -109,3 +109,32 @@ Let op: de eigen tabellen van een plugin hebben geen omgekeerde namen in queries
 ## Spelletjes: de plugin `games`
 
 De plugin `games` is een spelletjeshal. Elk spel is een eigen pakket (zip met `game.json`) dat bij Admin → Plugins → Spelletjes → Spel uploaden wordt geladen. Zie daar de handleiding (game.json en `window.game`). Een spel draait afgeschermd (geen login, geen internet, geen opslag van de browser) en bewaart scores en voortgang via de SDK.
+
+
+## Rechten voor records (bekijken, bewerken, verwijderen)
+
+Het systeem heeft een standaard rechtensysteem (altijd aan, Admin > Rechten). De records van jouw plugin (een product, een document ...) kunnen daar ook onder vallen: een gebruiker of een groep krijgt het recht om een record te bekijken, te bewerken en te verwijderen.
+
+Zet in `plugin.json` welke modellen rechten kunnen hebben (alleen voor de lijst in Admin > Rechten):
+
+```json
+"rights": {"models": ["document"]}
+```
+
+In je code vraag je het rechtensysteem naast je eigen controles:
+
+```python
+from apps.plugins import facade
+
+# bij het aanmaken (of later): wie mag het record bekijken, bewerken en verwijderen. De eigenaar en beheerders mogen altijd alles.
+facade.rights.protect("documents", "document", doc.pk, owner=request.user,
+                      rules={"view": {"users": [], "groups": [groep_id]}, "edit": {"users": [], "groups": [groep_id]}})
+
+facade.rights.can(request.user, "documents", "document", doc.pk, "edit")            # mag deze gebruiker dit record bewerken?
+docs = facade.rights.exclude_hidden(Document.objects.all(), request.user, "documents", "document")  # een lijst zonder wat hij niet mag zien
+facade.rights.forget("documents", "document", doc.pk)                                # het record is verwijderd: de rechten gaan mee
+```
+
+Een recht zonder lijst heeft geen beperking (jouw eigen regels beslissen dan). Staat er een lijst, dan mogen alleen die gebruikers en leden van die groepen het (plus de eigenaar en beheerders); wie mag verwijderen mag ook bewerken, wie mag bewerken mag ook bekijken.
+
+Rechten wijzigen kan via de API (`/api/rights/record/<plugin>/<model>/<id>/`, GET, PUT met `{"entries": [{"type": "user", "id": 1, "view": true, "edit": false, "delete": false}]}`, DELETE haalt alle beperkingen weg) voor beheerders, en voor de eigenaar van het record als de superadmin dat voor jouw plugin heeft aangezet (Admin > Rechten > Plugins: "Ook gebruikers die geen admin zijn mogen rechten zetten"). Vraag dit aan met `facade.rights.members_may_set("documents")` om te weten of je een knop "Rechten" mag tonen.
