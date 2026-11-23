@@ -512,11 +512,11 @@ export default function SetupWizard() {
               {step === "trees" && (
                 <div className="eco" style={{ gridColumn: "1 / -1", display: "grid", gap: ".9rem" }}>
                   <p className="muted" style={{ margin: 0 }}>{tx("Laat je website bomen planten. Bezoekers, het energiegebruik en jouw eigen bijdrage planten samen bomen met Ecologi; easy2edit plant er zelf ook elke maand één voor je website. Bezoekers zien het resultaat in het energievenster onderaan de website.")}</p>
-                  <label className="eco-panel" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".8rem", cursor: "pointer", borderColor: treesOn ? "var(--eco-green)" : undefined }}>
-                    <input type="checkbox" checked={treesOn} onChange={(e) => chooseTrees(e.target.checked)} />
-                    <span style={{ flex: 1 }}><strong style={{ color: "var(--eco-deep)" }}>{tx("Bomen planten met easy2edit")}</strong><br /><small className="muted">{tx("Begint in testmodus: er wordt niets gekocht totdat jij dat zelf aanzet.")}</small></span>
-                    <span className="eco-ic" style={{ position: "static", background: "color-mix(in srgb, var(--eco-leaf) 40%, transparent)" }}><IconTree /></span>
-                  </label>
+                  <div className="eco-panel" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".9rem", borderColor: treesOn ? "var(--eco-green)" : undefined }}>
+                    <label className="switch" style={{ flex: "none" }}><input id="sw-trees" type="checkbox" checked={treesOn} onChange={(e) => chooseTrees(e.target.checked)} aria-label={tx("Bomen planten met easy2edit")} /><span /></label>
+                    <label htmlFor="sw-trees" style={{ flex: 1, minWidth: 0, display: "grid", gap: ".1rem", cursor: "pointer" }}><strong style={{ color: "var(--eco-deep)" }}>{tx("Bomen planten met easy2edit")}</strong><small className="muted">{tx("Begint in testmodus: er wordt niets gekocht totdat jij dat zelf aanzet.")}</small></label>
+                    <span className="eco-ic" style={{ position: "static", flex: "none", background: "color-mix(in srgb, var(--eco-leaf) 40%, transparent)" }}><IconTree /></span>
+                  </div>
                   {treesInfo && !treesInfo.error && (
                     <>
                       <div className="eco-tiles">
