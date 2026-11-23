@@ -182,6 +182,9 @@ export default function SetupWizard() {
     });
   }, [step, d, user, forced]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {  // a superadmin: the code is filled in at once (nothing is sent, nothing is pressed)
+    if (step === "agree" && user?.is_staff && !upd && form.consent_ok !== "1" && !form.consent_code) setForm((f) => ({ ...f, consent_code: "000-000" }));
+  }, [step, user?.is_staff, upd, form.consent_ok, form.consent_code]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {  // everything that is filled in is kept (also when the form is stopped)
     if (!allowed || !d || closed || done || upd) return undefined;
     const t = setTimeout(() => saveDraft(uid, form, step), 400);
@@ -865,7 +868,7 @@ export default function SetupWizard() {
                 {stepIdx > 0 && <button type="button" className="e2e-btn e2e-btn--outline" onClick={() => setStep(steps[stepIdx - 1][0])}>{tx("Vorige")}</button>}
                 {step === "agree" && !upd && user?.is_staff && form.consent_ok !== "1" && <button type="button" className="e2e-btn e2e-btn--outline" disabled={consent.busy} onClick={() => typeCode("@")} title={tx("Als superadmin kun je de code overslaan.")}>{tx("Bypass (superadmin)")}</button>}
                 {stepIdx < steps.length - 1
-                  ? <button type="button" className="e2e-btn" disabled={presetBusy || (step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 7 || consent.busy))} onClick={step === "agree" && form.consent_ok !== "1" ? () => checkCode(form.consent_code) : next}>{tx("Volgende")}</button>
+                  ? <button type="button" className="e2e-btn" disabled={presetBusy || (step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 7 || consent.busy || (!termsRead && !user?.is_staff)))} onClick={step === "agree" && form.consent_ok !== "1" ? () => (user?.is_staff && form.consent_code === "000-000" ? typeCode("@") : checkCode(form.consent_code)) : next}>{tx("Volgende")}</button>
                   : <button type="button" className="e2e-btn" disabled={busy} onClick={save}>{tx("Opslaan")}</button>}
               </div>
             </div>
