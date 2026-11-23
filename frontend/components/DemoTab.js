@@ -51,15 +51,17 @@ export default function DemoTab({ setMsg }) {
   const problems = d.problems || [];
   return (
     <div className="e2e-stack" style={{ gap: "1.2rem" }}>
-      <div style={{ ...tint, background: d.enabled ? "color-mix(in srgb, var(--eco-green, #2f7d5b) 16%, transparent)" : tint.background }}>
+      <div style={{ ...tint, ...{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }, background: d.enabled ? "color-mix(in srgb, var(--eco-green, #2f7d5b) 16%, transparent)" : tint.background }}>
         <Switch checked={d.enabled} disabled={!!busy || d.restoring || (!d.enabled && problems.length > 0)} onChange={(v) => put({ enabled: v, times: times.filter(Boolean) }, v ? "De demo mode staat aan." : "De demo mode staat uit.")}
           title="Demo mode aan" hint="Alleen een superadmin kan dit aanzetten, en pas als alles hieronder klopt. In demo mode wordt er geen e-mail of sms verstuurd en worden codes op het scherm ingevuld." />
+        <div style={{ display: "grid", gap: ".4rem", alignContent: "start" }}>
         {!d.enabled && problems.length > 0 && <ul className="e2e-hint" style={{ margin: 0, paddingLeft: "1.2rem" }}>{problems.map((p) => <li key={p}>{tx(p)}</li>)}</ul>}
         {d.enabled && <span className="e2e-hint">{d.restoring ? tx("De demo wordt nu hersteld…") : d.next_restore_at ? tx("Volgende herstel: {0}", when(d.next_restore_at)) : ""}</span>}
+        </div>
       </div>
       <Tabs tabs={[["general", "Backup en tijden"], ["users", "Demo gebruikers"], ["firms", "Bedrijven"], ["login", "Weergave"]]} value={sub} onChange={setSub} />
       {sub === "general" && (
-        <div className="e2e-stack" style={{ gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
           <section style={tint}>
             <strong>{tx("Gekoppelde backup")}</strong>
             <span className="e2e-hint">{tx("Deze backup wordt teruggezet (gebruikers, pagina's, bestanden en ook de creator-bestanden). Je kunt hem altijd wisselen.")}</span>
@@ -89,7 +91,7 @@ export default function DemoTab({ setMsg }) {
               <input id="demo-warn" className="e2e-input" type="number" min={0} max={120} style={{ width: 90 }} defaultValue={d.warn_minutes} onBlur={(e) => put({ warn_minutes: e.target.value }, "Opgeslagen.")} />
             </div>
           </section>
-          <section style={tint}>
+          <section style={{ ...tint, gridColumn: "1 / -1", gridTemplateColumns: "1fr auto", alignItems: "center" }}>
             <span className="e2e-hint">{tx("Laatst teruggezet")}: {when(d.last_restore_at)}{d.last_status === "failed" ? ` · ${tx("mislukt")}: ${d.last_error}` : d.last_status === "ok" ? ` · ${tx("gelukt")}` : ""}</span>
             <div><button type="button" className="e2e-btn e2e-btn--outline" disabled={!!busy || d.restoring || !d.backup} onClick={async () => { if (await confirmDialog(tx("De gekoppelde backup nu terugzetten? Alles wat sindsdien is gedaan gaat verloren."), { okLabel: tx("Nu terugzetten"), cancelLabel: tx("Annuleren") })) run("rs", () => api("/demo/restore/", { method: "POST", body: {} }), "Het terugzetten is gestart."); }}><span style={{ display: "inline-flex", width: 16, height: 16, marginRight: ".4rem", verticalAlign: "middle" }}><IconRefresh /></span>{d.restoring ? tx("Bezig met terugzetten…") : tx("Nu terugzetten")}</button></div>
           </section>
@@ -98,6 +100,7 @@ export default function DemoTab({ setMsg }) {
       {sub === "users" && (
         <div className="e2e-stack" style={{ gap: ".8rem" }}>
           <span className="e2e-hint">{tx("Demo gebruikers worden na elk terugzetten opnieuw gemaakt, met hetzelfde wachtwoord en dezelfde rechten.")}</span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
           {d.users.map((u) => (
             <div key={u.id} style={{ ...tint, gridTemplateColumns: "1fr auto auto", alignItems: "center" }}>
               <span style={{ display: "grid", lineHeight: 1.3, minWidth: 0 }}><strong>{u.note || `${u.first_name} ${u.last_name}`.trim() || u.email}</strong><small className="e2e-hint" style={{ overflowWrap: "anywhere" }}>{u.email} · {u.password} · {[...u.roles, ...u.groups].join(", ") || tx("geen rechten")}</small></span>
@@ -105,6 +108,7 @@ export default function DemoTab({ setMsg }) {
               <button type="button" className="e2e-btn e2e-btn--ghost e2e-btn--sm" aria-label={tx("Verwijderen")} title={tx("Verwijderen")} onClick={async () => { if (await confirmDialog(tx("Deze demo gebruiker verwijderen? Het account verdwijnt bij het volgende terugzetten."), { okLabel: tx("Verwijderen"), cancelLabel: tx("Annuleren") })) run("del", () => api(`/demo/users/${u.id}/`, { method: "DELETE" })); }}><span style={{ display: "inline-flex", width: 16, height: 16 }}><IconTrash /></span></button>
             </div>
           ))}
+          </div>
           <div className="e2e-row" style={{ gap: ".6rem", flexWrap: "wrap" }}>
             <button type="button" className="e2e-btn e2e-btn--outline" disabled={!!busy} onClick={() => run("seed", () => api("/demo/seed/", { method: "POST", body: {} }), "De standaard demo gegevens zijn aangemaakt: een gebruiker, een admin en twee bedrijven.")}>{tx("Standaard gegevens aanmaken")}</button>
             <button type="button" className="e2e-btn" onClick={() => setPopup({ email: "", first_name: "", last_name: "", password: "", note: "", roles: [], groups: [] })}><span style={{ display: "inline-flex", width: 16, height: 16, marginRight: ".4rem", verticalAlign: "middle" }}><IconPlus /></span>{tx("Demo gebruiker toevoegen")}</button>
@@ -115,6 +119,7 @@ export default function DemoTab({ setMsg }) {
       {sub === "firms" && (
         <div className="e2e-stack" style={{ gap: ".8rem" }}>
           <span className="e2e-hint">{tx("Bedrijven worden na elk terugzetten opnieuw gemaakt met dezelfde gegevens en dezelfde gebruikers erbij.")}</span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
           {(d.entities || []).map((e) => (
             <div key={e.id} style={{ ...tint, gridTemplateColumns: "1fr auto auto", alignItems: "center" }}>
               <span style={{ display: "grid", lineHeight: 1.3, minWidth: 0 }}><strong>{e.name}</strong><small className="e2e-hint">{[e.kind, e.city, `${(e.members || []).length} ${tx("gebruikers")}`].filter(Boolean).join(" · ")}</small></span>
@@ -122,6 +127,7 @@ export default function DemoTab({ setMsg }) {
               <button type="button" className="e2e-btn e2e-btn--ghost e2e-btn--sm" aria-label={tx("Verwijderen")} title={tx("Verwijderen")} onClick={async () => { if (await confirmDialog(tx("Dit demo bedrijf verwijderen? Het bedrijf verdwijnt bij het volgende terugzetten."), { okLabel: tx("Verwijderen"), cancelLabel: tx("Annuleren") })) run("delf", () => api(`/demo/entities/${e.id}/`, { method: "DELETE" })); }}><span style={{ display: "inline-flex", width: 16, height: 16 }}><IconTrash /></span></button>
             </div>
           ))}
+          </div>
           <div><button type="button" className="e2e-btn" onClick={() => setFirm({ name: "", kind: "bedrijf", email: "", phone: "", website: "", street: "", house_number: "", postal_code: "", city: "", country: "Nederland", members: [] })}><span style={{ display: "inline-flex", width: 16, height: 16, marginRight: ".4rem", verticalAlign: "middle" }}><IconPlus /></span>{tx("Demo bedrijf toevoegen")}</button></div>
         </div>
       )}
@@ -152,7 +158,7 @@ function UserPopup({ d, user, onClose, onSaved }) {
   };
   return (
     <div role="dialog" aria-label={tx("Demo gebruiker")} style={{ position: "fixed", inset: 0, zIndex: 3200, background: "rgba(0,0,0,.45)", display: "grid", placeItems: "center", padding: "1rem" }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="card" style={{ width: "min(560px, 96vw)", maxHeight: "90vh", overflowY: "auto", display: "grid", gap: "1rem", padding: "1.2rem 1.3rem" }}>
+      <div className="card" style={{ width: "min(760px, 96vw)", maxHeight: "90vh", overflowY: "auto", display: "grid", gap: "1rem", padding: "1.2rem 1.3rem" }}>
         <strong style={{ fontSize: "1.1rem" }}>{f.id ? tx("Demo gebruiker wijzigen") : tx("Demo gebruiker toevoegen")}</strong>
         <Tabs tabs={[["data", "Gegevens"], ["rights", "Rechten"]]} value={tab} onChange={setTab} />
         {tab === "data" && (
@@ -165,13 +171,15 @@ function UserPopup({ d, user, onClose, onSaved }) {
                 {f.user_id && <span className="e2e-hint">{tx("Gekoppeld: {0}. Geef een demo wachtwoord op: het wachtwoord van dit account wordt dat wachtwoord.", f.email)}</span>}
               </div>
             )}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: ".7rem .9rem" }}>
             {[["email", "E-mailadres", "email"], ["first_name", "Voornaam"], ["last_name", "Achternaam"], ["password", "Wachtwoord (zichtbaar op de login)"], ["note", "Omschrijving (bijvoorbeeld Beheerder)"]].map(([k, label, type]) => (
               <div key={k} className="e2e-field"><label className="e2e-label" htmlFor={`du-${k}`}>{tx(label)}</label><input id={`du-${k}`} className="e2e-input" type={type || "text"} value={f[k] || ""} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} autoComplete="off" /></div>
             ))}
+            </div>
           </div>
         )}
         {tab === "rights" && (
-          <div className="e2e-stack" style={{ gap: ".8rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
             <section style={tint}><strong>{tx("Rollen")}</strong>{d.roles.length ? d.roles.map((n) => <Switch key={n} checked={f.roles.includes(n)} onChange={(v) => toggle("roles", n, v)} title={n} />) : <span className="e2e-hint">{tx("Geen rollen.")}</span>}</section>
             <section style={tint}><strong>{tx("Groepen")}</strong>{d.groups.length ? d.groups.map((n) => <Switch key={n} checked={f.groups.includes(n)} onChange={(v) => toggle("groups", n, v)} title={n} />) : <span className="e2e-hint">{tx("Geen groepen.")}</span>}</section>
           </div>
@@ -199,16 +207,18 @@ function FirmPopup({ d, firm, onClose, onSaved }) {
   };
   return (
     <div role="dialog" aria-label={tx("Demo bedrijf")} style={{ position: "fixed", inset: 0, zIndex: 3200, background: "rgba(0,0,0,.45)", display: "grid", placeItems: "center", padding: "1rem" }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="card" style={{ width: "min(560px, 96vw)", maxHeight: "90vh", overflowY: "auto", display: "grid", gap: "1rem", padding: "1.2rem 1.3rem" }}>
+      <div className="card" style={{ width: "min(760px, 96vw)", maxHeight: "90vh", overflowY: "auto", display: "grid", gap: "1rem", padding: "1.2rem 1.3rem" }}>
         <strong style={{ fontSize: "1.1rem" }}>{f.id ? tx("Demo bedrijf wijzigen") : tx("Demo bedrijf toevoegen")}</strong>
         <Tabs tabs={[["data", "Gegevens"], ["users", "Gebruikers"]]} value={tab} onChange={setTab} />
         {tab === "data" && (
           <div className="e2e-stack" style={{ gap: ".7rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: ".7rem .9rem" }}>
             <div className="e2e-field"><label className="e2e-label" htmlFor="df-kind">{tx("Soort")}</label>
               <select id="df-kind" className="e2e-input" value={f.kind} onChange={(e) => setF((x) => ({ ...x, kind: e.target.value }))}>{(d.kinds || []).map((k) => <option key={k} value={k}>{k}</option>)}</select></div>
             {[["name", "Naam"], ["legal_name", "Juridische naam"], ["email", "E-mailadres"], ["phone", "Telefoon"], ["website", "Website"], ["street", "Straat"], ["house_number", "Huisnummer"], ["postal_code", "Postcode"], ["city", "Plaats"], ["country", "Land"]].map(([k, label]) => (
               <div key={k} className="e2e-field"><label className="e2e-label" htmlFor={`df-${k}`}>{tx(label)}</label><input id={`df-${k}`} className="e2e-input" value={f[k] || ""} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} autoComplete="off" /></div>
             ))}
+            </div>
           </div>
         )}
         {tab === "users" && (
