@@ -112,6 +112,7 @@ class User(AbstractUser):
     totp_last_step = models.BigIntegerField(default=0)  # last accepted 30 s step: a code works only once
     email_verified = models.BooleanField(default=False)  # confirmed with a code sent to the address
     phone = models.CharField(max_length=20, blank=True)  # E.164, for SMS (and the profile)
+    mobile = models.CharField(max_length=20, blank=True)  # the mobile number (E.164), in the profile next to the phone number
     display_name = models.CharField(max_length=60, blank=True)  # profile name shown to others
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=1, blank=True)  # m | f | x

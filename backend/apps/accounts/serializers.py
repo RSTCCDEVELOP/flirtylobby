@@ -14,7 +14,7 @@ from apps.security.words import validate_no_forbidden_words
 from .models import Role, User, UserGroup
 from .perms import KEYS
 
-PROFILE_FIELDS = ["first_name", "last_name", "display_name", "birth_date", "gender", "phone", "address", "postal_code", "city", "country", "function", "short", "description", "link", "link_external"]
+PROFILE_FIELDS = ["first_name", "last_name", "display_name", "birth_date", "gender", "phone", "mobile", "address", "postal_code", "city", "country", "function", "short", "description", "link", "link_external"]
 WORD_FIELDS = ["first_name", "last_name", "display_name", "address", "city", "function", "role", "short", "description"]
 WORD_KWARGS = {f: {"validators": [validate_no_forbidden_words]} for f in WORD_FIELDS}
 
@@ -175,6 +175,16 @@ class ProfileSerializer(serializers.ModelSerializer):
         u = self.instance
         if u and u.otp_active and u.twofa_method == "sms" and value != u.phone:
             raise serializers.ValidationError("Dit nummer is je 2-stapsverificatie-nummer. Wijzig het via je beveiligingsinstellingen.")
+        return value
+
+    def validate_mobile(self, value):
+        import re
+
+        from apps.security.twofa import PHONE_RE
+
+        value = re.sub(r"[ \-()]", "", value or "")
+        if value and not PHONE_RE.match(value):
+            raise serializers.ValidationError("Geef een mobiel nummer met landcode, bv. +31612345678.")
         return value
 
     def validate_country(self, value):

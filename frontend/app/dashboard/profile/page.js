@@ -38,7 +38,7 @@ export default function Profile() {
   const { user, setUser } = useAuth();
   const [secTab, setSecTab] = useState("password"); // Beveiliging: password | passkeys | twofa | account
   const [form, setForm] = useState({
-    first_name: user.first_name, last_name: user.last_name, display_name: user.display_name || "", birth_date: user.birth_date || "", gender: user.gender || "", phone: user.phone || "", address: user.address || "", postal_code: user.postal_code || "", city: user.city || "", country: user.country || "", function: user.function,
+    first_name: user.first_name, last_name: user.last_name, display_name: user.display_name || "", birth_date: user.birth_date || "", gender: user.gender || "", phone: user.phone || "", mobile: user.mobile || "", address: user.address || "", postal_code: user.postal_code || "", city: user.city || "", country: user.country || "", function: user.function,
     short: user.short, description: user.description, link: user.link, link_external: user.link_external,
   });
   const [pw, setPw] = useState({ old_password: "", new_password: "" });
@@ -127,6 +127,7 @@ export default function Profile() {
       <ProfileBlock id="p-contact" icon={<IconPin />} title={tx("Contact & adres")} hint={tx("Telefoon en woonplaats.")}>
         <div className="grid2">
           <label>{tx("Telefoon")}<PhoneInput value={form.phone || ""} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} /></label>
+          <label>{tx("Mobiel")}<PhoneInput value={form.mobile || ""} onChange={(v) => setForm((f) => ({ ...f, mobile: v }))} /></label>
           <label>{tx("Adres")}<input value={form.address} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} autoComplete="street-address" /></label>
           <label>{tx("Postcode")}
             <span style={{ display: "flex", gap: ".5rem", alignItems: "stretch", flexWrap: "wrap" }}>
