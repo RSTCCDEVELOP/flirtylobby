@@ -502,7 +502,7 @@ export default function SetupWizard() {
                   <input id="sw-company_name_ro" className="e2e-input" value={form.company_name || ""} readOnly aria-readonly="true" tabIndex={-1} style={{ opacity: .8, cursor: "default", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, #fff))" }} />
                   <span className="e2e-hint">{tx("De bedrijfsnaam verander je bij Website.")}</span>
                 </div>
-                <AddressFinder span="auto" initial={[form.postal_code, form.house_number].filter(Boolean).join(" ")} onPick={(r) => { setForm((f) => ({ ...f, street: r.street || f.street, house_number: r.house_number || "", postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country: r.country || f.country })); setErrs((x) => ({ ...x, street: "", house_number: "", postal_code: "", city: "", country: "" })); lookupAddress(r); }} />
+                <AddressFinder span="auto" onPick={(r) => { setForm((f) => ({ ...f, street: r.street || f.street, house_number: r.house_number || "", postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country: r.country || f.country })); setErrs((x) => ({ ...x, street: "", house_number: "", postal_code: "", city: "", country: "" })); lookupAddress(r); }} />
                 {foundBlock}
                 {field("street", tx("Straat"), { autoComplete: "address-line1", span: "1 / -1" })}
                 {field("house_number", tx("Huisnummer"), { maxLength: 12 })}
