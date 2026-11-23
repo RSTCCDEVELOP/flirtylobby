@@ -421,14 +421,15 @@ export default function SetupWizard() {
     </div>
   ) : null;
   const foundBlock = (finder.results || owner.source === "entity") && (finder.results || owner.status) && (
-                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem", padding: ".7rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))" }}>
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".5rem", padding: ".55rem .8rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))" }}>
                     {finder.fromAddress && finder.results?.length > 0 && <span className="e2e-hint"><strong>{tx("Dit adres staat al bij easy2edit.")}</strong> {tx("Is dit jouw bedrijf? Kies het bedrijf en daarna de contactpersoon, dan vullen we de gegevens in.")}</span>}
                     {finder.results && <>
                       {finder.error && <span className="e2e-error">{finder.error}</span>}
                       {!finder.results.length && !finder.error && <span className="e2e-hint">{tx("Geen bedrijf gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
+                      {(finder.results.length > 0 || (finder.entity && finder.contacts)) && <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".6rem 1.8rem" }}>
                       {finder.results.length > 0 && (
-                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
-                          <span className="e2e-hint">{tx("Kies je bedrijf:")}</span>
+                        <div style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
+                          <span className="e2e-hint" style={{ fontSize: ".72rem", fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", opacity: .65 }}>{tx("Bedrijf")}</span>
                           {finder.results.map((c) => {
                             const on = finder.entity?.id === c.id;
                             return <button key={c.id} type="button" onClick={() => pickCompany(c)} aria-pressed={on} style={{ ...CHIP, border: `1px solid ${on ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: on ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{c.name}</strong>{c.city && <span className="e2e-hint">{c.city}</span>}</button>;
@@ -436,12 +437,13 @@ export default function SetupWizard() {
                         </div>
                       )}
                       {finder.entity && finder.contacts && (
-                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
-                          <span className="e2e-hint">{tx("Wie ben jij? Kies de contactpersoon van {0}", finder.entity.name)}</span>
+                        <div style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }} title={tx("Wie ben jij? Kies de contactpersoon van {0}", finder.entity.name)}>
+                          <span className="e2e-hint" style={{ fontSize: ".72rem", fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", opacity: .65 }}>{tx("Contactpersoon")}</span>
                           {!finder.contacts.length && <span className="e2e-hint">{tx("Er zijn geen personen aan dit bedrijf gekoppeld.")}</span>}
                           {finder.contacts.map((u) => <button key={u.id} type="button" disabled={owner.busy} onClick={() => pickContact(finder.entity, u)} aria-pressed={owner.user === u.id && owner.source === "entity"} style={{ ...CHIP, border: `1px solid ${owner.user === u.id && owner.source === "entity" ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: owner.user === u.id && owner.source === "entity" ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{u.name}</strong></button>)}
                         </div>
                       )}
+                      </div>}
                     </>}
                     {owner.source === "entity" && ownerBox}
                   </div>
