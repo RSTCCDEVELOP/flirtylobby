@@ -53,6 +53,16 @@ const TEST_DATA = { site_name: "Testwebsite", company_name: "Testbedrijf BV", fr
   contact_first_name: "Test", contact_last_name: "Gebruiker", contact_email: "demo@easy2edit.com", phone: "+31 301234567", mobile: "+31 612345678" };
 const isLocal = () => typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 
+// A switch that always shows (inline colours, no style of a set can hide it): grey and the knob left = off, theme colour and the knob right = on.
+function Toggle({ on, onChange, label, id }) {
+  return (
+    <button type="button" id={id} role="switch" aria-checked={!!on} aria-label={label} onClick={() => onChange(!on)}
+      style={{ flex: "none", position: "relative", width: 50, height: 28, padding: 0, borderRadius: 999, cursor: "pointer", border: `1px solid ${on ? "var(--e2e-primary, #e8803f)" : "#8f8a80"}`, background: on ? "var(--e2e-primary, #e8803f)" : "#b9b4aa", transition: "background .2s" }}>
+      <span aria-hidden="true" style={{ position: "absolute", top: 3, left: on ? 25 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,.35)", transition: "left .2s" }} />
+    </button>
+  );
+}
+
 export default function SetupWizard() {
   const { user } = useAuth();
   const mods = useModules();
@@ -513,7 +523,7 @@ export default function SetupWizard() {
                 <div className="eco" style={{ gridColumn: "1 / -1", display: "grid", gap: ".9rem" }}>
                   <p className="muted" style={{ margin: 0 }}>{tx("Laat je website bomen planten. Bezoekers, het energiegebruik en jouw eigen bijdrage planten samen bomen met Ecologi; easy2edit plant er zelf ook elke maand één voor je website. Bezoekers zien het resultaat in het energievenster onderaan de website.")}</p>
                   <div className="eco-panel" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".9rem", borderColor: treesOn ? "var(--eco-green)" : undefined }}>
-                    <label className="switch" style={{ flex: "none" }}><input id="sw-trees" type="checkbox" checked={treesOn} onChange={(e) => chooseTrees(e.target.checked)} aria-label={tx("Bomen planten met easy2edit")} /><span /></label>
+                    <Toggle id="sw-trees" on={treesOn} onChange={chooseTrees} label={tx("Bomen planten met easy2edit")} />
                     <label htmlFor="sw-trees" style={{ flex: 1, minWidth: 0, display: "grid", gap: ".1rem", cursor: "pointer" }}><strong style={{ color: "var(--eco-deep)" }}>{tx("Bomen planten met easy2edit")}</strong><small className="muted">{tx("Begint in testmodus: er wordt niets gekocht totdat jij dat zelf aanzet.")}</small></label>
                     <span className="eco-ic" style={{ position: "static", flex: "none", background: "color-mix(in srgb, var(--eco-leaf) 40%, transparent)" }}><IconTree /></span>
                   </div>
@@ -546,7 +556,7 @@ export default function SetupWizard() {
                     {!aiInfo ? <span className="e2e-hint">{tx("Bezig…")}</span> : aiInfo.module === false || !p ? <span className="e2e-hint">{tx("AI staat niet aan in deze installatie.")}</span> : (
                       <>
                         <label className="e2e-check" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".7rem", padding: ".7rem .9rem", border: `1px solid ${on ? "var(--e2e-primary)" : "var(--e2e-line, rgba(0,0,0,.15))"}`, borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer" }}>
-                          <input type="checkbox" checked={on} onChange={(e) => setAiAmount(e.target.checked ? p.suggest : 0)} />
+                          <Toggle on={on} onChange={(v) => setAiAmount(v ? p.suggest : 0)} label={tx("Ik wil AI-tegoed kopen")} />
                           <span style={{ flex: 1 }}><strong>{tx("Ik wil AI-tegoed kopen")}</strong><br /><small className="e2e-hint">{tx("Je betaalt het na het aanmaken van de licentie, op de betaalpagina. Je kunt dit later ook doen.")}</small></span>
                         </label>
                         {on && (
