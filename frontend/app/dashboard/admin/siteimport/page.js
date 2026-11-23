@@ -145,6 +145,9 @@ function Swatches({ colors }) {
   return <span className="si-swatches">{(colors || []).map((c) => <i key={c} style={{ background: c }} title={c} />)}</span>;
 }
 
+// The start page of a design (index.html / home.html, else the first page) is put ON the home page of the website (key "home", address /), so that "/" shows the new home page: it takes the place of the old one instead of becoming a page of its own.
+const homeTargetIndex = (pages) => { const list = pages || []; const k = list.findIndex((p) => p.has_design && /^(index|home|start)$/i.test(String(p.stem || ""))); return k >= 0 ? k : (list[0]?.has_design ? 0 : -1); };
+
 function Detail({ imp, onChanged, onApply, busy }) {
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -278,7 +281,7 @@ function Proposal({ imp, onDone, onCancel, onPreview }) {
   const [name, setName] = useState(pr.theme.name);
   const [profile, setProfile] = useState(pr.profile.key);
   const [useProfile, setUseProfile] = useState(true);
-  const [pages, setPages] = useState(pr.pages.map((p) => ({ i: p.i, include: true, title: p.title, in_menu: p.in_menu, target: p.suggest || "" })));
+  const [pages, setPages] = useState(pr.pages.map((p, n) => ({ i: p.i, include: true, title: p.title, in_menu: p.in_menu, target: p.suggest || (n === homeTargetIndex(pr.pages) ? "home" : "") })));
   const [home, setHome] = useState(!!pr.home.title);
   const [assets, setAssets] = useState(pr.assets.map((a) => ({ file: a.file, include: true, role: a.role })));
   const [useTheme, setUseTheme] = useState(true);
@@ -601,7 +604,7 @@ export default function SiteImport() {
       const off = o.off || [];
       const ap = await api(`/siteimport/${r.id}/approve/`, { method: "POST", body: {
         name: wname, profile: pr.profile?.key || null,
-        pages: (pr.pages || []).map((p, i) => ({ i: p.i ?? i, include: true, title: p.title, in_menu: p.in_menu, target: p.suggest || "" })),
+        pages: (pr.pages || []).map((p, i) => ({ i: p.i ?? i, include: true, title: p.title, in_menu: p.in_menu, target: p.suggest || (i === homeTargetIndex(pr.pages) ? "home" : "") })),
         home: { include: !!pr.home?.title }, assets: (pr.assets || []).map((a) => ({ file: a.file, include: true, role: a.role })), theme: { include: false }, // (the theme of an own style is made from the choices of the step plan, below)
         modules: (pr.modules || []).map((m) => ({ key: m.key, include: o.modules !== false && !!m.include && !off.includes(m.key) })) } });
       let themeNote = "";
