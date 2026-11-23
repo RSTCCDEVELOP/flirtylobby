@@ -419,7 +419,7 @@ export default function SetupWizard() {
             </div>
             <div className={`sw-body${step === "costs" ? " fit" : ""}`}>
             {error && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{error}</div></div>}
-            <form className="e2e-grid" style={{ "--e2e-min": "230px" }} onSubmit={(e) => { e.preventDefault(); if (stepIdx < steps.length - 1) next(); else save(); }}>
+            <form className="e2e-grid" style={{ "--e2e-min": "min(100%, 340px)" }} onSubmit={(e) => { e.preventDefault(); if (stepIdx < steps.length - 1) next(); else save(); }}>
               {step === "site" && <>
                 {field("site_name", tx("Naam van de website"))}
                 {field("frontend_url", tx("Hoofd-URL"), { placeholder: "www.voorbeeld.nl", inputMode: "url", title: tx("Het hoofdadres van de website, zonder pad of slash erachter. Dit staat ook op het licentiescherm.") })}
