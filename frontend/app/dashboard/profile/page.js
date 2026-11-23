@@ -125,10 +125,11 @@ export default function Profile() {
       </ProfileBlock>
 
       <ProfileBlock id="p-contact" icon={<IconPin />} title={tx("Contact & adres")} hint={tx("Telefoon en woonplaats.")}>
-        <div className="grid2">
+        <div className="grid2" style={{ alignItems: "start", rowGap: "1rem" }}>
           <label>{tx("Telefoon")}<PhoneInput value={form.phone || ""} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} /></label>
-          <label>{tx("Mobiel")}<PhoneInput value={form.mobile || ""} onChange={(v) => setForm((f) => ({ ...f, mobile: v }))} /><small className="muted">{tx("Hierheen gaan codes per sms (tweestapsverificatie en bevestigingen).")}</small></label>
-          <label>{tx("Adres")}<input value={form.address} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} autoComplete="street-address" /></label>
+          <label>{tx("Mobiel")}<PhoneInput value={form.mobile || ""} onChange={(v) => setForm((f) => ({ ...f, mobile: v }))} /></label>
+          <small className="muted" style={{ gridColumn: "1 / -1", marginTop: "-.5rem" }}>{tx("Mobiel")}: {tx("Hierheen gaan codes per sms (tweestapsverificatie en bevestigingen).")}</small>
+          <label style={{ gridColumn: "1 / -1" }}>{tx("Adres")}<input value={form.address} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} autoComplete="street-address" /></label>
           <label>{tx("Postcode")}
             <span style={{ display: "flex", gap: ".5rem", alignItems: "stretch", flexWrap: "wrap" }}>
               <input value={form.postal_code} onChange={set("postal_code")} maxLength={12} autoComplete="postal-code" style={{ flex: 1, minWidth: 0 }} />

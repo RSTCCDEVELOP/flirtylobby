@@ -265,9 +265,10 @@ export default function Users() {
               </>
             )}
             {tab === "contact" && (
-            <div className="grid2">
+            <div className="grid2" style={{ alignItems: "start", rowGap: "1rem" }}>
               <label>{tx("Telefoon")}<PhoneInput value={modal.phone || ""} onChange={(v) => setModal((m) => ({ ...m, phone: v }))} /></label>
-              <label>{tx("Mobiel")}<PhoneInput value={modal.mobile || ""} onChange={(v) => setModal((m) => ({ ...m, mobile: v }))} /><small className="muted">{tx("Hierheen gaan codes per sms (tweestapsverificatie en bevestigingen).")}</small></label>
+              <label>{tx("Mobiel")}<PhoneInput value={modal.mobile || ""} onChange={(v) => setModal((m) => ({ ...m, mobile: v }))} /></label>
+              <small className="muted" style={{ gridColumn: "1 / -1", marginTop: "-.5rem" }}>{tx("Mobiel")}: {tx("Hierheen gaan codes per sms (tweestapsverificatie en bevestigingen).")}</small>
               <label style={{ gridColumn: "1 / -1" }}>{tx("Adres")}<input value={modal.address || ""} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} /></label>
               <label>{tx("Postcode")}
                 <span style={{ display: "flex", gap: ".5rem", alignItems: "stretch", flexWrap: "wrap" }}>
