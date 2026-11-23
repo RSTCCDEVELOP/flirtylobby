@@ -43,6 +43,13 @@ const STEPS = [
   ["overview", "Overzicht", []],  // the last screen: everything of the licence together, with its number; Save makes it
    // what the website costs, from everything that is in use; the end date of the licence (only when there is no licence yet: it is made by itself)
 ];
+// What is filled in is kept when the form is stopped (closed, left, the browser closed) and comes back the next time; it is cleared when the form was saved. Never the password, the code or the payment.
+const DRAFT_FIELDS = ["site_name", "company_name", "frontend_url", "street", "house_number", "postal_code", "city", "country", "contact_first_name", "contact_last_name", "contact_email", "phone", "mobile", "hosting", "renew_months", "preset", "ai_amount"];
+const draftKey = (uid) => `e2e_setup_draft:${uid || ""}`;
+const loadDraft = (uid) => { try { const x = JSON.parse(localStorage.getItem(draftKey(uid)) || "null"); return x && typeof x === "object" && x.fields && Date.now() - (x.at || 0) < 30 * 864e5 ? x : null; } catch { return null; } };
+const saveDraft = (uid, form, step) => { try { const f = {}; DRAFT_FIELDS.forEach((k) => { if (form[k] !== undefined && form[k] !== null && form[k] !== "") f[k] = form[k]; }); if (Object.keys(f).length) localStorage.setItem(draftKey(uid), JSON.stringify({ fields: f, step, at: Date.now() })); } catch { /* no storage */ } };
+const clearDraft = (uid) => { try { localStorage.removeItem(draftKey(uid)); } catch { /* no storage */ } };
+
 const SKIP_KEY = "e2e_setup_skipped";
 // Only for testing: on this computer (localhost) a superadmin who types a single @ in any field gets all fields filled with made-up data.
 // The main address as it is shown in the form: without https:// (the server adds it when it is saved); empty -> the address this website runs on (not on localhost).
@@ -68,6 +75,8 @@ export default function SetupWizard() {
   const mods = useModules();
   const first = useSandboxFirst(!!user?.is_staff); // the onboarding done again: the form comes after the first questions (welcome, licence check, terms, sandbox, manual)
   const allowed = !!user && (user.is_staff || canAdmin(user, mods));
+  const uid = user?.id;
+  const withDraft = (base) => { const dr = loadDraft(uid); return dr ? { ...base, ...dr.fields } : base; };  // what was typed before and not saved comes back
   const [d, setD] = useState(null);
   const [form, setForm] = useState({});
   const [step, setStep] = useState("site");
@@ -94,12 +103,12 @@ export default function SetupWizard() {
   useEffect(() => {
     if (!allowed) return;
     try { if (sessionStorage.getItem(SKIP_KEY)) { setClosed(true); return; } } catch { /* no storage */ }
-    api("/system/setup/").then((r) => { setD(r); setForm({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); }).catch(() => {});
+    api("/system/setup/").then((r) => { setD(r); setForm(withDraft({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" })); { const dr = loadDraft(uid); if (dr && ["site", "address", "contact"].includes(dr.step)) setStep(dr.step); } }).catch(() => {});
   }, [allowed]);
 
   useEffect(() => {
     if (!allowed) return undefined;
-    const again = (to, detail) => (detail?.mode === "update" ? api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}) : Promise.resolve()).then(() => api("/system/setup/")).then((r) => { setD(r); setForm({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" }); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
+    const again = (to, detail) => (detail?.mode === "update" ? api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}) : Promise.resolve()).then(() => api("/system/setup/")).then((r) => { setD(r); setForm(withDraft({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" })); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
     const onOpen = (e) => again(undefined, e?.detail);
     window.addEventListener("open-setup-wizard", onOpen);
     try { // back from Stripe: is the session paid? Then the wizard goes on with the agreement
@@ -173,6 +182,11 @@ export default function SetupWizard() {
     });
   }, [step, d, user, forced]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {  // everything that is filled in is kept (also when the form is stopped)
+    if (!allowed || !d || closed || done || upd) return undefined;
+    const t = setTimeout(() => saveDraft(uid, form, step), 400);
+    return () => clearTimeout(t);
+  }, [form, step, allowed, d, closed, done, upd, uid]);
   const waiting = !forced && !done && (first.welcomeOpen || first.licenseMessageOpen || (user?.is_staff && !first.known)); // the very first question (colour) and the licence message come before the form
   const shown = !!allowed && !closed && !!(d?.needed || forced || done) && typeof document !== "undefined" && !waiting;
   useEffect(() => { // while the form (where the licence is made) or the screen "licence made" is open, the terms, the AI and the rest wait for it; they follow when it is closed
@@ -227,7 +241,7 @@ export default function SetupWizard() {
     if (!checkStep()) return;
     setBusy(true); setError("");
     const hostChanged = again && ((form.hosting || "") !== (d.hosting_current || "") || Number(form.renew_months) !== Number(d.renew_months || 12));  // (hosting or period of the licence that is there)
-    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (!r.needed && hostChanged) { await changeHostingAndUpdate(d); return; } if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); /* the last screen: "Voltooid" with "Afronden en verder gaan" (also when the licence was there already or the onboarding is done again); the reload that follows brings the next steps (terms, installation, AI, design wizard) */ setDone(r.license?.number && d.needs_license ? r.license : { finished: true, number: r.license?.number || "", client: form.company_name, main_url: form.frontend_url, valid_until: r.license?.valid_until }); } }
+    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (!r.needed && hostChanged) { await changeHostingAndUpdate(d); return; } if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { clearDraft(uid); setForced(false); window.dispatchEvent(new Event("setup-saved")); /* the last screen: "Voltooid" with "Afronden en verder gaan" (also when the licence was there already or the onboarding is done again); the reload that follows brings the next steps (terms, installation, AI, design wizard) */ setDone(r.license?.number && d.needs_license ? r.license : { finished: true, number: r.license?.number || "", client: form.company_name, main_url: form.frontend_url, valid_until: r.license?.valid_until }); } }
     catch (e) {
       const bad = Object.fromEntries(Object.entries(e?.data?.errors || {}).map(([k, v]) => [k, tx(v)]));  // each message in the chosen language
       setError(Object.keys(bad).length ? Object.values(bad).join(" ") : errorText(e));
