@@ -43,13 +43,17 @@ def _overview():
     from apps.accounts.models import Role, UserGroup
     from apps.backups.models import Backup
 
+    from apps.core import presets
+
     cfg = demo.get()
     nxt = demo.next_slot(cfg)
-    return {"enabled": cfg.enabled, "backup": cfg.backup_id, "times": cfg.times or [], "warn_minutes": cfg.warn_minutes, "show_on_login": cfg.show_on_login,
+    current = demo.current_installation()
+    installs = [{"key": p["key"], "name": p["name"], "desc": p["desc"], "current": p["key"] == current, **demo.install_config(cfg, p["key"])} for p in presets.PRESETS]
+    return {"installs": installs, "installation": current, "enabled": cfg.enabled, "backup": cfg.backup_id, "times": cfg.times or [], "warn_minutes": cfg.warn_minutes, "show_on_login": cfg.show_on_login,
             "last_restore_at": cfg.last_restore_at, "last_status": cfg.last_status, "last_error": cfg.last_error, "restoring": demo.restoring(), "problems": demo.problems(cfg),
             "next_restore_at": nxt.isoformat() if nxt and cfg.backup_id else None,
             "backups": [{"id": b.id, "file": b.file, "frequency": b.frequency, "created_at": b.created_at, "size": b.size, "note": b.note} for b in Backup.objects.all()],
-            "users": [_user(d) for d in DemoUser.objects.all()], "entities": [_entity(e) for e in DemoEntity.objects.all()], "kinds": ["bedrijf", "vereniging", "club", "vrij"], "roles": list(Role.objects.values_list("name", flat=True)), "groups": list(UserGroup.objects.values_list("name", flat=True))}
+            "users": [{**_user(d), "generated": d.generated} for d in DemoUser.objects.all()], "entities": [{**_entity(e), "generated": e.generated} for e in DemoEntity.objects.all()], "kinds": ["bedrijf", "vereniging", "club", "vrij"], "roles": list(Role.objects.values_list("name", flat=True)), "groups": list(UserGroup.objects.values_list("name", flat=True))}
 
 
 @api_view(["GET", "PUT"])
@@ -61,6 +65,7 @@ def settings(request):
         from apps.backups.models import Backup
 
         cfg, d = demo.get(), request.data
+        installs_changed = False
         if "times" in d:
             try:
                 cfg.times = demo.clean_times(d["times"])
@@ -74,6 +79,9 @@ def settings(request):
                 if not b:
                     return _bad("Deze backup bestaat niet.")
                 cfg.backup = b
+        if "installs" in d:
+            cfg.installs = demo.clean_installs(cfg, d["installs"])
+            installs_changed = True
         if "warn_minutes" in d:
             try:
                 cfg.warn_minutes = min(max(int(d["warn_minutes"]), 0), 120)
@@ -94,6 +102,10 @@ def settings(request):
 
                 cfg.last_restore_at = timezone.now()  # the first restore is at the next planned time (use "Nu terugzetten" for one now)
         cfg.save()
+        if cfg.enabled and (installs_changed or ("enabled" in d and bool(d["enabled"]))):  # the demo users and companies are made when the demo mode goes on and when their settings change
+            demo.generate()
+            demo.sync_users()
+            demo.sync_entities()
         logger.info("Demo mode settings changed by %s", request.user.email)
     return Response(_overview())
 
@@ -242,13 +254,26 @@ def candidates(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def seed(request):
-    """The standard demo data: one user, one admin, two companies and their links (only what is not there yet)."""
+    """Make the demo users and companies of the installation that is on now (again), from the settings of that installation."""
     if not _is_super(request):
         return _bad("Alleen een superadmin.", status.HTTP_403_FORBIDDEN)
-    demo.seed_defaults()
+    demo.generate()
     demo.sync_users()
     demo.sync_entities()
     return Response(_overview())
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def installation(request):
+    """Choose another standard installation (one that is allowed in the demo): a superadmin, or a demo account while the demo mode is on."""
+    if not (_is_super(request) or (demo.enabled() and demo.may_switch(request.user))):
+        return _bad("Dit mag alleen in de demo.", status.HTTP_403_FORBIDDEN)
+    try:
+        demo.switch_installation(str(request.data.get("key") or ""), request.user)
+    except (ValueError, KeyError) as e:
+        return _bad(str(e) or "Onbekende installatie.")
+    return Response(_overview() if _is_super(request) else {"ok": True, "installation": demo.current_installation()})
 
 
 def _fill_entity(e, data):

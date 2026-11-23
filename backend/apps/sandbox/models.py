@@ -56,6 +56,7 @@ class DemoSettings(models.Model):
     times = models.JSONField(default=list, blank=True)  # ["03:00", "13:00"]: local time of the website, several per day
     warn_minutes = models.PositiveSmallIntegerField(default=2)  # how long before a restore the visitors see a message
     show_on_login = models.BooleanField(default=True)  # the demo users (with password) are shown on the login page
+    installs = models.JSONField(default=dict, blank=True)  # per standard installation: {"allowed", "users", "admins", "companies", "user_roles", "user_groups", "admin_roles", "admin_groups"}
     last_restore_at = models.DateTimeField(null=True, blank=True)
     last_status = models.CharField(max_length=10, blank=True)  # ok | failed
     last_error = models.TextField(blank=True)
@@ -72,6 +73,7 @@ class DemoUser(models.Model):
     roles = models.JSONField(default=list, blank=True)  # names of roles
     groups = models.JSONField(default=list, blank=True)  # names of groups
     order = models.PositiveSmallIntegerField(default=0)
+    generated = models.BooleanField(default=False)  # made by the system from the settings of the installation (made again after every restore); False = added by hand
 
     class Meta:
         ordering = ["order", "id"]
@@ -93,6 +95,8 @@ class DemoEntity(models.Model):
     country = models.CharField(max_length=80, blank=True)
     members = models.JSONField(default=list, blank=True)  # e-mail addresses of demo users that belong to it
     order = models.PositiveSmallIntegerField(default=0)
+
+    generated = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["order", "id"]

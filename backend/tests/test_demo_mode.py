@@ -26,7 +26,7 @@ def test_settings_are_for_superadmins_only(boss, django_user_model):
     plain = APIClient(); plain.force_authenticate(django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!"))
     assert plain.get("/api/demo/settings/").status_code == 403
     r = c.put("/api/demo/settings/", {"times": ["3:00", "13:30"], "warn_minutes": 5, "enabled": True}, format="json")
-    assert r.status_code == 400 and len(r.json()["problems"]) == 2  # no backup, no demo user: it does not go on
+    assert r.status_code == 400 and len(r.json()["problems"]) == 1  # no backup: it does not go on (the users are planned from the installation)
     assert c.get("/api/demo/settings/").json()["times"] == ["03:00", "13:30"] and not c.get("/api/demo/settings/").json()["enabled"]
     assert c.put("/api/demo/settings/", {"times": ["25:00"]}, format="json").status_code == 400
 
@@ -69,7 +69,7 @@ def test_demo_users_are_made_and_shown(boss, django_user_model, tmp_path, settin
     assert u.check_password("demo1234") and list(u.roles.values_list("name", flat=True)) == ["Redacteur"] and not u.is_staff
     c.put("/api/demo/settings/", {"enabled": True, "times": ["03:00"], "backup": __import__("apps.backups.service", fromlist=["x"]).create("manual", None).id}, format="json")
     users = APIClient().get("/api/sandbox/status/").json()["demo"]["users"]
-    users = [x for x in users if x["email"] == "demo@example.com"]
+    users = [x for x in users if x["email"] == "demo@example.com"]  # (next to the generated demo.gebruiker1 and demo.admin1)
     assert users == [{"email": "demo@example.com", "password": "demo1234", "name": "Dina", "note": "Redacteur"}]
     c.put("/api/demo/settings/", {"show_on_login": False}, format="json")
     assert APIClient().get("/api/sandbox/status/").json()["demo"]["users"] == []
@@ -78,7 +78,7 @@ def test_demo_users_are_made_and_shown(boss, django_user_model, tmp_path, settin
     # the user is made again after the account is gone
     django_user_model.objects.filter(email="demo@example.com").delete()
     from apps.sandbox import demo
-    assert demo.sync_users() == 1 and django_user_model.objects.filter(email="demo@example.com").exists()
+    assert demo.sync_users() >= 1 and django_user_model.objects.filter(email="demo@example.com").exists()
 
 
 @pytest.mark.django_db
@@ -124,28 +124,67 @@ def test_creator_part_in_backup(boss, tmp_path, settings):
 
 
 @pytest.mark.django_db
-def test_standard_demo_data_a_user_an_admin_and_companies(boss, django_user_model):
-    from apps.accounts.models import Role
+def test_generated_demo_data_follows_the_installation_settings(boss, django_user_model):
+    from apps.accounts.models import Role, UserGroup
+    from apps.core import presets
     from apps.core.models import Entity
     from apps.sandbox import demo
 
     c, _ = boss
     Role.objects.update_or_create(slug="admin", defaults={"name": "Admin", "all_permissions": True})
-    r = c.post("/api/demo/seed/", {}, format="json").json()
-    assert [u["note"] for u in r["users"]] == ["Gebruiker", "Beheerder (admin)"] and len(r["entities"]) == 2
-    admin = django_user_model.objects.get(email="demo.admin@example.com")
-    user = django_user_model.objects.get(email="demo.gebruiker@example.com")
-    assert not admin.is_staff and not admin.is_superuser and admin.roles.filter(all_permissions=True).exists() and not user.roles.exists()
-    firm = Entity.objects.get(name="Demo Bedrijf B.V.")
-    assert set(firm.users.values_list("email", flat=True)) == {"demo.gebruiker@example.com", "demo.admin@example.com"}
-    # after a restore everything is made again with the same data, also when the users and companies are gone
-    django_user_model.objects.filter(email__startswith="demo.").delete(); Entity.objects.filter(name__startswith="Demo").delete()
+    Role.objects.update_or_create(slug="redacteur", defaults={"name": "Redacteur"})
+    UserGroup.objects.get_or_create(slug="team", defaults={"name": "Team"})
+    key = presets.PRESETS[1]["key"]
+    presets._save_data({**presets._data(), "active_preset": key})
+    r = c.put("/api/demo/settings/", {"installs": {key: {"users": 3, "admins": 1, "companies": 2, "user_roles": ["Redacteur"], "user_groups": ["Team"]}}}, format="json").json()
+    cur = next(i for i in r["installs"] if i["key"] == key)
+    assert cur["current"] and cur["users"] == 3 and cur["admins"] == 1 and cur["companies"] == 2 and cur["allowed"]
+    demo.generate()
     demo.sync_users(); demo.sync_entities()
-    assert django_user_model.objects.get(email="demo.admin@example.com").check_password("demo-admin")
-    assert Entity.objects.get(name="Demo Vereniging").users.count() == 1
-    # even a superadmin's e-mail can never be turned into a demo user
+    emails = sorted(django_user_model.objects.filter(email__startswith="demo.").values_list("email", flat=True))
+    assert emails == ["demo.admin1@example.com", "demo.gebruiker1@example.com", "demo.gebruiker2@example.com", "demo.gebruiker3@example.com"]
+    admin = django_user_model.objects.get(email="demo.admin1@example.com")
+    user = django_user_model.objects.get(email="demo.gebruiker2@example.com")
+    assert admin.check_password("demo-admin1") and not admin.is_staff and not admin.is_superuser and admin.roles.filter(all_permissions=True).exists()
+    assert list(user.roles.values_list("name", flat=True)) == ["Redacteur"] and list(user.user_groups.values_list("name", flat=True)) == ["Team"]
+    assert Entity.objects.filter(name__startswith="Demo bedrijf").count() == 2
+    assert admin.entities.count() == 2 and user.entities.count() == 1  # the admins are in every company, the users are spread
+    # after a restore everything is made again, also when the users and companies are gone
+    django_user_model.objects.filter(email__startswith="demo.").delete(); Entity.objects.filter(name__startswith="Demo").delete()
+    demo.generate(); demo.sync_users(); demo.sync_entities()
+    assert django_user_model.objects.get(email="demo.admin1@example.com").check_password("demo-admin1")
+    # fewer in the settings: the extra ones are not made again
+    c.put("/api/demo/settings/", {"installs": {key: {"users": 1, "companies": 1}}}, format="json")
+    demo.generate()
+    assert demo.DemoUser.objects.filter(generated=True).count() == 2 and demo.DemoEntity.objects.filter(generated=True).count() == 1
+    # a superadmin's e-mail can never be turned into a demo user
     django_user_model.objects.create_user("su", "su@example.com", "pw12345678!", is_staff=True)
     assert c.post("/api/demo/users/", {"email": "su@example.com", "password": "demo1234"}, format="json").status_code == 400
+    # numbers are kept within the limits
+    r = c.put("/api/demo/settings/", {"installs": {key: {"users": 999, "admins": -4}}}, format="json").json()
+    cur = next(i for i in r["installs"] if i["key"] == key)
+    assert cur["users"] == demo.LIMITS["users"] and cur["admins"] == 0
+
+
+@pytest.mark.django_db
+def test_choose_the_installation_in_the_demo(boss, django_user_model, tmp_path, settings, monkeypatch):
+    from apps.core import presets
+    from apps.sandbox import demo
+
+    c, u = boss
+    b = ready(c, u, tmp_path, settings)
+    first, second = presets.PRESETS[0]["key"], presets.PRESETS[1]["key"]
+    c.put("/api/demo/settings/", {"installs": {first: {"allowed": True}, second: {"allowed": False}}, "enabled": True, "backup": b.id, "times": ["03:00"]}, format="json")
+    applied = []
+    monkeypatch.setattr(presets, "apply", lambda key, **k: applied.append(key) or {"ok": True})
+    st = APIClient().get("/api/sandbox/status/").json()["demo"]
+    assert [i["key"] for i in st["installations"]] == [i["key"] for i in presets.PRESETS if i["key"] != second]
+    c.post("/api/demo/seed/", {}, format="json")
+    d = APIClient(); d.force_authenticate(django_user_model.objects.get(email="demo.admin1@example.com"))
+    assert d.post("/api/demo/installation/", {"key": second}, format="json").status_code == 400  # not allowed in the demo
+    assert d.post("/api/demo/installation/", {"key": first}, format="json").status_code == 200 and applied == [first]
+    plain = APIClient(); plain.force_authenticate(django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!"))
+    assert plain.post("/api/demo/installation/", {"key": first}, format="json").status_code == 403
 
 
 @pytest.mark.django_db
@@ -154,7 +193,7 @@ def test_demo_accounts_may_switch_modules_and_plugins_only_in_demo_mode(boss, dj
 
     c, u = boss
     c.post("/api/demo/seed/", {}, format="json")
-    d = APIClient(); d.force_authenticate(django_user_model.objects.get(email="demo.admin@example.com"))
+    d = APIClient(); d.force_authenticate(django_user_model.objects.get(email="demo.admin1@example.com"))
     assert d.get("/api/modules/all/").status_code == 403 and d.get("/api/plugins/").status_code == 403  # demo mode is off
     assert not d.get("/api/auth/me/").json().get("demo_switch")
     b = ready(c, u, tmp_path, settings)

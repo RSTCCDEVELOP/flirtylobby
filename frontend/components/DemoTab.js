@@ -27,7 +27,8 @@ const when = (v) => (v ? new Date(v).toLocaleString() : "–");
 // Demo mode: a website people can try out. A linked backup is put back at planned times; demo users with their rights; nothing is sent, codes are shown.
 export default function DemoTab({ setMsg }) {
   const [d, setD] = useState(null);
-  const [sub, setSub] = useState("general");
+  const [sub, setSub] = useState("install");
+  const [rights, setRights] = useState(null);  // the installation whose rights are edited
   const [busy, setBusy] = useState("");
   const [times, setTimes] = useState([]);
   const [firm, setFirm] = useState(null);
@@ -59,7 +60,27 @@ export default function DemoTab({ setMsg }) {
         {d.enabled && <span className="e2e-hint">{d.restoring ? tx("De demo wordt nu hersteld…") : d.next_restore_at ? tx("Volgende herstel: {0}", when(d.next_restore_at)) : ""}</span>}
         </div>
       </div>
-      <Tabs tabs={[["general", "Backup en tijden"], ["users", "Demo gebruikers"], ["firms", "Bedrijven"], ["login", "Weergave"]]} value={sub} onChange={setSub} />
+      <Tabs tabs={[["install", "Installaties"], ["general", "Backup en tijden"], ["users", "Demo gebruikers"], ["firms", "Bedrijven"], ["login", "Weergave"]]} value={sub} onChange={setSub} />
+      {sub === "install" && (
+        <div className="e2e-stack" style={{ gap: ".8rem" }}>
+          <span className="e2e-hint">{tx("Kies welke standaard installaties in de demo gebruikt mogen worden (een demo admin kan ertussen wisselen) en hoeveel demo gebruikers, admins en bedrijven erbij gemaakt worden, met welke rechten. Ze worden aangemaakt na het terugzetten en bij het aanzetten van de demo mode.")}</span>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
+            {(d.installs || []).map((it) => (
+              <div key={it.key} style={tint}>
+                <span style={{ display: "flex", justifyContent: "space-between", gap: ".5rem", alignItems: "baseline" }}><strong>{it.name}</strong>{it.current && <small className="e2e-hint">{tx("nu actief")}</small>}</span>
+                <Switch checked={it.allowed} disabled={!!busy} onChange={(v) => put({ installs: { [it.key]: { allowed: v } } }, "Opgeslagen.")} title="Beschikbaar in de demo" />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: ".6rem" }}>
+                  {[["users", "Gebruikers"], ["admins", "Admins"], ["companies", "Bedrijven"]].map(([k, label]) => (
+                    <div key={k} className="e2e-field"><label className="e2e-label" htmlFor={`in-${it.key}-${k}`}>{tx(label)}</label>
+                      <input id={`in-${it.key}-${k}`} key={`${it.key}-${k}-${it[k]}`} className="e2e-input" type="number" min={0} max={20} defaultValue={it[k]} disabled={!!busy} onBlur={(e) => { if (String(e.target.value) !== String(it[k])) put({ installs: { [it.key]: { [k]: e.target.value } } }, "Opgeslagen."); }} /></div>
+                  ))}
+                </div>
+                <div><button type="button" className="e2e-btn e2e-btn--outline e2e-btn--sm" onClick={() => setRights(it)}>{tx("Rechten")}</button></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {sub === "general" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
           <section style={tint}>
@@ -99,18 +120,18 @@ export default function DemoTab({ setMsg }) {
       )}
       {sub === "users" && (
         <div className="e2e-stack" style={{ gap: ".8rem" }}>
-          <span className="e2e-hint">{tx("Demo gebruikers worden na elk terugzetten opnieuw gemaakt, met hetzelfde wachtwoord en dezelfde rechten.")}</span>
+          <span className="e2e-hint">{tx("Demo gebruikers worden gemaakt na elk terugzetten en bij het aanzetten van de demo mode, uit de instellingen bij Installaties. Eigen demo gebruikers die je hier toevoegt blijven staan.")}</span>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
           {d.users.map((u) => (
             <div key={u.id} style={{ ...tint, gridTemplateColumns: "1fr auto auto", alignItems: "center" }}>
-              <span style={{ display: "grid", lineHeight: 1.3, minWidth: 0 }}><strong>{u.note || `${u.first_name} ${u.last_name}`.trim() || u.email}</strong><small className="e2e-hint" style={{ overflowWrap: "anywhere" }}>{u.email} · {u.password} · {[...u.roles, ...u.groups].join(", ") || tx("geen rechten")}</small></span>
+              <span style={{ display: "grid", lineHeight: 1.3, minWidth: 0 }}><strong>{u.note || `${u.first_name} ${u.last_name}`.trim() || u.email}</strong><small className="e2e-hint" style={{ overflowWrap: "anywhere" }}>{u.email} · {u.password} · {[...u.roles, ...u.groups].join(", ") || tx("geen rechten")}{u.generated ? ` · ${tx("automatisch")}` : ""}</small></span>
               <button type="button" className="e2e-btn e2e-btn--outline e2e-btn--sm" onClick={() => setPopup(u)}>{tx("Wijzigen")}</button>
               <button type="button" className="e2e-btn e2e-btn--ghost e2e-btn--sm" aria-label={tx("Verwijderen")} title={tx("Verwijderen")} onClick={async () => { if (await confirmDialog(tx("Deze demo gebruiker verwijderen? Het account verdwijnt bij het volgende terugzetten."), { okLabel: tx("Verwijderen"), cancelLabel: tx("Annuleren") })) run("del", () => api(`/demo/users/${u.id}/`, { method: "DELETE" })); }}><span style={{ display: "inline-flex", width: 16, height: 16 }}><IconTrash /></span></button>
             </div>
           ))}
           </div>
           <div className="e2e-row" style={{ gap: ".6rem", flexWrap: "wrap" }}>
-            <button type="button" className="e2e-btn e2e-btn--outline" disabled={!!busy} onClick={() => run("seed", () => api("/demo/seed/", { method: "POST", body: {} }), "De standaard demo gegevens zijn aangemaakt: een gebruiker, een admin en twee bedrijven.")}>{tx("Standaard gegevens aanmaken")}</button>
+            <button type="button" className="e2e-btn e2e-btn--outline" disabled={!!busy} onClick={() => run("seed", () => api("/demo/seed/", { method: "POST", body: {} }), "De demo gebruikers en bedrijven zijn aangemaakt.")}>{tx("Nu aanmaken")}</button>
             <button type="button" className="e2e-btn" onClick={() => setPopup({ email: "", first_name: "", last_name: "", password: "", note: "", roles: [], groups: [] })}><span style={{ display: "inline-flex", width: 16, height: 16, marginRight: ".4rem", verticalAlign: "middle" }}><IconPlus /></span>{tx("Demo gebruiker toevoegen")}</button>
           </div>
           <span className="e2e-hint">{tx("Een demo gebruiker is nooit een superadmin of hoger. De demo mag modules en plugins aan en uit zetten; de licentiestappen blijven staan.")}</span>
@@ -136,6 +157,7 @@ export default function DemoTab({ setMsg }) {
           <Switch checked={d.show_on_login} disabled={!!busy} onChange={(v) => put({ show_on_login: v }, "Opgeslagen.")} title="Toon de demo gebruikers bij het inloggen" hint="Netjes in een blok onder het inlogformulier, met een knop die het formulier invult." />
         </section>
       )}
+      {rights && <RightsPopup d={d} it={rights} onClose={() => setRights(null)} onSave={async (conf) => { if (await put({ installs: { [rights.key]: conf } }, "Rechten opgeslagen.")) setRights(null); }} />}
       {firm && <FirmPopup d={d} firm={firm} onClose={() => setFirm(null)} onSaved={(r) => { take(r); setFirm(null); setMsg({ ok: true, text: tx("Demo bedrijf opgeslagen.") }); }} />}
       {popup && <UserPopup d={d} user={popup} onClose={() => setPopup(null)} onSaved={(r) => { take(r); setPopup(null); setMsg({ ok: true, text: tx("Demo gebruiker opgeslagen.") }); }} />}
     </div>
@@ -231,6 +253,30 @@ function FirmPopup({ d, firm, onClose, onSaved }) {
         <div className="e2e-row" style={{ gap: ".6rem", justifyContent: "flex-end" }}>
           <button type="button" className="e2e-btn e2e-btn--ghost" onClick={onClose}>{tx("Annuleren")}</button>
           <button type="button" className="e2e-btn" disabled={busy} onClick={save}>{busy ? tx("Bezig…") : tx("Opslaan")}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// the rights of the demo users and admins of one standard installation (roles and groups)
+function RightsPopup({ d, it, onClose, onSave }) {
+  const [f, setF] = useState({ user_roles: it.user_roles, user_groups: it.user_groups, admin_roles: it.admin_roles, admin_groups: it.admin_groups });
+  const [tab, setTab] = useState("users");
+  const toggle = (k, name, on) => setF((x) => ({ ...x, [k]: on ? [...new Set([...x[k], name])] : x[k].filter((n) => n !== name) }));
+  const pre = tab === "users" ? "user" : "admin";
+  return (
+    <div role="dialog" aria-label={tx("Rechten")} style={{ position: "fixed", inset: 0, zIndex: 3200, background: "rgba(0,0,0,.45)", display: "grid", placeItems: "center", padding: "1rem" }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="card" style={{ width: "min(760px, 96vw)", maxHeight: "90vh", overflowY: "auto", display: "grid", gap: "1rem", padding: "1.2rem 1.3rem" }}>
+        <strong style={{ fontSize: "1.1rem" }}>{tx("Rechten")}: {it.name}</strong>
+        <Tabs tabs={[["users", "Gebruikers"], ["admins", "Admins"]]} value={tab} onChange={setTab} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: ".9rem", alignItems: "start" }}>
+          <section style={tint}><strong>{tx("Rollen")}</strong>{d.roles.length ? d.roles.map((n) => <Switch key={n} checked={f[`${pre}_roles`].includes(n)} onChange={(v) => toggle(`${pre}_roles`, n, v)} title={n} />) : <span className="e2e-hint">{tx("Geen rollen.")}</span>}</section>
+          <section style={tint}><strong>{tx("Groepen")}</strong>{d.groups.length ? d.groups.map((n) => <Switch key={n} checked={f[`${pre}_groups`].includes(n)} onChange={(v) => toggle(`${pre}_groups`, n, v)} title={n} />) : <span className="e2e-hint">{tx("Geen groepen.")}</span>}</section>
+        </div>
+        <div className="e2e-row" style={{ gap: ".6rem", justifyContent: "flex-end" }}>
+          <button type="button" className="e2e-btn e2e-btn--ghost" onClick={onClose}>{tx("Annuleren")}</button>
+          <button type="button" className="e2e-btn" onClick={() => onSave(f)}>{tx("Opslaan")}</button>
         </div>
       </div>
     </div>

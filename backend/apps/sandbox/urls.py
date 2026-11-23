@@ -15,6 +15,7 @@ urlpatterns = [
     path("demo/backup/", demo_views.make_backup),
     path("demo/restore/", demo_views.restore_now),
     path("demo/seed/", demo_views.seed),
+    path("demo/installation/", demo_views.installation),
     path("demo/entities/", demo_views.entities),
     path("demo/entities/<int:pk>/", demo_views.entity),
     path("demo/users/", demo_views.users),

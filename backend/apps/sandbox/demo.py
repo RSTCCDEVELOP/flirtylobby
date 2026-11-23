@@ -92,8 +92,8 @@ def problems(cfg=None):
             out.append("De gekoppelde backup kan niet gelezen worden.")
     if not cfg.times:
         out.append("Vul minstens één tijd in waarop de demo wordt teruggezet.")
-    if not DemoUser.objects.exists():
-        out.append("Maak minstens één demo gebruiker aan.")
+    if not DemoUser.objects.exists() and not planned_counts(cfg)[0]:
+        out.append("Stel bij de standaard installatie minstens één demo gebruiker of admin in.")
     return out
 
 
@@ -167,30 +167,91 @@ def sync_users():
     return n
 
 
-DEFAULT_USERS = [
-    {"email": "demo.gebruiker@example.com", "first_name": "Demi", "last_name": "Gebruiker", "password": "demo-gebruiker", "note": "Gebruiker", "roles": [], "groups": []},
-    {"email": "demo.admin@example.com", "first_name": "Adam", "last_name": "Admin", "password": "demo-admin", "note": "Beheerder (admin)", "roles": ["Admin"], "groups": []},
-]
-DEFAULT_ENTITIES = [
-    {"name": "Demo Bedrijf B.V.", "kind": "bedrijf", "legal_name": "Demo Bedrijf B.V.", "email": "info@demo-bedrijf.example", "phone": "+31 20 123 4567", "website": "https://demo-bedrijf.example", "street": "Voorbeeldstraat",
-     "house_number": "1", "postal_code": "1011 AA", "city": "Amsterdam", "country": "Nederland", "members": ["demo.gebruiker@example.com", "demo.admin@example.com"]},
-    {"name": "Demo Vereniging", "kind": "vereniging", "legal_name": "Vereniging Demo", "email": "info@demo-vereniging.example", "phone": "+31 30 765 4321", "website": "", "street": "Clublaan",
-     "house_number": "12", "postal_code": "3511 AB", "city": "Utrecht", "country": "Nederland", "members": ["demo.admin@example.com"]},
-]
+DEFAULT_INSTALL = {"allowed": True, "users": 1, "admins": 1, "companies": 2, "user_roles": [], "user_groups": [], "admin_roles": ["Admin"], "admin_groups": []}
+LIMITS = {"users": 20, "admins": 5, "companies": 10}
+CITIES = [("Amsterdam", "1011 AA"), ("Utrecht", "3511 AB"), ("Rotterdam", "3011 AC"), ("Eindhoven", "5611 AD"), ("Groningen", "9711 AE")]
 
 
-def seed_defaults():
-    """The standard demo data: ONE user and ONE admin (never a superadmin or higher), two companies and the links between them. Only what is not there yet is made."""
-    n = 0
-    for i, u in enumerate(DEFAULT_USERS):
-        if not DemoUser.objects.filter(email__iexact=u["email"]).exists():
-            DemoUser.objects.create(order=i, **u)
-            n += 1
-    for i, e in enumerate(DEFAULT_ENTITIES):
-        if not DemoEntity.objects.filter(name=e["name"]).exists():
-            DemoEntity.objects.create(order=i, **e)
-            n += 1
-    return n
+def _num(v, key, default):
+    try:
+        return min(max(int(v), 0), LIMITS[key])
+    except (TypeError, ValueError):
+        return default
+
+
+def clean_install(raw, base=None):
+    """The settings of one standard installation, checked: what may be used, and how many demo users, admins and companies are made (and with which rights)."""
+    d = {**DEFAULT_INSTALL, **(base or {})}
+    raw = raw if isinstance(raw, dict) else {}
+    if "allowed" in raw:
+        d["allowed"] = bool(raw["allowed"])
+    for k in LIMITS:
+        if k in raw:
+            d[k] = _num(raw[k], k, d[k])
+    for k in ("user_roles", "user_groups", "admin_roles", "admin_groups"):
+        if k in raw:
+            d[k] = [str(x)[:100] for x in (raw[k] if isinstance(raw[k], list) else [])][:30]
+    return d
+
+
+def install_config(cfg, key):
+    return clean_install((cfg.installs or {}).get(key), None)
+
+
+def clean_installs(cfg, incoming):
+    from apps.core import presets
+
+    out = dict(cfg.installs or {})
+    for k, v in (incoming if isinstance(incoming, dict) else {}).items():
+        if k in presets.BY_KEY:
+            out[k] = clean_install(v, install_config(cfg, k))
+    return out
+
+
+def current_installation():
+    from apps.core import presets
+
+    return presets.active()
+
+
+def allowed_installations(cfg=None):
+    from apps.core import presets
+
+    cfg = cfg or get()
+    return [p for p in presets.PRESETS if install_config(cfg, p["key"])["allowed"]]
+
+
+def planned_counts(cfg=None):
+    """How many users and companies the installation that is on now will get."""
+    cfg = cfg or get()
+    c = install_config(cfg, current_installation())
+    return c["users"] + c["admins"], c["companies"]
+
+
+def generate(key=None):
+    """Make the demo users and companies of this standard installation (the one that is on now): ONE set of fixed names and passwords, made again after every restore, when the demo mode is switched on
+    and when another installation is chosen. What was made by hand stays. A demo user is never a superadmin or higher. Returns (users, companies)."""
+    cfg = get()
+    key = key or current_installation()
+    c = install_config(cfg, key)
+    DemoUser.objects.filter(generated=True).delete()
+    DemoEntity.objects.filter(generated=True).delete()
+    users, order = [], DemoUser.objects.count()
+    for kind, n, roles, groups, label, mail in (("user", c["users"], c["user_roles"], c["user_groups"], "Gebruiker", "gebruiker"), ("admin", c["admins"], c["admin_roles"], c["admin_groups"], "Beheerder (admin)", "admin")):
+        for i in range(1, n + 1):
+            email = f"demo.{mail}{i}@example.com"
+            if DemoUser.objects.filter(email=email).exists():
+                continue
+            users.append((kind, DemoUser.objects.create(email=email, first_name="Demo", last_name=f"{label.split(' ')[0]} {i}", password=f"demo-{mail}{i}", note=f"{label} {i}", roles=roles, groups=groups, order=order, generated=True)))
+            order += 1
+    for i in range(c["companies"]):
+        city, zip_ = CITIES[i % len(CITIES)]
+        name = f"Demo bedrijf {i + 1}"
+        plain = [u.email for kind, u in users if kind == "user"]
+        members = [u.email for kind, u in users if kind == "admin"] + [e for j, e in enumerate(plain) if j % c["companies"] == i]  # the admins are in every company, the users are spread over them
+        DemoEntity.objects.update_or_create(name=name, defaults={"kind": "bedrijf", "legal_name": f"{name} B.V.", "email": f"info@demo-bedrijf{i + 1}.example", "phone": f"+31 20 123 45{i:02d}", "website": f"https://demo-bedrijf{i + 1}.example",
+                                            "street": "Voorbeeldstraat", "house_number": str(i + 1), "postal_code": zip_, "city": city, "country": "Nederland", "members": members, "order": i, "generated": True})
+    return len(users), c["companies"]
 
 
 def sync_entities():
@@ -222,6 +283,7 @@ def restore_now(user=None):
     _set_flag(True)
     try:
         service.restore(b, None, user, safety=False)
+        generate()
         sync_users()
         sync_entities()
         DemoSettings.objects.filter(pk=1).update(last_restore_at=timezone.now(), last_status="ok", last_error="")
@@ -249,6 +311,20 @@ def run_due():
     return True
 
 
+def switch_installation(key, user=None):
+    """A demo account (or a superadmin) chooses another standard installation that is allowed in the demo: it is switched on, and the demo users and companies of it are made."""
+    from apps.core import presets
+
+    cfg = get()
+    if key not in presets.BY_KEY or not install_config(cfg, key)["allowed"]:
+        raise ValueError("Deze installatie is niet beschikbaar in de demo.")
+    result = presets.apply(key)
+    generate(key)
+    sync_users()
+    sync_entities()
+    return result
+
+
 def public():
     """What every visitor may know: is this a demo, is it being restored, when is the next restore, and (if wanted) the demo users with their password."""
     if not enabled():
@@ -261,5 +337,6 @@ def public():
     if cfg.show_on_login:
         users = [{"email": d.email, "password": d.password, "name": f"{d.first_name} {d.last_name}".strip(), "note": d.note} for d in DemoUser.objects.all()]
     left = int((nxt - timezone.localtime(timezone.now())).total_seconds()) if nxt and cfg.backup_id else None
-    return {"enabled": True, "restoring": False, "next_restore_at": nxt.isoformat() if nxt and cfg.backup_id else None, "seconds_left": left,
+    inst = [{"key": p["key"], "name": p["name"], "desc": p["desc"]} for p in allowed_installations(cfg)]
+    return {"enabled": True, "restoring": False, "installation": current_installation(), "installations": inst, "next_restore_at": nxt.isoformat() if nxt and cfg.backup_id else None, "seconds_left": left,
             "warn": bool(left is not None and left <= cfg.warn_minutes * 60), "users": users}
