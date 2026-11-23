@@ -128,3 +128,17 @@ def test_a_company_with_this_address_is_found_by_postcode_and_number(site, perso
         assert [x["name"] for x in r] == ["Shop BV"] and set(r[0]) == {"id", "name", "city"}, kw
     assert ownerlookup.by_address(site, "", "2", "3511AA")["results"] == []  # another house number
     assert ownerlookup.by_address(site, "", "", "")["results"] == []
+
+
+def test_on_the_master_itself_the_address_is_looked_up_here_with_its_contacts_and_a_code(site, person, monkeypatch):
+    monkeypatch.setattr("apps.core.sitemanager.server_enabled", lambda: True)
+    monkeypatch.setattr("apps.security.twofa.issue_code", lambda user, force_email=False: None)
+    monkeypatch.setattr("apps.security.twofa.check_code", lambda user, code: code == "123456")
+    assert ownerlookup.ask("lookup", {"email": "jan@example.com"}) == {"exists": False}  # the e-mail address is not offered here
+    r = ownerlookup.ask("address", {"postal_code": "3511 AA", "house_number": "1"})["results"]
+    assert [x["name"] for x in r] == ["Shop BV"]
+    c = ownerlookup.ask("contacts", {"entity": str(r[0]["id"])})["contacts"]
+    assert [x["name"] for x in c] == ["Jan Jansen"]
+    sent = ownerlookup.ask("send", {"email": "", "entity": str(r[0]["id"]), "user": str(c[0]["id"])})
+    out = ownerlookup.ask("fetch", {"challenge": sent["challenge"], "code": "123456"})["fields"]
+    assert out["company_name"] == "Shop BV" and out["contact_first_name"] == "Jan"

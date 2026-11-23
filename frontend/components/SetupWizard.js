@@ -364,12 +364,12 @@ export default function SetupWizard() {
     catch (e) { setFinder((f) => ({ ...f, busy: false, results: [], error: errorText(e) })); }
   };
   const lookupAddress = async (r) => {  // the chosen address: does a company of the easy2edit server have it already? Then the contact person can be chosen from the linked names
-    if (d?.license_server?.mode !== "linked") return;
+    if (!["linked", "server"].includes(d?.license_server?.mode)) return;
     setOwner({ source: "entity", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
     setFinder((f) => ({ ...f, results: null, entity: null, contacts: null, fromAddress: false, error: "" }));
     try {
       const x = await api("/system/setup/owner/address/", { method: "POST", body: { street: r.street || "", house_number: r.house_number || "", postal_code: r.postal_code || "", city: r.city || "" } });
-      if ((x.results || []).length) setFinder((f) => ({ ...f, results: x.results, fromAddress: true }));
+      if ((x.results || []).length) { setFinder((f) => ({ ...f, results: x.results, fromAddress: true })); if (x.results.length === 1) pickCompany(x.results[0]); }  // one company: its linked persons are shown at once
     } catch { /* the form never waits for this */ }
   };
   const pickCompany = async (c) => {  // a company of the results: who is the contact person? (the names that are linked to it)
@@ -530,7 +530,7 @@ export default function SetupWizard() {
                   <input id="sw-company_name_ro" className="e2e-input" value={form.company_name || ""} readOnly aria-readonly="true" tabIndex={-1} style={{ opacity: .8, cursor: "default", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, #fff))" }} />
                   <span className="e2e-hint">{tx("De bedrijfsnaam verander je bij Website.")}</span>
                 </div>
-                <AddressFinder span="auto" onPick={(r) => { setForm((f) => ({ ...f, street: r.street || f.street, house_number: r.house_number || "", postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country: r.country || f.country })); setErrs((x) => ({ ...x, street: "", house_number: "", postal_code: "", city: "", country: "" })); lookupAddress(r); }} />
+                <AddressFinder span="auto" onQuery={(q) => { const m = String(q).match(/(\d{4})\s?([A-Za-z]{2})(?:\s+(\d{1,5}\s?[A-Za-z]?))?/); if (m) lookupAddress({ postal_code: m[1] + m[2].toUpperCase(), house_number: (m[3] || "").replace(/\s/g, "") }); }} onPick={(r) => { setForm((f) => ({ ...f, street: r.street || f.street, house_number: r.house_number || "", postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country: r.country || f.country })); setErrs((x) => ({ ...x, street: "", house_number: "", postal_code: "", city: "", country: "" })); lookupAddress(r); }} />
                 {foundBlock}
                 {field("street", tx("Straat"), { autoComplete: "address-line1", span: "1 / -1" })}
                 {field("house_number", tx("Huisnummer"), { maxLength: 12 })}

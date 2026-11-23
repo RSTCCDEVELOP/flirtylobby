@@ -232,10 +232,23 @@ def fetch(site, challenge, code):
 # ── client side: this website asks the master site ──
 def ask(step, body):
     """Call the master site for one step. Raises ValueError (message) when it is not possible. On the master site itself there is nothing to ask: lookup says no."""
-    if sitemanager.server_enabled():
-        if step in ("lookup", "company", "search", "address", "contacts"):
+    if sitemanager.server_enabled():  # this installation IS the master site: what is asked is looked up here (companies, their linked persons, the code and the data); a contact e-mail address is not offered
+        if step in ("lookup", "company"):
             return NOTHING.get(step, {"exists": False})
-        raise ValueError("Dit is de easy2edit server zelf.")
+        from types import SimpleNamespace
+
+        here = SimpleNamespace(pk=0)
+        if step == "search":
+            return search(here, body.get("q"))
+        if step == "address":
+            return by_address(here, body.get("street"), body.get("house_number"), body.get("postal_code"), body.get("city"))
+        if step == "contacts":
+            return contacts(here, body.get("entity"))
+        if step == "send":
+            return send(here, body.get("email"), body.get("company") or "", body.get("entity") or None, body.get("user") or None)
+        if step == "fetch":
+            return fetch(here, body.get("challenge"), body.get("code"))
+        raise ValueError("Onbekende stap.")
     state = sitemanager._state()
     key = state.get("token") or ""
     api = (sitemanager.global_settings.get().get("api_url") or "").rstrip("/")

@@ -15,7 +15,7 @@ import { IconPin } from "./Icons";
 
 // Look up an address: "RST Coaching Utrecht", "RST Coaching 3542 DH" or "3542 DH 46". Google (when linked in Admin -> API keys) or the free sources PDOK and OpenStreetMap.
 // The chosen result {naam, street, house_number, postal_code, city, country, adres} goes to onPick; the caller fills its own fields.
-export default function AddressFinder({ onPick, disabled = false, label, span = "1 / -1" }) {
+export default function AddressFinder({ onPick, onQuery, disabled = false, label, span = "1 / -1" }) {
   const [q, setQ] = useState("");  // always starts empty: never filled with the name of the company
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState(null);
@@ -26,6 +26,7 @@ export default function AddressFinder({ onPick, disabled = false, label, span = 
     const text = q.trim();
     if (text.length < 3 || busy) return;
     setBusy(true); setErr(""); setPicked(""); setRes(null);
+    if (onQuery) onQuery(text);  // (the caller can look at the easy2edit server with the same text)
     try { const r = await api("/system/setup/address/search/", { method: "POST", body: { q: text } }); setRes(r.results || []); setSrc(r.source || ""); }
     catch (e) { setErr(errorText(e)); }
     setBusy(false);
