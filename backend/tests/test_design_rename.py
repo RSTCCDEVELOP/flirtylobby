@@ -58,3 +58,28 @@ def test_the_questionnaire_asks_for_the_standard_installation(django_user_model,
     idx = next(i for i, m in enumerate(c.get(f"/api/sitecreator/{pk}/").json()["messages"]) if m.get("questions"))
     sitecreator.save_answers(SiteDesignJob.objects.get(pk=pk), idx, {"installation": "Webwinkel"}, {})
     assert SiteDesignJob.objects.get(pk=pk).brief["installation"] == "webshop"
+
+
+@pytest.mark.django_db
+def test_the_questionnaire_asks_about_background_pictures(django_user_model, monkeypatch):
+    """The questionnaire has a question about background pictures (hero and blocks): the answer goes into the brief and into the instructions of the designer."""
+    from apps.core import sitecreator
+    from apps.core.models import SiteDesignJob
+
+    monkeypatch.setattr(sitecreator.ai, "available", lambda *a, **k: True)
+    monkeypatch.setattr(sitecreator, "_spawn", lambda fn, pk, *a: fn(pk, *a))
+    monkeypatch.setattr(sitecreator, "_ask", lambda *a, **k: '{"reply": "Vragen", "ready": false, "questions": [{"id": "name", "q": "Naam?", "type": "text"}]}')
+    u = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    c = APIClient(); c.force_authenticate(u)
+    pk = c.post("/api/sitecreator/", {"name": "x"}, format="json").json()["id"]
+    SiteDesignJob.objects.filter(pk=pk).update(brief={"chat": True, "prefill": False}, messages=[{"role": "user", "text": "club"}, {"role": "ai", "text": "?", "ask": "prefill", "answered": "nee"}])
+    c.post(f"/api/sitecreator/{pk}/chat/", {"text": "club"}, format="json")
+    msgs = c.get(f"/api/sitecreator/{pk}/").json()["messages"]
+    q = next(x for m in msgs for x in (m.get("questions") or []) if x["id"] == "bgimages")
+    assert q["options"] == list(sitecreator.BG_OPTIONS.values()) and q["default"] == sitecreator.BG_OPTIONS["hero"]
+    idx = next(i for i, m in enumerate(msgs) if m.get("questions"))
+    sitecreator.save_answers(SiteDesignJob.objects.get(pk=pk), idx, {"bgimages": sitecreator.BG_OPTIONS["all"], "installation": "Webwinkel"}, {})
+    job = SiteDesignJob.objects.get(pk=pk)
+    assert job.brief["bg_images"] == "all" and job.brief["installation"] == "webshop"  # (both answers are kept)
+    assert "BACKGROUND PICTURES" in sitecreator._brief_text(job.brief) and "NO BACKGROUND" not in sitecreator._brief_text(job.brief)
+    assert "NO BACKGROUND PICTURES" in sitecreator._brief_text({**job.brief, "bg_images": "none"})

@@ -303,6 +303,14 @@ FONTS = {"sans": 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', "se
 STYLE_TAGS = {"modern", "warm", "zakelijk", "speels", "minimalistisch", "luxe", "natuurlijk", "technisch", "creatief", "klassiek"}
 KINDS = {"company", "shop", "community", "agenda", "blog", "portfolio", "club"}
 INSTALL_QID = "installation"
+BG_QID = "bgimages"
+BG_OPTIONS = {"all": "Ja, in de hero en in enkele blokken", "hero": "Alleen in de hero", "none": "Nee, geen achtergrondafbeeldingen"}  # the answers of the question about background pictures -> brief["bg_images"]
+
+
+def bg_key(value):
+    """The choice (all | hero | none) from the text of an answer, or ''."""
+    v = str(value or "").strip().lower()
+    return next((k for k, t in BG_OPTIONS.items() if v in (k, t.lower())), "")
 KIND_INSTALL = {"company": "bedrijfswebsite", "shop": "webshop", "community": "zakelijk-netwerk", "agenda": "stichting", "blog": "standaard-website", "portfolio": "standaard-website", "club": "sportclub"}  # the installation that fits a kind of website when the designer gives no answer
 
 
@@ -326,7 +334,8 @@ def _install_prompt():
     rows = "\n".join(f"- {c['name']}: {c['desc'][:160]}" for c in install_choices())
     return ("STANDARD INSTALLATIONS of easy2edit (ready-made sets of modules, plugins and demo data):\n" + rows + "\n"
             "ALWAYS ask one question about this (when it was not asked before): id \"installation\", type \"choice\", the options EXACTLY the names above, and as \"default\" the name that fits this website best (you choose it from what the customer wants). "
-            "Put the key of your choice in the brief as \"installation\" only when it is certain.\n\n")
+            "Put the key of your choice in the brief as \"installation\" only when it is certain.\n"
+            "ALSO ask (when it was not asked before) a question about BACKGROUND PICTURES: id \"bgimages\", type \"choice\", the options exactly: " + "; ".join(f"\"{t}\"" for t in BG_OPTIONS.values()) + ", default \"" + BG_OPTIONS["hero"] + "\" unless the kind of website clearly asks for another.\n\n")
 
 
 def _with_installation(qs, br, msgs):
@@ -342,7 +351,10 @@ def _with_installation(qs, br, msgs):
     if not dflt:
         dflt = by_key.get(install_key((br or {}).get("installation"))) or by_key.get(KIND_INSTALL.get(str((br or {}).get("kind") or ""), "")) or by_key.get("bedrijfswebsite") or names[0]
     new = {"id": INSTALL_QID, "q": "Welke standaard installatie past het best bij deze website? (de modules en demo-gegevens die erbij horen)", "type": "choice", "options": names, "default": dflt}
-    return [x for x in qs if x.get("id") != INSTALL_QID] + [new] if qs else qs
+    bq = next((x for x in qs if x.get("id") == BG_QID), None)
+    bdef = next((t for t in BG_OPTIONS.values() if bq and t.lower() == str(bq.get("default") or "").strip().lower()), BG_OPTIONS["hero"])
+    bg = {"id": BG_QID, "q": "Wil je achtergrondafbeeldingen gebruiken in de blokken en de hero?", "type": "choice", "options": list(BG_OPTIONS.values()), "default": bdef}
+    return [x for x in qs if x.get("id") not in (INSTALL_QID, BG_QID)] + [bg, new] if qs else qs
 IMG_OK = {e for e in R.IMAGE_EXT if e != "svg"}
 MAX_PHOTOS = R.MAX_IMAGES
 
@@ -516,6 +528,8 @@ def clean_brief(patch, old):
         b["kind"] = p["kind"] if p["kind"] in KINDS else "company"
     if "installation" in p:
         b["installation"] = install_key(p["installation"])
+    if "bg_images" in p:
+        b["bg_images"] = p["bg_images"] if p["bg_images"] in BG_OPTIONS else ""
     if "style_tags" in p:
         b["style_tags"] = [t for t in (p["style_tags"] if isinstance(p["style_tags"], list) else []) if t in STYLE_TAGS][:6]
     if "colors" in p:
@@ -1186,6 +1200,13 @@ def _brief_text(b):
         lines.append("NO CALL TO ACTION: the customer chose no main goal. Do NOT design a call-to-action section or banner, no 'Request a ...' / 'Contact us' / 'Get started' buttons in the hero or the navbar, and no call-to-action wording anywhere.")
     if isinstance(b.get("extras"), list):
         lines.append("FUNCTIONS: the customer chose only these extra functions: " + (", ".join(b["extras"]) or "none") + ". Do NOT add any other function: no FAQ, agenda/appointments/booking, web shop, community, login or sign-up, documents/downloads, newsletter or contact form unless it is in this list (a plain contact section with the contact details is always fine). No login, sign-up, account or downloads links in the menu or the footer.")
+    bgi = b.get("bg_images")
+    if bgi == "all":
+        lines.append("BACKGROUND PICTURES: the customer WANTS background pictures: give the hero AND two or three other bands a photo as background (style=\"background-image:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('img/FILE');background-size:cover;background-position:center\" on the band, a photo from the list, each photo once), with a dark layer over it and light text so everything stays readable.")
+    elif bgi == "hero":
+        lines.append("BACKGROUND PICTURES: only the hero gets a photo as background (style=\"background-image:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('img/FILE');background-size:cover;background-position:center\", a photo from the list), with a dark layer over it and light text. The other bands have a plain colour.")
+    elif bgi == "none":
+        lines.append("NO BACKGROUND PICTURES: the customer does not want background pictures. Photos only as <img> inside the content; the bands and the hero have a plain colour or gradient of the theme.")
     if b.get("contact"):
         lines.append("CONTACT DETAILS of the customer (use EXACTLY these in the contact section, the call to action and the footer; never invent an address, a phone number or an e-mail address, and never use example.com): " + str(b["contact"])[:500])
     if b.get("theme_name"):
@@ -3125,6 +3146,10 @@ def save_answers(job, index, ans, own):
         key = install_key(clean[INSTALL_QID])
         if key:
             upd["brief"] = {**(job.brief or {}), "installation": key}
+    if BG_QID in clean:  # background pictures in the hero and the blocks: yes, only the hero, or no
+        bk = bg_key(clean[BG_QID])
+        if bk:
+            upd["brief"] = {**(upd.get("brief") or job.brief or {}), "bg_images": bk}
     SiteDesignJob.objects.filter(pk=job.pk).update(**upd)
 
 
