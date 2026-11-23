@@ -17,6 +17,7 @@ import urllib.request
 TIMEOUT = 10
 BASE = "https://places.googleapis.com/v1"
 SEARCH_MASK = "places.id,places.displayName,places.formattedAddress,places.addressComponents"  # name and address only
+BIZ_MASK = "places.id,places.displayName,places.formattedAddress,places.addressComponents,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.types"  # for the businesses at one address: with phone and website
 DETAIL_MASK = "id,nationalPhoneNumber,internationalPhoneNumber,websiteUri"  # only for a chosen place
 
 
@@ -107,3 +108,46 @@ def place(place_id, cfg=None):
         raise ValueError("Deze plaats is niet gevonden.") from e
     out = {"phone": str(d.get("internationalPhoneNumber") or d.get("nationalPhoneNumber") or "").strip(), "website": str(d.get("websiteUri") or "").strip()}
     return {k: v for k, v in out.items() if v}
+
+
+def _norm(v):
+    return re.sub(r"[^a-z0-9]", "", str(v or "").lower())
+
+
+def businesses_at(street, house_number, postal_code, city, cfg=None, limit=15):
+    """The businesses that Google knows at one address, with phone number and website. The address is looked up first (its place on the map), then the places within 60 metres of it are asked
+    and only those with the same street and house number are kept. -> [{id, naam, adres, street, house_number, postal_code, city, country, phone, website}]."""
+    cfg = cfg or settings()
+    text = " ".join(x for x in (street, house_number, postal_code, city) if str(x or "").strip())
+    if len(text) < 4:
+        return []
+    body = {"textQuery": text, "languageCode": (cfg or {}).get("language") or "nl", "pageSize": 1}
+    if (cfg or {}).get("region"):
+        body["regionCode"] = cfg["region"]
+    try:
+        d = _call("POST", "/places:searchText", "places.location", body, cfg)
+    except LookupError:
+        return []
+    loc = ((d.get("places") or [{}])[0].get("location") or {})
+    if "latitude" not in loc or "longitude" not in loc:
+        return []
+    near = {"locationRestriction": {"circle": {"center": {"latitude": loc["latitude"], "longitude": loc["longitude"]}, "radius": 60.0}}, "maxResultCount": 20, "languageCode": body["languageCode"]}
+    try:
+        res = _call("POST", "/places:searchNearby", BIZ_MASK, near, cfg)
+    except LookupError:
+        return []
+    st, nr = _norm(street), _norm(house_number)
+    out = []
+    for p in res.get("places") or []:
+        a = _components(p.get("addressComponents"))
+        if st and _norm(a["street"]) != st or nr and _norm(a["house_number"]).split("-")[0] != nr:
+            continue
+        if "political" in (p.get("types") or []) and not p.get("displayName"):
+            continue
+        x = _place(p)
+        x["phone"] = str(p.get("internationalPhoneNumber") or p.get("nationalPhoneNumber") or "").strip()
+        x["website"] = str(p.get("websiteUri") or "").strip()
+        out.append(x)
+        if len(out) >= limit:
+            break
+    return out

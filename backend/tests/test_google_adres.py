@@ -119,3 +119,29 @@ def test_address_search_is_plain_json_for_admins(monkeypatch, django_user_model)
     r = c.get("/api/address/search/?q=RST Coaching 3542 DH").json()
     assert r["source"] == "google" and r["results"][0] == {**r["results"][0], "naam": "RST Coaching & Consultancy", "street": "Voorbeeldlaan", "house_number": "12 A", "postal_code": "3542 DH", "city": "Utrecht", "country": "Nederland"}
     assert c.post("/api/address/search/", {"q": "RST Coaching Utrecht"}, format="json").json()["results"][0]["city"] == "Utrecht"
+
+
+@pytest.mark.django_db
+def test_businesses_at_an_address_with_phone_and_website(monkeypatch, django_user_model):
+    link()
+    calls = []
+
+    def fake(method, path, mask, body=None, cfg=None):
+        calls.append(path)
+        if path == "/places:searchText":
+            return {"places": [{"location": {"latitude": 52.1, "longitude": 5.1}}]}
+        mk = lambda pid, name, nr, phone: {"id": pid, "displayName": {"text": name}, "formattedAddress": f"Voorbeeldlaan {nr}, 3542 DH Utrecht", "internationalPhoneNumber": phone, "websiteUri": "https://x.nl",
+                                           "addressComponents": [{"longText": nr, "types": ["street_number"]}, {"longText": "Voorbeeldlaan", "types": ["route"]}, {"longText": "Utrecht", "types": ["locality"]}, {"longText": "3542 DH", "types": ["postal_code"]}, {"longText": "Nederland", "types": ["country"]}]}
+        return {"places": [mk("ChIJaaaaaaaaaaaa1", "RST Coaching", "12", "+31 30 123 4567"), mk("ChIJaaaaaaaaaaaa2", "Buurman BV", "14", "+31 30 999 9999")]}
+
+    monkeypatch.setattr(gp, "_call", fake)
+    r = gp.businesses_at("Voorbeeldlaan", "12", "3542 DH", "Utrecht")
+    assert [x["naam"] for x in r] == ["RST Coaching"] and r[0]["phone"] == "+31 30 123 4567" and r[0]["website"] == "https://x.nl" and r[0]["postal_code"] == "3542 DH"  # the neighbour at 14 is not listed
+    assert calls == ["/places:searchText", "/places:searchNearby"]
+    cache.clear()
+    boss = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    c = APIClient(); c.force_authenticate(boss)
+    out = c.post("/api/system/setup/address-businesses/", {"street": "Voorbeeldlaan", "house_number": "12", "postal_code": "3542 DH", "city": "Utrecht"}, format="json").json()
+    assert out["linked"] and out["results"][0]["naam"] == "RST Coaching"
+    Integration.objects.all().delete()
+    assert c.post("/api/system/setup/address-businesses/", {"street": "x", "house_number": "1"}, format="json").json() == {"linked": False, "results": []}

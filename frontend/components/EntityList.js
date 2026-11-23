@@ -214,7 +214,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
               </section>
               <section style={SECTION}>
                 <h4 style={SECTION_TITLE}><IconPin width={15} height={15} />{tx("Hoofdadres")}</h4>
-                {canEdit && <AddressFinder onPick={(r) => setF((x) => ({ ...x, street: r.street || x.street, house_number: r.house_number || "", postal_code: r.postal_code || x.postal_code, city: r.city || x.city, country: r.country || x.country }))} />}
+                {canEdit && <AddressFinder onPick={(r) => setF((x) => ({ ...x, street: r.street || x.street, house_number: r.house_number || "", postal_code: r.postal_code || x.postal_code, city: r.city || x.city, country: r.country || x.country }))} onBusiness={(b) => setF((x) => ({ ...x, name: b.naam || x.name, phone: b.phone || x.phone, website: b.website || x.website, street: b.street || x.street, house_number: b.house_number || x.house_number, postal_code: b.postal_code || x.postal_code, city: b.city || x.city, country: b.country || x.country }))} />}
                 <div style={ADDR}>
                   <div style={{ gridColumn: "span 6" }}>{field("street", "Straat", { max: 120 })}</div>
                   <div style={{ gridColumn: "span 2" }}>{field("house_number", "Huisnummer", { max: 20 })}</div>

@@ -685,6 +685,32 @@ def system_setup_address(request, step):
         return Response({"detail": str(e)}, status=400)
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def address_businesses(request):
+    """Licence form: the businesses that Google knows at the chosen address, with phone number and website. {street, house_number, postal_code, city} -> {linked, results}. Only with the link
+    Google adressen (Admin -> API keys); without it {linked: false, results: []}. For administrators; 60 per hour per user."""
+    from django.core.cache import cache
+
+    from apps.accounts.access import can_admin
+    from apps.integrations import googleplaces
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    if not googleplaces.settings():
+        return Response({"linked": False, "results": []})
+    key = f"gadres:rate:{request.user.pk}"
+    n = (cache.get(key) or 0) + 1
+    cache.set(key, n, 3600)
+    if n > 60:
+        return Response({"detail": "Even rustig: je zoekt te vaak. Probeer het over een uur opnieuw."}, status=429)
+    d = request.data
+    try:
+        return Response({"linked": True, "results": googleplaces.businesses_at(str(d.get("street") or "")[:120], str(d.get("house_number") or "")[:20], str(d.get("postal_code") or "")[:20], str(d.get("city") or "")[:80])})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=400)
+
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def address_search(request):
