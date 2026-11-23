@@ -21,6 +21,7 @@ import { IconGrid } from "./Icons";
 import { useChat } from "./Chat";
 import { useModules } from "./Modules";
 import TileSearch from "./TileSearch";
+import { EditableText } from "./EditMode";
 import { useRouter } from "next/navigation";
 import { gateClick } from "../lib/pluginGate";
 
@@ -64,8 +65,8 @@ export default function GroupTiles({ id }) {
   if (admin && id === "a-site" && !items.some((n) => n.href === IMPORTED_HREF)) items = [{ href: IMPORTED_HREF, label: imported ? "Webdesign" : "Website ontwerpen", icon: <IconGrid />, big: "Ontwerpen of een andere site inlezen" }, ...items];  // always there: a click asks to install and switch it on when it is not
   return (
     <>
-      <h1>{tx(group.title)}</h1>
-      <p className="muted">{tx("Kies een onderdeel. Liever het menu links? Wissel bovenin het menu.")}</p>
+      <EditableText id={`page.group.${id}.title`} as="h1" fallback={tx(group.title)} removable={false} />
+      <EditableText id={`page.group.${id}.intro`} as="p" className="muted" fallback={tx("Kies een onderdeel. Liever het menu links? Wissel bovenin het menu.")} removable={false} />
       <TileSearch />
       <div className="cards" style={{ marginTop: 0 }}>
         {items.map((n) => {
