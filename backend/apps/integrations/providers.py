@@ -300,7 +300,7 @@ PROVIDERS = {
         f("api_key", "API-sleutel (KVK Developer Portal, developers.kvk.nl; leeg bij de testomgeving)", secret=True, required=False),
         f("omgeving", "Omgeving", kind="select", default="production",
           options=[{"value": "production", "label": "Productie (echte bedrijven, het zoeken is gratis, een bedrijfsprofiel kost enkele centen)"}, {"value": "test", "label": "Test (verzonnen bedrijven, gratis)"}], required=False)]},
-    "google_adres": {"label": "Google adressen (bedrijf of adres zoeken)", "test": test_google_adres, "fields": [
+    "google_adres": {"label": "Google adressen (optioneel: betere resultaten dan de gratis adresbronnen)", "test": test_google_adres, "fields": [
         f("api_key", "API-sleutel (Google Cloud → APIs → Places API (New) aanzetten → Inloggegevens)", secret=True),
         f("region", "Land (twee letters, bijvoorbeeld NL; leeg = overal zoeken)", default="NL", required=False),
         f("language", "Taal van de resultaten", default="nl", required=False)]},

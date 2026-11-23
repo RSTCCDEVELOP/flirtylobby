@@ -74,10 +74,29 @@ def test_endpoint_is_for_admins_and_the_connection_test(monkeypatch, django_user
     c, p = APIClient(), APIClient()
     c.force_authenticate(boss); p.force_authenticate(plain)
     assert p.post("/api/system/setup/address/search/", {"q": "rst"}, format="json").status_code == 403
-    assert c.post("/api/system/setup/address/search/", {"q": "rst coaching"}, format="json").json() == {"linked": False, "results": []}
+    monkeypatch.setattr("apps.integrations.addresssearch.free_search", lambda q, limit=5: [{"id": "osm:n1", "naam": "X", "city": "Utrecht", "bron": "OpenStreetMap"}])
+    assert c.post("/api/system/setup/address/search/", {"q": "rst coaching"}, format="json").json()["source"] == "free"  # without a link: the free sources
+    assert c.post("/api/system/setup/address/place/", {"id": "ChIJabcdefghijk123"}, format="json").status_code == 400
     link()
     monkeypatch.setattr(gp, "_call", lambda method, path, mask, body=None, cfg=None: PLACES)
     r = c.post("/api/system/setup/address/search/", {"q": "rst coaching utrecht"}, format="json").json()
-    assert r["linked"] and r["results"][0]["city"] == "Utrecht"
+    assert r["source"] == "google" and r["results"][0]["city"] == "Utrecht" and r["results"][0]["bron"] == "Google"
     assert providers.PROVIDERS["google_adres"]["test"]({"api_key": "x"})[0] is True
     assert providers.PROVIDERS["google_adres"]["test"]({"api_key": ""})[0] is False
+
+
+def test_free_sources_postcode_and_name(monkeypatch):
+    from apps.integrations import addresssearch as ad
+
+    pdok = {"response": {"docs": [{"woonplaatsnaam": "Utrecht", "weergavenaam": "Ambachtsweg 46, 3542DH Utrecht", "postcode": "3542DH", "huisnummer": 46, "straatnaam": "Ambachtsweg"}]}}
+    osm = [{"osm_type": "node", "osm_id": 7, "name": "RST Coaching", "display_name": "RST Coaching, Ambachtsweg 46, Utrecht", "address": {"road": "Ambachtsweg", "house_number": "46", "postcode": "3542 DH", "city": "Utrecht", "country": "Nederland"}}]
+    seen = []
+    monkeypatch.setattr(ad, "_http_json", lambda url: (seen.append(url) or (pdok if "pdok" in url else osm)))
+    monkeypatch.setattr(ad.time, "sleep", lambda s: None)
+    r = ad.free_search("RST Coaching 3542 DH")
+    assert r[0]["naam"] == "RST Coaching" and r[0]["postal_code"] == "3542 DH" and r[0]["bron"] == "OpenStreetMap"
+    assert any("RST+Coaching+Utrecht" in u for u in seen)  # the town of the postcode is added to the name
+    r = ad.free_search("3542 DH 46")
+    assert r == [{"id": "pdok:Ambachtsweg 46, 3542DH Utrecht", "naam": "", "adres": "Ambachtsweg 46, 3542DH Utrecht", "street": "Ambachtsweg", "house_number": "46", "postal_code": "3542 DH", "city": "Utrecht", "country": "Nederland", "bron": "PDOK"}]
+    monkeypatch.setattr(ad, "_http_json", lambda url: pdok if "pdok" in url else [])
+    assert ad.free_search("Onbekend 3542 DH")[0]["bron"] == "PDOK"  # no business found: the addresses of that postcode
