@@ -64,9 +64,9 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
         </div>
         <div className="pb-tb-mid"><strong>{title || tx("Pagina")}</strong></div>
         <div className="pb-tb-right">
-          <button type="button" className={`pb-tb-btn${headerHidden ? " on" : ""}`} onClick={() => setHeaderHidden((v) => !v)} aria-pressed={headerHidden} title={headerHidden ? tx("De header weer tonen") : tx("De header verbergen om de bovenste blokken te bewerken")}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18" />{headerHidden ? <path d="M8 14h8" /> : <path d="M7 6.5h.01M10 6.5h.01" />}</svg>
-            <span>{headerHidden ? tx("Header tonen") : tx("Header verbergen")}</span>
+          <button type="button" className={`pb-tb-btn${headerHidden ? " on" : ""}`} onClick={() => setHeaderHidden((v) => !v)} aria-pressed={headerHidden} title={headerHidden ? tx("De header weer omlaag halen") : tx("De header omhoog sturen om de bovenste blokken te bewerken")}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{headerHidden ? <path d="M6 9l6 6 6-6" /> : <path d="M6 15l6-6 6 6" />}</svg>
+            <span>{headerHidden ? tx("Header omlaag") : tx("Header omhoog")}</span>
           </button>
           <div id="pb-tb-tools" className="pb-tb-tools" />
           <span className="pb-tb-save">{saving === "saving" ? tx("Opslaan…") : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</span>
@@ -74,6 +74,9 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
           <button type="button" className="pb-tb-btn primary" onClick={onExit} title={tx("Bewerken afsluiten en de pagina bekijken")}>{ICON.eye}<span>{tx("Klaar")}</span></button>
         </div>
       </div>
+      <button type="button" className="pb-header-handle" onClick={() => setHeaderHidden((v) => !v)} aria-label={headerHidden ? tx("De header weer omlaag halen") : tx("De header omhoog sturen")} title={headerHidden ? tx("Header omlaag") : tx("Header omhoog")} style={{ top: headerHidden ? "var(--pb-bar-h, 48px)" : "calc(var(--pb-bar-h, 48px) + var(--site-header-h, 64px))" }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{headerHidden ? <path d="M6 9l6 6 6-6" /> : <path d="M6 15l6-6 6 6" />}</svg>
+      </button>
       {!open && (
         <div className="pb-sb-rail" aria-label={tx("Bewerkpaneel")}>
           <button type="button" className="pb-rail-btn" onClick={() => setOpen(true)} title={tx("Paneel uitklappen")} aria-label={tx("Paneel uitklappen")}>{ICON.expand}</button>
