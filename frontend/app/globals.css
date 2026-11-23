@@ -4829,6 +4829,4 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 /* header hidden while editing (button in the bar of the editor): the top of the page can be edited */
 .site-header { transition: transform .35s cubic-bezier(.4, 0, .2, 1), margin-bottom .35s cubic-bezier(.4, 0, .2, 1); }
 html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-bottom: calc(var(--hdr-live, var(--site-header-h, 72px)) * -1 + 2.6rem); pointer-events: none; visibility: hidden; transition: transform .35s cubic-bezier(.4, 0, .2, 1), margin-bottom .35s cubic-bezier(.4, 0, .2, 1), visibility 0s .35s; }  /* up and out of sight; 2.6rem stay free above the first block: its own buttons (move, copy, delete) sit there and must not lie under the bar of the editor */  /* the header slides up out of the way (the page moves up with it) */
-.pb-header-handle { position: fixed; left: 50%; transform: translateX(-50%); z-index: 1095; width: 46px; height: 22px; padding: 0; border: 0; border-radius: 0 0 12px 12px; display: grid; place-items: center; cursor: pointer; color: #fff; background: var(--blue, #3b82f6); box-shadow: 0 4px 14px rgba(0,0,0,.3); transition: top .35s cubic-bezier(.4, 0, .2, 1), filter .15s; }
-.pb-header-handle:hover { filter: brightness(1.12); }
-.pb-header-handle svg { width: 16px; height: 16px; }
+
