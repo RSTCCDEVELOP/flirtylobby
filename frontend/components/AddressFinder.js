@@ -30,9 +30,7 @@ export default function AddressFinder({ onPick, onBusiness, disabled = false, la
     setBizBusy(true); setNote("");
     try {
       const x = await api("/system/setup/address-businesses/", { method: "POST", body: { street: r.street, house_number: r.house_number || "", postal_code: r.postal_code || "", city: r.city || "" } });
-      if (!x.linked) setNote(tx("Koppel Google adressen (Admin → API keys) om ook de bedrijven op dit adres met telefoonnummer te vinden."));
-      else if (x.results?.length) setBiz(x.results);
-      else setNote(tx("Google kent geen bedrijven op dit adres."));
+      if (x.linked && x.results?.length) setBiz(x.results);
     } catch (e) { setNote(errorText(e)); }
     setBizBusy(false);
   };
@@ -94,7 +92,6 @@ export default function AddressFinder({ onPick, onBusiness, disabled = false, la
             <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setBiz(null)}>{tx("Geen van deze")}</button></div>
           </div>
         </div>, document.body)}
-      {picked && <span className="e2e-hint">{tx("Ingevuld: {0}. Controleer de gegevens en pas ze zo nodig aan.", picked)}</span>}
     </div>
   );
 }
