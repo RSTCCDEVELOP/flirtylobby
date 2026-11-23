@@ -47,6 +47,7 @@ const SKIP_KEY = "e2e_setup_skipped";
 // The main address as it is shown in the form: without https:// (the server adds it when it is saved); empty -> the address this website runs on (not on localhost).
 const bareUrl = (u) => String(u || "").replace(/^https?:\/\//i, "").replace(/\/+$/, "");
 const hostOfSite = () => (typeof window === "undefined" || /^(localhost|127\.|\[::1\])/.test(window.location.hostname) ? "" : window.location.host);
+const CHIP = { textAlign: "left", display: "inline-flex", alignItems: "baseline", gap: ".5rem", padding: ".4rem .75rem", borderRadius: 999, cursor: "pointer", font: "inherit", color: "inherit" };  // a choice as a pill (company, contact person)
 const TEST_DATA = { site_name: "Testwebsite", company_name: "Testbedrijf BV", frontend_url: "www.testbedrijf.nl", street: "Teststraat", house_number: "12", postal_code: "1234 AB", city: "Utrecht", country: "Nederland",
   contact_first_name: "Test", contact_last_name: "Gebruiker", contact_email: "demo@easy2edit.com", phone: "+31 301234567", mobile: "+31 612345678" };
 const isLocal = () => typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
@@ -342,7 +343,7 @@ export default function SetupWizard() {
   };
   const co = owner.source !== "email";
   const ownerBox = owner.status ? (
-    <div className="e2e-stack" data-easy2edit-tag="ui-alerts" style={{ gridColumn: "1 / -1", gap: ".6rem", padding: ".75rem .9rem", border: "1px solid var(--e2e-border, #e5e0d8)", borderRadius: "var(--e2e-radius, 10px)" }}>
+    <div className="e2e-stack" data-easy2edit-tag="ui-alerts" style={owner.source === "entity" ? { gap: ".4rem" } : { gridColumn: "1 / -1", gap: ".6rem", padding: ".75rem .9rem", border: "1px solid var(--e2e-border, #e5e0d8)", borderRadius: "var(--e2e-radius, 10px)" }}>
       {owner.status === "none" && <span className="e2e-hint">{owner.error || tx("Dit bedrijf is niet gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
       {owner.status === "found" && owner.source === "entity" && (owner.error ? <span className="e2e-error">{owner.error}</span> : <span className="e2e-hint">{tx("Bezig…")}</span>)}
       {owner.status === "found" && owner.source !== "entity" && <>
@@ -419,46 +420,47 @@ export default function SetupWizard() {
             {error && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{error}</div></div>}
             <form className="e2e-grid" style={{ "--e2e-min": "230px" }} onSubmit={(e) => { e.preventDefault(); if (stepIdx < steps.length - 1) next(); else save(); }}>
               {step === "site" && <>
-                {field("site_name", tx("Naam van de website"), { span: "1 / -1" })}
-                <div className="e2e-field" style={{ gridColumn: "1 / -1" }}>
+                {field("site_name", tx("Naam van de website"))}
+                {field("frontend_url", tx("Hoofd-URL"), { placeholder: "www.voorbeeld.nl", inputMode: "url", title: tx("Het hoofdadres van de website, zonder pad of slash erachter. Dit staat ook op het licentiescherm.") })}
+                <div className="e2e-field">
                   <label className="e2e-label" htmlFor="sw-company_name"><span>{tx("Bedrijfsnaam")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
                   <input id="sw-company_name" className={`e2e-input${errs.company_name ? " e2e-input--error" : ""}`} value={form.company_name || ""} onChange={set("company_name")} autoComplete="organization" aria-invalid={errs.company_name ? "true" : undefined} aria-required="true" />
                   {errs.company_name && <span className="e2e-error">{errs.company_name}</span>}
                 </div>
-                {d?.license_server?.mode === "linked" && (
-                  <div className="e2e-field" style={{ gridColumn: "1 / -1" }}>
+                {d?.license_server?.mode === "linked" ? (
+                  <div className="e2e-field">
                     <label className="e2e-label" htmlFor="sw-company_find"><span>{tx("Bestaand bedrijf zoeken bij easy2edit")}</span></label>
                     <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
-                      <input id="sw-company_find" type="search" className="e2e-input" style={{ flex: 1, minWidth: 0 }} value={finder.q} placeholder={tx("Naam, adres, postcode of e-mailadres (een deel is genoeg)")} onChange={(e) => setFinder((f) => ({ ...f, q: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); searchCompanies(); } }} autoComplete="off" />
+                      <input id="sw-company_find" type="search" className="e2e-input" style={{ flex: 1, minWidth: 0 }} value={finder.q} placeholder={tx("Naam, adres, postcode of e-mailadres")} onChange={(e) => setFinder((f) => ({ ...f, q: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); searchCompanies(); } }} autoComplete="off" />
                       <button type="button" className="btn" disabled={finder.busy || finder.q.trim().length < 3} onClick={searchCompanies}>{finder.busy && !finder.entity ? tx("Bezig…") : tx("Zoeken")}</button>
                     </div>
                   </div>
-                )}
-                {finder.results && (
-                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".5rem" }}>
-                    {finder.error && <span className="e2e-error">{finder.error}</span>}
-                    {!finder.results.length && !finder.error && <span className="e2e-hint">{tx("Geen bedrijf gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
-                    {finder.results.length > 0 && <span className="e2e-hint">{tx("Kies je bedrijf:")}</span>}
-                    {finder.results.map((c) => (
-                      <button key={c.id} type="button" onClick={() => pickCompany(c)} aria-pressed={finder.entity?.id === c.id} style={{ textAlign: "left", display: "flex", justifyContent: "space-between", gap: ".6rem", padding: ".6rem .85rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: `1px solid ${finder.entity?.id === c.id ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: finder.entity?.id === c.id ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 10%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}>
-                        <strong>{c.name}</strong><span className="e2e-hint">{c.city}</span>
-                      </button>
-                    ))}
-                    {finder.entity && finder.contacts && (
-                      <div className="e2e-stack" style={{ gap: ".4rem", marginTop: ".3rem" }}>
-                        <strong>{tx("Wie ben jij? Kies de contactpersoon van {0}", finder.entity.name)}</strong>
-                        {!finder.contacts.length && <span className="e2e-hint">{tx("Er zijn geen personen aan dit bedrijf gekoppeld.")}</span>}
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-                          {finder.contacts.map((u) => <button key={u.id} type="button" className="btn" disabled={owner.busy} onClick={() => pickContact(finder.entity, u)} aria-pressed={owner.user === u.id && owner.source === "entity"}>{u.name}</button>)}
+                ) : <span />}
+                {(finder.results || owner.source === "entity") && (finder.results || owner.status) && (
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem", padding: ".7rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))" }}>
+                    {finder.results && <>
+                      {finder.error && <span className="e2e-error">{finder.error}</span>}
+                      {!finder.results.length && !finder.error && <span className="e2e-hint">{tx("Geen bedrijf gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
+                      {finder.results.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
+                          <span className="e2e-hint">{tx("Kies je bedrijf:")}</span>
+                          {finder.results.map((c) => {
+                            const on = finder.entity?.id === c.id;
+                            return <button key={c.id} type="button" onClick={() => pickCompany(c)} aria-pressed={on} style={{ ...CHIP, border: `1px solid ${on ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: on ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{c.name}</strong>{c.city && <span className="e2e-hint">{c.city}</span>}</button>;
+                          })}
                         </div>
-                        <span className="e2e-hint">{tx("De code gaat naar het e-mailadres van de gekozen persoon.")}</span>
-                      </div>
-                    )}
+                      )}
+                      {finder.entity && finder.contacts && (
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
+                          <span className="e2e-hint">{tx("Wie ben jij? Kies de contactpersoon van {0}", finder.entity.name)}</span>
+                          {!finder.contacts.length && <span className="e2e-hint">{tx("Er zijn geen personen aan dit bedrijf gekoppeld.")}</span>}
+                          {finder.contacts.map((u) => <button key={u.id} type="button" disabled={owner.busy} onClick={() => pickContact(finder.entity, u)} aria-pressed={owner.user === u.id && owner.source === "entity"} style={{ ...CHIP, border: `1px solid ${owner.user === u.id && owner.source === "entity" ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: owner.user === u.id && owner.source === "entity" ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{u.name}</strong></button>)}
+                        </div>
+                      )}
+                    </>}
+                    {owner.source === "entity" && ownerBox}
                   </div>
                 )}
-                {owner.source === "entity" && ownerBox}
-                {field("frontend_url", tx("Hoofd-URL"), { placeholder: "www.voorbeeld.nl", inputMode: "url", span: "1 / -1" })}
-                <span className="e2e-hint" style={{ gridColumn: "1 / -1" }}>{tx("Het hoofdadres van de website, zonder pad of slash erachter. Dit staat ook op het licentiescherm.")}</span>
               </>}
               {step === "address" && <>
                 {field("street", tx("Straat"), { autoComplete: "address-line1", span: "1 / -1" })}
