@@ -416,3 +416,54 @@ def test_superadmin_and_superadmin_plus_always_pass_the_code_and_the_payment():
     plus = U.objects.create_user("pp9", "pp9@x.nl", "pw12345678!", is_staff=True, is_superuser=True, is_superadmin_plus=True)
     assert not setup_consent.ok(plain) and not setup_pay.ok(plain)  # an ordinary administrator still needs the code
     assert setup_consent.ok(boss) and setup_pay.ok(boss) and setup_consent.ok(plus) and setup_pay.ok(plus)
+
+
+@pytest.mark.django_db
+def test_onboarding_again_changes_name_and_address_everywhere_but_keeps_the_ids(monkeypatch):
+    from apps.core import entity, setup_consent, siteowners
+    from apps.core.models import License
+
+    U = get_user_model()
+    staff = U.objects.create_user("st", "st@x.nl", "pw12345678!", is_staff=True)
+    c = APIClient()
+    c.force_authenticate(staff)
+    setup_consent.mark_ok(staff)
+    monkeypatch.setattr("apps.core.entity._mail_account", lambda *a, **k: True)
+    monkeypatch.setattr(siteowners, "push_async", lambda **k: None)
+    assert c.put("/api/system/setup/", FULL, format="json").status_code == 200
+    e, u = entity.own(), siteowners.owner_user()
+    uid_e, uid_u = str(e.uid), str(u.uid)
+    U.objects.filter(pk=u.pk).update(remote_id="remote-user")
+    type(e).objects.filter(pk=e.pk).update(remote_id="remote-company")
+    pushed = []
+    monkeypatch.setattr(siteowners, "push_async", lambda **k: pushed.append(k))
+    changed = {**FULL, "company_name": "Demo Nieuw BV", "city": "Amsterdam", "street": "Nieuwstraat", "contact_first_name": "Johan", "contact_email": "johan@demo.nl"}
+    assert c.put("/api/system/setup/", changed, format="json").status_code == 200
+    e, u = entity.own(), U.objects.get(pk=u.pk)
+    assert e.name == "Demo Nieuw BV" and e.city == "Amsterdam" and e.street == "Nieuwstraat" and str(e.uid) == uid_e and e.remote_id == "remote-company"
+    assert u.first_name == "Johan" and u.email == "johan@demo.nl" and str(u.uid) == uid_u and u.remote_id == "remote-user"  # the same person and company, the ids stay
+    lic = License.objects.get(pk=1)
+    assert lic.client == "Demo Nieuw BV" and lic.client_parts["city"] == "Amsterdam"
+    assert {"force": True} in pushed  # and it goes to the master site
+
+
+@pytest.mark.django_db
+def test_hosting_of_an_existing_licence_can_be_changed_and_put_back(monkeypatch):
+    from apps.core import license_price, setup_consent
+    from apps.core.models import License
+
+    U = get_user_model()
+    staff = U.objects.create_user("st", "st@x.nl", "pw12345678!", is_staff=True)
+    c = APIClient()
+    c.force_authenticate(staff)
+    assert c.post("/api/system/license/hosting/", {"hosting": "shared", "renew_months": 12}, format="json").status_code == 400  # no licence yet
+    setup_consent.mark_ok(staff)
+    monkeypatch.setattr("apps.core.siteowners.push_async", lambda **k: None)
+    monkeypatch.setattr("apps.core.entity._mail_account", lambda *a, **k: True)
+    c.put("/api/system/setup/", FULL, format="json")
+    key = [o["key"] for o in license_price.hosting_options()][-1]
+    r = c.post("/api/system/license/hosting/", {"hosting": key, "renew_months": 3}, format="json").json()
+    assert r["ok"] and r["now"] == {"hosting": key, "renew_months": 3} and License.objects.get(pk=1).hosting == key
+    back = c.post("/api/system/license/hosting/", {"back": r["prev"]}, format="json").json()
+    assert back["now"] == r["prev"] and License.objects.get(pk=1).renew_months == r["prev"]["renew_months"]
+    assert c.post("/api/system/license/hosting/", {"hosting": "nonsense", "renew_months": 3}, format="json").status_code == 400

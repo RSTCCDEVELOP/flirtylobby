@@ -65,8 +65,8 @@ def payload():
     if not u:
         return None
     url = sitemanager.payload("sync")["url"]
-    return {"url": url, "user": {"uid": str(u.uid), "email": u.email, "first_name": u.first_name, "last_name": u.last_name, "phone": u.phone},
-            "company": {"uid": str(e.uid), **{k: str(getattr(e, k) or "") for k in entity.FIELDS if k != "description"}}}
+    return {"url": url, "user": {"uid": str(u.uid), "remote_id": str(u.remote_id or ""), "email": u.email, "first_name": u.first_name, "last_name": u.last_name, "phone": u.phone},
+            "company": {"uid": str(e.uid), "remote_id": str(e.remote_id or ""), **{k: str(getattr(e, k) or "") for k in entity.FIELDS if k != "description"}}}
 
 
 def has_remote():
@@ -204,7 +204,22 @@ def register(site, data):
     if not EMAIL_RE.match(email) or not name or not domain:
         raise ValueError("E-mailadres van de eigenaar, naam van het bedrijf en het adres van de website zijn nodig.")
     User = get_user_model()
-    user = User.objects.filter(email__iexact=email).first()
+    user = None
+    if ud.get("remote_id"):  # the owner is known here by its id: the same person gets the changed data (the id never changes)
+        cand = User.objects.filter(uid=_uuid(ud.get("remote_id"))).first()
+        if cand and domain in (cand.domains or []):
+            user = cand
+            if email != str(cand.email or "").lower() and not User.objects.filter(email__iexact=email).exclude(pk=cand.pk).exists():
+                if str(cand.username or "").lower() == str(cand.email or "").lower():
+                    cand.username = email[:150]
+                cand.email = email
+            cand.first_name = _clean(ud.get("first_name"), 60) or cand.first_name
+            cand.last_name = _clean(ud.get("last_name"), 60) or cand.last_name
+            phone = re.sub(r"[^\d+]", "", str(ud.get("phone") or ""))[:20]
+            cand.phone = phone or cand.phone
+            cand.save()
+    if user is None:
+        user = User.objects.filter(email__iexact=email).first()
     user_new = user is None
     if user_new:
         password = entity.generate_password()
@@ -212,7 +227,18 @@ def register(site, data):
         user.set_password(password)
         user.save()  # an ordinary user with a login: no roles, no admin rights on the master site
         entity._mail_account(user, password, system.get())
-    comp = _find_company(cd)
+    comp = None
+    if cd.get("remote_id"):  # the company is known by its id: the same company gets the changed name and address (the id never changes)
+        cand = Entity.objects.filter(uid=_uuid(cd.get("remote_id")), is_own=False).first()
+        if cand and domain in (cand.domains or []):
+            comp = cand
+            for k, (n, _var) in entity.FIELDS.items():
+                if k != "description" and k in cd:
+                    setattr(comp, k, _clean(cd.get(k), n))
+            comp.website = comp.website if entity.URL_RE.match(comp.website or "") else ""
+            comp.save()
+    if comp is None:
+        comp = _find_company(cd)
     company_new = comp is None
     if company_new:
         comp = Entity(kind="bedrijf", is_own=False)

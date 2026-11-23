@@ -396,6 +396,41 @@ def sync_from_system(s):
     return out
 
 
+def apply_system_changes(s, owner=None):
+    """The set-up form (the onboarding) was saved again while the website already had a licence: the name and the address go to the entity of the website and the names to the owner
+    (the contact person; `owner` is that user as he was BEFORE the save, so a changed e-mail address changes the same person, never makes a new one). The entity and the owner keep their
+    id and their easy2edit id. Returns {"entity": bool, "user": bool}."""
+    from django.contrib.auth import get_user_model
+
+    out = {"entity": False, "user": False}
+    if filled():
+        e = own()
+        web = str(s.get("frontend_url") or "")
+        mapped = {"name": s.get("company_name"), "email": s.get("contact_email"), "phone": s.get("phone"), "website": web if URL_RE.match(web) else None, "street": s.get("street"), "house_number": s.get("house_number"),
+                  "postal_code": s.get("postal_code"), "city": s.get("city"), "country": s.get("country")}
+        for k, v in mapped.items():
+            v = str(v or "").strip()
+            if v:
+                setattr(e, k, v[:FIELDS[k][0]])
+        e.save()
+        out["entity"] = True
+    if owner is not None:
+        User = get_user_model()
+        email = str(s.get("contact_email") or "").strip().lower()
+        if EMAIL_RE.match(email) and email != str(owner.email or "").lower() and not User.objects.filter(email__iexact=email).exclude(pk=owner.pk).exists():
+            if str(owner.username or "").lower() == str(owner.email or "").lower():
+                owner.username = email[:150]
+            owner.email = email
+        owner.first_name = str(s.get("contact_first_name") or owner.first_name or "")[:60]
+        owner.last_name = str(s.get("contact_last_name") or owner.last_name or "")[:60]
+        phone = re.sub(r"[^\d+]", "", str(s.get("mobile") or s.get("phone") or ""))[:20]
+        if phone:
+            owner.phone = phone
+        owner.save()
+        out["user"] = True
+    return out
+
+
 def ensure_from_licence():
     """The licence makes the entity: once the website has a licence, the company of the licence is the entity of the website and the contact person is a user linked to it. Called when the
     licence is made and whenever the entity is looked at while it is still empty (an older licence that was made before the entity existed). Only while the entity has no name; returns what was done."""

@@ -83,3 +83,23 @@ def test_on_the_master_site_itself_the_own_id_is_the_easy2edit_id(db, monkeypatc
     u.refresh_from_db()
     e.refresh_from_db()
     assert u.remote_id == str(u.uid) and e.remote_id == str(e.uid) and "api.easy2edit.com" in u.domains and "api.easy2edit.com" in e.domains
+
+
+def test_master_updates_the_same_owner_and_company_by_their_ids_when_name_and_address_change(site, monkeypatch):
+    monkeypatch.setattr("apps.core.entity._mail_account", lambda *a, **k: True)
+    first = siteowners.register(site, _data("https://www.shop.nl"))
+    d = _data("https://www.shop.nl", email="jan.nieuw@example.com", kvk="", name="Shop Nieuw BV")
+    d["user"].update(remote_id=first["user_id"], first_name="Johan")
+    d["company"].update(remote_id=first["company_id"], city="Amsterdam", vat_no="")
+    second = siteowners.register(site, d)
+    assert second["user_id"] == first["user_id"] and second["company_id"] == first["company_id"] and not second["user_new"] and not second["company_new"]  # the ids stay the same
+    u = get_user_model().objects.get(uid=first["user_id"])
+    e = Entity.objects.get(uid=first["company_id"])
+    assert u.email == "jan.nieuw@example.com" and u.first_name == "Johan" and e.name == "Shop Nieuw BV" and e.city == "Amsterdam"
+    assert Entity.objects.filter(is_own=False).count() == 1 and get_user_model().objects.count() == 1  # nothing new was made
+    # an id of another website's company is not used to change it
+    other = EasySite.objects.create(instance_id="b" * 32, name="Blog", url="https://blog.nl", token_hash="y", status="active")
+    d2 = _data("https://blog.nl", email="x@blog.nl", kvk="999", name="Blog BV")
+    d2["company"]["remote_id"] = first["company_id"]
+    third = siteowners.register(other, d2)
+    assert third["company_id"] != first["company_id"] and Entity.objects.get(uid=first["company_id"]).name == "Shop Nieuw BV"

@@ -970,6 +970,61 @@ def _make_license(until=None, months=None, hosting=None, user=None):
         __import__("logging").getLogger(__name__).exception("site owner could not be sent")
 
 
+def _licence_data_changed(old_owner):
+    """The onboarding was done again with a licence: the name and the address go to the licence, to the entity and the contact person here, and to the easy2edit master site
+    (the same owner and company there: their id and easy2edit id stay the same). Never stops the save."""
+    from . import entity, siteowners
+    from .models import License
+
+    s = system.get()
+    try:
+        lic = License.objects.filter(pk=1).first()
+        if lic:
+            lic.client = (s.get("company_name") or s.get("site_name") or lic.client or "")[:200]
+            lic.client_parts = {k: s.get(k, "") for k in system.ADDRESS_PARTS}
+            lic.client_address = (s.get("address") or lic.client_address or "")[:300]
+            if s.get("frontend_url"):
+                lic.main_url = s["frontend_url"]
+            lic.save(update_fields=["client", "client_parts", "client_address", "main_url"])
+            system.license_changed()
+        entity.apply_system_changes(s, old_owner)
+        siteowners.push_async(force=True)
+    except Exception:  # noqa: BLE001
+        __import__("logging").getLogger(__name__).exception("the changed data could not be passed on")
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def license_hosting(request):
+    """Onboarding: change the hosting (and the period) of the licence that is there. POST {hosting, renew_months}. The price changes with it: the answer has what it was before (`prev`, to put it back
+    when the person does not go on) and the licence goes through the update screen (agreement and payment) with /system/license/change/. A way back: POST {back: {hosting, renew_months}}."""
+    from apps.accounts.access import can_admin
+
+    from . import license_price
+    from .models import License
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    lic = License.objects.filter(pk=1).first()
+    if not lic or not lic.number:
+        return Response({"detail": "Er is nog geen licentie."}, status=400)
+    d = request.data.get("back") if isinstance(request.data.get("back"), dict) else request.data
+    host, months = str(d.get("hosting") if d.get("hosting") is not None else lic.hosting), d.get("renew_months", lic.renew_months)
+    if host and host not in {o["key"] for o in license_price.hosting_options()} | {""}:
+        return Response({"detail": "Kies een hosting uit de lijst."}, status=400)
+    try:
+        months = int(months)
+    except (TypeError, ValueError):
+        months = 0
+    if months not in (1, 3, 12):
+        return Response({"detail": "Kies per maand, per kwartaal of per jaar."}, status=400)
+    prev = {"hosting": lic.hosting, "renew_months": lic.renew_months}
+    lic.hosting, lic.renew_months = host[:30], months
+    lic.save(update_fields=["hosting", "renew_months"])
+    system.license_changed()
+    return Response({"ok": True, "prev": prev, "now": {"hosting": lic.hosting, "renew_months": lic.renew_months}, "monthly": str(license_price.monthly(lic)), "billed": str(lic.billed_monthly)})
+
+
 @api_view(["GET", "PUT"])
 @permission_classes([IsAuthenticated])
 def system_setup(request):
@@ -1028,9 +1083,17 @@ def system_setup(request):
 
             until = _date.today() + _td(days=_sp.TRIAL_DAYS)
         __import__("apps.core.entity", fromlist=["x"]).set_pending_password(request.data.get("contact_password"))  # the password that the wizard showed for the contact person
+        had_licence = _license_exists()
+        old_owner = None
+        if had_licence:
+            from . import siteowners
+
+            old_owner = siteowners.owner_user()  # (the contact person as he is now: a changed e-mail address changes this person)
         system.save(cleaned)
         __import__("apps.core.reset", fromlist=["x"]).mark_form_done()  # (the form of the onboarding that was started again is done: the installation and the design wizard follow)
         _make_license(until, months, request.data.get("hosting"), request.user)
+        if had_licence:
+            _licence_data_changed(old_owner)
         __import__("apps.core.setup_consent", fromlist=["x"]).clear(request.user)
         __import__("apps.core.setup_pay", fromlist=["x"]).clear(request.user)
     cur = system.split_contact(system.get())

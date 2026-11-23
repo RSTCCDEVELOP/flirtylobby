@@ -15,6 +15,7 @@ import { matches, norm } from "../lib/useView";
 
 // What can be found besides the tiles: the settings inside a screen (where they are, in plain words). staff: only for a superadmin.
 const INDEX = [
+  { href: "/dashboard/admin/onboarding", label: "Onboarding", where: "Admin → Systeem", words: "onboarding licentie upgraden hosting wijzigen gegevens naam adres opnieuw starten" },
   { href: "/dashboard/admin/cache", label: "Cache en snelheid", where: "Admin → Systeem", words: "cache snelheid sneller groener zuinig bewaren wissen systeemcache" },
   { href: "/dashboard/admin/system", label: "Welke cache de server gebruikt (database, geheugen, Redis)", where: "Admin → Basisgegevens → Cache", words: "cache database redis geheugen opslag server herstart basisgegevens", staff: true },
   { href: "/dashboard/admin/system", label: "Basisgegevens", where: "Admin → Systeem", words: "basisgegevens naam adres website api contact licentiegegevens deployment" },

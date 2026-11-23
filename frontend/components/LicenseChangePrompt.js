@@ -20,6 +20,10 @@ import KitScope from "../lib/ui-kit/KitScope";
 
 // Undo the switch of a module or plugin (c: {which: "plugin:x"|"module:x", enabled}): it goes back to how it was, without reloading the page.
 export async function revertSwitch(c) {
+  if (c?.hosting_prev) {  // the hosting or the period was changed in the onboarding and the update was cancelled: back to how it was
+    try { await api("/system/license/hosting/", { method: "POST", body: { back: c.hosting_prev } }); window.dispatchEvent(new Event("licence-reverted")); } catch (e) { alertDialog(errorText(e)); }
+    return;
+  }
   const [kind, key] = String(c?.which || "").split(":");
   if (!key) return;
   window.__licenceRevert = true;  // (lib/api.js does not ask again for this change)
