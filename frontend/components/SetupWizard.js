@@ -22,6 +22,7 @@ import { revertSwitch } from "./LicenseChangePrompt";
 import { money } from "../lib/format";
 import KitScope from "../lib/ui-kit/KitScope";
 import { RichText } from "./SmallEditor";
+import AddressFinder from "./AddressFinder";
 import CodeInput from "./CodeInput";
 import { setBlock, useSandboxFirst } from "../lib/firstRun";
 import Loading from "./Loading";
@@ -463,6 +464,7 @@ export default function SetupWizard() {
                 )}
               </>}
               {step === "address" && <>
+                <AddressFinder initial={[form.company_name, form.city].filter(Boolean).join(" ")} onPick={(r) => { setForm((f) => ({ ...f, street: r.street || f.street, house_number: r.house_number || "", postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country: r.country || f.country })); setErrs((x) => ({ ...x, street: "", house_number: "", postal_code: "", city: "", country: "" })); }} />
                 {field("street", tx("Straat"), { autoComplete: "address-line1", span: "1 / -1" })}
                 {field("house_number", tx("Huisnummer"), { maxLength: 12 })}
                 {field("postal_code", tx("Postcode"), { maxLength: 10, autoComplete: "postal-code" })}

@@ -1,0 +1,62 @@
+// Copyright & Ownership Notice
+// easy2Edit is the exclusive legal property of RST Coaching & Consultancy B.V. (RSTCC),
+// owned by Ronald Stolk. All rights reserved. Any unauthorized use, copying, modification,
+// reproduction, distribution, or commercial exploitation of Easy2Edit, including its source code,
+// is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
+// website https://rstcc.net
+
+"use client";
+
+import { useState } from "react";
+import { api, errorText } from "../lib/api";
+import { tx } from "../lib/t";
+import { IconPin, IconSearch } from "./Icons";
+
+// Look up an address: "RST Coaching Utrecht", "RST Coaching 3542 DH" or "3542 DH 46". Google (when linked in Admin -> API keys) or the free sources PDOK and OpenStreetMap.
+// The chosen result {naam, street, house_number, postal_code, city, country, adres} goes to onPick; the caller fills its own fields.
+export default function AddressFinder({ initial = "", onPick, disabled = false, label }) {
+  const [q, setQ] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState(null);
+  const [src, setSrc] = useState("");
+  const [err, setErr] = useState("");
+  const [picked, setPicked] = useState("");
+  const run = async () => {
+    const text = q.trim();
+    if (text.length < 3 || busy) return;
+    setBusy(true); setErr(""); setPicked(""); setRes(null);
+    try { const r = await api("/system/setup/address/search/", { method: "POST", body: { q: text } }); setRes(r.results || []); setSrc(r.source || ""); }
+    catch (e) { setErr(errorText(e)); }
+    setBusy(false);
+  };
+  return (
+    <div className="e2e-stack" style={{ gap: ".6rem", padding: ".75rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))", gridColumn: "1 / -1" }}>
+      <label className="e2e-label" htmlFor="af-q"><span style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }}><IconSearch width={14} height={14} />{label || tx("Adres opzoeken")}</span></label>
+      <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
+        <input id="af-q" type="search" className="e2e-input" style={{ flex: 1, minWidth: 0 }} value={q} disabled={disabled} placeholder={tx("Bijvoorbeeld: RST Coaching Utrecht, of RST Coaching 3542 DH")} autoComplete="off"
+          onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); run(); } }} />
+        <button type="button" className="btn" disabled={disabled || busy || q.trim().length < 3} onClick={run}>{busy ? tx("Bezig…") : tx("Zoeken")}</button>
+      </div>
+      {err && <span className="e2e-error">{err}</span>}
+      {res && !res.length && !err && <span className="e2e-hint">{tx("Niets gevonden. Probeer de naam met de plaats, of een postcode met huisnummer.")}</span>}
+      {res && res.length > 0 && (
+        <div className="e2e-stack" style={{ gap: ".4rem" }}>
+          <span className="e2e-hint">{tx("Kies het juiste adres:")}</span>
+          {res.map((r) => (
+            <button key={r.id} type="button" disabled={disabled} onClick={() => { onPick(r); setPicked(r.naam || r.adres); setRes(null); }}
+              style={{ textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".6rem", padding: ".55rem .8rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, #e5e0d8)", background: "var(--e2e-bg, #fff)" }}>
+              <span aria-hidden="true" style={{ flex: "none", marginTop: ".15rem", color: "var(--e2e-primary, var(--blue))" }}><IconPin width={15} height={15} /></span>
+              <span style={{ display: "grid", gap: ".1rem", minWidth: 0, flex: 1 }}>
+                {r.naam && <strong>{r.naam}</strong>}
+                <span>{[[r.street, r.house_number].filter(Boolean).join(" "), [r.postal_code, r.city].filter(Boolean).join(" "), r.country].filter(Boolean).join(", ") || r.adres}</span>
+              </span>
+              {r.bron && <small className="e2e-hint" style={{ flex: "none" }}>{r.bron}</small>}
+            </button>
+          ))}
+          {src === "free" && <small className="e2e-hint">{tx("Gratis adresbronnen (PDOK en OpenStreetMap). Met de koppeling Google adressen (Admin → API keys) vind je ook kleine bedrijven.")}</small>}
+        </div>
+      )}
+      {picked && <span className="e2e-hint">{tx("Ingevuld: {0}. Controleer de gegevens en pas ze zo nodig aan.", picked)}</span>}
+    </div>
+  );
+}
