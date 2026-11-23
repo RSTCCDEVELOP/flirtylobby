@@ -417,6 +417,14 @@ def build_from_site(key, name, description="", author="", version="1.0.0", previ
     chosen = set(pages) if pages else {p["key"] for p in site_pages() if p["default"]}
     only = chosen | (_menu_keys() if chosen else set())
     site, files, skipped = bs.collect_site(only)
+    from django.core.files.storage import default_storage
+
+    for p in referenced_files(site):  # the pictures that the pages point to (themes/<design>/img/...)
+        try:
+            with default_storage.open(p, "rb") as fh:
+                files[f"files/{p}"] = fh.read()
+        except Exception:  # noqa: BLE001 - a file that is gone is not part of the template
+            skipped.append(p)
     pages_zip = _pages_zip(chosen)
     try:
         comp = componentpacks.active_key() or ""
@@ -472,6 +480,37 @@ def ensure_fresh(backup):
         raise TemplateError("De website is veranderd sinds deze backup. Maak eerst een nieuwe backup.")
 
 
+MEDIA_REF = re.compile(r"__MEDIA__/([^\"'\s)<>\\]+)")
+
+
+def referenced_files(site):
+    """The files of the storage that the pages, layouts and texts of a site point to as __MEDIA__/<path> (the pictures of an imported design, the photos of a design): they must go in the template too."""
+    blob = json.dumps(site, ensure_ascii=False)
+    out = []
+    for p in MEDIA_REF.findall(blob):
+        p = p.replace("&amp;", "&")
+        if p and ".." not in p.split("/") and not p.startswith("/") and len(p) < 300 and p not in out:
+            out.append(p)
+    return sorted(out)
+
+
+def restore_template_files(zf):
+    """The files of the template (files/<path>) back in the storage under their own name. Returns the number."""
+    from django.core.files.base import ContentFile
+    from django.core.files.storage import default_storage
+
+    n = 0
+    for name in zf.namelist():
+        if not name.startswith("files/") or name.endswith("/") or ".." in name.split("/"):
+            continue
+        key = name[len("files/"):]
+        if default_storage.exists(key):
+            default_storage.delete(key)
+        default_storage.save(key, ContentFile(zf.read(name)))
+        n += 1
+    return n
+
+
 def backup_pages(backup):
     """The own pages in a backup (for the example pictures): [{key, title, path}]."""
     from apps.backups import service as bs
@@ -524,6 +563,9 @@ def build_from_backup(backup, key, name, description="", author="", version="1.0
         full = json.loads(zf.read("settings.json"))
         site = json.loads(zf.read("site.json"))
         media = {n: zf.read(n) for n in names if n.startswith("media/")}
+        wanted = referenced_files(site)  # the pictures that the pages point to (themes/<design>/img/...): they live in the files of the backup
+        stored = {f"files/{p}": zf.read(f"files/{p}") for p in wanted if f"files/{p}" in names}
+        missing_files = [p for p in wanted if f"files/{p}" not in names]
     secs = {k: v for k, v in (full.get("sections") or {}).items() if k in SYSTEM_SECTIONS}
     for it in ((secs.get("plugins") or {}).get("data") or {}).get("plugins", []):
         it.pop("data", None)  # the data of a plugin is data of people
@@ -551,13 +593,17 @@ def build_from_backup(backup, key, name, description="", author="", version="1.0
         z.writestr("site.json", json.dumps(site, ensure_ascii=False))
         for path, raw in media.items():
             z.writestr(path, raw)
+        for path, raw in stored.items():
+            z.writestr(path, raw)
+        man["files"] = sorted(stored)
+        man["missing_files"] = missing_files  # pictures that the pages point to but that the backup did not have
         z.writestr("template.json", json.dumps(man, indent=2, ensure_ascii=False))
     data = out.getvalue()
     if len(data) > MAX_ZIP:
         raise TemplateError("De template is te groot (meer dan 120 MB).")
     m = read(data)
     _store(data, m)
-    return m
+    return {**m, "files": len(stored), "missing_files": missing_files}
 
 
 def _prune_site(site):
@@ -619,6 +665,9 @@ def apply_system(key, user):
             site_doc = json.loads(zf.read("site.json"))
             with transaction.atomic():
                 notes.append(_prune_site(site_doc))  # first away with the pages and texts of the website as it was: the site becomes what the template says
+                n_files = restore_template_files(zf)  # the pictures that the pages point to
+                if n_files:
+                    notes.append(f"{n_files} afbeelding(en) en bestanden van de pagina's teruggezet.")
                 notes.append(bs._restore_site(zf))
         except Exception as e:  # noqa: BLE001
             notes.append(f"De pagina's konden niet worden teruggezet: {e}")

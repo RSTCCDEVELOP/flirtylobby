@@ -108,6 +108,8 @@ export default function BackupTemplate({ backup, onClose }) {
         {made ? (
           <div className="stack-sm" style={{ gap: ".7rem" }}>
             <div className="alert ok" role="status">{tx("De template {0} is opgeslagen in resource/templates. Je vindt hem bij Admin → Website → Templates, met de voorbeelden.", made.name)}</div>
+            <small className="muted">{made.files} {tx("afbeeldingen en bestanden van de pagina's zitten in de template.")}</small>
+            {made.missing_files?.length > 0 && <div className="alert" role="alert">{made.missing_files.length} {tx("afbeeldingen waar de pagina's naar verwijzen zaten niet in de backup en ontbreken dus in de template")}: {made.missing_files.slice(0, 4).join(", ")}{made.missing_files.length > 4 ? "…" : ""}</div>}
             <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" className="btn primary" onClick={onClose}>{tx("Sluiten")}</button></div>
           </div>
         ) : (<>

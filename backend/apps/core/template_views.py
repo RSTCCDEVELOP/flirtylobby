@@ -74,7 +74,7 @@ def templates(request):
                 return _bad("Deze backup bestaat niet.", status.HTTP_404_NOT_FOUND)
             shots = [(f.name, f.read()) for f in request.FILES.getlist("previews")[:12]]
             m = tp.build_from_backup(b, key, request.data.get("name"), request.data.get("description"), request.data.get("author"), request.data.get("version") or "1.0.0", shots)
-            return Response({"templates": tp.listing(), "manage": True, "can_use": True, "made": {"key": m["key"], "name": m["name"], "version": m["version"]}}, status=status.HTTP_201_CREATED)
+            return Response({"templates": tp.listing(), "manage": True, "can_use": True, "made": {"key": m["key"], "name": m["name"], "version": m["version"], "files": m.get("files", 0), "missing_files": m.get("missing_files", [])}}, status=status.HTTP_201_CREATED)
         if action == "suggest":  # the AI fills in the details of the new template
             if not request.user.is_staff:
                 return _bad("Alleen een superadmin kan templates maken.", status.HTTP_403_FORBIDDEN)

@@ -123,3 +123,29 @@ def test_the_templates_module_is_always_on(settings):
     ModuleState.objects.update_or_create(key="templates", defaults={"enabled": False})
     modules.invalidate()
     assert modules.enabled("templates") is True  # (what is stored does not matter: the base stays on)
+
+
+@pytest.mark.django_db
+def test_the_pictures_of_the_pages_go_in_the_template_and_come_back(setup, monkeypatch, tmp_path):
+    """The pictures that a design points to (__MEDIA__/themes/<design>/img/...) are files of the storage: they must be in the template (files/...) and be put back."""
+    from django.core.files.base import ContentFile
+    from django.core.files.storage import default_storage
+
+    from apps.backups import service
+    from apps.pages.models import PageLayout
+
+    c, boss, _b, tp = setup
+    monkeypatch.setattr(tp, "library_dir", lambda: tmp_path / "lib")
+    default_storage.save("themes/demo-design/img/hero.jpg", ContentFile(b"\xff\xd8\xff" + b"1" * 60))
+    PageLayout.objects.update_or_create(key="home", defaults={"data": {"rows": [{"cells": [{"items": [{"type": "widget", "widget": "code", "data": {"html": '<img src="__MEDIA__/themes/demo-design/img/hero.jpg">'}}]}]}]}})
+    b = service.create("manual", boss, "Demo")  # (a backup made after the picture exists)
+    f = io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 40); f.name = "home.png"
+    r = c.post("/api/templates/", {"action": "create_from_backup", "backup": b.id, "key": "met-beeld", "name": "Met beeld", "version": "1.0.0", "demo_only": "true", "previews": f}, format="multipart")
+    assert r.status_code == 201, r.content
+    assert r.json()["made"]["files"] >= 1 and r.json()["made"]["missing_files"] == []
+    z = zipfile.ZipFile(tmp_path / "lib" / "met-beeld-1.0.0.zip")
+    assert "files/themes/demo-design/img/hero.jpg" in z.namelist()
+    default_storage.delete("themes/demo-design/img/hero.jpg")
+    assert not default_storage.exists("themes/demo-design/img/hero.jpg")
+    assert tp.restore_template_files(z) >= 1 and default_storage.exists("themes/demo-design/img/hero.jpg")
+    default_storage.delete("themes/demo-design/img/hero.jpg")

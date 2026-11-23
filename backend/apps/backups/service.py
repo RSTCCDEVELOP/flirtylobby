@@ -45,7 +45,7 @@ VERSION = 1
 SKIP_SECTIONS = {"pages", "content", "media_files"}  # replaced by site.json and media/ (they know what is standard)
 MAX_MEDIA_TOTAL = 1024 * 1024 * 1024
 MAX_MEDIA_FILE = 200 * 1024 * 1024
-PAGE_FIELDS = ("key", "kind", "title", "url", "module", "enabled", "in_menu", "new_tab", "audience", "devices", "cta", "label_link", "slugs", "scope", "access", "order", "source")
+PAGE_FIELDS = ("key", "kind", "title", "url", "module", "enabled", "in_menu", "new_tab", "audience", "devices", "cta", "label_link", "slugs", "scope", "access", "setup", "design", "order", "source")  # (setup: header and footer of this page only; design: the html of a page that was taken over 1 to 1)
 
 
 class BackupError(ValueError):
