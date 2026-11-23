@@ -64,7 +64,7 @@ function ChooseWizard({ onPick, onStart, onInstalled, onHelp }) {
         <div className="stack-sm" style={{ gap: ".8rem" }}>
 
           <TemplateGallery onInstalled={onInstalled} onDetail={() => {}} subtitle={way.text} onHelp={onHelp} />
-          <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap", paddingTop: ".4rem", borderTop: "1px solid var(--line, rgba(0,0,0,.1))" }}>
+          <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap", padding: ".6rem 0 .1rem", borderTop: "1px solid var(--line, rgba(0,0,0,.1))", position: "sticky", bottom: -4, background: "var(--card, #fff)", zIndex: 3 }}>
             <button type="button" className="btn" onClick={() => setPath(path.slice(0, -1))}>{tx("Vorige vraag")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Opnieuw beginnen")}</button>
             <span style={{ flex: 1 }} />
@@ -96,7 +96,7 @@ export default function StartPlanPopup({ onClose, onPick, onStart, onInstalled }
     <div className="pb-objback" style={{ zIndex: 1300 }} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pb-objpop" role="dialog" aria-label={tx("Wizard")} style={{ width: "min(1040px, 94vw)", maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div className="pb-objhead"><strong>{tx("Wizard: een goede start voor je website")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
-        <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
+        <div style={{ padding: ".9rem 1.2rem 1rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".7rem" }}>
           <ChooseWizard onPick={onPick} onStart={onStart} onInstalled={onInstalled} onHelp={() => setHelp(true)} />
         </div>
       </div>

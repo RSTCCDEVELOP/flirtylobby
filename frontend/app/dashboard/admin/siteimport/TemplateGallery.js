@@ -27,7 +27,7 @@ function Card({ t, onOpen }) {
   return (
     <button type="button" onClick={onOpen} aria-label={t.name} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onFocus={() => setHov(true)} onBlur={() => setHov(false)}
       style={{ textAlign: "left", display: "grid", gridTemplateRows: "auto 1fr", padding: 0, border: "1px solid var(--line, rgba(0,0,0,.12))", borderRadius: 16, overflow: "hidden", background: "var(--card, #fff)", cursor: "pointer", font: "inherit", color: "var(--text)", transition: "transform .18s, box-shadow .18s, border-color .18s", transform: hov ? "translateY(-4px)" : "none", boxShadow: hov ? "0 16px 36px rgba(0,0,0,.18)" : "0 2px 8px rgba(0,0,0,.06)", borderColor: hov ? "var(--eco-green, #2f7d5b)" : undefined }}>
-      <span style={{ position: "relative", display: "block", aspectRatio: "16 / 10", background: tint(18), overflow: "hidden", borderBottom: "1px solid var(--line, rgba(0,0,0,.08))" }}>
+      <span style={{ position: "relative", display: "block", height: "clamp(130px, 25vh, 250px)", background: tint(18), overflow: "hidden", borderBottom: "1px solid var(--line, rgba(0,0,0,.08))" }}>
         {t.previews > 0 ? <img src={img(t, 0)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block", transition: "transform .5s", transform: hov ? "scale(1.05)" : "none" }} /> : null}
         <span style={{ position: "absolute", left: 10, top: 10, display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
           {t.system && <Badge solid>{tx("Volledig systeem")}</Badge>}
@@ -35,10 +35,10 @@ function Card({ t, onOpen }) {
         </span>
         <span aria-hidden="true" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "end center", paddingBottom: 14, background: "linear-gradient(to top, rgba(0,0,0,.45), transparent 45%)", opacity: hov ? 1 : 0, transition: "opacity .2s" }}><span style={{ color: "#fff", fontWeight: 600, fontSize: ".9rem", letterSpacing: ".02em" }}>{tx("Bekijken en installeren")} ›</span></span>
       </span>
-      <span style={{ display: "grid", gap: ".35rem", padding: ".9rem 1rem 1rem", alignContent: "start" }}>
+      <span style={{ display: "grid", gap: ".25rem", padding: ".7rem .9rem .8rem", alignContent: "start" }}>
         <strong style={{ fontSize: "1.05rem", lineHeight: 1.25 }}>{t.name}</strong>
         <small className="muted" style={{ letterSpacing: ".01em" }}>v{t.version}{t.author ? ` · ${t.author}` : ""}{t.applied_version && !t.update ? ` · ${tx("In gebruik")}` : ""}</small>
-        <small className="muted" style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.5 }}>{plain(t.description)}</small>
+        <small className="muted" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.45 }}>{plain(t.description)}</small>
         <span style={{ display: "flex", gap: ".3rem", flexWrap: "wrap", marginTop: ".2rem" }}>
           {t.has_theme && <Badge>{tx("Eigen thema")}</Badge>}
           {t.components && <Badge>{tx("Componentenset")}</Badge>}
@@ -86,7 +86,7 @@ function Detail({ t, can, manage, onBack, onInstalled }) {  // eslint-disable-li
       <div><button type="button" className="btn sm" onClick={onBack}>‹ {tx("Alle templates")}</button></div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.3rem", alignItems: "start" }}>
         <div style={{ display: "grid", gap: ".6rem", minWidth: 0, position: "sticky", top: 0 }}>
-          <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: tint(18), aspectRatio: "16 / 10", boxShadow: "0 8px 26px rgba(0,0,0,.15)" }}>
+          <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: tint(18), height: "clamp(200px, 44vh, 400px)", boxShadow: "0 8px 26px rgba(0,0,0,.15)" }}>
             {t.previews > 0 && <img src={img(t, n)} alt={t.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />}
             {t.previews > 1 && <>
               <button type="button" className="btn sm" aria-label={tx("Vorige")} disabled={n === 0} onClick={() => setN(n - 1)} style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)" }}>‹</button>
@@ -97,7 +97,7 @@ function Detail({ t, can, manage, onBack, onInstalled }) {  // eslint-disable-li
         </div>
         <div style={{ display: "grid", gap: ".7rem", minWidth: 0 }}>
           <div style={{ display: "grid", gap: ".25rem" }}><strong style={{ fontSize: "1.35rem", lineHeight: 1.2 }}>{t.name}</strong><small className="muted">v{t.version}{t.author ? ` · ${t.author}` : ""}{t.size ? ` · ${(t.size / 1048576).toFixed(1)} MB` : ""}{t.previews ? ` · ${t.previews} ${tx("voorbeelden")}` : ""}</small></div>
-          {t.description && <p style={{ margin: 0, padding: ".7rem .9rem", borderRadius: 12, background: tint(10), lineHeight: 1.55, maxHeight: 190, overflowY: "auto" }}>{plain(t.description)}</p>}
+          {t.description && <p style={{ margin: 0, padding: ".7rem .9rem", borderRadius: 12, background: tint(10), lineHeight: 1.5, maxHeight: "18vh", overflowY: "auto" }}>{plain(t.description)}</p>}
           <div style={{ display: "flex", gap: ".3rem", flexWrap: "wrap" }}>
             {t.system && <Badge>{tx("Volledig systeem")}</Badge>}{t.has_theme && <Badge>{tx("Met eigen thema")}</Badge>}{t.components && <Badge>{tx("Met componentenset")}</Badge>}
             {t.update && <Badge warm>{tx("Nieuwe versie beschikbaar")}</Badge>}{t.applied_version && !t.update && <Badge>{tx("In gebruik")}: v{t.applied_version}</Badge>}
@@ -158,16 +158,16 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle, onHel
   const clear = () => { setOn({}); setMaker(""); setQ(""); };
   const chip = (k, label) => <button type="button" key={k} aria-pressed={!!on[k]} onClick={() => setOn((o) => ({ ...o, [k]: !o[k] }))} style={{ padding: ".3rem .8rem", borderRadius: 99, fontSize: ".82rem", fontWeight: 600, cursor: "pointer", font: "inherit", border: `1px solid ${on[k] ? "var(--eco-green, #2f7d5b)" : "var(--line, rgba(0,0,0,.18))"}`, background: on[k] ? "var(--eco-green, #2f7d5b)" : "var(--card, #fff)", color: on[k] ? "#fff" : "var(--text)", transition: "background .15s, border-color .15s" }}>{tx(label)}</button>;
   return (
-    <div style={{ display: "grid", gap: "1rem" }}>
+    <div style={{ display: "grid", gap: ".8rem" }}>
       <div style={{ display: "grid", gridTemplateColumns: onHelp ? "repeat(auto-fit, minmax(300px, 1fr))" : "1fr", gap: "1rem", alignItems: "stretch" }}>
         {onHelp && (
-          <div style={{ display: "grid", gap: ".6rem", alignContent: "center", padding: "1rem 1.1rem", borderRadius: 14, background: tint(14), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
+          <div style={{ display: "grid", gap: ".6rem", alignContent: "center", padding: ".75rem .95rem", borderRadius: 14, background: tint(14), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
             <strong>{tx("Hulp nodig?")}</strong>
-            <span className="muted" style={{ lineHeight: 1.5 }}>{tx("De handleiding met uitleg en video's laat zien hoe je een template kiest, installeert en daarna aanpast.")}</span>
+            <span className="muted" style={{ lineHeight: 1.4, fontSize: ".9rem" }}>{tx("De handleiding met uitleg en video's laat zien hoe je een template kiest, installeert en daarna aanpast.")}</span>
             <div><button type="button" className="btn primary" onClick={onHelp}><span style={{ display: "inline-flex", width: 16, height: 16, marginRight: ".4rem", verticalAlign: "middle" }}><IconHelp /></span>{tx("Help openen")}</button></div>
           </div>
         )}
-        <div role="search" style={{ display: "grid", gap: ".7rem", alignContent: "center", padding: ".9rem 1rem", borderRadius: 14, background: tint(9), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
+        <div role="search" style={{ display: "grid", gap: ".55rem", alignContent: "center", padding: ".75rem .95rem", borderRadius: 14, background: tint(9), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
           <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "center" }}>
             <label style={{ position: "relative", flex: "1 1 200px", minWidth: 0 }}>
               <span aria-hidden="true" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", display: "inline-flex", width: 16, height: 16, opacity: .6 }}><IconSearch /></span>
@@ -179,11 +179,10 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle, onHel
           <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", alignItems: "center" }}>
             <small className="muted" style={{ marginRight: ".2rem" }}>{tx("Filter")}:</small>
             {FILTERS.filter(([k]) => avail[k] || on[k]).map(([k, l]) => chip(k, l))}
-            {active > 0 && <button type="button" className="btn sm" onClick={clear} style={{ marginLeft: "auto" }}>{tx("Filters wissen")}</button>}
+            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: ".5rem" }}><small className="muted" role="status" aria-live="polite">{list.length === d.templates.length ? `${d.templates.length} ${d.templates.length === 1 ? tx("template") : tx("templates")}` : `${list.length} ${tx("van")} ${d.templates.length} ${tx("templates")}`}</small>{active > 0 && <button type="button" className="btn sm" onClick={clear}>{tx("Filters wissen")}</button>}</span>
           </div>
         </div>
       </div>
-      <small className="muted" role="status" aria-live="polite">{list.length === d.templates.length ? `${d.templates.length} ${d.templates.length === 1 ? tx("template") : tx("templates")}` : `${list.length} ${tx("van")} ${d.templates.length} ${tx("templates")}`}</small>
       {!list.length && <div style={{ padding: "1.6rem", textAlign: "center", borderRadius: 14, border: "1px dashed var(--line, rgba(0,0,0,.2))" }}><strong>{d.templates.length ? tx("Geen template gevonden") : tx("Er zijn nog geen templates")}</strong><p className="muted" style={{ margin: ".3rem 0 .6rem" }}>{d.templates.length ? tx("Pas de zoekterm of de filters aan.") : tx("Een superadmin kan er een toevoegen (zip) of zet hem in resource/templates.")}</p>{d.templates.length > 0 && <button type="button" className="btn sm" onClick={clear}>{tx("Filters wissen")}</button>}</div>}
       {list.length > 0 && (() => {
         const per = 2, pages = Math.max(1, Math.ceil(list.length / per)), pg = Math.min(page, pages - 1);
