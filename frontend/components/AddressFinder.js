@@ -44,10 +44,10 @@ export default function AddressFinder({ onPick, disabled = false, label, span = 
         <div className="overlay" style={{ zIndex: 3100 }} role="dialog" aria-modal="true" aria-label={tx("Kies het juiste adres:")} onClick={() => setRes(null)}>
           <div className="card modal" style={{ maxWidth: 560, width: "100%", maxHeight: "86vh", display: "flex", flexDirection: "column", gap: ".8rem", padding: "1.2rem 1.4rem" }} onClick={(e) => e.stopPropagation()}>
             <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{tx("Kies het juiste adres:")}</h2>
-            <div className="e2e-stack" style={{ gap: ".5rem", overflowY: "auto", minHeight: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".85rem", overflowY: "auto", minHeight: 0, padding: ".2rem" }}>
               {res.map((r) => (
                 <button key={r.id} type="button" disabled={disabled} onClick={() => { onPick(r); setPicked(r.naam || r.adres); setRes(null); }}
-                  style={{ textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".7rem", padding: ".7rem .9rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, var(--line, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, var(--card, #fff)))" }}>
+                  style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".7rem", padding: ".8rem 1rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, var(--line, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, var(--card, #fff)))" }}>
                   <span aria-hidden="true" style={{ flex: "none", marginTop: ".15rem", color: "var(--e2e-primary, var(--blue))" }}><IconPin width={16} height={16} /></span>
                   <span style={{ display: "grid", gap: ".15rem", minWidth: 0, flex: 1 }}>
                     {r.naam && <strong>{r.naam}</strong>}
