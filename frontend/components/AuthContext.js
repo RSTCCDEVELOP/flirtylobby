@@ -24,8 +24,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.replace("/login");
+    if (!getToken()) {  // a protected address (/dashboard and everything behind it) without a login: the page "Content niet beschikbaar" (with Inloggen, back to this address)
+      router.replace(`/geen-toegang?next=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname + window.location.search : "/dashboard")}`);
       return;
     }
     // Only a refused login (401) logs the person out. A hiccup of the server (restart, slow answer, network) must not: that made people log in twice. Retry a few times first.

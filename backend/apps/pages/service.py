@@ -23,6 +23,7 @@ SYSTEM = [
     ("register", "/registreren", "registration", False, "guests", {"nl": "Aanmelden", "en": "Sign up", "de": "Registrieren", "fr": "S’inscrire", "es": "Registrarse", "pt": "Registar", "zh": "注册", "ar": "إنشاء حساب"}),
     ("login", "/login", "", False, "guests", {"nl": "Inloggen", "en": "Log in", "de": "Anmelden", "fr": "Connexion", "es": "Iniciar sesión", "pt": "Entrar", "zh": "登录", "ar": "تسجيل الدخول"}),
     ("notfound", "/404", "", False, "all", {"nl": "Pagina niet gevonden (404)", "en": "Page not found (404)", "de": "Seite nicht gefunden (404)", "fr": "Page introuvable (404)", "es": "Página no encontrada (404)", "pt": "Página não encontrada (404)", "zh": "页面未找到 (404)", "ar": "الصفحة غير موجودة (404)"}),
+    ("forbidden", "/geen-toegang", "", False, "all", {"nl": "Content niet beschikbaar", "en": "Content not available", "de": "Inhalt nicht verfügbar", "fr": "Contenu non disponible", "es": "Contenido no disponible", "pt": "Conteúdo não disponível", "zh": "内容不可用", "ar": "المحتوى غير متاح"}),
     ("privacy", "/privacy", "privacy_pages", False, "all", {"nl": "Privacybeleid", "en": "Privacy policy", "de": "Datenschutz", "fr": "Confidentialité", "es": "Privacidad", "pt": "Privacidade", "zh": "隐私政策", "ar": "سياسة الخصوصية"}),
     ("cookies", "/cookies", "privacy_pages", False, "all", {"nl": "Cookiebeleid", "en": "Cookie policy", "de": "Cookie-Richtlinie", "fr": "Politique de cookies", "es": "Política de cookies", "pt": "Política de cookies", "zh": "Cookie 政策", "ar": "سياسة ملفات الارتباط"}),
 ]
@@ -36,9 +37,9 @@ def lang_codes():
     except Exception:  # noqa: BLE001 (before the first migration)
         codes = []
     return tuple(codes) or BASE_LANGS
-ALWAYS_ON = {"home", "login", "notfound"}  # cannot be switched off
+ALWAYS_ON = {"home", "login", "notfound", "forbidden"}  # cannot be switched off
 # pages whose texts can be edited in edit mode (own pages always can)
-EDITABLE = {"home", "login", "notfound"}
+EDITABLE = {"home", "login", "notfound", "forbidden"}
 
 
 def ensure_defaults():

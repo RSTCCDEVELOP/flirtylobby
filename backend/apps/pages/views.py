@@ -153,8 +153,10 @@ def by_url(request):
     """Public: the standard page (content page with an address of its own, like /community) at ?path=; 404 when there is none or its module is off."""
     path = "/" + str(request.query_params.get("path") or "").strip("/")
     p = next((x for x in Page.objects.filter(scope="public", kind__in=("content", "system", "link", "menu")) if path in x.all_paths()), None)  # the address in any language leads to the page
-    if not p or not modules.enabled("pages") or not service.available(p) or not service.can_see(request.user, p):
+    if not p or not modules.enabled("pages") or not service.available(p):
         return Response(status=status.HTTP_404_NOT_FOUND)
+    if (p.audience == "members" and not request.user.is_authenticated) or not service.can_see(request.user, p):  # the page is there but not for this person (members only, or guests only): the page "Content niet beschikbaar" instead of a 404
+        return Response({"forbidden": True}, status=status.HTTP_403_FORBIDDEN)
     return Response({"key": p.key, "kind": p.kind, "canonical": p.path, "title": p.title})
 
 

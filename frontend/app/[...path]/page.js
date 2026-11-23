@@ -6,6 +6,7 @@
 // website https://rstcc.net
 
 import { notFound } from "next/navigation";
+import ForbiddenView from "../../components/ForbiddenView";
 import { EditableText } from "../../components/EditMode";
 import PageBlocks from "../../components/PageBlocks";
 import { PageRouteProvider } from "../../components/PageRoute";
@@ -35,6 +36,7 @@ async function find(path) {
 async function findStandard(path) {
   try {
     const res = await fetch(`${API()}/api/pages/by-url/?path=${encodeURIComponent("/" + path.join("/"))}`, { cache: "no-store" });
+    if (res.status === 403) return { forbidden: true };  // the page is there, not for this person
     return res.ok ? await res.json() : null;
   } catch {
     return null;
@@ -78,6 +80,7 @@ export default async function PluginSitePage({ params, searchParams }) {
     );
   }
   const sp = await findStandard(path);
+  if (sp?.forbidden) return <ForbiddenView />;
   const own = sp ? await getOwnPage(sp.key) : null;
   if (!sp || !own) notFound();
   const slug = sp.key;

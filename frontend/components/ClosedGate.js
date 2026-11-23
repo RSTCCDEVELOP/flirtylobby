@@ -13,7 +13,7 @@ import { useSession } from "./Session";
 
 // A closed website (an intranet, Beveiliging -> Algemeen): without logging in only the login screens are open; everything else leads to the login page.
 // The server answers nothing else either (ClosedSiteMiddleware), this only takes the visitor to the right place and keeps the page covered meanwhile.
-const OPEN = ["/login", "/uitnodiging", "/geo-blocked", "/404", "/sandbox"];
+const OPEN = ["/login", "/uitnodiging", "/geo-blocked", "/404", "/geen-toegang", "/sandbox"];
 
 export default function ClosedGate({ closed }) {
   const { user, ready } = useSession();
