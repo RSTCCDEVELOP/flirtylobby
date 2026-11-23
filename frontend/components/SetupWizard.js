@@ -780,14 +780,14 @@ export default function SetupWizard() {
                                 ))}
                               </div></div>
                             )}
-                            <button type="button" className="e2e-btn e2e-btn--outline" style={{ height: 42, margin: 0 }} disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
+                            <button type="button" className="e2e-btn e2e-btn--outline" style={{ height: 42, margin: 0 }} disabled={consent.busy || (!canMail && !canSms) || (!termsRead && !upd)} title={!termsRead && !upd ? tx("Scroll eerst naar het einde van de voorwaarden.") : undefined} onClick={sendCode}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
                           </div>
                         </div>
                         <span className="e2e-hint">{consent.sent ? tx("De code is verstuurd. Die is 10 minuten geldig.") : `${tx("De code gaat naar")} ${method === "email" ? form.contact_email : form.mobile}`}{consent.shown ? ` · ${tx("Code")}: ${consent.shown}` : ""}</span>
                       </div>
-                      <div className="e2e-field" style={{ alignItems: "flex-start" }}>
+                      <div className="e2e-field" aria-disabled={!termsRead && !upd ? "true" : undefined} style={{ alignItems: "flex-start", ...(!termsRead && !upd ? { opacity: .45, pointerEvents: "none" } : {}) }}>
                         <label className="e2e-label" htmlFor="sw-consent_code"><span>{tx("Code")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
-                        <CodeInput value={form.consent_code || ""} onChange={typeCode} onAt={user?.is_staff ? () => typeCode("@") : undefined} invalid={!!(consent.error || errs.consent_ok)} label={tx("Code")} />
+                        <CodeInput value={form.consent_code || ""} onChange={typeCode} onAt={user?.is_staff && (termsRead || upd) ? () => typeCode("@") : undefined} invalid={!!(consent.error || errs.consent_ok)} label={tx("Code")} />
                         {(consent.error || errs.consent_ok) && <span className="e2e-error">{consent.error || errs.consent_ok}</span>}
                       </div>
                     </div>
