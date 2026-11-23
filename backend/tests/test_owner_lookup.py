@@ -120,3 +120,11 @@ def test_contact_person_is_chosen_from_the_linked_names_and_gets_the_code(site, 
     assert out["contact_first_name"] == "Els" and out["company_name"] == "Shop BV"
     with pytest.raises(ValueError):
         ownerlookup.send(site, "", entity=ent.pk, user_id=99999)
+
+
+def test_a_company_with_this_address_is_found_by_postcode_and_number(site, person):
+    for kw in ({"postal_code": "3511 aa", "house_number": "1"}, {"postal_code": "3511AA", "house_number": ""}, {"street": "hoofdstraat", "house_number": "1", "city": "UTRECHT", "postal_code": ""}):
+        r = ownerlookup.by_address(site, kw.get("street", ""), kw["house_number"], kw["postal_code"], kw.get("city", ""))["results"]
+        assert [x["name"] for x in r] == ["Shop BV"] and set(r[0]) == {"id", "name", "city"}, kw
+    assert ownerlookup.by_address(site, "", "2", "3511AA")["results"] == []  # another house number
+    assert ownerlookup.by_address(site, "", "", "")["results"] == []

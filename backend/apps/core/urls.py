@@ -99,6 +99,7 @@ urlpatterns = [
     path("easy2edit/owner/lookup/", sitemanager_views.owner_lookup),
     path("easy2edit/owner/company/", sitemanager_views.owner_company),
     path("easy2edit/owner/search/", sitemanager_views.owner_search),
+    path("easy2edit/owner/address/", sitemanager_views.owner_address),
     path("easy2edit/owner/contacts/", sitemanager_views.owner_contacts),
     path("easy2edit/owner/send/", sitemanager_views.owner_send),
     path("easy2edit/owner/fetch/", sitemanager_views.owner_fetch),

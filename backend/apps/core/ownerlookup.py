@@ -11,6 +11,7 @@ Three steps, always through the key of an approved website (see sitemanager_view
   1. `lookup`  {email}              -> {exists}                  (nothing else is told); or `company` {name} -> {exists, hint} (hint = the masked e-mail address of the contact of that company)
   2. `send`    {email} or {company} -> {challenge, hint}         (a code goes to that address (the contact person of the company), also when the person uses SMS for the login)
   1b. `search` {q}                  -> {results: [{id, name, city}]}   (part of the name, the address, the postcode or an e-mail address; never an e-mail address back)
+  1b2. `address` {street, house_number, postal_code, city} -> {results: [{id, name, city}]}   (the companies that have this address already)
   1c. `contacts` {entity}           -> {contacts: [{id, name}]}        (the linked persons of that company: names only, to choose the contact person)
   3. `fetch`   {challenge, code}    -> {fields}                  (only after the right code: the data of the person and of the company, in the names of the licence form)
 
@@ -25,7 +26,7 @@ from . import entity, sitemanager
 
 TRIES = 5
 LIFETIME = 600  # seconds: a challenge lives 10 minutes
-NOTHING = {"search": {"results": []}, "contacts": {"contacts": []}}  # what a step answers when the master site cannot be asked
+NOTHING = {"search": {"results": []}, "address": {"results": []}, "contacts": {"contacts": []}}  # what a step answers when the master site cannot be asked
 FORM_COMPANY = {"name": "company_name", "street": "street", "house_number": "house_number", "postal_code": "postal_code", "city": "city", "country": "country", "phone": "phone"}
 
 
@@ -96,6 +97,32 @@ def search(site, q):
     out = []
     for e in found.values():
         if _contact_of(e):
+            out.append({"id": e.pk, "name": e.name or e.legal_name, "city": e.city})
+        if len(out) >= 10:
+            break
+    return {"results": out}
+
+
+def by_address(site, street, house_number, postal_code, city=""):
+    """The companies that have this address (postcode + house number; without a house number street + town) and a person with a login. -> {results: [{id, name, city}]} (no e-mail address)."""
+    from .models import Entity
+
+    def sq(v):
+        return re.sub(r"[^a-z0-9]", "", str(v or "").lower())
+
+    pc, nr, st, ct = sq(postal_code), sq(house_number), sq(street), sq(city)
+    if len(pc) < 6 and not (st and ct):
+        return {"results": []}
+    out = []
+    for e in Entity.objects.order_by("name")[:3000]:
+        places = [{"street": e.street, "house_number": e.house_number, "postal_code": e.postal_code, "city": e.city}, *[x for x in (e.locations or []) if isinstance(x, dict)]]
+        hit = False
+        for a in places:
+            if pc and sq(a.get("postal_code")) == pc and (not nr or sq(a.get("house_number")) == nr):
+                hit = True
+            elif not pc and st and sq(a.get("street")) == st and sq(a.get("city")) == ct and (not nr or sq(a.get("house_number")) == nr):
+                hit = True
+        if hit and _contact_of(e):
             out.append({"id": e.pk, "name": e.name or e.legal_name, "city": e.city})
         if len(out) >= 10:
             break
@@ -206,14 +233,14 @@ def fetch(site, challenge, code):
 def ask(step, body):
     """Call the master site for one step. Raises ValueError (message) when it is not possible. On the master site itself there is nothing to ask: lookup says no."""
     if sitemanager.server_enabled():
-        if step in ("lookup", "company", "search", "contacts"):
+        if step in ("lookup", "company", "search", "address", "contacts"):
             return NOTHING.get(step, {"exists": False})
         raise ValueError("Dit is de easy2edit server zelf.")
     state = sitemanager._state()
     key = state.get("token") or ""
     api = (sitemanager.global_settings.get().get("api_url") or "").rstrip("/")
     if not key or not api:
-        if step in ("lookup", "company", "search", "contacts"):
+        if step in ("lookup", "company", "search", "address", "contacts"):
             return NOTHING.get(step, {"exists": False})  # not linked: nothing to download from
         raise ValueError("Deze website is niet gekoppeld aan easy2edit.")
     import json
@@ -226,10 +253,10 @@ def ask(step, body):
             detail = json.loads(e.read(20_000).decode("utf-8", "ignore")).get("detail")
         except Exception:  # noqa: BLE001
             detail = ""
-        if step in ("lookup", "company", "search", "contacts"):
+        if step in ("lookup", "company", "search", "address", "contacts"):
             return NOTHING.get(step, {"exists": False})
         raise ValueError(str(detail or "De easy2edit server geeft geen antwoord.")[:200]) from e
     except Exception as e:  # noqa: BLE001 - a master that cannot be reached never blocks the licence form
-        if step in ("lookup", "company", "search", "contacts"):
+        if step in ("lookup", "company", "search", "address", "contacts"):
             return NOTHING.get(step, {"exists": False})
         raise ValueError("De easy2edit server is niet bereikbaar.") from e

@@ -309,9 +309,18 @@ export default function SetupWizard() {
     const q = String(finder.q || "").trim();
     if (q.length < 3) return;
     setOwner({ source: "entity", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
-    setFinder((f) => ({ ...f, busy: true, results: null, entity: null, contacts: null, error: "" }));
+    setFinder((f) => ({ ...f, busy: true, results: null, entity: null, contacts: null, fromAddress: false, error: "" }));
     try { const r = await api("/system/setup/owner/search/", { method: "POST", body: { q } }); setFinder((f) => ({ ...f, busy: false, results: r.results || [] })); }
     catch (e) { setFinder((f) => ({ ...f, busy: false, results: [], error: errorText(e) })); }
+  };
+  const lookupAddress = async (r) => {  // the chosen address: does a company of the easy2edit server have it already? Then the contact person can be chosen from the linked names
+    if (d?.license_server?.mode !== "linked") return;
+    setOwner({ source: "entity", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
+    setFinder((f) => ({ ...f, results: null, entity: null, contacts: null, fromAddress: false, error: "" }));
+    try {
+      const x = await api("/system/setup/owner/address/", { method: "POST", body: { street: r.street || "", house_number: r.house_number || "", postal_code: r.postal_code || "", city: r.city || "" } });
+      if ((x.results || []).length) setFinder((f) => ({ ...f, results: x.results, fromAddress: true }));
+    } catch { /* the form never waits for this */ }
   };
   const pickCompany = async (c) => {  // a company of the results: who is the contact person? (the names that are linked to it)
     setOwner({ source: "entity", checked: "", status: "", challenge: "", hint: "", code: "", busy: false, error: "" });
@@ -361,6 +370,32 @@ export default function SetupWizard() {
       {owner.status === "done" && <span className="e2e-hint"><IconCheck width={14} height={14} style={{ verticalAlign: "-2px", marginRight: ".3rem" }} />{tx("De gegevens zijn ingevuld. Controleer ze en pas ze zo nodig aan.")}</span>}
     </div>
   ) : null;
+  const foundBlock = (finder.results || owner.source === "entity") && (finder.results || owner.status) && (
+                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem", padding: ".7rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))" }}>
+                    {finder.fromAddress && finder.results?.length > 0 && <span className="e2e-hint"><strong>{tx("Dit adres staat al bij easy2edit.")}</strong> {tx("Is dit jouw bedrijf? Kies het bedrijf en daarna de contactpersoon, dan vullen we de gegevens in.")}</span>}
+                    {finder.results && <>
+                      {finder.error && <span className="e2e-error">{finder.error}</span>}
+                      {!finder.results.length && !finder.error && <span className="e2e-hint">{tx("Geen bedrijf gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
+                      {finder.results.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
+                          <span className="e2e-hint">{tx("Kies je bedrijf:")}</span>
+                          {finder.results.map((c) => {
+                            const on = finder.entity?.id === c.id;
+                            return <button key={c.id} type="button" onClick={() => pickCompany(c)} aria-pressed={on} style={{ ...CHIP, border: `1px solid ${on ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: on ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{c.name}</strong>{c.city && <span className="e2e-hint">{c.city}</span>}</button>;
+                          })}
+                        </div>
+                      )}
+                      {finder.entity && finder.contacts && (
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
+                          <span className="e2e-hint">{tx("Wie ben jij? Kies de contactpersoon van {0}", finder.entity.name)}</span>
+                          {!finder.contacts.length && <span className="e2e-hint">{tx("Er zijn geen personen aan dit bedrijf gekoppeld.")}</span>}
+                          {finder.contacts.map((u) => <button key={u.id} type="button" disabled={owner.busy} onClick={() => pickContact(finder.entity, u)} aria-pressed={owner.user === u.id && owner.source === "entity"} style={{ ...CHIP, border: `1px solid ${owner.user === u.id && owner.source === "entity" ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: owner.user === u.id && owner.source === "entity" ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{u.name}</strong></button>)}
+                        </div>
+                      )}
+                    </>}
+                    {owner.source === "entity" && ownerBox}
+                  </div>
+                );
   const go = (s) => { const i = steps.findIndex((x) => x[0] === s); if (i <= stepIdx || steps.slice(0, i).every((x) => stepDone(x[0]))) { if (i > stepIdx) fill(s); setStep(s); } };
   return createPortal(
     <div className="overlay" role="dialog" aria-modal="true" aria-label={tx("Licentiegegevens")}>
@@ -437,31 +472,7 @@ export default function SetupWizard() {
                     </div>
                   </div>
                 ) : <span />}
-                {(finder.results || owner.source === "entity") && (finder.results || owner.status) && (
-                  <div className="e2e-stack" style={{ gridColumn: "1 / -1", gap: ".6rem", padding: ".7rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))" }}>
-                    {finder.results && <>
-                      {finder.error && <span className="e2e-error">{finder.error}</span>}
-                      {!finder.results.length && !finder.error && <span className="e2e-hint">{tx("Geen bedrijf gevonden bij easy2edit. Vul de gegevens zelf in.")}</span>}
-                      {finder.results.length > 0 && (
-                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
-                          <span className="e2e-hint">{tx("Kies je bedrijf:")}</span>
-                          {finder.results.map((c) => {
-                            const on = finder.entity?.id === c.id;
-                            return <button key={c.id} type="button" onClick={() => pickCompany(c)} aria-pressed={on} style={{ ...CHIP, border: `1px solid ${on ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: on ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{c.name}</strong>{c.city && <span className="e2e-hint">{c.city}</span>}</button>;
-                          })}
-                        </div>
-                      )}
-                      {finder.entity && finder.contacts && (
-                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
-                          <span className="e2e-hint">{tx("Wie ben jij? Kies de contactpersoon van {0}", finder.entity.name)}</span>
-                          {!finder.contacts.length && <span className="e2e-hint">{tx("Er zijn geen personen aan dit bedrijf gekoppeld.")}</span>}
-                          {finder.contacts.map((u) => <button key={u.id} type="button" disabled={owner.busy} onClick={() => pickContact(finder.entity, u)} aria-pressed={owner.user === u.id && owner.source === "entity"} style={{ ...CHIP, border: `1px solid ${owner.user === u.id && owner.source === "entity" ? "var(--e2e-primary, var(--blue))" : "var(--e2e-border, #e5e0d8)"}`, background: owner.user === u.id && owner.source === "entity" ? "color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-bg, #fff))" : "var(--e2e-bg, #fff)" }}><strong>{u.name}</strong></button>)}
-                        </div>
-                      )}
-                    </>}
-                    {owner.source === "entity" && ownerBox}
-                  </div>
-                )}
+                {foundBlock}
               </>}
               {step === "address" && <>
                 <div className="e2e-field">
@@ -469,7 +480,8 @@ export default function SetupWizard() {
                   <input id="sw-company_name_ro" className="e2e-input" value={form.company_name || ""} readOnly aria-readonly="true" tabIndex={-1} style={{ opacity: .8, cursor: "default", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, #fff))" }} />
                   <span className="e2e-hint">{tx("De bedrijfsnaam verander je bij Website.")}</span>
                 </div>
-                <AddressFinder span="auto" initial={[form.company_name, form.city].filter(Boolean).join(" ")} onPick={(r) => { setForm((f) => ({ ...f, street: r.street || f.street, house_number: r.house_number || "", postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country: r.country || f.country })); setErrs((x) => ({ ...x, street: "", house_number: "", postal_code: "", city: "", country: "" })); }} />
+                <AddressFinder span="auto" initial={[form.company_name, form.city].filter(Boolean).join(" ")} onPick={(r) => { setForm((f) => ({ ...f, street: r.street || f.street, house_number: r.house_number || "", postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country: r.country || f.country })); setErrs((x) => ({ ...x, street: "", house_number: "", postal_code: "", city: "", country: "" })); lookupAddress(r); }} />
+                {foundBlock}
                 {field("street", tx("Straat"), { autoComplete: "address-line1", span: "1 / -1" })}
                 {field("house_number", tx("Huisnummer"), { maxLength: 12 })}
                 {field("postal_code", tx("Postcode"), { maxLength: 10, autoComplete: "postal-code" })}

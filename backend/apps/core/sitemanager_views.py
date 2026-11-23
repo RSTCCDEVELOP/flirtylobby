@@ -120,6 +120,8 @@ def _owner_step(request, step):
             return Response(ownerlookup.lookup_company(site, str(d.get("name") or "")[:120]))
         if step == "search":
             return Response(ownerlookup.search(site, str(d.get("q") or "")[:80]))
+        if step == "address":
+            return Response(ownerlookup.by_address(site, str(d.get("street") or "")[:120], str(d.get("house_number") or "")[:20], str(d.get("postal_code") or "")[:20], str(d.get("city") or "")[:80]))
         if step == "contacts":
             return Response(ownerlookup.contacts(site, d.get("entity")))
         if step == "send":
@@ -148,6 +150,13 @@ def owner_company(request):
 @permission_classes([AllowAny])
 def owner_search(request):
     return _owner_step(request, "search")
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def owner_address(request):
+    return _owner_step(request, "address")
 
 
 @api_view(["POST"])
