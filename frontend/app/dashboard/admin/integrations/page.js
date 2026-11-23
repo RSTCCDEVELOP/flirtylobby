@@ -32,8 +32,8 @@ const STATUS_TEXT = { ok: "Verbinding OK", fail: "Test mislukt", none: "Nog niet
 
 
 // the groups of the picker ("+ Nieuwe koppeling"): which system belongs where
-const CATS = [["ai", "AI en stem"], ["pay", "Betalen"], ["msg", "E-mail en sms"], ["store", "Opslag"], ["media", "Foto's en video's"], ["login", "Inloggen"], ["green", "Duurzaamheid"], ["other", "Overig"]];
-const CAT_OF = { anthropic: "ai", gemini: "ai", openai: "ai", elevenlabs: "ai", stripe: "pay", mollie: "pay", postmark: "msg", smtp: "msg", bird: "msg", spryng: "msg", seven: "msg", s3: "store", pexels: "media", unsplash: "media", google_login: "login", apple_login: "login", ecologi: "green", custom: "other" };
+const CATS = [["ai", "AI en stem"], ["pay", "Betalen"], ["msg", "E-mail en sms"], ["store", "Opslag"], ["media", "Foto's en video's"], ["login", "Inloggen"], ["green", "Duurzaamheid"], ["biz", "Bedrijfsgegevens"], ["other", "Overig"]];
+const CAT_OF = { anthropic: "ai", gemini: "ai", openai: "ai", elevenlabs: "ai", stripe: "pay", mollie: "pay", postmark: "msg", smtp: "msg", bird: "msg", spryng: "msg", seven: "msg", s3: "store", pexels: "media", unsplash: "media", google_login: "login", apple_login: "login", ecologi: "green", kvk: "biz", custom: "other" };
 
 export default function Integrations() {
   const { user, setUser } = useAuth();

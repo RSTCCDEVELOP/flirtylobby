@@ -628,6 +628,34 @@ def system_setup_owner(request, step):
         return Response({"detail": str(e)}, status=400)
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def system_setup_kvk(request, step):
+    """Licence form: a Dutch company from the KVK Handelsregister (link in Admin -> API keys). step = search ({q} -> {linked, results}) or profile ({kvk} -> {fields}). The key stays on this server."""
+    from django.core.cache import cache
+
+    from apps.accounts.access import can_admin
+    from apps.integrations import kvk
+
+    if not can_admin(request.user):
+        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
+    if step not in ("search", "profile"):
+        return Response({"detail": "Onbekende stap."}, status=404)
+    if not kvk.settings():
+        return Response({"linked": False, "results": []} if step == "search" else {"detail": "De koppeling met de KVK is niet ingesteld."}, status=200 if step == "search" else 400)
+    key = f"kvk:rate:{request.user.pk}"
+    n = (cache.get(key) or 0) + 1
+    cache.set(key, n, 3600)
+    if n > 60:
+        return Response({"detail": "Even rustig: je zoekt te vaak. Probeer het over een uur opnieuw."}, status=429)
+    try:
+        if step == "search":
+            return Response({"linked": True, "results": kvk.search(request.data.get("q"))})
+        return Response(kvk.profile(request.data.get("kvk")))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=400)
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def system_setup_password(request):

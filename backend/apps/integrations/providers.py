@@ -224,6 +224,23 @@ def test_google_login(c):
     return True, "Client-ID ziet er goed uit. Zet bij Google Cloud je websiteadres bij 'Geautoriseerde JavaScript-bronnen'."
 
 
+def test_kvk(c):
+    """KVK Handelsregister: one search (free of charge) with the key in the chosen environment."""
+    from . import kvk
+
+    env = "test" if (c.get("omgeving") or "production") == "test" else "production"
+    key = (c.get("api_key") or "").strip() or (kvk.TEST_KEY if env == "test" else "")
+    if not key:
+        return False, "API-sleutel ontbreekt."
+    try:
+        kvk._get("/v2/zoeken", {"naam": "test", "resultaatPerPagina": "1"}, {"api_key": key, "omgeving": env})
+    except LookupError:
+        pass  # nothing found is an answer too: the key works
+    except ValueError as e:
+        return False, str(e)
+    return True, "Verbinding met de KVK gelukt" + (" (testomgeving)." if env == "test" else ".")
+
+
 def test_apple_login(c):
     cid = (c.get("client_id") or "").strip()
     if not cid or " " in cid or "." not in cid:
@@ -263,6 +280,10 @@ PROVIDERS = {
     "ecologi": {"label": "Ecologi (bomen planten)", "test": test_ecologi, "fields": [
         f("api_key", "API-sleutel (Ecologi → Integrations → API keys)", secret=True),
         f("username", "Ecologi-gebruikersnaam (voor de openbare cijfers van je bomen, optioneel)", required=False)]},
+    "kvk": {"label": "KVK Handelsregister (Nederlandse bedrijven zoeken)", "test": test_kvk, "fields": [
+        f("api_key", "API-sleutel (KVK Developer Portal, developers.kvk.nl; leeg bij de testomgeving)", secret=True, required=False),
+        f("omgeving", "Omgeving", kind="select", default="production",
+          options=[{"value": "production", "label": "Productie (echte bedrijven, het zoeken is gratis, een bedrijfsprofiel kost enkele centen)"}, {"value": "test", "label": "Test (verzonnen bedrijven, gratis)"}], required=False)]},
     "stripe": {"label": "Stripe", "test": test_stripe, "fields": [f("secret_key", "Secret key", secret=True)]},
     "mollie": {"label": "Mollie", "test": test_mollie, "fields": [f("api_key", "API-sleutel (live_ of test_)", secret=True)]},
     "postmark": {"label": "Postmark", "test": test_postmark, "fields": [f("server_token", "Server-token", secret=True), f("from_email", "Afzender (e-mailadres, gevalideerd bij Postmark)", required=False)]},
