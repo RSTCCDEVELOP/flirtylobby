@@ -6,11 +6,10 @@
 # website https://rstcc.net
 
 """Find a business or an address on a text like "RST Coaching Utrecht" or "RST Coaching 3542 DH", WITHOUT a key.
-Google search itself cannot be called from a server (no official way, it blocks programs and its terms forbid it); the official way is the Places API with a key (link "Google adressen", the best result).
-Without that link two free sources are used:
+Google search itself cannot be called from a server (no official way, it blocks programs and its terms forbid it). Two free sources are used:
   - PDOK Locatieserver (the Dutch government, all addresses of the Netherlands, by postcode and house number)  -> the address behind a postcode
   - OpenStreetMap Nominatim (businesses and places by name, usually together with a town)                     -> a business by name (small businesses are often not on the map)
-`search(q)` -> {"source": "google"|"free", "results": [{id, naam, adres, street, house_number, postal_code, city, country, bron}]}. Raises ValueError with a readable message."""
+`search(q)` -> {"source": "free", "results": [{id, naam, adres, street, house_number, postal_code, city, country, bron}]}. Raises ValueError with a readable message."""
 import json
 import re
 import time
@@ -118,13 +117,6 @@ def search(q, limit=5):
     q = re.sub(r"\s+", " ", str(q or "")).strip()[:120]
     if len(q) < 3:
         return {"source": "free", "results": []}
-    from . import googleplaces
-
-    if googleplaces.settings():
-        r = _same_once(googleplaces.search(q, limit))
-        for x in r:
-            x["bron"] = "Google"
-        return {"source": "google", "results": r}
     key = "addrsearch:" + q.lower()
     hit = cache.get(key)
     if hit is None:

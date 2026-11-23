@@ -659,54 +659,23 @@ def system_setup_kvk(request, step):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def system_setup_address(request, step):
-    """Licence form: find a business or an address on a text ("RST Coaching Utrecht", "RST Coaching 3542 DH"). With the link Google adressen (Admin -> API keys) through Google, otherwise through the free sources PDOK and OpenStreetMap.
-    step = search ({q} -> {source, results}) or place ({id} -> {phone, website}, only with the Google link). No key is needed for the search."""
+    """Licence form: find a business or an address on a text ("bol.com Utrecht", "3542 DH 46") with the free sources PDOK and OpenStreetMap. step = search ({q} -> {source, results}). No key is needed."""
     from django.core.cache import cache
 
     from apps.accounts.access import can_admin
-    from apps.integrations import addresssearch, googleplaces
+    from apps.integrations import addresssearch
 
     if not can_admin(request.user):
         return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
-    if step not in ("search", "place"):
+    if step != "search":
         return Response({"detail": "Onbekende stap."}, status=404)
-    if step == "place" and not googleplaces.settings():
-        return Response({"detail": "Telefoon en website zijn alleen bij Google adressen (Admin → API keys) te vinden."}, status=400)
     key = f"gadres:rate:{request.user.pk}"
     n = (cache.get(key) or 0) + 1
     cache.set(key, n, 3600)
     if n > 60:
         return Response({"detail": "Even rustig: je zoekt te vaak. Probeer het over een uur opnieuw."}, status=429)
     try:
-        if step == "search":
-            return Response(addresssearch.search(request.data.get("q")))
-        return Response(googleplaces.place(request.data.get("id")))
-    except ValueError as e:
-        return Response({"detail": str(e)}, status=400)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def address_businesses(request):
-    """Licence form: the businesses that Google knows at the chosen address, with phone number and website. {street, house_number, postal_code, city} -> {linked, results}. Only with the link
-    Google adressen (Admin -> API keys); without it {linked: false, results: []}. For administrators; 60 per hour per user."""
-    from django.core.cache import cache
-
-    from apps.accounts.access import can_admin
-    from apps.integrations import googleplaces
-
-    if not can_admin(request.user):
-        return Response({"detail": "Je hebt hier geen rechten voor."}, status=403)
-    if not googleplaces.settings():
-        return Response({"linked": False, "results": []})
-    key = f"gadres:rate:{request.user.pk}"
-    n = (cache.get(key) or 0) + 1
-    cache.set(key, n, 3600)
-    if n > 60:
-        return Response({"detail": "Even rustig: je zoekt te vaak. Probeer het over een uur opnieuw."}, status=429)
-    d = request.data
-    try:
-        return Response({"linked": True, "results": googleplaces.businesses_at(str(d.get("street") or "")[:120], str(d.get("house_number") or "")[:20], str(d.get("postal_code") or "")[:20], str(d.get("city") or "")[:80])})
+        return Response(addresssearch.search(request.data.get("q")))
     except ValueError as e:
         return Response({"detail": str(e)}, status=400)
 
@@ -714,8 +683,8 @@ def address_businesses(request):
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def address_search(request):
-    """Address search as plain JSON: GET /api/address/search/?q=RST Coaching 3542 DH (or POST {q}) -> {source: google|free, results: [{id, naam, adres, street, house_number, postal_code, city, country, bron}]}.
-    Through Google when the link Google adressen is made (Admin -> API keys), otherwise through the free sources PDOK and OpenStreetMap. For administrators; 60 requests per hour per user."""
+    """Address search as plain JSON: GET /api/address/search/?q=RST Coaching 3542 DH (or POST {q}) -> {source: free, results: [{id, naam, adres, street, house_number, postal_code, city, country, bron}]}.
+    Through the free sources PDOK and OpenStreetMap. For administrators; 60 requests per hour per user."""
     from django.core.cache import cache
 
     from apps.accounts.access import can_admin

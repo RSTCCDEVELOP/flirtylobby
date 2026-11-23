@@ -15,25 +15,13 @@ import { IconPin } from "./Icons";
 
 // Look up an address: "RST Coaching Utrecht", "RST Coaching 3542 DH" or "3542 DH 46". Google (when linked in Admin -> API keys) or the free sources PDOK and OpenStreetMap.
 // The chosen result {naam, street, house_number, postal_code, city, country, adres} goes to onPick; the caller fills its own fields.
-export default function AddressFinder({ onPick, onBusiness, disabled = false, label, span = "1 / -1" }) {
+export default function AddressFinder({ onPick, disabled = false, label, span = "1 / -1" }) {
   const [q, setQ] = useState("");  // always starts empty: never filled with the name of the company
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState(null);
   const [src, setSrc] = useState("");
   const [err, setErr] = useState("");
   const [picked, setPicked] = useState("");
-  const [biz, setBiz] = useState(null);  // the businesses at the chosen address (Google, with phone and website)
-  const [bizBusy, setBizBusy] = useState(false);
-  const [note, setNote] = useState("");
-  const findBusinesses = async (r) => {  // an address was chosen: which businesses does Google know there? (phone number and website too)
-    if (!onBusiness || !r.street) return;
-    setBizBusy(true); setNote("");
-    try {
-      const x = await api("/system/setup/address-businesses/", { method: "POST", body: { street: r.street, house_number: r.house_number || "", postal_code: r.postal_code || "", city: r.city || "" } });
-      if (x.linked && x.results?.length) setBiz(x.results);
-    } catch (e) { setNote(errorText(e)); }
-    setBizBusy(false);
-  };
   const run = async () => {
     const text = q.trim();
     if (text.length < 3 || busy) return;
@@ -58,7 +46,7 @@ export default function AddressFinder({ onPick, onBusiness, disabled = false, la
             <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{tx("Kies het juiste adres:")}</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: ".85rem", overflowY: "auto", minHeight: 0, padding: ".2rem" }}>
               {res.map((r) => (
-                <button key={r.id} type="button" disabled={disabled} onClick={() => { onPick(r); setPicked(r.naam || r.adres); setRes(null); findBusinesses(r); }}
+                <button key={r.id} type="button" disabled={disabled} onClick={() => { onPick(r); setPicked(r.naam || r.adres); setRes(null); }}
                   style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".7rem", padding: ".8rem 1rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, var(--line, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, var(--card, #fff)))" }}>
                   <span aria-hidden="true" style={{ flex: "none", marginTop: ".15rem", color: "var(--e2e-primary, var(--blue))" }}><IconPin width={16} height={16} /></span>
                   <span style={{ display: "grid", gap: ".15rem", minWidth: 0, flex: 1 }}>
@@ -69,27 +57,7 @@ export default function AddressFinder({ onPick, onBusiness, disabled = false, la
                 </button>
               ))}
             </div>
-            {src === "free" && <small className="e2e-hint">{tx("Gratis adresbronnen (PDOK en OpenStreetMap). Met de koppeling Google adressen (Admin → API keys) vind je ook kleine bedrijven.")}</small>}
             <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setRes(null)}>{tx("Sluiten")}</button></div>
-          </div>
-        </div>, document.body)}
-      {bizBusy && <span className="e2e-hint">{tx("Bedrijven op dit adres zoeken…")}</span>}
-      {note && <span className="e2e-hint">{note}</span>}
-      {biz && typeof document !== "undefined" && createPortal(
-        <div className="overlay" style={{ zIndex: 3100 }} role="dialog" aria-modal="true" aria-label={tx("Kies het bedrijf op dit adres:")} onClick={() => setBiz(null)}>
-          <div className="card modal" style={{ maxWidth: 600, width: "100%", maxHeight: "86vh", display: "flex", flexDirection: "column", gap: ".9rem", padding: "1.2rem 1.4rem" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{tx("Kies het bedrijf op dit adres:")}</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: ".85rem", overflowY: "auto", minHeight: 0, padding: ".2rem" }}>
-              {biz.map((b) => (
-                <button key={b.id} type="button" onClick={() => { onBusiness(b); setPicked(b.naam); setBiz(null); }}
-                  style={{ width: "100%", textAlign: "left", display: "flex", flexDirection: "column", gap: ".2rem", padding: ".8rem 1rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, var(--line, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, var(--card, #fff)))" }}>
-                  <strong>{b.naam}</strong>
-                  <span>{[[b.street, b.house_number].filter(Boolean).join(" "), [b.postal_code, b.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</span>
-                  <span style={{ opacity: .8 }}>{[b.phone, b.website && b.website.replace(/^https?:\/\//, "").replace(/\/$/, "")].filter(Boolean).join(" · ") || tx("Geen telefoonnummer bekend")}</span>
-                </button>
-              ))}
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setBiz(null)}>{tx("Geen van deze")}</button></div>
           </div>
         </div>, document.body)}
     </div>

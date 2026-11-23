@@ -241,22 +241,6 @@ def test_kvk(c):
     return True, "Verbinding met de KVK gelukt" + (" (testomgeving)." if env == "test" else ".")
 
 
-def test_google_adres(c):
-    """Google address search: one search that asks for the id only (the cheapest group)."""
-    from . import googleplaces
-
-    key = (c.get("api_key") or "").strip()
-    if not key:
-        return False, "API-sleutel ontbreekt."
-    try:
-        googleplaces._call("POST", "/places:searchText", "places.id", {"textQuery": "Dam 1 Amsterdam", "pageSize": 1, "languageCode": "nl"}, {"api_key": key, "region": "", "language": "nl"})
-    except LookupError:
-        pass
-    except ValueError as e:
-        return False, str(e)
-    return True, "Verbinding met Google adressen gelukt."
-
-
 def test_apple_login(c):
     cid = (c.get("client_id") or "").strip()
     if not cid or " " in cid or "." not in cid:
@@ -300,10 +284,6 @@ PROVIDERS = {
         f("api_key", "API-sleutel (KVK Developer Portal, developers.kvk.nl; leeg bij de testomgeving)", secret=True, required=False),
         f("omgeving", "Omgeving", kind="select", default="production",
           options=[{"value": "production", "label": "Productie (echte bedrijven, het zoeken is gratis, een bedrijfsprofiel kost enkele centen)"}, {"value": "test", "label": "Test (verzonnen bedrijven, gratis)"}], required=False)]},
-    "google_adres": {"label": "Google adressen (optioneel: betere resultaten dan de gratis adresbronnen)", "test": test_google_adres, "fields": [
-        f("api_key", "API-sleutel (Google Cloud → APIs → Places API (New) aanzetten → Inloggegevens)", secret=True),
-        f("region", "Land (twee letters, bijvoorbeeld NL; leeg = overal zoeken)", default="NL", required=False),
-        f("language", "Taal van de resultaten", default="nl", required=False)]},
     "stripe": {"label": "Stripe", "test": test_stripe, "fields": [f("secret_key", "Secret key", secret=True)]},
     "mollie": {"label": "Mollie", "test": test_mollie, "fields": [f("api_key", "API-sleutel (live_ of test_)", secret=True)]},
     "postmark": {"label": "Postmark", "test": test_postmark, "fields": [f("server_token", "Server-token", secret=True), f("from_email", "Afzender (e-mailadres, gevalideerd bij Postmark)", required=False)]},
