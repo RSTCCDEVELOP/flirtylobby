@@ -46,3 +46,53 @@ class SandboxPayment(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
+
+class DemoSettings(models.Model):
+    """Demo mode (singleton, pk=1). NOT part of a backup, so a restore of the demo never changes the demo settings themselves."""
+
+    enabled = models.BooleanField(default=False)
+    backup = models.ForeignKey("backups.Backup", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")  # the backup that is put back at the planned times
+    times = models.JSONField(default=list, blank=True)  # ["03:00", "13:00"]: local time of the website, several per day
+    warn_minutes = models.PositiveSmallIntegerField(default=2)  # how long before a restore the visitors see a message
+    show_on_login = models.BooleanField(default=True)  # the demo users (with password) are shown on the login page
+    last_restore_at = models.DateTimeField(null=True, blank=True)
+    last_status = models.CharField(max_length=10, blank=True)  # ok | failed
+    last_error = models.TextField(blank=True)
+
+
+class DemoUser(models.Model):
+    """A demo user: kept apart from the real users (and out of the backups) so it can be made again after every restore, with the same password and rights."""
+
+    email = models.EmailField(unique=True)
+    first_name = models.CharField(max_length=60, blank=True)
+    last_name = models.CharField(max_length=60, blank=True)
+    password = models.CharField(max_length=128)  # readable on purpose: it is shown on the login page of the demo
+    note = models.CharField(max_length=120, blank=True)  # what this user can do ("Beheerder", "Lid" ...), shown on the login page
+    roles = models.JSONField(default=list, blank=True)  # names of roles
+    groups = models.JSONField(default=list, blank=True)  # names of groups
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+
+class DemoEntity(models.Model):
+    """A demo company (entity): made again after every restore with the same data and the same demo users linked to it. Not part of a backup."""
+
+    name = models.CharField(max_length=120, unique=True)
+    kind = models.CharField(max_length=20, default="bedrijf")
+    legal_name = models.CharField(max_length=160, blank=True)
+    email = models.CharField(max_length=160, blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    website = models.CharField(max_length=200, blank=True)
+    street = models.CharField(max_length=120, blank=True)
+    house_number = models.CharField(max_length=20, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+    city = models.CharField(max_length=80, blank=True)
+    country = models.CharField(max_length=80, blank=True)
+    members = models.JSONField(default=list, blank=True)  # e-mail addresses of demo users that belong to it
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "id"]

@@ -14,7 +14,7 @@ from apps.core.models import License
 
 def test_with_license_adds_the_part_for_old_backups():
     parts = service.with_license([{"key": "data", "label": "x"}, {"key": "site", "label": "y"}])
-    assert [p["key"] for p in parts] == ["data", "license", "site"]
+    assert [p["key"] for p in parts] == ["data", "license", "creator", "site"]
     assert service.with_license(parts) == parts
 
 

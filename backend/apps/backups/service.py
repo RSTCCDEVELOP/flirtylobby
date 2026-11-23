@@ -168,6 +168,7 @@ def collect_site(only=None):
 # ── create ──────────────────────────────────────────────────────────────────
 LICENSE_LABEL = "Licentiegegevens: nummer, opdrachtgever, geldigheid, prijzen en betaalwijze"
 LICENSE_MODELS = {"core.license"}
+CREATOR_LABEL = "Creator-bestanden: ontwerpen met hun html, css en illustraties, de chat, documenten en vertalingen"
 
 
 def with_license(parts):
@@ -177,12 +178,16 @@ def with_license(parts):
     if "data" in keys and "license" not in keys:
         i = next(n for n, p in enumerate(parts) if p.get("key") == "data")
         parts.insert(i + 1, {"key": "license", "label": LICENSE_LABEL})
+    if "data" in keys and "creator" not in {p.get("key") for p in parts}:  # (also a backup from before this part existed: the designs are in its data)
+        i = next(n for n, p in enumerate(parts) if p.get("key") == "license") if any(p.get("key") == "license" for p in parts) else next(n for n, p in enumerate(parts) if p.get("key") == "data")
+        parts.insert(i + 1, {"key": "creator", "label": CREATOR_LABEL})
     return parts
 
 
 def parts_of(bundle_sections, site):
     parts = [{"key": "data", "label": "Alle gegevens van het systeem: gebruikers, rollen en groepen, mediabibliotheek, licentie, instellingen"},
              {"key": "license", "label": LICENSE_LABEL},
+             {"key": "creator", "label": CREATOR_LABEL},
              {"key": "files", "label": "Alle bestanden: afbeeldingen, video's, foto's van gebruikers en logo's"},
              {"key": "site", "label": "Pagina's, menu's, indelingen, teksten en afbeeldingen"}]
     parts += [{"key": f"settings:{k}", "label": v.get("label") or k} for k, v in bundle_sections.items()]
@@ -324,10 +329,10 @@ def _restore_site(zf):
     return f"{n_pages} pagina(s), {len(site.get('layouts') or {})} indeling(en), {n_text} tekst(en) en {len(m)} bestand(en) teruggezet."
 
 
-def restore(b, parts=None, user=None):
+def restore(b, parts=None, user=None, safety=True):
     """Put a backup back (everything, or only the chosen parts). A backup of the current state is made first. Returns [{key, label, ok, message}]."""
     zf, man = _open(path_of(b))
-    safety = create("restore", user, f"Automatisch, vlak voor het terugzetten van {b.file}")
+    safety = create("restore", user, f"Automatisch, vlak voor het terugzetten van {b.file}") if safety else None  # (the demo restores often: it makes no safety backup)
     results = []
     try:
         want = set(parts) if parts else None
@@ -347,6 +352,14 @@ def restore(b, parts=None, user=None):
             except Exception as e:  # noqa: BLE001
                 logger.exception("restore of the licence failed")
                 results.append({"key": "license", "label": "Licentiegegevens", "ok": False, "message": f"Niet teruggezet: {e}"})
+        if want is not None and "creator" in want and "data" not in want:  # only the creator: its designs and its documents
+            try:
+                n_files = full.restore_files(zf, full.creator_prefix()) if any(x.startswith(full.FILES + full.creator_prefix()) for x in names) else 0
+                n = full.load(zf.read("data.json").decode("utf-8"), only=full.CREATOR_MODELS) if "data.json" in names else 0
+                results.append({"key": "creator", "label": "Creator-bestanden", "ok": True, "message": f"{n} rij(en) en {n_files} bestand(en) teruggezet." if (n or n_files) else "Deze backup bevat geen creator-bestanden."})
+            except Exception as e:  # noqa: BLE001
+                logger.exception("restore of the creator files failed")
+                results.append({"key": "creator", "label": "Creator-bestanden", "ok": False, "message": f"Niet teruggezet: {e}"})
         if (want is None or "data" in want) and "data.json" in names:
             try:
                 n = full.load(zf.read("data.json").decode("utf-8"), skip=None if (want is None or "license" in want) else LICENSE_MODELS)

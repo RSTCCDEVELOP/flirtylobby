@@ -8,13 +8,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "../../../components/AuthContext";
 import { tx } from "../../../lib/t";
 
 // Super admin area: superadmins only. Anybody else gets a clear "no access" screen (never the home page or a silent jump somewhere else).
 export default function SuperAdminLayout({ children }) {
   const { user } = useAuth();
-  if (user?.is_staff) return children;
+  const path = usePathname();
+  if (user?.is_staff || (user?.demo_switch && path?.startsWith("/dashboard/superadmin/modules"))) return children;  // (demo mode: a demo account may switch the modules on and off)
   return (
     <div className="card" role="alert" style={{ maxWidth: 560, margin: "3rem auto", display: "grid", gap: ".8rem", textAlign: "center" }}>
       <h1 style={{ margin: 0 }}>{tx("Geen toegang")}</h1>

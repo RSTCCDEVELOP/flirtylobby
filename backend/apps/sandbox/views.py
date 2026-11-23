@@ -36,6 +36,10 @@ def _payment(p):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def public_status(request):
+    from . import demo
+
+    if demo.restoring():  # the database is being put back: only say so
+        return Response({"enabled": True, "banner": True, "epoch": 0, "button": False, "can_toggle": False, "demo": {"enabled": True, "restoring": True}})
     s = service.get()
     on = service.active()
     from apps.core.models import SystemSettings
@@ -47,7 +51,9 @@ def public_status(request):
     u = request.user
     can = bool(modules_on() and getattr(u, "is_authenticated", False) and level(u, "sandbox") >= LEVEL["edit"])  # who may switch it
     # "button": the label stays visible (also when the sandbox is off, as a button to switch it on and off, to test live too) for the people who may switch it, until the setting is turned off
-    return Response({"enabled": on, "banner": on and s["banner"], "epoch": epoch, "button": bool(can and s.get("button", True)), "can_toggle": can})
+    from . import demo
+
+    return Response({"enabled": on, "banner": on and s["banner"], "epoch": epoch, "button": bool(can and s.get("button", True)), "can_toggle": can, "demo": demo.public()})
 
 
 @api_view(["GET", "PUT"])

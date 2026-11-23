@@ -5212,6 +5212,14 @@
    "a": {
     "en": "Open Admin → Users or Admin → Companies, choose a user or company and go to the tab Notes. With New note you write a text and add photos, videos and documents (pdf, Word, Excel and more). With the switch Visible for the user you decide whether the user (or the people of the company) may also read the note under My profile → Notes; if it is off, the note is for internal use only. The files are private: only you and, for a visible note, the user can open them."
    }
+  },
+  "demomodehelp": {
+   "q": {
+    "en": "What is the demo mode?"
+   },
+   "a": {
+    "en": "A superadmin switches the demo mode on under Super admin → Standard and global settings → tab Demo mode. The switch only works when everything is right: a linked backup, at least one time and at least one demo user (Create standard data gives you a user, an admin and two companies). At the planned times (several per day) the backup is put back, including the creator files; visitors see a message. The demo users with their password are shown at the login. No e-mail or sms is sent and codes are filled in for you. Demo users are never a superadmin and may switch modules and plugins on and off; the licence steps stay."
+   }
   }
  }
 }

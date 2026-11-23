@@ -136,6 +136,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
     module_levels = serializers.SerializerMethodField()
+    demo_switch = serializers.SerializerMethodField()  # a demo account in demo mode: may switch modules and plugins on and off
     company = serializers.SerializerMethodField()  # the company of this user: the page variable {{user.bedrijf}}
     idle = serializers.SerializerMethodField()  # how long this person may do nothing before he is asked / logged out (the setting of the website)
 
@@ -147,6 +148,11 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_company(self, obj):
         e = obj.entities.exclude(name="").order_by("is_own", "name").first()  # a company he is linked to; the company of the website when he is linked to nothing else
         return e.name if e else ""
+
+    def get_demo_switch(self, obj):
+        from apps.sandbox import demo
+
+        return demo.may_switch(obj)
 
     def get_module_levels(self, obj):
         from .access import levels
@@ -242,8 +248,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "idle", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"] + PROFILE_FIELDS
-        read_only_fields = ["id", "idle", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "image", "show_public", "verification", "company"]
+        fields = ["id", "idle", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "demo_switch", "image", "show_public", "verification", "company"] + PROFILE_FIELDS
+        read_only_fields = ["id", "idle", "email", "role", "is_staff", "is_superadmin_plus", "twofa", "email_verified", "permissions", "roles", "module_levels", "demo_switch", "image", "show_public", "verification", "company"]
         extra_kwargs = WORD_KWARGS
 
 

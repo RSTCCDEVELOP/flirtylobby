@@ -32,6 +32,7 @@ from .models import Plugin
 logger = logging.getLogger(__name__)
 
 MOD = module_required("plugins")
+from apps.sandbox import demo  # noqa: E402
 bad = lambda msg, code=status.HTTP_400_BAD_REQUEST: Response({"detail": msg}, status=code)  # noqa: E731
 STAFF = Response({"detail": "Alleen superadmins mogen plugins beheren."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -58,7 +59,7 @@ def _out(p):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated, MOD])
 def plugins(request):
-    if not request.user.is_staff:
+    if not (request.user.is_staff or demo.may_switch(request.user)):
         return STAFF
     installer.scan()  # a plugin folder that was put in <plugins>/ shows up by itself
     return Response({"plugins": [_out(p) for p in Plugin.objects.all()], "folder": str(installer.root()), "max_zip_mb": installer.MAX_ZIP_MB, "events": runtime.EVENTS, "system_version": settings.SYSTEM_VERSION, "languages": installer.languages()})
@@ -98,7 +99,7 @@ def scan(request):
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated, MOD])
 def plugin(request, name):
-    if not request.user.is_staff:
+    if not request.user.is_staff and not (demo.may_switch(request.user) and request.method == "PATCH" and set(request.data) <= {"enabled", "with_requires"}):  # (demo accounts: only on and off)
         return STAFF
     p = Plugin.objects.filter(name=name).first()
     if not p and request.method == "PATCH" and request.data.get("enabled"):  # switching on a plugin that is not installed yet: it comes from the library of the product (resource/plugins)

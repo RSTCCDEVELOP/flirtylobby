@@ -7,6 +7,7 @@
 
 "use client";
 
+import DemoLogins from "../../components/DemoLogins";
 import { homeAfterLogin } from "../../lib/levelHome";
 import { tx } from "../../lib/t";
 import Link from "next/link";
@@ -198,6 +199,7 @@ export default function Login() {
         {canRegister && <Link href="/registreren" className="center">{tx("Nog geen account? Aanmelden")}</Link>}
         <Link href="/" className="muted center">{tx("← Terug naar website")}</Link>
       </form>
+      <DemoLogins onPick={(e, pw) => { setEmail(e); setPassword(pw); setError(""); }} />
     </main>
   );
 }

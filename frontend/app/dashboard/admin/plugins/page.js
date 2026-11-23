@@ -77,7 +77,7 @@ export default function PluginsPage() {
   }
 
   const outdated = d?.plugins.filter((p) => ["outdated", "incompatible", "newer"].includes(p.compat)) || [];
-  if (!user?.is_staff) return <p className="muted">{tx("Alleen superadmins beheren plugins.")}</p>;
+  if (!user?.is_staff && !user?.demo_switch) return <p className="muted">{tx("Alleen superadmins beheren plugins.")}</p>;
   if (!d) return msg ? <ModuleOffAlert msg={msg} /> : <Busy />;
 
   return (

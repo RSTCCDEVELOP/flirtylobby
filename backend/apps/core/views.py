@@ -375,7 +375,7 @@ def content_ai_write(request):
 
 
 # ── Modules ─────────────────────────────────────────────────────────────────
-from rest_framework.permissions import IsAdminUser  # noqa: E402
+from rest_framework.permissions import BasePermission, IsAdminUser  # noqa: E402
 
 from .models import ModuleState  # noqa: E402
 
@@ -389,6 +389,17 @@ def modules_public(request):
 
     flags = presets.setup_flags()  # Setup of the standard installation: Users and Entiteit on the dashboard (left menu and tile) or not
     return Response({**modules.states(), **{f"plugin:{n}": on for n, on in Plugin.objects.values_list("name", "enabled")}, "setup_users": flags["users"], "setup_entity": flags["entity"]})  # plugins count as modules for the website
+
+
+class StaffOrDemo(BasePermission):
+    """A superadmin; in demo mode also a demo account (it may switch the modules on and off to try them out)."""
+
+    def has_permission(self, request, view):
+        if request.user and request.user.is_staff:
+            return True
+        from apps.sandbox import demo
+
+        return demo.may_switch(request.user)
 
 
 def _module_payload():
@@ -407,13 +418,13 @@ def _module_payload():
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])  # superadmins only (is_staff)
+@permission_classes([StaffOrDemo])  # superadmins only (is_staff); in demo mode also the demo accounts
 def modules_admin(request):
     return Response(_module_payload())
 
 
 @api_view(["PATCH"])
-@permission_classes([IsAdminUser])
+@permission_classes([StaffOrDemo])
 def module_update(request, key):
     m = modules.BY_KEY.get(key)
     if not m:

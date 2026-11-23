@@ -10,3 +10,17 @@ from django.apps import AppConfig
 
 class SandboxConfig(AppConfig):
     name = "apps.sandbox"
+
+    def ready(self):
+        """The planned restores of the demo mode run on the background controller (one timer for everything)."""
+        import os
+
+        from apps.core import background
+
+        def run():
+            from . import demo
+
+            demo.run_due()
+
+        background.register("demo-restore", run, every=60, first=45, enabled=lambda: os.getenv("BACKUP_SCHEDULER", "1") == "1")
+        background.start()

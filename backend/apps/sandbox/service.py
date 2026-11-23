@@ -34,7 +34,7 @@ class NotConfigured(Exception):
     pass
 
 
-def get():
+def get(raw=False):
     d = copy.deepcopy(DEFAULTS)
     stored = SandboxSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}
     for k, v in stored.items():
@@ -42,11 +42,17 @@ def get():
             d["simulate"].update({a: bool(b) for a, b in v.items() if a in d["simulate"]})
         elif k in d and k != "simulate":
             d[k] = v
+    from . import demo
+
+    if not raw and demo.enabled():  # demo mode: always simulated (no e-mail, no sms, no payments), and the codes are shown on the screen
+        d["enabled"] = True
+        d["code_on_screen"] = True
+        d["simulate"].update({"email": True, "sms": True, "payments": True, "integrations": True})
     return d
 
 
 def save(incoming):
-    cur = get()
+    cur = get(raw=True)
     for k, v in (incoming or {}).items():
         if k == "simulate" and isinstance(v, dict):
             cur["simulate"].update({a: bool(b) for a, b in v.items() if a in cur["simulate"]})
@@ -80,7 +86,9 @@ def save(incoming):
 
 def active(feature=None):
     """True when the sandbox is on (and, with `feature`, that kind of call is simulated)."""
-    if not modules.enabled("sandbox"):
+    from . import demo
+
+    if not (modules.enabled("sandbox") or demo.enabled()):
         return False
     s = get()
     return s["enabled"] and (feature is None or s["simulate"].get(feature, False))

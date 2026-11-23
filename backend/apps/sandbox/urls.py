@@ -7,10 +7,19 @@
 
 from django.urls import path
 
-from . import views
+from . import demo_views, views
 
 urlpatterns = [
     path("sandbox/status/", views.public_status),
+    path("demo/settings/", demo_views.settings),
+    path("demo/backup/", demo_views.make_backup),
+    path("demo/restore/", demo_views.restore_now),
+    path("demo/seed/", demo_views.seed),
+    path("demo/entities/", demo_views.entities),
+    path("demo/entities/<int:pk>/", demo_views.entity),
+    path("demo/users/", demo_views.users),
+    path("demo/users/candidates/", demo_views.candidates),
+    path("demo/users/<int:pk>/", demo_views.user),
     path("sandbox/settings/", views.settings),
     path("sandbox/messages/", views.messages),
     path("sandbox/clear/", views.clear),

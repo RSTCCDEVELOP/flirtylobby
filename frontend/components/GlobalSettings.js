@@ -10,7 +10,8 @@
 import { useEffect, useState } from "react";
 import PhoneInput from "./PhoneInput";
 import Tabs from "./Tabs";
-import { IconBriefcase, IconCheck, IconLock, IconUsers, IconGlobe, IconMail, IconSettings, IconShield, IconSliders, IconX } from "./Icons";
+import DemoTab from "./DemoTab";
+import { IconBriefcase, IconCheck, IconRefresh, IconLock, IconUsers, IconGlobe, IconMail, IconSettings, IconShield, IconSliders, IconX } from "./Icons";
 import KitScope from "../lib/ui-kit/KitScope";
 import SuperTile from "./SuperTile";
 import PlusLock from "./PlusLock";
@@ -30,7 +31,7 @@ const FIELDS = [
 
 const PHASES = [["grace_1", "Fase 1: volledige toegang", "Alles werkt nog; er staat een melding in de site en bij het inloggen."], ["grace_2", "Fase 2: geen pagina-editor", "Pagina's kunnen niet meer worden gewijzigd."], ["grace_3", "Fase 3: geen beheer, alleen de licentie bijwerken", "Beheerders kunnen alleen nog de licentie bijwerken."], ["grace_4", "Fase 4: website offline", "Daarna blijft de website offline tot de licentie is bijgewerkt."]];
 const NOTIFY = [["notify_rstcc", "RST CC", "De eigenaar van easy2edit."], ["notify_reseller", "Reseller", "Leeg: het e-mailadres van de reseller op de licentie zelf."], ["notify_invoicing", "Invoicing", "De administratie die de facturen maakt."], ["notify_support", "Support", "Het supportteam."]];
-const TABS = [["server", "Easy2edit-server", IconGlobe], ["settings", "Instellingen", IconSliders], ["licence", "Licentieregels", IconShield], ["mails", "Licentie-e-mails", IconMail], ["reseller", "Standaard reseller", IconBriefcase], ["twofa", "Twee-staps verificatie", IconLock], ["websites", "Websites", IconUsers]];
+const TABS = [["server", "Easy2edit-server", IconGlobe], ["settings", "Instellingen", IconSliders], ["licence", "Licentieregels", IconShield], ["mails", "Licentie-e-mails", IconMail], ["reseller", "Standaard reseller", IconBriefcase], ["twofa", "Twee-staps verificatie", IconLock], ["websites", "Websites", IconUsers], ["demo", "Demo mode", IconRefresh]];
 
 const rsField = (k, label, form, setForm, wide) => (
   <div key={k} className="e2e-field" style={wide ? { gridColumn: "1 / -1" } : undefined}>
@@ -398,6 +399,7 @@ export default function GlobalSettings() {
                     </div>
                   )}
                   {tab === "websites" && <WebsitesTab setMsg={setMsg} />}
+                  {tab === "demo" && <DemoTab setMsg={setMsg} />}
                   {tab === "twofa" && (
                     <div className="e2e-stack" style={{ gap: "1.6rem" }}>
                       {!sec ? <p className="e2e-hint">{<Loading compact />}</p> : (
@@ -437,7 +439,7 @@ export default function GlobalSettings() {
                   <div className="e2e-row" style={{ gap: ".6rem", flexWrap: "wrap" }}>
                     {tab === "server" && <button type="button" className="e2e-btn e2e-btn--ghost" disabled={!!busy} onClick={back}>{tx("Standaardwaarden terugzetten")}</button>}
                     {tab === "settings" && data.values.source_mode === "easy2edit" && <button type="button" className="e2e-btn e2e-btn--outline" disabled={!!busy} onClick={testSource}>{busy === "test" ? tx("Bezig…") : tx("Verbinding testen")}</button>}
-                    {tab !== "websites" && <button type="button" className="e2e-btn" disabled={!!busy} onClick={() => save(true)}>{busy === "default" ? tx("Bezig…") : tx("Opslaan en als standaard meegeven")}</button>}
+                    {tab !== "websites" && tab !== "demo" && <button type="button" className="e2e-btn" disabled={!!busy} onClick={() => save(true)}>{busy === "default" ? tx("Bezig…") : tx("Opslaan en als standaard meegeven")}</button>}
                   </div>
                 </div>
               </div>

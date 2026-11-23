@@ -21,7 +21,7 @@ from django.core.management import call_command
 from django.db import connection, transaction
 
 logger = logging.getLogger(__name__)
-EXCLUDE = ["contenttypes", "auth.permission", "sessions", "authtoken", "admin.logentry", "backups", "plugins"]
+EXCLUDE = ["contenttypes", "auth.permission", "sessions", "authtoken", "admin.logentry", "backups", "plugins", "sandbox.demosettings", "sandbox.demouser", "sandbox.demoentity"]  # (the demo settings and demo users stay as they are when a backup is put back)
 FILES = "files/"
 
 
@@ -124,13 +124,25 @@ def load(raw, only=None, skip=None):
     return len(rows)
 
 
-def restore_files(zf):
-    """Every file of the backup back in the storage under its old name. Returns the number of files."""
+CREATOR_MODELS = {"core.sitedesignjob", "core.componentrequest"}  # the designs of the creator (files, chat, documents, translations) and its component requests
+
+
+def creator_prefix():
+    """Where the documents of the creator live in the storage (site/designs/...)."""
+    from apps.medialib import areas
+
+    return areas.site_path("designs").rstrip("/") + "/"
+
+
+def restore_files(zf, prefix=None):
+    """Every file of the backup back in the storage under its old name (with prefix: only the files under that folder). Returns the number of files."""
     n = 0
     for name in zf.namelist():
         if not name.startswith(FILES) or name.endswith("/"):
             continue
         key = name[len(FILES):]
+        if prefix and not key.startswith(prefix):
+            continue
         if default_storage.exists(key):
             default_storage.delete(key)
         default_storage.save(key, ContentFile(zf.read(name)))

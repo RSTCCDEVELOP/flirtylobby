@@ -185,7 +185,7 @@ export default function ModulesPage() {
   }
   const missingAll = [...new Map(mods.filter((m) => m.enabled).flatMap((m) => (m.requires || []).filter((r) => !r.enabled)).map((r) => [r.key, r])).values()];
 
-  if (!user.is_staff) return null;
+  if (!user.is_staff && !user.demo_switch) return null;
   const on = mods.filter((m) => m.enabled).length;
 
   return (
