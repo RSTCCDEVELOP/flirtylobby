@@ -1115,6 +1115,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
   };
   const frame = useRef(null);
+  const liveFrame = useRef(null);  // the live page (tab Live): the screenshot button takes the whole page of that one
   const [kit, setKit] = useState(null);  // the component set: the preview draws the components like the website does
   useEffect(() => { loadKit(job?.brief?.component_set || "").then(setKit).catch(() => setKit(null)); }, [job?.brief?.component_set]);
   const [shots, setShots] = useState([]);  // screenshots of the preview that go along with the next message to the designer
@@ -1122,7 +1123,8 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const shoot = async () => {
     setShooting(true); setErr("");
     try {
-      const d = await captureFrame(frame.current, 1400, { full: true });  // the whole page, with its pictures
+      const live = view === "live" && !!job?.applied && !!liveFrame.current;  // tab Live: the page as it is on the website (its css is in files)
+      const d = await captureFrame(live ? liveFrame.current : frame.current, 1400, { full: true, ...(live ? { styles: true } : {}) });  // the whole page, with its pictures
       setShooting(false);
       const full = shots.length >= 3;
       const what = await confirmDialog(tx("Wat wil je met deze screenshot doen?"), {
@@ -1408,7 +1410,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 {ready && view === "live" && job.applied ? (
                   <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24 }) }}>
                     {job.applied
-                      ? <iframe key={liveKey} title={tx("Live pagina")} src={`${cur === "index.html" ? "/" : `/${cur.replace(/\.html?$/i, "")}`}${designLangCode ? `?lang=${designLangCode}` : ""}`} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
+                      ? <iframe key={liveKey} ref={liveFrame} title={tx("Live pagina")} src={`${cur === "index.html" ? "/" : `/${cur.replace(/\.html?$/i, "")}`}${designLangCode ? `?lang=${designLangCode}` : ""}`} style={{ display: "block", width: "100%", height: "100%", border: 0, background: "#fff" }} />
                       : <p className="muted" style={{ maxWidth: 360, textAlign: "center", padding: "1rem" }}>{tx("Dit ontwerp staat nog niet op de website. Zet het eerst live met de knop rechtsboven.")}</p>}
                   </div>
                 ) : ready ? (
