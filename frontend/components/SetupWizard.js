@@ -767,27 +767,27 @@ export default function SetupWizard() {
                   {form.consent_ok === "1" ? (
                     <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{user?.is_staff ? tx("Als superadmin hoef je geen code in te geven. Ga verder naar de betaling.") : tx("Akkoord gegeven. Ga verder naar de betaling.")}</div></div>
                   ) : (!termsRead && !upd && !user?.is_staff) ? null : (
-                    <div className="e2e-stack" style={{ gap: "1rem", alignItems: "center", textAlign: "center" }}>
-                      {!canMail && !canSms && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Er is geen e-mail- of SMS-koppeling actief (API keys), dus er kan geen code worden verstuurd.")}</div></div>}
-                      {canMail && canSms && (
-                        <div className="e2e-field" style={{ alignItems: "center" }}>
-                          <span className="e2e-label">{tx("Code versturen via")}</span>
-                          <div className="e2e-tabs e2e-pills" data-easy2edit-tag="ui-tabs-pills"><div className="e2e-tabs__list" role="radiogroup" aria-label={tx("Code versturen via")}>
-                            {[["email", "E-mail"], ["sms", "SMS"]].map(([m, l]) => (
-                              <button key={m} type="button" role="radio" className="e2e-tabs__tab" aria-checked={method === m} aria-selected={method === m} onClick={() => setConsent((c) => ({ ...c, method: m, sent: false, shown: "", error: "" }))}>{l}</button>
-                            ))}
-                          </div></div>
-                        </div>
-                      )}
-                      <div className="e2e-row" style={{ alignItems: "flex-end", justifyContent: "center", gap: ".8rem", flexWrap: "wrap" }}>
-                        <div className="e2e-field" style={{ alignItems: "center" }}>
-                          <label className="e2e-label" htmlFor="sw-consent_code"><span>{tx("Code")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
-                          <CodeInput value={form.consent_code || ""} onChange={typeCode} onAt={user?.is_staff ? () => typeCode("@") : undefined} invalid={!!(consent.error || errs.consent_ok)} label={tx("Code")} />
-                        </div>
-                        <button type="button" className="e2e-btn e2e-btn--outline" disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode} style={{ height: 46 }}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: "1rem 1.6rem", alignItems: "start", padding: ".9rem 1rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 25%, var(--e2e-line, var(--line)))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, #fff))" }}>
+                      <div className="e2e-stack" style={{ gap: ".8rem", alignItems: "flex-start", textAlign: "left" }}>
+                        {!canMail && !canSms && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Er is geen e-mail- of SMS-koppeling actief (API keys), dus er kan geen code worden verstuurd.")}</div></div>}
+                        {canMail && canSms && (
+                          <div className="e2e-field" style={{ alignItems: "flex-start" }}>
+                            <span className="e2e-label">{tx("Code versturen via")}</span>
+                            <div className="e2e-tabs e2e-pills" data-easy2edit-tag="ui-tabs-pills"><div className="e2e-tabs__list" role="radiogroup" aria-label={tx("Code versturen via")}>
+                              {[["email", "E-mail"], ["sms", "SMS"]].map(([m, l]) => (
+                                <button key={m} type="button" role="radio" className="e2e-tabs__tab" aria-checked={method === m} aria-selected={method === m} onClick={() => setConsent((c) => ({ ...c, method: m, sent: false, shown: "", error: "" }))}>{l}</button>
+                              ))}
+                            </div></div>
+                          </div>
+                        )}
+                        <button type="button" className="e2e-btn e2e-btn--outline" disabled={consent.busy || (!canMail && !canSms)} onClick={sendCode}>{consent.sent ? tx("Opnieuw versturen") : tx("Code versturen")}</button>
+                        <span className="e2e-hint">{consent.sent ? tx("De code is verstuurd. Die is 10 minuten geldig.") : `${tx("De code gaat naar")} ${method === "email" ? form.contact_email : form.mobile}`}{consent.shown ? ` · ${tx("Code")}: ${consent.shown}` : ""}</span>
                       </div>
-                      <span className="e2e-hint">{consent.sent ? tx("De code is verstuurd. Die is 10 minuten geldig.") : `${tx("De code gaat naar")} ${method === "email" ? form.contact_email : form.mobile}`}{consent.shown ? ` · ${tx("Code")}: ${consent.shown}` : ""}</span>
-                      {(consent.error || errs.consent_ok) && <span className="e2e-error">{consent.error || errs.consent_ok}</span>}
+                      <div className="e2e-field" style={{ alignItems: "flex-start" }}>
+                        <label className="e2e-label" htmlFor="sw-consent_code"><span>{tx("Code")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
+                        <CodeInput value={form.consent_code || ""} onChange={typeCode} onAt={user?.is_staff ? () => typeCode("@") : undefined} invalid={!!(consent.error || errs.consent_ok)} label={tx("Code")} />
+                        {(consent.error || errs.consent_ok) && <span className="e2e-error">{consent.error || errs.consent_ok}</span>}
+                      </div>
                     </div>
                   )}
                 </div>
