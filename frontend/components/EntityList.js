@@ -214,7 +214,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
               </section>
               <section style={SECTION}>
                 <h4 style={SECTION_TITLE}><IconPin width={15} height={15} />{tx("Hoofdadres")}</h4>
-                {canEdit && <AddressFinder initial={[f.name, f.city].filter(Boolean).join(" ")} onPick={(r) => setF((x) => ({ ...x, street: r.street || x.street, house_number: r.house_number || "", postal_code: r.postal_code || x.postal_code, city: r.city || x.city, country: r.country || x.country }))} />}
+                {canEdit && <AddressFinder initial={[f.postal_code, f.house_number].filter(Boolean).join(" ")} onPick={(r) => setF((x) => ({ ...x, street: r.street || x.street, house_number: r.house_number || "", postal_code: r.postal_code || x.postal_code, city: r.city || x.city, country: r.country || x.country }))} />}
                 <div style={ADDR}>
                   <div style={{ gridColumn: "span 6" }}>{field("street", "Straat", { max: 120 })}</div>
                   <div style={{ gridColumn: "span 2" }}>{field("house_number", "Huisnummer", { max: 20 })}</div>

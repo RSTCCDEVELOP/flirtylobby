@@ -32,9 +32,9 @@ export default function AddressFinder({ initial = "", onPick, disabled = false, 
   };
   return (
     <div className="e2e-stack" style={{ gap: ".6rem", padding: ".75rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))", gridColumn: span }}>
-      <label className="e2e-label" htmlFor="af-q"><span style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }}><IconSearch width={14} height={14} />{label || tx("Adres opzoeken")}</span></label>
+      <label className="e2e-label" htmlFor="af-q"><span style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }}><IconSearch width={14} height={14} />{label || tx("Adres opzoeken (postcode)")}</span></label>
       <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
-        <input id="af-q" type="search" className="e2e-input" style={{ flex: 1, minWidth: 0 }} value={q} disabled={disabled} placeholder={tx("Bijvoorbeeld: RST Coaching Utrecht, of RST Coaching 3542 DH")} autoComplete="off"
+        <input id="af-q" type="search" className="e2e-input" style={{ flex: 1, minWidth: 0 }} value={q} disabled={disabled} placeholder={tx("Postcode en huisnummer, bijvoorbeeld 3542 DH 46")} autoComplete="off"
           onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); run(); } }} />
         <button type="button" className="btn" disabled={disabled || busy || q.trim().length < 3} onClick={run}>{busy ? tx("Bezig…") : tx("Zoeken")}</button>
       </div>
