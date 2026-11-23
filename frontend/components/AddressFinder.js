@@ -14,7 +14,7 @@ import { IconPin, IconSearch } from "./Icons";
 
 // Look up an address: "RST Coaching Utrecht", "RST Coaching 3542 DH" or "3542 DH 46". Google (when linked in Admin -> API keys) or the free sources PDOK and OpenStreetMap.
 // The chosen result {naam, street, house_number, postal_code, city, country, adres} goes to onPick; the caller fills its own fields.
-export default function AddressFinder({ initial = "", onPick, disabled = false, label }) {
+export default function AddressFinder({ initial = "", onPick, disabled = false, label, span = "1 / -1" }) {
   const [q, setQ] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState(null);
@@ -30,7 +30,7 @@ export default function AddressFinder({ initial = "", onPick, disabled = false, 
     setBusy(false);
   };
   return (
-    <div className="e2e-stack" style={{ gap: ".6rem", padding: ".75rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))", gridColumn: "1 / -1" }}>
+    <div className="e2e-stack" style={{ gap: ".6rem", padding: ".75rem .9rem", border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 28%, var(--e2e-border, #e5e0d8))", borderRadius: "var(--e2e-radius, 10px)", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 6%, var(--e2e-bg, #fff))", gridColumn: span }}>
       <label className="e2e-label" htmlFor="af-q"><span style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }}><IconSearch width={14} height={14} />{label || tx("Adres opzoeken")}</span></label>
       <div style={{ display: "flex", gap: ".5rem", alignItems: "stretch" }}>
         <input id="af-q" type="search" className="e2e-input" style={{ flex: 1, minWidth: 0 }} value={q} disabled={disabled} placeholder={tx("Bijvoorbeeld: RST Coaching Utrecht, of RST Coaching 3542 DH")} autoComplete="off"
