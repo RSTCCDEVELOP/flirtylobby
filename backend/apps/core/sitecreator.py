@@ -302,6 +302,47 @@ MODES = ("light", "dark", "both")
 FONTS = {"sans": 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif', "serif": 'Georgia, "Times New Roman", serif', "round": '"Trebuchet MS", "Segoe UI", system-ui, sans-serif'}
 STYLE_TAGS = {"modern", "warm", "zakelijk", "speels", "minimalistisch", "luxe", "natuurlijk", "technisch", "creatief", "klassiek"}
 KINDS = {"company", "shop", "community", "agenda", "blog", "portfolio", "club"}
+INSTALL_QID = "installation"
+KIND_INSTALL = {"company": "bedrijfswebsite", "shop": "webshop", "community": "zakelijk-netwerk", "agenda": "stichting", "blog": "standaard-website", "portfolio": "standaard-website", "club": "sportclub"}  # the installation that fits a kind of website when the designer gives no answer
+
+
+def install_choices():
+    """The standard installations a design can be built on: [{key, name, desc}]."""
+    from . import presets
+
+    return [{"key": p["key"], "name": p["name"], "desc": p.get("desc", "")} for p in presets.PRESETS]
+
+
+def install_key(value):
+    """The key of an installation from its key or its name (an answer of the customer), or ''."""
+    v = str(value or "").strip().lower()
+    for c in install_choices():
+        if v in (c["key"].lower(), c["name"].lower()):
+            return c["key"]
+    return ""
+
+
+def _install_prompt():
+    rows = "\n".join(f"- {c['name']}: {c['desc'][:160]}" for c in install_choices())
+    return ("STANDARD INSTALLATIONS of easy2edit (ready-made sets of modules, plugins and demo data):\n" + rows + "\n"
+            "ALWAYS ask one question about this (when it was not asked before): id \"installation\", type \"choice\", the options EXACTLY the names above, and as \"default\" the name that fits this website best (you choose it from what the customer wants). "
+            "Put the key of your choice in the brief as \"installation\" only when it is certain.\n\n")
+
+
+def _with_installation(qs, br, msgs):
+    """The question about the standard installation is always in the questionnaire (once): the options are the installations, the default is the choice of the designer (or the one that fits the kind)."""
+    if any(m.get("ask") for m in msgs[-1:]):
+        return qs
+    names = [c["name"] for c in install_choices()]
+    by_key = {c["key"]: c["name"] for c in install_choices()}
+    q = next((x for x in qs if x.get("id") == INSTALL_QID), None)
+    dflt = ""
+    if q:
+        dflt = next((n for n in names if n.lower() == str(q.get("default") or "").strip().lower()), "")
+    if not dflt:
+        dflt = by_key.get(install_key((br or {}).get("installation"))) or by_key.get(KIND_INSTALL.get(str((br or {}).get("kind") or ""), "")) or by_key.get("bedrijfswebsite") or names[0]
+    new = {"id": INSTALL_QID, "q": "Welke standaard installatie past het best bij deze website? (de modules en demo-gegevens die erbij horen)", "type": "choice", "options": names, "default": dflt}
+    return [x for x in qs if x.get("id") != INSTALL_QID] + [new] if qs else qs
 IMG_OK = {e for e in R.IMAGE_EXT if e != "svg"}
 MAX_PHOTOS = R.MAX_IMAGES
 
@@ -473,6 +514,8 @@ def clean_brief(patch, old):
             b[k] = str(p[k] or "")[:n]
     if "kind" in p:
         b["kind"] = p["kind"] if p["kind"] in KINDS else "company"
+    if "installation" in p:
+        b["installation"] = install_key(p["installation"])
     if "style_tags" in p:
         b["style_tags"] = [t for t in (p["style_tags"] if isinstance(p["style_tags"], list) else []) if t in STYLE_TAGS][:6]
     if "colors" in p:
@@ -3078,6 +3121,10 @@ def save_answers(job, index, ans, own):
         if re.match(r"^(name|naam|company_?name|business_?name|bedrijfs_?naam|brand)$", str(qid or ""), re.I) and isinstance(clean.get(qid), str) and clean[qid].strip():
             upd["name"] = clean[qid].strip()[:120]
             break
+    if INSTALL_QID in clean:  # the chosen standard installation is part of the brief (the design is built on it and it is offered again when everything is made)
+        key = install_key(clean[INSTALL_QID])
+        if key:
+            upd["brief"] = {**(job.brief or {}), "installation": key}
     SiteDesignJob.objects.filter(pk=job.pk).update(**upd)
 
 
@@ -3337,6 +3384,7 @@ def _chat(pk, text, has, shots=None):
         convo = "\n".join(f"{'Customer' if m['role'] == 'user' else 'Designer'}: {m['text']}" for m in (job.messages or [])[-20:])
         mods = [i for i in module_items() if i["key"] not in effective_off(job.brief)]
         cat = "Modules of the system: " + ", ".join(f"{i['key']} ({i['label']})" for i in mods[:40]) if mods else ""
+        cat = _install_prompt() + cat
         ui = (job.brief or {}).get("ui_lang") or ""
         try:
             lg = Language.objects.filter(code=ui).first() if ui else None
@@ -3355,6 +3403,7 @@ def _chat(pk, text, has, shots=None):
             raise ValueError("De AI gaf geen antwoord. Probeer het nog eens.")
         job = SiteDesignJob.objects.get(pk=pk)
         qs = clean_questions(d.get("questions")) if not d.get("ready") else []
+        qs = _with_installation(qs, d.get("brief") if isinstance(d.get("brief"), dict) else {}, list(job.messages or []))
         had = bool(qs)
         qs = _drop_repeated(qs, job.messages)  # a question is asked once: what was asked before is dropped
         if had and not qs:  # it only wanted to ask things again: everything is known now, the designer goes on and decides the rest itself
@@ -3389,7 +3438,7 @@ def _chat(pk, text, has, shots=None):
             if raw_pages and isinstance(br, dict):
                 br = {**br, "one_pager_pages": raw_pages}
         if d.get("ready") and str(br.get("name") or "").strip():
-            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width", "header_wide", "footer_wide", "contact", "extras", "one_pager_pages", "unanswered", "no_cta") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
+            patch = {k: br.get(k) for k in ("name", "kind", "lang", "pages", "style", "extra", "colors", "font", "radius", "color_mode", "langs", "lang_switch", "istock_search", "layouts", "max_width", "header_wide", "footer_wide", "installation", "contact", "extras", "one_pager_pages", "unanswered", "no_cta") if br.get(k) not in (None, "", {}, []) and not (k in ((job.brief or {}).get("locked") or []) or (k in ("colors", "font", "radius", "color_mode") and (job.brief or {}).get(k) not in (None, "", {})))}  # what the customer already chose (in the wizard or the blocks: name, pages, colours, languages ...) stays
             patch["chat"] = True
             _set(pk, brief=clean_brief(patch, job.brief), name=str(((job.brief or {}).get("name") if "name" in ((job.brief or {}).get("locked") or []) else "") or br["name"]).strip()[:120], messages=msgs, progress=6, step="De website ontwerpen")
             if patch.get("istock_search"):

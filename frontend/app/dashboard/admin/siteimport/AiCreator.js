@@ -396,7 +396,9 @@ function CreatePopup({ job, onClose, onCreate, onReview, onDesign, onLocate }) {
   useEffect(() => { recheck(); }, [recheck]);
   const blocked = (rep?.fouten || 0) > 0;
   const own = !job.brief?.theme; // an own style: a theme is made of it (named after the website)
-  const [o, setO] = useState({ render: "blocks", theme: true, useTheme: true, modules: true, translate: (job.brief?.langs || []).length > 0 });
+  const [o, setO] = useState({ render: "blocks", theme: true, useTheme: true, modules: true, translate: (job.brief?.langs || []).length > 0, installation: job.brief?.installation || "" });
+  const [installs, setInstalls] = useState(null);  // the standard installations (null = not loaded, [] = not allowed for this person)
+  useEffect(() => { api("/system/presets/").then((r) => setInstalls(Array.isArray(r) ? r.map((x) => ({ key: x.key, name: x.name, active: !!x.active })) : [])).catch(() => setInstalls([])); }, []);
   const n = Object.keys(job.files || {}).filter((f) => f.endsWith(".html")).length;
   const photos = (job.brief?.photos || []).length;
   const sw = (k, l, h) => <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!o[k]} onChange={(e) => setO({ ...o, [k]: e.target.checked })} /><span /></span><span>{tx(l)} <small className="muted">{tx(h)}</small></span></label>;
@@ -418,6 +420,13 @@ function CreatePopup({ job, onClose, onCreate, onReview, onDesign, onLocate }) {
                 ? <>{sw("theme", `${tx("Thema maken")}: ${job.brief?.name || ""}`, "Je eigen stijl (kleuren, lettertype, hoeken) komt als thema in de bibliotheek, met de naam van de website")}
                   {o.theme && sw("useTheme", "Het thema meteen gebruiken op de website", "Je kunt later altijd een ander thema kiezen bij Thema")}</>
                 : <div className="alert ok">{tx("Het gekozen thema van je systeem wordt gebruikt")}: <b>{job.brief?.theme_name}</b></div>}
+              {installs && installs.length > 0 && (
+                <div className="card" style={{ padding: ".7rem .9rem", display: "grid", gap: ".5rem", background: "color-mix(in srgb, var(--eco-leaf, #7cc59a) 12%, transparent)" }}>
+                  <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!o.installation} onChange={(e) => setO({ ...o, installation: e.target.checked ? (job.brief?.installation || installs.find((x) => x.active)?.key || installs[0].key) : "" })} /><span /></span>
+                    <span>{tx("De standaard installatie uitvoeren")} <small className="muted" style={{ display: "block" }}>{tx("Zet de modules en plugins van de installatie aan en maakt de demo-gegevens. Pagina's met inhoud worden niet overschreven.")}</small></span></label>
+                  {o.installation && <select value={o.installation} onChange={(e) => setO({ ...o, installation: e.target.value })} aria-label={tx("Standaard installatie")}>{installs.map((x) => <option key={x.key} value={x.key}>{x.name}{x.key === job.brief?.installation ? ` · ${tx("gekozen in de vragen")}` : ""}</option>)}</select>}
+                </div>
+              )}
               {sw("modules", "Modules aanzetten", "De modules die de pagina's nodig hebben")}
               {(job.brief?.langs || []).length > 0 && sw("translate", "Ook vertalen", "Naar de andere talen van het ontwerp")}
               <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>

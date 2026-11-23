@@ -592,6 +592,12 @@ export default function SiteImport() {
       const pr = got.proposal;
       if (!pr) throw new Error(tx("Het ontwerp kon niet worden ingelezen."));
       setProg((p) => ({ ...p, percent: 42, step: tx("Pagina's, afbeeldingen en modules vastleggen…") }));
+      let installNote = "";
+      if (o.installation) { // the standard installation: its modules, plugins and demo data (pages that have content are not replaced)
+        setProg((p) => ({ ...p, percent: 43, step: tx("De standaard installatie uitvoeren…") }));
+        try { await api(`/system/presets/${o.installation}/apply/`, { method: "POST", body: { overwrite_pages: false } }); installNote = tx("Standaard installatie uitgevoerd"); }
+        catch (e) { installNote = `${tx("De standaard installatie kon niet worden uitgevoerd")}: ${errorText(e)}`; }
+      }
       const off = o.off || [];
       const ap = await api(`/siteimport/${r.id}/approve/`, { method: "POST", body: {
         name: wname, profile: pr.profile?.key || null,
@@ -607,7 +613,7 @@ export default function SiteImport() {
       await load(); setOpen(ap.id);
       await runApply(ap, null, { render: o.render || "blocks", mode: "clear", prompt: "", translate: !!o.translate }, [45, 100]); // the pages are built: 45 - 100 %
       if (!cancelRef.current.requested) api(`/sitecreator/${job.id}/identity/`, { method: "POST", body: {} }).catch(() => {}); // the footer and the details of the website follow the design (name, text, address, phone, e-mail)
-      if (themeNote) setProg((p) => (p ? { ...p, themeNote } : p));
+      if (themeNote || installNote) setProg((p) => (p ? { ...p, themeNote: [themeNote, installNote].filter(Boolean).join(" · ") } : p));
       if (!cancelRef.current.requested) api(`/sitecreator/${job.id}/`, { method: "PATCH", body: { live: true } }).catch(() => {}); // from now on the concept is adjusted "live"
     } catch (e) { if (cancelRef.current.requested) return; setProg((p) => ({ ...(p || { name: job.name, percent: 0, built: [] }), error: errorText(e), state: "error" })); }
   };
