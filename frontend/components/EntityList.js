@@ -122,7 +122,7 @@ export default function EntityList({ canEdit, canManage }) {
 // A value that is shown and can not be changed (the unique id, the easy2edit id, the websites): selectable text, no input.
 export function ReadOnly({ label, value, empty = "", wide = false, boxed = false }) {
   if (boxed) return (
-    <div className="e2e-field" style={{ ...(wide ? { gridColumn: "1 / -1" } : {}), border: "1px solid var(--line)", borderRadius: "var(--radius, 12px)", padding: ".7rem .9rem", background: "var(--card)" }}>
+    <div className="e2e-field" style={{ ...(wide ? { gridColumn: "1 / -1" } : {}), border: "1px solid color-mix(in srgb, var(--blue) 28%, var(--line))", borderRadius: "var(--radius, 12px)", padding: ".7rem .9rem", background: "color-mix(in srgb, var(--blue) 9%, var(--card))" }}>
       <small className="muted" style={{ display: "block", fontWeight: 600, marginBottom: ".25rem" }}>{label}</small>
       <div style={{ userSelect: "all", fontFamily: "ui-monospace, monospace", fontSize: ".85rem", overflowWrap: "anywhere" }}>{value || <span className="muted">{empty}</span>}</div>
     </div>
