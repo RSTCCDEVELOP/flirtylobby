@@ -11,10 +11,11 @@ import { useEffect, useRef } from "react";
 import { api, getToken } from "../lib/api";
 import { useSession } from "./Session";
 
+// Edit mode is NOT a personal setting that is synced: it is always off after logging in (see Session.js).
 // Personal settings (open blocks, tiles or list, menu or tiles, light or dark, language, ...) live in the database per user, so they are the same on every computer.
 // The browser keeps a copy (localStorage) so nothing flickers; every change is sent to the server a moment later, and after logging in the server's version wins.
 const PREFIX = /^(collapse|collapse-pin|navg|navg-pin|view|plg|find):/;
-const NAMES = new Set(["navmode", "sidebar", "lastBackendUrl", "theme", "lang", "editMode", "directSize", "directPos", "directView", "savedColors", "aiLivePos"]);
+const NAMES = new Set(["navmode", "sidebar", "lastBackendUrl", "theme", "lang", "directSize", "directPos", "directView", "savedColors", "aiLivePos"]);
 const KEEP_AT_LOGOUT = new Set(["theme", "lang"]); // choices of the device itself stay for the next visitor
 const synced = (k) => PREFIX.test(k) || NAMES.has(k);
 
@@ -65,6 +66,7 @@ export default function PrefsSync() {
       const server = d.prefs || {};
       let changed = false;
       for (const [k, v] of Object.entries(server)) {
+        if (!synced(k)) continue; // (an old value of a setting that is not synced any more, like editMode, is left alone)
         try { if (localStorage.getItem(k) !== v) { orig.set.call(localStorage, k, v); if (!NO_RELOAD.has(k)) changed = true; } } catch {}
       }
       // first time on this account: what this browser already has goes to the server

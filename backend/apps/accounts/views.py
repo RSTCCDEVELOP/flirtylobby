@@ -208,32 +208,79 @@ def login_resend(request):
     return Response({"ok": True, **({"sandbox_code": shown} if shown else {})})
 
 
+def _change_key(user):
+    return f"twofa-change:{user.pk}"
+
+
 @api_view(["POST"])
 def twofa_start(request):
-    """Logged-in user picks a method; a code is sent to verify it before 2FA is switched on."""
+    """Logged-in user picks a method; a code is sent to verify it before 2FA is switched on.
+    {change: true} = two-step verification is ON already and the person wants ANOTHER method (e-mail, authenticator app or sms): the new method is only kept aside and proven with a code first
+    (twofa_confirm with change); the method in use stays as it is until then, so a wrong phone number never locks anybody out."""
+    from django.core.cache import cache
+
     method, user = request.data.get("method"), request.user
+    change = bool(request.data.get("change"))
     if method not in twofa.allowed_methods():
         return Response({"detail": "Deze methode is niet beschikbaar."}, status=status.HTTP_400_BAD_REQUEST)
+    if change and not user.otp_active:
+        return Response({"detail": "Twee-staps verificatie staat niet aan."}, status=status.HTTP_400_BAD_REQUEST)
+    if change and method == "app" and user.twofa_method == "app":
+        return Response({"detail": "Dit is al jouw methode."}, status=status.HTTP_400_BAD_REQUEST)
     if method == "app":  # QR code + key; the app is switched on once the first code is confirmed
         secret, uri = twofa.app_start(user)
+        if change:
+            cache.set(_change_key(user), {"method": "app"}, 900)
         return Response({"app": True, "secret": secret, "uri": uri})
     phone = (request.data.get("phone") or "").replace(" ", "")
     if method == "sms" and not twofa.PHONE_RE.match(phone):
         return Response({"detail": "Geef een telefoonnummer met landcode, bv. +31612345678."}, status=status.HTTP_400_BAD_REQUEST)
-    user.twofa_method = method
-    if method == "sms":
-        user.phone = phone
-    user.save(update_fields=["twofa_method", "phone"])
+    if change:
+        if method == user.twofa_method and (method != "sms" or phone == user.phone):
+            return Response({"detail": "Dit is al jouw methode."}, status=status.HTTP_400_BAD_REQUEST)
+        user.twofa_method = method  # (in memory only: it is saved when the code is confirmed)
+        if method == "sms":
+            user.phone = phone
+        cache.set(_change_key(user), {"method": method, "phone": phone if method == "sms" else ""}, 900)
+    else:
+        user.twofa_method = method
+        if method == "sms":
+            user.phone = phone
+        user.save(update_fields=["twofa_method", "phone"])
     try:
-        twofa.issue_code(user)
+        shown = twofa.issue_code(user)
     except twofa.DeliveryError as e:
         return Response({"detail": str(e)}, status=status.HTTP_502_BAD_GATEWAY)
-    return Response({"destination": twofa.destination_hint(user)})
+    # sandbox: nothing is really sent (the message is kept in the sandbox); the form says so, and shows the code when "toon de code in het scherm" is on
+    return Response({"destination": twofa.destination_hint(user), "sandbox": twofa.simulated(method), **({"sandbox_code": shown} if shown else {})})
 
 
 @api_view(["POST"])
 def twofa_confirm(request):
+    from django.core.cache import cache
+
     user = request.user
+    if request.data.get("change"):  # another method for a login that has two-step verification already
+        pending = cache.get(_change_key(user)) if user.otp_active else None
+        if not pending:
+            return Response({"detail": "De wijziging is verlopen. Begin opnieuw."}, status=status.HTTP_400_BAD_REQUEST)
+        method = pending["method"]
+        if method == "app":
+            ok = "app" in twofa.allowed_methods() and twofa.check_app_code(user, request.data.get("code", ""))
+        else:
+            user.twofa_method = method  # (the code was sent by this method; saved below once it is right)
+            ok = twofa.check_code(user, request.data.get("code", ""))
+        if not ok:
+            return Response({"detail": "Onjuiste of verlopen code."}, status=status.HTTP_400_BAD_REQUEST)
+        user.twofa_method = method
+        if method == "sms":
+            user.phone = pending.get("phone") or user.phone
+        if method == "email":
+            user.email_verified = True
+        user.save(update_fields=["twofa_method", "phone", "email_verified"])
+        cache.delete(_change_key(user))
+        logger.info("2FA method changed for %s: %s", user.email, method)
+        return Response(ProfileSerializer(user).data)
     if request.data.get("method") == "app":
         if "app" not in twofa.allowed_methods() or not twofa.check_app_code(user, request.data.get("code", "")):
             return Response({"detail": "Onjuiste of verlopen code."}, status=status.HTTP_400_BAD_REQUEST)
@@ -247,6 +294,17 @@ def twofa_confirm(request):
     user.save(update_fields=["otp_active", "email_verified"])
     logger.info("2FA enabled for %s (%s)", user.email, user.twofa_method)
     return Response(ProfileSerializer(user).data)
+
+
+@api_view(["POST"])
+def twofa_bypass(request):
+    """A superadmin or superadmin+ skips the forced set-up of two-step verification for this login (12 hours, a new login asks again)."""
+    try:
+        twofa.bypass(request.user)
+    except PermissionError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+    logger.warning("2FA set-up bypassed by %s", request.user.email)
+    return Response(ProfileSerializer(request.user).data)
 
 
 @api_view(["POST"])

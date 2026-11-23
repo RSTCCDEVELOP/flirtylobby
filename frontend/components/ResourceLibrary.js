@@ -17,6 +17,7 @@ import { sourceError } from "../lib/sourceNotice";
 import { tx } from "../lib/t";
 
 import Loading from "./Loading";
+import { matches } from "../lib/useView";
 // where an installed part is changed: the theme in Theme, a plugin in its own page, a language in Languages
 const EDIT = { themas: () => "/dashboard/admin/theme", plugins: (r) => `/dashboard/admin/plugins/${r.name}`, languages: () => "/dashboard/admin/languages", components: () => "/dashboard/admin/components", templates: () => "/dashboard/admin/templates" };
 
@@ -51,7 +52,7 @@ export function ThemeGallery({ onChanged, canManage = false }) {
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (canManage) api("/content/ai/").then((r) => setAi(!!r.available)).catch(() => setAi(false)); }, [canManage]);
   if (!rows) return <Loading fill />;
-  const list = rows.filter((r) => !r.bundle && (!q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase())))
+  const list = rows.filter((r) => !r.bundle && matches(q, r.title, r.name, r.description))
     .sort((a, b) => ["update", "new", "current"].indexOf(a.state) - ["update", "new", "current"].indexOf(b.state) || a.title.localeCompare(b.title));
   if (!rows.some((r) => !r.bundle)) return null;
   const add = async (r) => {
@@ -195,7 +196,7 @@ export function ResourceButtons({ kind, onChanged }) {
     catch (e) { if (!sourceError(e)) setMsg({ ok: false, text: errorText(e) }); }
     setProg(null); setBusy("");
   };
-  const shown = rows.filter((r) => !q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const shown = rows.filter((r) => matches(q, r.title, r.name, r.description));
   return (
     <>
       <button type="button" className="btn primary" onClick={() => { setOpen(true); setMsg(null); load(); }}>+ {tx("Toevoegen uit de bibliotheek")}</button>

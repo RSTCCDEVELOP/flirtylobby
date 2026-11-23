@@ -25,6 +25,7 @@ import { useView } from "../../../../lib/useView";
 import S3Browser from "../../../../components/S3Browser";
 import ApiLinksUpdate from "../../../../components/ApiLinksUpdate";
 import { resetIntegrationsCache } from "../../../../lib/integrations";
+import { matches } from "../../../../lib/useView";
 
 const statusOf = (i) => (i.last_test_ok === true ? "ok" : i.last_test_ok === false ? "fail" : "none");
 const STATUS_TEXT = { ok: "Verbinding OK", fail: "Test mislukt", none: "Nog niet getest", wait: "Testen…" };
@@ -244,7 +245,7 @@ export default function Integrations() {
       <ViewBar view={view} count={`${items.length}`} placeholder={tx("Zoek een koppeling…")} />
       <Paged id="integrations" query={view.q}>
       <div className={`api-grid${view.cls}`}>
-        {items.filter((i) => view.match(i.name, i.slug, i.provider_label, i.last_test_message)).map((i) => {
+        {items.filter((i) => view.match(i.name, i.slug, i.provider, i.provider_label, spec(i.provider)?.label, spec(i.provider)?.title, spec(i.provider)?.description, i.last_test_message)).map((i) => {
           const st = checking.includes(i.id) ? "wait" : statusOf(i);
           return (
             <div className="card api-card" key={i.id}>
@@ -376,8 +377,7 @@ export default function Integrations() {
             </div>
             <div className="int-picker-body">
               {(() => {
-                const q = picker.q.trim().toLowerCase();
-                const list = providers.filter((p) => (!picker.cat || (CAT_OF[p.provider] || "other") === picker.cat) && (!q || `${p.label} ${p.provider}`.toLowerCase().includes(q)));
+                const list = providers.filter((p) => (!picker.cat || (CAT_OF[p.provider] || "other") === picker.cat) && matches(picker.q, p.label, p.provider, p.description, p.title));
                 if (!list.length) return <p className="muted" style={{ margin: 0 }}>{tx("Geen systeem gevonden.")}</p>;
                 return CATS.map(([ck, cl]) => {
                   const rows = list.filter((p) => (CAT_OF[p.provider] || "other") === ck);

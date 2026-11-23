@@ -6,6 +6,7 @@
 // website https://rstcc.net
 
 import { tx, translateTree } from "./t";
+import { rememberSandboxCode } from "./sandboxCode";
 const CONFIGURED = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Opened via a LAN address (phone, other computer)? Then "localhost" for the API would be that device itself: use the page's host.
@@ -62,6 +63,7 @@ export async function api(path, { method = "GET", body } = {}) {
   // the login is not valid any more (the account was removed, or logged out elsewhere): log out here too. Only when it is still the token this call used: a call that started before logging in must not log the new login out again
   if (res.status === 401 && token && /token/i.test(data?.detail || "") && getToken() === token) clearToken();
   if (!res.ok) throw new ApiError(res.status, data);
+  rememberSandboxCode(data);  // sandbox on: the code that was made fills the code boxes on screen (lib/sandboxCode.js)
   // a module or a plugin was switched on or off: it may cost money, so the licence price can have changed (see LicenseChangePrompt)
   if (typeof window !== "undefined" && !window.__licenceRevert && method !== "GET" && /^\/(modules\/[a-z0-9_-]+|plugins\/[a-z0-9_-]+|modules\/packages\/[a-z0-9_-]+)\/$/i.test(path) && body && ("enabled" in body)) window.dispatchEvent(new CustomEvent("licence-maybe-changed", { detail: { item: path.replace(/^\/(modules|plugins)\/([^/]+)\/$/i, (m, a, b) => `${a === "plugins" ? "plugin" : "module"}:${b}`), enabled: !!body.enabled } }));
   return translateTree(data);

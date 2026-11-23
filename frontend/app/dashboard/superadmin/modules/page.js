@@ -19,6 +19,7 @@ import Paged from "../../../../components/Paged";
 import ViewBar from "../../../../components/ViewBar";
 import { useView } from "../../../../lib/useView";
 import { api, errorText } from "../../../../lib/api";
+import { tileWords } from "../../../../lib/admin-tiles";
 
 const GROUPS = ["Content", "Community", "Webshop", "Subscription", "Beveiliging", "Systeem", "Kern"];
 const LEVELS = [
@@ -232,7 +233,7 @@ export default function ModulesPage() {
 
       {GROUPS.map((g) => {
         const list = mods.filter((m) => m.group === g);
-        const shownList = list.filter((m) => view.match(m.label, m.desc, m.key));
+        const shownList = list.filter((m) => view.match(m.label, m.desc, m.key, tileWords(m.key)));
         if (!list.length) return null; // a group without modules (e.g. Webshop without its plugin) is not shown
         if (view.q.trim() && !shownList.length) return null;
         return (

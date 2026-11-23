@@ -55,6 +55,7 @@ class ExpiringTokenAuthentication(TokenAuthentication):
         if result:
             from .twofa import needs_setup
 
+            result[0]._login_token = result[1].key  # (the bypass of the forced two-step set-up is kept per login)
             if needs_setup(result[0]) and not request.path.startswith("/api/auth/"):
                 raise PermissionDenied({"detail": "Stel eerst twee-staps verificatie in.", "code": "twofa_setup_required"})
         return result

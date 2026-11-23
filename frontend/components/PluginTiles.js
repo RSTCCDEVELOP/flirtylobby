@@ -14,6 +14,7 @@ import { SECTION_LABEL } from "./PluginParts";
 import { api, errorText } from "../lib/api";
 import { sourceError } from "../lib/sourceNotice";
 import { getLanguage, tx } from "../lib/t";
+import { matches } from "../lib/useView";
 
 // One picture (single colour, like every icon) per kind of plugin
 const SECTION_ICON = { users: IconUsers, website: IconGlobe, community: IconHeart, shop: IconCart, subscription: IconStar, system: IconSettings };
@@ -27,7 +28,7 @@ const describe = (p) => (p.descriptions && (p.descriptions[getLanguage()] || p.d
 // The plugins that are installed on this site: one tile each, with the switch on the tile. "Beheren" opens the settings of the plugin.
 export function InstalledTiles({ plugins, onToggle, onManage }) {
   const [q, setQ] = useState("");
-  const list = plugins.filter((p) => !q.trim() || `${p.title} ${p.name} ${describe(p)}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const list = plugins.filter((p) => matches(q, p.title, p.name, describe(p)));
   return (
     <div className="pl-wrap">
       {plugins.length > 6 && <input type="search" className="pl-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoeken…")} />}
@@ -94,7 +95,7 @@ export function PluginLibrary({ onChanged }) {
   if (!rows) return <Loading fill />;
   const updates = rows.filter((r) => r.state === "update").length;
   const count = (s) => rows.filter((r) => r.state === s).length;
-  const list = rows.filter((r) => (filter === "all" || r.state === filter) && (!q.trim() || `${r.title} ${r.name} ${r.description}`.toLowerCase().includes(q.trim().toLowerCase())));
+  const list = rows.filter((r) => (filter === "all" || r.state === filter) && matches(q, r.title, r.name, r.description));
   const install = async (r) => {
     setBusy(r.name); setMsg(null);
     try { const d = await api("/resource/install/", { method: "POST", body: { kind: "plugins", name: r.name } }); setMsg({ ok: true, text: tx("{0} is geïnstalleerd.", d.installed.join(", ")) }); await load(); onChanged?.(); }

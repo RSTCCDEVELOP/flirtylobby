@@ -603,7 +603,10 @@ def system_setup_consent(request):
     except setup_consent.ConsentError as e:
         return Response({"detail": str(e)}, status=400)
     local = request.get_host().split(":")[0] in ("localhost", "127.0.0.1", "[::1]") and request.user.is_staff
-    return Response({"sent": True, "code": code if (on_screen or local) else None})
+    from apps.sandbox import service as _sb
+
+    visible = on_screen or local or _sb.code_visible()
+    return Response({"sent": True, "code": code if visible else None, **({"sandbox_code": code} if _sb.code_visible() else {})})
 
 
 @api_view(["POST"])

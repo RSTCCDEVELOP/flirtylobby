@@ -49,4 +49,7 @@ export const TILES = [
   { href: "/dashboard/admin/theme", title: "Thema", big: "Thema's, kleuren, logo's, e-mail", small: "De hele uitstraling van de website", modules: ["theme", "branding"] },
 ];
 
+// All the words of the tiles that belong to a module (title, big title, text): a module is found by the name of its tile too ("Sandbox" and "Testomgeving").
+export const tileWords = (...keys) => TILES.filter((t) => (t.modules || []).some((m) => keys.includes(m))).map((t) => [t.title, t.big, t.small, t.find || ""]).flat().filter(Boolean);
+
 export const LEVEL_LABEL = { 1: "Gebruik", 2: "Bewerken", 3: "Beheer" };

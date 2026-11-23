@@ -20,7 +20,8 @@ import ProfileBlock from "../../../components/ProfileBlock";
 import PublicProfileBlock from "../../../components/PublicProfileBlock";
 import NotificationPrefs from "../../../components/NotificationPrefs";
 import { useModule } from "../../../components/Modules";
-import { IconBell, IconBriefcase, IconImage, IconLock, IconPin, IconUser } from "../../../components/Icons";
+import { IconBell, IconBriefcase, IconImage, IconKey, IconLock, IconPin, IconShield, IconTrash, IconUser } from "../../../components/Icons";
+import Tabs from "../../../components/Tabs";
 import { countryOptions } from "../../../lib/countries";
 import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
@@ -34,6 +35,7 @@ export default function Profile() {
   const notifyOn = useModule("notifications");
   const genders = useGenders();
   const { user, setUser } = useAuth();
+  const [secTab, setSecTab] = useState("password"); // Beveiliging: password | passkeys | twofa | account
   const [form, setForm] = useState({
     first_name: user.first_name, last_name: user.last_name, display_name: user.display_name || "", birth_date: user.birth_date || "", gender: user.gender || "", phone: user.phone || "", address: user.address || "", postal_code: user.postal_code || "", city: user.city || "", country: user.country || "", function: user.function,
     short: user.short, description: user.description, link: user.link, link_external: user.link_external,
@@ -157,7 +159,10 @@ export default function Profile() {
         </ProfileBlock>
       )}
       <ProfileBlock id="p-security" icon={<IconLock />} title={tx("Beveiliging")} hint={tx("Wachtwoord en inloggen met een code.")}>
-        <form className="form" onSubmit={changePassword}>
+        <Tabs value={secTab} onChange={setSecTab} tabs={[["password", tx("Wachtwoord"), <IconLock key="a" />], ["passkeys", tx("Passkeys"), <IconKey key="b" />], ["twofa", tx("2-staps verificatie"), <IconShield key="c" />], ["account", tx("Account"), <IconTrash key="d" />]]} />
+        <div style={{ paddingTop: ".9rem", display: "grid", gap: ".9rem" }}>
+          {secTab === "password" && (
+          <form className="form" onSubmit={changePassword}>
           <strong style={{ fontSize: ".9rem" }}>{tx("Wachtwoord wijzigen")}</strong>
           <div className="grid2">
             <label>{tx("Huidig wachtwoord")}<input type="text" name="username" value={user?.email || ""} autoComplete="username" readOnly tabIndex={-1} aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, border: 0, overflow: "hidden", clip: "rect(0 0 0 0)" }} /><input type="password" name="current-password" value={pw.old_password} onChange={(e) => setPw({ ...pw, old_password: e.target.value })} required autoComplete="current-password" /></label>
@@ -165,13 +170,17 @@ export default function Profile() {
           </div>
           {pwMsg && <div className={pwMsg.ok ? "alert ok" : "alert"}>{pwMsg.text}</div>}
           <div><button className="btn">{tx("Wachtwoord wijzigen")}</button></div>
-        </form>
-        <PasskeysProfile />
-        <TwoFactorProfile />
-        <div className="danger-zone">
+          </form>
+          )}
+          {secTab === "passkeys" && <PasskeysProfile />}
+          {secTab === "twofa" && <TwoFactorProfile />}
+          {secTab === "account" && (
+          <div className="danger-zone">
           <strong style={{ fontSize: ".9rem" }}>{tx("Account verwijderen")}</strong>
           <p className="muted" style={{ margin: ".25rem 0 .6rem", fontSize: ".85rem" }}>{tx("Wist je profiel, foto's, berichten en bestanden definitief, en haalt je weg uit alle groepen en rechten.")}</p>
           <button type="button" className="btn danger" onClick={deleteAccount}>{tx("Account verwijderen")}</button>
+        </div>
+          )}
         </div>
       </ProfileBlock>
       </div>

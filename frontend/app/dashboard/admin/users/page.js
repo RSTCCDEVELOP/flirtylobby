@@ -25,7 +25,7 @@ import TableView from "../../../../components/TableView";
 import { useView } from "../../../../lib/useView";
 import KitScope from "../../../../lib/ui-kit/KitScope";
 import { ColorDot, ColorField, TagChip, TagPicker, useTagMap } from "../../../../components/Tags";
-import { IconBriefcase } from "../../../../components/Icons";
+import { IconBriefcase, IconShield } from "../../../../components/Icons";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { lvl } from "../../../../lib/perms";
@@ -230,6 +230,15 @@ export default function Users() {
                 </select>
               </label>
               {modal.id && <div style={{ gridColumn: "1 / -1" }}><TagPicker kind="user" refId={modal.id} label={tx("Tags")} canEdit={L >= 2} /></div>}
+              {modal.id && (
+                <div role="group" aria-label={tx("Inloggen met 2-staps verificatie")} style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: ".7rem", flexWrap: "wrap", padding: ".6rem .8rem", border: "1px solid var(--line, rgba(0,0,0,.12))", borderRadius: "var(--radius, 10px)" }}>
+                  <span style={{ display: "inline-flex", color: modal.otp_active ? "var(--blue, #e8803f)" : "var(--muted)" }} aria-hidden="true"><IconShield /></span>
+                  <span style={{ display: "grid", gap: ".1rem", flex: "1 1 240px", minWidth: 0 }}>
+                    <strong style={{ fontSize: ".85rem" }}>{tx("Inloggen met 2-staps verificatie")}</strong>
+                    <small className="muted">{modal.otp_active ? `${tx("Aan")} · ${modal.twofa_method === "app" ? tx("Authenticator-app (OTP)") : modal.twofa_method === "sms" ? "SMS" : tx("E-mail")}` : (modal.twofa_required ? tx("Verplicht, nog niet ingesteld") : tx("Uit"))}. {tx("De gebruiker kiest en wijzigt de methode (e-mail, authenticator-app of sms) zelf in het profiel.")}</small>
+                  </span>
+                </div>
+              )}
               {modal.id && L >= 2 && (
                 <label className="check sec-toggle" style={{ alignSelf: "end" }} title={modal.id === me.id ? tx("Je kunt je eigen account niet uitschakelen") : undefined}>
                   <span className="switch"><input type="checkbox" checked={modal.is_active !== false} disabled={modal.id === me.id} onChange={(e) => setModal({ ...modal, is_active: e.target.checked })} /><span /></span>

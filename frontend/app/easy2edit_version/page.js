@@ -14,6 +14,8 @@ import Tabs from "../../components/Tabs";
 import ThemeToggle from "../../components/ThemeToggle";
 import { IconGrid, IconInfo, IconKey, IconShield } from "../../components/Icons";
 import Loading from "../../components/Loading";
+import { matches } from "../../lib/useView";
+import { tileWords } from "../../lib/admin-tiles";
 
 // /easy2edit_version: version, build, modules and administrators. Open to everybody; only the prices need a superadmin login.
 export default function Easy2editVersion() {
@@ -28,7 +30,7 @@ export default function Easy2editVersion() {
   const groups = useMemo(() => {
     if (!d) return [];
     const needle = q.trim().toLowerCase();
-    const list = d.modules.filter((m) => !needle || m.label.toLowerCase().includes(needle) || m.key.includes(needle) || m.group.toLowerCase().includes(needle));
+    const list = d.modules.filter((m) => matches(needle, m.label, m.key, m.group, m.desc, tileWords(m.key)));
     return [...new Set(list.map((m) => m.group))].map((g) => [g, list.filter((m) => m.group === g)]);
   }, [d, q]);
 

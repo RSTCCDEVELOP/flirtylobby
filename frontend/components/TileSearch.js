@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { tx } from "../lib/t";
 import { useAuth } from "./AuthContext";
+import { matches, norm } from "../lib/useView";
 
 // What can be found besides the tiles: the settings inside a screen (where they are, in plain words). staff: only for a superadmin.
 const INDEX = [
@@ -39,22 +40,23 @@ export default function TileSearch({ selector = ".st-tile, .group-tile, .tile-ca
   const box = useRef(null);
   const { user } = useAuth();
   useEffect(() => {
-    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const words = norm(q).split(/\s+/).filter(Boolean);
     const root = box.current?.closest("main") || document;
-    const tiles = [...root.querySelectorAll(selector)];
-    let shown = 0;
+    window.dispatchEvent(new CustomEvent("tilesearch", { detail: q }));  // the lists of the page that have their own search (tiles, modules, API links) follow this field
+    const tiles = [...root.querySelectorAll(selector)].filter((t) => !t.closest("[data-view-managed]"));  // (the tiles of a list with its own search are filtered from its data, not from the page: all of them are found, also the ones on another page)
     tiles.forEach((t) => {
-      const hit = !words.length || words.every((w) => (t.textContent || "").toLowerCase().includes(w));
+      const hit = !words.length || words.every((w) => norm(t.textContent).includes(w) || (t.dataset.find && norm(t.dataset.find).includes(w)));
       t.style.display = hit ? "" : "none";
-      if (hit) shown += 1;
     });
-    // a block of tiles in which nothing matches is hidden too
-    root.querySelectorAll(".collapsible, [data-tile-block]").forEach((b) => { const has = [...b.querySelectorAll(selector)]; if (has.length) b.style.display = !words.length || has.some((t) => t.style.display !== "none") ? "" : "none"; });
-    setN(words.length ? shown : null);
-    return () => { tiles.forEach((t) => { t.style.display = ""; }); };
+    const count = () => {  // after the lists have drawn themselves again
+      const all = [...root.querySelectorAll(selector)];
+      setN(words.length ? all.filter((t) => t.style.display !== "none").length : null);
+      root.querySelectorAll(".collapsible, [data-tile-block]").forEach((b) => { const has = [...b.querySelectorAll(selector)]; if (has.length) b.style.display = !words.length || has.some((t) => t.style.display !== "none") ? "" : "none"; });
+    };
+    const timer = setTimeout(count, 80);
+    return () => { clearTimeout(timer); tiles.forEach((t) => { t.style.display = ""; }); };
   }, [q, selector]);
-  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-  const found = words.length ? INDEX.filter((x) => (!x.staff || user?.is_staff) && words.every((w) => `${x.label} ${x.words}`.toLowerCase().includes(w))) : [];
+  const found = norm(q).trim() ? INDEX.filter((x) => (!x.staff || user?.is_staff) && matches(q, x.label, x.words, x.where)) : [];
   return (
     <div ref={box} className="tile-search">
       <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek een onderdeel…")} aria-label={tx("Zoek een onderdeel…")} />

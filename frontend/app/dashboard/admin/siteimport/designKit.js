@@ -20,6 +20,8 @@ import { componentListText } from "../../../../lib/ui-kit/componentList";
 import { hexOf, loadKit } from "../../../../lib/ui-kit/kitDoc";
 
 import Loading from "../../../../components/Loading";
+import { matches } from "../../../../lib/useView";
+import { tileWords } from "../../../../lib/admin-tiles";
 // The steps of the design flow: key, name, one line under the name, icon.
 export const STEPS = [
   ["start", "Start", "Naam, soort en taal", IconEdit], ["style", "Stijl", "Thema en sfeer", IconPalette], ["colors", "Kleuren", "Palet en weergave", IconSliders], ["pages", "Pagina's", "Menu en volgorde", IconFolder],
@@ -408,7 +410,7 @@ export function ModulePicker({ catalog, b, upd }) {
   const [q, setQ] = useState("");
   if (!catalog) return <div className="dw-panel"><span className="muted"><Loading /></span></div>;
   const toggle = (list, k) => (list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
-  const keys = catalog.modules.map((m) => m.key), shown = catalog.modules.filter((m) => !q.trim() || `${m.label} ${m.desc}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const keys = catalog.modules.map((m) => m.key), shown = catalog.modules.filter((m) => matches(q, m.label, m.desc, m.key, tileWords(m.key)));
   const onCount = catalog.modules.filter((m) => isUsed(m, b)).length, kinds = [...new Set(catalog.objects.map((o) => o.kind_label))];
   return (
     <>

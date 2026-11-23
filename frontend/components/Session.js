@@ -23,6 +23,12 @@ export function EditOverride({ value, children }) {
   return <SessionContext.Provider value={{ ...s, editing: !!s.canEdit && !!value }}>{children}</SessionContext.Provider>;
 }
 
+// Edit mode (bewerkmodus) belongs to ONE login: it is always off right after logging in and can only be switched on afterwards. It is kept per login token (a reload keeps it, a new login never does)
+// and it is not synced between computers (PrefsSync).
+const EDIT_FOR = "editModeFor";
+const editWasOn = () => { try { return localStorage.getItem("editMode") === "1" && !!getToken() && localStorage.getItem(EDIT_FOR) === getToken(); } catch { return false; } };
+const editStore = (on) => { try { localStorage.setItem("editMode", on ? "1" : "0"); if (on && getToken()) localStorage.setItem(EDIT_FOR, getToken()); else localStorage.removeItem(EDIT_FOR); } catch {} };
+
 // Who is logged in on the public site + the "bewerkmodus" (edit mode) switch for people with content.edit
 export function SessionProvider({ children, editClosed = false }) {  // editClosed: the licence has ended for some time: the page editor is closed (phase 2)
   const [user, setUser] = useState(null);
@@ -33,7 +39,7 @@ export function SessionProvider({ children, editClosed = false }) {  // editClos
   useEffect(() => {
     try {
       const q = new URLSearchParams(window.location.search).get("edit"); // ?edit=1 / ?edit=0: this page opens in (or out of) edit mode, without changing the setting of the person (used by the page preview in the admin)
-      setEditModeState(q === "1" ? true : q === "0" ? false : localStorage.getItem("editMode") === "1");
+      setEditModeState(q === "1" ? !!getToken() : q === "0" ? false : editWasOn());
     } catch {}
     try { setPreview(!!new URLSearchParams(window.location.search).get("preview")); } catch {}
     let alive = true;
@@ -46,8 +52,9 @@ export function SessionProvider({ children, editClosed = false }) {  // editClos
         .finally(() => alive && setReady(true));
     };
     load();
-    window.addEventListener("token-changed", load); // after logging in or out (no page reload needed)
-    return () => { alive = false; window.removeEventListener("token-changed", load); };
+    const loginChanged = () => { if (!editWasOn()) { setEditModeState(false); editStore(false); } load(); };  // a new login (or logout): edit mode is off again
+    window.addEventListener("token-changed", loginChanged); // after logging in or out (no page reload needed)
+    return () => { alive = false; window.removeEventListener("token-changed", loginChanged); };
   }, []);
 
   const editModule = useModule("edit_mode");
@@ -69,13 +76,14 @@ export function SessionProvider({ children, editClosed = false }) {  // editClos
       setMobileOk(true);
       try { sessionStorage.setItem("edit-mobile-ok", "1"); } catch {}
     }
+    if (on && !getToken()) return;  // only after logging in
     setEditModeState(on);
-    try { localStorage.setItem("editMode", on ? "1" : "0"); } catch {}
+    editStore(on);
   }, [small, mobileOk]);
   const allowed = !small || mobileOk;
 
   // Editing only works while you are logged in and connected: when you log out, or the connection is gone, edit mode is switched off (and stays off after logging in again)
-  const editOff = useCallback(() => { setEditModeState(false); try { localStorage.setItem("editMode", "0"); } catch {} }, []);
+  const editOff = useCallback(() => { setEditModeState(false); editStore(false); }, []);
   useEffect(() => { if (ready && !user) editOff(); }, [ready, user, editOff]);
   const editOn = editMode && !!user;
   useEffect(() => {

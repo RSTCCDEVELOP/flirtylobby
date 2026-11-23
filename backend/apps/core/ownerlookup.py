@@ -94,7 +94,7 @@ def send(site, email, company=""):
     if not user:
         raise ValueError("Dit bedrijf is niet bekend." if company else "Dit e-mailadres is niet bekend.")
     try:
-        twofa.issue_code(user, force_email=True)
+        twofa.issue_code(user, force_email=True)  # (the code is never given back to the website that asks, also not in a sandbox: that would make the verification pointless)
     except twofa.DeliveryError as e:
         raise ValueError(str(e)) from e
     token = secrets.token_urlsafe(24)

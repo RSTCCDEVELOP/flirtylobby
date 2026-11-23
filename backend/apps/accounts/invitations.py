@@ -247,8 +247,10 @@ def _send_code(i):
     if i.code_sent_at and (timezone.now() - i.code_sent_at).total_seconds() < RESEND_SECONDS:
         return f"Wacht even voordat je een nieuwe code aanvraagt ({RESEND_SECONDS} seconden)."
     code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
-    if sandbox.code_on_screen():
+    if sandbox.code_visible():
         i._sandbox_code = code
+    if sandbox.code_on_screen():
+        pass  # nothing is sent
     else:
         from apps.communication import sending
 

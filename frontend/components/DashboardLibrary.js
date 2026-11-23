@@ -12,6 +12,7 @@ import { useState } from "react";
 import { DASH_LAYOUTS, DASH_THEMES, suggestedFor, WIDGETS } from "./Widgets";
 import { IconBag, IconBolt, IconChat, IconFlask, IconGrid, IconHeart, IconImage, IconLink, IconMail, IconReceipt, IconSearch, IconSend, IconSmile, IconTruck, IconUser, IconUsers } from "./Icons";
 import Tabs from "./Tabs";
+import { matches } from "../lib/useView";
 
 const ICON = {
   welcome: <IconSmile />, notice: <IconSend />, shortcuts: <IconGrid />, profile: <IconUser />, messages: <IconMail />, chat: <IconChat />, direct: <IconLink />,
@@ -28,7 +29,7 @@ export default function DashboardLibrary({ theme, ctx, onDashIds, onAdd, onLayou
   const suggestedIds = suggestedFor(theme);
   const groups = [...new Set(usable.map((w) => w.group))];
   const list = usable.filter((w) => (tab === "suggested" ? suggestedIds.includes(w.id) : tab === "all" || w.group === tab))
-    .filter((w) => !q || `${tx(w.title)} ${tx(w.desc)}`.toLowerCase().includes(q.toLowerCase()));
+    .filter((w) => matches(q, w.title, w.desc));
   const tabs = [["suggested", "Aanbevolen"], ["all", "Alle"], ...groups.map((g) => [g, g])];
 
   return (

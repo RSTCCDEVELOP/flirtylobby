@@ -162,3 +162,18 @@ def test_plugin_gate_shows_cost_and_steps_and_runs_them(monkeypatch):
     assert d["allowed"] and not d["on"] and {"extra_ex", "extra_inc", "steps", "title"} <= set(d)
     assert any(x["key"] == "enable" for x in d["steps"]) and d["steps"][-1]["key"] == "price"
     assert su.post("/api/system/plugin-gate/", {"plugin": "siteimport", "step": "price"}, format="json").json() == {"ok": True, "step": "price"}
+
+
+def test_twofa_is_on_by_default_in_every_implementation(db):
+    """OTP must be possible everywhere: its module and the communication module never go off (not by a preset, not by a reset), and the setting is on by default."""
+    from apps.core import modules, presets
+    from apps.core.models import ModuleState
+    from apps.security import service
+
+    ModuleState.objects.update_or_create(key="twofa", defaults={"enabled": False})
+    ModuleState.objects.update_or_create(key="communication", defaults={"enabled": False})
+    modules.invalidate()
+    assert modules.enabled("twofa") and modules.enabled("communication")
+    assert "twofa" in presets.ALWAYS_ON and "communication" in presets.ALWAYS_ON
+    service.invalidate()
+    assert service.get()["twofa"]["enabled"] is True

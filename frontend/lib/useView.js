@@ -8,6 +8,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { tx } from "./t";
+
+// THE matching of every search field of the system: not sensitive for capitals and accents, and every text is searched in what the person SEES (the translation) and in the Dutch source text,
+// so "sandbox" and "testomgeving" both find the tile, in every language.
+export const norm = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+export const haystack = (texts) => norm(texts.flat().filter(Boolean).flatMap((t) => { const s = String(t); let seen = s; try { seen = tx(s); } catch {} return seen === s ? [s] : [s, seen]; }).join(" "));
+export const matches = (q, ...texts) => { const words = norm(q).split(/\s+/).filter(Boolean); if (!words.length) return true; const h = haystack(texts); return words.every((w) => h.includes(w)); };
 
 // Tiles or list, per screen, remembered for this user (localStorage "view:<id>"). The search text is not remembered.
 // const view = useView("integrations");  view.mode = "tiles" | "list";  view.q = search text;  view.match(...texts) -> bool
@@ -21,6 +28,11 @@ export function useView(id, initial = "tiles") {
     setModeState(m);
     try { localStorage.setItem(`view:${id}`, m); } catch {}
   }, [id]);
-  const match = useCallback((...texts) => !q.trim() || texts.filter(Boolean).join(" ").toLowerCase().includes(q.trim().toLowerCase()), [q]);
+  const match = useCallback((...texts) => matches(q, ...texts), [q]);
+  useEffect(() => { // the search field above the tiles of Admin (TileSearch) drives the lists on the page too
+    const on = (e) => setQ(String(e.detail ?? ""));
+    window.addEventListener("tilesearch", on);
+    return () => window.removeEventListener("tilesearch", on);
+  }, []);
   return { id, mode, setMode, q, setQ, match, cls: mode === "list" ? " view-list" : "" };
 }

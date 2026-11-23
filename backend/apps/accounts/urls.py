@@ -51,6 +51,7 @@ urlpatterns = [
     path("auth/2fa/start/", views.twofa_start),
     path("auth/2fa/confirm/", views.twofa_confirm),
     path("auth/2fa/disable/", views.twofa_disable),
+    path("auth/2fa/bypass/", views.twofa_bypass),
     path("invitations/", invitations.invitations),
     path("invitations/<int:pk>/", invitations.invitation),
     path("invitations/<int:pk>/resend/", invitations.invitation_resend),

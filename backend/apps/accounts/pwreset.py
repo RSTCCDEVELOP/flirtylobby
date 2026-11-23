@@ -115,8 +115,10 @@ def start(email, lang="nl"):
     subject, body = TEXTS.get(lang) or TEXTS["nl"]
     fill = lambda t: t.replace("{code}", code).replace("{minutes}", str(CODE_MINUTES))  # noqa: E731
     try:
+        if sandbox.code_visible():
+            out["sandbox_code"] = code  # the sandbox is on: the screen shows the code and fills it in
         if sandbox.code_on_screen():
-            out["sandbox_code"] = code  # nothing is sent: the screen shows the code
+            pass  # nothing is sent
         else:
             sending.send_email(user.email, fill(subject), fill(body), purpose="security", code=code)
     except sending.DeliveryError as e:

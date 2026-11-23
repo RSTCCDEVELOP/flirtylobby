@@ -124,7 +124,7 @@ def send(user, method):
             raise GateError(f"De code kon niet worden verstuurd: {str(e)[:150]}")
     cache.set(_k("code", user), {"h": _hash(user, code), "tries": 0}, MINUTES_CODE * 60)
     cache.set(_k("sent", user), 1, RESEND_SECONDS)
-    return {"sent": True, "method": method, "dev_code": code if on_screen else None}
+    return {"sent": True, "method": method, "dev_code": code if (on_screen or sandbox.code_visible()) else None}
 
 
 def verify(user, code):

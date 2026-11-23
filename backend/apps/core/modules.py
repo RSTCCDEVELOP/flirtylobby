@@ -149,7 +149,7 @@ BY_KEY = {m["key"]: m for m in MODULES}
 
 _cache = {"t": 0, "v": None}
 TTL = 10
-ALWAYS_ON = ("system", "plugins", "storage", "backups", "integrations", "theme")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible)
+ALWAYS_ON = ("system", "plugins", "storage", "backups", "integrations", "theme", "twofa", "communication")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible). "twofa" + "communication" (the e-mail addresses the code is sent from) keep two-step verification possible in every implementation: it is ON by default (setting Beveiliging -> Twee-staps verificatie, admins), only a superadmin can switch the setting off
 
 
 def states():

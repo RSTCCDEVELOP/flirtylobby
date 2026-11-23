@@ -82,8 +82,10 @@ def _send(p):
     code = (sandbox.get()["fixed_code"] if sandbox.active() else "") or f"{secrets.randbelow(10**6):06d}"
     fmt = lambda t: t.replace("{code}", code).replace("{minutes}", str(cfg["code_minutes"]))  # noqa: E731
     lang = p.data.get("language")  # the language of the sign-up form: the mail arrives in it
+    if sandbox.code_visible():
+        p.sandbox_code = code  # the sandbox is on: the form shows the code and fills it in
     if sandbox.code_on_screen():
-        p.sandbox_code = code  # nothing is sent: the form shows the code
+        pass  # nothing is sent
     elif p.steps[0] == "sms":
         twofa.send_sms(p.data["phone"], fmt(_text("sms_body", lang)))
     else:

@@ -71,6 +71,13 @@ def availability():
             "sms": sms.name if sms else ("Sandbox" if sandbox.active("sms") else None)}
 
 
+def simulated(method):
+    """True when a code by this method is not really sent because the sandbox simulates it (the message is kept in the sandbox)."""
+    from apps.sandbox import service as sandbox
+
+    return bool(sandbox.active("sms" if method == "sms" else "email"))
+
+
 def allowed_methods():
     cfg, avail = service.get()["twofa"], availability()
     if not cfg["enabled"]:
@@ -91,9 +98,39 @@ def exempt(user):
     return sandbox.skips_verification(getattr(user, "email", ""))
 
 
+BYPASS_SECONDS = 12 * 3600  # a superadmin who bypasses the forced set-up is left alone for this long (this login only)
+
+
+def _bypass_key(token_key):
+    return f"twofa-bypass:{token_key}"
+
+
+def can_bypass(user):
+    """A superadmin and a superadmin+ (both is_staff) may skip the forced set-up of two-step verification, for this login."""
+    return bool(getattr(user, "is_staff", False))
+
+
+def bypassed(user):
+    """True when this person bypassed the forced set-up in THIS login (a new login asks again)."""
+    from django.core.cache import cache
+
+    key = getattr(user, "_login_token", None)
+    return bool(key and can_bypass(user) and cache.get(_bypass_key(key)))
+
+
+def bypass(user):
+    """Skip the forced set-up for this login. Raises PermissionError for someone who may not."""
+    from django.core.cache import cache
+
+    key = getattr(user, "_login_token", None)
+    if not can_bypass(user) or not key:
+        raise PermissionError("Alleen een superadmin of superadmin+ mag dit overslaan.")
+    cache.set(_bypass_key(key), True, BYPASS_SECONDS)
+
+
 def needs_setup(user):
-    """Policy says this user must have 2FA but has not set it up yet."""
-    if exempt(user):
+    """Policy says this user must have 2FA but has not set it up yet (and did not bypass it in this login)."""
+    if exempt(user) or bypassed(user):
         return False
     cfg = service.get()["twofa"]
     if not cfg["enabled"] or user.otp_active or not allowed_methods():
@@ -113,13 +150,29 @@ def required_for(user):
     return cfg["enabled"] and (bool(user.twofa_required) or cfg["required_for"] == "all" or (cfg["required_for"] == "admins" and is_admin(user)))
 
 
+def suggested_phone(user):
+    """The phone number the sms code can go to, taken from the system: the number of the login itself, else (when this is the contact person of the website) the mobile number of the licence data."""
+    if getattr(user, "phone", ""):
+        return user.phone
+    try:
+        from apps.core import system
+
+        s = system.get()
+        if str(s.get("contact_email") or "").strip().lower() == str(user.email or "").strip().lower():
+            return str(s.get("mobile") or s.get("phone") or "").strip()
+    except Exception:  # noqa: BLE001 - a suggestion only
+        pass
+    return ""
+
+
 def state(user):
     return {
+        "phone": suggested_phone(user),
         "enabled_system": service.get()["twofa"]["enabled"],
         "active": user.otp_active, "method": user.twofa_method,
         "destination": destination_hint(user) if user.twofa_method else "",
         "email_verified": user.email_verified, "email_verify_required": bool(service.get()["email_verify"]["enabled"]),
-        "available": allowed_methods(), "required": required_for(user), "setup_required": needs_setup(user),
+        "available": allowed_methods(), "required": required_for(user), "setup_required": needs_setup(user), "can_bypass": can_bypass(user), "bypassed": bypassed(user),
     }
 
 
@@ -169,7 +222,7 @@ def issue_code(user, force_email=False):
     user.save(update_fields=["otp_token", "otp_expires", "otp_attempts", "otp_sent_at"])
     if dj_settings.DEBUG:
         logger.warning("2FA code for %s (DEBUG only): %s", user.email, code)
-    return code if on_screen else None
+    return code if (on_screen or sandbox.code_visible()) else None
 
 
 def app_start(user):

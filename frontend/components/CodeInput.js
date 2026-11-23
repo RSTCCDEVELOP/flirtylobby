@@ -7,13 +7,27 @@
 
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { tx } from "../lib/t";
+import { freshSandboxCode } from "../lib/sandboxCode";
 
 // The one place for entering a verification code: a box per digit. Typing moves on, backspace goes back, a pasted code (or one the phone
 // suggests from an sms) fills all boxes. Use it on every verification screen. onComplete(code) is called when the last digit is in.
 export default function CodeInput({ value, onChange, length = 6, autoFocus = false, onComplete, onAt, label, disabled = false, invalid = false }) {
   const refs = useRef([]);
+  const live = useRef({});
+  live.current = { value, onChange, disabled, length };
+  useEffect(() => { // the sandbox is on and the server gave the code: it is filled in (only an empty box set; never when the sandbox is off, then the server gives no code)
+    const fill = (code) => {
+      const c = live.current;
+      if (!code || c.disabled || String(c.value || "").replace(/\D/g, "")) return;
+      c.onChange(String(code).slice(0, c.length));
+    };
+    fill(freshSandboxCode());
+    const on = (e) => fill(e.detail);
+    window.addEventListener("sandbox-code", on);
+    return () => window.removeEventListener("sandbox-code", on);
+  }, []);
   const v = (value || "").replace(/\D/g, "").slice(0, length);
   const chars = Array.from({ length }, (_, i) => v[i] || "");
   const focus = (i) => { const el = refs.current[Math.max(0, Math.min(length - 1, i))]; el?.focus(); el?.select(); };

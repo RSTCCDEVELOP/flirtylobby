@@ -15,6 +15,7 @@ import Tabs from "./Tabs";
 import { loadKit } from "../lib/ui-kit/kitDoc";
 import MediaLibraryPanel from "./MediaLibraryPanel";
 import Loading from "./Loading";
+import { matches } from "../lib/useView";
 
 // One-colour icons (they follow the colour of the text)
 const I = (d) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -73,7 +74,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
   const [kit, setKit] = useState(null);  // the components of the UI-kit (loaded when this menu opens)
   useEffect(() => { loadKit().then(setKit).catch(() => {}); }, []);
   const find = q.trim().toLowerCase();
-  const match = (l, d) => `${tx(l)} ${tx(d)}`.toLowerCase().includes(find);
+  const match = (l, d) => matches(q, l, d);
   const tabs = [...GROUPS.map(([k, l]) => [k, l]), ["componenten", "Componenten"], ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
   const tile = ([type, widget, label, desc, icon]) => (
     <button type="button" key={`${type}-${widget}`} className="pb-addtile" onClick={() => onAdd(type, widget)} {...dragProps({ kind: "basic", type, widget })}>

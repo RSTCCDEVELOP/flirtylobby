@@ -123,6 +123,12 @@ def admin_password_login(user, password):
     return False
 
 
+def code_visible():
+    """The sandbox is ON (the orange label): every verification code that is made is also given to the screen, which fills it in by itself (a test goes quickly). Never when the sandbox is off.
+    (Whether the code is still sent or only shown is the separate setting code_on_screen; with the simulation on a "sent" message only lands in the sandbox messages.)"""
+    return bool(active())
+
+
 def code_on_screen():
     """Sandbox on and 'toon de code in het scherm' switched on: codes are not sent, the form shows them (to test the verification flow)."""
     return bool(active() and get()["code_on_screen"])

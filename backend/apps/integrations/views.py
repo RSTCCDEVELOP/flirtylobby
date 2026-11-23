@@ -143,8 +143,10 @@ class IntegrationViewSet(viewsets.ModelViewSet):
         text = f"easy2edit testcode: {shown}"
         out = {"phone_saved": saved} if saved else {}
         try:
+            if sandbox.code_visible():
+                out["sandbox_code"] = shown  # the sandbox is on: the screen shows the code and fills it in
             if sandbox.code_on_screen():
-                out["sandbox_code"] = shown  # nothing is sent: the screen shows the code
+                pass  # nothing is sent
             else:
                 sent = twofa.send_via(obj, phone, text)  # this very link (not the first one that is on)
                 if obj.provider == "seven" and isinstance(sent, dict):

@@ -72,7 +72,7 @@ export default function AdminTiles({ all = false }) {
     {msg && <div className="alert">{msg}</div>}
     <ViewBar view={view} count={`${shown.length}/${tiles.length}`} />
     <Paged id={all ? "admin-tiles-all" : "admin-tiles"} query={view.q}>
-    <div className={`cards${view.cls}`} style={{ marginTop: 0 }}>
+    <div className={`cards${view.cls}`} style={{ marginTop: 0 }} data-view-managed>
       {shown.map((t) => (
         <div key={t.href} className={all && !t.on ? "tile-off" : ""} style={{ display: "flex" }}>
           <div style={{ flex: 1, display: "flex", minWidth: 0 }} className="st-wrap">
