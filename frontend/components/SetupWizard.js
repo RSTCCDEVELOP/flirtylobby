@@ -180,7 +180,8 @@ export default function SetupWizard() {
     return () => setBlock("setup", false);
   }, [shown]);
   if (!shown) return null;
-  const steps = upd ? STEPS.filter((x) => ["costs", "agree", "pay", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "trees" || user?.is_staff)).filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus))).map((x) => (x[0] === "costs" && !d.needs_license ? [x[0], x[1], []] : x));
+  const again = !upd && !!d && !d.needs_license;  // the onboarding done again with a licence: the same screens, the hosting and the payment period can be changed (the price update follows after saving)
+  const steps = upd ? STEPS.filter((x) => ["costs", "agree", "pay", "overview"].includes(x[0])).map((x) => (x[0] === "costs" ? [x[0], x[1], []] : x)) : STEPS.filter((x) => (x[0] !== "trees" || user?.is_staff)).filter((x) => (x[0] !== "hosting" && x[0] !== "agree" && x[0] !== "pay" && x[0] !== "overview") || (d.needs_license && (x[0] !== "pay" || d.pay?.provider || user?.is_staff || user?.is_superadmin_plus)) || (again && x[0] === "hosting")).map((x) => ((x[0] === "costs" && !d.needs_license) || (again && x[0] === "hosting") ? [x[0], x[1], []] : x));
   const hostOpt = d.needs_license ? (d.hosting_options || []).find((o) => o.key === form.hosting) : null;  // the chosen hosting: a line of the price (not in the base price)
   const hostPrice = hostOpt ? Number(hostOpt.price) : 0;
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setErrs((x) => ({ ...x, [k]: "" })); };
@@ -211,11 +212,22 @@ export default function SetupWizard() {
     catch (e) { setError(errorText(e)); if (e?.data?.errors?.consent) setStep("agree"); else if (e?.data?.errors?.pay) setStep("pay"); }
     setBusy(false);
   };
+  const changeHostingAndUpdate = async (before) => {  // the hosting or the period changed: it is set, then the update screen (agreement and payment) shows the new price; cancelling puts it back
+    try {
+      const h = await api("/system/license/hosting/", { method: "POST", body: { hosting: form.hosting || "", renew_months: Number(form.renew_months) || 12 } });
+      const c = await api("/system/license/change/");
+      setForced(false); setClosed(true); setBusy(false);
+      window.dispatchEvent(new Event("setup-saved"));
+      if (c?.changed) window.dispatchEvent(new CustomEvent("open-setup-wizard", { detail: { mode: "update", change: { ...c, hosting_prev: h.prev } } }));
+      else window.location.reload();
+    } catch (e) { setError(errorText(e)); setBusy(false); }
+  };
   const save = async () => {
     if (upd) return saveUpdate();
     if (!checkStep()) return;
     setBusy(true); setError("");
-    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); /* the last screen: "Voltooid" with "Afronden en verder gaan" (also when the licence was there already or the onboarding is done again); the reload that follows brings the next steps (terms, installation, AI, design wizard) */ setDone(r.license?.number && d.needs_license ? r.license : { finished: true, number: r.license?.number || "", client: form.company_name, main_url: form.frontend_url, valid_until: r.license?.valid_until }); } }
+    const hostChanged = again && ((form.hosting || "") !== (d.hosting_current || "") || Number(form.renew_months) !== Number(d.renew_months || 12));  // (hosting or period of the licence that is there)
+    try { const r = await api("/system/setup/", { method: "PUT", body: form }); setD(r); if (!r.needed && hostChanged) { await changeHostingAndUpdate(d); return; } if (r.needed) setError(tx("Niet alle verplichte velden zijn ingevuld.")); else { setForced(false); window.dispatchEvent(new Event("setup-saved")); /* the last screen: "Voltooid" with "Afronden en verder gaan" (also when the licence was there already or the onboarding is done again); the reload that follows brings the next steps (terms, installation, AI, design wizard) */ setDone(r.license?.number && d.needs_license ? r.license : { finished: true, number: r.license?.number || "", client: form.company_name, main_url: form.frontend_url, valid_until: r.license?.valid_until }); } }
     catch (e) {
       const bad = Object.fromEntries(Object.entries(e?.data?.errors || {}).map(([k, v]) => [k, tx(v)]));  // each message in the chosen language
       setError(Object.keys(bad).length ? Object.values(bad).join(" ") : errorText(e));
@@ -580,6 +592,14 @@ export default function SetupWizard() {
                       <span style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{money(o.price)} {tx("per maand")}</span>
                     </label>
                   ))}
+                  {again && (
+                    <div className="e2e-stack" style={{ gap: ".4rem" }}>
+                      <strong>{tx("Betalen")}</strong>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+                        {[[1, "per maand"], [3, "per kwartaal"], [12, "per jaar"]].map(([m, l]) => <button key={m} type="button" className={`btn${Number(form.renew_months) === m ? " primary" : ""}`} aria-pressed={Number(form.renew_months) === m} onClick={() => setForm((f) => ({ ...f, renew_months: m }))}>{tx(l)}</button>)}
+                      </div>
+                    </div>
+                  )}
                   <span className="e2e-hint">{tx("De prijs van de hosting staat apart in de kosten en zit niet in de basisprijs. Prijzen inclusief btw, uit de prijslijst.")}</span>
                   {errs.hosting && <span className="e2e-error">{errs.hosting}</span>}
                 </div>
