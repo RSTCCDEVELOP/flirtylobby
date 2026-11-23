@@ -174,12 +174,12 @@ export default function TemplateGallery({ onInstalled, onDetail, subtitle, onHel
               <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek op naam, omschrijving of maker…")} aria-label={tx("Zoeken")} style={{ width: "100%", paddingLeft: 34, height: 40, borderRadius: 10, boxSizing: "border-box" }} />
             </label>
             {makers.length > 1 && <select value={maker} onChange={(e) => setMaker(e.target.value)} aria-label={tx("Maker")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}><option value="">{tx("Alle makers")}</option>{makers.map((m) => <option key={m} value={m}>{m}</option>)}</select>}
-            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={tx("Sorteren")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{tx("Sorteren")}: {tx(l)}</option>)}</select>
+            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={tx("Sorteren")} style={{ height: 40, borderRadius: 10, width: "auto", flex: "0 0 auto" }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{tx("Sorteren")}: {tx(l)}</option>)}</select><span role="status" aria-live="polite" style={{ flex: "0 0 auto", fontSize: ".82rem", fontWeight: 650, padding: ".35rem .8rem", borderRadius: 99, background: tint(22), whiteSpace: "nowrap" }}>{list.length === d.templates.length ? `${d.templates.length} ${d.templates.length === 1 ? tx("template") : tx("templates")}` : `${list.length} ${tx("van")} ${d.templates.length} ${tx("templates")}`}</span>
           </div>
           <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", alignItems: "center" }}>
             <small className="muted" style={{ marginRight: ".2rem" }}>{tx("Filter")}:</small>
             {FILTERS.filter(([k]) => avail[k] || on[k]).map(([k, l]) => chip(k, l))}
-            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: ".5rem" }}><small className="muted" role="status" aria-live="polite">{list.length === d.templates.length ? `${d.templates.length} ${d.templates.length === 1 ? tx("template") : tx("templates")}` : `${list.length} ${tx("van")} ${d.templates.length} ${tx("templates")}`}</small>{active > 0 && <button type="button" className="btn sm" onClick={clear}>{tx("Filters wissen")}</button>}</span>
+            {active > 0 && <button type="button" className="btn sm" onClick={clear} style={{ marginLeft: "auto" }}>{tx("Filters wissen")}</button>}
           </div>
         </div>
       </div>
