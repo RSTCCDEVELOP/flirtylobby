@@ -70,6 +70,29 @@ def _nominatim(q, rows=5):
     return out
 
 
+def _one_per_street(rows, limit):
+    """A postcode has many houses in the same street: the street comes once (street, postcode and town), without a house number."""
+    seen, out = set(), []
+    for r in rows:
+        k = (r["street"].lower(), r["postal_code"], r["city"].lower())
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append({**r, "id": "pdok:" + "|".join(k), "house_number": "", "adres": f"{r['street']}, {r['postal_code']} {r['city']}"})
+    return out[:limit]
+
+
+def _same_once(rows):
+    """The same address (name, street, number, postcode, town) only once."""
+    seen, out = set(), []
+    for r in rows:
+        k = tuple(str(r.get(x) or "").lower() for x in ("naam", "street", "house_number", "postal_code", "city"))
+        if k not in seen:
+            seen.add(k)
+            out.append(r)
+    return out
+
+
 def free_search(q, limit=5):
     """The free sources. 'RST Coaching 3542 DH' -> the town of that postcode is added to the name; a postcode with a house number gives the exact address."""
     m = POSTCODE.search(q)
@@ -86,7 +109,7 @@ def free_search(q, limit=5):
         if rest:
             out += _nominatim(f"{rest} {city}".strip(), limit)
         if not out:
-            out += _pdok(pc, limit)  # no business found: the addresses of that postcode
+            out += _one_per_street(_pdok(pc, 20), limit)  # no business found: the street of that postcode, once (the house number is typed by the person)
         return out[:limit]
     return _nominatim(q, limit)[:limit]
 
@@ -98,7 +121,7 @@ def search(q, limit=5):
     from . import googleplaces
 
     if googleplaces.settings():
-        r = googleplaces.search(q, limit)
+        r = _same_once(googleplaces.search(q, limit))
         for x in r:
             x["bron"] = "Google"
         return {"source": "google", "results": r}
@@ -107,4 +130,4 @@ def search(q, limit=5):
     if hit is None:
         hit = free_search(q, limit)
         cache.set(key, hit, 86400)
-    return {"source": "free", "results": hit}
+    return {"source": "free", "results": _same_once(hit)}

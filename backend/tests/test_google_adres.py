@@ -100,6 +100,10 @@ def test_free_sources_postcode_and_name(monkeypatch):
     assert r == [{"id": "pdok:Ambachtsweg 46, 3542DH Utrecht", "naam": "", "adres": "Ambachtsweg 46, 3542DH Utrecht", "street": "Ambachtsweg", "house_number": "46", "postal_code": "3542 DH", "city": "Utrecht", "country": "Nederland", "bron": "PDOK"}]
     monkeypatch.setattr(ad, "_http_json", lambda url: pdok if "pdok" in url else [])
     assert ad.free_search("Onbekend 3542 DH")[0]["bron"] == "PDOK"  # no business found: the addresses of that postcode
+    many = {"response": {"docs": [{"woonplaatsnaam": "Utrecht", "weergavenaam": f"Ambachtsweg {n}, 3542DH Utrecht", "postcode": "3542DH", "huisnummer": n, "straatnaam": "Ambachtsweg"} for n in (46, 48, 50)]}}
+    monkeypatch.setattr(ad, "_http_json", lambda url: many if "pdok" in url else [])
+    r = ad.free_search("Onbekend 3542 DH")
+    assert len(r) == 1 and r[0]["street"] == "Ambachtsweg" and r[0]["house_number"] == "" and r[0]["adres"] == "Ambachtsweg, 3542 DH Utrecht"  # the street only once
 
 
 @pytest.mark.django_db
