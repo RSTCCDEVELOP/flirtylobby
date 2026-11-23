@@ -4798,9 +4798,15 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .entity-form .e2e-label { font-weight: 600; margin-bottom: .3rem; display: block; }
 
 /* The licence form: every tick box is a switch (standard for the whole system) */
-.sw-col input[type=checkbox]:not(.switch input) { -webkit-appearance: none; appearance: none; flex: none; width: 2.6rem; height: 1.5rem; padding: 0; margin: 0; border: 0; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background .2s; }
+.sw-col input[type=checkbox]:not(.switch input) { -webkit-appearance: none; appearance: none; flex: none; width: 2.6rem; height: 1.5rem; padding: 0; margin: 0; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text, #1f2937) 30%, var(--card, #fff)); position: relative; cursor: pointer; transition: background .2s; }
 .sw-col input[type=checkbox]:not(.switch input)::before { content: ""; position: absolute; left: .19rem; top: .19rem; width: 1.12rem; height: 1.12rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); transition: transform .2s; }
 .sw-col input[type=checkbox]:not(.switch input):checked { background: var(--e2e-primary, var(--blue)); }
 .sw-col input[type=checkbox]:not(.switch input):checked::before { transform: translateX(1.1rem); }
 .sw-col input[type=checkbox]:not(.switch input):disabled { opacity: .55; cursor: not-allowed; }
 .sw-col input[type=checkbox]:not(.switch input):focus-visible { outline: 2px solid var(--e2e-primary, var(--blue)); outline-offset: 2px; }
+.sw-col .switch { flex: none; width: 2.6rem; height: 1.5rem; }
+.sw-col .switch span { background: color-mix(in srgb, var(--text, #1f2937) 30%, var(--card, #fff)); border-radius: 999px; }
+.sw-col .switch span::before { left: .19rem; top: .19rem; width: 1.12rem; height: 1.12rem; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.sw-col .switch input:checked + span { background: var(--e2e-primary, var(--blue)); }
+.sw-col .switch input:checked + span::before { transform: translateX(1.1rem); }
+.sw-col .switch input:focus-visible + span { outline: 2px solid var(--e2e-primary, var(--blue)); outline-offset: 2px; }
