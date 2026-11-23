@@ -118,20 +118,20 @@ function PluginRights({ plugins, setMsg, reload }) {
     <div style={{ display: "grid", gap: ".8rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("De records van een plugin (een product, een document …) kunnen eigen rechten hebben: wie ze mag bekijken, bewerken en verwijderen. Het maken van die rechten doet de plugin; hier bepaal je per plugin of ook gebruikers die geen admin zijn rechten mogen zetten voor hun eigen records.")}</p>
       {plugins.length === 0 ? <p className="muted">{tx("Er zijn geen plugins.")}</p> : (
-        <div className="e2e-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="e2e-table" style={{ width: "100%" }}>
-            <thead><tr><th style={{ textAlign: "left" }}>{tx("Plugin")}</th><th style={{ textAlign: "left" }}>{tx("Records met rechten")}</th><th style={{ textAlign: "center" }}>{tx("Ook gebruikers die geen admin zijn mogen rechten zetten")}</th></tr></thead>
-            <tbody>
-              {plugins.map((p) => (
-                <tr key={p.name}>
-                  <td><b>{p.title}</b>{!p.enabled && <small className="muted" style={{ display: "block" }}>{tx("Staat uit")}</small>}{p.models.length > 0 && <small className="muted" style={{ display: "block" }}>{p.models.join(", ")}</small>}</td>
-                  <td>{p.restricted_records}</td>
-                  <td style={{ textAlign: "center" }}><label className="check" style={{ justifyContent: "center" }}><span className="switch"><input type="checkbox" aria-label={`${p.title}: ${tx("Ook gebruikers die geen admin zijn mogen rechten zetten")}`} checked={!!p.rights_members} onChange={(e) => set(p, e.target.checked)} /><span /></span></label></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: ".6rem" }}>
+          {plugins.map((p) => (
+            <li key={p.name} style={{ border: "1px solid var(--line)", borderRadius: "var(--radius, 10px)", padding: ".6rem .75rem", display: "grid", gap: ".5rem" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: ".5rem", flexWrap: "wrap" }}>
+                <b>{p.title}</b>
+                {!p.enabled && <small className="muted">{tx("Staat uit")}</small>}
+                {p.models.length > 0 && <small className="muted">{p.models.join(", ")}</small>}
+                <span style={{ flex: 1 }} />
+                <small className="muted">{tx("Records met rechten")}: {p.restricted_records}</small>
+              </div>
+              <label className="check"><span className="switch"><input type="checkbox" aria-label={`${p.title}: ${tx("Ook gebruikers die geen admin zijn mogen rechten zetten")}`} checked={!!p.rights_members} onChange={(e) => set(p, e.target.checked)} /><span /></span><span>{tx("Ook gebruikers die geen admin zijn mogen rechten zetten")}</span></label>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
