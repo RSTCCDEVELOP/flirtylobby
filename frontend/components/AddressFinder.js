@@ -8,6 +8,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { IconPin, IconSearch } from "./Icons";
@@ -39,23 +40,27 @@ export default function AddressFinder({ initial = "", onPick, disabled = false, 
       </div>
       {err && <span className="e2e-error">{err}</span>}
       {res && !res.length && !err && <span className="e2e-hint">{tx("Niets gevonden. Probeer de naam met de plaats, of een postcode met huisnummer.")}</span>}
-      {res && res.length > 0 && (
-        <div className="e2e-stack" style={{ gap: ".4rem" }}>
-          <span className="e2e-hint">{tx("Kies het juiste adres:")}</span>
-          {res.map((r) => (
-            <button key={r.id} type="button" disabled={disabled} onClick={() => { onPick(r); setPicked(r.naam || r.adres); setRes(null); }}
-              style={{ textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".6rem", padding: ".55rem .8rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, #e5e0d8)", background: "var(--e2e-bg, #fff)" }}>
-              <span aria-hidden="true" style={{ flex: "none", marginTop: ".15rem", color: "var(--e2e-primary, var(--blue))" }}><IconPin width={15} height={15} /></span>
-              <span style={{ display: "grid", gap: ".1rem", minWidth: 0, flex: 1 }}>
-                {r.naam && <strong>{r.naam}</strong>}
-                <span>{[[r.street, r.house_number].filter(Boolean).join(" "), [r.postal_code, r.city].filter(Boolean).join(" "), r.country].filter(Boolean).join(", ") || r.adres}</span>
-              </span>
-              {r.bron && <small className="e2e-hint" style={{ flex: "none" }}>{r.bron}</small>}
-            </button>
-          ))}
-          {src === "free" && <small className="e2e-hint">{tx("Gratis adresbronnen (PDOK en OpenStreetMap). Met de koppeling Google adressen (Admin → API keys) vind je ook kleine bedrijven.")}</small>}
-        </div>
-      )}
+      {res && res.length > 0 && typeof document !== "undefined" && createPortal(
+        <div className="overlay" style={{ zIndex: 3100 }} role="dialog" aria-modal="true" aria-label={tx("Kies het juiste adres:")} onClick={() => setRes(null)}>
+          <div className="card modal" style={{ maxWidth: 560, width: "100%", maxHeight: "86vh", display: "flex", flexDirection: "column", gap: ".8rem", padding: "1.2rem 1.4rem" }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{tx("Kies het juiste adres:")}</h2>
+            <div className="e2e-stack" style={{ gap: ".5rem", overflowY: "auto", minHeight: 0 }}>
+              {res.map((r) => (
+                <button key={r.id} type="button" disabled={disabled} onClick={() => { onPick(r); setPicked(r.naam || r.adres); setRes(null); }}
+                  style={{ textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".7rem", padding: ".7rem .9rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, var(--line, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, var(--card, #fff)))" }}>
+                  <span aria-hidden="true" style={{ flex: "none", marginTop: ".15rem", color: "var(--e2e-primary, var(--blue))" }}><IconPin width={16} height={16} /></span>
+                  <span style={{ display: "grid", gap: ".15rem", minWidth: 0, flex: 1 }}>
+                    {r.naam && <strong>{r.naam}</strong>}
+                    <span>{[[r.street, r.house_number].filter(Boolean).join(" "), [r.postal_code, r.city].filter(Boolean).join(" "), r.country].filter(Boolean).join(", ") || r.adres}</span>
+                  </span>
+                  {r.bron && <small className="e2e-hint" style={{ flex: "none" }}>{r.bron}</small>}
+                </button>
+              ))}
+            </div>
+            {src === "free" && <small className="e2e-hint">{tx("Gratis adresbronnen (PDOK en OpenStreetMap). Met de koppeling Google adressen (Admin → API keys) vind je ook kleine bedrijven.")}</small>}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setRes(null)}>{tx("Sluiten")}</button></div>
+          </div>
+        </div>, document.body)}
       {picked && <span className="e2e-hint">{tx("Ingevuld: {0}. Controleer de gegevens en pas ze zo nodig aan.", picked)}</span>}
     </div>
   );
