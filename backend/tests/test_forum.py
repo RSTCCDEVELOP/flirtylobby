@@ -185,6 +185,19 @@ def test_approval_admin_board_and_menu_flags(forum):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_inline_flag_is_parsed_and_returned(forum):
+    from apps.plugins import manifest
+
+    assert forum.manifest["inline"] is True
+    assert manifest.parse(b'{"name": "plain", "version": "1.0.0"}')["inline"] is False
+    boss = user("inlineboss", is_staff=True, is_superuser=True)
+    c = client(boss)
+    assert [x for x in c.get("/api/plugins/menu/").json() if x["name"] == "forum"][0]["inline"] is True
+    assert [x for x in c.get("/api/plugins/menu/?scope=admin").json() if x["name"] == "forum"][0]["inline"] is True
+    assert client().get("/api/plugins/public/?path=forum").json()["inline"] is True
+
+
+@pytest.mark.django_db(transaction=True)
 def test_my_forums_use_reverse_relations(forum):
     ann = user("ann")
     f = make(client(ann))["forum"]["id"]

@@ -28,7 +28,7 @@ export default function PluginPage() {
   return (
     <>
       <div className="page-head"><div><h1>{p.label}</h1><p className="muted" style={{ margin: 0 }}>{p.title}</p></div></div>
-      <PluginFrame name={name} title={p.title} route={{ path: "/", params: {}, query }} />
+      <PluginFrame name={name} inline={p.inline} title={p.title} route={{ path: "/", params: {}, query }} />
     </>
   );
 }

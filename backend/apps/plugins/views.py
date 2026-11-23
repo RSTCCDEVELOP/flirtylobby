@@ -51,7 +51,7 @@ def _out(p):
             "compat": mf.compatibility(built, settings.SYSTEM_VERSION), "languages": installer.lang_state(p.name), "blocked": runtime.start_problem(p), "requires": p.manifest.get("requires", []), "required_by": runtime.dependents(p.name), "requires_off": [{"name": x.name, "title": x.title} for x in runtime.requirement_chain(p)[0]], "requires_missing": runtime.requirement_chain(p)[1],
             "payments_notice": __import__("apps.core.payments_notice", fromlist=["x"]).notice_for([p.name]) if p.enabled else "",
             "name": p.name, "title": p.title, "version": p.version, "description": p.description, "descriptions": p.manifest.get("descriptions") or {}, "author": p.author, "enabled": p.enabled, "error": p.error,
-            "permissions": p.manifest.get("permissions", []), "events": p.manifest.get("events", []), "has_python": bool(p.manifest.get("python")), "section": installer.admin_section(p), "section_default": p.manifest.get("section", "system"), "admin_web": p.manifest.get("admin_web", ""), "settings_web": p.manifest.get("settings_web", ""), "blocks_page": p.manifest.get("blocks_page", ""), "admin_links": p.manifest.get("admin_links", []), "admin_entries": p.manifest.get("admin_entries", []), "has_web": bool(p.manifest.get("web")),
+            "permissions": p.manifest.get("permissions", []), "events": p.manifest.get("events", []), "has_python": bool(p.manifest.get("python")), "section": installer.admin_section(p), "section_default": p.manifest.get("section", "system"), "admin_web": p.manifest.get("admin_web", ""), "settings_web": p.manifest.get("settings_web", ""), "blocks_page": p.manifest.get("blocks_page", ""), "admin_links": p.manifest.get("admin_links", []), "admin_entries": p.manifest.get("admin_entries", []), "has_web": bool(p.manifest.get("web")), "inline": bool(p.manifest.get("inline")),
             "menu": p.manifest.get("menu"), "public_pages": p.manifest.get("public_pages", []), "site_link": p.manifest.get("site_link"), "provides": p.manifest.get("provides", []), "admin_label": p.manifest.get("admin_label", ""), "content_label": p.manifest.get("content_label", ""), "active_languages": active_languages() if p.manifest.get("content_dirs") else [], "all_languages": active_languages(everything=True) if p.manifest.get("content_dirs") else [], "content_items": installer.content_items(p), "menu_group": installer.menu_group(p), "page_object_offered": bool(p.manifest.get("page_object")), "public_path": p.manifest.get("public_path", ""), "page_public": installer.page_public(p), "page_object": installer.as_page_object(p), "config_schema": p.manifest.get("config", []), "config": installer.public_config(p), "updated_at": p.updated_at}
 
 
@@ -432,12 +432,12 @@ def menu(request):
     if request.query_params.get("scope") == "admin":
         if not request.user.is_staff:
             return Response([])
-        return Response([{"name": p.name, "label": p.title, "title": p.title, "section": installer.admin_section(p), "has_admin": bool(p.manifest.get("admin_web")), "admin_web": p.manifest.get("admin_web", ""), "entries": p.manifest.get("admin_entries", [])} for p in Plugin.objects.filter(enabled=True)])
+        return Response([{"name": p.name, "label": p.title, "title": p.title, "section": installer.admin_section(p), "has_admin": bool(p.manifest.get("admin_web")), "admin_web": p.manifest.get("admin_web", ""), "inline": bool(p.manifest.get("inline")), "entries": p.manifest.get("admin_entries", [])} for p in Plugin.objects.filter(enabled=True)])
     for p in Plugin.objects.filter(enabled=True):
         m, web = p.manifest.get("menu"), p.manifest.get("web")
         if m and web and (m["access"] == "members" or request.user.is_staff):  # the page of the plugin in the menu
             cfg = p.config or {}  # the plugin setting "Item in het gebruikersmenu" / "Tegel op het gebruikersdashboard" (show_in_menu, show_tile; on when the plugin does not have them)
-            out.append({"name": p.name, "label": m["label"], "title": p.title, "section": p.manifest.get("section", "system"), "group": installer.menu_group(p), "path": p.manifest.get("public_path", ""),
+            out.append({"name": p.name, "label": m["label"], "title": p.title, "inline": bool(p.manifest.get("inline")), "section": p.manifest.get("section", "system"), "group": installer.menu_group(p), "path": p.manifest.get("public_path", ""),
                         "in_menu": cfg.get("show_in_menu", True) is not False, "tile": cfg.get("show_tile", True) is not False})
     return Response(out)
 
@@ -458,7 +458,7 @@ def public(request):
         hit = mf.match_public(pages, path)
         if hit:
             pg, params = hit
-            return Response({"name": p.name, "file": pg["file"], "title": pg["title"] or p.title, "noindex": pg.get("noindex", False), "params": params, "page": pg.get("page", "")})
+            return Response({"name": p.name, "file": pg["file"], "title": pg["title"] or p.title, "noindex": pg.get("noindex", False), "params": params, "page": pg.get("page", ""), "inline": bool(p.manifest.get("inline"))})
     return bad("Onbekende pagina.", status.HTTP_404_NOT_FOUND)
 
 

@@ -71,7 +71,7 @@ export default async function PluginSitePage({ params, searchParams }) {
       <div className="site">
         <SiteHeader />
         <main className="shop">
-          {wrapped ? <PageRouteProvider value={route}><PageBlocks pageKey={pg.page} title={pg.title} /></PageRouteProvider> : <PluginPublic name={pg.name} file={pg.file} title={pg.title} route={route} />}
+          {wrapped ? <PageRouteProvider value={route}><PageBlocks pageKey={pg.page} title={pg.title} /></PageRouteProvider> : <PluginPublic name={pg.name} file={pg.file} title={pg.title} route={route} inline={pg.inline} />}
         </main>
         <SiteFooter />
       </div>

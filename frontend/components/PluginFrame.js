@@ -23,6 +23,7 @@ import { useSession } from "./Session";
 import MediaPicker from "./MediaPicker";
 import RichEditor from "./RichEditor";
 import AiCreditPopup from "./AiCreditPopup";
+import PluginInline from "./PluginInline";
 
 const VARS = ["--bg", "--card", "--text", "--muted", "--line", "--blue", "--orange", "--ok", "--danger", "--radius", "--btn-radius", "--shadow", "--font-body", "--font-heading", "--fw-heading"];
 const scheme = () => { const m = (getComputedStyle(document.documentElement).getPropertyValue("--bg").trim().match(/^#([0-9a-f]{6})$/i) || [])[1]; if (!m) return document.documentElement.dataset.theme === "light" ? "light" : "dark"; const n = parseInt(m, 16); return ((n >> 16) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) < 140 ? "dark" : "light"; };
@@ -30,7 +31,12 @@ const siteVars = () => { const cs = getComputedStyle(document.documentElement); 
 
 // A page of a plugin (file: "" = its own page, or e.g. "web/admin.html"), inside the dashboard. It runs in a sandboxed frame: it never sees the login of the member;
 // it asks this host (postMessage) to call the system's API for it, as the logged-in member, and gets its texts in the language of the visitor.
-export default function PluginFrame({ name, file = "", title, route = null, bare = false, onWrite = null, keep = false }) {  // keep: this frame does not load again on a soft refresh (a settings panel that sits beside the page it changes)
+// inline (plugin.json "inline": true): the page runs inside the dashboard itself, see PluginInline; every other plugin runs in the frame below.
+export default function PluginFrame(props) {
+  return props.inline ? <PluginInline {...props} /> : <PluginFrameBox {...props} />;
+}
+
+function PluginFrameBox({ name, file = "", title, route = null, bare = false, onWrite = null, keep = false, inline = false }) {  // keep: this frame does not load again on a soft refresh (a settings panel that sits beside the page it changes)
   const dash = useAuth(), site = useSession(); // in the dashboard the AuthContext, on the public site the Session
   const user = dash?.user ?? site?.user ?? null;
   const frame = useRef(null);

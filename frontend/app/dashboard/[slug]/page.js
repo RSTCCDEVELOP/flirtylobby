@@ -40,7 +40,7 @@ export default function DashboardPage() {
     return (
       <>
         <div className="page-head"><div><h1>{p.label}</h1><p className="muted" style={{ margin: 0 }}>{p.title}</p></div></div>
-        <PluginFrame name={p.name} title={p.title} />
+        <PluginFrame name={p.name} inline={p.inline} title={p.title} />
       </>
     );
   }

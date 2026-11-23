@@ -30,7 +30,7 @@ export default function PluginWorkPage() {
   return (
     <>
       <div className="page-head"><div><h1>{p.label}</h1></div></div>
-      <PluginFrame key={wanted} name={name} file={p.admin_web} title={p.title} route={wanted ? { params: {}, query: { tab: wanted } } : null} />
+      <PluginFrame key={wanted} name={name} inline={p.inline} file={p.admin_web} title={p.title} route={wanted ? { params: {}, query: { tab: wanted } } : null} />
     </>
   );
 }
