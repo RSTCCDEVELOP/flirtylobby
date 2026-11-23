@@ -4810,3 +4810,21 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .sw-col .switch input:checked + span { background: var(--e2e-primary, var(--blue)); }
 .sw-col .switch input:checked + span::before { transform: translateX(1.1rem); }
 .sw-col .switch input:focus-visible + span { outline: 2px solid var(--e2e-primary, var(--blue)); outline-offset: 2px; }
+
+/* ── Left panel of the page editor: the tab "Opmaak" in tidy blocks (label above, control under it, nothing on top of each other) ── */
+.pb-sidebar .pb-stylebox { display: grid; gap: .6rem; }
+.pb-sidebar .pb-stylebox > strong { font-size: .95rem; padding-bottom: .1rem; }
+.pb-sidebar .pb-stylebox .pb-stylerow { flex-wrap: wrap; align-items: center; row-gap: .45rem; padding: .65rem .75rem; border-radius: 10px; background: color-mix(in srgb, var(--blue) 6%, transparent); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.pb-sidebar .pb-stylebox .pb-stylerow > span:first-child { flex: 0 0 100%; font-size: .78rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; opacity: .75; }
+.pb-sidebar .pb-stylebox .pb-stylerow > .pb-colorpick { flex: 1 1 100%; }
+.pb-sidebar .pb-stylebox .pb-colorpick { gap: .5rem; }
+.pb-sidebar .pb-stylebox .pb-swatches { gap: .4rem; }
+.pb-sidebar .pb-stylebox .pb-swatches.pb-saved { padding-top: .35rem; border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent); }
+.pb-sidebar .pb-stylebox .pb-alpha { flex: 1 1 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .6rem; align-items: center; font-size: .8rem; }
+.pb-sidebar .pb-stylebox .pb-alpha small { white-space: nowrap; opacity: .75; }
+.pb-sidebar .pb-stylebox .pb-stylerow > .sec-toggle, .pb-sidebar .pb-stylebox .pb-stylerow > select { flex: 1 1 100%; }
+.pb-sidebar .pb-stylebox .pb-stylerow > .btn { flex: 0 0 auto; }
+.pb-sidebar .pb-stylebox .pb-stylerow > input[type="range"] { flex: 1 1 0; min-width: 6rem; }
+
+/* header hidden while editing (button in the bar of the editor): the top of the page can be edited */
+html[data-hide-header="1"] .site-header { display: none !important; }

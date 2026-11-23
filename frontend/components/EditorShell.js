@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
 import PageSettingsPanel from "./PageSettingsPanel";
@@ -45,6 +45,13 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
   const { user } = useSession();
   useEffect(() => { try { const w = parseInt(localStorage.getItem("pb-sb-w") || "", 10); if (w) setWidth(w); } catch {} }, []);
   useEffect(() => { window.dispatchEvent(new Event("pb-bar-ready")); return () => window.dispatchEvent(new Event("pb-bar-ready")); }, []);  // the tools (save, undo, help, blocks) go in the bar
+  const [headerHidden, setHeaderHidden] = useState(() => { try { return localStorage.getItem("editHideHeader") === "1"; } catch { return false; } });
+  useEffect(() => {  // the site header can be hidden while editing, so the top of the page (the first block, the hero) can be edited; it is always back when the editor closes
+    const root = document.documentElement;
+    if (headerHidden) root.setAttribute("data-hide-header", "1"); else root.removeAttribute("data-hide-header");
+    try { localStorage.setItem("editHideHeader", headerHidden ? "1" : "0"); } catch { /* ok */ }
+    return () => root.removeAttribute("data-hide-header");
+  }, [headerHidden]);
   if (typeof document === "undefined") return null;
   const views = [["elements", "Elementen", ICON.plus], ["structure", "Structuur", ICON.layers], ["page", "Pagina", ICON.sliders], ["settings", "Instellingen", ICON.gear]];
   const pick = (k) => { if (open && view === k) setOpen(false); else { setView(k); setOpen(true); } };
@@ -57,6 +64,10 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
         </div>
         <div className="pb-tb-mid"><strong>{title || tx("Pagina")}</strong></div>
         <div className="pb-tb-right">
+          <button type="button" className={`pb-tb-btn${headerHidden ? " on" : ""}`} onClick={() => setHeaderHidden((v) => !v)} aria-pressed={headerHidden} title={headerHidden ? tx("De header weer tonen") : tx("De header verbergen om de bovenste blokken te bewerken")}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18" />{headerHidden ? <path d="M8 14h8" /> : <path d="M7 6.5h.01M10 6.5h.01" />}</svg>
+            <span>{headerHidden ? tx("Header tonen") : tx("Header verbergen")}</span>
+          </button>
           <div id="pb-tb-tools" className="pb-tb-tools" />
           <span className="pb-tb-save">{saving === "saving" ? tx("Opslaan…") : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</span>
           <div id="pb-tb-ai" className="pb-tb-ai" />
