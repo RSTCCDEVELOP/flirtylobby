@@ -12,6 +12,7 @@ import Link from "next/link";
 import { api, apiBase, errorText } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
 import Loading from "../../../../components/Loading";
+import { IconSearch } from "../../../../components/Icons";
 
 // The templates in the pop-up of the wizard: a gallery with the example pictures, a detail view (big picture with thumbnails, what is in it, how to use it) and the installation from the pop-up itself.
 const MODES = [["copy", "Naast mijn pagina's zetten", "De pagina's van de template komen erbij. Jouw bestaande pagina's blijven staan."], ["replace", "In plaats van mijn pagina's", "Een pagina met hetzelfde adres wordt vervangen door die van de template."]];
@@ -120,29 +121,63 @@ function Detail({ t, can, manage, onBack, onInstalled }) {  // eslint-disable-li
   );
 }
 
-export default function TemplateGallery({ onInstalled, onDetail }) {
+const FILTERS = [["system", "Volledig systeem"], ["pages", "Alleen pagina's"], ["theme", "Eigen thema"], ["kit", "Componentenset"], ["update", "Nieuwe versie"], ["used", "In gebruik"]];
+const SORTS = [["name", "Naam A–Z"], ["name-desc", "Naam Z–A"], ["size", "Grootte"], ["version", "Nieuwste versie"]];
+const verNum = (v) => String(v || "0").split(".").reduce((n, x) => n * 1000 + (parseInt(x, 10) || 0), 0);
+const match = (t, f) => (f === "system" ? t.system : f === "pages" ? t.has_pages && !t.system : f === "theme" ? t.has_theme : f === "kit" ? !!t.components : f === "update" ? t.update : f === "used" ? !!t.applied_version : true);
+
+export default function TemplateGallery({ onInstalled, onDetail, subtitle }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(null);
+  const [on, setOn] = useState({});          // the filters that are on
+  const [maker, setMaker] = useState("");
+  const [sort, setSort] = useState("name");
   const load = useCallback(() => api("/templates/").then(setD).catch((e) => setErr(errorText(e))), []);
   useEffect(() => { load(); }, [load]);
-  const list = useMemo(() => (d?.templates || []).filter((t) => !q.trim() || `${t.name} ${t.description} ${t.author}`.toLowerCase().includes(q.trim().toLowerCase())), [d, q]);
+  const makers = useMemo(() => [...new Set((d?.templates || []).map((t) => t.author).filter(Boolean))].sort(), [d]);
+  const avail = useMemo(() => Object.fromEntries(FILTERS.map(([k]) => [k, (d?.templates || []).some((t) => match(t, k))])), [d]);  // a filter that no template has is not offered
+  const list = useMemo(() => {
+    const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const rows = (d?.templates || []).filter((t) => {
+      const hay = `${t.name} ${plain(t.description)} ${t.author} ${t.key}`.toLowerCase();
+      return words.every((w) => hay.includes(w)) && Object.keys(on).filter((k) => on[k]).every((k) => match(t, k)) && (!maker || t.author === maker);
+    });
+    const cmp = { name: (a, b) => a.name.localeCompare(b.name), "name-desc": (a, b) => b.name.localeCompare(a.name), size: (a, b) => (b.size || 0) - (a.size || 0), version: (a, b) => verNum(b.version) - verNum(a.version) }[sort];
+    return rows.sort(cmp);
+  }, [d, q, on, maker, sort]);
   const cur = open && d?.templates?.find((t) => t.key === open);
   useEffect(() => { onDetail?.(!!cur); }, [!!cur]);  // eslint-disable-line react-hooks/exhaustive-deps
   if (err) return <div className="alert">{err}</div>;
   if (!d) return <Loading compact />;
   if (cur) return <Detail key={cur.key} t={cur} can={d.can_use} manage={d.manage} onBack={() => { setOpen(null); load(); }} onInstalled={onInstalled} />;
+  const active = Object.values(on).filter(Boolean).length + (maker ? 1 : 0) + (q.trim() ? 1 : 0);
+  const clear = () => { setOn({}); setMaker(""); setQ(""); };
+  const chip = (k, label) => <button type="button" key={k} aria-pressed={!!on[k]} onClick={() => setOn((o) => ({ ...o, [k]: !o[k] }))} style={{ padding: ".3rem .8rem", borderRadius: 99, fontSize: ".82rem", fontWeight: 600, cursor: "pointer", font: "inherit", border: `1px solid ${on[k] ? "var(--eco-green, #2f7d5b)" : "var(--line, rgba(0,0,0,.18))"}`, background: on[k] ? "var(--eco-green, #2f7d5b)" : "var(--card, #fff)", color: on[k] ? "#fff" : "var(--text)", transition: "background .15s, border-color .15s" }}>{tx(label)}</button>;
   return (
     <div style={{ display: "grid", gap: "1rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: ".8rem", flexWrap: "wrap" }}>
-        <div style={{ display: "grid", gap: ".15rem" }}>
-          <strong style={{ fontSize: "1.25rem" }}>{tx("Kies een template")}</strong>
-          <small className="muted">{d.templates.length} {d.templates.length === 1 ? tx("template") : tx("templates")} · {tx("klik voor een groot voorbeeld en installeer hem vanuit hier")}</small>
+      <div style={{ display: "grid", gap: ".2rem" }}>
+        <strong style={{ fontSize: "1.3rem" }}>{tx("Kies een template")}</strong>
+        <span className="muted" style={{ maxWidth: 720 }}>{subtitle ? tx(subtitle) : tx("Klik op een template voor een groot voorbeeld en installeer hem vanuit hier.")}</span>
+      </div>
+      <div role="search" style={{ display: "grid", gap: ".7rem", padding: ".8rem .9rem", borderRadius: 14, background: tint(9), border: "1px solid var(--line, rgba(0,0,0,.08))" }}>
+        <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", alignItems: "center" }}>
+          <label style={{ position: "relative", flex: "1 1 260px", minWidth: 0 }}>
+            <span aria-hidden="true" style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", display: "inline-flex", width: 16, height: 16, opacity: .6 }}><IconSearch /></span>
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek op naam, omschrijving of maker…")} aria-label={tx("Zoeken")} style={{ width: "100%", paddingLeft: 34, height: 40, borderRadius: 10, boxSizing: "border-box" }} />
+          </label>
+          {makers.length > 1 && <select value={maker} onChange={(e) => setMaker(e.target.value)} aria-label={tx("Maker")} style={{ height: 40, borderRadius: 10 }}><option value="">{tx("Alle makers")}</option>{makers.map((m) => <option key={m} value={m}>{m}</option>)}</select>}
+          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={tx("Sorteren")} style={{ height: 40, borderRadius: 10 }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{tx("Sorteren")}: {tx(l)}</option>)}</select>
+        </div>
+        <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", alignItems: "center" }}>
+          <small className="muted" style={{ marginRight: ".2rem" }}>{tx("Filter")}:</small>
+          {FILTERS.filter(([k]) => avail[k] || on[k]).map(([k, l]) => chip(k, l))}
+          {active > 0 && <button type="button" className="btn sm" onClick={clear} style={{ marginLeft: "auto" }}>{tx("Filters wissen")}</button>}
         </div>
       </div>
-      {d.templates.length > 3 && <input type="search" className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoeken…")} aria-label={tx("Zoeken…")} style={{ maxWidth: 320 }} />}
-      {!list.length && <p className="muted" style={{ margin: 0 }}>{d.templates.length ? tx("Niets gevonden.") : tx("Er zijn nog geen templates. Een superadmin kan er een toevoegen (zip) of zet hem in resource/templates.")}</p>}
+      <small className="muted" role="status" aria-live="polite">{list.length === d.templates.length ? `${d.templates.length} ${d.templates.length === 1 ? tx("template") : tx("templates")}` : `${list.length} ${tx("van")} ${d.templates.length} ${tx("templates")}`}</small>
+      {!list.length && <div style={{ padding: "1.6rem", textAlign: "center", borderRadius: 14, border: "1px dashed var(--line, rgba(0,0,0,.2))" }}><strong>{d.templates.length ? tx("Geen template gevonden") : tx("Er zijn nog geen templates")}</strong><p className="muted" style={{ margin: ".3rem 0 .6rem" }}>{d.templates.length ? tx("Pas de zoekterm of de filters aan.") : tx("Een superadmin kan er een toevoegen (zip) of zet hem in resource/templates.")}</p>{d.templates.length > 0 && <button type="button" className="btn sm" onClick={clear}>{tx("Filters wissen")}</button>}</div>}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${list.length <= 2 ? 340 : 250}px, ${list.length === 1 ? "460px" : "1fr"}))`, gap: "1.1rem" }}>
         {list.map((t) => <Card key={t.key} t={t} onOpen={() => setOpen(t.key)} />)}
       </div>

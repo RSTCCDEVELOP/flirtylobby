@@ -42,7 +42,7 @@ function ChooseWizard({ onPick, onStart, onInstalled, onCompact }) {
   const reset = () => setPath([]);
   const [compact, setCompactState] = useState(false);  // a template is open in the detail view: the advice makes room for the template
   const setCompact = (v) => { setCompactState(v); onCompact?.(v); };
-  useEffect(() => { if (cur !== "=templates") setCompact(false); }, [cur]);  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setCompact(cur === "=templates"); }, [cur]);  // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: ".8rem" }}>
       {!compact && <div role="list" style={{ display: "flex", gap: ".4rem", alignItems: "center", flexWrap: "wrap" }}>
@@ -60,11 +60,8 @@ function ChooseWizard({ onPick, onStart, onInstalled, onCompact }) {
       )}
       {way && cur === "=templates" && (
         <div className="stack-sm" style={{ gap: ".8rem" }}>
-          {!compact && <div className="alert ok" style={{ margin: 0 }}>
-            <strong>{tx("Mijn advies")}: {tx(way.title)}</strong>
-            <p style={{ margin: ".3rem 0 0" }}>{tx(way.text)}</p>
-          </div>}
-          <TemplateGallery onInstalled={onInstalled} onDetail={setCompact} />
+
+          <TemplateGallery onInstalled={onInstalled} onDetail={() => {}} subtitle={way.text} />
           <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", flexWrap: "wrap", paddingTop: ".4rem", borderTop: "1px solid var(--line, rgba(0,0,0,.1))" }}>
             <button type="button" className="btn" onClick={() => setPath(path.slice(0, -1))}>{tx("Vorige vraag")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Opnieuw beginnen")}</button>
