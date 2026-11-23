@@ -167,6 +167,8 @@ export default function PluginInline({ name, file = "", title, route = null, bar
       hostRef.current.appendChild(box);
       const onTheme = () => { applyAll(); vh(); };
       window.addEventListener("themechange", onTheme); window.addEventListener("resize", vh);
+      const themeWatch = new MutationObserver(() => requestAnimationFrame(onTheme));  // the theme switch only changes data-theme (and the style of the root): follow that too
+      themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "style", "class"] });
 
       // the scripts as normal global scripts, window.system is ours
       const prevSystem = window.system;
@@ -184,7 +186,7 @@ export default function PluginInline({ name, file = "", title, route = null, bar
       const added = Object.getOwnPropertyNames(window).filter((k) => !before.has(k) || before.get(k) !== val(k));  // new globals, and ones the page replaced
 
       undo.push(() => {
-        window.removeEventListener("themechange", onTheme); window.removeEventListener("resize", vh);
+        window.removeEventListener("themechange", onTheme); window.removeEventListener("resize", vh); themeWatch.disconnect();
         box.remove(); style.remove(); portal?.remove(); portal = null;
         added.forEach((k) => {  // a var of a classic script cannot be deleted: it is emptied (or put back to what it was)
           try { if (before.has(k)) window[k] = before.get(k); else if (!delete window[k]) window[k] = undefined; } catch { try { window[k] = undefined; } catch {} }
