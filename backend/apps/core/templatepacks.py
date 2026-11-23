@@ -431,6 +431,93 @@ def build_from_site(key, name, description="", author="", version="1.0.0", previ
     return {**m, "skipped": skipped, "errors": bundle.get("errors") or {}}
 
 
+def backup_pages(backup):
+    """The own pages in a backup (for the example pictures): [{key, title, path}]."""
+    from apps.backups import service as bs
+
+    zf, _ = bs._open(bs.path_of(backup))
+    with zf:
+        site = json.loads(zf.read("site.json"))
+    out = []
+    for r in site.get("pages", []):
+        if r.get("kind") not in ("content", "system") or (r.get("kind") == "system" and r.get("key") != "home") or r.get("scope", "public") != "public":
+            continue
+        t = r.get("title")
+        title = str(t.get("nl") or t.get("en") or next(iter(t.values()), "") or r["key"]) if isinstance(t, dict) else str(t or r["key"])
+        out.append({"key": r["key"], "title": title, "path": "/" if r["key"] == "home" else (r.get("url") or f"/p/{r['key']}")})
+    out.sort(key=lambda r: r["key"] != "home")
+    return out
+
+
+def _secret_like(k):
+    return bool(re.search(r"secret|token|password|passwd|api[_-]?key|private|credential", str(k), re.I))
+
+
+def build_from_backup(backup, key, name, description="", author="", version="1.0.0", previews=()):
+    """Save a backup as a template (resource/templates/<key>-<version>.zip): the settings of the system and the site (pages, menu, layouts, texts, pictures) of the backup, with the example pictures.
+    No users, no data of plugins, no secrets and no files of people: a template holds demo content only. Returns the manifest."""
+    from django.conf import settings
+
+    from apps.backups import service as bs
+
+    from . import richtext
+    from .models import SiteSettings
+
+    key = str(key or "").strip().lower()
+    if not KEY_RE.match(key):
+        raise TemplateError("De key van de template is ongeldig (2-60 tekens: a-z, 0-9, - en _).")
+    name = str(name or "").strip()[:80] or key
+    version = str(version or "1.0.0").strip()
+    if not re.fullmatch(r"\d{1,4}\.\d{1,4}\.\d{1,4}", version):
+        raise TemplateError("De versie moet er zo uitzien: 1.0.0.")
+    description = richtext.plain(richtext.clean_small(description, 1500)) if description else ""
+    try:
+        zf, bman = bs._open(bs.path_of(backup))
+    except bs.BackupError as e:
+        raise TemplateError(str(e))
+    with zf:
+        names = set(zf.namelist())
+        if "settings.json" not in names or "site.json" not in names:
+            raise TemplateError("Deze backup heeft geen instellingen of site-gegevens.")
+        full = json.loads(zf.read("settings.json"))
+        site = json.loads(zf.read("site.json"))
+        media = {n: zf.read(n) for n in names if n.startswith("media/")}
+    secs = {k: v for k, v in (full.get("sections") or {}).items() if k in SYSTEM_SECTIONS}
+    for it in ((secs.get("plugins") or {}).get("data") or {}).get("plugins", []):
+        it.pop("data", None)  # the data of a plugin is data of people
+        it["config"] = {k: v for k, v in (it.get("config") or {}).items() if not _secret_like(k)}
+    bundle = {"format": full.get("format"), "version": full.get("version"), "exported_at": full.get("exported_at"), "secrets_included": False, "files_included": bool(full.get("files_included", True)), "sections": secs, "errors": {}}
+    plugin_rows = ((secs.get("plugins") or {}).get("data") or {}).get("plugins", [])
+    mods = (secs.get("modules") or {}).get("data") or {}
+    langs = ((secs.get("languages") or {}).get("data") or {}).get("languages", [])
+    requires = {"system_version": str(bman.get("system_version") or settings.SYSTEM_VERSION), "plugins": {p.get("name"): {"version": p.get("version"), "enabled": bool(p.get("enabled"))} for p in plugin_rows if p.get("name")},
+                "components": "", "languages": [l.get("code") for l in langs if isinstance(l, dict) and l.get("code")], "modules": sorted(k for k, v in mods.items() if v is True or (isinstance(v, dict) and v.get("enabled"))),
+                "pages": [r["key"] for r in site.get("pages", []) if r.get("key")]}
+    good = [(n, b) for n, b in previews if n.lower().endswith(IMG_EXT) and 0 < len(b) <= MAX_PREVIEW][:12]
+    if not good:
+        th = SiteSettings.load().theme or {}
+        good = [("home.jpg", _drawn_preview([th.get("light_page") or "#f7f5f2", th.get("primary") or "#1f2a37", th.get("secondary") or "#f0833a", th.get("light_line") or "#d9d6d1", th.get("light_card") or "#ffffff"]))]
+    man = {"format": FORMAT, "version": 1, "key": key, "name": name, "description": description, "version": version, "author": str(author or "")[:80], "system": "system.json", "previews": [], "requires": requires,
+           "from_backup": str(backup.file)}
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        for i, (n, raw) in enumerate(good):
+            ext = Path(n).suffix.lower() or ".jpg"
+            z.writestr(f"previews/{i + 1}{ext}", raw)
+            man["previews"].append(f"previews/{i + 1}{ext}")
+        z.writestr("system.json", json.dumps(bundle, ensure_ascii=False))
+        z.writestr("site.json", json.dumps(site, ensure_ascii=False))
+        for path, raw in media.items():
+            z.writestr(path, raw)
+        z.writestr("template.json", json.dumps(man, indent=2, ensure_ascii=False))
+    data = out.getvalue()
+    if len(data) > MAX_ZIP:
+        raise TemplateError("De template is te groot (meer dan 120 MB).")
+    m = read(data)
+    _store(data, m)
+    return m
+
+
 def _prune_site(site):
     """Remove what is not in the template: the own pages (content, links, menus) with their layouts and texts that the template does not have. The standard pages and texts of the system stay."""
     from apps.backups import service as bs

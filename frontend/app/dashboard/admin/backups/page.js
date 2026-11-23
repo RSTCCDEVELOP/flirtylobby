@@ -15,6 +15,7 @@ import { lvl } from "../../../../lib/perms";
 import { api, apiBase, errorText, getToken } from "../../../../lib/api";
 import { alertDialog, confirmDialog } from "../../../../lib/dialog";
 import { LoaderArt } from "../../../../components/PageLoader";
+import BackupTemplate from "../../../../components/BackupTemplate";
 
 const KIND = { daily: "Per dag", weekly: "Per week", monthly: "Per maand", manual: "Handmatig", restore: "Voor terugzetten" };
 const WEEKDAYS = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
@@ -35,6 +36,7 @@ export default function BackupsAdmin() {
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState("");
   const [restoring, setRestoring] = useState(null); // {backup, parts: Set}
+  const [asTemplate, setAsTemplate] = useState(null); // a backup that is saved as a template (superadmin)
   const [lim, setLim] = useState(null);
   const fileIn = useRef(null);
 
@@ -160,27 +162,26 @@ export default function BackupsAdmin() {
 
       <Collapsible id="backup-list" title={`${tx("Backups")} (${d.backups.length})`}>
         {!d.backups.length ? <p className="muted">{tx("Er zijn nog geen backups.")}</p> : (
-          <div className="table-wrap"><table>
-            <thead><tr><th>{tx("Datum")}</th><th>{tx("Soort")}</th><th>{tx("Grootte")}</th><th>{tx("Inhoud")}</th><th /></tr></thead>
-            <tbody>
-              {d.backups.map((b) => (
-                <tr key={b.id}>
-                  <td><strong>{when(b.created_at)}</strong><br /><small className="muted">{b.file}{b.created_by ? ` · ${b.created_by}` : ""}</small></td>
-                  <td><span className={`badge ${b.frequency === "manual" ? "off" : "ok"}`}>{tx(KIND[b.frequency] || b.frequency)}</span>{b.note && <><br /><small className="muted">{b.note}</small></>}</td>
-                  <td>{b.exists ? size(b.size) : <span className="badge off">{tx("bestand weg")}</span>}</td>
-                  <td><small className="muted">{tx("{0} pagina's, {1} indelingen, {2} teksten, {3} bestanden", b.stats?.pages ?? 0, b.stats?.layouts ?? 0, b.stats?.texts ?? 0, b.stats?.files ?? 0)}{b.stats?.skipped?.length ? ` · ${tx("{0} overgeslagen (te groot)", b.stats.skipped.length)}` : ""}</small></td>
-                  <td className="actions">
-                    {canEdit && <button type="button" className="btn sm" disabled={!b.exists} onClick={() => download(b)}>{tx("Download")}</button>}
-                    {canManage && <button type="button" className="btn sm primary" disabled={!b.exists || !!busy} onClick={() => setRestoring({ backup: b, parts: new Set(b.parts.map((p) => p.key)) })}>{tx("Terugzetten")}</button>}
-                    {canManage && <button type="button" className="btn sm danger" disabled={!!busy} onClick={() => remove(b)}>{tx("Verwijder")}</button>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
+          <div style={{ display: "grid", gap: ".7rem" }}>
+            {d.backups.map((b) => (
+              <div key={b.id} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: ".5rem 1.2rem", alignItems: "start", padding: ".8rem 1rem", borderRadius: 12, background: "color-mix(in srgb, var(--eco-leaf, #7cc59a) 11%, transparent)", minWidth: 0 }}>
+                <div style={{ minWidth: 0, overflowWrap: "anywhere" }}><strong>{when(b.created_at)}</strong><br /><small className="muted">{b.file}{b.created_by ? ` · ${b.created_by}` : ""}</small></div>
+                <div style={{ minWidth: 0, overflowWrap: "anywhere" }}><span className={`badge ${b.frequency === "manual" ? "off" : "ok"}`}>{tx(KIND[b.frequency] || b.frequency)}</span> {b.exists ? <small className="muted">{size(b.size)}</small> : <span className="badge off">{tx("bestand weg")}</span>}{b.note && <><br /><small className="muted">{b.note}</small></>}</div>
+                <small className="muted" style={{ minWidth: 0, overflowWrap: "anywhere" }}>{tx("{0} pagina's, {1} indelingen, {2} teksten, {3} bestanden", b.stats?.pages ?? 0, b.stats?.layouts ?? 0, b.stats?.texts ?? 0, b.stats?.files ?? 0)}{b.stats?.skipped?.length ? ` · ${tx("{0} overgeslagen (te groot)", b.stats.skipped.length)}` : ""}</small>
+                <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", gridColumn: "1 / -1", justifyContent: "flex-end" }}>
+                  {canEdit && <button type="button" className="btn sm" disabled={!b.exists} onClick={() => download(b)}>{tx("Download")}</button>}
+                  {d.superadmin && <button type="button" className="btn sm" disabled={!b.exists || !!busy} onClick={() => setAsTemplate(b)}>{tx("Opslaan als template")}</button>}
+                  {canManage && <button type="button" className="btn sm primary" disabled={!b.exists || !!busy} onClick={() => setRestoring({ backup: b, parts: new Set(b.parts.map((p) => p.key)) })}>{tx("Terugzetten")}</button>}
+                  {canManage && <button type="button" className="btn sm danger" disabled={!!busy} onClick={() => remove(b)}>{tx("Verwijder")}</button>}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         {busy === "restore" && <div className="imp-bar imp-wait" role="progressbar"><span /></div>}
       </Collapsible>
+
+      {asTemplate && <BackupTemplate backup={asTemplate} onClose={() => setAsTemplate(null)} />}
 
       {d.superadmin && lim && (
         <Collapsible id="backup-limits" title={tx("Limieten (superadmin)")}>

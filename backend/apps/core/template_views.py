@@ -32,6 +32,14 @@ def templates(request):
     if request.method == "GET":
         if request.GET.get("pages") and request.user.is_staff:  # the screen that makes a template: the pages that will be in it (for the example pictures)
             return Response({"pages": tp.site_pages()})
+        if request.GET.get("backup_pages") and request.user.is_staff:  # the pages of a backup that is saved as a template
+            from apps.backups.models import Backup
+
+            b = Backup.objects.filter(pk=request.GET["backup_pages"]).first()
+            try:
+                return Response({"pages": tp.backup_pages(b) if b else []})
+            except Exception as e:  # noqa: BLE001
+                return _bad(str(e))
         return Response({"templates": tp.listing(), "manage": bool(request.user.is_staff), "can_use": lvl >= 3})
     try:
         if request.FILES.get("file"):
@@ -46,6 +54,19 @@ def templates(request):
             shots = [(f.name, f.read()) for f in request.FILES.getlist("previews")[:12]]
             m = tp.build_from_site(key, request.data.get("name"), request.data.get("description"), request.data.get("author"), request.data.get("version") or "1.0.0", shots, request.data.getlist("pages") or None)
             return Response({"templates": tp.listing(), "manage": True, "can_use": True, "made": {"key": m["key"], "name": m["name"], "version": m["version"], "skipped": m["skipped"], "errors": m["errors"]}}, status=status.HTTP_201_CREATED)
+        if action == "create_from_backup":  # a backup saved as a template: only for demo content
+            if not request.user.is_staff:
+                return _bad("Alleen een superadmin kan templates maken.", status.HTTP_403_FORBIDDEN)
+            if str(request.data.get("demo_only")).lower() not in ("1", "true", "yes", "on"):
+                return _bad("Bevestig eerst dat de backup alleen demo-gegevens bevat en niet gebruikt is.")
+            from apps.backups.models import Backup
+
+            b = Backup.objects.filter(pk=request.data.get("backup")).first()
+            if not b:
+                return _bad("Deze backup bestaat niet.", status.HTTP_404_NOT_FOUND)
+            shots = [(f.name, f.read()) for f in request.FILES.getlist("previews")[:12]]
+            m = tp.build_from_backup(b, key, request.data.get("name"), request.data.get("description"), request.data.get("author"), request.data.get("version") or "1.0.0", shots)
+            return Response({"templates": tp.listing(), "manage": True, "can_use": True, "made": {"key": m["key"], "name": m["name"], "version": m["version"]}}, status=status.HTTP_201_CREATED)
         if action == "suggest":  # the AI fills in the details of the new template
             if not request.user.is_staff:
                 return _bad("Alleen een superadmin kan templates maken.", status.HTTP_403_FORBIDDEN)
