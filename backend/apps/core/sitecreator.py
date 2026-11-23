@@ -3700,7 +3700,9 @@ def _stale(job):
 def public(job, files=False):
     job = _stale(job)
     b = job.brief or {}
-    return {"id": str(job.pk), "name": name_of(job), "stalled": is_stalled(job), "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": fix_photo_names(job.files or {}, b) if files else {},  # (the files that the screen takes for the import: the names of the photos are the exact names of the library, also for a design that was made before) "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
+    # (the files that the screen takes for the import: the names of the photos are the exact names of the library, also for a design that was made before)
+    return {"id": str(job.pk), "name": name_of(job), "stalled": is_stalled(job), "live": is_live(job), "applied": bool(b.get("live_hash")), "status": job.status, "progress": job.progress, "step": job.step, "error": job.error, "files": fix_photo_names(job.files or {}, b) if files else {},
+            "translation_files": (job.translations or {}) if files else {}, "file_names": sorted(job.files or {}), "can_restore": bool(job.files_prev), "translations": sorted((job.translations or {}).keys()), "messages": job.messages or [], "brief": b, "modules_off_effective": sorted(effective_off(b)),
             "pages": [{"file": f, "title": t} for f, t in pages_of(b)], "ai": ai.available(), "files_sig": f"{len(job.files or {})}-{sum(len(str(v)) for v in (job.files or {}).values())}", "chat": bool(b.get("chat")), "istock_tried": bool(b.get("istock_tried")), "photo_slots": photo_slots(job) if b.get("chat") else [],
             "docs": [_doc_public(d) for d in job.docs or []]}
 
