@@ -991,9 +991,9 @@ label > em, label > small { font-style: normal; font-weight: 500; }
 .totp-key { display: flex; flex-direction: column; gap: .4rem; min-width: 0; flex: 1 1 240px; }
 .totp-key code { font-size: 1.05rem; letter-spacing: .06em; word-break: break-all; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
 .totp-key .btn { white-space: nowrap; }
-.notfound { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; padding-block: 4rem; }
+.notfound { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1rem; padding-block: 4rem; min-height: min(62vh, 38rem); }  /* the content stands in the middle, between the header and the footer */
 .notfound .nf-code { font-size: clamp(4rem, 14vw, 9rem); font-weight: 800; line-height: 1; letter-spacing: -.04em; color: var(--blue); opacity: .9; }
-.notfound h1 { margin: 0; }
+.notfound h1 { margin: 0; color: var(--text); }
 .notfound p { max-width: 36rem; margin: 0; }
 
 /* ── page background (picture/video from the media library) ── */

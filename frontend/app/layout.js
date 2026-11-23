@@ -55,6 +55,7 @@ import EnergyBeacon from "../components/EnergyBeacon";
 import ThemeFallback from "../components/ThemeFallback";
 import SandboxBadge from "../components/SandboxBadge";
 import { absoluteUrl, getSeo } from "../lib/seo";
+import { cache } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const absolute = (p) => (p ? (p.startsWith("http") || p.startsWith("/logos/") ? p : API + p) : undefined);
@@ -71,7 +72,7 @@ export async function generateViewport() {
 const themeScript = (mode, forced, fontTool) => `${fontTool ? 'try{var f=+localStorage.getItem("e2e_fontsize");if(f>=12&&f<=22)document.documentElement.style.setProperty("--fs-base",f+"px")}catch(e){}' : ""}try{var t=${forced ? "null" : 'localStorage.getItem("theme")'};if(!t){var d="${mode}";t=d==="light"||d==="dark"?d:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){}`;
 
 // Design settings ("Vormgeving") are validated server-side, so the CSS is safe to inline
-async function getTheme() {
+async function getThemeRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
     const res = await fetch(`${base}/api/theme/`, { cache: "no-store" });
@@ -81,7 +82,7 @@ async function getTheme() {
   }
 }
 
-async function getBranding() {
+async function getBrandingRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
     const res = await fetch(`${base}/api/branding/`, { cache: "no-store" });
@@ -116,7 +117,7 @@ export async function generateMetadata() {
   };
 }
 
-async function getSandbox() {
+async function getSandboxRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
     const res = await fetch(`${base}/api/sandbox/status/`, { cache: "no-store" });
@@ -126,7 +127,7 @@ async function getSandbox() {
   }
 }
 
-async function getContent() {
+async function getContentRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
     const res = await fetch(`${base}/api/content/`, { cache: "no-store" });
@@ -136,7 +137,7 @@ async function getContent() {
   }
 }
 
-async function getLanguages() {
+async function getLanguagesRaw() {
   try {
     const base = process.env.API_URL_INTERNAL || "http://localhost:8000";
     const res = await fetch(`${base}/api/languages/`, { cache: "no-store" });
@@ -220,3 +221,9 @@ export default async function RootLayout({ children }) {
     </html>
   );
 }
+
+const getTheme = cache(getThemeRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+const getBranding = cache(getBrandingRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+const getSandbox = cache(getSandboxRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+const getContent = cache(getContentRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+const getLanguages = cache(getLanguagesRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once

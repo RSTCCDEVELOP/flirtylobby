@@ -6,11 +6,12 @@
 // website https://rstcc.net
 
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 const base = () => process.env.API_URL_INTERNAL || "http://localhost:8000";
 
 // Header menu (only what is switched on in Admin -> Pagina's)
-export async function getMenu() {
+async function getMenuRaw() {
   try {
     const res = await fetch(`${base()}/api/pages/menu/`, { cache: "no-store" });
     if (!res.ok) return { items: [], settings: null };
@@ -22,7 +23,7 @@ export async function getMenu() {
 }
 
 // Page backgrounds (picture/video from the media library), by page path
-export async function getBackgrounds() {
+async function getBackgroundsRaw() {
   try {
     const res = await fetch(`${base()}/api/pages/backgrounds/`, { cache: "no-store" });
     return res.ok ? await res.json() : {};
@@ -46,7 +47,7 @@ export async function requirePage(key) {
 }
 
 // The html design of a page (a page that was taken over from an html file, also the start page); "" when it has none.
-export async function getDesign(key) {
+async function getDesignRaw(key) {
   try {
     const res = await fetch(`${base()}/api/pages/design/${encodeURIComponent(key)}/`, { cache: "no-store" });
     return res.ok ? (await res.json()).design || "" : "";
@@ -55,7 +56,7 @@ export async function getDesign(key) {
   }
 }
 
-export async function getOwnPage(key) {
+async function getOwnPageRaw(key) {
   try {
     const res = await fetch(`${base()}/api/pages/public/${encodeURIComponent(key)}/`, { cache: "no-store" });
     return res.ok ? await res.json() : null;
@@ -65,7 +66,7 @@ export async function getOwnPage(key) {
 }
 
 // The fixed elements of a page that its blocks have taken over (the start page of an import: the standard logo, title, text and photos are then not shown, not even for a moment).
-export async function getMoved(key) {
+async function getMovedRaw(key) {
   try {
     const res = await fetch(`${base()}/api/pages/layout/${encodeURIComponent(key)}/`, { cache: "no-store" });
     return res.ok ? (await res.json()).moved || [] : [];
@@ -75,7 +76,7 @@ export async function getMoved(key) {
 }
 
 // The energy label at the bottom of the website (only when the administrator switched it on in Admin -> Energie): drawn on the server, so it is in the page at once
-export async function getEnergyBadge() {
+async function getEnergyBadgeRaw() {
   try {
     const res = await fetch(`${base()}/api/energy/badge/`, { cache: "no-store" });
     return res.ok ? await res.json() : null;
@@ -83,3 +84,10 @@ export async function getEnergyBadge() {
     return null;
   }
 }
+
+export const getMenu = cache(getMenuRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+export const getBackgrounds = cache(getBackgroundsRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+export const getDesign = cache(getDesignRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+export const getOwnPage = cache(getOwnPageRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+export const getMoved = cache(getMovedRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
+export const getEnergyBadge = cache(getEnergyBadgeRaw);  // one answer per page view: the same call in generateMetadata and in the layout is made once
