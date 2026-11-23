@@ -114,22 +114,12 @@ def test_the_migration_copies_the_page_rights_to_the_templates():
 
 
 @pytest.mark.django_db
-def test_the_templates_module_is_on_in_every_installation(settings):
-    """A new installation (or an installation that is set again) has the module Templates on; so does a site that had it off before the module existed (migration)."""
+def test_the_templates_module_is_always_on(settings):
+    """The module Templates is part of the base of the system: on in every installation, after a reset and also on a site where it was switched off before."""
     from apps.core import modules, presets
     from apps.core.models import ModuleState
 
-    assert all("templates" in presets._wanted_modules(p) for p in presets.PRESETS)
+    assert "templates" in modules.ALWAYS_ON and all("templates" in presets._wanted_modules(p) for p in presets.PRESETS)
     ModuleState.objects.update_or_create(key="templates", defaults={"enabled": False})
     modules.invalidate()
-    assert modules.enabled("templates") is False
-    from importlib import import_module
-
-    class Apps:
-        @staticmethod
-        def get_model(app, name):
-            return ModuleState
-
-    import_module("apps.core.migrations.0063_templates_module_on").switch_on(Apps, None)
-    modules.invalidate()
-    assert modules.enabled("templates") is True
+    assert modules.enabled("templates") is True  # (what is stored does not matter: the base stays on)

@@ -34,7 +34,7 @@ export default function SystemReset() {
     if (value !== "@" || typeof window === "undefined" || !["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
     try {
       const d = await api("/auth/dev-login/");
-      if (d?.configured) setPw(d.password);
+      if (d?.configured) setPw(d.password || "");  // (never undefined: the field stays a controlled field)
     } catch {}
   };
   const [saved, setSaved] = useState(false);
@@ -108,7 +108,7 @@ export default function SystemReset() {
       </span>
     </label>
   );
-  const close = () => { if (!busy) { setStep(0); if (step === 3) { if (adminMail) { clearToken(); window.location.href = "/login"; } else window.location.href = "/dashboard/superadmin"; } } };
+  const close = () => { if (!busy) { setStep(0); if (step === 3) { clearToken(); window.location.href = "/login"; } } };  // after a reset everybody is logged out (the server removed every login): always to the login, with or without a standard superadmin
   return (
     <>
       <p className="muted" style={{ marginTop: 0 }}>{tx("Maakt het systeem schoon: alle gebruikers (behalve de superadmins), afbeeldingen, pagina's, thema's en gegevens van de modules en plugins worden verwijderd. Alle modules en alle plugins gaan uit (alleen Users en de kernonderdelen blijven aan), het thema wordt easy2edit en de licentie wordt leeggemaakt.")}</p>
@@ -234,6 +234,7 @@ export default function SystemReset() {
               <>
                 <h2 style={{ margin: 0 }}>{tx("Het systeem is schoon")}</h2>
                 <p style={{ margin: 0 }}>{tx("Alle gegevens van de site zijn verwijderd, alle modules en plugins staan uit en het thema is easy2edit. Zet bij Super admin → Modules en Plugins aan wat je nodig hebt.")}</p>
+                {!adminMail && <p style={{ margin: 0 }}>{tx("Iedereen is uitgelogd: je gaat nu naar het inlogscherm.")}</p>}
                 {adminMail && <p style={{ margin: 0 }}>{tx("De standaard superadmin is {0}. Andere superadmins zijn verwijderd en iedereen is uitgelogd: log opnieuw in met het standaardwachtwoord.", adminMail)}</p>}
                 <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn primary" onClick={close}>{tx("Sluiten")}</button></div>
               </>

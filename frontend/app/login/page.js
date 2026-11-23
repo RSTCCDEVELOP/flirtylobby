@@ -32,7 +32,7 @@ export default function Login() {
     try {
       const d = await api("/auth/dev-login/");
       if (d?.token) { setToken(d.token); router.push(await homeAfterLogin()); } // the superadmin+ that is in the database now (it can differ after an import)
-      else if (d?.configured) { setEmail(d.email); setPassword(d.password); setError(""); }
+      else if (d?.configured) { setEmail(d.email || ""); setPassword(d.password || ""); setError(""); }
       else setError(tx("Zet DEV_LOGIN_EMAIL en DEV_LOGIN_PASSWORD in backend/.env om met @ in te vullen."));
     } catch {}
   };
