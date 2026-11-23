@@ -103,12 +103,12 @@ export default function SetupWizard() {
   useEffect(() => {
     if (!allowed) return;
     try { if (sessionStorage.getItem(SKIP_KEY)) { setClosed(true); return; } } catch { /* no storage */ }
-    api("/system/setup/").then((r) => { setD(r); setForm(withDraft({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" })); { const dr = loadDraft(uid); if (dr && ["site", "address", "contact"].includes(dr.step)) setStep(dr.step); } }).catch(() => {});
+    api("/system/setup/").then((r) => { setD(r); setForm(withDraft({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok && !user?.is_staff ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" })); { const dr = loadDraft(uid); if (dr && ["site", "address", "contact"].includes(dr.step)) setStep(dr.step); } }).catch(() => {});
   }, [allowed]);
 
   useEffect(() => {
     if (!allowed) return undefined;
-    const again = (to, detail) => (detail?.mode === "update" ? api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}) : Promise.resolve()).then(() => api("/system/setup/")).then((r) => { setD(r); setForm(withDraft({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" })); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
+    const again = (to, detail) => (detail?.mode === "update" ? api("/system/license/update/reset/", { method: "POST", body: {} }).catch(() => {}) : Promise.resolve()).then(() => api("/system/setup/")).then((r) => { setD(r); setForm(withDraft({ ...(r.settings || {}), frontend_url: bareUrl(r.settings?.frontend_url) || hostOfSite(), license_until: r.license_until || "", renew_months: r.renew_months || 12, hosting: r.hosting_current || r.hosting_default || "shared", consent_ok: r.consent_ok && !user?.is_staff ? "1" : "", pay_ok: r.pay?.ok ? "1" : "" })); setErrs({}); setError(""); setUpd(detail?.mode === "update" ? detail.change : null); setStep(detail?.mode === "update" ? "costs" : typeof to === "string" ? to : "site"); setClosed(false); setForced(true); }).catch(() => {});
     const onOpen = (e) => again(undefined, e?.detail);
     window.addEventListener("open-setup-wizard", onOpen);
     try { // back from Stripe: is the session paid? Then the wizard goes on with the agreement
@@ -766,7 +766,7 @@ export default function SetupWizard() {
                   )}
                   {form.consent_ok === "1" ? (
                     <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{user?.is_staff ? tx("Als superadmin hoef je geen code in te geven. Ga verder naar de betaling.") : tx("Akkoord gegeven. Ga verder naar de betaling.")}</div></div>
-                  ) : (!termsRead && !upd) ? null : (
+                  ) : (!termsRead && !upd && !user?.is_staff) ? null : (
                     <div className="e2e-stack" style={{ gap: "1rem", alignItems: "center", textAlign: "center" }}>
                       {!canMail && !canSms && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Er is geen e-mail- of SMS-koppeling actief (API keys), dus er kan geen code worden verstuurd.")}</div></div>}
                       {canMail && canSms && (
@@ -861,6 +861,7 @@ export default function SetupWizard() {
               <div>{forced ? <button type="button" className="e2e-btn e2e-btn--ghost" onClick={closeWizard}>{tx("Sluiten")}</button> : d.can_skip && <button type="button" className="e2e-btn e2e-btn--ghost" onClick={skip}>{tx("Nu niet invullen")}</button>}</div>
               <div className="e2e-row" style={{ gap: ".6rem" }}>
                 {stepIdx > 0 && <button type="button" className="e2e-btn e2e-btn--outline" onClick={() => setStep(steps[stepIdx - 1][0])}>{tx("Vorige")}</button>}
+                {step === "agree" && !upd && user?.is_staff && form.consent_ok !== "1" && <button type="button" className="e2e-btn e2e-btn--outline" disabled={consent.busy} onClick={() => typeCode("@")} title={tx("Als superadmin kun je de code overslaan.")}>{tx("Bypass (superadmin)")}</button>}
                 {stepIdx < steps.length - 1
                   ? <button type="button" className="e2e-btn" disabled={presetBusy || (step === "pay" && form.pay_ok !== "1") || (step === "agree" && form.consent_ok !== "1" && (String(form.consent_code || "").length !== 7 || consent.busy))} onClick={step === "agree" && form.consent_ok !== "1" ? () => checkCode(form.consent_code) : next}>{tx("Volgende")}</button>
                   : <button type="button" className="e2e-btn" disabled={busy} onClick={save}>{tx("Opslaan")}</button>}
