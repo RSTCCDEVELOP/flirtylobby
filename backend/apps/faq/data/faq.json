@@ -5116,6 +5116,86 @@
     "uk": "У plugin.json вкажіть моделі в rights, а в коді використовуйте facade.rights: protect під час створення запису, can для перевірки, exclude_hidden для списку та forget під час видалення. Так ви вирішуєте для кожного запису, хто може його переглядати, редагувати й видаляти. У розділі Адмін → Права → Плагіни ви налаштовуєте для кожного плагіна, чи можуть користувачі, які не є адміністраторами, також задавати права для власних записів.",
     "zh": "在 plugin.json 的 rights 下列出模型,并在代码中使用 facade.rights:创建记录时用 protect,检查时用 can,列表用 exclude_hidden,删除时用 forget。这样你可以按记录决定谁可以查看、编辑和删除。在“管理 → 权限 → 插件”中,你可以按插件设置非管理员用户是否也可以为自己的记录设置权限。"
    }
+  },
+  "onboarding": {
+   "q": {
+    "en": "What does the Onboarding tile do?"
+   },
+   "a": {
+    "en": "Under Admin → System you find the Onboarding tile. It is always there and does not have to be switched on. It starts the onboarding again with the data that is already known: you check and change your name, address and contact person (this also goes to the easy2edit server; your id and easy2edit id stay the same), you can upgrade your licence with Check price, and you can change the hosting and the payment period. If the price changes, the update screen follows with your agreement by code and the payment; if you cancel it, the hosting goes back to how it was."
+   }
+  },
+  "wizardsteps": {
+   "q": {
+    "en": "How do Terms, Payment and On account work in the licence form?"
+   },
+   "a": {
+    "en": "In the Terms step you read the terms to the end; only then can you send the code (by e-mail or SMS) and enter it. A superadmin has the code filled in already and can skip it with the Bypass (superadmin) button. In the Payment step it only says Paid after you really paid, chose On account or chose not to pay. If you choose On account you confirm that with a code, like the terms; a superadmin can bypass that. What you fill in is kept in this browser when you stop, except password, code and payment."
+   }
+  },
+  "addresssearch": {
+   "q": {
+    "en": "How do I look up an address?"
+   },
+   "a": {
+    "en": "In the licence form (step Address) and at the main address of a company there is Look up address (postcode). Type a postcode with a house number, for example 3542 DH 46, or a name with a town. The results come from PDOK (all Dutch addresses) and OpenStreetMap; you choose one in the pop-up and street, house number, postcode, town and country are filled in. A postcode alone gives the street once. With a postcode the form also checks whether a company with that address is already at easy2edit: then you can choose that company, then yourself among the linked contact persons, and with a code by e-mail all data is taken over."
+   }
+  },
+  "apikvk": {
+   "q": {
+    "en": "How do I link the KVK?"
+   },
+   "a": {
+    "en": "At Admin → API keys choose the link KVK Handelsregister (group Company data). Enter the API key from developers.kvk.nl and choose the environment Production or Test (the test environment needs no key). The test button does one free search. Searching the trade register is free; a company profile costs a few cents and is only fetched for a company that you choose. The key stays on the server."
+   }
+  },
+  "entityhelp": {
+   "q": {
+    "en": "How do I manage companies?"
+   },
+   "a": {
+    "en": "Under Admin → Companies (the name follows the standard installation: Organisations, Associations or Clubs) you find all companies. A company has tabs: General, Contact and address (with Look up address and extra locations), Registration (KvK and VAT; the Id and the easy2edit id are in their own blocks and cannot be changed), Payment details, Linked (users and groups) and Text variables. If you put the company of the website in a text with a variable such as {{organisatie.naam}}, the website fills it in."
+   }
+  },
+  "grouptexts": {
+   "q": {
+    "en": "How do I change the title and text of My community?"
+   },
+   "a": {
+    "en": "Switch on edit mode and open the page My community, Contact or a group of the Admin menu. The title and the text below it can be changed, per language. If you leave them empty, the standard text comes back."
+   }
+  },
+  "newversionbar": {
+   "q": {
+    "en": "What is the message New version available?"
+   },
+   "a": {
+    "en": "A bar at the bottom of the screen appears when a new version of the website is online. First save what you are working on and choose Refresh now; if you choose Later, everything stays as it was until you refresh yourself."
+   }
+  },
+  "forumhelp": {
+   "q": {
+    "en": "How do I use the Forum?"
+   },
+   "a": {
+    "en": "Under Forum you find the forums you may enter. Choose a forum, then a group, and start a topic with New topic. You can reply, add attachments and photos, give a heart and follow a forum, group or topic with the bell; you then get a notification for new messages. With Search you find topics in all forums you may enter."
+   }
+  },
+  "forumadmin": {
+   "q": {
+    "en": "How do I manage the Forum?"
+   },
+   "a": {
+    "en": "With New forum you create a forum. In the settings of a forum you choose who may see it, who may create groups, start topics, reply and moderate, with extra people and groups per right. Under Possibilities you switch attachments, photos, videos, reports and approving new messages on or off with switches. You add managers of a forum or group on the Managers tab."
+   }
+  },
+  "coachvideohelp": {
+   "q": {
+    "en": "How does Coach video work?"
+   },
+   "a": {
+    "en": "As a coach you make an analysis of a video or photos, draw on it (lines, arrows, angles, circles and text) and add remarks at a moment in the video. With Share you add an athlete; the athlete sees the analysis under My analyses and can reply in the chat. You invite athletes with their e-mail address: if the account exists already, the athlete first has to agree. Your athletes are only visible to you. With AI you can have an instruction made; you pay for that from your AI credit."
+   }
   }
  }
 }
