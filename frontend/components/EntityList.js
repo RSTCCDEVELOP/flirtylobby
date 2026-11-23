@@ -259,14 +259,16 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
           )}
           {tab === "registration" && (
             <div style={{ display: "grid", gap: "1rem" }}>
-              <div style={{ display: "grid", gap: ".8rem", maxWidth: "30rem" }}>{field("registration_no", "Registratienummer (KvK)", { max: 40 })}{field("vat_no", "Btw-nummer", { max: 40 })}</div>
-              {f.id && f.ids && (
-                <div style={{ display: "grid", gap: ".8rem", gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))" }}>
-                  <ReadOnly boxed label={tx("Id")} value={f.ids.uid} />
-                  <ReadOnly boxed label={tx("easy2edit id")} value={f.ids.remote_id} empty={tx("Nog niet aangemaakt op de easy2edit server")} />
-                  <ReadOnly boxed label={tx("Websites")} value={(f.ids.domains || []).join(", ")} empty={tx("(geen)")} wide />
-                </div>
-              )}
+              <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(18rem, 1fr))", alignItems: "start" }}>
+                <div style={{ display: "grid", gap: ".8rem" }}>{field("registration_no", "Registratienummer (KvK)", { max: 40 })}{field("vat_no", "Btw-nummer", { max: 40 })}</div>
+                {f.id && f.ids && (
+                  <div style={{ display: "grid", gap: ".8rem" }}>
+                    <ReadOnly boxed label={tx("Id")} value={f.ids.uid} />
+                    <ReadOnly boxed label={tx("easy2edit id")} value={f.ids.remote_id} empty={tx("Nog niet aangemaakt op de easy2edit server")} />
+                  </div>
+                )}
+              </div>
+              {f.id && f.ids && <ReadOnly boxed label={tx("Websites")} value={(f.ids.domains || []).join(", ")} empty={tx("(geen)")} wide />}
             </div>
           )}
           {tab === "payments" && f.id && <PaymentDetails base={`/entities/${f.id}/payments/`} canEdit={canEdit} />}
