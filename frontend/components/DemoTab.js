@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import Tabs from "./Tabs";
 import Loading from "./Loading";
-import { IconPlus, IconTrash, IconRefresh } from "./Icons";
+import { IconPlus, IconTrash, IconRefresh, IconX } from "./Icons";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
@@ -29,11 +29,11 @@ export default function DemoTab({ setMsg }) {
   const [d, setD] = useState(null);
   const [sub, setSub] = useState("general");
   const [busy, setBusy] = useState("");
-  const [times, setTimes] = useState("");
+  const [times, setTimes] = useState([]);
   const [firm, setFirm] = useState(null);
   const [popup, setPopup] = useState(null);  // null | {id?, ...user}
   const poll = useRef(null);
-  const take = (r) => { setD(r); setTimes((r.times || []).join(", ")); };
+  const take = (r) => { setD(r); setTimes(r.times || []); };
   const load = () => api("/demo/settings/").then(take).catch((e) => setMsg({ ok: false, text: errorText(e) }));
   useEffect(() => { load(); return () => clearTimeout(poll.current); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {  // while it restores: look again until it is ready
@@ -52,7 +52,7 @@ export default function DemoTab({ setMsg }) {
   return (
     <div className="e2e-stack" style={{ gap: "1.2rem" }}>
       <div style={{ ...tint, background: d.enabled ? "color-mix(in srgb, var(--eco-green, #2f7d5b) 16%, transparent)" : tint.background }}>
-        <Switch checked={d.enabled} disabled={!!busy || d.restoring || (!d.enabled && problems.length > 0)} onChange={(v) => put({ enabled: v, times: times.split(/[\s,;]+/).filter(Boolean) }, v ? "De demo mode staat aan." : "De demo mode staat uit.")}
+        <Switch checked={d.enabled} disabled={!!busy || d.restoring || (!d.enabled && problems.length > 0)} onChange={(v) => put({ enabled: v, times: times.filter(Boolean) }, v ? "De demo mode staat aan." : "De demo mode staat uit.")}
           title="Demo mode aan" hint="Alleen een superadmin kan dit aanzetten, en pas als alles hieronder klopt. In demo mode wordt er geen e-mail of sms verstuurd en worden codes op het scherm ingevuld." />
         {!d.enabled && problems.length > 0 && <ul className="e2e-hint" style={{ margin: 0, paddingLeft: "1.2rem" }}>{problems.map((p) => <li key={p}>{tx(p)}</li>)}</ul>}
         {d.enabled && <span className="e2e-hint">{d.restoring ? tx("De demo wordt nu hersteld…") : d.next_restore_at ? tx("Volgende herstel: {0}", when(d.next_restore_at)) : ""}</span>}
@@ -73,10 +73,16 @@ export default function DemoTab({ setMsg }) {
           </section>
           <section style={tint}>
             <strong>{tx("Terugzetten op vaste tijden")}</strong>
-            <span className="e2e-hint">{tx("Meerdere tijden per dag, tijd van de website (uu:mm), gescheiden door een komma. Bezoekers zien een melding als het bezig is.")}</span>
+            <span className="e2e-hint">{tx("Meerdere tijden per dag, tijd van de website. Voeg een tijd toe met +. Bezoekers zien een melding als het bezig is.")}</span>
             <div className="e2e-row" style={{ gap: ".6rem", flexWrap: "wrap", alignItems: "center" }}>
-              <input className="e2e-input" style={{ flex: "1 1 240px" }} value={times} onChange={(e) => setTimes(e.target.value)} placeholder="03:00, 13:00, 21:00" aria-label={tx("Tijden")} />
-              <button type="button" className="e2e-btn" disabled={!!busy} onClick={() => put({ times: times.split(/[\s,;]+/).filter(Boolean) }, "Tijden opgeslagen.")}>{tx("Opslaan")}</button>
+              {times.map((t, i) => (
+                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: ".2rem", padding: ".2rem .3rem .2rem .5rem", borderRadius: 99, background: "color-mix(in srgb, var(--eco-green, #2f7d5b) 12%, transparent)" }}>
+                  <input type="time" className="e2e-input" style={{ width: "auto", border: 0, background: "transparent", padding: ".2rem" }} value={t} aria-label={tx("Tijd")} onChange={(e) => setTimes((a) => a.map((x, j) => (j === i ? e.target.value : x)))} />
+                  <button type="button" className="e2e-btn e2e-btn--ghost e2e-btn--sm" aria-label={tx("Tijd verwijderen")} title={tx("Tijd verwijderen")} style={{ padding: ".2rem" }} onClick={() => setTimes((a) => a.filter((_, j) => j !== i))}><span style={{ display: "inline-flex", width: 14, height: 14 }}><IconX /></span></button>
+                </span>
+              ))}
+              <button type="button" className="e2e-btn e2e-btn--outline e2e-btn--sm" aria-label={tx("Tijd toevoegen")} title={tx("Tijd toevoegen")} onClick={() => setTimes((a) => [...a, "12:00"])}><span style={{ display: "inline-flex", width: 16, height: 16 }}><IconPlus /></span></button>
+              <button type="button" className="e2e-btn" disabled={!!busy} onClick={() => put({ times: times.filter(Boolean) }, "Tijden opgeslagen.")}>{tx("Opslaan")}</button>
             </div>
             <div className="e2e-row" style={{ gap: ".6rem", alignItems: "center" }}>
               <label htmlFor="demo-warn">{tx("Melding vooraf (minuten)")}</label>
