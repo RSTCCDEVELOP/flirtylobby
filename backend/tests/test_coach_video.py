@@ -473,3 +473,15 @@ def test_the_coach_group_is_made_and_deleting_the_plugin_removes_everything(sett
     assert not UserGroup.objects.filter(name__iexact="Coaches").exists()  # the group that the plugin made
     with connection.cursor() as cur:
         assert not [t for t in connection.introspection.table_names() if t.startswith("plg_coach_video_")]  # the tables are dropped
+
+
+@pytest.mark.django_db(transaction=True)
+def test_lookup_gives_the_name_of_a_known_address_only_to_a_coach(cv):
+    co, ath, plain = coach(), user("sanne"), user("plain")
+    ath.first_name, ath.last_name = "Sanne", "de Vries"
+    ath.save()
+    cc = client(co)
+    r = cc.post(RUN + "sporters/opzoeken", {"email": "SANNE@example.com"}, format="json").json()
+    assert r["bekend"] and r["first_name"] == "Sanne" and r["last_name"] == "de Vries" and not r["al_sporter"]
+    assert cc.post(RUN + "sporters/opzoeken", {"email": "nobody@example.com"}, format="json").json() == {"bekend": False}
+    assert client(plain).post(RUN + "sporters/opzoeken", {"email": "SANNE@example.com"}, format="json").status_code == 403
