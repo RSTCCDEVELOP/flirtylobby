@@ -81,6 +81,12 @@ def test_superadmin_can_bypass_the_forced_setup_for_this_login_only(django_user_
     c2 = APIClient()
     c2.credentials(HTTP_AUTHORIZATION="Token " + Token.objects.create(user=boss).key)
     assert c2.get("/api/auth/me/").json()["twofa"]["setup_required"] is True
+    # once a licence exists nobody can bypass any more
+    from apps.core.models import License
+
+    License.objects.update_or_create(pk=1, defaults={"number": "E2E-TEST-0001"})
+    assert c2.get("/api/auth/me/").json()["twofa"]["can_bypass"] is False and c2.post("/api/auth/2fa/bypass/").status_code == 403
+    License.objects.filter(pk=1).delete()
     # an admin who is not a superadmin cannot bypass
     admin_role = django_user_model.objects.create_user("ad", "ad@x.nl", "pw12345678!")
     c3 = APIClient()

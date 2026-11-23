@@ -105,9 +105,16 @@ def _bypass_key(token_key):
     return f"twofa-bypass:{token_key}"
 
 
+def _licence_made():
+    from apps.core.models import License
+
+    lic = License.objects.filter(pk=1).first()
+    return bool(lic and lic.number)
+
+
 def can_bypass(user):
-    """A superadmin and a superadmin+ (both is_staff) may skip the forced set-up of two-step verification, for this login."""
-    return bool(getattr(user, "is_staff", False))
+    """A superadmin and a superadmin+ (both is_staff) may skip the forced set-up of two-step verification, for this login, but only as long as there is no licence yet (the first installation)."""
+    return bool(getattr(user, "is_staff", False)) and not _licence_made()
 
 
 def bypassed(user):
