@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
+import { useAuth } from "./AuthContext";
 import { tx } from "../lib/t";
 import { captureFrame } from "../lib/screenshot";
 import { IconBolt } from "./Icons";
@@ -44,6 +45,9 @@ export default function BackupTemplate({ backup, onClose }) {
   const [tab, setTab] = useState("data");
   const [v, setV] = useState({ name: "", key: "", description: "", author: "", version: "1.0.0" });
   const [keyTouched, setKeyTouched] = useState(false);
+  const { user } = useAuth() || {};
+  // the maker is the person who is logged in, unless somebody types another name
+  useEffect(() => { const n = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim() || user?.display_name || user?.email || ""; if (n) setV((o) => (o.author ? o : { ...o, author: n.slice(0, 80) })); }, [user?.id]);  // eslint-disable-line react-hooks/exhaustive-deps
   const [demoOnly, setDemoOnly] = useState(false);
   const [pages, setPages] = useState(null);
   const [on, setOn] = useState({});
