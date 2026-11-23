@@ -100,3 +100,18 @@ def test_free_sources_postcode_and_name(monkeypatch):
     assert r == [{"id": "pdok:Ambachtsweg 46, 3542DH Utrecht", "naam": "", "adres": "Ambachtsweg 46, 3542DH Utrecht", "street": "Ambachtsweg", "house_number": "46", "postal_code": "3542 DH", "city": "Utrecht", "country": "Nederland", "bron": "PDOK"}]
     monkeypatch.setattr(ad, "_http_json", lambda url: pdok if "pdok" in url else [])
     assert ad.free_search("Onbekend 3542 DH")[0]["bron"] == "PDOK"  # no business found: the addresses of that postcode
+
+
+@pytest.mark.django_db
+def test_address_search_is_plain_json_for_admins(monkeypatch, django_user_model):
+    cache.clear()
+    boss = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    plain = django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!")
+    c, p = APIClient(), APIClient()
+    c.force_authenticate(boss); p.force_authenticate(plain)
+    assert p.get("/api/address/search/?q=rst").status_code == 403
+    link()
+    monkeypatch.setattr(gp, "_call", lambda method, path, mask, body=None, cfg=None: PLACES)
+    r = c.get("/api/address/search/?q=RST Coaching 3542 DH").json()
+    assert r["source"] == "google" and r["results"][0] == {**r["results"][0], "naam": "RST Coaching & Consultancy", "street": "Voorbeeldlaan", "house_number": "12 A", "postal_code": "3542 DH", "city": "Utrecht", "country": "Nederland"}
+    assert c.post("/api/address/search/", {"q": "RST Coaching Utrecht"}, format="json").json()["results"][0]["city"] == "Utrecht"

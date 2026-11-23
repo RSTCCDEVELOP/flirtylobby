@@ -191,12 +191,13 @@ export default function Integrations() {
   // choose a system: fill in defaults and suggest a name/slug (unless already typed)
   function pick(provider, base) {
     const p = spec(provider);
-    const taken = items.some((i) => i.slug === provider);
+    const slugOf = provider.replace(/_/g, "-");  // a slug has only letters, digits and hyphens (google_adres -> google-adres)
+    const taken = items.some((i) => i.slug === slugOf);
     setModal({
       ...base,
       provider,
       name: base.name && base.name !== spec(base.provider)?.label ? base.name : p.label,
-      slug: base.slug && base.slug !== base.provider ? base.slug : taken ? "" : provider,
+      slug: base.slug && base.slug !== base.provider ? base.slug : taken ? "" : slugOf,
       config: defaults(p),
     });
   }

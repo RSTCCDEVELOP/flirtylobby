@@ -59,6 +59,7 @@ urlpatterns = [
     path("system/setup/owner/<str:step>/", views.system_setup_owner),
     path("system/setup/kvk/<str:step>/", views.system_setup_kvk),
     path("system/setup/address/<str:step>/", views.system_setup_address),
+    path("address/search/", views.address_search),
     path("system/setup/consent/verify/", views.system_setup_consent_verify),
     path("system/demo/", views.demo_data),
     path("system/pricing/", views.pricing_view),
