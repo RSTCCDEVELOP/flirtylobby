@@ -19,10 +19,10 @@ import LineChart from "./LineChart";
 
 const GREEN = "#2f7d5b", SUN = "#d98f2b", SEA = "#3b82a0", PLUM = "#8a5a9e";
 const METRIC = [  // key, name, unit, decimals
-  ["html", "Pagina (zoals een bezoeker)", "ms", 0],
-  ["api", "Backend, uit de cache", "ms", 0],
-  ["db", "Backend, met de database", "ms", 0],
-  ["mbps", "Downloadsnelheid", "Mbit/s", 1],
+  ["html", "Pagina", "ms", 0],
+  ["api", "Cache", "ms", 0],
+  ["db", "Database", "ms", 0],
+  ["mbps", "Download", "Mbit/s", 1],
 ];
 
 const durLabel = (d) => (d === 0 ? tx("Tot ik uitlog") : d < 120 ? `${d} ${tx("seconden")}` : d < 3600 ? `${d / 60} ${tx("minuten")}` : `${d / 3600} ${tx("uur")}`);
@@ -34,9 +34,9 @@ function Charts({ samples }) {
   const span = samples.length ? samples[samples.length - 1].t : 0;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 330px), 1fr))", gap: "1rem" }}>
-      <LineChart span={span} title={tx("Pagina (zoals een bezoeker)")} unit="ms" series={[{ label: tx("Pagina"), color: GREEN, points: pts(samples, "html") }]} />
+      <LineChart span={span} title={tx("Pagina")} unit="ms" series={[{ label: tx("Pagina"), color: GREEN, points: pts(samples, "html") }]} />
       <LineChart span={span} title={tx("Backend")} unit="ms" series={[{ label: tx("Uit de cache"), color: SEA, points: pts(samples, "api") }, { label: tx("Met database"), color: SUN, points: pts(samples, "db") }, { label: tx("Server zelf"), color: PLUM, points: pts(samples, "server") }]} decimals={0} />
-      <LineChart span={span} title={tx("Downloadsnelheid")} unit="Mbit/s" series={[{ label: tx("Snelheid"), color: GREEN, points: pts(samples, "mbps") }]} decimals={1} />
+      <LineChart span={span} title={tx("Download")} unit="Mbit/s" series={[{ label: tx("Snelheid"), color: GREEN, points: pts(samples, "mbps") }]} decimals={1} />
       <div className="eco-panel" style={{ alignContent: "start" }}>
         <strong style={{ color: "var(--eco-deep)" }}>{tx("Samenvatting")}</strong>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".88rem", fontVariantNumeric: "tabular-nums" }}>

@@ -113,7 +113,7 @@ def shortcuts(request):
     return Response({"items": row.items if row else []})
 
 
-PREF_KEY = re.compile(r"^(?:(?:collapse|collapse-pin|navg|navg-pin|view|find):[A-Za-z0-9_.\-]{1,80}|navmode|sidebar|lastBackendUrl|theme|lang|editMode|directSize|directPos|directView|aiLivePos)$")
+PREF_KEY = re.compile(r"^(?:(?:collapse|collapse-pin|navg|navg-pin|view|find):[A-Za-z0-9_.\-]{1,80}|navmode|sidebar|lastBackendUrl|lastPlace|theme|lang|editMode|directSize|directPos|directView|aiLivePos)$")
 
 
 @api_view(["GET", "PUT"])
@@ -126,6 +126,8 @@ def prefs(request):
     data = dict(row.data) if row else {}
     if request.method == "PUT":
         for k, v in (request.data.get("set") or {}).items() if isinstance(request.data.get("set"), dict) else []:
+            if str(k) == "lastPlace" and not re.fullmatch(r"/(?![/\\])[^\s\x00-\x1f]{0,198}", str(v)):
+                continue  # the page to come back to after logging in: only a page of this site
             if PREF_KEY.match(str(k)):
                 data[str(k)] = str(v)[:200]
         for k in request.data.get("remove") or [] if isinstance(request.data.get("remove"), list) else []:

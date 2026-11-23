@@ -8,6 +8,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { api, getToken } from "../lib/api";
 import { useSession } from "./Session";
 
@@ -15,7 +16,7 @@ import { useSession } from "./Session";
 // Personal settings (open blocks, tiles or list, menu or tiles, light or dark, language, ...) live in the database per user, so they are the same on every computer.
 // The browser keeps a copy (localStorage) so nothing flickers; every change is sent to the server a moment later, and after logging in the server's version wins.
 const PREFIX = /^(collapse|collapse-pin|navg|navg-pin|view|plg|find):/;
-const NAMES = new Set(["navmode", "sidebar", "lastBackendUrl", "theme", "lang", "directSize", "directPos", "directView", "savedColors", "aiLivePos"]);
+const NAMES = new Set(["navmode", "sidebar", "lastBackendUrl", "lastPlace", "theme", "lang", "directSize", "directPos", "directView", "savedColors", "aiLivePos"]);
 const KEEP_AT_LOGOUT = new Set(["theme", "lang"]); // choices of the device itself stay for the next visitor
 const synced = (k) => PREFIX.test(k) || NAMES.has(k);
 
@@ -47,11 +48,21 @@ function install() {
 }
 
 // Settings that change what is on the screen need a new draw; the last page someone was on does not (it only decides where "back to the backend" goes): no reload for it.
-const NO_RELOAD = new Set(["lastBackendUrl"]);
+const NO_RELOAD = new Set(["lastBackendUrl", "lastPlace"]);
+// pages that are not a place to come back to (login, registration, no access)
+export const NOT_A_PLACE = /^\/(login|registreren|wachtwoord|geen-toegang|logout|uitgelogd)(\/|$|\?)/;
 
 export default function PrefsSync() {
   const { user } = useSession();
   const was = useRef(null);
+  const pathname = usePathname();
+  // the page (with its object, e.g. ?id=…) where the person is: after the next login they come back here. Edit mode is never part of it: that is switched on by hand.
+  useEffect(() => {
+    if (!user || !pathname) return;
+    const place = pathname + (typeof window !== "undefined" ? window.location.search : "");
+    if (NOT_A_PLACE.test(place)) return;
+    try { if (localStorage.getItem("lastPlace") !== place) localStorage.setItem("lastPlace", place); } catch {}
+  }, [pathname, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { install(); }, []);
   useEffect(() => {
     if (!user) {

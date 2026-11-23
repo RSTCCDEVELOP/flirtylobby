@@ -9,12 +9,21 @@ import { api } from "./api";
 
 // After logging in: on a new installation (or after a reset: the server has a new "epoch" that this browser has not seen yet) everybody goes to the dashboard of their own level:
 // a superadmin to Super admin, an admin (edit rights somewhere) to Admin, everybody else to the dashboard. Otherwise the usual /dashboard.
+// where the person was when they logged out (or were logged out): kept on the server per user
+async function lastPlace() {
+  try {
+    const p = (await api("/dashboard/prefs/"))?.prefs?.lastPlace;
+    if (typeof p === "string" && /^\/[^/\\]/.test(p) && !/^\/(login|registreren|wachtwoord|geen-toegang)(\/|$|\?)/.test(p)) return p;
+  } catch {}
+  return null;
+}
+
 export async function homeAfterLogin() {
   try {
     const st = await api("/sandbox/status/");
     const epoch = String(st?.epoch || "");
     const seen = localStorage.getItem("ui-epoch");
-    if (!epoch || seen === epoch) return "/dashboard";
+    if (!epoch || seen === epoch) return (await lastPlace()) || "/dashboard";
     const me = await api("/auth/me/");
     const u = me?.user || me;
     if (u?.is_staff) return "/dashboard/superadmin";
