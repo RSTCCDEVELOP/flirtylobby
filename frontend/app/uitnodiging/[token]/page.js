@@ -56,6 +56,7 @@ export default function Invite() {
 
   const done = async (r) => {
     setToken(r.token);
+    if (info?.after) { router.push(info.after); return; }  // an invitation of a plugin (e.g. Coach video): straight to its page, nothing else to fill in first
     setP((x) => ({ ...x, display_name: r.user?.display_name || x.display_name, birth_date: x.birth_date || checkedBirthMonth() }));
     setStep("profile");
     setBusy(false);

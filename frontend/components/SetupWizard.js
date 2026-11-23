@@ -645,7 +645,7 @@ export default function SetupWizard() {
                     </div>
                   )}
                   {form.consent_ok === "1" ? (
-                    <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{tx("Akkoord gegeven. Ga verder naar de betaling.")}</div></div>
+                    <div className="e2e-alert" role="status" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon"><IconCheck width={14} height={14} /></span><div>{user?.is_staff ? tx("Als superadmin hoef je geen code in te geven. Ga verder naar de betaling.") : tx("Akkoord gegeven. Ga verder naar de betaling.")}</div></div>
                   ) : (!termsRead && !upd) ? null : (
                     <div className="e2e-stack" style={{ gap: "1rem", alignItems: "center", textAlign: "center" }}>
                       {!canMail && !canSms && <div className="e2e-alert" role="alert" data-easy2edit-tag="ui-alerts"><span className="e2e-alert__icon">!</span><div>{tx("Er is geen e-mail- of SMS-koppeling actief (API keys), dus er kan geen code worden verstuurd.")}</div></div>}

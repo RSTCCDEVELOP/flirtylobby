@@ -58,7 +58,7 @@ export default function GroupTiles({ id }) {
     items = [...own, ...fromPlugins].map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label, big: tx("Over je {0}", tx(entity.label).toLowerCase()) } : n));
   } else {
     const own = COMMUNITY.filter((n) => COMMUNITY_GROUP_OF[n.href] === id && (n.module === "any" ? ["profiles", "discover", "messages", "chat"].some((m) => mods[m] !== false) : mods[n.module] !== false));
-    const fromPlugins = plugins.filter((x) => (x.group === "mine" ? "c-mine" : x.group === "contact" ? "c-contact" : "") === id).map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true }));
+    const fromPlugins = plugins.filter((x) => x.tile !== false && (x.group === "mine" ? "c-mine" : x.group === "contact" ? "c-contact" : "") === id).map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, plugin: true }));
     items = [...own, ...fromPlugins];
   }
   if (admin && id === "a-site" && !items.some((n) => n.href === IMPORTED_HREF)) items = [{ href: IMPORTED_HREF, label: imported ? "Webdesign" : "Website ontwerpen", icon: <IconGrid />, big: "Ontwerpen of een andere site inlezen" }, ...items];  // always there: a click asks to install and switch it on when it is not

@@ -26,7 +26,7 @@ from . import installer, manifest as mf, signing
 from .models import Plugin
 
 logger = logging.getLogger(__name__)
-EVENTS = ["user_registered", "user_login", "listing_created", "bid_placed", "booking_created", "agenda_event_created", "agenda_event_responded"]
+EVENTS = ["user_registered", "user_login", "listing_created", "bid_placed", "booking_created", "agenda_event_created", "agenda_event_responded", "invitation_accepted"]
 LOADED = {}      # name -> Loaded, per process
 _checked = {"t": 0}
 TTL = 5
@@ -36,6 +36,7 @@ class Loaded:
     def __init__(self, stamp):
         self.stamp, self.hooks, self.routes, self.module, self.provides = stamp, {}, [], None, {}
         self.urlpatterns = []  # ordinary Django routes of a plugin (System.mount)
+        self.uninstall = []  # cleanups the plugin asked for (System.on_uninstall): run when the plugin is deleted
 
     def match(self, method, path):
         """(fn, public, params) for a path like "listing/3", or None. Exact paths win over paths with <parts>."""
@@ -101,6 +102,12 @@ class System:
             self._loaded.hooks.setdefault(event, []).append(f)
             return f
         return add(fn) if fn else add
+
+    def on_uninstall(self, fn):
+        """Register a cleanup that runs when the plugin is DELETED (not when it is switched off or updated): remove what lives outside the plugin folder and outside its own tables, e.g. files on S3,
+        rows in tables of the system, a group the plugin made. The tables of the plugin itself (plg_<name>_*) and its data folder are removed by the system afterwards."""
+        self._loaded.uninstall.append(fn)
+        return fn
 
     def route(self, method, path, fn=None, public=False):
         """Add a route. A part like <id> in the path is handed to the function as a keyword (fn(request, id="3"))."""
@@ -215,6 +222,21 @@ def load(p):
             return f"{type(e).__name__}: {e}"[:500]
     LOADED[p.name] = loaded
     return None
+
+
+def uninstall(p):
+    """Before a plugin is deleted: run its cleanups (a plugin that is switched off is loaded for a moment, so it can still reach its own data). Never raises."""
+    try:
+        if p.name not in LOADED and p.manifest.get("python"):
+            load(p)
+        lp = LOADED.get(p.name)
+        for fn in list(getattr(lp, "uninstall", []) or []):
+            try:
+                fn()
+            except Exception:  # noqa: BLE001 - a failing cleanup must not block the removal
+                logger.exception("Cleanup of plugin %s failed", p.name)
+    except Exception:  # noqa: BLE001
+        logger.exception("Cleanup of plugin %s failed", p.name)
 
 
 def requirement_problem(p, on=None):

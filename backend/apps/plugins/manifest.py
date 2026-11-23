@@ -57,7 +57,9 @@ def parse(raw):
             raise ManifestError(f"Configuratieveld {c['key']}: onbekend type.")
         seen.add(c["key"])
         out["config"].append({"key": c["key"], "label": str(c.get("label") or c["key"])[:80], "type": t, "default": c.get("default", False if t == "bool" else ""),
-                              "options": [str(o)[:60] for o in (c.get("options") or [])][:40] if t == "select" else [], "hint": str(c.get("hint") or "")[:200]})
+                              "options": [str(o)[:60] for o in (c.get("options") or [])][:40] if t == "select" else [], "hint": str(c.get("hint") or "")[:300],
+                              "group": str(c.get("group") or "")[:40],  # a tab of the settings screen: settings with the same group stand together
+                              "labels": {str(k)[:60]: str(v)[:80] for k, v in (c.get("labels") or {}).items()} if t == "select" and isinstance(c.get("labels"), dict) else {}})  # readable names for the options
     return out
 
 

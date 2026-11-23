@@ -66,17 +66,33 @@ export function InstalledTiles({ plugins, onToggle, onManage }) {
   );
 }
 
-// The settings of one installed plugin in a pop-up (tabs): the same settings as before, now away from the tiles.
-export function ManageModal({ p, onClose, onSaved, children }) {
+// The settings of one installed plugin in a pop-up: a header with what it is and whether it is on (the switch), the tabs in a body that scrolls on its own, and the buttons fixed at the bottom
+// (the standard of every pop-up: tabs, short scrolling content, fixed buttons). footer = the buttons; toggle(on) switches the plugin; blocked = why it cannot be switched on.
+export function ManageModal({ p, onClose, onToggle, blocked = "", footer, children }) {
+  const compatOk = p.compat === "current";
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="card modal wide pl-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="row between" style={{ alignItems: "center" }}>
-          <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: ".6rem" }}><span className="pl-ico sm"><PlugIcon section={p.section} name={p.name} /></span>{p.title}</h2>
-          <button type="button" className="btn sm" onClick={onClose}>{tx("Sluiten")}</button>
+      <div className="card modal wide pl-modal" role="dialog" aria-modal="true" aria-label={p.title} onClick={(e) => e.stopPropagation()}>
+        <div className="pl-modal__head">
+          <span className="pl-ico"><PlugIcon section={p.section} name={p.name} /></span>
+          <div className="pl-modal__title">
+            <h2>{p.title}</h2>
+            <div className="pl-chips">
+              <span className="pl-chip">{tx("Versie")} {p.version}</span>
+              <span className="pl-chip">{tx(SECTION_LABEL[p.section] || p.section)}</span>
+              <span className={`pl-chip ${compatOk ? "ok" : "warn"}`}>{compatOk ? tx("Up-to-date") : tx("Niet up-to-date")} · {tx("systeem")} {p.built_for}</span>
+              {p.signature === "missing" && p.dev_mode && <span className="pl-chip">{tx("Ontwikkelversie")}</span>}
+            </div>
+          </div>
+          {onToggle && (
+            <label className="check sec-toggle pl-modal__switch" title={blocked || undefined}>
+              <span className="switch"><input type="checkbox" checked={p.enabled} disabled={!p.enabled && !!blocked} onChange={(e) => onToggle(e.target.checked)} /><span /></span>
+              <span>{p.enabled ? tx("Actief") : tx("Uit")}</span>
+            </label>
+          )}
         </div>
-        <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Plugin")} {p.version} · {tx("voor systeem")} {p.built_for} · {tx(SECTION_LABEL[p.section] || p.section)}</span>
-        {children}
+        <div className="pl-modal__body">{children}</div>
+        <div className="pl-modal__foot">{footer}</div>
       </div>
     </div>
   );

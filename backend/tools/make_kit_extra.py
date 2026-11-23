@@ -315,6 +315,63 @@ LINKS = [
 ]
 EXTRA += LINKS
 
+# ---- coach-video / media interaction components (chat, dropzone, annotation player, toolbar, avatar + chip) ----
+def _ic(d):
+    return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">%s</svg>' % d
+
+
+_I_PLAY = _ic('<polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/>')
+_I_BACK = _ic('<polyline points="15 18 9 12 15 6"/>')
+_I_FWD = _ic('<polyline points="9 18 15 12 9 6"/>')
+_I_CLIP = _ic('<path d="M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/>')
+_I_SEND = _ic('<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>')
+_I_UP = _ic('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>')
+_I_FILE = _ic('<rect x="3" y="5" width="18" height="14" rx="2"/><polygon points="10 9 15 12 10 15 10 9" fill="currentColor"/>')
+_I_PEN = _ic('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>')
+_I_ARROW = _ic('<line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/>')
+_I_CIRCLE = _ic('<circle cx="12" cy="12" r="8"/>')
+_I_LINE = _ic('<line x1="5" y1="19" x2="19" y2="5"/>')
+_I_UNDO = _ic('<polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>')
+_I_TRASH = _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>')
+_I_EXP = _ic('<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>')
+_I_TICK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 13 6 18 14 8"/><polyline points="10 15 12 17 22 7"/></svg>'
+
+GROUP_CV = "Media"
+COACHVIDEO = [
+    C("ui-chat", "Chat", "Gesprek tussen coach (links) en sporter (rechts), met datumscheiding, tijdverwijzing, bijlage, kaart naar de analyse en een invoerbalk.", "Data & feedback", "Chat", f"""
+<div class="e2e-chat" role="log" aria-label="Gesprek met de coach">
+<a class="e2e-chat__card" href="#"><span class="e2e-chat__card-ico">{_I_FILE}</span><span><strong>Squat, set 3</strong><small>Bekijk de analyse met tekeningen</small></span></a>
+<div class="e2e-chat__day">Vandaag</div>
+<div class="e2e-chat__msg e2e-chat__msg--left"><span class="e2e-chat__name">Coach</span><div class="e2e-chat__bubble">Mooie set! Kijk bij <button type="button" class="e2e-chat__ref">0:11</button> naar je knieen: die zakken naar binnen.<img class="e2e-chat__img" alt="Beeld uit de video" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Crect width='320' height='180' fill='%23cbd5e1'/%3E%3C/svg%3E"><span class="e2e-chat__meta">10:42</span></div></div>
+<div class="e2e-chat__msg e2e-chat__msg--right"><span class="e2e-chat__name">Jij</span><div class="e2e-chat__bubble">Dank je! Ik let er volgende keer op en stuur een nieuwe video.<span class="e2e-chat__meta">10:45 {_I_TICK}</span></div></div>
+<div class="e2e-chat__composer"><button type="button" class="e2e-chat__attach" aria-label="Bijlage toevoegen">{_I_CLIP}</button><input class="e2e-chat__input" type="text" placeholder="Schrijf een bericht" aria-label="Bericht"><button type="button" class="e2e-chat__send" aria-label="Versturen">{_I_SEND}</button></div>
+</div>"""),
+    C("ui-dropzone", "Uploadvak", "Vak met een stippellijn om bestanden te slepen of te kiezen, met een rij per bestand en een voortgangsbalk.", "Data & feedback", "Uploadvak", f"""
+<div class="e2e-drop" tabindex="0"><span class="e2e-drop__icon">{_I_UP}</span><strong class="e2e-drop__title">Sleep je video hierheen</strong><span class="e2e-drop__hint">MP4 of MOV, maximaal 500 MB</span><div class="e2e-drop__actions"><button type="button" class="e2e-btn e2e-btn--primary">Kies een bestand</button><button type="button" class="e2e-btn e2e-btn--outline">Neem op</button></div></div>
+<div class="e2e-drop e2e-drop--over" tabindex="0"><span class="e2e-drop__icon">{_I_UP}</span><strong class="e2e-drop__title">Laat los om te uploaden</strong></div>
+<div class="e2e-upload-row"><span class="e2e-upload-row__icon">{_I_FILE}</span><div class="e2e-upload-row__main"><span class="e2e-upload-row__name">squat-set-3.mp4</span><span class="e2e-upload-row__meta">48 MB · 62%</span><div class="e2e-upload-row__bar"><i class="e2e-upload-row__fill" style="width:62%"></i></div></div><span class="e2e-upload-row__state"><span class="e2e-badge">Bezig</span></span></div>
+<div class="e2e-upload-row e2e-upload-row--done"><span class="e2e-upload-row__icon">{_I_FILE}</span><div class="e2e-upload-row__main"><span class="e2e-upload-row__name">squat-set-2.mp4</span><span class="e2e-upload-row__meta">52 MB</span><div class="e2e-upload-row__bar"><i class="e2e-upload-row__fill" style="width:100%"></i></div></div><span class="e2e-upload-row__state"><span class="e2e-badge e2e-badge--success">Klaar</span></span></div>
+<div class="e2e-upload-row e2e-upload-row--error"><span class="e2e-upload-row__icon">{_I_FILE}</span><div class="e2e-upload-row__main"><span class="e2e-upload-row__name">squat-set-1.avi</span><span class="e2e-upload-row__meta">Bestandstype niet ondersteund</span><div class="e2e-upload-row__bar"><i class="e2e-upload-row__fill" style="width:100%"></i></div></div><span class="e2e-upload-row__state"><span class="e2e-badge e2e-badge--danger">Mislukt</span></span></div>"""),
+    C("ui-annotation-player", "Speler met tekeningen en tijdlijn", "Video of foto met een laag voor tekeningen, een bedieningsbalk met zoekbalk en markeringen, en een tijdlijn met banen voor markeringen en tekenbereiken.", GROUP_CV, "Speler met tekeningen", f"""
+<div class="e2e-annot"><div class="e2e-annot__media" style="background:var(--e2e-accent)"></div>
+<svg class="e2e-annot__svg" viewBox="0 0 160 90" preserveAspectRatio="none" aria-label="Tekeningen"><line x1="40" y1="70" x2="80" y2="30" stroke="currentColor" stroke-width="1.2"/><circle cx="105" cy="45" r="10" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+<div class="e2e-annot__controls"><button type="button" class="e2e-annot__btn" aria-label="Een beeld terug">{_I_BACK}</button><button type="button" class="e2e-annot__btn e2e-annot__btn--play" aria-label="Afspelen">{_I_PLAY}</button><button type="button" class="e2e-annot__btn" aria-label="Een beeld vooruit">{_I_FWD}</button><span class="e2e-annot__time">0:11 / 0:42</span>
+<div class="e2e-annot__seek" role="slider" aria-label="Positie" aria-valuemin="0" aria-valuemax="42" aria-valuenow="11"><i class="e2e-annot__seek-fill" style="width:26%"></i><span class="e2e-annot__mark" style="left:26%"></span><span class="e2e-annot__mark" style="left:61%"></span></div>
+<select class="e2e-annot__speed" aria-label="Snelheid"><option>0,5x</option><option selected>1x</option><option>2x</option></select><span class="e2e-annot__spacer"></span><button type="button" class="e2e-annot__btn" aria-label="Volledig scherm">{_I_EXP}</button></div></div>
+<div class="e2e-annot-timeline"><div class="e2e-annot-timeline__ruler"><span>0:00</span><span>0:10</span><span>0:20</span><span>0:30</span><span>0:40</span></div>
+<div class="e2e-annot-timeline__lane"><span class="e2e-annot-timeline__lane-label">Markeringen</span><div class="e2e-annot-timeline__track"><span class="e2e-annot-timeline__marker e2e-annot-timeline__marker--active" style="left:26%">1</span><span class="e2e-annot-timeline__marker" style="left:61%">2</span><span class="e2e-annot-timeline__playhead" style="left:26%"></span></div></div>
+<div class="e2e-annot-timeline__lane"><span class="e2e-annot-timeline__lane-label">Tekeningen</span><div class="e2e-annot-timeline__track"><span class="e2e-annot-timeline__range" style="left:24%;width:12%"></span><span class="e2e-annot-timeline__range e2e-annot-timeline__range--accent" style="left:58%;width:18%"></span></div></div></div>"""),
+    C("ui-toolbar", "Tekengereedschap", "Verticale balk met gereedschappen en kleuren om op een video of foto te tekenen; op een smal scherm een horizontale balk.", GROUP_CV, "Tekengereedschap", f"""
+<div class="e2e-toolbar" role="toolbar" aria-label="Tekengereedschap"><button type="button" class="e2e-toolbar__btn" aria-pressed="true" aria-label="Pen">{_I_PEN}</button><button type="button" class="e2e-toolbar__btn" aria-pressed="false" aria-label="Lijn">{_I_LINE}</button><button type="button" class="e2e-toolbar__btn" aria-pressed="false" aria-label="Pijl">{_I_ARROW}</button><button type="button" class="e2e-toolbar__btn" aria-pressed="false" aria-label="Cirkel">{_I_CIRCLE}</button><span class="e2e-toolbar__sep"></span>
+<button type="button" class="e2e-swatch e2e-swatch--primary" aria-pressed="true" aria-label="Hoofdkleur"></button><button type="button" class="e2e-swatch e2e-swatch--light" aria-pressed="false" aria-label="Licht"></button><button type="button" class="e2e-swatch e2e-swatch--accent" aria-pressed="false" aria-label="Accent"></button><span class="e2e-toolbar__sep"></span>
+<button type="button" class="e2e-toolbar__btn" aria-label="Ongedaan maken">{_I_UNDO}</button><button type="button" class="e2e-toolbar__btn" aria-label="Alles wissen">{_I_TRASH}</button></div>"""),
+    C("ui-avatar-chip", "Initialen en chip", "Rondje met initialen in drie maten en een chip in de vorm van een pil, met of zonder icoon, actief of gedempt.", "Basis", "Initialen en chip", f"""
+<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap"><span class="e2e-avatar e2e-avatar--sm">JD</span><span class="e2e-avatar">SD</span><span class="e2e-avatar e2e-avatar--lg">LB</span></div>
+<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.75rem"><span class="e2e-chip e2e-chip--active">Alle video's</span><span class="e2e-chip"><span class="e2e-chip__icon">{_I_FILE}</span>Squat</span><span class="e2e-chip e2e-chip--muted">Archief</span></div>"""),
+]
+EXTRA += COACHVIDEO
+
+
 CSS = r'''
 /* ===== TABS VOLGEN HET THEMA: data-e2e-tabstyle="pills|underline|segmented|folder" op html, body of het blok (easy2edit zet hem uit Thema > Vormgeving > Uiterlijk van tabbladen) ===== */
 [data-e2e-tabstyle="pills"] .e2e-tabs:not(.e2e-pills) .e2e-tabs__list{border:0;background:transparent;padding:0;gap:.4rem;flex-wrap:wrap;overflow:visible;display:flex;border-radius:0}
@@ -570,6 +627,95 @@ CSS = r'''
 .e2e-colorpick__pop.is-fixed{position:fixed}
 .e2e-colorpick__more{grid-column:1/-1;display:flex;gap:.5rem;align-items:center;justify-content:space-between;border-top:1px solid var(--e2e-border);padding-top:.55rem;margin-top:.1rem}
 .e2e-colorpick__more input[type=color]{width:34px;height:30px;padding:0;border:1px solid var(--e2e-border);border-radius:var(--e2e-radius);background:none;cursor:pointer}
+
+/* ===== COACH-VIDEO: chat, uploadvak, speler met tekeningen, tekengereedschap, initialen en chip ===== */
+.e2e-chat{display:flex;flex-direction:column;gap:.7rem;max-height:34rem;overflow-y:auto;padding:1rem;background:var(--e2e-bg);border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);font-family:var(--e2e-font-body);color:var(--e2e-text)}
+.e2e-chat__day{align-self:center;font-size:.72rem;font-weight:600;color:var(--e2e-muted);background:var(--e2e-surface);border:1px solid var(--e2e-border);border-radius:999px;padding:.15rem .75rem}
+.e2e-chat__msg{display:flex;flex-direction:column;gap:.15rem;max-width:80%}
+.e2e-chat__msg--left{align-self:flex-start;align-items:flex-start}
+.e2e-chat__msg--right{align-self:flex-end;align-items:flex-end}
+.e2e-chat__name{font-size:.72rem;font-weight:700;color:var(--e2e-muted);padding-inline:.4rem}
+.e2e-chat__msg--left .e2e-chat__name{color:var(--e2e-accent)}
+.e2e-chat__bubble{max-width:100%;padding:.55rem .8rem;border-radius:var(--e2e-radius-lg);line-height:1.45;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:.35rem}
+.e2e-chat__msg--left .e2e-chat__bubble{background:var(--e2e-surface);border:1px solid var(--e2e-border);border-bottom-left-radius:var(--e2e-radius-sm)}
+.e2e-chat__msg--right .e2e-chat__bubble{background:var(--e2e-primary-soft);color:var(--e2e-primary-ink);border:1px solid var(--e2e-primary-line);border-bottom-right-radius:var(--e2e-radius-sm)}
+.e2e-chat__meta{align-self:flex-end;display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;color:var(--e2e-muted)}
+.e2e-chat__ref{display:inline-block;font:700 .75rem var(--e2e-font-body);padding:.05rem .5rem;border-radius:999px;border:1px solid var(--e2e-primary-line);background:var(--e2e-bg);color:var(--e2e-primary-ink);cursor:pointer}
+.e2e-chat__ref:hover,.e2e-chat__ref:focus-visible{background:var(--e2e-primary);color:var(--e2e-on-primary);outline:none}
+.e2e-chat__img{display:block;max-width:100%;max-height:14rem;object-fit:cover;border-radius:var(--e2e-radius)}
+.e2e-chat__card{display:flex;align-items:center;gap:.75rem;padding:.65rem .85rem;background:var(--e2e-surface);border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);color:inherit;text-decoration:none}
+.e2e-chat__card:hover{border-color:var(--e2e-primary)}
+.e2e-chat__card strong,.e2e-chat__card small{display:block}.e2e-chat__card small{color:var(--e2e-muted)}
+.e2e-chat__card-ico{display:grid;place-items:center;width:2.4rem;height:2.4rem;border-radius:var(--e2e-radius);background:var(--e2e-primary-soft);color:var(--e2e-primary-ink);flex:none}
+.e2e-chat__composer{position:sticky;bottom:-1rem;display:flex;align-items:center;gap:.5rem;margin:.3rem -1rem -1rem;padding:.6rem 1rem;background:var(--e2e-surface);border-top:1px solid var(--e2e-border)}
+.e2e-chat__attach{display:grid;place-items:center;width:2.4rem;height:2.4rem;border:0;border-radius:50%;background:none;color:var(--e2e-muted);cursor:pointer;flex:none}
+.e2e-chat__attach:hover{background:var(--e2e-primary-soft);color:var(--e2e-primary-ink)}
+.e2e-chat__input{flex:1;min-width:0;height:2.4rem;padding:0 1rem;border:1px solid var(--e2e-border);border-radius:999px;background:var(--e2e-bg);color:var(--e2e-text);font:inherit}
+.e2e-chat__input:focus{outline:2px solid var(--e2e-focus);outline-offset:1px;border-color:var(--e2e-primary)}
+.e2e-chat__send{display:grid;place-items:center;width:2.6rem;height:2.6rem;border:0;border-radius:50%;background:var(--e2e-primary);color:var(--e2e-on-primary);cursor:pointer;flex:none}
+.e2e-chat__send:hover{background:var(--e2e-primary-hover)}
+.e2e-drop{display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;padding:2rem 1.25rem;border:2px dashed var(--e2e-border-strong);border-radius:var(--e2e-radius-lg);background:var(--e2e-surface);color:var(--e2e-text);margin-bottom:.75rem;transition:background .15s,border-color .15s}
+.e2e-drop__icon{display:grid;place-items:center;width:3.2rem;height:3.2rem;border-radius:50%;background:var(--e2e-primary-soft);color:var(--e2e-primary-ink)}
+.e2e-drop__icon svg{width:1.5rem;height:1.5rem}
+.e2e-drop__title{font:700 1.05rem var(--e2e-font-heading)}
+.e2e-drop__hint{color:var(--e2e-muted);font-size:.85rem}
+.e2e-drop__actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:.4rem}
+.e2e-drop--over,.e2e-drop:focus-visible{border-color:var(--e2e-primary);background:var(--e2e-primary-soft);outline:none}
+.e2e-upload-row{--_c:var(--e2e-primary);display:flex;align-items:center;gap:.75rem;padding:.7rem .85rem;margin-bottom:.5rem;background:var(--e2e-bg);border:1px solid var(--e2e-border);border-radius:var(--e2e-radius)}
+.e2e-upload-row__icon{display:grid;place-items:center;width:2.4rem;height:2.4rem;border-radius:var(--e2e-radius);background:var(--e2e-primary-soft);color:var(--e2e-primary-ink);flex:none}
+.e2e-upload-row__main{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem}
+.e2e-upload-row__name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.e2e-upload-row__meta{font-size:.78rem;color:var(--e2e-muted)}
+.e2e-upload-row__bar{height:.4rem;border-radius:999px;background:var(--e2e-raised);overflow:hidden}
+.e2e-upload-row__fill{display:block;height:100%;width:0;border-radius:999px;background:var(--_c);transition:width .25s}
+.e2e-upload-row__state{flex:none}
+.e2e-upload-row--done{--_c:var(--e2e-success)}
+.e2e-upload-row--error{--_c:var(--e2e-danger);border-color:var(--e2e-danger)}
+.e2e-upload-row--error .e2e-upload-row__meta{color:var(--e2e-danger)}
+.e2e-annot{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:var(--e2e-radius-lg);background:var(--e2e-accent);color:var(--e2e-on-accent)}
+.e2e-annot__media{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.e2e-annot video.e2e-annot__media,.e2e-annot img.e2e-annot__media{object-fit:contain}
+.e2e-annot__svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:auto;touch-action:none;cursor:crosshair;color:var(--e2e-primary)}
+.e2e-annot__controls{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:.4rem;padding:.5rem .75rem;background:color-mix(in srgb,var(--e2e-accent) 82%,transparent);color:var(--e2e-on-accent);flex-wrap:wrap}
+.e2e-annot__btn{display:grid;place-items:center;width:2.2rem;height:2.2rem;border:0;border-radius:50%;background:none;color:inherit;cursor:pointer;flex:none}
+.e2e-annot__btn:hover,.e2e-annot__btn:focus-visible{background:color-mix(in srgb,var(--e2e-on-accent) 18%,transparent);outline:none}
+.e2e-annot__btn--play{width:2.9rem;height:2.9rem;background:var(--e2e-primary);color:var(--e2e-on-primary)}
+.e2e-annot__btn--play:hover,.e2e-annot__btn--play:focus-visible{background:var(--e2e-primary-hover)}
+.e2e-annot__time{font:600 .8rem var(--e2e-font-body);font-variant-numeric:tabular-nums;white-space:nowrap}
+.e2e-annot__speed{background:color-mix(in srgb,var(--e2e-on-accent) 14%,transparent);color:inherit;border:1px solid color-mix(in srgb,var(--e2e-on-accent) 28%,transparent);border-radius:var(--e2e-radius-sm);padding:.2rem .4rem;font:inherit;font-size:.8rem}
+.e2e-annot__speed option{color:var(--e2e-text);background:var(--e2e-bg)}
+.e2e-annot__spacer{margin-left:auto}
+.e2e-annot__seek{position:relative;flex:1 1 8rem;min-width:6rem;height:.45rem;border-radius:999px;background:color-mix(in srgb,var(--e2e-on-accent) 28%,transparent);cursor:pointer;margin:0 .4rem}
+.e2e-annot__seek-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--e2e-primary)}
+.e2e-annot__mark{position:absolute;top:50%;width:.7rem;height:.7rem;border-radius:50%;transform:translate(-50%,-50%);background:var(--e2e-on-accent);border:2px solid var(--e2e-accent)}
+.e2e-annot-timeline{margin-top:.75rem;padding:.75rem .9rem;background:var(--e2e-surface);border:1px solid var(--e2e-border);border-radius:var(--e2e-radius-lg);display:grid;gap:.5rem;font-family:var(--e2e-font-body)}
+.e2e-annot-timeline__ruler{display:flex;justify-content:space-between;margin-left:6.5rem;font-size:.7rem;color:var(--e2e-muted);font-variant-numeric:tabular-nums}
+.e2e-annot-timeline__lane{display:flex;align-items:center;gap:.5rem}
+.e2e-annot-timeline__lane-label{width:6rem;flex:none;font-size:.75rem;font-weight:600;color:var(--e2e-muted)}
+.e2e-annot-timeline__track{position:relative;flex:1;height:1.7rem;border-radius:var(--e2e-radius-sm);background:var(--e2e-raised)}
+.e2e-annot-timeline__playhead{position:absolute;top:-.25rem;bottom:-.25rem;width:2px;margin-left:-1px;background:var(--e2e-danger);pointer-events:none;z-index:2}
+.e2e-annot-timeline__marker{position:absolute;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:1.4rem;height:1.4rem;border-radius:50%;border:2px solid var(--e2e-primary);background:var(--e2e-bg);color:var(--e2e-primary-ink);font:700 .7rem var(--e2e-font-body);cursor:pointer;padding:0}
+.e2e-annot-timeline__marker--active{background:var(--e2e-primary);color:var(--e2e-on-primary)}
+.e2e-annot-timeline__range{position:absolute;top:50%;height:.8rem;transform:translateY(-50%);border-radius:999px;background:var(--e2e-primary);opacity:.8;min-width:.5rem;cursor:pointer}
+.e2e-annot-timeline__range--accent{background:var(--e2e-accent)}
+.e2e-toolbar{display:inline-flex;flex-direction:column;align-items:center;gap:.35rem;padding:.5rem;border-radius:var(--e2e-radius-lg);background:var(--e2e-accent);color:var(--e2e-on-accent)}
+.e2e-toolbar__btn{display:grid;place-items:center;width:2.4rem;height:2.4rem;border:0;border-radius:var(--e2e-radius);background:none;color:inherit;cursor:pointer}
+.e2e-toolbar__btn:hover,.e2e-toolbar__btn:focus-visible{background:color-mix(in srgb,var(--e2e-on-accent) 18%,transparent);outline:none}
+.e2e-toolbar__btn[aria-pressed="true"]{background:var(--e2e-primary);color:var(--e2e-on-primary)}
+.e2e-toolbar__sep{align-self:stretch;height:1px;margin:.15rem .25rem;background:color-mix(in srgb,var(--e2e-on-accent) 30%,transparent)}
+.e2e-swatch{--_s:var(--e2e-primary);width:1.6rem;height:1.6rem;border-radius:50%;border:2px solid transparent;background:var(--_s);padding:0;cursor:pointer;flex:none}
+.e2e-swatch--primary{--_s:var(--e2e-primary)}
+.e2e-swatch--light{--_s:var(--e2e-on-accent)}
+.e2e-swatch--accent{--_s:var(--e2e-secondary)}
+.e2e-swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--e2e-accent),0 0 0 4px var(--e2e-on-accent)}
+.e2e-swatch:focus-visible{outline:2px solid var(--e2e-focus);outline-offset:2px}
+@media (max-width:640px){.e2e-toolbar{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;width:100%}.e2e-toolbar__sep{align-self:center;width:1px;height:1.6rem;margin:0 .25rem}}
+@container (max-width:640px){.e2e-toolbar{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;width:100%}.e2e-toolbar__sep{align-self:center;width:1px;height:1.6rem;margin:0 .25rem}}
+.e2e-chip:not([data-c]){display:inline-flex;align-items:center;gap:.4rem;width:auto;padding:.3rem .8rem;border:1px solid var(--e2e-border);border-radius:999px;background:var(--e2e-surface);color:var(--e2e-text);font:600 .82rem var(--e2e-font-body);text-align:center;white-space:nowrap}
+.e2e-chip:not([data-c]):hover{border-color:var(--e2e-primary)}
+.e2e-chip__icon{display:inline-grid;place-items:center;flex:none}.e2e-chip__icon svg{width:1em;height:1em}
+.e2e-chip:not([data-c]).e2e-chip--active{background:var(--e2e-primary);border-color:var(--e2e-primary);color:var(--e2e-on-primary)}
+.e2e-chip:not([data-c]).e2e-chip--muted{background:var(--e2e-raised);color:var(--e2e-muted);border-color:transparent}
 '''
 
 JS = r'''

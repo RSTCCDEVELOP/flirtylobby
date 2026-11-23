@@ -195,6 +195,9 @@ class Invitation(models.Model):
     code_expires = models.DateTimeField(null=True, blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     code_sent_at = models.DateTimeField(null=True, blank=True)
+    source = models.CharField(max_length=40, blank=True)  # who made it: "" = an administrator (Admin -> Users), else the key of a plugin (e.g. "coach-video")
+    after_path = models.CharField(max_length=200, blank=True)  # where the new person goes right after the account is made (a path of this website)
+    context = models.JSONField(default=dict, blank=True)  # for the plugin that made it (e.g. {"coach_id": 5}); the plugin hears about the account through the event invitation_accepted
 
     class Meta:
         ordering = ["-created_at"]

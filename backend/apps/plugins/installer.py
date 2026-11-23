@@ -338,9 +338,33 @@ def lang_state(name):
     return {"have": have, "missing": [c for c in codes if c not in have]}
 
 
+def drop_tables(name):
+    """The tables of a plugin (plg_<name>_*): its data goes when the plugin is deleted, as the screen says. Tables that point at each other are dropped in rounds (the ones that are pointed at last)."""
+    from django.db import IntegrityError, OperationalError, connection
+
+    prefix = "plg_" + name.replace("-", "_") + "_"
+    try:
+        todo = [t for t in connection.introspection.table_names() if t.startswith(prefix)]
+        for _round in range(len(todo) + 1):
+            left = []
+            for t in todo:
+                try:
+                    with connection.cursor() as cur:
+                        cur.execute(f'DROP TABLE IF EXISTS "{t}"' + (" CASCADE" if connection.vendor == "postgresql" else ""))
+                except (IntegrityError, OperationalError):
+                    left.append(t)
+            if not left:
+                return
+            todo = left
+        logger.warning("Tables of plugin %s could not all be dropped: %s", name, todo)
+    except Exception:  # noqa: BLE001 - a table that cannot be dropped must not stop the removal
+        logger.warning("Tables of plugin %s could not be dropped", name, exc_info=True)
+
+
 def remove(p):
     shutil.rmtree(plugin_dir(p.name), ignore_errors=True)
     shutil.rmtree(root() / ".data" / p.name, ignore_errors=True)
+    drop_tables(p.name)
     p.delete()
 
 

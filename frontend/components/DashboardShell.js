@@ -284,7 +284,7 @@ export default function DashboardShell({ children }) {
     return () => window.removeEventListener("plugins-changed", load);
   }, [mods.plugins, user]);
   // a plugin belongs to a section (plugin.json): its page sits in that part of the menu, its admin page in that part of the admin menu
-  const pluginUser = pluginMenu.map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section, group: x.group }));
+  const pluginUser = pluginMenu.filter((x) => x.in_menu !== false).map((x) => ({ href: x.path ? `/dashboard/${x.path}` : `/dashboard/plugins/${x.name}`, label: x.label, icon: <IconGrid />, section: x.section, group: x.group }));
   const pluginUserGroup = Object.fromEntries(pluginUser.filter((n) => n.group === "mine" || n.group === "contact").map((n) => [n.href, n.group === "mine" ? "c-mine" : "c-contact"]));
   // a plugin has its own page and (plugin.json admin_entries) own places in the menu: the products and the orders of the webshop
   // (the settings of a plugin are only under Plugins; here only the plugins that have a working page of their own: orders, products, moderation)

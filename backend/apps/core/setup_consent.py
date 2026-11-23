@@ -99,7 +99,15 @@ def verify(user, code):
     return True
 
 
+def passes(user):
+    """A superadmin and a superadmin+ (both is_staff) always pass the consent with a code and the confirmation of the payment: they need no code (it also works when no e-mail or SMS link is on)."""
+    return bool(getattr(user, "is_staff", False))
+
+
 def ok(user):
+    """The consent with a code has been given (or the person passes anyway: see passes)."""
+    if passes(user):
+        return True
     return bool(cache.get(_key(user, "ok")))
 
 

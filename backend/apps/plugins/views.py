@@ -109,6 +109,7 @@ def plugin(request, name):
     if request.method == "DELETE":
         if need := runtime.dependents(p.name):
             return bad("Eerst deze plugins uitzetten of verwijderen: " + ", ".join(need) + ". Zij hebben deze plugin nodig.")
+        runtime.uninstall(p)  # the plugin removes what it keeps outside its folder (files on S3 ...)
         runtime.unload(p.name)
         installer.remove(p)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -416,7 +417,7 @@ def content_file(request, token, name, item, path):
     else:
         r = HttpResponse(f.read_bytes(), content_type=mimetypes.guess_type(f.name)[0] or "application/octet-stream")
     r["Content-Security-Policy"] = ("sandbox allow-scripts allow-pointer-lock; default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; "
-                                    f"font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; form-action 'none'; frame-ancestors {frame_ancestors(request)}")
+                                    f"font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; form-action 'none'; frame-src https://www.youtube-nocookie.com; frame-ancestors {frame_ancestors(request)}")
     r["X-Content-Type-Options"] = "nosniff"
     r["Cache-Control"] = "no-store"
     return r
@@ -435,7 +436,9 @@ def menu(request):
     for p in Plugin.objects.filter(enabled=True):
         m, web = p.manifest.get("menu"), p.manifest.get("web")
         if m and web and (m["access"] == "members" or request.user.is_staff):  # the page of the plugin in the menu
-            out.append({"name": p.name, "label": m["label"], "title": p.title, "section": p.manifest.get("section", "system"), "group": installer.menu_group(p), "path": p.manifest.get("public_path", "")})
+            cfg = p.config or {}  # the plugin setting "Item in het gebruikersmenu" / "Tegel op het gebruikersdashboard" (show_in_menu, show_tile; on when the plugin does not have them)
+            out.append({"name": p.name, "label": m["label"], "title": p.title, "section": p.manifest.get("section", "system"), "group": installer.menu_group(p), "path": p.manifest.get("public_path", ""),
+                        "in_menu": cfg.get("show_in_menu", True) is not False, "tile": cfg.get("show_tile", True) is not False})
     return Response(out)
 
 
@@ -549,6 +552,8 @@ SDK = r"""/* Plugin SDK: put into every page of a plugin by the system (nothing 
     upload: function (path, file, fields) { return call("upload", { path: path, file: file, fields: fields || {} }); },  /* send a file (multipart) to the system API as the member: resolves the answer */
     openAdmin: function (file, query) { parent.postMessage({ plugin: "openadmin", file: file, query: query || {}, rect: last }, "*"); },  /* the admin screen of this plugin in a popup of the site (edit mode only) */
     go: function (path) { parent.postMessage({ plugin: "go", path: path }, "*"); },  /* open an address of the website (or a full link) */
+    aiCredit: function () { return call("aicredit", {}); },  /* the system's offer to buy AI credit (when a call said there is not enough): resolves true when the person went on to pay, else false */
+    consent: function () { return call("consent", {}); },  /* the cookie choice of the visitor: {choices: {analytics, marketing, preferences}} or null when nothing was chosen yet */
     pickMedia: function () { return call("media", {}); },  /* the media library of the system: resolves {id, url} or null */
     editHtml: function (html, opts) { return call("html", { html: html || "", opts: opts || {} }); },  /* the system's text editor: resolves the new html, or null */
     resize: function (h) { parent.postMessage({ plugin: "resize", height: h }, "*"); },

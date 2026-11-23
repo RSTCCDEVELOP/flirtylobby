@@ -22,6 +22,7 @@ import { loadKit, kitTokens, themeFontLinks } from "../lib/ui-kit/kitDoc";
 import { useSession } from "./Session";
 import MediaPicker from "./MediaPicker";
 import RichEditor from "./RichEditor";
+import AiCreditPopup from "./AiCreditPopup";
 
 const VARS = ["--bg", "--card", "--text", "--muted", "--line", "--blue", "--orange", "--ok", "--danger", "--radius", "--btn-radius", "--shadow", "--font-body", "--font-heading", "--fw-heading"];
 const scheme = () => { const m = (getComputedStyle(document.documentElement).getPropertyValue("--bg").trim().match(/^#([0-9a-f]{6})$/i) || [])[1]; if (!m) return document.documentElement.dataset.theme === "light" ? "light" : "dark"; const n = parseInt(m, 16); return ((n >> 16) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) < 140 ? "dark" : "light"; };
@@ -82,6 +83,8 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
       else if (d.plugin === "go" && typeof d.path === "string") { if (d.path.startsWith("/") && !d.path.startsWith("//")) { window.dispatchEvent(new Event("nav-start")); router.push(d.path); } else if (/^https?:\/\//.test(d.path)) window.location.href = d.path; }
       else if (d.plugin === "openadmin" && site?.editing && typeof d.file === "string" && /^web\/[A-Za-z0-9_.-]+\.html$/.test(d.file)) setAdminPop({ anchor: (() => { const f = frame.current?.getBoundingClientRect(); const r = d.rect; return f && r && Number.isFinite(r.left) ? { left: f.left + r.left, top: f.top + r.bottom + 8 } : null; })(), file: d.file, query: { popup: "1", ...(d.query || {}) } });
       else if (d.plugin === "media") setAsk({ type: "media", id: d.id });
+      else if (d.plugin === "aicredit") { api("/ai/me/").then((info) => (info?.proposal ? setAsk({ type: "aicredit", id: d.id, info }) : reply({ ok: true, data: false }))).catch(() => reply({ ok: true, data: false })); }  // the offer to buy AI credit, for a plugin whose AI call needs more credit
+      else if (d.plugin === "consent") { try { const c = JSON.parse(localStorage.getItem("cookie-consent") || "null"); reply({ ok: true, data: c && c.choices ? { choices: c.choices } : null }); } catch { reply({ ok: true, data: null }); } }  // the cookie choice of the visitor (for embeds like YouTube)
       else if (d.plugin === "html") setAsk({ type: "html", id: d.id, html: String(d.html || ""), title: d.opts?.title });
       else if (d.plugin === "bleed") { setBleed(!!d.on); sendView(); }
       else if (d.plugin === "loaded") { clearTimeout(settle.current); ready.current?.(); }
@@ -114,6 +117,7 @@ export default function PluginFrame({ name, file = "", title, route = null, bare
             <PluginFrame name={name} file={adminPop.file} bare route={{ params: {}, query: adminPop.query }} onWrite={() => { dirty.current = true; }} />
           </div>
         </div>, document.body)}
+      {ask?.type === "aicredit" && <AiCreditPopup info={ask.info} onClose={() => answer(ask.id, false)} beforePay={async () => { answer(ask.id, true); }} />}
       {ask?.type === "media" && <MediaPicker onClose={() => answer(ask.id, null)} onPick={(item) => answer(ask.id, { id: item.id, url: item.url })} />}
       {ask?.type === "html" && <RichEditor title={ask.title || tx("Tekst bewerken")} initialHtml={ask.html} onSave={async (html) => answer(ask.id, html)} onPlain={async (t) => answer(ask.id, `<p>${t.replace(/</g, "&lt;")}</p>`)} onClose={() => answer(ask.id, null)} />}
     </>

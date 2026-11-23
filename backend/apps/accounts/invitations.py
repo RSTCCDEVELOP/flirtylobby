@@ -70,18 +70,60 @@ def _link_base(request):
     return (layout._site_url() or request.headers.get("Origin") or "").rstrip("/")  # noqa: SLF001
 
 
-def _send_invite(request, i, token):
+def _send_invite(request, i, token, base_url=None, inviter_name=None, subject=None, what=None):
+    """The e-mail with the link (in the layout of the website). A plugin that invites for its own purpose gives `what` ("om deel te nemen aan Coach video") and `subject`."""
     from apps.communication import sending
 
-    url = f"{_link_base(request)}/uitnodiging/{token}"
+    base = base_url if base_url is not None else _link_base(request)
+    url = f"{base}/uitnodiging/{token}"
     who = f"{i.first_name} {i.last_name}".strip()
-    inviter = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.email
-    body = (f"Hallo {i.first_name},\n\n{inviter} nodigt je uit om een account aan te maken.\n\n[Account aanmaken]({url})\n\n"
-            f"Of open deze link in je browser: {url}\n\nDe link is geldig tot {timezone.localtime(i.expires_at):%d-%m-%Y %H:%M}.")
-    sending.send_email(i.email, "Je bent uitgenodigd", body, purpose="notifications", base_url=_link_base(request))
+    inviter = inviter_name or f"{request.user.first_name} {request.user.last_name}".strip() or request.user.email
+    body = (f"Hallo {i.first_name},\n\n{inviter} nodigt je uit {what or 'om een account aan te maken'}.\n\n[Account aanmaken]({url})\n\n"
+            f"Of open deze link in je browser: {url}\n\nDe link is geldig tot {timezone.localtime(i.expires_at):%d-%m-%Y %H:%M}. Je bevestigt je e-mailadres met een code, daarna kun je direct verder.")
+    sending.send_email(i.email, subject or "Je bent uitgenodigd", body, purpose="notifications", base_url=base)
     i.sent_at = timezone.now()
     i.save(update_fields=["sent_at"])
     return who, url
+
+
+def safe_path(v):
+    """A path of this website for "after the account": /dashboard/... only (never another site)."""
+    v = str(v or "").strip()
+    return v if re.fullmatch(r"/dashboard/[A-Za-z0-9/_\-?=&.%]{0,180}", v) else ""
+
+
+def create_invite(inviter, email, first_name, last_name, *, source, after_path="", context=None, hours=24 * 14, base_url="", what="", subject=""):
+    """For plugins: invite a person who has no account yet. The person gets an e-mail in the layout of the website, sets a password, accepts the terms, confirms the e-mail address with a code
+    (always) and goes to `after_path`. The plugin hears about the account through the event `invitation_accepted` (invitation=, user=). Raises ValueError (message for the inviter)."""
+    email = str(email or "").strip().lower()
+    try:
+        validate_email(email)
+    except DjangoValidationError:
+        raise ValueError("Geef een geldig e-mailadres.")
+    first, last = str(first_name or "").strip()[:150], str(last_name or "").strip()[:150]
+    if not first or not last:
+        raise ValueError("Vul de voor- en achternaam in.")
+    if User.objects.filter(email__iexact=email).exists():
+        raise ValueError("Er bestaat al een account met dit e-mailadres.")
+    Invitation.objects.filter(email__iexact=email, source=source, used_at__isnull=True).delete()  # a new invitation replaces the open one of this plugin
+    token = secrets.token_urlsafe(32)
+    i = Invitation.objects.create(token_hash=_hash(token), email=email, first_name=first, last_name=last, require_terms=True, require_email_verify=True, source=str(source)[:40], after_path=safe_path(after_path),
+                                  context=context or {}, expires_at=timezone.now() + timedelta(hours=min(max(int(hours), 1), MAX_HOURS)), created_by=inviter)
+    try:
+        _send_invite(None, i, token, base_url=base_url, inviter_name=f"{inviter.first_name} {inviter.last_name}".strip() or inviter.email, subject=subject, what=what)
+    except Exception as e:  # noqa: BLE001
+        i.delete()
+        raise ValueError(f"De uitnodiging kon niet worden verstuurd: {e}")
+    return i
+
+
+def resend_invite(i, inviter, base_url="", what="", subject=""):
+    """A fresh link for an open invitation of a plugin (the old link stops working)."""
+    token = secrets.token_urlsafe(32)
+    i.token_hash, i.expires_at, i.attempts = _hash(token), timezone.now() + timedelta(days=14), 0
+    i.save(update_fields=["token_hash", "expires_at", "attempts"])
+    _send_invite(None, i, token, base_url=base_url, inviter_name=f"{inviter.first_name} {inviter.last_name}".strip() or inviter.email, subject=subject, what=what)
+    return i
 
 
 def _clean_grants(actor, raw):
@@ -213,7 +255,7 @@ def invite(request, token):
         return _bad(GONE, status.HTTP_410_GONE)
     s = security.get()
     if request.method == "GET":
-        return Response({"first_name": i.first_name, "last_name": i.last_name, "email": i.email, "require_terms": i.require_terms, "terms_url": i.terms_url or "/voorwaarden",
+        return Response({"after": i.after_path, "first_name": i.first_name, "last_name": i.last_name, "email": i.email, "require_terms": i.require_terms, "terms_url": i.terms_url or "/voorwaarden",
                         "require_email_verify": i.require_email_verify, "password_min_length": s["basic"]["password_min_length"], "password_complexity": s["basic"]["password_complexity"], "expires_at": i.expires_at})
     d = request.data
     password = str(d.get("password") or "")
@@ -314,4 +356,5 @@ def _finish(i, verified):
     token = Token.objects.create(user=user)
     logger.info("Invitation accepted: %s", user.email)
     __import__("apps.plugins.runtime", fromlist=["emit"]).emit("user_registered", user=user)
+    __import__("apps.plugins.runtime", fromlist=["emit"]).emit("invitation_accepted", invitation=i, user=user)  # a plugin that made the invitation links the new person to what it was for
     return Response({"done": True, "token": token.key, "user": ProfileSerializer(user).data}, status=status.HTTP_201_CREATED)

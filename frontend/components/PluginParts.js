@@ -13,23 +13,27 @@ import { confirmDialog } from "../lib/dialog";
 import { useAuth } from "./AuthContext";
 import { useAutoSave } from "../lib/autosave";
 import { tx } from "../lib/t";
-import { IconEye, IconGrid, IconSettings } from "./Icons";
+import { IconEye, IconGrid, IconInfo, IconSettings } from "./Icons";
 import MediaField from "./MediaField";
 import SaveStatus from "./SaveStatus";
 import Tabs from "./Tabs";
 
-// A field of a plugin's settings (the plugin describes them in plugin.json)
+// A field of a plugin's settings (the plugin describes them in plugin.json): label above, the field, the explanation underneath. A switch is a card with its explanation next to it.
 function Field({ c, value, onChange }) {
-  const label = <>{c.label}{c.hint && <small className="muted"> {c.hint}</small>}</>;
-  if (c.type === "bool") return <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} /><span /></span><span>{label}</span></label>;
-  if (c.type === "textarea") return <label>{label}<textarea rows={4} value={value ?? ""} onChange={(e) => onChange(e.target.value)} /></label>;
-  if (c.type === "select") return <label>{label}<select value={value ?? ""} onChange={(e) => onChange(e.target.value)}>{c.options.map((o) => <option key={o} value={o}>{o}</option>)}</select></label>;
-  if (c.type === "secret") return <label>{label}<input type="password" autoComplete="new-password" value={value === true ? "" : value ?? ""} placeholder={value === true ? tx("Ingesteld (laat leeg om te behouden)") : ""} onChange={(e) => onChange(e.target.value)} /></label>;
-  return <label>{label}<input type={c.type === "number" ? "number" : "text"} value={value ?? ""} onChange={(e) => onChange(e.target.value)} /></label>;
+  const id = `pf-${c.key}`;
+  const hint = c.hint ? <small className="pl-hint">{tx(c.hint)}</small> : null;
+  if (c.type === "bool") return <label className="pl-switchcard" htmlFor={id}><span className="switch"><input id={id} type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} /><span /></span><span className="pl-switchcard__text"><strong>{tx(c.label)}</strong>{hint}</span></label>;
+  const wide = c.type === "textarea" || c.type === "secret" || (c.type === "text" && String(c.hint || "").length > 90);
+  let control;
+  if (c.type === "textarea") control = <textarea id={id} rows={4} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />;
+  else if (c.type === "select") control = <select id={id} value={value ?? ""} onChange={(e) => onChange(e.target.value)}>{c.options.map((o) => <option key={o} value={o}>{c.labels?.[o] ? tx(c.labels[o]) : o}</option>)}</select>;
+  else if (c.type === "secret") control = <input id={id} type="password" autoComplete="new-password" value={value === true ? "" : value ?? ""} placeholder={value === true ? tx("Ingesteld (laat leeg om te behouden)") : ""} onChange={(e) => onChange(e.target.value)} />;
+  else control = <input id={id} type={c.type === "number" ? "number" : "text"} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />;
+  return <div className={`pl-field${wide ? " wide" : ""}`}><label htmlFor={id}>{tx(c.label)}</label>{control}{hint}</div>;
 }
 
 // Warnings about one plugin: version against the system, signature, languages
-export function PluginWarnings({ p }) {
+export function warningsOf(p) {
   const items = [];
   if (p.signature === "invalid") items.push(["bad", tx("De ondertekening van deze plugin klopt niet: hij is gewijzigd na het ondertekenen. Hij draait niet.")]);
   else if (p.signature === "missing") items.push([p.dev_mode ? "info" : "bad", p.dev_mode ? tx("Ontwikkelversie: niet ondertekend. Draait alleen in de ontwikkelomgeving; bouw hem met plugin_build voor gebruik elders.") : tx("Niet ondertekend: alleen plugins van onze ontwikkelaar draaien hier.")]);
@@ -38,25 +42,29 @@ export function PluginWarnings({ p }) {
   else if (p.compat === "newer") items.push(["warn", tx("Deze plugin is gemaakt voor een nieuwere systeemversie ({0}); het systeem is {1}. Werk het systeem bij.", p.built_for, p.system_version)]);
   if (p.payments_notice) items.push(["warn", tx(p.payments_notice)]);
   if (p.languages?.missing?.length) items.push(["warn", tx("Niet in alle talen vertaald. Ontbreekt: {0}.", p.languages.missing.join(", "))]);
-  return items.map(([k, text], i) => <div key={i} className={k === "bad" ? "alert" : k === "info" ? "alert ok" : "alert"} style={k === "warn" ? { background: "#fef3c7", color: "#78350f" } : undefined}>{text}</div>);
+  return items;
 }
 
-// Settings of one plugin; they are saved by themselves
+export function PluginWarnings({ p }) {
+  return warningsOf(p).map(([k, text], i) => <div key={i} className={k === "bad" ? "alert" : k === "info" ? "alert ok" : "alert"} style={k === "warn" ? { background: "#fef3c7", color: "#78350f" } : undefined}>{text}</div>);
+}
+
+// Settings of one plugin; they are saved by themselves. Settings with the same `group` (plugin.json) stand on a tab of their own; without groups it is one page.
 export function PluginConfig({ p, onSaved }) {
   const [cfg, setCfg] = useState(p.config);
+  const [grp, setGrp] = useState("");
   const save = async () => { try { onSaved(await api(`/plugins/${p.name}/`, { method: "PATCH", body: { config: cfg } })); } catch { return false; } };
   const auto = useAutoSave(cfg, save, { delay: 1000 });
   if (!p.config_schema.length) return <p className="muted" style={{ margin: 0 }}>{tx("Deze plugin heeft geen instellingen.")}</p>;
-  const rows = [];  // consecutive switches (bool) form one block with columns; the other fields keep the full width
-  for (const c of p.config_schema) {
-    const last = rows[rows.length - 1];
-    if (c.type === "bool" && last?.bools) last.items.push(c); else rows.push({ bools: c.type === "bool", items: [c] });
-  }
+  const groups = [...new Set(p.config_schema.map((c) => c.group || ""))];
+  const show = groups.length > 1 ? (groups.includes(grp) ? grp : groups[0]) : groups[0];
+  const fields = p.config_schema.filter((c) => (c.group || "") === show);
   return (
-    <div className="form">
-      {rows.map((r, n) => r.bools
-        ? <div key={n} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: ".6rem 1.5rem" }}>{r.items.map((c) => <Field key={c.key} c={c} value={cfg[c.key]} onChange={(v) => setCfg((x) => ({ ...x, [c.key]: v }))} />)}</div> // switches next to each other, in columns
-        : <Field key={r.items[0].key} c={r.items[0]} value={cfg[r.items[0].key]} onChange={(v) => setCfg((x) => ({ ...x, [r.items[0].key]: v }))} />)}
+    <div className="pl-config">
+      {groups.length > 1 && <Tabs value={show} onChange={setGrp} tabs={groups.map((g) => [g, g || "Overig", null, p.config_schema.filter((c) => (c.group || "") === g).length])} />}
+      <div className="pl-form">
+        {fields.map((c) => <Field key={c.key} c={c} value={cfg[c.key]} onChange={(v) => setCfg((x) => ({ ...x, [c.key]: v }))} />)}
+      </div>
       <SaveStatus auto={auto} />
     </div>
   );
@@ -66,39 +74,61 @@ export function PluginConfig({ p, onSaved }) {
 const GROUPS = [["mine", "Mijn community"], ["contact", "Contact"], ["other", "Los in het menu (zonder groep)"]];
 
 // Where the plugin sits in the member dashboard, and whether it may be put on a page as a system object (each change is saved at once)
+// The tab Plaatsing: where the plugin shows up, as one card per place (admin menu and tiles, the menu of the users, the public page, a system object on a page).
+function PlaceCard({ icon, title, hint, status, children }) {
+  return (
+    <section className="pl-place">
+      <header className="pl-place__head">
+        <span className="pl-place__ico" aria-hidden="true">{icon}</span>
+        <div className="pl-place__title"><h3>{title}</h3>{hint && <small className="pl-hint">{hint}</small>}</div>
+        {status && <span className="pl-chip">{status}</span>}
+      </header>
+      <div className="pl-place__body">{children}</div>
+    </section>
+  );
+}
+
 export function PluginPlacement({ p, onSaved }) {
   const [err, setErr] = useState("");
   const patch = async (body) => { setErr(""); try { onSaved(await api(`/plugins/${p.name}/`, { method: "PATCH", body })); window.dispatchEvent(new Event("plugins-changed")); } catch (e) { setErr(e?.message || tx("Opslaan mislukt.")); } }; // (the menus follow at once)
+  const cfg = p.config || {};
+  const hasSwitches = (p.config_schema || []).some((c) => c.key === "show_in_menu" || c.key === "show_tile");
   return (
-    <div className="form">
+    <div className="pl-places">
       {err && <div className="alert">{err}</div>}
-      <h3 style={{ margin: 0 }}>{tx("Beheer: menu en tegels")}</h3>
-      <label>{tx("Plaats de beheerpagina van deze plugin bij")}
-        <select value={p.section} onChange={(e) => patch({ admin_section: e.target.value })}>{Object.entries(SECTION_LABEL).map(([k, l]) => <option key={k} value={k}>{tx(l)}{k === p.section_default ? ` (${tx("standaard")})` : ""}</option>)}</select>
-      </label>
-      <small className="muted">{tx("Hier staat de plugin in het Admin-menu en op de tegelpagina van die groep (bijvoorbeeld Orders bij Webshop).")}</small>
-      <h3 style={{ margin: ".6rem 0 0" }}>{tx("Menu van het gebruikersdashboard")}</h3>
-      {p.menu ? (
-        <>
-          <label>{tx("Plaats de pagina van deze plugin in")}
-            <select value={p.menu_group} onChange={(e) => patch({ menu_group: e.target.value })}>{GROUPS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
-          </label>
-          <small className="muted">{tx("Zichtbaar voor")} {p.menu.access === "members" ? tx("alle leden") : tx("alleen beheer")} · {tx("naam in het menu")}: {p.menu.label}</small>
-        </>
-      ) : <p className="muted" style={{ margin: 0 }}>{tx("Deze plugin heeft geen pagina in het menu van het gebruikersdashboard.")}</p>}
+      <PlaceCard icon={<IconSettings width={18} height={18} />} title={tx("Beheer: menu en tegels")} hint={tx("Hier staat de plugin in het Admin-menu en op de tegelpagina van die groep (bijvoorbeeld Orders bij Webshop).")}>
+        <div className="pl-field"><label htmlFor="pl-section">{tx("Plaats de beheerpagina van deze plugin bij")}</label>
+          <select id="pl-section" value={p.section} onChange={(e) => patch({ admin_section: e.target.value })}>{Object.entries(SECTION_LABEL).map(([k, l]) => <option key={k} value={k}>{tx(l)}{k === p.section_default ? ` (${tx("standaard")})` : ""}</option>)}</select>
+        </div>
+      </PlaceCard>
+      <PlaceCard icon={<IconGrid width={18} height={18} />} title={tx("Menu van het gebruikersdashboard")} status={p.menu ? (p.menu.access === "members" ? tx("Voor alle leden") : tx("Alleen beheer")) : tx("Geen pagina")}
+        hint={p.menu ? `${tx("Naam in het menu")}: ${p.menu.label}` : tx("Deze plugin heeft geen pagina in het menu van het gebruikersdashboard.")}>
+        {p.menu && (
+          <>
+            <div className="pl-field"><label htmlFor="pl-group">{tx("Plaats de pagina van deze plugin in")}</label>
+              <select id="pl-group" value={p.menu_group} onChange={(e) => patch({ menu_group: e.target.value })}>{GROUPS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
+            </div>
+            {hasSwitches && (
+              <div className="pl-place__row">
+                <span className={`pl-chip ${cfg.show_in_menu === false ? "" : "ok"}`}>{cfg.show_in_menu === false ? tx("Niet in het menu") : tx("In het menu")}</span>
+                <span className={`pl-chip ${cfg.show_tile === false ? "" : "ok"}`}>{cfg.show_tile === false ? tx("Geen tegel") : tx("Met tegel")}</span>
+                <small className="pl-hint">{tx("Menu en tegel zet je aan of uit bij Instellingen.")}</small>
+              </div>
+            )}
+          </>
+        )}
+      </PlaceCard>
       {p.public_path && (
-        <>
-          <h3 style={{ margin: ".6rem 0 0" }}>{tx("Wie ziet de pagina")}</h3>
-          <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.page_public} onChange={(e) => patch({ page_public: e.target.checked })} /><span /></span><span>{tx("Pagina publiek beschikbaar")} <small className="muted">{p.page_public ? tx("Iedereen opent de pagina op /{0}.", p.public_path) : tx("Alleen leden achter de login, op /dashboard/{0}.", p.public_path)}</small></span></label>
-        </>
+        <PlaceCard icon={<IconEye width={18} height={18} />} title={tx("Wie ziet de pagina")} hint={tx("Bezoekers die niet zijn ingelogd kunnen de pagina openen als je dit aanzet.")}>
+          <label className="pl-switchcard" htmlFor="pl-public"><span className="switch"><input id="pl-public" type="checkbox" checked={p.page_public} onChange={(e) => patch({ page_public: e.target.checked })} /><span /></span><span className="pl-switchcard__text"><strong>{tx("Pagina publiek beschikbaar")}</strong></span></label>
+        </PlaceCard>
       )}
-      <h3 style={{ margin: ".6rem 0 0" }}>{tx("Systeemobject voor een pagina")}</h3>
-      {p.page_object_offered ? (
-        <>
-          <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.page_object} onChange={(e) => patch({ page_object: e.target.checked })} /><span /></span><span>{tx("Deze plugin mag als systeemobject op een pagina worden gezet")}</span></label>
-          <small className="muted">{tx("Daarna kies je hem in de paginabewerker bij Systeemobject. Beheer: Admin → Systeemobjecten.")}</small>
-        </>
-      ) : <p className="muted" style={{ margin: 0 }}>{tx("Deze plugin biedt zichzelf niet aan als systeemobject (page_object in plugin.json).")}</p>}
+      <PlaceCard icon={<IconInfo width={18} height={18} />} title={tx("Systeemobject voor een pagina")} status={p.page_object_offered ? (p.page_object ? tx("Aan") : tx("Uit")) : tx("Niet beschikbaar")}
+        hint={p.page_object_offered ? tx("Daarna kies je hem in de paginabewerker bij Systeemobject. Beheer: Admin → Systeemobjecten.") : tx("Deze plugin biedt zichzelf niet aan als systeemobject (page_object in plugin.json).")}>
+        {p.page_object_offered && (
+          <label className="pl-switchcard" htmlFor="pl-object"><span className="switch"><input id="pl-object" type="checkbox" checked={p.page_object} onChange={(e) => patch({ page_object: e.target.checked })} /><span /></span><span className="pl-switchcard__text"><strong>{tx("Deze plugin mag als systeemobject op een pagina worden gezet")}</strong></span></label>
+        )}
+      </PlaceCard>
     </div>
   );
 }
@@ -111,22 +141,35 @@ const COMPAT = { current: "Up-to-date", outdated: "Niet meer up-to-date", incomp
 const Row = ({ label, children }) => <div className="plugin-row"><span className="muted">{label}</span><span>{children}</span></div>;
 
 // Overview: what the plugin is and in what state it stands
-export function PluginOverview({ p }) {
+export function PluginOverview({ p, onTab }) {
+  const n = warningsOf(p).length + (p.error ? 1 : 0);
+  const facts = [
+    [tx("Onderdeel"), tx(SECTION_LABEL[p.section] || p.section)],
+    [tx("Plugin"), p.version],
+    [tx("Gemaakt voor systeem"), <>{p.built_for} <span className="muted">· {tx("nu")} {p.system_version}</span> <span className={`badge ${p.compat === "current" ? "ok" : "off"}`}>{tx(COMPAT[p.compat])}</span></>],
+    ...(p.author ? [[tx("Door"), p.author]] : []),
+    ...(p.menu ? [[tx("Menu gebruikers"), tx(GROUPS.find((g) => g[0] === p.menu_group)?.[1] || "")]] : []),
+    [tx("Systeemobject"), p.page_object ? tx("Ja, mag op een pagina") : tx("Nee")],
+    [tx("Status"), <span className={`badge ${p.enabled ? "ok" : "off"}`}>{p.enabled ? tx("Aan") : tx("Uit")}</span>],
+  ];
   return (
     <div className="stack-sm">
       <p style={{ margin: 0 }}>{p.description || tx("Geen omschrijving.")}</p>
-      <div className="plugin-rows">
-        <Row label={tx("Onderdeel")}>{tx(SECTION_LABEL[p.section] || p.section)}</Row>
-        <Row label={tx("Plugin")}>{p.version}</Row>
-        <Row label={tx("Gemaakt voor systeem")}>{p.built_for} <span className="muted">· {tx("nu")} {p.system_version}</span> <span className={`badge ${p.compat === "current" ? "ok" : "off"}`}>{tx(COMPAT[p.compat])}</span></Row>
-        {p.author && <Row label={tx("Door")}>{p.author}</Row>}
-        {p.menu && <Row label={tx("Menu gebruikers")}>{tx(GROUPS.find((g) => g[0] === p.menu_group)?.[1] || "")}</Row>}
-        <Row label={tx("Systeemobject")}>{p.page_object ? tx("Ja, mag op een pagina") : tx("Nee")}</Row>
-        <Row label={tx("Status")}><span className={`badge ${p.enabled ? "ok" : "off"}`}>{p.enabled ? tx("Aan") : tx("Uit")}</span></Row>
-      </div>
+      <div className="pl-facts">{facts.map(([k, v], i) => <div key={i} className="pl-fact"><span className="muted">{k}</span><strong>{v}</strong></div>)}</div>
+      {n > 0 && <button type="button" className="pl-note" onClick={() => onTab && onTab("status")}>{n === 1 ? tx("Er is 1 melding over deze plugin.") : tx("Er zijn {0} meldingen over deze plugin.", n)} <span>{tx("Bekijk de tab Status")}</span></button>}
+      <PluginDemo p={p} />
+    </div>
+  );
+}
+
+// The tab Status: every warning of the plugin (signature, version, languages, payments) and its last error
+export function PluginStatus({ p }) {
+  const n = warningsOf(p).length + (p.error ? 1 : 0);
+  return (
+    <div className="stack-sm">
+      {n === 0 && <div className="alert ok">{tx("Geen meldingen: deze plugin is in orde.")}</div>}
       <PluginWarnings p={p} />
       {p.error && <div className="alert">{p.error}</div>}
-      <PluginDemo p={p} />
     </div>
   );
 }
@@ -487,9 +530,10 @@ export function PluginTabs({ p, onSaved, extra = [], first = "overview", childre
   const [tab, setTab] = useState(first);
   return (
     <>
-      <Tabs value={tab} onChange={setTab} tabs={[...extra.map(([k, l, i]) => [k, l, i]), ...(p.content_items ? [["content", p.content_label || "Inhoud", <IconGrid key="c" />, p.content_items.length]] : []), ["overview", "Overzicht", <IconEye key="o" />], ["placement", "Plaatsing", <IconGrid key="p" />], ...(p.settings_web && !p.config_schema?.length ? [] : [["settings", "Instellingen", <IconSettings key="s" />]]), ["details", "Details", <IconGrid key="d" />]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[...extra.map(([k, l, i]) => [k, l, i]), ...(p.content_items ? [["content", p.content_label || "Inhoud", <IconGrid key="c" />, p.content_items.length]] : []), ["overview", "Overzicht", <IconEye key="o" />], ["placement", "Plaatsing", <IconGrid key="p" />], ...(p.settings_web && !p.config_schema?.length ? [] : [["settings", "Instellingen", <IconSettings key="s" />]]), ["status", "Status", <IconInfo key="st" />, (warningsOf(p).length + (p.error ? 1 : 0)) || undefined], ["details", "Details", <IconGrid key="d" />]]} />
       <div style={{ marginTop: "1rem" }}>
-        {tab === "overview" && <PluginOverview p={p} />}
+        {tab === "overview" && <PluginOverview p={p} onTab={setTab} />}
+        {tab === "status" && <PluginStatus p={p} />}
         {tab === "content" && <PluginContent p={p} onSaved={onSaved} />}
         {tab === "placement" && <PluginPlacement p={p} onSaved={onSaved} />}
         {tab === "settings" && <PluginConfig p={p} onSaved={onSaved} />}

@@ -10,7 +10,7 @@
 import { Busy } from "../../../../components/PageLoader";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../../components/AuthContext";
-import { IconCart, IconGrid, IconRefresh, IconSettings } from "../../../../components/Icons";
+import { IconCart, IconGrid, IconInfo, IconRefresh, IconSettings } from "../../../../components/Icons";
 import ModuleOffAlert from "../../../../components/ModuleOffAlert";
 import { InstalledTiles, ManageModal, PluginLibrary } from "../../../../components/PluginTiles";
 import PluginFrame from "../../../../components/PluginFrame";
@@ -88,11 +88,9 @@ export default function PluginsPage() {
           <p className="muted" style={{ margin: 0 }}>{tx("Losse programma's die je los van het systeem uploadt en die er wel mee samenwerken: eigen pagina's, routes, instellingen en reacties op gebeurtenissen.")}</p>
         </div>
       </div>
-      {outdated.length > 0 && <div className="alert" style={{ background: "#fef3c7", color: "#78350f", marginBottom: "1rem" }}><strong>{tx("Plugins bijwerken:")}</strong> {outdated.map((p) => `${p.title} ${p.version}`).join(", ")} {tx("zijn niet meer up-to-date voor systeemversie {0}.", d.system_version)}
-      </div>}
       {msg && <div className={msg.ok ? "alert ok" : "alert"} style={{ marginBottom: "1rem" }}>{msg.text}</div>}
 
-      <Tabs value={tab} onChange={setTab} tabs={[["installed", "Geïnstalleerd", <IconGrid key="i" />, d.plugins.length || undefined], ["library", "Bibliotheek", <IconCart key="l" />], ["upload", "Uploaden", <IconRefresh key="u" />], ["develop", "Ontwikkelen", <IconSettings key="d" />]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["installed", "Geïnstalleerd", <IconGrid key="i" />, d.plugins.length || undefined], ["library", "Bibliotheek", <IconCart key="l" />], ["upload", "Uploaden", <IconRefresh key="u" />], ["develop", "Ontwikkelen", <IconSettings key="d" />], ["info", "Info", <IconInfo key="n" />, outdated.length || undefined]]} />
 
       {tab === "installed" && (
         <>
@@ -107,23 +105,36 @@ export default function PluginsPage() {
         const p = d.plugins.find((x) => x.name === manage);
         if (!p) return null;
         return (
-          <ManageModal p={p} onClose={() => setManage(null)}>
-            <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
-              <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={p.enabled} disabled={!p.enabled && (!!p.blocked || (p.requires_missing || []).length > 0)} onChange={(e) => toggle(p, e.target.checked)} /><span /></span><span>{p.enabled ? tx("Actief") : tx("Uit")}</span></label>
-            </div>
+          <ManageModal p={p} onClose={() => setManage(null)} onToggle={(on) => toggle(p, on)} blocked={(!!p.blocked || (p.requires_missing || []).length > 0) ? tx("Deze plugin kan niet aan: er mist iets of hij is niet geschikt voor dit systeem.") : ""}
+            footer={(
+              <>
+                <button type="button" className="btn danger" onClick={async () => { if (await remove(p)) setManage(null); }}>{tx("Verwijderen")}</button>
+                <span className="pl-modal__spacer" />
+                {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg({ ok: false, text: errorText(e) }))}>{tx("Downloaden (zip)")}</button>}
+                {p.enabled && p.has_web && p.menu && <a className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</a>}
+                <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Instellingen")}</a>
+                <button type="button" className="btn primary" onClick={() => setManage(null)}>{tx("Sluiten")}</button>
+              </>
+            )}>
+
             {(p.requires?.length > 0 || p.required_by?.length > 0) && <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{p.requires?.length > 0 && <>{tx("Heeft nodig:")} {p.requires.join(", ")}. </>}</p>}
             <PluginTabs p={p} onSaved={upd} extra={p.settings_web && p.enabled ? [["shopsettings", "Instellingen", <IconSettings key="ss" />]] : []}>
               {(tab) => tab === "shopsettings" && p.settings_web && p.enabled && <PluginFrame name={p.name} file={p.settings_web} title={`${p.title} – ${tx("instellingen")}`} bare />}
             </PluginTabs>
-            <div className="row" style={{ justifyContent: "flex-start", flexWrap: "wrap" }}>
-              <a className="btn" href={`/dashboard/admin/plugins/${p.name}`}>{tx("Instellingen")}</a>
-              {p.enabled && p.has_web && p.menu && <a className="btn" href={`/dashboard/plugins/${p.name}`}>{tx("Open de pagina van de plugin")}</a>}
-              {user?.is_staff && <button type="button" className="btn" onClick={() => downloadFile(`/plugins/${p.name}/download/`, `${p.name}-${p.version}.zip`).catch((e) => setMsg({ ok: false, text: errorText(e) }))}>{tx("Downloaden (zip)")}</button>}
-              <button type="button" className="btn danger" onClick={async () => { if (await remove(p)) setManage(null); }}>{tx("Verwijderen")}</button>
-            </div>
           </ManageModal>
         );
       })()}
+
+      {tab === "info" && (
+        <div style={{ display: "grid", gap: "1rem", paddingTop: "1rem" }}>
+          {outdated.length > 0 ? (
+            <div className="alert" style={{ background: "#fef3c7", color: "#78350f", margin: 0 }}><strong>{tx("Plugins bijwerken:")}</strong> {outdated.map((p) => `${p.title} ${p.version}`).join(", ")} {tx("zijn niet meer up-to-date voor systeemversie {0}.", d.system_version)}</div>
+          ) : (
+            <div className="alert ok" style={{ margin: 0 }}>{tx("Alle plugins zijn up-to-date voor systeemversie {0}.", d.system_version)}</div>
+          )}
+          <p className="muted" style={{ margin: 0, fontSize: ".85rem" }}>{tx("Een plugin is gemaakt voor één versie van het systeem. Is die ouder, dan werkt hij meestal nog, maar werk hem bij in de Bibliotheek (Updaten) zodra er een nieuwe versie is.")}</p>
+        </div>
+      )}
 
       {tab === "upload" && (
         <div className="card" style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>

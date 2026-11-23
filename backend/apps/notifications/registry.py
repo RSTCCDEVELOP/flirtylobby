@@ -21,6 +21,8 @@ KINDS = [
     ("order", "orders", "Bestelling", "De status van je bestelling is gewijzigd.", "info", True, True, True),
     ("security", "security_basic", "Beveiliging", "Belangrijke meldingen over de beveiliging van je account.", "danger", True, True, False),
     ("agenda", "plugins", "Agenda", "Uitnodigingen, antwoorden, wijzigingen en herinneringen van je afspraken.", "info", True, True, True),
+    ("forum", "plugins", "Forum", "Nieuwe onderwerpen en reacties in forums en discussies die je volgt, reacties op je berichten en berichten van de beheerders van een forum.", "info", True, True, True),
+    ("coachvideo", "plugins", "Coach video", "Een analyse is gedeeld of bijgewerkt, een nieuw bericht in de chat van een analyse, en een AI-opdracht die klaar is.", "info", True, True, True),
     ("design", "ai", "Website-ontwerp", "Het ontwerp van je website is klaar of bijgewerkt door de AI.", "success", True, False, True),
     ("plugin", "plugins", "Plugin", "Berichten van plugins, zoals de spelletjes en de webshop.", "info", True, False, True),
 ]

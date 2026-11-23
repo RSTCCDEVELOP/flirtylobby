@@ -392,3 +392,27 @@ def test_superadmin_plus_passes_the_code_with_an_at():
     assert not setup_consent.ok(User.objects.create_user("n@demo.nl", "n@demo.nl", "x"))  # not for somebody else
     c.force_authenticate(plus)
     assert c.post("/api/system/setup/consent/verify/", {"code": "@"}, format="json").status_code == 200 and setup_consent.ok(plus)
+
+
+@pytest.fixture(autouse=True)
+def _staff_needs_the_code_here(request, monkeypatch):
+    """These tests are about the code and the payment: a superadmin passes them in real life (see the last test), so for the others the pass is switched off."""
+    if "staff_passes" not in request.keywords:
+        from apps.core import setup_consent
+
+        monkeypatch.setattr(setup_consent, "passes", lambda u: False)
+
+
+@pytest.mark.staff_passes
+@pytest.mark.django_db
+def test_superadmin_and_superadmin_plus_always_pass_the_code_and_the_payment():
+    from django.contrib.auth import get_user_model
+
+    from apps.core import setup_consent, setup_pay
+
+    U = get_user_model()
+    plain = U.objects.create_user("pl9", "pl9@x.nl", "pw12345678!")
+    boss = U.objects.create_user("bs9", "bs9@x.nl", "pw12345678!", is_staff=True)
+    plus = U.objects.create_user("pp9", "pp9@x.nl", "pw12345678!", is_staff=True, is_superuser=True, is_superadmin_plus=True)
+    assert not setup_consent.ok(plain) and not setup_pay.ok(plain)  # an ordinary administrator still needs the code
+    assert setup_consent.ok(boss) and setup_pay.ok(boss) and setup_consent.ok(plus) and setup_pay.ok(plus)

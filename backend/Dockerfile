@@ -13,6 +13,9 @@ WORKDIR /app/backend
 
 # The build context is the project folder (not backend/): the library of plugins, themes and languages (resource/) is part of the image,
 # so a server does not depend on a folder that is mounted next to it (Coolify mounts an empty folder there).
+# ffmpeg: the plugin Coach video makes a small web version and a poster of every video (and reads its length)
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

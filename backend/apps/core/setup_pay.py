@@ -27,6 +27,11 @@ def _key(user):
 
 
 def ok(user):
+    """Paying has been confirmed (a superadmin and a superadmin+ always pass: see setup_consent.passes)."""
+    from . import setup_consent
+
+    if setup_consent.passes(user):
+        return True
     return bool(cache.get(_key(user)))
 
 
