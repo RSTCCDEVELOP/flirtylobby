@@ -13,6 +13,31 @@ import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import { IconPin } from "./Icons";
 
+// The pop-up with the results of an address search (also used next to the postcode field of the profile): choose the right address.
+export function AddressPopup({ results, onPick, onClose, disabled = false }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="overlay" style={{ zIndex: 3100 }} role="dialog" aria-modal="true" aria-label={tx("Kies het juiste adres:")} onClick={onClose}>
+      <div className="card modal" style={{ maxWidth: 560, width: "100%", maxHeight: "86vh", display: "flex", flexDirection: "column", gap: ".8rem", padding: "1.2rem 1.4rem" }} onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{tx("Kies het juiste adres:")}</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: ".85rem", overflowY: "auto", minHeight: 0, padding: ".2rem" }}>
+          {results.map((r) => (
+            <button key={r.id} type="button" disabled={disabled} onClick={() => onPick(r)}
+              style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".7rem", padding: ".8rem 1rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, var(--line, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, var(--card, #fff)))" }}>
+              <span aria-hidden="true" style={{ flex: "none", marginTop: ".15rem", color: "var(--e2e-primary, var(--blue))" }}><IconPin width={16} height={16} /></span>
+              <span style={{ display: "grid", gap: ".15rem", minWidth: 0, flex: 1 }}>
+                {r.naam && <strong>{r.naam}</strong>}
+                <span>{[[r.street, r.house_number].filter(Boolean).join(" "), [r.postal_code, r.city].filter(Boolean).join(" "), r.country].filter(Boolean).join(", ") || r.adres}</span>
+              </span>
+              {r.bron && <small style={{ flex: "none", opacity: .65 }}>{r.bron}</small>}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" className="btn" onClick={onClose}>{tx("Sluiten")}</button></div>
+      </div>
+    </div>, document.body);
+}
+
 // Look up an address: "RST Coaching Utrecht", "RST Coaching 3542 DH" or "3542 DH 46". Google (when linked in Admin -> API keys) or the free sources PDOK and OpenStreetMap.
 // The chosen result {naam, street, house_number, postal_code, city, country, adres} goes to onPick; the caller fills its own fields.
 export default function AddressFinder({ onPick, onQuery, disabled = false, label, span = "1 / -1" }) {
@@ -41,26 +66,7 @@ export default function AddressFinder({ onPick, onQuery, disabled = false, label
       </div>
       {err && <span className="e2e-error">{err}</span>}
       {res && !res.length && !err && <span className="e2e-hint">{tx("Niets gevonden. Probeer de naam met de plaats, of een postcode met huisnummer.")}</span>}
-      {res && res.length > 0 && typeof document !== "undefined" && createPortal(
-        <div className="overlay" style={{ zIndex: 3100 }} role="dialog" aria-modal="true" aria-label={tx("Kies het juiste adres:")} onClick={() => setRes(null)}>
-          <div className="card modal" style={{ maxWidth: 560, width: "100%", maxHeight: "86vh", display: "flex", flexDirection: "column", gap: ".8rem", padding: "1.2rem 1.4rem" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{tx("Kies het juiste adres:")}</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: ".85rem", overflowY: "auto", minHeight: 0, padding: ".2rem" }}>
-              {res.map((r) => (
-                <button key={r.id} type="button" disabled={disabled} onClick={() => { onPick(r); setPicked(r.naam || r.adres); setRes(null); }}
-                  style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "flex-start", gap: ".7rem", padding: ".8rem 1rem", borderRadius: "var(--e2e-radius, 10px)", cursor: "pointer", font: "inherit", color: "inherit", border: "1px solid var(--e2e-border, var(--line, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, var(--e2e-bg, var(--card, #fff)))" }}>
-                  <span aria-hidden="true" style={{ flex: "none", marginTop: ".15rem", color: "var(--e2e-primary, var(--blue))" }}><IconPin width={16} height={16} /></span>
-                  <span style={{ display: "grid", gap: ".15rem", minWidth: 0, flex: 1 }}>
-                    {r.naam && <strong>{r.naam}</strong>}
-                    <span>{[[r.street, r.house_number].filter(Boolean).join(" "), [r.postal_code, r.city].filter(Boolean).join(" "), r.country].filter(Boolean).join(", ") || r.adres}</span>
-                  </span>
-                  {r.bron && <small className="e2e-hint" style={{ flex: "none" }}>{r.bron}</small>}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}><button type="button" className="btn" onClick={() => setRes(null)}>{tx("Sluiten")}</button></div>
-          </div>
-        </div>, document.body)}
+      {res && res.length > 0 && <AddressPopup results={res} disabled={disabled} onPick={(r) => { onPick(r); setPicked(r.naam || r.adres); setRes(null); }} onClose={() => setRes(null)} />}
     </div>
   );
 }

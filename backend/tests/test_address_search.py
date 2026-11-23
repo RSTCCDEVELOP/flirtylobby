@@ -45,3 +45,15 @@ def test_address_search_is_plain_json_for_admins(monkeypatch, django_user_model)
     assert c.post("/api/address/search/", {"q": "bol.com Utrecht"}, format="json").json()["results"][0]["city"] == "Utrecht"
     assert c.post("/api/system/setup/address/search/", {"q": "bol.com Utrecht"}, format="json").json()["source"] == "free"
     assert c.post("/api/system/setup/address/place/", {"id": "x"}, format="json").status_code == 404
+
+
+@pytest.mark.django_db
+def test_every_logged_in_person_can_look_up_an_address(monkeypatch, django_user_model):
+    cache.clear()
+    monkeypatch.setattr("apps.integrations.addresssearch.free_search", lambda q, limit=5: [{"id": "pdok:x", "naam": "", "street": "Ambachtsweg", "house_number": "46", "postal_code": "3542 DH", "city": "Utrecht", "country": "Nederland", "bron": "PDOK"}])
+    plain = django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!")
+    c = APIClient(); c.force_authenticate(plain)
+    r = c.get("/api/address/lookup/?q=3542 DH 46").json()
+    assert r["source"] == "free" and r["results"][0]["city"] == "Utrecht"
+    assert APIClient().get("/api/address/lookup/?q=3542 DH 46").status_code in (401, 403)
+    assert c.get("/api/address/search/?q=3542").status_code == 403  # the one for the admin screens stays for administrators

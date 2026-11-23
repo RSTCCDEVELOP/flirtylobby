@@ -682,6 +682,26 @@ def system_setup_address(request, step):
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
+def address_lookup(request):
+    """Address lookup for every logged-in person (the profile: Postcode + Zoeken): GET /api/address/lookup/?q=3542 DH 46 -> {source, results: [{street, house_number, postal_code, city, country, ...}]}. The free sources PDOK and OpenStreetMap; 30 per hour per person."""
+    from django.core.cache import cache
+
+    from apps.integrations import addresssearch
+
+    key = f"alookup:rate:{request.user.pk}"
+    n = (cache.get(key) or 0) + 1
+    cache.set(key, n, 3600)
+    if n > 30:
+        return Response({"detail": "Even rustig: je zoekt te vaak. Probeer het over een uur opnieuw."}, status=429)
+    q = request.query_params.get("q") if request.method == "GET" else request.data.get("q")
+    try:
+        return Response(addresssearch.search(q))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=400)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
 def address_search(request):
     """Address search as plain JSON: GET /api/address/search/?q=RST Coaching 3542 DH (or POST {q}) -> {source: free, results: [{id, naam, adres, street, house_number, postal_code, city, country, bron}]}.
     Through the free sources PDOK and OpenStreetMap. For administrators; 60 requests per hour per user."""

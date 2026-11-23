@@ -23,6 +23,7 @@ import { useModule } from "../../../components/Modules";
 import { IconBell, IconBriefcase, IconImage, IconKey, IconLock, IconPin, IconShield, IconTrash, IconUser } from "../../../components/Icons";
 import Tabs from "../../../components/Tabs";
 import { countryOptions } from "../../../lib/countries";
+import PostcodeSearch from "../../../components/PostcodeSearch";
 import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../lib/genders";
@@ -127,7 +128,17 @@ export default function Profile() {
         <div className="grid2">
           <label>{tx("Telefoon")}<PhoneInput value={form.phone || ""} onChange={(v) => setForm((f) => ({ ...f, phone: v }))} /></label>
           <label>{tx("Adres")}<input value={form.address} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} autoComplete="street-address" /></label>
-          <label>{tx("Postcode")}<input value={form.postal_code} onChange={set("postal_code")} maxLength={12} autoComplete="postal-code" /></label>
+          <label>{tx("Postcode")}
+            <span style={{ display: "flex", gap: ".5rem", alignItems: "stretch", flexWrap: "wrap" }}>
+              <input value={form.postal_code} onChange={set("postal_code")} maxLength={12} autoComplete="postal-code" style={{ flex: 1, minWidth: 0 }} />
+              <PostcodeSearch query={`${form.postal_code || ""} ${((form.address || "").match(/(\d+\s?[A-Za-z]?)\s*$/) || [])[1] || ""}`}
+                onPick={(r) => setForm((f) => {
+                  const nr = r.house_number || ((f.address || "").match(/(\d+\s?[A-Za-z]?)\s*$/) || [])[1] || "";  // the house number that was already typed stays when the postcode alone was looked up
+                  const country = (countryOptions("nl").find(([c, n]) => n.toLowerCase() === String(r.country || "").toLowerCase()) || [r.country === "Nederland" ? "NL" : f.country])[0] || f.country;
+                  return { ...f, address: `${r.street || ""} ${nr}`.trim() || f.address, postal_code: r.postal_code || f.postal_code, city: r.city || f.city, country };
+                })} />
+            </span>
+          </label>
           <label>{tx("Plaats")}<input value={form.city} onChange={set("city")} maxLength={100} autoComplete="address-level2" /></label>
           <label>{tx("Land")}
             <select value={form.country} onChange={set("country")} autoComplete="country">
