@@ -29,6 +29,7 @@ KINDS = [  # key, label (Dutch source text; translated in the screens)
     ("club", "Club"),
     (FREE, "Vrije naam"),
 ]
+PLURALS = {"organisatie": "Organisaties", "bedrijf": "Bedrijven", "vereniging": "Verenigingen", "club": "Clubs"}  # the free name stays as it is
 KIND_KEYS = [k for k, _ in KINDS]
 FREE_DEFAULT = "Entiteit"
 FREE_MAX = 40
@@ -66,6 +67,12 @@ def label(setting=None):
     if s["kind"] == FREE:
         return s["name"].strip() or FREE_DEFAULT
     return dict(KINDS)[s["kind"]]
+
+
+def plural(setting=None):
+    """The word for the entities in the admin menu and the tile (there can be several: Bedrijven, Organisaties ...)."""
+    s = setting or kind_setting()
+    return PLURALS.get(s["kind"]) or label(s)
 
 
 LOC_FIELDS = {"name": 80, "street": 120, "house_number": 20, "postal_code": 20, "city": 80, "country": 80, "phone": 40, "email": 160}
@@ -254,7 +261,7 @@ def fill(text):
 def public():
     """What the website and the screens need: the kind and the title of the tile, the data and the variables (no secrets: all of it is meant to be shown)."""
     s = kind_setting()
-    return {"id": own().pk, "kind": s["kind"], "label": label(s), "title": label(s), "kinds": [{"key": k, "label": lb} for k, lb in KINDS], "filled": filled(), "data": get(), "variables": variables()}
+    return {"id": own().pk, "kind": s["kind"], "label": label(s), "plural": plural(s), "title": label(s), "kinds": [{"key": k, "label": lb} for k, lb in KINDS], "filled": filled(), "data": get(), "variables": variables()}
 
 
 def creator_text():

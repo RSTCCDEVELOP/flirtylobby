@@ -102,7 +102,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/users", label: "Users", icon: <IconUsers />, perm: "users.manage" },
   { href: "/dashboard/admin/groups", label: "User groups", icon: <IconGroup /> },
   { href: "/dashboard/admin/rights", label: "Rechten", icon: <IconLock /> },
-  { href: "/dashboard/admin/entity", label: "Bedrijf", icon: <IconBriefcase /> },  // the label follows the standard installation (Bedrijf, Organisatie, Vereniging, Club or a free name)
+  { href: "/dashboard/admin/entity", label: "Bedrijven", icon: <IconBriefcase /> },  // the label follows the standard installation (Bedrijf, Organisatie, Vereniging, Club or a free name)
   { href: "/dashboard/admin/tags", label: "Tags", icon: <IconTag /> },
   { href: "/dashboard/admin/component-requests", label: "Componentverzoeken", icon: <IconGrid /> },
   { href: "/dashboard/admin/roles", label: "Rollen", icon: <IconShield />, perm: "roles.manage" },
@@ -296,7 +296,7 @@ export default function DashboardShell({ children }) {
   const inAdmin = pathname.startsWith("/dashboard/admin");
   const faqSet = useFaqSettings(); // Admin → FAQ → Instellingen: is the Help link shown in the left menus
   const imported = useImported(mods.siteimport !== false);
-  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.label } : n)).filter((n) => !n.needs || ecoAdmin).filter((n) => { if (n.href === IMPORTED_HREF) return true; if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
+  const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.plural || entity.label } : n)).filter((n) => !n.needs || ecoAdmin).filter((n) => { if (n.href === IMPORTED_HREF) return true; if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
   const closeMenu = () => { setOpen(false); if (auto === "after_click") setCollapsed(true); };
   const NavLink = ({ n, exact }) => (
     <Link href={n.href} title={tx(n.label)} className={(exact ? pathname === n.href : pathname === n.href || pathname.startsWith(n.href + "/")) ? "active" : ""} onClick={(e) => { if (!gateClick(e, n.href, router)) closeMenu(); }}>
