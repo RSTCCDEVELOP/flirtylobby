@@ -27,9 +27,11 @@ const bucket = (samples) => {
 };
 let S = { open: false, collapsed: false, running: false, samples: [], limit: 30, record: true, label: "", msg: null };
 const subs = new Set();
-let stopFlag = false;
+let stopFlag = false, hydrated = false;
 const emit = () => subs.forEach((f) => f());
-const set = (patch) => { S = { ...S, ...patch }; emit(); };
+const KEY = "speedtest:ui", KEEP = ["open", "collapsed", "limit", "record", "label"];
+const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.fromEntries(KEEP.map((k) => [k, S[k]])))); } catch {} };
+const set = (patch) => { S = { ...S, ...patch }; emit(); if (KEEP.some((k) => k in patch)) persist(); };
 
 const timed = async (fn) => { const t = performance.now(); try { await fn(); return performance.now() - t; } catch { return null; } };
 
@@ -52,6 +54,21 @@ async function measure() {
 export const speed = {
   subscribe(f) { subs.add(f); return () => subs.delete(f); },
   get: () => S,
+  hydrate() {  // the window, the duration and the name come back on every page and after a reload
+    if (hydrated || typeof window === "undefined") return;
+    hydrated = true;
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (!v || typeof v !== "object") return;
+      const p = {};
+      if (typeof v.open === "boolean") p.open = v.open;
+      if (typeof v.collapsed === "boolean") p.collapsed = v.collapsed;
+      if (typeof v.record === "boolean") p.record = v.record;
+      if (typeof v.label === "string") p.label = v.label.slice(0, 120);
+      if (SPEED_DURATIONS.some((d) => d[0] === v.limit)) p.limit = v.limit;
+      S = { ...S, ...p }; emit();
+    } catch {}
+  },
   set,
   openPanel() { set({ open: true, collapsed: false }); },
   closePanel() { if (S.running) stopFlag = true; set({ open: false }); },
@@ -66,7 +83,7 @@ export const speed = {
     set({ running: true, samples: [], msg: null });
     const save = async (final) => {
       if (!record || got.length < 3 || !getToken()) return;
-      const body = { label: label.trim() || `${tx("Test")} ${new Date(Date.now() - (performance.now() - t0)).toLocaleString()}`, seconds: Math.round((performance.now() - t0) / 1000), samples: bucket(got) };
+      const body = { label: label.trim() || `${tx("Sessie")} ${(() => { const d = new Date(Date.now() - (performance.now() - t0)), z = (n) => String(n).padStart(2, "0"); return `${z(d.getDate())}-${z(d.getMonth() + 1)}-${d.getFullYear()} - ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`; })()}`, seconds: Math.round((performance.now() - t0) / 1000), samples: bucket(got) };
       try {
         const created = !runId;
         const run = runId ? await api(`/system/speedtest/runs/${runId}/`, { method: "PUT", body }) : await api("/system/speedtest/runs/", { method: "POST", body });

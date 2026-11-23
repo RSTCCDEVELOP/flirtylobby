@@ -13,6 +13,8 @@ import { api, errorText } from "../lib/api";
 import { SPEED_DURATIONS, speed, useSpeed } from "../lib/speedStore";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
+import { lvl } from "../lib/perms";
+import { useSession } from "./Session";
 import LineChart from "./LineChart";
 
 const GREEN = "#2f7d5b", SUN = "#d98f2b", SEA = "#3b82a0", PLUM = "#8a5a9e";
@@ -55,6 +57,13 @@ const modal = { maxWidth: 1000, width: "100%", maxHeight: "92vh", overflowY: "au
 
 // The floating window of the speed test (Admin -> Cache en snelheid -> Snelheidstest starten): no dark layer, the page behind it stays usable; the test keeps measuring while you go to other pages.
 // With the arrow (›) the window slides away to a small tab on the right edge (with the live number); the tab brings it back.
+export function SpeedTestHost() {
+  const { user } = useSession() || {};
+  useEffect(() => { speed.hydrate(); }, []);
+  if (!user || !(user.is_staff || lvl(user, "system") >= 3)) return null;
+  return <SpeedTestDock />;
+}
+
 export function SpeedTestDock() {
   const S = useSpeed();
   if (!S.open || typeof document === "undefined") return null;
@@ -85,13 +94,15 @@ export function SpeedTestDock() {
         {S.running
           ? <button type="button" className="btn primary" onClick={() => speed.stop()}>{tx("Stoppen")}</button>
           : <button type="button" className="btn primary" onClick={() => speed.start()}>{S.samples.length ? tx("Opnieuw starten") : tx("Starten")}</button>}
-        <label style={{ display: "inline-flex", alignItems: "center", gap: ".5rem", fontWeight: 600 }}>{tx("Duur")}
-          <select value={S.limit} disabled={S.running} onChange={(e) => speed.set({ limit: Number(e.target.value) })}>{SPEED_DURATIONS.map(([d, every]) => <option key={d} value={d}>{durLabel(d)}</option>)}</select>
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".5rem", fontWeight: 600 }}>
+          <span>{tx("Duur")}</span>
+          <select value={S.limit} disabled={S.running} onChange={(e) => speed.set({ limit: Number(e.target.value) })} aria-label={tx("Duur")} style={{ width: "auto" }}>{SPEED_DURATIONS.map(([d]) => <option key={d} value={d}>{durLabel(d)}</option>)}</select>
+        </div>
+        <label style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: ".6rem", fontWeight: 600, cursor: "pointer", marginLeft: "auto" }}>
+          <span className="switch"><input type="checkbox" checked={S.record} disabled={S.running} onChange={(e) => speed.set({ record: e.target.checked })} /><span /></span>
+          <span>{tx("Opnemen voor analyse")}</span>
         </label>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: ".6rem", fontWeight: 600, cursor: "pointer" }}>
-          <span className="switch"><input type="checkbox" checked={S.record} disabled={S.running} onChange={(e) => speed.set({ record: e.target.checked })} /><span /></span>{tx("Opnemen voor analyse")}
-        </label>
-        {S.record && <input value={S.label} disabled={S.running} onChange={(e) => speed.set({ label: e.target.value })} maxLength={120} placeholder={tx("Naam van de opname (bijvoorbeeld: met paginacache)")} aria-label={tx("Naam van de opname")} style={{ flex: "1 1 220px", minWidth: 0 }} />}
+        {S.record && <input value={S.label} disabled={S.running} onChange={(e) => speed.set({ label: e.target.value })} maxLength={120} placeholder={tx("Naam van de opname (leeg = sessie datum - tijd)")} aria-label={tx("Naam van de opname")} style={{ flex: "1 1 100%", minWidth: 0 }} />}
         <div style={{ flex: "1 1 100%", height: 6, borderRadius: 99, background: "color-mix(in srgb, var(--eco-leaf, #7cc59a) 25%, transparent)", overflow: "hidden" }} aria-hidden="true"><div style={{ width: `${pct}%`, height: "100%", background: "var(--eco-green, #2f7d5b)", transition: "width .3s" }} /></div>
       </div>
       {(S.limit === 0 || S.limit > 120) && <small className="muted">{tx("Een lange test meet minder vaak ({0} s) en wordt tussendoor bewaard. Hij stopt als je op Stoppen drukt of uitlogt.", (SPEED_DURATIONS.find((d) => d[0] === S.limit) || [0, 10])[1])}</small>}

@@ -20,6 +20,7 @@ import SmallEditor from "./SmallEditor";
 import Tabs from "./Tabs";
 import PaymentDetails from "./PaymentDetails";
 import AddressFinder from "./AddressFinder";
+import Notes from "./Notes";
 
 // The other entities of the site (module Entiteit): companies, organisations, associations or clubs that users and user groups belong to.
 // Rows with edit and delete, "+" on top; the popup has tabs and a "Gekoppeld" tab where users and user groups are picked through a search.
@@ -179,7 +180,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 26rem), 1fr))", gap: "1rem 1.4rem" };  // two columns, one on a narrow screen
   return (
       <div className="card entity-form" style={{ padding: "1.2rem 1.4rem" }}>
-        <Tabs value={tab} onChange={setTab} tabs={[["general", tx("Algemeen"), <IconBriefcase key="g" />], ["contact", tx("Contact en adres"), <IconMail key="c" />], ["registration", tx("Registratie"), <IconInfo key="r" />], ...(f.id && canEdit ? [["payments", tx("Betaalgegevens"), <IconCard key="p" />]] : []), ["links", `${tx("Gekoppeld")} (${f.user_ids.length + f.group_ids.length})`, <IconUsers key="l" />], ...(f.own ? [["variables", tx("Tekstvariabelen"), <IconCheck key="v" />]] : [])]} />
+        <Tabs value={tab} onChange={setTab} tabs={[["general", tx("Algemeen"), <IconBriefcase key="g" />], ["contact", tx("Contact en adres"), <IconMail key="c" />], ["registration", tx("Registratie"), <IconInfo key="r" />], ...(f.id && canEdit ? [["payments", tx("Betaalgegevens"), <IconCard key="p" />]] : []), ["links", `${tx("Gekoppeld")} (${f.user_ids.length + f.group_ids.length})`, <IconUsers key="l" />], ...(f.id && canEdit ? [["notes", tx("Notities"), <IconEdit key="n" />]] : []), ...(f.own ? [["variables", tx("Tekstvariabelen"), <IconCheck key="v" />]] : [])]} />
         {err && <div className="alert">{err}</div>}
         <div style={{ paddingTop: ".8rem" }}>
           {tab === "general" && (
@@ -273,6 +274,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
               {f.id && f.ids && <ReadOnly boxed label={tx("Websites")} value={(f.ids.domains || []).join(", ")} empty={tx("(geen)")} wide />}
             </div>
           )}
+          {tab === "notes" && f.id && <Notes kind="entity" id={f.id} />}
           {tab === "payments" && f.id && <PaymentDetails base={`/entities/${f.id}/payments/`} canEdit={canEdit} />}
           {tab === "variables" && (
             <div>

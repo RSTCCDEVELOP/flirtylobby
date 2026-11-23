@@ -5,6 +5,7 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 
+import { SpeedTestHost } from "../components/SpeedTest";
 import SiteBack from "../components/SiteBack";
 import SiteCredit from "../components/SiteCredit";
 import "./globals.css";
@@ -211,6 +212,7 @@ export default async function RootLayout({ children }) {
         <VersionNotice current={getBuildId()} />
         <DomTranslate />
         <AdminBar />
+        <SpeedTestHost />
         <DeviceGate devices={{ mobile: theme?.values?.device_mobile !== "no", tablet: theme?.values?.device_tablet !== "no", desktop: theme?.values?.device_desktop !== "no", app: theme?.values?.device_app === "yes" }} />
         </LangRoot>
         </MenuProvider>

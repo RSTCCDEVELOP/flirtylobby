@@ -21,7 +21,6 @@ import SetupWizard from "./SetupWizard";
 import ItemHelp from "./ItemHelp";
 import SidebarSearch from "./SidebarSearch";
 import LicenseChangePrompt from "./LicenseChangePrompt";
-import { SpeedTestDock } from "./SpeedTest";
 import OnboardingNag from "./OnboardingNag";
 import WizardLoader from "./WizardLoader";
 import TermsGate from "./TermsGate";
@@ -440,7 +439,6 @@ export default function DashboardShell({ children }) {
         {user && <SetupWizard />}
         <ItemHelp />
         {user && <LicenseChangePrompt />}
-        {user && (user.is_staff || lvl(user, "system") >= 3) && <SpeedTestDock />}
         {user && !user.is_staff && <AiCreditGate />}
         {user && <AiWelcome />}
         {user?.is_staff && <TreesWelcome />}

@@ -24,6 +24,7 @@ import { IconBell, IconBriefcase, IconImage, IconKey, IconLock, IconPin, IconShi
 import Tabs from "../../../components/Tabs";
 import { countryOptions } from "../../../lib/countries";
 import PostcodeSearch from "../../../components/PostcodeSearch";
+import MyNotes from "../../../components/MyNotes";
 import { useAuth } from "../../../components/AuthContext";
 import { api, setToken, clearToken, errorText, mediaUrl } from "../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../lib/genders";
@@ -108,6 +109,7 @@ export default function Profile() {
       <div className="profile-cols">
       <div className="profile-col">
       <PublicProfileBlock />
+      <MyNotes />
       <form onSubmit={save}>
       <ProfileBlock id="p-personal" icon={<IconUser />} title={tx("Persoonlijk")} hint={tx("Zo ben je bekend op de website.")}>
         <div className="grid2">

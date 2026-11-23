@@ -5204,6 +5204,14 @@
    "a": {
     "en": "Go to Admin → Cache and speed and press Start speed test. In the pop-up press Start: every second we measure how fast the page is as a visitor gets it, how fast the backend answers from the cache and with the database, and how fast a download is. The charts follow live. With Record for analysis on, the test is kept when you stop, with the cache settings of that moment. Under Recordings you find them again with the change against the previous recording; with View you see the charts. Run a test before and after a change in the cache to see the difference."
    }
+  },
+  "noteshelp": {
+   "q": {
+    "en": "How do I make a note on a user or a company?"
+   },
+   "a": {
+    "en": "Open Admin → Users or Admin → Companies, choose a user or company and go to the tab Notes. With New note you write a text and add photos, videos and documents (pdf, Word, Excel and more). With the switch Visible for the user you decide whether the user (or the people of the company) may also read the note under My profile → Notes; if it is off, the note is for internal use only. The files are private: only you and, for a visible note, the user can open them."
+   }
   }
  }
 }

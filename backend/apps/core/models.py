@@ -193,6 +193,38 @@ class SystemSettings(models.Model):
         system.forget_cache()  # (the system cache keeps a copy of these settings)
 
 
+class Note(models.Model):
+    """A note on a user or on an entity (company) with text and files (pictures, videos, documents). Internal by default; with `visible` the user (or the people linked to the company) may read it too."""
+
+    KINDS = [("user", "user"), ("entity", "entity")]
+    kind = models.CharField(max_length=10, choices=KINDS, db_index=True)
+    target_id = models.IntegerField(db_index=True)  # the id of the user or the entity (no foreign key: removed together with it, see note_views)
+    title = models.CharField(max_length=200, blank=True)
+    body = models.TextField(blank=True)  # the small editor: a few safe tags only
+    visible = models.BooleanField(default=False)  # the user (or the linked people) may read this note
+    created_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
+class NoteFile(models.Model):
+    """A file of a note: kept in the private storage (never under a public address), given out only by the notes endpoint."""
+
+    note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name="files")
+    name = models.CharField(max_length=255)
+    key = models.CharField(max_length=500)  # the name in the storage
+    kind = models.CharField(max_length=10, default="document")  # image | video | document
+    mime = models.CharField(max_length=100, blank=True)
+    size = models.BigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+
 class SpeedRun(models.Model):
     """A recorded speed test (Admin -> Cache -> Snelheidstest): the measurements every second, with a summary and the cache settings of that moment, to analyse later."""
 

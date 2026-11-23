@@ -8,7 +8,7 @@
 from django.urls import path
 
 from . import component_views, backup_views, terms_views, dashboard, marketing, resource_views, sales, views, template_views
-from . import entity_views, manual, sitemanager_views, speedtest, tag_views
+from . import entity_views, manual, note_views, sitemanager_views, speedtest, tag_views
 
 urlpatterns = [
     path("components/", component_views.active),
@@ -26,6 +26,11 @@ urlpatterns = [
     path("system/", views.system_settings),
     path("system/reset/", views.system_reset),
     path("system/cache/", views.system_cache),
+    path("notes/", note_views.notes),
+    path("notes/mine/", note_views.mine),
+    path("notes/files/<int:pk>/", note_views.note_file),
+    path("notes/<int:pk>/", note_views.note_detail),
+    path("notes/<int:pk>/files/", note_views.note_files),
     path("system/speedtest/ping/", speedtest.ping),
     path("system/speedtest/blob/", speedtest.blob),
     path("system/speedtest/runs/", speedtest.runs),
