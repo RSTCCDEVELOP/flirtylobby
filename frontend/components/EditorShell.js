@@ -46,11 +46,24 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
   useEffect(() => { try { const w = parseInt(localStorage.getItem("pb-sb-w") || "", 10); if (w) setWidth(w); } catch {} }, []);
   useEffect(() => { window.dispatchEvent(new Event("pb-bar-ready")); return () => window.dispatchEvent(new Event("pb-bar-ready")); }, []);  // the tools (save, undo, help, blocks) go in the bar
   const [headerHidden, setHeaderHidden] = useState(() => { try { return localStorage.getItem("editHideHeader") === "1"; } catch { return false; } });
+  const [hpos, setHpos] = useState(null);  // where the tab of the header goes: the middle of the header (of the page, not of the whole window), at its lower edge
   useEffect(() => {  // the site header can be hidden while editing, so the top of the page (the first block, the hero) can be edited; it is always back when the editor closes
     const root = document.documentElement;
     if (headerHidden) root.setAttribute("data-hide-header", "1"); else root.removeAttribute("data-hide-header");
     try { localStorage.setItem("editHideHeader", headerHidden ? "1" : "0"); } catch { /* ok */ }
-    return () => root.removeAttribute("data-hide-header");
+    const hdr = document.querySelector(".site-header");
+    const bar = parseFloat(getComputedStyle(root).getPropertyValue("--pb-bar-h")) || 48;
+    const measure = () => {  // the real height of the header (it can be higher than the standard one) decides how far the page moves up
+      if (!hdr) return;
+      root.style.setProperty("--hdr-live", `${hdr.offsetHeight}px`);
+      const r = hdr.getBoundingClientRect();
+      setHpos({ top: Math.max(headerHidden ? 0 : r.bottom, bar), left: r.left + r.width / 2 });
+    };
+    measure();
+    const t1 = setTimeout(measure, 120), t2 = setTimeout(measure, 450);  // (again when the slide is ready)
+    const ro = typeof ResizeObserver !== "undefined" && hdr ? new ResizeObserver(measure) : null;
+    ro?.observe(hdr); window.addEventListener("resize", measure); window.addEventListener("scroll", measure, { passive: true });
+    return () => { clearTimeout(t1); clearTimeout(t2); ro?.disconnect(); window.removeEventListener("resize", measure); window.removeEventListener("scroll", measure); root.removeAttribute("data-hide-header"); root.style.removeProperty("--hdr-live"); };
   }, [headerHidden]);
   if (typeof document === "undefined") return null;
   const views = [["elements", "Elementen", ICON.plus], ["structure", "Structuur", ICON.layers], ["page", "Pagina", ICON.sliders], ["settings", "Instellingen", ICON.gear]];
@@ -74,7 +87,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
           <button type="button" className="pb-tb-btn primary" onClick={onExit} title={tx("Bewerken afsluiten en de pagina bekijken")}>{ICON.eye}<span>{tx("Klaar")}</span></button>
         </div>
       </div>
-      <button type="button" className="pb-header-handle" onClick={() => setHeaderHidden((v) => !v)} aria-label={headerHidden ? tx("De header weer omlaag halen") : tx("De header omhoog sturen")} title={headerHidden ? tx("Header omlaag") : tx("Header omhoog")} style={{ top: headerHidden ? "var(--pb-bar-h, 48px)" : "calc(var(--pb-bar-h, 48px) + var(--site-header-h, 64px))" }}>
+      <button type="button" className="pb-header-handle" onClick={() => setHeaderHidden((v) => !v)} aria-label={headerHidden ? tx("De header weer omlaag halen") : tx("De header omhoog sturen")} title={headerHidden ? tx("Header omlaag") : tx("Header omhoog")} style={hpos ? { top: hpos.top, left: hpos.left } : undefined}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{headerHidden ? <path d="M6 9l6 6 6-6" /> : <path d="M6 15l6-6 6 6" />}</svg>
       </button>
       {!open && (
