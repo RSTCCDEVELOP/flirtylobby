@@ -41,7 +41,7 @@ export default function CachePage() {
     <div className="eco">
       <h1>{tx("Cache en snelheid")}</h1>
       <p className="muted" style={{ marginTop: 0 }}>{tx("De website bewaart de antwoorden die elke bezoeker vraagt even. Zo hoeft de server minder te rekenen: de pagina's laden sneller en er is minder stroom nodig. Een wijziging die je opslaat is meteen zichtbaar.")}</p>
-      {msg && <div className={msg.ok ? "alert ok" : "alert"} role="status">{msg.text}</div>}
+      {msg && <div className={msg.ok ? "alert ok" : "alert"} role="status" style={{ margin: "1rem 0 1.2rem" }}>{msg.text}</div>}
       <div className="eco-cols two">
         <div className="card eco-form" style={{ gridTemplateColumns: "1fr" }}>
           <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={on} disabled={!!busy} onChange={(e) => send("on", "PUT", { system_cache: e.target.checked }, e.target.checked ? tx("De cache staat aan.") : tx("De cache staat uit."))} /><span /></span><span>{tx("Cache gebruiken")}<br /><small className="muted">{tx("Aanbevolen: sneller en zuiniger.")}</small></span></label>
