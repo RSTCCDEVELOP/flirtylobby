@@ -19,6 +19,9 @@ import Collapsible from "../../../../components/Collapsible";
 import SmallEditor from "../../../../components/SmallEditor";
 import Tabs from "../../../../components/Tabs";
 import PaymentDetails from "../../../../components/PaymentDetails";
+import PhoneInput from "../../../../components/PhoneInput";
+import PostcodeSearch from "../../../../components/PostcodeSearch";
+import { countryOptions } from "../../../../lib/countries";
 import UserInvites from "../../../../components/UserInvites";
 import ViewBar from "../../../../components/ViewBar";
 import TableView from "../../../../components/TableView";
@@ -30,7 +33,7 @@ import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { lvl } from "../../../../lib/perms";
 
-const EMPTY = { twofa_required: false, user_groups: [], entity_ids: [], color: "", email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
+const EMPTY = { twofa_required: false, user_groups: [], entity_ids: [], color: "", email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", phone: "", mobile: "", address: "", postal_code: "", city: "", country: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
 const initials = (u) => (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
 
 export default function Users() {
@@ -210,7 +213,7 @@ export default function Users() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save} onInvalidCapture={() => setTab("account")}>
             <h2>{modal.id ? tx("Gebruiker wijzigen") : tx("Nieuwe gebruiker")}</h2>
-            <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["media", "Media"], ["rights", "Rechten"], ...(modal.id && L >= 2 ? [["payments", "Betaalgegevens"]] : [])]} />
+            <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["contact", "Contact en adres"], ["media", "Media"], ["rights", "Rechten"], ...(modal.id && L >= 2 ? [["payments", "Betaalgegevens"]] : [])]} />
             {tab === "account" && (
             <div className="grid2">
               <label>{tx("Voornaam")}<span style={{ display: "flex", gap: ".6rem", alignItems: "center" }}><ColorField inline value={modal.color || ""} onChange={(v) => setModal({ ...modal, color: v })} disabled={L < 2} /><input style={{ flex: 1 }} value={modal.first_name} onChange={set("first_name")} /></span></label>
@@ -260,6 +263,31 @@ export default function Users() {
             </div>
             <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={modal.show_public} onChange={set("show_public")} /><span /></span><span>{tx("Tonen op de website als member (foto, functie en omschrijving)")}</span></label>
               </>
+            )}
+            {tab === "contact" && (
+            <div className="grid2">
+              <label>{tx("Telefoon")}<PhoneInput value={modal.phone || ""} onChange={(v) => setModal((m) => ({ ...m, phone: v }))} /></label>
+              <label>{tx("Mobiel")}<PhoneInput value={modal.mobile || ""} onChange={(v) => setModal((m) => ({ ...m, mobile: v }))} /><small className="muted">{tx("Hierheen gaan codes per sms (tweestapsverificatie en bevestigingen).")}</small></label>
+              <label style={{ gridColumn: "1 / -1" }}>{tx("Adres")}<input value={modal.address || ""} onChange={set("address")} maxLength={200} placeholder={tx("Straat en huisnummer")} /></label>
+              <label>{tx("Postcode")}
+                <span style={{ display: "flex", gap: ".5rem", alignItems: "stretch", flexWrap: "wrap" }}>
+                  <input value={modal.postal_code || ""} onChange={set("postal_code")} maxLength={12} style={{ flex: 1, minWidth: 0 }} />
+                  <PostcodeSearch query={`${modal.postal_code || ""} ${((modal.address || "").match(/(\d+\s?[A-Za-z]?)\s*$/) || [])[1] || ""}`}
+                    onPick={(r) => setModal((m) => {
+                      const nr = r.house_number || ((m.address || "").match(/(\d+\s?[A-Za-z]?)\s*$/) || [])[1] || "";
+                      const country = (countryOptions("nl").find(([c, n]) => n.toLowerCase() === String(r.country || "").toLowerCase()) || [r.country === "Nederland" ? "NL" : m.country])[0] || m.country;
+                      return { ...m, address: `${r.street || ""} ${nr}`.trim() || m.address, postal_code: r.postal_code || m.postal_code, city: r.city || m.city, country };
+                    })} />
+                </span>
+              </label>
+              <label>{tx("Plaats")}<input value={modal.city || ""} onChange={set("city")} maxLength={100} /></label>
+              <label>{tx("Land")}
+                <select value={modal.country || ""} onChange={set("country")}>
+                  <option value="">{tx("Niet opgegeven")}</option>
+                  {countryOptions("nl").map(([c, n]) => <option key={c} value={c}>{n}</option>)}
+                </select>
+              </label>
+            </div>
             )}
             {tab === "media" && (
             <div className="photo-row">

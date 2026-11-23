@@ -342,3 +342,21 @@ class UserGroupSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated):
         return self._save(instance, validated, False)
+
+
+# the address and phone data of a user that an administrator edits (Admin -> Users -> Contact en adres) are checked like the profile of the user himself
+def _admin_mobile(self, value):
+    import re
+
+    from apps.security.twofa import PHONE_RE
+
+    value = re.sub(r"[ \-()]", "", value or "")
+    if value and not PHONE_RE.match(value):
+        raise serializers.ValidationError("Geef een mobiel nummer met landcode, bv. +31612345678.")
+    return value
+
+
+UserSerializer.validate_phone = ProfileSerializer.validate_phone
+UserSerializer.validate_mobile = _admin_mobile  # (an administrator may change the number of the two-step verification too)
+UserSerializer.validate_country = ProfileSerializer.validate_country
+UserSerializer.validate_postal_code = ProfileSerializer.validate_postal_code

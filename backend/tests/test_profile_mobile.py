@@ -55,3 +55,16 @@ def test_the_phone_number_that_was_the_sms_number_is_copied_to_mobile_by_the_mig
     mig.copy(real, None)
     a.refresh_from_db(); b.refresh_from_db()
     assert a.mobile == "+31611110000" and b.mobile == "+31699999999"
+
+
+@pytest.mark.django_db
+def test_an_administrator_edits_the_address_and_phone_data_of_a_user(django_user_model):
+    boss = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    u = django_user_model.objects.create_user("us", "us@x.nl", "pw12345678!")
+    c = APIClient(); c.force_authenticate(boss)
+    r = c.patch(f"/api/users/{u.pk}/", {"phone": "+31 20 123 4567", "mobile": "+31 6 1234 5678", "address": "Dorpsstraat 1", "postal_code": "1234 ab", "city": "Utrecht", "country": "nl"}, format="json")
+    assert r.status_code == 200, r.content
+    j = r.json()
+    assert j["phone"] == "+31201234567" and j["mobile"] == "+31612345678" and j["address"] == "Dorpsstraat 1" and j["postal_code"] == "1234 AB" and j["country"] == "NL"
+    assert c.patch(f"/api/users/{u.pk}/", {"mobile": "0612"}, format="json").status_code == 400
+    assert c.patch(f"/api/users/{u.pk}/", {"country": "XX"}, format="json").status_code == 400
