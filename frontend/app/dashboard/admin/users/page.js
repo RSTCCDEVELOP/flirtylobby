@@ -301,8 +301,8 @@ export default function Users() {
             )}
             {tab === "payments" && modal.id && <PaymentDetails base={`/users/${modal.id}/payments/`} canEdit={L >= 2} forUser />}
             {tab === "rights" && (() => {
-              const sec = { border: "1px solid var(--e2e-border, #e5e0d8)", borderRadius: "var(--e2e-radius, 10px)", padding: ".7rem .8rem", display: "grid", gap: ".55rem" };
-              const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: ".5rem" };
+              const sec = { border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-border, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, transparent)", borderRadius: "var(--e2e-radius, 10px)", padding: ".8rem .9rem", display: "grid", gap: ".6rem", alignContent: "start" };
+              const grid = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: ".5rem" };  // the cards of one block under each other, full width
               const item = (on) => ({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".7rem", padding: ".55rem .7rem", borderRadius: "var(--e2e-radius, 10px)", border: `1px solid ${on ? "var(--e2e-primary, #e8803f)" : "var(--e2e-border, #e5e0d8)"}`, background: on ? "color-mix(in srgb, var(--e2e-primary, #e8803f) 8%, transparent)" : "transparent", cursor: "pointer", minWidth: 0 });
               const Card = ({ on, onChange, title, sub, disabled, hint }) => (
                 <label className="check sec-toggle" style={item(on)} title={hint}>
@@ -315,7 +315,7 @@ export default function Users() {
               );
               const toggle = (key, id) => setModal({ ...modal, [key]: (modal[key] || []).includes(id) ? modal[key].filter((x) => x !== id) : [...(modal[key] || []), id] });
               return (
-              <div style={{ display: "grid", gap: ".8rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 330px), 1fr))", gap: ".9rem", alignItems: "start" }}>
                 <div style={sec}>
                   <strong style={{ fontSize: ".85rem" }}>{tx("Rollen")}</strong>
                   <div style={grid}>
