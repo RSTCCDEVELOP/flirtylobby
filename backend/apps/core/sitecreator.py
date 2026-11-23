@@ -3403,9 +3403,10 @@ def _chat(pk, text, has, shots=None):
             raise ValueError("De AI gaf geen antwoord. Probeer het nog eens.")
         job = SiteDesignJob.objects.get(pk=pk)
         qs = clean_questions(d.get("questions")) if not d.get("ready") else []
-        qs = _with_installation(qs, d.get("brief") if isinstance(d.get("brief"), dict) else {}, list(job.messages or []))
         had = bool(qs)
         qs = _drop_repeated(qs, job.messages)  # a question is asked once: what was asked before is dropped
+        if qs:  # the question about the standard installation joins a questionnaire that is really asked (and, like every question, once)
+            qs = _drop_repeated(_with_installation(qs, d.get("brief") if isinstance(d.get("brief"), dict) else {}, list(job.messages or [])), job.messages)
         if had and not qs:  # it only wanted to ask things again: everything is known now, the designer goes on and decides the rest itself
             out2 = _ask(CHAT_SYSTEM, f"{say}{cat}\n\n{_answered_text(job.messages)}Conversation so far:\n{convo}\n\nEvery question has been asked and answered. Do NOT ask anything again: set \"ready\" to true, decide what was not answered yourself, say shortly what you chose and give the complete brief. Answer with the JSON.", max_tokens=5000, pk=pk)
             m2 = re.search(r"\{.*\}", out2 or "", re.S)
