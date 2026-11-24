@@ -447,6 +447,7 @@ def module_update(request, key):
         return Response({"detail": "Deze module is een plugin: zet hem aan of uit bij Admin → Plugins."}, status=status.HTTP_400_BAD_REQUEST)
     on = bool(request.data.get("enabled"))
     ModuleState.objects.update_or_create(key=key, defaults={"enabled": on})
+    __import__("apps.auditlog.service", fromlist=["log"]).log("module.changed", request.user, target=key, detail="aan" if on else "uit", request=request)
     modules.invalidate()
     from apps.security import service as security_service
 
@@ -1278,7 +1279,13 @@ def system_reset(request):
         return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
     if replay:
         return Response({"replay": reset.replay_onboarding()})
+    who_email, who_name, who_level = request.user.email, (getattr(request.user, "display_name", "") or request.user.get_full_name()), __import__("apps.auditlog.service", fromlist=["rank_of"]).rank_of(request.user)
     removed = reset.perform(request.user, ai=bool(request.data.get("ai")), delete_admins=bool(request.data.get("delete_admins")), delete_superadmins=bool(request.data.get("delete_superadmins")), keep_identity=bool(request.data.get("keep_identity")), remove_remote=bool(request.data.get("remove_remote")))
+    audit = __import__("apps.auditlog.service", fromlist=["log"])
+    clear_logs = bool(request.data.get("clear_logs"))  # the switch "Logboek legen" of the reset screen
+    if clear_logs:
+        audit.LogEntry.objects.all().delete()
+    audit.log("system.reset", None, detail="logboek geleegd" if clear_logs else "logboek bewaard", request=request, level=who_level, actor_email=who_email, actor_name=who_name)
     applied = None
     if request.data.get("preset"):  # start straight from a standard installation
         from . import presets
@@ -1702,7 +1709,9 @@ def presets_apply(request, key):
         return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
     if request.data.get("check"):  # which pages would be replaced and already have content: the screen asks before it overwrites
         return Response({"conflicts": presets.conflicts(key)})
-    return Response(presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages")), install_design=request.data.get("design") is not False, use_theme=request.data.get("theme") is not False))
+    out = presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages")), install_design=request.data.get("design") is not False, use_theme=request.data.get("theme") is not False)
+    __import__("apps.auditlog.service", fromlist=["log"]).log("installation.applied", request.user, target=key, request=request)
+    return Response(out)
 
 
 @api_view(["GET", "PUT", "DELETE"])
@@ -1791,7 +1800,9 @@ def presets_remove(request, key):
         return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
     if presets.active() != key:
         return Response({"detail": "Deze installatie is niet in gebruik."}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(presets.unapply(key))
+    out = presets.unapply(key)
+    __import__("apps.auditlog.service", fromlist=["log"]).log("installation.removed", request.user, target=key, request=request)
+    return Response(out)
 
 
 @api_view(["POST"])
@@ -3644,6 +3655,7 @@ def first_run_verify(request):
     except Exception:  # noqa: BLE001
         logger.exception("First run: this website could not be linked to the reseller")
     token, _ = Token.objects.get_or_create(user=user)
+    __import__("apps.auditlog.service", fromlist=["log"]).log("reseller.onboarding", user, detail=(got.get("reseller") or {}).get("name", ""), request=request)
     return Response({"token": token.key, "email": user.email, "reseller": (got.get("reseller") or {}).get("name", "")})
 
 

@@ -4916,3 +4916,11 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .code-timer.gone .ct-text { color: var(--danger, #d64545); opacity: 1; }
 .code-wrap { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
 .code-resend { border: 0; background: none; color: var(--blue, #3b82f6); font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; padding: .3rem .6rem; border-radius: 8px; } .code-resend:hover { background: color-mix(in srgb, var(--blue, #3b82f6) 10%, transparent); text-decoration: underline; } .code-resend:disabled { opacity: .5; cursor: default; }
+
+/* the log (Logboek) */
+.log-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--line); margin: .75rem 0; }
+.log-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.log-table th { text-align: left; padding: .55rem .7rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; opacity: .7; background: color-mix(in srgb, var(--blue) 6%, transparent); }
+.log-table td { padding: .5rem .7rem; border-top: 1px solid var(--line); vertical-align: top; } .log-time { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.log-seg { display: flex; flex-wrap: wrap; gap: 3px; padding: 3px; border-radius: 10px; background: color-mix(in srgb, currentColor 8%, transparent); width: fit-content; max-width: 100%; }
+.log-seg button { border: 0; border-radius: 8px; padding: .45rem .8rem; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; } .log-seg button.on { background: var(--blue); color: #fff; } .log-seg button:disabled { opacity: .6; cursor: default; }

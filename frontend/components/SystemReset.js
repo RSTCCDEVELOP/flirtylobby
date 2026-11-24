@@ -46,6 +46,7 @@ export default function SystemReset() {
   const [replay, setReplay] = useState(false); // the switch Onboarding: do the onboarding again, nothing is removed (confirmed with REPLAY)
   const [keepId, setKeepId] = useState(false); // keep the licence, the entities and all users?
   const [remoteToo, setRemoteToo] = useState(false); // also remove the owner and the company from the easy2edit master site?
+  const [logsToo, setLogsToo] = useState(false); // also empty the log (Logboek)?
   const [aiToo, setAiToo] = useState(false); // also remove the AI data (calls, costs, credit and its history)?
 
   async function open() {
@@ -86,7 +87,7 @@ export default function SystemReset() {
   async function reset() {
     setBusy(true); setMsg(null); setFinished(false); setJob("reset");
     try {
-      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo, delete_admins: adminsToo && !keepId, delete_superadmins: superToo, keep_identity: keepId, remove_remote: remoteToo && !!info.remote_owner } });
+      const r = await api("/system/reset/", { method: "POST", body: { confirm: word, password: pw, preset, ai: aiToo, clear_logs: logsToo, delete_admins: adminsToo && !keepId, delete_superadmins: superToo, keep_identity: keepId, remove_remote: remoteToo && !!info.remote_owner } });
       setAdminMail(r?.admin || "");
       setFinished(true);
       await new Promise((r) => setTimeout(r, 700)); // the bar shows 100% for a moment
@@ -195,6 +196,12 @@ export default function SystemReset() {
                       <small className="muted" style={{ display: "block" }}>{tx("{0} AI-aanroepen met hun kosten, het tegoed (en de geschiedenis van {1} betalingen en boekingen) van de superadmins. De AI-instellingen (prijzen, marges, koppelingen) blijven. Het tegoed van gebruikers verdwijnt sowieso met de gebruikers.", info.ai_calls, info.ai_ledger)}{info.ai_credit > 0 ? ` ${tx("Let op: er staat nog {0} aan tegoed van gebruikers.", info.ai_credit.toFixed(2))}` : ""}</small></span>
                   </label>
                 )}
+                <label className="check sec-toggle">
+                  <span className="switch"><input type="checkbox" checked={logsToo} onChange={(e) => setLogsToo(e.target.checked)} /><span /></span>
+                  <span>{tx("Ook het logboek legen?")}
+                    <small className="muted" style={{ display: "block" }}>{tx("Uit: het logboek blijft bewaard, ook wie de reset deed. Aan: alle regels worden verwijderd en het logboek begint opnieuw met de reset.")}</small>
+                  </span>
+                </label>
                 {presets?.length > 0 && (
                   <label>{tx("Daarna meteen instellen als")}
                     <select value={preset} onChange={(e) => setPreset(e.target.value)}>

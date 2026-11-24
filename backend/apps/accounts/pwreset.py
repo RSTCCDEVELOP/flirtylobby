@@ -157,6 +157,7 @@ def confirm(request):
     except DjangoValidationError as e:
         return Response({"password": list(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
     user.set_password(password)  # the new password is active from now on
+    __import__("apps.auditlog.service", fromlist=["log"]).log("auth.password_reset", user)
     user.save()
     from . import superplus
 

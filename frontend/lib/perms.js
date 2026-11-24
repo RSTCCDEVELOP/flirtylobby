@@ -43,6 +43,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/system", module: "system" },
   { href: "/dashboard/admin/storage", module: "storage" },
   { href: "/dashboard/admin/backups", module: "backups" },
+  { href: "/dashboard/admin/log", module: "log" },
   { href: "/dashboard/admin/statistieken", module: "stats" },
   { href: "/dashboard/admin/energy", module: "energy" },
   { href: "/dashboard/admin/cache", module: "system" },

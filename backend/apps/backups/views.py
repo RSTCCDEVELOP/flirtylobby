@@ -68,6 +68,7 @@ def create_now(request):
     except Exception as e:  # noqa: BLE001
         logger.exception("manual backup failed")
         return _bad(f"De backup is mislukt: {e}")
+    __import__("apps.auditlog.service", fromlist=["log"]).log("backup.created", request.user, target=getattr(b, "file", ""), request=request)
     return Response({**_overview(request), "made": _out(b)}, status=status.HTTP_201_CREATED)
 
 
@@ -160,6 +161,7 @@ def restore(request, pk):
     except service.BackupError as e:
         return _bad(str(e))
     logger.info("Backup %s restored by %s", b.file, request.user.email)
+    __import__("apps.auditlog.service", fromlist=["log"]).log("backup.restored", request.user, target=b.file, request=request)
     return Response({"results": results, "safety": _out(safety), **_overview(request)})
 
 

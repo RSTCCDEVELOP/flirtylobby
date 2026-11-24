@@ -105,6 +105,7 @@ def login(request):
             __import__("apps.security.lockout", fromlist=["notify"]).notify(email, client_ip(request), "password", cfg["lockout_minutes"])  # the administrator always gets a mail
         throttle.save()
         logger.warning("Failed login for %s", email)
+        __import__("apps.auditlog.service", fromlist=["log"]).log("auth.login_failed", user, target=email, detail="onjuist wachtwoord" if user else "onbekend e-mailadres", request=request)  # (the line has the rank of the account that was tried)
         __import__("apps.plugins.facade", fromlist=["stats"]).stats.record("users", "login_failed")
         return Response({"detail": "Onjuist e-mailadres of wachtwoord."}, status=status.HTTP_400_BAD_REQUEST)
     if not user.is_active:
@@ -325,6 +326,7 @@ def twofa_disable(request):
 
 @api_view(["POST"])
 def logout(request):
+    __import__("apps.auditlog.service", fromlist=["log"]).log("auth.logout", request.user, request=request)
     Token.objects.filter(user=request.user).delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -358,6 +360,7 @@ def change_password(request):
         return Response({"old_password": ["Huidig wachtwoord is onjuist."]}, status=status.HTTP_400_BAD_REQUEST)
     request.user.set_password(serializer.validated_data["new_password"])
     request.user.save()
+    __import__("apps.auditlog.service", fromlist=["log"]).log("auth.password_changed", request.user, request=request)
     Token.objects.filter(user=request.user).delete()
     token = Token.objects.create(user=request.user)
     return Response({"token": token.key})
@@ -404,6 +407,10 @@ class UserViewSet(viewsets.ModelViewSet):
         # delegated managers cannot even see beheerders
         return qs if self.request.user.is_staff else qs.exclude(is_staff=True)
 
+    def perform_create(self, serializer):
+        made = serializer.save()
+        __import__("apps.auditlog.service", fromlist=["log"]).log("user.created", self.request.user, target=getattr(made, "email", ""), request=self.request)
+
     def destroy(self, request, *args, **kwargs):
         if self.get_object() == request.user:
             return Response({"detail": "Je kunt jezelf niet verwijderen."}, status=status.HTTP_400_BAD_REQUEST)
@@ -411,6 +418,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Je mag een superadmin+ niet verwijderen."}, status=status.HTTP_403_FORBIDDEN)
         from .erasure import erase_user
 
+        gone = self.get_object()
+        __import__("apps.auditlog.service", fromlist=["log"]).log("user.deleted", request.user, target=gone.email, request=request, level=max(__import__("apps.auditlog.service", fromlist=["rank_of"]).rank_of(request.user), __import__("apps.auditlog.service", fromlist=["rank_of"]).rank_of(gone)))
         erase_user(self.get_object())  # files, keys, group/role links and records go too
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -424,6 +433,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user.is_active = False
         user.save(update_fields=["is_active"])
         Token.objects.filter(user=user).delete()
+        __import__("apps.auditlog.service", fromlist=["log"]).log("user.changed", request.user, target=user.email, detail="geblokkeerd", request=request)
         return Response(self.get_serializer(user).data)
 
     @action(detail=True, methods=["post", "delete"], parser_classes=[MultiPartParser, FormParser], url_path="image")

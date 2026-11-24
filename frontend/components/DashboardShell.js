@@ -57,7 +57,7 @@ import { useNavMode } from "../lib/navmode";
 import { useSession } from "./Session";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconRocket, IconLeaf, IconTree, IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
+import { IconHistory, IconRocket, IconLeaf, IconTree, IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
 
 import { useUpdates } from "../lib/updates";
 
@@ -135,6 +135,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/onboarding", label: "Onboarding", icon: <IconRocket /> },  // always there: the onboarding again with the data that is known (licence, hosting, name and address)
   { href: "/dashboard/admin/bomen", label: "Bomen en giften", icon: <IconTree />, needs: "ecologi_admin" },  // only while the API Ecologi is on and the superadmin allowed it
   { href: "/dashboard/admin/backups", label: "Backup", icon: <IconArchive />, perm: "backups.manage" },
+  { href: "/dashboard/admin/log", label: "Logboek", icon: <IconHistory /> },
   { href: "/dashboard/admin/settings-backup", label: "Instellingen back-up", icon: <IconArchive /> }, // always available: no module, no extra right
   { href: "/dashboard/admin/license", label: "Licentie", icon: <IconKey />, perm: "system.manage" },
   { href: "/dashboard/admin/sandbox", label: "Sandbox", icon: <IconFlask /> },
@@ -160,7 +161,7 @@ const ADMIN_GROUP_OF = {
   "/dashboard/admin/community": "a-community",
   "/dashboard/admin/faq": "a-site", "/dashboard/admin/help": "a-site", "/dashboard/admin/helptips": "a-site", "/dashboard/admin/components": "a-site", "/dashboard/admin/templates": "a-site",
   "/dashboard/admin/subscriptions": "a-subs", "/dashboard/admin/donations": "a-subs", "/dashboard/admin/actions": "a-subs",
-  "/dashboard/admin/security": "a-system", "/dashboard/admin/energy": "a-system", "/dashboard/admin/bomen": "a-system", "/dashboard/admin/cache": "a-system", "/dashboard/admin/onboarding": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/settings-backup": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/btw": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
+  "/dashboard/admin/security": "a-system", "/dashboard/admin/energy": "a-system", "/dashboard/admin/log": "a-system", "/dashboard/admin/bomen": "a-system", "/dashboard/admin/cache": "a-system", "/dashboard/admin/onboarding": "a-system", "/dashboard/admin/communication": "a-system", "/dashboard/admin/integrations": "a-system", "/dashboard/admin/sandbox": "a-system", "/dashboard/admin/installaties": "a-system", "/dashboard/admin/plugins": "a-system", "/dashboard/admin/storage": "a-system", "/dashboard/admin/backups": "a-system", "/dashboard/admin/settings-backup": "a-system", "/dashboard/admin/statistieken": "a-system", "/dashboard/admin/btw": "a-system", "/dashboard/admin/license": "a-system", "/dashboard/admin/system": "a-system", "/dashboard/admin/notifications": "a-system",
 };
 
 export { ADMIN_NAV, ADMIN_GROUPS, ADMIN_GROUP_OF, ADMIN_SECTION_GROUP, COMMUNITY, COMMUNITY_GROUPS, COMMUNITY_GROUP_OF };

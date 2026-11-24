@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "apps.faq",
     "apps.notifications",
     "apps.backups",
+    "apps.auditlog",
     "apps.energy",
     "apps.ecologi",
 ]

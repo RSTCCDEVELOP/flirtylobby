@@ -110,6 +110,8 @@ MODULES = [
      "desc": "Grafieken en cijfers over de hele website: bezoekers, SEO, bots en AI-aanroepen, en per module en plugin een eigen tabblad. Modules en plugins schrijven hun cijfers hierheen."},
     {"key": "backups", "group": "Systeem", "label": "Backup",
      "desc": "Backups van de website per dag, week of maand (pagina's, menu's, teksten, afbeeldingen, thema en instellingen van modules en plugins), terugzetten en downloaden. De standaardgegevens van easy2edit zitten er niet in."},
+    {"key": "log", "group": "Systeem", "label": "Logboek",
+     "desc": "Wie logde in of uit en de belangrijke dingen die gebeuren (gebruikers, installaties, resets, modules, backups). Zichtbaar voor admins en superadmins; een regel is alleen te lezen door mensen van dezelfde rang of hoger. Alleen een superadmin leegt het logboek en stelt de bewaartermijn in."},
     {"key": "templates", "group": "Content", "label": "Templates",
      "desc": "Complete websites om mee te beginnen (zip in resource/templates): beheerders kiezen en gebruiken ze, superadmins voegen ze toe, maken ze van een backup of van de website en verwijderen ze. Met een melding als er een nieuwe versie is."},
     {"key": "roles", "group": "Systeem", "label": "Rollen",
@@ -151,7 +153,7 @@ BY_KEY = {m["key"]: m for m in MODULES}
 
 _cache = {"t": 0, "v": None}
 TTL = 10
-ALWAYS_ON = ("system", "plugins", "storage", "backups", "templates", "integrations", "theme", "twofa", "communication")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible). "twofa" + "communication" (the e-mail addresses the code is sent from) keep two-step verification possible in every implementation: it is ON by default (setting Beveiliging -> Twee-staps verificatie, admins), only a superadmin can switch the setting off
+ALWAYS_ON = ("system", "plugins", "storage", "backups", "log", "templates", "integrations", "theme", "twofa", "communication")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible). "twofa" + "communication" (the e-mail addresses the code is sent from) keep two-step verification possible in every implementation: it is ON by default (setting Beveiliging -> Twee-staps verificatie, admins), only a superadmin can switch the setting off
 
 
 def states():

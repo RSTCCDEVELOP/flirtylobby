@@ -47,6 +47,8 @@ def levels(user):
     if not (user.is_staff and getattr(user, "is_superadmin_plus", False)):  # the easy2edit modules ("Alleen superadmin+") are for a superadmin+ only: nobody else has a level there
         for k in modules.owner_only_keys():
             out.pop(k, None)
+    if "log" not in out and any(v >= 2 for v in out.values()):  # the log (Logboek) is for admins too (anybody who may edit something): they read the lines of their own rank and lower
+        out["log"] = 1
     user._levels = out
     return out
 
