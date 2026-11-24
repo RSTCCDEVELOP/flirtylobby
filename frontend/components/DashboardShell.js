@@ -121,6 +121,7 @@ const ADMIN_NAV = [
   { href: "/dashboard/admin/help", label: "Help", icon: <IconHelp />, helpLayer: true },
   { href: "/dashboard/admin/templates", label: "Templates", icon: <IconFolder /> },
   { href: "/dashboard/admin/components", label: "Componenten", icon: <IconGrid /> },
+  { href: "/dashboard/admin/widgets", label: "Widgets", icon: <IconGrid /> },
   { href: "/dashboard/admin/helptips", label: "Help-teksten", icon: <IconEdit /> },
   { href: "/dashboard/admin/actions", label: "Actions", icon: <IconLock /> },
   { href: "/dashboard/admin/media", label: "Media", icon: <IconFolder />, perm: "media.manage" },
