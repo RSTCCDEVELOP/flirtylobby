@@ -150,3 +150,15 @@ def test_the_code_is_shown_on_the_screen_only_on_the_development_computer(master
     settings.DEBUG = False
     live = c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json", HTTP_HOST="localhost")
     assert "sandbox_code" not in live.json()  # (a real site never gives the code back)
+
+
+@pytest.mark.django_db
+def test_on_the_development_computer_there_is_no_limit_on_asking_for_a_code(master, settings):
+    c = APIClient()
+    settings.DEBUG = True
+    for _ in range(8):
+        assert c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json", HTTP_HOST="localhost").status_code == 200
+    settings.DEBUG = False
+    cache.clear()
+    codes = [c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json", HTTP_HOST="localhost").status_code for _ in range(8)]
+    assert 400 in codes  # a real site keeps the limit

@@ -71,7 +71,7 @@ def send(email, ip="", show_code=False):
     e = _email(email)
     if not e:
         raise ValueError("Vul een geldig e-mailadres in.")
-    if not _hit(f"rsignup:ip:{ip}", IP_TRIES, 3600) or not _hit(f"rsignup:em:{e}", EMAIL_TRIES, LIFETIME):
+    if not show_code and (not _hit(f"rsignup:ip:{ip}", IP_TRIES, 3600) or not _hit(f"rsignup:em:{e}", EMAIL_TRIES, LIFETIME)):  # (not on the development computer: there you try as often as you like)
         raise ValueError("Te veel pogingen. Probeer het over 10 minuten opnieuw.")
     reseller, person = find(e)
     if not reseller:  # said, like the licence lookup does ("Dit e-mailadres is niet bekend"): the person must know why no mail comes
