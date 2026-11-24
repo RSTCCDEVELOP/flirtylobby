@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { useEffect, useRef, useState } from "react";
 import { api, apiBase, downloadFile, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
@@ -222,7 +223,7 @@ function OptionField({ c, value, onChange }) {
     <label>{tx(c.label)}
       {c.type === "select" ? <select value={value} onChange={(e) => onChange(e.target.value)}>{c.options.map((o) => <option key={o.value} value={o.value}>{tx(o.label)}</option>)}</select>
         : c.type === "textarea" ? <textarea rows={3} value={value} onChange={(e) => onChange(e.target.value)} />
-        : c.type === "color" ? <input type="color" value={value} onChange={(e) => onChange(e.target.value)} style={{ height: "2.6rem", padding: 2 }} />
+        : c.type === "color" ? <ColorInput value={value} onChange={(e) => onChange(e.target.value)} style={{ height: "2.6rem", padding: 2 }} />
         : <input type={c.type === "number" ? "number" : "text"} min={c.min ?? undefined} max={c.max ?? undefined} value={value} onChange={(e) => onChange(c.type === "number" ? (e.target.value === "" ? "" : Number(e.target.value)) : e.target.value)} />}
       {c.hint && c.type !== "bool" && <small className="muted">{tx(c.hint)}</small>}
     </label>

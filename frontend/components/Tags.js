@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
@@ -67,7 +68,7 @@ export function ColorField({ value, onChange, label, disabled = false, allowNone
         ))}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(127,127,127,.22)" }}>
-        <input type="color" value={has ? value : "#2563eb"} onChange={(e) => onChange(e.target.value)} aria-label={tx("Eigen kleur")} title={tx("Eigen kleur")} style={{ width: 28, height: 28, padding: 0, border: "none", borderRadius: "50%", background: "none", cursor: "pointer", overflow: "hidden" }} />
+        <ColorInput value={has ? value : "#2563eb"} onChange={(e) => onChange(e.target.value)} aria-label={tx("Eigen kleur")} title={tx("Eigen kleur")} style={{ width: 28, height: 28, padding: 0, border: "none", borderRadius: "50%", background: "none", cursor: "pointer", overflow: "hidden" }} />
         <span style={{ fontSize: 13, flex: 1 }}>{tx("Eigen kleur")}</span>
         {allowNone && value ? <button type="button" onClick={() => pick("")} style={{ appearance: "none", background: "none", border: "none", padding: "2px 4px", fontSize: 13, cursor: "pointer", color: "inherit", opacity: .75, textDecoration: "underline" }}>{tx("Geen kleur")}</button> : null}
       </div>

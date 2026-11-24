@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { tx } from "../lib/t";
 import { IconEdit, IconTrash } from "./Icons";
 import { alertDialog, confirmDialog } from "../lib/dialog";
@@ -352,7 +353,7 @@ function ImageStylePanel({ st, onChange, position = null }) {
             {sl("blur", "Vervaging", 0, 150)}
             {sl("spread", "Grootte", -50, 100)}
             {sl("opacity", "Sterkte", 0, 100, "%")}
-            <div className="pb-stylerow"><span>{tx("Kleur")}</span><input type="color" value={/^#[0-9a-fA-F]{6}$/.test(sh.color || "") ? sh.color : "#000000"} onChange={(e) => set({ color: e.target.value })} aria-label={tx("Kleur van de schaduw")} /></div>
+            <div className="pb-stylerow"><span>{tx("Kleur")}</span><ColorInput value={/^#[0-9a-fA-F]{6}$/.test(sh.color || "") ? sh.color : "#000000"} onChange={(e) => set({ color: e.target.value })} aria-label={tx("Kleur van de schaduw")} /></div>
             <div className="img-shadow-preview" aria-hidden="true"><span style={{ boxShadow: shadowCss(sh), borderRadius: st.radius === undefined || st.radius === "" ? "var(--radius, 12px)" : `${Math.min(st.radius, 999)}px` }} /></div>
           </>}
         </>;

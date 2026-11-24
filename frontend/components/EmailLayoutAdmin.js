@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -127,7 +128,7 @@ export default function EmailLayoutAdmin({ canEdit, onMessage }) {
             <div className="theme-grid">
               {COLORS.map(([k, label]) => (
                 <label key={k}>{tx(label)}
-                  <span className="color-row"><input type="color" value={cfg.custom[k]} disabled={!canEdit} onChange={(e) => setCustom({ [k]: e.target.value })} /><input value={cfg.custom[k]} disabled={!canEdit} onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setCustom({ [k]: e.target.value })} /></span>
+                  <span className="color-row"><ColorInput value={cfg.custom[k]} disabled={!canEdit} onChange={(e) => setCustom({ [k]: e.target.value })} /><input value={cfg.custom[k]} disabled={!canEdit} onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && setCustom({ [k]: e.target.value })} /></span>
                 </label>
               ))}
               <label>{tx("Lettertype")}

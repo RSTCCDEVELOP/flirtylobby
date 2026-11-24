@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "../../../../components/ColorInput";
 import { Busy } from "../../../../components/PageLoader";
 import SmallEditor from "../../../../components/SmallEditor";
 import { tx } from "../../../../lib/t";
@@ -238,7 +239,7 @@ export default function DonationsAdmin() {
                     <select value={modal.button.radius} onChange={(e) => setBtn({ radius: e.target.value })}>{[["default", "Standaard"], ["pill", "Rond"], ["square", "Vierkant"]].map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
                   </label>
                   <label>{tx("Kleur (leeg = huisstijl)")}
-                    <span className="color-pick"><input type="color" value={modal.button.color || "#1b97d3"} onChange={(e) => setBtn({ color: e.target.value })} />{modal.button.color && <button type="button" className="btn sm" onClick={() => setBtn({ color: "" })}>{tx("Huisstijl")}</button>}</span>
+                    <span className="color-pick"><ColorInput value={modal.button.color || "#1b97d3"} onChange={(e) => setBtn({ color: e.target.value })} />{modal.button.color && <button type="button" className="btn sm" onClick={() => setBtn({ color: "" })}>{tx("Huisstijl")}</button>}</span>
                   </label>
                 </div>
                 <div className="sys-demo">

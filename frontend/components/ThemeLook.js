@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { Busy } from "./PageLoader";
 import { tx } from "../lib/t";
 import { confirmDialog } from "../lib/dialog";
@@ -60,7 +61,7 @@ export function Field({ f, value, onChange }) {
       <label className="theme-field">
         {f.label}
         <span className="color-row">
-          <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+          <ColorInput value={value} onChange={(e) => onChange(e.target.value)} />
           <input value={value} onChange={(e) => /^#[0-9a-fA-F]{0,6}$/.test(e.target.value) && onChange(e.target.value)} maxLength={7} />
         </span>
       </label>

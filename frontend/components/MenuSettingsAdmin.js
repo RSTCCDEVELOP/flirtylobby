@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { Busy } from "./PageLoader";
 import { useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
@@ -201,7 +202,7 @@ export default function MenuSettingsAdmin({ canEdit = true }) {
         <div className="theme-grid">
           <label>{tx("Achtergrondkleur")}
             <span className="row" style={{ flexWrap: "nowrap", justifyContent: "flex-start", gap: ".5rem" }}>
-              <input type="color" disabled={!canEdit} value={cfg.bg || "#151b2b"} onChange={(e) => set({ bg: e.target.value })} style={{ width: "3.2rem", height: "2.6rem", padding: 2 }} />
+              <ColorInput disabled={!canEdit} value={cfg.bg || "#151b2b"} onChange={(e) => set({ bg: e.target.value })} style={{ width: "3.2rem", height: "2.6rem", padding: 2 }} />
               <button type="button" className="btn sm" disabled={!canEdit || !cfg.bg} onClick={() => set({ bg: "" })}>{tx("Zoals het thema")}</button>
             </span>
           </label>

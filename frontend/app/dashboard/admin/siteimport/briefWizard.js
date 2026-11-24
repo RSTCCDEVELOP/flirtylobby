@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "../../../../components/ColorInput";
 import { useEffect, useState } from "react";
 import { api } from "../../../../lib/api";
 import { tx } from "../../../../lib/t";
@@ -132,7 +133,7 @@ export function BriefStep({ step, brief, setBrief, onSet }) {
             {q.t === "yesno" && <div style={{ display: "flex", gap: ".4rem" }}>{[[true, "Ja"], [false, "Nee"]].map(([val, l]) => <button type="button" key={l} style={chip(v === val)} aria-pressed={v === val} onClick={() => set(q.k, v === val ? undefined : val)}>{tx(l)}</button>)}</div>}
             {q.t === "color" && (
               <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem", alignItems: "center" }}>
-                <input type="color" value={/^#[0-9a-f]{6}$/i.test(v || "") ? v : "#f2823f"} onChange={(e) => set(q.k, e.target.value)} aria-label={tx(q.l)} style={{ width: 44, height: 36, padding: 0 }} />
+                <ColorInput value={/^#[0-9a-f]{6}$/i.test(v || "") ? v : "#f2823f"} onChange={(e) => set(q.k, e.target.value)} aria-label={tx(q.l)} style={{ width: 44, height: 36, padding: 0 }} />
                 <input value={v || ""} placeholder="#f2823f" onChange={(e) => set(q.k, e.target.value)} style={{ width: "8rem" }} />
                 {v && <button type="button" className="btn sm" onClick={() => set(q.k, "")}>{tx("Leegmaken")}</button>}
               </div>

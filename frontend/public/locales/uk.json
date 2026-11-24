@@ -8946,5 +8946,8 @@
   "Achtergrond (donkere modus)": "Тло (темний режим)",
   "Kleur (donkere modus)": "Колір (темний режим)",
   "Kleur van de cijfers (donkere modus)": "Колір цифр (темний режим)",
-  "Tekstkleur (donkere modus)": "Колір тексту (темний режим)"
+  "Tekstkleur (donkere modus)": "Колір тексту (темний режим)",
+  "Kleuren van het thema": "Кольори теми",
+  "Nog geen eigen kleuren opgeslagen.": "Власні кольори ще не збережено.",
+  "Kleurcode": "Код кольору"
 }

@@ -8946,5 +8946,8 @@
   "Achtergrond (donkere modus)": "背景(ダークモード)",
   "Kleur (donkere modus)": "色(ダークモード)",
   "Kleur van de cijfers (donkere modus)": "数字の色(ダークモード)",
-  "Tekstkleur (donkere modus)": "文字色(ダークモード)"
+  "Tekstkleur (donkere modus)": "文字色(ダークモード)",
+  "Kleuren van het thema": "テーマの色",
+  "Nog geen eigen kleuren opgeslagen.": "保存した独自の色はまだありません。",
+  "Kleurcode": "カラーコード"
 }

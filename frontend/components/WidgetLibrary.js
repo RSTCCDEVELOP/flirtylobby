@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { useEffect, useMemo, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
@@ -55,7 +56,7 @@ export default function WidgetLibrary() {
     if (o.type === "switch") return <label key={o.key} className="hed-sw"><span className="switch"><input type="checkbox" checked={!!v} onChange={(e) => set(e.target.checked)} /><span /></span><span className="hed-swt"><strong>{tx(o.label)}</strong></span></label>;
     if (o.type === "choice") return <label key={o.key}>{tx(o.label)}<select value={v} onChange={(e) => set(e.target.value)}>{o.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label>;
     if (o.type === "number") return <label key={o.key}>{tx(o.label)}<input type="number" min={o.min} max={o.max} step={o.step} value={v} onChange={(e) => set(e.target.value === "" ? "" : Number(e.target.value))} /></label>;
-    if (o.type === "color") return <label key={o.key}>{tx(o.label)}<input type="color" value={v} onChange={(e) => set(e.target.value)} style={{ height: 38, padding: 2 }} /></label>;
+    if (o.type === "color") return <label key={o.key}>{tx(o.label)}<ColorInput value={v} onChange={(e) => set(e.target.value)} style={{ height: 38, padding: 2 }} /></label>;
     return <label key={o.key}>{tx(o.label)}<input type={o.type === "datetime" ? "datetime-local" : "text"} value={v} maxLength={300} onChange={(e) => set(e.target.value)} /></label>;
   };
   return (

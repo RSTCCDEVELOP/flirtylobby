@@ -8,6 +8,7 @@
 
 "use client";
 
+import ColorInput from "../../../../components/ColorInput";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconArchive, IconBolt, IconCheck, IconImage, IconPaperclip, IconTrash } from "../../../../components/Icons";
 import { api, apiUpload, downloadFile, errorText, mediaUrl } from "../../../../lib/api";
@@ -182,7 +183,7 @@ export default function Wizard({ job, onJob, onGenerate, onReload, onApply, onIm
 
   const colorRow = (k, l) => (
     <div key={k} className="dw-color">
-      <input type="color" value={colors[k]} aria-label={tx(l)} onChange={(e) => upd({ colors: { ...colors, [k]: e.target.value } })} />
+      <ColorInput value={colors[k]} aria-label={tx(l)} onChange={(e) => upd({ colors: { ...colors, [k]: e.target.value } })} />
       <span><b>{tx(l)}</b></span>
       <HexField value={colors[k]} onChange={(v) => upd({ colors: { ...colors, [k]: v } })} label={`${tx(l)} (${tx("hex-code")})`} />
     </div>

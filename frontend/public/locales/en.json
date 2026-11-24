@@ -8946,5 +8946,8 @@
   "Achtergrond (donkere modus)": "Background (dark mode)",
   "Kleur (donkere modus)": "Colour (dark mode)",
   "Kleur van de cijfers (donkere modus)": "Colour of the numbers (dark mode)",
-  "Tekstkleur (donkere modus)": "Text colour (dark mode)"
+  "Tekstkleur (donkere modus)": "Text colour (dark mode)",
+  "Kleuren van het thema": "Theme colours",
+  "Nog geen eigen kleuren opgeslagen.": "No own colours saved yet.",
+  "Kleurcode": "Colour code"
 }

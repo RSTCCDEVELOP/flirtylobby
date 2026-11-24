@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "../../../../components/ColorInput";
 import { markImported } from "../../../../lib/imported";
 import { Busy } from "../../../../components/PageLoader";
 import { tx } from "../../../../lib/t";
@@ -222,7 +223,7 @@ function Detail({ imp, onChanged, onApply, busy }) {
             {atab === "theme" && (<div className="form">
               <p className="muted" style={{ margin: 0 }}>{tx("De instellingen van het thema dat uit het bestand is gemaakt, zoals bij Thema. Wat je hier wijzigt, geldt voor het thema van deze import.")}</p>
               <div className="grid2">
-                {[["primary", "Hoofdkleur"], ["secondary", "Tweede kleur"]].map(([k, l]) => <label key={k}>{tx(l)}<input type="color" value={thm[k] || "#7b2ce0"} onChange={(e) => set(k, e.target.value)} /></label>)}
+                {[["primary", "Hoofdkleur"], ["secondary", "Tweede kleur"]].map(([k, l]) => <label key={k}>{tx(l)}<ColorInput value={thm[k] || "#7b2ce0"} onChange={(e) => set(k, e.target.value)} /></label>)}
                 <label>{tx("Standaard weergave")}<select value={thm.default_mode || "system"} onChange={(e) => set("default_mode", e.target.value)}><option value="system">{tx("Volgt het apparaat")}</option><option value="light">{tx("Licht")}</option><option value="dark">{tx("Donker")}</option></select></label>
                 <label>{tx("Breedte van de inhoud")} (px)<input type="number" min="720" max="1600" step="20" value={thm.content_w || 1100} onChange={(e) => set("content_w", Number(e.target.value))} /></label>
                 <label>{tx("Ronde hoeken")} (px)<input type="number" min="0" max="40" value={thm.radius ?? 12} onChange={(e) => set("radius", Number(e.target.value))} /></label>

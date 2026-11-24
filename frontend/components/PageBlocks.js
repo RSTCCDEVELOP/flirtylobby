@@ -25,6 +25,7 @@ import { panelDrag, setPanelDrag } from "../lib/panel-drag";
 import { pushUndo } from "../lib/undo";
 import { SysObjectBySlug } from "./SysObjects";
 import FitChrome from "./FitChrome";
+import ColorInput from "./ColorInput";
 import WidgetOptions from "./WidgetOptions";
 import LayoutPresets from "./LayoutPresets";
 import { BgControls, BgLayer } from "./SectionBg";
@@ -70,35 +71,9 @@ const styleCss = (st) => {
   if (st.radius !== undefined && st.radius !== "") out.borderRadius = `${st.radius}px`;
   return out;
 };
-// your own colours: saved per person (also on other computers) and usable everywhere a colour is chosen
-const readSaved = () => { try { const v = JSON.parse(localStorage.getItem("savedColors") || "[]"); return Array.isArray(v) ? v.filter((x) => /^#[0-9a-f]{6}$/i.test(x)).slice(0, 16) : []; } catch { return []; } };
+// the colour field of the page editor: the swatch and its popup (the colours of the active theme, your own saved colours, an own colour); a theme colour is kept by its name, "" = like the theme
 function ColorPick({ value, onChange }) {
-  const [saved, setSaved] = useState([]);
-  useEffect(() => { // all colour pickers on the screen show the same saved colours
-    const on = () => setSaved(readSaved());
-    on(); window.addEventListener("saved-colors", on);
-    return () => window.removeEventListener("saved-colors", on);
-  }, []);
-  const store = (list) => { try { localStorage.setItem("savedColors", JSON.stringify(list)); } catch {} setSaved(list); window.dispatchEvent(new Event("saved-colors")); };
-  const isHex = !!value && /^#[0-9a-f]{6}$/i.test(value);
-  const custom = value && !TOKEN_VAR[value];
-  const isSaved = isHex && saved.some((c) => c.toLowerCase() === value.toLowerCase());
-  return (
-    <span className="pb-colorpick">
-      <span className="pb-swatches">
-        <button type="button" className={`pb-sw none${!value ? " on" : ""}`} title={tx("Zoals het thema")} onClick={() => onChange("")}>∅</button>
-        {PALETTE.map(([k, l]) => <button key={k} type="button" className={`pb-sw${value === k ? " on" : ""}`} style={{ background: TOKEN_VAR[k] }} title={tx(l)} onClick={() => onChange(k)} />)}
-        <input type="color" className={custom ? "on" : ""} value={isHex ? value : "#888888"} onChange={(e) => onChange(e.target.value)} title={tx("Eigen kleur")} />
-      </span>
-      <span className="pb-swatches pb-saved">
-        <small className="muted">{tx("Opgeslagen")}</small>
-        {saved.map((c) => <button key={c} type="button" className={`pb-sw saved${value && value.toLowerCase() === c.toLowerCase() ? " on" : ""}`} style={{ background: c }} title={`${c} · ${tx("Rechtsklik om te verwijderen")}`} onClick={() => onChange(c)} onContextMenu={(e) => { e.preventDefault(); store(saved.filter((x) => x !== c)); }} />)}
-        {isSaved && <label className="pb-sw editsave" title={tx("Deze opgeslagen kleur wijzigen")}><span aria-hidden="true">✎</span><input type="color" value={value} aria-label={tx("Deze opgeslagen kleur wijzigen")} onChange={(e) => { const n = e.target.value.toLowerCase(); store(saved.map((c) => (c.toLowerCase() === value.toLowerCase() ? n : c))); onChange(n); }} /></label>}
-        {isSaved && <button type="button" className="pb-sw delsave" title={tx("Deze opgeslagen kleur verwijderen")} aria-label={tx("Deze opgeslagen kleur verwijderen")} onClick={() => store(saved.filter((c) => c.toLowerCase() !== value.toLowerCase()))}>×</button>}
-        <button type="button" className="pb-sw addsave" disabled={!isHex || isSaved} title={tx("Deze eigen kleur opslaan")} aria-label={tx("Deze eigen kleur opslaan")} onClick={() => store([...saved, value.toLowerCase()].slice(-16))}>+</button>
-      </span>
-    </span>
-  );
+  return <ColorInput value={value || ""} tokens allowNone onValue={onChange} />;
 }
 // column layouts: the widths of the columns in % ("auto" = equal share)
 const COLUMN_LAYOUTS = [["1", ["auto"]], ["50 / 50", ["50", "50"]], ["66 / 33", ["66", "33"]], ["33 / 66", ["33", "66"]], ["75 / 25", ["75", "25"]], ["25 / 75", ["25", "75"]], ["33 / 33 / 33", ["33", "33", "33"]], ["25 / 50 / 25", ["25", "50", "25"]], ["25 × 4", ["25", "25", "25", "25"]]];

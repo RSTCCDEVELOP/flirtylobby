@@ -8946,5 +8946,8 @@
   "Achtergrond (donkere modus)": "Фон (тёмный режим)",
   "Kleur (donkere modus)": "Цвет (тёмный режим)",
   "Kleur van de cijfers (donkere modus)": "Цвет цифр (тёмный режим)",
-  "Tekstkleur (donkere modus)": "Цвет текста (тёмный режим)"
+  "Tekstkleur (donkere modus)": "Цвет текста (тёмный режим)",
+  "Kleuren van het thema": "Цвета темы",
+  "Nog geen eigen kleuren opgeslagen.": "Собственные цвета ещё не сохранены.",
+  "Kleurcode": "Код цвета"
 }

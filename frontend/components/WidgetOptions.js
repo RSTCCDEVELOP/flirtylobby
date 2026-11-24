@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import Tabs from "./Tabs";
+import ColorInput from "./ColorInput";
 
 // The settings of a widget, in the left panel of the page editor: click a widget (or its edit button) and its options are here, in tabs (Inhoud, Uiterlijk, Gedrag) under a card with the widget.
 // The options belong to the widget, so a change counts for the widget on every page. A change is saved with the button and the page shows it at once. (The library, Admin > Website > Widgets, has the same options.)
@@ -39,8 +40,8 @@ function Field({ o, v, set }) {
   if (o.type === "color") return (
     <label style={LABEL}>{tx(o.label)}
       <span style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-        <input type="color" value={v} onChange={(e) => set(e.target.value)} style={{ width: 44, height: 38, padding: 2, flex: "none" }} />
-        <input type="text" value={v} maxLength={7} onChange={(e) => set(e.target.value)} style={{ flex: 1, fontFamily: "ui-monospace, Menlo, monospace" }} aria-label={tx(o.label)} />
+        <ColorInput value={v} onValue={set} />
+        <input type="text" value={v} maxLength={7} onChange={(e) => set(e.target.value)} style={{ flex: 1, minWidth: 0, fontFamily: "ui-monospace, Menlo, monospace" }} aria-label={tx(o.label)} />
       </span>
     </label>
   );

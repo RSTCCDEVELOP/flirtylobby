@@ -8946,5 +8946,8 @@
   "Achtergrond (donkere modus)": "背景(深色模式)",
   "Kleur (donkere modus)": "颜色(深色模式)",
   "Kleur van de cijfers (donkere modus)": "数字颜色(深色模式)",
-  "Tekstkleur (donkere modus)": "文字颜色(深色模式)"
+  "Tekstkleur (donkere modus)": "文字颜色(深色模式)",
+  "Kleuren van het thema": "主题颜色",
+  "Nog geen eigen kleuren opgeslagen.": "尚未保存自定义颜色。",
+  "Kleurcode": "颜色代码"
 }

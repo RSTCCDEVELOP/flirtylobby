@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "../../../../components/ColorInput";
 import AiCreditAlert from "../../../../components/AiCreditAlert";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -1131,7 +1132,7 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
                   </button>))}
               </div>
               <label style={{ display: "flex", alignItems: "center", gap: ".6rem", fontSize: ".85rem" }}>
-                <input type="color" value={ans[bgOpen === "page" ? "page_bg" : "front_bg"] || shown[bgOpen]} onChange={(e) => pickColor(bgOpen, e.target.value, false)} aria-label={tx("Eigen kleur")} style={{ width: 44, height: 32, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+                <ColorInput value={ans[bgOpen === "page" ? "page_bg" : "front_bg"] || shown[bgOpen]} onChange={(e) => pickColor(bgOpen, e.target.value, false)} aria-label={tx("Eigen kleur")} style={{ width: 44, height: 32, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
                 <span>{tx("Eigen kleur")}</span>
                 <button type="button" className="btn sm" style={{ marginLeft: "auto" }} onClick={() => { const t = bgOpen; const v = choicesFor(t)[0]?.[0]; setBgOpen(""); if (v) pickColor(t, v, false); }}>{tx("Standaard")}</button>
               </label>
@@ -1173,7 +1174,7 @@ function ThemeBlock({ job, onChanged }) {
             <div key={k} style={{ display: "grid", gap: ".25rem", fontSize: ".85rem", minWidth: 0 }}>
               <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx(l)}</span>
               <span style={{ display: "flex", alignItems: "center", gap: ".4rem", minWidth: 0 }}>
-                <input type="color" value={vals.colors[k] || "#000000"} onChange={(e) => setColor(k, e.target.value)} aria-label={tx(l)} style={{ flex: "none", width: 34, height: 28, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
+                <ColorInput value={vals.colors[k] || "#000000"} onChange={(e) => setColor(k, e.target.value)} aria-label={tx(l)} style={{ flex: "none", width: 34, height: 28, padding: 0, border: "1px solid var(--line)", borderRadius: 6, background: "none", cursor: "pointer" }} />
                 <HexField value={vals.colors[k] || ""} onChange={(v) => setColor(k, v)} label={`${tx(l)} (${tx("hex-code")})`} />
               </span>
             </div>

@@ -7,6 +7,7 @@
 
 "use client";
 
+import ColorInput from "./ColorInput";
 import { Busy } from "./PageLoader";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -98,12 +99,12 @@ export default function LoaderAdmin({ canEdit = true }) {
             <div className="theme-grid">
               <label>{tx("Ronde hoeken")} <small className="muted">{vals.loader_image_radius ?? 0} px</small><input type="range" min={0} max={250} step={2} disabled={!canEdit} value={vals.loader_image_radius ?? 0} onChange={(e) => set({ loader_image_radius: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>
               <label>{tx("Rand (dikte)")} <small className="muted">{vals.loader_image_border ?? 0} px</small><input type="range" min={0} max={24} step={1} disabled={!canEdit} value={vals.loader_image_border ?? 0} onChange={(e) => set({ loader_image_border: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>
-              {(vals.loader_image_border ?? 0) > 0 && <label>{tx("Kleur van de rand")}<input type="color" disabled={!canEdit} value={vals.loader_image_border_color || "#f2823f"} onChange={(e) => set({ loader_image_border_color: e.target.value })} onBlur={() => show(1600)} style={{ height: "2.6rem", padding: 2 }} /></label>}
+              {(vals.loader_image_border ?? 0) > 0 && <label>{tx("Kleur van de rand")}<ColorInput disabled={!canEdit} value={vals.loader_image_border_color || "#f2823f"} onChange={(e) => set({ loader_image_border_color: e.target.value })} onBlur={() => show(1600)} style={{ height: "2.6rem", padding: 2 }} /></label>}
               <label>{tx("Ruimte tussen rand en afbeelding")} <small className="muted">{vals.loader_image_pad ?? 0} px</small><input type="range" min={0} max={60} step={2} disabled={!canEdit} value={vals.loader_image_pad ?? 0} onChange={(e) => set({ loader_image_pad: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>
             </div>
             <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={vals.loader_image_bg_on === "yes"} disabled={!canEdit} onChange={(e) => setShow({ loader_image_bg_on: e.target.checked ? "yes" : "no" })} /><span /></span><span>{tx("Achtergrondkleur achter de afbeelding")}</span></label>
             {vals.loader_image_bg_on === "yes" && <label style={{ maxWidth: 420 }}>{tx("Doorzichtigheid van de achtergrondkleur")} <small className="muted">{vals.loader_image_bg_opacity ?? 100}% {tx("zichtbaar")}</small><input type="range" min={0} max={100} step={5} disabled={!canEdit} value={vals.loader_image_bg_opacity ?? 100} onChange={(e) => set({ loader_image_bg_opacity: Number(e.target.value) })} onMouseUp={() => show(1600)} onKeyUp={() => show(1600)} /></label>}
-            {vals.loader_image_bg_on === "yes" && <label style={{ maxWidth: 200 }}>{tx("Achtergrondkleur")}<input type="color" disabled={!canEdit} value={vals.loader_image_bg || "#ffffff"} onChange={(e) => set({ loader_image_bg: e.target.value })} onBlur={() => show(1600)} style={{ height: "2.6rem", padding: 2 }} /></label>}
+            {vals.loader_image_bg_on === "yes" && <label style={{ maxWidth: 200 }}>{tx("Achtergrondkleur")}<ColorInput disabled={!canEdit} value={vals.loader_image_bg || "#ffffff"} onChange={(e) => set({ loader_image_bg: e.target.value })} onBlur={() => show(1600)} style={{ height: "2.6rem", padding: 2 }} /></label>}
             <label style={{ maxWidth: 260 }}>{tx("Beweging")}<select disabled={!canEdit} value={vals.loader_image_anim || "pulse"} onChange={(e) => setShow({ loader_image_anim: e.target.value })}>{ANIMS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select></label>
           </div>
           </Collapsible>
