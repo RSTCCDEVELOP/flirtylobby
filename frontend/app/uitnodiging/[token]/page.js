@@ -132,11 +132,10 @@ export default function Invite() {
       {steps()}
       <p className="muted">{tx("We hebben een code gestuurd naar {0}.", dest)}</p>
       {sandboxCode && <div className="alert ok">{tx("Sandbox: je code is {0}", sandboxCode)}</div>}
-      <CodeInput value={code} onChange={setCode} autoFocus onComplete={(c) => setTimeout(verify, 0)} invalid={!!error} />
+      <CodeInput value={code} onChange={setCode} autoFocus onComplete={(c) => setTimeout(verify, 0)} invalid={!!error} onResend={resend} />
       {error && <div className="alert">{error}</div>}
       {msg && <p className="muted">{msg}</p>}
       <button className="btn primary" disabled={busy || code.length < 6}>{tx("Bevestigen")}</button>
-      <button type="button" className="btn" onClick={resend}>{tx("Code opnieuw versturen")}</button>
     </Shell>
   );
 

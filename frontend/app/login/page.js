@@ -168,12 +168,11 @@ export default function Login() {
           <Logo />
           <h1>{challenge.email_verify ? tx("E-mailadres bevestigen") : tx("Verificatiecode")}</h1>
           <p className="muted" style={{ margin: 0 }}>{challenge.method === "app" ? tx("Open je authenticator-app en vul de 6-cijferige code in.") : <>{tx("We hebben een code gestuurd naar")} {challenge.destination} ({challenge.method === "sms" ? "sms" : "e-mail"}).</>}</p>
-          <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!error} /></div>
+          <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!error} onResend={challenge.method !== "app" ? resend : null} timer={challenge.method !== "app"} /></div>
           {error && <div className="alert">{error}</div>}
           {info && <div className="alert ok">{info}</div>}
           {challenge.sandbox_code && <div className="alert ok" style={{ display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>{tx("Sandbox: je code is")} <strong style={{ letterSpacing: ".15em" }}>{challenge.sandbox_code}</strong> <button type="button" className="btn sm" onClick={() => setCode(challenge.sandbox_code)}>{tx("Invullen")}</button></div>}
           <button className="btn primary" disabled={busy || code.length < 6}>{busy ? tx("Bezig…") : tx("Bevestigen")}</button>
-          {challenge.method !== "app" && <button type="button" className="btn" onClick={resend}>{tx("Code opnieuw sturen")}</button>}
           <button type="button" className="muted center" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setChallenge(null); setCode(""); setError(""); setInfo(""); }}>{tx("← Terug")}</button>
         </form>
       </main>

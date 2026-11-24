@@ -78,7 +78,7 @@ export default function ResellerOnboarding() {
           {step === "code" && (
             <form className="form" onSubmit={verify}>
               <p className="muted" style={{ marginTop: 0 }}>{tx("Als dit adres bij een reseller hoort, is er een code gestuurd naar")} <strong>{ch?.hint}</strong>.</p>
-              <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!err} kind="owner" /></div>
+              <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!err} kind="owner" onResend={() => send()} /></div>
               <p className="muted" style={{ margin: 0 }}>{tx("Na de code log je in met het wachtwoord van je reseller-login bij easy2edit. Heb je daar nog geen login, dan maakt easy2edit er een en mailt het wachtwoord naar je. Verandert je wachtwoord daar, dan verandert het hier mee.")}</p>
               {err && <div className="alert">{err}</div>}
               <div className="row"><button type="button" className="btn" onClick={() => { setStep("email"); setErr(""); }}>{tx("Terug")}</button><button className="btn primary" disabled={busy || code.length < 6}>{busy ? tx("Bezig…") : tx("Aanmelden en beginnen")}</button></div>

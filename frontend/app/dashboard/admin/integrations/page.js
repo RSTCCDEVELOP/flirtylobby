@@ -330,8 +330,7 @@ export default function Integrations() {
             {smsT.step === "code" && (<>
               <p className="muted" style={{ margin: 0, fontSize: ".9rem" }}>{tx("De code is verstuurd naar {0}. Vul hem hieronder in (geldig 10 minuten).", smsT.phone)}</p>
               {smsT.sandbox_code && <div className="alert">{tx("Sandbox: er is niets verstuurd. De code is")} <strong>{smsT.sandbox_code}</strong></div>}
-              <div className="code-field"><span>{tx("Code")}</span><CodeInput value={smsT.code} onChange={(c) => setSmsT({ ...smsT, code: c })} autoFocus invalid={!!smsT.error} /></div>
-              <button type="button" className="btn sm" onClick={smsSend} disabled={smsT.busy}>{tx("Code opnieuw versturen")}</button>
+              <div className="code-field"><span>{tx("Code")}</span><CodeInput value={smsT.code} onChange={(c) => setSmsT({ ...smsT, code: c })} autoFocus invalid={!!smsT.error} onResend={smsSend} /></div>
             </>)}
             {smsT.step === "done" && <div className="alert ok">{tx("De sms is aangekomen en de code klopt: de koppeling werkt.")}</div>}
             {smsT.error && <div className="alert">{smsT.error}</div>}

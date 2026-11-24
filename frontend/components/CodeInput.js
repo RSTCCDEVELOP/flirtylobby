@@ -14,20 +14,28 @@ import { codeLifetimes, DEFAULT_LIFETIME } from "../lib/codeLifetime";
 
 // The one place for entering a verification code: a box per digit. Typing moves on, backspace goes back, a pasted code (or one the phone
 // suggests from an sms) fills all boxes. Use it on every verification screen. onComplete(code) is called when the last digit is in.
-// The round timer next to the code: a ring that runs out while the code is valid, with the minutes and seconds in it. Orange for the last minute, red when it has expired.
-// It starts when the code input appears, and again when a new code is sent ("code-sent": every request that sends a code, see lib/api.js).
-function CodeTimer({ kind }) {
+// The clock of a code that was sent: how many seconds it is still valid and how long ago it was sent. It starts when the code input appears, and again when a new code is sent
+// ("code-sent": every request that sends a code, see lib/api.js).
+function useCodeClock(kind, on) {
   const [total, setTotal] = useState(DEFAULT_LIFETIME);
-  const [left, setLeft] = useState(DEFAULT_LIFETIME);
-  const end = useRef(Date.now() + DEFAULT_LIFETIME * 1000);
+  const [now, setNow] = useState(() => Date.now());
+  const start = useRef(Date.now());
   useEffect(() => {
+    if (!on) return undefined;
     let live = true;
-    codeLifetimes().then((l) => { if (live && l?.[kind]) { setTotal(l[kind]); end.current = Date.now() + l[kind] * 1000; } });
-    const restart = () => { end.current = Date.now() + total * 1000; };
+    codeLifetimes().then((l) => { if (live && l?.[kind]) setTotal(l[kind]); });
+    const restart = () => { start.current = Date.now(); setNow(Date.now()); };
     window.addEventListener("code-sent", restart);
-    const id = setInterval(() => setLeft(Math.max(0, Math.ceil((end.current - Date.now()) / 1000))), 500);
+    const id = setInterval(() => setNow(Date.now()), 500);
     return () => { live = false; clearInterval(id); window.removeEventListener("code-sent", restart); };
-  }, [kind, total]);
+  }, [kind, on]);
+  const elapsed = Math.floor((now - start.current) / 1000);
+  return { total, left: Math.max(0, total - elapsed), elapsed, restart: () => { start.current = Date.now(); setNow(Date.now()); } };
+}
+
+// The round timer next to the code: a ring that runs out while the code is valid, with the minutes and seconds in it. Orange for the last minute, red when it has expired.
+function CodeTimer({ kind, clock }) {
+  const { total, left } = clock;
   const R = 28, C = 2 * Math.PI * R;
   const frac = Math.min(1, left / total);
   const state = left === 0 ? "gone" : left <= 60 ? "low" : "ok";
@@ -47,7 +55,8 @@ function CodeTimer({ kind }) {
   );
 }
 
-export default function CodeInput({ value, onChange, length = 6, autoFocus = false, onComplete, onAt, label, disabled = false, invalid = false, kind = "twofa", timer = true }) {
+export default function CodeInput({ value, onChange, length = 6, autoFocus = false, onComplete, onAt, label, disabled = false, invalid = false, kind = "twofa", timer = true, onResend = null, resendAfter = 60 }) {
+  const clock = useCodeClock(kind, timer || !!onResend);
   const refs = useRef([]);
   const live = useRef({});
   live.current = { value, onChange, disabled, length };
@@ -96,6 +105,7 @@ export default function CodeInput({ value, onChange, length = 6, autoFocus = fal
   const groups = length === 6 ? [chars.slice(0, 3), chars.slice(3)] : [chars];
   let n = 0;
   return (
+    <div className="code-wrap">
     <div className="code-boxes" role="group" aria-label={label || tx("Code")}>
       {groups.map((g, gi) => (
         <span key={gi} className="code-group-wrap">
@@ -103,7 +113,11 @@ export default function CodeInput({ value, onChange, length = 6, autoFocus = fal
           <span className={`code-group${invalid ? " bad" : ""}`}>{g.map((c) => cell(c, n++))}</span>
         </span>
       ))}
-      {timer && <CodeTimer kind={kind} />}
+      {timer && <CodeTimer kind={kind} clock={clock} />}
+    </div>
+      {onResend && clock.elapsed >= resendAfter && (
+        <button type="button" className="code-resend" onClick={async () => { try { await onResend(); } finally { clock.restart(); } }} disabled={disabled}>{tx("Code opnieuw versturen")}</button>
+      )}
     </div>
   );
 }
