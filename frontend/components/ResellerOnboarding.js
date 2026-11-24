@@ -36,9 +36,21 @@ export default function ResellerOnboarding() {
     }).catch(() => {});
   }, []);
   if (!empty) return null;
+  // only on your own computer (localhost): "@" in the e-mail field logs in at once as the superadmin+ that is in the database, like at the login screen (the backend gives it only to localhost in DEBUG)
+  const devLogin = async () => {
+    setBusy(true); setErr("");
+    try {
+      const d = await api("/auth/dev-login/");
+      if (d?.token) { setToken(d.token); router.push(await homeAfterLogin()); return; }
+      setErr(tx("Er is op deze computer geen superadmin+ om mee in te loggen."));
+    } catch { setErr(tx("Aanmelden met @ werkt alleen op je eigen computer (ontwikkelomgeving).")); }
+    setBusy(false);
+  };
+  const typeEmail = (v) => { setEmail(v); if (v.trim() === "@" && typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname)) devLogin(); };
   const send = async (e) => {
     e?.preventDefault();
     setBusy(true); setErr("");
+    if (email.trim() === "@") { await devLogin(); return; }
     try { const r = await api("/system/first-run/send/", { method: "POST", body: { email } }); setCh(r); setCode(r.sandbox_code || ""); setStep("code"); }  // (r.sandbox_code: only on the development computer)
     catch (x) { setErr(errorText(x)); }
     setBusy(false);
@@ -70,7 +82,7 @@ export default function ResellerOnboarding() {
           {step === "email" && (
             <form className="form" onSubmit={send}>
               <p className="muted" style={{ marginTop: 0 }}>{tx("Vul het e-mailadres in waarmee je bij easy2edit als reseller bekend bent. Je krijgt een code om je te verifiëren.")}</p>
-              <label>{tx("E-mailadres")}<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus autoComplete="email" /></label>
+              <label>{tx("E-mailadres")}<input type="text" inputMode="email" value={email} onChange={(e) => typeEmail(e.target.value)} required autoFocus autoComplete="email" /></label>
               {err && <div className="alert">{err}</div>}
               <div className="row"><button type="button" className="btn" onClick={close}>{tx("Annuleren")}</button><button className="btn primary" disabled={busy || !email.trim()}>{busy ? tx("Bezig…") : tx("Code sturen")}</button></div>
             </form>
