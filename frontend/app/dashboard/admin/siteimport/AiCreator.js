@@ -7,6 +7,7 @@
 
 "use client";
 
+import AiCreditAlert from "../../../../components/AiCreditAlert";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconBolt, IconCamera, IconCheck, IconChat, IconEdit, IconImage, IconMenu, IconPalette, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
@@ -87,7 +88,7 @@ function ConvertPromptPopup({ onClose, designs = [] }) {
         <div className="pb-objhead"><strong>{tx("AI-prompt: HTML-ontwerp naar importeer-ZIP")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={onClose} aria-label={tx("Sluiten")}>×</button></div>
         <div style={{ padding: "1rem 1.2rem 1.2rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: ".8rem" }}>
           <Tabs value={tab} onChange={setTab} tabs={[["design", "Ontwerp"], ["prompt", "Prompt"], ["how", "Zo gebruik je het"]]} />
-          {err && <div className="alert">{err}</div>}
+          <AiCreditAlert text={err} />
           {tab === "design" && (
             <div className="form">
               <div role="list" aria-label={tx("Stappen")} style={{ display: "flex", gap: ".35rem", flexWrap: "wrap" }}>
@@ -265,7 +266,7 @@ export function AiCreatorHome({ onOpen, refreshKey, onWay, importsEmpty = null }
   return (
     <div style={{ marginTop: ".75rem", display: "flex", flexDirection: "column", gap: ".8rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("Ontwerp je website in een gesprek met de AI: links de chat, rechts direct het voorbeeld. Wil je eerst een opzet laten maken? Start dan de wizard: die stelt een paar vragen (ook als je al een website, een ontwerp, een ZIP of een voorbeeldadres hebt) en zet de eerste opzet klaar. Alles wat je invult wordt bewaard, ook als je halverwege stopt.")}</p>
-      {err && <div className="alert">{err}</div>}
+      <AiCreditAlert text={err} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: ".6rem" }}>
         {[
           [IconChat, "AI chat build", () => create(true), busy || d?.ai === false],
@@ -553,7 +554,7 @@ function PhotoSlots({ job, onJob, onShow, onAsk }) {
   return (
     <Fold shut={job.status === "running" || job.status === "stopping"} defaultOpen={open > 0} title={<><IconImage /> {tx("Foto's en video's")} <span className={open ? "badge" : "badge ok"}>{slots.length - open}/{slots.length}</span> <button type="button" className="btn sm" style={{ marginLeft: ".4rem" }} disabled={looking} onClick={(e) => { e.preventDefault(); e.stopPropagation(); look(); }} title={`${tx("Zoek passende foto's en video's op")} ${srcName}`}><IconSearch /> {looking ? tx("Bezig…") : tx("Zoeken")}</button></>}>
       <p className="muted" style={{ margin: ".4rem 0", fontSize: ".85rem" }}>{source !== "istock" ? freeTx(source, "Zoek foto's en video's op Pexels: die zijn gratis te gebruiken. Een gekozen foto komt meteen in je ontwerp.") : tx("Zoek elke foto of video op iStock, download hem zelf (daar heb je een licentie voor nodig) en zet hem hier in de plek. Tot die tijd staat er een grijs vlak.")}</p>
-      {err && <div className="alert">{err}</div>}
+      <AiCreditAlert text={err} />
       <form onSubmit={search} role="search" style={{ display: "flex", gap: ".35rem", flexWrap: "wrap", margin: ".2rem 0 .5rem" }}>
         <input type="search" value={q} maxLength={120} onChange={(e) => setQ(e.target.value)} placeholder={`${tx("Zoek een foto of video op")} ${srcName}…`} aria-label={`${tx("Zoek een foto of video op")} ${srcName}`} style={{ flex: "1 1 160px", minWidth: 0 }} />
         <SourceSelect value={source} onChange={(v) => { setSource(v); setFound(null); }} style={{ flex: "0 0 auto", width: "auto", maxWidth: 120 }} />
@@ -707,7 +708,7 @@ function ThemeCarousel({ themes, value, onPick, disabled, jobId, onJob, onChange
           <small className="muted" style={{ lineHeight: 1.25 }}>{t.description}{!t.installed && !on ? ` · ${tx("wordt geïnstalleerd als je hem kiest")}` : ""}</small>
         </button>); })}
     </Carousel>
-    {err && <div className="alert">{err}</div>}
+    <AiCreditAlert text={err} />
     </>
   );
 }
@@ -751,7 +752,7 @@ function DropZone({ jobId, onJob, role, accept, multiple, label, hint, disabled,
         <small className="muted">{hint}</small>
         <input ref={input} type="file" accept={accept} multiple={!!multiple} style={{ display: "none" }} onChange={(e) => { take(e.target.files); e.target.value = ""; }} />
       </div>
-      {err && <div className="alert">{err}</div>}
+      <AiCreditAlert text={err} />
       {done.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>{done.map((x) => (
         <span key={x.file} style={{ position: "relative" }}>
           <span style={{ display: "grid", placeItems: "center", width: role === "logo" ? 96 : 58, height: 58, borderRadius: 8, overflow: "hidden", background: "var(--line)", border: "1px solid var(--line)" }}>{x.video ? <video src={mediaUrl(x.url)} muted playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={mediaUrl(x.url)} alt={x.file} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: role === "logo" ? "contain" : "cover" }} />}</span>
@@ -845,7 +846,7 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
         <small className="muted">{suggesting ? tx("De AI bedenkt zoekwoorden…") : tx("Voorstel van de AI")}:</small>
         {terms.map((t) => <button key={t} type="button" disabled={disabled} onClick={() => { typed.current = true; setQ(t); run(t, kind); }} style={{ padding: ".15rem .6rem", borderRadius: 999, border: `1px solid ${q === t ? "var(--blue)" : "var(--line)"}`, background: q === t ? "color-mix(in srgb, var(--blue) 14%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".8rem" }}>{t}</button>)}
       </div>}
-      {err && <div className="alert">{err}</div>}
+      <AiCreditAlert text={err} />
       {found && !found.length && <small className="muted">{tx("Niets gevonden. Probeer een ander zoekwoord (Engels werkt het best).")}</small>}
       {found && left.length > 1 && askAll && !disabled && (
         <div className="row" style={{ gap: ".5rem", flexWrap: "wrap", alignItems: "center" }} role="group" aria-label={tx("Alles selecteren?")}>
@@ -962,7 +963,7 @@ function RefSites({ jobId, disabled, onChange, onView, viewId }) {
       {!full && <div style={{ padding: ".35rem .5rem", textAlign: "center", borderRadius: 8, border: `1px dashed ${over ? "var(--blue)" : "var(--line)"}`, fontSize: ".74rem" }} className="muted">{tx("Sleep een afbeelding hierheen, of plak er een uit het klembord (klik hier en druk op Ctrl+V of ⌘V)")}</div>}
       <small className="muted">{list.length}/{max} · {tx("Van elke website wordt een afbeelding gemaakt; de ontwerper kijkt ernaar voor de sfeer en de opbouw. Teksten, logo's en foto's worden niet overgenomen.")}</small>
       {!can && <div className="alert" style={{ margin: 0 }}>{tx("Op de server is geen browser (Chrome of Chromium) om afbeeldingen van websites te maken. Een afbeelding slepen of plakken werkt wel.")}</div>}
-      {err && <div className="alert" style={{ margin: 0 }} role="alert">{err}</div>}
+      <AiCreditAlert text={err} style={{ margin: 0 }} />
       {work && createPortal(
         <div className="pb-objback" style={{ zIndex: 1450 }} role="alertdialog" aria-live="polite" aria-label={tx("Bezig")}>
           <div className="pb-objpop" style={{ width: "min(420px, 92vw)", padding: "1.3rem 1.4rem", display: "grid", gap: ".8rem", textAlign: "center" }}>
@@ -1486,7 +1487,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                     </div>
                   </div>
                 )}
-                {err && <div className="alert">{err}</div>}
+                <AiCreditAlert text={err} />
                 {!running && job.can_restore && <button type="button" className="btn sm" style={{ alignSelf: "flex-start" }} disabled={!!busy} onClick={restore}>{busy === "restore" ? tx("Bezig…") : tx("Vorige versie terugzetten")}</button>}
               </div>
               {blocksOpen && (ready || chatMode) && <ThemeBlock key={job.id + (job.brief?.theme_name || "")} job={job} onChanged={() => reload(true)} />}
