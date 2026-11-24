@@ -165,10 +165,10 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
             <h2 style={{ marginTop: 0 }}>{tx("Bevestigen")}</h2>
             <p style={{ marginTop: 0 }}>{tx("De installatie \"{0}\" instellen? Alle modules, plugins en het community-thema worden zoals bij deze installatie aan of uit gezet. Je gegevens blijven bestaan.", ask.p.name)}</p>
             <p className="muted" style={{ marginTop: 0 }}>{tx("De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.")}</p>
-            {(ask.p.design_pages || 0) > 0 && (
+            {(
               <label className="check sec-toggle">
                 <span className="switch"><input type="checkbox" checked={ask.design !== false} onChange={(e) => setAsk({ ...ask, design: e.target.checked })} /><span /></span>
-                <span>{tx("Pagina-design van deze installatie installeren")} <small className="muted">{tx("De pagina's van de installatie komen er precies zo op te staan, met hun afbeeldingen. Zet uit om je eigen pagina's te laten zoals ze zijn.")}</small></span>
+                <span>{tx("De pagina's van deze installatie aanmaken (pagina-design)")} <small className="muted">{tx("De startpagina en de andere pagina's van de installatie worden aangemaakt, precies zo en met hun afbeeldingen. Zet uit om je eigen pagina's te laten zoals ze zijn.")}</small></span>
               </label>
             )}
             <label className="check sec-toggle">
