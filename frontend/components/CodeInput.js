@@ -28,17 +28,21 @@ function CodeTimer({ kind }) {
     const id = setInterval(() => setLeft(Math.max(0, Math.ceil((end.current - Date.now()) / 1000))), 500);
     return () => { live = false; clearInterval(id); window.removeEventListener("code-sent", restart); };
   }, [kind, total]);
-  const R = 15, C = 2 * Math.PI * R;
+  const R = 28, C = 2 * Math.PI * R;
   const frac = Math.min(1, left / total);
   const state = left === 0 ? "gone" : left <= 60 ? "low" : "ok";
   const mm = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  const gid = `ctg-${kind}`;
   return (
     <span className={`code-timer ${state}`} role="timer" aria-label={left === 0 ? tx("De code is verlopen") : `${tx("De code is nog geldig")}: ${mm}`} title={left === 0 ? tx("De code is verlopen: vraag een nieuwe aan") : `${tx("De code is nog geldig")}: ${mm}`}>
-      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
-        <circle cx="20" cy="20" r={R} fill="none" className="ct-track" strokeWidth="4" />
-        <circle cx="20" cy="20" r={R} fill="none" className="ct-ring" strokeWidth="4" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} transform="rotate(-90 20 20)" />
+      <svg width="68" height="68" viewBox="0 0 68 68" aria-hidden="true">
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" className="ct-g1" /><stop offset="100%" className="ct-g2" /></linearGradient>
+        </defs>
+        <circle cx="34" cy="34" r={R} fill="none" className="ct-track" strokeWidth="6" />
+        <circle cx="34" cy="34" r={R} fill="none" stroke={`url(#${gid})`} className="ct-ring" strokeWidth="6" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} transform="rotate(-90 34 34)" />
       </svg>
-      <span className="ct-text">{left === 0 ? "0:00" : mm}</span>
+      <span className="ct-in"><span className="ct-text">{mm}</span><span className="ct-sub">{left === 0 ? tx("verlopen") : tx("geldig")}</span></span>
     </span>
   );
 }
