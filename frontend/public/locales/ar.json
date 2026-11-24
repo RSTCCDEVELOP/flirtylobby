@@ -8937,5 +8937,8 @@
   "{0} afbeeldingen ontbreken": "{0} صور مفقودة",
   "{0} pagina's gekozen": "تم اختيار {0} صفحات",
   "{0} regels": "{0} سجلات",
-  "{0} regels verwijderd.": "تم حذف {0} سجلات."
+  "{0} regels verwijderd.": "تم حذف {0} سجلات.",
+  "Dit widget is niet gevonden.": "لم يتم العثور على هذا الودجت.",
+  "Deze instellingen gelden voor dit widget op alle pagina's.": "تنطبق هذه الإعدادات على هذا الودجت في جميع الصفحات.",
+  "Instellingen van dit widget": "إعدادات هذا الودجت"
 }

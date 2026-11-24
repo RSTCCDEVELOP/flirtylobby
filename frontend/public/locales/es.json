@@ -8937,5 +8937,8 @@
   "{0} afbeeldingen ontbreken": "Faltan {0} imágenes",
   "{0} pagina's gekozen": "{0} páginas elegidas",
   "{0} regels": "{0} líneas",
-  "{0} regels verwijderd.": "{0} líneas eliminadas."
+  "{0} regels verwijderd.": "{0} líneas eliminadas.",
+  "Dit widget is niet gevonden.": "No se encontró este widget.",
+  "Deze instellingen gelden voor dit widget op alle pagina's.": "Estos ajustes se aplican a este widget en todas las páginas.",
+  "Instellingen van dit widget": "Ajustes de este widget"
 }

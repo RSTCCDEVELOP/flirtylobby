@@ -25,6 +25,7 @@ import { panelDrag, setPanelDrag } from "../lib/panel-drag";
 import { pushUndo } from "../lib/undo";
 import { SysObjectBySlug } from "./SysObjects";
 import FitChrome from "./FitChrome";
+import WidgetOptions from "./WidgetOptions";
 import LayoutPresets from "./LayoutPresets";
 import { BgControls, BgLayer } from "./SectionBg";
 import Tabs from "./Tabs";
@@ -249,6 +250,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
     setCurCell(c.id);
     if (it.type === "button") { setBarOpen({}); setItemOpen({}); showSettings(); setTimeout(() => setBtnEdit(it.id), 60); return; }
     if (it.type === "widget") { if (it.widget === "code") { setWidgetEdit(it.id); return; } setBarOpen({}); setItemOpen({}); showSettings(); setTimeout(() => setWidgetEdit(it.id), 60); return; }
+    if (it.type === "object" && objects.find((x) => x.slug === it.ref)?.kind === "widget") { setBarOpen({}); setItemOpen({ [it.id]: true }); showSettings(); return; }  // a widget of the library: its options in the panel
     if (!["text", "heading", "spacer", "line", "image"].includes(it.type)) return;
     setBarOpen({}); setItemOpen({ [it.id]: true }); showSettings();
   };
@@ -614,6 +616,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
           {it.type === "object" && (() => { // a system object (product overview, donation, subscription ...): its settings, in a popup (a donation or subscription: its own admin page)
             const o = objects.find((x) => x.slug === it.ref);
             if (!o) return null;
+            if (o.kind === "widget") return <button type="button" className={`btn sm pb-edit${itemOpen[it.id] ? " on" : ""}`} title={tx("Instellingen van dit widget")} aria-label={tx("Instellingen van dit widget")} onClick={(e) => { e.stopPropagation(); setBarOpen({}); setItemOpen({ [it.id]: true }); showSettings(); }}><IconEdit width={13} height={13} /></button>;
             const plug = o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part";
             const href = o.kind === "donation" ? "/dashboard/admin/donations" : o.kind === "plan" ? "/dashboard/admin/subscriptions" : "";
             if (o.kind === "media") return <button type="button" className="btn sm pb-edit" title={tx("Dit systeemobject bewerken")} aria-label={tx("Dit systeemobject bewerken")} onClick={() => api("/mediaviews/").then((vs) => { const v = vs.find((x) => x.name === o.data?.name); if (v) setMediaEdit(v); })}><IconEdit width={13} height={13} /></button>;
@@ -625,6 +628,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
           </span>
           <button type="button" className="btn sm danger pb-x pb-trash" title={tx("Dit onderdeel van de pagina verwijderen")} aria-label={tx("Dit onderdeel van de pagina verwijderen")} onClick={() => delItem(it.id)}><IconTrash width={22} height={22} /></button>
         </div>
+        {it.type === "object" && itemOpen[it.id] && objects.find((x) => x.slug === it.ref)?.kind === "widget" && sbHost(<WidgetOptions slug={it.ref} />)}
         {it.type === "image" && itemOpen[it.id] && sbHost(
           <div className="pb-stylebox" onMouseDown={(e) => e.stopPropagation()}>
             {shell && <MediaThumb id={key} onPick={() => setImgPick(key)} />}

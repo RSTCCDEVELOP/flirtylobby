@@ -8937,5 +8937,8 @@
   "{0} afbeeldingen ontbreken": "Brakujące obrazy: {0}",
   "{0} pagina's gekozen": "Wybrane strony: {0}",
   "{0} regels": "Wiersze: {0}",
-  "{0} regels verwijderd.": "Usunięte wiersze: {0}."
+  "{0} regels verwijderd.": "Usunięte wiersze: {0}.",
+  "Dit widget is niet gevonden.": "Nie znaleziono tego widżetu.",
+  "Deze instellingen gelden voor dit widget op alle pagina's.": "Te ustawienia obowiązują dla tego widżetu na wszystkich stronach.",
+  "Instellingen van dit widget": "Ustawienia tego widżetu"
 }

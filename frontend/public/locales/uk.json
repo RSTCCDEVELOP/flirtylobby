@@ -8937,5 +8937,8 @@
   "{0} afbeeldingen ontbreken": "Відсутні зображення: {0}",
   "{0} pagina's gekozen": "Вибрано сторінок: {0}",
   "{0} regels": "Рядків: {0}",
-  "{0} regels verwijderd.": "Видалено рядків: {0}."
+  "{0} regels verwijderd.": "Видалено рядків: {0}.",
+  "Dit widget is niet gevonden.": "Цей віджет не знайдено.",
+  "Deze instellingen gelden voor dit widget op alle pagina's.": "Ці налаштування діють для цього віджета на всіх сторінках.",
+  "Instellingen van dit widget": "Налаштування цього віджета"
 }

@@ -8937,5 +8937,8 @@
   "{0} afbeeldingen ontbreken": "{0} görsel eksik",
   "{0} pagina's gekozen": "{0} sayfa seçildi",
   "{0} regels": "{0} satır",
-  "{0} regels verwijderd.": "{0} satır silindi."
+  "{0} regels verwijderd.": "{0} satır silindi.",
+  "Dit widget is niet gevonden.": "Bu widget bulunamadı.",
+  "Deze instellingen gelden voor dit widget op alle pagina's.": "Bu ayarlar, bu widget için tüm sayfalarda geçerlidir.",
+  "Instellingen van dit widget": "Bu widget'ın ayarları"
 }

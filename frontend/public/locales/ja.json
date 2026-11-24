@@ -8937,5 +8937,8 @@
   "{0} afbeeldingen ontbreken": "{0}件の画像がありません",
   "{0} pagina's gekozen": "{0}ページを選択中",
   "{0} regels": "{0}行",
-  "{0} regels verwijderd.": "{0}行を削除しました。"
+  "{0} regels verwijderd.": "{0}行を削除しました。",
+  "Dit widget is niet gevonden.": "このウィジェットが見つかりません。",
+  "Deze instellingen gelden voor dit widget op alle pagina's.": "この設定は、すべてのページのこのウィジェットに適用されます。",
+  "Instellingen van dit widget": "このウィジェットの設定"
 }

@@ -48,7 +48,7 @@ function Widget({ obj, layout = "1" }) {
   const lang = langNow();
   const d = obj.data;
   const route = usePageRoute();
-  if (obj.kind === "widget") return d.enabled === false ? null : <WidgetFrame doc={d.doc} height={d.popup && !editing ? 0 : d.height} preview={!!d.popup && !!editing} title={d.title} />;  // a widget of the library (Admin > Thema > Widgets)
+  if (obj.kind === "widget") return d.enabled === false ? null : <WidgetFrame doc={d.doc} height={d.popup && !editing ? 0 : d.height} inert={!!editing} preview={!!d.popup && !!editing} title={d.title} />;  // a widget of the library (Admin > Thema > Widgets)
   if (obj.kind === "variable") return <VariableValue name={d.variable} user={user} />;
   if (obj.kind === "calculator") return <PriceCalculator layout={layout} />;
   if (obj.kind === "pricelist") return <PriceList />;
@@ -111,6 +111,7 @@ export function SysObjectBySlug({ slug, layout = "1" }) {
   const on = useModule("sysobjects");
   const [objs, setObjs] = useState([]);
   useEffect(() => { if (on) load().then(setObjs); }, [on]);
+  useEffect(() => { const re = () => { resetSysObjects(); load().then(setObjs); }; window.addEventListener("sysobjects-changed", re); return () => window.removeEventListener("sysobjects-changed", re); }, []);  // a widget got other options: draw it again
   const o = objs.find((x) => x.slug === slug);
   const own = o && (o.kind === "widget" || o.kind === "marketing" || o.kind === "calculator" || o.kind === "pricelist" || o.kind === "installation" || o.kind === "ai" || o.kind === "energy" || o.kind === "variable");
   const n = ["1", "2", "3", "4"].includes(String(layout)) ? String(layout) : "1";

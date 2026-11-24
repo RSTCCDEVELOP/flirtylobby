@@ -8937,5 +8937,8 @@
   "{0} afbeeldingen ontbreken": "Отсутствуют изображения: {0}",
   "{0} pagina's gekozen": "Выбрано страниц: {0}",
   "{0} regels": "Строк: {0}",
-  "{0} regels verwijderd.": "Удалено строк: {0}."
+  "{0} regels verwijderd.": "Удалено строк: {0}.",
+  "Dit widget is niet gevonden.": "Этот виджет не найден.",
+  "Deze instellingen gelden voor dit widget op alle pagina's.": "Эти настройки действуют для этого виджета на всех страницах.",
+  "Instellingen van dit widget": "Настройки этого виджета"
 }
