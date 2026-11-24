@@ -3054,6 +3054,7 @@ def text_logo(name, colors, parts=None):
         first, rest = (" ".join(words[:-1]), words[-1]) if len(words) > 1 else (name, "")
         if parts and (parts[0] or parts[1]):
             first, rest = parts  # the text mark of the header of the design
+        first, rest = _h.unescape(str(first)), _h.unescape(str(rest))  # (an "&amp;" from the html of the design is the text "&": it is escaped once, below)
         w = int((len(first) + len(rest) + 1) * 21 + 16)
         accent = hexof(colors.get("primary"), ink)
         svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="56" viewBox="0 0 {w} 56"><text x="0" y="39" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="34" font-weight="700" fill="{ink}">'
