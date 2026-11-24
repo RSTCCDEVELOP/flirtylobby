@@ -25,6 +25,7 @@ const INDEX = [
   { href: "/dashboard/superadmin/ecologi", label: "easy2edit: bomen planten", where: "Super admin", words: "bomen planten ecologi bijdragen kosten maximum", staff: true },
   { href: "/dashboard/admin/security", label: "Beveiliging", where: "Admin → Systeem", words: "beveiliging twee stap verificatie 2fa landen cookies verboden woorden blokkeren" },
   { href: "/dashboard/admin/theme", label: "Thema en loader", where: "Admin → Website", words: "thema loader laden kleuren logo lettertype boom" },
+  { href: "/dashboard/superadmin", label: "Widgets in de bibliotheek", where: "Super admin → Bibliotheek → Widgets", words: "widgets widget bibliotheek installeren aftelklok klok teller lopende tekst voortgang", staff: true },
   { href: "/dashboard/admin/theme", label: "Widgets (bibliotheek)", where: "Admin → Website → Thema → Layout → Widgets", words: "widgets widget bibliotheek installeren aftelklok klok teller lopende tekst voortgang onderdelen pagina systeemobject voorbeeld" },
   { href: "/dashboard/admin/backups", label: "Backup", where: "Admin → Systeem", words: "backup back-up terugzetten kopie" },
   { href: "/dashboard/admin/log", label: "Logboek", where: "Admin → Systeem", words: "log logboek logfile logbestand storing storingen fout fouten inloggen uitloggen gebeurtenissen audit bewaartermijn" },

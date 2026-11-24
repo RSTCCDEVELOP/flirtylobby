@@ -18,6 +18,7 @@ import { tx } from "../lib/t";
 
 import Loading from "./Loading";
 import { matches } from "../lib/useView";
+import WidgetLibrary from "./WidgetLibrary";
 // where an installed part is changed: the theme in Theme, a plugin in its own page, a language in Languages
 const EDIT = { themas: () => "/dashboard/admin/theme", plugins: (r) => `/dashboard/admin/plugins/${r.name}`, languages: () => "/dashboard/admin/languages", components: () => "/dashboard/admin/components", templates: () => "/dashboard/admin/templates" };
 
@@ -268,6 +269,7 @@ export function ResourceAdmin() {
   useEffect(() => { load(); }, [load]);
   if (!lib) return msg ? <div className="alert">{msg.text}</div> : <Loading fill />;
   const rows = lib.kinds[kind] || [];
+  const tabList = [...Object.keys(lib.kinds).map((k) => [k, lib.titles[k] || k]), ["widgets", "Widgets"]];  // (the widgets are a library of folders in source/widgets: their own screen)
   const flip = (name) => setOk((cur) => { const s = new Set(cur[kind]); s.has(name) ? s.delete(name) : s.add(name); return { ...cur, [kind]: s }; });
   const save = async () => {
     setBusy("save"); setMsg(null);
@@ -290,10 +292,16 @@ export function ResourceAdmin() {
     catch (x) { setMsg({ ok: false, text: errorText(x) }); }
     setBusy("");
   };
+  if (kind === "widgets") return (
+    <div className="stack" style={{ gap: ".9rem" }}>
+      <Tabs value={kind} onChange={setKind} tabs={tabList} />
+      <WidgetLibrary />
+    </div>
+  );
   return (
     <div className="stack" style={{ gap: ".9rem" }}>
       <p className="muted" style={{ margin: 0 }}>{tx("De map resource van het product bevat de zips van plugins, thema's en talen (alleen de nieuwste versie). Vink aan wat gebruikers met rechten voor dat onderdeel mogen installeren zonder te uploaden; superadmins kunnen alles installeren. Het vinkje komt in resource/allowed.json en gaat met het product mee.")}</p>
-      <Tabs value={kind} onChange={setKind} tabs={Object.keys(lib.kinds).map((k) => [k, lib.titles[k] || k])} />
+      <Tabs value={kind} onChange={setKind} tabs={tabList} />
       {msg && <div className={`alert ${msg.ok ? "ok" : ""}`}>{msg.text}</div>}
       {makeTpl && <TemplateCreate onClose={() => setMakeTpl(false)} onMade={(r) => { setMsg({ ok: true, text: `${tx("De template is gemaakt en staat in resource/templates")}: ${r.made?.name} ${r.made?.version}.${r.made?.skipped?.length ? ` ${tx("Overgeslagen (te groot of ontbreekt)")}: ${r.made.skipped.slice(0, 5).join(", ")}.` : ""}` }); load(); }} />}
       {kind === "templates" && (
