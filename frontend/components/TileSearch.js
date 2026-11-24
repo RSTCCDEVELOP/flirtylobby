@@ -26,6 +26,7 @@ const INDEX = [
   { href: "/dashboard/admin/security", label: "Beveiliging", where: "Admin → Systeem", words: "beveiliging twee stap verificatie 2fa landen cookies verboden woorden blokkeren" },
   { href: "/dashboard/admin/theme", label: "Thema en loader", where: "Admin → Website", words: "thema loader laden kleuren logo lettertype boom" },
   { href: "/dashboard/admin/backups", label: "Backup", where: "Admin → Systeem", words: "backup back-up terugzetten kopie" },
+  { href: "/dashboard/admin/log", label: "Logboek", where: "Admin → Systeem", words: "log logboek logfile logbestand storing storingen fout fouten inloggen uitloggen gebeurtenissen audit bewaartermijn" },
   { href: "/dashboard/admin/languages", label: "Talen", where: "Admin → Systeem", words: "talen taal vertalen standaardtaal" },
   { href: "/dashboard/superadmin/wizard", label: "Installatie en licentie", where: "Super admin", words: "installatie wizard licentie prijs modules plugins", staff: true },
   { href: "/dashboard/superadmin/sites", label: "Site manager", where: "Super admin+", words: "site manager websites easy2edit server bijwerken uitsluiten bomen planten", staff: true },

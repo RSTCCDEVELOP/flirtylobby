@@ -44,6 +44,7 @@ export default function SuperAdminHome() {
       <Collapsible id="super-system" title={tx("Systeem")}>
         <div className="cards" style={{ marginTop: 0 }}>
           <SuperTile href="/dashboard/superadmin/modules" icon={IconGrid} label={tx("Modules")} title={tx("Aan en uit zetten")} text={tx("En bepaal wie ze mag gebruiken")} />
+          <SuperTile href="/dashboard/admin/log" icon={IconGrid} label={tx("Logboek")} title={tx("Storingen en gebeurtenissen volgen")} text={tx("Inloggen, uitloggen, belangrijke acties en fouten van de server; altijd actief")} />
           <SuperTile href="/dashboard/superadmin/vernieuwen" icon={IconRefresh} label={tx("Vernieuwen")} title={tx("Verversing en oproepsignalen")} text={tx("Hoe vaak de pagina's bij de server vragen (seconden)")} />
           <SuperTile href="/dashboard/superadmin/ai" icon={IconBolt} label={tx("AI")} title={tx("Gebruik, kosten en marge")} text={tx("Alle AI-verkeer per gebruiker, groep en onderdeel")} />
           <SuperTile href="/dashboard/superadmin/energy" icon={IconGlobe2} label={tx("Energie")} title={tx("Totaalbeeld van alle websites")} text={tx("Paginagewicht, verzoeken en uitstoot, verzameld via de API")} />

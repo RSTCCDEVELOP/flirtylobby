@@ -30,8 +30,9 @@ EVENTS = {
     "system.reset": ("Website gereset", "Systeem"), "system.log_cleared": ("Logboek geleegd", "Systeem"), "system.log_settings": ("Logboek-instelling gewijzigd", "Systeem"),
     "module.changed": ("Module aan of uit gezet", "Systeem"), "backup.created": ("Backup gemaakt", "Systeem"), "backup.restored": ("Backup teruggezet", "Systeem"),
     "reseller.onboarding": ("Onboarding als reseller", "Inloggen"),
+    "system.error": ("Storing", "Storingen"),  # errors of the server (see handler.py): for superadmins
 }
-CATEGORIES = ["Inloggen", "Gebruikers", "Systeem", "Overig"]
+CATEGORIES = ["Inloggen", "Gebruikers", "Systeem", "Storingen", "Overig"]
 RANKS = {0: "Gebruiker", 1: "Admin", 2: "Superadmin", 3: "Superadmin+"}
 RETENTION_CHOICES = [30, 90, 180, 365, 730, 0]  # days; 0 = unlimited
 DEFAULT_RETENTION = 365

@@ -111,3 +111,33 @@ def test_a_reset_asks_whether_the_log_is_emptied(people, monkeypatch):
     c.post("/api/system/reset/", {"confirm": "RESET", "password": "x", "clear_logs": True}, format="json")
     assert not LogEntry.objects.filter(event="auth.login").exists()  # emptied
     assert LogEntry.objects.filter(event="system.reset", detail="logboek geleegd").count() == 1
+
+
+@pytest.mark.django_db
+def test_errors_of_the_server_become_lines_for_superadmins_once_a_minute(people):
+    import logging
+
+    from django.core.cache import cache
+
+    cache.clear()
+    plain, admin, sup, plus = people
+    lg = logging.getLogger("apps.test_area")
+    h = __import__("apps.auditlog.handler", fromlist=["DbErrorHandler"]).DbErrorHandler()
+    lg.addHandler(h)
+    lg.propagate = False
+    try:
+        lg.warning("only a warning")  # (a warning goes to the file, not to the log of the website)
+        lg.error("De betaling is mislukt voor %s", "order 12")
+        lg.error("De betaling is mislukt voor %s", "order 12")  # the same message: once a minute
+        try:
+            raise ValueError("kapot")
+        except ValueError:
+            lg.exception("Andere storing")
+    finally:
+        lg.removeHandler(h)
+    rows = list(LogEntry.objects.filter(event="system.error").order_by("id"))
+    assert len(rows) == 2 and rows[0].level == 2 and rows[0].target == "apps.test_area" and "order 12" in rows[0].detail and "ValueError: kapot" in rows[1].detail
+    seen = lambda u: [r["event"] for r in _c(u).get("/api/log/").json()["results"]]  # noqa: E731
+    assert "system.error" not in seen(admin)  # a malfunction is for superadmins
+    assert seen(sup).count("system.error") == 2
+    assert "Storingen" in _c(sup).get("/api/log/").json()["categories"]

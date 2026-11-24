@@ -98,6 +98,7 @@ export default function LogPage() {
           {cfg.choices.map((d) => <button type="button" key={d} className={cfg.retention_days === d ? "on" : ""} aria-pressed={cfg.retention_days === d} disabled={!cfg.can_edit || busy} onClick={() => keep(d)}>{days(d)}</button>)}
         </div>
         {!cfg.can_edit && <small className="muted">{tx("Alleen een superadmin kan de bewaartermijn wijzigen.")}</small>}
+        <p className="muted" style={{ marginBottom: 0 }}>{tx("Het logboek staat altijd aan. Fouten van de server staan er als \"Storing\" in (alleen voor superadmins) en worden ook bewaard in het bestand logs/easy2edit.log in de mappen van de website.")}</p>
         {cfg.can_edit && (<>
           <h3 style={{ marginBottom: 0 }}>{tx("Logboek legen")}</h3>
           <p className="muted" style={{ marginTop: 0 }}>{tx("Alleen een superadmin mag het logboek leegmaken. Er blijft één regel over die zegt dat het is gedaan.")}</p>

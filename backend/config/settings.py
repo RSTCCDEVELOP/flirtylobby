@@ -213,12 +213,24 @@ else:
 
 # ── Logging ─────────────────────────────────────────────────────────────────
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+_LOG_DIR = Path(os.getenv("LOG_DIR") or _site_path("logs", BASE_DIR / "logs"))
+try:
+    _LOG_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:  # a folder that cannot be made: the file handler then writes nowhere (the console and the log of the website still work)
+    pass
+_LOG_FILE = _LOG_DIR / "easy2edit.log"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {"std": {"format": "%(asctime)s %(levelname)s %(name)s: %(message)s"}},
     "filters": {"quiet_polls": {"()": "config.logfilters.QuietPolls"}},
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "std", "filters": ["quiet_polls"]}},
-    "loggers": {"django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False}},  # with the filter that leaves out the polling addresses (and without Django's own second line)
-    "root": {"handlers": ["console"], "level": LOG_LEVEL},
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "std", "filters": ["quiet_polls"]},
+        # the errors of the server also go into the log of the website (Logboek, lines "Storing" for superadmins) and into a file that is always written: <site>/logs/easy2edit.log
+        "auditlog": {"class": "apps.auditlog.handler.DbErrorHandler", "level": "ERROR"},
+        "file": {"class": "logging.handlers.RotatingFileHandler", "formatter": "std", "level": "WARNING", "filename": str(_LOG_FILE), "maxBytes": 2_000_000, "backupCount": 5, "encoding": "utf-8", "delay": True, "filters": ["quiet_polls"]},
+    },
+    "loggers": {"django.request": {"handlers": ["console", "auditlog", "file"], "level": "WARNING", "propagate": False}},  # with the filter that leaves out the polling addresses (and without Django's own second line)
+    "root": {"handlers": ["console", "auditlog", "file"], "level": LOG_LEVEL},
 }
