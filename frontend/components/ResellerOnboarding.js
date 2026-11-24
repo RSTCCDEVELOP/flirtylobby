@@ -14,7 +14,6 @@ import { api, errorText, setToken } from "../lib/api";
 import { homeAfterLogin } from "../lib/levelHome";
 import { tx } from "../lib/t";
 import CodeInput from "./CodeInput";
-import SuggestPassword from "./SuggestPassword";
 
 // An installation that is still empty (no users at all): a button starts the onboarding as a reseller of easy2edit. The master site (easy2edit) looks up the reseller by e-mail address
 // and sends a code; with the right code the person becomes the first superuser of this installation and the onboarding goes on (installation, design ...).
@@ -27,8 +26,6 @@ export default function ResellerOnboarding() {
   const [email, setEmail] = useState("");
   const [ch, setCh] = useState(null);        // {challenge, hint}
   const [code, setCode] = useState("");
-  const [pw, setPw] = useState("");
-  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => {
@@ -50,7 +47,7 @@ export default function ResellerOnboarding() {
     e.preventDefault();
     setBusy(true); setErr("");
     try {
-      const r = await api("/system/first-run/verify/", { method: "POST", body: { challenge: ch.challenge, code, password: pw } });
+      const r = await api("/system/first-run/verify/", { method: "POST", body: { challenge: ch.challenge, code } });
       setToken(r.token);
       router.push(await homeAfterLogin());
     } catch (x) { setErr(errorText(x)); setBusy(false); }
@@ -82,11 +79,9 @@ export default function ResellerOnboarding() {
             <form className="form" onSubmit={verify}>
               <p className="muted" style={{ marginTop: 0 }}>{tx("Als dit adres bij een reseller hoort, is er een code gestuurd naar")} <strong>{ch?.hint}</strong>.</p>
               <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!err} /></div>
-              <label>{tx("Kies een wachtwoord (minstens 10 tekens)")}<input type={show ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" minLength={10} required /></label>
-              <SuggestPassword onPick={(p) => { setPw(p); setShow(true); }} />
-              <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /><span /></span><span>{tx("Toon wachtwoord")}</span></label>
+              <p className="muted" style={{ margin: 0 }}>{tx("Na de code log je in met het wachtwoord van je reseller-login bij easy2edit. Heb je daar nog geen login, dan maakt easy2edit er een en mailt het wachtwoord naar je. Verandert je wachtwoord daar, dan verandert het hier mee.")}</p>
               {err && <div className="alert">{err}</div>}
-              <div className="row"><button type="button" className="btn" onClick={() => { setStep("email"); setErr(""); }}>{tx("Terug")}</button><button className="btn primary" disabled={busy || code.length < 6 || pw.length < 10}>{busy ? tx("Bezig…") : tx("Aanmelden en beginnen")}</button></div>
+              <div className="row"><button type="button" className="btn" onClick={() => { setStep("email"); setErr(""); }}>{tx("Terug")}</button><button className="btn primary" disabled={busy || code.length < 6}>{busy ? tx("Bezig…") : tx("Aanmelden en beginnen")}</button></div>
             </form>
           )}
         </div>

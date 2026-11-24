@@ -100,9 +100,23 @@ def verify(challenge, code):
     if not r:
         raise ValueError("Deze reseller is niet meer actief.")
     cache.delete(key)
+    login = login_of(r, ch["person"])
     grant = secrets.token_urlsafe(32)
     cache.set(f"rsignup:grant:{grant}", {"rid": r.pk}, 1800)
-    return {"grant": grant, "person": ch["person"], "reseller": {"id": r.pk, "name": r.name, "email": r.email, "phone": r.phone, "website": r.website, "address": r.address or {}, "kvk": r.kvk, "vat_id": r.vat_id}}
+    return {"grant": grant, "person": ch["person"], "login": login, "reseller": {"id": r.pk, "name": r.name, "email": r.email, "phone": r.phone, "website": r.website, "address": r.address or {}, "kvk": r.kvk, "vat_id": r.vat_id}}
+
+
+def login_of(reseller, person):
+    """After the code: the login of this person at the reseller (made when there is none: the password is made and sent by e-mail). -> {password_hash, name, access}.
+    The installation takes this password over, so the reseller logs in everywhere with the same password (the sync of the logins keeps it the same when it is changed)."""
+    from . import resellers
+    from .models import ResellerLogin
+
+    email = person["email"]
+    x = ResellerLogin.objects.filter(reseller=reseller, email__iexact=email, active=True).first()
+    if not x:
+        x, _pw = resellers.add_login(reseller, email, {"name": person.get("name") or email.split("@")[0], "access": "superadmin"}, send=True)
+    return {"password_hash": x.password_hash, "name": x.name or person.get("name") or "", "access": x.access}
 
 
 def apply_grant(site, grant):
@@ -160,27 +174,32 @@ def is_empty():
     return all(u.is_superadmin_plus or (std and u.email.lower() == std) for u in get_user_model().objects.all())
 
 
-def make_user(person, reseller, password):
-    """The superuser: the verified person (made, or an account with that address becomes a superuser with this password). Only while the installation is still open (checked again inside the transaction)."""
+def make_user(person, login):
+    """The superuser: the verified person, with the password of the reseller login on the master (its hash: the password itself never travels). An account with that address gets that password too
+    (after the code, never before). The account is the one of the sync of the reseller logins, so a password that changes on the master changes here. Only while the installation is open."""
     from django.contrib.auth import get_user_model
     from django.db import transaction
 
+    from .resellers import MARKER
+
     User = get_user_model()
     email = _email((person or {}).get("email"))
+    h = str((login or {}).get("password_hash") or "")
     if not email:
         raise ValueError("Het e-mailadres van de reseller is onbekend.")
-    if len(str(password or "")) < 10:
-        raise ValueError("Kies een wachtwoord van minstens 10 tekens.")
+    if not h.startswith(("pbkdf2_", "argon2", "bcrypt", "scrypt")):
+        raise ValueError("De easy2edit server gaf geen wachtwoord.")
     with transaction.atomic():
         if not is_empty():
             raise PermissionError("Deze installatie is al ingericht.")
-        name = str((person or {}).get("name") or "").strip()
+        name = str((login or {}).get("name") or (person or {}).get("name") or "").strip()
         first, _, last = name.partition(" ")
-        user = User.objects.filter(email__iexact=email).first()
-        if user:
-            user.is_staff, user.is_superuser, user.is_active = True, True, True
-            user.set_password(password)
-            user.save()
-        else:
-            user = User.objects.create_user(email.split("@")[0][:30] or "reseller", email, password, is_staff=True, is_superuser=True, first_name=first[:60], last_name=last[:60])
+        user = User.objects.filter(email__iexact=email).first() or User.objects.filter(username__iexact=email).first()
+        if not user:
+            user = User(username=email, email=email)
+        user.username, user.email = user.username or email, email
+        user.first_name, user.last_name = (first[:60], last[:60]) if name else (user.first_name, user.last_name)
+        user.is_staff, user.is_superuser, user.is_active, user.email_verified, user.function = True, True, True, True, MARKER
+        user.password = h
+        user.save()
     return user

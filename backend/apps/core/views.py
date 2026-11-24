@@ -3610,7 +3610,7 @@ def first_run_send(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def first_run_verify(request):
-    """{challenge, code, password}: the code is checked by the master site; then the person is made the first superuser, this website reports itself as a website of that reseller, and the person is logged in."""
+    """{challenge, code}: the code is checked by the master site; only then the person is made a superuser with the password of the reseller login on the master, this website reports itself as a website of that reseller, and the person is logged in."""
     from rest_framework.authtoken.models import Token
 
     from . import reseller_signup, sitemanager
@@ -3621,7 +3621,7 @@ def first_run_verify(request):
     d = request.data or {}
     try:
         got = reseller_signup.ask("verify", {"challenge": d.get("challenge"), "code": d.get("code")})
-        user = reseller_signup.make_user(got.get("person"), got.get("reseller"), d.get("password"))
+        user = reseller_signup.make_user(got.get("person"), got.get("login"))
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except PermissionError as e:
