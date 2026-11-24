@@ -19,6 +19,16 @@ from apps.medialib.models import MediaItem
 from apps.pages.models import Page, PageLayout
 
 
+@pytest.fixture(autouse=True)
+def _no_browser(monkeypatch):
+    """No test starts a real browser: the pictures of the pages are made by a stand-in."""
+    from apps.core import siteshots
+
+    preset_design._JOBS.clear()
+    monkeypatch.setattr(siteshots, "capture", lambda url, allow_private=False: b"\xff\xd8jpegbytes")
+    monkeypatch.setattr(preset_design, "start_sample", lambda *a, **k: False)
+
+
 def _png(color):
     from PIL import Image
 
@@ -103,6 +113,7 @@ def test_samples_are_made_when_a_page_is_switched_on_and_removed_when_it_is_off(
     settings.CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
     key = presets.PRESETS[0]["key"]
     seen = []
+    monkeypatch.undo()  # (this test makes the pictures, with a stand-in for the browser)
     monkeypatch.setattr(siteshots, "capture", lambda url, allow_private=False: (seen.append((url, allow_private)) or b"\xff\xd8jpegbytes"))
     Page.objects.create(key="over-ons-x", kind="content", title={"nl": "Over ons X"}, source="")
     PageLayout.objects.create(key="over-ons-x", data={"rows": [{"id": "r1aa", "cols": 1, "gap": "md", "cells": [{"id": "c1aa", "items": [{"id": "i1aa", "type": "text", "ref": ""}]}]}]})
@@ -118,3 +129,11 @@ def test_samples_are_made_when_a_page_is_switched_on_and_removed_when_it_is_off(
     assert not (tmp_path / "presets" / key / "design" / "samples" / "over-ons-x.jpg").exists()
     assert APIClient().get(f"/api/system/presets/{key}/samples/over-ons-x.jpg").status_code == 404
     assert preset_design.own_origin(None) == "http://localhost:5173"
+
+
+def test_the_own_website_may_have_another_port_but_a_reference_site_may_not():
+    from apps.core import siteshots
+
+    assert siteshots.clean_url("http://localhost:5173/p/x", True) == "http://localhost:5173/p/x"
+    with pytest.raises(siteshots.ShotError):
+        siteshots.clean_url("http://localhost:5173/p/x")

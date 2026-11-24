@@ -57,7 +57,7 @@ def clean_url(url, allow_private=False):
         raise ShotError("Dit is geen geldig websiteadres (https://…).")
     if p.scheme not in ("http", "https") or not p.hostname or p.username or p.password or len(u) > 300:
         raise ShotError("Dit is geen geldig websiteadres (https://…).")
-    if port not in (None, 80, 443):
+    if port not in (None, 80, 443) and not allow_private:  # (the own website may run on another port, like 5173 on a development computer)
         raise ShotError("Alleen de gewone poorten van een website zijn toegestaan.")
     try:
         infos = socket.getaddrinfo(p.hostname, port or (443 if p.scheme == "https" else 80), type=socket.SOCK_STREAM)
@@ -76,7 +76,7 @@ def _capture_top(url, allow_private=False):
     """The jpeg bytes of the top of the website (1000 px wide): the simple way, used when the whole page can not be made. Raises ShotError."""
     from PIL import Image
 
-    u = clean_url(url, allow_private)
+    u = clean_url(url, True) if allow_private else clean_url(url)
     exe = browser()
     if not exe:
         raise ShotError("Op de server is geen browser (Chrome of Chromium) om een afbeelding van een website te maken.")
@@ -184,7 +184,7 @@ def capture(url, allow_private=False):
     """The jpeg bytes of the WHOLE page of the website (1000 px wide, as high as the page is, at most about 9000 px). When that does not work: the top of the page. Raises ShotError."""
     from PIL import Image
 
-    u = clean_url(url, allow_private)
+    u = clean_url(url, True) if allow_private else clean_url(url)
     if not browser():
         raise ShotError("Op de server is geen browser (Chrome of Chromium) om een afbeelding van een website te maken.")
     try:
