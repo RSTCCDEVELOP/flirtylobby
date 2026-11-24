@@ -303,6 +303,8 @@ SCHEMA = [
         choice("header_side_unit", "Zijmenu: vanaf (eenheid)", "pct", None, HEADER_STICKY_UNITS),
         number("header_side_pct", "Zijmenu: vanaf (procent van het scherm)", 15, None, "%", 0, 200, 5),
         number("header_side_px", "Zijmenu: vanaf (pixels)", 300, None, "px", 0, 1500, 10),
+        number("side_button_y", "Zijmenu: positie van de knop (% van de schermhoogte)", 6, "--side-btn-y", "", 0, 100, 1),
+        number("side_menu_y", "Zijmenu: positie van het menu (% van de schermhoogte)", 0, "--side-menu-y", "", 0, 60, 1),
         number("page_start", "Pagina begint onder het menu (fijn afstellen)", 0, "--page-start", "px", -200, 400, 4),
         number("hero_start", "Hero begint onder het menu (fijn afstellen)", 0, "--hero-start", "px", -200, 400, 4),
         choice("header_width", "Header: breedte", "content", None, HEADER_WIDTHS),

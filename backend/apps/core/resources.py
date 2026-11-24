@@ -433,7 +433,7 @@ def update_all(kind, user):
 # ── making and removing themes of the library ────────────────────────────────
 THEME_KEYS = ["primary", "secondary", "light_page", "light_bg", "light_card", "light_hover", "light_line", "light_text", "light_muted",
               "dark_page", "dark_bg", "dark_card", "dark_hover", "dark_line", "dark_text", "dark_muted", "font_body", "font_heading", "radius", "btn_radius", "shadow",
-              "header_layout", "header_style", "header_sticky", "header_sticky_unit", "header_sticky_pct", "header_sticky_px", "header_side", "header_side_unit", "header_side_pct", "header_side_px", "page_start", "hero_start", "menu_style", "footer_layout", "footer_tone", "footer_brand", "block_style", "block_gap", "content_w", "heading_weight", "tab_style", "system_popup"]
+              "header_layout", "header_style", "header_sticky", "header_sticky_unit", "header_sticky_pct", "header_sticky_px", "header_side", "header_side_unit", "header_side_pct", "header_side_px", "side_button_y", "side_menu_y", "page_start", "hero_start", "menu_style", "footer_layout", "footer_tone", "footer_brand", "block_style", "block_gap", "content_w", "heading_weight", "tab_style", "system_popup"]
 
 
 def _slug(name):

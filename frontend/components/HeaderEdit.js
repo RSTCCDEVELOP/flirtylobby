@@ -75,7 +75,8 @@ export default function HeaderEdit() {
   const setStart = (key, n) => {  // where the page and the hero begin under the menu: follows the slider at once
     const values = { ...theme.values, [key]: n };
     setTheme({ ...theme, values });
-    document.documentElement.style.setProperty(key === "page_start" ? "--page-start" : "--hero-start", `${n}px`);
+    const VAR = { page_start: ["--page-start", "px"], hero_start: ["--hero-start", "px"], side_button_y: ["--side-btn-y", ""], side_menu_y: ["--side-menu-y", ""] }[key];
+    if (VAR) document.documentElement.style.setProperty(VAR[0], `${n}${VAR[1]}`);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(values), 400);
   };
@@ -212,6 +213,19 @@ export default function HeaderEdit() {
                         <small className="muted">{tx("Zo ver moet de bezoeker scrollen voordat de header een zijmenu wordt. Met de pijl aan de rand open en sluit je het menu. In de bewerkmodus blijft de header staan.")}</small>
                       </div>
                     </>)}
+                  </section>
+                  <section className="hed-card">
+                    <h4>{tx("Positie")}</h4>
+                    {[["side_button_y", "Positie van de knop", "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%)."], ["side_menu_y", "Positie van het menu", "Hoe ver het menu van boven begint, als percentage van de schermhoogte."]].map(([k, l, d]) => {
+                      const f = fields.find((x) => x.key === k); if (!f) return null;
+                      const n = Number(theme.values[k] ?? f.default);
+                      return (
+                        <div className="hed-field" key={k}><span className="hed-lbl">{tx(l)}<b className="hed-val">{n}%</b></span>
+                          <input type="range" min={f.min} max={f.max} step={f.step || 1} value={n} onChange={(e) => setStart(k, Number(e.target.value))} aria-label={tx(l)} />
+                          <small className="muted">{tx(d)}</small>
+                        </div>
+                      );
+                    })}
                   </section>
                 </div>
               );

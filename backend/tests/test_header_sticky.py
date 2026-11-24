@@ -38,4 +38,6 @@ def test_the_side_menu_and_the_start_of_the_page_and_the_hero():
     assert f["page_start"]["css"] == "--page-start" and f["hero_start"]["css"] == "--hero-start"
     css, _ = theme.build({**{k: f["default"] for k, f in theme.FIELDS.items()}, "page_start": 24})
     assert "--page-start:24px" in css
-    assert {"header_side", "header_side_unit", "header_side_pct", "header_side_px", "page_start", "hero_start"} <= set(themepacks.COMPLETE_KEYS)
+    assert {"header_side", "header_side_unit", "header_side_pct", "header_side_px", "page_start", "hero_start", "side_button_y", "side_menu_y"} <= set(themepacks.COMPLETE_KEYS)
+    assert theme.validate({"side_button_y": 40, "side_menu_y": 20})[0] == {"side_button_y": 40, "side_menu_y": 20}  # the position of the arrow and of the menu of the side menu (% of the screen height)
+    assert theme.validate({"side_button_y": 101})[1] and theme.validate({"side_menu_y": 61})[1]

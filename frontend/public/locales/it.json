@@ -8996,5 +8996,11 @@
   "Zijmenu: vanaf (pixels)": "Menu laterale: da (pixel)",
   "Pagina begint onder het menu (fijn afstellen)": "La pagina inizia sotto il menu (regolazione fine)",
   "Hero begint onder het menu (fijn afstellen)": "L'hero inizia sotto il menu (regolazione fine)",
-  "Zo ver moet de bezoeker scrollen voordat de header een zijmenu wordt. Met de pijl aan de rand open en sluit je het menu. In de bewerkmodus blijft de header staan.": "Quanto deve scorrere il visitatore prima che l'header diventi un menu laterale. Con la freccia sul bordo apri e chiudi il menu. In modalità modifica l'header resta fermo."
+  "Zo ver moet de bezoeker scrollen voordat de header een zijmenu wordt. Met de pijl aan de rand open en sluit je het menu. In de bewerkmodus blijft de header staan.": "Quanto deve scorrere il visitatore prima che l'header diventi un menu laterale. Con la freccia sul bordo apri e chiudi il menu. In modalità modifica l'header resta fermo.",
+  "Positie van de knop": "Posizione del pulsante",
+  "Positie van het menu": "Posizione del menu",
+  "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%).": "Dove si trova la freccia sul bordo dello schermo, dall'alto (0%) al basso (100%).",
+  "Hoe ver het menu van boven begint, als percentage van de schermhoogte.": "A che distanza dall'alto inizia il menu, come percentuale dell'altezza dello schermo.",
+  "Zijmenu: positie van de knop (% van de schermhoogte)": "Menu laterale: posizione del pulsante (% dell'altezza dello schermo)",
+  "Zijmenu: positie van het menu (% van de schermhoogte)": "Menu laterale: posizione del menu (% dell'altezza dello schermo)"
 }
