@@ -24,6 +24,9 @@ class Command(BaseCommand):
         from apps.accounts import superplus
 
         superplus.ensure()  # the standard superadmin+ accounts (also when no admin is set in the environment)
+        made = superplus.ensure_recovery()  # no superadmin at all: the recovery superadmin (stored encrypted) is made
+        if made:
+            self.stdout.write(f"ensure_admin: no superadmin existed: {made} made from the stored credentials.")
         if reset.stored_admin():  # the standard superadmin was set in Super admin: that one counts (it is made again when it is gone)
             email = reset.stored_admin()["email"]
             if not User.objects.filter(email__iexact=email).exists():

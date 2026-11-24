@@ -320,6 +320,9 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, 
         # users of the site go (their photos, profiles, messages ... follow); the superadmins stay
         User.objects.filter(is_staff=False).exclude(pk__in=list(keep_ids)).delete()
         removed["admin"] = standard_admin("delete" if delete_superadmins else "keep")  # the standard superadmin is made again; the other superadmins stay or go
+        from apps.accounts import superplus as _sp
+
+        removed["recovery_admin"] = _sp.ensure_recovery()  # no superadmin left at all: the recovery superadmin (stored encrypted) is made
         removed["kept_admins"] = len(keep_ids)
         # pages and blocks; the built-in pages come back as they were
         PageLayout.objects.all().delete()

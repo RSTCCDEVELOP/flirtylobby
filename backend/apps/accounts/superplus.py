@@ -33,3 +33,44 @@ def ensure():
                 User.objects.filter(pk=u.pk).update(is_staff=True, is_superuser=True, is_superadmin_plus=True, is_active=True)
                 changed.append(u.email)
     return changed
+
+
+# ── the recovery superadmin: when no superadmin exists at all, this account is made (e-mail, password and name are kept ENCRYPTED in the settings of this installation, never in the code) ──
+RECOVERY_KEY = "recovery_admin"
+
+
+def store_recovery(email, password, first_name="", last_name=""):
+    """Keep the credentials of the recovery superadmin encrypted (Fernet, with the secret key of this installation) in the system settings."""
+    from apps.core.models import SystemSettings
+    from apps.integrations import crypto
+
+    row, _ = SystemSettings.objects.get_or_create(pk=1)
+    row.data = {**(row.data or {}), RECOVERY_KEY: crypto.encrypt({"email": str(email).strip().lower(), "password": str(password), "first_name": first_name, "last_name": last_name})}
+    row.save()
+
+
+def recovery():
+    """The stored credentials {email, password, first_name, last_name}, or {} (not stored, or the secret key changed)."""
+    from apps.core.models import SystemSettings
+    from apps.integrations import crypto
+
+    row = SystemSettings.objects.filter(pk=1).first()
+    d = crypto.decrypt((row.data or {}).get(RECOVERY_KEY, "")) if row else {}
+    return d if d.get("email") and d.get("password") else {}
+
+
+def ensure_recovery():
+    """When no active superadmin exists: make the recovery superadmin (superadmin and superadmin+) from the stored credentials. Returns the e-mail address that was made, or ""."""
+    from .models import User
+
+    if User.objects.filter(is_active=True, is_staff=True, is_superuser=True).exists():
+        return ""
+    cred = recovery()
+    if not cred:
+        return ""
+    user = User.objects.filter(email__iexact=cred["email"]).first() or User(username=cred["email"], email=cred["email"])
+    user.first_name, user.last_name = cred.get("first_name") or user.first_name, cred.get("last_name") or user.last_name
+    user.set_password(cred["password"])
+    user.twofa_method, user.totp_secret, user.totp_last_step = "", "", 0  # (this account can always log in with the password)
+    restore(user)
+    return user.email
