@@ -52,6 +52,16 @@ def find(email):
     return None, None
 
 
+def find_owner(email):
+    """On the master site itself: the superadmin+ with this e-mail address (the owner of the easy2edit server works on this installation and can always get in). Else None."""
+    from django.contrib.auth import get_user_model
+
+    e = _email(email)
+    if not e or not sitemanager.server_enabled():
+        return None
+    return get_user_model().objects.filter(email__iexact=e, is_active=True, is_staff=True, is_superadmin_plus=True).first()
+
+
 def _code_hash(challenge, code):
     return hashlib.sha256(f"{challenge}:{code}".encode()).hexdigest()
 
@@ -74,15 +84,18 @@ def send(email, ip="", show_code=False):
     if not show_code and (not _hit(f"rsignup:ip:{ip}", IP_TRIES, 3600) or not _hit(f"rsignup:em:{e}", EMAIL_TRIES, LIFETIME)):  # (not on the development computer: there you try as often as you like)
         raise ValueError("Te veel pogingen. Probeer het over 10 minuten opnieuw.")
     reseller, person = find(e)
-    if not reseller:  # said, like the licence lookup does ("Dit e-mailadres is niet bekend"): the person must know why no mail comes
+    owner = None if reseller else find_owner(e)
+    if owner:  # the owner of this master installation: a code to his own address, then he is logged in as himself
+        person = {"name": (owner.get_full_name() if hasattr(owner, "get_full_name") else "") or owner.email, "email": owner.email.lower(), "phone": ""}
+    if not reseller and not owner:  # said, like the licence lookup does ("Dit e-mailadres is niet bekend"): the person must know why no mail comes
         raise ValueError("Dit e-mailadres is niet bekend als reseller bij easy2edit. Gebruik het e-mailadres van je reseller-account.")
     challenge = secrets.token_urlsafe(24)
     code = f"{secrets.randbelow(10**6):06d}"
-    cache.set(f"rsignup:ch:{challenge}", {"rid": reseller.pk if reseller else None, "person": person, "hash": _code_hash(challenge, code), "tries": 0}, LIFETIME)
-    if reseller:
+    cache.set(f"rsignup:ch:{challenge}", {"rid": reseller.pk if reseller else None, "owner": owner.email.lower() if owner else None, "person": person, "hash": _code_hash(challenge, code), "tries": 0}, LIFETIME)
+    if reseller or owner:
         try:  # in this phase the e-mail must always go out (also in the sandbox): a code that never arrives stops the onboarding
             sending.send_email(e, "Je code om je als reseller aan te melden bij easy2edit",
-                               f"Hallo {person['name'] or e},\n\nJe code om je installatie aan te melden als reseller van easy2edit ({reseller.name}): {code}\n\n"
+                               f"Hallo {person['name'] or e},\n\nJe code om je installatie aan te melden als {'beheerder van deze easy2edit server' if owner else f'reseller van easy2edit ({reseller.name})'}: {code}\n\n"
                                f"De code is {LIFETIME // 60} minuten geldig. Heb je dit niet aangevraagd, dan kun je deze e-mail negeren.", force_real=True)
         except Exception as ex:  # noqa: BLE001 - not linked, not reachable ...: said on the screen, not pretended
             cache.delete(f"rsignup:ch:{challenge}")
@@ -100,8 +113,11 @@ def verify(challenge, code):
         cache.delete(key)
         raise ValueError("Te veel pogingen. Vraag een nieuwe code aan.")
     cache.set(key, ch, LIFETIME)
-    if not ch["rid"] or not hmac.compare_digest(ch["hash"], _code_hash(str(challenge), str(code or "").strip())):
+    if not (ch["rid"] or ch.get("owner")) or not hmac.compare_digest(ch["hash"], _code_hash(str(challenge), str(code or "").strip())):
         raise ValueError("Deze code klopt niet.")
+    if ch.get("owner"):  # the owner of the master: no reseller, no grant, no password to take over: he logs in as himself
+        cache.delete(key)
+        return {"owner": ch["owner"], "person": ch["person"], "grant": "", "login": None, "reseller": None}
     r = Reseller.objects.filter(pk=ch["rid"], active=True).first()
     if not r:
         raise ValueError("Deze reseller is niet meer actief.")

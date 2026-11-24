@@ -3625,6 +3625,14 @@ def first_run_verify(request):
     d = request.data or {}
     try:
         got = reseller_signup.ask("verify", {"challenge": d.get("challenge"), "code": d.get("code")})
+        if got.get("owner"):  # the owner of the master site: he logs in as himself (his password stays as it is); there is no reseller to link
+            from django.contrib.auth import get_user_model
+
+            user = get_user_model().objects.filter(email__iexact=got["owner"], is_active=True, is_staff=True, is_superadmin_plus=True).first()
+            if not user or not sitemanager.server_enabled():
+                return Response({"detail": "Deze aanmelding is niet toegestaan."}, status=status.HTTP_403_FORBIDDEN)
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({"token": token.key, "email": user.email, "reseller": ""})
         user = reseller_signup.make_user(got.get("person"), got.get("login"))
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

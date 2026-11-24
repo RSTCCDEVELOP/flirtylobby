@@ -162,3 +162,19 @@ def test_on_the_development_computer_there_is_no_limit_on_asking_for_a_code(mast
     cache.clear()
     codes = [c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json", HTTP_HOST="localhost").status_code for _ in range(8)]
     assert 400 in codes  # a real site keeps the limit
+
+
+@pytest.mark.django_db
+def test_the_owner_of_the_master_gets_in_as_himself(django_user_model, master):
+    owner = django_user_model.objects.create_user("ronald", "ronald@rstcc.net", "mijn-wachtwoord-1!", is_staff=True, is_superuser=True)
+    owner.is_superadmin_plus = True
+    owner.save()
+    c = APIClient()
+    ch = c.post("/api/system/first-run/send/", {"email": "Ronald@rstcc.net"}, format="json").json()["challenge"]
+    assert master and master[-1][0] == "ronald@rstcc.net"
+    ok = c.post("/api/system/first-run/verify/", {"challenge": ch, "code": _code(master)}, format="json")
+    assert ok.status_code == 200 and ok.json()["token"] and ok.json()["email"] == "ronald@rstcc.net"
+    owner.refresh_from_db()
+    assert owner.check_password("mijn-wachtwoord-1!")  # (nothing changed)
+    # an ordinary address that is no reseller still gets nothing; and on a site that is not the master the owner path does not exist
+    assert c.post("/api/system/first-run/send/", {"email": "iemand@rstcc.net"}, format="json").status_code == 400
