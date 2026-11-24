@@ -67,7 +67,7 @@ export default function WidgetLibrary() {
       <WidgetCategories tree={tree} total={shown.length} cat={cat} sub={sub} onCat={setCat} onSub={setSub} />
       <div className={view === "list" ? "wl-list" : "wl-grid"}>
         {groups.map((g) => [
-          <h4 key={`h-${g.cat}:${g.sub}`} className="wc-head wl-headrow"><b>{tx(g.cat)}</b>{g.sub && <span>› {tx(g.sub)}</span>}<span>({g.items.length})</span></h4>,
+          groups.length === 1 ? <h4 key={`h-${g.cat}:${g.sub}`} className="wc-head wl-headrow"><b>{tx(g.cat)}</b>{g.sub && <span>› {tx(g.sub)}</span>}<span>({g.items.length})</span></h4> : null,  // one flowing grid when all categories show: the chips on the tiles say the category
           ...g.items.map((w) => (
             <article key={w.key} className={`wl-card${w.installed ? " on" : ""}`}>
               <div className="wl-prev"><div className="wl-prev-in"><WidgetFrame doc={w.installed ? w.doc : w.example_doc} height={Math.min(w.height, 200)} inert title={w.name} /></div></div>
