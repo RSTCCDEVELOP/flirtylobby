@@ -3,7 +3,7 @@
   "name": "Klantquotes",
   "description": "Een quote met naam en functie die elke paar seconden wisselt, met bolletjes om zelf te kiezen. Tot vijf quotes.",
   "version": "1.0.0",
-  "category": "Vertrouwen",
+  "category": "Uitleg en vertrouwen",
   "height": 250,
   "options": [
     {
@@ -34,5 +34,6 @@
       "default": "#f2823f"
     }
   ],
-  "example": {}
+  "example": {},
+  "subcategory": "Reviews"
 }

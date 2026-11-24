@@ -3,7 +3,7 @@
   "name": "Stappenplan",
   "description": "Drie of vier genummerde stappen \"Zo werkt het\", met een lijn die zich opbouwt als het widget in beeld komt.",
   "version": "1.0.0",
-  "category": "Uitleg",
+  "category": "Uitleg en vertrouwen",
   "height": 420,
   "options": [
     {
@@ -83,5 +83,6 @@
       "default": "#f2823f"
     }
   ],
-  "example": {}
+  "example": {},
+  "subcategory": "Stappen"
 }

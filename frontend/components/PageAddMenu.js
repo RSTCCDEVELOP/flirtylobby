@@ -16,6 +16,7 @@ import { loadKit } from "../lib/ui-kit/kitDoc";
 import MediaLibraryPanel from "./MediaLibraryPanel";
 import Loading from "./Loading";
 import WidgetFrame from "./WidgetFrame";
+import WidgetCategories, { widgetGroups, widgetTree } from "./WidgetCategories";
 import { matches } from "../lib/useView";
 
 // One-colour icons (they follow the colour of the text)
@@ -77,6 +78,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
   const find = q.trim().toLowerCase();
   const match = (l, d) => matches(q, l, d);
   const widgetItems = (objectGroups || []).flatMap((g) => g.items).filter((o) => o.kind === "widget");  // the installed widgets: each with its example, to click or drag onto the page
+  const [wCat, setWCat] = useState(""); const [wSub, setWSub] = useState("");  // the chosen category and sub category of the widgets
   const tabs = [...GROUPS.map(([k, l]) => [k, l]), ["componenten", "Componenten"], ...(widgetItems.length ? [["widgets", "Widgets"]] : []), ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
   const tile = ([type, widget, label, desc, icon]) => (
     <button type="button" key={`${type}-${widget}`} className="pb-addtile" onClick={() => onAdd(type, widget)} {...dragProps({ kind: "basic", type, widget })}>
@@ -151,16 +153,29 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
             {GROUPS.filter(([k]) => k === tab).map(([k, , items]) => <div className="pb-addgrid" key={k}>{items.map(tile)}</div>)}
             {tab === "opmaak" && colsRow}
             {tab === "componenten" && compList}
-            {tab === "widgets" && (
-              <div className="pb-widgetgrid">
-                {widgetItems.map((o) => (
-                  <button type="button" key={o.slug} className="pb-widgettile" onClick={() => onObject && onObject(o.slug)} title={o.desc || o.name} {...dragProps({ kind: "object", slug: o.slug })}>
-                    <span className="pb-widgetprev"><WidgetFrame doc={o.doc} height={Math.min(o.height || 160, 190)} inert title={o.name} /></span>
-                    <span className="pb-addtext"><strong>{o.name}</strong>{o.desc && <small>{o.desc}</small>}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {tab === "widgets" && (() => {
+              const gc = (o) => o.cat, gs = (o) => o.sub;
+              const tree = widgetTree(widgetItems, gc, gs);
+              const groups = widgetGroups(widgetItems, gc, gs, wCat, wSub);
+              return (
+                <div>
+                  <WidgetCategories tree={tree} total={widgetItems.length} cat={wCat} sub={wSub} onCat={setWCat} onSub={setWSub} />
+                  {groups.map((g) => (
+                    <div key={`${g.cat}:${g.sub}`}>
+                      <h4 className="wc-head"><b>{tx(g.cat)}</b>{g.sub && <span>› {tx(g.sub)}</span>}</h4>
+                      <div className="pb-widgetgrid">
+                        {g.items.map((o) => (
+                          <button type="button" key={o.slug} className="pb-widgettile" onClick={() => onObject && onObject(o.slug)} title={o.desc || o.name} {...dragProps({ kind: "object", slug: o.slug })}>
+                            <span className="pb-widgetprev"><WidgetFrame doc={o.doc} height={Math.min(o.height || 160, 190)} inert title={o.name} /></span>
+                            <span className="pb-addtext"><strong>{o.name}</strong>{o.desc && <small>{o.desc}</small>}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
             {tab === "media" && objectGroups && onObject && (
               <div className="pb-mediaobjs">
                 <h4 style={{ margin: ".9rem 0 .3rem" }}>

@@ -3,7 +3,7 @@
   "name": "Lopende tekst",
   "description": "Een tekst die over de pagina schuift, bijvoorbeeld voor een aanbieding of nieuws.",
   "version": "1.0.0",
-  "category": "Tekst",
+  "category": "Verkoop",
   "height": 70,
   "options": [
     {
@@ -34,5 +34,6 @@
       "default": "#ffffff"
     }
   ],
-  "example": {}
+  "example": {},
+  "subcategory": "Aanbiedingen"
 }

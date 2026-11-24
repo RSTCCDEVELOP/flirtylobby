@@ -7,7 +7,7 @@
 
 """The widgets: small parts (a countdown, a clock, a ticker ...) that an admin installs from the library and that an editor puts on a page like any system object.
 
-Library:   <source>/widgets/<key>/widget.json   {key, name, description, version, category, height, options: [{key, label, type, default, ...}], example: {option: value}}
+Library:   <source>/widgets/<key>/widget.json   {key, name, description, version, category, subcategory, height, options: [{key, label, type, default, ...}], example: {option: value}}
            widget.html, widget.css, widget.js   {{option}} in the html and the css is replaced by the (escaped) value; the js reads window.WIDGET (the values) and window.WIDGET_KEY
 Installed: InstalledWidget (key, enabled, options): the admin installs and removes; the options he sets apply everywhere the widget is shown.
 A widget runs inside a sandboxed iframe (scripts only, no access to the page, the cookies or the login) and tells its height to the page (postMessage).
@@ -59,7 +59,7 @@ def manifest(key):
     if not isinstance(d, dict) or d.get("key") != key or not str(d.get("name") or "").strip() or not _read(key, "widget.html").strip():
         return None
     opts = [x for x in (_clean_option(o) for o in d.get("options") or []) if x]
-    return {"key": key, "name": str(d["name"])[:60], "description": str(d.get("description") or "")[:300], "version": str(d.get("version") or "1.0.0")[:20], "category": str(d.get("category") or "Overig")[:30],
+    return {"key": key, "name": str(d["name"])[:60], "description": str(d.get("description") or "")[:300], "version": str(d.get("version") or "1.0.0")[:20], "category": str(d.get("category") or "Overig")[:30], "subcategory": str(d.get("subcategory") or "")[:30],
             "height": min(max(int(d.get("height") or 220), 40), 1200), "options": opts, "example": d.get("example") if isinstance(d.get("example"), dict) else {}}
 
 
@@ -72,7 +72,7 @@ def library():
             m = manifest(p.name) if p.is_dir() else None
             if m:
                 out.append(m)
-    return sorted(out, key=lambda m: (m["category"], m["name"]))
+    return sorted(out, key=lambda m: (m["category"], m["subcategory"], m["name"]))
 
 
 def defaults(m):

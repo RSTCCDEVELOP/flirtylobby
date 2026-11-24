@@ -3,7 +3,7 @@
   "name": "WhatsApp-knop",
   "description": "Een knop die WhatsApp opent met jouw nummer en een vooringevuld bericht.",
   "version": "1.0.0",
-  "category": "Contact",
+  "category": "Bedrijf",
   "height": 90,
   "options": [
     {
@@ -47,5 +47,6 @@
       "default": "#25d366"
     }
   ],
-  "example": {}
+  "example": {},
+  "subcategory": "Contact"
 }

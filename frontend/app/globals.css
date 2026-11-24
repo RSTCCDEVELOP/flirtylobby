@@ -4980,13 +4980,25 @@ html[data-pbbar="1"] .pb { margin-top: 3.2rem; }
 
 /* widgets: the tab in the page editor (an example of each, to click or drag) */
 .pb-widgetgrid { display: grid; grid-template-columns: 1fr; gap: .6rem; }
-.pb-widgettile { display: flex; flex-direction: column; gap: .35rem; text-align: left; padding: .5rem; border-radius: 10px; border: 1px solid var(--line); background: var(--card, #fff); color: inherit; font: inherit; cursor: grab; }
+.pb-widgettile { display: flex; flex-direction: column; gap: .4rem; text-align: left; padding: .55rem; border-radius: 14px; border: 1px solid var(--line); background: var(--card, #fff); color: inherit; font: inherit; cursor: grab; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: transform .15s, box-shadow .15s, border-color .15s; } .pb-widgettile:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.1); }
 .pb-widgettile:hover { border-color: var(--blue); }
 .pb-widgetprev { display: block; max-height: 190px; overflow: hidden; border-radius: 8px; background: color-mix(in srgb, var(--blue) 4%, transparent); pointer-events: none; }
 
-/* the library of the widgets (Admin > Thema > Widgets) */
-.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; }
-.wl-card { display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; border: 1px solid var(--line); background: var(--card, #fff); } .wl-card.on { border-color: color-mix(in srgb, #2f9e6a 55%, var(--line)); }
-.wl-prev { padding: .5rem; min-height: 120px; background: color-mix(in srgb, var(--blue) 5%, transparent); border-bottom: 1px solid var(--line); overflow: hidden; max-height: 230px; }
-.wl-body { display: flex; flex-direction: column; gap: .45rem; padding: .75rem .85rem .85rem; }
-.wl-opts { display: flex; flex-direction: column; gap: .6rem; padding-top: .6rem; margin-top: .2rem; border-top: 1px solid var(--line); } .wl-opts label { display: flex; flex-direction: column; gap: .25rem; font-size: .82rem; font-weight: 600; } .wl-opts label.hed-sw { flex-direction: row; align-items: center; gap: .6rem; }
+/* the library of the widgets (Admin > Thema > Widgets): tiles of the same size, the example in a framed window, the button centred at the bottom */
+.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; align-items: stretch; }
+.wl-card { display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--card, #fff); box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: transform .18s, box-shadow .18s, border-color .18s; }
+.wl-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.1); border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
+.wl-card.on { border-color: color-mix(in srgb, #2f9e6a 55%, var(--line)); }
+.wl-prev { position: relative; height: 200px; padding: .7rem; background: linear-gradient(160deg, color-mix(in srgb, var(--blue) 7%, transparent), color-mix(in srgb, var(--blue) 2%, transparent)); border-bottom: 1px solid var(--line); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.wl-prev::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 36px; pointer-events: none; background: linear-gradient(transparent, var(--card, #fff)); opacity: .9; }
+.wl-prev-in { width: 100%; max-height: 100%; overflow: hidden; border-radius: 10px; }
+.wl-body { flex: 1; display: flex; flex-direction: column; gap: .4rem; padding: .85rem 1rem .5rem; }
+.wl-title { display: flex; align-items: center; justify-content: space-between; gap: .5rem; font-size: 1.02rem; } .wl-dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 800; background: color-mix(in srgb, #2f9e6a 18%, transparent); color: #1f7a4f; }
+.wl-meta { display: flex; flex-wrap: wrap; gap: .3rem; } .wl-chip { font-size: .68rem; font-weight: 700; letter-spacing: .04em; padding: .12rem .55rem; border-radius: 999px; background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--blue); } .wl-chip.sub { background: color-mix(in srgb, currentColor 8%, transparent); color: inherit; opacity: .75; }
+.wl-desc { opacity: .72; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.wl-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; padding: .6rem 1rem 1rem; }
+.wl-install { min-width: 150px; justify-content: center; }
+.wl-opts { display: flex; flex-direction: column; gap: .6rem; padding-top: .6rem; margin-top: .3rem; border-top: 1px solid var(--line); } .wl-opts label { display: flex; flex-direction: column; gap: .25rem; font-size: .82rem; font-weight: 600; } .wl-opts label.hed-sw { flex-direction: row; align-items: center; gap: .6rem; }
+.wc { display: flex; flex-direction: column; gap: .4rem; } .wc-row { flex-wrap: wrap; width: auto; } .wc-row small { opacity: .65; font-weight: 600; margin-left: .15rem; }
+.wc-sub { background: transparent; padding: 0; } .wc-sub button { border: 1px solid var(--line); background: var(--card, #fff); padding: .3rem .65rem; font-size: .8rem; } .wc-sub button.on { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 14%, transparent); color: inherit; }
+.wc-head { margin: .9rem 0 .4rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; opacity: .7; display: flex; gap: .4rem; align-items: baseline; } .wc-head b { opacity: .9; }

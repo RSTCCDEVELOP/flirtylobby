@@ -111,3 +111,14 @@ def test_a_textarea_option_keeps_lines_and_is_limited():
     m = {"options": [{"key": "f", "label": "Kenmerken", "type": "textarea", "default": "a"}]}
     assert widgets.clean_options(m, {"f": "een\r\ntwee"})["f"] == "een\ntwee"
     assert len(widgets.clean_options(m, {"f": "x" * 5000})["f"]) == 1200
+
+
+def test_every_widget_has_a_category_and_a_sub_category_to_find_it_by(settings):
+    settings.SOURCE_DIR = __import__("pathlib").Path(__file__).resolve().parents[2] / "source"
+    lib = widgets.library()
+    assert lib and all(m["category"] and m["subcategory"] for m in lib)
+    tree = {}
+    for m in lib:
+        tree.setdefault(m["category"], set()).add(m["subcategory"])
+    assert {"Bedrijf", "Verkoop", "Tijd", "Cijfers", "Uitleg en vertrouwen"} <= set(tree)
+    assert [(m["category"], m["subcategory"]) for m in lib] == sorted((m["category"], m["subcategory"]) for m in lib)  # (sorted by category, then sub category)
