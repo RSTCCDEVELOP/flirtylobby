@@ -8940,5 +8940,7 @@
   "{0} regels verwijderd.": "{0} पंक्तियाँ हटाई गईं।",
   "Dit widget is niet gevonden.": "यह विजेट नहीं मिला।",
   "Deze instellingen gelden voor dit widget op alle pagina's.": "ये सेटिंग्स इस विजेट के लिए सभी पेजों पर लागू होती हैं।",
-  "Instellingen van dit widget": "इस विजेट की सेटिंग्स"
+  "Instellingen van dit widget": "इस विजेट की सेटिंग्स",
+  "Uiterlijk": "रूप",
+  "Gedrag": "व्यवहार"
 }

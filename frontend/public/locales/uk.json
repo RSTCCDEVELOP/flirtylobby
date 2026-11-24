@@ -8940,5 +8940,7 @@
   "{0} regels verwijderd.": "Видалено рядків: {0}.",
   "Dit widget is niet gevonden.": "Цей віджет не знайдено.",
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Ці налаштування діють для цього віджета на всіх сторінках.",
-  "Instellingen van dit widget": "Налаштування цього віджета"
+  "Instellingen van dit widget": "Налаштування цього віджета",
+  "Uiterlijk": "Вигляд",
+  "Gedrag": "Поведінка"
 }

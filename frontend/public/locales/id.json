@@ -8940,5 +8940,7 @@
   "{0} regels verwijderd.": "{0} baris dihapus.",
   "Dit widget is niet gevonden.": "Widget ini tidak ditemukan.",
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Pengaturan ini berlaku untuk widget ini di semua halaman.",
-  "Instellingen van dit widget": "Pengaturan widget ini"
+  "Instellingen van dit widget": "Pengaturan widget ini",
+  "Uiterlijk": "Tampilan",
+  "Gedrag": "Perilaku"
 }

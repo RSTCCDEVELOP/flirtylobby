@@ -8940,5 +8940,7 @@
   "{0} regels verwijderd.": "{0}行を削除しました。",
   "Dit widget is niet gevonden.": "このウィジェットが見つかりません。",
   "Deze instellingen gelden voor dit widget op alle pagina's.": "この設定は、すべてのページのこのウィジェットに適用されます。",
-  "Instellingen van dit widget": "このウィジェットの設定"
+  "Instellingen van dit widget": "このウィジェットの設定",
+  "Uiterlijk": "外観",
+  "Gedrag": "動作"
 }

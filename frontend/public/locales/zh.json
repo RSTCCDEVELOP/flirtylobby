@@ -8940,5 +8940,7 @@
   "{0} regels verwijderd.": "已删除 {0} 条记录。",
   "Dit widget is niet gevonden.": "未找到此小部件。",
   "Deze instellingen gelden voor dit widget op alle pagina's.": "这些设置适用于所有页面上的此小部件。",
-  "Instellingen van dit widget": "此小部件的设置"
+  "Instellingen van dit widget": "此小部件的设置",
+  "Uiterlijk": "外观",
+  "Gedrag": "行为"
 }

@@ -8940,5 +8940,7 @@
   "{0} regels verwijderd.": "تم حذف {0} سجلات.",
   "Dit widget is niet gevonden.": "لم يتم العثور على هذا الودجت.",
   "Deze instellingen gelden voor dit widget op alle pagina's.": "تنطبق هذه الإعدادات على هذا الودجت في جميع الصفحات.",
-  "Instellingen van dit widget": "إعدادات هذا الودجت"
+  "Instellingen van dit widget": "إعدادات هذا الودجت",
+  "Uiterlijk": "المظهر",
+  "Gedrag": "السلوك"
 }

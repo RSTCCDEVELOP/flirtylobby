@@ -8940,5 +8940,7 @@
   "{0} regels verwijderd.": "{0} righe eliminate.",
   "Dit widget is niet gevonden.": "Questo widget non è stato trovato.",
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Queste impostazioni valgono per questo widget in tutte le pagine.",
-  "Instellingen van dit widget": "Impostazioni di questo widget"
+  "Instellingen van dit widget": "Impostazioni di questo widget",
+  "Uiterlijk": "Aspetto",
+  "Gedrag": "Comportamento"
 }
