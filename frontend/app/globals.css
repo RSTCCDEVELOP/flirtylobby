@@ -4985,7 +4985,7 @@ html[data-pbbar="1"] .pb { margin-top: 3.2rem; }
 .pb-widgetprev { display: block; max-height: 190px; overflow: hidden; border-radius: 8px; background: color-mix(in srgb, var(--blue) 4%, transparent); pointer-events: none; }
 
 /* the library of the widgets (Admin > Thema > Widgets): tiles of the same size, the example in a framed window, the button centred at the bottom */
-.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; align-items: stretch; }
+.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; align-items: stretch; }
 .wl-card { display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--card, #fff); box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: transform .18s, box-shadow .18s, border-color .18s; }
 .wl-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.1); border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); }
 .wl-card.on { border-color: color-mix(in srgb, #2f9e6a 55%, var(--line)); }
