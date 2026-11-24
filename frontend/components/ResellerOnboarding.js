@@ -62,7 +62,7 @@ export default function ResellerOnboarding() {
     {open && createPortal(
       <div className="overlay" onClick={close}>
         <div className="card modal form" role="dialog" aria-label={tx("Onboarding als reseller")} style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
-          <h2 style={{ marginTop: 0 }}>{tx("Onboarding")}</h2>
+          <h2 style={{ marginTop: 0 }}>{tx("Reseller onboarding")}</h2>
           {step === "ask" && (<>
             <p style={{ marginTop: 0 }}>{tx("Deze installatie is nog leeg. Wil je de onboarding doen voor deze installatie? Je meldt je aan als reseller van easy2edit, daarna richt je de installatie in.")}</p>
             <div className="row"><button type="button" className="btn" onClick={close}>{tx("Nu niet")}</button><button type="button" className="btn primary" onClick={() => setStep("email")}>{tx("Ja, onboarding doen")}</button></div>
@@ -77,7 +77,7 @@ export default function ResellerOnboarding() {
           )}
           {step === "code" && (
             <form className="form" onSubmit={verify}>
-              <p className="muted" style={{ marginTop: 0 }}>{tx("Als dit adres bij een reseller hoort, is er een code gestuurd naar")} <strong>{ch?.hint}</strong>.</p>
+              <p className="muted" style={{ marginTop: 0 }}>{tx("Er is een code gestuurd naar")} <strong>{ch?.hint}</strong>.</p>
               <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!err} kind="owner" onResend={() => send()} /></div>
               <p className="muted" style={{ margin: 0 }}>{tx("Na de code log je in met het wachtwoord van je reseller-login bij easy2edit. Heb je daar nog geen login, dan maakt easy2edit er een en mailt het wachtwoord naar je. Verandert je wachtwoord daar, dan verandert het hier mee.")}</p>
               {err && <div className="alert">{err}</div>}

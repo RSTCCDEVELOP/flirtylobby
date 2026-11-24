@@ -309,14 +309,14 @@ def set_password(x, password="", send=False, site_url=""):
     return password
 
 
-def mail_password(x, password, site_url=""):
+def mail_password(x, password, site_url="", force=False):
     """The e-mail with the login and the password (the reseller should change the password after the first login)."""
     from apps.communication import sending
 
     where = f"\n\nInloggen: {site_url}" if site_url else ""
     body = (f"Hallo {x.name or x.email},\n\nVoor {x.reseller.name} is een login gemaakt voor easy2edit.\n\nGebruikersnaam: {x.email}\nWachtwoord: {password}{where}\n\n"
             "Wijzig je wachtwoord na de eerste keer inloggen.")
-    sending.send_email(x.email, "Je easy2edit login als reseller", body)
+    sending.send_email(x.email, "Je easy2edit login als reseller", body, force_real=force)
 
 
 def public_list(q=""):

@@ -12,7 +12,7 @@ itself to the master with that grant, so the master links the website to that re
 
 Master side:   send(email, ip) -> {challenge, hint}      verify(challenge, code) -> {grant, reseller, person}      apply_grant(site, grant)
 Installation:  ask(step, body) calls the master (or answers itself when this installation IS the master); make_user() makes the first superuser after a verified code.
-Nothing tells whether an address is a reseller: an unknown address gets a challenge too (the code just never comes)."""
+An address that is no reseller is said so ("niet bekend"), so nobody waits for a mail that never comes; asking is limited per address and per ip."""
 import hashlib
 import hmac
 import secrets
@@ -74,13 +74,19 @@ def send(email, ip=""):
     if not _hit(f"rsignup:ip:{ip}", IP_TRIES, 3600) or not _hit(f"rsignup:em:{e}", EMAIL_TRIES, LIFETIME):
         raise ValueError("Te veel pogingen. Probeer het over 10 minuten opnieuw.")
     reseller, person = find(e)
+    if not reseller:  # said, like the licence lookup does ("Dit e-mailadres is niet bekend"): the person must know why no mail comes
+        raise ValueError("Dit e-mailadres is niet bekend als reseller bij easy2edit. Gebruik het e-mailadres van je reseller-account.")
     challenge = secrets.token_urlsafe(24)
     code = f"{secrets.randbelow(10**6):06d}"
     cache.set(f"rsignup:ch:{challenge}", {"rid": reseller.pk if reseller else None, "person": person, "hash": _code_hash(challenge, code), "tries": 0}, LIFETIME)
     if reseller:
-        sending.send_email(e, "Je code om je als reseller aan te melden bij easy2edit",
-                           f"Hallo {person['name'] or e},\n\nJe code om je installatie aan te melden als reseller van easy2edit ({reseller.name}): {code}\n\n"
-                           f"De code is {LIFETIME // 60} minuten geldig. Heb je dit niet aangevraagd, dan kun je deze e-mail negeren.")
+        try:  # in this phase the e-mail must always go out (also in the sandbox): a code that never arrives stops the onboarding
+            sending.send_email(e, "Je code om je als reseller aan te melden bij easy2edit",
+                               f"Hallo {person['name'] or e},\n\nJe code om je installatie aan te melden als reseller van easy2edit ({reseller.name}): {code}\n\n"
+                               f"De code is {LIFETIME // 60} minuten geldig. Heb je dit niet aangevraagd, dan kun je deze e-mail negeren.", force_real=True)
+        except Exception as ex:  # noqa: BLE001 - not linked, not reachable ...: said on the screen, not pretended
+            cache.delete(f"rsignup:ch:{challenge}")
+            raise ValueError(f"De e-mail met de code kon niet worden verstuurd: {str(ex)[:150] or 'de e-mail is niet ingesteld op de easy2edit server'}.") from ex
     return {"challenge": challenge, "hint": mask(e)}
 
 
@@ -115,7 +121,13 @@ def login_of(reseller, person):
     email = person["email"]
     x = ResellerLogin.objects.filter(reseller=reseller, email__iexact=email, active=True).first()
     if not x:
-        x, _pw = resellers.add_login(reseller, email, {"name": person.get("name") or email.split("@")[0], "access": "superadmin"}, send=True)
+        x, _pw = resellers.add_login(reseller, email, {"name": person.get("name") or email.split("@")[0], "access": "superadmin"}, send=False)
+        try:  # the reseller must get the password: when the e-mail cannot be sent the login is not kept (it would be a login that nobody can use)
+            resellers.mail_password(x, _pw, force=True)
+        except Exception as ex:  # noqa: BLE001
+            x.delete()
+            resellers.sync_host()
+            raise ValueError(f"De e-mail met je wachtwoord kon niet worden verstuurd: {str(ex)[:150]}.") from ex
     return {"password_hash": x.password_hash, "name": x.name or person.get("name") or "", "access": x.access}
 
 

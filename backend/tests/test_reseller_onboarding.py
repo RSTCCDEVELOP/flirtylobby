@@ -22,7 +22,7 @@ def master(monkeypatch):
     cache.clear()
     sent = []
     monkeypatch.setattr(sitemanager, "server_enabled", lambda: True)
-    monkeypatch.setattr("apps.communication.sending.send_email", lambda to, subject, body, *a, **k: sent.append((to, body)))
+    monkeypatch.setattr("apps.communication.sending.send_email", lambda to, subject, body, *a, **k: sent.append((to, body, k.get("force_real"))))
     monkeypatch.setattr(sitemanager, "report", lambda *a, **k: {"ok": True})
     monkeypatch.setattr("apps.core.resellers.sync_host", lambda *a, **k: None)  # (the master itself would also make the login as a user here)
     Reseller.objects.create(name="Webbouwer BV", active=True, email="info@webbouwer.nl", contacts=[{"id": "a", "role": "sales", "name": "Piet Puk", "email": "piet@webbouwer.nl", "phone": "0612345678"}])
@@ -67,11 +67,10 @@ def test_a_reseller_signs_up_gets_a_superuser_and_the_website_is_linked(django_u
 
 
 @pytest.mark.django_db
-def test_an_unknown_address_looks_the_same_and_gets_no_code(master):
+def test_an_unknown_address_is_told_so_and_gets_no_code(master):
     c = APIClient()
     r = c.post("/api/system/first-run/send/", {"email": "nobody@nowhere.nl"}, format="json")
-    assert r.status_code == 200 and r.json()["challenge"] and not master  # no mail, but the same answer
-    assert c.post("/api/system/first-run/verify/", {"challenge": r.json()["challenge"], "code": "123456"}, format="json").status_code == 400
+    assert r.status_code == 400 and "niet bekend" in r.json()["detail"] and not master  # no mail, and the person knows why
 
 
 @pytest.mark.django_db
@@ -111,3 +110,28 @@ def test_on_a_clean_installation_the_standard_superadmin_stays_and_an_existing_a
     u = django_user_model.objects.get(email="piet@webbouwer.nl")
     pw = re.search(r"Wachtwoord: (\S+)", master[-1][1]).group(1)
     assert u.is_staff and u.is_superuser and u.check_password(pw) and not u.check_password("oud-wachtwoord1!")
+
+
+@pytest.mark.django_db
+def test_the_mail_is_really_sent_also_in_the_sandbox_and_a_failure_is_said(master, monkeypatch):
+    c = APIClient()
+    c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json")
+    assert master[-1][2] is True  # (force_real: also in the sandbox and on a development computer)
+    def boom(*a, **k):
+        raise RuntimeError("E-mail is niet gekoppeld.")
+    monkeypatch.setattr("apps.communication.sending.send_email", boom)
+    r = c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json")  # a failure is shown, never "sent"
+    assert r.status_code == 400 and "niet worden verstuurd" in r.json()["detail"]
+
+
+@pytest.mark.django_db
+def test_force_real_skips_the_sandbox_and_the_debug_log(monkeypatch, settings):
+    from apps.communication import sending
+    from apps.sandbox import service as sandbox
+
+    settings.DEBUG = True
+    monkeypatch.setattr(sandbox, "active", lambda *a, **k: True)
+    monkeypatch.setattr(sending, "email_integration", lambda *a, **k: None)
+    assert sending.send_email("a@b.nl", "x", "y") == "sandbox"  # (normal: captured)
+    with pytest.raises(sending.DeliveryError):
+        sending.send_email("a@b.nl", "x", "y", force_real=True)  # (forced: not linked is an error, not a silent log)

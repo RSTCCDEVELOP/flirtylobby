@@ -56,18 +56,19 @@ def email_integration(slug=None):
     return None
 
 
-def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None, code=None, attachments=None, integration=None, reply_to=None):
-    """Send an e-mail (plain text or HTML, see Communicatie -> E-mailopmaak). Sender and reply-to come from the communication page (fallback: the integration's own sender)."""
+def send_email(to, subject, body, purpose=None, from_addr=None, base_url=None, api_base=None, code=None, attachments=None, integration=None, reply_to=None, force_real=False):
+    """Send an e-mail (plain text or HTML, see Communicatie -> E-mailopmaak). Sender and reply-to come from the communication page (fallback: the integration's own sender).
+    force_real=True: the e-mail is really sent, also in the sandbox and on a development computer (the onboarding as a reseller: the code and the password must arrive); when no e-mail is linked it is an error, never a silent "logged"."""
     from apps.sandbox import service as sandbox
 
     from .service import sender
 
-    if sandbox.active("email"):  # sandbox: capture instead of sending
+    if sandbox.active("email") and not force_real:  # sandbox: capture instead of sending
         sandbox.capture("email", to, subject, body + (f"\n\n[bijlage: {', '.join(a[0] for a in attachments)}]" if attachments else ""), sender=from_addr or sender("email_from", purpose) or "")
         return "sandbox"
     obj = email_integration(integration)
     if not obj:
-        if dj_settings.DEBUG:
+        if dj_settings.DEBUG and not force_real:
             logger.warning("E-mail to %s (DEBUG, not sent): %s", to, subject)
             return "logged"
         raise DeliveryError("E-mail is niet gekoppeld.")
