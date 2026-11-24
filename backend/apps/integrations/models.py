@@ -134,6 +134,8 @@ class AiTopup(models.Model):
     payment_ref = models.CharField(max_length=40, unique=True)
     session_id = models.CharField(max_length=120, blank=True)  # the Stripe Checkout session of the system Stripe account
     via = models.CharField(max_length=10, default="")  # stripe (the system Stripe account) or the payment engine (sandbox)
+    payer_entity = models.PositiveIntegerField(null=True, blank=True)  # the company that pays this purchase (one of the companies of the user); empty = the person pays himself
+    payer_name = models.CharField(max_length=160, blank=True)  # its name at the moment of the purchase (for the ledger and the payment page)
     status = models.CharField(max_length=8, default="open")  # open, paid, failed
     created_at = models.DateTimeField(auto_now_add=True)
 

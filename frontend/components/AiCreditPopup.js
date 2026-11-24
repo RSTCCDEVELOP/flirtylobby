@@ -20,9 +20,11 @@ export default function AiCreditPopup({ info, onClose, amount: preset, beforePay
   const [amount, setAmount] = useState(preset || p.suggest);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const companies = info.companies || [];
+  const [who, setWho] = useState(() => (info.payer?.mode === "company" && companies.some((c) => c.id === info.payer.entity) ? String(info.payer.entity) : "private"));  // who pays: "private" or the id of a company
   const pay = async () => {
     setBusy(true); setErr("");
-    try { if (beforePay) await beforePay(); const r = await api("/ai/me/topup/", { method: "POST", body: { amount } }); window.location.href = r.url; }
+    try { if (beforePay) await beforePay(); const r = await api("/ai/me/topup/", { method: "POST", body: { amount, ...(companies.length ? (who === "private" ? { payer: "private" } : { payer: "company", entity: Number(who) }) : {}) } }); window.location.href = r.url; }
     catch (e) { setErr(errorText(e)); setBusy(false); }
   };
   const body = (
@@ -37,6 +39,16 @@ export default function AiCreditPopup({ info, onClose, amount: preset, beforePay
           <input type="range" min={p.min} max={p.max} step={p.step} value={amount} onChange={(e) => setAmount(Number(e.target.value))} aria-label={tx("Bedrag")} />
           <div className="row" style={{ justifyContent: "space-between" }}><small className="muted">{money(p.min, info.currency)}</small><small className="muted">{tx("Voorstel")}: {money(p.suggest, info.currency)}</small><small className="muted">{money(p.max, info.currency)}</small></div>
         </div>
+        {companies.length > 0 && (
+          <div className="stack-sm" role="group" aria-label={tx("Wie betaalt")}>
+            <strong style={{ fontSize: ".9rem" }}>{tx("Wie betaalt dit tegoed?")}</strong>
+            <div className="lg-seg" style={{ flexWrap: "wrap" }}>
+              <button type="button" className={who === "private" ? "on" : ""} aria-pressed={who === "private"} onClick={() => setWho("private")}>{tx("Ik betaal zelf")}</button>
+              {companies.map((c) => <button type="button" key={c.id} className={who === String(c.id) ? "on" : ""} aria-pressed={who === String(c.id)} onClick={() => setWho(String(c.id))}>{c.name} {tx("betaalt")}</button>)}
+            </div>
+            <small className="muted">{tx("Het tegoed is altijd voor jou; dit bepaalt alleen op wiens naam de betaling staat.")}</small>
+          </div>
+        )}
         {info.can_pay && info.pay_via === "stripe" && <small className="muted">{tx("Je betaalt veilig via Stripe.")}</small>}
         {!info.can_pay && <div className="alert">{tx("Betalen is nu niet mogelijk: de Stripe-koppeling van het systeem staat niet aan.")}</div>}
         {err && <div className="alert">{err}</div>}

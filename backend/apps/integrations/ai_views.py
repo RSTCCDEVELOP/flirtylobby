@@ -545,7 +545,7 @@ def me(request):
     t = qs.aggregate(calls=Count("id"), tin=Sum("tokens_in"), tout=Sum("tokens_out"), charged=Sum("charged", filter=Q(billable=True)))
     from apps.core import modules
 
-    return Response({"module": modules.enabled("ai"), "credit_required": bool(cfg.credit_required and sub), "exempt": not sub, "own_system": cfg.tenant, "welcome": bool(aiusage.group_of(u) in ("super", "admin") and not (acc and acc.welcomed)), "is_staff": bool(u.is_staff), "balance": F(bal), "currency": st.currency, "low": bool(cfg.credit_required and sub and bal < max(1.0, float(cfg.topup_min) / 5)),
+    return Response({"module": modules.enabled("ai"), "credit_required": bool(cfg.credit_required and sub), "exempt": not sub, "own_system": cfg.tenant, "welcome": bool(aiusage.group_of(u) in ("super", "admin") and not (acc and acc.welcomed)), "is_staff": bool(u.is_staff), "companies": _companies(u), "payer": _payer_default(u), "balance": F(bal), "currency": st.currency, "low": bool(cfg.credit_required and sub and bal < max(1.0, float(cfg.topup_min) / 5)),
                      "proposal": aiusage.proposal(st, u), "can_pay": stripe_on or commerce.can_pay_online() or _sandbox_pays(), "pay_via": "stripe" if stripe_on else "sandbox", "pay_name": (link["name"] if link else "") if u.is_staff else "", "month": {"calls": t["calls"], "tokens_in": t["tin"] or 0, "tokens_out": t["tout"] or 0, "charged": F(t["charged"])},
                      "ledger": [{"at": r.created_at.isoformat(), "kind": r.kind, "amount": F(r.amount), "balance": F(r.balance_after), "note": r.note} for r in AiLedger.objects.filter(user=u)[:30]],
                      "recent": [{"at": r.created_at.isoformat(), "source": r.source, "model": r.model, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out, "ok": r.ok, "charged": F(r.charged if r.billable else 0)} for r in qs[:20]]})
@@ -571,10 +571,49 @@ def _sandbox_pays():
         return False
 
 
+def _companies(user):
+    """The companies the person belongs to (to choose who pays a purchase of credit)."""
+    from apps.accounts.payment_views import companies_of
+
+    return companies_of(user)
+
+
+def _payer_default(user):
+    """What the popup starts with: {"mode": "private"|"company", "entity": id}, from the payer setting of the person."""
+    from apps.accounts.payment_views import billing_party
+
+    bp = billing_party(user)
+    return {"mode": bp["mode"], "entity": bp["entity"].pk if bp["mode"] == "company" else None}
+
+
+def _payer(user, body):
+    """Who pays this purchase: {"entity": id, "name": ...} for a company the user belongs to, or {} when the person pays himself. The choice comes with the purchase ({payer: "company"|"private", entity: id});
+    without it the payer setting of the person counts (pays through a company). Raises ValueError for a company that is not one of his."""
+    from apps.accounts.payment_views import billing_party
+
+    want = body.get("payer")
+    if want == "private":
+        return {}
+    if want == "company":
+        try:
+            eid = int(body.get("entity") or user.billing_entity or 0)
+        except (TypeError, ValueError):
+            eid = 0
+        e = user.entities.filter(pk=eid).first()
+        if not e:
+            raise ValueError("Kies een bedrijf waar je bij hoort.")
+        return {"entity": e.pk, "name": (e.legal_name or e.name or "")[:160]}
+    bp = billing_party(user)
+    if bp["mode"] == "company":
+        e = bp["entity"]
+        return {"entity": e.pk, "name": (e.legal_name or e.name or "")[:160]}
+    return {}
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def topup(request):
-    """Buy AI credit: a payment is started; the credit is added when it is paid. Returns where to pay."""
+    """Buy AI credit: a payment is started; the credit is added when it is paid. Returns where to pay. {amount, payer?: "private"|"company", entity?}: who pays (the credit is always for the person)."""
     from apps import commerce
 
     st = AiSettings.load()
@@ -582,6 +621,10 @@ def topup(request):
         amount = Decimal(str(request.data.get("amount"))).quantize(Decimal("0.01"))
     except Exception:  # noqa: BLE001
         return Response({"detail": "Kies een bedrag."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        who = _payer(request.user, request.data)
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     prop = aiusage.proposal(st, request.user)
     top = float(aiusage.Cfg(st, request.user).topup_max)
     if not (Decimal(str(prop["min"])) <= amount <= Decimal(str(max(prop["max"], top)))):
@@ -594,30 +637,30 @@ def topup(request):
 
         ref = "ai_" + uuid.uuid4().hex[:20]
         try:
-            url, sid = license_stripe.ai_checkout(request.user, amount, st.currency, ref, key=link["key"])
+            url, sid = license_stripe.ai_checkout(request.user, amount, st.currency, ref, key=link["key"], payer=who.get("name", ""))
         except license_stripe.StripeError as e:
             msg = str(e)
             if "cannot currently make live charges" in msg:
                 msg = "Het Stripe-account achter deze koppeling mag nog geen echte betalingen ontvangen. Rond de activering van het account in Stripe af, of gebruik tijdelijk een testsleutel (sk_test…) of de sandbox."
             return Response({"detail": f"Stripe: {msg}"}, status=status.HTTP_400_BAD_REQUEST)
-        AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, session_id=sid, via="stripe")
+        AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, session_id=sid, via="stripe", payer_entity=who.get("entity"), payer_name=who.get("name", ""))
         return Response({"url": url, "ref": ref, "via": "stripe"})
     pay = commerce.payments()
     if not (pay and pay.available()) and _sandbox_pays():  # sandbox on but the Payments plugin is not: the purchase is simulated here (no money moves), so credit can be bought during the onboarding
         import uuid
 
         ref = "ai_" + uuid.uuid4().hex[:20]
-        AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, via="sandbox")
+        AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, via="sandbox", payer_entity=who.get("entity"), payer_name=who.get("name", ""))
         aiusage.settle_topup(ref, True, "sandbox")
         return Response({"url": f"/dashboard/ai?paid=1&ref={ref}", "ref": ref, "via": "sandbox"})
     if not (pay and pay.available()):
         return Response({"detail": "Betalen is nu niet mogelijk: de Stripe-koppeling van het systeem staat niet aan (Super admin → Licentie) en ook de sandbox niet."}, status=status.HTTP_400_BAD_REQUEST)
     back = "/dashboard/ai?paid=1"
     try:
-        payment = pay.create(amount, st.currency, f"AI-tegoed {request.user.email}", back)
+        payment = pay.create(amount, st.currency, f"AI-tegoed {request.user.email}" + (f" ({who['name']})" if who.get("name") else ""), back)
     except Exception as e:  # noqa: BLE001
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=payment.ref, via="sandbox")
+    AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=payment.ref, via="sandbox", payer_entity=who.get("entity"), payer_name=who.get("name", ""))
     done = pay.settle(payment, back)
     return Response({"url": done or pay.checkout_path(payment), "ref": payment.ref, "via": "sandbox"})
 

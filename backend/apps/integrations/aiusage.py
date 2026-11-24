@@ -224,7 +224,7 @@ def settle_topup(ref, paid, via=""):
         t.status = "paid" if paid else "failed"
         t.save(update_fields=["status"])
         if paid:
-            credit(t.user, t.amount, "topup", "Tegoed gekocht" + (f" ({via})" if via else ""), ref)
+            credit(t.user, t.amount, "topup", "Tegoed gekocht" + (f" ({via})" if via else "") + (f", betaald door {t.payer_name}" if t.payer_name else ""), ref)
         return t
 
 

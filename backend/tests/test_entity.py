@@ -641,6 +641,31 @@ def test_ai_credit_can_be_bought_in_the_sandbox_without_the_payments_plugin(admi
     assert float(AiAccount.objects.get().balance) == 5.0
 
 
+@pytest.mark.django_db
+def test_ai_credit_says_who_pays_the_person_or_a_company(admin, monkeypatch):
+    from apps.core.models import Entity
+    from apps.integrations import ai_views
+    from apps.integrations.models import AiLedger, AiTopup
+
+    monkeypatch.setattr(ai_views, "_sandbox_pays", lambda: True)
+    monkeypatch.setattr("apps.integrations.aiusage.pay_link", lambda user=None: None)
+    from django.contrib.auth import get_user_model
+
+    u = get_user_model().objects.filter(is_staff=True).first()
+    e = Entity.objects.create(name="Shop BV", kind="bedrijf")
+    other = Entity.objects.create(name="Andere BV", kind="bedrijf")
+    e.users.add(u)
+    me = admin.get("/api/ai/me/").json()
+    assert me["companies"] == [{"id": e.pk, "name": "Shop BV", "city": ""}] and me["payer"]["mode"] == "private"
+    assert admin.post("/api/ai/me/topup/", {"amount": 5, "payer": "company", "entity": other.pk}, format="json").status_code == 400  # not his company
+    assert admin.post("/api/ai/me/topup/", {"amount": 5, "payer": "company", "entity": e.pk}, format="json").status_code == 200
+    t = AiTopup.objects.get()
+    assert t.payer_entity == e.pk and t.payer_name == "Shop BV"
+    assert "betaald door Shop BV" in AiLedger.objects.get(kind="topup").note  # the credit is the person's; the note says who paid
+    assert admin.post("/api/ai/me/topup/", {"amount": 5, "payer": "private"}, format="json").status_code == 200
+    assert AiTopup.objects.order_by("-id").first().payer_entity is None
+
+
 def test_locations_are_cleaned_and_saved(db):
     from apps.core import entity
     from apps.core.models import Entity

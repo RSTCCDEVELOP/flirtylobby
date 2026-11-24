@@ -161,11 +161,11 @@ def checkout(user, amount, months, subscribe=False, l=None):
     return call("POST", "checkout/sessions", data, l)["url"]
 
 
-def ai_checkout(user, amount, currency, ref, l=None, key=None):
+def ai_checkout(user, amount, currency, ref, l=None, key=None, payer=""):
     """A Stripe Checkout page (the system Stripe account of the superadmin) for AI credit. Returns (address, session id)."""
     c = config(l)
     base = _site() or "http://localhost:5173"
-    data = {"mode": "payment", "line_items": [{"price_data": {"currency": (currency or "eur").lower(), "unit_amount": int((Decimal(str(amount)) * 100).quantize(Decimal("1"))), "product_data": {"name": "AI-tegoed"}}, "quantity": 1}],
+    data = {"mode": "payment", "line_items": [{"price_data": {"currency": (currency or "eur").lower(), "unit_amount": int((Decimal(str(amount)) * 100).quantize(Decimal("1"))), "product_data": {"name": "AI-tegoed" + (f" ({payer})" if payer else "")}}, "quantity": 1}],
             "success_url": f"{base}/dashboard/ai?paid=1&ref={ref}", "cancel_url": f"{base}/dashboard/ai?cancelled=1", "client_reference_id": ref, "metadata": {"kind": "ai_credit", "ref": ref, "user": getattr(user, "pk", "")},
             "customer_email": getattr(user, "email", "") or None, "locale": "auto"}
     if c.get("payment_methods"):
