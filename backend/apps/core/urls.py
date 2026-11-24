@@ -229,6 +229,7 @@ urlpatterns = [
     path("sitecreator/<uuid:pk>/", views.sitecreator_job),
     path("sitecreator/<uuid:pk>/zip/", views.sitecreator_zip),
     path("sitecreator/<uuid:pk>/refs/", views.sitecreator_refs),
+    path("sitecreator/<uuid:pk>/refs/<str:rid>/image/", views.sitecreator_ref_image),
     path("sitecreator/<uuid:pk>/generate/", views.sitecreator_generate),
     path("sitecreator/<uuid:pk>/palette/", views.sitecreator_palette),
     path("sitecreator/<uuid:pk>/theme-apply/", views.sitecreator_theme_apply),

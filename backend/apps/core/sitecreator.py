@@ -1611,6 +1611,18 @@ def add_ref_image(job, upload):
     return refs_public(job)
 
 
+def ref_bytes(job, rid):
+    """The picture (jpeg) of one example, full size, or None."""
+    for r in refs_of(job.brief):
+        if (r.get("id") or r["key"]) == rid:
+            try:
+                with default_storage.open(r["key"], "rb") as fh:
+                    return fh.read()
+            except Exception:  # noqa: BLE001
+                return None
+    return None
+
+
 def remove_ref(job, url):
     b = dict(job.brief or {})
     keep, gone = [], []

@@ -2956,6 +2956,25 @@ def sitecreator_refs(request, pk):
 
 @api_view(["GET"])
 @permission_classes(DESIGN_PERM)
+def sitecreator_ref_image(request, pk, rid):
+    """The picture of one example website, full size (the screen shows it in the preview on the right)."""
+    from django.http import HttpResponse
+
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    data = sitecreator.ref_bytes(job, rid)
+    if not data:
+        return Response({"detail": "Deze afbeelding bestaat niet meer."}, status=status.HTTP_404_NOT_FOUND)
+    r = HttpResponse(data, content_type="image/jpeg")
+    r["Cache-Control"] = "private, max-age=300"
+    return r
+
+
+@api_view(["GET"])
+@permission_classes(DESIGN_PERM)
 def sitecreator_export(request, pk):
     """Superadmins: the design as json (the choices, the chat with the answers and the files)."""
     from . import sitecreator

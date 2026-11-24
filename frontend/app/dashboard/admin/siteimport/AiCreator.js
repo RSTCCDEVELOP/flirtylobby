@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconBolt, IconCamera, IconCheck, IconChat, IconEdit, IconImage, IconMenu, IconPalette, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
-import { api, apiUpload, errorText, mediaUrl } from "../../../../lib/api";
+import { api, apiBase, apiUpload, errorText, getToken, mediaUrl } from "../../../../lib/api";
 import { useBusy } from "../../../../lib/busy";
 import { confirmDialog, promptDialog } from "../../../../lib/dialog";
 import { tx, getLanguage } from "../../../../lib/t";
@@ -876,8 +876,35 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
   );
 }
 
+// An example website (a picture) big in the preview on the right.
+function RefPreview({ jobId, view, onClose }) {
+  const [src, setSrc] = useState("");
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    let url = "", gone = false;
+    setSrc(""); setErr("");
+    fetch(`${apiBase()}/api/sitecreator/${jobId}/refs/${encodeURIComponent(view.id)}/image/`, { headers: { Authorization: `Token ${getToken()}` } })
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(tx("De afbeelding kon niet worden geladen.")))))
+      .then((b) => { url = URL.createObjectURL(b); if (!gone) setSrc(url); })
+      .catch((e) => { if (!gone) setErr(e.message); });
+    return () => { gone = true; if (url) URL.revokeObjectURL(url); };
+  }, [jobId, view.id]);
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 6, display: "flex", flexDirection: "column", background: "var(--bg)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: ".6rem", padding: ".5rem .8rem", borderBottom: "1px solid var(--line)", background: "var(--card)" }}>
+        <strong style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx("Voorbeeld dat je mooi vindt")}: {view.label.replace(/^https?:\/\//, "")}</strong>
+        {/^https?:\/\//.test(view.label) && <a className="btn sm" href={view.label} target="_blank" rel="noopener noreferrer">{tx("Website openen")}</a>}
+        <button type="button" className="btn sm" onClick={onClose}>{tx("Sluiten")}</button>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: ".8rem", display: "grid", placeItems: "start center" }}>
+        {err ? <div className="alert">{err}</div> : src ? <img src={src} alt={view.label} style={{ maxWidth: "100%", height: "auto", borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,.2)" }} /> : <p className="muted">{tx("Laden…")}</p>}
+      </div>
+    </div>
+  );
+}
+
 // The websites that the customer likes (at most five): with the + one is added, a picture of it is made on the server and goes to the designer with the next design.
-function RefSites({ jobId, disabled, onChange }) {
+function RefSites({ jobId, disabled, onChange, onView, viewId }) {
   const [list, setList] = useState([]);
   const [max, setMax] = useState(5);
   const [can, setCan] = useState(true);
@@ -906,7 +933,7 @@ function RefSites({ jobId, disabled, onChange }) {
     try { for (const f of imgs) { const fd = new FormData(); fd.append("file", f, f.name || "plak.png"); apply(await api(`/sitecreator/${jobId}/refs/`, { method: "POST", body: fd })); } } catch (e) { setErr(errorText(e)); }
     setBusy(false); setWork(null);
   };
-  const del = async (r) => { try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "DELETE", body: { id: r.id } })); } catch (e) { setErr(errorText(e)); } };
+  const del = async (r) => { try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "DELETE", body: { id: r.id } })); if (viewId === r.id) onView?.(null); } catch (e) { setErr(errorText(e)); } };
   const onPaste = (e) => {  // a picture from the clipboard (a screenshot, a copied picture): only when it is pasted in this part
     const files = [...(e.clipboardData?.files || [])].filter((f) => /^image\//.test(f.type));
     if (files.length) { e.preventDefault(); addFiles(files); }
@@ -917,10 +944,12 @@ function RefSites({ jobId, disabled, onChange }) {
       style={{ display: "grid", gap: ".35rem", outline: "none", borderRadius: 8, boxShadow: over ? "0 0 0 2px var(--blue)" : "none", transition: "box-shadow .15s" }}>
       {list.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: ".35rem" }}>
         {list.map((r) => (
-          <div key={r.id || r.url} style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)", background: "var(--card)" }} title={r.url || tx("Afbeelding")}>
-            {r.thumb ? <img src={r.thumb} alt={r.url || tx("Afbeelding")} style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", objectPosition: "top", display: "block" }} /> : <div style={{ aspectRatio: "4 / 3" }} />}
-            <small style={{ display: "block", padding: ".15rem .3rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: ".68rem" }}>{r.url ? r.url.replace(/^https?:\/\//, "") : tx("Eigen afbeelding")}</small>
-            <button type="button" className="btn sm" disabled={disabled} onClick={() => del(r)} aria-label={tx("Verwijderen")} title={tx("Verwijderen")} style={{ position: "absolute", top: 3, right: 3, padding: "0 .35rem", lineHeight: 1.3 }}>×</button>
+          <div key={r.id || r.url} style={{ display: "grid", borderRadius: 8, overflow: "hidden", border: `2px solid ${viewId === r.id ? "var(--blue)" : "var(--line)"}`, background: "var(--card)" }}>
+            <button type="button" onClick={() => onView?.({ id: r.id, label: r.url || tx("Eigen afbeelding") })} title={tx("Groot bekijken (rechts)")} aria-label={`${tx("Bekijken")}: ${r.url || tx("Eigen afbeelding")}`} style={{ padding: 0, border: 0, background: "none", cursor: "zoom-in", display: "block" }}>
+              {r.thumb ? <img src={r.thumb} alt={r.url || tx("Afbeelding")} style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", objectPosition: "top", display: "block" }} /> : <div style={{ aspectRatio: "4 / 3" }} />}
+            </button>
+            <small style={{ display: "block", padding: ".15rem .3rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: ".68rem" }} title={r.url}>{r.url ? r.url.replace(/^https?:\/\//, "") : tx("Eigen afbeelding")}</small>
+            <button type="button" className="btn sm danger" disabled={disabled} onClick={() => del(r)} style={{ borderRadius: 0, fontSize: ".72rem", padding: ".2rem .3rem" }}>{tx("Verwijderen")}</button>
           </div>))}
       </div>}
       {!full && (
@@ -951,7 +980,7 @@ function RefSites({ jobId, disabled, onChange }) {
   );
 }
 
-function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound, saved, onSave, picked, colors, mode }) {
+function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound, saved, onSave, picked, colors, mode, onRefView, refViewId }) {
   // the first questionnaire always has a question for the logo and one for photos and videos (own files and iStock), also when the AI did not think of them: two separate drop zones
   const given = [...first];
   const isName = (q) => /^(name|naam|company_?name|business_?name|bedrijfs_?naam|brand)$/i.test(q.id || "");
@@ -1067,7 +1096,7 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
       {questions.map((q) => (
         <div key={q.id} style={{ display: "grid", gap: ".25rem", padding: ".45rem .6rem .5rem", borderRadius: 10, background: "color-mix(in srgb, var(--blue) 5%, transparent)", border: "1px solid color-mix(in srgb, var(--line) 70%, transparent)" }}>
           <strong style={{ fontSize: ".8rem", lineHeight: 1.3 }}>{q.q}</strong>
-          {isRefs(q) ? <RefSites jobId={jobId} disabled={disabled} onChange={(urls) => set(q.id, urls.join(", "))} />
+          {isRefs(q) ? <RefSites jobId={jobId} disabled={disabled} onView={onRefView} viewId={refViewId} onChange={(urls) => set(q.id, urls.join(", "))} />
           : isLogo(q) ? <><DropZone jobId={jobId} onJob={onJob} role="logo" accept="image/*" label={tx("Sleep je logo hierheen")} hint={tx("of klik om een bestand te kiezen (png, jpg, webp of svg)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} />
             <input value={ans[q.id]} maxLength={300} disabled={disabled || filling === q.id} onKeyDown={atEnter(q)} onChange={(e) => set(q.id, e.target.value)} placeholder={filling === q.id ? tx("Bezig…") : tx("Of typ de bedrijfsnaam zoals die in de header moet staan")} /></>
           : isMedia(q) ? <><MediaPicker jobId={jobId} picked={picked} onAsk={() => askPhotos()} onJob={onJob} disabled={disabled} defaultQuery={queryHint} topic={{ name: go.name, what: go.what, go: go.n }} onAnswer={(t) => set(q.id, t)} />
@@ -1196,6 +1225,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const liveFrame = useRef(null);  // the live page (tab Live): the screenshot button takes the whole page of that one
   const [kit, setKit] = useState(null);  // the component set: the preview draws the components like the website does
   useEffect(() => { loadKit(job?.brief?.component_set || "").then(setKit).catch(() => setKit(null)); }, [job?.brief?.component_set]);
+  const [refView, setRefView] = useState(null);  // an example website that is shown big in the preview on the right: {id, label}
   const [shots, setShots] = useState([]);  // screenshots of the preview that go along with the next message to the designer
   const [shooting, setShooting] = useState(false);
   const shoot = async () => {
@@ -1408,7 +1438,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
               <div ref={chat} style={{ flex: 1, overflowY: "auto", padding: ".9rem", display: "flex", flexDirection: "column", gap: ".6rem" }}>
                 {chatMode && !(job.messages || []).length && <div style={{ alignSelf: "flex-start", maxWidth: "92%", padding: ".55rem .8rem", borderRadius: 12, background: "var(--card)", border: "1px solid var(--line)" }}>{tx("Hoi! Vertel in je eigen woorden wat voor website je wilt: waar is hij voor en voor wie? Ik ontwerp hem met de componenten en modules van easy2edit en je ziet het resultaat rechts. Foto's zoek je zelf op iStock; ik laat zien welke ik nodig heb.")}</div>}
                 {(job.messages || []).map((m, i) => (
-                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} picked={job.brief?.picked} colors={job.brief?.colors} mode={job.brief?.color_mode} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
+                  <div key={i} {...(m.questions?.length > 0 && i === (job.messages || []).length - 1 ? { "data-questionnaire": "1" } : {})} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "92%", ...(m.questions?.length ? { width: "92%", boxSizing: "border-box", minWidth: 0 } : {}), padding: ".55rem .8rem", borderRadius: 12, background: m.role === "user" ? "color-mix(in srgb, var(--blue) 18%, var(--card))" : "var(--card)", border: "1px solid var(--line)", whiteSpace: "pre-wrap" }}>{(m.img || []).map((u, k) => <a key={k} href={u} target="_blank" rel="noopener noreferrer" style={{ display: "block", marginBottom: ".4rem" }}><img src={u} alt={tx("Screenshot")} style={{ display: "block", maxWidth: "100%", borderRadius: 8, border: "1px solid var(--line)" }} /></a>)}{m.text}{m.questions?.length > 0 && (i === (job.messages || []).length - 1 || reopen === i) && <QuestionForm key={i} onRefView={setRefView} refViewId={refView?.id} picked={job.brief?.picked} colors={job.brief?.colors} mode={job.brief?.color_mode} saved={m.answers} onSave={(a, o) => api(`/sitecreator/${jobId}/answers/`, { method: "POST", body: { index: i, ans: a, own: o } }).catch(() => {})} questions={m.questions} disabled={running || sending} onSend={(t) => sendWith(t)} accent={job.brief?.colors?.primary} jobId={jobId} onJob={merge} onChanged={() => reload(true)} queryHint={job.brief?.name || ""} firstRound={(job.messages || []).filter((x) => x.questions?.length).length === 1} />}{m.questions?.length > 0 && i !== (job.messages || []).length - 1 && <button type="button" className="btn sm" style={{ marginTop: ".5rem" }} onClick={() => setReopen(reopen === i ? -1 : i)}>{reopen === i ? tx("Vragen verbergen") : tx("Vragen opnieuw openen met mijn antwoorden")}</button>}</div>
                 ))}
                 {(() => { // the first request: may the designer fill in the first questions with assumptions (AI)? Two buttons; the answer is kept
                   const last = (job.messages || [])[(job.messages || []).length - 1];
@@ -1485,6 +1515,7 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
                 )}
               </div>}
               <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", justifyContent: "center", background: "var(--bg)", padding: ".6rem" }}>
+                {refView && <RefPreview jobId={jobId} view={refView} onClose={() => setRefView(null)} />}
                 {ready && view === "live" && job.applied ? (
                   <div style={{ width, maxWidth: "100%", height: "100%", boxSizing: "border-box", background: "#fff", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", ...(dev === "web" ? {} : { border: `${dev === "phone" || dev === "mobile" ? 10 : 12}px solid #1e293b`, borderRadius: dev === "phone" || dev === "mobile" ? 34 : 24 }) }}>
                     {job.applied

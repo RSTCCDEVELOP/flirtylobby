@@ -80,3 +80,14 @@ def test_a_dropped_or_pasted_picture_counts_as_an_example(job):
     assert bad.status_code == 400 and "geen afbeelding" in bad.json()["detail"]
     rid = r.json()["refs"][0]["id"]
     assert c.delete(f"/api/sitecreator/{pk}/refs/", {"id": rid}, format="json").json()["refs"] == []
+
+
+@pytest.mark.django_db
+def test_the_full_picture_of_an_example_can_be_shown(job):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    c, pk = job
+    rid = c.post(f"/api/sitecreator/{pk}/refs/", {"file": SimpleUploadedFile("a.jpg", _jpg(), content_type="image/jpeg")}, format="multipart").json()["refs"][0]["id"]
+    r = c.get(f"/api/sitecreator/{pk}/refs/{rid}/image/")
+    assert r.status_code == 200 and r["Content-Type"] == "image/jpeg" and r.content[:3] == b"\xff\xd8\xff"
+    assert c.get(f"/api/sitecreator/{pk}/refs/onbekend/image/").status_code == 404
