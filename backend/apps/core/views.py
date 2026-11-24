@@ -1877,6 +1877,22 @@ def presets_design_theme(request, key):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+def presets_design_widgets(request, key):
+    """The widgets of the installation (superadmins): {widgets: [keys]} chooses which widgets are installed (active) when the installation is set."""
+    from . import preset_design, presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    wanted = request.data.get("widgets")
+    if not isinstance(wanted, list):
+        return Response({"detail": "Geef een lijst met widgets."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"widgets": preset_design.set_widgets(key, wanted), "widgets_chosen": True})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def presets_design_sample(request, key):
     """Make the picture of one page of the design again: {page: "home"} (superadmins)."""
     from . import preset_design, presets

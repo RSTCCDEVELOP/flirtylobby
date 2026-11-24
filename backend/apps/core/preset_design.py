@@ -70,7 +70,16 @@ def listing(key):
         if p.key not in have and p.key not in kept:
             continue
         rows.append({"key": p.key, "title": _title(p), "kind": p.kind, "path": p.path, "in_menu": p.in_menu, "saved": p.key in kept, "has_blocks": p.key in have, "sample": sample_state(key, p.key) if p.key in kept else "none", "missing": _missing(key, p.key) if p.key in kept else []})
-    return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept), "theme": theme_info(key), "widgets": widget_keys(key)}
+    return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept), "theme": theme_info(key), "widgets": widget_keys(key), "widgets_chosen": widgets_chosen(key), "widget_library": _widget_library()}
+
+
+def _widget_library():
+    from apps.sysobjects import widgets
+
+    try:
+        return [{"key": w["key"], "name": w["name"], "description": w.get("description", ""), "category": w.get("category", ""), "subcategory": w.get("subcategory", "")} for w in widgets.library()]
+    except Exception:  # noqa: BLE001
+        return []
 
 
 # ── samples: a picture of the whole page, made when a page is switched on and removed when it is switched off; they present the installation ──
@@ -329,9 +338,29 @@ def capture_widgets(key):
     """Keep the widgets that are installed now (and on) in the installation. Returns the keys."""
     from apps.sysobjects import widgets
 
+    if widgets_chosen(key):  # the superadmin chose the widgets of this installation by hand: that choice stays
+        return widget_keys(key)
     keys = sorted(k for k, w in widgets.installed().items() if w.enabled)
     folder(key).mkdir(parents=True, exist_ok=True)
     widgets_file(key).write_text(json.dumps({"widgets": keys}, indent=1), encoding="utf-8")
+    return keys
+
+
+def widgets_chosen(key):
+    try:
+        return bool(json.loads(widgets_file(key).read_text(encoding="utf-8")).get("chosen"))
+    except (OSError, ValueError):
+        return False
+
+
+def set_widgets(key, wanted):
+    """The superadmin chooses which widgets of the library are installed (and active) with this installation. Unknown keys are skipped. Returns the keys."""
+    from apps.sysobjects import widgets
+
+    known = {w["key"] for w in widgets.library()}
+    keys = sorted({k for k in wanted if isinstance(k, str) and k in known})
+    folder(key).mkdir(parents=True, exist_ok=True)
+    widgets_file(key).write_text(json.dumps({"widgets": keys, "chosen": True}, indent=1), encoding="utf-8")
     return keys
 
 

@@ -50,6 +50,12 @@ export default function PresetDesign({ preset }) {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
+  const setWidgets = async (keys) => {  // the widgets of the installation: chosen by hand, saved at once
+    setBusy(true); setMsg(null);
+    try { const r = await api(`/system/presets/${preset}/design/widgets/`, { method: "POST", body: { widgets: keys } }); setData({ ...data, widgets: r.widgets, widgets_chosen: true }); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
   const again = async (k) => {
     setBusy(true);
     try { load(await api(`/system/presets/${preset}/design/sample/`, { method: "POST", body: { page: k } })); setStamp(Date.now()); }
@@ -94,7 +100,18 @@ export default function PresetDesign({ preset }) {
       </section>
       <section className="pdz-theme">
         <h4>{tx("Widgets van de installatie")}</h4>
-        <p className="muted" style={{ margin: 0, fontSize: ".82rem" }}>{(data.widgets || []).length ? tx("Deze widgets worden bij het instellen van de installatie geïnstalleerd (actief): {0}.", data.widgets.join(", ")) : tx("Er zijn nog geen widgets vastgelegd. De widgets die op deze website zijn geïnstalleerd (Admin → Thema → Widgets) worden bij elke wijziging op deze tab vastgelegd.")}</p>
+        <p className="muted" style={{ margin: 0, fontSize: ".82rem" }}>{tx("Kies welke widgets bij het instellen van de installatie worden geïnstalleerd en actief gezet. De keuze blijft staan; wijzigingen van de pagina's passen hem niet aan.")}</p>
+        <div className="pdz-widgets">
+          {(data.widget_library || []).map((w) => {
+            const on = (data.widgets || []).includes(w.key);
+            return (
+              <label key={w.key} className="hed-sw pdz-widget">
+                <span className="switch"><input type="checkbox" checked={on} disabled={busy} onChange={(e) => setWidgets(e.target.checked ? [...(data.widgets || []), w.key] : (data.widgets || []).filter((x) => x !== w.key))} /><span /></span>
+                <span className="hed-swt"><strong>{w.name}</strong><small>{[w.category, w.subcategory].filter(Boolean).map((x) => tx(x)).join(" › ")}</small></span>
+              </label>
+            );
+          })}
+        </div>
       </section>
       <small className="muted">{tx("{0} pagina's gekozen", chosen.length)}{data.saved_at ? ` · ${tx("laatst opgeslagen")} ${new Date(data.saved_at).toLocaleString()}` : ""}</small>
     </>)}

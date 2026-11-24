@@ -122,3 +122,21 @@ def test_every_widget_has_a_category_and_a_sub_category_to_find_it_by(settings):
         tree.setdefault(m["category"], set()).add(m["subcategory"])
     assert {"Bedrijf", "Verkoop", "Tijd", "Cijfers", "Uitleg en vertrouwen"} <= set(tree)
     assert [(m["category"], m["subcategory"]) for m in lib] == sorted((m["category"], m["subcategory"]) for m in lib)  # (sorted by category, then sub category)
+
+
+@pytest.mark.django_db
+def test_a_superadmin_chooses_the_widgets_of_an_installation(lib, settings, django_user_model):
+    from apps.core import preset_design, presets
+
+    settings.RESOURCE_DIR = lib
+    settings.THEMES_DIR = lib / "themes"
+    key = presets.PRESETS[0]["key"]
+    c = _su(django_user_model)
+    r = c.post(f"/api/system/presets/{key}/design/widgets/", {"widgets": ["hello", "nope"]}, format="json")
+    assert r.status_code == 200 and r.json()["widgets"] == ["hello"]  # an unknown widget is skipped
+    widgets.install("hello"); widgets.uninstall("hello")
+    assert preset_design.capture_widgets(key) == ["hello"]  # a design save does not change the choice
+    d = c.get(f"/api/system/presets/{key}/design/").json()
+    assert d["widgets_chosen"] and [w["key"] for w in d["widget_library"]] == ["hello"]
+    assert c.post(f"/api/system/presets/{key}/design/widgets/", {"widgets": []}, format="json").json()["widgets"] == []
+    assert c.post(f"/api/system/presets/{key}/design/widgets/", {}, format="json").status_code == 400

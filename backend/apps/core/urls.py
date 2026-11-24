@@ -161,6 +161,7 @@ urlpatterns = [
     path("system/presets/<slug:key>/design/", views.presets_design),
     path("system/presets/<slug:key>/design/sample/", views.presets_design_sample),
     path("system/presets/<slug:key>/design/theme/", views.presets_design_theme),
+    path("system/presets/<slug:key>/design/widgets/", views.presets_design_widgets),
     path("system/presets/<slug:key>/samples/<slug:page>.jpg", views.presets_sample_image),
     path("system/presets/<slug:key>/update/", views.presets_update),
     path("system/presets/<slug:key>/edit/", views.presets_edit),

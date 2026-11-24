@@ -5011,3 +5011,6 @@ html[data-pbbar="1"] .pb { margin-top: 3.2rem; }
 .wl-list .wl-prev { width: 250px; flex: none; height: auto; min-height: 120px; max-height: 150px; border-bottom: 0; border-right: 1px solid var(--line); } .wl-list .wl-prev::after { display: none; }
 .wl-list .wl-body { padding: .8rem 1rem; justify-content: center; } .wl-list .wl-foot { flex-direction: column; justify-content: center; align-items: center; width: 170px; flex: none; padding: .8rem 1rem; border-left: 1px solid var(--line); }
 @media (max-width: 720px) { .wl-list .wl-card { flex-direction: column; } .wl-list .wl-prev { width: auto; border-right: 0; border-bottom: 1px solid var(--line); } .wl-list .wl-foot { width: auto; border-left: 0; flex-direction: row; } }
+
+/* standard installation: the widgets to switch on */
+.pdz-widgets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .5rem; margin-top: .5rem; } .pdz-widget { padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--blue) 4%, var(--card, #fff)); }
