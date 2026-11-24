@@ -21,14 +21,14 @@ export default function WidgetLibrary() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
   const [sub, setSub] = useState("");
-  const [status, setStatus] = useState("");  // "" all | on = in use | off = not installed
+  const [status, setStatus] = useState("on");  // "" all | on = in use (the default) | off = not installed
   const [view, setView] = useWidgetView();
   const [open, setOpen] = useState("");     // the key of the widget whose options are open
   const [vals, setVals] = useState({});
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
   const load = () => api("/widgets/").then((d) => setList(d.widgets)).catch((e) => setMsg({ ok: false, text: errorText(e) }));
-  useEffect(() => { load(); }, []);
+  useEffect(() => { api("/widgets/").then((d) => { setList(d.widgets); if (!d.widgets.some((w) => w.installed)) setStatus(""); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);  // nothing installed yet: show the whole library
   const gc = (w) => w.category, gs = (w) => w.subcategory;
   const tree = useMemo(() => widgetTree(list || [], gc, gs), [list]);
   if (!list) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Bezig…")}</p>;
