@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
+import NewPagePopup from "./NewPagePopup";
 import PageSettingsPanel from "./PageSettingsPanel";
 import { useSession } from "./Session";
 
@@ -45,6 +46,8 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
   const { user } = useSession();
   useEffect(() => { try { const w = parseInt(localStorage.getItem("pb-sb-w") || "", 10); if (w) setWidth(w); } catch {} }, []);
   useEffect(() => { window.dispatchEvent(new Event("pb-bar-ready")); return () => window.dispatchEvent(new Event("pb-bar-ready")); }, []);  // the tools (save, undo, help, blocks) go in the bar
+  const [pgMenu, setPgMenu] = useState(false);
+  const [newPage, setNewPage] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(() => { try { return localStorage.getItem("editHideHeader") === "1"; } catch { return false; } });
   useEffect(() => {  // the site header can be hidden while editing, so the top of the page (the first block, the hero) can be edited; it is always back when the editor closes
     const root = document.documentElement;
@@ -69,7 +72,18 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
       <div className="pb-topbar" role="toolbar" aria-label={tx("Pagina bewerken")}>
         <div className="pb-tb-left">
           <button type="button" className={`pb-tb-btn${open ? " on" : ""}`} onClick={() => setOpen(!open)} title={open ? tx("Paneel verbergen") : tx("Paneel tonen")} aria-label={tx("Paneel")}>{ICON.panel}</button>
-          {views.map(([k, l, ic]) => <button type="button" key={k} className={`pb-tb-btn${open && view === k ? " on" : ""}`} onClick={() => pick(k)} title={tx(l)} aria-label={tx(l)}>{ic}<span>{tx(l)}</span></button>)}
+          {views.map(([k, l, ic]) => k === "page" ? (
+            <div key={k} className="pb-tb-drop">
+              <button type="button" className={`pb-tb-btn${open && view === k ? " on" : ""}`} onClick={() => setPgMenu((v) => !v)} aria-haspopup="menu" aria-expanded={pgMenu} title={tx(l)} aria-label={tx(l)}>{ic}<span>{tx(l)}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
+              {pgMenu && <>
+                <div className="pb-tb-dropbg" onClick={() => setPgMenu(false)} />
+                <div className="pb-tb-dropmenu" role="menu">
+                  <button type="button" role="menuitem" onClick={() => { setPgMenu(false); setView("page"); setOpen(true); }}>{ICON.sliders}<span>{tx("Pagina settings")}</span></button>
+                  <button type="button" role="menuitem" onClick={() => { setPgMenu(false); setNewPage(true); }}>{ICON.plus}<span>{tx("Nieuwe pagina")}</span></button>
+                </div>
+              </>}
+            </div>
+          ) : <button type="button" key={k} className={`pb-tb-btn${open && view === k ? " on" : ""}`} onClick={() => pick(k)} title={tx(l)} aria-label={tx(l)}>{ic}<span>{tx(l)}</span></button>)}
         </div>
         <div className="pb-tb-mid"><strong>{title || tx("Pagina")}</strong></div>
         <div className="pb-tb-right">
@@ -118,5 +132,6 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
           <div className="pb-sb-foot" id="pb-device-host" />
         </aside>
       )}
+      {newPage && <NewPagePopup onClose={() => setNewPage(false)} />}
     </>, document.body);
 }

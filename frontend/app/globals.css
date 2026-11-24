@@ -4830,3 +4830,10 @@ body.has-blocknav .pb-tb-tools .edit-help-btn, body.has-blocknav .pb-tb-tools .e
 .site-header { transition: transform .35s cubic-bezier(.4, 0, .2, 1), margin-bottom .35s cubic-bezier(.4, 0, .2, 1); }
 html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-bottom: calc(var(--hdr-live, var(--site-header-h, 72px)) * -1 + 2.6rem); pointer-events: none; visibility: hidden; transition: transform .35s cubic-bezier(.4, 0, .2, 1), margin-bottom .35s cubic-bezier(.4, 0, .2, 1), visibility 0s .35s; }  /* up and out of sight; 2.6rem stay free above the first block: its own buttons (move, copy, delete) sit there and must not lie under the bar of the editor */  /* the header slides up out of the way (the page moves up with it) */
 
+
+/* the Pagina pulldown in the top bar of the editor */
+.pb-tb-drop { position: relative; display: inline-flex; }
+.pb-tb-dropbg { position: fixed; inset: 0; z-index: 1; }
+.pb-tb-dropmenu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 2; min-width: 190px; padding: .3rem; border-radius: 10px; background: #232831; border: 1px solid #3a4150; box-shadow: 0 8px 24px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 2px; }
+.pb-tb-dropmenu button { display: flex; align-items: center; gap: .5rem; padding: .5rem .65rem; border: 0; border-radius: 8px; background: transparent; color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-align: left; }
+.pb-tb-dropmenu button:hover { background: #3a4150; }
