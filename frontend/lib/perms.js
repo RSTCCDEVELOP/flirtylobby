@@ -50,6 +50,7 @@ export const ADMIN_PAGES = [
   { href: "/dashboard/admin/onboarding", module: "system" },
   { href: "/dashboard/admin/license", module: "system" },
   { href: "/dashboard/admin/theme", modules: ["theme", "branding"] },
+  { href: "/dashboard/admin/widgets", module: "theme" },
   { href: "/dashboard/admin/themes", modules: ["theme", "branding"] },
   { href: "/dashboard/admin/plugins", module: "plugins" },
   { href: "/dashboard/admin/ai", module: "ai", perm: "ai.manage" },

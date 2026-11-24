@@ -43,6 +43,7 @@ export const ITEM_HELP = {
   "/dashboard/admin/pages": "Je pagina's en het menu bovenaan de website: overzicht, menu-editor, eigen pagina's en links.",
   "/dashboard/admin/sysobjects": "Onderdelen voor op pagina's, zoals donatieknoppen en abonnementen, die je in bewerkmodus op een pagina zet.",
   "/dashboard/admin/siteimport": "Ontwerp een website of lees een andere site in: thema, pagina's, startpagina en afbeeldingen. Je kunt alles weer verwijderen.",
+  "/dashboard/admin/widgets": "De bibliotheek met widgets: kleine onderdelen zoals een aftelklok of een prijstabel. Installeer ze, zet ze aan of uit en stel de opties in; daarna voeg je ze toe in de paginabewerker.",
   "/dashboard/admin/theme": "De hele uitstraling van je website: thema's, kleuren, lettertypen, logo's en de opmaak van e-mail.",
   "/dashboard/superadmin": "Het overzicht voor de superadmin: systeemonderdelen, de bibliotheek, de licentie en de standaard instellingen.",
   "/dashboard/superadmin/modules": "Zet onderdelen van easy2edit aan of uit en bepaal wie ze mag gebruiken.",

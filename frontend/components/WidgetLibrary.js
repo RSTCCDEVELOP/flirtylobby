@@ -21,6 +21,7 @@ export default function WidgetLibrary() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
   const [sub, setSub] = useState("");
+  const [status, setStatus] = useState("");  // "" all | on = in use | off = not installed
   const [view, setView] = useWidgetView();
   const [open, setOpen] = useState("");     // the key of the widget whose options are open
   const [vals, setVals] = useState({});
@@ -31,7 +32,8 @@ export default function WidgetLibrary() {
   const gc = (w) => w.category, gs = (w) => w.subcategory;
   const tree = useMemo(() => widgetTree(list || [], gc, gs), [list]);
   if (!list) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Bezig…")}</p>;
-  const shown = list.filter((w) => `${w.name} ${w.description} ${w.category} ${w.subcategory}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const nOn = list.filter((w) => w.installed).length;
+  const shown = list.filter((w) => (!status || (status === "on") === !!w.installed) && `${w.name} ${w.description} ${w.category} ${w.subcategory}`.toLowerCase().includes(q.trim().toLowerCase()));
   const groups = widgetGroups(shown, gc, gs, cat, sub);
   const act = async (w, method) => {
     if (method === "DELETE" && !(await confirmDialog(tx("Dit widget verwijderen? Pagina's waar het op staat tonen het niet meer."), { okLabel: tx("Verwijderen"), cancelLabel: tx("Annuleren") }))) return;
@@ -62,6 +64,11 @@ export default function WidgetLibrary() {
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       <div className="wl-top">
         <div className="lg-search" style={{ flex: "1 1 260px", maxWidth: 460 }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek een widget…")} aria-label={tx("Zoeken")} /></div>
+        <div className="lg-seg" role="group" aria-label={tx("Status")}>
+          <button type="button" className={!status ? "on" : ""} aria-pressed={!status} onClick={() => setStatus("")}>{tx("Alles")} <small>{list.length}</small></button>
+          <button type="button" className={status === "on" ? "on" : ""} aria-pressed={status === "on"} onClick={() => setStatus("on")}>{tx("In gebruik")} <small>{nOn}</small></button>
+          <button type="button" className={status === "off" ? "on" : ""} aria-pressed={status === "off"} onClick={() => setStatus("off")}>{tx("Niet geïnstalleerd")} <small>{list.length - nOn}</small></button>
+        </div>
         <ViewToggle view={view} onChange={setView} />
       </div>
       <WidgetCategories tree={tree} total={shown.length} cat={cat} sub={sub} onCat={setCat} onSub={setSub} />

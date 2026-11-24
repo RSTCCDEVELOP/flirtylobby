@@ -26,7 +26,7 @@ const INDEX = [
   { href: "/dashboard/admin/security", label: "Beveiliging", where: "Admin → Systeem", words: "beveiliging twee stap verificatie 2fa landen cookies verboden woorden blokkeren" },
   { href: "/dashboard/admin/theme", label: "Thema en loader", where: "Admin → Website", words: "thema loader laden kleuren logo lettertype boom" },
   { href: "/dashboard/superadmin", label: "Widgets in de bibliotheek", where: "Super admin → Bibliotheek → Widgets", words: "widgets widget bibliotheek installeren aftelklok klok teller lopende tekst voortgang", staff: true },
-  { href: "/dashboard/admin/theme", label: "Widgets (bibliotheek)", where: "Admin → Website → Thema → Layout → Widgets", words: "widgets widget bibliotheek installeren aftelklok klok teller lopende tekst voortgang onderdelen pagina systeemobject voorbeeld" },
+  { href: "/dashboard/admin/widgets", label: "Widgets (bibliotheek)", where: "Admin → Website → Widgets", words: "widgets widget bibliotheek installeren aftelklok klok teller lopende tekst voortgang onderdelen pagina systeemobject voorbeeld" },
   { href: "/dashboard/admin/backups", label: "Backup", where: "Admin → Systeem", words: "backup back-up terugzetten kopie" },
   { href: "/dashboard/admin/log", label: "Logboek", where: "Admin → Systeem", words: "log logboek logfile logbestand storing storingen fout fouten inloggen uitloggen gebeurtenissen audit bewaartermijn" },
   { href: "/dashboard/admin/languages", label: "Talen", where: "Admin → Systeem", words: "talen taal vertalen standaardtaal" },
