@@ -414,6 +414,13 @@ def outdated(key):
                 t = page_specs[page_key]["title"]
                 title = (t.get("nl") if isinstance(t, dict) else t) or page_key
             out.append({"key": page_key, "title": title, "missing": bool(missing)})
+    try:  # the pages that were chosen on the tab Design
+        from . import preset_design
+
+        have_keys = {o["key"] for o in out}
+        out += [o for o in preset_design.outdated(key) if o["key"] not in have_keys]
+    except Exception:  # noqa: BLE001
+        logger.exception("Design pages of %s could not be compared", key)
     return out
 
 

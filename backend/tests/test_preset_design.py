@@ -137,3 +137,27 @@ def test_the_own_website_may_have_another_port_but_a_reference_site_may_not():
     assert siteshots.clean_url("http://localhost:5173/p/x", True) == "http://localhost:5173/p/x"
     with pytest.raises(siteshots.ShotError):
         siteshots.clean_url("http://localhost:5173/p/x")
+
+
+@pytest.mark.django_db
+def test_update_of_the_installation_puts_the_design_pages_back(settings, tmp_path):
+    from apps.core import preset_pages
+
+    settings.RESOURCE_DIR = tmp_path
+    key = presets.PRESETS[0]["key"]
+    Page.objects.update_or_create(key="home", defaults={"kind": "system", "title": {"nl": "Home"}, "url": "/"})
+    mine = {"rows": [{"id": "r2aa", "cols": 1, "gap": "md", "cells": [{"id": "c2aa", "items": [{"id": "i3aa", "type": "text", "ref": ""}]}]}]}
+    PageLayout.objects.update_or_create(key="home", defaults={"data": mine})
+    ContentBlock.objects.update_or_create(key="layout.home.i3aa", lang="nl", defaults={"text": "Mijn thuis"})
+    preset_design.save(key, ["home"], "")
+    assert preset_design.outdated(key) == []  # nothing changed
+    # the site is changed (the standard design came back): the page is listed and an update puts it back
+    PageLayout.objects.filter(key="home").update(data={"rows": [{"id": "zzzz", "cols": 1, "gap": "md", "cells": [{"id": "yyyy", "items": []}]}]})
+    ContentBlock.objects.filter(key="layout.home.i3aa").delete()
+    assert "home" in [o["key"] for o in preset_pages.outdated(key)]
+    presets.update_pages(key, ["home"])
+    assert PageLayout.objects.get(key="home").data["rows"][0]["id"] == "r2aa"
+    assert ContentBlock.objects.get(key="layout.home.i3aa", lang="nl").text == "Mijn thuis"
+    assert preset_design.outdated(key) == []
+    ContentBlock.objects.filter(key="layout.home.i3aa").update(text="Anders")  # only a text changed
+    assert [o["key"] for o in preset_design.outdated(key)] == ["home"]

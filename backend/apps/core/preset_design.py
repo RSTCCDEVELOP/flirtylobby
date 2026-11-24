@@ -199,6 +199,50 @@ def install(key, skip=(), user=None):
     return done
 
 
+def _manifest(key, page_key):
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(folder(key) / f"{page_key}.zip") as z:
+            name = next(n for n in z.namelist() if n.endswith("page.json"))
+            return json.loads(z.read(name))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def outdated(key):
+    """The design pages that are not on this website as they were kept (the page is gone, its blocks or its texts differ): [{key, title, missing}]."""
+    from apps.pages.models import Page, PageLayout
+
+    from . import preset_pages
+    from .models import ContentBlock
+
+    out = []
+    for k in saved_keys(key):
+        man = _manifest(key, k)
+        page = Page.objects.filter(key=k).first()
+        lay = PageLayout.objects.filter(key=k).first()
+        have = (lay.data if lay else {}) or {}
+        want = man.get("layout") or {}
+        missing = page is None or not have.get("rows")
+        differs = missing or preset_pages._sig(have) != preset_pages._sig(want)
+        if not differs:  # the same blocks: are the texts the same too?
+            for ck, per in (man.get("content") or {}).items():
+                for lang, text in per.items():
+                    if str(text).startswith("media:") or "data-media" in str(text):
+                        continue  # (pictures are stored by their number here: not compared)
+                    row = ContentBlock.objects.filter(key=ck, lang=lang).first()
+                    if row is None or row.text != text:
+                        differs = True
+                        break
+                if differs:
+                    break
+        if differs:
+            t = man.get("title") or {}
+            out.append({"key": k, "title": (t.get("nl") or next(iter(t.values()), k)) if isinstance(t, dict) else k, "missing": bool(missing)})
+    return out
+
+
 def keys(key):
     """The pages that this installation designs (they count when the site asks what an installation would replace)."""
     return saved_keys(key)

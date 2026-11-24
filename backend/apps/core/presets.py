@@ -628,12 +628,17 @@ def update_pages(key, page_keys):
     preset = get(key)
     if not preset:
         raise KeyError(key)
-    chosen = {k for k in page_keys if k in preset_pages.standard_layouts(key)}
+    from . import preset_design
+
+    design = set(preset_design.keys(key))
+    chosen = {k for k in page_keys if k in preset_pages.standard_layouts(key) or k in design}
     keep = set(preset_pages.standard_layouts(key)) - chosen
     done = sorted(chosen)
-    if chosen:
+    if chosen & set(preset_pages.standard_layouts(key)):
         preset_pages.install(key, skip=keep or {""})  # (a skip that is not empty keeps pages of another installation and the pages that are not chosen)
         _apply_saved_pages(key, skip=keep | {k for k in chosen if k not in saved_pages(key)})
+    if chosen & design:
+        preset_design.install(key, skip=design - chosen)  # the design pages come back exactly as they were kept (with their pictures); the other ones stay as they are
     return {"pages": done}
 
 
