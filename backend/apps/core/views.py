@@ -2877,8 +2877,28 @@ def sitecreator_zip(request, pk):
     return Response({**sitecreator.public(job), "notes": notes})
 
 
+def _needs_ai_credit(view):
+    """The work of this view uses the AI: someone without AI credit is asked to buy credit first (answer 402 with code ai_credit; the screen opens the offer) and nothing is started."""
+    import functools
+
+    @functools.wraps(view)
+    def wrapped(request, *a, **kw):
+        from apps.integrations import aiusage
+
+        try:
+            aiusage.precheck()
+        except aiusage.NotAllowed as e:
+            return Response({"detail": str(e), "code": "ai_not_allowed"}, status=status.HTTP_403_FORBIDDEN)
+        except aiusage.NoCredit as e:
+            return Response({"detail": str(e), "code": "ai_credit"}, status=status.HTTP_402_PAYMENT_REQUIRED)
+        return view(request, *a, **kw)
+
+    return wrapped
+
+
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+@_needs_ai_credit
 def sitecreator_generate(request, pk):
     from . import sitecreator
 
@@ -2896,6 +2916,7 @@ def sitecreator_generate(request, pk):
 
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+@_needs_ai_credit
 def sitecreator_chat(request, pk):
     """AI chat build: one message of the customer; the designer answers (and designs or changes the website)."""
     from . import sitecreator
@@ -2960,6 +2981,7 @@ def sitecreator_version(request, pk):
 
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+@_needs_ai_credit
 def sitecreator_resume(request, pk):
     """The design got stuck (the server was restarted): go on with what was running."""
     from . import sitecreator
@@ -2977,6 +2999,7 @@ def sitecreator_resume(request, pk):
 
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+@_needs_ai_credit
 def sitecreator_more_photos(request, pk):
     """The pages still ask for pictures that are not there: the designer searches iStock for them (in the background)."""
     from . import sitecreator
@@ -3103,6 +3126,7 @@ def component_request_item(request, pk):
 
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+@_needs_ai_credit
 def sitecreator_prefill(request, pk):
     """Answer to "may I fill in the first questions with assumptions (AI)?": {yes: true|false}. The first request is handled after it."""
     from . import sitecreator
@@ -3256,6 +3280,7 @@ def sitecreator_istock(request, pk):
 
 @api_view(["POST"])
 @permission_classes(DESIGN_PERM)
+@_needs_ai_credit
 def sitecreator_revise(request, pk):
     from . import sitecreator
 

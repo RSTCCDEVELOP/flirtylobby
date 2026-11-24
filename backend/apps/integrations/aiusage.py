@@ -54,6 +54,10 @@ def group_names():
     return _names["v"]
 
 
+class NotAllowed(ValueError):
+    """Plain users may not use the AI on this website (the switch of the superadmin)."""
+
+
 class NoCredit(ValueError):
     """The user has no AI credit left (and credit is required)."""
 
@@ -119,6 +123,8 @@ def gate(model="", texts=(), max_tokens=1000, images=0):
 
     st = AiSettings.load()
     user = current_user()
+    if user is not None and not st.users_may_use and group_of(user) == "user":  # plain users (not admins) have no AI on this website: nothing is sent, also not with credit
+        raise NotAllowed("AI is op deze website niet beschikbaar voor gebruikers. Vraag een beheerder.")
     cfg = Cfg(st, user)
     if not cfg.credit_required or not subject(user):
         return
@@ -130,6 +136,11 @@ def gate(model="", texts=(), max_tokens=1000, images=0):
         raise NoCredit("Je hebt nog geen AI-tegoed (of het is op). Koop eerst tegoed bij Dashboard → AI voordat je AI kunt gebruiken.")
     if bal < need:
         raise NoCredit(f"Je AI-tegoed ({sym}{bal:.2f}) is niet genoeg voor deze opdracht (geschat {sym}{need:.2f}). Koop meer tegoed bij Dashboard → AI.")
+
+
+def precheck():
+    """Before work that will use the AI starts: a user (or admin) without credit gets NoCredit at once (the work is not started, nothing is sent). Never for a superadmin or the system."""
+    gate("claude-sonnet-5-5", (), 100, 0)
 
 
 def credit(user, amount, kind, note="", ref="", by=""):

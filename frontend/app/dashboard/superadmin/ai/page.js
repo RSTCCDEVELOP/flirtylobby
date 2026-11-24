@@ -168,6 +168,8 @@ export default function AiDashboard() {
       </div>)}
       {tab === "credit" && cr && (<div className="ai-wrap">
         <div className="card form ai-settings">
+          <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={cr.users_may_use !== false} onChange={(e) => crSave({ users_may_use: e.target.checked })} /><span /></span>
+            <span>{tx("Gebruikers (geen admins) mogen AI gebruiken")}<small className="muted" style={{ display: "block" }}>{tx("Uit: er wordt niets naar de AI gestuurd voor gebruikers, ook niet met tegoed. Admins en superadmins houden AI.")}</small></span></label>
           <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={cr.credit_required} onChange={(e) => crSave({ credit_required: e.target.checked })} /><span /></span>
             <span>{tx("Gebruikers en admins moeten AI-tegoed kopen om AI te kunnen gebruiken")}<small className="muted" style={{ display: "block" }}>{tx("Aan: zonder tegoed wordt er niets naar de AI gestuurd en krijgt de gebruiker een voorstel om tegoed te kopen. Superadmins en het systeem hebben geen tegoed nodig. Alleen jij beheert dit.")}</small></span></label>
           <div className="grid2">

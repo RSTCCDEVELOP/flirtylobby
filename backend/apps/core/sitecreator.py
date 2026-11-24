@@ -2712,14 +2712,15 @@ def _ref_of(pk):
 ACTIVE = set()  # the designs that are being worked on in THIS process (a restart of the server empties it: then a design that says "running" is stuck)
 
 
-def _run_for(fn, pk, args):
+def _run_for(fn, pk, args, uid=None):
     """Work in the background for a design: every AI call inside is counted for that design."""
     from apps.integrations import aiusage
 
     ACTIVE.add(pk)
     try:
+        # (uid: the person who started the work: its AI calls are counted for him and checked against his credit)
         with aiusage.for_ref(_ref_of(pk)):
-            fn(*args)
+            aiusage.run_as(uid, fn, *args)
         row = SiteDesignJob.objects.filter(pk=pk).values("status").first()  # the work ended but the design still says "running": say so, never hang
         if row and row["status"] in ("running", "stopping"):
             SiteDesignJob.objects.filter(pk=pk).update(status="error", progress=100, step="", error="Het ontwerpen stopte onverwacht, zonder melding. Probeer het nog eens.", updated_at=timezone.now())
@@ -2732,15 +2733,17 @@ def _run_for(fn, pk, args):
 
 
 def _spawn(fn, pk, *args):
+    uid = None
     try:  # what runs is kept, so a design that got stuck (the server was restarted) can go on
         row = SiteDesignJob.objects.filter(pk=pk).first()
+        uid = row.user_id if row else None
         if row:
             b = dict(row.brief or {})
             b["run"] = {"fn": fn.__name__, "args": [a for a in args if isinstance(a, (str, int, bool)) or a is None]}
             SiteDesignJob.objects.filter(pk=pk).update(brief=b)
     except Exception:  # noqa: BLE001
         logger.warning("run not kept", exc_info=True)
-    threading.Thread(target=_run_for, args=(fn, pk, (pk, *args)), daemon=True).start()
+    threading.Thread(target=_run_for, args=(fn, pk, (pk, *args), uid), daemon=True).start()
 
 
 def is_stalled(job):

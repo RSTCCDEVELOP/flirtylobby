@@ -6,6 +6,7 @@
 // website https://rstcc.net
 
 import DemoNotice from "../components/DemoNotice";
+import AiCreditAsk from "../components/AiCreditAsk";
 import { SpeedTestHost } from "../components/SpeedTest";
 import SiteBack from "../components/SiteBack";
 import SiteCredit from "../components/SiteCredit";
@@ -215,6 +216,7 @@ export default async function RootLayout({ children }) {
         <AdminBar />
         <SpeedTestHost />
         <DemoNotice />
+        <AiCreditAsk />
         <DeviceGate devices={{ mobile: theme?.values?.device_mobile !== "no", tablet: theme?.values?.device_tablet !== "no", desktop: theme?.values?.device_desktop !== "no", app: theme?.values?.device_app === "yes" }} />
         </LangRoot>
         </MenuProvider>
