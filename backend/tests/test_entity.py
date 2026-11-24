@@ -656,7 +656,7 @@ def test_ai_credit_says_who_pays_the_person_or_a_company(admin, monkeypatch):
     other = Entity.objects.create(name="Andere BV", kind="bedrijf")
     e.users.add(u)
     me = admin.get("/api/ai/me/").json()
-    assert me["companies"] == [{"id": e.pk, "name": "Shop BV", "city": ""}] and me["payer"]["mode"] == "private"
+    assert [(c["id"], c["name"]) for c in me["companies"]] == [(e.pk, "Shop BV")] and me["payer"]["mode"] == "private"
     assert admin.post("/api/ai/me/topup/", {"amount": 5, "payer": "company", "entity": other.pk}, format="json").status_code == 400  # not his company
     assert admin.post("/api/ai/me/topup/", {"amount": 5, "payer": "company", "entity": e.pk}, format="json").status_code == 200
     t = AiTopup.objects.get()
@@ -812,3 +812,38 @@ def test_stripe_invoice_for_the_company_that_pays(monkeypatch):
     seen.clear()
     license_stripe.ai_checkout(u, 5, "EUR", "ai_y", key="k")
     assert "invoice_creation" not in seen  # a person who pays himself: as before
+
+
+@pytest.mark.django_db
+def test_ai_credit_on_account_within_the_maximum(admin, monkeypatch, django_user_model):
+    from rest_framework.test import APIClient
+
+    from apps.core.models import Entity
+    from apps.integrations import ai_views
+    from apps.integrations.models import AiAccount, AiTopup
+
+    monkeypatch.setattr(ai_views, "_sandbox_pays", lambda: False)
+    monkeypatch.setattr("apps.integrations.aiusage.pay_link", lambda user=None: None)
+    boss = django_user_model.objects.filter(is_staff=True).first()
+    e = Entity.objects.create(name="Shop BV", kind="bedrijf")
+    plain = django_user_model.objects.create_user("pl", "pl@x.nl", "pw12345678!")
+    e.users.add(plain)
+    c = APIClient(); c.force_authenticate(plain)
+    body = {"amount": 5, "pay": "account", "payer": "company", "entity": e.pk}
+    assert c.post("/api/ai/me/topup/", body, format="json").status_code == 400  # not switched on for the company
+    assert c.put(f"/api/entities/{e.pk}/payments/", {"pay_on_account": True, "account_limit": 12}, format="json").status_code == 403  # a plain user can not switch it on
+    admin.put(f"/api/entities/{e.pk}/payments/", {"pay_on_account": True, "account_limit": 12}, format="json")
+    r = c.get("/api/ai/me/").json()
+    assert r["companies"][0]["account"] == {"on": True, "limit": 12.0, "open": 0.0, "may": True}
+    assert c.post("/api/ai/me/topup/", body, format="json").json()["via"] == "account"
+    assert float(AiAccount.objects.get(user=plain).balance) == 5.0  # the credit is there at once
+    assert c.post("/api/ai/me/topup/", body, format="json").status_code == 200  # 10 of 12 open
+    r = c.post("/api/ai/me/topup/", body, format="json")
+    assert r.status_code == 400 and "maximum" in r.json()["detail"]  # 15 > 12
+    assert c.post("/api/ai/me/topup/", {"amount": 5, "pay": "account"}, format="json").status_code == 400  # privately: not switched on for the person
+    assert float(admin.get(f"/api/entities/{e.pk}/payments/").json()["account"]["open"]) == 10.0
+    assert admin.post(f"/api/entities/{e.pk}/payments/settle/", {}, format="json").json()["account"]["open"] == 0.0
+    assert c.post("/api/ai/me/topup/", body, format="json").status_code == 200  # room again
+    assert c.post(f"/api/entities/{e.pk}/payments/settle/", {}, format="json").status_code == 403
+    assert admin.post("/api/ai/me/topup/", {"amount": 5, "pay": "account"}, format="json").json()["via"] == "account"  # a superadmin can always, without a maximum
+    assert AiTopup.objects.filter(via="account", user=boss).exists()

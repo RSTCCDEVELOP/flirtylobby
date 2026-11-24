@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from apps.accounts.permissions import has_level_for
 from apps.core.modules import module_required
 
-from . import entity, entity_payments
+from . import entity, entity_payments, payaccount
 from .models import Entity
 
 
@@ -86,8 +86,8 @@ def entity_item(request, pk):
 PAY_PERM = [has_level_for("entities", {}, default="edit"), module_required("entities")]  # payment details: edit rights for everything, also for reading
 
 
-def _pay_answer(e, items=None, locked=False):
-    return Response({"items": entity_payments.masked(items or []), "locked": locked, "kinds": [{"key": k, "label": lb} for k, lb in entity_payments.KINDS], "max": entity_payments.MAX_ITEMS})
+def _pay_answer(e, items=None, locked=False, by=None):
+    return Response({"account": payaccount.info(e, True), "account_manage": bool(by and by.is_staff), "items": entity_payments.masked(items or []), "locked": locked, "kinds": [{"key": k, "label": lb} for k, lb in entity_payments.KINDS], "max": entity_payments.MAX_ITEMS})
 
 
 @api_view(["GET", "PUT"])
@@ -99,14 +99,17 @@ def entity_payments_item(request, pk):
         return Response({"detail": "Deze entiteit bestaat niet."}, status=status.HTTP_404_NOT_FOUND)
     if request.method == "PUT":
         try:
-            items = entity_payments.save(e, request.data.get("items"), request.user)
+            payaccount.set_fields(e, request.data, request.user)
+            items = entity_payments.save(e, request.data.get("items"), request.user) if "items" in request.data else entity_payments.unseal(e)
         except ValueError as x:
             return Response({"detail": str(x)}, status=status.HTTP_400_BAD_REQUEST)
-        return _pay_answer(e, items)
+        except entity_payments.Locked:
+            return _pay_answer(e, locked=True, by=request.user)
+        return _pay_answer(e, items, by=request.user)
     try:
-        return _pay_answer(e, entity_payments.unseal(e))
+        return _pay_answer(e, entity_payments.unseal(e), by=request.user)
     except entity_payments.Locked:
-        return _pay_answer(e, locked=True)
+        return _pay_answer(e, locked=True, by=request.user)
 
 
 @api_view(["POST"])
@@ -120,3 +123,15 @@ def entity_payments_reveal(request, pk):
         return Response({"items": entity_payments.reveal(e, request.user)})
     except entity_payments.Locked as x:
         return Response({"detail": str(x)}, status=status.HTTP_409_CONFLICT)
+
+
+@api_view(["POST"])
+@permission_classes(PAY_PERM)
+def entity_account_settle(request, pk):
+    """A superadmin marks what this company has open on account as paid."""
+    e = Entity.objects.filter(pk=pk).first()
+    if not e:
+        return Response({"detail": "Deze entiteit bestaat niet."}, status=status.HTTP_404_NOT_FOUND)
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    return Response({"settled": payaccount.settle(e, True), "account": payaccount.info(e, True)})

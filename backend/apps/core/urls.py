@@ -208,6 +208,7 @@ urlpatterns = [
     path("entities/<int:pk>/", entity_views.entity_item),
     path("entities/<int:pk>/payments/", entity_views.entity_payments_item),
     path("entities/<int:pk>/payments/reveal/", entity_views.entity_payments_reveal),
+    path("entities/<int:pk>/payments/settle/", entity_views.entity_account_settle),
     path("content/", views.content_public),
     path("content/save/", views.content_save),
     path("content/ai/", views.content_ai),

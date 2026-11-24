@@ -22,9 +22,14 @@ export default function AiCreditPopup({ info, onClose, amount: preset, beforePay
   const [err, setErr] = useState("");
   const companies = info.companies || [];
   const [who, setWho] = useState(() => (info.payer?.mode === "company" && companies.some((c) => c.id === info.payer.entity) ? String(info.payer.entity) : "private"));  // who pays: "private" or the id of a company
+  const accOf = who === "private" ? info.person?.account : companies.find((c) => String(c.id) === who)?.account;  // paying on account for the one who pays: {on, limit, open, may}
+  const mayAccount = !!accOf?.may;
+  const [how, setHow] = useState("");  // "" = the default (pay now when that works, else on account) | "now" | "account"
+  const onAccount = mayAccount && (how === "account" || (how === "" && !info.can_pay));
+  const room = accOf && accOf.limit > 0 ? Math.max(0, accOf.limit - accOf.open) : null;  // what may still be open
   const pay = async () => {
     setBusy(true); setErr("");
-    try { if (beforePay) await beforePay(); const r = await api("/ai/me/topup/", { method: "POST", body: { amount, ...(companies.length ? (who === "private" ? { payer: "private" } : { payer: "company", entity: Number(who) }) : {}) } }); window.location.href = r.url; }
+    try { if (beforePay) await beforePay(); const r = await api("/ai/me/topup/", { method: "POST", body: { amount, ...(onAccount ? { pay: "account" } : {}), ...(companies.length ? (who === "private" ? { payer: "private" } : { payer: "company", entity: Number(who) }) : {}) } }); window.location.href = r.url; }
     catch (e) { setErr(errorText(e)); setBusy(false); }
   };
   const body = (
@@ -52,12 +57,22 @@ export default function AiCreditPopup({ info, onClose, amount: preset, beforePay
             <small className="muted">{who === "private" ? tx("De factuur komt op jouw naam.") : tx("De factuur komt op naam van het bedrijf.")} {tx("Het tegoed is altijd voor jou.")}</small>
           </div>
         )}
-        {info.can_pay && info.pay_via === "stripe" && <small className="muted">{tx("Je betaalt veilig via Stripe.")}</small>}
-        {!info.can_pay && <div className="alert">{tx("Betalen is nu niet mogelijk: de Stripe-koppeling van het systeem staat niet aan.")}</div>}
+        {mayAccount && (
+          <div className="stack-sm" role="group" aria-label={tx("Betalen")} style={{ padding: ".7rem .8rem", borderRadius: 12, border: "1px solid var(--line)", background: "color-mix(in srgb, var(--blue) 5%, var(--card, #fff))" }}>
+            <strong style={{ fontSize: ".9rem" }}>{tx("Hoe betaal je?")}</strong>
+            <div className="lg-seg">
+              {info.can_pay && <button type="button" className={!onAccount ? "on" : ""} aria-pressed={!onAccount} onClick={() => setHow("now")}>{tx("Direct betalen")}</button>}
+              <button type="button" className={onAccount ? "on" : ""} aria-pressed={onAccount} onClick={() => setHow("account")}>{tx("Op rekening")}</button>
+            </div>
+            {onAccount && <small className="muted">{tx("Het tegoed staat meteen klaar; je krijgt later een factuur.")} {tx("Nu openstaand")}: € {Number(accOf.open || 0).toFixed(2)}{room !== null ? ` · ${tx("nog ruimte")}: € ${room.toFixed(2)}` : ` · ${tx("geen maximum")}`}{room !== null && amount > room ? <strong style={{ color: "var(--danger, #b3261e)" }}> · {tx("dit bedrag past niet")}</strong> : null}</small>}
+          </div>
+        )}
+        {!onAccount && info.can_pay && info.pay_via === "stripe" && <small className="muted">{tx("Je betaalt veilig via Stripe.")}</small>}
+        {!info.can_pay && !mayAccount && <div className="alert">{tx("Betalen is nu niet mogelijk: de Stripe-koppeling van het systeem staat niet aan.")}</div>}
         {err && <div className="alert">{err}</div>}
         <div className="row" style={{ justifyContent: "flex-end" }}>
           <button type="button" className="btn" onClick={onClose}>{tx("Later")}</button>
-          <button type="button" className="btn primary" disabled={busy || !info.can_pay} onClick={pay}>{busy ? tx("Bezig…") : `${tx("Betalen")} ${money(amount, info.currency)}`}</button>
+          <button type="button" className="btn primary" disabled={busy || (!info.can_pay && !onAccount) || (onAccount && room !== null && amount > room)} onClick={pay}>{busy ? tx("Bezig…") : `${onAccount ? tx("Op rekening bestellen") : tx("Betalen")} ${money(amount, info.currency)}`}</button>
         </div>
       </div>
     </div>

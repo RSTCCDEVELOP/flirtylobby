@@ -13,7 +13,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from apps.core import entity_payments
+from apps.core import entity_payments, payaccount
 from apps.core.modules import module_required
 
 from .models import User
@@ -41,8 +41,8 @@ def _target(request, pk):
     return qs.filter(pk=pk).first()
 
 
-def _answer(u, items=None, locked=False):
-    return Response({"items": entity_payments.masked(items or []), "locked": locked, "kinds": [{"key": k, "label": lb} for k, lb in entity_payments.KINDS], "max": entity_payments.MAX_ITEMS,
+def _answer(u, items=None, locked=False, by=None):
+    return Response({"account": payaccount.info(u), "account_manage": bool(by and by.is_staff), "items": entity_payments.masked(items or []), "locked": locked, "kinds": [{"key": k, "label": lb} for k, lb in entity_payments.KINDS], "max": entity_payments.MAX_ITEMS,
                      "pays_via_company": u.pays_via_company, "billing_entity": u.billing_entity, "companies": companies_of(u)})
 
 
@@ -80,14 +80,15 @@ def user_payments(request, pk):
     if request.method == "PUT":
         try:
             _set_payer(u, request.data)
+            payaccount.set_fields(u, request.data, request.user)
             if "items" in request.data:
                 entity_payments.save(u, request.data.get("items"), request.user)
         except ValueError as x:
             return Response({"detail": str(x)}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        return _answer(u, entity_payments.unseal(u))
+        return _answer(u, entity_payments.unseal(u), by=request.user)
     except entity_payments.Locked:
-        return _answer(u, locked=True)
+        return _answer(u, locked=True, by=request.user)
 
 
 @api_view(["POST"])
@@ -101,3 +102,15 @@ def user_payments_reveal(request, pk):
         return Response({"items": entity_payments.reveal(u, request.user)})
     except entity_payments.Locked as x:
         return Response({"detail": str(x)}, status=status.HTTP_409_CONFLICT)
+
+
+@api_view(["POST"])
+@permission_classes(PERM)
+def user_account_settle(request, pk):
+    """A superadmin marks what this person has open on account as paid."""
+    u = _target(request, pk)
+    if not u:
+        return Response({"detail": "Deze gebruiker bestaat niet."}, status=status.HTTP_404_NOT_FOUND)
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    return Response({"settled": payaccount.settle(u), "account": payaccount.info(u)})

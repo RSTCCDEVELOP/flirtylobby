@@ -25,6 +25,7 @@ urlpatterns = [
     path("users/fake/", fakeusers.fake_users),
     path("users/<int:pk>/payments/", payment_views.user_payments),
     path("users/<int:pk>/payments/reveal/", payment_views.user_payments_reveal),
+    path("users/<int:pk>/payments/settle/", payment_views.user_account_settle),
     path("profile/me/fill-test/", fakeusers.fill_own_profile),
     path("auth/login/", views.login),
     path("auth/activity/", views.activity),

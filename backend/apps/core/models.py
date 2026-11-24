@@ -432,6 +432,8 @@ class Entity(models.Model):
     vat_no = models.CharField(max_length=40, blank=True)
     color = models.CharField(max_length=7, blank=True)  # a colour an administrator gives this entity: a coloured dot before the name in the lists (#rrggbb)
     locations = models.JSONField(default=list, blank=True)  # more addresses of this company, each with a location name: [{name, street, house_number, postal_code, city, country, phone, email}] (see entity.clean_locations)
+    pay_on_account = models.BooleanField(default=False)  # may buy (AI credit) on account: invoiced later, set by a superadmin (core/payaccount.py)
+    account_limit = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # the maximum that may be open on account
     payments_enc = models.TextField(blank=True, editable=False)  # the payment details of this company, ONE encrypted blob (see entity_payments.py): nothing in it is readable in the database
     users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="entities")
     groups = models.ManyToManyField("accounts.UserGroup", blank=True, related_name="entities")

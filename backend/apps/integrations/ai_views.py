@@ -545,7 +545,7 @@ def me(request):
     t = qs.aggregate(calls=Count("id"), tin=Sum("tokens_in"), tout=Sum("tokens_out"), charged=Sum("charged", filter=Q(billable=True)))
     from apps.core import modules
 
-    return Response({"module": modules.enabled("ai"), "credit_required": bool(cfg.credit_required and sub), "exempt": not sub, "own_system": cfg.tenant, "welcome": bool(aiusage.group_of(u) in ("super", "admin") and not (acc and acc.welcomed)), "is_staff": bool(u.is_staff), "companies": _companies(u), "payer": _payer_default(u), "person": {"name": (u.get_full_name() or u.email or u.username or "")[:120], "email": u.email or ""}, "balance": F(bal), "currency": st.currency, "low": bool(cfg.credit_required and sub and bal < max(1.0, float(cfg.topup_min) / 5)),
+    return Response({"module": modules.enabled("ai"), "credit_required": bool(cfg.credit_required and sub), "exempt": not sub, "own_system": cfg.tenant, "welcome": bool(aiusage.group_of(u) in ("super", "admin") and not (acc and acc.welcomed)), "is_staff": bool(u.is_staff), "companies": _companies(u), "payer": _payer_default(u), "person": {"name": (u.get_full_name() or u.email or u.username or "")[:120], "email": u.email or "", "account": __import__("apps.core.payaccount", fromlist=["info"]).info(u, False, u.is_staff)}, "balance": F(bal), "currency": st.currency, "low": bool(cfg.credit_required and sub and bal < max(1.0, float(cfg.topup_min) / 5)),
                      "proposal": aiusage.proposal(st, u), "can_pay": stripe_on or commerce.can_pay_online() or _sandbox_pays(), "pay_via": "stripe" if stripe_on else "sandbox", "pay_name": (link["name"] if link else "") if u.is_staff else "", "month": {"calls": t["calls"], "tokens_in": t["tin"] or 0, "tokens_out": t["tout"] or 0, "charged": F(t["charged"])},
                      "ledger": [{"at": r.created_at.isoformat(), "kind": r.kind, "amount": F(r.amount), "balance": F(r.balance_after), "note": r.note} for r in AiLedger.objects.filter(user=u)[:30]],
                      "recent": [{"at": r.created_at.isoformat(), "source": r.source, "model": r.model, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out, "ok": r.ok, "charged": F(r.charged if r.billable else 0)} for r in qs[:20]]})
@@ -574,8 +574,14 @@ def _sandbox_pays():
 def _companies(user):
     """The companies the person belongs to (to choose who pays a purchase of credit)."""
     from apps.accounts.payment_views import companies_of
+    from apps.core import payaccount
+    from apps.core.models import Entity
 
-    return companies_of(user)
+    out = companies_of(user)
+    for c in out:
+        e = Entity.objects.filter(pk=c["id"]).first()
+        c["account"] = payaccount.info(e, True, user.is_staff) if e else None
+    return out
 
 
 def _payer_default(user):
@@ -629,6 +635,23 @@ def topup(request):
     top = float(aiusage.Cfg(st, request.user).topup_max)
     if not (Decimal(str(prop["min"])) <= amount <= Decimal(str(max(prop["max"], top)))):
         return Response({"detail": f"Kies een bedrag tussen {prop['min']:g} en {max(prop['max'], top):g}."}, status=status.HTTP_400_BAD_REQUEST)
+    if request.data.get("pay") == "account":  # on account: booked at once, invoiced later, within the maximum open amount of the person or the company that pays
+        import uuid
+
+        from apps.core import payaccount
+        from apps.core.models import Entity
+
+        owner, is_ent = (Entity.objects.filter(pk=who["entity"]).first(), True) if who.get("entity") else (request.user, False)
+        if not owner:
+            return Response({"detail": "Kies een bedrijf waar je bij hoort."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            payaccount.check(owner, amount, is_ent, request.user.is_staff)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        ref = "ai_" + uuid.uuid4().hex[:20]
+        AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, via="account", payer_entity=who.get("entity"), payer_name=who.get("name", ""))
+        aiusage.settle_topup(ref, True, "op rekening")
+        return Response({"url": f"/dashboard/ai?paid=1&ref={ref}", "ref": ref, "via": "account"})
     from apps.core import license_stripe
 
     link = aiusage.pay_link(request.user)

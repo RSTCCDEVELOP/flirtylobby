@@ -31,8 +31,9 @@ export default function PaymentDetails({ base, canEdit, forUser = false }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [payer, setPayer] = useState({ on: false, entity: "" });
+  const [acc, setAcc] = useState({ on: false, limit: "" });  // paying on account: the switch and the maximum open amount (a superadmin sets them)
 
-  const take = (r) => { setD(r); setItems(r.items || []); setPayer({ on: !!r.pays_via_company, entity: r.billing_entity ? String(r.billing_entity) : "" }); };
+  const take = (r) => { setD(r); setItems(r.items || []); setAcc({ on: !!r.account?.on, limit: r.account?.limit ? String(r.account.limit) : "" }); setPayer({ on: !!r.pays_via_company, entity: r.billing_entity ? String(r.billing_entity) : "" }); };
   useEffect(() => { setD(null); setShown(false); api(base).then(take).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, [base]);
 
   const setItem = (i, k, v) => setItems((xs) => xs.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
@@ -45,7 +46,7 @@ export default function PaymentDetails({ base, canEdit, forUser = false }) {
   const save = async () => {
     setBusy(true); setMsg(null);
     try {
-      const body = { items };
+      const body = { items, ...(d.account_manage ? { pay_on_account: acc.on, account_limit: acc.limit === "" ? 0 : Number(acc.limit) } : {}) };
       if (forUser) { body.pays_via_company = payer.on; body.billing_entity = payer.entity ? Number(payer.entity) : null; }
       take(await api(base, { method: "PUT", body })); setShown(false); setMsg({ ok: true, text: tx("Opgeslagen.") });
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
@@ -53,6 +54,12 @@ export default function PaymentDetails({ base, canEdit, forUser = false }) {
   };
 
   if (!d) return <p className="muted">{msg ? msg.text : tx("Laden…")}</p>;
+  const settle = async () => {  // what is open on account is paid
+    setBusy(true); setMsg(null);
+    try { const r = await api(`${base}settle/`, { method: "POST", body: {} }); setD({ ...d, account: r.account }); setMsg({ ok: true, text: tx("Het openstaande bedrag is als betaald gemarkeerd.") }); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
   const kinds = (d.kinds || []).map((k) => k.key);
   const companies = d.companies || [];
   return (
@@ -79,6 +86,25 @@ export default function PaymentDetails({ base, canEdit, forUser = false }) {
             </div>
           )}
           <span className="muted" style={{ fontSize: ".8rem" }}>{companies.length ? tx("Zo bepaalt het systeem bij een bestelling of factuur wie de rekening krijgt: het bedrijf of de gebruiker zelf.") : tx("Koppel eerst een bedrijf aan deze gebruiker (tab Rechten, Entiteiten) om via een bedrijf te kunnen betalen.")}</span>
+        </section>
+      )}
+
+      {d.account && (d.account_manage || d.account.on) && (
+        <section style={SECTION}>
+          <strong style={{ fontSize: ".9rem" }}>{tx("Betalen op rekening")}</strong>
+          <label className="check sec-toggle">
+            <span className="switch"><input type="checkbox" checked={acc.on} disabled={!canEdit || !d.account_manage} onChange={(e) => setAcc((a) => ({ ...a, on: e.target.checked }))} /><span /></span>
+            <span>{acc.on ? tx("Mag AI-tegoed op rekening kopen (de factuur volgt later)") : tx("Betaalt direct, niet op rekening")}</span>
+          </label>
+          {acc.on && (
+            <div className="e2e-field" style={{ maxWidth: 260 }}>
+              <label className="e2e-label" htmlFor="pd-acc-limit"><span>{tx("Maximaal openstaand bedrag (€)")}</span></label>
+              <input id="pd-acc-limit" className="e2e-input" type="number" min="0" step="1" value={acc.limit} disabled={!canEdit || !d.account_manage} onChange={(e) => setAcc((a) => ({ ...a, limit: e.target.value }))} />
+            </div>
+          )}
+          <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Nu openstaand")}: <strong>€ {Number(d.account.open || 0).toFixed(2)}</strong>{d.account.limit > 0 ? ` ${tx("van maximaal")} € ${Number(d.account.limit).toFixed(2)}` : ""}</span>
+          {d.account_manage && d.account.open > 0 && <div><button type="button" className="btn sm" disabled={busy} onClick={settle}>{tx("Als betaald markeren")}</button></div>}
+          <span className="muted" style={{ fontSize: ".8rem" }}>{tx("Alleen een superadmin zet dit aan en stelt het maximum in. Een superadmin kan zelf altijd op rekening bestellen.")}</span>
         </section>
       )}
 

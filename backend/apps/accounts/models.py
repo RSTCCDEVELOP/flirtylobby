@@ -105,6 +105,8 @@ class User(AbstractUser):
     otp_active = models.BooleanField(default=False)  # two-step verification switched on
     twofa_method = models.CharField(max_length=10, blank=True)  # "email" | "sms" | "app"
     payments_enc = models.TextField(blank=True, editable=False)  # the payment details of this person, ONE encrypted blob (core/entity_payments.py): nothing in it is readable in the database
+    pay_on_account = models.BooleanField(default=False)  # may buy (AI credit) on account: invoiced later, set by a superadmin (core/payaccount.py)
+    account_limit = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # the maximum that may be open on account
     pays_via_company = models.BooleanField(default=False)  # this person pays (orders, invoices) through a company; False = pays privately, by himself
     billing_entity = models.PositiveIntegerField(null=True, blank=True)  # the id of that company (one of the companies this person belongs to); no foreign key: the companies live in the core app
     twofa_required = models.BooleanField(default=False)  # a superadmin requires two-step verification for this person: it has to be set up after the first login
