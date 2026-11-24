@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu samping: warna aksen saat disorot dan untuk item saat ini (kosong = seperti tema)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu samping: warna garis (kosong = seperti tema)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu samping: warna tombol (panah) (kosong = seperti tema)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu samping: warna panah (kosong = seperti tema)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu samping: warna panah (kosong = seperti tema)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "Secara default, menu samping mengikuti warna tema. Pilih untuk setiap mode sebuah warna tema atau warna sendiri. Jika tidak ada yang dipilih untuk gelap, warna terang yang berlaku.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Menu samping: warna latar belakang dalam mode gelap (kosong = seperti terang)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Menu samping: warna teks dalam mode gelap (kosong = seperti terang)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Menu samping: warna aksen dalam mode gelap (kosong = seperti terang)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Menu samping: warna garis dalam mode gelap (kosong = seperti terang)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Menu samping: warna tombol dalam mode gelap (kosong = seperti terang)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Menu samping: warna panah dalam mode gelap (kosong = seperti terang)"
 }

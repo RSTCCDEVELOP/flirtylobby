@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "القائمة الجانبية: اللون المميز عند التمرير وللعنصر الحالي (فارغ = مثل القالب)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "القائمة الجانبية: لون الخطوط (فارغ = مثل القالب)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "القائمة الجانبية: لون الزر (السهم) (فارغ = مثل القالب)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "القائمة الجانبية: لون السهم (فارغ = مثل القالب)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "القائمة الجانبية: لون السهم (فارغ = مثل القالب)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "افتراضيًا تتبع القائمة الجانبية ألوان القالب. اختر لكل وضع لونًا من القالب أو لونًا خاصًا بك. إذا لم يتم اختيار شيء للوضع الداكن، يُطبَّق لون الوضع الفاتح.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "القائمة الجانبية: لون الخلفية في الوضع الداكن (فارغ = مثل الفاتح)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "القائمة الجانبية: لون النص في الوضع الداكن (فارغ = مثل الفاتح)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "القائمة الجانبية: لون التمييز في الوضع الداكن (فارغ = مثل الفاتح)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "القائمة الجانبية: لون الخطوط في الوضع الداكن (فارغ = مثل الفاتح)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "القائمة الجانبية: لون الزر في الوضع الداكن (فارغ = مثل الفاتح)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "القائمة الجانبية: لون السهم في الوضع الداكن (فارغ = مثل الفاتح)"
 }

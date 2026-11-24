@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menú lateral: color de acento al pasar el ratón y en el elemento actual (vacío = como el tema)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menú lateral: color de las líneas (vacío = como el tema)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menú lateral: color del botón (flecha) (vacío = como el tema)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menú lateral: color de la flecha (vacío = como el tema)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menú lateral: color de la flecha (vacío = como el tema)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "De forma predeterminada, el menú lateral sigue los colores del tema. Elige para cada modo un color del tema o un color propio. Si no se elige nada para el oscuro, se aplica el color del claro.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Menú lateral: color de fondo en modo oscuro (vacío = como claro)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Menú lateral: color del texto en modo oscuro (vacío = como claro)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Menú lateral: color de acento en modo oscuro (vacío = como claro)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Menú lateral: color de las líneas en modo oscuro (vacío = como claro)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Menú lateral: color del botón en modo oscuro (vacío = como claro)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Menú lateral: color de la flecha en modo oscuro (vacío = como claro)"
 }

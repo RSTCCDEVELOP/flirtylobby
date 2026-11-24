@@ -245,9 +245,9 @@ def number(key, label, default, css, unit, lo, hi, step=1):
 COLOR_TOKENS = {"primary": "var(--blue)", "secondary": "var(--orange)", "card": "var(--card)", "page": "var(--page, var(--bg))", "text": "var(--text)", "muted": "var(--muted)", "ok": "var(--ok)", "danger": "var(--danger)", "white": "#ffffff", "black": "#000000"}
 
 
-def colorref(key, label, css):
+def colorref(key, label, css, mode="both"):
     """A colour of the theme by its name (primary, secondary, card ...), an own colour (#rrggbb) or empty = like the theme (nothing is set)."""
-    return {"key": key, "label": label, "type": "colorref", "default": "", "css": css, "mode": "both"}
+    return {"key": key, "label": label, "type": "colorref", "default": "", "css": css, "mode": mode}  # mode "dark": only in the dark mode of the website (it overrides the colour of the light mode there)
 
 
 def choice(key, label, default, css, choices):
@@ -330,6 +330,12 @@ SCHEMA = [
         colorref("side_menu_linec", "Zijmenu: kleur van de lijnen (leeg = zoals het thema)", "--side-menu-linec"),
         colorref("side_button_bg", "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)", "--side-btn-bg"),
         colorref("side_button_fg", "Zijmenu: kleur van het pijltje (leeg = zoals het thema)", "--side-btn-fg"),
+        colorref("side_menu_bg_dark", "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)", "--side-menu-bg", "dark"),
+        colorref("side_menu_fg_dark", "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)", "--side-menu-fg", "dark"),
+        colorref("side_menu_accent_dark", "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)", "--side-menu-accent", "dark"),
+        colorref("side_menu_linec_dark", "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)", "--side-menu-linec", "dark"),
+        colorref("side_button_bg_dark", "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)", "--side-btn-bg", "dark"),
+        colorref("side_button_fg_dark", "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)", "--side-btn-fg", "dark"),
         number("side_menu_w", "Zijmenu: breedte van het menu", 300, "--side-menu-w", "px", 120, 480, 10),
         number("side_menu_size", "Zijmenu: tekstgrootte van het menu (%)", 100, "--side-menu-size", "", 80, 140, 5),
         number("side_menu_opacity", "Zijmenu: dekking van het menu (% , lager = transparanter)", 100, "--side-menu-op", "", 20, 100, 5),

@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "侧边菜单：悬停和当前项的强调色（留空 = 与主题相同）",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "侧边菜单：线条颜色（留空 = 与主题相同）",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "侧边菜单：按钮（箭头）颜色（留空 = 与主题相同）",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "侧边菜单：箭头颜色（留空 = 与主题相同）"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "侧边菜单：箭头颜色（留空 = 与主题相同）",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "默认情况下，侧边菜单跟随主题颜色。请为每种模式选择主题颜色或自定义颜色。如果未为深色选择颜色，则使用浅色的颜色。",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "侧边菜单: 深色模式下的背景颜色 (留空 = 与浅色相同)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "侧边菜单: 深色模式下的文字颜色 (留空 = 与浅色相同)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "侧边菜单: 深色模式下的强调色 (留空 = 与浅色相同)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "侧边菜单: 深色模式下的线条颜色 (留空 = 与浅色相同)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "侧边菜单: 深色模式下的按钮颜色 (留空 = 与浅色相同)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "侧边菜单: 深色模式下的箭头颜色 (留空 = 与浅色相同)"
 }

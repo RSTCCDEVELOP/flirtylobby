@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Side menu: accent colour on hover and the current item (empty = like the theme)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Side menu: colour of the lines (empty = like the theme)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Side menu: colour of the button (arrow) (empty = like the theme)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Side menu: colour of the arrow (empty = like the theme)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Side menu: colour of the arrow (empty = like the theme)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "By default, the side menu follows the theme colours. For each mode, choose a theme colour or your own colour. If nothing is chosen for dark, the light colour applies.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Side menu: background colour in dark mode (empty = like light)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Side menu: text colour in dark mode (empty = like light)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Side menu: accent colour in dark mode (empty = like light)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Side menu: colour of the lines in dark mode (empty = like light)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Side menu: colour of the button in dark mode (empty = like light)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Side menu: colour of the arrow in dark mode (empty = like light)"
 }

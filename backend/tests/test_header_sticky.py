@@ -99,3 +99,18 @@ def test_the_colours_of_the_side_menu_are_a_colour_of_the_theme_an_own_colour_or
     assert "--side-menu-bg" not in css  # like the theme: nothing is set, the style sheet falls back on the colours of the theme
     css, _ = theme.build({**base, "side_menu_bg": "primary", "side_menu_fg": "#ffffff"})
     assert "--side-menu-bg:var(--blue)" in css and "--side-menu-fg:#ffffff" in css
+
+
+def test_every_colour_of_the_side_menu_has_a_dark_mode_twin_that_only_counts_in_the_dark_mode():
+    from apps.core import themepacks
+
+    for k in ("side_menu_bg", "side_menu_fg", "side_menu_accent", "side_menu_linec", "side_button_bg", "side_button_fg"):
+        d = theme.FIELDS[f"{k}_dark"]
+        assert d["type"] == "colorref" and d["mode"] == "dark" and d["css"] == theme.FIELDS[k]["css"] and d["default"] == "" and f"{k}_dark" in themepacks.COMPLETE_KEYS
+    base = {k: f["default"] for k, f in theme.FIELDS.items()}
+    css, _ = theme.build({**base, "side_menu_bg": "card", "side_menu_bg_dark": "#112233"})
+    light, dark = css.split('html:root[data-theme="dark"]')
+    assert "--side-menu-bg:var(--card)" in light and "--side-menu-bg:#112233" in dark and "#112233" not in light  # the dark colour only in the dark mode
+    css, _ = theme.build({**base, "side_menu_bg_dark": "primary"})
+    assert "--side-menu-bg:var(--blue)" in css.split('html:root[data-theme="dark"]')[1] and "--side-menu-bg" not in css.split('html:root[data-theme="dark"]')[0]
+    assert theme.validate({"side_menu_fg_dark": "white", "side_menu_linec_dark": "#ABCDEF"})[0] == {"side_menu_fg_dark": "white", "side_menu_linec_dark": "#abcdef"}

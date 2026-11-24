@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Yan menü: üzerine gelince ve geçerli öğe için vurgu rengi (boş = tema gibi)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Yan menü: çizgilerin rengi (boş = tema gibi)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Yan menü: düğmenin (ok) rengi (boş = tema gibi)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Yan menü: okun rengi (boş = tema gibi)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Yan menü: okun rengi (boş = tema gibi)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "Varsayılan olarak yan menü temanın renklerini izler. Her mod için temanın bir rengini veya kendi rengini seç. Koyu için hiçbir şey seçilmezse açığın rengi geçerlidir.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Yan menü: arka plan rengi koyu modda (boş = açık gibi)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Yan menü: metin rengi koyu modda (boş = açık gibi)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Yan menü: vurgu rengi koyu modda (boş = açık gibi)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Yan menü: çizgilerin rengi koyu modda (boş = açık gibi)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Yan menü: düğmenin rengi koyu modda (boş = açık gibi)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Yan menü: okun rengi koyu modda (boş = açık gibi)"
 }

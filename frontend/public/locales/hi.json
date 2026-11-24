@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "साइड मेन्यू: होवर पर और वर्तमान आइटम के लिए एक्सेंट रंग (खाली = थीम जैसा)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "साइड मेन्यू: रेखाओं का रंग (खाली = थीम जैसा)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "साइड मेन्यू: बटन (तीर) का रंग (खाली = थीम जैसा)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "साइड मेन्यू: तीर का रंग (खाली = थीम जैसा)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "साइड मेन्यू: तीर का रंग (खाली = थीम जैसा)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "डिफ़ॉल्ट रूप से साइड मेन्यू थीम के रंगों का पालन करता है। हर मोड के लिए थीम का रंग या अपना रंग चुनें। अगर डार्क के लिए कुछ नहीं चुना गया है, तो लाइट का रंग लागू होता है।",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "साइड मेन्यू: पृष्ठभूमि का रंग डार्क मोड में (खाली = लाइट जैसा)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "साइड मेन्यू: टेक्स्ट का रंग डार्क मोड में (खाली = लाइट जैसा)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "साइड मेन्यू: एक्सेंट रंग डार्क मोड में (खाली = लाइट जैसा)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "साइड मेन्यू: लाइनों का रंग डार्क मोड में (खाली = लाइट जैसा)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "साइड मेन्यू: बटन का रंग डार्क मोड में (खाली = लाइट जैसा)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "साइड मेन्यू: तीर का रंग डार्क मोड में (खाली = लाइट जैसा)"
 }

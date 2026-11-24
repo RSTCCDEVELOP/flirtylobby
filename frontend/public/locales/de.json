@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Seitenmenü: Akzentfarbe beim Darüberfahren und beim aktuellen Eintrag (leer = wie das Theme)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Seitenmenü: Farbe der Linien (leer = wie das Theme)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Seitenmenü: Farbe des Buttons (Pfeil) (leer = wie das Theme)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Seitenmenü: Farbe des Pfeils (leer = wie das Theme)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Seitenmenü: Farbe des Pfeils (leer = wie das Theme)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "Standardmäßig folgt das Seitenmenü den Farben des Themes. Wähle pro Modus eine Farbe des Themes oder eine eigene Farbe. Ist für Dunkel nichts gewählt, gilt die Farbe von Hell.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Seitenmenü: Hintergrundfarbe im dunklen Modus (leer = wie Hell)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Seitenmenü: Textfarbe im dunklen Modus (leer = wie Hell)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Seitenmenü: Akzentfarbe im dunklen Modus (leer = wie Hell)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Seitenmenü: Farbe der Linien im dunklen Modus (leer = wie Hell)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Seitenmenü: Farbe der Schaltfläche im dunklen Modus (leer = wie Hell)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Seitenmenü: Farbe des Pfeils im dunklen Modus (leer = wie Hell)"
 }

@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu laterale: colore di accento al passaggio del mouse e per la voce corrente (vuoto = come il tema)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu laterale: colore delle linee (vuoto = come il tema)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu laterale: colore del pulsante (freccia) (vuoto = come il tema)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu laterale: colore della freccia (vuoto = come il tema)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu laterale: colore della freccia (vuoto = come il tema)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "Per impostazione predefinita, il menu laterale segue i colori del tema. Scegli per ogni modalità un colore del tema o un colore personalizzato. Se per lo scuro non è scelto nulla, vale il colore del chiaro.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Menu laterale: colore di sfondo in modalità scura (vuoto = come chiaro)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Menu laterale: colore del testo in modalità scura (vuoto = come chiaro)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Menu laterale: colore di accento in modalità scura (vuoto = come chiaro)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Menu laterale: colore delle linee in modalità scura (vuoto = come chiaro)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Menu laterale: colore del pulsante in modalità scura (vuoto = come chiaro)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Menu laterale: colore della freccia in modalità scura (vuoto = come chiaro)"
 }

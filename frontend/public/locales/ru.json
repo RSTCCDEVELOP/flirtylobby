@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Боковое меню: акцентный цвет при наведении и для текущего пункта (пусто = как в теме)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Боковое меню: цвет линий (пусто = как в теме)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Боковое меню: цвет кнопки (стрелка) (пусто = как в теме)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Боковое меню: цвет стрелки (пусто = как в теме)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Боковое меню: цвет стрелки (пусто = как в теме)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "По умолчанию боковое меню использует цвета темы. Для каждого режима выбери цвет темы или собственный цвет. Если для тёмного ничего не выбрано, действует цвет светлого.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Боковое меню: цвет фона в тёмном режиме (пусто = как светлый)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Боковое меню: цвет текста в тёмном режиме (пусто = как светлый)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Боковое меню: акцентный цвет в тёмном режиме (пусто = как светлый)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Боковое меню: цвет линий в тёмном режиме (пусто = как светлый)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Боковое меню: цвет кнопки в тёмном режиме (пусто = как светлый)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Боковое меню: цвет стрелки в тёмном режиме (пусто = как светлый)"
 }

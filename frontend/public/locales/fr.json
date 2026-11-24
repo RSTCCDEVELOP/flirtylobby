@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu latéral : couleur d'accent au survol et pour l'élément actuel (vide = comme le thème)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu latéral : couleur des lignes (vide = comme le thème)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu latéral : couleur du bouton (flèche) (vide = comme le thème)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu latéral : couleur de la flèche (vide = comme le thème)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu latéral : couleur de la flèche (vide = comme le thème)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "Par défaut, le menu latéral suit les couleurs du thème. Choisis pour chaque mode une couleur du thème ou une couleur personnalisée. Si rien n'est choisi pour le sombre, la couleur du clair s'applique.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Menu latéral: couleur d'arrière-plan en mode sombre (vide = comme clair)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Menu latéral: couleur du texte en mode sombre (vide = comme clair)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Menu latéral: couleur d'accent en mode sombre (vide = comme clair)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Menu latéral: couleur des lignes en mode sombre (vide = comme clair)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Menu latéral: couleur du bouton en mode sombre (vide = comme clair)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Menu latéral: couleur de la flèche en mode sombre (vide = comme clair)"
 }

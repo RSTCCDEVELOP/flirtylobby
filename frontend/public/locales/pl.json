@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu boczne: kolor akcentu po najechaniu i dla bieżącej pozycji (puste = jak motyw)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu boczne: kolor linii (puste = jak motyw)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu boczne: kolor przycisku (strzałka) (puste = jak motyw)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu boczne: kolor strzałki (puste = jak motyw)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu boczne: kolor strzałki (puste = jak motyw)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "Domyślnie menu boczne korzysta z kolorów motywu. Wybierz dla każdego trybu kolor motywu lub własny kolor. Jeśli dla ciemnego nic nie wybrano, obowiązuje kolor jasnego.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Menu boczne: kolor tła w trybie ciemnym (puste = jak jasny)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Menu boczne: kolor tekstu w trybie ciemnym (puste = jak jasny)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Menu boczne: kolor akcentu w trybie ciemnym (puste = jak jasny)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Menu boczne: kolor linii w trybie ciemnym (puste = jak jasny)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Menu boczne: kolor przycisku w trybie ciemnym (puste = jak jasny)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Menu boczne: kolor strzałki w trybie ciemnym (puste = jak jasny)"
 }

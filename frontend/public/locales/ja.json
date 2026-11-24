@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "サイドメニュー：ホバー時と現在の項目のアクセント色（空 = テーマと同じ）",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "サイドメニュー：線の色（空 = テーマと同じ）",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "サイドメニュー：ボタン（矢印）の色（空 = テーマと同じ）",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "サイドメニュー：矢印の色（空 = テーマと同じ）"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "サイドメニュー：矢印の色（空 = テーマと同じ）",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "既定では、サイドメニューはテーマの色に従います。モードごとに、テーマの色または独自の色を選んでください。ダークで何も選ばれていない場合は、ライトの色が適用されます。",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "サイドメニュー: ダークモードの背景色 (空 = ライトと同じ)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "サイドメニュー: ダークモードの文字色 (空 = ライトと同じ)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "サイドメニュー: ダークモードのアクセントカラー (空 = ライトと同じ)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "サイドメニュー: ダークモードの線の色 (空 = ライトと同じ)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "サイドメニュー: ダークモードのボタンの色 (空 = ライトと同じ)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "サイドメニュー: ダークモードの矢印の色 (空 = ライトと同じ)"
 }

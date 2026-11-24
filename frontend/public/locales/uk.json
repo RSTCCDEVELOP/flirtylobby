@@ -9054,5 +9054,12 @@
   "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Бічне меню: акцентний колір при наведенні та для поточного пункту (порожньо = як у теми)",
   "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Бічне меню: колір ліній (порожньо = як у теми)",
   "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Бічне меню: колір кнопки (стрілка) (порожньо = як у теми)",
-  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Бічне меню: колір стрілки (порожньо = як у теми)"
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Бічне меню: колір стрілки (порожньо = як у теми)",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.": "За замовчуванням бічне меню використовує кольори теми. Для кожного режиму обери колір теми або власний колір. Якщо для темного нічого не вибрано, діє колір світлого.",
+  "Zijmenu: achtergrondkleur in de donkere modus (leeg = zoals licht)": "Бічне меню: колір тла у темному режимі (порожньо = як світлий)",
+  "Zijmenu: tekstkleur in de donkere modus (leeg = zoals licht)": "Бічне меню: колір тексту у темному режимі (порожньо = як світлий)",
+  "Zijmenu: accentkleur in de donkere modus (leeg = zoals licht)": "Бічне меню: акцентний колір у темному режимі (порожньо = як світлий)",
+  "Zijmenu: kleur van de lijnen in de donkere modus (leeg = zoals licht)": "Бічне меню: колір ліній у темному режимі (порожньо = як світлий)",
+  "Zijmenu: kleur van de knop in de donkere modus (leeg = zoals licht)": "Бічне меню: колір кнопки у темному режимі (порожньо = як світлий)",
+  "Zijmenu: kleur van het pijltje in de donkere modus (leeg = zoals licht)": "Бічне меню: колір стрілки у темному режимі (порожньо = як світлий)"
 }

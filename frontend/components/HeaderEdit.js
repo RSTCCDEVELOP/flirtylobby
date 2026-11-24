@@ -81,11 +81,16 @@ export default function HeaderEdit() {
     timer.current = setTimeout(() => save(values), 400);
   };
   const COLOR_VAR = { side_menu_bg: "--side-menu-bg", side_menu_fg: "--side-menu-fg", side_menu_accent: "--side-menu-accent", side_menu_linec: "--side-menu-linec", side_button_bg: "--side-btn-bg", side_button_fg: "--side-btn-fg" };
-  const setColor = (key, v) => {  // a colour of the side menu: a colour of the theme (kept by its name), an own colour, or "" (like the theme); the page follows at once
+  const liveColors = (values) => {  // the colours of the side menu for light and dark mode, in a style tag after the theme: the page follows at once
+    const decl = (suffix) => Object.entries(COLOR_VAR).map(([k, cssVar]) => { const v = values[k + suffix]; return v ? `${cssVar}:${tokenVar(v) || v};` : ""; }).join("");
+    let el = document.getElementById("side-menu-live");
+    if (!el) { el = document.createElement("style"); el.id = "side-menu-live"; document.head.appendChild(el); }
+    el.textContent = `html:root{${decl("")}}html:root[data-theme="dark"]{${decl("_dark")}}`;
+  };
+  const setColor = (key, v) => {  // a colour of the side menu (key or key_dark): a colour of the theme (kept by its name), an own colour, or "" (like the theme / like light)
     const values = { ...theme.values, [key]: v };
     setTheme({ ...theme, values });
-    const root = document.documentElement;
-    if (!v) root.style.removeProperty(COLOR_VAR[key]); else root.style.setProperty(COLOR_VAR[key], tokenVar(v) || v);
+    liveColors(values);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(values), 400);
   };
@@ -300,20 +305,21 @@ export default function HeaderEdit() {
                     {designTab === "color" && (<>
                     <section className="hed-card">
                       <h4>{tx("Kleuren")}</h4>
-                      <small className="muted">{tx("Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.")}</small>
-                      {[["side_menu_bg", "Achtergrond"], ["side_menu_fg", "Tekst"], ["side_menu_accent", "Accent (aanwijzen en huidige pagina)"], ["side_menu_linec", "Lijnen"], ["side_button_bg", "Knop (pijl): achtergrond"], ["side_button_fg", "Knop (pijl): pijltje"]].map(([k, l]) => {
-                        if (!fields.some((x) => x.key === k)) return null;
-                        const v = theme.values[k] || "";
-                        return (
-                          <div className="hed-field" key={k}>
-                            <span className="hed-lbl">{tx(l)}<b className="hed-val">{v ? (tokenVar(v) ? tx(({ primary: "Primair", secondary: "Secundair", card: "Kaart", page: "Pagina", text: "Tekst", muted: "Gedempt", ok: "Succes", danger: "Gevaar", white: "Wit", black: "Zwart" })[v]) : v) : tx("Zoals het thema")}</b></span>
-                            <span style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                              <ColorInput value={v} tokens allowNone onValue={(x) => setColor(k, x)} />
-                              {v && <button type="button" className="btn sm" onClick={() => setColor(k, "")}>{tx("Zoals het thema")}</button>}
-                            </span>
-                          </div>
-                        );
-                      })}
+                      <small className="muted">{tx("Standaard volgt het zijmenu de kleuren van het thema. Kies per modus een kleur van het thema of een eigen kleur. Is voor donker niets gekozen, dan geldt de kleur van licht.")}</small>
+                      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 52px 52px", gap: ".4rem .6rem", alignItems: "center" }}>
+                        <span />
+                        <strong style={{ fontSize: ".72rem", textTransform: "uppercase", letterSpacing: ".04em", textAlign: "center", opacity: .7 }}>{tx("Licht")}</strong>
+                        <strong style={{ fontSize: ".72rem", textTransform: "uppercase", letterSpacing: ".04em", textAlign: "center", opacity: .7 }}>{tx("Donker")}</strong>
+                        {[["side_menu_bg", "Achtergrond"], ["side_menu_fg", "Tekst"], ["side_menu_accent", "Accent (aanwijzen en huidige pagina)"], ["side_menu_linec", "Lijnen"], ["side_button_bg", "Knop (pijl): achtergrond"], ["side_button_fg", "Knop (pijl): pijltje"]].map(([k, l]) => {
+                          if (!fields.some((x) => x.key === k)) return null;
+                          const name = (v) => (v ? (tokenVar(v) ? tx(({ primary: "Primair", secondary: "Secundair", card: "Kaart", page: "Pagina", text: "Tekst", muted: "Gedempt", ok: "Succes", danger: "Gevaar", white: "Wit", black: "Zwart" })[v]) : v) : tx("Zoals het thema"));
+                          return [
+                            <span key={`${k}-l`} style={{ fontSize: ".8rem", lineHeight: 1.25 }}>{tx(l)}</span>,
+                            <span key={`${k}-a`} style={{ display: "grid", justifyItems: "center" }}><ColorInput value={theme.values[k] || ""} tokens allowNone title={`${tx("Licht")}: ${name(theme.values[k] || "")}`} style={{ width: 40, height: 32 }} onValue={(x) => setColor(k, x)} /></span>,
+                            <span key={`${k}-d`} style={{ display: "grid", justifyItems: "center" }}><ColorInput value={theme.values[`${k}_dark`] || ""} tokens allowNone title={`${tx("Donker")}: ${name(theme.values[`${k}_dark`] || "")}`} style={{ width: 40, height: 32 }} onValue={(x) => setColor(`${k}_dark`, x)} /></span>,
+                          ];
+                        })}
+                      </div>
                     </section>
                     </>)}
                   </>)}
