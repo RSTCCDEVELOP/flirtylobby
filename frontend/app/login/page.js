@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "../../components/BrandingContext";
 import ThemeToggle from "../../components/ThemeToggle";
+import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { useEffect } from "react";
 import { api, setToken, errorText, ApiError } from "../../lib/api";
 import { EditableText } from "../../components/EditMode";
@@ -121,7 +122,7 @@ export default function Login() {
   if (reset) {
     return (
       <main className="login-page">
-        <div className="login-theme"><ThemeToggle /></div>
+        <div className="login-theme"><LanguageSwitcher flags /><ThemeToggle /></div>
         {reset.step === "ask" ? (
           <form className="card login-card" onSubmit={askCode}>
             <Logo />
@@ -163,7 +164,7 @@ export default function Login() {
   if (challenge) {
     return (
       <main className="login-page">
-        <div className="login-theme"><ThemeToggle /></div>
+        <div className="login-theme"><LanguageSwitcher flags /><ThemeToggle /></div>
         <form className="card login-card" onSubmit={verify}>
           <Logo />
           <h1>{challenge.email_verify ? tx("E-mailadres bevestigen") : tx("Verificatiecode")}</h1>
@@ -181,7 +182,7 @@ export default function Login() {
 
   return (
     <main className="login-page">
-      <div className="login-theme"><ThemeToggle /></div>
+      <div className="login-theme"><LanguageSwitcher flags /><ThemeToggle /></div>
       <form className="card login-card" onSubmit={submit}>
         <Logo />
         <EditableText id="login.title" as="h1" fallbacks={{ nl: "Inloggen", en: "Log in", de: "Anmelden", fr: "Connexion", es: "Iniciar sesión", pt: "Entrar", zh: "登录", ar: "تسجيل الدخول" }} fallback="Inloggen" />
