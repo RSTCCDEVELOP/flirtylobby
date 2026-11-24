@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "لون النص (الوضع الداكن)",
   "Kleuren van het thema": "ألوان السمة",
   "Nog geen eigen kleuren opgeslagen.": "لم يتم حفظ ألوان خاصة بعد.",
-  "Kleurcode": "رمز اللون"
+  "Kleurcode": "رمز اللون",
+  "Altijd bovenaan (blijft staan)": "دائمًا في الأعلى (يبقى ثابتًا)",
+  "Nooit (scrolt weg)": "أبدًا (يتحرك مع الصفحة)",
+  "Blijft staan na 10% scrollen": "يثبت بعد التمرير 10%",
+  "Blijft staan na 25% scrollen": "يثبت بعد التمرير 25%",
+  "Blijft staan na 50% scrollen": "يثبت بعد التمرير 50%",
+  "Blijft staan na 100% scrollen (een heel scherm)": "يثبت بعد التمرير 100% (شاشة كاملة)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "اختر متى يبقى الرأس ثابتًا: دائمًا أو أبدًا أو بعد أن يمرّر الزائر جزءًا من الشاشة."
 }

@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "Cor do texto (modo escuro)",
   "Kleuren van het thema": "Cores do tema",
   "Nog geen eigen kleuren opgeslagen.": "Ainda não há cores próprias guardadas.",
-  "Kleurcode": "Código da cor"
+  "Kleurcode": "Código da cor",
+  "Altijd bovenaan (blijft staan)": "Sempre no topo (fica fixo)",
+  "Nooit (scrolt weg)": "Nunca (desloca-se)",
+  "Blijft staan na 10% scrollen": "Fica fixo após deslocar 10%",
+  "Blijft staan na 25% scrollen": "Fica fixo após deslocar 25%",
+  "Blijft staan na 50% scrollen": "Fica fixo após deslocar 50%",
+  "Blijft staan na 100% scrollen (een heel scherm)": "Fica fixo após deslocar 100% (um ecrã inteiro)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Escolhe quando o cabeçalho fica fixo: sempre, nunca ou depois de o visitante deslocar parte do ecrã."
 }

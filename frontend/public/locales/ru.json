@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "Цвет текста (тёмный режим)",
   "Kleuren van het thema": "Цвета темы",
   "Nog geen eigen kleuren opgeslagen.": "Собственные цвета ещё не сохранены.",
-  "Kleurcode": "Код цвета"
+  "Kleurcode": "Код цвета",
+  "Altijd bovenaan (blijft staan)": "Всегда вверху (закреплена)",
+  "Nooit (scrolt weg)": "Никогда (прокручивается)",
+  "Blijft staan na 10% scrollen": "Закрепляется после прокрутки на 10%",
+  "Blijft staan na 25% scrollen": "Закрепляется после прокрутки на 25%",
+  "Blijft staan na 50% scrollen": "Закрепляется после прокрутки на 50%",
+  "Blijft staan na 100% scrollen (een heel scherm)": "Закрепляется после прокрутки на 100% (целый экран)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Выберите, когда шапка закрепляется: всегда, никогда или после того, как посетитель прокрутил часть экрана."
 }

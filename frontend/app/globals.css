@@ -5043,3 +5043,10 @@ html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.edit.selected) > .pb-celltools {
 html[data-pbbar="1"] .pb { margin-top: 4.4rem; }
 html[data-pbbar="1"] .pb-cell.edit { padding-top: 2.4rem; }
 html[data-pbbar="1"] .pb-rowwrap.styled:not(.hero) { overflow: visible; }
+
+/* the header sticks after a part of the screen is scrolled (theme value header_sticky = after10, after25, after50 or after100): it scrolls with the page first; components/StickyHeader.js sets data-hstuck on <html> when the visitor has scrolled far enough, then it is fixed at the top and slides in */
+html[data-hsticky^="after"] .site-header { position: relative; }
+html[data-hsticky^="after"][data-hstuck="1"] .site-header { position: fixed; top: 0; left: 0; right: 0; margin-left: auto; margin-right: auto; animation: hstick-in .22s ease-out; }
+html[data-hsticky^="after"][data-hstuck="1"] body { padding-top: var(--site-header-h, 64px); }
+@keyframes hstick-in { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { html[data-hsticky^="after"][data-hstuck="1"] .site-header { animation: none; } }

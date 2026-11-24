@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "Textfarbe (Dunkelmodus)",
   "Kleuren van het thema": "Farben des Themes",
   "Nog geen eigen kleuren opgeslagen.": "Noch keine eigenen Farben gespeichert.",
-  "Kleurcode": "Farbcode"
+  "Kleurcode": "Farbcode",
+  "Altijd bovenaan (blijft staan)": "Immer oben (bleibt stehen)",
+  "Nooit (scrolt weg)": "Nie (scrollt weg)",
+  "Blijft staan na 10% scrollen": "Bleibt nach 10% Scrollen stehen",
+  "Blijft staan na 25% scrollen": "Bleibt nach 25% Scrollen stehen",
+  "Blijft staan na 50% scrollen": "Bleibt nach 50% Scrollen stehen",
+  "Blijft staan na 100% scrollen (een heel scherm)": "Bleibt nach 100% Scrollen stehen (ein ganzer Bildschirm)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Wähle, wann die Kopfzeile stehen bleibt: immer, nie oder nachdem der Besucher einen Teil des Bildschirms gescrollt hat."
 }

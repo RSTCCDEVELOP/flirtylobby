@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "टेक्स्ट का रंग (डार्क मोड)",
   "Kleuren van het thema": "थीम के रंग",
   "Nog geen eigen kleuren opgeslagen.": "अभी तक कोई अपना रंग सहेजा नहीं गया।",
-  "Kleurcode": "रंग कोड"
+  "Kleurcode": "रंग कोड",
+  "Altijd bovenaan (blijft staan)": "हमेशा ऊपर (टिका रहता है)",
+  "Nooit (scrolt weg)": "कभी नहीं (स्क्रॉल के साथ जाता है)",
+  "Blijft staan na 10% scrollen": "10% स्क्रॉल करने के बाद टिका रहता है",
+  "Blijft staan na 25% scrollen": "25% स्क्रॉल करने के बाद टिका रहता है",
+  "Blijft staan na 50% scrollen": "50% स्क्रॉल करने के बाद टिका रहता है",
+  "Blijft staan na 100% scrollen (een heel scherm)": "100% स्क्रॉल करने के बाद टिका रहता है (पूरी स्क्रीन)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "चुनें कि हेडर कब टिका रहे: हमेशा, कभी नहीं, या विज़िटर के स्क्रीन का कुछ हिस्सा स्क्रॉल करने के बाद।"
 }

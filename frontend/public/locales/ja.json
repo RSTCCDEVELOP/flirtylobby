@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "文字色(ダークモード)",
   "Kleuren van het thema": "テーマの色",
   "Nog geen eigen kleuren opgeslagen.": "保存した独自の色はまだありません。",
-  "Kleurcode": "カラーコード"
+  "Kleurcode": "カラーコード",
+  "Altijd bovenaan (blijft staan)": "常に上部に固定",
+  "Nooit (scrolt weg)": "固定しない(スクロールで流れる)",
+  "Blijft staan na 10% scrollen": "10%スクロール後に固定",
+  "Blijft staan na 25% scrollen": "25%スクロール後に固定",
+  "Blijft staan na 50% scrollen": "50%スクロール後に固定",
+  "Blijft staan na 100% scrollen (een heel scherm)": "100%スクロール後に固定(画面1つ分)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "ヘッダーをいつ固定するかを選びます:常に、固定しない、または訪問者が画面の一部をスクロールした後。"
 }

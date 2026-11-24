@@ -5,6 +5,7 @@
 // is strictly prohibited without prior written permission from Ronald Stolk or RSTCC.
 // website https://rstcc.net
 
+import StickyHeader from "../components/StickyHeader";
 import DemoNotice from "../components/DemoNotice";
 import AiCreditAsk from "../components/AiCreditAsk";
 import { SpeedTestHost } from "../components/SpeedTest";
@@ -164,6 +165,7 @@ export default async function RootLayout({ children }) {
         {theme?.css && <style id="theme-live" dangerouslySetInnerHTML={{ __html: theme.css }} />}
       </head>
       <body>
+        <StickyHeader />
         <SiteCurrency currency={site?.currency} />
         <ModulesProvider value={modules}>
         <UiProvider value={theme?.values}>

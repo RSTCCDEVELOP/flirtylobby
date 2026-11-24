@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "Kolor tekstu (tryb ciemny)",
   "Kleuren van het thema": "Kolory motywu",
   "Nog geen eigen kleuren opgeslagen.": "Nie zapisano jeszcze własnych kolorów.",
-  "Kleurcode": "Kod koloru"
+  "Kleurcode": "Kod koloru",
+  "Altijd bovenaan (blijft staan)": "Zawsze na górze (zostaje)",
+  "Nooit (scrolt weg)": "Nigdy (przewija się)",
+  "Blijft staan na 10% scrollen": "Zostaje po przewinięciu 10%",
+  "Blijft staan na 25% scrollen": "Zostaje po przewinięciu 25%",
+  "Blijft staan na 50% scrollen": "Zostaje po przewinięciu 50%",
+  "Blijft staan na 100% scrollen (een heel scherm)": "Zostaje po przewinięciu 100% (cały ekran)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Wybierz, kiedy nagłówek zostaje na górze: zawsze, nigdy lub po przewinięciu części ekranu przez odwiedzającego."
 }

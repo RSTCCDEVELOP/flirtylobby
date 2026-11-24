@@ -100,7 +100,12 @@ export default function HeaderEdit() {
                     <section className="hed-card">
                       <h4>{tx("Zichtbaarheid")}</h4>
                       <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.page_header || "show") !== "hide"} onChange={(e) => setLook("page_header", e.target.checked ? "show" : "hide")} /><span /></span><span className="hed-swt"><strong>{tx("Header standaard tonen")}</strong><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
-                      {fld("header_sticky") && sw("header_sticky", "Blijft bovenaan bij scrollen", "De header blijft zichtbaar als je naar beneden scrolt.", "yes", "no")}
+                      {fld("header_sticky") && (
+                        <label key="header_sticky" style={{ display: "grid", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>{tx("Blijft bovenaan bij scrollen")}
+                          <select value={theme.values.header_sticky || "yes"} onChange={(e) => setLook("header_sticky", e.target.value)}>{(fld("header_sticky").choices || []).map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select>
+                          <small className="muted" style={{ fontWeight: 400 }}>{tx("Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.")}</small>
+                        </label>
+                      )}
                       {fld("mode_switch") && sw("mode_switch", "Schakelaar licht/donker", "Laat bezoekers wisselen tussen een lichte en donkere weergave.", "show", "hide")}
                     </section>
                     <section className="hed-card">

@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "文字颜色(深色模式)",
   "Kleuren van het thema": "主题颜色",
   "Nog geen eigen kleuren opgeslagen.": "尚未保存自定义颜色。",
-  "Kleurcode": "颜色代码"
+  "Kleurcode": "颜色代码",
+  "Altijd bovenaan (blijft staan)": "始终固定在顶部",
+  "Nooit (scrolt weg)": "从不固定(随页面滚动)",
+  "Blijft staan na 10% scrollen": "滚动 10% 后固定",
+  "Blijft staan na 25% scrollen": "滚动 25% 后固定",
+  "Blijft staan na 50% scrollen": "滚动 50% 后固定",
+  "Blijft staan na 100% scrollen (een heel scherm)": "滚动 100% 后固定(整屏)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "选择页眉何时固定:始终、从不,或访问者滚动部分屏幕之后。"
 }

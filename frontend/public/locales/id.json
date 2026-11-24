@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "Warna teks (mode gelap)",
   "Kleuren van het thema": "Warna tema",
   "Nog geen eigen kleuren opgeslagen.": "Belum ada warna sendiri yang disimpan.",
-  "Kleurcode": "Kode warna"
+  "Kleurcode": "Kode warna",
+  "Altijd bovenaan (blijft staan)": "Selalu di atas (tetap)",
+  "Nooit (scrolt weg)": "Tidak pernah (ikut bergulir)",
+  "Blijft staan na 10% scrollen": "Tetap setelah menggulir 10%",
+  "Blijft staan na 25% scrollen": "Tetap setelah menggulir 25%",
+  "Blijft staan na 50% scrollen": "Tetap setelah menggulir 50%",
+  "Blijft staan na 100% scrollen (een heel scherm)": "Tetap setelah menggulir 100% (satu layar penuh)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Pilih kapan header tetap di atas: selalu, tidak pernah, atau setelah pengunjung menggulir sebagian layar."
 }

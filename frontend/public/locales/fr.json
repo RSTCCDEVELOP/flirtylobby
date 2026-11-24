@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "Couleur du texte (mode sombre)",
   "Kleuren van het thema": "Couleurs du thème",
   "Nog geen eigen kleuren opgeslagen.": "Aucune couleur personnelle enregistrée.",
-  "Kleurcode": "Code couleur"
+  "Kleurcode": "Code couleur",
+  "Altijd bovenaan (blijft staan)": "Toujours en haut (reste fixe)",
+  "Nooit (scrolt weg)": "Jamais (défile avec la page)",
+  "Blijft staan na 10% scrollen": "Reste fixe après 10% de défilement",
+  "Blijft staan na 25% scrollen": "Reste fixe après 25% de défilement",
+  "Blijft staan na 50% scrollen": "Reste fixe après 50% de défilement",
+  "Blijft staan na 100% scrollen (een heel scherm)": "Reste fixe après 100% de défilement (un écran entier)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Choisis quand l'en-tête reste fixe : toujours, jamais, ou après que le visiteur a fait défiler une partie de l'écran."
 }

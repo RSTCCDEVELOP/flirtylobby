@@ -8949,5 +8949,12 @@
   "Tekstkleur (donkere modus)": "Metin rengi (koyu mod)",
   "Kleuren van het thema": "Tema renkleri",
   "Nog geen eigen kleuren opgeslagen.": "Henüz kayıtlı özel renk yok.",
-  "Kleurcode": "Renk kodu"
+  "Kleurcode": "Renk kodu",
+  "Altijd bovenaan (blijft staan)": "Her zaman üstte (sabit kalır)",
+  "Nooit (scrolt weg)": "Asla (kayar)",
+  "Blijft staan na 10% scrollen": "%10 kaydırıldıktan sonra sabit kalır",
+  "Blijft staan na 25% scrollen": "%25 kaydırıldıktan sonra sabit kalır",
+  "Blijft staan na 50% scrollen": "%50 kaydırıldıktan sonra sabit kalır",
+  "Blijft staan na 100% scrollen (een heel scherm)": "%100 kaydırıldıktan sonra sabit kalır (tam bir ekran)",
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Üst bilginin ne zaman sabit kalacağını seçin: her zaman, asla veya ziyaretçi ekranın bir kısmını kaydırdıktan sonra."
 }

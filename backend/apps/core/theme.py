@@ -109,6 +109,9 @@ def _opts(*pairs):
 TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"), ("zoom", "Inzoomen"), ("blur", "Scherp worden"))
 REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
+HEADER_STICKY = [{"value": "yes", "label": "Altijd bovenaan (blijft staan)", "css": ""}, {"value": "no", "label": "Nooit (scrolt weg)", "css": ""},
+                 {"value": "after10", "label": "Blijft staan na 10% scrollen", "css": ""}, {"value": "after25", "label": "Blijft staan na 25% scrollen", "css": ""},
+                 {"value": "after50", "label": "Blijft staan na 50% scrollen", "css": ""}, {"value": "after100", "label": "Blijft staan na 100% scrollen (een heel scherm)", "css": ""}]  # the percentage of the screen height that is scrolled before the header sticks (components/StickyHeader.js)
 FX_COLOR = _opts(("primary", "Primaire kleur"), ("secondary", "Secundaire kleur"), ("text", "Tekstkleur"), ("white", "Wit"))
 FX_CURSOR = _opts(("off", "Uit"), ("ring", "Ring die de muis volgt"), ("dot", "Punt met ring"), ("blob", "Zachte vlek die de muis volgt"))  # the mouse effects of the website (components/MouseEffects.js)
 HEADER_WIDTHS = [{"value": "content", "label": "Maximale breedte van de inhoud (standaard)", "css": ""}, {"value": "full", "label": "Hele breedte van het scherm (100%)", "css": ""}]  # (also for the footer: footer_width)
@@ -290,7 +293,7 @@ SCHEMA = [
     {"key": "page_layout", "label": "Pagina-indeling", "fields": [  # part of a theme: edited in Thema -> Layout
         choice("header_layout", "Header: indeling", "classic", None, HEADER_LAYOUTS),
         choice("header_style", "Header: uiterlijk", "solid", None, HEADER_STYLES),
-        choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, YESNO),
+        choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, HEADER_STICKY),
         choice("header_width", "Header: breedte", "content", None, HEADER_WIDTHS),
         choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
         choice("menu_case", "Menu: letters", "normal", None, MENU_CASES),
