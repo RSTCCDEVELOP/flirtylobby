@@ -180,7 +180,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 26rem), 1fr))", gap: "1rem 1.4rem" };  // two columns, one on a narrow screen
   return (
       <div className="card entity-form" style={{ padding: "1.2rem 1.4rem" }}>
-        <Tabs value={tab} onChange={setTab} tabs={[["general", tx("Algemeen"), <IconBriefcase key="g" />], ["contact", tx("Contact en adres"), <IconMail key="c" />], ["registration", tx("Registratie"), <IconInfo key="r" />], ...(f.id && canEdit ? [["payments", tx("Betaalgegevens"), <IconCard key="p" />]] : []), ["links", `${tx("Gekoppeld")} (${f.user_ids.length + f.group_ids.length})`, <IconUsers key="l" />], ...(f.id && canEdit ? [["notes", tx("Notities"), <IconEdit key="n" />]] : []), ...(f.own ? [["variables", tx("Tekstvariabelen"), <IconCheck key="v" />]] : [])]} />
+        <Tabs value={tab} onChange={setTab} tabs={[["general", tx("Algemeen"), <IconBriefcase key="g" />], ["contact", tx("Contact en adres"), <IconMail key="c" />], ["registration", tx("Registratie"), <IconInfo key="r" />], ...(canEdit ? [["payments", tx("Betaalgegevens"), <IconCard key="p" />]] : []), ["links", `${tx("Gekoppeld")} (${f.user_ids.length + f.group_ids.length})`, <IconUsers key="l" />], ...(f.id && canEdit ? [["notes", tx("Notities"), <IconEdit key="n" />]] : []), ...(f.own ? [["variables", tx("Tekstvariabelen"), <IconCheck key="v" />]] : [])]} />
         {err && <div className="alert">{err}</div>}
         <div style={{ paddingTop: ".8rem" }}>
           {tab === "general" && (
@@ -276,6 +276,7 @@ export function EntityForm({ init, kinds, variables, canEdit, onClose, onSaved }
           )}
           {tab === "notes" && f.id && <Notes kind="entity" id={f.id} />}
           {tab === "payments" && f.id && <PaymentDetails base={`/entities/${f.id}/payments/`} canEdit={canEdit} />}
+          {tab === "payments" && !f.id && <div className="alert" role="note" style={{ background: "color-mix(in srgb, var(--blue) 7%, var(--card, #fff))", borderColor: "var(--line)", color: "inherit" }}>{tx("Sla het bedrijf eerst op. Daarna kun je hier de betaalgegevens invullen, de keuze om op rekening te betalen en het maximum instellen.")}</div>}
           {tab === "variables" && (
             <div>
               <p className="muted" style={{ marginTop: 0 }}>{tx("Schrijf een variabele in een tekst op een pagina (in de bewerkmodus): de website vult hem in. Verander je hier iets, dan werkt dat door op alle pagina's. In de bewerkmodus blijft de variabele zelf staan. In de pagina-editor staan ze ook als systeemobject (Variabele).")}</p>

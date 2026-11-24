@@ -214,7 +214,7 @@ export default function Users() {
         <div className="overlay" onClick={() => setModal(null)}>
           <form className="card modal form int-modal" onClick={(e) => e.stopPropagation()} onSubmit={save} onInvalidCapture={() => setTab("account")}>
             <h2>{modal.id ? tx("Gebruiker wijzigen") : tx("Nieuwe gebruiker")}</h2>
-            <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["contact", "Contact en adres"], ["media", "Media"], ["rights", "Rechten"], ...(modal.id && L >= 2 ? [["payments", "Betaalgegevens"], ["notes", "Notities"]] : [])]} />
+            <Tabs className="tabs-one-row" value={tab} onChange={setTab} tabs={[["account", "Account"], ["profile", "Profiel"], ["contact", "Contact en adres"], ["media", "Media"], ["rights", "Rechten"], ...(L >= 2 ? [["payments", "Betaalgegevens"], ...(modal.id ? [["notes", "Notities"]] : [])] : [])]} />
             {tab === "account" && (
             <div className="grid2">
               <label>{tx("Voornaam")}<span style={{ display: "flex", gap: ".6rem", alignItems: "center" }}><ColorField inline value={modal.color || ""} onChange={(v) => setModal({ ...modal, color: v })} disabled={L < 2} /><input style={{ flex: 1 }} value={modal.first_name} onChange={set("first_name")} /></span></label>
@@ -302,6 +302,7 @@ export default function Users() {
             </div>
             )}
             {tab === "notes" && modal.id && <Notes kind="user" id={modal.id} />}
+            {tab === "payments" && !modal.id && <div className="alert" role="note" style={{ background: "color-mix(in srgb, var(--blue) 7%, var(--card, #fff))", borderColor: "var(--line)", color: "inherit" }}>{tx("Sla de gebruiker eerst op. Daarna kun je hier de betaalgegevens invullen, de keuze om op rekening te betalen en het maximum instellen.")}</div>}
             {tab === "payments" && modal.id && <PaymentDetails base={`/users/${modal.id}/payments/`} canEdit={L >= 2} forUser />}
             {tab === "rights" && (() => {
               const sec = { border: "1px solid color-mix(in srgb, var(--e2e-primary, var(--blue)) 16%, var(--e2e-border, #e5e0d8))", background: "color-mix(in srgb, var(--e2e-primary, var(--blue)) 5%, transparent)", borderRadius: "var(--e2e-radius, 10px)", padding: ".8rem .9rem", display: "grid", gap: ".6rem", alignContent: "start" };
