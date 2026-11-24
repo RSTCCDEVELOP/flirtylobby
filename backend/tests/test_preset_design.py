@@ -177,3 +177,24 @@ def test_apply_can_leave_out_the_design_and_the_theme(settings, tmp_path, django
     assert seen["design"] == 1
     rows = c.get("/api/system/presets/").json()
     assert "design_pages" in rows[0]
+
+
+@pytest.mark.django_db
+def test_a_design_with_other_parts_is_never_put_right_by_itself_and_the_refresh_leaves_design_pages(settings, tmp_path):
+    from apps.core import preset_pages
+
+    settings.RESOURCE_DIR = tmp_path
+    key = presets.PRESETS[0]["key"]
+    Page.objects.update_or_create(key="home", defaults={"kind": "system", "title": {"nl": "Home"}, "url": "/"})
+    # a design of the website designer: headings and images next to texts
+    PageLayout.objects.update_or_create(key="home", defaults={"data": {"rows": [{"id": "r9aa", "cols": 1, "gap": "md", "cells": [{"id": "c9aa", "items": [{"id": "h9aa", "type": "heading", "ref": ""}, {"id": "t9aa", "type": "text", "ref": ""}]}]}]}})
+    assert "home" not in preset_pages.pristine_wrong(key)  # (it was "put right" with the standard layout before: the design was gone)
+    # the automatic refresh never installs a kept design page
+    called = []
+    orig = preset_design.install
+    preset_design.install = lambda *a, **k: called.append(1) or []
+    try:
+        presets.update_pages(key, ["home"], with_design=False)
+    finally:
+        preset_design.install = orig
+    assert not called

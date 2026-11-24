@@ -387,6 +387,8 @@ def pristine_wrong(key):
         known = set(b.texts) | set(b.images)
         if ContentBlock.objects.filter(key__startswith=f"layout.{page_key}.").exclude(key__in=known).exists():
             continue  # something was added or set on this page by hand
+        if any(it.get("type") not in ("text", "object", "image") for r in (lay.data or {}).get("rows") or [] for c in r.get("cells") or [] for it in c.get("items") or []):
+            continue  # a design with code, buttons, widgets or kit components (made by the website designer, an import or by hand): never "put right" by itself
         want = _layout_dict(b, page_key)
         if _sig(lay.data) != _sig(want) or _hero_shape(lay.data) != _hero_shape(want):  # not the standard structure (an older version of it)
             out.append(page_key)

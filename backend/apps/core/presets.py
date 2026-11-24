@@ -613,7 +613,7 @@ def refresh_pristine_pages(key):
     try:
         wrong = preset_pages.pristine_wrong(key)
         if wrong:
-            update_pages(key, wrong)
+            update_pages(key, wrong, with_design=False)
             logger.warning("Installation %s: pages put back as the standard has them: %s", key, ", ".join(wrong))
         return wrong
     except Exception:  # noqa: BLE001 - never stop the system for this
@@ -621,7 +621,7 @@ def refresh_pristine_pages(key):
         return []
 
 
-def update_pages(key, page_keys):
+def update_pages(key, page_keys, with_design=True):
     """Put the chosen pages of this installation back as the standard has them (the designed pages and the pages saved in the installation file). Other pages stay as they are."""
     from . import preset_pages
 
@@ -630,15 +630,15 @@ def update_pages(key, page_keys):
         raise KeyError(key)
     from . import preset_design
 
-    design = set(preset_design.keys(key))
-    chosen = {k for k in page_keys if k in preset_pages.standard_layouts(key) or k in design}
+    dsn = set(preset_design.keys(key))
+    chosen = {k for k in page_keys if k in preset_pages.standard_layouts(key) or k in dsn}
     keep = set(preset_pages.standard_layouts(key)) - chosen
     done = sorted(chosen)
     if chosen & set(preset_pages.standard_layouts(key)):
         preset_pages.install(key, skip=keep or {""})  # (a skip that is not empty keeps pages of another installation and the pages that are not chosen)
         _apply_saved_pages(key, skip=keep | {k for k in chosen if k not in saved_pages(key)})
-    if chosen & design:
-        preset_design.install(key, skip=design - chosen)  # the design pages come back exactly as they were kept (with their pictures); the other ones stay as they are
+    if with_design and chosen & dsn:  # (only when the person agreed: the automatic refresh never puts a design page back, that would overwrite a design that was made since)
+        preset_design.install(key, skip=dsn - chosen)  # the design pages come back exactly as they were kept (with their pictures); the other ones stay as they are
     return {"pages": done}
 
 
