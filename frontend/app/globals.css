@@ -5038,3 +5038,8 @@ html[data-pbbar="1"] .pb-item.edit.obj[data-box] > .pb-pencil.del { right: auto;
    Block > column > part: a block shows its tools when the mouse is over the block outside its columns; a column when it is over the column outside its parts; a part when it is over the part. */
 html[data-pbbar="1"] .pb-rowwrap:has(.pb-cell.edit:hover) > .pb-rowtools, html[data-pbbar="1"] .pb-rowwrap:has(.pb-item.edit.selected) > .pb-rowtools { opacity: 0; pointer-events: none; }
 html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.edit.selected) > .pb-celltools { opacity: 0; pointer-events: none; }
+
+/* more room at the top while editing: the bar and the pencil of a part sit above it (30px and 12px), so a part at the top of a column or a block needs that room inside, or a block with rounded corners (overflow hidden) cuts them off */
+html[data-pbbar="1"] .pb { margin-top: 4.4rem; }
+html[data-pbbar="1"] .pb-cell.edit { padding-top: 2.4rem; }
+html[data-pbbar="1"] .pb-rowwrap.styled:not(.hero) { overflow: visible; }
