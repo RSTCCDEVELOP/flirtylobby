@@ -66,10 +66,12 @@ export default function PresetDesign({ preset }) {
             <span className="pdz-name">{p.title}<small className="muted" style={{ display: "block" }}>{p.path || `/${p.key}`}</small></span>
             <span className="badge">{p.kind === "content" ? tx("Eigen pagina") : tx("Standaardpagina")}</span>
             {p.in_menu && <span className="badge ok">{tx("In het menu")}</span>}
+            {p.missing?.length > 0 && <span className="badge off" title={p.missing.join("\n")}>{tx("{0} afbeeldingen ontbreken", p.missing.length)}</span>}
           </label>
         ))}
         {!rows.length && <p className="muted">{tx("Geen pagina gevonden.")}</p>}
       </div>
+      {chosen.some((p) => p.missing?.length) && <div className="alert">{tx("Van sommige pagina's staan afbeeldingen niet (meer) op deze website; die kunnen niet met de installatie mee. Zet ze eerst terug (bijvoorbeeld door de website opnieuw te importeren) en zet de pagina uit en weer aan.")}</div>}
       <small className="muted">{tx("{0} pagina's gekozen", chosen.length)}{data.saved_at ? ` · ${tx("laatst opgeslagen")} ${new Date(data.saved_at).toLocaleString()}` : ""}</small>
     </>)}
     {sub === "samples" && (<>

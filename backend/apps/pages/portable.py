@@ -40,7 +40,7 @@ from .models import Page, PageLayout
 FORMAT = "easy2edit-page"
 VERSION = 1
 MAX_ZIP = 200 * 1024 * 1024
-MAX_FILES = 300
+MAX_FILES = 1000
 MARK = "@"  # in page.json a picture is written as "@media/<file>"; on import it becomes the id of the new library item
 
 
@@ -102,7 +102,21 @@ def build(page, menus=False, system=False):
         slugs.update(SYSOBJ_RE.findall(b.text))  # system objects inside the texts (a donation button, a subscription, a game ...)
         content.setdefault(b.key, {})[b.lang] = text
 
-    manifest = {"format": FORMAT, "version": VERSION, "key": page.key, "scope": page.scope, "kind": "content", "title": page.title,
+    # the files of the storage that the blocks point to as __MEDIA__/<path> (the pictures of an imported design): they go in the package too, under their own name
+    from apps.core.templatepacks import MEDIA_REF
+
+    blob = json.dumps({"layout": data, "content": content, "design": getattr(page, "design", "") or ""}, ensure_ascii=False)
+    missing = []
+    for ref in sorted({r.replace("&amp;", "&") for r in MEDIA_REF.findall(blob)}):
+        if not ref or ".." in ref.split("/") or ref.startswith("/") or len(ref) > 300:
+            continue
+        try:
+            with default_storage.open(ref) as f:
+                files[f"files/{ref}"] = f.read()
+        except Exception:  # noqa: BLE001 - a picture that is gone is reported, it does not stop the package
+            missing.append(ref)
+
+    manifest = {"format": FORMAT, "version": VERSION, "key": page.key, "missing_files": missing, "scope": page.scope, "kind": "content", "title": page.title,
                 "audience": page.audience, "in_menu": page.in_menu, "new_tab": page.new_tab, "cta": page.cta, "label_link": page.label_link, "devices": page.devices or {},
                 "background": bg(page.background), "layout": data, "content": content, "objects": sorted(slugs), "requires": requirements(sorted(slugs), bool(files)),
                 "media": {p: {"kind": kind_of(p)} for p in files}}
@@ -343,6 +357,11 @@ def _import_zip(data, user, scope=None, mode="copy", menus=False, source=None):
     def bg(b):
         mid = media_id((b or {}).get("file"))
         return {"type": b["type"], "media": mid, "overlay": b.get("overlay", 0.35)} if mid and b.get("type") in ("image", "video") else {}
+
+    for path in sorted(p for p in files if p.startswith("files/") and ".." not in p.split("/")):  # the files that the blocks point to as __MEDIA__/<path>: back in the storage under their own name
+        target = path[len("files/"):]
+        if target and not default_storage.exists(target):
+            default_storage.save(target, ContentFile(files[path]))
 
     # 2. the blocks; the keys of the content carry the page key, so they are renamed to the new key
     def rename(k):

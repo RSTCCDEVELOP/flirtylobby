@@ -46,6 +46,19 @@ def _title(p):
     return t.get("nl") or next(iter(t.values()), "") or p.key
 
 
+def _missing(key, page_key):
+    """The pictures that the page points to but that were not on this website when the page was kept: they cannot come back with the installation."""
+    import io
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(folder(key) / f"{page_key}.zip") as z:
+            name = next(n for n in z.namelist() if n.endswith("page.json"))
+            return list(json.loads(z.read(name)).get("missing_files") or [])
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def listing(key):
     """The pages that can be chosen: public pages that have blocks. {pages: [...], saved_at}"""
     from apps.pages.models import Page, PageLayout
@@ -56,7 +69,7 @@ def listing(key):
     for p in Page.objects.filter(scope="public").order_by("order", "id"):
         if p.key not in have and p.key not in kept:
             continue
-        rows.append({"key": p.key, "title": _title(p), "kind": p.kind, "path": p.path, "in_menu": p.in_menu, "saved": p.key in kept, "has_blocks": p.key in have, "sample": sample_state(key, p.key) if p.key in kept else "none"})
+        rows.append({"key": p.key, "title": _title(p), "kind": p.kind, "path": p.path, "in_menu": p.in_menu, "saved": p.key in kept, "has_blocks": p.key in have, "sample": sample_state(key, p.key) if p.key in kept else "none", "missing": _missing(key, p.key) if p.key in kept else []})
     return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept)}
 
 
