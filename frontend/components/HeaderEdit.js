@@ -59,7 +59,7 @@ export default function HeaderEdit() {
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
   const save = async (values) => { try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   // The header reads these choices from attributes on <html> that the server sets when the page loads (layout.js): without this the header only changed after closing the panel (a reload). They are put there at once, with the same defaults as the server.
-  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_side: ["hside", "off"], header_side_v: ["hsidev", "top"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
+  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_side: ["hside", "off"], header_side_v: ["hsidev", "top"], header_side_div: ["hsidediv", "no"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
   const setLook = (key, v) => {
     const values = { ...theme.values, [key]: v };
     setTheme({ ...theme, values });
@@ -81,7 +81,7 @@ export default function HeaderEdit() {
   const setStart = (key, n) => {  // where the page and the hero begin under the menu: follows the slider at once
     const values = { ...theme.values, [key]: n };
     setTheme({ ...theme, values });
-    const VAR = { page_start: ["--page-start", "px"], hero_start: ["--hero-start", "px"], side_button_y: ["--side-btn-y", ""], side_menu_y: ["--side-menu-y", ""], side_menu_w: ["--side-menu-w", "px"], side_menu_h: ["--side-menu-h", ""], side_menu_size: ["--side-menu-size", ""], side_menu_opacity: ["--side-menu-op", ""] }[key];
+    const VAR = { page_start: ["--page-start", "px"], hero_start: ["--hero-start", "px"], side_button_y: ["--side-btn-y", ""], side_menu_y: ["--side-menu-y", ""], side_menu_w: ["--side-menu-w", "px"], side_menu_h: ["--side-menu-h", ""], side_menu_radius: ["--side-menu-r", ""], side_menu_float: ["--side-menu-float", ""], side_menu_line: ["--side-menu-line", ""], side_menu_shadow: ["--side-menu-shadow", ""], side_menu_igap: ["--side-menu-igap", ""], side_menu_size: ["--side-menu-size", ""], side_menu_opacity: ["--side-menu-op", ""] }[key];
     if (VAR) document.documentElement.style.setProperty(VAR[0], `${n}${VAR[1]}`);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(values), 400);
@@ -201,7 +201,7 @@ export default function HeaderEdit() {
               const amount = Number(theme.values[amountKey] ?? (unit === "px" ? 300 : 15));
               return (
                 <div className="hed">
-                  {mode !== "off" && <Tabs value={sideTab} onChange={setSideTab} tabs={[["behaviour", "Gedrag"], ["position", "Positie"], ["look", "Uiterlijk"]]} className="tabs-one-row" />}
+                  {mode !== "off" && <Tabs value={sideTab} onChange={setSideTab} tabs={[["behaviour", "Gedrag"], ["position", "Positie"], ["look", "Uiterlijk"], ["design", "Design"]]} className="tabs-one-row" />}
                   {(mode === "off" || sideTab === "behaviour") && (
                   <section className="hed-card">
                     <h4>{tx("Zijmenu bij scrollen")}</h4>
@@ -238,6 +238,37 @@ export default function HeaderEdit() {
                     })}
                   </section>
                   )}
+                  {mode !== "off" && sideTab === "design" && (<>
+                    <section className="hed-card">
+                      <h4>{tx("Hoeken en lijnen")}</h4>
+                      {[["side_menu_radius", "Ronde hoeken (buitenkant)", "px", "Hoe rond de hoeken aan de buitenkant van het menu zijn."], ["side_menu_line", "Dikte van de lijnen", "px", "De dikte van de lijn om het menu; 0 haalt de lijn weg."]].map(([k, l, u, d]) => {
+                        const f = fields.find((x) => x.key === k); if (!f) return null;
+                        const n = Number(theme.values[k] ?? f.default);
+                        return (
+                          <div className="hed-field" key={k}><span className="hed-lbl">{tx(l)}<b className="hed-val">{n} {u}</b></span>
+                            <input type="range" min={f.min} max={f.max} step={f.step || 1} value={n} onChange={(e) => setStart(k, Number(e.target.value))} aria-label={tx(l)} />
+                            <small className="muted">{tx(d)}</small>
+                          </div>
+                        );
+                      })}
+                      {fields.some((x) => x.key === "header_side_div") && (
+                        <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.header_side_div || "no") === "yes"} onChange={(e) => setLook("header_side_div", e.target.checked ? "yes" : "no")} /><span /></span><span className="hed-swt"><strong>{tx("Lijnen tussen de menu-items")}</strong><small>{tx("Een dunne lijn onder elk menu-item.")}</small></span></label>
+                      )}
+                    </section>
+                    <section className="hed-card">
+                      <h4>{tx("Vorm en ruimte")}</h4>
+                      {[["side_menu_float", "Zwevend: afstand tot de rand", "px", "Zet het menu los van de rand van het scherm; dan zijn alle hoeken rond. 0 is tegen de rand."], ["side_menu_shadow", "Schaduw", "%", "Hoe sterk de schaduw rond het geopende menu is."], ["side_menu_igap", "Ruimte tussen de menu-items", "px", "De afstand tussen de menu-items."]].map(([k, l, u, d]) => {
+                        const f = fields.find((x) => x.key === k); if (!f) return null;
+                        const n = Number(theme.values[k] ?? f.default);
+                        return (
+                          <div className="hed-field" key={k}><span className="hed-lbl">{tx(l)}<b className="hed-val">{n} {u}</b></span>
+                            <input type="range" min={f.min} max={f.max} step={f.step || 1} value={n} onChange={(e) => setStart(k, Number(e.target.value))} aria-label={tx(l)} />
+                            <small className="muted">{tx(d)}</small>
+                          </div>
+                        );
+                      })}
+                    </section>
+                  </>)}
                   {mode !== "off" && sideTab === "position" && (
                   <section className="hed-card">
                     <h4>{tx("Positie")}</h4>

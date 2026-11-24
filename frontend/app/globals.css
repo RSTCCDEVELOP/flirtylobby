@@ -5070,17 +5070,20 @@ html[data-hsticky="start"][data-hstuck="1"] .site-header { transform: translateY
 /* the side menu (theme value header_side = left or right): after the amount is scrolled the header goes and a menu at the side takes its place, with an arrow at its edge to open and close it (components/SideMenu.js) */
 html[data-hside="left"][data-hsidenow="1"] .site-header, html[data-hside="right"][data-hsidenow="1"] .site-header { position: fixed; top: 0; left: 0; right: 0; margin-left: auto; margin-right: auto; transform: translateY(-100%); visibility: hidden; transition: transform .22s ease-out, visibility 0s linear .22s; }
 html[data-hside="left"][data-hsidenow="1"] body, html[data-hside="right"][data-hsidenow="1"] body { padding-top: var(--site-header-h, 64px); }
-.side-menu { position: fixed; top: 0; bottom: 0; z-index: 1000; width: min(var(--side-menu-w, 300px), 86vw); display: flex; flex-direction: column; justify-content: flex-start; pointer-events: none; color: var(--text); font-size: calc(var(--side-menu-size, 100) * 1%); transition: transform .25s ease; }
+.side-menu { position: fixed; top: 0; bottom: 0; z-index: 1000; width: min(var(--side-menu-w, 300px), 86vw); display: flex; flex-direction: column; justify-content: flex-start; box-sizing: border-box; padding-block: calc(var(--side-menu-float, 0) * 1px); pointer-events: none; color: var(--text); font-size: calc(var(--side-menu-size, 100) * 1%); transition: transform .25s ease; }
 html[data-hsidev="middle"] .side-menu { justify-content: center; } html[data-hsidev="bottom"] .side-menu { justify-content: flex-end; }
-.side-menu .side-card { pointer-events: auto; position: relative; display: flex; min-height: calc(var(--side-menu-h, 100) * 1vh); max-height: 100vh; background: color-mix(in srgb, var(--card, #fff) calc(var(--side-menu-op, 100) * 1%), transparent); backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); -webkit-backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); transition: box-shadow .25s; }
+.side-menu .side-card { pointer-events: auto; position: relative; display: flex; min-height: min(calc(var(--side-menu-h, 100) * 1vh), 100%); max-height: 100%; background: color-mix(in srgb, var(--card, #fff) calc(var(--side-menu-op, 100) * 1%), transparent); backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); -webkit-backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); transition: box-shadow .25s; }
 html[data-hsidev="top"] .side-menu .side-card, html:not([data-hsidev]) .side-menu .side-card { margin-top: calc(var(--side-menu-y, 0) * 1vh); } html[data-hsidev="bottom"] .side-menu .side-card { margin-bottom: calc(var(--side-menu-y, 0) * 1vh); }  /* the distance from the edge: only when the menu stands at the top or at the bottom */
-.side-menu.left { left: 0; transform: translateX(-100%); } .side-menu.right { right: 0; transform: translateX(100%); }
-.side-menu.left .side-card { border-right: 1px solid var(--line); } .side-menu.right .side-card { border-left: 1px solid var(--line); }
+.side-menu.left { left: calc(var(--side-menu-float, 0) * 1px); transform: translateX(calc(-100% - var(--side-menu-float, 0) * 1px)); } .side-menu.right { right: calc(var(--side-menu-float, 0) * 1px); transform: translateX(calc(100% + var(--side-menu-float, 0) * 1px)); }
+.side-menu .side-card { border: calc(var(--side-menu-line, 1) * 1px) solid var(--line); }
+.side-menu .side-card { --fl: min(1, var(--side-menu-float, 0)); }  /* floating (a distance from the edge of the screen): then the corners and the lines go all around, else only the side away from the edge is round */
+.side-menu.left .side-card { border-left-width: calc(var(--fl) * var(--side-menu-line, 1) * 1px); border-radius: calc(var(--side-menu-r, 0) * 1px * var(--fl)) calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px * var(--fl)); }
+.side-menu.right .side-card { border-right-width: calc(var(--fl) * var(--side-menu-line, 1) * 1px); border-radius: calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px * var(--fl)) calc(var(--side-menu-r, 0) * 1px * var(--fl)) calc(var(--side-menu-r, 0) * 1px); }
 .side-menu.left.open, .side-menu.right.open { transform: none; }  /* open: slid out */
-.side-menu.open .side-card { box-shadow: 0 0 40px rgba(0, 0, 0, .25); }
+.side-menu.open .side-card { box-shadow: 0 0 40px rgba(0, 0, 0, calc(var(--side-menu-shadow, 40) / 100 * .6)); }
 .side-menu .side-in { flex: 1; min-width: 0; overflow-y: auto; padding: 1.1rem 1rem 1.5rem; display: grid; gap: 1.1rem; align-content: start; }
 .side-menu .side-brand { display: inline-flex; max-width: 100%; }
-.side-menu .hmenu.f-bar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: .15rem; flex: none; }
+.side-menu .hmenu.f-bar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: calc(var(--side-menu-igap, 2) * 1px); flex: none; }
 .side-menu .hmenu a, .side-menu .hmenu .hm-label { display: block; padding: .6rem .8rem; border-radius: 10px; text-align: left; }
 .side-menu .hmenu a:hover { background: color-mix(in srgb, var(--blue) 9%, transparent); }
 .side-menu .hm-split { display: flex; align-items: center; justify-content: space-between; }
@@ -5107,3 +5110,7 @@ html[data-pbbar="1"][data-pbsb="1"] .side-menu.left, html[data-hsidepreview="1"]
 .side-menu .hmenu a, .side-menu .hmenu .hm-label { white-space: nowrap; }
 .side-menu .side-brand { min-width: 0; max-width: 100%; }
 .side-menu .side-brand img, .side-menu .side-brand svg { max-width: 100%; width: auto; height: auto; max-height: var(--site-logo-h, 52px); object-fit: contain; }
+
+/* the design of the side menu: floating (a distance from the screen edge, all corners round and lines all around), lines between the menu items */
+html[data-hsidediv="yes"] .side-menu .hmenu.f-bar > * { border-bottom: 1px solid var(--line); border-radius: 0; }
+html[data-hsidediv="yes"] .side-menu .hmenu.f-bar > *:last-child { border-bottom: 0; }

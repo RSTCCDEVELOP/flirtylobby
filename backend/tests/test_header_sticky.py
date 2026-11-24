@@ -59,3 +59,17 @@ def test_the_side_menu_has_a_height_in_percent_and_a_place_along_the_edge():
     f = theme.FIELDS
     assert f["side_menu_h"]["default"] == 100 and f["header_side_v"]["default"] == "top" and f["side_menu_h"]["css"] == "--side-menu-h"
     assert {"side_menu_h", "header_side_v"} <= set(themepacks.COMPLETE_KEYS)
+
+
+def test_the_design_of_the_side_menu_corners_lines_float_shadow_and_spacing():
+    from apps.core import themepacks
+
+    ok, err = theme.validate({"side_menu_radius": 16, "side_menu_float": 12, "side_menu_line": 2, "header_side_div": "yes", "side_menu_shadow": 60, "side_menu_igap": 6})
+    assert not err and ok["side_menu_radius"] == 16 and ok["header_side_div"] == "yes"
+    for bad in ({"side_menu_radius": 41}, {"side_menu_float": 41}, {"side_menu_line": 5}, {"side_menu_shadow": 101}, {"side_menu_igap": 17}, {"header_side_div": "maybe"}):
+        assert theme.validate(bad)[1], bad
+    f = theme.FIELDS
+    assert f["side_menu_radius"]["default"] == 0 and f["side_menu_float"]["default"] == 0 and f["side_menu_line"]["default"] == 1 and f["header_side_div"]["default"] == "no"
+    css, _ = theme.build({**{k: x["default"] for k, x in theme.FIELDS.items()}, "side_menu_radius": 18})
+    assert "--side-menu-r:18" in css
+    assert {"side_menu_radius", "side_menu_float", "side_menu_line", "header_side_div", "side_menu_shadow", "side_menu_igap"} <= set(themepacks.COMPLETE_KEYS)
