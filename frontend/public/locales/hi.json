@@ -9002,5 +9002,15 @@
   "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%).": "स्क्रीन के किनारे पर तीर कहाँ है, ऊपर (0%) से नीचे (100%) तक।",
   "Hoe ver het menu van boven begint, als percentage van de schermhoogte.": "मेन्यू ऊपर से कितना नीचे शुरू होता है, स्क्रीन की ऊँचाई के प्रतिशत के रूप में।",
   "Zijmenu: positie van de knop (% van de schermhoogte)": "साइड मेन्यू: बटन की स्थिति (स्क्रीन की ऊँचाई का %)",
-  "Zijmenu: positie van het menu (% van de schermhoogte)": "साइड मेन्यू: मेन्यू की स्थिति (स्क्रीन की ऊँचाई का %)"
+  "Zijmenu: positie van het menu (% van de schermhoogte)": "साइड मेन्यू: मेन्यू की स्थिति (स्क्रीन की ऊँचाई का %)",
+  "Grootte en transparantie": "आकार और पारदर्शिता",
+  "Breedte van het menu": "मेन्यू की चौड़ाई",
+  "Tekstgrootte van het menu": "मेन्यू के टेक्स्ट का आकार",
+  "Transparantie": "पारदर्शिता",
+  "Hoe breed het zijmenu is.": "साइड मेन्यू कितना चौड़ा है।",
+  "De grootte van de letters in het zijmenu; 100% is normaal.": "साइड मेन्यू में अक्षरों का आकार; 100% सामान्य है।",
+  "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "मेन्यू कितना अपारदर्शी है: 100% पूरी तरह ठोस है, कम मान होने पर पेज दिखाई देता है।",
+  "Zijmenu: breedte van het menu": "साइड मेन्यू: मेन्यू की चौड़ाई",
+  "Zijmenu: tekstgrootte van het menu (%)": "साइड मेन्यू: मेन्यू के टेक्स्ट का आकार (%)",
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "साइड मेन्यू: मेन्यू की अपारदर्शिता (% , कम = अधिक पारदर्शी)"
 }

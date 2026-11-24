@@ -9002,5 +9002,15 @@
   "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%).": "Де розташована стрілка біля краю екрана: від верху (0%) до низу (100%).",
   "Hoe ver het menu van boven begint, als percentage van de schermhoogte.": "Як далеко від верху починається меню, у відсотках від висоти екрана.",
   "Zijmenu: positie van de knop (% van de schermhoogte)": "Бічне меню: положення кнопки (% висоти екрана)",
-  "Zijmenu: positie van het menu (% van de schermhoogte)": "Бічне меню: положення меню (% висоти екрана)"
+  "Zijmenu: positie van het menu (% van de schermhoogte)": "Бічне меню: положення меню (% висоти екрана)",
+  "Grootte en transparantie": "Розмір і прозорість",
+  "Breedte van het menu": "Ширина меню",
+  "Tekstgrootte van het menu": "Розмір тексту меню",
+  "Transparantie": "Прозорість",
+  "Hoe breed het zijmenu is.": "Наскільки широким буде бічне меню.",
+  "De grootte van de letters in het zijmenu; 100% is normaal.": "Розмір літер у бічному меню; 100% — звичайний розмір.",
+  "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Наскільки непрозоре меню: 100% — повністю суцільне, менше значення дозволяє сторінці просвічувати.",
+  "Zijmenu: breedte van het menu": "Бічне меню: ширина меню",
+  "Zijmenu: tekstgrootte van het menu (%)": "Бічне меню: розмір тексту меню (%)",
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Бічне меню: непрозорість меню (% , менше = прозоріше)"
 }

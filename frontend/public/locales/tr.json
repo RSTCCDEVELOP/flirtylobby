@@ -9002,5 +9002,15 @@
   "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%).": "Okun ekranın kenarında nerede durduğu, yukarıdan (%0) aşağıya (%100).",
   "Hoe ver het menu van boven begint, als percentage van de schermhoogte.": "Menünün yukarıdan ne kadar aşağıda başladığı, ekran yüksekliğinin yüzdesi olarak.",
   "Zijmenu: positie van de knop (% van de schermhoogte)": "Yan menü: düğmenin konumu (ekran yüksekliğinin %'si)",
-  "Zijmenu: positie van het menu (% van de schermhoogte)": "Yan menü: menünün konumu (ekran yüksekliğinin %'si)"
+  "Zijmenu: positie van het menu (% van de schermhoogte)": "Yan menü: menünün konumu (ekran yüksekliğinin %'si)",
+  "Grootte en transparantie": "Boyut ve şeffaflık",
+  "Breedte van het menu": "Menü genişliği",
+  "Tekstgrootte van het menu": "Menü metin boyutu",
+  "Transparantie": "Şeffaflık",
+  "Hoe breed het zijmenu is.": "Yan menünün ne kadar geniş olduğu.",
+  "De grootte van de letters in het zijmenu; 100% is normaal.": "Yan menüdeki harflerin boyutu; 100% normaldir.",
+  "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Menünün ne kadar opak olduğu: 100% tamamen dolu, daha düşük değer sayfanın görünmesini sağlar.",
+  "Zijmenu: breedte van het menu": "Yan menü: menü genişliği",
+  "Zijmenu: tekstgrootte van het menu (%)": "Yan menü: menü metin boyutu (%)",
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Yan menü: menü opaklığı (% , düşük = daha şeffaf)"
 }

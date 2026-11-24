@@ -9002,5 +9002,15 @@
   "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%).": "Где находится стрелка у края экрана: от верха (0%) до низа (100%).",
   "Hoe ver het menu van boven begint, als percentage van de schermhoogte.": "Как далеко от верха начинается меню, в процентах от высоты экрана.",
   "Zijmenu: positie van de knop (% van de schermhoogte)": "Боковое меню: положение кнопки (% высоты экрана)",
-  "Zijmenu: positie van het menu (% van de schermhoogte)": "Боковое меню: положение меню (% высоты экрана)"
+  "Zijmenu: positie van het menu (% van de schermhoogte)": "Боковое меню: положение меню (% высоты экрана)",
+  "Grootte en transparantie": "Размер и прозрачность",
+  "Breedte van het menu": "Ширина меню",
+  "Tekstgrootte van het menu": "Размер текста меню",
+  "Transparantie": "Прозрачность",
+  "Hoe breed het zijmenu is.": "Насколько широким будет боковое меню.",
+  "De grootte van de letters in het zijmenu; 100% is normaal.": "Размер букв в боковом меню; 100% — обычный размер.",
+  "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Насколько непрозрачно меню: 100% — полностью сплошное, меньшее значение позволяет странице просвечивать.",
+  "Zijmenu: breedte van het menu": "Боковое меню: ширина меню",
+  "Zijmenu: tekstgrootte van het menu (%)": "Боковое меню: размер текста меню (%)",
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Боковое меню: непрозрачность меню (% , меньше = прозрачнее)"
 }

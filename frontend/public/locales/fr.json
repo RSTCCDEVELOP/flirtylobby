@@ -9002,5 +9002,15 @@
   "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%).": "Où se trouve la flèche au bord de l'écran, de haut (0 %) en bas (100 %).",
   "Hoe ver het menu van boven begint, als percentage van de schermhoogte.": "À quelle distance du haut le menu commence, en pourcentage de la hauteur de l'écran.",
   "Zijmenu: positie van de knop (% van de schermhoogte)": "Menu latéral : position du bouton (% de la hauteur de l'écran)",
-  "Zijmenu: positie van het menu (% van de schermhoogte)": "Menu latéral : position du menu (% de la hauteur de l'écran)"
+  "Zijmenu: positie van het menu (% van de schermhoogte)": "Menu latéral : position du menu (% de la hauteur de l'écran)",
+  "Grootte en transparantie": "Taille et transparence",
+  "Breedte van het menu": "Largeur du menu",
+  "Tekstgrootte van het menu": "Taille du texte du menu",
+  "Transparantie": "Transparence",
+  "Hoe breed het zijmenu is.": "Largeur du menu latéral.",
+  "De grootte van de letters in het zijmenu; 100% is normaal.": "La taille des lettres dans le menu latéral ; 100% est normal.",
+  "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Opacité du menu : 100% est totalement opaque, plus bas laisse transparaître la page.",
+  "Zijmenu: breedte van het menu": "Menu latéral : largeur du menu",
+  "Zijmenu: tekstgrootte van het menu (%)": "Menu latéral : taille du texte du menu (%)",
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu latéral : opacité du menu (% , plus bas = plus transparent)"
 }

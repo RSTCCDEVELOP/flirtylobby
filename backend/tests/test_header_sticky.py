@@ -41,3 +41,9 @@ def test_the_side_menu_and_the_start_of_the_page_and_the_hero():
     assert {"header_side", "header_side_unit", "header_side_pct", "header_side_px", "page_start", "hero_start", "side_button_y", "side_menu_y"} <= set(themepacks.COMPLETE_KEYS)
     assert theme.validate({"side_button_y": 40, "side_menu_y": 20})[0] == {"side_button_y": 40, "side_menu_y": 20}  # the position of the arrow and of the menu of the side menu (% of the screen height)
     assert theme.validate({"side_button_y": 101})[1] and theme.validate({"side_menu_y": 61})[1]
+    ok2, err2 = theme.validate({"side_menu_w": 360, "side_menu_size": 110, "side_menu_opacity": 70})  # the size and the transparency of the side menu
+    assert not err2 and ok2 == {"side_menu_w": 360, "side_menu_size": 110, "side_menu_opacity": 70}
+    assert theme.validate({"side_menu_w": 100})[1] and theme.validate({"side_menu_size": 200})[1] and theme.validate({"side_menu_opacity": 10})[1]
+    assert {"side_menu_w", "side_menu_size", "side_menu_opacity"} <= set(themepacks.COMPLETE_KEYS)
+    css, _ = theme.build({**{k: f["default"] for k, f in theme.FIELDS.items()}, "side_menu_opacity": 60})
+    assert "--side-menu-op:60" in css and "--side-menu-w:300px" in css
