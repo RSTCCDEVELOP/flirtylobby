@@ -1,0 +1,51 @@
+{
+  "key": "whatsapp-button",
+  "name": "WhatsApp-knop",
+  "description": "Een knop die WhatsApp opent met jouw nummer en een vooringevuld bericht.",
+  "version": "1.0.0",
+  "category": "Contact",
+  "height": 90,
+  "options": [
+    {
+      "key": "phone",
+      "label": "Telefoonnummer met landcode (bijvoorbeeld 31612345678)",
+      "type": "text",
+      "default": "31612345678"
+    },
+    {
+      "key": "message",
+      "label": "Vooringevuld bericht",
+      "type": "text",
+      "default": "Hallo! Ik heb een vraag over jullie website."
+    },
+    {
+      "key": "label",
+      "label": "Tekst op de knop",
+      "type": "text",
+      "default": "Stuur ons een bericht"
+    },
+    {
+      "key": "shape",
+      "label": "Vorm",
+      "type": "choice",
+      "default": "wide",
+      "choices": [
+        {
+          "value": "wide",
+          "label": "Brede knop"
+        },
+        {
+          "value": "round",
+          "label": "Ronde knop"
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#25d366"
+    }
+  ],
+  "example": {}
+}

@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// A widget of the library (<source>/widgets/): its own document in a sandboxed iframe (scripts only: no access to the page, the cookies or the login). The widget tells its height
+// A widget of the library (<source>/widgets/): its own document in a sandboxed iframe (scripts, and links that open in a new tab: no access to the page, the cookies or the login). The widget tells its height
 // (postMessage) and the frame follows it. `doc` = the whole html of the widget (the server fills in the options); `height` = the height before the widget has told its own.
 export default function WidgetFrame({ doc, height = 200, title = "", inert = false, className = "" }) {
   const ref = useRef(null);
@@ -20,5 +20,5 @@ export default function WidgetFrame({ doc, height = 200, title = "", inert = fal
     return () => window.removeEventListener("message", on);
   }, []);
   if (!doc) return null;
-  return <iframe ref={ref} className={`widget-frame ${className}`} title={title || "Widget"} sandbox="allow-scripts" srcDoc={doc} loading="lazy" style={{ width: "100%", height: h, border: 0, display: "block", background: "transparent", ...(inert ? { pointerEvents: "none" } : {}) }} />;
+  return <iframe ref={ref} className={`widget-frame ${className}`} title={title || "Widget"} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" srcDoc={doc} loading="lazy" style={{ width: "100%", height: h, border: 0, display: "block", background: "transparent", ...(inert ? { pointerEvents: "none" } : {}) }} />;
 }

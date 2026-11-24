@@ -44,6 +44,7 @@ export default function WidgetLibrary() {
   const field = (o) => {
     const v = vals[o.key] ?? o.default;
     const set = (x) => setVals({ ...vals, [o.key]: x });
+    if (o.type === "textarea") return <label key={o.key}>{tx(o.label)}<textarea rows={5} value={v} maxLength={1200} onChange={(e) => set(e.target.value)} /></label>;
     if (o.type === "switch") return <label key={o.key} className="hed-sw"><span className="switch"><input type="checkbox" checked={!!v} onChange={(e) => set(e.target.checked)} /><span /></span><span className="hed-swt"><strong>{tx(o.label)}</strong></span></label>;
     if (o.type === "choice") return <label key={o.key}>{tx(o.label)}<select value={v} onChange={(e) => set(e.target.value)}>{o.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label>;
     if (o.type === "number") return <label key={o.key}>{tx(o.label)}<input type="number" min={o.min} max={o.max} step={o.step} value={v} onChange={(e) => set(e.target.value === "" ? "" : Number(e.target.value))} /></label>;

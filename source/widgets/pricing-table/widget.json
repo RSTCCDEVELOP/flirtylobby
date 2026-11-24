@@ -1,0 +1,155 @@
+{
+  "key": "pricing-table",
+  "name": "Prijstabel",
+  "description": "Drie pakketten naast elkaar met prijs, kenmerken en een knop; een pakket kan worden uitgelicht.",
+  "version": "1.0.0",
+  "category": "Verkoop",
+  "height": 430,
+  "options": [
+    {
+      "key": "n1",
+      "label": "Pakket 1: naam",
+      "type": "text",
+      "default": "Basis"
+    },
+    {
+      "key": "p1",
+      "label": "Pakket 1: prijs",
+      "type": "text",
+      "default": "€ 19"
+    },
+    {
+      "key": "e1",
+      "label": "Pakket 1: periode",
+      "type": "text",
+      "default": "per maand"
+    },
+    {
+      "key": "f1",
+      "label": "Pakket 1: kenmerken (een per regel)",
+      "type": "textarea",
+      "default": "Tot 5 pagina's\nE-mailondersteuning\nBasisstatistieken"
+    },
+    {
+      "key": "b1",
+      "label": "Pakket 1: tekst op de knop",
+      "type": "text",
+      "default": "Kies Basis"
+    },
+    {
+      "key": "u1",
+      "label": "Pakket 1: link van de knop",
+      "type": "text",
+      "default": "#"
+    },
+    {
+      "key": "n2",
+      "label": "Pakket 2: naam",
+      "type": "text",
+      "default": "Plus"
+    },
+    {
+      "key": "p2",
+      "label": "Pakket 2: prijs",
+      "type": "text",
+      "default": "€ 39"
+    },
+    {
+      "key": "e2",
+      "label": "Pakket 2: periode",
+      "type": "text",
+      "default": "per maand"
+    },
+    {
+      "key": "f2",
+      "label": "Pakket 2: kenmerken (een per regel)",
+      "type": "textarea",
+      "default": "Tot 25 pagina's\nSnelle ondersteuning\nVolledige statistieken\nEigen domein"
+    },
+    {
+      "key": "b2",
+      "label": "Pakket 2: tekst op de knop",
+      "type": "text",
+      "default": "Kies Plus"
+    },
+    {
+      "key": "u2",
+      "label": "Pakket 2: link van de knop",
+      "type": "text",
+      "default": "#"
+    },
+    {
+      "key": "n3",
+      "label": "Pakket 3: naam",
+      "type": "text",
+      "default": "Pro"
+    },
+    {
+      "key": "p3",
+      "label": "Pakket 3: prijs",
+      "type": "text",
+      "default": "€ 79"
+    },
+    {
+      "key": "e3",
+      "label": "Pakket 3: periode",
+      "type": "text",
+      "default": "per maand"
+    },
+    {
+      "key": "f3",
+      "label": "Pakket 3: kenmerken (een per regel)",
+      "type": "textarea",
+      "default": "Onbeperkt pagina's\nPrioriteit ondersteuning\nMaatwerk en koppelingen\nPersoonlijke begeleiding"
+    },
+    {
+      "key": "b3",
+      "label": "Pakket 3: tekst op de knop",
+      "type": "text",
+      "default": "Kies Pro"
+    },
+    {
+      "key": "u3",
+      "label": "Pakket 3: link van de knop",
+      "type": "text",
+      "default": "#"
+    },
+    {
+      "key": "featured",
+      "label": "Uitgelicht pakket",
+      "type": "choice",
+      "default": "2",
+      "choices": [
+        {
+          "value": "0",
+          "label": "Geen"
+        },
+        {
+          "value": "1",
+          "label": "Pakket 1"
+        },
+        {
+          "value": "2",
+          "label": "Pakket 2"
+        },
+        {
+          "value": "3",
+          "label": "Pakket 3"
+        }
+      ]
+    },
+    {
+      "key": "badge",
+      "label": "Label bij het uitgelichte pakket",
+      "type": "text",
+      "default": "Meest gekozen"
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#f2823f"
+    }
+  ],
+  "example": {}
+}

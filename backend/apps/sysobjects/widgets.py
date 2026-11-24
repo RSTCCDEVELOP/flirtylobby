@@ -20,7 +20,7 @@ from pathlib import Path
 from django.conf import settings
 
 KEY_RE = re.compile(r"^[a-z][a-z0-9-]{1,38}[a-z0-9]$")
-OPTION_TYPES = ("text", "number", "color", "choice", "switch", "datetime")
+OPTION_TYPES = ("text", "textarea", "number", "color", "choice", "switch", "datetime")
 MAX_FILE = 200_000
 
 
@@ -102,6 +102,8 @@ def clean_options(m, given):
         elif o["type"] == "color":
             if not re.fullmatch(r"#[0-9a-fA-F]{6}", str(v)):
                 continue
+        elif o["type"] == "textarea":
+            v = str(v).replace("\r", "")[:1200]
         else:
             v = str(v)[:300]
         out[o["key"]] = v

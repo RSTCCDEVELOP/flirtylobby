@@ -1,0 +1,77 @@
+{
+  "key": "opening-hours",
+  "name": "Openingstijden",
+  "description": "De tijden per dag, met live wat er nu geldt: \"Nu geopend, sluit om 17:30\" of \"Gesloten, opent morgen om 09:00\".",
+  "version": "1.0.0",
+  "category": "Bedrijf",
+  "height": 330,
+  "options": [
+    {
+      "key": "d1",
+      "label": "Maandag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30"
+    },
+    {
+      "key": "d2",
+      "label": "Dinsdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30"
+    },
+    {
+      "key": "d3",
+      "label": "Woensdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30"
+    },
+    {
+      "key": "d4",
+      "label": "Donderdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30"
+    },
+    {
+      "key": "d5",
+      "label": "Vrijdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30"
+    },
+    {
+      "key": "d6",
+      "label": "Zaterdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "10:00-16:00"
+    },
+    {
+      "key": "d7",
+      "label": "Zondag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "gesloten"
+    },
+    {
+      "key": "open_text",
+      "label": "Tekst als je open bent",
+      "type": "text",
+      "default": "Nu geopend"
+    },
+    {
+      "key": "closed_text",
+      "label": "Tekst als je gesloten bent",
+      "type": "text",
+      "default": "Nu gesloten"
+    },
+    {
+      "key": "note",
+      "label": "Opmerking onderaan (bijvoorbeeld feestdagen)",
+      "type": "text",
+      "default": "Op feestdagen kunnen de tijden afwijken."
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#f2823f"
+    }
+  ],
+  "example": {}
+}

@@ -91,3 +91,23 @@ def test_widgets_are_standard_and_always_on():
     from apps.core import modules
 
     assert "sysobjects" in modules.ALWAYS_ON and modules.enabled("sysobjects")  # (the system objects, so the widgets, are always on)
+
+
+def test_every_widget_that_comes_with_the_product_works_and_has_an_example(settings):
+    """The library in the repository (source/widgets): each widget is valid, has options with defaults, and its example document is complete (and nothing is left unfilled)."""
+    import re
+
+    settings.SOURCE_DIR = __import__("pathlib").Path(__file__).resolve().parents[2] / "source"
+    keys = {m["key"] for m in widgets.library()}
+    assert {"countdown", "clock", "stats-counter", "marquee", "progress-bars", "opening-hours", "whatsapp-button", "pricing-table", "steps", "testimonials-slider"} <= keys
+    for m in widgets.library():
+        d = widgets.doc(m["key"], example=True)
+        assert d.startswith("<!doctype html>") and "window.WIDGET=" in d and m["name"] and m["description"] and m["height"] >= 40
+        assert not re.search(r"\{\{[a-z0-9_]+\}\}", d), m["key"]  # (every {{option}} was filled in)
+        assert all(o["key"] in widgets.defaults(m) for o in m["options"])
+
+
+def test_a_textarea_option_keeps_lines_and_is_limited():
+    m = {"options": [{"key": "f", "label": "Kenmerken", "type": "textarea", "default": "a"}]}
+    assert widgets.clean_options(m, {"f": "een\r\ntwee"})["f"] == "een\ntwee"
+    assert len(widgets.clean_options(m, {"f": "x" * 5000})["f"]) == 1200

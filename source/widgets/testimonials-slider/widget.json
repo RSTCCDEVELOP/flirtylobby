@@ -1,0 +1,38 @@
+{
+  "key": "testimonials-slider",
+  "name": "Klantquotes",
+  "description": "Een quote met naam en functie die elke paar seconden wisselt, met bolletjes om zelf te kiezen. Tot vijf quotes.",
+  "version": "1.0.0",
+  "category": "Vertrouwen",
+  "height": 250,
+  "options": [
+    {
+      "key": "quotes",
+      "label": "Quotes (een per regel: quote | naam | functie)",
+      "type": "textarea",
+      "default": "Snel, duidelijk en precies wat we zochten. Onze website scoort nu veel beter. | Anna de Vries | Eigenaar, Bakkerij Vries\nPersoonlijke aandacht en een prettige samenwerking van begin tot eind. | Jeroen Bakker | Directeur, Bakker Advies\nIk had niet verwacht dat het zo makkelijk zou zijn om zelf aan te passen. | Sanne Jansen | Marketing, Studio Zon"
+    },
+    {
+      "key": "seconds",
+      "label": "Seconden per quote",
+      "type": "number",
+      "default": 6,
+      "min": 2,
+      "max": 30,
+      "step": 1
+    },
+    {
+      "key": "auto",
+      "label": "Vanzelf doorbladeren",
+      "type": "switch",
+      "default": true
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#f2823f"
+    }
+  ],
+  "example": {}
+}

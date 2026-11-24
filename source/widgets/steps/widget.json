@@ -1,0 +1,87 @@
+{
+  "key": "steps",
+  "name": "Stappenplan",
+  "description": "Drie of vier genummerde stappen \"Zo werkt het\", met een lijn die zich opbouwt als het widget in beeld komt.",
+  "version": "1.0.0",
+  "category": "Uitleg",
+  "height": 420,
+  "options": [
+    {
+      "key": "count",
+      "label": "Aantal stappen",
+      "type": "choice",
+      "default": "4",
+      "choices": [
+        {
+          "value": "3",
+          "label": "3 stappen"
+        },
+        {
+          "value": "4",
+          "label": "4 stappen"
+        }
+      ]
+    },
+    {
+      "key": "t1",
+      "label": "Stap 1: titel",
+      "type": "text",
+      "default": "Neem contact op"
+    },
+    {
+      "key": "d1",
+      "label": "Stap 1: uitleg",
+      "type": "text",
+      "default": "Vertel kort wat je zoekt, dan nemen we binnen een dag contact op."
+    },
+    {
+      "key": "t2",
+      "label": "Stap 2: titel",
+      "type": "text",
+      "default": "Samen plannen"
+    },
+    {
+      "key": "d2",
+      "label": "Stap 2: uitleg",
+      "type": "text",
+      "default": "We bespreken je wensen en maken een duidelijk plan met een vaste prijs."
+    },
+    {
+      "key": "t3",
+      "label": "Stap 3: titel",
+      "type": "text",
+      "default": "Wij gaan aan de slag"
+    },
+    {
+      "key": "d3",
+      "label": "Stap 3: uitleg",
+      "type": "text",
+      "default": "Je volgt de voortgang en geeft feedback tot je tevreden bent."
+    },
+    {
+      "key": "t4",
+      "label": "Stap 4: titel",
+      "type": "text",
+      "default": "Klaar en live"
+    },
+    {
+      "key": "d4",
+      "label": "Stap 4: uitleg",
+      "type": "text",
+      "default": "Alles staat online en we blijven beschikbaar voor vragen."
+    },
+    {
+      "key": "title",
+      "label": "Kop boven de stappen",
+      "type": "text",
+      "default": "Zo werkt het"
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#f2823f"
+    }
+  ],
+  "example": {}
+}
