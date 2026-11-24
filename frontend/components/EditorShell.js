@@ -13,6 +13,7 @@ import { tx } from "../lib/t";
 import MenuEditorPopup from "./MenuEditorPopup";
 import NewPagePopup from "./NewPagePopup";
 import PageSettingsPanel from "./PageSettingsPanel";
+import Tabs from "./Tabs";
 import { useSession } from "./Session";
 
 const I = (d) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -51,6 +52,17 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
   const [pgMenu, setPgMenu] = useState(false);
   const [newPage, setNewPage] = useState(false);
   const [menuEd, setMenuEd] = useState(false);
+  const [stab, setStab] = useState("settings");  // the parts of the settings: 1. settings, 2. edit header, 3. edit footer, 4. use AI
+  useEffect(() => {  // the header and the footer tell when their editor opens or closes (also when it was opened by a click on the header or the footer in the page)
+    const on = (e) => { const w = e.detail; if (w === "header" || w === "footer") setStab(w); else setStab((s) => (s === "header" || s === "footer" ? "settings" : s)); };
+    window.addEventListener("pb-hf-state", on);
+    return () => window.removeEventListener("pb-hf-state", on);
+  }, []);
+  const chooseTab = (k) => {
+    setStab(k);
+    window.dispatchEvent(new Event("pb-close-hf"));
+    if (k === "header" || k === "footer") setTimeout(() => window.dispatchEvent(new Event(k === "header" ? "pb-open-header" : "pb-open-footer")), 80);
+  };
   const [headerHidden, setHeaderHidden] = useState(() => { try { return localStorage.getItem("editHideHeader") === "1"; } catch { return false; } });
   useEffect(() => {  // the site header can be hidden while editing, so the top of the page (the first block, the hero) can be edited; it is always back when the editor closes
     const root = document.documentElement;
@@ -97,7 +109,6 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
           </button>
           <div id="pb-tb-tools" className="pb-tb-tools" />
           <span className="pb-tb-save">{saving === "saving" ? tx("Opslaan…") : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</span>
-          <div id="pb-tb-ai" className="pb-tb-ai" />
           <button type="button" className="pb-tb-btn primary" onClick={onExit} title={tx("Bewerken afsluiten en de pagina bekijken")}>{ICON.eye}<span>{tx("Klaar")}</span></button>
         </div>
       </div>
@@ -121,9 +132,16 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
             <div className="pb-sb-pane" hidden={view !== "structure"}>{structure}</div>
             <div className="pb-sb-pane" hidden={view !== "page"}><PageSettingsPanel lead={<div ref={setPageTarget} className="pb-sb-page" />} /></div>
             <div className="pb-sb-pane" hidden={view !== "settings"}>
-              {!hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
-              {actions}
-              <div ref={setTarget} className="pb-sb-settings" />
+              <Tabs className="pb-sb-tabs" value={stab} onChange={chooseTab} tabs={[["settings", "Instellingen"], ["header", "Header bewerken"], ["footer", "Footer bewerken"], ["ai", "AI gebruiken"]]} />
+              <div hidden={stab === "ai"}>
+                {stab === "settings" && !hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
+                {stab === "settings" && actions}
+                <div ref={setTarget} className="pb-sb-settings" />
+              </div>
+              <div hidden={stab !== "ai"} className="pb-sb-aipane">
+                <p className="muted" style={{ margin: 0 }}>{tx("Laat de AI deze pagina verbeteren: teksten, foto's en video's. Je ziet eerst wat er verandert en kiest zelf wat je overneemt.")}</p>
+                <div id="pb-sb-ai" className="pb-sb-ai" />
+              </div>
             </div>
           </div>
           <div className="pb-sb-save">

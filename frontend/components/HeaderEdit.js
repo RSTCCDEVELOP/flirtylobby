@@ -40,6 +40,14 @@ export default function HeaderEdit() {
     head?.addEventListener("click", click);
     return () => head?.removeEventListener("click", click);
   }, [editing]);
+  useEffect(() => {  // the tabs "Header bewerken" / "Footer bewerken" in the settings of the editor open and close this editor
+    if (!editing) return undefined;
+    const on = () => { window.dispatchEvent(new Event("pb-show-settings")); setTimeout(() => setOpen(true), 60); };
+    const off = () => setOpen(false);
+    window.addEventListener("pb-open-header", on); window.addEventListener("pb-close-hf", off);
+    return () => { window.removeEventListener("pb-open-header", on); window.removeEventListener("pb-close-hf", off); };
+  }, [editing]);
+  useEffect(() => { if (editing) window.dispatchEvent(new CustomEvent("pb-hf-state", { detail: open ? "header" : "" })); }, [open, editing]);
   if (!editing) return null;
   const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // the panel of the editor
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
