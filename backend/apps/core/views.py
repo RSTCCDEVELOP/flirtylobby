@@ -1272,7 +1272,9 @@ def system_reset(request):
     word = str(request.data.get("confirm", "")).strip()
     if (word.upper() != "REPLAY") if replay else (word != "RESET"):  # (REPLAY removes nothing: upper or lower case is fine; RESET has to be typed exactly)
         return Response({"detail": "Typ REPLAY om te bevestigen." if replay else "Typ RESET om te bevestigen."}, status=status.HTTP_400_BAD_REQUEST)
-    if not request.user.check_password(str(request.data.get("password", ""))):
+    from apps.accounts import devlogin
+
+    if not devlogin.check(request, request.user, request.data.get("password", "")):  # (on your own computer also the password that @ fills in)
         return Response({"detail": "Het wachtwoord klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
     if replay:
         return Response({"replay": reset.replay_onboarding()})
@@ -2646,7 +2648,7 @@ def standard_admin_view(request):
         validate_password(password)
     except ValidationError as e:
         return Response({"detail": " ".join(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
-    if not request.user.check_password(str(d.get("confirm_password") or "")):
+    if not __import__("apps.accounts.devlogin", fromlist=["x"]).check(request, request.user, d.get("confirm_password")):
         return Response({"detail": "Het controle-wachtwoord (dat van jezelf) klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
     old = User.objects.filter(email__iexact=cur).first() if cur else None
     other = User.objects.filter(email__iexact=email).exclude(pk=old.pk if old else None).first()
@@ -2735,7 +2737,7 @@ def standard_admin_file(request):
         if d.get("action") == "export":
             return Response({"file": reset.export_file(pw)})
         if d.get("action") == "import":
-            if not request.user.check_password(str(d.get("confirm_password") or "")):
+            if not __import__("apps.accounts.devlogin", fromlist=["x"]).check(request, request.user, d.get("confirm_password")):
                 return Response({"detail": "Het controle-wachtwoord (dat van jezelf) klopt niet."}, status=status.HTTP_400_BAD_REQUEST)
             st = reset.read_file(d.get("file") if isinstance(d.get("file"), dict) else {}, pw)
             return Response(_apply_standard_admin(request, {"email": st["email"], "name": st.get("name") or st["email"], "password_hash": st["password_hash"], "to": "een configuratiebestand"}))
