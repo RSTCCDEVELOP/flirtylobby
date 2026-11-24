@@ -29,8 +29,7 @@ MODULES = [
     {"key": "siteimport", "group": "Content", "plugin": "siteimport", "hidden": True, "label": "Website ontwerpen",
      "desc": "Een andere website (adres, map of ZIP) inlezen: thema, pagina's, startpagina, iconen en plaatjes. Te verwijderen met alles wat erbij hoort."},
     {"key": "sysobjects", "group": "Content", "label": "Systeemobjecten",
-     "desc": "Onderdelen van andere modules (donatieknoppen, abonnementen, …) die je in de bewerkmodus op een pagina kunt zetten. Overzicht en aan/uit per object.",
-     "default": False},
+     "desc": "Onderdelen van andere modules (donatieknoppen, abonnementen, widgets …) die je in de bewerkmodus op een pagina kunt zetten. Overzicht en aan/uit per object. Staat altijd aan: ook de widgets van de bibliotheek (Admin → Thema → Widgets) zijn systeemobjecten."},
     {"key": "branding", "group": "Content", "label": "Logo's & beeld",
      "desc": "Logo, favicon, app-icoon en de foto's op de homepage."},
     {"key": "theme", "group": "Content", "label": "Vormgeving",
@@ -153,7 +152,7 @@ BY_KEY = {m["key"]: m for m in MODULES}
 
 _cache = {"t": 0, "v": None}
 TTL = 10
-ALWAYS_ON = ("system", "plugins", "storage", "backups", "log", "templates", "integrations", "theme", "twofa", "communication")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible). "twofa" + "communication" (the e-mail addresses the code is sent from) keep two-step verification possible in every implementation: it is ON by default (setting Beveiliging -> Twee-staps verificatie, admins), only a superadmin can switch the setting off
+ALWAYS_ON = ("system", "plugins", "storage", "backups", "log", "sysobjects", "templates", "integrations", "theme", "twofa", "communication")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible). "twofa" + "communication" (the e-mail addresses the code is sent from) keep two-step verification possible in every implementation: it is ON by default (setting Beveiliging -> Twee-staps verificatie, admins), only a superadmin can switch the setting off
 
 
 def states():

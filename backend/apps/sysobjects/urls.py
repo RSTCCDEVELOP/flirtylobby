@@ -13,4 +13,7 @@ urlpatterns = [
     path("sysobjects/", views.public_list),
     path("sysobjects/admin/", views.admin_list),
     path("sysobjects/admin/<int:pk>/", views.admin_toggle),
+    path("widgets/", views.widget_library),
+    path("widgets/<slug:key>/", views.widget_install),
+    path("widgets/<slug:key>/options/", views.widget_options),
 ]

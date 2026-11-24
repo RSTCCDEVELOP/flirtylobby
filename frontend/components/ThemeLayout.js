@@ -18,6 +18,7 @@ import { HamburgerCard } from "./MenuSettingsAdmin";
 import { DEFAULT_MENU } from "./SiteMenu";
 import { lvl } from "../lib/perms";
 import MediaPicker from "./MediaPicker";
+import WidgetLibrary from "./WidgetLibrary";
 import RichEditor from "./RichEditor";
 import { alertDialog, confirmDialog, promptDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
@@ -203,7 +204,7 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
   return (
     <div className="stack-sm">
       <p className="muted" style={{ margin: 0 }}>{tx("Zo zien pagina's en popups eruit met het thema dat nu in gebruik is, op een telefoon, een iPad en een computer. De afronding, kleuren, breedte en schaduw van popups pas je aan bij Vormgeving.")}</p>
-      {!draft && <Tabs value={section} onChange={setSection} tabs={[["templates", "Pagina-indeling"], ["header", "Header"], ["footer", "Footer"], ["style", "Tabbladen en vensters"], ["pages", "Voorbeeld: pagina's"], ["popups", "Voorbeeld: popups"]]} />}
+      {!draft && <Tabs value={section} onChange={setSection} tabs={[["templates", "Pagina-indeling"], ["header", "Header"], ["footer", "Footer"], ["style", "Tabbladen en vensters"], ["widgets", "Widgets"], ["pages", "Voorbeeld: pagina's"], ["popups", "Voorbeeld: popups"]]} />}
       {(sec === "pages" || sec === "popups") && <div className="row" style={{ justifyContent: "flex-start" }}>
         {DEV.map(([k, l, h]) => <button key={k} type="button" className={`btn ${dev === k ? "primary" : ""}`} title={tx(h)} onClick={() => setDev(k)}>{tx(l)}</button>)}
       </div>}
@@ -322,6 +323,7 @@ export default function ThemeLayout({ draft = null }) { // draft: {logo}: only t
         </>
       )}
 
+      {sec === "widgets" && <WidgetLibrary />}
       {sec === "pages" && <>
       <h2 style={{ margin: "1rem 0 0" }}>{tx("Pagina-indelingen")}</h2>
       <div className="lay-grid">

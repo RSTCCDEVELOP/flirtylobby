@@ -373,7 +373,7 @@ def listing():
     for base in PRESETS:
         p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "design_pages": _design_count(p["key"]), "theme_pack": _theme_pack(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "design_pages": _design_count(p["key"]), "theme_pack": _theme_pack(p["key"]), "widgets": __import__("apps.core.preset_design", fromlist=["widget_keys"]).widget_keys(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -1153,6 +1153,12 @@ def apply(key, preset=None, overwrite_pages=False, install_design=True, use_them
             themepacks.use(theme_choice, with_files=True)
     except Exception:  # noqa: BLE001 - the installation is done; the theme can be chosen by hand
         logger.exception("Preset %s: its colour theme could not be set", key)
+    try:  # the widgets of the installation are installed (active): they are standard parts of it
+        from . import preset_design as _pdw
+
+        _pdw.install_widgets(key)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: its widgets could not be installed", key)
     try:  # the designed pages of this installation (start page, community pages) go in; those of another installation go out
         from . import preset_pages
 

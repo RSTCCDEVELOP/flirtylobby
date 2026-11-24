@@ -4977,3 +4977,16 @@ html.fx-hide-native, html.fx-hide-native * { cursor: none !important; }
 
 /* while the page is edited everything sits a little lower: the bars and buttons above the first block (the grip, the gear, the bin, the page gear) stay within reach under the top bar */
 html[data-pbbar="1"] .pb { margin-top: 3.2rem; }
+
+/* widgets: the tab in the page editor (an example of each, to click or drag) */
+.pb-widgetgrid { display: grid; grid-template-columns: 1fr; gap: .6rem; }
+.pb-widgettile { display: flex; flex-direction: column; gap: .35rem; text-align: left; padding: .5rem; border-radius: 10px; border: 1px solid var(--line); background: var(--card, #fff); color: inherit; font: inherit; cursor: grab; }
+.pb-widgettile:hover { border-color: var(--blue); }
+.pb-widgetprev { display: block; max-height: 190px; overflow: hidden; border-radius: 8px; background: color-mix(in srgb, var(--blue) 4%, transparent); pointer-events: none; }
+
+/* the library of the widgets (Admin > Thema > Widgets) */
+.wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; }
+.wl-card { display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; border: 1px solid var(--line); background: var(--card, #fff); } .wl-card.on { border-color: color-mix(in srgb, #2f9e6a 55%, var(--line)); }
+.wl-prev { padding: .5rem; min-height: 120px; background: color-mix(in srgb, var(--blue) 5%, transparent); border-bottom: 1px solid var(--line); overflow: hidden; max-height: 230px; }
+.wl-body { display: flex; flex-direction: column; gap: .45rem; padding: .75rem .85rem .85rem; }
+.wl-opts { display: flex; flex-direction: column; gap: .6rem; padding-top: .6rem; margin-top: .2rem; border-top: 1px solid var(--line); } .wl-opts label { display: flex; flex-direction: column; gap: .25rem; font-size: .82rem; font-weight: 600; } .wl-opts label.hed-sw { flex-direction: row; align-items: center; gap: .6rem; }

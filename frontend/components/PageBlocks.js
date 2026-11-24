@@ -723,9 +723,9 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const targetRow = shownRows.find((r) => r.cells.some((c) => c.id === curCell)) || shownRows[shownRows.length - 1];
   // the system objects of the website by module or plugin (for the panel)
   const objGroupKey = (o) => ((o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part") ? `plugin:${o.data?.name || "plugin"}` : o.kind);
-  const objGroupLabel = (o) => (o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "ai" ? "AI" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin"));
+  const objGroupLabel = (o) => (o.kind === "widget" ? "Widgets" : o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "ai" ? "AI" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin"));
   const objGroups = [];
-  objects.forEach((o) => { const k = objGroupKey(o); let g = objGroups.find((x) => x.key === k); if (!g) { g = { key: k, label: objGroupLabel(o), items: [] }; objGroups.push(g); } g.items.push({ slug: o.slug, kind: o.kind, typeLabel: o.data?.type_label || "", mtype: o.data?.type || "", name: `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}` }); });
+  objects.forEach((o) => { const k = objGroupKey(o); let g = objGroups.find((x) => x.key === k); if (!g) { g = { key: k, label: objGroupLabel(o), items: [] }; objGroups.push(g); } g.items.push({ slug: o.slug, kind: o.kind, doc: o.kind === "widget" ? o.data?.example_doc : "", desc: o.kind === "widget" ? o.data?.description : "", height: o.data?.height, typeLabel: o.data?.type_label || "", mtype: o.data?.type || "", name: `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}` }); });
   objGroups.sort((a, b) => a.label.localeCompare(b.label));
   const addMediaKind = async (kind, label) => {  // a kind of media object that was not made yet (carousel, coverflow, mosaic ...): it is made now, with the pictures (or videos) of the library, and put on the page
     try {
@@ -876,7 +876,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
                 {(() => { // one tab per module: donations, subscriptions and every plugin on its own
                   const nameOf = (o) => `${o.names?.[Object.keys(o.names || {})[0]] || o.data?.name || o.slug}`;
                   const tabOf = (o) => (o.kind === "plugin" || o.kind === "plugin_item" || o.kind === "plugin_part") ? `plugin:${o.data?.name || "plugin"}` : o.kind;
-                  const labelOf = (o) => o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "ai" ? "AI" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin");
+                  const labelOf = (o) => o.kind === "widget" ? "Widgets" : o.kind === "donation" ? "Donaties" : o.kind === "plan" ? "Abonnementen" : o.kind === "marketing" ? "Marketing" : o.kind === "installation" ? "Standaardinstallaties" : o.kind === "pricelist" ? "Prijslijst" : o.kind === "ai" ? "AI" : o.kind === "calculator" ? "Prijsberekening" : o.kind === "media" ? "Media" : (o.data?.plugin_title || o.data?.title || o.data?.name || "Plugin");
                   const hits = objects.filter((o) => !objQ || nameOf(o).toLowerCase().includes(objQ.toLowerCase()));
                   const tabs = [];
                   for (const o of hits) if (!tabs.some((x) => x[0] === tabOf(o))) tabs.push([tabOf(o), labelOf(o), null, 0]);

@@ -1,0 +1,38 @@
+{
+  "key": "clock",
+  "name": "Klok",
+  "description": "Een digitale klok met de tijd van nu, met of zonder seconden en datum.",
+  "version": "1.0.0",
+  "category": "Tijd",
+  "height": 150,
+  "options": [
+    {
+      "key": "seconds",
+      "label": "Seconden tonen",
+      "type": "switch",
+      "default": true
+    },
+    {
+      "key": "date",
+      "label": "Datum tonen",
+      "type": "switch",
+      "default": true
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#1f2937"
+    },
+    {
+      "key": "size",
+      "label": "Grootte (px)",
+      "type": "number",
+      "default": 56,
+      "min": 24,
+      "max": 120,
+      "step": 2
+    }
+  ],
+  "example": {}
+}

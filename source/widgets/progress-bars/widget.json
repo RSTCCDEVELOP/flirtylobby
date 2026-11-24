@@ -1,0 +1,62 @@
+{
+  "key": "progress-bars",
+  "name": "Voortgangsbalken",
+  "description": "Drie balken met een percentage, bijvoorbeeld voor vaardigheden of resultaten.",
+  "version": "1.0.0",
+  "category": "Cijfers",
+  "height": 190,
+  "options": [
+    {
+      "key": "l1",
+      "label": "Naam 1",
+      "type": "text",
+      "default": "Kwaliteit"
+    },
+    {
+      "key": "p1",
+      "label": "Percentage 1",
+      "type": "number",
+      "default": 95,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "l2",
+      "label": "Naam 2",
+      "type": "text",
+      "default": "Snelheid"
+    },
+    {
+      "key": "p2",
+      "label": "Percentage 2",
+      "type": "number",
+      "default": 85,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "l3",
+      "label": "Naam 3",
+      "type": "text",
+      "default": "Service"
+    },
+    {
+      "key": "p3",
+      "label": "Percentage 3",
+      "type": "number",
+      "default": 90,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#f2823f"
+    }
+  ],
+  "example": {}
+}

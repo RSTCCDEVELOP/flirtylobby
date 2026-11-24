@@ -1,0 +1,1 @@
+.mq{overflow:hidden;background:{{bg}};color:{{color}};padding:.9rem 0;border-radius:10px}.tr{display:flex;width:max-content;animation:mq {{speed}}s linear infinite}.tr span{padding:0 2.5rem;white-space:nowrap;font-weight:600}@keyframes mq{to{transform:translateX(-25%)}}@media (prefers-reduced-motion:reduce){.tr{animation:none}}

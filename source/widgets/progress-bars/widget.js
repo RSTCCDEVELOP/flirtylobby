@@ -1,0 +1,1 @@
+(function(){var us=document.querySelectorAll('u[data-p]');function go(){us.forEach(function(u){u.style.width=u.dataset.p+'%'})}if('IntersectionObserver' in window){new IntersectionObserver(function(a){if(a[0].isIntersecting)go()}).observe(document.body)}setTimeout(go,400)})();

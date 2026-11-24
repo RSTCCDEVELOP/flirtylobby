@@ -74,7 +74,7 @@ export default function AdminTiles({ all = false }) {
     <Paged id={all ? "admin-tiles-all" : "admin-tiles"} query={view.q}>
     <div className={`cards${view.cls}`} style={{ marginTop: 0 }} data-view-managed>
       {shown.map((t) => (
-        <div key={t.href} className={all && !t.on ? "tile-off" : ""} style={{ display: "flex" }}>
+        <div key={`${t.href}:${t.title}`} className={all && !t.on ? "tile-off" : ""} style={{ display: "flex" }}>
           <div style={{ flex: 1, display: "flex", minWidth: 0 }} className="st-wrap">
             <SuperTile href={t.href} icon={iconOf(t.href)} label={tx(t.title)} title={tx(t.big)} text={tx(t.small)} lock={all && t.modules.some((m) => state?.[m]?.owner_only)}
               onClick={(e) => { if (isLocked(t)) { e.preventDefault(); deny(); } }}

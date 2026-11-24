@@ -92,6 +92,10 @@ export default function PresetDesign({ preset }) {
           {data.theme && <button type="button" className="btn sm" disabled={busy} onClick={() => themeAct("remove")}>{tx("Thema verwijderen")}</button>}
         </div>
       </section>
+      <section className="pdz-theme">
+        <h4>{tx("Widgets van de installatie")}</h4>
+        <p className="muted" style={{ margin: 0, fontSize: ".82rem" }}>{(data.widgets || []).length ? tx("Deze widgets worden bij het instellen van de installatie geïnstalleerd (actief): {0}.", data.widgets.join(", ")) : tx("Er zijn nog geen widgets vastgelegd. De widgets die op deze website zijn geïnstalleerd (Admin → Thema → Widgets) worden bij elke wijziging op deze tab vastgelegd.")}</p>
+      </section>
       <small className="muted">{tx("{0} pagina's gekozen", chosen.length)}{data.saved_at ? ` · ${tx("laatst opgeslagen")} ${new Date(data.saved_at).toLocaleString()}` : ""}</small>
     </>)}
     {sub === "samples" && (<>

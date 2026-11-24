@@ -26,6 +26,7 @@ import PriceCalculator from "./PriceCalculator";
 import MarketingTile from "./MarketingTile";
 import AiBlock from "./AiBlock";
 import EnergyBlock from "./EnergyBlocks";
+import WidgetFrame from "./WidgetFrame";
 import { useEntity, variableValue } from "../lib/entity";
 
 let cache = null; // the list of objects is the same for every widget on the page
@@ -47,6 +48,7 @@ function Widget({ obj, layout = "1" }) {
   const lang = langNow();
   const d = obj.data;
   const route = usePageRoute();
+  if (obj.kind === "widget") return d.enabled === false ? null : <WidgetFrame doc={d.doc} height={d.height} title={d.title} />;  // a widget of the library (Admin > Thema > Widgets)
   if (obj.kind === "variable") return <VariableValue name={d.variable} user={user} />;
   if (obj.kind === "calculator") return <PriceCalculator layout={layout} />;
   if (obj.kind === "pricelist") return <PriceList />;
@@ -93,7 +95,7 @@ export function SysObjectBySlug({ slug, layout = "1" }) {
   const [objs, setObjs] = useState([]);
   useEffect(() => { if (on) load().then(setObjs); }, [on]);
   const o = objs.find((x) => x.slug === slug);
-  const own = o && (o.kind === "marketing" || o.kind === "calculator" || o.kind === "pricelist" || o.kind === "installation" || o.kind === "ai" || o.kind === "energy" || o.kind === "variable");
+  const own = o && (o.kind === "widget" || o.kind === "marketing" || o.kind === "calculator" || o.kind === "pricelist" || o.kind === "installation" || o.kind === "ai" || o.kind === "energy" || o.kind === "variable");
   const n = ["1", "2", "3", "4"].includes(String(layout)) ? String(layout) : "1";
   return on && o ? <div className={`so so-${own ? "own" : n}`} data-layout={n}><Widget obj={o} layout={n} /></div> : null;
 }

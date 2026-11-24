@@ -1,0 +1,62 @@
+{
+  "key": "stats-counter",
+  "name": "Tellers met cijfers",
+  "description": "Drie cijfers die oplopen als ze in beeld komen, met een omschrijving (klanten, projecten, jaren).",
+  "version": "1.0.0",
+  "category": "Cijfers",
+  "height": 170,
+  "options": [
+    {
+      "key": "n1",
+      "label": "Cijfer 1",
+      "type": "number",
+      "default": 250,
+      "min": 0,
+      "max": 1000000,
+      "step": 1
+    },
+    {
+      "key": "l1",
+      "label": "Omschrijving 1",
+      "type": "text",
+      "default": "Tevreden klanten"
+    },
+    {
+      "key": "n2",
+      "label": "Cijfer 2",
+      "type": "number",
+      "default": 1200,
+      "min": 0,
+      "max": 1000000,
+      "step": 1
+    },
+    {
+      "key": "l2",
+      "label": "Omschrijving 2",
+      "type": "text",
+      "default": "Afgeronde projecten"
+    },
+    {
+      "key": "n3",
+      "label": "Cijfer 3",
+      "type": "number",
+      "default": 15,
+      "min": 0,
+      "max": 1000000,
+      "step": 1
+    },
+    {
+      "key": "l3",
+      "label": "Omschrijving 3",
+      "type": "text",
+      "default": "Jaar ervaring"
+    },
+    {
+      "key": "color",
+      "label": "Kleur van de cijfers",
+      "type": "color",
+      "default": "#f2823f"
+    }
+  ],
+  "example": {}
+}

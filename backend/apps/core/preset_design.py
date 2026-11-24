@@ -70,7 +70,7 @@ def listing(key):
         if p.key not in have and p.key not in kept:
             continue
         rows.append({"key": p.key, "title": _title(p), "kind": p.kind, "path": p.path, "in_menu": p.in_menu, "saved": p.key in kept, "has_blocks": p.key in have, "sample": sample_state(key, p.key) if p.key in kept else "none", "missing": _missing(key, p.key) if p.key in kept else []})
-    return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept), "theme": theme_info(key)}
+    return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept), "theme": theme_info(key), "widgets": widget_keys(key)}
 
 
 # ── samples: a picture of the whole page, made when a page is switched on and removed when it is switched off; they present the installation ──
@@ -162,6 +162,10 @@ def save(key, page_keys, origin="", wait=False):
             f.unlink()
     titles = {p.key: _title(p) for p in Page.objects.filter(key__in=chosen)}
     (d / "index.json").write_text(json.dumps({"pages": chosen, "titles": titles, "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, indent=1, ensure_ascii=False), encoding="utf-8")
+    try:  # the widgets that are installed on the website go with the installation (active)
+        capture_widgets(key)
+    except Exception:  # noqa: BLE001
+        logger.exception("The widgets of %s could not be kept", key)
     try:  # the look of the website goes with the pages: a theme that is kept before stays up to date
         capture_theme(key)
     except Exception:  # noqa: BLE001 - the pages are saved; the theme can be kept with its own button
@@ -314,6 +318,43 @@ def install_theme(key):
 
 def remove_theme(key):
     theme_file(key).unlink(missing_ok=True)
+
+
+# ── the widgets of the installation: the widgets that are installed on this website (Admin > Thema > Widgets) are kept as a list and installed (active) when the installation is set ──
+def widgets_file(key):
+    return folder(key) / "widgets.json"
+
+
+def capture_widgets(key):
+    """Keep the widgets that are installed now (and on) in the installation. Returns the keys."""
+    from apps.sysobjects import widgets
+
+    keys = sorted(k for k, w in widgets.installed().items() if w.enabled)
+    folder(key).mkdir(parents=True, exist_ok=True)
+    widgets_file(key).write_text(json.dumps({"widgets": keys}, indent=1), encoding="utf-8")
+    return keys
+
+
+def widget_keys(key):
+    try:
+        d = json.loads(widgets_file(key).read_text(encoding="utf-8"))
+        return [k for k in d.get("widgets", []) if isinstance(k, str)]
+    except (OSError, ValueError):
+        return []
+
+
+def install_widgets(key):
+    """Install the widgets of the installation (active). A widget that is not in the library of this website is skipped. Returns the keys that were installed."""
+    from apps.sysobjects import widgets
+
+    done = []
+    for k in widget_keys(key):
+        try:
+            widgets.install(k)
+            done.append(k)
+        except ValueError:
+            logger.warning("Preset %s: widget %s is not in the library", key, k)
+    return done
 
 
 def keys(key):

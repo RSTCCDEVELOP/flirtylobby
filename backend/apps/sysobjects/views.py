@@ -53,6 +53,15 @@ def _row(o, public=False):
         if not lay or (o.ref_key == "network" and not mods.enabled("energy_network")):
             return None
         data, names, button = {"layout": o.ref_key, "title": "Energie: " + lay["label"], "enabled": True}, {"": "Energie: " + lay["label"]}, {}
+    elif o.kind == "widget":
+        from . import widgets
+
+        m = widgets.manifest(src.key)
+        if not m:
+            return None
+        names, button = {"": m["name"]}, {}
+        data = {"key": src.key, "title": m["name"], "description": m["description"], "category": m["category"], "height": m["height"], "enabled": src.enabled,
+                "doc": widgets.doc(src.key, src.options), "example_doc": widgets.doc(src.key, example=True)}
     elif o.kind == "variable":
         from apps.core import entity as ent
 
@@ -96,7 +105,7 @@ def _row(o, public=False):
     row = {"id": o.id, "slug": o.slug, "kind": o.kind, "enabled": o.enabled, "names": names, "button": button, "data": data}
     if not public:
         row.update(kind_label=dict(SystemObject.KINDS)[o.kind], used_on=service.usage(o.slug), source_id=o.ref_id,
-                   edit_url={"variable": "/dashboard/admin/entity", "donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen", "ai": "/dashboard/superadmin/ai", "pricelist": "/dashboard/superadmin/prijzen", "installation": "/dashboard/superadmin/prijzen", "energy": "/dashboard/admin/energy"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
+                   edit_url={"variable": "/dashboard/admin/entity", "donation": "/dashboard/admin/donations", "plan": "/dashboard/admin/subscriptions", "media": "/dashboard/admin/media", "calculator": "/dashboard/superadmin/prijzen", "marketing": "/dashboard/superadmin/prijzen", "ai": "/dashboard/superadmin/ai", "pricelist": "/dashboard/superadmin/prijzen", "installation": "/dashboard/superadmin/prijzen", "energy": "/dashboard/admin/energy", "widget": "/dashboard/admin/theme"}.get(o.kind) or f"/dashboard/admin/plugins/{getattr(src, 'name', '')}")
     return row
 
 
@@ -126,7 +135,7 @@ def public_list(request):
 
     out = []
     for o in SystemObject.objects.filter(enabled=True):
-        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins", "media": "media", "calculator": "sysobjects", "marketing": "sysobjects", "pricelist": "sysobjects", "ai": "ai", "installation": "sysobjects", "energy": "energy"}[o.kind]):
+        if not modules.enabled({"donation": "donations", "plan": "subscriptions", "plugin": "plugins", "plugin_item": "plugins", "plugin_part": "plugins", "media": "media", "calculator": "sysobjects", "marketing": "sysobjects", "pricelist": "sysobjects", "ai": "ai", "installation": "sysobjects", "energy": "energy", "widget": "sysobjects", "variable": "sysobjects"}.get(o.kind, "sysobjects")):
             continue
         r = _row(o, public=True)
         if r and o.kind in ("plugin", "plugin_item", "plugin_part") and not r["data"]["enabled"]:
@@ -134,3 +143,44 @@ def public_list(request):
         if r:
             out.append(r)
     return Response(out)
+
+
+# ── the library of the widgets (Admin > Thema > Widgets) ──
+WIDGET_PERM = [has_level("theme", "edit"), module_required("theme")]
+
+
+@api_view(["GET"])
+@permission_classes(WIDGET_PERM)
+def widget_library(request):
+    """Every widget of the library (<source>/widgets/) with its example, and whether it is installed on this website."""
+    from . import widgets
+
+    return Response({"widgets": widgets.admin_listing(), "folder": "source/widgets"})
+
+
+@api_view(["POST", "DELETE"])
+@permission_classes(WIDGET_PERM)
+def widget_install(request, key):
+    """POST: install the widget (it is a system object now: the editor can put it on a page). DELETE: remove it from this website (pages that show it lose it)."""
+    from . import widgets
+
+    try:
+        if request.method == "POST":
+            widgets.install(key)
+        else:
+            widgets.uninstall(key)
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"widgets": widgets.admin_listing()})
+
+
+@api_view(["PUT"])
+@permission_classes(WIDGET_PERM)
+def widget_options(request, key):
+    from . import widgets
+
+    try:
+        widgets.set_options(key, request.data.get("options") if isinstance(request.data, dict) else {})
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"widgets": widgets.admin_listing()})

@@ -1,0 +1,38 @@
+{
+  "key": "marquee",
+  "name": "Lopende tekst",
+  "description": "Een tekst die over de pagina schuift, bijvoorbeeld voor een aanbieding of nieuws.",
+  "version": "1.0.0",
+  "category": "Tekst",
+  "height": 70,
+  "options": [
+    {
+      "key": "text",
+      "label": "Tekst",
+      "type": "text",
+      "default": "Gratis verzending vanaf € 50 · Nu extra voordelig · Bestel vandaag, morgen in huis"
+    },
+    {
+      "key": "speed",
+      "label": "Snelheid (seconden voor een rondje)",
+      "type": "number",
+      "default": 22,
+      "min": 6,
+      "max": 80,
+      "step": 1
+    },
+    {
+      "key": "bg",
+      "label": "Achtergrond",
+      "type": "color",
+      "default": "#1f2937"
+    },
+    {
+      "key": "color",
+      "label": "Tekstkleur",
+      "type": "color",
+      "default": "#ffffff"
+    }
+  ],
+  "example": {}
+}

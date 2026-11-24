@@ -1,0 +1,1 @@
+(function(){function z(n){return n<10?'0'+n:n}function tick(){var n=new Date();document.getElementById('t').textContent=z(n.getHours())+':'+z(n.getMinutes())+(WIDGET.seconds?':'+z(n.getSeconds()):'');document.getElementById('d').textContent=WIDGET.date?n.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'}):''}tick();setInterval(tick,1000)})();

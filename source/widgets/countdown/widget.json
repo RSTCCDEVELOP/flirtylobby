@@ -1,0 +1,38 @@
+{
+  "key": "countdown",
+  "name": "Aftelklok",
+  "description": "Telt af naar een datum en tijd: dagen, uren, minuten en seconden.",
+  "version": "1.0.0",
+  "category": "Tijd",
+  "height": 170,
+  "options": [
+    {
+      "key": "title",
+      "label": "Titel",
+      "type": "text",
+      "default": "Nog te gaan"
+    },
+    {
+      "key": "date",
+      "label": "Datum en tijd",
+      "type": "datetime",
+      "default": "2027-01-01T00:00"
+    },
+    {
+      "key": "color",
+      "label": "Kleur",
+      "type": "color",
+      "default": "#f2823f"
+    },
+    {
+      "key": "done",
+      "label": "Tekst als de tijd om is",
+      "type": "text",
+      "default": "Het is zover!"
+    }
+  ],
+  "example": {
+    "title": "De opening is over",
+    "date": "2099-01-01T09:00"
+  }
+}

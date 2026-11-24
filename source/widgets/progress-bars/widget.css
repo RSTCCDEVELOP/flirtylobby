@@ -1,0 +1,1 @@
+.pg{padding:1rem;display:grid;gap:1rem}.pg p{margin:0 0 .3rem;display:flex;justify-content:space-between;font-weight:600}.pg i{display:block;height:10px;border-radius:999px;background:rgba(0,0,0,.08);overflow:hidden}.pg u{display:block;height:100%;width:0;border-radius:999px;background:{{color}};transition:width 1.2s cubic-bezier(.2,.7,.2,1)}
