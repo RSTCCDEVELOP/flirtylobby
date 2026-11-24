@@ -112,6 +112,7 @@ YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "N
 HEADER_STICKY = [{"value": "yes", "label": "Altijd bovenaan (blijft staan)", "css": ""}, {"value": "no", "label": "Nooit (scrolt weg)", "css": ""},
                  {"value": "after", "label": "Blijft staan na een stuk scrollen", "css": ""},
                  {"value": "start", "label": "Verschijnt na een stuk scrollen (eerst verborgen)", "css": ""}]  # "after": scrolls with the page, then stays; "start": hidden at first, appears after the amount is scrolled; only one of the two is active  # "after": the header sticks after header_sticky_pct percent of the screen height or header_sticky_px pixels is scrolled (header_sticky_unit says which; components/StickyHeader.js)
+HEADER_SIDE = [{"value": "off", "label": "Uit", "css": ""}, {"value": "left", "label": "Zijmenu links", "css": ""}, {"value": "right", "label": "Zijmenu rechts", "css": ""}]  # after the amount is scrolled the header goes and a menu at the side takes its place (components/SideMenu.js)
 HEADER_STICKY_UNITS = [{"value": "pct", "label": "Procent van het scherm", "css": ""}, {"value": "px", "label": "Pixels", "css": ""}]
 FX_COLOR = _opts(("primary", "Primaire kleur"), ("secondary", "Secundaire kleur"), ("text", "Tekstkleur"), ("white", "Wit"))
 FX_CURSOR = _opts(("off", "Uit"), ("ring", "Ring die de muis volgt"), ("dot", "Punt met ring"), ("blob", "Zachte vlek die de muis volgt"))  # the mouse effects of the website (components/MouseEffects.js)
@@ -298,6 +299,12 @@ SCHEMA = [
         choice("header_sticky_unit", "Header: blijft staan na (eenheid)", "pct", None, HEADER_STICKY_UNITS),
         number("header_sticky_pct", "Header: blijft staan na (procent van het scherm)", 25, None, "%", 0, 200, 5),
         number("header_sticky_px", "Header: blijft staan na (pixels)", 200, None, "px", 0, 1500, 10),
+        choice("header_side", "Header wordt zijmenu bij scrollen", "off", None, HEADER_SIDE),
+        choice("header_side_unit", "Zijmenu: vanaf (eenheid)", "pct", None, HEADER_STICKY_UNITS),
+        number("header_side_pct", "Zijmenu: vanaf (procent van het scherm)", 15, None, "%", 0, 200, 5),
+        number("header_side_px", "Zijmenu: vanaf (pixels)", 300, None, "px", 0, 1500, 10),
+        number("page_start", "Pagina begint onder het menu (fijn afstellen)", 0, "--page-start", "px", -200, 400, 4),
+        number("hero_start", "Hero begint onder het menu (fijn afstellen)", 0, "--hero-start", "px", -200, 400, 4),
         choice("header_width", "Header: breedte", "content", None, HEADER_WIDTHS),
         choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
         choice("menu_case", "Menu: letters", "normal", None, MENU_CASES),

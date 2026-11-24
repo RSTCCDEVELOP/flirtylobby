@@ -18,6 +18,11 @@ export default function StickyHeader() {
     const run = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
+        const side = root.dataset.hside;  // after the amount is scrolled the header gives way to the side menu (components/SideMenu.js); not while editing
+        if (side && side !== "off" && root.dataset.pbbar !== "1") {
+          const sat = Number(root.dataset.hsideat) || 0, sfar = root.dataset.hsideunit === "px" ? sat : (sat / 100) * window.innerHeight;
+          if (window.scrollY > sfar) root.dataset.hsidenow = "1"; else delete root.dataset.hsidenow;
+        } else if (root.dataset.hsidenow) delete root.dataset.hsidenow;
         if (root.dataset.hsticky !== "after" && root.dataset.hsticky !== "start") { if (root.dataset.hstuck) delete root.dataset.hstuck; return; }
         const at = Number(root.dataset.hstickyat) || 0;
         const far = root.dataset.hstickyunit === "px" ? at : (at / 100) * window.innerHeight;  // pixels, or a percentage of the screen height
@@ -28,8 +33,8 @@ export default function StickyHeader() {
     window.addEventListener("scroll", run, { passive: true });
     window.addEventListener("resize", run);
     const mo = new MutationObserver(run);
-    mo.observe(root, { attributes: true, attributeFilter: ["data-hsticky", "data-hstickyat", "data-hstickyunit"] });
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("scroll", run); window.removeEventListener("resize", run); mo.disconnect(); delete root.dataset.hstuck; };
+    mo.observe(root, { attributes: true, attributeFilter: ["data-hsticky", "data-hstickyat", "data-hstickyunit", "data-hside", "data-hsideat", "data-hsideunit"] });
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("scroll", run); window.removeEventListener("resize", run); mo.disconnect(); delete root.dataset.hstuck; delete root.dataset.hsidenow; };
   }, []);
   return null;
 }

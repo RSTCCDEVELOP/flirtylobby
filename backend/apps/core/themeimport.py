@@ -230,7 +230,7 @@ def _image(fetcher, url):
     return (ext, data) if len(data) <= MAX_DRAFT_IMG else None
 
 
-PAGE_KEYS = ("header_layout", "header_style", "header_sticky", "header_sticky_unit", "header_sticky_pct", "header_sticky_px", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w")
+PAGE_KEYS = ("header_layout", "header_style", "header_sticky", "header_sticky_unit", "header_sticky_pct", "header_sticky_px", "header_side", "header_side_unit", "header_side_pct", "header_side_px", "page_start", "hero_start", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w")
 
 
 def guess_layout(css, primary, fixed_header):

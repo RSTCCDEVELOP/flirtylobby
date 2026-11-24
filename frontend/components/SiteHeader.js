@@ -20,9 +20,11 @@ import { ChatButton, DirectIndicator } from "./Chat";
 import NotificationBell from "./NotificationBell";
 import SandboxPill from "./SandboxPill";
 import HeaderEdit from "./HeaderEdit";
+import SideMenu from "./SideMenu";
 
 export default function SiteHeader() {
   return (
+    <>
     <header className="site-header">
       <ImageEdit target="asset:logo">
         <Link href="/" className="brand">
@@ -44,5 +46,7 @@ export default function SiteHeader() {
         <SiteUserArea />
       </div>
     </header>
+    <SideMenu />
+    </>
   );
 }

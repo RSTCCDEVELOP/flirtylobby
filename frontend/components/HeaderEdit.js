@@ -53,21 +53,29 @@ export default function HeaderEdit() {
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
   const save = async (values) => { try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   // The header reads these choices from attributes on <html> that the server sets when the page loads (layout.js): without this the header only changed after closing the panel (a reload). They are put there at once, with the same defaults as the server.
-  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
+  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_side: ["hside", "off"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
   const setLook = (key, v) => {
     const values = { ...theme.values, [key]: v };
     setTheme({ ...theme, values });
     setDirty(true);
+    if (key === "header_side_unit" && typeof document !== "undefined") { document.documentElement.dataset.hsideunit = v; document.documentElement.dataset.hsideat = String(values[v === "px" ? "header_side_px" : "header_side_pct"] ?? (v === "px" ? 300 : 15)); }
     if (key === "header_sticky_unit" && typeof document !== "undefined") { document.documentElement.dataset.hstickyunit = v; document.documentElement.dataset.hstickyat = String(values[v === "px" ? "header_sticky_px" : "header_sticky_pct"] ?? (v === "px" ? 200 : 25)); }  // the other unit has its own amount
     const a = LOOK_ATTR[key];
     if (a && typeof document !== "undefined") document.documentElement.dataset[a[0]] = key === "mode_switch" ? (v === "hide" ? "hide" : "show") : (v || a[1]);  // the switch light/dark shows or hides at once
     save(values);
   };
   // the logo follows the slider at once; it is saved a moment after the last move
-  const setStickyAt = (key, n) => {  // the slider of "stays after": the page follows at once, saved a moment after the last move
+  const setStickyAt = (key, n, attr = "hstickyat") => {  // the slider of "stays after" (and of the side menu): the page follows at once, saved a moment after the last move
     const values = { ...theme.values, [key]: n };
     setTheme({ ...theme, values });
-    document.documentElement.dataset.hstickyat = String(n);
+    document.documentElement.dataset[attr] = String(n);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => save(values), 400);
+  };
+  const setStart = (key, n) => {  // where the page and the hero begin under the menu: follows the slider at once
+    const values = { ...theme.values, [key]: n };
+    setTheme({ ...theme, values });
+    document.documentElement.style.setProperty(key === "page_start" ? "--page-start" : "--hero-start", `${n}px`);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(values), 400);
   };
@@ -95,7 +103,7 @@ export default function HeaderEdit() {
         <div className={host ? "pb-hdock" : "pb-objback"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) close(); }}>
           <div className={host ? "pb-hdock-in" : "pb-objpop"} role="dialog" aria-label={tx("Header bewerken")} style={host ? undefined : { width: "min(720px, 100%)" }}>
             <div className="pb-objhead"><strong>{tx("Header bewerken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={close} aria-label={tx("Sluiten")}>×</button></div>
-            <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ["position", "Positie"], ["logo", "Logo"], ["menu", "Menu"]]} />
+            <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ["position", "Positie"], ["side", "Zijmenu"], ["logo", "Logo"], ["menu", "Menu"]]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
             {tab === "look" && (!theme ? <p className="muted"><Loading /></p> : (
               <div className="hed">
@@ -159,6 +167,51 @@ export default function HeaderEdit() {
                       </div>
                     </>)}
                     <small className="muted">{tx("Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.")}</small>
+                  </section>
+                  <section className="hed-card">
+                    <h4>{tx("Start onder het menu")}</h4>
+                    {[["page_start", "Pagina start", "Hoeveel ruimte er tussen het menu en het begin van de pagina zit."], ["hero_start", "Hero start", "Waar de eerste hero of het eerste blok begint; een negatieve waarde schuift hem omhoog, onder een doorzichtige header."]].map(([k, l, d]) => {
+                      const f = fields.find((x) => x.key === k); if (!f) return null;
+                      const n = Number(theme.values[k] ?? 0);
+                      return (
+                        <div className="hed-field" key={k}><span className="hed-lbl">{tx(l)}<b className="hed-val">{n} px</b></span>
+                          <input type="range" min={f.min} max={f.max} step={f.step || 4} value={n} onChange={(e) => setStart(k, Number(e.target.value))} aria-label={tx(l)} />
+                          <small className="muted">{tx(d)}</small>
+                        </div>
+                      );
+                    })}
+                    <button type="button" className="btn sm" onClick={() => { setStart("page_start", 0); setTimeout(() => setStart("hero_start", 0), 0); }}>{tx("Terug naar standaard")}</button>
+                  </section>
+                </div>
+              );
+            })())}
+            {tab === "side" && (!theme ? <p className="muted"><Loading /></p> : (() => {
+              const f = fields.find((x) => x.key === "header_side");
+              if (!f) return null;
+              const mode = theme.values.header_side || "off", unit = theme.values.header_side_unit || "pct";
+              const amountKey = unit === "px" ? "header_side_px" : "header_side_pct";
+              const af = fields.find((x) => x.key === amountKey);
+              const amount = Number(theme.values[amountKey] ?? (unit === "px" ? 300 : 15));
+              return (
+                <div className="hed">
+                  <section className="hed-card">
+                    <h4>{tx("Zijmenu bij scrollen")}</h4>
+                    <div className="hed-cards" role="radiogroup" aria-label={tx("Zijmenu")}>
+                      {[["off", "Uit", "De header blijft de header; er komt geen zijmenu."], ["left", "Zijmenu links", "Bij het scrollen verdwijnt de header en komt het menu links aan de zijkant."], ["right", "Zijmenu rechts", "Bij het scrollen verdwijnt de header en komt het menu rechts aan de zijkant."]].map(([k, l, d]) => (
+                        <button type="button" key={k} role="radio" aria-checked={mode === k} className={`hed-opt${mode === k ? " on" : ""}`} onClick={() => setLook("header_side", k)}>
+                          <span className="hed-dot" aria-hidden="true" /><span><strong>{tx(l)}</strong><small>{tx(d)}</small></span>
+                        </button>
+                      ))}
+                    </div>
+                    {mode !== "off" && (<>
+                      <div className="hed-field"><span className="hed-lbl">{tx("Eenheid")}</span>
+                        <div className="hed-seg lg" role="group">{[["pct", tx("Procent (%)")], ["px", tx("Pixels (px)")]].map(([k, l]) => <button type="button" key={k} className={unit === k ? "on" : ""} aria-pressed={unit === k} onClick={() => setLook("header_side_unit", k)}>{l}</button>)}</div>
+                      </div>
+                      <div className="hed-field"><span className="hed-lbl">{tx("Het zijmenu komt na")}<b className="hed-val">{amount} {unit === "px" ? "px" : "%"}</b></span>
+                        <input type="range" min={af?.min ?? 0} max={af?.max ?? (unit === "px" ? 1500 : 200)} step={af?.step ?? (unit === "px" ? 10 : 5)} value={amount} onChange={(e) => setStickyAt(amountKey, Number(e.target.value), "hsideat")} aria-label={tx("Het zijmenu komt na")} />
+                        <small className="muted">{tx("Zo ver moet de bezoeker scrollen voordat de header een zijmenu wordt. Met de pijl aan de rand open en sluit je het menu. In de bewerkmodus blijft de header staan.")}</small>
+                      </div>
+                    </>)}
                   </section>
                 </div>
               );

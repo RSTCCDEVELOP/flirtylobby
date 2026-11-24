@@ -5067,3 +5067,25 @@ html[data-pbbar="1"][data-hsticky="start"] .site-header { position: relative; tr
 .hed-opt.on .hed-dot { border-color: var(--blue); } .hed-opt.on .hed-dot::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--blue); }
 .hed-opt:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .hed-seg.lg { padding: 4px; gap: 4px; border-radius: 11px; } .hed-seg.lg button { padding: .55rem .6rem; font-size: .84rem; border-radius: 8px; }
+
+/* the side menu (theme value header_side = left or right): after the amount is scrolled the header goes and a menu at the side takes its place, with an arrow at its edge to open and close it (components/SideMenu.js) */
+html[data-hside="left"][data-hsidenow="1"]:not([data-pbbar="1"]) .site-header, html[data-hside="right"][data-hsidenow="1"]:not([data-pbbar="1"]) .site-header { position: fixed; top: 0; left: 0; right: 0; margin-left: auto; margin-right: auto; transform: translateY(-100%); visibility: hidden; transition: transform .22s ease-out, visibility 0s linear .22s; }
+html[data-hside="left"][data-hsidenow="1"]:not([data-pbbar="1"]) body, html[data-hside="right"][data-hsidenow="1"]:not([data-pbbar="1"]) body { padding-top: var(--site-header-h, 64px); }
+.side-menu { position: fixed; top: 0; bottom: 0; z-index: 1000; width: min(300px, 86vw); display: flex; background: var(--card, #fff); color: var(--text); transition: transform .25s ease, box-shadow .25s; }
+.side-menu.left { left: 0; transform: translateX(-100%); border-right: 1px solid var(--line); } .side-menu.right { right: 0; transform: translateX(100%); border-left: 1px solid var(--line); }
+.side-menu.open { transform: none; box-shadow: 0 0 40px rgba(0, 0, 0, .25); }
+.side-menu .side-in { flex: 1; min-width: 0; overflow-y: auto; padding: 1.1rem 1rem 1.5rem; display: grid; gap: 1.1rem; align-content: start; }
+.side-menu .side-brand { display: inline-flex; max-width: 100%; }
+.side-menu .hmenu.f-bar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: .15rem; flex: none; }
+.side-menu .hmenu a, .side-menu .hmenu .hm-label { display: block; padding: .6rem .8rem; border-radius: 10px; text-align: left; }
+.side-menu .hmenu a:hover { background: color-mix(in srgb, var(--blue) 9%, transparent); }
+.side-menu .hm-split { display: flex; align-items: center; justify-content: space-between; }
+.side-arrow { position: absolute; top: 1rem; width: 34px; height: 54px; display: grid; place-items: center; padding: 0; color: var(--text); background: var(--card, #fff); border: 1px solid var(--line); cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+.side-menu.left .side-arrow { right: -34px; border-left: 0; border-radius: 0 14px 14px 0; } .side-menu.right .side-arrow { left: -34px; border-right: 0; border-radius: 14px 0 0 14px; }
+.side-arrow:hover { color: var(--blue); } .side-arrow:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .side-menu, .side-arrow svg { transition: none !important; } }
+
+/* fine tuning where the page and the hero begin under the menu (theme values page_start and hero_start, in px; a negative value moves up, under a see-through header) */
+.pb { margin-top: calc(1.5rem + var(--page-start, 0px)); }
+.pb > .pb-rowwrap:first-child { margin-top: var(--hero-start, 0px); }
+html[data-pbbar="1"] .pb { margin-top: calc(4.4rem + var(--page-start, 0px)); }

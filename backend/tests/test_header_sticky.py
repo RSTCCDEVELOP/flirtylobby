@@ -25,3 +25,17 @@ def test_after_how_much_scrolling_is_a_slider_in_percent_or_pixels():
     from apps.core import themepacks
 
     assert {"header_sticky_unit", "header_sticky_pct", "header_sticky_px"} <= set(themepacks.COMPLETE_KEYS)  # a theme and a standard installation keep them
+
+
+def test_the_side_menu_and_the_start_of_the_page_and_the_hero():
+    from apps.core import themepacks
+
+    ok, err = theme.validate({"header_side": "left", "header_side_unit": "px", "header_side_px": 400, "header_side_pct": 20, "page_start": -40, "hero_start": 120})
+    assert not err and ok["header_side"] == "left" and ok["page_start"] == -40 and ok["hero_start"] == 120  # a negative start moves the page up, under a see-through header
+    assert theme.validate({"header_side": "top"})[1] and theme.validate({"page_start": 900})[1] and theme.validate({"hero_start": -500})[1]
+    f = theme.FIELDS
+    assert f["header_side"]["default"] == "off" and f["page_start"]["default"] == 0 and f["hero_start"]["default"] == 0
+    assert f["page_start"]["css"] == "--page-start" and f["hero_start"]["css"] == "--hero-start"
+    css, _ = theme.build({**{k: f["default"] for k, f in theme.FIELDS.items()}, "page_start": 24})
+    assert "--page-start:24px" in css
+    assert {"header_side", "header_side_unit", "header_side_pct", "header_side_px", "page_start", "hero_start"} <= set(themepacks.COMPLETE_KEYS)
