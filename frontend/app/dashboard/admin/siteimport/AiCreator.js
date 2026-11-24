@@ -972,8 +972,8 @@ function RefSites({ jobId, disabled, onChange, onView, viewId }) {
             <strong style={{ fontSize: "1.05rem" }}>{work.kind === "url" ? tx("Er wordt een afbeelding van de website gemaakt…") : tx("De afbeelding wordt verwerkt…")}</strong>
             <span style={{ overflowWrap: "anywhere" }}>{work.what}</span>
             <div className="imp-bar imp-wait" role="progressbar" aria-label={tx("Bezig")}><span /></div>
-            <small className="muted">{work.kind === "url" ? `${tx("De website wordt geopend en vastgelegd. Dit duurt meestal 10 tot 30 seconden, soms een minuut.")} · ${secs} s` : `${secs} s`}</small>
-            {work.kind === "url" && secs >= 20 && <small className="muted">{tx("Even geduld: sommige websites laden traag. Na 45 seconden stopt het vanzelf met een melding.")}</small>}
+            <small className="muted">{work.kind === "url" ? `${tx("De website wordt geopend en de hele pagina wordt vastgelegd, van boven tot onder. Dit duurt meestal 15 tot 40 seconden, soms een minuut.")} · ${secs} s` : `${secs} s`}</small>
+            {work.kind === "url" && secs >= 20 && <small className="muted">{tx("Even geduld: sommige websites laden traag. Na een minuut stopt het vanzelf met een melding.")}</small>}
           </div>
         </div>, document.body)}
     </div>

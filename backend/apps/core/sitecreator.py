@@ -1522,17 +1522,36 @@ def refs_of(b):
     return [r for r in ((b or {}).get("refs") or []) if isinstance(r, dict) and r.get("key")][:MAX_REFS]  # (url: a website; no url: a picture that the customer dropped or pasted)
 
 
-def refs_images(b):
-    """The pictures of the websites that the customer likes, for the AI: [(media_type, base64)] (at most five, about 100 kB each)."""
+def refs_images(b, budget=10):
+    """The pictures of the websites that the customer likes, for the AI: [(media_type, base64)]. A whole page is a long picture (a model reads about 1500 px at a time): it is cut in pieces of
+    1000 x 1400 and at most `budget` pieces go along in total (the top of every page first, then pieces further down), so the designer sees the whole of every page for a reasonable price."""
     import base64
 
-    out = []
+    from PIL import Image
+
+    pages = []
     for r in refs_of(b):
         try:
             with default_storage.open(r["key"], "rb") as fh:
-                out.append(("image/jpeg", base64.b64encode(fh.read()).decode()))
+                im = Image.open(io.BytesIO(fh.read())).convert("RGB")
+            pieces = [im.crop((0, y, im.width, min(im.height, y + 1400))) for y in range(0, im.height, 1400) if im.height - y > 200 or y == 0]
+            pages.append(pieces or [im])
         except Exception:  # noqa: BLE001 - a picture that is gone is left out
             continue
+    if not pages:
+        return []
+    per = max(1, budget // len(pages))
+    out = []
+    for pieces in pages:
+        if len(pieces) <= per:
+            pick = pieces
+        else:  # the top first, then evenly spread over the rest of the page
+            step = (len(pieces) - 1) / max(1, per - 1) if per > 1 else 0
+            pick = [pieces[round(i * step)] for i in range(per)] if per > 1 else [pieces[0]]
+        for piece in pick:
+            buf = io.BytesIO()
+            piece.save(buf, "JPEG", quality=75)
+            out.append(("image/jpeg", base64.b64encode(buf.getvalue()).decode()))
     return out
 
 
@@ -1548,6 +1567,7 @@ def refs_public(job):
                 from PIL import Image
 
                 im = Image.open(io.BytesIO(fh.read())).convert("RGB")
+                im = im.crop((0, 0, im.width, min(im.height, int(im.width * 0.75))))  # (the top of the page; the whole page is seen big on the right)
                 im.thumbnail((360, 360))
                 buf = io.BytesIO()
                 im.save(buf, "JPEG", quality=70)

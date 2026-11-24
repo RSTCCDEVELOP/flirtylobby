@@ -91,3 +91,24 @@ def test_the_full_picture_of_an_example_can_be_shown(job):
     r = c.get(f"/api/sitecreator/{pk}/refs/{rid}/image/")
     assert r.status_code == 200 and r["Content-Type"] == "image/jpeg" and r.content[:3] == b"\xff\xd8\xff"
     assert c.get(f"/api/sitecreator/{pk}/refs/onbekend/image/").status_code == 404
+
+
+@pytest.mark.django_db
+def test_a_whole_page_goes_to_the_designer_in_pieces_within_a_budget(job, monkeypatch):
+    """A long picture of a whole page is cut in pieces; at most `budget` pieces go along in total, the top of every page first."""
+    from apps.core import sitecreator
+    from apps.core.models import SiteDesignJob
+
+    c, pk = job
+    tall = io.BytesIO(); Image.new("RGB", (1000, 7000), (200, 80, 40)).save(tall, "JPEG"); tall = tall.getvalue()
+    monkeypatch.setattr(siteshots, "clean_url", lambda u: "https://" + str(u).replace("https://", "").strip("/"))
+    monkeypatch.setattr(siteshots, "capture", lambda u: tall)
+    for i in range(3):
+        c.post(f"/api/sitecreator/{pk}/refs/", {"url": f"hoog{i}.nl"}, format="json")
+    b = SiteDesignJob.objects.get(pk=pk).brief
+    imgs = sitecreator.refs_images(b, budget=9)
+    assert len(imgs) == 9  # three pieces of every page (top, middle, bottom)
+    assert len(sitecreator.refs_images(b, budget=3)) == 3  # one piece (the top) of every page
+    assert len(sitecreator.refs_images(b, budget=30)) == 15  # 5 pieces of 1400 px of a page of 7000 px, three pages
+    thumb = c.get(f"/api/sitecreator/{pk}/refs/").json()["refs"][0]["thumb"]
+    assert thumb.startswith("data:image/jpeg")
