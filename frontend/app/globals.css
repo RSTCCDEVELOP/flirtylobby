@@ -4949,3 +4949,7 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .lg-over { max-width: 240px; overflow-wrap: anywhere; } .lg-ip { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; opacity: .75; }
 .lg-empty { padding: 2rem !important; text-align: center; opacity: .6; }
 .lg-foot { display: flex; justify-content: space-between; align-items: center; margin-top: .75rem; } .lg-pager { display: flex; align-items: center; gap: .6rem; font-variant-numeric: tabular-nums; }
+.lg-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .75rem; margin-bottom: 1.2rem; }
+.lg-opt-card { display: flex; flex-direction: column; gap: .5rem; padding: .8rem .9rem; border-radius: 12px; background: color-mix(in srgb, var(--blue) 6%, transparent); border: 1px solid color-mix(in srgb, var(--blue) 14%, transparent); }
+.lg-opt-card h4 { margin: 0; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+.lg-opt { display: flex; align-items: center; gap: .7rem; cursor: pointer; } .lg-opt.locked { cursor: default; } .lg-opt-name { flex: 1; font-size: .88rem; font-weight: 600; }

@@ -80,10 +80,11 @@ def log_settings(request):
     if request.method == "PUT":
         if service.rank_of(request.user) < 2:
             return Response({"detail": "Alleen een superadmin mag de bewaartermijn wijzigen."}, status=status.HTTP_403_FORBIDDEN)
+        d = request.data
         try:
-            out = service.save_settings(request.data.get("retention_days"))
+            out = service.save_settings(d.get("retention_days"), d.get("disabled_events") if "disabled_events" in d else None)
         except (ValueError, TypeError) as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        service.log("system.log_settings", request.user, detail=f"bewaartermijn: {out['retention_days'] or 'onbeperkt'}", request=request)
+        service.log("system.log_settings", request.user, detail=("bewaartermijn: " + (str(out["retention_days"]) + " dagen" if out["retention_days"] else "onbeperkt")) if "retention_days" in d else f"niet gelogd: {', '.join(out['disabled_events']) or 'niets'}", request=request)
         return Response({**out, "choices": service.RETENTION_CHOICES})
     return Response({**service.settings(), "choices": service.RETENTION_CHOICES, "can_edit": service.rank_of(request.user) >= 2, "count": service.visible_to(request.user).count()})

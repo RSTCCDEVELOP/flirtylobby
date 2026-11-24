@@ -32,6 +32,8 @@ EVENTS = {
     "reseller.onboarding": ("Onboarding als reseller", "Inloggen"),
     "system.error": ("Storing", "Storingen"),  # errors of the server (see handler.py): for superadmins
 }
+# What MUST be logged (always on: needed to follow a malfunction or an attack and to see who did what) and what MAY be logged (a superadmin switches these off in Logboek -> Instellingen)
+REQUIRED = {"auth.login", "auth.login_failed", "auth.password_changed", "auth.password_reset", "user.deleted", "system.reset", "system.log_cleared", "system.log_settings", "system.error"}
 CATEGORIES = ["Inloggen", "Gebruikers", "Systeem", "Storingen", "Overig"]
 RANKS = {0: "Gebruiker", 1: "Admin", 2: "Superadmin", 3: "Superadmin+"}
 RETENTION_CHOICES = [30, 90, 180, 365, 730, 0]  # days; 0 = unlimited
@@ -64,6 +66,8 @@ def log(event, actor=None, detail="", target="", request=None, level=None, ip=""
             ip = client_ip(request)
         if actor is not None and not getattr(actor, "is_authenticated", True):
             actor = None
+        if event in disabled_events():  # an optional event that a superadmin switched off
+            return
         label, cat = EVENTS.get(event, (event, "Overig"))
         LogEntry.objects.create(
             event=event[:60], category=cat, level=rank_of(actor) if level is None else int(level), actor=actor if getattr(actor, "pk", None) else None,
@@ -90,21 +94,41 @@ def _data():
     return (SystemSettings.objects.filter(pk=1).values_list("data", flat=True).first() or {}).get(SETTINGS_KEY) or {}
 
 
+def disabled_events():
+    """The optional events that are switched off (never a required one)."""
+    d = cache.get("auditlog:disabled")
+    if d is None:
+        d = [e for e in (_data().get("disabled_events") or []) if e in EVENTS and e not in REQUIRED]
+        cache.set("auditlog:disabled", d, 60)
+    return d
+
+
 def settings():
     d = _data()
     days = d.get("retention_days", DEFAULT_RETENTION)
-    return {"retention_days": days if days in RETENTION_CHOICES else DEFAULT_RETENTION}
+    off = set(disabled_events())
+    return {"retention_days": days if days in RETENTION_CHOICES else DEFAULT_RETENTION, "disabled_events": sorted(off),
+            "events": [{"key": k, "label": v[0], "category": v[1], "required": k in REQUIRED, "on": k not in off} for k, v in EVENTS.items()]}
 
 
-def save_settings(retention_days):
+def save_settings(retention_days=None, disabled=None):
+    """Retention (days) and/or which optional events are not logged. A required event can never be switched off."""
     from apps.core.models import SystemSettings
 
-    days = int(retention_days)
-    if days not in RETENTION_CHOICES:
-        raise ValueError("Ongeldige bewaartermijn.")
+    cur = dict(_data())
+    if retention_days is not None:
+        days = int(retention_days)
+        if days not in RETENTION_CHOICES:
+            raise ValueError("Ongeldige bewaartermijn.")
+        cur["retention_days"] = days
+    if disabled is not None:
+        if not isinstance(disabled, list) or any(e not in EVENTS for e in disabled):
+            raise ValueError("Onbekende gebeurtenis.")
+        cur["disabled_events"] = sorted({e for e in disabled if e not in REQUIRED})
     row, _ = SystemSettings.objects.get_or_create(pk=1)
-    row.data = {**(row.data or {}), SETTINGS_KEY: {"retention_days": days}}
+    row.data = {**(row.data or {}), SETTINGS_KEY: cur}
     row.save()
+    cache.delete("auditlog:disabled")
     purge()
     return settings()
 

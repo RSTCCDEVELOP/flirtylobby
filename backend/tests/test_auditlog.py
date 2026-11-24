@@ -141,3 +141,24 @@ def test_errors_of_the_server_become_lines_for_superadmins_once_a_minute(people)
     assert "system.error" not in seen(admin)  # a malfunction is for superadmins
     assert seen(sup).count("system.error") == 2
     assert "Storingen" in _c(sup).get("/api/log/").json()["categories"]
+
+
+@pytest.mark.django_db
+def test_required_events_always_log_and_optional_ones_can_be_switched_off(people):
+    plain, admin, sup, plus = people
+    cfg = _c(admin).get("/api/log/settings/").json()
+    by = {e["key"]: e for e in cfg["events"]}
+    assert by["auth.login"]["required"] and by["auth.logout"]["required"] is False and by["system.error"]["required"]
+    assert _c(admin).put("/api/log/settings/", {"disabled_events": ["auth.logout"]}, format="json").status_code == 403  # only a superadmin
+    r = _c(sup).put("/api/log/settings/", {"disabled_events": ["auth.logout", "auth.login", "module.changed"]}, format="json").json()
+    assert r["disabled_events"] == ["auth.logout", "module.changed"]  # a required event cannot be switched off
+    assert _c(sup).put("/api/log/settings/", {"disabled_events": ["no.such"]}, format="json").status_code == 400
+    service.log("auth.logout", plain)
+    service.log("auth.login", plain)
+    service.log("module.changed", sup)
+    events = set(LogEntry.objects.values_list("event", flat=True))
+    assert "auth.login" in events and "auth.logout" not in events and "module.changed" not in events
+    assert _c(sup).put("/api/log/settings/", {"retention_days": 90}, format="json").json()["disabled_events"] == ["auth.logout", "module.changed"]  # (setting the retention keeps the choice)
+    _c(sup).put("/api/log/settings/", {"disabled_events": []}, format="json")
+    service.log("auth.logout", plain)
+    assert LogEntry.objects.filter(event="auth.logout").exists()

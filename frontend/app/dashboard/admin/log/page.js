@@ -40,6 +40,14 @@ export default function LogPage() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
+  const flip = async (key, on) => {  // an optional event is logged or not
+    const off = new Set(cfg.disabled_events || []);
+    if (on) off.delete(key); else off.add(key);
+    setBusy(true); setMsg(null);
+    try { setCfg(await api("/log/settings/", { method: "PUT", body: { disabled_events: [...off] } })); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
   const clear = async () => {
     if (!(await confirmDialog(tx("Het hele logboek leegmaken? Alle regels worden verwijderd. Dit kan niet ongedaan worden gemaakt."), { okLabel: tx("Ja, leegmaken"), cancelLabel: tx("Annuleren") }))) return;
     setBusy(true); setMsg(null);
@@ -114,6 +122,22 @@ export default function LogPage() {
         </div>
         {!cfg.can_edit && <small className="muted">{tx("Alleen een superadmin kan de bewaartermijn wijzigen.")}</small>}
         <p className="muted" style={{ marginBottom: 0 }}>{tx("Het logboek staat altijd aan. Fouten van de server staan er als \"Storing\" in (alleen voor superadmins) en worden ook bewaard in het bestand logs/easy2edit.log in de mappen van de website.")}</p>
+        <h3 style={{ marginBottom: 0, marginTop: "1.2rem" }}>{tx("Wat wordt gelogd")}</h3>
+        <p className="muted" style={{ marginTop: 0 }}>{tx("Wat verplicht is, staat altijd aan: daarmee volg je een storing of een aanval en zie je wie wat deed. De rest kan een superadmin uitzetten.")}</p>
+        <div className="lg-opts">
+          {[...new Set((cfg.events || []).map((e) => e.category))].map((cat) => (
+            <section key={cat} className="lg-opt-card">
+              <h4>{tx(cat)}</h4>
+              {(cfg.events || []).filter((e) => e.category === cat).map((e) => (
+                <label key={e.key} className={`lg-opt${e.required ? " locked" : ""}`}>
+                  <span className="switch"><input type="checkbox" checked={e.on} disabled={e.required || !cfg.can_edit || busy} onChange={(ev) => flip(e.key, ev.target.checked)} /><span /></span>
+                  <span className="lg-opt-name">{tx(e.label)}</span>
+                  <span className={`badge ${e.required ? "ok" : ""}`}>{e.required ? tx("Verplicht") : tx("Mag")}</span>
+                </label>
+              ))}
+            </section>
+          ))}
+        </div>
         {cfg.can_edit && (<>
           <h3 style={{ marginBottom: 0 }}>{tx("Logboek legen")}</h3>
           <p className="muted" style={{ marginTop: 0 }}>{tx("Alleen een superadmin mag het logboek leegmaken. Er blijft één regel over die zegt dat het is gedaan.")}</p>
