@@ -845,5 +845,9 @@ def test_ai_credit_on_account_within_the_maximum(admin, monkeypatch, django_user
     assert admin.post(f"/api/entities/{e.pk}/payments/settle/", {}, format="json").json()["account"]["open"] == 0.0
     assert c.post("/api/ai/me/topup/", body, format="json").status_code == 200  # room again
     assert c.post(f"/api/entities/{e.pk}/payments/settle/", {}, format="json").status_code == 403
-    assert admin.post("/api/ai/me/topup/", {"amount": 5, "pay": "account"}, format="json").json()["via"] == "account"  # a superadmin can always, without a maximum
-    assert AiTopup.objects.filter(via="account", user=boss).exists()
+    assert admin.post("/api/ai/me/topup/", {"amount": 5, "pay": "account"}, format="json").status_code == 400  # a superadmin is bound by the switch and the maximum too
+    plus = django_user_model.objects.create_user("plus", "plus@x.nl", "pw12345678!", is_staff=True, is_superuser=True)
+    cp = APIClient(); cp.force_authenticate(plus)
+    for _ in range(3):  # 3 x 90: far above any maximum
+        assert cp.post("/api/ai/me/topup/", {"amount": 90, "pay": "account"}, format="json").json()["via"] == "account"  # only a superadmin+ has no maximum
+    assert AiTopup.objects.filter(via="account", user=plus).exists()

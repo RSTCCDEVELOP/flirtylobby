@@ -104,7 +104,7 @@ export default function PaymentDetails({ base, canEdit, forUser = false }) {
           )}
           <span className="muted" style={{ fontSize: ".85rem" }}>{tx("Nu openstaand")}: <strong>€ {Number(d.account.open || 0).toFixed(2)}</strong>{d.account.limit > 0 ? ` ${tx("van maximaal")} € ${Number(d.account.limit).toFixed(2)}` : ""}</span>
           {d.account_manage && d.account.open > 0 && <div><button type="button" className="btn sm" disabled={busy} onClick={settle}>{tx("Als betaald markeren")}</button></div>}
-          <span className="muted" style={{ fontSize: ".8rem" }}>{tx("Alleen een superadmin zet dit aan en stelt het maximum in. Een superadmin kan zelf altijd op rekening bestellen.")}</span>
+          <span className="muted" style={{ fontSize: ".8rem" }}>{tx("Alleen een superadmin zet dit aan en stelt het maximum in. Alleen een superadmin+ kan op rekening bestellen zonder maximum.")}</span>
         </section>
       )}
 

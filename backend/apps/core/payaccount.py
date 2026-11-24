@@ -6,7 +6,7 @@
 # website https://rstcc.net
 
 """Paying on account (op rekening): a user or a company may buy AI credit that is invoiced later, up to a maximum open amount. A superadmin switches it on per user or company and sets the maximum;
-a superadmin can always buy on account himself (the maximum counts only when there is one). The purchase is booked at once (the credit is added); it stays 'open' until the superadmin marks it paid."""
+only a superadmin+ (is_superuser) buys on account without a maximum. The purchase is booked at once (the credit is added); it stays 'open' until the superadmin marks it paid."""
 from decimal import Decimal, InvalidOperation
 
 from django.utils import timezone
@@ -25,19 +25,19 @@ def open_amount(owner, is_entity=False):
     return sum((t.amount for t in _open_qs(owner, is_entity)), Decimal("0"))
 
 
-def info(owner, is_entity=False, staff=False):
-    """{on, limit, open, may}: the switch, the maximum open amount, what is open now, and whether the person who looks may buy on account (the switch, or a superadmin)."""
-    return {"on": bool(owner.pay_on_account), "limit": float(owner.account_limit or 0), "open": float(open_amount(owner, is_entity)), "may": bool(owner.pay_on_account or staff)}
+def info(owner, is_entity=False, plus=False):
+    """{on, limit, open, may}: the switch, the maximum open amount, what is open now, and whether the person who looks may buy on account (the switch, or a superadmin+)."""
+    return {"on": bool(owner.pay_on_account), "limit": float(owner.account_limit or 0), "open": float(open_amount(owner, is_entity)), "may": bool(owner.pay_on_account or plus)}
 
 
-def check(owner, amount, is_entity=False, staff=False):
+def check(owner, amount, is_entity=False, plus=False):
     """Raises ValueError (the reason) when this amount may not be bought on account."""
-    if not (owner.pay_on_account or staff):
+    if not (owner.pay_on_account or plus):
         raise ValueError("Betalen op rekening staat hier niet aan.")
     limit = Decimal(str(owner.account_limit or 0))
-    if limit <= 0 and not staff:
+    if limit <= 0 and not plus:
         raise ValueError("Er is geen bedrag ingesteld dat op rekening open mag staan.")
-    if limit > 0 and open_amount(owner, is_entity) + Decimal(str(amount)) > limit:
+    if not plus and open_amount(owner, is_entity) + Decimal(str(amount)) > limit:
         raise ValueError(f"Dat past niet binnen het maximum: er staat al € {open_amount(owner, is_entity):.2f} open van maximaal € {limit:.2f}.")
 
 
