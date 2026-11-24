@@ -5033,3 +5033,8 @@ html[data-pbbar="1"] .pb-item.edit.obj[data-box]:hover, html[data-pbbar="1"] .pb
 html[data-pbbar="1"] .pb-item.edit.obj[data-box] > .pb-itembar { left: var(--bx-l); right: auto; width: max-content; max-width: calc(100% - var(--bx-l)); gap: .4rem; }
 html[data-pbbar="1"] .pb-item.edit.obj[data-box] > .pb-pencil { right: auto; left: calc(var(--bx-l) + var(--bx-w) - 52px); }
 html[data-pbbar="1"] .pb-item.edit.obj[data-box] > .pb-pencil.del { right: auto; left: calc(var(--bx-l) + var(--bx-w) - 22px); }
+
+/* the pencil and the cross of different levels (block, column, part) never lie over each other: only the innermost level that the mouse is over shows its own, the outer one gives way.
+   Block > column > part: a block shows its tools when the mouse is over the block outside its columns; a column when it is over the column outside its parts; a part when it is over the part. */
+html[data-pbbar="1"] .pb-rowwrap:has(.pb-cell.edit:hover) > .pb-rowtools, html[data-pbbar="1"] .pb-rowwrap:has(.pb-item.edit.selected) > .pb-rowtools { opacity: 0; pointer-events: none; }
+html[data-pbbar="1"] .pb-cell.edit:has(.pb-item.edit.selected) > .pb-celltools { opacity: 0; pointer-events: none; }
