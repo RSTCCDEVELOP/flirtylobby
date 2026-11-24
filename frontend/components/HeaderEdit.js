@@ -48,6 +48,11 @@ export default function HeaderEdit() {
     return () => { window.removeEventListener("pb-open-header", on); window.removeEventListener("pb-close-hf", off); };
   }, [editing]);
   useEffect(() => { if (editing) window.dispatchEvent(new CustomEvent("pb-hf-state", { detail: open ? "header" : "" })); }, [open, editing]);
+  useEffect(() => {  // the tab Zijmenu is open: the side menu is shown on the page (open), so every change can be seen at once
+    const root = document.documentElement;
+    if (editing && open && tab === "side") root.dataset.hsidepreview = "1"; else delete root.dataset.hsidepreview;
+    return () => { delete root.dataset.hsidepreview; };
+  }, [editing, open, tab]);
   if (!editing) return null;
   const host = typeof document !== "undefined" && document.documentElement.dataset.pbbar === "1" ? document.querySelector(".pb-sb-settings") : null;  // the panel of the editor
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];

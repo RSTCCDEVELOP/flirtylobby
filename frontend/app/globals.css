@@ -5093,3 +5093,7 @@ html[data-pbbar="1"] .pb { margin-top: calc(4.4rem + var(--page-start, 0px)); }
 /* header up while editing: everything of it goes out of sight. The menu has its own visibility (visible, set when the screen size is known) and that overrode the hidden header: "About us" and "News" stayed on the screen. */
 html[data-hide-header="1"] .site-header, html[data-hide-header="1"] .site-header * { visibility: hidden !important; pointer-events: none !important; }
 html[data-hide-header="1"] .site-header { clip-path: inset(100% 0 0 0); }
+
+/* the preview of the side menu in the editor (tab Zijmenu of the header panel): under the bar and next to the panel of the editor, so every change is seen at once */
+html[data-hsidepreview="1"] .side-menu { top: var(--pb-bar-h, 48px); z-index: 1085; }
+html[data-hsidepreview="1"][data-pbsb="1"] .side-menu.left { left: var(--pb-sb-w, 340px); }

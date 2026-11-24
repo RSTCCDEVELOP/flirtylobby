@@ -16,25 +16,26 @@ import { MenuView, useMenu } from "./SiteMenu";
 import { useSession } from "./Session";
 
 // The side menu: when the theme value header_side is left or right and the visitor has scrolled the set amount (StickyHeader.js sets data-hsidenow on <html>), the header goes and this menu takes its
-// place at the side: the logo and the same menu as a list, with an arrow at the edge that opens and closes it (the choice is remembered). Not shown while the page is edited.
+// place at the side: the logo and the same menu as a list, with an arrow at the edge that opens and closes it (the choice is remembered). Not shown while the page is edited, except as a preview while the tab Zijmenu of the header panel is open (data-hsidepreview).
 const KEY = "sideMenuOpen";
 export default function SideMenu() {
   const { items, settings: cfg } = useMenu();
   const { user } = useSession();
   const pathname = usePathname();
-  const [state, setState] = useState({ side: "off", on: false });
+  const [state, setState] = useState({ side: "off", on: false, preview: false });
   const [open, setOpen] = useState(false);
   useEffect(() => {
     try { setOpen(sessionStorage.getItem(KEY) === "1"); } catch { /* ok */ }
     const root = document.documentElement;
-    const read = () => setState({ side: root.dataset.hside || "off", on: root.dataset.hsidenow === "1" });
+    const read = () => setState({ side: root.dataset.hside || "off", on: root.dataset.hsidenow === "1", preview: root.dataset.hsidepreview === "1" });
     read();
     const mo = new MutationObserver(read);
-    mo.observe(root, { attributes: true, attributeFilter: ["data-hside", "data-hsidenow"] });
+    mo.observe(root, { attributes: true, attributeFilter: ["data-hside", "data-hsidenow", "data-hsidepreview"] });
     return () => mo.disconnect();
   }, []);
   const toggle = () => setOpen((o) => { const n = !o; try { sessionStorage.setItem(KEY, n ? "1" : "0"); } catch { /* ok */ } return n; });
-  if (state.side === "off" || !state.on) return null;
+  useEffect(() => { if (state.preview) setOpen(true); }, [state.preview]);  // the preview in the editor starts open
+  if (state.side === "off" || !(state.on || state.preview)) return null;
   const forms = { desktop: "bar", tablet: "bar", mobile: "bar" }, sub = { desktop: "accordion", tablet: "accordion", mobile: "accordion" };  // the menu as a list with folding sub menus
   const right = state.side === "right";
   return (
