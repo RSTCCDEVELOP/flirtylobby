@@ -545,7 +545,7 @@ def me(request):
     t = qs.aggregate(calls=Count("id"), tin=Sum("tokens_in"), tout=Sum("tokens_out"), charged=Sum("charged", filter=Q(billable=True)))
     from apps.core import modules
 
-    return Response({"module": modules.enabled("ai"), "credit_required": bool(cfg.credit_required and sub), "exempt": not sub, "own_system": cfg.tenant, "welcome": bool(aiusage.group_of(u) in ("super", "admin") and not (acc and acc.welcomed)), "is_staff": bool(u.is_staff), "companies": _companies(u), "payer": _payer_default(u), "balance": F(bal), "currency": st.currency, "low": bool(cfg.credit_required and sub and bal < max(1.0, float(cfg.topup_min) / 5)),
+    return Response({"module": modules.enabled("ai"), "credit_required": bool(cfg.credit_required and sub), "exempt": not sub, "own_system": cfg.tenant, "welcome": bool(aiusage.group_of(u) in ("super", "admin") and not (acc and acc.welcomed)), "is_staff": bool(u.is_staff), "companies": _companies(u), "payer": _payer_default(u), "person": {"name": (u.get_full_name() or u.email or u.username or "")[:120], "email": u.email or ""}, "balance": F(bal), "currency": st.currency, "low": bool(cfg.credit_required and sub and bal < max(1.0, float(cfg.topup_min) / 5)),
                      "proposal": aiusage.proposal(st, u), "can_pay": stripe_on or commerce.can_pay_online() or _sandbox_pays(), "pay_via": "stripe" if stripe_on else "sandbox", "pay_name": (link["name"] if link else "") if u.is_staff else "", "month": {"calls": t["calls"], "tokens_in": t["tin"] or 0, "tokens_out": t["tout"] or 0, "charged": F(t["charged"])},
                      "ledger": [{"at": r.created_at.isoformat(), "kind": r.kind, "amount": F(r.amount), "balance": F(r.balance_after), "note": r.note} for r in AiLedger.objects.filter(user=u)[:30]],
                      "recent": [{"at": r.created_at.isoformat(), "source": r.source, "model": r.model, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out, "ok": r.ok, "charged": F(r.charged if r.billable else 0)} for r in qs[:20]]})
@@ -602,11 +602,11 @@ def _payer(user, body):
         e = user.entities.filter(pk=eid).first()
         if not e:
             raise ValueError("Kies een bedrijf waar je bij hoort.")
-        return {"entity": e.pk, "name": (e.legal_name or e.name or "")[:160]}
+        return {"entity": e.pk, "name": (e.legal_name or e.name or "")[:160], "vat": (e.vat_no or "")[:40]}
     bp = billing_party(user)
     if bp["mode"] == "company":
         e = bp["entity"]
-        return {"entity": e.pk, "name": (e.legal_name or e.name or "")[:160]}
+        return {"entity": e.pk, "name": (e.legal_name or e.name or "")[:160], "vat": (e.vat_no or "")[:40]}
     return {}
 
 
@@ -637,7 +637,7 @@ def topup(request):
 
         ref = "ai_" + uuid.uuid4().hex[:20]
         try:
-            url, sid = license_stripe.ai_checkout(request.user, amount, st.currency, ref, key=link["key"], payer=who.get("name", ""))
+            url, sid = license_stripe.ai_checkout(request.user, amount, st.currency, ref, key=link["key"], payer=who.get("name", ""), payer_vat=who.get("vat", ""))
         except license_stripe.StripeError as e:
             msg = str(e)
             if "cannot currently make live charges" in msg:

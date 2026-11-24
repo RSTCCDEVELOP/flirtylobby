@@ -39,14 +39,17 @@ export default function AiCreditPopup({ info, onClose, amount: preset, beforePay
           <input type="range" min={p.min} max={p.max} step={p.step} value={amount} onChange={(e) => setAmount(Number(e.target.value))} aria-label={tx("Bedrag")} />
           <div className="row" style={{ justifyContent: "space-between" }}><small className="muted">{money(p.min, info.currency)}</small><small className="muted">{tx("Voorstel")}: {money(p.suggest, info.currency)}</small><small className="muted">{money(p.max, info.currency)}</small></div>
         </div>
-        {companies.length > 0 && (
-          <div className="stack-sm" role="group" aria-label={tx("Wie betaalt")}>
-            <strong style={{ fontSize: ".9rem" }}>{tx("Wie betaalt dit tegoed?")}</strong>
-            <div className="lg-seg" style={{ flexWrap: "wrap" }}>
-              <button type="button" className={who === "private" ? "on" : ""} aria-pressed={who === "private"} onClick={() => setWho("private")}>{tx("Ik betaal zelf")}</button>
-              {companies.map((c) => <button type="button" key={c.id} className={who === String(c.id) ? "on" : ""} aria-pressed={who === String(c.id)} onClick={() => setWho(String(c.id))}>{c.name} {tx("betaalt")}</button>)}
-            </div>
-            <small className="muted">{tx("Het tegoed is altijd voor jou; dit bepaalt alleen op wiens naam de betaling staat.")}</small>
+        {(companies.length > 0 || info.person) && (
+          <div className="stack-sm" role="group" aria-label={tx("Wie betaalt")} style={{ padding: ".7rem .8rem", borderRadius: 12, border: "1px solid var(--line)", background: "color-mix(in srgb, var(--blue) 5%, var(--card, #fff))" }}>
+            <strong style={{ fontSize: ".9rem" }}>{tx("Wie betaalt en krijgt de factuur?")}</strong>
+            {companies.length > 0 && (
+              <div className="lg-seg" style={{ flexWrap: "wrap" }}>
+                <button type="button" className={who === "private" ? "on" : ""} aria-pressed={who === "private"} onClick={() => setWho("private")}>{tx("Ik betaal zelf")}</button>
+                {companies.map((c) => <button type="button" key={c.id} className={who === String(c.id) ? "on" : ""} aria-pressed={who === String(c.id)} onClick={() => setWho(String(c.id))}>{c.name} {tx("betaalt")}</button>)}
+              </div>
+            )}
+            <span>{tx("Betaald door")}: <strong>{who === "private" ? (info.person?.name || info.person?.email) : (companies.find((c) => String(c.id) === who)?.name || "")}</strong>{who === "private" && info.person?.email && info.person?.name ? <small className="muted"> · {info.person.email}</small> : null}</span>
+            <small className="muted">{who === "private" ? tx("De factuur komt op jouw naam.") : tx("De factuur komt op naam van het bedrijf.")} {tx("Het tegoed is altijd voor jou.")}</small>
           </div>
         )}
         {info.can_pay && info.pay_via === "stripe" && <small className="muted">{tx("Je betaalt veilig via Stripe.")}</small>}

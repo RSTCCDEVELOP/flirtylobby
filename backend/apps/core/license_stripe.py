@@ -161,13 +161,18 @@ def checkout(user, amount, months, subscribe=False, l=None):
     return call("POST", "checkout/sessions", data, l)["url"]
 
 
-def ai_checkout(user, amount, currency, ref, l=None, key=None, payer=""):
+def ai_checkout(user, amount, currency, ref, l=None, key=None, payer="", payer_vat=""):
     """A Stripe Checkout page (the system Stripe account of the superadmin) for AI credit. Returns (address, session id)."""
     c = config(l)
     base = _site() or "http://localhost:5173"
     data = {"mode": "payment", "line_items": [{"price_data": {"currency": (currency or "eur").lower(), "unit_amount": int((Decimal(str(amount)) * 100).quantize(Decimal("1"))), "product_data": {"name": "AI-tegoed" + (f" ({payer})" if payer else "")}}, "quantity": 1}],
             "success_url": f"{base}/dashboard/ai?paid=1&ref={ref}", "cancel_url": f"{base}/dashboard/ai?cancelled=1", "client_reference_id": ref, "metadata": {"kind": "ai_credit", "ref": ref, "user": getattr(user, "pk", "")},
             "customer_email": getattr(user, "email", "") or None, "locale": "auto"}
+    if payer:  # a company pays: the invoice of Stripe is for that company (its name, and its VAT number when it has one)
+        fields = [{"name": "Op naam van", "value": payer[:30]}] if len(payer) <= 30 else []
+        if payer_vat:
+            fields.append({"name": "BTW-nummer", "value": payer_vat[:30]})
+        data["invoice_creation"] = {"enabled": True, "invoice_data": {"description": f"AI-tegoed voor {getattr(user, 'email', '')}", "footer": f"Factuur op naam van {payer}" + (f" · BTW {payer_vat}" if payer_vat else ""), **({"custom_fields": fields} if fields else {}), "metadata": {"kind": "ai_credit", "ref": ref}}}
     if c.get("payment_methods"):
         data["payment_method_types"] = c["payment_methods"]
     elif c.get("descriptor"):

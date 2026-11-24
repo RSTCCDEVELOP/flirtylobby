@@ -796,3 +796,19 @@ def test_user_payments_switch_and_encryption(db):
     other = U.objects.create_user(username="m@x.nl", email="m@x.nl", password="pw")
     c.force_authenticate(other)
     assert c.get(url).status_code in (401, 403)
+
+
+@pytest.mark.django_db
+def test_stripe_invoice_for_the_company_that_pays(monkeypatch):
+    from apps.core import license_stripe
+
+    seen = {}
+    monkeypatch.setattr(license_stripe, "call", lambda m, path, data=None, l=None, key=None: (seen.update(data or {}) or {"url": "u", "id": "s"}))
+    monkeypatch.setattr(license_stripe, "config", lambda l=None: {})
+    u = type("U", (), {"email": "a@x.nl", "pk": 1})()
+    license_stripe.ai_checkout(u, 5, "EUR", "ai_x", key="k", payer="Shop BV", payer_vat="NL123B01")
+    inv = seen["invoice_creation"]
+    assert inv["enabled"] and inv["invoice_data"]["custom_fields"][0] == {"name": "Op naam van", "value": "Shop BV"} and "NL123B01" in inv["invoice_data"]["footer"]
+    seen.clear()
+    license_stripe.ai_checkout(u, 5, "EUR", "ai_y", key="k")
+    assert "invoice_creation" not in seen  # a person who pays himself: as before
