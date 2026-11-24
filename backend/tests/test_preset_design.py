@@ -93,3 +93,28 @@ def test_only_superadmins_use_the_design_tab(django_user_model):
     c = APIClient(); c.force_authenticate(u)
     assert c.get(f"/api/system/presets/{key}/design/").status_code == 403
     assert c.post(f"/api/system/presets/{key}/design/", {"pages": []}, format="json").status_code == 403
+
+
+@pytest.mark.django_db
+def test_samples_are_made_when_a_page_is_switched_on_and_removed_when_it_is_off(settings, tmp_path, django_user_model, monkeypatch):
+    from apps.core import siteshots
+
+    settings.RESOURCE_DIR = tmp_path
+    settings.CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+    key = presets.PRESETS[0]["key"]
+    seen = []
+    monkeypatch.setattr(siteshots, "capture", lambda url, allow_private=False: (seen.append((url, allow_private)) or b"\xff\xd8jpegbytes"))
+    Page.objects.create(key="over-ons-x", kind="content", title={"nl": "Over ons X"}, source="")
+    PageLayout.objects.create(key="over-ons-x", data={"rows": [{"id": "r1aa", "cols": 1, "gap": "md", "cells": [{"id": "c1aa", "items": [{"id": "i1aa", "type": "text", "ref": ""}]}]}]})
+    su = django_user_model.objects.create_user("su", "su@x.nl", "pw12345678!", is_staff=True)
+    c = APIClient(); c.force_authenticate(su)
+    assert preset_design.save(key, ["over-ons-x"], "http://localhost:5173", wait=True)["pages"]
+    assert seen == [("http://localhost:5173/p/over-ons-x", True)]
+    assert (tmp_path / "presets" / key / "design" / "samples" / "over-ons-x.jpg").is_file()
+    assert [s["key"] for s in preset_design.samples_of(key)] == ["over-ons-x"]
+    assert c.get(f"/api/system/presets/{key}/samples/over-ons-x.jpg").status_code == 200
+    assert APIClient().get(f"/api/system/presets/{key}/samples/over-ons-x.jpg").status_code == 200  # (it presents the installation)
+    preset_design.save(key, [], "http://localhost:5173", wait=True)  # switched off: picture and package are gone
+    assert not (tmp_path / "presets" / key / "design" / "samples" / "over-ons-x.jpg").exists()
+    assert APIClient().get(f"/api/system/presets/{key}/samples/over-ons-x.jpg").status_code == 404
+    assert preset_design.own_origin(None) == "http://localhost:5173"

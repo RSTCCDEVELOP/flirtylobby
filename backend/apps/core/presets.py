@@ -373,7 +373,7 @@ def listing():
     for base in PRESETS:
         p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -681,6 +681,15 @@ def repair_active():
         logger.warning("Installation %s: plugins put back: %s", key, ", ".join(fixed))
     refresh_pristine_pages(key)  # pages nobody changed follow the standard of this version
     return fixed
+
+
+def _design_samples(key):
+    from . import preset_design
+
+    try:
+        return preset_design.samples_of(key)
+    except Exception:  # noqa: BLE001 - a presentation picture must never break the list
+        return []
 
 
 def saved_pages(key):

@@ -4878,3 +4878,9 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .pdz-list { display: flex; flex-direction: column; gap: .35rem; max-height: 340px; overflow: auto; padding: .35rem; border-radius: 10px; background: color-mix(in srgb, var(--blue) 6%, transparent); }
 .pdz-row { display: flex; align-items: center; gap: .6rem; padding: .45rem .6rem; border-radius: 8px; background: var(--card, #fff); border: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
 .pdz-name { flex: 1; min-width: 0; font-weight: 600; }
+.pdz-samples { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .75rem; }
+.pdz-sample { display: flex; flex-direction: column; gap: .35rem; padding: .5rem; border-radius: 10px; background: color-mix(in srgb, var(--blue) 7%, transparent); }
+.pdz-shot { height: 190px; overflow: hidden; border-radius: 8px; background: var(--card, #fff); border: 1px solid color-mix(in srgb, currentColor 14%, transparent); display: flex; align-items: center; justify-content: center; text-align: center; padding: 0; }
+.pdz-shot button { all: unset; cursor: zoom-in; display: block; width: 100%; height: 100%; } .pdz-shot img { width: 100%; display: block; }
+.pdz-big { width: min(900px, 96vw); max-height: 92vh; display: flex; flex-direction: column; gap: .5rem; } .pdz-bigimg { overflow: auto; border-radius: 8px; } .pdz-bigimg img { width: 100%; display: block; }
+.preset-shot { all: unset; display: block; cursor: zoom-in; height: 130px; overflow: hidden; border-radius: 8px; border: 1px solid color-mix(in srgb, currentColor 14%, transparent); } .preset-shot img { width: 100%; display: block; }

@@ -17,6 +17,7 @@ import DemoData from "./DemoData";
 import RunPopup from "./RunPopup";
 import { runDemo, resumeDemo } from "../lib/demoRun";
 import { PresetIcon, IconSettings } from "./Icons";
+import { sampleUrl } from "./PresetDesign";
 import PresetSettings from "./PresetSettings";
 import AiFillAsk from "./AiFillAsk";
 import InstallationsBase from "./InstallationsBase";
@@ -43,6 +44,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   const [open, setOpen] = useState("");
   const [aiLinked, setAiLinked] = useState(true); // is an AI link installed?
   const [fillAsk, setFillAsk] = useState(false); // after setting an installation: fill the website with AI?
+  const [shots, setShots] = useState(null); // the installation whose sample pictures are shown big
   const [cfgKey, setCfgKey] = useState(""); // the installation whose settings are open (pop-up with tabs)
   const [run, setRun] = useState(null); // the status pop-up with the progress
   const [ask, setAsk] = useState(null); // {p, needs, demo}: the question before an installation is set
@@ -191,6 +193,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
           <div key={p.key} className={`card preset-card preset-mini${p.active ? " preset-active" : ""}`}>
             <div className="preset-head"><span className="preset-ico"><PresetIcon name={p.icon} /></span><strong>{tx(p.name)}</strong></div>
             {(p.active || (manage && !adminOnly && p.edited)) && <div className="preset-state">{p.active && <span className="badge ok">{tx("In gebruik")}</span>}{manage && !adminOnly && p.edited && <span className="badge">{tx("Aangepast")}</span>}</div>}
+            {p.samples?.length > 0 && <button type="button" className="preset-shot" onClick={() => setShots(p)} aria-label={tx("Voorbeelden bekijken")} title={tx("Voorbeelden bekijken")}><img src={sampleUrl(p.key, p.samples[0].key)} alt={tx(p.name)} loading="lazy" /></button>}
             <p className="muted preset-desc">{tx(p.desc)}</p>
             <div className="chips">
               {manage && !adminOnly && p.system_api?.stripe && <span className="badge">{tx("Stripe (systeem)")}</span>}
@@ -207,6 +210,14 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
           </div>
         ))}
       </div>
+      {shots && (
+        <div className="overlay" onClick={() => setShots(null)}>
+          <div className="card modal pdz-big" onClick={(e) => e.stopPropagation()}>
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}><h2 style={{ margin: 0 }}>{tx(shots.name)}</h2><button type="button" className="btn sm" onClick={() => setShots(null)}>{tx("Sluiten")}</button></div>
+            <div className="pdz-bigimg">{shots.samples.map((x) => <figure key={x.key} style={{ margin: "0 0 1rem" }}><figcaption><strong>{x.title}</strong></figcaption><img src={sampleUrl(shots.key, x.key)} alt={x.title} loading="lazy" /></figure>)}</div>
+          </div>
+        </div>
+      )}
       {cfgKey && list.find((x) => x.key === cfgKey) && <PresetSettings p={list.find((x) => x.key === cfgKey)} manage={manage} adminOnly={adminOnly} demo={demo} onRelease={release} onDefault={makeDefault} onUnapply={unapply} busy={busy} onClose={() => setCfgKey("")} />}
     </div>
   );

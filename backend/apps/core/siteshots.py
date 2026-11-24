@@ -45,7 +45,7 @@ def available():
     return bool(browser())
 
 
-def clean_url(url):
+def clean_url(url, allow_private=False):
     """A public http(s) address, checked: no login in it, no port other than 80/443, and the host must not be an internal address. Returns the clean address."""
     u = str(url or "").strip()
     if u and "://" not in u:
@@ -64,17 +64,19 @@ def clean_url(url):
     except OSError:
         raise ShotError("Deze website is niet gevonden.")
     for info in infos:
+        if allow_private:  # (the own website of the installation: only used with an address that the server itself knows)
+            break
         ip = ipaddress.ip_address(info[4][0])
         if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
             raise ShotError("Dit adres is niet openbaar.")
     return u
 
 
-def _capture_top(url):
+def _capture_top(url, allow_private=False):
     """The jpeg bytes of the top of the website (1000 px wide): the simple way, used when the whole page can not be made. Raises ShotError."""
     from PIL import Image
 
-    u = clean_url(url)
+    u = clean_url(url, allow_private)
     exe = browser()
     if not exe:
         raise ShotError("Op de server is geen browser (Chrome of Chromium) om een afbeelding van een website te maken.")
@@ -178,11 +180,11 @@ def _cdp_page(url):
                 pass
 
 
-def capture(url):
+def capture(url, allow_private=False):
     """The jpeg bytes of the WHOLE page of the website (1000 px wide, as high as the page is, at most about 9000 px). When that does not work: the top of the page. Raises ShotError."""
     from PIL import Image
 
-    u = clean_url(url)
+    u = clean_url(url, allow_private)
     if not browser():
         raise ShotError("Op de server is geen browser (Chrome of Chromium) om een afbeelding van een website te maken.")
     try:
@@ -201,4 +203,4 @@ def capture(url):
         logger.warning("whole page picture failed (%s): the top of the page is taken", e)
     except Exception:  # noqa: BLE001
         logger.warning("whole page picture failed: the top of the page is taken", exc_info=True)
-    return _capture_top(u)
+    return _capture_top(u, allow_private)

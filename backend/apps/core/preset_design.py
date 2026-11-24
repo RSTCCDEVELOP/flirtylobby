@@ -14,6 +14,7 @@ install(key, skip)  put the pages in place (a page that has content of its own s
 remove(key)         the pages that this installation made go away again (pages of the system keep their standard design)"""
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -55,12 +56,79 @@ def listing(key):
     for p in Page.objects.filter(scope="public").order_by("order", "id"):
         if p.key not in have and p.key not in kept:
             continue
-        rows.append({"key": p.key, "title": _title(p), "kind": p.kind, "path": p.path, "in_menu": p.in_menu, "saved": p.key in kept, "has_blocks": p.key in have})
+        rows.append({"key": p.key, "title": _title(p), "kind": p.kind, "path": p.path, "in_menu": p.in_menu, "saved": p.key in kept, "has_blocks": p.key in have, "sample": sample_state(key, p.key) if p.key in kept else "none"})
     return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept)}
 
 
-def save(key, page_keys):
-    """Make the packages of the chosen pages. Returns the listing."""
+# ── samples: a picture of the whole page, made when a page is switched on and removed when it is switched off; they present the installation ──
+_JOBS = {}  # (installation, page) -> "busy" | "error: text"
+
+
+def sample_file(key, page_key):
+    return folder(key) / "samples" / f"{page_key}.jpg"
+
+
+def sample_state(key, page_key):
+    job = _JOBS.get((key, page_key))
+    if job == "busy":
+        return "busy"
+    if sample_file(key, page_key).is_file():
+        return "ready"
+    return job or "none"
+
+
+def samples_of(key):
+    """The pages with a picture, for the presentation of the installation: [{key, title}] (the start page first)."""
+    titles = _index(key).get("titles") or {}
+    keys = [k for k in saved_keys(key) if sample_file(key, k).is_file()]
+    keys.sort(key=lambda k: (k != "home", k))
+    return [{"key": k, "title": titles.get(k) or k} for k in keys]
+
+
+def own_origin(request=None):
+    """The address of this website as the browser has it (for the picture of a page). Only an address that the server knows as its own website is used."""
+    allowed = list(getattr(settings, "CORS_ALLOWED_ORIGINS", []) or [])
+    regexes = list(getattr(settings, "CORS_ALLOWED_ORIGIN_REGEXES", []) or [])
+    import re
+
+    origin = (request.META.get("HTTP_ORIGIN") or "").rstrip("/") if request is not None else ""
+    if origin and (origin in allowed or any(re.match(r, origin) for r in regexes)):
+        return origin
+    return allowed[0] if allowed else ""
+
+
+def _make_sample(key, page_key, url):
+    from . import siteshots
+
+    try:
+        raw = siteshots.capture(url, allow_private=True)
+        f = sample_file(key, page_key)
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_bytes(raw)
+        _JOBS.pop((key, page_key), None)
+    except Exception as e:  # noqa: BLE001 - shown on the tab Samples
+        logger.warning("Sample of %s/%s could not be made: %s", key, page_key, e)
+        _JOBS[(key, page_key)] = f"error: {e}"
+
+
+def start_sample(key, page_key, origin, wait=False):
+    """Make the picture of one page (in the background). Returns False when there is no address or it is being made already."""
+    from apps.pages.models import Page
+
+    p = Page.objects.filter(key=page_key, scope="public").first()
+    if not p or not origin or _JOBS.get((key, page_key)) == "busy":
+        return False
+    url = origin.rstrip("/") + (p.path or f"/{page_key}")
+    _JOBS[(key, page_key)] = "busy"
+    t = threading.Thread(target=_make_sample, args=(key, page_key, url), daemon=True)
+    t.start()
+    if wait:
+        t.join()
+    return True
+
+
+def save(key, page_keys, origin="", wait=False):
+    """Make the packages of the chosen pages (a picture of each new page is made, the pictures of the pages that go are removed). Returns the listing."""
     from apps.pages import portable
     from apps.pages.models import Page
 
@@ -76,7 +144,14 @@ def save(key, page_keys):
     for f in d.glob("*.zip"):  # what is not chosen any more goes
         if f.stem not in chosen:
             f.unlink()
-    (d / "index.json").write_text(json.dumps({"pages": chosen, "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, indent=1), encoding="utf-8")
+    for f in (d / "samples").glob("*.jpg") if (d / "samples").is_dir() else []:  # and so do its pictures
+        if f.stem not in chosen:
+            f.unlink()
+    titles = {p.key: _title(p) for p in Page.objects.filter(key__in=chosen)}
+    (d / "index.json").write_text(json.dumps({"pages": chosen, "titles": titles, "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, indent=1, ensure_ascii=False), encoding="utf-8")
+    for k in chosen:  # a page that is switched on gets its picture
+        if not sample_file(key, k).is_file():
+            start_sample(key, k, origin, wait=wait)
     return listing(key)
 
 
