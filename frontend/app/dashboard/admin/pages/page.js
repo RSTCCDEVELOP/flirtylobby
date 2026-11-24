@@ -294,6 +294,20 @@ export default function PagesAdmin() {
       else { const last = tree.slice(-1)[0]; if (last && last.id !== drag) place(last.id, "after"); }
     },
   };
+  async function removeSelected() {  // first a warning with the names, then (only after a yes) all selected own pages are deleted
+    const rows = (pages || []).filter((p) => sel.has(p.id));
+    if (!rows.length) return;
+    const names = rows.slice(0, 8).map((p) => `• ${label(p)}`).join("\n") + (rows.length > 8 ? `\n… ${tx("en {0} andere", rows.length - 8)}` : "");
+    const ok = await confirmDialog(tx("Let op: {0} pagina's worden verwijderd, met hun blokken en teksten. Dit kan niet ongedaan worden gemaakt.\n\n{1}\n\nMaak eerst een pakket (Pakketten maken) als je ze wilt bewaren. Doorgaan?", rows.length, names), { danger: true, title: tx("Selectie verwijderen"), okLabel: tx("Ja, verwijder {0} pagina's", rows.length), cancelLabel: tx("Annuleren") });
+    if (!ok) return;
+    setBusy(true); setMsg(null);
+    const failed = [];
+    for (const p of rows) { try { await api(`/pages/${p.id}/`, { method: "DELETE" }); } catch (e) { failed.push(`${label(p)}: ${errorText(e)}`); } }
+    setSel(new Set());
+    await load(); router.refresh(); window.dispatchEvent(new Event("pages-changed"));
+    setMsg(failed.length ? { ok: false, text: `${rows.length - failed.length} ${tx("pagina's verwijderd")}. ${tx("Niet gelukt")}: ${failed.join("; ")}` } : { ok: true, text: `${rows.length} ${tx("pagina's verwijderd")}.` });
+    setBusy(false);
+  }
   async function remove(p) {
     if (await confirmDialog(tx("Pagina \"{0}\" verwijderen?", label(p)), { danger: true })) act(() => api(`/pages/${p.id}/`, { method: "DELETE" }));
   }
@@ -331,7 +345,8 @@ export default function PagesAdmin() {
             {L >= 3 && <button type="button" className="btn sm" disabled={busy} onClick={() => fileIn.current?.click()}>{tx("Pagina importeren (.zip)")}</button>}
             <input ref={fileIn} type="file" accept=".zip,application/zip" hidden onChange={(e) => { importPage(e.target.files[0]); e.target.value = ""; }} />
             <button type="button" className="btn sm primary" disabled={busy || !sel.size} onClick={exportSelected}>{tx("Pakketten maken")}{sel.size ? ` (${sel.size})` : ""}</button>
-            {sel.size > 0 && <button type="button" className="btn sm" onClick={() => setSel(new Set())}>{tx("Selectie wissen")}</button>}
+            {sel.size > 0 && <button type="button" className="btn sm" disabled={busy} onClick={() => setSel(new Set())}>{tx("Selectie opheffen")}</button>}
+            {sel.size > 0 && L >= 3 && <button type="button" className="btn sm danger" disabled={busy} onClick={removeSelected}>{tx("Selectie verwijderen")} ({sel.size})</button>}
             {sel.size === 0 && <small className="muted">{tx("Vink eigen pagina's aan om er een pakket (zip) van te maken. Het komt in site/pages/.")}</small>}
           </div>
         )}
