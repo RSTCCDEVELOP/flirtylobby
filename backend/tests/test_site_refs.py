@@ -63,3 +63,20 @@ def test_without_a_browser_there_is_a_clear_message(job, monkeypatch):
     r = c.post(f"/api/sitecreator/{pk}/refs/", {"url": "voorbeeld.nl"}, format="json")
     assert r.status_code == 400 and "geen browser" in r.json()["detail"]
     assert c.get(f"/api/sitecreator/{pk}/refs/").json()["available"] is False
+
+
+@pytest.mark.django_db
+def test_a_dropped_or_pasted_picture_counts_as_an_example(job):
+    from apps.core import sitecreator
+    from apps.core.models import SiteDesignJob
+
+    c, pk = job
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    r = c.post(f"/api/sitecreator/{pk}/refs/", {"file": SimpleUploadedFile("plak.jpg", _jpg(), content_type="image/jpeg")}, format="multipart")
+    assert r.status_code == 201 and r.json()["refs"][0]["url"] == "" and r.json()["refs"][0]["thumb"].startswith("data:image/jpeg")
+    assert len(sitecreator.refs_images(SiteDesignJob.objects.get(pk=pk).brief)) == 1
+    bad = c.post(f"/api/sitecreator/{pk}/refs/", {"file": SimpleUploadedFile("x.txt", b"geen afbeelding", content_type="text/plain")}, format="multipart")
+    assert bad.status_code == 400 and "geen afbeelding" in bad.json()["detail"]
+    rid = r.json()["refs"][0]["id"]
+    assert c.delete(f"/api/sitecreator/{pk}/refs/", {"id": rid}, format="json").json()["refs"] == []

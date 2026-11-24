@@ -172,7 +172,7 @@ def language_update(request, code):
 
 # ── Language packages (Admin -> Talen): import for admins, export for superadmins ──
 from rest_framework.decorators import parser_classes  # noqa: E402
-from rest_framework.parsers import FormParser, MultiPartParser  # noqa: E402
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser  # noqa: E402
 
 
 @api_view(["GET"])
@@ -2934,6 +2934,7 @@ def sitecreator_chat(request, pk):
 
 @api_view(["GET", "POST", "DELETE"])
 @permission_classes(DESIGN_PERM)
+@parser_classes([JSONParser, MultiPartParser, FormParser])
 def sitecreator_refs(request, pk):
     """The websites that the customer likes (at most five): a picture of each is made and goes to the designer. GET: the list; POST {url}: add one; DELETE {url}: remove one."""
     from . import siteshots, sitecreator
@@ -2943,10 +2944,11 @@ def sitecreator_refs(request, pk):
         return _gone()
     try:
         if request.method == "POST":
-            refs = sitecreator.add_ref(job, request.data.get("url"))
+            f = request.FILES.get("file")
+            refs = sitecreator.add_ref_image(job, f) if f else sitecreator.add_ref(job, request.data.get("url"))
             return Response({"refs": refs, "available": siteshots.available(), "max": sitecreator.MAX_REFS}, status=status.HTTP_201_CREATED)
         if request.method == "DELETE":
-            return Response({"refs": sitecreator.remove_ref(job, request.data.get("url")), "available": siteshots.available(), "max": sitecreator.MAX_REFS})
+            return Response({"refs": sitecreator.remove_ref(job, request.data.get("url") or request.data.get("id")), "available": siteshots.available(), "max": sitecreator.MAX_REFS})
     except ValueError as e:
         return _bad(str(e))
     return Response({"refs": sitecreator.refs_public(job), "available": siteshots.available(), "max": sitecreator.MAX_REFS})

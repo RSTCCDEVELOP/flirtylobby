@@ -883,8 +883,11 @@ function RefSites({ jobId, disabled, onChange }) {
   const [can, setCan] = useState(true);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
   const [err, setErr] = useState("");
-  const apply = (r) => { setList(r.refs || []); setMax(r.max || 5); setCan(r.available !== false); onChange?.((r.refs || []).map((x) => x.url)); };
+  const box = useRef(null);
+  const fileIn = useRef(null);
+  const apply = (r) => { setList(r.refs || []); setMax(r.max || 5); setCan(r.available !== false); onChange?.((r.refs || []).map((x) => x.url).filter(Boolean)); };
   useEffect(() => { api(`/sitecreator/${jobId}/refs/`).then(apply).catch(() => {}); }, [jobId]);  // eslint-disable-line react-hooks/exhaustive-deps
   const add = async () => {
     const u = url.trim();
@@ -893,24 +896,40 @@ function RefSites({ jobId, disabled, onChange }) {
     try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "POST", body: { url: u } })); setUrl(""); } catch (e) { setErr(errorText(e)); }
     setBusy(false);
   };
-  const del = async (u) => { try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "DELETE", body: { url: u } })); } catch (e) { setErr(errorText(e)); } };
+  const addFiles = async (files) => {  // pictures that were dropped, pasted or chosen: each one counts like a website (together at most five)
+    const imgs = [...files].filter((f) => /^image\//.test(f.type)).slice(0, Math.max(0, max - list.length));
+    if (!imgs.length || busy) return;
+    setBusy(true); setErr("");
+    try { for (const f of imgs) { const fd = new FormData(); fd.append("file", f, f.name || "plak.png"); apply(await api(`/sitecreator/${jobId}/refs/`, { method: "POST", body: fd })); } } catch (e) { setErr(errorText(e)); }
+    setBusy(false);
+  };
+  const del = async (r) => { try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "DELETE", body: { id: r.id } })); } catch (e) { setErr(errorText(e)); } };
+  const onPaste = (e) => {  // a picture from the clipboard (a screenshot, a copied picture): only when it is pasted in this part
+    const files = [...(e.clipboardData?.files || [])].filter((f) => /^image\//.test(f.type));
+    if (files.length) { e.preventDefault(); addFiles(files); }
+  };
+  const full = list.length >= max;
   return (
-    <div style={{ display: "grid", gap: ".35rem" }}>
+    <div ref={box} tabIndex={0} onPaste={onPaste} onDragOver={(e) => { if (!disabled && !full) { e.preventDefault(); setOver(true); } }} onDragLeave={() => setOver(false)} onDrop={(e) => { e.preventDefault(); setOver(false); if (!disabled && !full) addFiles(e.dataTransfer.files); }}
+      style={{ display: "grid", gap: ".35rem", outline: "none", borderRadius: 8, boxShadow: over ? "0 0 0 2px var(--blue)" : "none", transition: "box-shadow .15s" }}>
       {list.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: ".35rem" }}>
         {list.map((r) => (
-          <div key={r.url} style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)", background: "var(--card)" }} title={r.url}>
-            {r.thumb ? <img src={r.thumb} alt={r.url} style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", objectPosition: "top", display: "block" }} /> : <div style={{ aspectRatio: "4 / 3" }} />}
-            <small style={{ display: "block", padding: ".15rem .3rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: ".68rem" }}>{r.url.replace(/^https?:\/\//, "")}</small>
-            <button type="button" className="btn sm" disabled={disabled} onClick={() => del(r.url)} aria-label={tx("Verwijderen")} title={tx("Verwijderen")} style={{ position: "absolute", top: 3, right: 3, padding: "0 .35rem", lineHeight: 1.3 }}>×</button>
+          <div key={r.id || r.url} style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)", background: "var(--card)" }} title={r.url || tx("Afbeelding")}>
+            {r.thumb ? <img src={r.thumb} alt={r.url || tx("Afbeelding")} style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", objectPosition: "top", display: "block" }} /> : <div style={{ aspectRatio: "4 / 3" }} />}
+            <small style={{ display: "block", padding: ".15rem .3rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: ".68rem" }}>{r.url ? r.url.replace(/^https?:\/\//, "") : tx("Eigen afbeelding")}</small>
+            <button type="button" className="btn sm" disabled={disabled} onClick={() => del(r)} aria-label={tx("Verwijderen")} title={tx("Verwijderen")} style={{ position: "absolute", top: 3, right: 3, padding: "0 .35rem", lineHeight: 1.3 }}>×</button>
           </div>))}
       </div>}
-      {list.length < max && (
+      {!full && (
         <div style={{ display: "flex", gap: ".35rem" }}>
           <input value={url} disabled={disabled || busy || !can} maxLength={300} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} placeholder={busy ? tx("Afbeelding maken… (dit kan even duren)") : tx("https://… een website die je mooi vindt")} style={{ flex: 1, minWidth: 0 }} aria-label={tx("Website die je mooi vindt")} />
           <button type="button" className="btn sm primary" disabled={disabled || busy || !can || !url.trim()} onClick={add} aria-label={tx("Website toevoegen")} title={tx("Website toevoegen")} style={{ minWidth: 34, fontWeight: 700 }}>+</button>
+          <input ref={fileIn} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
+          <button type="button" className="btn sm" disabled={disabled || busy} onClick={() => fileIn.current?.click()} title={tx("Een afbeelding kiezen")} aria-label={tx("Een afbeelding kiezen")}>{tx("Afbeelding")}</button>
         </div>)}
+      {!full && <div style={{ padding: ".35rem .5rem", textAlign: "center", borderRadius: 8, border: `1px dashed ${over ? "var(--blue)" : "var(--line)"}`, fontSize: ".74rem" }} className="muted">{tx("Sleep een afbeelding hierheen, of plak er een uit het klembord (klik hier en druk op Ctrl+V of ⌘V)")}</div>}
       <small className="muted">{list.length}/{max} · {tx("Van elke website wordt een afbeelding gemaakt; de ontwerper kijkt ernaar voor de sfeer en de opbouw. Teksten, logo's en foto's worden niet overgenomen.")}</small>
-      {!can && <div className="alert" style={{ margin: 0 }}>{tx("Op de server is geen browser (Chrome of Chromium) om afbeeldingen van websites te maken.")}</div>}
+      {!can && <div className="alert" style={{ margin: 0 }}>{tx("Op de server is geen browser (Chrome of Chromium) om afbeeldingen van websites te maken. Een afbeelding slepen of plakken werkt wel.")}</div>}
       {err && <div className="alert" style={{ margin: 0 }} role="alert">{err}</div>}
     </div>
   );

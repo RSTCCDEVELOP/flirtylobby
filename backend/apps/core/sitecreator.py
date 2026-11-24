@@ -1208,7 +1208,7 @@ def _brief_text(b):
     elif bgi == "none":
         lines.append("NO BACKGROUND PICTURES: the customer does not want background pictures. Photos only as <img> inside the content; the bands and the hero have a plain colour or gradient of the theme.")
     if refs_of(b):
-        lines.append("REFERENCE WEBSITES that the customer likes: " + ", ".join(r["url"] for r in refs_of(b)) + ". " + (f"What they have in common and what to take over: {b['refs_look']} " if b.get("refs_look") else "") + "Follow that look and feel; never copy their texts, logo or photos.")
+        lines.append("REFERENCE WEBSITES that the customer likes: " + ", ".join(r["url"] or "(a picture that he attached)" for r in refs_of(b)) + ". " + (f"What they have in common and what to take over: {b['refs_look']} " if b.get("refs_look") else "") + "Follow that look and feel; never copy their texts, logo or photos.")
     if b.get("contact"):
         lines.append("CONTACT DETAILS of the customer (use EXACTLY these in the contact section, the call to action and the footer; never invent an address, a phone number or an e-mail address, and never use example.com): " + str(b["contact"])[:500])
     if b.get("theme_name"):
@@ -1519,7 +1519,7 @@ MAX_REFS = 5
 
 
 def refs_of(b):
-    return [r for r in ((b or {}).get("refs") or []) if isinstance(r, dict) and r.get("url") and r.get("key")][:MAX_REFS]
+    return [r for r in ((b or {}).get("refs") or []) if isinstance(r, dict) and r.get("key")][:MAX_REFS]  # (url: a website; no url: a picture that the customer dropped or pasted)
 
 
 def refs_images(b):
@@ -1554,7 +1554,7 @@ def refs_public(job):
                 thumb = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
         except Exception:  # noqa: BLE001
             pass
-        out.append({"url": r["url"], "thumb": thumb})
+        out.append({"id": r.get("id") or r["key"], "url": r.get("url") or "", "thumb": thumb})
     return out
 
 
@@ -1568,15 +1568,44 @@ def add_ref(job, url):
         raise ValueError(f"Je kunt maximaal {MAX_REFS} voorbeeldwebsites toevoegen.")
     try:
         clean = siteshots.clean_url(url)
-        if any(r["url"].rstrip("/") == clean.rstrip("/") for r in refs):
+        if any(r.get("url") and r["url"].rstrip("/") == clean.rstrip("/") for r in refs):
             raise ValueError("Deze website staat er al bij.")
         data = siteshots.capture(clean)
     except siteshots.ShotError as e:
         raise ValueError(str(e))
     key = areas.site_path("designs", f"{job.pk}/refs/{uuid.uuid4().hex[:10]}.jpg")
     default_storage.save(key, ContentFile(data))
-    b["refs"] = [*refs, {"url": clean, "key": key}]
+    b["refs"] = [*refs, {"id": uuid.uuid4().hex[:10], "url": clean, "key": key}]
     b.pop("refs_look", None)  # (the description of their look is made again with the new picture)
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    job.brief = b
+    return refs_public(job)
+
+
+def add_ref_image(job, upload):
+    """A picture that the customer dropped or pasted (a website that he likes, a screenshot): it counts like a website (at most five together). Returns the list for the screen."""
+    from PIL import Image
+
+    b = dict(job.brief or {})
+    refs = refs_of(b)
+    if len(refs) >= MAX_REFS:
+        raise ValueError(f"Je kunt maximaal {MAX_REFS} voorbeelden toevoegen.")
+    if getattr(upload, "size", 0) > 8 * 1024 * 1024:
+        raise ValueError("De afbeelding is te groot (maximaal 8 MB).")
+    try:
+        im = Image.open(upload)
+        im.load()
+        im = im.convert("RGB")
+    except Exception:  # noqa: BLE001
+        raise ValueError("Dit is geen afbeelding (kies een png, jpg of webp).")
+    if im.width > 1000:
+        im = im.resize((1000, max(1, int(im.height * 1000 / im.width))))
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=80, optimize=True)
+    key = areas.site_path("designs", f"{job.pk}/refs/{uuid.uuid4().hex[:10]}.jpg")
+    default_storage.save(key, ContentFile(buf.getvalue()))
+    b["refs"] = [*refs, {"id": uuid.uuid4().hex[:10], "url": "", "key": key}]
+    b.pop("refs_look", None)
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
     job.brief = b
     return refs_public(job)
@@ -1585,8 +1614,9 @@ def add_ref(job, url):
 def remove_ref(job, url):
     b = dict(job.brief or {})
     keep, gone = [], []
+    want = str(url or "").rstrip("/")
     for r in refs_of(b):
-        (gone if r["url"].rstrip("/") == str(url or "").rstrip("/") else keep).append(r)
+        (gone if want and ((r.get("url") or "").rstrip("/") == want or r.get("id") == want) else keep).append(r)
     for r in gone:
         try:
             default_storage.delete(r["key"])
