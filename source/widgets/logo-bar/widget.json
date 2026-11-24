@@ -1,0 +1,169 @@
+{
+  "key": "logo-bar",
+  "name": "Logobalk",
+  "description": "Een rij met logo's van klanten, partners of keurmerken.",
+  "version": "1.0.0",
+  "category": "Uitleg en vertrouwen",
+  "subcategory": "Logo's",
+  "height": 200,
+  "options": [
+    {
+      "key": "title",
+      "label": "Titel boven de logo's",
+      "type": "text",
+      "default": "Zij gingen u voor",
+      "group": "content"
+    },
+    {
+      "key": "logos",
+      "label": "Logo's (een per regel: adres van het plaatje | naam | link)",
+      "type": "textarea",
+      "default": "",
+      "group": "content"
+    },
+    {
+      "key": "show_names",
+      "label": "Naam tonen als er geen plaatje is (tekstblokje)",
+      "type": "switch",
+      "default": true,
+      "group": "content"
+    },
+    {
+      "key": "layout",
+      "label": "Opmaak",
+      "type": "choice",
+      "default": "rij",
+      "group": "look",
+      "choices": [
+        {
+          "value": "rij",
+          "label": "Rij"
+        },
+        {
+          "value": "raster",
+          "label": "Raster"
+        },
+        {
+          "value": "lopend",
+          "label": "Lopende band"
+        }
+      ]
+    },
+    {
+      "key": "align",
+      "label": "Uitlijning",
+      "type": "choice",
+      "default": "midden",
+      "group": "look",
+      "choices": [
+        {
+          "value": "links",
+          "label": "Links"
+        },
+        {
+          "value": "midden",
+          "label": "Midden"
+        },
+        {
+          "value": "rechts",
+          "label": "Rechts"
+        }
+      ]
+    },
+    {
+      "key": "height",
+      "label": "Hoogte van de logo's (px)",
+      "type": "number",
+      "default": 48,
+      "group": "look",
+      "min": 20,
+      "max": 160,
+      "step": 2
+    },
+    {
+      "key": "gap",
+      "label": "Ruimte tussen de logo's (px)",
+      "type": "number",
+      "default": 24,
+      "group": "look",
+      "min": 0,
+      "max": 80,
+      "step": 2
+    },
+    {
+      "key": "opacity",
+      "label": "Doorzichtigheid (%)",
+      "type": "number",
+      "default": 100,
+      "group": "look",
+      "min": 20,
+      "max": 100,
+      "step": 5
+    },
+    {
+      "key": "columns",
+      "label": "Kolommen in het raster",
+      "type": "number",
+      "default": 3,
+      "group": "look",
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "key": "grayscale",
+      "label": "Grijs tot de muis erboven staat",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "tile_bg",
+      "label": "Achtergrond van de blokjes",
+      "type": "color",
+      "default": "#f3f4f6",
+      "group": "look"
+    },
+    {
+      "key": "tile_bg_dark",
+      "label": "Achtergrond van de blokjes (donkere modus)",
+      "type": "color",
+      "default": "#2a3040",
+      "group": "dark"
+    },
+    {
+      "key": "tile_text",
+      "label": "Tekstkleur van de blokjes",
+      "type": "color",
+      "default": "#374151",
+      "group": "look"
+    },
+    {
+      "key": "tile_text_dark",
+      "label": "Tekstkleur van de blokjes (donkere modus)",
+      "type": "color",
+      "default": "#e5e7eb",
+      "group": "dark"
+    },
+    {
+      "key": "tile_border",
+      "label": "Rand van de blokjes",
+      "type": "color",
+      "default": "#e5e7eb",
+      "group": "look"
+    },
+    {
+      "key": "tile_border_dark",
+      "label": "Rand van de blokjes (donkere modus)",
+      "type": "color",
+      "default": "#3b4256",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "title": "Zij gingen u voor",
+    "layout": "raster",
+    "columns": 3,
+    "show_names": true
+  }
+}

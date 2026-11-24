@@ -1,0 +1,158 @@
+{
+  "key": "date-weather",
+  "name": "Datum en weer",
+  "description": "Toont de datum van vandaag in de taal van de bezoeker, met op wens het weer van een plaats.",
+  "version": "1.0.0",
+  "category": "Tijd",
+  "subcategory": "Datum",
+  "height": 190,
+  "options": [
+    {
+      "key": "show_weekday",
+      "label": "Dag van de week tonen",
+      "type": "switch",
+      "default": true,
+      "group": "content"
+    },
+    {
+      "key": "show_day",
+      "label": "Dag van de maand tonen",
+      "type": "switch",
+      "default": true,
+      "group": "content"
+    },
+    {
+      "key": "show_month",
+      "label": "Maand tonen",
+      "type": "switch",
+      "default": true,
+      "group": "content"
+    },
+    {
+      "key": "show_year",
+      "label": "Jaar tonen",
+      "type": "switch",
+      "default": true,
+      "group": "content"
+    },
+    {
+      "key": "place",
+      "label": "Plaatsnaam (bij het weer)",
+      "type": "text",
+      "default": "Amsterdam",
+      "group": "content"
+    },
+    {
+      "key": "lat",
+      "label": "Breedtegraad",
+      "type": "number",
+      "default": 52.37,
+      "group": "content",
+      "min": -90,
+      "max": 90,
+      "step": 0.01
+    },
+    {
+      "key": "lon",
+      "label": "Lengtegraad",
+      "type": "number",
+      "default": 4.9,
+      "group": "content",
+      "min": -180,
+      "max": 180,
+      "step": 0.01
+    },
+    {
+      "key": "layout",
+      "label": "Opmaak",
+      "type": "choice",
+      "default": "kaart",
+      "group": "look",
+      "choices": [
+        {
+          "value": "kaart",
+          "label": "Kaart"
+        },
+        {
+          "value": "regel",
+          "label": "Eén regel"
+        }
+      ]
+    },
+    {
+      "key": "align",
+      "label": "Uitlijning",
+      "type": "choice",
+      "default": "links",
+      "group": "look",
+      "choices": [
+        {
+          "value": "links",
+          "label": "Links"
+        },
+        {
+          "value": "midden",
+          "label": "Midden"
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "label": "Kleur (accent)",
+      "type": "color",
+      "default": "#f2823f",
+      "group": "look"
+    },
+    {
+      "key": "show_week",
+      "label": "Weeknummer tonen",
+      "type": "switch",
+      "default": false,
+      "group": "behaviour"
+    },
+    {
+      "key": "weather",
+      "label": "Toon het weer (maakt een verzoek aan Open-Meteo)",
+      "type": "switch",
+      "default": false,
+      "group": "behaviour"
+    },
+    {
+      "key": "unit",
+      "label": "Eenheid van de temperatuur",
+      "type": "choice",
+      "default": "celsius",
+      "group": "behaviour",
+      "choices": [
+        {
+          "value": "celsius",
+          "label": "Celsius"
+        },
+        {
+          "value": "fahrenheit",
+          "label": "Fahrenheit"
+        }
+      ]
+    },
+    {
+      "key": "weather_text",
+      "label": "Korte tekst bij het weer tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "color_dark",
+      "label": "Kleur (accent) (donkere modus)",
+      "type": "color",
+      "default": "#f59a63",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "layout": "kaart",
+    "show_week": true,
+    "weather": true,
+    "place": "Amsterdam"
+  }
+}

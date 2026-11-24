@@ -1,0 +1,34 @@
+{
+  "key": "faq-accordion",
+  "name": "Veelgestelde vragen",
+  "description": "Vragen die open en dicht klappen, met zoekveld en categorieën, uit de plugin FAQ of eigen invoer.",
+  "version": "1.0.0",
+  "category": "Uitleg en vertrouwen",
+  "subcategory": "FAQ",
+  "height": 420,
+  "data": {"provider": "faq"},
+  "options": [
+    {"key": "title", "label": "Titel", "type": "text", "default": "Veelgestelde vragen", "group": "content"},
+    {"key": "questions", "label": "Vragen (een per regel: vraag | antwoord)", "type": "textarea", "default": "Wat zijn de levertijden? | Bestellingen die voor 15:00 binnenkomen worden de volgende werkdag bezorgd.\nKan ik mijn bestelling retourneren? | Ja, binnen 30 dagen na ontvangst kun je kosteloos retourneren.\nHoe kan ik contact opnemen? | Stuur ons een e-mail of bel tijdens kantooruren, we helpen je graag.", "group": "content"},
+    {"key": "search_placeholder", "label": "Tekst in het zoekveld", "type": "text", "default": "Zoek een vraag...", "group": "content"},
+    {"key": "no_results", "label": "Tekst als er niets gevonden is", "type": "text", "default": "Geen vragen gevonden.", "group": "content"},
+    {"key": "empty_text", "label": "Tekst als er nog geen vragen zijn", "type": "text", "default": "Er zijn nog geen vragen.", "group": "content"},
+    {"key": "source", "label": "Bron van de gegevens", "type": "choice", "default": "auto", "group": "data", "choices": [{"value": "auto", "label": "Automatisch (uit de plugin als die actief is)"}, {"value": "plugin", "label": "Altijd uit de plugin"}, {"value": "own", "label": "Eigen invoer"}]},
+    {"key": "categories", "label": "Categorieën als kopjes tonen (uit de plugin)", "type": "switch", "default": true, "group": "data"},
+    {"key": "icon", "label": "Stijl van het icoon", "type": "choice", "default": "plusmin", "group": "look", "choices": [{"value": "plusmin", "label": "Plus en min"}, {"value": "number", "label": "Nummering"}, {"value": "arrow", "label": "Pijltje"}]},
+    {"key": "shape", "label": "Vorm van de blokken", "type": "choice", "default": "round", "group": "look", "choices": [{"value": "round", "label": "Afgerond"}, {"value": "square", "label": "Strak"}]},
+    {"key": "color", "label": "Accentkleur", "type": "color", "default": "#f2823f", "group": "look"},
+    {"key": "tint", "label": "Achtergrond van een geopende vraag", "type": "color", "default": "#fdf1e8", "group": "look"},
+    {"key": "multi", "label": "Meerdere vragen tegelijk open", "type": "choice", "default": "one", "group": "behaviour", "choices": [{"value": "one", "label": "Een tegelijk"}, {"value": "several", "label": "Meerdere tegelijk"}]},
+    {"key": "search", "label": "Zoekveld tonen", "type": "switch", "default": true, "group": "behaviour"},
+    {"key": "first_open", "label": "Eerste vraag open", "type": "switch", "default": true, "group": "behaviour"},
+    {"key": "animate", "label": "Animatie bij openen en sluiten", "type": "switch", "default": true, "group": "behaviour"},
+    {"key": "color_dark", "label": "Accentkleur (donkere modus)", "type": "color", "default": "#f59a63", "group": "dark"},
+    {"key": "tint_dark", "label": "Achtergrond van een geopende vraag (donkere modus)", "type": "color", "default": "#2c2520", "group": "dark"}
+  ],
+  "example": {
+    "title": "Veelgestelde vragen",
+    "questions": "Wat zijn de levertijden? | Bestellingen die voor 15:00 binnenkomen worden de volgende werkdag bezorgd.\nKan ik mijn bestelling retourneren? | Ja, binnen 30 dagen na ontvangst kun je kosteloos retourneren.\nWelke betaalmethodes accepteren jullie? | iDEAL, creditcard, PayPal en op factuur voor zakelijke klanten.\nHoe kan ik contact opnemen? | Stuur ons een e-mail of bel tijdens kantooruren, we helpen je graag.",
+    "source": "own"
+  }
+}

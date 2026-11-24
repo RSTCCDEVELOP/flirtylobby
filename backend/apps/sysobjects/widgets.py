@@ -20,7 +20,7 @@ from pathlib import Path
 from django.conf import settings
 
 KEY_RE = re.compile(r"^[a-z][a-z0-9-]{1,38}[a-z0-9]$")
-GROUPS = ("content", "look", "behaviour", "dark")
+GROUPS = ("content", "look", "behaviour", "dark", "data")
 OPTION_TYPES = ("text", "textarea", "number", "color", "choice", "switch", "datetime")
 MAX_FILE = 200_000
 
@@ -51,6 +51,14 @@ def _clean_option(o):
     return out
 
 
+def _clean_data(v):
+    """The provider of the data of a widget ({"provider": "faq"}): the plugin or the part of the system whose database content the widget can show (see widgetdata.py)."""
+    from . import widgetdata
+
+    p = v.get("provider") if isinstance(v, dict) else ""
+    return {"provider": p, "label": widgetdata.label(p)} if p in widgetdata.PROVIDERS else None
+
+
 def manifest(key):
     """The clean manifest of a widget of the library, or None (not there, or broken)."""
     if not KEY_RE.match(str(key or "")):
@@ -64,7 +72,7 @@ def manifest(key):
         return None
     opts = [x for x in (_clean_option(o) for o in d.get("options") or []) if x]
     return {"key": key, "name": str(d["name"])[:60], "description": str(d.get("description") or "")[:300], "version": str(d.get("version") or "1.0.0")[:20], "category": str(d.get("category") or "Overig")[:30], "subcategory": str(d.get("subcategory") or "")[:30],
-            "height": min(max(int(d.get("height") or 220), 40), 1200), "popup": bool(d.get("popup")), "options": opts, "example": d.get("example") if isinstance(d.get("example"), dict) else {}}
+            "height": min(max(int(d.get("height") or 220), 40), 1200), "popup": bool(d.get("popup")), "data": _clean_data(d.get("data")), "options": opts, "example": d.get("example") if isinstance(d.get("example"), dict) else {}}
 
 
 def library():
@@ -132,9 +140,15 @@ def doc(key, options=None, example=False):
              "html[data-theme=dark]{--w-text:#e5e7eb;--w-muted:#9ca3af;--w-card:#1f2430;--w-line:#374151;" + "".join(f"--w-{k}:{vals[f'{k}_dark']};" for k in pairs) + "}"
     js = _read(key, "widget.js")
     data = json.dumps(vals).replace("</", "<\\/")
+    if m["data"]:  # the data of the plugin or the system that this widget can show (window.WIDGET_DATA); nothing of it is in the html, only here
+        from . import widgetdata
+
+        wd = json.dumps(widgetdata.get(m["data"]["provider"]), default=str).replace("</", "<\\/")
+    else:
+        wd = "null"
     return ("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
             "<style>html,body{margin:0;padding:0;background:transparent;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--w-text);box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}</style>"
-            f"<style>{tokens}</style><style>{css}</style></head><body>{body}<script>window.WIDGET={data};window.WIDGET_KEY={json.dumps(key)};</script>"
+            f"<style>{tokens}</style><style>{css}</style></head><body>{body}<script>window.WIDGET={data};window.WIDGET_DATA={wd};window.WIDGET_KEY={json.dumps(key)};</script>"
             f"<script>{js}</script><script>(function(){{{_BOX_JS}function h(){{var b=box();parent.postMessage({{widgetHeight:document.documentElement.scrollHeight,widgetBox:b,widget:{json.dumps(key)}}},'*')}}"
             "addEventListener('message',function(e){if(e.data&&e.data.widgetTheme)document.documentElement.setAttribute('data-theme',e.data.widgetTheme)});"
             "addEventListener('load',h);if(window.ResizeObserver)new ResizeObserver(h).observe(document.body);setTimeout(h,300)})();</script></body></html>")
@@ -199,5 +213,5 @@ def admin_listing():
     for m in library():
         w = have.get(m["key"])
         opts = clean_options(m, w.options if w else {})
-        out.append({**m, "installed": bool(w), "options_now": opts, "example_doc": doc(m["key"], example=True), "doc": doc(m["key"], opts) if w else ""})
+        out.append({**m, "data_status": __import__("apps.sysobjects.widgetdata", fromlist=["status"]).status(m["data"]["provider"]) if m["data"] else None, "installed": bool(w), "options_now": opts, "example_doc": doc(m["key"], example=True), "doc": doc(m["key"], opts) if w else ""})
     return out

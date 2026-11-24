@@ -13,10 +13,11 @@ import { api, errorText } from "../lib/api";
 import { confirmDialog } from "../lib/dialog";
 import { tx } from "../lib/t";
 import WidgetFrame from "./WidgetFrame";
+import WidgetOptions from "./WidgetOptions";
 import WidgetCategories, { ViewToggle, useWidgetView, widgetGroups, widgetTree } from "./WidgetCategories";
 
 // The library of the widgets (Admin > Thema > Widgets), like the library of the themes: every widget of <source>/widgets/ with an example. An admin installs a widget (it is a system object
-// then) or removes it, and sets its options. An installed widget is added to a page in the page editor: Toevoegen > Widgets (click or drag).
+// then) or removes it, and sets its options (the same panel with tabs as in the page editor). An installed widget is added to a page in the page editor: Toevoegen > Widgets (click or drag).
 export default function WidgetLibrary() {
   const [list, setList] = useState(null);
   const [q, setQ] = useState("");
@@ -25,11 +26,11 @@ export default function WidgetLibrary() {
   const [status, setStatus] = useState("on");  // "" all | on = in use (the default) | off = not installed
   const [view, setView] = useWidgetView();
   const [open, setOpen] = useState("");     // the key of the widget whose options are open
-  const [vals, setVals] = useState({});
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
   const load = () => api("/widgets/").then((d) => setList(d.widgets)).catch((e) => setMsg({ ok: false, text: errorText(e) }));
   useEffect(() => { api("/widgets/").then((d) => { setList(d.widgets); if (!d.widgets.some((w) => w.installed)) setStatus(""); }).catch((e) => setMsg({ ok: false, text: errorText(e) })); }, []);  // nothing installed yet: show the whole library
+  useEffect(() => { const re = () => load(); window.addEventListener("sysobjects-changed", re); return () => window.removeEventListener("sysobjects-changed", re); }, []);  // the options were saved in the panel: the previews are drawn again
   const gc = (w) => w.category, gs = (w) => w.subcategory;
   const tree = useMemo(() => widgetTree(list || [], gc, gs), [list]);
   if (!list) return msg ? <div className="alert">{msg.text}</div> : <p className="muted">{tx("Bezig…")}</p>;
@@ -42,22 +43,6 @@ export default function WidgetLibrary() {
     try { const d = await api(`/widgets/${w.key}/`, { method }); setList(d.widgets); if (method === "DELETE" && open === w.key) setOpen(""); }
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy("");
-  };
-  const save = async (w) => {
-    setBusy(w.key); setMsg(null);
-    try { const d = await api(`/widgets/${w.key}/options/`, { method: "PUT", body: { options: vals } }); setList(d.widgets); setMsg({ ok: true, text: tx("Opgeslagen. Het widget is overal aangepast.") }); }
-    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
-    setBusy("");
-  };
-  const field = (o) => {
-    const v = vals[o.key] ?? o.default;
-    const set = (x) => setVals({ ...vals, [o.key]: x });
-    if (o.type === "textarea") return <label key={o.key}>{tx(o.label)}<textarea rows={5} value={v} maxLength={1200} onChange={(e) => set(e.target.value)} /></label>;
-    if (o.type === "switch") return <label key={o.key} className="hed-sw"><span className="switch"><input type="checkbox" checked={!!v} onChange={(e) => set(e.target.checked)} /><span /></span><span className="hed-swt"><strong>{tx(o.label)}</strong></span></label>;
-    if (o.type === "choice") return <label key={o.key}>{tx(o.label)}<select value={v} onChange={(e) => set(e.target.value)}>{o.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label>;
-    if (o.type === "number") return <label key={o.key}>{tx(o.label)}<input type="number" min={o.min} max={o.max} step={o.step} value={v} onChange={(e) => set(e.target.value === "" ? "" : Number(e.target.value))} /></label>;
-    if (o.type === "color") return <label key={o.key}>{tx(o.label)}<ColorInput value={v} onChange={(e) => set(e.target.value)} style={{ height: 38, padding: 2 }} /></label>;
-    return <label key={o.key}>{tx(o.label)}<input type={o.type === "datetime" ? "datetime-local" : "text"} value={v} maxLength={300} onChange={(e) => set(e.target.value)} /></label>;
   };
   return (
     <div className="stack-sm">
@@ -84,15 +69,12 @@ export default function WidgetLibrary() {
                 <div className="wl-meta"><span className="wl-chip">{tx(w.category)}</span>{w.subcategory && <span className="wl-chip sub">{tx(w.subcategory)}</span>}</div>
                 <small className="wl-desc">{tx(w.description)}</small>
                 {open === w.key && w.installed && (
-                  <div className="wl-opts">
-                    {w.options.length ? w.options.map(field) : <small className="muted">{tx("Dit widget heeft geen opties.")}</small>}
-                    {w.options.length > 0 && <div className="row" style={{ justifyContent: "center" }}><button type="button" className="btn sm primary" disabled={!!busy} onClick={() => save(w)}>{tx("Opslaan")}</button></div>}
-                  </div>
+                  <div className="wl-opts"><WidgetOptions slug={`widget-${w.key}`} /></div>
                 )}
               </div>
               <div className="wl-foot">
                 {w.installed
-                  ? <><button type="button" className="btn sm" disabled={!!busy} onClick={() => { setOpen(open === w.key ? "" : w.key); setVals(w.options_now || {}); }}>{open === w.key ? tx("Opties sluiten") : tx("Opties")}</button>
+                  ? <><button type="button" className="btn sm" disabled={!!busy} onClick={() => { setOpen(open === w.key ? "" : w.key); }}>{open === w.key ? tx("Opties sluiten") : tx("Opties")}</button>
                       <button type="button" className="btn sm" disabled={!!busy} onClick={() => act(w, "DELETE")}>{tx("Verwijderen")}</button></>
                   : <button type="button" className="btn primary wl-install" disabled={!!busy} onClick={() => act(w, "POST")}>{busy === w.key ? tx("Bezig…") : tx("Installeren")}</button>}
               </div>

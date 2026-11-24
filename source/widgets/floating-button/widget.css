@@ -1,0 +1,15 @@
+html,body{height:100%}
+.root{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px}.root.ps-linksonder{justify-content:flex-start}.root[hidden]{display:none}
+.fab{position:relative;display:inline-flex;align-items:center;gap:.55rem;height:56px;min-width:56px;padding:0 1.3rem;border-radius:999px;background:{{color}};color:{{text_color}};font-weight:700;font-size:1rem;text-decoration:none;box-shadow:0 8px 22px rgba(0,0,0,.28);justify-content:center;white-space:nowrap;transition:transform .15s,box-shadow .15s;--c:{{color}}}
+.fab:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.32)}.fab:focus-visible{outline:3px solid {{text_color}};outline-offset:2px}
+.ic{display:inline-flex}.ic:empty{display:none}.ic svg{width:24px;height:24px}
+.lbl{overflow:hidden;max-width:20em;transition:max-width .25s,opacity .2s}
+.sh-rond .fab{padding:0}.sh-rond.has-ic .lbl{display:none}
+.sz-klein .fab{height:44px;min-width:44px;font-size:.88rem}.sz-klein .ic svg{width:20px;height:20px}.sz-klein.sh-pil .fab{padding:0 1rem}
+.sz-groot .fab{height:68px;min-width:68px;font-size:1.15rem}.sz-groot .ic svg{width:30px;height:30px}.sz-groot.sh-pil .fab{padding:0 1.7rem}
+.sh-rond:not(.has-ic) .fab{border-radius:999px;padding:0 1.3rem}
+.pulse .fab::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 0 var(--c);opacity:.6;animation:pl 2.2s ease-out infinite;pointer-events:none}
+@keyframes pl{0%{box-shadow:0 0 0 0 var(--c);opacity:.55}80%,100%{box-shadow:0 0 0 14px var(--c);opacity:0}}
+@media (hover:hover){.hov.sh-pil.has-ic .lbl{max-width:0;opacity:0}.hov.sh-pil.has-ic .fab{padding:0}.hov.sh-pil.has-ic .fab:hover,.hov.sh-pil.has-ic .fab:focus-visible{padding:0 1.3rem}.hov.sh-pil.has-ic .fab:hover .lbl,.hov.sh-pil.has-ic .fab:focus-visible .lbl{max-width:20em;opacity:1}.hov.sh-pil.has-ic .fab{gap:0}.hov.sh-pil.has-ic .fab:hover{gap:.55rem}}
+@media (prefers-reduced-motion:reduce){.pulse .fab::before{animation:none;display:none}.fab,.lbl{transition:none}}
+html.preview .root{position:static;min-height:110px;padding:20px;align-items:center;justify-content:center;border-radius:14px;background:rgba(127,127,127,.1)}

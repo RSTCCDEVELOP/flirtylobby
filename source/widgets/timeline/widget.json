@@ -1,0 +1,162 @@
+{
+  "key": "timeline",
+  "name": "Tijdlijn",
+  "description": "De geschiedenis van een bedrijf of de stappen van een proces op een tijdlijn.",
+  "version": "1.0.0",
+  "category": "Uitleg en vertrouwen",
+  "subcategory": "Tijdlijn",
+  "height": 480,
+  "options": [
+    {
+      "key": "title",
+      "label": "Titel",
+      "type": "text",
+      "default": "Onze geschiedenis",
+      "group": "content"
+    },
+    {
+      "key": "items",
+      "label": "Momenten (een per regel: jaar of datum | titel | tekst)",
+      "type": "textarea",
+      "default": "2015 | De start | Twee vrienden beginnen een bakkerij aan de gracht.\n2018 | Tweede winkel | Een tweede filiaal opent in het centrum.\n2021 | Online bestellen | Brood en taart bestel je nu ook via de website.\n2024 | Tien jaar | Een feestelijk jubileum met onze vaste klanten.",
+      "group": "content"
+    },
+    {
+      "key": "max_items",
+      "label": "Maximaal aantal momenten",
+      "type": "number",
+      "default": 12,
+      "group": "content",
+      "min": 1,
+      "max": 12,
+      "step": 1
+    },
+    {
+      "key": "orientation",
+      "label": "Richting",
+      "type": "choice",
+      "default": "verticaal",
+      "group": "look",
+      "choices": [
+        {
+          "value": "verticaal",
+          "label": "Verticaal"
+        },
+        {
+          "value": "zigzag",
+          "label": "Verticaal afwisselend (zigzag)"
+        },
+        {
+          "value": "horizontaal",
+          "label": "Horizontaal (scrollbaar)"
+        }
+      ]
+    },
+    {
+      "key": "line_style",
+      "label": "Stijl van de lijn",
+      "type": "choice",
+      "default": "lijn",
+      "group": "look",
+      "choices": [
+        {
+          "value": "lijn",
+          "label": "Lijn"
+        },
+        {
+          "value": "stippellijn",
+          "label": "Stippellijn"
+        }
+      ]
+    },
+    {
+      "key": "dot_style",
+      "label": "Stijl van de stip",
+      "type": "choice",
+      "default": "stip",
+      "group": "look",
+      "choices": [
+        {
+          "value": "stip",
+          "label": "Stip"
+        },
+        {
+          "value": "nummer",
+          "label": "Nummer"
+        },
+        {
+          "value": "ring",
+          "label": "Ring"
+        }
+      ]
+    },
+    {
+      "key": "compact",
+      "label": "Compact",
+      "type": "switch",
+      "default": false,
+      "group": "look"
+    },
+    {
+      "key": "animate",
+      "label": "Laten verschijnen als het zichtbaar wordt",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "highlight_last",
+      "label": "Het laatste moment uitlichten",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "accent",
+      "label": "Kleur van de stippen en de lijn",
+      "type": "color",
+      "default": "#f2823f",
+      "group": "look"
+    },
+    {
+      "key": "accent_dark",
+      "label": "Kleur van de stippen en de lijn (donkere modus)",
+      "type": "color",
+      "default": "#f59a63",
+      "group": "dark"
+    },
+    {
+      "key": "card_bg",
+      "label": "Achtergrond van de blokken",
+      "type": "color",
+      "default": "#ffffff",
+      "group": "look"
+    },
+    {
+      "key": "card_bg_dark",
+      "label": "Achtergrond van de blokken (donkere modus)",
+      "type": "color",
+      "default": "#1f2430",
+      "group": "dark"
+    },
+    {
+      "key": "year_color",
+      "label": "Kleur van het jaartal",
+      "type": "color",
+      "default": "#c2410c",
+      "group": "look"
+    },
+    {
+      "key": "year_color_dark",
+      "label": "Kleur van het jaartal (donkere modus)",
+      "type": "color",
+      "default": "#fdba74",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "orientation": "zigzag",
+    "animate": true,
+    "highlight_last": true
+  }
+}

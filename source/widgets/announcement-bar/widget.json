@@ -1,0 +1,235 @@
+{
+  "key": "announcement-bar",
+  "name": "Aanbiedingsbalk",
+  "description": "Een balk over de volle breedte bovenaan of onderaan het scherm voor een actie of mededeling, met knop, aftelklok en sluitkruisje.",
+  "version": "1.0.0",
+  "category": "Sales",
+  "subcategory": "Actie",
+  "height": 120,
+  "popup": true,
+  "options": [
+    {
+      "key": "message",
+      "label": "Tekst van de balk",
+      "type": "text",
+      "default": "Deze week 20% korting op alles met de code ZOMER",
+      "group": "content"
+    },
+    {
+      "key": "button",
+      "label": "Tekst van de knop (leeg = geen knop)",
+      "type": "text",
+      "default": "Bekijk de actie",
+      "group": "content"
+    },
+    {
+      "key": "url",
+      "label": "Link van de knop",
+      "type": "text",
+      "default": "#",
+      "group": "content"
+    },
+    {
+      "key": "icon",
+      "label": "Icoon",
+      "type": "choice",
+      "default": "megafoon",
+      "group": "content",
+      "choices": [
+        {
+          "value": "megafoon",
+          "label": "Megafoon"
+        },
+        {
+          "value": "label",
+          "label": "Prijskaartje"
+        },
+        {
+          "value": "gift",
+          "label": "Cadeau"
+        },
+        {
+          "value": "geen",
+          "label": "Geen icoon"
+        }
+      ]
+    },
+    {
+      "key": "countdown",
+      "label": "Aftelklok tonen",
+      "type": "switch",
+      "default": true,
+      "group": "content"
+    },
+    {
+      "key": "countdown_label",
+      "label": "Tekst voor de aftelklok",
+      "type": "text",
+      "default": "eindigt over",
+      "group": "content"
+    },
+    {
+      "key": "date",
+      "label": "Aftellen naar",
+      "type": "datetime",
+      "default": "2099-11-30T23:59",
+      "group": "content"
+    },
+    {
+      "key": "ack_text",
+      "label": "Tekst van de knop 'Begrepen'",
+      "type": "text",
+      "default": "Begrepen",
+      "group": "content"
+    },
+    {
+      "key": "position",
+      "label": "Positie",
+      "type": "choice",
+      "default": "bovenaan",
+      "group": "look",
+      "choices": [
+        {
+          "value": "bovenaan",
+          "label": "Bovenaan het scherm"
+        },
+        {
+          "value": "onderaan",
+          "label": "Onderaan het scherm"
+        }
+      ]
+    },
+    {
+      "key": "style",
+      "label": "Stijl",
+      "type": "choice",
+      "default": "gekleurd",
+      "group": "look",
+      "choices": [
+        {
+          "value": "gekleurd",
+          "label": "Gekleurd"
+        },
+        {
+          "value": "licht",
+          "label": "Licht"
+        },
+        {
+          "value": "donker",
+          "label": "Donker"
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "label": "Kleur (accent)",
+      "type": "color",
+      "default": "#c026d3",
+      "group": "look"
+    },
+    {
+      "key": "text_color",
+      "label": "Tekstkleur (gekleurde stijl)",
+      "type": "color",
+      "default": "#ffffff",
+      "group": "look"
+    },
+    {
+      "key": "bar_bg",
+      "label": "Achtergrond (donkere stijl)",
+      "type": "color",
+      "default": "#111827",
+      "group": "look"
+    },
+    {
+      "key": "closable",
+      "label": "Sluitkruisje tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "ack",
+      "label": "Knop 'Begrepen' die de balk sluit en onthoudt",
+      "type": "switch",
+      "default": false,
+      "group": "behaviour"
+    },
+    {
+      "key": "delay",
+      "label": "Verschijnt na (seconden)",
+      "type": "number",
+      "default": 1,
+      "group": "behaviour",
+      "min": 0,
+      "max": 120,
+      "step": 1
+    },
+    {
+      "key": "scroll",
+      "label": "Verschijnt na scrollen (procent van het scherm, 0 = meteen)",
+      "type": "number",
+      "default": 0,
+      "group": "behaviour",
+      "min": 0,
+      "max": 500,
+      "step": 1
+    },
+    {
+      "key": "frequency",
+      "label": "Hoe vaak ziet een bezoeker hem",
+      "type": "choice",
+      "default": "session",
+      "group": "behaviour",
+      "choices": [
+        {
+          "value": "always",
+          "label": "Elke keer dat de pagina opent"
+        },
+        {
+          "value": "session",
+          "label": "Eén keer per bezoek"
+        },
+        {
+          "value": "1",
+          "label": "Eén keer per dag"
+        },
+        {
+          "value": "7",
+          "label": "Eén keer per week"
+        },
+        {
+          "value": "once",
+          "label": "Eén keer, daarna nooit meer"
+        }
+      ]
+    },
+    {
+      "key": "color_dark",
+      "label": "Kleur (accent) (donkere modus)",
+      "type": "color",
+      "default": "#e879f9",
+      "group": "dark"
+    },
+    {
+      "key": "text_color_dark",
+      "label": "Tekstkleur (gekleurde stijl) (donkere modus)",
+      "type": "color",
+      "default": "#111827",
+      "group": "dark"
+    },
+    {
+      "key": "bar_bg_dark",
+      "label": "Achtergrond (donkere stijl) (donkere modus)",
+      "type": "color",
+      "default": "#0b0b0f",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "message": "Deze week 20% korting op alles met de code ZOMER",
+    "button": "Bekijk de actie",
+    "countdown": true,
+    "date": "2099-11-30T23:59"
+  }
+}

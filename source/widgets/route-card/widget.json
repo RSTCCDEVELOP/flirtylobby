@@ -1,0 +1,181 @@
+{
+  "key": "route-card",
+  "name": "Routekaart",
+  "description": "Een kaart met het adres, een routeknop naar je favoriete routeplanner en een knop om het adres te kopiëren.",
+  "version": "1.0.0",
+  "category": "Bedrijf",
+  "subcategory": "Route",
+  "height": 340,
+  "data": {
+    "provider": "entity"
+  },
+  "options": [
+    {
+      "key": "title",
+      "label": "Titel",
+      "type": "text",
+      "default": "Kom langs",
+      "group": "content"
+    },
+    {
+      "key": "street",
+      "label": "Straat en huisnummer",
+      "type": "text",
+      "default": "Keizersgracht 12",
+      "group": "content"
+    },
+    {
+      "key": "zipcity",
+      "label": "Postcode en plaats",
+      "type": "text",
+      "default": "1015 CS Amsterdam",
+      "group": "content"
+    },
+    {
+      "key": "country",
+      "label": "Land",
+      "type": "text",
+      "default": "Nederland",
+      "group": "content"
+    },
+    {
+      "key": "note",
+      "label": "Opmerking (parkeren of ingang)",
+      "type": "textarea",
+      "default": "Parkeren kan op het plein achter het pand. De ingang is aan de zijkant.",
+      "group": "content"
+    },
+    {
+      "key": "button_label",
+      "label": "Tekst op de routeknop",
+      "type": "text",
+      "default": "Route",
+      "group": "content"
+    },
+    {
+      "key": "copy_label",
+      "label": "Tekst op de kopieerknop",
+      "type": "text",
+      "default": "Kopieer adres",
+      "group": "content"
+    },
+    {
+      "key": "copied_text",
+      "label": "Tekst na het kopiëren",
+      "type": "text",
+      "default": "Gekopieerd",
+      "group": "content"
+    },
+    {
+      "key": "source",
+      "label": "Bron van de gegevens",
+      "type": "choice",
+      "default": "auto",
+      "group": "data",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Automatisch (uit de plugin als die actief is)"
+        },
+        {
+          "value": "plugin",
+          "label": "Altijd uit de plugin"
+        },
+        {
+          "value": "own",
+          "label": "Eigen invoer"
+        }
+      ]
+    },
+    {
+      "key": "style",
+      "label": "Afbeelding",
+      "type": "choice",
+      "default": "map",
+      "group": "look",
+      "choices": [
+        {
+          "value": "map",
+          "label": "Kaartachtige illustratie"
+        },
+        {
+          "value": "pin",
+          "label": "Alleen een speld"
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "label": "Accentkleur",
+      "type": "color",
+      "default": "#f2823f",
+      "group": "look"
+    },
+    {
+      "key": "tint",
+      "label": "Kleur van de illustratie",
+      "type": "color",
+      "default": "#eef3f7",
+      "group": "look"
+    },
+    {
+      "key": "service",
+      "label": "Routeplanner",
+      "type": "choice",
+      "default": "google",
+      "group": "behaviour",
+      "choices": [
+        {
+          "value": "google",
+          "label": "Google Maps"
+        },
+        {
+          "value": "apple",
+          "label": "Apple Maps"
+        },
+        {
+          "value": "osm",
+          "label": "OpenStreetMap"
+        }
+      ]
+    },
+    {
+      "key": "show_copy",
+      "label": "Knop Kopieer adres tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "show_note",
+      "label": "Opmerking tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "show_all",
+      "label": "Toon alle locaties",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "color_dark",
+      "label": "Accentkleur (donkere modus)",
+      "type": "color",
+      "default": "#f59a63",
+      "group": "dark"
+    },
+    {
+      "key": "tint_dark",
+      "label": "Kleur van de illustratie (donkere modus)",
+      "type": "color",
+      "default": "#262d36",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "source": "own"
+  }
+}

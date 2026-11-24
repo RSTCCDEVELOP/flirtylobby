@@ -1,0 +1,217 @@
+{
+  "key": "contact-card",
+  "name": "Contactkaart",
+  "description": "Een kaart met foto, naam, contactgegevens en knoppen om te bellen, mailen, appen of de route te openen.",
+  "version": "1.0.0",
+  "category": "Bedrijf",
+  "subcategory": "Contact",
+  "height": 270,
+  "data": {
+    "provider": "entity"
+  },
+  "options": [
+    {
+      "key": "name",
+      "label": "Naam",
+      "type": "text",
+      "default": "Studio Jansen",
+      "group": "content"
+    },
+    {
+      "key": "role",
+      "label": "Functie of omschrijving",
+      "type": "text",
+      "default": "Eigenaar",
+      "group": "content"
+    },
+    {
+      "key": "phone",
+      "label": "Telefoonnummer",
+      "type": "text",
+      "default": "+31 20 123 45 67",
+      "group": "content"
+    },
+    {
+      "key": "email",
+      "label": "E-mailadres",
+      "type": "text",
+      "default": "info@studiojansen.nl",
+      "group": "content"
+    },
+    {
+      "key": "website",
+      "label": "Website",
+      "type": "text",
+      "default": "www.studiojansen.nl",
+      "group": "content"
+    },
+    {
+      "key": "address",
+      "label": "Adres (straat nummer, postcode plaats)",
+      "type": "text",
+      "default": "Keizersgracht 12, 1015 CS Amsterdam",
+      "group": "content"
+    },
+    {
+      "key": "photo",
+      "label": "Foto (webadres; leeg = initialen)",
+      "type": "text",
+      "default": "",
+      "group": "content"
+    },
+    {
+      "key": "whatsapp",
+      "label": "WhatsApp-nummer met landcode (leeg = geen knop)",
+      "type": "text",
+      "default": "31612345678",
+      "group": "content"
+    },
+    {
+      "key": "call_label",
+      "label": "Tekst op de belknop",
+      "type": "text",
+      "default": "Bel",
+      "group": "content"
+    },
+    {
+      "key": "mail_label",
+      "label": "Tekst op de mailknop",
+      "type": "text",
+      "default": "Mail",
+      "group": "content"
+    },
+    {
+      "key": "route_label",
+      "label": "Tekst op de routeknop",
+      "type": "text",
+      "default": "Route",
+      "group": "content"
+    },
+    {
+      "key": "source",
+      "label": "Bron van de gegevens",
+      "type": "choice",
+      "default": "auto",
+      "group": "data",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Automatisch (uit de plugin als die actief is)"
+        },
+        {
+          "value": "plugin",
+          "label": "Altijd uit de plugin"
+        },
+        {
+          "value": "own",
+          "label": "Eigen invoer"
+        }
+      ]
+    },
+    {
+      "key": "location",
+      "label": "Welke locatie",
+      "type": "choice",
+      "default": "main",
+      "group": "data",
+      "choices": [
+        {
+          "value": "main",
+          "label": "Hoofdadres"
+        },
+        {
+          "value": "first",
+          "label": "Eerste extra locatie"
+        }
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "Opmaak",
+      "type": "choice",
+      "default": "horizontal",
+      "group": "look",
+      "choices": [
+        {
+          "value": "horizontal",
+          "label": "Horizontaal"
+        },
+        {
+          "value": "vertical",
+          "label": "Verticaal"
+        },
+        {
+          "value": "compact",
+          "label": "Compact"
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "label": "Accentkleur",
+      "type": "color",
+      "default": "#f2823f",
+      "group": "look"
+    },
+    {
+      "key": "tint",
+      "label": "Achtergrond van de kaart",
+      "type": "color",
+      "default": "#fff7f1",
+      "group": "look"
+    },
+    {
+      "key": "show_call",
+      "label": "Knop Bel tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "show_mail",
+      "label": "Knop Mail tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "show_whatsapp",
+      "label": "Knop WhatsApp tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "show_route",
+      "label": "Knop Route tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "show_details",
+      "label": "Telefoon, e-mail, website en adres als tekst tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "color_dark",
+      "label": "Accentkleur (donkere modus)",
+      "type": "color",
+      "default": "#f59a63",
+      "group": "dark"
+    },
+    {
+      "key": "tint_dark",
+      "label": "Achtergrond van de kaart (donkere modus)",
+      "type": "color",
+      "default": "#2a2320",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "source": "own",
+    "layout": "horizontal"
+  }
+}

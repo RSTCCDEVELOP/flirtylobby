@@ -1,0 +1,206 @@
+{
+  "key": "floating-button",
+  "name": "Zwevende actieknop",
+  "description": "Een ronde of pilvormige knop in de hoek van het scherm om te bellen, te mailen of een afspraak te maken.",
+  "version": "1.0.0",
+  "category": "Sales",
+  "subcategory": "Actie",
+  "height": 140,
+  "popup": true,
+  "options": [
+    {
+      "key": "label",
+      "label": "Tekst van de knop",
+      "type": "text",
+      "default": "Bel ons",
+      "group": "content"
+    },
+    {
+      "key": "icon",
+      "label": "Icoon",
+      "type": "choice",
+      "default": "telefoon",
+      "group": "content",
+      "choices": [
+        {
+          "value": "telefoon",
+          "label": "Telefoon"
+        },
+        {
+          "value": "e-mail",
+          "label": "E-mail"
+        },
+        {
+          "value": "chat",
+          "label": "Chat"
+        },
+        {
+          "value": "agenda",
+          "label": "Agenda"
+        },
+        {
+          "value": "geen",
+          "label": "Geen icoon"
+        }
+      ]
+    },
+    {
+      "key": "url",
+      "label": "Link (tel:, mailto:, https:// of #)",
+      "type": "text",
+      "default": "tel:+31201234567",
+      "group": "content"
+    },
+    {
+      "key": "position",
+      "label": "Positie",
+      "type": "choice",
+      "default": "rechtsonder",
+      "group": "look",
+      "choices": [
+        {
+          "value": "rechtsonder",
+          "label": "Rechtsonder"
+        },
+        {
+          "value": "linksonder",
+          "label": "Linksonder"
+        }
+      ]
+    },
+    {
+      "key": "shape",
+      "label": "Vorm",
+      "type": "choice",
+      "default": "pil",
+      "group": "look",
+      "choices": [
+        {
+          "value": "rond",
+          "label": "Rond (alleen icoon)"
+        },
+        {
+          "value": "pil",
+          "label": "Pil (icoon en tekst)"
+        }
+      ]
+    },
+    {
+      "key": "size",
+      "label": "Grootte",
+      "type": "choice",
+      "default": "normaal",
+      "group": "look",
+      "choices": [
+        {
+          "value": "klein",
+          "label": "Klein"
+        },
+        {
+          "value": "normaal",
+          "label": "Normaal"
+        },
+        {
+          "value": "groot",
+          "label": "Groot"
+        }
+      ]
+    },
+    {
+      "key": "color",
+      "label": "Kleur van de knop",
+      "type": "color",
+      "default": "#16a34a",
+      "group": "look"
+    },
+    {
+      "key": "text_color",
+      "label": "Kleur van tekst en icoon",
+      "type": "color",
+      "default": "#ffffff",
+      "group": "look"
+    },
+    {
+      "key": "pulse",
+      "label": "Zachte puls-animatie",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "hover_label",
+      "label": "Tekst alleen tonen bij de muis erover (computer)",
+      "type": "switch",
+      "default": false,
+      "group": "behaviour"
+    },
+    {
+      "key": "delay",
+      "label": "Verschijnt na (seconden)",
+      "type": "number",
+      "default": 0,
+      "group": "behaviour",
+      "min": 0,
+      "max": 120,
+      "step": 1
+    },
+    {
+      "key": "scroll",
+      "label": "Verschijnt na scrollen (procent van het scherm, 0 = meteen)",
+      "type": "number",
+      "default": 0,
+      "group": "behaviour",
+      "min": 0,
+      "max": 500,
+      "step": 1
+    },
+    {
+      "key": "frequency",
+      "label": "Hoe vaak ziet een bezoeker hem",
+      "type": "choice",
+      "default": "always",
+      "group": "behaviour",
+      "choices": [
+        {
+          "value": "always",
+          "label": "Elke keer dat de pagina opent"
+        },
+        {
+          "value": "session",
+          "label": "Eén keer per bezoek"
+        },
+        {
+          "value": "1",
+          "label": "Eén keer per dag"
+        },
+        {
+          "value": "7",
+          "label": "Eén keer per week"
+        },
+        {
+          "value": "once",
+          "label": "Eén keer, daarna nooit meer"
+        }
+      ]
+    },
+    {
+      "key": "color_dark",
+      "label": "Kleur van de knop (donkere modus)",
+      "type": "color",
+      "default": "#22c55e",
+      "group": "dark"
+    },
+    {
+      "key": "text_color_dark",
+      "label": "Kleur van tekst en icoon (donkere modus)",
+      "type": "color",
+      "default": "#052e16",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "label": "Bel ons",
+    "icon": "telefoon",
+    "url": "tel:+31201234567"
+  }
+}

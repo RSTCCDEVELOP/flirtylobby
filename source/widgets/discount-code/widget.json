@@ -1,0 +1,39 @@
+{
+  "key": "discount-code",
+  "name": "Kortingscode",
+  "description": "Een kortingsbon met de code in grote letters en een knop om hem te kopiëren.",
+  "version": "1.0.0",
+  "category": "Verkoop",
+  "subcategory": "Aanbiedingen",
+  "height": 300,
+  "data": {"provider": "webshop"},
+  "options": [
+    {"key": "title", "label": "Titel", "type": "text", "default": "Jouw kortingscode", "group": "content"},
+    {"key": "text", "label": "Tekst", "type": "textarea", "default": "Gebruik deze code bij het afrekenen.", "group": "content"},
+    {"key": "code", "label": "Code", "type": "text", "default": "WELKOM10", "group": "content"},
+    {"key": "until", "label": "Geldig tot", "type": "datetime", "default": "", "group": "content"},
+    {"key": "kind", "label": "Soort korting (eigen invoer)", "type": "choice", "default": "percent", "group": "content", "choices": [{"value": "percent", "label": "Percentage"}, {"value": "fixed", "label": "Vast bedrag"}]},
+    {"key": "value", "label": "Hoogte van de korting (eigen invoer)", "type": "number", "default": 10, "min": 0, "max": 10000, "step": 1, "group": "content"},
+    {"key": "min", "label": "Minimaal bestelbedrag (eigen invoer, 0 = geen)", "type": "number", "default": 0, "min": 0, "max": 100000, "step": 1, "group": "content"},
+    {"key": "copy_text", "label": "Tekst van de knop", "type": "text", "default": "Kopieer", "group": "content"},
+    {"key": "copied_text", "label": "Tekst na het kopiëren", "type": "text", "default": "Gekopieerd!", "group": "content"},
+    {"key": "source", "label": "Bron van de gegevens", "type": "choice", "default": "auto", "group": "data", "choices": [{"value": "auto", "label": "Automatisch (uit de plugin als die actief is)"}, {"value": "plugin", "label": "Altijd uit de plugin"}, {"value": "own", "label": "Eigen invoer"}]},
+    {"key": "which", "label": "Welke code", "type": "choice", "default": "first", "group": "data", "choices": [{"value": "first", "label": "De eerste"}, {"value": "all", "label": "Alle (lijst om uit te kiezen)"}]},
+    {"key": "currency", "label": "Valuta", "type": "choice", "default": "EUR", "group": "data", "choices": [{"value": "EUR", "label": "Euro"}, {"value": "USD", "label": "Dollar"}, {"value": "GBP", "label": "Pond"}]},
+    {"key": "border", "label": "Rand van de bon", "type": "choice", "default": "dashed", "group": "look", "choices": [{"value": "dashed", "label": "Gestreept"}, {"value": "dotted", "label": "Gestippeld"}, {"value": "solid", "label": "Doorlopend"}, {"value": "none", "label": "Geen rand"}]},
+    {"key": "color", "label": "Kleur", "type": "color", "default": "#f2823f", "group": "look"},
+    {"key": "show_until", "label": "Geldig-tot-regel tonen", "type": "switch", "default": true, "group": "behaviour"},
+    {"key": "show_min", "label": "Minimaal bestelbedrag tonen", "type": "switch", "default": true, "group": "behaviour"},
+    {"key": "color_dark", "label": "Kleur (donkere modus)", "type": "color", "default": "#f59a63", "group": "dark"}
+  ],
+  "example": {
+    "title": "Welkomstkorting",
+    "text": "Bestel je eerste product en betaal minder.",
+    "code": "WELKOM10",
+    "until": "2099-12-31T23:59",
+    "kind": "percent",
+    "value": 10,
+    "min": 25,
+    "source": "own"
+  }
+}

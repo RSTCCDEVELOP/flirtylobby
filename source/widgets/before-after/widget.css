@@ -1,0 +1,25 @@
+.ba{position:relative;width:100%;overflow:hidden;border-radius:{{radius}}px;background:var(--w-card);border:1px solid var(--w-line);user-select:none;-webkit-user-select:none;touch-action:pan-y;aspect-ratio:16/9}
+.ba.v{touch-action:pan-x}
+.ba.r43{aspect-ratio:4/3}.ba.r11{aspect-ratio:1/1}.ba.r32{aspect-ratio:3/2}
+.pic{position:absolute;inset:0;overflow:hidden}
+.pic img{width:100%;height:100%;display:block;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
+.ba.contain .pic img{object-fit:contain}
+.pic.ph{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:2rem;color:rgba(255,255,255,.85)}
+.pic.ph.a{background:linear-gradient(135deg,#0ea5e9,#6366f1 60%,#a855f7)}
+.pic.ph.b{background:linear-gradient(135deg,#9ca3af,#6b7280 60%,#4b5563)}
+.lab{position:absolute;top:12px;padding:.25rem .7rem;border-radius:999px;font-size:.78rem;font-weight:600;background:{{label_bg}};color:{{label_text}};opacity:.9;pointer-events:none;z-index:2}
+.lb{left:12px}.la{right:12px}
+.ba.v .lb{top:12px;left:12px}.ba.v .la{top:auto;bottom:12px;right:auto;left:12px}
+.lab[hidden]{display:none}
+.hd{position:absolute;z-index:3;outline:none;color:#111827;cursor:ew-resize}
+.ba:not(.v) .hd{top:0;bottom:0;width:44px;margin-left:-22px}
+.ba.v .hd{left:0;right:0;height:44px;margin-top:-22px;cursor:ns-resize}
+.ln{position:absolute;background:{{handle}};box-shadow:0 0 6px rgba(0,0,0,.35)}
+.ba:not(.v) .ln{left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px}
+.ba.v .ln{top:50%;left:0;right:0;height:3px;margin-top:-1.5px}
+.kn{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:{{handle}};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.35);color:#111827}
+.ba.v .kn svg{transform:rotate(90deg)}
+.ba.bar .kn{width:12px;height:36px;margin:-18px 0 0 -6px;border-radius:6px}
+.ba.bar .kn svg{display:none}
+.ba.v.bar .kn{width:36px;height:12px;margin:-6px 0 0 -18px}
+.hd:focus-visible .kn{box-shadow:0 0 0 3px #3b82f6,0 2px 10px rgba(0,0,0,.35)}

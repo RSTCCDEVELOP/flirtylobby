@@ -1,0 +1,39 @@
+{
+  "key": "event-counter",
+  "name": "Plaatsen over",
+  "description": "Toont een evenement met datum, plaats en hoeveel plaatsen er nog vrij zijn, met voortgangsbalk en knop.",
+  "version": "1.0.0",
+  "category": "Cijfers",
+  "subcategory": "Evenement",
+  "height": 300,
+  "data": {"provider": "agenda"},
+  "options": [
+    {"key": "title", "label": "Titel van het evenement", "type": "text", "default": "Workshop webdesign", "group": "content"},
+    {"key": "date", "label": "Datum en tijd", "type": "datetime", "default": "2099-01-01T19:30", "group": "content"},
+    {"key": "place", "label": "Plaats", "type": "text", "default": "Amsterdam", "group": "content"},
+    {"key": "capacity", "label": "Aantal plaatsen (0 = onbeperkt)", "type": "number", "default": 30, "min": 0, "max": 100000, "step": 1, "group": "content"},
+    {"key": "taken", "label": "Bezette plaatsen", "type": "number", "default": 18, "min": 0, "max": 100000, "step": 1, "group": "content"},
+    {"key": "button_text", "label": "Tekst van de knop", "type": "text", "default": "Inschrijven", "group": "content"},
+    {"key": "button_url", "label": "Link van de knop", "type": "text", "default": "#", "group": "content"},
+    {"key": "soldout_text", "label": "Tekst als het vol is", "type": "text", "default": "Uitverkocht", "group": "content"},
+    {"key": "source", "label": "Bron van de gegevens", "type": "choice", "default": "auto", "group": "data", "choices": [{"value": "auto", "label": "Automatisch (uit de plugin als die actief is)"}, {"value": "plugin", "label": "Altijd uit de plugin"}, {"value": "own", "label": "Eigen invoer"}]},
+    {"key": "which", "label": "Welk evenement", "type": "choice", "default": "next", "group": "data", "choices": [{"value": "next", "label": "Het eerstvolgende"}, {"value": "title", "label": "Op titel"}]},
+    {"key": "match_title", "label": "Titel van het evenement (bij 'Op titel')", "type": "text", "default": "", "group": "data"},
+    {"key": "color", "label": "Kleur", "type": "color", "default": "#f2823f", "group": "look"},
+    {"key": "warn_color", "label": "Waarschuwingskleur", "type": "color", "default": "#d64545", "group": "look"},
+    {"key": "show_bar", "label": "Voortgangsbalk tonen", "type": "switch", "default": true, "group": "behaviour"},
+    {"key": "show_place", "label": "Plaats tonen", "type": "switch", "default": true, "group": "behaviour"},
+    {"key": "warn_below", "label": "Waarschuwen als er minder plaatsen over zijn dan", "type": "number", "default": 5, "min": 0, "max": 1000, "step": 1, "group": "behaviour"},
+    {"key": "color_dark", "label": "Kleur (donkere modus)", "type": "color", "default": "#f59a63", "group": "dark"},
+    {"key": "warn_color_dark", "label": "Waarschuwingskleur (donkere modus)", "type": "color", "default": "#f07272", "group": "dark"}
+  ],
+  "example": {
+    "title": "Workshop webdesign",
+    "date": "2099-03-14T19:30",
+    "place": "Amsterdam",
+    "capacity": 30,
+    "taken": 18,
+    "button_text": "Inschrijven",
+    "source": "own"
+  }
+}

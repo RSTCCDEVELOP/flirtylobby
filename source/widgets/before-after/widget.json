@@ -1,0 +1,210 @@
+{
+  "key": "before-after",
+  "name": "Voor en na",
+  "description": "Vergelijk twee plaatjes met een verschuifbare verdeler.",
+  "version": "1.0.0",
+  "category": "Uitleg en vertrouwen",
+  "subcategory": "Vergelijken",
+  "height": 320,
+  "options": [
+    {
+      "key": "before_image",
+      "label": "Plaatje voor (plak het adres van een plaatje uit de mediabibliotheek)",
+      "type": "text",
+      "default": "",
+      "group": "content"
+    },
+    {
+      "key": "after_image",
+      "label": "Plaatje na (plak het adres van een plaatje uit de mediabibliotheek)",
+      "type": "text",
+      "default": "",
+      "group": "content"
+    },
+    {
+      "key": "before_alt",
+      "label": "Beschrijving van het plaatje voor",
+      "type": "text",
+      "default": "Situatie voor de verandering",
+      "group": "content"
+    },
+    {
+      "key": "after_alt",
+      "label": "Beschrijving van het plaatje na",
+      "type": "text",
+      "default": "Situatie na de verandering",
+      "group": "content"
+    },
+    {
+      "key": "label_before",
+      "label": "Label voor",
+      "type": "text",
+      "default": "Voor",
+      "group": "content"
+    },
+    {
+      "key": "label_after",
+      "label": "Label na",
+      "type": "text",
+      "default": "Na",
+      "group": "content"
+    },
+    {
+      "key": "show_labels",
+      "label": "Labels tonen",
+      "type": "switch",
+      "default": true,
+      "group": "content"
+    },
+    {
+      "key": "orientation",
+      "label": "Richting van de verdeler",
+      "type": "choice",
+      "default": "horizontaal",
+      "group": "look",
+      "choices": [
+        {
+          "value": "horizontaal",
+          "label": "Horizontaal (links en rechts)"
+        },
+        {
+          "value": "verticaal",
+          "label": "Verticaal (boven en onder)"
+        }
+      ]
+    },
+    {
+      "key": "handle_style",
+      "label": "Stijl van het handvat",
+      "type": "choice",
+      "default": "rond",
+      "group": "look",
+      "choices": [
+        {
+          "value": "rond",
+          "label": "Rond"
+        },
+        {
+          "value": "streep",
+          "label": "Streep"
+        }
+      ]
+    },
+    {
+      "key": "radius",
+      "label": "Ronding van de hoeken (px)",
+      "type": "number",
+      "default": 16,
+      "group": "look",
+      "min": 0,
+      "max": 40,
+      "step": 1
+    },
+    {
+      "key": "ratio",
+      "label": "Beeldverhouding",
+      "type": "choice",
+      "default": "16:9",
+      "group": "look",
+      "choices": [
+        {
+          "value": "16:9",
+          "label": "16:9"
+        },
+        {
+          "value": "4:3",
+          "label": "4:3"
+        },
+        {
+          "value": "1:1",
+          "label": "1:1"
+        },
+        {
+          "value": "3:2",
+          "label": "3:2"
+        }
+      ]
+    },
+    {
+      "key": "fit",
+      "label": "Plaatje passen",
+      "type": "choice",
+      "default": "cover",
+      "group": "look",
+      "choices": [
+        {
+          "value": "cover",
+          "label": "Vullen (bijsnijden)"
+        },
+        {
+          "value": "contain",
+          "label": "Geheel tonen"
+        }
+      ]
+    },
+    {
+      "key": "start",
+      "label": "Startpositie (%)",
+      "type": "number",
+      "default": 50,
+      "group": "behaviour",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "autoplay",
+      "label": "Demobeweging van het handvat als het zichtbaar wordt",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "handle",
+      "label": "Kleur van het handvat",
+      "type": "color",
+      "default": "#ffffff",
+      "group": "look"
+    },
+    {
+      "key": "handle_dark",
+      "label": "Kleur van het handvat (donkere modus)",
+      "type": "color",
+      "default": "#f3f4f6",
+      "group": "dark"
+    },
+    {
+      "key": "label_bg",
+      "label": "Achtergrond van de labels",
+      "type": "color",
+      "default": "#111827",
+      "group": "look"
+    },
+    {
+      "key": "label_bg_dark",
+      "label": "Achtergrond van de labels (donkere modus)",
+      "type": "color",
+      "default": "#f9fafb",
+      "group": "dark"
+    },
+    {
+      "key": "label_text",
+      "label": "Tekst van de labels",
+      "type": "color",
+      "default": "#ffffff",
+      "group": "look"
+    },
+    {
+      "key": "label_text_dark",
+      "label": "Tekst van de labels (donkere modus)",
+      "type": "color",
+      "default": "#111827",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "start": 50,
+    "autoplay": true,
+    "show_labels": true
+  }
+}

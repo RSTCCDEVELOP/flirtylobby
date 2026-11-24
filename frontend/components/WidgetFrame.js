@@ -8,13 +8,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getLanguage } from "../lib/t";
 
 // A widget of the library (<source>/widgets/): its own document in a sandboxed iframe (scripts, and links that open in a new tab: no access to the page, the cookies or the login). The widget tells its height
 // (postMessage) and the frame follows it. `doc` = the whole html of the widget (the server fills in the options); `height` = the height before the widget has told its own.
 //
 // A POPUP widget (the library widget "popup") tells {widgetPopup: "ready"}: its frame is then 0 high. After its delay it asks {widgetPopup: "open", freq}: when the visitor may see it (freq: always,
 // session, once or a number of days; remembered here in the browser, as the sandboxed widget has no storage) the frame covers the screen and the widget is told to show itself. {widgetPopup: "close"}
-// (or the Escape key) makes it small again. `preview` (the library, the editor lists, the edit mode) shows a popup as a plain card on the spot instead.
+// (or the Escape key) makes it small again. {widgetPopup: "open", pos, w, h, scroll}: pos is "full" (the whole screen, the default), "top" or "bottom" (a bar over the full width, h high) or "bl" / "br"
+// (a button in a corner, w wide and h high); scroll = a percentage of the screen height: it opens only after the visitor has scrolled that far (a floating button, a banner). `preview` (the library, the editor lists, the edit mode) shows a popup as a plain card on the spot instead.
 const hash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
 const mayShow = (id, freq) => {
   try {
@@ -32,6 +34,8 @@ export default function WidgetFrame({ doc, height = 200, title = "", inert = fal
   const [h, setH] = useState(height);
   const [popup, setPopup] = useState(false);  // the widget is a popup
   const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState({ pos: "full", w: 0, h: 0 });  // where an open popup stands
+  const pending = useRef(null);
   const flag = inert || preview;
   const id = useRef("");
   const theme0 = useRef(typeof document !== "undefined" && document.documentElement.dataset.theme === "dark" ? "dark" : "light");  // the mode of the website when the frame was made; changes are sent to the widget
@@ -46,7 +50,10 @@ export default function WidgetFrame({ doc, height = 200, title = "", inert = fal
       if (d.widgetPopup === "open" && !flag) {
         freqRef.current = String(d.freq || "session");
         id.current = `wpopup:${d.widget}:${hash(doc || "")}`;
-        if (mayShow(id.current, freqRef.current)) { setOpen(true); ref.current.contentWindow.postMessage({ widgetPopupShow: true }, "*"); }
+        const where = { pos: ["full", "top", "bottom", "bl", "br"].includes(d.pos) ? d.pos : "full", w: Math.min(Math.max(Number(d.w) || 0, 0), 900), h: Math.min(Math.max(Number(d.h) || 0, 0), 900) };
+        const show = () => { window.removeEventListener("scroll", pending.current || (() => {})); pending.current = null; if (mayShow(id.current, freqRef.current)) { setPlace(where); setOpen(true); ref.current?.contentWindow?.postMessage({ widgetPopupShow: true }, "*"); } };
+        const need = (Number(d.scroll) || 0) / 100 * window.innerHeight;
+        if (need > 0 && window.scrollY < need) { const on2 = () => { if (window.scrollY >= need) show(); }; pending.current = on2; window.addEventListener("scroll", on2, { passive: true }); } else show();  // after the amount is scrolled, or at once
       }
       if (d.widgetPopup === "close") { setOpen(false); remember(id.current, freqRef.current); }
     };
@@ -55,13 +62,20 @@ export default function WidgetFrame({ doc, height = 200, title = "", inert = fal
     window.addEventListener("keydown", key);
     const mo = new MutationObserver(() => { const t = document.documentElement.dataset.theme === "dark" ? "dark" : "light"; try { ref.current?.contentWindow?.postMessage({ widgetTheme: t }, "*"); } catch { /* ok */ } });
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });  // light or dark mode of the website: the widget follows
-    return () => { window.removeEventListener("message", on); window.removeEventListener("keydown", key); mo.disconnect(); };
+    const lang = () => { try { ref.current?.contentWindow?.postMessage({ widgetLang: getLanguage() }, "*"); } catch { /* ok */ } };
+    window.addEventListener("langchange", lang);  // the language of the website: the widget draws its texts again
+    return () => { window.removeEventListener("message", on); window.removeEventListener("keydown", key); window.removeEventListener("langchange", lang); mo.disconnect(); if (pending.current) window.removeEventListener("scroll", pending.current); };
   }, [doc, flag]);
   if (!doc) return null;
-  const pre = `${theme0.current === "dark" ? "<script>document.documentElement.setAttribute('data-theme','dark')</script>" : ""}${flag ? "<script>window.WIDGET_PREVIEW=1</script>" : ""}`;
-  const src = pre ? doc.replace("<body>", `<body>${pre}`) : doc;
+  const pre = `<script>window.WIDGET_LANG=${JSON.stringify(getLanguage() || "nl")}</script>${theme0.current === "dark" ? "<script>document.documentElement.setAttribute('data-theme','dark')</script>" : ""}${flag ? "<script>window.WIDGET_PREVIEW=1</script>" : ""}`;
+  const src = doc.replace("<body>", `<body>${pre}`);
   const style = popup && !flag
-    ? (open ? { position: "fixed", inset: 0, width: "100vw", height: "100vh", zIndex: 100000, border: 0, background: "transparent" } : { width: 0, height: 0, border: 0, display: "block", position: "absolute", pointerEvents: "none" })
+    ? (open ? (place.pos === "top" ? { position: "fixed", top: 0, left: 0, right: 0, width: "100%", height: place.h || 80, zIndex: 100000, border: 0, background: "transparent" }
+      : place.pos === "bottom" ? { position: "fixed", bottom: 0, left: 0, right: 0, width: "100%", height: place.h || 80, zIndex: 100000, border: 0, background: "transparent" }
+      : place.pos === "bl" ? { position: "fixed", bottom: 16, left: 16, width: place.w || 200, height: place.h || 64, zIndex: 100000, border: 0, background: "transparent" }
+      : place.pos === "br" ? { position: "fixed", bottom: 16, right: 16, width: place.w || 200, height: place.h || 64, zIndex: 100000, border: 0, background: "transparent" }
+      : { position: "fixed", inset: 0, width: "100vw", height: "100vh", zIndex: 100000, border: 0, background: "transparent" })
+      : { width: 0, height: 0, border: 0, display: "block", position: "absolute", pointerEvents: "none" })
     : { width: "100%", height: h, border: 0, display: "block", background: "transparent", ...(inert ? { pointerEvents: "none" } : {}) };
   return <iframe ref={ref} className={`widget-frame ${className}`} title={title || "Widget"} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" srcDoc={src} loading={popup || !height ? "eager" : "lazy"} style={style} />;
 }

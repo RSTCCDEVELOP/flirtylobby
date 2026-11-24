@@ -1,0 +1,13 @@
+html,body{height:100%}
+.root{position:fixed;left:0;right:0;top:0}.root.ps-onderaan{top:auto;bottom:0}.root[hidden]{display:none}
+.bar{display:flex;align-items:center;justify-content:center;gap:.75rem;height:56px;padding:0 1rem;font-size:.95rem;line-height:1.25;overflow:hidden}
+.ic{display:inline-flex;flex:none}.ic svg{width:22px;height:22px}.ic:empty{display:none}
+.msg{min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600}
+.cd{flex:none;font-variant-numeric:tabular-nums;font-size:.85rem;padding:.2rem .6rem;border-radius:999px;background:rgba(127,127,127,.22);white-space:nowrap}.cd[hidden]{display:none}
+.btn,.ok{flex:none;display:inline-block;border:0;border-radius:999px;padding:.4rem 1rem;font:inherit;font-weight:700;font-size:.9rem;text-decoration:none;cursor:pointer;white-space:nowrap}.btn[hidden],.ok[hidden],.x[hidden]{display:none}
+.x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:inherit;opacity:.8;cursor:pointer}.x:hover{opacity:1;background:rgba(127,127,127,.22)}
+.st-gekleurd .bar{background:{{color}};color:{{text_color}}}.st-gekleurd .btn,.st-gekleurd .ok{background:{{text_color}};color:{{color}}}
+.st-licht .bar{background:var(--w-card);color:var(--w-text)}.st-licht.ps-bovenaan .bar{border-bottom:1px solid var(--w-line)}.st-licht.ps-onderaan .bar{border-top:1px solid var(--w-line)}.st-licht .btn,.st-licht .ok{background:{{color}};color:#fff}.st-licht .ic{color:{{color}}}
+.st-donker .bar{background:{{bar_bg}};color:#fff}.st-donker .btn,.st-donker .ok{background:{{color}};color:#fff}.st-donker .ic{color:{{color}}}
+html.preview .root{position:static}html.preview .bar{height:auto;min-height:56px;padding:.7rem 1rem;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.14);flex-wrap:wrap}
+@media (max-width:520px){.bar{height:72px;gap:.5rem;padding:0 .6rem;font-size:.85rem}.ic svg{width:18px;height:18px}.btn,.ok{padding:.35rem .7rem;font-size:.8rem}.cd{font-size:.75rem;padding:.15rem .45rem}html.preview .bar{height:auto}}

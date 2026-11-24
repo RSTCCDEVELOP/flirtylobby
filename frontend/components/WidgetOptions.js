@@ -15,9 +15,9 @@ import ColorInput from "./ColorInput";
 
 // The settings of a widget, in the left panel of the page editor: click a widget (or its edit button) and its options are here, in tabs (Inhoud, Uiterlijk, Gedrag) under a card with the widget.
 // The options belong to the widget, so a change counts for the widget on every page. A change is saved with the button and the page shows it at once. (The library, Admin > Website > Widgets, has the same options.)
-const GROUPS = [["content", "Inhoud"], ["look", "Uiterlijk"], ["behaviour", "Gedrag"], ["dark", "Donkere modus"]];
+const GROUPS = [["content", "Inhoud"], ["data", "Gegevens"], ["look", "Uiterlijk"], ["behaviour", "Gedrag"], ["dark", "Donkere modus"]];
 const LOOK = /^(style|stijl|shape|vorm|size|grootte|speed|color|kleur|bg|accent)/i;
-const groupOf = (o) => (o.group && GROUPS.some(([k]) => k === o.group) ? o.group : /_dark$/.test(o.key) ? "dark" : o.type === "color" || (o.type === "choice" && LOOK.test(o.key)) || LOOK.test(o.key) ? "look" : o.type === "switch" || o.type === "number" || o.type === "datetime" || o.type === "choice" ? "behaviour" : "content");
+const groupOf = (o) => (o.group && GROUPS.some(([k]) => k === o.group) ? o.group : o.key === "source" ? "data" : /_dark$/.test(o.key) ? "dark" : o.type === "color" || (o.type === "choice" && LOOK.test(o.key)) || LOOK.test(o.key) ? "look" : o.type === "switch" || o.type === "number" || o.type === "datetime" || o.type === "choice" ? "behaviour" : "content");
 const LABEL = { display: "grid", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 };
 
 // the options in order; switches that follow each other go in one row (an array)
@@ -88,6 +88,13 @@ export default function WidgetOptions({ slug }) {
         <>
           {groups.length > 1 && <div style={{ margin: "0 .6rem" }}><Tabs value={cur[0]} onChange={setTab} tabs={groups.map(([k, l]) => [k, l])} className="tabs-one-row" /></div>}
           <div style={{ display: "grid", gap: ".8rem", padding: ".8rem .6rem" }}>
+            {cur[0] === "data" && w.data_status && (
+              <div role="status" style={{ display: "flex", gap: ".6rem", alignItems: "flex-start", padding: ".6rem .75rem", borderRadius: 12, border: "1px solid var(--line)", background: w.data_status.active ? "color-mix(in srgb, var(--ok, #2f9e6a) 9%, var(--card, #fff))" : "color-mix(in srgb, var(--blue) 5%, var(--card, #fff))" }}>
+                <span aria-hidden="true" style={{ flex: "none", width: 10, height: 10, borderRadius: "50%", marginTop: 5, background: w.data_status.active ? "var(--ok, #2f9e6a)" : "var(--muted)" }} />
+                <span><strong style={{ fontSize: ".88rem" }}>{tx(w.data_status.label)}</strong>
+                  <small className="muted" style={{ display: "block" }}>{w.data_status.active ? tx("Actief: de gegevens komen uit de database.") + (w.data_status.count ? ` (${w.data_status.count})` : "") : tx("Niet actief: het widget gebruikt de gegevens die je hieronder en op de andere tabbladen zelf invult.")}</small></span>
+              </div>
+            )}
             {rows(cur[2]).map((r, i) => (Array.isArray(r)
               ? <div key={`sw${i}`} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", gap: ".5rem" }}>{r.map((o) => <Field key={o.key} o={o} v={vals[o.key] ?? o.default} set={(x) => setVals((p) => ({ ...p, [o.key]: x }))} />)}</div>  // switches side by side: it saves room
               : <Field key={r.key} o={r} v={vals[r.key] ?? r.default} set={(x) => setVals((p) => ({ ...p, [r.key]: x }))} />))}

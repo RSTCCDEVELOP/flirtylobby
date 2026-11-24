@@ -1,0 +1,181 @@
+{
+  "key": "open-now-badge",
+  "name": "Nu geopend",
+  "description": "Een klein label dat live laat zien of je nu open bent en wanneer je sluit of weer opent.",
+  "version": "1.0.0",
+  "category": "Bedrijf",
+  "subcategory": "Openingstijden",
+  "height": 80,
+  "data": {
+    "provider": "hours"
+  },
+  "options": [
+    {
+      "key": "d1",
+      "label": "Maandag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30",
+      "group": "content"
+    },
+    {
+      "key": "d2",
+      "label": "Dinsdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30",
+      "group": "content"
+    },
+    {
+      "key": "d3",
+      "label": "Woensdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30",
+      "group": "content"
+    },
+    {
+      "key": "d4",
+      "label": "Donderdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30",
+      "group": "content"
+    },
+    {
+      "key": "d5",
+      "label": "Vrijdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "09:00-17:30",
+      "group": "content"
+    },
+    {
+      "key": "d6",
+      "label": "Zaterdag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "10:00-16:00",
+      "group": "content"
+    },
+    {
+      "key": "d7",
+      "label": "Zondag (bijvoorbeeld 09:00-17:30 of 09:00-12:30,13:15-17:30; \"gesloten\")",
+      "type": "text",
+      "default": "gesloten",
+      "group": "content"
+    },
+    {
+      "key": "open_text",
+      "label": "Tekst als je open bent",
+      "type": "text",
+      "default": "Nu geopend",
+      "group": "content"
+    },
+    {
+      "key": "closed_text",
+      "label": "Tekst als je gesloten bent",
+      "type": "text",
+      "default": "Gesloten",
+      "group": "content"
+    },
+    {
+      "key": "source",
+      "label": "Bron van de gegevens",
+      "type": "choice",
+      "default": "auto",
+      "group": "data",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Automatisch (uit de plugin als die actief is)"
+        },
+        {
+          "value": "plugin",
+          "label": "Altijd uit de plugin"
+        },
+        {
+          "value": "own",
+          "label": "Eigen invoer"
+        }
+      ]
+    },
+    {
+      "key": "shape",
+      "label": "Vorm van de badge",
+      "type": "choice",
+      "default": "pill",
+      "group": "look",
+      "choices": [
+        {
+          "value": "pill",
+          "label": "Pil"
+        },
+        {
+          "value": "blok",
+          "label": "Blok"
+        }
+      ]
+    },
+    {
+      "key": "size",
+      "label": "Grootte",
+      "type": "choice",
+      "default": "normal",
+      "group": "look",
+      "choices": [
+        {
+          "value": "small",
+          "label": "Klein"
+        },
+        {
+          "value": "normal",
+          "label": "Normaal"
+        },
+        {
+          "value": "large",
+          "label": "Groot"
+        }
+      ]
+    },
+    {
+      "key": "color_open",
+      "label": "Kleur als geopend",
+      "type": "color",
+      "default": "#2f9e6a",
+      "group": "look"
+    },
+    {
+      "key": "color_closed",
+      "label": "Kleur als gesloten",
+      "type": "color",
+      "default": "#d64545",
+      "group": "look"
+    },
+    {
+      "key": "show_time",
+      "label": "Sluit- of openingstijd tonen",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "pulse",
+      "label": "Stip laten pulseren als geopend",
+      "type": "switch",
+      "default": true,
+      "group": "behaviour"
+    },
+    {
+      "key": "color_open_dark",
+      "label": "Kleur als geopend (donkere modus)",
+      "type": "color",
+      "default": "#4cc38a",
+      "group": "dark"
+    },
+    {
+      "key": "color_closed_dark",
+      "label": "Kleur als gesloten (donkere modus)",
+      "type": "color",
+      "default": "#f07070",
+      "group": "dark"
+    }
+  ],
+  "example": {
+    "source": "own"
+  }
+}

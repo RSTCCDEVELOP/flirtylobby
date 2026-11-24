@@ -1,0 +1,23 @@
+.lg{padding:1rem;text-align:center}
+.tt{font-weight:700;font-size:1.05rem;margin-bottom:1rem;color:var(--w-text)}
+.tt:empty{display:none}
+.lg.l-links,.lg.l-links .tt{text-align:left}.lg.l-rechts,.lg.l-rechts .tt{text-align:right}
+.vp{overflow:hidden}
+.tr{display:flex;flex-wrap:wrap;align-items:center;gap:{{gap}}px;opacity:calc({{opacity}} / 100)}
+.l-midden .tr{justify-content:center}.l-links .tr{justify-content:flex-start}.l-rechts .tr{justify-content:flex-end}
+.lg.raster .tr{display:grid;grid-template-columns:repeat({{columns}},minmax(0,1fr));justify-items:center}
+.lg.raster .tr .it{width:100%}
+.it{display:inline-flex;align-items:center;justify-content:center;height:{{height}}px;text-decoration:none;color:inherit;flex:0 0 auto}
+.it img{height:100%;max-width:100%;width:auto;display:block;object-fit:contain;transition:filter .25s,opacity .25s}
+.gs .it img{filter:grayscale(1)}
+.gs .it:hover img,.gs .it:focus-visible img{filter:none}
+.it.tile{padding:0 1.1rem;border-radius:12px;background:{{tile_bg}};border:1px solid {{tile_border}};color:{{tile_text}};font-weight:600;font-size:.95rem;white-space:nowrap;transition:transform .2s}
+a.it.tile:hover{transform:translateY(-2px)}
+.it:focus-visible{outline:2px solid #3b82f6;outline-offset:2px;border-radius:8px}
+.lg.lopend .tr{flex-wrap:nowrap;width:max-content;gap:0;justify-content:flex-start;animation:mq var(--d,30s) linear infinite}
+.lg.lopend .tr .it{margin-right:{{gap}}px}
+.lg.lopend .vp:hover .tr,.lg.lopend .vp:focus-within .tr{animation-play-state:paused}
+.lg.lopend .vp{-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.lg.lopend .tr{animation:none;width:auto;flex-wrap:wrap;justify-content:center}.lg.lopend .tr .it{margin-right:0}.lg.lopend .tr .dup{display:none}.lg.lopend .tr{gap:{{gap}}px}}
+@media (max-width:520px){.lg.raster .tr{grid-template-columns:repeat(2,minmax(0,1fr))}}
