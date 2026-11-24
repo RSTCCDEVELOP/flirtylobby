@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Tetap setelah menggulir 25%",
   "Blijft staan na 50% scrollen": "Tetap setelah menggulir 50%",
   "Blijft staan na 100% scrollen (een heel scherm)": "Tetap setelah menggulir 100% (satu layar penuh)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Pilih kapan header tetap di atas: selalu, tidak pernah, atau setelah pengunjung menggulir sebagian layar."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Pilih kapan header tetap di atas: selalu, tidak pernah, atau setelah pengunjung menggulir sebagian layar.",
+  "Plakken bij scrollen": "Menempel saat menggulir",
+  "De header blijft bovenaan staan": "Header tetap di atas",
+  "Altijd": "Selalu",
+  "Na scrollen": "Setelah menggulir",
+  "Blijft staan na": "Tetap setelah",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Persentase tinggi layar: pada 100% header tetap setelah pengunjung menggulir satu layar penuh."
 }

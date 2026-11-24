@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Resta fissa dopo 25% di scorrimento",
   "Blijft staan na 50% scrollen": "Resta fissa dopo 50% di scorrimento",
   "Blijft staan na 100% scrollen (een heel scherm)": "Resta fissa dopo 100% di scorrimento (una schermata intera)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Scegli quando l'intestazione resta fissa: sempre, mai o dopo che il visitatore ha scorso una parte dello schermo."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Scegli quando l'intestazione resta fissa: sempre, mai o dopo che il visitatore ha scorso una parte dello schermo.",
+  "Plakken bij scrollen": "Blocco allo scorrimento",
+  "De header blijft bovenaan staan": "L'intestazione resta in alto",
+  "Altijd": "Sempre",
+  "Na scrollen": "Dopo lo scorrimento",
+  "Blijft staan na": "Resta fissa dopo",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Una percentuale dell'altezza dello schermo: al 100% l'intestazione resta fissa quando il visitatore ha scorso un'intera schermata."
 }

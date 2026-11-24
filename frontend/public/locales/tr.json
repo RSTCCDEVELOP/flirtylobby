@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "%25 kaydırıldıktan sonra sabit kalır",
   "Blijft staan na 50% scrollen": "%50 kaydırıldıktan sonra sabit kalır",
   "Blijft staan na 100% scrollen (een heel scherm)": "%100 kaydırıldıktan sonra sabit kalır (tam bir ekran)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Üst bilginin ne zaman sabit kalacağını seçin: her zaman, asla veya ziyaretçi ekranın bir kısmını kaydırdıktan sonra."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Üst bilginin ne zaman sabit kalacağını seçin: her zaman, asla veya ziyaretçi ekranın bir kısmını kaydırdıktan sonra.",
+  "Plakken bij scrollen": "Kaydırırken sabitleme",
+  "De header blijft bovenaan staan": "Üst bilgi en üstte kalır",
+  "Altijd": "Her zaman",
+  "Na scrollen": "Kaydırdıktan sonra",
+  "Blijft staan na": "Şundan sonra sabit kalır",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Ekran yüksekliğinin yüzdesi: %100'de ziyaretçi tam bir ekran kaydırdığında üst bilgi sabit kalır."
 }

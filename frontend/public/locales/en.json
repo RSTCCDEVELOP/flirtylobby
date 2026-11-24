@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Stays after scrolling 25%",
   "Blijft staan na 50% scrollen": "Stays after scrolling 50%",
   "Blijft staan na 100% scrollen (een heel scherm)": "Stays after scrolling 100% (a whole screen)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Choose when the header stays: always, never, or after the visitor has scrolled part of the screen."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Choose when the header stays: always, never, or after the visitor has scrolled part of the screen.",
+  "Plakken bij scrollen": "Sticking when scrolling",
+  "De header blijft bovenaan staan": "The header stays at the top",
+  "Altijd": "Always",
+  "Na scrollen": "After scrolling",
+  "Blijft staan na": "Stays after",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "A percentage of the screen height: at 100% the header stays once the visitor has scrolled a whole screen."
 }

@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "يثبت بعد التمرير 25%",
   "Blijft staan na 50% scrollen": "يثبت بعد التمرير 50%",
   "Blijft staan na 100% scrollen (een heel scherm)": "يثبت بعد التمرير 100% (شاشة كاملة)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "اختر متى يبقى الرأس ثابتًا: دائمًا أو أبدًا أو بعد أن يمرّر الزائر جزءًا من الشاشة."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "اختر متى يبقى الرأس ثابتًا: دائمًا أو أبدًا أو بعد أن يمرّر الزائر جزءًا من الشاشة.",
+  "Plakken bij scrollen": "التثبيت عند التمرير",
+  "De header blijft bovenaan staan": "يبقى الرأس في الأعلى",
+  "Altijd": "دائمًا",
+  "Na scrollen": "بعد التمرير",
+  "Blijft staan na": "يثبت بعد",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "نسبة مئوية من ارتفاع الشاشة: عند 100% يثبت الرأس بعد أن يمرّر الزائر شاشة كاملة."
 }

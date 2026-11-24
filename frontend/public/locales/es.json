@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Se fija tras desplazar 25%",
   "Blijft staan na 50% scrollen": "Se fija tras desplazar 50%",
   "Blijft staan na 100% scrollen (een heel scherm)": "Se fija tras desplazar 100% (una pantalla entera)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Elige cuándo se queda fija la cabecera: siempre, nunca o después de que el visitante desplace parte de la pantalla."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Elige cuándo se queda fija la cabecera: siempre, nunca o después de que el visitante desplace parte de la pantalla.",
+  "Plakken bij scrollen": "Fijación al desplazar",
+  "De header blijft bovenaan staan": "La cabecera se queda arriba",
+  "Altijd": "Siempre",
+  "Na scrollen": "Tras desplazar",
+  "Blijft staan na": "Se queda fija tras",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Un porcentaje de la altura de la pantalla: con 100 % la cabecera se queda fija cuando el visitante ha desplazado una pantalla entera."
 }

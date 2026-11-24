@@ -87,7 +87,7 @@ export default function HeaderEdit() {
         <div className={host ? "pb-hdock" : "pb-objback"} onMouseDown={(e) => { if (!host && e.target === e.currentTarget) close(); }}>
           <div className={host ? "pb-hdock-in" : "pb-objpop"} role="dialog" aria-label={tx("Header bewerken")} style={host ? undefined : { width: "min(720px, 100%)" }}>
             <div className="pb-objhead"><strong>{tx("Header bewerken")}</strong><span style={{ flex: 1 }} /><button type="button" className="pb-panelx" onClick={close} aria-label={tx("Sluiten")}>×</button></div>
-            <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ["logo", "Logo"], ["menu", "Menu"]]} />
+            <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ["position", "Positie"], ["logo", "Logo"], ["menu", "Menu"]]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
             {tab === "look" && (!theme ? <p className="muted"><Loading /></p> : (
               <div className="hed">
@@ -100,12 +100,6 @@ export default function HeaderEdit() {
                     <section className="hed-card">
                       <h4>{tx("Zichtbaarheid")}</h4>
                       <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.page_header || "show") !== "hide"} onChange={(e) => setLook("page_header", e.target.checked ? "show" : "hide")} /><span /></span><span className="hed-swt"><strong>{tx("Header standaard tonen")}</strong><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
-                      {fld("header_sticky") && (
-                        <label key="header_sticky" style={{ display: "grid", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>{tx("Blijft bovenaan bij scrollen")}
-                          <select value={theme.values.header_sticky || "yes"} onChange={(e) => setLook("header_sticky", e.target.value)}>{(fld("header_sticky").choices || []).map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select>
-                          <small className="muted" style={{ fontWeight: 400 }}>{tx("Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.")}</small>
-                        </label>
-                      )}
                       {fld("mode_switch") && sw("mode_switch", "Schakelaar licht/donker", "Laat bezoekers wisselen tussen een lichte en donkere weergave.", "show", "hide")}
                     </section>
                     <section className="hed-card">
@@ -126,6 +120,30 @@ export default function HeaderEdit() {
                 <small className="muted">{tx("Zien hoe de varianten eruitzien kan bij Admin → Thema → Layout → Header.")}</small>
               </div>
             ))}
+            {tab === "position" && (!theme ? <p className="muted"><Loading /></p> : (() => {
+              const f = fields.find((x) => x.key === "header_sticky");
+              if (!f) return null;
+              const v = theme.values.header_sticky || "yes";
+              const mode = v.startsWith("after") ? "after" : v, pct = v.startsWith("after") ? v.slice(5) : "25";
+              const SEG = (items, cur, on) => <div className="hed-seg" role="group">{items.map(([k, l]) => <button type="button" key={k} className={cur === k ? "on" : ""} aria-pressed={cur === k} onClick={() => on(k)}>{l}</button>)}</div>;
+              return (
+                <div className="hed">
+                  <section className="hed-card">
+                    <h4>{tx("Plakken bij scrollen")}</h4>
+                    <div className="hed-field"><span className="hed-lbl">{tx("De header blijft bovenaan staan")}</span>
+                      {SEG([["yes", tx("Altijd")], ["after", tx("Na scrollen")], ["no", tx("Nooit")]], mode, (k) => setLook("header_sticky", k === "after" ? `after${pct}` : k))}
+                    </div>
+                    {mode === "after" && (
+                      <div className="hed-field"><span className="hed-lbl">{tx("Blijft staan na")}</span>
+                        {SEG([["10", "10%"], ["25", "25%"], ["50", "50%"], ["100", "100%"]], pct, (k) => setLook("header_sticky", `after${k}`))}
+                        <small className="muted">{tx("Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.")}</small>
+                      </div>
+                    )}
+                    <small className="muted">{tx("Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.")}</small>
+                  </section>
+                </div>
+              );
+            })())}
             {tab === "logo" && (!theme || !logoField ? <p className="muted"><Loading /></p> : (
               <div className="stack-sm">
                 <label>{tx("Hoogte van het logo")}: <strong>{Number(theme.values.site_logo_h) || 52} px</strong>

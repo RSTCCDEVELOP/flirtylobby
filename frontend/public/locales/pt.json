@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Fica fixo após deslocar 25%",
   "Blijft staan na 50% scrollen": "Fica fixo após deslocar 50%",
   "Blijft staan na 100% scrollen (een heel scherm)": "Fica fixo após deslocar 100% (um ecrã inteiro)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Escolhe quando o cabeçalho fica fixo: sempre, nunca ou depois de o visitante deslocar parte do ecrã."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Escolhe quando o cabeçalho fica fixo: sempre, nunca ou depois de o visitante deslocar parte do ecrã.",
+  "Plakken bij scrollen": "Fixar ao deslocar",
+  "De header blijft bovenaan staan": "O cabeçalho fica no topo",
+  "Altijd": "Sempre",
+  "Na scrollen": "Após deslocar",
+  "Blijft staan na": "Fica fixo após",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Uma percentagem da altura do ecrã: com 100% o cabeçalho fica fixo quando o visitante deslocou um ecrã inteiro."
 }

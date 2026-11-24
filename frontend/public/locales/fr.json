@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Reste fixe après 25% de défilement",
   "Blijft staan na 50% scrollen": "Reste fixe après 50% de défilement",
   "Blijft staan na 100% scrollen (een heel scherm)": "Reste fixe après 100% de défilement (un écran entier)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Choisis quand l'en-tête reste fixe : toujours, jamais, ou après que le visiteur a fait défiler une partie de l'écran."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Choisis quand l'en-tête reste fixe : toujours, jamais, ou après que le visiteur a fait défiler une partie de l'écran.",
+  "Plakken bij scrollen": "Fixation au défilement",
+  "De header blijft bovenaan staan": "L'en-tête reste en haut",
+  "Altijd": "Toujours",
+  "Na scrollen": "Après défilement",
+  "Blijft staan na": "Reste fixe après",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Un pourcentage de la hauteur de l'écran : à 100 %, l'en-tête reste fixe quand le visiteur a fait défiler un écran entier."
 }

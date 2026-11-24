@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "25%スクロール後に固定",
   "Blijft staan na 50% scrollen": "50%スクロール後に固定",
   "Blijft staan na 100% scrollen (een heel scherm)": "100%スクロール後に固定(画面1つ分)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "ヘッダーをいつ固定するかを選びます:常に、固定しない、または訪問者が画面の一部をスクロールした後。"
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "ヘッダーをいつ固定するかを選びます:常に、固定しない、または訪問者が画面の一部をスクロールした後。",
+  "Plakken bij scrollen": "スクロール時の固定",
+  "De header blijft bovenaan staan": "ヘッダーを上部に固定する",
+  "Altijd": "常に",
+  "Na scrollen": "スクロール後",
+  "Blijft staan na": "固定される位置",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "画面の高さに対する割合です。100%では、訪問者が画面1つ分スクロールすると固定されます。"
 }

@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Закріплюється після прокручування на 25%",
   "Blijft staan na 50% scrollen": "Закріплюється після прокручування на 50%",
   "Blijft staan na 100% scrollen (een heel scherm)": "Закріплюється після прокручування на 100% (цілий екран)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Виберіть, коли шапка закріплюється: завжди, ніколи або після того, як відвідувач прокрутив частину екрана."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Виберіть, коли шапка закріплюється: завжди, ніколи або після того, як відвідувач прокрутив частину екрана.",
+  "Plakken bij scrollen": "Закріплення під час прокручування",
+  "De header blijft bovenaan staan": "Шапка залишається вгорі",
+  "Altijd": "Завжди",
+  "Na scrollen": "Після прокручування",
+  "Blijft staan na": "Залишається після",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Відсоток висоти екрана: при 100% шапка закріплюється, коли відвідувач прокрутив цілий екран."
 }

@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "25% स्क्रॉल करने के बाद टिका रहता है",
   "Blijft staan na 50% scrollen": "50% स्क्रॉल करने के बाद टिका रहता है",
   "Blijft staan na 100% scrollen (een heel scherm)": "100% स्क्रॉल करने के बाद टिका रहता है (पूरी स्क्रीन)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "चुनें कि हेडर कब टिका रहे: हमेशा, कभी नहीं, या विज़िटर के स्क्रीन का कुछ हिस्सा स्क्रॉल करने के बाद।"
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "चुनें कि हेडर कब टिका रहे: हमेशा, कभी नहीं, या विज़िटर के स्क्रीन का कुछ हिस्सा स्क्रॉल करने के बाद।",
+  "Plakken bij scrollen": "स्क्रॉल पर चिपकना",
+  "De header blijft bovenaan staan": "हेडर ऊपर टिका रहता है",
+  "Altijd": "हमेशा",
+  "Na scrollen": "स्क्रॉल के बाद",
+  "Blijft staan na": "इसके बाद टिका रहता है",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "स्क्रीन की ऊँचाई का प्रतिशत: 100% पर हेडर तब टिकता है जब विज़िटर ने पूरी स्क्रीन स्क्रॉल कर ली हो।"
 }

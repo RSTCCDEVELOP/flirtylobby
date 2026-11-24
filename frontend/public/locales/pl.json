@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "Zostaje po przewinięciu 25%",
   "Blijft staan na 50% scrollen": "Zostaje po przewinięciu 50%",
   "Blijft staan na 100% scrollen (een heel scherm)": "Zostaje po przewinięciu 100% (cały ekran)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Wybierz, kiedy nagłówek zostaje na górze: zawsze, nigdy lub po przewinięciu części ekranu przez odwiedzającego."
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "Wybierz, kiedy nagłówek zostaje na górze: zawsze, nigdy lub po przewinięciu części ekranu przez odwiedzającego.",
+  "Plakken bij scrollen": "Przyklejanie podczas przewijania",
+  "De header blijft bovenaan staan": "Nagłówek zostaje na górze",
+  "Altijd": "Zawsze",
+  "Na scrollen": "Po przewinięciu",
+  "Blijft staan na": "Zostaje po",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Procent wysokości ekranu: przy 100% nagłówek zostaje, gdy odwiedzający przewinął cały ekran."
 }

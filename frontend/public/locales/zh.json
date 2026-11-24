@@ -8956,5 +8956,11 @@
   "Blijft staan na 25% scrollen": "滚动 25% 后固定",
   "Blijft staan na 50% scrollen": "滚动 50% 后固定",
   "Blijft staan na 100% scrollen (een heel scherm)": "滚动 100% 后固定(整屏)",
-  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "选择页眉何时固定:始终、从不,或访问者滚动部分屏幕之后。"
+  "Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.": "选择页眉何时固定:始终、从不,或访问者滚动部分屏幕之后。",
+  "Plakken bij scrollen": "滚动时固定",
+  "De header blijft bovenaan staan": "页眉固定在顶部",
+  "Altijd": "始终",
+  "Na scrollen": "滚动后",
+  "Blijft staan na": "滚动超过此比例后固定",
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "屏幕高度的百分比:100% 表示访问者滚动一整屏后页眉固定。"
 }
