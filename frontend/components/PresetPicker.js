@@ -65,7 +65,9 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
     if (demo) {
       try { const d = await api("/system/demo/"); needs = !(d.presets || []).includes(p.key) || (d.incomplete || []).includes(p.key); } catch {}
     }
-    setAsk({ p, needs, demo: needs, shops: "clothing" });
+    let packs = [];
+    try { packs = ((await api("/theme/packs/")).packs || []).filter((t) => t.enabled !== false && !t.key.startsWith("inst-")); } catch {}
+    setAsk({ p, needs, demo: needs, shops: "clothing", packs, themeChoice: "standard" });
   };
   // Pages that already have content are never replaced without asking: the answer "Nee, behouden" keeps every page as it is
   const askOverwrite = async (key) => {
@@ -110,7 +112,7 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   };
   const doApply = async () => {
     const { p, demo: withDemo, shops } = ask;
-    const design = ask.design !== false, theme = ask.theme !== false;
+    const design = ask.design !== false, theme = ask.themeChoice || "standard";
     setAsk(null); setMsg(null);
     const overwrite = design ? await askOverwrite(p.key) : false;
     setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false, undo: p.key });
@@ -171,9 +173,13 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
                 <span>{tx("De pagina's van deze installatie aanmaken (pagina-design)")} <small className="muted">{tx("De startpagina en de andere pagina's van de installatie worden aangemaakt, precies zo en met hun afbeeldingen. Zet uit om je eigen pagina's te laten zoals ze zijn.")}</small></span>
               </label>
             )}
-            <label className="check sec-toggle">
-              <span className="switch"><input type="checkbox" checked={ask.theme !== false} onChange={(e) => setAsk({ ...ask, theme: e.target.checked })} /><span /></span>
-              <span>{tx("Het kleurenthema van deze installatie gebruiken")} <small className="muted">{tx("De kleuren en vormen van het thema van de installatie worden gezet. Zet uit om je huidige kleuren te houden.")}</small></span>
+            <label>{tx("Kleurenthema")}
+              <select value={ask.themeChoice || "standard"} onChange={(e) => setAsk({ ...ask, themeChoice: e.target.value })}>
+                <option value="standard">{ask.p.theme_pack ? `${tx("Het thema van deze installatie")}: ${ask.p.theme_pack.name}` : tx("Het standaard thema van deze installatie")}</option>
+                {(ask.packs || []).length > 0 && <optgroup label={tx("Een ander kleurenthema")}>{ask.packs.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}</optgroup>}
+                <option value="keep">{tx("Mijn huidige kleuren behouden")}</option>
+              </select>
+              <small className="muted">{tx("Kies met welke kleuren, lettertypen en vormen de website wordt ingesteld.")}</small>
             </label>
             {demo && (
               <label className="check sec-toggle">

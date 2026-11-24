@@ -1709,7 +1709,14 @@ def presets_apply(request, key):
         return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
     if request.data.get("check"):  # which pages would be replaced and already have content: the screen asks before it overwrites
         return Response({"conflicts": presets.conflicts(key)})
-    out = presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages")), install_design=request.data.get("design") is not False, use_theme=request.data.get("theme") is not False)
+    choice = request.data.get("theme")  # "standard" | "keep" | the key of another theme package (False = keep, like before)
+    choice = "keep" if choice is False else ("standard" if choice in (None, True, "") else str(choice))
+    if choice not in ("standard", "keep"):
+        from . import themepacks
+
+        if not themepacks.manifest_of(choice):
+            return Response({"detail": "Dit thema bestaat niet."}, status=status.HTTP_400_BAD_REQUEST)
+    out = presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages")), install_design=request.data.get("design") is not False, use_theme=choice != "keep", theme_choice=choice)
     __import__("apps.auditlog.service", fromlist=["log"]).log("installation.applied", request.user, target=key, request=request)
     return Response(out)
 
@@ -1843,6 +1850,29 @@ def presets_design(request, key):
         except Exception as e:  # noqa: BLE001 - a package that cannot be made (a page that is gone, a picture that cannot be read) is shown as text
             return Response({"detail": str(e) or "De pagina's konden niet worden opgeslagen."}, status=status.HTTP_400_BAD_REQUEST)
     return Response(preset_design.listing(key))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def presets_design_theme(request, key):
+    """The colour theme of the installation (superadmins): {action: "capture"} keeps the look of this website in the installation, {action: "remove"} takes it away."""
+    from . import preset_design, presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    act = request.data.get("action")
+    if act == "remove":
+        preset_design.remove_theme(key)
+    elif act == "capture":
+        try:
+            preset_design.capture_theme(key)
+        except Exception as e:  # noqa: BLE001
+            return Response({"detail": str(e) or "Het thema kon niet worden opgeslagen."}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({"detail": "Onbekende actie."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"theme": preset_design.theme_info(key)})
 
 
 @api_view(["POST"])

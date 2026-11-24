@@ -4957,3 +4957,6 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .lg-opt-card .switch { flex: none; transform: scale(.82); transform-origin: left center; margin-right: -.25rem; }
 .lg-opt-name { flex: 1; min-width: 0; font-size: .84rem; font-weight: 600; line-height: 1.2; }
 .lg-opt-card .badge { flex: none; font-size: .64rem; padding: .08rem .45rem; text-transform: uppercase; letter-spacing: .05em; }
+.pdz-theme { padding: .75rem .9rem; border-radius: 12px; background: color-mix(in srgb, var(--blue) 6%, transparent); border: 1px solid color-mix(in srgb, var(--blue) 14%, transparent); }
+.pdz-theme h4 { margin: 0 0 .5rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+.pdz-theme-row { display: flex; align-items: center; gap: .75rem; } .pdz-sw { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); } .pdz-sw i { width: 22px; height: 28px; display: block; }

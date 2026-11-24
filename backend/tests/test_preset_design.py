@@ -20,11 +20,12 @@ from apps.pages.models import Page, PageLayout
 
 
 @pytest.fixture(autouse=True)
-def _no_browser(monkeypatch):
+def _no_browser(monkeypatch, settings, tmp_path):
     """No test starts a real browser: the pictures of the pages are made by a stand-in."""
     from apps.core import siteshots
 
     preset_design._JOBS.clear()
+    settings.THEMES_DIR = tmp_path / "themes-test"  # (the theme that is kept with the pages never lands in the real folder of the website)
     monkeypatch.setattr(siteshots, "capture", lambda url, allow_private=False: b"\xff\xd8jpegbytes")
     monkeypatch.setattr(preset_design, "start_sample", lambda *a, **k: False)
 
@@ -198,3 +199,36 @@ def test_a_design_with_other_parts_is_never_put_right_by_itself_and_the_refresh_
     finally:
         preset_design.install = orig
     assert not called
+
+
+@pytest.mark.django_db
+def test_the_theme_of_the_installation_is_kept_and_installed_and_the_choice_is_asked(settings, tmp_path, django_user_model):
+    from apps.core import themepacks
+    from apps.core.models import SiteSettings
+
+    settings.RESOURCE_DIR = tmp_path
+    settings.THEMES_DIR = tmp_path / "themes"
+    key = presets.PRESETS[0]["key"]
+    row = SiteSettings.load()
+    row.theme = {"primary": "#aa3311", "font_heading": row.theme.get("font_heading", "") or "Inter"}
+    row.save()
+    su = django_user_model.objects.create_user("su", "su@x.nl", "pw12345678!", is_staff=True, is_superuser=True)
+    c = APIClient(); c.force_authenticate(su)
+    assert c.get(f"/api/system/presets/{key}/design/").json()["theme"] is None
+    r = c.post(f"/api/system/presets/{key}/design/theme/", {"action": "capture"}, format="json").json()
+    assert r["theme"]["colors"]["primary"] == "#aa3311" and (tmp_path / "presets" / key / "design" / "theme.zip").is_file()
+    assert any(x["theme_pack"] for x in c.get("/api/system/presets/").json() if x["key"] == key)
+    # the website gets other colours; setting the installation with "standard" brings the kept theme back
+    row.theme = {"primary": "#112233"}
+    row.save()
+    assert c.post(f"/api/system/presets/{key}/apply/", {"theme": "keep"}, format="json").status_code == 200
+    assert SiteSettings.load().theme.get("primary") == "#112233"  # keep: the colours stay
+    assert c.post(f"/api/system/presets/{key}/apply/", {"theme": "standard"}, format="json").status_code == 200
+    assert SiteSettings.load().theme.get("primary") == "#aa3311"
+    # another colour theme that was chosen
+    other = themepacks.create("Mijn ander thema", from_current=False)
+    themepacks.update_meta(other, {"values": {"primary": "#00aa55"}})
+    assert c.post(f"/api/system/presets/{key}/apply/", {"theme": other}, format="json").status_code == 200
+    assert SiteSettings.load().theme.get("primary") == "#00aa55"
+    assert c.post(f"/api/system/presets/{key}/apply/", {"theme": "bestaat-niet"}, format="json").status_code == 400
+    assert c.post(f"/api/system/presets/{key}/design/theme/", {"action": "remove"}, format="json").json()["theme"] is None

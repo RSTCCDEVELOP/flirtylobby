@@ -373,7 +373,7 @@ def listing():
     for base in PRESETS:
         p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "design_pages": _design_count(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "design_pages": _design_count(p["key"]), "theme_pack": _theme_pack(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -686,6 +686,15 @@ def repair_active():
         logger.warning("Installation %s: plugins put back: %s", key, ", ".join(fixed))
     refresh_pristine_pages(key)  # pages nobody changed follow the standard of this version
     return fixed
+
+
+def _theme_pack(key):
+    from . import preset_design
+
+    try:
+        return preset_design.theme_info(key)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _design_count(key):
@@ -1040,8 +1049,9 @@ def bump_epoch():
     obj.save()
 
 
-def apply(key, preset=None, overwrite_pages=False, install_design=True, use_theme=True):
+def apply(key, preset=None, overwrite_pages=False, install_design=True, use_theme=True, theme_choice="standard"):
     """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened.
+    theme_choice: "standard" (the theme that is kept in the installation, tab Design; else only the community theme), "keep" (the colours stay as they are) or the key of a theme package of this website (another colour theme).
     install_design=False: the pages of the installation (designed pages, saved pages and the pages of the tab Design) are not put in; use_theme=False: the community theme (colours) is not set.
     Pages that already have content are NOT replaced (overwrite_pages=True replaces them: only when the person said so, or on a site that is reset)."""
     from apps.plugins import runtime
@@ -1132,6 +1142,17 @@ def apply(key, preset=None, overwrite_pages=False, install_design=True, use_them
         themepacks.logos_to_library()
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: logos could not be put in the media library", key)
+    try:  # the colours of the website: the theme of the installation, another theme that was chosen, or what is there now
+        if theme_choice == "standard":
+            from . import preset_design as _pd
+
+            _pd.install_theme(key)
+        elif theme_choice not in ("keep", "", None):
+            from . import themepacks
+
+            themepacks.use(theme_choice, with_files=True)
+    except Exception:  # noqa: BLE001 - the installation is done; the theme can be chosen by hand
+        logger.exception("Preset %s: its colour theme could not be set", key)
     try:  # the designed pages of this installation (start page, community pages) go in; those of another installation go out
         from . import preset_pages
 

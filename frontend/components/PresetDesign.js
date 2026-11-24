@@ -44,6 +44,12 @@ export default function PresetDesign({ preset }) {
     setBusy(false);
   };
   const flip = (k, on) => { const cur = data.pages.filter((p) => p.saved).map((p) => p.key); push(on ? [...cur, k] : cur.filter((x) => x !== k)); };
+  const themeAct = async (action) => {  // keep the look of this website in the installation, or take it away
+    setBusy(true); setMsg(null);
+    try { const r = await api(`/system/presets/${preset}/design/theme/`, { method: "POST", body: { action } }); setData({ ...data, theme: r.theme }); setMsg({ ok: true, text: action === "capture" ? tx("Het thema van deze website is opgeslagen in de installatie.") : tx("Het thema is uit de installatie gehaald.") }); }
+    catch (e) { setMsg({ ok: false, text: errorText(e) }); }
+    setBusy(false);
+  };
   const again = async (k) => {
     setBusy(true);
     try { load(await api(`/system/presets/${preset}/design/sample/`, { method: "POST", body: { page: k } })); setStamp(Date.now()); }
@@ -72,6 +78,20 @@ export default function PresetDesign({ preset }) {
         {!rows.length && <p className="muted">{tx("Geen pagina gevonden.")}</p>}
       </div>
       {chosen.some((p) => p.missing?.length) && <div className="alert">{tx("Van sommige pagina's staan afbeeldingen niet (meer) op deze website; die kunnen niet met de installatie mee. Zet ze eerst terug (bijvoorbeeld door de website opnieuw te importeren) en zet de pagina uit en weer aan.")}</div>}
+      <section className="pdz-theme">
+        <h4>{tx("Kleurenthema van de installatie")}</h4>
+        {data.theme ? (
+          <div className="pdz-theme-row">
+            <span className="pdz-sw" aria-hidden="true">{Object.values(data.theme.colors).map((c, i) => <i key={i} style={{ background: c }} />)}</span>
+            <span><strong>{data.theme.name}</strong><small className="muted" style={{ display: "block" }}>{(data.theme.fonts || []).join(" · ")}</small></span>
+          </div>
+        ) : <p className="muted" style={{ margin: 0 }}>{tx("Er is nog geen thema opgeslagen: de installatie brengt de kleuren van de website niet mee.")}</p>}
+        <p className="muted" style={{ margin: ".25rem 0 .5rem", fontSize: ".82rem" }}>{tx("Het thema (kleuren, lettertypen, vormen, logo's en foto's van de startpagina) wordt bij elke wijziging van de pagina's vanzelf bijgewerkt. Bij het instellen van de installatie wordt gevraagd of dit thema of een ander kleurenthema wordt gebruikt.")}</p>
+        <div className="row" style={{ justifyContent: "flex-start", gap: ".5rem" }}>
+          <button type="button" className="btn sm primary" disabled={busy} onClick={() => themeAct("capture")}>{data.theme ? tx("Thema opnieuw vastleggen") : tx("Thema van deze website opslaan")}</button>
+          {data.theme && <button type="button" className="btn sm" disabled={busy} onClick={() => themeAct("remove")}>{tx("Thema verwijderen")}</button>}
+        </div>
+      </section>
       <small className="muted">{tx("{0} pagina's gekozen", chosen.length)}{data.saved_at ? ` · ${tx("laatst opgeslagen")} ${new Date(data.saved_at).toLocaleString()}` : ""}</small>
     </>)}
     {sub === "samples" && (<>

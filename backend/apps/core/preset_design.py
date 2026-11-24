@@ -70,7 +70,7 @@ def listing(key):
         if p.key not in have and p.key not in kept:
             continue
         rows.append({"key": p.key, "title": _title(p), "kind": p.kind, "path": p.path, "in_menu": p.in_menu, "saved": p.key in kept, "has_blocks": p.key in have, "sample": sample_state(key, p.key) if p.key in kept else "none", "missing": _missing(key, p.key) if p.key in kept else []})
-    return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept)}
+    return {"pages": rows, "saved_at": _index(key).get("saved_at"), "count": len(kept), "theme": theme_info(key)}
 
 
 # ── samples: a picture of the whole page, made when a page is switched on and removed when it is switched off; they present the installation ──
@@ -162,6 +162,10 @@ def save(key, page_keys, origin="", wait=False):
             f.unlink()
     titles = {p.key: _title(p) for p in Page.objects.filter(key__in=chosen)}
     (d / "index.json").write_text(json.dumps({"pages": chosen, "titles": titles, "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}, indent=1, ensure_ascii=False), encoding="utf-8")
+    try:  # the look of the website goes with the pages: a theme that is kept before stays up to date
+        capture_theme(key)
+    except Exception:  # noqa: BLE001 - the pages are saved; the theme can be kept with its own button
+        logger.exception("The theme of %s could not be kept", key)
     for k in chosen:  # a page that is switched on gets its picture
         if not sample_file(key, k).is_file():
             start_sample(key, k, origin, wait=wait)
@@ -241,6 +245,75 @@ def outdated(key):
             t = man.get("title") or {}
             out.append({"key": k, "title": (t.get("nl") or next(iter(t.values()), k)) if isinstance(t, dict) else k, "missing": bool(missing)})
     return out
+
+
+# ── the colour theme of the installation: the look of the site (colours, fonts, shapes, logos, home photos) as a theme package, kept next to the pages ──
+def theme_file(key):
+    return folder(key) / "theme.zip"
+
+
+def theme_key(key):
+    import re
+
+    return re.sub(r"-+$", "", f"inst-{key}"[:38])
+
+
+def capture_theme(key, name=""):
+    """Keep the look of this website as it is now in the installation (theme.zip). Returns the info. Called when the pages are saved and from the button on the tab Design."""
+    from . import presets, themepacks
+
+    pk = theme_key(key)
+    label = f"Thema van {name or (presets.BY_KEY.get(key) or {}).get('name') or key}"[:60]
+    if themepacks.manifest_of(pk):
+        themepacks.capture(pk)
+    else:
+        made = themepacks.create(pk, from_current=True)
+        pk = made
+    try:
+        themepacks.update_meta(pk, {"name": label})
+    except Exception:  # noqa: BLE001
+        pass
+    raw = themepacks.as_zip(pk)
+    if raw:
+        folder(key).mkdir(parents=True, exist_ok=True)
+        theme_file(key).write_bytes(raw)
+    return theme_info(key)
+
+
+def theme_info(key):
+    """{name, key, colors, fonts} of the theme that is kept in the installation, else None."""
+    import io
+    import json
+    import zipfile
+
+    from . import theme as th
+
+    f = theme_file(key)
+    if not f.is_file():
+        return None
+    try:
+        with zipfile.ZipFile(io.BytesIO(f.read_bytes())) as z:
+            man = json.loads(z.read(next(n for n in z.namelist() if n.endswith("theme.json"))))
+        v = th.merged(man.get("values") or {})
+        return {"name": man.get("name") or "", "key": man.get("key") or "", "colors": {k: v[k] for k in ("primary", "secondary", "light_bg", "light_text", "dark_bg")}, "fonts": [v["font_heading"], v["font_body"]]}
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def install_theme(key):
+    """Put the theme of the installation in place as the look of the website (with its logos and home photos). Returns True when there was one."""
+    from . import themepacks
+
+    f = theme_file(key)
+    if not f.is_file():
+        return False
+    keys = themepacks.install_zip(f.read_bytes())
+    themepacks.use(keys[0], with_files=True)
+    return True
+
+
+def remove_theme(key):
+    theme_file(key).unlink(missing_ok=True)
 
 
 def keys(key):
