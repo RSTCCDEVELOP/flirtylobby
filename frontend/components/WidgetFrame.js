@@ -11,14 +11,52 @@ import { useEffect, useRef, useState } from "react";
 
 // A widget of the library (<source>/widgets/): its own document in a sandboxed iframe (scripts, and links that open in a new tab: no access to the page, the cookies or the login). The widget tells its height
 // (postMessage) and the frame follows it. `doc` = the whole html of the widget (the server fills in the options); `height` = the height before the widget has told its own.
-export default function WidgetFrame({ doc, height = 200, title = "", inert = false, className = "" }) {
+//
+// A POPUP widget (the library widget "popup") tells {widgetPopup: "ready"}: its frame is then 0 high. After its delay it asks {widgetPopup: "open", freq}: when the visitor may see it (freq: always,
+// session, once or a number of days; remembered here in the browser, as the sandboxed widget has no storage) the frame covers the screen and the widget is told to show itself. {widgetPopup: "close"}
+// (or the Escape key) makes it small again. `preview` (the library, the editor lists, the edit mode) shows a popup as a plain card on the spot instead.
+const hash = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+const mayShow = (id, freq) => {
+  try {
+    if (freq === "always") return true;
+    if (freq === "session") return !sessionStorage.getItem(id);
+    const t = Number(localStorage.getItem(id) || 0);
+    if (freq === "once") return !t;
+    return !t || Date.now() - t > (Number(freq) || 1) * 86400000;
+  } catch { return true; }
+};
+const remember = (id, freq) => { try { if (freq === "session") sessionStorage.setItem(id, "1"); else if (freq !== "always") localStorage.setItem(id, String(Date.now())); } catch { /* ok */ } };
+
+export default function WidgetFrame({ doc, height = 200, title = "", inert = false, preview = false, className = "" }) {
   const ref = useRef(null);
   const [h, setH] = useState(height);
+  const [popup, setPopup] = useState(false);  // the widget is a popup
+  const [open, setOpen] = useState(false);
+  const flag = inert || preview;
+  const id = useRef("");
+  const freqRef = useRef("session");
   useEffect(() => {
-    const on = (e) => { if (ref.current && e.source === ref.current.contentWindow && e.data && typeof e.data.widgetHeight === "number") setH(Math.min(Math.max(Math.ceil(e.data.widgetHeight), 40), 1600)); };
+    const on = (e) => {
+      if (!ref.current || e.source !== ref.current.contentWindow || !e.data) return;
+      const d = e.data;
+      if (typeof d.widgetHeight === "number") setH(Math.min(Math.max(Math.ceil(d.widgetHeight), 40), 1600));
+      if (d.widgetPopup === "ready") setPopup(true);
+      if (d.widgetPopup === "open" && !flag) {
+        freqRef.current = String(d.freq || "session");
+        id.current = `wpopup:${d.widget}:${hash(doc || "")}`;
+        if (mayShow(id.current, freqRef.current)) { setOpen(true); ref.current.contentWindow.postMessage({ widgetPopupShow: true }, "*"); }
+      }
+      if (d.widgetPopup === "close") { setOpen(false); remember(id.current, freqRef.current); }
+    };
+    const key = (e) => { if (e.key === "Escape") setOpen((o) => { if (o) remember(id.current, freqRef.current); return false; }); };
     window.addEventListener("message", on);
-    return () => window.removeEventListener("message", on);
-  }, []);
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener("message", on); window.removeEventListener("keydown", key); };
+  }, [doc, flag]);
   if (!doc) return null;
-  return <iframe ref={ref} className={`widget-frame ${className}`} title={title || "Widget"} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" srcDoc={doc} loading="lazy" style={{ width: "100%", height: h, border: 0, display: "block", background: "transparent", ...(inert ? { pointerEvents: "none" } : {}) }} />;
+  const src = flag ? doc.replace("<body>", "<body><script>window.WIDGET_PREVIEW=1</script>") : doc;
+  const style = popup && !flag
+    ? (open ? { position: "fixed", inset: 0, width: "100vw", height: "100vh", zIndex: 100000, border: 0, background: "transparent" } : { width: 0, height: 0, border: 0, display: "block", position: "absolute", pointerEvents: "none" })
+    : { width: "100%", height: h, border: 0, display: "block", background: "transparent", ...(inert ? { pointerEvents: "none" } : {}) };
+  return <iframe ref={ref} className={`widget-frame ${className}`} title={title || "Widget"} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" srcDoc={src} loading={popup || !height ? "eager" : "lazy"} style={style} />;
 }

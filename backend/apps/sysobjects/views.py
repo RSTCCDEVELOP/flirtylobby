@@ -60,7 +60,7 @@ def _row(o, public=False):
         if not m:
             return None
         names, button = {"": m["name"]}, {}
-        data = {"key": src.key, "title": m["name"], "description": m["description"], "category": m["category"], "subcategory": m["subcategory"], "height": m["height"], "enabled": src.enabled,
+        data = {"key": src.key, "title": m["name"], "description": m["description"], "category": m["category"], "subcategory": m["subcategory"], "height": m["height"], "popup": m["popup"], "enabled": src.enabled,
                 "doc": widgets.doc(src.key, src.options), "example_doc": widgets.doc(src.key, example=True)}
     elif o.kind == "variable":
         from apps.core import entity as ent

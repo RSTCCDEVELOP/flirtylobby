@@ -60,7 +60,7 @@ def manifest(key):
         return None
     opts = [x for x in (_clean_option(o) for o in d.get("options") or []) if x]
     return {"key": key, "name": str(d["name"])[:60], "description": str(d.get("description") or "")[:300], "version": str(d.get("version") or "1.0.0")[:20], "category": str(d.get("category") or "Overig")[:30], "subcategory": str(d.get("subcategory") or "")[:30],
-            "height": min(max(int(d.get("height") or 220), 40), 1200), "options": opts, "example": d.get("example") if isinstance(d.get("example"), dict) else {}}
+            "height": min(max(int(d.get("height") or 220), 40), 1200), "popup": bool(d.get("popup")), "options": opts, "example": d.get("example") if isinstance(d.get("example"), dict) else {}}
 
 
 def library():

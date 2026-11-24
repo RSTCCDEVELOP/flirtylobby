@@ -43,12 +43,12 @@ function VariableValue({ name, user }) {
 }
 
 function Widget({ obj, layout = "1" }) {
-  const { user } = useSession();
+  const { user, editing } = useSession();
   const [open, setOpen] = useState(false);
   const lang = langNow();
   const d = obj.data;
   const route = usePageRoute();
-  if (obj.kind === "widget") return d.enabled === false ? null : <WidgetFrame doc={d.doc} height={d.height} title={d.title} />;  // a widget of the library (Admin > Thema > Widgets)
+  if (obj.kind === "widget") return d.enabled === false ? null : <WidgetFrame doc={d.doc} height={d.popup && !editing ? 0 : d.height} preview={!!d.popup && !!editing} title={d.title} />;  // a widget of the library (Admin > Thema > Widgets)
   if (obj.kind === "variable") return <VariableValue name={d.variable} user={user} />;
   if (obj.kind === "calculator") return <PriceCalculator layout={layout} />;
   if (obj.kind === "pricelist") return <PriceList />;
