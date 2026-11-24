@@ -16,7 +16,6 @@ import { tx } from "../lib/t";
 import { IconCheck, IconSparkle, IconX } from "./Icons";
 import { useSession } from "./Session";
 import Tabs from "./Tabs";
-import TbSlot from "./TbSlot";
 
 const PRESETS = [
   ["Professioneler", "Maak de pagina professioneler: rustiger, consistente ruimte en een duidelijke hiërarchie."],
@@ -105,6 +104,12 @@ export default function AiImprove() {
   const url = () => `/pages/improve/${encodeURIComponent(key())}/`;
   const reload = () => { window.dispatchEvent(new Event("pb-layout-reload")); try { router.refresh(); } catch {} };
   const start = () => { setTab("ask"); setErr(""); setDone(""); setOpen(true); };
+  useEffect(() => {  // started from the menu "Instellingen → AI gebruiken" of the editor
+    const go = () => { setTab("ask"); setErr(""); setDone(""); setOpen(true); };
+    document.documentElement.dataset.aiimprove = "1";
+    window.addEventListener("pb-ai-improve", go);
+    return () => { window.removeEventListener("pb-ai-improve", go); delete document.documentElement.dataset.aiimprove; };
+  }, []);
 
   async function run() {
     setBusy(true); setErr(""); setDone(""); setJob({ step: tx("Starten"), progress: 2, usage: { calls: 0, tokens: 0, charged: 0 }, seconds: 0 }); setSpent(null);
@@ -164,7 +169,6 @@ export default function AiImprove() {
   const nChanges = res?.changes?.length;
   return (
     <>
-      <TbSlot host="pb-sb-ai"><button type="button" className="ai-improve-btn" onClick={start} title={tx("Pagina verbeteren met AI")} aria-label={tx("Pagina verbeteren met AI")}><IconSparkle width={18} height={18} /><span>{tx("AI")}</span></button></TbSlot>
       {open && createPortal(
         <div className="overlay" onClick={() => !busy && setOpen(false)}>
           <div className="card modal ai-improve" role="dialog" aria-label={tx("Pagina verbeteren met AI")} onClick={(e) => e.stopPropagation()}>

@@ -13,7 +13,6 @@ import { tx } from "../lib/t";
 import MenuEditorPopup from "./MenuEditorPopup";
 import NewPagePopup from "./NewPagePopup";
 import PageSettingsPanel from "./PageSettingsPanel";
-import Tabs from "./Tabs";
 import { useSession } from "./Session";
 
 const I = (d) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -24,6 +23,7 @@ const ICON = {
   eye: I(<><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>),
   sliders: I(<><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></>),
   expand: I(<path d="M9 5l7 7-7 7" />),
+  ai: I(<><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z" /></>),
   menu: I(<path d="M4 6h16M4 12h16M4 18h10" />),
   panel: I(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></>),
 };
@@ -52,16 +52,12 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
   const [pgMenu, setPgMenu] = useState(false);
   const [newPage, setNewPage] = useState(false);
   const [menuEd, setMenuEd] = useState(false);
-  const [stab, setStab] = useState("settings");  // the parts of the settings: 1. settings, 2. edit header, 3. edit footer, 4. use AI
-  useEffect(() => {  // the header and the footer tell when their editor opens or closes (also when it was opened by a click on the header or the footer in the page)
-    const on = (e) => { const w = e.detail; if (w === "header" || w === "footer") setStab(w); else setStab((s) => (s === "header" || s === "footer" ? "settings" : s)); };
-    window.addEventListener("pb-hf-state", on);
-    return () => window.removeEventListener("pb-hf-state", on);
-  }, []);
-  const chooseTab = (k) => {
-    setStab(k);
+  const [stMenu, setStMenu] = useState(false);  // the pulldown of Instellingen
+  const openSettings = (what) => {  // what: "" = the settings as they are, "header" / "footer" = their editor in the panel
+    setStMenu(false);
     window.dispatchEvent(new Event("pb-close-hf"));
-    if (k === "header" || k === "footer") setTimeout(() => window.dispatchEvent(new Event(k === "header" ? "pb-open-header" : "pb-open-footer")), 80);
+    setView("settings"); setOpen(true);
+    if (what) setTimeout(() => window.dispatchEvent(new Event(what === "header" ? "pb-open-header" : "pb-open-footer")), 80);
   };
   const [headerHidden, setHeaderHidden] = useState(() => { try { return localStorage.getItem("editHideHeader") === "1"; } catch { return false; } });
   useEffect(() => {  // the site header can be hidden while editing, so the top of the page (the first block, the hero) can be edited; it is always back when the editor closes
@@ -87,7 +83,20 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
       <div className="pb-topbar" role="toolbar" aria-label={tx("Pagina bewerken")}>
         <div className="pb-tb-left">
           <button type="button" className={`pb-tb-btn${open ? " on" : ""}`} onClick={() => setOpen(!open)} title={open ? tx("Paneel verbergen") : tx("Paneel tonen")} aria-label={tx("Paneel")}>{ICON.panel}</button>
-          {views.map(([k, l, ic]) => k === "page" ? (
+          {views.map(([k, l, ic]) => k === "settings" ? (
+            <div key={k} className="pb-tb-drop">
+              <button type="button" className={`pb-tb-btn${open && view === k ? " on" : ""}`} onClick={() => setStMenu((v) => !v)} aria-haspopup="menu" aria-expanded={stMenu} title={tx(l)} aria-label={tx(l)}>{ic}<span>{tx(l)}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
+              {stMenu && <>
+                <div className="pb-tb-dropbg" onClick={() => setStMenu(false)} />
+                <div className="pb-tb-dropmenu" role="menu">
+                  <button type="button" role="menuitem" onClick={() => openSettings("")}>{ICON.gear}<span>{tx("Instellingen")}</span></button>
+                  <button type="button" role="menuitem" onClick={() => openSettings("header")}>{ICON.sliders}<span>{tx("Header bewerken")}</span></button>
+                  <button type="button" role="menuitem" onClick={() => openSettings("footer")}>{ICON.sliders}<span>{tx("Footer bewerken")}</span></button>
+                  {typeof document !== "undefined" && document.documentElement.dataset.aiimprove === "1" && <button type="button" role="menuitem" onClick={() => { setStMenu(false); window.dispatchEvent(new Event("pb-ai-improve")); }}>{ICON.ai}<span>{tx("AI gebruiken")}</span></button>}
+                </div>
+              </>}
+            </div>
+          ) : k === "page" ? (
             <Fragment key={k}><div className="pb-tb-drop">
               <button type="button" className={`pb-tb-btn${open && view === k ? " on" : ""}`} onClick={() => setPgMenu((v) => !v)} aria-haspopup="menu" aria-expanded={pgMenu} title={tx(l)} aria-label={tx(l)}>{ic}<span>{tx(l)}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
               {pgMenu && <>
@@ -132,16 +141,9 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
             <div className="pb-sb-pane" hidden={view !== "structure"}>{structure}</div>
             <div className="pb-sb-pane" hidden={view !== "page"}><PageSettingsPanel lead={<div ref={setPageTarget} className="pb-sb-page" />} /></div>
             <div className="pb-sb-pane" hidden={view !== "settings"}>
-              <Tabs className="pb-sb-tabs" value={stab} onChange={chooseTab} tabs={[["settings", "Instellingen"], ["header", "Header bewerken"], ["footer", "Footer bewerken"], ["ai", "AI gebruiken"]]} />
-              <div hidden={stab === "ai"}>
-                {stab === "settings" && !hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
-                {stab === "settings" && actions}
-                <div ref={setTarget} className="pb-sb-settings" />
-              </div>
-              <div hidden={stab !== "ai"} className="pb-sb-aipane">
-                <p className="muted" style={{ margin: 0 }}>{tx("Laat de AI deze pagina verbeteren: teksten, foto's en video's. Je ziet eerst wat er verandert en kiest zelf wat je overneemt.")}</p>
-                <div id="pb-sb-ai" className="pb-sb-ai" />
-              </div>
+              {!hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
+              {actions}
+              <div ref={setTarget} className="pb-sb-settings" />
             </div>
           </div>
           <div className="pb-sb-save">
