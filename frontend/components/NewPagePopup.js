@@ -19,7 +19,8 @@ const slugOf = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[Ì
 // A new page from the editor: title, address (slug), rights, a menu item yes/no and the place in the menu.
 export default function NewPagePopup({ onClose }) {
   const [tab, setTab] = useState("page");
-  const [f, setF] = useState({ title: "", slug: "", slugEdited: false, in_menu: true, place: "end", rights: [] });
+  const [f, setF] = useState({ title: "", slug: "", slugEdited: false, in_menu: true, place: "end", rights: [], sample: "empty" });
+  const [samples, setSamples] = useState([]);
   const [pages, setPages] = useState([]);
   const [lang, setLang] = useState({ languages: [], default: "nl" });
   const [busy, setBusy] = useState(false);
@@ -28,6 +29,7 @@ export default function NewPagePopup({ onClose }) {
   useEffect(() => {
     api("/pages/").then((d) => setPages((d.pages || []).filter((p) => p.in_menu && p.scope !== "private"))).catch(() => {});
     api("/languages/").then(setLang).catch(() => {});
+    api("/pages/samples/").then((d) => setSamples(d.samples || [])).catch(() => {});
   }, []);
   const tops = useMemo(() => pages.filter((p) => !p.parent || !pages.some((x) => x.id === p.parent)).sort((a, b) => a.order - b.order), [pages]);
   const nameOf = (p) => p.title?.[lang.default] || Object.values(p.title || {}).find(Boolean) || p.key;
@@ -40,6 +42,7 @@ export default function NewPagePopup({ onClose }) {
     try {
       const title = Object.fromEntries((lang.languages.length ? lang.languages : [{ code: lang.default }]).map((l) => [l.code, f.title.trim()]));
       const made = await api("/pages/", { method: "POST", body: { kind: "content", scope: "public", title, key: f.slug || slugOf(f.title), in_menu: f.in_menu, rights: f.rights } });
+      if (f.sample !== "empty") await api(`/pages/${made.id}/sample/`, { method: "POST", body: { sample: f.sample } });  // the blocks of the chosen example
       if (f.in_menu) {  // the place in the menu (two levels)
         const all = (await api("/pages/")).pages.filter((p) => p.scope !== "private" && p.in_menu);
         const top = all.filter((p) => !p.parent || !all.some((x) => x.id === p.parent)).sort((a, b) => a.order - b.order);
@@ -65,11 +68,27 @@ export default function NewPagePopup({ onClose }) {
     <div className="overlay" onClick={onClose}>
       <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <h2>{tx("Nieuwe pagina")}</h2>
-        <Tabs tabs={[["page", "Pagina"], ["rights", "Rechten"]]} value={tab} onChange={setTab} />
+        <Tabs tabs={[["page", "Pagina"], ["layout", "Indelingen"], ["rights", "Rechten"]]} value={tab} onChange={setTab} />
         {tab === "rights" && (
           <RightsEditor entries={f.rights} onChange={(rows) => set({ rights: rows })} people={people}
             emptyText="Geen beperkingen: iedereen met het recht van de module Pagina's."
             hint="De rechten worden gezet als de pagina wordt gemaakt en kun je later wijzigen bij de instellingen van de pagina. Een recht zonder lijst heeft geen beperking." />
+        )}
+        {tab === "layout" && (
+          <div className="npl-grid">
+            {samples.map((x) => (
+              <button type="button" key={x.key} className={`npl-card${f.sample === x.key ? " on" : ""}`} onClick={() => set({ sample: x.key })} aria-pressed={f.sample === x.key}>
+                <span className="npl-wire" aria-hidden="true">
+                  {x.rows.length === 0 && <span className="npl-empty" />}
+                  {x.rows.map((r, i) => r === "hero" ? <span key={i} className="npl-hero" /> : (
+                    <span key={i} className="npl-row">{(r === "66-33" ? [2, 1] : r === "33-66" ? [1, 2] : Array.from({ length: r }, () => 1)).map((w, j) => <span key={j} style={{ flex: w }} />)}</span>
+                  ))}
+                </span>
+                <strong>{tx(x.name)}</strong>
+                <small className="muted">{tx(x.info)}</small>
+              </button>
+            ))}
+          </div>
         )}
         {tab === "page" && <>
           <label>{tx("Titel van de pagina")}

@@ -538,3 +538,33 @@ def reset_page(request, pk):
     standard.reset(p)
     logger.info("Page '%s' reset to its standard by %s", p.key, request.user.email)
     return Response({**_out(p), "resettable": True, "modified": False})
+
+
+@api_view(["GET"])
+@permission_classes([has_level("pages", "edit"), module_required("pages")])
+def sample_layouts(request):
+    """The example layouts that a new page can start with."""
+    from . import samples
+
+    return Response({"samples": samples.listing()})
+
+
+@api_view(["POST"])
+@permission_classes([has_level("pages", "edit"), module_required("pages")])
+def apply_sample(request, pk):
+    """Gives a page the blocks of an example layout, in the style of the theme. Only a page without blocks yet."""
+    from . import defaults, samples
+    from .models import PageLayout
+
+    p = Page.objects.filter(pk=pk).first()
+    if not p:
+        return bad("Niet gevonden.", status.HTTP_404_NOT_FOUND)
+    if not service.can_do(request.user, p, "edit"):
+        return bad("Je hebt geen rechten voor deze pagina.", status.HTTP_403_FORBIDDEN)
+    name = request.data.get("sample")
+    if name not in samples.SAMPLES:
+        return bad("Onbekende indeling.")
+    old = PageLayout.objects.filter(key=p.key).first()
+    if old and (old.data or {}).get("rows"):
+        return bad("Deze pagina heeft al blokken.")
+    return Response(samples.build(p.key, name, defaults._theme()))

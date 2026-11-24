@@ -33,6 +33,8 @@ urlpatterns = [
     path("pages/improve/<str:key>/", views.improve_page),
     path("pages/<int:pk>/translate-all/", views.translate_page),
     path("pages/<int:pk>/reset/", views.reset_page),
+    path("pages/<int:pk>/sample/", views.apply_sample),
+    path("pages/samples/", views.sample_layouts),
     path("pages/", views.pages),
     path("pages/<int:pk>/", views.page),
 ]
