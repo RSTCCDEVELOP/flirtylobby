@@ -4949,7 +4949,11 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .lg-over { max-width: 240px; overflow-wrap: anywhere; } .lg-ip { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; opacity: .75; }
 .lg-empty { padding: 2rem !important; text-align: center; opacity: .6; }
 .lg-foot { display: flex; justify-content: space-between; align-items: center; margin-top: .75rem; } .lg-pager { display: flex; align-items: center; gap: .6rem; font-variant-numeric: tabular-nums; }
-.lg-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .75rem; margin-bottom: 1.2rem; }
-.lg-opt-card { display: flex; flex-direction: column; gap: .5rem; padding: .8rem .9rem; border-radius: 12px; background: color-mix(in srgb, var(--blue) 6%, transparent); border: 1px solid color-mix(in srgb, var(--blue) 14%, transparent); }
-.lg-opt-card h4 { margin: 0; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
-.lg-opt { display: flex; align-items: center; gap: .7rem; cursor: pointer; } .lg-opt.locked { cursor: default; } .lg-opt-name { flex: 1; font-size: .88rem; font-weight: 600; }
+.lg-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: .6rem; margin: .5rem 0 1rem; align-items: start; }
+.lg-opt-card { display: flex; flex-direction: column; gap: 0; padding: .55rem .8rem .35rem; border-radius: 12px; background: color-mix(in srgb, var(--blue) 5%, var(--card, #fff)); border: 1px solid color-mix(in srgb, var(--blue) 14%, transparent); }
+.lg-opt-card h4 { margin: 0 0 .25rem; font-size: .68rem; text-transform: uppercase; letter-spacing: .09em; opacity: .65; }
+.lg-opt-card label.lg-opt { display: flex; flex-direction: row; align-items: center; gap: .6rem; margin: 0; padding: .32rem 0; font-weight: 500; cursor: pointer; border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.lg-opt-card label.lg-opt:first-of-type { border-top: 0; } .lg-opt.locked { cursor: default; }
+.lg-opt-card .switch { flex: none; transform: scale(.82); transform-origin: left center; margin-right: -.25rem; }
+.lg-opt-name { flex: 1; min-width: 0; font-size: .84rem; font-weight: 600; line-height: 1.2; }
+.lg-opt-card .badge { flex: none; font-size: .64rem; padding: .08rem .45rem; text-transform: uppercase; letter-spacing: .05em; }

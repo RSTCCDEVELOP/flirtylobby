@@ -115,15 +115,15 @@ export default function LogPage() {
         </div>
       </>)}
       {tab === "settings" && cfg && (<>
-        <h3 style={{ marginBottom: 0 }}>{tx("Bewaartermijn")}</h3>
-        <p className="muted" style={{ marginTop: 0 }}>{tx("Regels die ouder zijn dan deze termijn worden vanzelf verwijderd. Onbeperkt bewaart alles.")}</p>
+        <h3 style={{ margin: ".25rem 0 0" }}>{tx("Bewaartermijn")}</h3>
+        <p className="muted" style={{ margin: ".15rem 0 .5rem", fontSize: ".85rem" }}>{tx("Regels die ouder zijn dan deze termijn worden vanzelf verwijderd. Onbeperkt bewaart alles.")}</p>
         <div className="log-seg" role="group" aria-label={tx("Bewaartermijn")}>
           {cfg.choices.map((d) => <button type="button" key={d} className={cfg.retention_days === d ? "on" : ""} aria-pressed={cfg.retention_days === d} disabled={!cfg.can_edit || busy} onClick={() => keep(d)}>{days(d)}</button>)}
         </div>
         {!cfg.can_edit && <small className="muted">{tx("Alleen een superadmin kan de bewaartermijn wijzigen.")}</small>}
-        <p className="muted" style={{ marginBottom: 0 }}>{tx("Het logboek staat altijd aan. Fouten van de server staan er als \"Storing\" in (alleen voor superadmins) en worden ook bewaard in het bestand logs/easy2edit.log in de mappen van de website.")}</p>
-        <h3 style={{ marginBottom: 0, marginTop: "1.2rem" }}>{tx("Wat wordt gelogd")}</h3>
-        <p className="muted" style={{ marginTop: 0 }}>{tx("Wat verplicht is, staat altijd aan: daarmee volg je een storing of een aanval en zie je wie wat deed. De rest kan een superadmin uitzetten.")}</p>
+        <p className="muted" style={{ margin: ".6rem 0 0", fontSize: ".85rem" }}>{tx("Het logboek staat altijd aan. Fouten van de server staan er als \"Storing\" in (alleen voor superadmins) en worden ook bewaard in het bestand logs/easy2edit.log in de mappen van de website.")}</p>
+        <h3 style={{ margin: "1rem 0 0" }}>{tx("Wat wordt gelogd")}</h3>
+        <p className="muted" style={{ margin: ".15rem 0 0", fontSize: ".85rem" }}>{tx("Wat verplicht is, staat altijd aan: daarmee volg je een storing of een aanval en zie je wie wat deed. De rest kan een superadmin uitzetten.")}</p>
         <div className="lg-opts">
           {[...new Set((cfg.events || []).map((e) => e.category))].map((cat) => (
             <section key={cat} className="lg-opt-card">
@@ -139,8 +139,8 @@ export default function LogPage() {
           ))}
         </div>
         {cfg.can_edit && (<>
-          <h3 style={{ marginBottom: 0 }}>{tx("Logboek legen")}</h3>
-          <p className="muted" style={{ marginTop: 0 }}>{tx("Alleen een superadmin mag het logboek leegmaken. Er blijft één regel over die zegt dat het is gedaan.")}</p>
+          <h3 style={{ margin: ".25rem 0 0" }}>{tx("Logboek legen")}</h3>
+          <p className="muted" style={{ margin: ".15rem 0 .5rem", fontSize: ".85rem" }}>{tx("Alleen een superadmin mag het logboek leegmaken. Er blijft één regel over die zegt dat het is gedaan.")}</p>
           <div><button type="button" className="btn danger" disabled={busy} onClick={clear}>{tx("Logboek leegmaken")}</button></div>
         </>)}
       </>)}
