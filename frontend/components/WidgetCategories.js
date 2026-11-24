@@ -7,7 +7,24 @@
 
 "use client";
 
+import { useState } from "react";
 import { tx } from "../lib/t";
+
+// tiles or a list: the choice is remembered
+export function useWidgetView() {
+  const [view, set] = useState(() => { try { return localStorage.getItem("widgetView") === "list" ? "list" : "tiles"; } catch { return "tiles"; } });
+  return [view, (v) => { set(v); try { localStorage.setItem("widgetView", v); } catch { /* ok */ } }];
+}
+
+export function ViewToggle({ view, onChange }) {
+  const I = (d) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
+  return (
+    <div className="lg-seg wc-view" role="group" aria-label={tx("Weergave")}>
+      <button type="button" className={view === "tiles" ? "on" : ""} aria-pressed={view === "tiles"} onClick={() => onChange("tiles")} title={tx("Tegels")}>{I(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>)}<span>{tx("Tegels")}</span></button>
+      <button type="button" className={view === "list" ? "on" : ""} aria-pressed={view === "list"} onClick={() => onChange("list")} title={tx("Lijst")}>{I(<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />)}<span>{tx("Lijst")}</span></button>
+    </div>
+  );
+}
 
 // The categories and sub categories of the widgets, to find one quickly: the library (Admin > Thema > Widgets, Super admin > Bibliotheek) and the page editor (Toevoegen > Widgets) use this.
 // `items` is a list of anything with a category and a sub category (getCat / getSub say where). Returns the chips and the helpers to filter and group.

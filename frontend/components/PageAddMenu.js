@@ -16,7 +16,7 @@ import { loadKit } from "../lib/ui-kit/kitDoc";
 import MediaLibraryPanel from "./MediaLibraryPanel";
 import Loading from "./Loading";
 import WidgetFrame from "./WidgetFrame";
-import WidgetCategories, { widgetGroups, widgetTree } from "./WidgetCategories";
+import WidgetCategories, { ViewToggle, useWidgetView, widgetGroups, widgetTree } from "./WidgetCategories";
 import { matches } from "../lib/useView";
 
 // One-colour icons (they follow the colour of the text)
@@ -78,6 +78,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
   const find = q.trim().toLowerCase();
   const match = (l, d) => matches(q, l, d);
   const widgetItems = (objectGroups || []).flatMap((g) => g.items).filter((o) => o.kind === "widget");  // the installed widgets: each with its example, to click or drag onto the page
+  const [wView, setWView] = useWidgetView();
   const [wCat, setWCat] = useState(""); const [wSub, setWSub] = useState("");  // the chosen category and sub category of the widgets
   const tabs = [...GROUPS.map(([k, l]) => [k, l]), ["componenten", "Componenten"], ...(widgetItems.length ? [["widgets", "Widgets"]] : []), ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
   const tile = ([type, widget, label, desc, icon]) => (
@@ -159,11 +160,11 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
               const groups = widgetGroups(widgetItems, gc, gs, wCat, wSub);
               return (
                 <div>
-                  <WidgetCategories tree={tree} total={widgetItems.length} cat={wCat} sub={wSub} onCat={setWCat} onSub={setWSub} />
+                  <div className="wl-top"><WidgetCategories tree={tree} total={widgetItems.length} cat={wCat} sub={wSub} onCat={setWCat} onSub={setWSub} /><ViewToggle view={wView} onChange={setWView} /></div>
                   {groups.map((g) => (
                     <div key={`${g.cat}:${g.sub}`}>
                       <h4 className="wc-head"><b>{tx(g.cat)}</b>{g.sub && <span>› {tx(g.sub)}</span>}</h4>
-                      <div className="pb-widgetgrid">
+                      <div className={`pb-widgetgrid${wView === "list" ? " list" : ""}`}>
                         {g.items.map((o) => (
                           <button type="button" key={o.slug} className="pb-widgettile" onClick={() => onObject && onObject(o.slug)} title={o.desc || o.name} {...dragProps({ kind: "object", slug: o.slug })}>
                             <span className="pb-widgetprev"><WidgetFrame doc={o.doc} height={Math.min(o.height || 160, 190)} inert title={o.name} /></span>
