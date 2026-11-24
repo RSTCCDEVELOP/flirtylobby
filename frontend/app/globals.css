@@ -4865,3 +4865,6 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .npl-empty { flex: 1; border-radius: 4px; border: 1.5px dashed color-mix(in srgb, currentColor 30%, transparent); }
 .mnu-aud { padding: .2rem .35rem; font-size: .8rem; max-width: 110px; }
 .mnu-warn { font-size: .72rem; padding: .1rem .45rem; border-radius: 999px; background: color-mix(in srgb, #e08a3c 25%, transparent); white-space: nowrap; }
+.mnu-row.over-out { box-shadow: -4px 0 0 0 var(--blue); }
+.mnu-end { padding: .6rem; text-align: center; border-radius: 8px; border: 2px dashed color-mix(in srgb, currentColor 25%, transparent); font-size: .85rem; } .mnu-end.over { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, transparent); }
+.mnu-row * { user-select: none; } .mnu-row input, .mnu-row select { user-select: text; }

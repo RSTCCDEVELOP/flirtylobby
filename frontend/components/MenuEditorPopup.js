@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
@@ -30,6 +30,7 @@ export default function MenuEditorPopup({ onClose }) {
   const [over, setOver] = useState(null);    // {id, zone}
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const grab = useRef(true);
   const [nw, setNw] = useState({ kind: "link", title: "", url: "" });
 
   const build = (pages) => {
@@ -65,17 +66,23 @@ export default function MenuEditorPopup({ onClose }) {
     if (!node) return;
     const set = (nt, no = o) => { setTree(nt); setOff(no); };
     if (zone === "off") { set(t, [...o, node.p, ...node.kids]); return; }
+    if (zone === "end") { t.push({ p: { ...node.p, in_menu: true }, kids: node.kids }); set(t); return; }
     const ti = t.findIndex((r) => r.p.id === targetId);
     const kidOf = ti < 0 ? t.findIndex((r) => r.kids.some((c) => c.id === targetId)) : -1;
     if (ti < 0 && kidOf < 0) return;  // (the target is inside the dragged item)
     const live = { ...node.p, in_menu: true };
-    if (zone === "into" && ti >= 0 && !node.kids.length) { t[ti] = { ...t[ti], kids: [...t[ti].kids, live] }; set(t); return; }
+    const loose = node.kids.map((k) => ({ p: k, kids: [] }));  // (an item with subitems that becomes a sub itself: its subitems go to the main level, next to it)
+    if (zone === "into" && ti >= 0) { t[ti] = { ...t[ti], kids: [...t[ti].kids, live] }; t.splice(ti + 1, 0, ...loose); set(t); return; }
+    if (zone === "out" && kidOf >= 0) { t.splice(kidOf + 1, 0, { p: live, kids: node.kids }); set(t); return; }  // a sub back to the main level, right after its parent
     if (ti >= 0) { t.splice(zone === "before" ? ti : ti + 1, 0, { p: live, kids: node.kids }); set(t); return; }
-    if (node.kids.length) { setErr(tx("Een item met subitems kan niet onder een ander item.")); return; }
     const k = [...t[kidOf].kids]; const ci = k.findIndex((c) => c.id === targetId);
-    k.splice(zone === "before" ? ci : ci + 1, 0, live); t[kidOf] = { ...t[kidOf], kids: k }; set(t);
+    k.splice(zone === "before" ? ci : ci + 1, 0, live); t[kidOf] = { ...t[kidOf], kids: k }; t.splice(kidOf + 1, 0, ...loose); set(t);
   };
-  const zoneOf = (e, canInto) => { const r = e.currentTarget.getBoundingClientRect(); const y = (e.clientY - r.top) / r.height; return y < (canInto ? .28 : .5) ? "before" : y > (canInto ? .72 : .5) ? "after" : canInto ? "into" : "after"; };
+  const zoneOf = (e, canInto, sub) => {
+    const r = e.currentTarget.getBoundingClientRect(); const y = (e.clientY - r.top) / r.height;
+    if (sub) return e.clientX - r.left < 48 ? "out" : y < .5 ? "before" : "after";  // on the left edge of a sub: back to the main level
+    return y < .28 ? "before" : y > .72 ? "after" : "into";
+  };
   const toggle = (p) => {  // on: to the end of the menu; off: it goes (with its subitems) to the list below
     if (off.some((x) => x.id === p.id)) { setOff(off.filter((x) => x.id !== p.id)); setTree([...tree, { p: { ...p, in_menu: true }, kids: [] }]); return; }
     const { node, t, o } = take(tree, off, p.id);
@@ -133,10 +140,10 @@ export default function MenuEditorPopup({ onClose }) {
     const aud = edits[p.id]?.audience ?? p.audience ?? "all";
     return (
       <div key={p.id} className={`mnu-row${sub ? " sub" : ""}${isOff ? " off" : ""}${drag === p.id ? " drag" : ""}${over?.id === p.id ? ` over-${over.zone}` : ""}`}
-        draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", String(p.id)); } catch {} setDrag(p.id); }}
+        draggable onMouseDown={(e) => { grab.current = !/^(INPUT|SELECT|OPTION)$/.test(e.target.tagName); }} onDragStart={(e) => { if (!grab.current) { e.preventDefault(); return; } e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", String(p.id)); } catch {} setDrag(p.id); }}
         onDragEnd={() => { setDrag(null); setOver(null); }}
-        onDragOver={(e) => { if (!drag || drag === p.id) return; e.preventDefault(); const z = zoneOf(e, canInto); if (over?.id !== p.id || over.zone !== z) setOver({ id: p.id, zone: z }); }}
-        onDrop={(e) => { if (isOff) return; e.preventDefault(); e.stopPropagation(); drop(p.id, zoneOf(e, canInto)); setDrag(null); setOver(null); }}>
+        onDragOver={(e) => { if (!drag || drag === p.id) return; e.preventDefault(); const z = zoneOf(e, canInto, sub); if (over?.id !== p.id || over.zone !== z) setOver({ id: p.id, zone: z }); }}
+        onDrop={(e) => { if (isOff) return; e.preventDefault(); e.stopPropagation(); drop(p.id, zoneOf(e, canInto, sub)); setDrag(null); setOver(null); }}>
         <span className="mnu-grip" aria-hidden="true">⋮⋮</span>
         {free ? <input className="mnu-name" value={name(p)} maxLength={80} onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], title: e.target.value } })} aria-label={tx("Naam")} />
           : <span className="mnu-name">{name(p)}</span>}
@@ -156,7 +163,7 @@ export default function MenuEditorPopup({ onClose }) {
         <h2>{tx("Menu")}</h2>
         <Tabs tabs={[["menu", "Menu"], ["add", "Item toevoegen"]]} value={tab} onChange={setTab} />
         {tab === "menu" && (!tree ? <p className="muted">{tx("Laden…")}</p> : <>
-          <p className="muted mnu-hint">{tx("Sleep de items om de volgorde te wijzigen. Laat een item op het midden van een ander item vallen om er een submenu van te maken. Met de schakelaar zet je een item aan of uit.")}</p>
+          <p className="muted mnu-hint">{tx("Sleep de items om de volgorde te wijzigen. Laat een item op het midden van een ander item vallen: het wordt een sub van dat item. Sleep een sub naar de linkerrand van zijn rij om hem weer een hoofditem te maken. Met de schakelaar zet je een item aan of uit.")}</p>
           <div className="mnu-list">
             {tree.map((r) => (
               <div key={r.p.id} className="mnu-group">
@@ -165,6 +172,7 @@ export default function MenuEditorPopup({ onClose }) {
               </div>
             ))}
             {!tree.length && <p className="muted">{tx("Het menu is leeg.")}</p>}
+            {drag && <div className={`mnu-end${over?.id === "end" ? " over" : ""}`} onDragOver={(e) => { e.preventDefault(); setOver({ id: "end", zone: "end" }); }} onDrop={(e) => { e.preventDefault(); drop(null, "end"); setDrag(null); setOver(null); }}>{tx("Hier loslaten: onderaan het hoofdmenu")}</div>}
           </div>
           <div className={`mnu-offzone${over?.id === "off" ? " over" : ""}`} onDragOver={(e) => { if (drag) { e.preventDefault(); setOver({ id: "off", zone: "off" }); } }} onDragLeave={() => setOver(null)} onDrop={(e) => { e.preventDefault(); drop(null, "off"); setDrag(null); setOver(null); }}>
             <strong>{tx("Niet in het menu")}</strong>
