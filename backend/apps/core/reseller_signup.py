@@ -65,7 +65,7 @@ def _hit(key, limit, seconds):
 
 
 # ── master side ──
-def send(email, ip=""):
+def send(email, ip="", show_code=False):
     from apps.communication import sending
 
     e = _email(email)
@@ -87,7 +87,7 @@ def send(email, ip=""):
         except Exception as ex:  # noqa: BLE001 - not linked, not reachable ...: said on the screen, not pretended
             cache.delete(f"rsignup:ch:{challenge}")
             raise ValueError(f"De e-mail met de code kon niet worden verstuurd: {str(ex)[:150] or 'de e-mail is niet ingesteld op de easy2edit server'}.") from ex
-    return {"challenge": challenge, "hint": mask(e)}
+    return {"challenge": challenge, "hint": mask(e), **({"sandbox_code": code} if show_code else {})}  # (show_code: only on the development computer, see views.first_run_send)
 
 
 def verify(challenge, code):
@@ -148,10 +148,10 @@ def apply_grant(site, grant):
 
 
 # ── installation side ──
-def ask(step, body, ip=""):
+def ask(step, body, ip="", show_code=False):
     """Call the master (or answer here when this installation IS the master). Raises ValueError (message)."""
     if sitemanager.server_enabled():
-        return send(body.get("email"), ip) if step == "send" else verify(body.get("challenge"), body.get("code"))
+        return send(body.get("email"), ip, show_code) if step == "send" else verify(body.get("challenge"), body.get("code"))
     import json
     import urllib.error
 

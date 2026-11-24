@@ -39,7 +39,7 @@ export default function ResellerOnboarding() {
   const send = async (e) => {
     e?.preventDefault();
     setBusy(true); setErr("");
-    try { setCh(await api("/system/first-run/send/", { method: "POST", body: { email } })); setCode(""); setStep("code"); }
+    try { const r = await api("/system/first-run/send/", { method: "POST", body: { email } }); setCh(r); setCode(r.sandbox_code || ""); setStep("code"); }  // (r.sandbox_code: only on the development computer)
     catch (x) { setErr(errorText(x)); }
     setBusy(false);
   };
@@ -78,6 +78,7 @@ export default function ResellerOnboarding() {
           {step === "code" && (
             <form className="form" onSubmit={verify}>
               <p className="muted" style={{ marginTop: 0 }}>{tx("Er is een code gestuurd naar")} <strong>{ch?.hint}</strong>.</p>
+              {ch?.sandbox_code && <div className="alert ok" style={{ display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>{tx("Ontwikkelcomputer: je code is")} <strong style={{ letterSpacing: ".15em" }}>{ch.sandbox_code}</strong><button type="button" className="btn sm" onClick={() => setCode(ch.sandbox_code)}>{tx("Invullen")}</button></div>}
               <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!err} kind="owner" onResend={() => send()} /></div>
               <p className="muted" style={{ margin: 0 }}>{tx("Na de code log je in met het wachtwoord van je reseller-login bij easy2edit. Heb je daar nog geen login, dan maakt easy2edit er een en mailt het wachtwoord naar je. Verandert je wachtwoord daar, dan verandert het hier mee.")}</p>
               {err && <div className="alert">{err}</div>}

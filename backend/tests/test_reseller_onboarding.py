@@ -135,3 +135,18 @@ def test_force_real_skips_the_sandbox_and_the_debug_log(monkeypatch, settings):
     assert sending.send_email("a@b.nl", "x", "y") == "sandbox"  # (normal: captured)
     with pytest.raises(sending.DeliveryError):
         sending.send_email("a@b.nl", "x", "y", force_real=True)  # (forced: not linked is an error, not a silent log)
+
+
+@pytest.mark.django_db
+def test_the_code_is_shown_on_the_screen_only_on_the_development_computer(master, settings):
+    c = APIClient()
+    settings.DEBUG = True
+    here = c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json", HTTP_HOST="localhost")
+    assert here.json()["sandbox_code"] == _code(master)  # (and the mail went out as well)
+    cache.clear()
+    elsewhere = c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json", HTTP_HOST="demo.example.nl")
+    assert "sandbox_code" not in elsewhere.json()
+    cache.clear()
+    settings.DEBUG = False
+    live = c.post("/api/system/first-run/send/", {"email": "piet@webbouwer.nl"}, format="json", HTTP_HOST="localhost")
+    assert "sandbox_code" not in live.json()  # (a real site never gives the code back)

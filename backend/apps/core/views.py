@@ -3601,7 +3601,11 @@ def first_run_send(request):
     if bad:
         return bad
     try:
-        return Response(reseller_signup.ask("send", {"email": (request.data or {}).get("email")}, request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")))
+        # ONLY on the development computer (DEBUG, a call from this computer itself, for localhost: like the dev login) the code is shown on the screen too, so it can be used at once
+        from django.conf import settings as dj
+
+        dev = bool(dj.DEBUG and request.META.get("REMOTE_ADDR", "") in ("127.0.0.1", "::1") and not request.META.get("HTTP_X_FORWARDED_FOR") and request.get_host().split(":")[0] in ("localhost", "127.0.0.1"))
+        return Response(reseller_signup.ask("send", {"email": (request.data or {}).get("email")}, request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", ""), show_code=dev))
     except ValueError as e:
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
