@@ -127,8 +127,16 @@ def doc(key, options=None, example=False):
     return ("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
             "<style>html,body{margin:0;padding:0;background:transparent;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1f2937;box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}</style>"
             f"<style>{css}</style></head><body>{body}<script>window.WIDGET={data};window.WIDGET_KEY={json.dumps(key)};</script>"
-            f"<script>{js}</script><script>(function(){{function h(){{parent.postMessage({{widgetHeight:document.documentElement.scrollHeight,widget:{json.dumps(key)}}},'*')}}"
+            f"<script>{js}</script><script>(function(){{{_BOX_JS}function h(){{var b=box();parent.postMessage({{widgetHeight:document.documentElement.scrollHeight,widgetBox:b,widget:{json.dumps(key)}}},'*')}}"
             "addEventListener('load',h);if(window.ResizeObserver)new ResizeObserver(h).observe(document.body);setTimeout(h,300)})();</script></body></html>")
+
+
+# The box of what the widget paints (left and right edge, in px of the frame): the page editor draws the outline and the buttons of the widget around that, never wider than the widget itself.
+_BOX_JS = ("var P=/^(img|svg|canvas|video|input|button|select|textarea)$/i;function box(){var l=1e9,r=-1e9;function add(a,b){if(b-a>0){if(a<l)l=a;if(b>r)r=b}}"
+           "var w=document.createTreeWalker(document.body,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT),n;while(n=w.nextNode()){if(n.nodeType===3){if(!n.nodeValue.trim())continue;var g=document.createRange();g.selectNodeContents(n);"
+           "var q=g.getClientRects();for(var i=0;i<q.length;i++)add(q[i].left,q[i].right);continue}var c=getComputedStyle(n);if(c.display==='none'||c.visibility==='hidden')continue;var p=P.test(n.tagName);"
+           "if(!p){var bg=c.backgroundColor;p=(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')||c.backgroundImage!=='none'||c.boxShadow!=='none'||parseFloat(c.borderTopWidth)>0||parseFloat(c.borderBottomWidth)>0||parseFloat(c.borderLeftWidth)>0||parseFloat(c.borderRightWidth)>0}"
+           "if(p){var t=n.getBoundingClientRect();add(t.left,t.right)}}return l>1e8?null:{l:Math.round(l),r:Math.round(r)}}")
 
 
 # ── installed ──

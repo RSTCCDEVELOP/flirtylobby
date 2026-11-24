@@ -24,6 +24,7 @@ import { dragFixed, setMoved } from "../lib/moved";
 import { panelDrag, setPanelDrag } from "../lib/panel-drag";
 import { pushUndo } from "../lib/undo";
 import { SysObjectBySlug } from "./SysObjects";
+import FitChrome from "./FitChrome";
 import LayoutPresets from "./LayoutPresets";
 import { BgControls, BgLayer } from "./SectionBg";
 import Tabs from "./Tabs";
@@ -709,7 +710,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
             ))}
           </div>
         )}
-        {body}
+        {it.type === "object" ? <FitChrome>{body}</FitChrome> : body}
         {it.type === "object" && !objects.some((o) => o.slug === it.ref) && <small className="muted">{tx("Dit systeemobject bestaat niet meer of staat uit.")}</small>}
       </div>
     );

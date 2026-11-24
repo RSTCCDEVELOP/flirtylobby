@@ -39,6 +39,7 @@ export default function WidgetFrame({ doc, height = 200, title = "", inert = fal
     const on = (e) => {
       if (!ref.current || e.source !== ref.current.contentWindow || !e.data) return;
       const d = e.data;
+      if (d.widgetBox && typeof d.widgetBox.l === "number") { ref.current.dataset.boxL = String(Math.max(0, d.widgetBox.l)); ref.current.dataset.boxR = String(Math.max(d.widgetBox.l, d.widgetBox.r)); }
       if (typeof d.widgetHeight === "number") setH(Math.min(Math.max(Math.ceil(d.widgetHeight), 40), 1600));
       if (d.widgetPopup === "ready") setPopup(true);
       if (d.widgetPopup === "open" && !flag) {

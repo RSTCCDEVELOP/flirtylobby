@@ -169,7 +169,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
                         {g.items.map((o) => (
                           <button type="button" key={o.slug} className="pb-widgettile" onClick={() => onObject && onObject(o.slug)} title={o.desc || o.name} {...dragProps({ kind: "object", slug: o.slug })}>
                             <span className="pb-widgetprev"><WidgetFrame doc={o.doc} height={Math.min(o.height || 160, 190)} inert title={o.name} /></span>
-                            <span className="pb-addtext"><strong>{o.name}</strong>{o.desc && <small>{o.desc}</small>}</span>
+                            <span className="pb-addtext"><strong>{tx(o.name)}</strong>{o.desc && <small>{tx(o.desc)}</small>}</span>
                           </button>
                         ))}
                       </div>

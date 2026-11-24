@@ -79,9 +79,9 @@ export default function WidgetLibrary() {
             <article key={w.key} className={`wl-card${w.installed ? " on" : ""}`}>
               <div className="wl-prev"><div className="wl-prev-in"><WidgetFrame doc={w.installed ? w.doc : w.example_doc} height={Math.min(w.height, 200)} inert title={w.name} /></div></div>
               <div className="wl-body">
-                <div className="wl-title"><strong>{w.name}</strong>{w.installed && <span className="wl-dot" title={tx("Geïnstalleerd")}>✓</span>}</div>
+                <div className="wl-title"><strong>{tx(w.name)}</strong>{w.installed && <span className="wl-dot" title={tx("Geïnstalleerd")}>✓</span>}</div>
                 <div className="wl-meta"><span className="wl-chip">{tx(w.category)}</span>{w.subcategory && <span className="wl-chip sub">{tx(w.subcategory)}</span>}</div>
-                <small className="wl-desc">{w.description}</small>
+                <small className="wl-desc">{tx(w.description)}</small>
                 {open === w.key && w.installed && (
                   <div className="wl-opts">
                     {w.options.length ? w.options.map(field) : <small className="muted">{tx("Dit widget heeft geen opties.")}</small>}

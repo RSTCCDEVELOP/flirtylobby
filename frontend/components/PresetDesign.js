@@ -107,7 +107,7 @@ export default function PresetDesign({ preset }) {
             return (
               <label key={w.key} className="hed-sw pdz-widget">
                 <span className="switch"><input type="checkbox" checked={on} disabled={busy} onChange={(e) => setWidgets(e.target.checked ? [...(data.widgets || []), w.key] : (data.widgets || []).filter((x) => x !== w.key))} /><span /></span>
-                <span className="hed-swt"><strong>{w.name}</strong><small>{[w.category, w.subcategory].filter(Boolean).map((x) => tx(x)).join(" › ")}</small></span>
+                <span className="hed-swt"><strong>{tx(w.name)}</strong><small>{[w.category, w.subcategory].filter(Boolean).map((x) => tx(x)).join(" › ")}</small></span>
               </label>
             );
           })}
