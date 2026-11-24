@@ -4863,3 +4863,4 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .npl-hero { flex: 0 0 34%; border-radius: 4px; background: linear-gradient(135deg, var(--blue), color-mix(in srgb, var(--blue) 45%, #e08a3c)); }
 .npl-row { flex: 1; display: flex; gap: 4px; } .npl-row span { border-radius: 3px; background: color-mix(in srgb, var(--blue) 22%, transparent); }
 .npl-empty { flex: 1; border-radius: 4px; border: 1.5px dashed color-mix(in srgb, currentColor 30%, transparent); }
+.mnu-aud { padding: .2rem .35rem; font-size: .8rem; max-width: 110px; }

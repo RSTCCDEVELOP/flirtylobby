@@ -13,6 +13,7 @@ import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import Tabs from "./Tabs";
 
+const AUD = { all: "Iedereen", members: "Ingelogd", guests: "Bezoekers" };  // who sees the item in the menu
 const KIND = { content: "Pagina", link: "Link", menu: "Menu-item" };
 
 // The menu editor (a popup in the page editor): drag and drop the items in order (drop on the middle of an item = submenu of it, two levels),
@@ -91,6 +92,7 @@ export default function MenuEditorPopup({ onClose }) {
         if (!!p.in_menu !== onIds.has(p.id)) body.in_menu = onIds.has(p.id);
         const e = edits[p.id];
         if (e?.title !== undefined && p.kind !== "content") { const main = e.title.trim() || name(p); body.title = Object.fromEntries((lang.languages.length ? lang.languages : [{ code: lang.default }]).map((l) => [l.code, main])); }
+        if (e?.audience !== undefined && e.audience !== p.audience) body.audience = e.audience;
         if (e?.url !== undefined && p.kind === "link") body.url = e.url;
         if (Object.keys(body).length) await api(`/pages/${p.id}/`, { method: "PATCH", body });
       }
@@ -123,7 +125,8 @@ export default function MenuEditorPopup({ onClose }) {
   }
 
   const row = ({ p, sub, canInto, isOff }) => {
-    const free = p.kind !== "content";
+    const free = p.kind === "link" || p.kind === "menu";  // (own pages and system pages keep their name; it is changed in their settings)
+    const aud = edits[p.id]?.audience ?? p.audience ?? "all";
     return (
       <div key={p.id} className={`mnu-row${sub ? " sub" : ""}${isOff ? " off" : ""}${drag === p.id ? " drag" : ""}${over?.id === p.id ? ` over-${over.zone}` : ""}`}
         draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", String(p.id)); } catch {} setDrag(p.id); }}
@@ -134,6 +137,7 @@ export default function MenuEditorPopup({ onClose }) {
         {free ? <input className="mnu-name" value={name(p)} maxLength={80} onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], title: e.target.value } })} aria-label={tx("Naam")} />
           : <span className="mnu-name">{name(p)}</span>}
         {p.kind === "link" && <input className="mnu-url" value={edits[p.id]?.url ?? p.url ?? ""} placeholder="https://… of /pad" onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], url: e.target.value } })} aria-label={tx("Link")} />}
+        <select className="mnu-aud" value={aud} onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], audience: e.target.value } })} aria-label={tx("Wie ziet dit item")} title={tx("Wie ziet dit item in het menu")}>{Object.entries(AUD).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
         <span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span>
         {free && <button type="button" className="mnu-del" onClick={() => remove(p)} title={tx("Verwijderen")} aria-label={tx("Verwijderen")}>×</button>}
         <label className="switch" title={isOff ? tx("In het menu zetten") : tx("Uit het menu halen")}><input type="checkbox" checked={!isOff} onChange={() => toggle(p)} /><span /></label>
