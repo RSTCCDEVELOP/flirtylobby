@@ -12,8 +12,11 @@ import { api, errorText } from "../../../../lib/api";
 import { confirmDialog } from "../../../../lib/dialog";
 import { tx } from "../../../../lib/t";
 import Tabs from "../../../../components/Tabs";
+import { IconSearch } from "../../../../components/Icons";
 
-const RANK_CLASS = { 0: "", 1: "ok", 2: "", 3: "" };
+// the colour of an event: green = in or out, red = failed or a malfunction, blue = something was changed
+const toneOf = (e) => (e === "auth.login" || e === "auth.logout" ? "ok" : e === "auth.login_failed" || e === "system.error" ? "bad" : e === "system.reset" || e === "user.deleted" || e === "system.log_cleared" ? "warn" : "info");
+const iso = (d) => d.toISOString().slice(0, 10);
 
 // The log (Logboek): who logged in or out and the important things that happened. Every person reads the lines of their own rank and lower (an admin never reads the lines of a superadmin);
 // only a superadmin changes how long the lines are kept and empties the log.
@@ -44,6 +47,8 @@ export default function LogPage() {
     catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setBusy(false);
   };
+  const period = f.from ? ([0, 1, 7, 30].find((d) => d && f.from === iso(new Date(Date.now() - (d - 1) * 864e5)) && !f.to) ?? -1) : 0;  // which quick period is on (-1 = own dates)
+  const quick = (d) => setF({ ...f, from: d ? iso(new Date(Date.now() - (d - 1) * 864e5)) : "", to: "", page: 1 });
   const pages = data ? Math.max(1, Math.ceil(data.total / data.size)) : 1;
   const days = (d) => (d === 0 ? tx("Onbeperkt") : d === 30 ? tx("1 maand") : d === 90 ? tx("3 maanden") : d === 180 ? tx("6 maanden") : d === 365 ? tx("1 jaar") : d === 730 ? tx("2 jaar") : tx("{0} dagen", d));
   return (
@@ -53,41 +58,51 @@ export default function LogPage() {
       <Tabs value={tab} onChange={setTab} tabs={[["lines", "Regels"], ["settings", "Instellingen"]]} />
       {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
       {tab === "lines" && (<>
-        <div className="grid2" style={{ alignItems: "end" }}>
-          <label>{tx("Zoeken")}<input value={f.q} onChange={set("q")} placeholder={tx("Naam, e-mailadres, adres of omschrijving")} /></label>
-          <label>{tx("Soort")}
-            <select value={f.category} onChange={set("category")}><option value="">{tx("Alles")}</option>{(data?.categories || []).map((c) => <option key={c} value={c}>{tx(c)}</option>)}</select>
-          </label>
-          <label>{tx("Gebeurtenis")}
-            <select value={f.event} onChange={set("event")}><option value="">{tx("Alles")}</option>{(data?.events || []).filter((x) => !f.category || x.category === f.category).map((x) => <option key={x.key} value={x.key}>{tx(x.label)}</option>)}</select>
-          </label>
-          <label>{tx("Vanaf")}<input type="date" value={f.from} onChange={set("from")} /></label>
-          <label>{tx("Tot en met")}<input type="date" value={f.to} onChange={set("to")} /></label>
+        <div className="lg-stats">
+          {[["day", tx("Regels (24 uur)"), "info"], ["logins", tx("Inlogs (24 uur)"), "ok"], ["failed", tx("Mislukt inloggen (24 uur)"), "warn"], ...(data?.can_clear ? [["errors", tx("Storingen (24 uur)"), "bad"]] : [])].map(([k, label, tone]) => (
+            <div key={k} className={`lg-stat ${tone}${data?.stats?.[k] > 0 && (tone === "bad" || tone === "warn") ? " hot" : ""}`}><strong>{data?.stats ? data.stats[k] : "…"}</strong><span>{label}</span></div>
+          ))}
         </div>
-        <div className="log-wrap">
-          <table className="log-table">
-            <thead><tr><th>{tx("Tijd")}</th><th>{tx("Gebeurtenis")}</th><th>{tx("Wie")}</th><th>{tx("Over")}</th><th>{tx("Adres (IP)")}</th></tr></thead>
+        <div className="lg-bar">
+          <div className="lg-search"><IconSearch width={16} height={16} /><input value={f.q} onChange={set("q")} placeholder={tx("Zoek op naam, e-mailadres, adres of omschrijving")} aria-label={tx("Zoeken")} /></div>
+          <select value={f.category} onChange={set("category")} aria-label={tx("Soort")}><option value="">{tx("Alle soorten")}</option>{(data?.categories || []).map((c) => <option key={c} value={c}>{tx(c)}</option>)}</select>
+          <select value={f.event} onChange={set("event")} aria-label={tx("Gebeurtenis")}><option value="">{tx("Alle gebeurtenissen")}</option>{(data?.events || []).filter((x) => !f.category || x.category === f.category).map((x) => <option key={x.key} value={x.key}>{tx(x.label)}</option>)}</select>
+          <div className="lg-seg" role="group" aria-label={tx("Periode")}>
+            {[[0, tx("Alles")], [1, tx("24 uur")], [7, tx("7 dagen")], [30, tx("30 dagen")]].map(([d, l]) => <button type="button" key={d} className={period === d ? "on" : ""} aria-pressed={period === d} onClick={() => quick(d)}>{l}</button>)}
+          </div>
+          {(f.q || f.category || f.event || f.from || f.to) && <button type="button" className="btn sm" onClick={() => { setF({ q: "", category: "", event: "", from: "", to: "", page: 1 }); }}>{tx("Wis filters")}</button>}
+        </div>
+        <div className="lg-wrap">
+          <table className="lg-table">
+            <thead><tr><th>{tx("Tijd")}</th><th>{tx("Gebeurtenis")}</th><th>{tx("Wie")}</th><th>{tx("Over")}</th><th>{tx("IP-adres")}</th></tr></thead>
             <tbody>
-              {(data?.results || []).map((r) => (
-                <tr key={r.id}>
-                  <td className="log-time">{new Date(r.at).toLocaleString()}</td>
-                  <td><strong>{tx(r.label)}</strong>{r.detail && <small className="muted" style={{ display: "block" }}>{r.detail}</small>}</td>
-                  <td>{r.actor || "—"}{r.email && r.actor && r.email !== r.actor && <small className="muted" style={{ display: "block" }}>{r.email}</small>}<span className={`badge ${RANK_CLASS[r.level] || ""}`}>{tx(r.rank)}</span></td>
-                  <td>{r.target || "—"}</td>
-                  <td className="muted">{r.ip || "—"}</td>
-                </tr>
-              ))}
-              {data && !data.results.length && <tr><td colSpan={5} className="muted">{tx("Geen regels gevonden.")}</td></tr>}
-              {!data && <tr><td colSpan={5} className="muted">{tx("Bezig…")}</td></tr>}
+              {(data?.results || []).map((r) => {
+                const d = new Date(r.at);
+                return (
+                  <tr key={r.id}>
+                    <td className="lg-time"><strong>{d.toLocaleDateString()}</strong><span>{d.toLocaleTimeString()}</span></td>
+                    <td><span className={`lg-ev ${toneOf(r.event)}`}>{tx(r.label)}</span>{r.detail && <small className="lg-detail">{r.detail}</small>}</td>
+                    <td>{r.actor || r.email ? (
+                      <span className="lg-who"><span className="lg-av" aria-hidden="true">{(r.actor || r.email || "?").trim().charAt(0).toUpperCase()}</span>
+                        <span><span className="lg-name">{r.actor || r.email}</span>{r.email && r.actor && r.email !== r.actor && <small>{r.email}</small>}</span>
+                        <span className={`lg-rank r${r.level}`}>{tx(r.rank)}</span></span>
+                    ) : <span className="muted">{tx("Systeem")}</span>}</td>
+                    <td className="lg-over">{r.target || "—"}</td>
+                    <td className="lg-ip">{r.ip || "—"}</td>
+                  </tr>
+                );
+              })}
+              {data && !data.results.length && <tr><td colSpan={5} className="lg-empty">{tx("Geen regels gevonden.")}</td></tr>}
+              {!data && <tr><td colSpan={5} className="lg-empty">{tx("Bezig…")}</td></tr>}
             </tbody>
           </table>
         </div>
-        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <div className="lg-foot">
           <small className="muted">{data ? tx("{0} regels", data.total) : ""}</small>
-          <div className="row" style={{ gap: ".4rem" }}>
-            <button type="button" className="btn sm" disabled={f.page <= 1} onClick={() => setF({ ...f, page: f.page - 1 })}>{tx("Vorige")}</button>
-            <span className="muted">{f.page} / {pages}</span>
-            <button type="button" className="btn sm" disabled={f.page >= pages} onClick={() => setF({ ...f, page: f.page + 1 })}>{tx("Volgende")}</button>
+          <div className="lg-pager">
+            <button type="button" className="btn sm" disabled={f.page <= 1} onClick={() => setF({ ...f, page: f.page - 1 })}>‹ {tx("Vorige")}</button>
+            <span>{f.page} / {pages}</span>
+            <button type="button" className="btn sm" disabled={f.page >= pages} onClick={() => setF({ ...f, page: f.page + 1 })}>{tx("Volgende")} ›</button>
           </div>
         </div>
       </>)}

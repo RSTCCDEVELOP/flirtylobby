@@ -62,9 +62,13 @@ def entries(request):
     except ValueError:
         size, page = 50, 1
     total = qs.count()
+    from django.utils import timezone
+
+    day = service.visible_to(request.user).filter(created_at__gte=timezone.now() - timezone.timedelta(hours=24))  # the figures of the last 24 hours (of the lines this person may read)
+    stats = {"day": day.count(), "logins": day.filter(event="auth.login").count(), "failed": day.filter(event="auth.login_failed").count(), "errors": day.filter(event="system.error").count()}
     rows = [_out(e) for e in qs[(page - 1) * size: page * size]]
     return Response({"results": rows, "total": total, "page": page, "size": size, "events": [{"key": k, "label": v[0], "category": v[1]} for k, v in service.EVENTS.items()],
-                     "categories": service.CATEGORIES, "can_clear": service.rank_of(request.user) >= 2})
+                     "categories": service.CATEGORIES, "stats": stats, "can_clear": service.rank_of(request.user) >= 2})
 
 
 @api_view(["GET", "PUT"])
