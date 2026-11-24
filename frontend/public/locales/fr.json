@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Ces réglages s'appliquent à ce widget sur toutes les pages.",
   "Instellingen van dit widget": "Réglages de ce widget",
   "Uiterlijk": "Apparence",
-  "Gedrag": "Comportement"
+  "Gedrag": "Comportement",
+  "Achtergrond (donkere modus)": "Arrière-plan (mode sombre)",
+  "Kleur (donkere modus)": "Couleur (mode sombre)",
+  "Kleur van de cijfers (donkere modus)": "Couleur des chiffres (mode sombre)",
+  "Tekstkleur (donkere modus)": "Couleur du texte (mode sombre)"
 }

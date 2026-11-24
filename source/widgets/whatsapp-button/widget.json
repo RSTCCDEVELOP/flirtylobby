@@ -45,6 +45,12 @@
       "label": "Kleur",
       "type": "color",
       "default": "#25d366"
+    },
+    {
+      "key": "color_dark",
+      "label": "Kleur (donkere modus)",
+      "type": "color",
+      "default": "#34d368"
     }
   ],
   "example": {},

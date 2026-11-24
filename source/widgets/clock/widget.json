@@ -25,6 +25,12 @@
       "default": "#1f2937"
     },
     {
+      "key": "color_dark",
+      "label": "Kleur (donkere modus)",
+      "type": "color",
+      "default": "#e5e7eb"
+    },
+    {
       "key": "size",
       "label": "Grootte (px)",
       "type": "number",

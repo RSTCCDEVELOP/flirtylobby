@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Pengaturan ini berlaku untuk widget ini di semua halaman.",
   "Instellingen van dit widget": "Pengaturan widget ini",
   "Uiterlijk": "Tampilan",
-  "Gedrag": "Perilaku"
+  "Gedrag": "Perilaku",
+  "Achtergrond (donkere modus)": "Latar belakang (mode gelap)",
+  "Kleur (donkere modus)": "Warna (mode gelap)",
+  "Kleur van de cijfers (donkere modus)": "Warna angka (mode gelap)",
+  "Tekstkleur (donkere modus)": "Warna teks (mode gelap)"
 }

@@ -8,27 +8,120 @@
   "height": 440,
   "popup": true,
   "options": [
-    {"key": "style", "label": "Stijl", "type": "choice", "default": "dark", "choices": [
-      {"value": "dark", "label": "Donker met kleurverloop"},
-      {"value": "light", "label": "Licht"},
-      {"value": "color", "label": "Kleurvlak"}
-    ]},
-    {"key": "title", "label": "Titel", "type": "text", "default": "Black Friday duurt niet eeuwig"},
-    {"key": "text", "label": "Tekst", "type": "textarea", "default": "Je hebt niets te verliezen, maar wel een mooie aanbieding."},
-    {"key": "button", "label": "Tekst van de knop", "type": "text", "default": "Koop nu"},
-    {"key": "url", "label": "Link van de knop", "type": "text", "default": "#"},
-    {"key": "color", "label": "Kleur (accent)", "type": "color", "default": "#c026d3"},
-    {"key": "bg", "label": "Achtergrond (donkere stijl)", "type": "color", "default": "#0b0b0f"},
-    {"key": "countdown", "label": "Aftelklok tonen", "type": "switch", "default": true},
-    {"key": "date", "label": "Aftellen naar", "type": "datetime", "default": "2099-11-30T23:59"},
-    {"key": "delay", "label": "Verschijnt na (seconden)", "type": "number", "default": 3, "min": 0, "max": 120, "step": 1},
-    {"key": "frequency", "label": "Hoe vaak ziet een bezoeker hem", "type": "choice", "default": "session", "choices": [
-      {"value": "always", "label": "Elke keer dat de pagina opent"},
-      {"value": "session", "label": "Eén keer per bezoek"},
-      {"value": "1", "label": "Eén keer per dag"},
-      {"value": "7", "label": "Eén keer per week"},
-      {"value": "once", "label": "Eén keer, daarna nooit meer"}
-    ]}
+    {
+      "key": "style",
+      "label": "Stijl",
+      "type": "choice",
+      "default": "dark",
+      "choices": [
+        {
+          "value": "dark",
+          "label": "Donker met kleurverloop"
+        },
+        {
+          "value": "light",
+          "label": "Licht"
+        },
+        {
+          "value": "color",
+          "label": "Kleurvlak"
+        }
+      ]
+    },
+    {
+      "key": "title",
+      "label": "Titel",
+      "type": "text",
+      "default": "Black Friday duurt niet eeuwig"
+    },
+    {
+      "key": "text",
+      "label": "Tekst",
+      "type": "textarea",
+      "default": "Je hebt niets te verliezen, maar wel een mooie aanbieding."
+    },
+    {
+      "key": "button",
+      "label": "Tekst van de knop",
+      "type": "text",
+      "default": "Koop nu"
+    },
+    {
+      "key": "url",
+      "label": "Link van de knop",
+      "type": "text",
+      "default": "#"
+    },
+    {
+      "key": "color",
+      "label": "Kleur (accent)",
+      "type": "color",
+      "default": "#c026d3"
+    },
+    {
+      "key": "color_dark",
+      "label": "Kleur (donkere modus)",
+      "type": "color",
+      "default": "#e879f9"
+    },
+    {
+      "key": "bg",
+      "label": "Achtergrond (donkere stijl)",
+      "type": "color",
+      "default": "#0b0b0f"
+    },
+    {
+      "key": "countdown",
+      "label": "Aftelklok tonen",
+      "type": "switch",
+      "default": true
+    },
+    {
+      "key": "date",
+      "label": "Aftellen naar",
+      "type": "datetime",
+      "default": "2099-11-30T23:59"
+    },
+    {
+      "key": "delay",
+      "label": "Verschijnt na (seconden)",
+      "type": "number",
+      "default": 3,
+      "min": 0,
+      "max": 120,
+      "step": 1
+    },
+    {
+      "key": "frequency",
+      "label": "Hoe vaak ziet een bezoeker hem",
+      "type": "choice",
+      "default": "session",
+      "choices": [
+        {
+          "value": "always",
+          "label": "Elke keer dat de pagina opent"
+        },
+        {
+          "value": "session",
+          "label": "Eén keer per bezoek"
+        },
+        {
+          "value": "1",
+          "label": "Eén keer per dag"
+        },
+        {
+          "value": "7",
+          "label": "Eén keer per week"
+        },
+        {
+          "value": "once",
+          "label": "Eén keer, daarna nooit meer"
+        }
+      ]
+    }
   ],
-  "example": {"title": "Black Friday duurt niet eeuwig", "date": "2099-11-30T23:59"}
+  "example": {
+    "title": "Black Friday duurt niet eeuwig",
+    "date": "2099-11-30T23:59"
+  }
 }

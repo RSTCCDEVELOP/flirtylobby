@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Эти настройки действуют для этого виджета на всех страницах.",
   "Instellingen van dit widget": "Настройки этого виджета",
   "Uiterlijk": "Внешний вид",
-  "Gedrag": "Поведение"
+  "Gedrag": "Поведение",
+  "Achtergrond (donkere modus)": "Фон (тёмный режим)",
+  "Kleur (donkere modus)": "Цвет (тёмный режим)",
+  "Kleur van de cijfers (donkere modus)": "Цвет цифр (тёмный режим)",
+  "Tekstkleur (donkere modus)": "Цвет текста (тёмный режим)"
 }

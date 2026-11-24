@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Diese Einstellungen gelten für dieses Widget auf allen Seiten.",
   "Instellingen van dit widget": "Einstellungen dieses Widgets",
   "Uiterlijk": "Aussehen",
-  "Gedrag": "Verhalten"
+  "Gedrag": "Verhalten",
+  "Achtergrond (donkere modus)": "Hintergrund (Dunkelmodus)",
+  "Kleur (donkere modus)": "Farbe (Dunkelmodus)",
+  "Kleur van de cijfers (donkere modus)": "Farbe der Zahlen (Dunkelmodus)",
+  "Tekstkleur (donkere modus)": "Textfarbe (Dunkelmodus)"
 }

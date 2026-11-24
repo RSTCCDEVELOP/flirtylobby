@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Ці налаштування діють для цього віджета на всіх сторінках.",
   "Instellingen van dit widget": "Налаштування цього віджета",
   "Uiterlijk": "Вигляд",
-  "Gedrag": "Поведінка"
+  "Gedrag": "Поведінка",
+  "Achtergrond (donkere modus)": "Тло (темний режим)",
+  "Kleur (donkere modus)": "Колір (темний режим)",
+  "Kleur van de cijfers (donkere modus)": "Колір цифр (темний режим)",
+  "Tekstkleur (donkere modus)": "Колір тексту (темний режим)"
 }

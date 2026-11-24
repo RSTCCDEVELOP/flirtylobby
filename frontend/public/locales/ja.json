@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "この設定は、すべてのページのこのウィジェットに適用されます。",
   "Instellingen van dit widget": "このウィジェットの設定",
   "Uiterlijk": "外観",
-  "Gedrag": "動作"
+  "Gedrag": "動作",
+  "Achtergrond (donkere modus)": "背景(ダークモード)",
+  "Kleur (donkere modus)": "色(ダークモード)",
+  "Kleur van de cijfers (donkere modus)": "数字の色(ダークモード)",
+  "Tekstkleur (donkere modus)": "文字色(ダークモード)"
 }

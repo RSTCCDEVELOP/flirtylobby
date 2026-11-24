@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "Bu ayarlar, bu widget için tüm sayfalarda geçerlidir.",
   "Instellingen van dit widget": "Bu widget'ın ayarları",
   "Uiterlijk": "Görünüm",
-  "Gedrag": "Davranış"
+  "Gedrag": "Davranış",
+  "Achtergrond (donkere modus)": "Arka plan (koyu mod)",
+  "Kleur (donkere modus)": "Renk (koyu mod)",
+  "Kleur van de cijfers (donkere modus)": "Rakamların rengi (koyu mod)",
+  "Tekstkleur (donkere modus)": "Metin rengi (koyu mod)"
 }

@@ -20,6 +20,7 @@ from pathlib import Path
 from django.conf import settings
 
 KEY_RE = re.compile(r"^[a-z][a-z0-9-]{1,38}[a-z0-9]$")
+GROUPS = ("content", "look", "behaviour", "dark")
 OPTION_TYPES = ("text", "textarea", "number", "color", "choice", "switch", "datetime")
 MAX_FILE = 200_000
 
@@ -40,6 +41,9 @@ def _clean_option(o):
     if not isinstance(o, dict) or not re.fullmatch(r"[a-z][a-z0-9_]{0,30}", str(o.get("key") or "")) or o.get("type") not in OPTION_TYPES:
         return None
     out = {"key": o["key"], "label": str(o.get("label") or o["key"])[:80], "type": o["type"], "default": o.get("default", "")}
+    g = "dark" if o["key"].endswith("_dark") else o.get("group")
+    if g in GROUPS:  # the tab of the settings panel: content, look, behaviour or dark (the options of the dark mode)
+        out["group"] = g
     if o["type"] == "number":
         out.update({"min": o.get("min", 0), "max": o.get("max", 100), "step": o.get("step", 1)})
     if o["type"] == "choice":
@@ -121,13 +125,18 @@ def doc(key, options=None, example=False):
         return ""
     vals = clean_options(m, {**(m["example"] if example else {}), **(options or {})})
     body = _fill(_read(key, "widget.html"), vals)
-    css = _fill(_read(key, "widget.css"), vals)
+    pairs = [o["key"] for o in m["options"] if o["type"] == "color" and f"{o['key']}_dark" in vals]  # a colour with a dark twin (key_dark): the css uses a variable that the dark mode of the website switches
+    css_vals = {**vals, **{k: f"var(--w-{k})" for k in pairs}}
+    css = _fill(_read(key, "widget.css"), css_vals)
+    tokens = ":root{--w-text:#1f2937;--w-muted:#6b7280;--w-card:#ffffff;--w-line:#e5e7eb;" + "".join(f"--w-{k}:{vals[k]};" for k in pairs) + "}" \
+             "html[data-theme=dark]{--w-text:#e5e7eb;--w-muted:#9ca3af;--w-card:#1f2430;--w-line:#374151;" + "".join(f"--w-{k}:{vals[f'{k}_dark']};" for k in pairs) + "}"
     js = _read(key, "widget.js")
     data = json.dumps(vals).replace("</", "<\\/")
     return ("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            "<style>html,body{margin:0;padding:0;background:transparent;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1f2937;box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}</style>"
-            f"<style>{css}</style></head><body>{body}<script>window.WIDGET={data};window.WIDGET_KEY={json.dumps(key)};</script>"
+            "<style>html,body{margin:0;padding:0;background:transparent;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--w-text);box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}</style>"
+            f"<style>{tokens}</style><style>{css}</style></head><body>{body}<script>window.WIDGET={data};window.WIDGET_KEY={json.dumps(key)};</script>"
             f"<script>{js}</script><script>(function(){{{_BOX_JS}function h(){{var b=box();parent.postMessage({{widgetHeight:document.documentElement.scrollHeight,widgetBox:b,widget:{json.dumps(key)}}},'*')}}"
+            "addEventListener('message',function(e){if(e.data&&e.data.widgetTheme)document.documentElement.setAttribute('data-theme',e.data.widgetTheme)});"
             "addEventListener('load',h);if(window.ResizeObserver)new ResizeObserver(h).observe(document.body);setTimeout(h,300)})();</script></body></html>")
 
 

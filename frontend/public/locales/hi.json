@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "ये सेटिंग्स इस विजेट के लिए सभी पेजों पर लागू होती हैं।",
   "Instellingen van dit widget": "इस विजेट की सेटिंग्स",
   "Uiterlijk": "रूप",
-  "Gedrag": "व्यवहार"
+  "Gedrag": "व्यवहार",
+  "Achtergrond (donkere modus)": "पृष्ठभूमि (डार्क मोड)",
+  "Kleur (donkere modus)": "रंग (डार्क मोड)",
+  "Kleur van de cijfers (donkere modus)": "अंकों का रंग (डार्क मोड)",
+  "Tekstkleur (donkere modus)": "टेक्स्ट का रंग (डार्क मोड)"
 }

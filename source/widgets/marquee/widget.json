@@ -28,8 +28,20 @@
       "default": "#1f2937"
     },
     {
+      "key": "bg_dark",
+      "label": "Achtergrond (donkere modus)",
+      "type": "color",
+      "default": "#374151"
+    },
+    {
       "key": "color",
       "label": "Tekstkleur",
+      "type": "color",
+      "default": "#ffffff"
+    },
+    {
+      "key": "color_dark",
+      "label": "Tekstkleur (donkere modus)",
       "type": "color",
       "default": "#ffffff"
     }

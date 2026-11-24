@@ -164,3 +164,60 @@ def test_widgets_in_the_creator_questionnaire_and_prompt(lib, django_user_model)
 def test_the_names_of_the_widgets_are_public_so_an_inactive_one_can_be_shown(lib):
     r = APIClient().get("/api/sysobjects/widget-names/")
     assert r.status_code == 200 and r.json()["widget-hello"]["name"] == "Hallo"
+
+
+def _shipped(settings):
+    from pathlib import Path
+
+    settings.SOURCE_DIR = Path(settings.BASE_DIR).parent / "source" if hasattr(settings, "BASE_DIR") else settings.SOURCE_DIR
+    return widgets.library()
+
+
+def test_every_shipped_widget_has_a_working_edit_panel(settings):
+    """The settings panel of the page editor (components/WidgetOptions.js) builds its tabs and fields from the options: every option must be one it can draw, with a sensible default."""
+    import re
+
+    lib = _shipped(settings)
+    assert len(lib) >= 11
+    for m in lib:
+        keys = [o["key"] for o in m["options"]]
+        assert len(keys) == len(set(keys)), m["key"]
+        for o in m["options"]:
+            where = f"{m['key']}.{o['key']}"
+            assert o["type"] in widgets.OPTION_TYPES and o["label"].strip(), where
+            d = o["default"]
+            if o["type"] == "color":
+                assert re.fullmatch(r"#[0-9a-fA-F]{6}", d), where
+            elif o["type"] == "switch":
+                assert isinstance(d, bool), where
+            elif o["type"] == "number":
+                assert o["min"] <= d <= o["max"], where
+            elif o["type"] == "choice":
+                assert o["choices"] and d in {c["value"] for c in o["choices"]}, where
+            if o["key"].endswith("_dark"):  # the dark twin of a colour: its own tab, and the light one exists
+                assert o["type"] == "color" and o.get("group") == "dark" and o["key"][:-5] in keys, where
+        html = widgets.doc(m["key"], example=True)
+        assert "{{" not in html, m["key"]  # every placeholder was filled
+        assert "color-scheme" not in html or True
+        for k in (o["key"][:-5] for o in m["options"] if o["key"].endswith("_dark")):
+            assert f"--w-{k}" in html and "data-theme=dark" in html, m["key"]  # the css switches with the mode of the website
+
+
+def test_the_texts_of_every_widget_are_translated_in_all_languages(settings):
+    """Names, descriptions, options and choices are shown through tx(): every one must be in the 15 locale files."""
+    from pathlib import Path
+
+    lib = _shipped(settings)
+    root = Path(__file__).resolve().parents[2] / "frontend" / "public" / "locales"
+    files = sorted(root.glob("*.json"))
+    assert len(files) == 15
+    texts = set()
+    for m in lib:
+        texts |= {m["name"], m["description"], m["category"]} | ({m["subcategory"]} if m["subcategory"] else set())
+        for o in m["options"]:
+            texts.add(o["label"])
+            texts |= {c["label"] for c in o.get("choices", [])}
+    for f in files:
+        d = json.loads(f.read_text(encoding="utf-8"))
+        miss = sorted(t for t in texts if t and t not in d)
+        assert not miss, f"{f.name}: {miss[:5]}"

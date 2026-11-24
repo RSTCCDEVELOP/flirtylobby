@@ -56,6 +56,12 @@
       "label": "Kleur van de cijfers",
       "type": "color",
       "default": "#f2823f"
+    },
+    {
+      "key": "color_dark",
+      "label": "Kleur van de cijfers (donkere modus)",
+      "type": "color",
+      "default": "#f59a63"
     }
   ],
   "example": {},

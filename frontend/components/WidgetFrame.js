@@ -34,6 +34,7 @@ export default function WidgetFrame({ doc, height = 200, title = "", inert = fal
   const [open, setOpen] = useState(false);
   const flag = inert || preview;
   const id = useRef("");
+  const theme0 = useRef(typeof document !== "undefined" && document.documentElement.dataset.theme === "dark" ? "dark" : "light");  // the mode of the website when the frame was made; changes are sent to the widget
   const freqRef = useRef("session");
   useEffect(() => {
     const on = (e) => {
@@ -52,10 +53,13 @@ export default function WidgetFrame({ doc, height = 200, title = "", inert = fal
     const key = (e) => { if (e.key === "Escape") setOpen((o) => { if (o) remember(id.current, freqRef.current); return false; }); };
     window.addEventListener("message", on);
     window.addEventListener("keydown", key);
-    return () => { window.removeEventListener("message", on); window.removeEventListener("keydown", key); };
+    const mo = new MutationObserver(() => { const t = document.documentElement.dataset.theme === "dark" ? "dark" : "light"; try { ref.current?.contentWindow?.postMessage({ widgetTheme: t }, "*"); } catch { /* ok */ } });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });  // light or dark mode of the website: the widget follows
+    return () => { window.removeEventListener("message", on); window.removeEventListener("keydown", key); mo.disconnect(); };
   }, [doc, flag]);
   if (!doc) return null;
-  const src = flag ? doc.replace("<body>", "<body><script>window.WIDGET_PREVIEW=1</script>") : doc;
+  const pre = `${theme0.current === "dark" ? "<script>document.documentElement.setAttribute('data-theme','dark')</script>" : ""}${flag ? "<script>window.WIDGET_PREVIEW=1</script>" : ""}`;
+  const src = pre ? doc.replace("<body>", `<body>${pre}`) : doc;
   const style = popup && !flag
     ? (open ? { position: "fixed", inset: 0, width: "100vw", height: "100vh", zIndex: 100000, border: 0, background: "transparent" } : { width: 0, height: 0, border: 0, display: "block", position: "absolute", pointerEvents: "none" })
     : { width: "100%", height: h, border: 0, display: "block", background: "transparent", ...(inert ? { pointerEvents: "none" } : {}) };

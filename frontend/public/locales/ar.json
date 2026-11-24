@@ -8942,5 +8942,9 @@
   "Deze instellingen gelden voor dit widget op alle pagina's.": "تنطبق هذه الإعدادات على هذا الودجت في جميع الصفحات.",
   "Instellingen van dit widget": "إعدادات هذا الودجت",
   "Uiterlijk": "المظهر",
-  "Gedrag": "السلوك"
+  "Gedrag": "السلوك",
+  "Achtergrond (donkere modus)": "الخلفية (الوضع الداكن)",
+  "Kleur (donkere modus)": "اللون (الوضع الداكن)",
+  "Kleur van de cijfers (donkere modus)": "لون الأرقام (الوضع الداكن)",
+  "Tekstkleur (donkere modus)": "لون النص (الوضع الداكن)"
 }
