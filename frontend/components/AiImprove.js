@@ -99,17 +99,18 @@ export default function AiImprove() {
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
   }, [open, busy]);
+  useEffect(() => {  // started from the menu "Instellingen → AI gebruiken" of the editor (before the early return below: hooks always in the same order)
+    if (!editing) return undefined;
+    const go = () => { setTab("ask"); setErr(""); setDone(""); setOpen(true); };
+    document.documentElement.dataset.aiimprove = "1";
+    window.addEventListener("pb-ai-improve", go);
+    return () => { window.removeEventListener("pb-ai-improve", go); delete document.documentElement.dataset.aiimprove; };
+  }, [editing]);
   if (!editing) return null;
   const key = () => window.__pbOwner || "";
   const url = () => `/pages/improve/${encodeURIComponent(key())}/`;
   const reload = () => { window.dispatchEvent(new Event("pb-layout-reload")); try { router.refresh(); } catch {} };
   const start = () => { setTab("ask"); setErr(""); setDone(""); setOpen(true); };
-  useEffect(() => {  // started from the menu "Instellingen → AI gebruiken" of the editor
-    const go = () => { setTab("ask"); setErr(""); setDone(""); setOpen(true); };
-    document.documentElement.dataset.aiimprove = "1";
-    window.addEventListener("pb-ai-improve", go);
-    return () => { window.removeEventListener("pb-ai-improve", go); delete document.documentElement.dataset.aiimprove; };
-  }, []);
 
   async function run() {
     setBusy(true); setErr(""); setDone(""); setJob({ step: tx("Starten"), progress: 2, usage: { calls: 0, tokens: 0, charged: 0 }, seconds: 0 }); setSpent(null);
