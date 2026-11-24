@@ -147,7 +147,7 @@ def payload(event, role=""):
     s = system.get()
     url = system.origin(s["frontend_url"]) or live_url()
     name = str(s["site_name"] or "").strip() or url or system.site_name()  # a website that has no name yet (not set up) is shown by its address
-    return {"instance_id": instance_id(), "name": name, "url": url, "api_url": system.origin(s["backend_url"]), "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else "", **licence_and_installation(), "defaults": {"keep": sorted(_kept_tabs())}}
+    return {"instance_id": instance_id(), "name": name, "url": url, "api_url": system.origin(s["backend_url"]), "ip": own_ip(url), "version": str(settings.SYSTEM_VERSION), "build": build_number(), "event": event, "role": role if role in ROLES else "", **licence_and_installation(), "defaults": {"keep": sorted(_kept_tabs())}, **({"reseller_grant": _state()["reseller_grant"]} if _state().get("reseller_grant") else {})}
 
 
 # ── the server side: the list of websites ───────────────────────────────────
@@ -225,6 +225,9 @@ def register(data, seen_ip):
     site.status = "active" if _state().get("auto_approve") else "pending"  # a new website waits for approval (unless that is switched on): registering is open to the world
     _fill(site, data, seen_ip)
     callback = _new_callback(site)
+    from . import reseller_signup
+
+    reseller_signup.apply_grant(site, data.get("reseller_grant"))  # a website that signed up as a reseller (onboarding of an empty installation) is sold by that reseller
     if not site.reseller_id:  # a new website is sold by the standard reseller (Standaard en globale instellingen), until the server says otherwise
         from . import resellers
 
@@ -267,6 +270,10 @@ def ping(key, data, seen_ip):
     if not site or site.status == "blocked":
         raise PermissionError("Onbekende of geblokkeerde website.")
     _fill(site, data, seen_ip)
+    if data.get("reseller_grant"):
+        from . import reseller_signup
+
+        reseller_signup.apply_grant(site, data.get("reseller_grant"))
     if data.get("event") == "login":
         site.last_login_at, site.last_login_role = timezone.now(), (data.get("role") if data.get("role") in ROLES else "")
         site.login_count += 1
@@ -322,9 +329,11 @@ def report(event="login", role=""):
                 key = str(r.get("key") or "")
                 if not key:
                     raise ValueError("De server gaf geen sleutel.")
-                _save(token=key, **({"callback_key": str(r["callback_key"])} if r.get("callback_key") else {}))
+                _save(token=key, reseller_grant="", **({"callback_key": str(r["callback_key"])} if r.get("callback_key") else {}))
             if key and (event == "login" or st.get("token")):
                 r = _post(f"{api}/api/easy2edit/sites/ping/", {**data, **({} if _state().get("callback_key") else {"callback": "missing"})}, key)
+                if _state().get("reseller_grant"):
+                    _save(reseller_grant="")  # (the grant works once: it was sent with this ping)
                 if r.get("callback_key"):  # the key for the calls of the easy2edit server to this website
                     _save(callback_key=str(r["callback_key"]))
                 from . import resellers

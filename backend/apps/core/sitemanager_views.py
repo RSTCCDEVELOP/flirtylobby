@@ -765,3 +765,34 @@ def defaults_sites(request):
             results.append(row)
     info = site_defaults.info()
     return Response({"server": True, "tabs": list(site_defaults.TABS), "captured_at": info.get("captured_at"), "build": sitemanager.build_number(), "sites": [_defaults_row(s) for s in EasySite.objects.all()], "results": results})
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def reseller_signup_send(request):
+    """The master site: an installation without a key asks for a code for a reseller's e-mail address (answers the same for every address)."""
+    from . import reseller_signup
+
+    if not sitemanager.server_enabled():
+        raise Http404
+    try:
+        return Response(reseller_signup.send((request.data or {}).get("email"), _seen_ip(request)))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def reseller_signup_verify(request):
+    """The master site: the code is checked; the data of the reseller and the person come back with a one-time grant."""
+    from . import reseller_signup
+
+    if not sitemanager.server_enabled():
+        raise Http404
+    d = request.data or {}
+    try:
+        return Response(reseller_signup.verify(d.get("challenge"), d.get("code")))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

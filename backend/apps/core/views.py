@@ -9,7 +9,7 @@ import logging
 from decimal import Decimal
 
 from django.db import connection
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -3569,3 +3569,67 @@ def sitecreator_theme(request, pk):
         return Response(sitecreator.make_theme(job, use=bool(request.data.get("use"))))
     except ValueError as e:
         return _bad(str(e))
+
+
+# ── the first screen of an EMPTY installation (no users at all): sign up as a reseller, with a code from the master site ──
+def _first_run_guard():
+    from . import reseller_signup
+
+    if not reseller_signup.is_empty():
+        return Response({"detail": "Deze installatie is al ingericht."}, status=status.HTTP_403_FORBIDDEN)
+    return None
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def first_run(request):
+    """Is this installation still to be done (a clean installation: no standard installation, onboarding not complete, no other users than the standard superadmin)? Then the login screen offers the onboarding as a reseller."""
+    from . import reseller_signup
+
+    return Response({"empty": reseller_signup.is_empty()})
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def first_run_send(request):
+    """{email}: the master site looks for a reseller with this address and sends a code (only while there are no users)."""
+    from . import reseller_signup
+
+    bad = _first_run_guard()
+    if bad:
+        return bad
+    try:
+        return Response(reseller_signup.ask("send", {"email": (request.data or {}).get("email")}, request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def first_run_verify(request):
+    """{challenge, code, password}: the code is checked by the master site; then the person is made the first superuser, this website reports itself as a website of that reseller, and the person is logged in."""
+    from rest_framework.authtoken.models import Token
+
+    from . import reseller_signup, sitemanager
+
+    bad = _first_run_guard()
+    if bad:
+        return bad
+    d = request.data or {}
+    try:
+        got = reseller_signup.ask("verify", {"challenge": d.get("challenge"), "code": d.get("code")})
+        user = reseller_signup.make_user(got.get("person"), got.get("reseller"), d.get("password"))
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except PermissionError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+    try:  # the link with the reseller: reported with the grant (a failing report never blocks the onboarding)
+        sitemanager._save(reseller_grant=str(got.get("grant") or ""))
+        sitemanager.report("register")
+    except Exception:  # noqa: BLE001
+        logger.exception("First run: this website could not be linked to the reseller")
+    token, _ = Token.objects.get_or_create(user=user)
+    return Response({"token": token.key, "email": user.email, "reseller": (got.get("reseller") or {}).get("name", "")})

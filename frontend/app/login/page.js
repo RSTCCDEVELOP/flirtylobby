@@ -20,6 +20,7 @@ import { api, setToken, errorText, ApiError } from "../../lib/api";
 import { EditableText } from "../../components/EditMode";
 import CodeInput from "../../components/CodeInput";
 import SsoButtons from "../../components/SsoButtons";
+import ResellerOnboarding from "../../components/ResellerOnboarding";
 
 
 export default function Login() {
@@ -199,6 +200,7 @@ export default function Login() {
         {canRegister && <Link href="/registreren" className="center">{tx("Nog geen account? Aanmelden")}</Link>}
         <Link href="/" className="muted center">{tx("← Terug naar website")}</Link>
       </form>
+      <ResellerOnboarding />
       <DemoLogins onPick={(e, pw) => { setEmail(e); setPassword(pw); setError(""); }} />
     </main>
   );
