@@ -440,7 +440,7 @@ export function ModulePicker({ catalog, b, upd }) {
           <div key={kd}>
             <small className="muted">{kd}</small>
             <div className="dw-chips">
-              {catalog.objects.filter((o) => o.kind_label === kd).map((o) => { const on = objects.includes(o.slug); return <button type="button" key={o.slug} className={`dw-chip ${on ? "on" : ""}`} aria-pressed={on} title={o.slug} onClick={() => onChange({ off, objects: toggle(objects, o.slug) })}>{on && <IconCheck />} {o.name}</button>; })}
+              {catalog.objects.filter((o) => o.kind_label === kd).map((o) => { const on = objects.includes(o.slug); return <button type="button" key={o.slug} className={`dw-chip ${on ? "on" : ""}`} aria-pressed={on} title={o.installed === false ? `${o.slug} · ${tx("wordt geïnstalleerd")}` : o.slug} onClick={() => onChange({ off, objects: toggle(objects, o.slug) })}>{on && <IconCheck />} {o.name}{o.installed === false && <small className="muted"> · {tx("wordt geïnstalleerd")}</small>}</button>; })}
             </div>
           </div>
         ))}

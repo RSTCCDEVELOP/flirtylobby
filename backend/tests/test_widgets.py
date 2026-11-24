@@ -140,3 +140,21 @@ def test_a_superadmin_chooses_the_widgets_of_an_installation(lib, settings, djan
     assert d["widgets_chosen"] and [w["key"] for w in d["widget_library"]] == ["hello"]
     assert c.post(f"/api/system/presets/{key}/design/widgets/", {"widgets": []}, format="json").json()["widgets"] == []
     assert c.post(f"/api/system/presets/{key}/design/widgets/", {}, format="json").status_code == 400
+
+
+@pytest.mark.django_db
+def test_widgets_in_the_creator_questionnaire_and_prompt(lib, django_user_model):
+    from apps.core import pagevalidate, sitecreator
+
+    objs = {o["slug"]: o for o in sitecreator.catalog()["objects"]}
+    assert objs["widget-hello"]["installed"] is False and objs["widget-hello"]["kind"] == "widget"  # the questionnaire shows the whole library
+    assert "widget-hello" not in {o["slug"] for o in sitecreator.auto_objects({"objects": ["widget-hello"]})}  # not active: not in the prompt
+    assert sitecreator.clean_brief({"objects": ["widget-hello", "widget-onbekend"]}, {})["objects"] == ["widget-hello"]  # a library widget can be chosen before it is installed
+    sitecreator._install_chosen_widgets({"objects": ["widget-hello"]})  # chosen: installed when the design is made
+    assert InstalledWidget.objects.get(key="hello").enabled
+    assert "widget-hello" in {o["slug"] for o in sitecreator.auto_objects({"objects": ["widget-hello"]})}
+    assert "widget-hello" not in {o["slug"] for o in sitecreator.auto_objects({})}  # like a system object: only when the customer chose it
+    widgets.uninstall("hello")
+    doc = {"formaat": "easy2edit-pagina@1", "pagina": {"titel": "T", "slug": "t"}, "inhoud": [{"id": "w1", "type": "sysobject", "props": {"slug": "widget-hello"}, "children": []}]}
+    rep, _ = pagevalidate.validate(doc, pagevalidate.site_context({"sysobjecten": {"x"}}))
+    assert any(m["code"] == "WIDGET_NIET_ACTIEF" and m["ernst"] == "waarschuwing" for m in rep["meldingen"])

@@ -41,6 +41,7 @@ CODES = {  # code: what it means (the list of error codes of the documentation)
     "STRUCTUUR_VELD": "Een verplicht veld ontbreekt of heeft het verkeerde type.",
     "ID_DUBBEL": "Een id komt twee keer voor in het ontwerp.",
     "COMPONENT_ONBEKEND": "Het component staat niet in de component set.",
+    "WIDGET_NIET_ACTIEF": "Het widget is niet geïnstalleerd of staat uit op deze website.",
     "COMPONENT_VERSIE": "Het ontwerp is gemaakt voor een andere versie van het component.",
     "PROP_VERPLICHT": "Een verplichte prop ontbreekt.",
     "PROP_TYPE": "Een prop heeft het verkeerde type.",
@@ -318,7 +319,9 @@ def _node(run, node, pad, depth, parent):
         run.add("fout", "NESTING_ONGELDIG", pad + "/children", f"{typ} is een los component en heeft geen children.", typ)
     if typ == "sysobject":
         slug = (node.get("props") or {}).get("slug")
-        if not slug or (run.ctx["sysobjecten"] and slug not in run.ctx["sysobjecten"]):
+        if slug and str(slug).startswith("widget-") and run.ctx["sysobjecten"] and slug not in run.ctx["sysobjecten"]:  # a widget that is not active: no error, the rest of the design goes on
+            run.add("waarschuwing", "WIDGET_NIET_ACTIEF", pad + "/props/slug", f"Het widget '{slug}' is niet geïnstalleerd of staat uit; het blijft leeg tot je het activeert.", typ, "Installeer het widget bij Admin → Website → Widgets.")
+        elif not slug or (run.ctx["sysobjecten"] and slug not in run.ctx["sysobjecten"]):
             run.add("fout", "COMPONENT_ONBEKEND", pad + "/props/slug", f"Het systeemobject '{slug}' bestaat niet of staat uit.", typ)
         return
     if typ == "placeholder":

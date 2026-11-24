@@ -287,6 +287,16 @@ def catalog():
             objs.append({"slug": o.slug, "kind": o.kind, "kind_label": dict(SystemObject.KINDS).get(o.kind, o.kind), "name": str(name)[:120]})
     except Exception:  # noqa: BLE001
         logger.exception("sitecreator catalog")
+    try:  # the widgets of the library that are not installed yet: the customer can choose them (they are installed when the design is made); the planner only gets the active ones
+        from apps.sysobjects import widgets as _wg
+
+        have = {o["slug"] for o in objs}
+        for w in _wg.library():
+            slug_ = f"widget-{w['key']}"
+            if slug_ not in have:
+                objs.append({"slug": slug_, "kind": "widget", "kind_label": dict(SystemObject.KINDS).get("widget", "Widget"), "name": str(w["name"])[:120], "installed": False, "category": w.get("category", ""), "subcategory": w.get("subcategory", "")})
+    except Exception:  # noqa: BLE001
+        logger.exception("sitecreator widgets")
     from .models import Language
 
     langs = [{"code": l.code, "name": l.name, "native": l.native_name, "rtl": l.rtl, "enabled": l.enabled, "default": l.is_default} for l in Language.objects.all()]
@@ -581,6 +591,12 @@ def clean_brief(patch, old):
         b["modules_extra"] = [k for k in (p["modules_extra"] if isinstance(p["modules_extra"], list) else []) if k in known][:80]
     if "objects" in p:
         known = set(SystemObject.objects.values_list("slug", flat=True))
+        try:
+            from apps.sysobjects import widgets as _wg
+
+            known |= {f"widget-{w['key']}" for w in _wg.library()}  # a widget of the library can be chosen before it is installed
+        except Exception:  # noqa: BLE001
+            pass
         b["objects"] = [x for x in (p["objects"] if isinstance(p["objects"], list) else []) if isinstance(x, str) and x in known][:40]
     if "step" in p:
         try:
@@ -1335,6 +1351,24 @@ def _set(pk, **kw):
         keep_name(pk, b["name"])  # the designer made the name of the website: the design is not called "Nieuw ontwerp" any more
 
 
+def _install_chosen_widgets(b):
+    """The widgets that the customer chose in the questionnaire are installed (active) when the design is made, so the planner and the check see them as system objects."""
+    keys = [str(x)[7:] for x in (b.get("objects") or []) if str(x).startswith("widget-")]
+    if not keys:
+        return
+    from apps.sysobjects import widgets as _wg
+    from apps.sysobjects.models import InstalledWidget
+
+    done = {w.key for w in InstalledWidget.objects.filter(enabled=True)}
+    for k in keys:
+        if k in done:
+            continue
+        try:
+            _wg.install(k)
+        except ValueError:
+            logger.warning("sitecreator: widget %s is not in the library", k)
+
+
 def generate(job, improve=False, focus=""):
     if job.status in ("running", "stopping"):
         raise ValueError("Er wordt al gewerkt aan dit ontwerp.")
@@ -1349,6 +1383,7 @@ def generate(job, improve=False, focus=""):
         raise ValueError("Schrijf eerst wat er verbeterd moet worden: zonder opdracht verandert er niets.")
     if b.get("mode") == "improve" and not improve:
         raise ValueError("Een ingelezen ontwerp verbeter je met een opdracht (knop Verbeteren). Wil je het zoals het is gebruiken, kies dan Toepassen.")
+    _install_chosen_widgets(b)
     keep = list(job.messages or []) if improve else []
     if improve:  # improve what is here now (the files of the design as they are), with the points that the user asked attention for
         if not any(n.endswith(".html") for n in (job.files or {})):
@@ -1776,6 +1811,8 @@ def auto_objects(b):
     out = []
     for o in cat:
         slug_ = o["slug"]
+        if o.get("installed") is False:  # a widget of the library that is not active: not in the prompt
+            continue
         if slug_ in chosen or o["kind"] == "media":
             out.append(o)
         elif o["kind"] == "plugin_part":
