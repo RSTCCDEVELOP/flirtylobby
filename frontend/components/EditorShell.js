@@ -13,6 +13,7 @@ import { tx } from "../lib/t";
 import MenuEditorPopup from "./MenuEditorPopup";
 import NewPagePopup from "./NewPagePopup";
 import PageSettingsPanel from "./PageSettingsPanel";
+import SiteFxSettings from "./SiteFxSettings";
 import { useSession } from "./Session";
 
 const I = (d) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
@@ -141,6 +142,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
             <div className="pb-sb-pane" hidden={view !== "structure"}>{structure}</div>
             <div className="pb-sb-pane" hidden={view !== "page"}><PageSettingsPanel lead={<div ref={setPageTarget} className="pb-sb-page" />} /></div>
             <div className="pb-sb-pane" hidden={view !== "settings"}>
+              {!hasSettings && <SiteFxSettings />}
               {!hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
               {actions}
               <div ref={setTarget} className="pb-sb-settings" />

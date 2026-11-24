@@ -42,6 +42,7 @@ import DevicePreview from "../components/DevicePreview";
 import NavProgress from "../components/NavProgress";
 import DonateThanks from "../components/DonateThanks";
 import MaintenanceGate from "../components/MaintenanceGate";
+import MouseEffects from "../components/MouseEffects";
 import LicenseNotice from "../components/LicenseNotice";
 import LicensePrompt from "../components/LicensePrompt";
 import { getBuildId } from "../lib/version-server";
@@ -156,7 +157,7 @@ export default async function RootLayout({ children }) {
   const jsonld = (seo?.jsonld || []).map((o) => ({ ...o, logo: o.logo ? absoluteUrl(o.logo) : undefined }));
   const def = langs?.languages?.find((l) => l.code === langs.default);
   return (
-    <html lang={def?.code || "nl"} dir={def?.rtl ? "rtl" : "ltr"} data-mcase={theme?.values?.menu_case || "normal"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} data-hl={theme?.values?.header_layout || "classic"} data-hstyle={theme?.values?.header_style || "solid"} data-hsticky={theme?.values?.header_sticky || "yes"} data-hwidth={theme?.values?.header_width || "content"} data-fwidth={theme?.values?.footer_width || "content"} data-menu={theme?.values?.menu_style || "text"} data-modesw={theme?.values?.mode_switch === "hide" ? "hide" : "show"} data-fl={theme?.values?.footer_layout || "brand"} data-ft={theme?.values?.footer_tone || "card"} data-fbrand={theme?.values?.footer_brand || "logo"} data-fsocial={theme?.values?.footer_social || "show"} data-fmeta={theme?.values?.footer_meta || "show"} data-fsize={theme?.values?.footer_size || "normal"} data-blocks={theme?.values?.block_style || "card"} suppressHydrationWarning>
+    <html lang={def?.code || "nl"} data-fxc={theme?.values?.fx_cursor || "off"} data-fxm={theme?.values?.fx_magnetic || "no"} data-fxt={theme?.values?.fx_tilt || "no"} data-fxg={theme?.values?.fx_glow || "no"} data-fxr={theme?.values?.fx_ripple || "no"} data-fxp={theme?.values?.fx_parallax || "no"} dir={def?.rtl ? "rtl" : "ltr"} data-mcase={theme?.values?.menu_case || "normal"} data-tabs={theme?.values?.tab_style || "pills"} data-popup={theme?.values?.system_popup || "clean"} data-hl={theme?.values?.header_layout || "classic"} data-hstyle={theme?.values?.header_style || "solid"} data-hsticky={theme?.values?.header_sticky || "yes"} data-hwidth={theme?.values?.header_width || "content"} data-fwidth={theme?.values?.footer_width || "content"} data-menu={theme?.values?.menu_style || "text"} data-modesw={theme?.values?.mode_switch === "hide" ? "hide" : "show"} data-fl={theme?.values?.footer_layout || "brand"} data-ft={theme?.values?.footer_tone || "card"} data-fbrand={theme?.values?.footer_brand || "logo"} data-fsocial={theme?.values?.footer_social || "show"} data-fmeta={theme?.values?.footer_meta || "show"} data-fsize={theme?.values?.footer_size || "normal"} data-blocks={theme?.values?.block_style || "card"} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript(theme?.values?.default_mode, theme?.values?.mode_switch === "hide", theme?.values?.font_tool !== "no") }} />
         {theme?.fonts_url && <link rel="stylesheet" href={theme.fonts_url} />}
@@ -193,6 +194,7 @@ export default async function RootLayout({ children }) {
             <SiteGate />
             <ClosedGate closed={security?.basic?.closed_site} />
             <MaintenanceGate site={site} />
+            <MouseEffects />
             <LicenseNotice site={site} />
             <LicensePrompt site={site} />
             <DonateThanks />

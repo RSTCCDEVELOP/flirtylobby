@@ -109,6 +109,7 @@ def _opts(*pairs):
 TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"), ("zoom", "Inzoomen"), ("blur", "Scherp worden"))
 REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
+FX_CURSOR = _opts(("off", "Uit"), ("ring", "Ring die de muis volgt"), ("dot", "Punt met ring"), ("blob", "Zachte vlek die de muis volgt"))  # the mouse effects of the website (components/MouseEffects.js)
 HEADER_WIDTHS = [{"value": "content", "label": "Maximale breedte van de inhoud (standaard)", "css": ""}, {"value": "full", "label": "Hele breedte van het scherm (100%)", "css": ""}]  # (also for the footer: footer_width)
 
 NAV_DEFAULT = [
@@ -266,6 +267,14 @@ SCHEMA = [
     {"key": "interface_look", "label": "Tabbladen en vensters", "fields": [  # part of a theme: edited in Thema -> Layout
         choice("system_popup", "Uiterlijk van systeem-popups, vensters en bijbehorende tabbladen", "clean", None, SYSTEM_POPUPS),
         choice("tab_style", "Uiterlijk van tabbladen (standaard voor de hele website)", "pills", None, TAB_STYLES),
+    ]},
+    {"key": "mouse_fx", "label": "Muiseffecten", "fields": [  # the effects with the mouse on the website (not on a phone or tablet, and not for people who asked for less movement)
+        choice("fx_cursor", "Aangepaste muisaanwijzer (volgt de muis en groeit boven links en knoppen)", "off", None, FX_CURSOR),
+        choice("fx_magnetic", "Magnetische knoppen (de knop trekt een stukje naar de muis)", "no", None, YESNO),
+        choice("fx_tilt", "Kaarten kantelen in 3D onder de muis", "no", None, YESNO),
+        choice("fx_glow", "Lichtvlek die de muis volgt op kaarten", "no", None, YESNO),
+        choice("fx_ripple", "Golfje bij een klik op een knop", "no", None, YESNO),
+        choice("fx_parallax", "Grote afbeeldingen bewegen mee met de muis", "no", None, YESNO),
     ]},
     {"key": "page_layout", "label": "Pagina-indeling", "fields": [  # part of a theme: edited in Thema -> Layout
         choice("header_layout", "Header: indeling", "classic", None, HEADER_LAYOUTS),
