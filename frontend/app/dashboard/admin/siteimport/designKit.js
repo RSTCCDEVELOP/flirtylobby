@@ -439,9 +439,23 @@ export function ModulePicker({ catalog, b, upd }) {
         {kinds.map((kd) => (
           <div key={kd}>
             <small className="muted">{kd}</small>
-            <div className="dw-chips">
-              {catalog.objects.filter((o) => o.kind_label === kd).map((o) => { const on = objects.includes(o.slug); return <button type="button" key={o.slug} className={`dw-chip ${on ? "on" : ""}`} aria-pressed={on} title={o.installed === false ? `${o.slug} · ${tx("wordt geïnstalleerd")}` : o.slug} onClick={() => onChange({ off, objects: toggle(objects, o.slug) })}>{on && <IconCheck />} {o.name}{o.installed === false && <small className="muted"> · {tx("wordt geïnstalleerd")}</small>}</button>; })}
-            </div>
+            {(() => {
+              const chip = (o) => { const on = objects.includes(o.slug); return <button type="button" key={o.slug} className={`dw-chip ${on ? "on" : ""}`} aria-pressed={on} title={`${o.description ? tx(o.description) + " · " : ""}${o.installed === false ? tx("wordt geïnstalleerd") : o.slug}`} onClick={() => onChange({ off, objects: toggle(objects, o.slug) })}>{on && <IconCheck />} {o.name}{o.installed === false && <small className="muted"> · {tx("wordt geïnstalleerd")}</small>}</button>; };
+              const list = catalog.objects.filter((o) => o.kind_label === kd);
+              if (!list.some((o) => o.category)) return <div className="dw-chips">{list.map(chip)}</div>;  // the widgets: grouped by category and sub category
+              const cats = [...new Set(list.map((o) => o.category || "Overig"))].sort();
+              return cats.map((cat) => (
+                <div key={cat} style={{ marginTop: ".3rem" }}>
+                  <small className="muted" style={{ fontWeight: 700 }}>{tx(cat)}</small>
+                  {[...new Set(list.filter((o) => (o.category || "Overig") === cat).map((o) => o.subcategory || ""))].sort().map((sub) => (
+                    <div key={sub} className="dw-chips" style={{ marginTop: ".2rem" }}>
+                      {sub && <small className="muted" style={{ alignSelf: "center" }}>› {tx(sub)}</small>}
+                      {list.filter((o) => (o.category || "Overig") === cat && (o.subcategory || "") === sub).map(chip)}
+                    </div>
+                  ))}
+                </div>
+              ));
+            })()}
           </div>
         ))}
       </div>

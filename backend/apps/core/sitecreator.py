@@ -284,7 +284,11 @@ def catalog():
                 continue
             names = r.get("names") or {}
             name = (names.get("") or next(iter(names.values()), "") or (r.get("data") or {}).get("title") or o.slug)
-            objs.append({"slug": o.slug, "kind": o.kind, "kind_label": dict(SystemObject.KINDS).get(o.kind, o.kind), "name": str(name)[:120]})
+            row = {"slug": o.slug, "kind": o.kind, "kind_label": dict(SystemObject.KINDS).get(o.kind, o.kind), "name": str(name)[:120]}
+            if o.kind == "widget":  # an active widget: with its category, so the questionnaire can group them
+                dd = r.get("data") or {}
+                row.update({"installed": True, "category": dd.get("category", ""), "subcategory": dd.get("subcategory", ""), "description": dd.get("description", "")})
+            objs.append(row)
     except Exception:  # noqa: BLE001
         logger.exception("sitecreator catalog")
     try:  # the widgets of the library that are not installed yet: the customer can choose them (they are installed when the design is made); the planner only gets the active ones
@@ -294,7 +298,7 @@ def catalog():
         for w in _wg.library():
             slug_ = f"widget-{w['key']}"
             if slug_ not in have:
-                objs.append({"slug": slug_, "kind": "widget", "kind_label": dict(SystemObject.KINDS).get("widget", "Widget"), "name": str(w["name"])[:120], "installed": False, "category": w.get("category", ""), "subcategory": w.get("subcategory", "")})
+                objs.append({"slug": slug_, "kind": "widget", "kind_label": dict(SystemObject.KINDS).get("widget", "Widget"), "name": str(w["name"])[:120], "installed": False, "category": w.get("category", ""), "subcategory": w.get("subcategory", ""), "description": w.get("description", "")})
     except Exception:  # noqa: BLE001
         logger.exception("sitecreator widgets")
     from .models import Language
