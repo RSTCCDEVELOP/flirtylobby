@@ -63,6 +63,9 @@ class CoreConfig(AppConfig):
             from . import background, licence_reminder
 
             background.register("licence-reminder", licence_reminder.run, every=3600, first=180)
+            from . import invoicing
+
+            background.register("invoice-outbox", invoicing.send_pending, every=300, first=120)  # charges that could not reach the invoices of the easy2edit server are sent again
             background.start()
         except Exception:  # noqa: BLE001
             pass

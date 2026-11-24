@@ -837,6 +837,9 @@ def test_ai_credit_on_account_within_the_maximum(admin, monkeypatch, django_user
     assert r["companies"][0]["account"] == {"on": True, "limit": 12.0, "open": 0.0, "may": True}
     assert c.post("/api/ai/me/topup/", body, format="json").json()["via"] == "account"
     assert float(AiAccount.objects.get(user=plain).balance) == 5.0  # the credit is there at once
+    from apps.core.models import ChargeOutbox
+
+    assert ChargeOutbox.objects.filter(ref__startswith="ai-").count() == 1  # and the purchase waits to go on the invoice of the website at the easy2edit server
     assert c.post("/api/ai/me/topup/", body, format="json").status_code == 200  # 10 of 12 open
     r = c.post("/api/ai/me/topup/", body, format="json")
     assert r.status_code == 400 and "maximum" in r.json()["detail"]  # 15 > 12

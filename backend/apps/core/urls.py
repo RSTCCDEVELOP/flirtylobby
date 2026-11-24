@@ -7,7 +7,7 @@
 
 from django.urls import path
 
-from . import component_views, backup_views, terms_views, dashboard, marketing, resource_views, sales, views, template_views
+from . import invoice_views, component_views, backup_views, terms_views, dashboard, marketing, resource_views, sales, views, template_views
 from . import entity_views, manual, note_views, sitemanager_views, speedtest, tag_views
 
 urlpatterns = [
@@ -105,6 +105,10 @@ urlpatterns = [
     path("easy2edit/verify/login/", sitemanager_views.verify_login),
     path("easy2edit/verify/code/", sitemanager_views.verify_code),
     path("easy2edit/sites/component-request/", sitemanager_views.site_component_request),
+    path("easy2edit/invoices/charge/", invoice_views.site_charge),
+    path("invoices/", invoice_views.invoice_list),
+    path("invoices/<int:pk>/", invoice_views.invoice_detail),
+    path("invoices/<int:pk>/paid/", invoice_views.invoice_paid),
     path("easy2edit/sites/owner/remove/", sitemanager_views.site_owner_remove),
     path("easy2edit/owner/lookup/", sitemanager_views.owner_lookup),
     path("easy2edit/owner/company/", sitemanager_views.owner_company),

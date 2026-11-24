@@ -499,3 +499,56 @@ class TagLink(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["tag", "kind", "ref"], name="one_tag_per_thing")]
         indexes = [models.Index(fields=["kind", "ref"])]
+
+
+class Invoice(models.Model):
+    """An invoice of the easy2edit server (the master site): everything a website owes the master (AI credit on account, licence, hosting, other) is a line on the invoice of that website, made out to a
+    company or a person, linked to the reseller of the website. The reseller and the customer see their invoices when they log in on the master (core/invoicing.py)."""
+
+    STATUS = [("open", "Open"), ("paid", "Betaald"), ("void", "Vervallen")]
+    number = models.CharField(max_length=20, unique=True)  # YYYY-NNNN
+    site = models.ForeignKey("core.EasySite", null=True, blank=True, on_delete=models.SET_NULL, related_name="invoices")
+    reseller = models.ForeignKey("core.Reseller", null=True, blank=True, on_delete=models.SET_NULL, related_name="invoices")  # the reseller of the website when the line came in
+    entity = models.ForeignKey("core.Entity", null=True, blank=True, on_delete=models.SET_NULL, related_name="invoices")  # the company on the master that it is made out to (when there is one)
+    person = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="invoices")  # the person on the master that it is made out to / who may look at it
+    bill_kind = models.CharField(max_length=8, default="person")  # company | person
+    bill_name = models.CharField(max_length=160, blank=True)  # the name on the invoice (a snapshot)
+    bill_vat = models.CharField(max_length=40, blank=True)
+    bill_email = models.CharField(max_length=160, blank=True)
+    bill_address = models.JSONField(default=dict, blank=True)
+    period = models.CharField(max_length=7)  # YYYY-MM: the lines of one month go on one invoice
+    status = models.CharField(max_length=6, choices=STATUS, default="open")
+    currency = models.CharField(max_length=3, default="EUR")
+    issued_at = models.DateTimeField(auto_now_add=True)
+    due_at = models.DateField(null=True, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    note = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["-number"]
+
+
+class InvoiceLine(models.Model):
+    KINDS = [("ai", "AI-tegoed"), ("licence", "Licentie"), ("hosting", "Hosting"), ("other", "Overig")]
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lines")
+    kind = models.CharField(max_length=8, choices=KINDS, default="other")
+    description = models.CharField(max_length=200)
+    amount_incl = models.DecimalField(max_digits=12, decimal_places=2)  # the amount including VAT
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=21)
+    ref = models.CharField(max_length=80, unique=True)  # the reference at the website: the same charge twice is one line
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+
+class ChargeOutbox(models.Model):
+    """On a website: a charge that is to go to the invoices of the easy2edit server (core/invoicing.py). It is sent at once; when that fails it stays here and is tried again by the background controller."""
+
+    ref = models.CharField(max_length=80, unique=True)
+    payload = models.JSONField(default=dict)
+    sent = models.BooleanField(default=False)
+    tries = models.PositiveIntegerField(default=0)
+    last_error = models.CharField(max_length=200, blank=True)
+    number = models.CharField(max_length=20, blank=True)  # the invoice number the server gave
+    created = models.DateTimeField(auto_now_add=True)

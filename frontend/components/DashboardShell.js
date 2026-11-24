@@ -57,7 +57,7 @@ import { useNavMode } from "../lib/navmode";
 import { useSession } from "./Session";
 import BackButton from "./BackButton";
 import FindOnPage from "./FindOnPage";
-import { IconHistory, IconRocket, IconLeaf, IconTree, IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
+import { IconReceipt, IconHistory, IconRocket, IconLeaf, IconTree, IconTag, IconBriefcase, IconBolt, IconEdit, IconEye, IconHome, IconUsers, IconUser, IconMenu, IconShield, IconBack, IconPalette, IconGlobe, IconKey, IconLock, IconFolder, IconArchive, IconGrid, IconGroup, IconMail, IconSearch, IconFlask, IconBag, IconChat, IconSettings, IconStar, IconHeart, IconHelp, IconBell } from "./Icons";
 
 import { useUpdates } from "../lib/updates";
 
@@ -71,6 +71,7 @@ const NAV = [
   { href: "/dashboard/faq", label: "FAQ", icon: <IconHelp />, module: "faq", faqPrivate: true },
   { href: "/dashboard/notifications", label: "Meldingen", icon: <IconBell />, module: "notifications" },
   { href: "/dashboard/ai", label: "AI", icon: <IconStar />, module: "ai" },
+  { href: "/dashboard/invoices", label: "Facturen", icon: <IconReceipt />, invoices: true },  // only for someone who has invoices on this server (a customer, a reseller, a superadmin+)
 ];
 
 // Bottom group of the main menu
@@ -297,6 +298,8 @@ export default function DashboardShell({ children }) {
   const communityLinks = COMMUNITY.filter((n) => (n.module === "any" ? communityOn : mods[n.module] !== false));
   const inSuper = pathname.startsWith("/dashboard/superadmin");
   const inAdmin = pathname.startsWith("/dashboard/admin");
+  const [hasInvoices, setHasInvoices] = useState(false);
+  useEffect(() => { if (user) api("/invoices/").then((r) => setHasInvoices((r.invoices || []).length > 0)).catch(() => {}); }, [user]);
   const faqSet = useFaqSettings(); // Admin → FAQ → Instellingen: is the Help link shown in the left menus
   const imported = useImported(mods.siteimport !== false);
   const allowedAdminNav = ADMIN_NAV.map((n) => (imported && n.href === IMPORTED_HREF ? { ...n, label: "Webdesign" } : n.href === "/dashboard/admin/entity" && entity?.label ? { ...n, label: entity.plural || entity.label } : n)).filter((n) => !n.needs || ecoAdmin).filter((n) => { if (n.href === IMPORTED_HREF) return true; if (n.helpLayer) return mods.help !== false && faqSet.nav_link; const pg = ADMIN_PAGES.find((p) => p.href === n.href); return !pg || pageAllowed(user, pg, mods); });
@@ -411,7 +414,7 @@ export default function DashboardShell({ children }) {
           </>
         ) : (
           <>
-            {NAV.filter((n) => !n.hidden && (n.href !== "/dashboard/help" || faqSet.nav_link) && (!n.faqPrivate || (faqSet.nav_link && faqSet.page_scope === "private")) && (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
+            {NAV.filter((n) => !n.hidden && (n.href !== "/dashboard/help" || faqSet.nav_link) && (!n.faqPrivate || (faqSet.nav_link && faqSet.page_scope === "private")) && (!n.invoices || hasInvoices) && (!n.module || mods[n.module] !== false) && (!n.community || communityOn) ).map((n) => <NavLink key={n.href} n={n} exact={n.href === "/dashboard"} />)}
             {renderGroups([...communityLinks.map(withBadge), ...pluginUser], COMMUNITY_GROUPS, { ...COMMUNITY_GROUP_OF, ...pluginUserGroup })}
             {pluginUser.filter((n) => !pluginUserGroup[n.href]).map((n) => <NavLink key={n.href} n={n} />)}
           </>

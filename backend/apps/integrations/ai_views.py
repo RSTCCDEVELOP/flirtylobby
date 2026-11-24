@@ -651,6 +651,12 @@ def topup(request):
         ref = "ai_" + uuid.uuid4().hex[:20]
         AiTopup.objects.create(user=request.user, amount=amount, currency=st.currency, payment_ref=ref, via="account", payer_entity=who.get("entity"), payer_name=who.get("name", ""))
         aiusage.settle_topup(ref, True, "op rekening")
+        try:  # the purchase goes on the invoice of this website at the easy2edit server (made out to the company or the person)
+            from apps.core import invoicing
+
+            invoicing.charge(f"ai-{ref}", "ai", f"AI-tegoed (op rekening) {request.user.email}", amount, invoicing.payer_from(request.user, owner if is_ent else None))
+        except Exception:  # noqa: BLE001
+            pass
         return Response({"url": f"/dashboard/ai?paid=1&ref={ref}", "ref": ref, "via": "account"})
     from apps.core import license_stripe
 
