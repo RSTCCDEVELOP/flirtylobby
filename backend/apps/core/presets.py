@@ -897,7 +897,9 @@ def conflicts(key):
 
     from . import preset_pages
 
-    keys = sorted(set(saved_pages(key)) | set(preset_pages.layout_keys(key)))
+    from . import preset_design
+
+    keys = sorted(set(saved_pages(key)) | set(preset_pages.layout_keys(key)) | set(preset_design.keys(key)))
     out = []
     for k in keys:
         if page_has_content(k):
@@ -969,6 +971,12 @@ def unapply(key):
         preset_pages.remove(key)  # the designed pages of this installation go with it
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: its pages could not be removed", key)
+    try:
+        from . import preset_design
+
+        preset_design.remove(key)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: its design pages could not be removed", key)
     data = _data()
     data.pop("active_preset", None)
     _save_data(data)
@@ -1110,6 +1118,12 @@ def apply(key, preset=None, overwrite_pages=False):
         _apply_saved_pages(key, skip=protected)  # the pages that were saved in this installation come back as they were (except pages that have content of their own)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: saved pages could not be put back", key)
+    try:  # the design of the installation (the pages chosen on the tab Design, with all their pictures): exactly as it was saved
+        from . import preset_design
+
+        preset_design.install(key, skip=protected)
+    except Exception:  # noqa: BLE001
+        logger.exception("Preset %s: its design pages could not be installed", key)
     try:  # pages the superadmin added to or took out of this installation: on or off (they must exist; they need not be active now)
         from apps.pages.models import Page
 

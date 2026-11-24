@@ -1813,6 +1813,27 @@ def presets_page(request, key):
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def presets_design(request, key):
+    """The tab Design of a standard installation (superadmins). GET: the pages that can be chosen and the ones that are kept. POST {pages: [keys]}: keep exactly these pages (with their pictures) in the installation."""
+    from . import preset_design, presets
+
+    if not request.user.is_staff:
+        return Response({"detail": "Alleen superadmins."}, status=status.HTTP_403_FORBIDDEN)
+    if key not in presets.BY_KEY:
+        return Response({"detail": "Onbekende installatie."}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "POST":
+        pages = request.data.get("pages")
+        if not isinstance(pages, list):
+            return Response({"detail": "Ongeldige keuze."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            return Response(preset_design.save(key, [str(k) for k in pages]))
+        except Exception as e:  # noqa: BLE001 - a package that cannot be made (a page that is gone, a picture that cannot be read) is shown as text
+            return Response({"detail": str(e) or "De pagina's konden niet worden opgeslagen."}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(preset_design.listing(key))
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def presets_admin(request):

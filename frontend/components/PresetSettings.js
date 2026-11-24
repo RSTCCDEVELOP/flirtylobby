@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { api, errorText } from "../lib/api";
 import { tx } from "../lib/t";
 import DemoData from "./DemoData";
+import PresetDesign from "./PresetDesign";
 import PresetPlugins from "./PresetPlugins";
 import Tabs from "./Tabs";
 import { PresetIcon } from "./Icons";
@@ -49,7 +50,7 @@ export default function PresetSettings({ p, manage, adminOnly, demo, onRelease, 
     } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
     setSuBusy(false);
   };
-  const tabs = [["general", "Algemeen"], ...(canSetup ? [["setup", "Setup"]] : []), ...(manage ? [["ai", "AI"]] : []), ["modules", "Modules"], ["plugins", "Plugins"], ...(demo ? [["demo", "Demo-gegevens"]] : [])];
+  const tabs = [["general", "Algemeen"], ...(canSetup ? [["setup", "Setup"]] : []), ...(manage ? [["ai", "AI"]] : []), ["modules", "Modules"], ["plugins", "Plugins"], ...(canSetup ? [["design", "Design"]] : []), ...(demo ? [["demo", "Demo-gegevens"]] : [])];
   const num = (k) => (e) => setAi({ ...ai, [k]: e.target.value });
   const body = (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -122,6 +123,7 @@ export default function PresetSettings({ p, manage, adminOnly, demo, onRelease, 
             <strong>{tx("{0} modules", p.modules.length)}</strong>
             <small className="muted">{p.modules.map((m) => tx(m)).join(", ")}</small>
           </>)}
+          {tab === "design" && canSetup && <PresetDesign preset={p.key} />}
           {tab === "plugins" && manage && !adminOnly && <PresetPlugins preset={p.key} />}
           {tab === "plugins" && !(manage && !adminOnly) && (<>
             <p className="muted" style={{ margin: 0 }}>{tx("Dit zijn de plugins en modules van deze installatie volgens de standaardconfiguratie. Een superadmin past ze aan.")}</p>

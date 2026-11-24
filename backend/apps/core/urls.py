@@ -152,6 +152,7 @@ urlpatterns = [
     path("system/onboarding/done/", views.onboarding_done),
     path("system/onboarding/", views.onboarding_status),
     path("system/presets/<slug:key>/page/", views.presets_page),
+    path("system/presets/<slug:key>/design/", views.presets_design),
     path("system/presets/<slug:key>/update/", views.presets_update),
     path("system/presets/<slug:key>/edit/", views.presets_edit),
     path("system/presets/<slug:key>/remove/", views.presets_remove),

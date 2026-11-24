@@ -60,9 +60,9 @@ def _read(item):
         return f.read()
 
 
-def build(page, menus=False):
-    """The package of an own page: {path: bytes} (page.json and media/…)."""
-    if page.kind != "content":
+def build(page, menus=False, system=False):
+    """The package of an own page: {path: bytes} (page.json and media/…). system=True: also the design of a standard page (for a standard installation)."""
+    if page.kind != "content" and not system:
         raise PortableError("Alleen eigen pagina's kunnen worden geëxporteerd.")
     files, names = {}, {}
 
@@ -112,9 +112,9 @@ def build(page, menus=False):
     return files
 
 
-def as_zip(page, keep=True):
+def as_zip(page, keep=True, system=False):
     """The package as zip bytes; keep: also leave a copy in <SITE_DIR>/pages/<key>.zip."""
-    files = build(page)
+    files = build(page, system=system)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for path, raw in files.items():
@@ -256,7 +256,7 @@ def _unzip(data):
     return man, files
 
 
-def _store(path, raw, key, user):
+def _store(path, raw, key, user, source=None):
     """One file of the package into the media library; returns the new MediaItem."""
     name = path.rsplit("/", 1)[-1]
     ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
@@ -273,23 +273,30 @@ def _store(path, raw, key, user):
         except Exception:  # noqa: BLE001
             raise PortableError(f"{name}: geen geldige afbeelding.")
     clean_name = re.sub(r"^\d{3}-", "", name)  # the number in front is only the order in the package
+    if source:  # a standard installation: the same picture is not stored twice when the installation is put in again
+        for old in MediaItem.objects.filter(name=clean_name[:255], source=source[:40]):
+            try:
+                if default_storage.size(old.key) == len(raw):
+                    return old
+            except Exception:  # noqa: BLE001
+                pass
     stored = default_storage.save(areas.site_path("library", f"{date.today():%Y/%m}/{uuid.uuid4().hex[:8]}-{get_valid_filename(clean_name)}"), ContentFile(raw))
     item = MediaItem.objects.get(key=stored)
-    item.name, item.uploaded_by, item.source = clean_name[:255], user, f"page:{key}"[:40]
+    item.name, item.uploaded_by, item.source = clean_name[:255], user, (source or f"page:{key}")[:40]
     item.save(update_fields=["name", "uploaded_by", "source"])
     return item
 
 
-def import_zip(data, user, scope=None, mode="copy", menus=False):
+def import_zip(data, user, scope=None, mode="copy", menus=False, source=None):
     """Make a page of a package. Returns {"page": Page, "notes": [...]}. mode: what to do when a page with this address already exists:
     copy (default) = the new page gets a free address, replace = the existing own page is replaced by the package, skip = leave it as it is."""
     from django.db import transaction
 
     with transaction.atomic():
-        return _import_zip(data, user, scope, mode, menus)
+        return _import_zip(data, user, scope, mode, menus, source)
 
 
-def _import_zip(data, user, scope=None, mode="copy", menus=False):
+def _import_zip(data, user, scope=None, mode="copy", menus=False, source=None):
     from apps.security.words import find_forbidden
 
     man, files = _unzip(data)
@@ -305,17 +312,22 @@ def _import_zip(data, user, scope=None, mode="copy", menus=False):
     if not KEY_RE.fullmatch(old):
         raise PortableError("Het adres van de pagina in het pakket is ongeldig.")
     existing = Page.objects.filter(key=old).first()
-    prev = None
+    prev, only = None, False
+    if existing and mode == "apply" and existing.kind != "content":  # a standard page (the start page, a community page ...): the page stays, its design (blocks, texts, pictures) is replaced
+        only = True
+        PageLayout.objects.filter(key=old).delete()
+        ContentBlock.objects.filter(key__startswith=f"layout.{old}.").delete()
+        ContentBlock.objects.filter(key__startswith=f"page.{old}.").delete()
     if existing and mode == "skip":
         return {"page": existing, "skipped": True, "replaced": False, "key": old, "old": old, "notes": [f"'{old}' bestond al en is overgeslagen."], "warnings": {"modules": [], "plugins": [], "objects": []}, "media": 0, "blocks": 0}
-    if existing and mode == "replace" and existing.kind == "content":  # the package takes the place of the page: its blocks and texts go, its place in the menu stays
+    if existing and mode in ("replace", "apply") and existing.kind == "content":  # the package takes the place of the page: its blocks and texts go, its place in the menu stays
         prev = {"parent_id": existing.parent_id, "order": existing.order, "in_menu": existing.in_menu}
         PageLayout.objects.filter(key=old).delete()
         ContentBlock.objects.filter(key__startswith=f"layout.{old}.").delete()
         ContentBlock.objects.filter(key__startswith=f"page.{old}.").delete()
         existing.delete()
     key, n = old, 2
-    while Page.objects.filter(key=key).exists() or key in RESERVED or (scope == "private" and key in PRIVATE_RESERVED):
+    while not only and (Page.objects.filter(key=key).exists() or key in RESERVED or (scope == "private" and key in PRIVATE_RESERVED)):
         key, n = f"{old}-{n}", n + 1
     notes = []
 
@@ -323,7 +335,7 @@ def _import_zip(data, user, scope=None, mode="copy", menus=False):
     ids = {}
     used = {p for p in files if p.startswith("media/")}
     for path in sorted(used):
-        ids[path] = _store(path, files[path], key, user).id
+        ids[path] = _store(path, files[path], key, user, source).id
 
     def media_id(path):
         return ids.get(str(path or "").lstrip(MARK))
@@ -379,6 +391,11 @@ def _import_zip(data, user, scope=None, mode="copy", menus=False):
             blocks += 1
 
     # 4. the page itself
+    if only:  # (a standard page: only its background and design change)
+        existing.background = bg(man.get("background"))
+        existing.save(update_fields=["background"])
+        PageLayout.objects.update_or_create(key=key, defaults={"data": layout})
+        return {"page": existing, "notes": [], "warnings": check_requirements(man.get("requires") or {"objects": [{"slug": s} for s in man.get("objects") or []]}), "media": len(ids), "blocks": blocks, "key": key, "old": old, "replaced": True, "skipped": False, "menu_row": None}
     last = Page.objects.order_by("-order").first()
     devices = man.get("devices") if isinstance(man.get("devices"), dict) else {}
     p = Page.objects.create(key=key, kind="content", scope=scope, title=title, audience="members" if scope == "private" else (man.get("audience") if man.get("audience") in ("all", "members", "guests") else "all"),
