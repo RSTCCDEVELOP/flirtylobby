@@ -885,6 +885,9 @@ function RefSites({ jobId, disabled, onChange }) {
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
   const [err, setErr] = useState("");
+  const [work, setWork] = useState(null);  // {what, since}: the pop-up that shows that something is being made
+  const [secs, setSecs] = useState(0);
+  useEffect(() => { if (!work) { setSecs(0); return undefined; } const t = setInterval(() => setSecs(Math.round((Date.now() - work.since) / 1000)), 500); return () => clearInterval(t); }, [work]);
   const box = useRef(null);
   const fileIn = useRef(null);
   const apply = (r) => { setList(r.refs || []); setMax(r.max || 5); setCan(r.available !== false); onChange?.((r.refs || []).map((x) => x.url).filter(Boolean)); };
@@ -892,16 +895,16 @@ function RefSites({ jobId, disabled, onChange }) {
   const add = async () => {
     const u = url.trim();
     if (!u || busy || list.length >= max) return;
-    setBusy(true); setErr("");
+    setBusy(true); setErr(""); setWork({ what: u.replace(/^https?:\/\//, ""), kind: "url", since: Date.now() });
     try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "POST", body: { url: u } })); setUrl(""); } catch (e) { setErr(errorText(e)); }
-    setBusy(false);
+    setBusy(false); setWork(null);
   };
   const addFiles = async (files) => {  // pictures that were dropped, pasted or chosen: each one counts like a website (together at most five)
     const imgs = [...files].filter((f) => /^image\//.test(f.type)).slice(0, Math.max(0, max - list.length));
     if (!imgs.length || busy) return;
-    setBusy(true); setErr("");
+    setBusy(true); setErr(""); setWork({ what: imgs.length > 1 ? `${imgs.length} ${tx("afbeeldingen")}` : (imgs[0].name || tx("afbeelding")), kind: "file", since: Date.now() });
     try { for (const f of imgs) { const fd = new FormData(); fd.append("file", f, f.name || "plak.png"); apply(await api(`/sitecreator/${jobId}/refs/`, { method: "POST", body: fd })); } } catch (e) { setErr(errorText(e)); }
-    setBusy(false);
+    setBusy(false); setWork(null);
   };
   const del = async (r) => { try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "DELETE", body: { id: r.id } })); } catch (e) { setErr(errorText(e)); } };
   const onPaste = (e) => {  // a picture from the clipboard (a screenshot, a copied picture): only when it is pasted in this part
@@ -931,6 +934,19 @@ function RefSites({ jobId, disabled, onChange }) {
       <small className="muted">{list.length}/{max} · {tx("Van elke website wordt een afbeelding gemaakt; de ontwerper kijkt ernaar voor de sfeer en de opbouw. Teksten, logo's en foto's worden niet overgenomen.")}</small>
       {!can && <div className="alert" style={{ margin: 0 }}>{tx("Op de server is geen browser (Chrome of Chromium) om afbeeldingen van websites te maken. Een afbeelding slepen of plakken werkt wel.")}</div>}
       {err && <div className="alert" style={{ margin: 0 }} role="alert">{err}</div>}
+      {work && createPortal(
+        <div className="pb-objback" style={{ zIndex: 1450 }} role="alertdialog" aria-live="polite" aria-label={tx("Bezig")}>
+          <div className="pb-objpop" style={{ width: "min(420px, 92vw)", padding: "1.3rem 1.4rem", display: "grid", gap: ".8rem", textAlign: "center" }}>
+            <svg aria-hidden="true" width="46" height="46" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeLinecap="round" style={{ margin: "0 auto", color: "var(--blue)" }}>
+              <circle cx="32" cy="32" r="26" strokeWidth="5" opacity=".2" /><path d="M32 6a26 26 0 0 1 26 26" strokeWidth="5"><animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="1s" repeatCount="indefinite" /></path>
+            </svg>
+            <strong style={{ fontSize: "1.05rem" }}>{work.kind === "url" ? tx("Er wordt een afbeelding van de website gemaakt…") : tx("De afbeelding wordt verwerkt…")}</strong>
+            <span style={{ overflowWrap: "anywhere" }}>{work.what}</span>
+            <div className="imp-bar imp-wait" role="progressbar" aria-label={tx("Bezig")}><span /></div>
+            <small className="muted">{work.kind === "url" ? `${tx("De website wordt geopend en vastgelegd. Dit duurt meestal 10 tot 30 seconden, soms een minuut.")} · ${secs} s` : `${secs} s`}</small>
+            {work.kind === "url" && secs >= 20 && <small className="muted">{tx("Even geduld: sommige websites laden traag. Na 45 seconden stopt het vanzelf met een melding.")}</small>}
+          </div>
+        </div>, document.body)}
     </div>
   );
 }
