@@ -63,7 +63,7 @@ def test_login_with_mail(plus, monkeypatch):
     monkeypatch.setattr(sending, "send_email", lambda to, subject, body, **k: sent.append((to, body)))
     rid = plus.post("/api/system/resellers/", FORM, format="json").json()["id"]
     r = plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "Piet@Studiotest.nl", "name": "Piet Pols", "send": True}, format="json")
-    assert r.status_code == 201 and len(r.json()["password"]) == 12 and r.json()["sent"]
+    assert r.status_code == 201 and len(r.json()["password"]) == 20 and r.json()["sent"]
     assert sent and sent[0][0] == "piet@studiotest.nl" and r.json()["password"] in sent[0][1]  # the mail has the password
     assert plus.post(f"/api/system/resellers/{rid}/logins/", {"email": "piet@studiotest.nl"}, format="json").status_code == 400  # twice
     lid = r.json()["login"]["id"]
