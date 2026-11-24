@@ -4911,6 +4911,6 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .code-timer .ct-ring { transition: stroke-dashoffset .5s linear; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--blue, #3b82f6) 45%, transparent)); }
 .code-timer.low .ct-ring { filter: drop-shadow(0 0 3px rgba(224,138,60,.5)); } .code-timer.gone .ct-ring { filter: none; }
 .code-timer .ct-in { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
-.code-timer .ct-text { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.code-timer .ct-text { font-size: .8rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 .code-timer .ct-sub { font-size: .48rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; margin-top: 2px; }
 .code-timer.gone .ct-text { color: var(--danger, #d64545); opacity: 1; }
