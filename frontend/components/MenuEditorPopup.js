@@ -128,7 +128,7 @@ export default function MenuEditorPopup({ onClose }) {
     } catch (x) { setErr(errorText(x)); }
   }
 
-  const row = ({ p, sub, canInto, isOff }) => {
+  const row = ({ p, sub, canInto, isOff, empty }) => {
     const free = p.kind === "link" || p.kind === "menu";  // (own pages and system pages keep their name; it is changed in their settings)
     const aud = edits[p.id]?.audience ?? p.audience ?? "all";
     return (
@@ -141,6 +141,7 @@ export default function MenuEditorPopup({ onClose }) {
         {free ? <input className="mnu-name" value={name(p)} maxLength={80} onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], title: e.target.value } })} aria-label={tx("Naam")} />
           : <span className="mnu-name">{name(p)}</span>}
         {p.kind === "link" && <input className="mnu-url" value={edits[p.id]?.url ?? p.url ?? ""} placeholder="https://… of /pad" onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], url: e.target.value } })} aria-label={tx("Link")} />}
+        {empty && <span className="mnu-warn" title={tx("Een menu-item zonder subitems staat niet in de header. Sleep een item op het midden van dit item om er een submenu van te maken.")}>{tx("Nog leeg: niet zichtbaar")}</span>}
         <select className="mnu-aud" value={aud} onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], audience: e.target.value } })} aria-label={tx("Wie ziet dit item")} title={tx("Wie ziet dit item in het menu")}>{Object.entries(AUD).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
         <span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span>
         {free && <button type="button" className="mnu-del" onClick={() => remove(p)} title={tx("Verwijderen")} aria-label={tx("Verwijderen")}>×</button>}
@@ -159,7 +160,7 @@ export default function MenuEditorPopup({ onClose }) {
           <div className="mnu-list">
             {tree.map((r) => (
               <div key={r.p.id} className="mnu-group">
-                {row({ p: r.p, canInto: true })}
+                {row({ p: r.p, canInto: true, empty: r.p.kind === "menu" && !r.kids.length })}
                 {r.kids.map((k) => row({ p: k, sub: true }))}
               </div>
             ))}
@@ -187,6 +188,7 @@ export default function MenuEditorPopup({ onClose }) {
               </select>
             </label>
             <label>{tx("Naam")}<input value={nw.title} maxLength={80} onChange={(e) => setNw({ ...nw, title: e.target.value })} /></label>
+            {nw.kind === "menu" && <p className="muted">{tx("Een menu-item heeft alleen een naam en klapt open: het staat pas in de header als er minstens één item onder staat (sleep een item erop in het menu).")}</p>}
             {nw.kind === "link" && <label>{tx("Link")}<input value={nw.url} onChange={(e) => setNw({ ...nw, url: e.target.value })} placeholder="https://… of /pad" /></label>}
             <div className="row"><button className="btn primary" disabled={busy}>{tx("Toevoegen aan het menu")}</button></div>
           </form>
