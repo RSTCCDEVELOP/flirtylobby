@@ -42,7 +42,7 @@ function CodeTimer({ kind }) {
         <circle cx="34" cy="34" r={R} fill="none" className="ct-track" strokeWidth="6" />
         <circle cx="34" cy="34" r={R} fill="none" stroke={`url(#${gid})`} className="ct-ring" strokeWidth="6" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} transform="rotate(-90 34 34)" />
       </svg>
-      <span className="ct-in"><span className="ct-text">{mm}</span><span className="ct-sub">{left === 0 ? tx("verlopen") : tx("geldig")}</span></span>
+      <span className="ct-in"><span className="ct-text">{mm}</span></span>
     </span>
   );
 }
