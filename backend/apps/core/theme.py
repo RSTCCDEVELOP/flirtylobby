@@ -109,6 +109,7 @@ def _opts(*pairs):
 TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"), ("zoom", "Inzoomen"), ("blur", "Scherp worden"))
 REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
+FX_COLOR = _opts(("primary", "Primaire kleur"), ("secondary", "Secundaire kleur"), ("text", "Tekstkleur"), ("white", "Wit"))
 FX_CURSOR = _opts(("off", "Uit"), ("ring", "Ring die de muis volgt"), ("dot", "Punt met ring"), ("blob", "Zachte vlek die de muis volgt"))  # the mouse effects of the website (components/MouseEffects.js)
 HEADER_WIDTHS = [{"value": "content", "label": "Maximale breedte van de inhoud (standaard)", "css": ""}, {"value": "full", "label": "Hele breedte van het scherm (100%)", "css": ""}]  # (also for the footer: footer_width)
 
@@ -275,6 +276,16 @@ SCHEMA = [
         choice("fx_glow", "Lichtvlek die de muis volgt op kaarten", "no", None, YESNO),
         choice("fx_ripple", "Golfje bij een klik op een knop", "no", None, YESNO),
         choice("fx_parallax", "Grote afbeeldingen bewegen mee met de muis", "no", None, YESNO),
+        number("fx_cursor_size", "Muisaanwijzer: grootte", 34, None, "px", 20, 80, 2),
+        number("fx_cursor_speed", "Muisaanwijzer: hoe vlot hij de muis volgt (1 = zacht en traag, 10 = direct)", 5, None, "", 1, 10, 1),
+        number("fx_cursor_grow", "Muisaanwijzer: hoeveel hij groeit boven links en knoppen", 1.9, None, "x", 1, 3, 0.1),
+        choice("fx_cursor_color", "Muisaanwijzer: kleur", "primary", None, FX_COLOR),
+        choice("fx_cursor_native", "Muisaanwijzer: de gewone aanwijzer verbergen", "no", None, YESNO),
+        number("fx_magnetic_strength", "Magnetische knoppen: kracht", 25, None, "%", 5, 60, 5),
+        number("fx_tilt_amount", "Kaarten kantelen: hoek", 7, None, "°", 2, 16, 1),
+        number("fx_glow_size", "Lichtvlek: grootte", 260, None, "px", 120, 500, 20),
+        number("fx_glow_strength", "Lichtvlek: sterkte", 22, None, "%", 5, 50, 1),
+        number("fx_parallax_amount", "Meebewegende afbeeldingen: afstand", 8, None, "px", 2, 24, 1),
     ]},
     {"key": "page_layout", "label": "Pagina-indeling", "fields": [  # part of a theme: edited in Thema -> Layout
         choice("header_layout", "Header: indeling", "classic", None, HEADER_LAYOUTS),

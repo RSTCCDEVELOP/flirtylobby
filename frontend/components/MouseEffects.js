@@ -15,18 +15,25 @@ import { useEffect } from "react";
 const INTERACTIVE = "a, button, [role=button], input, select, textarea, label, summary, .btn";
 const MAGNETIC = ".btn, a.btn, button.btn, .site-main .btn, main .btn";
 const CARDS = "main .card:not(.modal):not(.login-card), .pb-card, .block-card";
-const FX_ATTRS = ["data-fxc", "data-fxm", "data-fxt", "data-fxg", "data-fxr", "data-fxp", "data-pbbar"];
+const FX_ATTRS = ["data-fxc", "data-fxm", "data-fxt", "data-fxg", "data-fxr", "data-fxp", "data-fxcfg", "data-pbbar"];
+const COLORS = { primary: "var(--blue, #f2823f)", secondary: "var(--secondary, var(--blue, #f2823f))", text: "var(--text, #1f2937)", white: "#ffffff" };
+const DEF = { fx_cursor_size: 34, fx_cursor_speed: 5, fx_cursor_grow: 1.9, fx_cursor_color: "primary", fx_cursor_native: "no", fx_magnetic_strength: 25, fx_tilt_amount: 7, fx_glow_size: 260, fx_glow_strength: 22, fx_parallax_amount: 8 };
+const cfgOf = () => { try { return { ...DEF, ...JSON.parse(document.documentElement.dataset.fxcfg || "{}") }; } catch { return DEF; } };
 
 const on = (t, e, f, o) => { t.addEventListener(e, f, o); return () => t.removeEventListener(e, f, o); };
 
-function cursor(kind) {
+function cursor(kind, cfg) {
   const ring = document.createElement("div"); ring.className = `fx-cursor fx-${kind}`;
   const dot = kind === "dot" ? Object.assign(document.createElement("div"), { className: "fx-cursor-dot" }) : null;
+  const col = COLORS[cfg.fx_cursor_color] || COLORS.primary;
+  ring.style.setProperty("--fx-cs", `${cfg.fx_cursor_size}px`); ring.style.setProperty("--fx-cc", col); dot?.style.setProperty("--fx-cc", col);
+  if (cfg.fx_cursor_native === "yes") document.documentElement.classList.add("fx-hide-native");
   document.body.append(ring); if (dot) document.body.append(dot);
+  const k = 0.06 + cfg.fx_cursor_speed * 0.045, grow = Number(cfg.fx_cursor_grow) || 1.9;
   let x = -100, y = -100, rx = x, ry = y, raf = 0, big = false, down = false;
   const tick = () => {
-    rx += (x - rx) * (kind === "blob" ? 0.12 : 0.22); ry += (y - ry) * (kind === "blob" ? 0.12 : 0.22);
-    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%) scale(${down ? 0.8 : big ? 1.9 : 1})`;
+    rx += (x - rx) * k; ry += (y - ry) * k;
+    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%) scale(${down ? 0.8 : big ? grow : 1})`;
     if (dot) dot.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
     raf = requestAnimationFrame(tick);
   };
@@ -36,10 +43,11 @@ function cursor(kind) {
     on(document, "mouseleave", () => { ring.classList.remove("show"); dot?.classList.remove("show"); }),
     on(document, "mousedown", () => { down = true; }), on(document, "mouseup", () => { down = false; }),
   ];
-  return () => { cancelAnimationFrame(raf); offs.forEach((f) => f()); ring.remove(); dot?.remove(); };
+  return () => { cancelAnimationFrame(raf); offs.forEach((f) => f()); ring.remove(); dot?.remove(); document.documentElement.classList.remove("fx-hide-native"); };
 }
 
-function magnetic() {
+function magnetic(cfg) {
+  const k = cfg.fx_magnetic_strength / 100;
   let cur = null;
   const reset = () => { if (cur) { cur.style.transform = ""; cur.style.transition = "transform .3s ease"; cur = null; } };
   const offs = [
@@ -49,14 +57,15 @@ function magnetic() {
       if (!el) return;
       cur = el; const r = el.getBoundingClientRect();
       el.style.transition = "transform .08s ease-out";
-      el.style.transform = `translate(${(e.clientX - (r.left + r.width / 2)) * 0.22}px, ${(e.clientY - (r.top + r.height / 2)) * 0.3}px)`;
+      el.style.transform = `translate(${(e.clientX - (r.left + r.width / 2)) * k}px, ${(e.clientY - (r.top + r.height / 2)) * k * 1.3}px)`;
     }, { passive: true }),
     on(document, "mouseleave", reset),
   ];
   return () => { offs.forEach((f) => f()); reset(); };
 }
 
-function tilt() {
+function tilt(cfg) {
+  const deg = cfg.fx_tilt_amount;
   let cur = null;
   const reset = () => { if (cur) { cur.style.transform = ""; cur.style.transition = "transform .4s ease"; cur = null; } };
   const offs = [
@@ -67,14 +76,16 @@ function tilt() {
       cur = el; const r = el.getBoundingClientRect();
       const px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
       el.style.transition = "transform .1s ease-out";
-      el.style.transform = `perspective(900px) rotateX(${(-py * 7).toFixed(2)}deg) rotateY(${(px * 7).toFixed(2)}deg) translateZ(0)`;
+      el.style.transform = `perspective(900px) rotateX(${(-py * deg).toFixed(2)}deg) rotateY(${(px * deg).toFixed(2)}deg) translateZ(0)`;
     }, { passive: true }),
     on(document, "mouseleave", reset),
   ];
   return () => { offs.forEach((f) => f()); reset(); };
 }
 
-function glow() {
+function glow(cfg) {
+  const root = document.documentElement;
+  root.style.setProperty("--fx-gs", `${cfg.fx_glow_size}px`); root.style.setProperty("--fx-gp", `${cfg.fx_glow_strength}%`);
   const hosts = new Set();
   const offs = [
     on(document, "mousemove", (e) => {
@@ -85,7 +96,7 @@ function glow() {
       el.style.setProperty("--fx-x", `${e.clientX - r.left}px`); el.style.setProperty("--fx-y", `${e.clientY - r.top}px`);
     }, { passive: true }),
   ];
-  return () => { offs.forEach((f) => f()); hosts.forEach((h) => h.classList.remove("fx-glow-host")); };
+  return () => { offs.forEach((f) => f()); hosts.forEach((h) => h.classList.remove("fx-glow-host")); root.style.removeProperty("--fx-gs"); root.style.removeProperty("--fx-gp"); };
 }
 
 function ripple() {
@@ -100,12 +111,13 @@ function ripple() {
   });
 }
 
-function parallax() {
+function parallax(cfg) {
+  const amount = cfg.fx_parallax_amount;
   let raf = 0, mx = 0, my = 0;
   const imgs = () => [...document.querySelectorAll("main img")].filter((i) => i.width > 240 && !i.closest(".site-header, .site-footer") && !i.classList.contains("logo-light") && !i.classList.contains("logo-dark"));
   const upd = () => {
     raf = 0;
-    imgs().forEach((i, n) => { const k = 6 + (n % 3) * 3; i.style.transform = `translate(${(mx * k).toFixed(1)}px, ${(my * k).toFixed(1)}px) scale(1.03)`; i.style.transition = "transform .25s ease-out"; });
+    imgs().forEach((i, n) => { const k = amount * (1 + (n % 3) * 0.4); i.style.transform = `translate(${(mx * k).toFixed(1)}px, ${(my * k).toFixed(1)}px) scale(1.03)`; i.style.transition = "transform .25s ease-out"; });
   };
   const off = on(document, "mousemove", (e) => { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; if (!raf) raf = requestAnimationFrame(upd); }, { passive: true });
   return () => { off(); cancelAnimationFrame(raf); imgs().forEach((i) => { i.style.transform = ""; }); };
@@ -121,13 +133,13 @@ export default function MouseEffects() {
     const apply = () => {
       undo.forEach((f) => f()); undo = [];
       if (root.dataset.pbbar === "1") return;  // while the page is edited the page stays as it is
-      const d = root.dataset;
-      if (d.fxc && d.fxc !== "off") undo.push(cursor(d.fxc));
-      if (d.fxm === "yes") undo.push(magnetic());
-      if (d.fxt === "yes") undo.push(tilt());
-      if (d.fxg === "yes") undo.push(glow());
+      const d = root.dataset, cfg = cfgOf();
+      if (d.fxc && d.fxc !== "off") undo.push(cursor(d.fxc, cfg));
+      if (d.fxm === "yes") undo.push(magnetic(cfg));
+      if (d.fxt === "yes") undo.push(tilt(cfg));
+      if (d.fxg === "yes") undo.push(glow(cfg));
       if (d.fxr === "yes") undo.push(ripple());
-      if (d.fxp === "yes") undo.push(parallax());
+      if (d.fxp === "yes") undo.push(parallax(cfg));
     };
     apply();
     const mo = new MutationObserver(apply);

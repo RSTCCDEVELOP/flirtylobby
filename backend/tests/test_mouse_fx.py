@@ -58,3 +58,11 @@ def test_the_mouse_effects_go_with_a_theme_package_and_a_standard_installation(s
     plain = themepacks.create("Zonder effecten", from_current=False)
     themepacks.use(plain)  # a theme without effects switches them off
     assert themepacks.current_values()["fx_cursor"] == "off"
+
+
+def test_the_numbers_of_the_effects_have_limits_and_defaults():
+    assert theme.DEFAULTS["fx_cursor_size"] == 34 and theme.DEFAULTS["fx_glow_size"] == 260 and theme.DEFAULTS["fx_cursor_color"] == "primary"
+    ok, err = theme.validate({"fx_cursor_size": 50, "fx_cursor_grow": 2.5, "fx_cursor_color": "white", "fx_cursor_native": "yes", "fx_tilt_amount": 10})
+    assert not err and ok["fx_cursor_size"] == 50
+    _c, err = theme.validate({"fx_cursor_size": 500, "fx_glow_strength": 0, "fx_cursor_color": "pink"})
+    assert set(err) == {"fx_cursor_size", "fx_glow_strength", "fx_cursor_color"}
