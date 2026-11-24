@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Bir süre kaydırdıktan sonra sabit kalır",
   "Header: blijft staan na (eenheid)": "Üst bilgi: şundan sonra sabit kalır (birim)",
   "Header: blijft staan na (procent van het scherm)": "Üst bilgi: şundan sonra sabit kalır (ekranın yüzdesi)",
-  "Header: blijft staan na (pixels)": "Üst bilgi: şundan sonra sabit kalır (piksel)"
+  "Header: blijft staan na (pixels)": "Üst bilgi: şundan sonra sabit kalır (piksel)",
+  "Verschijnt na": "Şundan sonra görünür",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "Üst bilgi önce gizlidir ve ziyaretçi o kadar kaydırınca görünür. «Şundan sonra sabit kalır» ve «Şundan sonra görünür» arasında seçim yapabilirsiniz: yalnızca biri etkindir.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Bir süre kaydırdıktan sonra görünür (önce gizli)"
 }

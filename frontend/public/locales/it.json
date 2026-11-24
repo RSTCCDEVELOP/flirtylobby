@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Resta fissa dopo un po' di scorrimento",
   "Header: blijft staan na (eenheid)": "Intestazione: resta fissa dopo (unità)",
   "Header: blijft staan na (procent van het scherm)": "Intestazione: resta fissa dopo (percentuale dello schermo)",
-  "Header: blijft staan na (pixels)": "Intestazione: resta fissa dopo (pixel)"
+  "Header: blijft staan na (pixels)": "Intestazione: resta fissa dopo (pixel)",
+  "Verschijnt na": "Appare dopo",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "L'intestazione è prima nascosta e appare quando il visitatore ha scorso fin lì. Puoi scegliere tra «Resta fissa dopo» e «Appare dopo»: ne è attiva una sola.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Appare dopo un po' di scorrimento (prima nascosta)"
 }

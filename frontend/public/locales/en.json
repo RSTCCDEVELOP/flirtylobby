@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Stays after scrolling a while",
   "Header: blijft staan na (eenheid)": "Header: stays after (unit)",
   "Header: blijft staan na (procent van het scherm)": "Header: stays after (percent of the screen)",
-  "Header: blijft staan na (pixels)": "Header: stays after (pixels)"
+  "Header: blijft staan na (pixels)": "Header: stays after (pixels)",
+  "Verschijnt na": "Appears after",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "The header is hidden at first and appears once the visitor has scrolled that far. You can choose between Stays after and Appears after: only one is active.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Appears after scrolling a while (hidden at first)"
 }

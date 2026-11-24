@@ -10,7 +10,7 @@ from apps.core import theme
 
 
 def test_the_header_can_stick_always_never_or_after_a_part_of_the_screen():
-    for v in ("yes", "no", "after"):
+    for v in ("yes", "no", "after", "start"):  # "after" stays after the scrolling, "start" appears after it: one of the two
         clean, errors = theme.validate({"header_sticky": v})
         assert clean == {"header_sticky": v} and not errors, v
     assert theme.validate({"header_sticky": "after75"})[1]  # only the values that are offered

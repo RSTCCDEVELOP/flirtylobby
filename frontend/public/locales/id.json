@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Tetap setelah menggulir sebentar",
   "Header: blijft staan na (eenheid)": "Header: tetap setelah (satuan)",
   "Header: blijft staan na (procent van het scherm)": "Header: tetap setelah (persen dari layar)",
-  "Header: blijft staan na (pixels)": "Header: tetap setelah (piksel)"
+  "Header: blijft staan na (pixels)": "Header: tetap setelah (piksel)",
+  "Verschijnt na": "Muncul setelah",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "Header awalnya tersembunyi dan muncul setelah pengunjung menggulir sejauh itu. Pilih antara «Tetap setelah» dan «Muncul setelah»: hanya satu yang aktif.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Muncul setelah menggulir sebentar (awalnya tersembunyi)"
 }

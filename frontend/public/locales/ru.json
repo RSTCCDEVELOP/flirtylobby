@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Закрепляется после прокрутки",
   "Header: blijft staan na (eenheid)": "Шапка: закрепляется после (единица)",
   "Header: blijft staan na (procent van het scherm)": "Шапка: закрепляется после (процент экрана)",
-  "Header: blijft staan na (pixels)": "Шапка: закрепляется после (пиксели)"
+  "Header: blijft staan na (pixels)": "Шапка: закрепляется после (пиксели)",
+  "Verschijnt na": "Появляется после",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "Шапка сначала скрыта и появляется, когда посетитель прокрутил на столько. Можно выбрать «Остаётся после» или «Появляется после»: активна только одна.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Появляется после прокрутки (сначала скрыта)"
 }

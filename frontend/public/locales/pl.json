@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Zostaje po przewinięciu kawałka",
   "Header: blijft staan na (eenheid)": "Nagłówek: zostaje po (jednostka)",
   "Header: blijft staan na (procent van het scherm)": "Nagłówek: zostaje po (procent ekranu)",
-  "Header: blijft staan na (pixels)": "Nagłówek: zostaje po (piksele)"
+  "Header: blijft staan na (pixels)": "Nagłówek: zostaje po (piksele)",
+  "Verschijnt na": "Pojawia się po",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "Nagłówek jest najpierw ukryty i pojawia się, gdy odwiedzający przewinie tak daleko. Możesz wybrać między „Zostaje po” a „Pojawia się po”: aktywna jest tylko jedna.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Pojawia się po przewinięciu kawałka (najpierw ukryty)"
 }

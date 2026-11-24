@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Fica fixo após deslocar um pouco",
   "Header: blijft staan na (eenheid)": "Cabeçalho: fica fixo após (unidade)",
   "Header: blijft staan na (procent van het scherm)": "Cabeçalho: fica fixo após (percentagem do ecrã)",
-  "Header: blijft staan na (pixels)": "Cabeçalho: fica fixo após (píxeis)"
+  "Header: blijft staan na (pixels)": "Cabeçalho: fica fixo após (píxeis)",
+  "Verschijnt na": "Aparece após",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "O cabeçalho está oculto ao início e aparece quando o visitante deslocou tanto. Podes escolher entre «Fica fixo após» e «Aparece após»: só uma está ativa.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Aparece após deslocar um pouco (oculto ao início)"
 }

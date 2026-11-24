@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Reste fixe après un certain défilement",
   "Header: blijft staan na (eenheid)": "En-tête : reste fixe après (unité)",
   "Header: blijft staan na (procent van het scherm)": "En-tête : reste fixe après (pourcentage de l'écran)",
-  "Header: blijft staan na (pixels)": "En-tête : reste fixe après (pixels)"
+  "Header: blijft staan na (pixels)": "En-tête : reste fixe après (pixels)",
+  "Verschijnt na": "Apparaît après",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "L'en-tête est d'abord masqué et apparaît dès que le visiteur a fait défiler autant. Tu peux choisir entre « Reste fixe après » et « Apparaît après » : une seule option est active.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Apparaît après un certain défilement (d'abord masqué)"
 }

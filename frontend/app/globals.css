@@ -5050,3 +5050,9 @@ html[data-hsticky^="after"][data-hstuck="1"] .site-header { position: fixed; top
 html[data-hsticky^="after"][data-hstuck="1"] body { padding-top: var(--site-header-h, 64px); }
 @keyframes hstick-in { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { html[data-hsticky^="after"][data-hstuck="1"] .site-header { animation: none; } }
+
+/* the header that starts after a part of the screen is scrolled (theme value header_sticky = start): hidden above the page at first, it slides in when components/StickyHeader.js sets data-hstuck; while editing it is shown as usual so its edit button can be reached */
+html[data-hsticky="start"] .site-header { position: fixed; top: 0; left: 0; right: 0; margin-left: auto; margin-right: auto; transform: translateY(-100%); visibility: hidden; transition: transform .22s ease-out, visibility 0s linear .22s; }
+html[data-hsticky="start"][data-hstuck="1"] .site-header { transform: translateY(0); visibility: visible; transition: transform .22s ease-out, visibility 0s; }
+html[data-pbbar="1"][data-hsticky="start"] .site-header { position: relative; transform: none; visibility: visible; transition: none; }
+@media (prefers-reduced-motion: reduce) { html[data-hsticky="start"] .site-header { transition: none; } }

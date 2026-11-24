@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "滚动一段距离后固定",
   "Header: blijft staan na (eenheid)": "页眉:滚动多少后固定(单位)",
   "Header: blijft staan na (procent van het scherm)": "页眉:滚动多少后固定(屏幕百分比)",
-  "Header: blijft staan na (pixels)": "页眉:滚动多少后固定(像素)"
+  "Header: blijft staan na (pixels)": "页眉:滚动多少后固定(像素)",
+  "Verschijnt na": "滚动后出现",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "页眉起初隐藏,访问者滚动到该距离后出现。可在“滚动超过此比例后固定”和“滚动后出现”之间选择:只有一个生效。",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "滚动一段距离后出现(起初隐藏)"
 }

@@ -141,15 +141,15 @@ export default function HeaderEdit() {
                   <section className="hed-card">
                     <h4>{tx("Plakken bij scrollen")}</h4>
                     <div className="hed-field"><span className="hed-lbl">{tx("De header blijft bovenaan staan")}</span>
-                      {SEG([["yes", tx("Altijd")], ["after", tx("Na scrollen")], ["no", tx("Nooit")]], mode, (k) => setLook("header_sticky", k))}
+                      {SEG([["yes", tx("Altijd")], ["after", tx("Blijft staan na")], ["start", tx("Verschijnt na")], ["no", tx("Nooit")]], mode, (k) => setLook("header_sticky", k))}
                     </div>
-                    {mode === "after" && (<>
+                    {(mode === "after" || mode === "start") && (<>
                       <div className="hed-field"><span className="hed-lbl">{tx("Eenheid")}</span>
                         {SEG([["pct", tx("Procent (%)")], ["px", tx("Pixels (px)")]], unit, (k) => setLook("header_sticky_unit", k))}
                       </div>
-                      <div className="hed-field"><span className="hed-lbl">{tx("Blijft staan na")}<b className="hed-val">{amount} {unit === "px" ? "px" : "%"}</b></span>
+                      <div className="hed-field"><span className="hed-lbl">{tx(mode === "start" ? "Verschijnt na" : "Blijft staan na")}<b className="hed-val">{amount} {unit === "px" ? "px" : "%"}</b></span>
                         <input type="range" min={af?.min ?? 0} max={af?.max ?? (unit === "px" ? 1500 : 200)} step={af?.step ?? (unit === "px" ? 10 : 5)} value={amount} onChange={(e) => setStickyAt(amountKey, Number(e.target.value))} aria-label={tx("Blijft staan na")} />
-                        <small className="muted">{unit === "px" ? tx("Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.") : tx("Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.")}</small>
+                        <small className="muted">{mode === "start" ? tx("De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.") : unit === "px" ? tx("Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.") : tx("Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.")}</small>
                       </div>
                     </>)}
                     <small className="muted">{tx("Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.")}</small>

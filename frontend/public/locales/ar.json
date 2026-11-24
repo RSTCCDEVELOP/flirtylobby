@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "يثبت بعد التمرير قليلًا",
   "Header: blijft staan na (eenheid)": "الرأس: يثبت بعد (الوحدة)",
   "Header: blijft staan na (procent van het scherm)": "الرأس: يثبت بعد (نسبة من الشاشة)",
-  "Header: blijft staan na (pixels)": "الرأس: يثبت بعد (بكسل)"
+  "Header: blijft staan na (pixels)": "الرأس: يثبت بعد (بكسل)",
+  "Verschijnt na": "يظهر بعد",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "يكون الرأس مخفيًا في البداية ويظهر بعد أن يمرّر الزائر هذه المسافة. يمكنك الاختيار بين «يثبت بعد» و«يظهر بعد»: واحد فقط يكون نشطًا.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "يظهر بعد التمرير قليلًا (مخفي في البداية)"
 }

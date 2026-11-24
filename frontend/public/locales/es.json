@@ -8969,5 +8969,8 @@
   "Blijft staan na een stuk scrollen": "Se queda fija tras desplazar un poco",
   "Header: blijft staan na (eenheid)": "Cabecera: se queda fija tras (unidad)",
   "Header: blijft staan na (procent van het scherm)": "Cabecera: se queda fija tras (porcentaje de la pantalla)",
-  "Header: blijft staan na (pixels)": "Cabecera: se queda fija tras (píxeles)"
+  "Header: blijft staan na (pixels)": "Cabecera: se queda fija tras (píxeles)",
+  "Verschijnt na": "Aparece tras",
+  "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "La cabecera está oculta al principio y aparece cuando el visitante ha desplazado tanto. Puedes elegir entre «Se queda fija tras» y «Aparece tras»: solo una está activa.",
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Aparece tras desplazar un poco (oculta al principio)"
 }
