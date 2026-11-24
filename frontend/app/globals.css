@@ -5116,3 +5116,9 @@ html[data-pbbar="1"] .side-menu, html[data-hsidepreview="1"] .side-menu { top: v
 /* the design of the side menu: floating (a distance from the screen edge, all corners round and lines all around), lines between the menu items */
 html[data-hsidediv="yes"] .side-menu .hmenu.f-bar > * { border-bottom: 1px solid var(--line); border-radius: 0; }
 html[data-hsidediv="yes"] .side-menu .hmenu.f-bar > *:last-child { border-bottom: 0; }
+
+/* the side menu against the start of the content: the button (arrow) stays against the content too, also when the menu is closed; the closed menu itself is not drawn (it would show in the space beside the content) */
+html[data-hsideanchor="content"] .side-menu.left { transform: translateX(-100%); } html[data-hsideanchor="content"] .side-menu.right { transform: translateX(100%); }
+html[data-hsideanchor="content"] .side-menu.left.open, html[data-hsideanchor="content"] .side-menu.right.open { transform: none; }
+html[data-hsideanchor="content"] .side-menu:not(.open) .side-card { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+html[data-hsideanchor="content"] .side-menu:not(.open) .side-in { visibility: hidden; transition: visibility 0s linear .25s; }
