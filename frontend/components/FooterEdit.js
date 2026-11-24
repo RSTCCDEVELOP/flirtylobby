@@ -16,7 +16,7 @@ import { useSession } from "./Session";
 import Tabs from "./Tabs";
 
 import Loading from "./Loading";
-const LOOK = [["footer_layout", "Indeling"], ["footer_tone", "Kleur"], ["footer_brand", "Logo en naam"], ["footer_social", "Sociale media"], ["footer_meta", "Bedrijfsgegevens"], ["footer_size", "Ruimte"]];
+const LOOK = [["footer_layout", "Indeling"], ["footer_width", "Breedte van de footer"], ["footer_tone", "Kleur"], ["footer_brand", "Logo en naam"], ["footer_social", "Sociale media"], ["footer_meta", "Bedrijfsgegevens"], ["footer_size", "Ruimte"]];
 const SOCIAL = [["facebook", "Facebook"], ["instagram", "Instagram"], ["x", "X"], ["linkedin", "LinkedIn"], ["youtube", "YouTube"], ["tiktok", "TikTok"]];
 
 // The Edit button of the footer (edit mode): its look (theme) and its texts (basic data) in one popup.
@@ -47,6 +47,7 @@ export default function FooterEdit() {
   const setLook = async (key, v) => {
     const values = { ...theme.values, [key]: v };
     setTheme({ ...theme, values }); setDirty(true);
+    if (key === "footer_width" && typeof document !== "undefined") document.documentElement.dataset.fwidth = v || "content";  // the width changes at once (like the header)
     try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); }
   };
   const saveSys = async () => {
