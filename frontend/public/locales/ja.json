@@ -9019,5 +9019,6 @@
   "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "メニューから上端または下端までの距離を、画面の高さに対する割合で指定します(「中央」の場合は適用されません)。",
   "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "サイドメニュー:メニューの高さ(画面の高さの%、メニュー自体より小さくはなりません)",
   "Zijmenu: waar staat het menu (boven, midden, onder)": "サイドメニュー:メニューの位置(上、中央、下)",
-  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "ウェブサイト全体のマウスエフェクト。スマートフォンやタブレットでは動作せず、動きを減らす設定にしているユーザーにも適用されません。編集中はマウスエフェクトが停止します(完了の後に確認できます)。画像が一緒に動くようなスクロール時のエフェクトは動作します。"
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "ウェブサイト全体のマウスエフェクト。スマートフォンやタブレットでは動作せず、動きを減らす設定にしているユーザーにも適用されません。編集中はマウスエフェクトが停止します(完了の後に確認できます)。画像が一緒に動くようなスクロール時のエフェクトは動作します。",
+  "Hoe breed het zijmenu is. Smaller kan, maar nooit smaller dan de menu-items; het logo schaalt dan mee.": "サイドメニューの幅です。狭くできますが、メニュー項目より狭くはなりません。その場合、ロゴも一緒に縮小されます。"
 }

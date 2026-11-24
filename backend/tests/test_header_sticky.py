@@ -43,6 +43,7 @@ def test_the_side_menu_and_the_start_of_the_page_and_the_hero():
     assert theme.validate({"side_button_y": 101})[1] and theme.validate({"side_menu_y": 61})[1]
     ok2, err2 = theme.validate({"side_menu_w": 360, "side_menu_size": 110, "side_menu_opacity": 70})  # the size and the transparency of the side menu
     assert not err2 and ok2 == {"side_menu_w": 360, "side_menu_size": 110, "side_menu_opacity": 70}
+    assert theme.validate({"side_menu_w": 110})[1] and theme.validate({"side_menu_w": 120})[0] == {"side_menu_w": 120}  # narrower than before, down to 120 px (the menu items stop it at their own width)
     assert theme.validate({"side_menu_w": 100})[1] and theme.validate({"side_menu_size": 200})[1] and theme.validate({"side_menu_opacity": 10})[1]
     assert {"side_menu_w", "side_menu_size", "side_menu_opacity"} <= set(themepacks.COMPLETE_KEYS)
     css, _ = theme.build({**{k: f["default"] for k, f in theme.FIELDS.items()}, "side_menu_opacity": 60})

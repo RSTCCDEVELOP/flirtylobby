@@ -5101,3 +5101,9 @@ html[data-hide-header="1"] .site-header { clip-path: inset(100% 0 0 0); }
 /* the preview of the side menu in the editor (tab Zijmenu of the header panel): under the bar and next to the panel of the editor, so every change is seen at once */
 html[data-pbbar="1"] .side-menu, html[data-hsidepreview="1"] .side-menu { top: var(--pb-bar-h, 48px); z-index: 1085; }
 html[data-pbbar="1"][data-pbsb="1"] .side-menu.left, html[data-hsidepreview="1"][data-pbsb="1"] .side-menu.left { left: var(--pb-sb-w, 340px); }
+
+/* a narrow side menu: never narrower than its menu items (they stay on one line and give the menu its minimum width) and the logo scales along with the width */
+.side-menu { min-width: min-content; }
+.side-menu .hmenu a, .side-menu .hmenu .hm-label { white-space: nowrap; }
+.side-menu .side-brand { min-width: 0; max-width: 100%; }
+.side-menu .side-brand img, .side-menu .side-brand svg { max-width: 100%; width: auto; height: auto; max-height: var(--site-logo-h, 52px); object-fit: contain; }

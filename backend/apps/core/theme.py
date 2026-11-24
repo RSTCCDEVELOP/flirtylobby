@@ -308,7 +308,7 @@ SCHEMA = [
         number("side_menu_y", "Zijmenu: positie van het menu (% van de schermhoogte)", 0, "--side-menu-y", "", 0, 60, 1),
         number("side_menu_h", "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)", 100, "--side-menu-h", "", 20, 100, 5),
         choice("header_side_v", "Zijmenu: waar staat het menu (boven, midden, onder)", "top", None, HEADER_SIDE_V),
-        number("side_menu_w", "Zijmenu: breedte van het menu", 300, "--side-menu-w", "px", 200, 480, 10),
+        number("side_menu_w", "Zijmenu: breedte van het menu", 300, "--side-menu-w", "px", 120, 480, 10),
         number("side_menu_size", "Zijmenu: tekstgrootte van het menu (%)", 100, "--side-menu-size", "", 80, 140, 5),
         number("side_menu_opacity", "Zijmenu: dekking van het menu (% , lager = transparanter)", 100, "--side-menu-op", "", 20, 100, 5),
         number("page_start", "Pagina begint onder het menu (fijn afstellen)", 0, "--page-start", "px", -200, 400, 4),

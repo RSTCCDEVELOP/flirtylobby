@@ -226,7 +226,7 @@ export default function HeaderEdit() {
                   {mode !== "off" && sideTab === "look" && (
                   <section className="hed-card">
                     <h4>{tx("Grootte en transparantie")}</h4>
-                    {[["side_menu_w", "Breedte van het menu", "px", "Hoe breed het zijmenu is."], ["side_menu_h", "Hoogte van het menu", "%", "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger."], ["side_menu_size", "Tekstgrootte van het menu", "%", "De grootte van de letters in het zijmenu; 100% is normaal."], ["side_menu_opacity", "Transparantie", "%", "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren."]].map(([k, l, u, d]) => {
+                    {[["side_menu_w", "Breedte van het menu", "px", "Hoe breed het zijmenu is. Smaller kan, maar nooit smaller dan de menu-items; het logo schaalt dan mee."], ["side_menu_h", "Hoogte van het menu", "%", "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger."], ["side_menu_size", "Tekstgrootte van het menu", "%", "De grootte van de letters in het zijmenu; 100% is normaal."], ["side_menu_opacity", "Transparantie", "%", "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren."]].map(([k, l, u, d]) => {
                       const f = fields.find((x) => x.key === k); if (!f) return null;
                       const n = Number(theme.values[k] ?? f.default);
                       return (
