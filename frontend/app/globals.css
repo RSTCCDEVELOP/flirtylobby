@@ -3205,7 +3205,7 @@ body:has(.topbar) .sandbox-badge, body:has(.site) .sandbox-badge { display: none
 @media (max-width: 560px) { .sandbox-pill { font-size: 0; gap: 0; padding: .35rem; } .sandbox-pill svg { width: 16px; height: 16px; } }
 
 /* all tabs next to each other on one row (popups with a few tabs); on a very narrow screen they scroll sideways */
-.tabs-pro.tabs-one-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.tabs-pro.tabs-one-row { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; padding-bottom: 1px; scrollbar-width: none; } .tabs-pro.tabs-one-row::-webkit-scrollbar { display: none; } /* the line of the active tab (it sits 1px over the edge) is no longer cut off by the scrolling row */
 .tabs-pro.tabs-one-row .tab-pro { flex: 0 0 auto; white-space: nowrap; }
 
 /* the small editor of descriptions */
@@ -5017,3 +5017,10 @@ html[data-pbbar="1"] .pb { margin-top: 3.2rem; }
 
 /* a widget that is not active, in a place on a page (shown to the people who edit) */
 .so-inactive { display: flex; align-items: center; gap: .8rem; padding: 1rem 1.2rem; border: 2px dashed var(--line); border-radius: 14px; background: color-mix(in srgb, var(--blue) 5%, var(--card, #fff)); color: var(--muted, #667); margin: .5rem 0; } .so-inactive strong { display: block; color: var(--text, inherit); } .so-inactive small { display: block; }
+
+/* the one-row tabs of the edit windows: a calm, even bar in every popup style (the minimal style squeezed them against the line) */
+.tabs-pro.tabs-one-row, html[data-popup="minimal"] .tabs-pro.tabs-one-row { gap: .15rem; border-bottom: 1px solid var(--line); padding-bottom: 1px; margin-bottom: .6rem; }
+.tabs-pro.tabs-one-row .tab-pro, html[data-popup="minimal"] .tabs-pro.tabs-one-row .tab-pro { padding: .65rem 1rem; font-size: .92rem; line-height: 1.2; border-radius: 10px 10px 0 0; margin-bottom: -1px; border-bottom: 2px solid transparent; letter-spacing: .005em; }
+.tabs-pro.tabs-one-row .tab-pro:hover, html[data-popup="minimal"] .tabs-pro.tabs-one-row .tab-pro:hover { background: color-mix(in srgb, var(--blue) 7%, transparent); color: var(--text); }
+.tabs-pro.tabs-one-row .tab-pro.active, html[data-popup="minimal"] .tabs-pro.tabs-one-row .tab-pro.active { color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, transparent); border-bottom: 2px solid var(--blue); }
+.tabs-pro.tabs-one-row .tab-pro:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
