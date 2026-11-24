@@ -24,6 +24,7 @@ const ICON = {
   eye: I(<><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>),
   sliders: I(<><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></>),
   expand: I(<path d="M9 5l7 7-7 7" />),
+  globe: I(<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18" /></>),
   ai: I(<><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z" /></>),
   menu: I(<path d="M4 6h16M4 12h16M4 18h10" />),
   panel: I(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></>),
@@ -54,11 +55,14 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
   const [newPage, setNewPage] = useState(false);
   const [menuEd, setMenuEd] = useState(false);
   const [stMenu, setStMenu] = useState(false);  // the pulldown of Instellingen
+  const [part, setPart] = useState("block");  // what the Settings show: "block" (the settings of the block or part that you picked) or "global" (the settings of the whole website, like the mouse effects)
+  useEffect(() => { if (hasSettings) setPart("block"); }, [hasSettings]);  // a block that is picked shows its own settings
   const openSettings = (what) => {  // what: "" = the settings as they are, "header" / "footer" = their editor in the panel
     setStMenu(false);
     window.dispatchEvent(new Event("pb-close-hf"));
+    setPart(what === "global" ? "global" : "block");
     setView("settings"); setOpen(true);
-    if (what) setTimeout(() => window.dispatchEvent(new Event(what === "header" ? "pb-open-header" : "pb-open-footer")), 80);
+    if (what === "header" || what === "footer") setTimeout(() => window.dispatchEvent(new Event(what === "header" ? "pb-open-header" : "pb-open-footer")), 80);
   };
   const [headerHidden, setHeaderHidden] = useState(() => { try { return localStorage.getItem("editHideHeader") === "1"; } catch { return false; } });
   useEffect(() => {  // the site header can be hidden while editing, so the top of the page (the first block, the hero) can be edited; it is always back when the editor closes
@@ -91,6 +95,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
                 <div className="pb-tb-dropbg" onClick={() => setStMenu(false)} />
                 <div className="pb-tb-dropmenu" role="menu">
                   <button type="button" role="menuitem" onClick={() => openSettings("")}>{ICON.gear}<span>{tx("Instellingen")}</span></button>
+                  <button type="button" role="menuitem" onClick={() => openSettings("global")}>{ICON.globe}<span>{tx("Global")}</span></button>
                   <button type="button" role="menuitem" onClick={() => openSettings("header")}>{ICON.sliders}<span>{tx("Header bewerken")}</span></button>
                   <button type="button" role="menuitem" onClick={() => openSettings("footer")}>{ICON.sliders}<span>{tx("Footer bewerken")}</span></button>
                   {typeof document !== "undefined" && document.documentElement.dataset.aiimprove === "1" && <button type="button" role="menuitem" onClick={() => { setStMenu(false); window.dispatchEvent(new Event("pb-ai-improve")); }}>{ICON.ai}<span>{tx("AI gebruiken")}</span></button>}
@@ -132,7 +137,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
         <aside className="pb-sidebar" aria-label={tx("Bewerkpaneel")}>
           <div className="pb-sb-resize" onPointerDown={startDrag} onDoubleClick={() => { setWidth(340); try { localStorage.removeItem("pb-sb-w"); } catch {} }} role="separator" aria-orientation="vertical" aria-label={tx("Breedte van het paneel: sleep om te verbreden of te versmallen")} title={tx("Sleep om de breedte aan te passen (dubbelklik: standaard)")} />
           <div className="pb-sb-head">
-            <strong>{tx(views.find(([k]) => k === view)?.[1] || "Elementen")}</strong>
+            <strong>{view === "settings" && part === "global" ? tx("Global") : tx(views.find(([k]) => k === view)?.[1] || "Elementen")}</strong>
             <span style={{ flex: 1 }} />
             {view !== "elements" && <button type="button" className="pb-sb-add" onClick={() => setView("elements")} title={tx("Een element toevoegen aan de pagina")}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>{tx("Elementen toevoegen")}</button>}
             <button type="button" className="pb-sb-x" onClick={() => setOpen(false)} aria-label={tx("Sluiten")}>×</button>
@@ -142,8 +147,8 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
             <div className="pb-sb-pane" hidden={view !== "structure"}>{structure}</div>
             <div className="pb-sb-pane" hidden={view !== "page"}><PageSettingsPanel lead={<div ref={setPageTarget} className="pb-sb-page" />} /></div>
             <div className="pb-sb-pane" hidden={view !== "settings"}>
-              {!hasSettings && <SiteFxSettings />}
-              {!hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
+              {part === "global" && <SiteFxSettings />}
+              {part !== "global" && !hasSettings && <p className="muted pb-sb-hint">{tx("Klik op het tandwiel van een blok of onderdeel op de pagina: de instellingen staan dan hier.")}</p>}
               {actions}
               <div ref={setTarget} className="pb-sb-settings" />
             </div>

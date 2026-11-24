@@ -4974,3 +4974,6 @@ html.fx-hide-native, html.fx-hide-native * { cursor: none !important; }
 .fxs { gap: .55rem; } .fxs .tabs-pro { margin: 0; } .fxs-top { margin-bottom: 0; }
 .fxs-panel { display: flex; flex-direction: column; gap: .65rem; padding: .7rem .75rem; border-radius: 10px; background: var(--card, #fff); border: 1px solid var(--line); }
 .fxs-dis { opacity: .45; } .fxs input[type=range] { width: 100%; }
+
+/* while the page is edited everything sits a little lower: the bars and buttons above the first block (the grip, the gear, the bin, the page gear) stay within reach under the top bar */
+html[data-pbbar="1"] .pb { margin-top: 3.2rem; }
