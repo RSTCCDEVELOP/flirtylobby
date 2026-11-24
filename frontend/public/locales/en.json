@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "How opaque the menu is: 100% is fully solid, lower lets the page show through.",
   "Zijmenu: breedte van het menu": "Side menu: menu width",
   "Zijmenu: tekstgrootte van het menu (%)": "Side menu: menu text size (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Side menu: menu opacity (% , lower = more transparent)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Side menu: menu opacity (% , lower = more transparent)",
+  "Hoogte van het menu": "Menu height",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "The minimum height as a percentage of the screen. The menu is never smaller than its own content: if more fits in, it becomes taller.",
+  "Waar staat het menu": "Where the menu stands",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "The distance from the menu to the top or bottom edge, as a percentage of the screen height (not applicable for Middle).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Side menu: menu height (% of the screen height, never smaller than the menu itself)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Side menu: where the menu stands (top, middle, bottom)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Mouse effects for the whole website. They do not work on a phone or tablet, nor for people who have asked for less motion. While editing, the mouse effects stand still (you will see them after Done); the scroll effect, such as images that move along, does work."
 }

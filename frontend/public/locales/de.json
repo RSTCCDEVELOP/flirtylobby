@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Wie deckend das Menü ist: 100% ist komplett undurchsichtig, niedriger lässt die Seite durchscheinen.",
   "Zijmenu: breedte van het menu": "Seitenmenü: Breite des Menüs",
   "Zijmenu: tekstgrootte van het menu (%)": "Seitenmenü: Textgröße des Menüs (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Seitenmenü: Deckkraft des Menüs (% , niedriger = transparenter)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Seitenmenü: Deckkraft des Menüs (% , niedriger = transparenter)",
+  "Hoogte van het menu": "Höhe des Menüs",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "Die Mindesthöhe als Prozentsatz des Bildschirms. Das Menü ist nie kleiner als sein eigener Inhalt: Passt mehr hinein, wird es höher.",
+  "Waar staat het menu": "Wo das Menü steht",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "Der Abstand des Menüs zum oberen oder unteren Rand, als Prozentsatz der Bildschirmhöhe (bei Mitte nicht anwendbar).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Seitenmenü: Höhe des Menüs (% der Bildschirmhöhe, nie kleiner als das Menü selbst)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Seitenmenü: Wo das Menü steht (oben, Mitte, unten)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Mauseffekte für die ganze Website. Sie funktionieren nicht auf einem Smartphone oder Tablet und nicht für Personen, die weniger Bewegung angefordert haben. Während der Bearbeitung stehen die Mauseffekte still (du siehst sie nach Fertig); der Effekt beim Scrollen, etwa mitbewegte Bilder, funktioniert dagegen."
 }

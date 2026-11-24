@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "مدى عتامة القائمة: 100% تعني معتمة تمامًا، والقيمة الأقل تُظهر الصفحة من خلالها.",
   "Zijmenu: breedte van het menu": "القائمة الجانبية: عرض القائمة",
   "Zijmenu: tekstgrootte van het menu (%)": "القائمة الجانبية: حجم نص القائمة (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "القائمة الجانبية: عتامة القائمة (% ، أقل = أكثر شفافية)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "القائمة الجانبية: عتامة القائمة (% ، أقل = أكثر شفافية)",
+  "Hoogte van het menu": "ارتفاع القائمة",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "الحد الأدنى للارتفاع كنسبة مئوية من الشاشة. لا تكون القائمة أصغر من محتواها أبدًا: إذا اتسعت لأكثر، فإنها تصبح أطول.",
+  "Waar staat het menu": "موضع القائمة",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "المسافة بين القائمة والحافة العلوية أو السفلية، كنسبة مئوية من ارتفاع الشاشة (لا ينطبق عند اختيار الوسط).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "القائمة الجانبية: ارتفاع القائمة (% من ارتفاع الشاشة، ولا تكون أصغر من القائمة نفسها)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "القائمة الجانبية: موضع القائمة (أعلى، وسط، أسفل)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "تأثيرات الماوس للموقع بالكامل. لا تعمل على الهاتف أو الجهاز اللوحي، ولا للأشخاص الذين طلبوا حركة أقل. أثناء التحرير تتوقف تأثيرات الماوس (سترى التأثيرات بعد النقر على تم)؛ أما تأثير التمرير، مثل الصور المتحركة معه، فيعمل."
 }

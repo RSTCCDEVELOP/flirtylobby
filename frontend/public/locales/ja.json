@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "メニューの不透明度です。100% は完全に不透明で、低くするとページが透けて見えます。",
   "Zijmenu: breedte van het menu": "サイドメニュー:メニューの幅",
   "Zijmenu: tekstgrootte van het menu (%)": "サイドメニュー:メニューの文字サイズ (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "サイドメニュー:メニューの不透明度 (% 、低いほど透明)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "サイドメニュー:メニューの不透明度 (% 、低いほど透明)",
+  "Hoogte van het menu": "メニューの高さ",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "画面に対する割合で示す最小の高さ。メニューは自分の内容より小さくなることはありません。内容が多い場合は、高くなります。",
+  "Waar staat het menu": "メニューの位置",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "メニューから上端または下端までの距離を、画面の高さに対する割合で指定します(「中央」の場合は適用されません)。",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "サイドメニュー:メニューの高さ(画面の高さの%、メニュー自体より小さくはなりません)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "サイドメニュー:メニューの位置(上、中央、下)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "ウェブサイト全体のマウスエフェクト。スマートフォンやタブレットでは動作せず、動きを減らす設定にしているユーザーにも適用されません。編集中はマウスエフェクトが停止します(完了の後に確認できます)。画像が一緒に動くようなスクロール時のエフェクトは動作します。"
 }

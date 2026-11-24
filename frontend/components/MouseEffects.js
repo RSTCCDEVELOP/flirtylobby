@@ -11,7 +11,7 @@ import { useEffect } from "react";
 
 // The mouse effects of the website (theme settings fx_*, set by the attributes data-fxc|fxm|fxt|fxg|fxr|fxp on <html>): a cursor that follows the mouse and grows over links and buttons,
 // magnetic buttons, cards that tilt in 3D, a spot of light that follows the mouse on cards, a ripple on a button click and large pictures that move along with the mouse.
-// Never on a touch screen, never for people who asked for less movement, and not while the page is being edited. A change in the settings works at once (the attributes are watched).
+// Never on a touch screen, never for people who asked for less movement, and while the page is being edited only the effect of scrolling (the pictures that move along) works. A change in the settings works at once (the attributes are watched).
 const INTERACTIVE = "a, button, [role=button], input, select, textarea, label, summary, .btn";
 const MAGNETIC = ".btn, a.btn, button.btn, .site-main .btn, main .btn";
 const CARDS = "main .card:not(.modal):not(.login-card), .pb-card, .block-card";
@@ -132,13 +132,15 @@ export default function MouseEffects() {
     let undo = [];
     const apply = () => {
       undo.forEach((f) => f()); undo = [];
-      if (root.dataset.pbbar === "1") return;  // while the page is edited the page stays as it is
       const d = root.dataset, cfg = cfgOf();
-      if (d.fxc && d.fxc !== "off") undo.push(cursor(d.fxc, cfg));
-      if (d.fxm === "yes") undo.push(magnetic(cfg));
-      if (d.fxt === "yes") undo.push(tilt(cfg));
-      if (d.fxg === "yes") undo.push(glow(cfg));
-      if (d.fxr === "yes") undo.push(ripple());
+      const editing = root.dataset.pbbar === "1";  // while the page is edited the effects of the mouse stay off (they would move what you are editing); the effect of scrolling works, so you see it at once
+      if (!editing) {
+        if (d.fxc && d.fxc !== "off") undo.push(cursor(d.fxc, cfg));
+        if (d.fxm === "yes") undo.push(magnetic(cfg));
+        if (d.fxt === "yes") undo.push(tilt(cfg));
+        if (d.fxg === "yes") undo.push(glow(cfg));
+        if (d.fxr === "yes") undo.push(ripple());
+      }
       if (d.fxp === "yes") undo.push(parallax(cfg));
     };
     apply();

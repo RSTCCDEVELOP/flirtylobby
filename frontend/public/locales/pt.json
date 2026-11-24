@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Quão opaco é o menu: 100% é totalmente sólido, mais baixo deixa a página transparecer.",
   "Zijmenu: breedte van het menu": "Menu lateral: largura do menu",
   "Zijmenu: tekstgrootte van het menu (%)": "Menu lateral: tamanho do texto do menu (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu lateral: opacidade do menu (% , mais baixo = mais transparente)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu lateral: opacidade do menu (% , mais baixo = mais transparente)",
+  "Hoogte van het menu": "Altura do menu",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "A altura mínima como percentagem do ecrã. O menu nunca é menor do que o seu próprio conteúdo: se couber mais, fica mais alto.",
+  "Waar staat het menu": "Onde fica o menu",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "A distância do menu à margem superior ou inferior, como percentagem da altura do ecrã (não aplicável em Meio).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Menu lateral: altura do menu (% da altura do ecrã, nunca menor do que o próprio menu)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Menu lateral: onde fica o menu (cima, meio, baixo)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Efeitos do rato para todo o site. Não funcionam num telemóvel ou tablet nem para pessoas que pediram menos movimento. Durante a edição, os efeitos do rato ficam parados (vais vê-los depois de Concluído); o efeito ao deslocar, como imagens que acompanham o movimento, funciona."
 }

@@ -40,12 +40,14 @@ export default function SideMenu() {
   const right = state.side === "right";
   return (
     <aside className={`side-menu ${right ? "right" : "left"}${open ? " open" : ""}`} aria-label={tx("Zijmenu")}>
+      <div className="side-card">
       <button type="button" className="side-arrow" aria-expanded={open} aria-label={open ? tx("Menu sluiten") : tx("Menu openen")} title={open ? tx("Menu sluiten") : tx("Menu openen")} onClick={toggle}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: (right ? !open : open) ? "rotate(180deg)" : "none", transition: "transform .25s" }}><path d="M9 6l6 6-6 6" /></svg>
       </button>
       <div className="side-in">
         <Link href="/" className="brand side-brand"><Logo header /></Link>
         <MenuView items={items} cfg={{ ...cfg, forms, sub }} device="desktop" pathname={pathname} user={user} />
+      </div>
       </div>
     </aside>
   );

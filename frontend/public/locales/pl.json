@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Jak nieprzezroczyste jest menu: 100% oznacza całkowicie pełne, niższa wartość pozwala prześwitywać stronie.",
   "Zijmenu: breedte van het menu": "Menu boczne: szerokość menu",
   "Zijmenu: tekstgrootte van het menu (%)": "Menu boczne: rozmiar tekstu menu (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu boczne: krycie menu (% , niżej = bardziej przezroczyste)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu boczne: krycie menu (% , niżej = bardziej przezroczyste)",
+  "Hoogte van het menu": "Wysokość menu",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "Minimalna wysokość jako procent ekranu. Menu nigdy nie jest mniejsze niż jego zawartość: jeśli mieści się więcej, staje się wyższe.",
+  "Waar staat het menu": "Gdzie znajduje się menu",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "Odległość menu od górnej lub dolnej krawędzi, jako procent wysokości ekranu (nie dotyczy opcji Środek).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Menu boczne: wysokość menu (% wysokości ekranu, nigdy mniejsze niż samo menu)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Menu boczne: gdzie znajduje się menu (góra, środek, dół)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Efekty myszy dla całej strony. Nie działają na telefonie ani tablecie, ani dla osób, które poprosiły o mniej ruchu. Podczas edycji efekty myszy są wstrzymane (zobaczysz je po kliknięciu Gotowe); efekt przy przewijaniu, jak obrazy poruszające się razem ze stroną, działa."
 }

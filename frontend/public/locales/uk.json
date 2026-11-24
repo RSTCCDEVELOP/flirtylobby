@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Наскільки непрозоре меню: 100% — повністю суцільне, менше значення дозволяє сторінці просвічувати.",
   "Zijmenu: breedte van het menu": "Бічне меню: ширина меню",
   "Zijmenu: tekstgrootte van het menu (%)": "Бічне меню: розмір тексту меню (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Бічне меню: непрозорість меню (% , менше = прозоріше)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Бічне меню: непрозорість меню (% , менше = прозоріше)",
+  "Hoogte van het menu": "Висота меню",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "Мінімальна висота у відсотках від екрана. Меню ніколи не буває меншим за свій вміст: якщо в нього вміщується більше, воно стає вищим.",
+  "Waar staat het menu": "Де розташоване меню",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "Відстань від меню до верхнього або нижнього краю у відсотках від висоти екрана (для варіанта «Посередині» не застосовується).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Бічне меню: висота меню (% від висоти екрана, ніколи не менша за саме меню)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Бічне меню: де розташоване меню (зверху, посередині, знизу)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Ефекти миші для всього сайту. Вони не працюють на телефоні чи планшеті та для людей, які попросили менше анімації. Під час редагування ефекти миші нерухомі (ти побачиш їх після «Готово»); ефект під час прокручування, як-от зображення, що рухаються, працює."
 }

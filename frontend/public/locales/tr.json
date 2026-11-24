@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Menünün ne kadar opak olduğu: 100% tamamen dolu, daha düşük değer sayfanın görünmesini sağlar.",
   "Zijmenu: breedte van het menu": "Yan menü: menü genişliği",
   "Zijmenu: tekstgrootte van het menu (%)": "Yan menü: menü metin boyutu (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Yan menü: menü opaklığı (% , düşük = daha şeffaf)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Yan menü: menü opaklığı (% , düşük = daha şeffaf)",
+  "Hoogte van het menu": "Menü yüksekliği",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "Ekranın yüzdesi olarak en düşük yükseklik. Menü hiçbir zaman kendi içeriğinden küçük olmaz: daha fazlası sığarsa daha yüksek olur.",
+  "Waar staat het menu": "Menü nerede duruyor",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "Menünün üst veya alt kenara uzaklığı, ekran yüksekliğinin yüzdesi olarak (Orta için geçerli değildir).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Yan menü: menü yüksekliği (ekran yüksekliğinin %, hiçbir zaman menünün kendisinden küçük olmaz)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Yan menü: menü nerede duruyor (üst, orta, alt)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Tüm web sitesi için fare efektleri. Telefonda veya tablette ve daha az hareket isteyen kişiler için çalışmazlar. Düzenleme sırasında fare efektleri durur (bunları Bitti'den sonra görürsün); kaydırma efekti, örneğin birlikte hareket eden görseller, çalışır."
 }

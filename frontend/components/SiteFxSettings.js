@@ -64,7 +64,7 @@ export default function SiteFxSettings() {
   return (
     <section className="fxs">
       <Tabs className="fxs-top" value="mouse" onChange={() => {}} tabs={[["mouse", "Muis"]]} />
-      <p className="muted fxs-sub">{tx("Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan ze stil: je ziet ze na Klaar.")}</p>
+      <p className="muted fxs-sub">{tx("Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.")}</p>
       {msg && <div className="alert">{msg}</div>}
       <Tabs className="fxs-subtabs" value={sub} onChange={setSub} tabs={SUB} />
       <div className="fxs-panel">

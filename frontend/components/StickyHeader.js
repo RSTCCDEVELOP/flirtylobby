@@ -18,8 +18,8 @@ export default function StickyHeader() {
     const run = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        const side = root.dataset.hside;  // after the amount is scrolled the header gives way to the side menu (components/SideMenu.js); not while editing
-        if (side && side !== "off" && root.dataset.pbbar !== "1") {
+        const side = root.dataset.hside;  // after the amount is scrolled the header gives way to the side menu (components/SideMenu.js); also while editing, so the effect is seen at once
+        if (side && side !== "off") {
           const sat = Number(root.dataset.hsideat) || 0, sfar = root.dataset.hsideunit === "px" ? sat : (sat / 100) * window.innerHeight;
           if (window.scrollY > sfar) root.dataset.hsidenow = "1"; else delete root.dataset.hsidenow;
         } else if (root.dataset.hsidenow) delete root.dataset.hsidenow;

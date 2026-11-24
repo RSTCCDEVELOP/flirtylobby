@@ -47,3 +47,14 @@ def test_the_side_menu_and_the_start_of_the_page_and_the_hero():
     assert {"side_menu_w", "side_menu_size", "side_menu_opacity"} <= set(themepacks.COMPLETE_KEYS)
     css, _ = theme.build({**{k: f["default"] for k, f in theme.FIELDS.items()}, "side_menu_opacity": 60})
     assert "--side-menu-op:60" in css and "--side-menu-w:300px" in css
+
+
+def test_the_side_menu_has_a_height_in_percent_and_a_place_along_the_edge():
+    from apps.core import themepacks
+
+    ok, err = theme.validate({"side_menu_h": 60, "header_side_v": "middle"})
+    assert not err and ok == {"side_menu_h": 60, "header_side_v": "middle"}
+    assert theme.validate({"side_menu_h": 10})[1] and theme.validate({"side_menu_h": 101})[1] and theme.validate({"header_side_v": "left"})[1]
+    f = theme.FIELDS
+    assert f["side_menu_h"]["default"] == 100 and f["header_side_v"]["default"] == "top" and f["side_menu_h"]["css"] == "--side-menu-h"
+    assert {"side_menu_h", "header_side_v"} <= set(themepacks.COMPLETE_KEYS)

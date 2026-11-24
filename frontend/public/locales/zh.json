@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "菜单的不透明程度:100% 为完全不透明,数值越低页面越能透出来。",
   "Zijmenu: breedte van het menu": "侧边菜单:菜单宽度",
   "Zijmenu: tekstgrootte van het menu (%)": "侧边菜单:菜单文字大小 (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "侧边菜单:菜单不透明度 (% ,越低越透明)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "侧边菜单:菜单不透明度 (% ,越低越透明)",
+  "Hoogte van het menu": "菜单高度",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "占屏幕的最小高度百分比。菜单不会小于其自身内容:如果内容更多,菜单会变得更高。",
+  "Waar staat het menu": "菜单所在位置",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "菜单与上边缘或下边缘的距离,以屏幕高度的百分比表示(选择“中间”时不适用)。",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "侧边菜单:菜单高度(屏幕高度的%,不小于菜单本身)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "侧边菜单:菜单所在位置(上、中、下)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "整个网站的鼠标效果。它们在手机或平板上不起作用,对要求减少动态效果的用户也不起作用。编辑期间鼠标效果保持静止(点击“完成”后即可看到);滚动时的效果,例如随之移动的图片,仍然有效。"
 }

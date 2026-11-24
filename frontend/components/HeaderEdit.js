@@ -59,7 +59,7 @@ export default function HeaderEdit() {
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
   const save = async (values) => { try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   // The header reads these choices from attributes on <html> that the server sets when the page loads (layout.js): without this the header only changed after closing the panel (a reload). They are put there at once, with the same defaults as the server.
-  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_side: ["hside", "off"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
+  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_side: ["hside", "off"], header_side_v: ["hsidev", "top"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
   const setLook = (key, v) => {
     const values = { ...theme.values, [key]: v };
     setTheme({ ...theme, values });
@@ -81,7 +81,7 @@ export default function HeaderEdit() {
   const setStart = (key, n) => {  // where the page and the hero begin under the menu: follows the slider at once
     const values = { ...theme.values, [key]: n };
     setTheme({ ...theme, values });
-    const VAR = { page_start: ["--page-start", "px"], hero_start: ["--hero-start", "px"], side_button_y: ["--side-btn-y", ""], side_menu_y: ["--side-menu-y", ""], side_menu_w: ["--side-menu-w", "px"], side_menu_size: ["--side-menu-size", ""], side_menu_opacity: ["--side-menu-op", ""] }[key];
+    const VAR = { page_start: ["--page-start", "px"], hero_start: ["--hero-start", "px"], side_button_y: ["--side-btn-y", ""], side_menu_y: ["--side-menu-y", ""], side_menu_w: ["--side-menu-w", "px"], side_menu_h: ["--side-menu-h", ""], side_menu_size: ["--side-menu-size", ""], side_menu_opacity: ["--side-menu-op", ""] }[key];
     if (VAR) document.documentElement.style.setProperty(VAR[0], `${n}${VAR[1]}`);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(values), 400);
@@ -226,7 +226,7 @@ export default function HeaderEdit() {
                   {mode !== "off" && sideTab === "look" && (
                   <section className="hed-card">
                     <h4>{tx("Grootte en transparantie")}</h4>
-                    {[["side_menu_w", "Breedte van het menu", "px", "Hoe breed het zijmenu is."], ["side_menu_size", "Tekstgrootte van het menu", "%", "De grootte van de letters in het zijmenu; 100% is normaal."], ["side_menu_opacity", "Transparantie", "%", "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren."]].map(([k, l, u, d]) => {
+                    {[["side_menu_w", "Breedte van het menu", "px", "Hoe breed het zijmenu is."], ["side_menu_h", "Hoogte van het menu", "%", "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger."], ["side_menu_size", "Tekstgrootte van het menu", "%", "De grootte van de letters in het zijmenu; 100% is normaal."], ["side_menu_opacity", "Transparantie", "%", "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren."]].map(([k, l, u, d]) => {
                       const f = fields.find((x) => x.key === k); if (!f) return null;
                       const n = Number(theme.values[k] ?? f.default);
                       return (
@@ -241,7 +241,10 @@ export default function HeaderEdit() {
                   {mode !== "off" && sideTab === "position" && (
                   <section className="hed-card">
                     <h4>{tx("Positie")}</h4>
-                    {[["side_button_y", "Positie van de knop", "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%)."], ["side_menu_y", "Positie van het menu", "Hoe ver het menu van boven begint, als percentage van de schermhoogte."]].map(([k, l, d]) => {
+                    <div className="hed-field"><span className="hed-lbl">{tx("Waar staat het menu")}</span>
+                      <div className="hed-seg lg" role="group" aria-label={tx("Waar staat het menu")}>{[["top", "Boven"], ["middle", "Midden"], ["bottom", "Onder"]].map(([k, l]) => <button type="button" key={k} className={(theme.values.header_side_v || "top") === k ? "on" : ""} aria-pressed={(theme.values.header_side_v || "top") === k} onClick={() => setLook("header_side_v", k)}>{tx(l)}</button>)}</div>
+                    </div>
+                    {[["side_button_y", "Positie van de knop", "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%)."], ["side_menu_y", "Positie van het menu", "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing)."]].map(([k, l, d]) => {
                       const f = fields.find((x) => x.key === k); if (!f) return null;
                       const n = Number(theme.values[k] ?? f.default);
                       return (

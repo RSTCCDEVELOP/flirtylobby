@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Qué tan opaco es el menú: 100% es totalmente sólido, un valor menor deja ver la página a través.",
   "Zijmenu: breedte van het menu": "Menú lateral: ancho del menú",
   "Zijmenu: tekstgrootte van het menu (%)": "Menú lateral: tamaño del texto del menú (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menú lateral: opacidad del menú (% , menor = más transparente)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menú lateral: opacidad del menú (% , menor = más transparente)",
+  "Hoogte van het menu": "Altura del menú",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "La altura mínima como porcentaje de la pantalla. El menú nunca es más pequeño que su propio contenido: si caben más elementos, se hace más alto.",
+  "Waar staat het menu": "Dónde está el menú",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "La distancia del menú al borde superior o inferior, como porcentaje de la altura de la pantalla (no aplicable en Centro).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Menú lateral: altura del menú (% de la altura de la pantalla, nunca menor que el propio menú)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Menú lateral: dónde está el menú (arriba, centro, abajo)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Efectos del ratón para todo el sitio web. No funcionan en un teléfono o tableta ni para las personas que han pedido menos movimiento. Durante la edición, los efectos del ratón están detenidos (los verás después de Listo); el efecto al desplazarse, como las imágenes que se mueven, sí funciona."
 }

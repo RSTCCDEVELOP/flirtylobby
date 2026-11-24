@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Quanto è opaco il menu: 100% è completamente pieno, un valore più basso lascia trasparire la pagina.",
   "Zijmenu: breedte van het menu": "Menu laterale: larghezza del menu",
   "Zijmenu: tekstgrootte van het menu (%)": "Menu laterale: dimensione del testo del menu (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu laterale: opacità del menu (% , più basso = più trasparente)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu laterale: opacità del menu (% , più basso = più trasparente)",
+  "Hoogte van het menu": "Altezza del menu",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "L'altezza minima come percentuale dello schermo. Il menu non è mai più piccolo del suo contenuto: se ne entra di più, diventa più alto.",
+  "Waar staat het menu": "Dove si trova il menu",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "La distanza del menu dal bordo superiore o inferiore, come percentuale dell'altezza dello schermo (non applicabile per Centro).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Menu laterale: altezza del menu (% dell'altezza dello schermo, mai più piccolo del menu stesso)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Menu laterale: dove si trova il menu (alto, centro, basso)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Effetti del mouse per l'intero sito web. Non funzionano su telefono o tablet e non per chi ha richiesto meno movimento. Durante la modifica gli effetti del mouse sono fermi (li vedrai dopo Fine); l'effetto allo scorrimento, come le immagini che si muovono, funziona invece."
 }

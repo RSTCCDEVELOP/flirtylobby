@@ -9012,5 +9012,12 @@
   "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren.": "Seberapa pekat menu: 100% berarti sepenuhnya solid, lebih rendah membuat halaman terlihat tembus.",
   "Zijmenu: breedte van het menu": "Menu samping: lebar menu",
   "Zijmenu: tekstgrootte van het menu (%)": "Menu samping: ukuran teks menu (%)",
-  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu samping: kepekatan menu (% , lebih rendah = lebih transparan)"
+  "Zijmenu: dekking van het menu (% , lager = transparanter)": "Menu samping: kepekatan menu (% , lebih rendah = lebih transparan)",
+  "Hoogte van het menu": "Tinggi menu",
+  "De minimale hoogte als percentage van het scherm. Het menu is nooit kleiner dan zijn eigen inhoud: past er meer in, dan wordt het hoger.": "Tinggi minimum sebagai persentase layar. Menu tidak pernah lebih kecil dari isinya sendiri: jika muat lebih banyak, menu menjadi lebih tinggi.",
+  "Waar staat het menu": "Posisi menu",
+  "De afstand van het menu tot de boven- of onderrand, als percentage van de schermhoogte (bij Midden niet van toepassing).": "Jarak menu ke tepi atas atau bawah, sebagai persentase tinggi layar (tidak berlaku untuk Tengah).",
+  "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)": "Menu samping: tinggi menu (% dari tinggi layar, tidak pernah lebih kecil dari menu itu sendiri)",
+  "Zijmenu: waar staat het menu (boven, midden, onder)": "Menu samping: posisi menu (atas, tengah, bawah)",
+  "Effecten met de muis voor de hele website. Ze werken niet op een telefoon of tablet en niet voor mensen die minder beweging hebben gevraagd. Tijdens het bewerken staan de effecten met de muis stil (je ziet ze na Klaar); het effect bij het scrollen, zoals meebewegende afbeeldingen, werkt wel.": "Efek mouse untuk seluruh situs web. Efek ini tidak berfungsi di ponsel atau tablet dan tidak untuk orang yang meminta gerakan lebih sedikit. Saat mengedit, efek mouse diam (kamu akan melihatnya setelah Selesai); efek saat menggulir, seperti gambar yang ikut bergerak, tetap berfungsi."
 }
