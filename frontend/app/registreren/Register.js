@@ -151,7 +151,7 @@ export default function Register() {
         <Logo />
         <h1>{step.step === "sms" ? tx("Bevestig je telefoonnummer") : tx("Bevestig je e-mailadres")}</h1>
         <p className="muted" style={{ margin: 0 }}>{tx("We hebben een code gestuurd naar")} {step.destination}{tx(". Je account wordt aangemaakt zodra dit gelukt is.")}</p>
-        <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!error} /></div>
+        <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!error} kind="registration" /></div>
         {error && <div className="alert">{error}</div>}
         {info && <div className="alert ok">{info}</div>}
         {step.sandbox_code && <div className="alert ok" style={{ display: "flex", gap: ".6rem", alignItems: "center", flexWrap: "wrap" }}>{tx("Sandbox: je code is")} <strong style={{ letterSpacing: ".15em" }}>{step.sandbox_code}</strong> <button type="button" className="btn sm" onClick={() => setCode(step.sandbox_code)}>{tx("Invullen")}</button></div>}

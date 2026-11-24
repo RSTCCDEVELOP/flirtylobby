@@ -3633,3 +3633,16 @@ def first_run_verify(request):
         logger.exception("First run: this website could not be linked to the reseller")
     token, _ = Token.objects.get_or_create(user=user)
     return Response({"token": token.key, "email": user.email, "reseller": (got.get("reseller") or {}).get("name", "")})
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def code_lifetimes(request):
+    """How long a code that is sent stays valid, in seconds: the round timer next to every code input (components/CodeInput.js) counts down from this."""
+    from apps.security import service as security
+
+    from . import terms
+
+    cfg = security.get()
+    return Response({"twofa": int(cfg["twofa"]["code_minutes"]) * 60, "registration": int(cfg["registration"]["code_minutes"]) * 60, "terms": terms.CODE_MINUTES * 60, "owner": 600})

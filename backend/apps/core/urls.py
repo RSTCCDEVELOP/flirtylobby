@@ -115,6 +115,7 @@ urlpatterns = [
     path("easy2edit/owner/fetch/", sitemanager_views.owner_fetch),
     path("easy2edit/reseller-signup/send/", sitemanager_views.reseller_signup_send),
     path("easy2edit/reseller-signup/verify/", sitemanager_views.reseller_signup_verify),
+    path("system/code-lifetimes/", views.code_lifetimes),
     path("system/first-run/", views.first_run),
     path("system/first-run/send/", views.first_run_send),
     path("system/first-run/verify/", views.first_run_verify),

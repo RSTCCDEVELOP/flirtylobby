@@ -130,7 +130,7 @@ export default function TwoFactorProfile() {
             </div>
           </div>
           <div className="row nw" style={{ justifyContent: "flex-start", flexWrap: "nowrap", alignItems: "end" }}>
-            <div className="code-field" style={{ flex: 1 }}><span>{tx("Code uit de app")}</span><CodeInput value={code} onChange={setCode} autoFocus /></div>
+            <div className="code-field" style={{ flex: 1 }}><span>{tx("Code uit de app")}</span><CodeInput value={code} onChange={setCode} autoFocus timer={false} /></div>
             <button className="btn primary" disabled={busy || code.length < 6}>{tx("Bevestigen")}</button>
             <button type="button" className="btn" onClick={reset}>{tx("Annuleren")}</button>
           </div>

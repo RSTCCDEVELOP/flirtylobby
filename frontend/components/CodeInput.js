@@ -7,13 +7,43 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { tx } from "../lib/t";
 import { freshSandboxCode } from "../lib/sandboxCode";
+import { codeLifetimes, DEFAULT_LIFETIME } from "../lib/codeLifetime";
 
 // The one place for entering a verification code: a box per digit. Typing moves on, backspace goes back, a pasted code (or one the phone
 // suggests from an sms) fills all boxes. Use it on every verification screen. onComplete(code) is called when the last digit is in.
-export default function CodeInput({ value, onChange, length = 6, autoFocus = false, onComplete, onAt, label, disabled = false, invalid = false }) {
+// The round timer next to the code: a ring that runs out while the code is valid, with the minutes and seconds in it. Orange for the last minute, red when it has expired.
+// It starts when the code input appears, and again when a new code is sent ("code-sent": every request that sends a code, see lib/api.js).
+function CodeTimer({ kind }) {
+  const [total, setTotal] = useState(DEFAULT_LIFETIME);
+  const [left, setLeft] = useState(DEFAULT_LIFETIME);
+  const end = useRef(Date.now() + DEFAULT_LIFETIME * 1000);
+  useEffect(() => {
+    let live = true;
+    codeLifetimes().then((l) => { if (live && l?.[kind]) { setTotal(l[kind]); end.current = Date.now() + l[kind] * 1000; } });
+    const restart = () => { end.current = Date.now() + total * 1000; };
+    window.addEventListener("code-sent", restart);
+    const id = setInterval(() => setLeft(Math.max(0, Math.ceil((end.current - Date.now()) / 1000))), 500);
+    return () => { live = false; clearInterval(id); window.removeEventListener("code-sent", restart); };
+  }, [kind, total]);
+  const R = 15, C = 2 * Math.PI * R;
+  const frac = Math.min(1, left / total);
+  const state = left === 0 ? "gone" : left <= 60 ? "low" : "ok";
+  const mm = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  return (
+    <span className={`code-timer ${state}`} role="timer" aria-label={left === 0 ? tx("De code is verlopen") : `${tx("De code is nog geldig")}: ${mm}`} title={left === 0 ? tx("De code is verlopen: vraag een nieuwe aan") : `${tx("De code is nog geldig")}: ${mm}`}>
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r={R} fill="none" className="ct-track" strokeWidth="4" />
+        <circle cx="20" cy="20" r={R} fill="none" className="ct-ring" strokeWidth="4" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} transform="rotate(-90 20 20)" />
+      </svg>
+      <span className="ct-text">{left === 0 ? "0:00" : mm}</span>
+    </span>
+  );
+}
+
+export default function CodeInput({ value, onChange, length = 6, autoFocus = false, onComplete, onAt, label, disabled = false, invalid = false, kind = "twofa", timer = true }) {
   const refs = useRef([]);
   const live = useRef({});
   live.current = { value, onChange, disabled, length };
@@ -69,6 +99,7 @@ export default function CodeInput({ value, onChange, length = 6, autoFocus = fal
           <span className={`code-group${invalid ? " bad" : ""}`}>{g.map((c) => cell(c, n++))}</span>
         </span>
       ))}
+      {timer && <CodeTimer kind={kind} />}
     </div>
   );
 }

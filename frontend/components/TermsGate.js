@@ -115,7 +115,7 @@ export default function TermsGate() {
               <div className="info-logo"><Logo /></div>
               <h3 style={{ margin: 0, fontSize: "1.25rem", lineHeight: 1.3 }}>{tx("Je code voor het ondertekenen van de algemene voorwaarden")}</h3>
               <p className="muted" style={{ margin: 0, maxWidth: 520 }}>{tx("Je ondertekent versie {0} met een code die naar je e-mailadres wordt gestuurd: {1}.", doc?.version || st.version, st.email)}</p>
-              <div onKeyDown={(e) => { if (e.key === "Enter" && code.length === 6 && !busy) sign(); }}><CodeInput value={code} onChange={(c) => onCode(c)} onAt={user?.is_staff ? () => onCode("@") : undefined} autoFocus /></div>
+              <div onKeyDown={(e) => { if (e.key === "Enter" && code.length === 6 && !busy) sign(); }}><CodeInput kind="terms" value={code} onChange={(c) => onCode(c)} onAt={user?.is_staff ? () => onCode("@") : undefined} autoFocus /></div>
               <small className="muted">{tx("De code is 15 minuten geldig. Heb je dit niet zelf gevraagd, negeer dit bericht dan.")}</small>
               <div className="row" style={{ justifyContent: "center", gap: ".6rem" }}>
                 <button type="button" className="btn" disabled={busy} onClick={ask}>{sent ? tx("Nieuwe code sturen") : tx("Code sturen")}</button>

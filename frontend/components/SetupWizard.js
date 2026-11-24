@@ -820,7 +820,7 @@ export default function SetupWizard() {
                       </div>
                       <div className="e2e-field" aria-disabled={!termsRead && !upd ? "true" : undefined} style={{ alignItems: "flex-start", ...(!termsRead && !upd ? { opacity: .45, pointerEvents: "none" } : {}) }}>
                         <label className="e2e-label" htmlFor="sw-consent_code"><span>{tx("Code")} <span style={{ color: "var(--e2e-danger)" }} aria-hidden="true">*</span></span></label>
-                        <CodeInput value={form.consent_code || ""} onChange={typeCode} onAt={user?.is_staff && (termsRead || upd) ? () => typeCode("@") : undefined} invalid={!!(consent.error || errs.consent_ok)} label={tx("Code")} />
+                        <CodeInput kind="terms" value={form.consent_code || ""} onChange={typeCode} onAt={user?.is_staff && (termsRead || upd) ? () => typeCode("@") : undefined} invalid={!!(consent.error || errs.consent_ok)} label={tx("Code")} />
                         {(consent.error || errs.consent_ok) && <span className="e2e-error">{consent.error || errs.consent_ok}</span>}
                       </div>
                     </div>
