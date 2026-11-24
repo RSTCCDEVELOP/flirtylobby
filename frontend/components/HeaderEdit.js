@@ -24,6 +24,7 @@ export default function HeaderEdit() {
   const { editing } = useSession();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("look");
+  const [sideTab, setSideTab] = useState("behaviour");  // the tab Zijmenu has its own tabs: Gedrag, Positie, Uiterlijk
   const [theme, setTheme] = useState(null); // {values, schema}
   const [msg, setMsg] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -200,6 +201,8 @@ export default function HeaderEdit() {
               const amount = Number(theme.values[amountKey] ?? (unit === "px" ? 300 : 15));
               return (
                 <div className="hed">
+                  {mode !== "off" && <Tabs value={sideTab} onChange={setSideTab} tabs={[["behaviour", "Gedrag"], ["position", "Positie"], ["look", "Uiterlijk"]]} className="tabs-one-row" />}
+                  {(mode === "off" || sideTab === "behaviour") && (
                   <section className="hed-card">
                     <h4>{tx("Zijmenu bij scrollen")}</h4>
                     <div className="hed-cards" role="radiogroup" aria-label={tx("Zijmenu")}>
@@ -219,6 +222,8 @@ export default function HeaderEdit() {
                       </div>
                     </>)}
                   </section>
+                  )}
+                  {mode !== "off" && sideTab === "look" && (
                   <section className="hed-card">
                     <h4>{tx("Grootte en transparantie")}</h4>
                     {[["side_menu_w", "Breedte van het menu", "px", "Hoe breed het zijmenu is."], ["side_menu_size", "Tekstgrootte van het menu", "%", "De grootte van de letters in het zijmenu; 100% is normaal."], ["side_menu_opacity", "Transparantie", "%", "Hoe dekkend het menu is: 100% is helemaal dicht, lager laat de pagina erdoor schemeren."]].map(([k, l, u, d]) => {
@@ -232,6 +237,8 @@ export default function HeaderEdit() {
                       );
                     })}
                   </section>
+                  )}
+                  {mode !== "off" && sideTab === "position" && (
                   <section className="hed-card">
                     <h4>{tx("Positie")}</h4>
                     {[["side_button_y", "Positie van de knop", "Waar de pijl aan de rand van het scherm staat, van boven (0%) naar onder (100%)."], ["side_menu_y", "Positie van het menu", "Hoe ver het menu van boven begint, als percentage van de schermhoogte."]].map(([k, l, d]) => {
@@ -245,6 +252,7 @@ export default function HeaderEdit() {
                       );
                     })}
                   </section>
+                  )}
                 </div>
               );
             })())}
