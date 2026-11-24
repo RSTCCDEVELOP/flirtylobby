@@ -31,7 +31,7 @@ export function ViewToggle({ view, onChange }) {
 export function widgetTree(items, getCat, getSub) {
   const tree = [];
   items.forEach((it) => {
-    const c = getCat(it) || "Overig", s = getSub(it) || "";
+    const c = getCat(it) || "Overig", s = sub ? (getSub(it) || "") : "";  // headings per category only, so the tiles fill the rows
     let node = tree.find((x) => x.cat === c);
     if (!node) { node = { cat: c, n: 0, subs: [] }; tree.push(node); }
     node.n += 1;
@@ -50,6 +50,7 @@ export function widgetGroups(items, getCat, getSub, cat, sub) {
     if (!g) { g = { cat: c, sub: s, items: [] }; out.push(g); }
     g.items.push(it);
   });
+  out.forEach((g) => g.items.sort((a, b) => ((getSub(a) || "") + (a.title || a.name || "")).localeCompare((getSub(b) || "") + (b.title || b.name || ""))));
   return out.sort((a, b) => (a.cat + a.sub).localeCompare(b.cat + b.sub));
 }
 
