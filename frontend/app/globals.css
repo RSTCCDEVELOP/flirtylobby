@@ -5014,3 +5014,6 @@ html[data-pbbar="1"] .pb { margin-top: 3.2rem; }
 
 /* standard installation: the widgets to switch on */
 .pdz-widgets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .5rem; margin-top: .5rem; } .pdz-widget { padding: .55rem .7rem; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--blue) 4%, var(--card, #fff)); }
+
+/* a widget that is not active, in a place on a page (shown to the people who edit) */
+.so-inactive { display: flex; align-items: center; gap: .8rem; padding: 1rem 1.2rem; border: 2px dashed var(--line); border-radius: 14px; background: color-mix(in srgb, var(--blue) 5%, var(--card, #fff)); color: var(--muted, #667); margin: .5rem 0; } .so-inactive strong { display: block; color: var(--text, inherit); } .so-inactive small { display: block; }

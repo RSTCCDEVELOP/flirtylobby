@@ -145,6 +145,15 @@ def public_list(request):
     return Response(out)
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def widget_names(request):
+    """The names of the widgets of the library by slug (widget-<key>): a page shows an inactive widget with its name, for the people who edit the page."""
+    from . import widgets
+
+    return Response({f"widget-{w['key']}": {"name": w["name"], "description": w.get("description", "")} for w in widgets.library()})
+
+
 # ── the library of the widgets (Admin > Thema > Widgets) ──
 WIDGET_PERM = [has_level("theme", "edit"), module_required("theme")]
 

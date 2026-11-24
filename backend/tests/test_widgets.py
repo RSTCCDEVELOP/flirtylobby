@@ -158,3 +158,9 @@ def test_widgets_in_the_creator_questionnaire_and_prompt(lib, django_user_model)
     doc = {"formaat": "easy2edit-pagina@1", "pagina": {"titel": "T", "slug": "t"}, "inhoud": [{"id": "w1", "type": "sysobject", "props": {"slug": "widget-hello"}, "children": []}]}
     rep, _ = pagevalidate.validate(doc, pagevalidate.site_context({"sysobjecten": {"x"}}))
     assert any(m["code"] == "WIDGET_NIET_ACTIEF" and m["ernst"] == "waarschuwing" for m in rep["meldingen"])
+
+
+@pytest.mark.django_db
+def test_the_names_of_the_widgets_are_public_so_an_inactive_one_can_be_shown(lib):
+    r = APIClient().get("/api/sysobjects/widget-names/")
+    assert r.status_code == 200 and r.json()["widget-hello"]["name"] == "Hallo"

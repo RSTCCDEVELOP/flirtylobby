@@ -88,6 +88,23 @@ function Widget({ obj, layout = "1" }) {
   );
 }
 
+// A widget that is not installed or is switched off, in a place on a page: the people who edit the page see a block with its name (the visitors see nothing).
+let namesCache = null;
+const loadNames = () => (namesCache ||= api("/sysobjects/widget-names/").catch(() => { namesCache = null; return {}; }));
+export function InactiveWidget({ slug }) {
+  const { canEdit } = useSession();
+  const [names, setNames] = useState(null);
+  useEffect(() => { if (canEdit && String(slug).startsWith("widget-")) loadNames().then(setNames); }, [canEdit, slug]);
+  if (!canEdit || !String(slug).startsWith("widget-") || !names) return null;
+  const w = names[slug];
+  return (
+    <div className="so-inactive" role="note">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M8 12h8" /></svg>
+      <span><strong>{w ? w.name : slug}</strong><small>{tx("Dit widget is niet actief. Installeer het bij Admin → Website → Widgets; bezoekers zien hier nu niets.")}</small></span>
+    </div>
+  );
+}
+
 // One system object by its slug (used by the page blocks)
 // layout "1" to "4": four looks to choose from per system object on a page. The marketing tile and the calculation form draw them themselves; the other objects get the look from the wrapper (card, banner, compact).
 export function SysObjectBySlug({ slug, layout = "1" }) {
@@ -97,7 +114,7 @@ export function SysObjectBySlug({ slug, layout = "1" }) {
   const o = objs.find((x) => x.slug === slug);
   const own = o && (o.kind === "widget" || o.kind === "marketing" || o.kind === "calculator" || o.kind === "pricelist" || o.kind === "installation" || o.kind === "ai" || o.kind === "energy" || o.kind === "variable");
   const n = ["1", "2", "3", "4"].includes(String(layout)) ? String(layout) : "1";
-  return on && o ? <div className={`so so-${own ? "own" : n}`} data-layout={n}><Widget obj={o} layout={n} /></div> : null;
+  return on && o ? <div className={`so so-${own ? "own" : n}`} data-layout={n}><Widget obj={o} layout={n} /></div> : (on && !o && objs.length ? <InactiveWidget slug={slug} /> : null);
 }
 
 // Rich text from a page, with the system objects placed in it (<div data-sysobject="slug">) shown as real widgets.
@@ -113,7 +130,7 @@ export default function RichHtml({ html, className }) {
       {parts.map((p, i) => {
         if (i % 2 === 0) return p ? <div key={i} style={{ display: "contents" }} dangerouslySetInnerHTML={{ __html: p }} /> : null;
         const o = on && objs.find((x) => x.slug === p);
-        return o ? <Widget key={i} obj={o} /> : null;
+        return o ? <Widget key={i} obj={o} /> : (on && objs.length ? <InactiveWidget key={i} slug={p} /> : null);
       })}
     </div>
   );
