@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "साइड मेन्यू: रेखाओं की मोटाई (px)",
   "Zijmenu: lijnen tussen de menu-items": "साइड मेन्यू: मेन्यू आइटम के बीच की रेखाएँ",
   "Zijmenu: schaduw (%)": "साइड मेन्यू: छाया (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "साइड मेन्यू: मेन्यू आइटम के बीच की जगह (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "साइड मेन्यू: मेन्यू आइटम के बीच की जगह (px)",
+  "Menu bij de start van de inhoud": "सामग्री की शुरुआत में मेन्यू",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "बंद: मेन्यू ब्राउज़र के किनारे से सटा रहता है। चालू: यह सामग्री की शुरुआत से सटा रहता है (पेज की अधिकतम चौड़ाई)।",
+  "Rand van de browser": "ब्राउज़र का किनारा",
+  "Start van de inhoud (maximale breedte)": "सामग्री की शुरुआत (अधिकतम चौड़ाई)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "साइड मेन्यू: ब्राउज़र के किनारे से सटा या सामग्री की शुरुआत से सटा"
 }

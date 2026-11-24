@@ -73,3 +73,13 @@ def test_the_design_of_the_side_menu_corners_lines_float_shadow_and_spacing():
     css, _ = theme.build({**{k: x["default"] for k, x in theme.FIELDS.items()}, "side_menu_radius": 18})
     assert "--side-menu-r:18" in css
     assert {"side_menu_radius", "side_menu_float", "side_menu_line", "header_side_div", "side_menu_shadow", "side_menu_igap"} <= set(themepacks.COMPLETE_KEYS)
+
+
+def test_the_side_menu_stands_against_the_browser_or_against_the_start_of_the_content():
+    from apps.core import themepacks
+
+    assert theme.validate({"header_side_anchor": "browser"})[0] == {"header_side_anchor": "browser"}
+    assert theme.validate({"header_side_anchor": "content"})[0] == {"header_side_anchor": "content"}
+    assert theme.validate({"header_side_anchor": "middle"})[1]
+    assert theme.FIELDS["header_side_anchor"]["default"] == "browser"  # as before: against the edge of the browser
+    assert "header_side_anchor" in themepacks.COMPLETE_KEYS

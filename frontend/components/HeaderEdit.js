@@ -59,7 +59,7 @@ export default function HeaderEdit() {
   const fields = theme ? theme.schema.flatMap((g) => g.fields) : [];
   const save = async (values) => { try { await api("/theme/", { method: "PUT", body: { values } }); setMsg(null); } catch (e) { setMsg({ ok: false, text: errorText(e) }); } };
   // The header reads these choices from attributes on <html> that the server sets when the page loads (layout.js): without this the header only changed after closing the panel (a reload). They are put there at once, with the same defaults as the server.
-  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_side: ["hside", "off"], header_side_v: ["hsidev", "top"], header_side_div: ["hsidediv", "no"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
+  const LOOK_ATTR = { header_layout: ["hl", "classic"], header_style: ["hstyle", "solid"], header_sticky: ["hsticky", "yes"], header_side: ["hside", "off"], header_side_v: ["hsidev", "top"], header_side_anchor: ["hsideanchor", "browser"], header_side_div: ["hsidediv", "no"], header_width: ["hwidth", "content"], menu_style: ["menu", "text"], mode_switch: ["modesw", "show"] };
   const setLook = (key, v) => {
     const values = { ...theme.values, [key]: v };
     setTheme({ ...theme, values });
@@ -272,6 +272,9 @@ export default function HeaderEdit() {
                   {mode !== "off" && sideTab === "position" && (
                   <section className="hed-card">
                     <h4>{tx("Positie")}</h4>
+                    {fields.some((x) => x.key === "header_side_anchor") && (
+                      <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.header_side_anchor || "browser") === "content"} onChange={(e) => setLook("header_side_anchor", e.target.checked ? "content" : "browser")} /><span /></span><span className="hed-swt"><strong>{tx("Menu bij de start van de inhoud")}</strong><small>{tx("Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).")}</small></span></label>
+                    )}
                     <div className="hed-field"><span className="hed-lbl">{tx("Waar staat het menu")}</span>
                       <div className="hed-seg lg" role="group" aria-label={tx("Waar staat het menu")}>{[["top", "Boven"], ["middle", "Midden"], ["bottom", "Onder"]].map(([k, l]) => <button type="button" key={k} className={(theme.values.header_side_v || "top") === k ? "on" : ""} aria-pressed={(theme.values.header_side_v || "top") === k} onClick={() => setLook("header_side_v", k)}>{tx(l)}</button>)}</div>
                     </div>

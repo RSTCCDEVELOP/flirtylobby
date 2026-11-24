@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "Menu laterale: spessore delle linee (px)",
   "Zijmenu: lijnen tussen de menu-items": "Menu laterale: linee tra le voci del menu",
   "Zijmenu: schaduw (%)": "Menu laterale: ombra (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "Menu laterale: spazio tra le voci del menu (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "Menu laterale: spazio tra le voci del menu (px)",
+  "Menu bij de start van de inhoud": "Menu all'inizio del contenuto",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Off: il menu si trova contro il bordo del browser. On: si trova contro l'inizio del contenuto (la larghezza massima della pagina).",
+  "Rand van de browser": "Bordo del browser",
+  "Start van de inhoud (maximale breedte)": "Inizio del contenuto (larghezza massima)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu laterale: contro il bordo del browser o contro l'inizio del contenuto"
 }

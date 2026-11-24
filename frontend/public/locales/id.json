@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "Menu samping: ketebalan garis (px)",
   "Zijmenu: lijnen tussen de menu-items": "Menu samping: garis di antara item menu",
   "Zijmenu: schaduw (%)": "Menu samping: bayangan (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "Menu samping: jarak antar item menu (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "Menu samping: jarak antar item menu (px)",
+  "Menu bij de start van de inhoud": "Menu di awal konten",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Mati: menu berada di tepi browser. Hidup: menu berada di awal konten (lebar maksimum halaman).",
+  "Rand van de browser": "Tepi browser",
+  "Start van de inhoud (maximale breedte)": "Awal konten (lebar maksimum)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu samping: di tepi browser atau di awal konten"
 }

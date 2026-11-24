@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "Боковое меню: толщина линий (px)",
   "Zijmenu: lijnen tussen de menu-items": "Боковое меню: линии между пунктами меню",
   "Zijmenu: schaduw (%)": "Боковое меню: тень (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "Боковое меню: расстояние между пунктами меню (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "Боковое меню: расстояние между пунктами меню (px)",
+  "Menu bij de start van de inhoud": "Меню в начале содержимого",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Выкл.: меню располагается у края браузера. Вкл.: оно располагается у начала содержимого (максимальной ширины страницы).",
+  "Rand van de browser": "Край браузера",
+  "Start van de inhoud (maximale breedte)": "Начало содержимого (максимальная ширина)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Боковое меню: у края браузера или у начала содержимого"
 }

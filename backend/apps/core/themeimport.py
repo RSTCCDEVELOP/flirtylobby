@@ -230,7 +230,7 @@ def _image(fetcher, url):
     return (ext, data) if len(data) <= MAX_DRAFT_IMG else None
 
 
-PAGE_KEYS = ("header_layout", "header_style", "header_sticky", "header_sticky_unit", "header_sticky_pct", "header_sticky_px", "header_side", "header_side_unit", "header_side_pct", "header_side_px", "side_button_y", "side_menu_y", "side_menu_h", "header_side_v", "side_menu_radius", "side_menu_float", "side_menu_line", "header_side_div", "side_menu_shadow", "side_menu_igap", "side_menu_w", "side_menu_size", "side_menu_opacity", "page_start", "hero_start", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w")
+PAGE_KEYS = ("header_layout", "header_style", "header_sticky", "header_sticky_unit", "header_sticky_pct", "header_sticky_px", "header_side", "header_side_unit", "header_side_pct", "header_side_px", "side_button_y", "side_menu_y", "side_menu_h", "header_side_anchor", "header_side_v", "side_menu_radius", "side_menu_float", "side_menu_line", "header_side_div", "side_menu_shadow", "side_menu_igap", "side_menu_w", "side_menu_size", "side_menu_opacity", "page_start", "hero_start", "menu_style", "footer_layout", "footer_tone", "block_style", "block_gap", "content_w")
 
 
 def guess_layout(css, primary, fixed_header):

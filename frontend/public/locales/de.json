@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "Seitenmenü: Linienstärke (px)",
   "Zijmenu: lijnen tussen de menu-items": "Seitenmenü: Linien zwischen den Menüpunkten",
   "Zijmenu: schaduw (%)": "Seitenmenü: Schatten (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "Seitenmenü: Abstand zwischen den Menüpunkten (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "Seitenmenü: Abstand zwischen den Menüpunkten (px)",
+  "Menu bij de start van de inhoud": "Menü am Beginn des Inhalts",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Aus: Das Menü liegt am Rand des Browsers. An: Es liegt am Beginn des Inhalts (die maximale Breite der Seite).",
+  "Rand van de browser": "Rand des Browsers",
+  "Start van de inhoud (maximale breedte)": "Beginn des Inhalts (maximale Breite)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Seitenmenü: am Rand des Browsers oder am Beginn des Inhalts"
 }

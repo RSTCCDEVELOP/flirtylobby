@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "Side menu: line thickness (px)",
   "Zijmenu: lijnen tussen de menu-items": "Side menu: lines between the menu items",
   "Zijmenu: schaduw (%)": "Side menu: shadow (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "Side menu: spacing between the menu items (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "Side menu: spacing between the menu items (px)",
+  "Menu bij de start van de inhoud": "Menu at the start of the content",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Off: the menu sits against the edge of the browser. On: it sits against the start of the content (the maximum width of the page).",
+  "Rand van de browser": "Edge of the browser",
+  "Start van de inhoud (maximale breedte)": "Start of the content (maximum width)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Side menu: against the edge of the browser or against the start of the content"
 }

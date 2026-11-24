@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "Yan menü: çizgi kalınlığı (px)",
   "Zijmenu: lijnen tussen de menu-items": "Yan menü: menü öğeleri arasındaki çizgiler",
   "Zijmenu: schaduw (%)": "Yan menü: gölge (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "Yan menü: menü öğeleri arasındaki boşluk (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "Yan menü: menü öğeleri arasındaki boşluk (px)",
+  "Menu bij de start van de inhoud": "İçeriğin başlangıcında menü",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Kapalı: menü tarayıcının kenarına yaslanır. Açık: içeriğin başlangıcına yaslanır (sayfanın maksimum genişliği).",
+  "Rand van de browser": "Tarayıcının kenarı",
+  "Start van de inhoud (maximale breedte)": "İçeriğin başlangıcı (maksimum genişlik)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Yan menü: tarayıcının kenarına veya içeriğin başlangıcına yaslı"
 }

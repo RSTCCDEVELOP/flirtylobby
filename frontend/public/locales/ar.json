@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "القائمة الجانبية: سماكة الخطوط (px)",
   "Zijmenu: lijnen tussen de menu-items": "القائمة الجانبية: خطوط بين عناصر القائمة",
   "Zijmenu: schaduw (%)": "القائمة الجانبية: الظل (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "القائمة الجانبية: المسافة بين عناصر القائمة (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "القائمة الجانبية: المسافة بين عناصر القائمة (px)",
+  "Menu bij de start van de inhoud": "القائمة عند بداية المحتوى",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "إيقاف: تلتصق القائمة بحافة المتصفح. تشغيل: تلتصق ببداية المحتوى (العرض الأقصى للصفحة).",
+  "Rand van de browser": "حافة المتصفح",
+  "Start van de inhoud (maximale breedte)": "بداية المحتوى (العرض الأقصى)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "القائمة الجانبية: عند حافة المتصفح أو عند بداية المحتوى"
 }

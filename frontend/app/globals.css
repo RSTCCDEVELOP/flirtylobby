@@ -5074,7 +5074,10 @@ html[data-hside="left"][data-hsidenow="1"] body, html[data-hside="right"][data-h
 html[data-hsidev="middle"] .side-menu { justify-content: center; } html[data-hsidev="bottom"] .side-menu { justify-content: flex-end; }
 .side-menu .side-card { pointer-events: auto; position: relative; display: flex; min-height: min(calc(var(--side-menu-h, 100) * 1vh), 100%); max-height: 100%; background: color-mix(in srgb, var(--card, #fff) calc(var(--side-menu-op, 100) * 1%), transparent); backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); -webkit-backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); transition: box-shadow .25s; }
 html[data-hsidev="top"] .side-menu .side-card, html:not([data-hsidev]) .side-menu .side-card { margin-top: calc(var(--side-menu-y, 0) * 1vh); } html[data-hsidev="bottom"] .side-menu .side-card { margin-bottom: calc(var(--side-menu-y, 0) * 1vh); }  /* the distance from the edge: only when the menu stands at the top or at the bottom */
-.side-menu.left { left: calc(var(--side-menu-float, 0) * 1px); transform: translateX(calc(-100% - var(--side-menu-float, 0) * 1px)); } .side-menu.right { right: calc(var(--side-menu-float, 0) * 1px); transform: translateX(calc(100% + var(--side-menu-float, 0) * 1px)); }
+.side-menu { --sbase: 0px; --sw: 100vw; --sgap: 0px; --sx: calc(var(--sbase) + max(calc(var(--side-menu-float, 0) * 1px), var(--sgap))); }  /* --sx: how far the menu stands from the edge: the floating distance, or the space beside the content */
+html[data-hsideanchor="content"] .side-menu { --sgap: max(0px, calc((var(--sw) - var(--content-w, 1100px)) / 2)); }  /* against the start of the content (the maximum width of the pages) instead of the edge of the browser */
+html[data-pbsb="1"] .side-menu { --sw: calc(100vw - var(--pb-sb-w, 340px)); } html[data-pbsb="1"] .side-menu.left { --sbase: var(--pb-sb-w, 340px); }  /* in the editor the page begins next to its panel */
+.side-menu.left { left: var(--sx); transform: translateX(calc(-100% - var(--sx))); } .side-menu.right { right: var(--sx); transform: translateX(calc(100% + var(--sx))); }
 .side-menu .side-card { border: calc(var(--side-menu-line, 1) * 1px) solid var(--line); }
 .side-menu .side-card { --fl: min(1, var(--side-menu-float, 0)); }  /* floating (a distance from the edge of the screen): then the corners and the lines go all around, else only the side away from the edge is round */
 .side-menu.left .side-card { border-left-width: calc(var(--fl) * var(--side-menu-line, 1) * 1px); border-radius: calc(var(--side-menu-r, 0) * 1px * var(--fl)) calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px * var(--fl)); }
@@ -5103,7 +5106,6 @@ html[data-hide-header="1"] .site-header { clip-path: inset(100% 0 0 0); }
 
 /* the preview of the side menu in the editor (tab Zijmenu of the header panel): under the bar and next to the panel of the editor, so every change is seen at once */
 html[data-pbbar="1"] .side-menu, html[data-hsidepreview="1"] .side-menu { top: var(--pb-bar-h, 48px); z-index: 1085; }
-html[data-pbbar="1"][data-pbsb="1"] .side-menu.left, html[data-hsidepreview="1"][data-pbsb="1"] .side-menu.left { left: var(--pb-sb-w, 340px); }
 
 /* a narrow side menu: never narrower than its menu items (they stay on one line and give the menu its minimum width) and the logo scales along with the width */
 .side-menu { min-width: min-content; }

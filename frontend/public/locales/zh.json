@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "侧边菜单:线条粗细(px)",
   "Zijmenu: lijnen tussen de menu-items": "侧边菜单:菜单项之间的线条",
   "Zijmenu: schaduw (%)": "侧边菜单:阴影(%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "侧边菜单:菜单项之间的间距(px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "侧边菜单:菜单项之间的间距(px)",
+  "Menu bij de start van de inhoud": "菜单位于内容起始处",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "关:菜单紧贴浏览器边缘。开:菜单紧贴内容起始处(页面的最大宽度)。",
+  "Rand van de browser": "浏览器边缘",
+  "Start van de inhoud (maximale breedte)": "内容起始处(最大宽度)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "侧边菜单:紧贴浏览器边缘或紧贴内容起始处"
 }

@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "サイドメニュー:線の太さ(px)",
   "Zijmenu: lijnen tussen de menu-items": "サイドメニュー:メニュー項目の間の線",
   "Zijmenu: schaduw (%)": "サイドメニュー:影(%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "サイドメニュー:メニュー項目の間隔(px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "サイドメニュー:メニュー項目の間隔(px)",
+  "Menu bij de start van de inhoud": "コンテンツの開始位置にメニューを配置",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "オフ: メニューはブラウザの端に配置されます。オン: コンテンツの開始位置(ページの最大幅)に配置されます。",
+  "Rand van de browser": "ブラウザの端",
+  "Start van de inhoud (maximale breedte)": "コンテンツの開始位置(最大幅)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "サイドメニュー: ブラウザの端、またはコンテンツの開始位置に配置"
 }

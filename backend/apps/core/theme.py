@@ -114,6 +114,7 @@ HEADER_STICKY = [{"value": "yes", "label": "Altijd bovenaan (blijft staan)", "cs
                  {"value": "start", "label": "Verschijnt na een stuk scrollen (eerst verborgen)", "css": ""}]  # "after": scrolls with the page, then stays; "start": hidden at first, appears after the amount is scrolled; only one of the two is active  # "after": the header sticks after header_sticky_pct percent of the screen height or header_sticky_px pixels is scrolled (header_sticky_unit says which; components/StickyHeader.js)
 HEADER_SIDE = [{"value": "off", "label": "Uit", "css": ""}, {"value": "left", "label": "Zijmenu links", "css": ""}, {"value": "right", "label": "Zijmenu rechts", "css": ""}]  # after the amount is scrolled the header goes and a menu at the side takes its place (components/SideMenu.js)
 HEADER_SIDE_V = [{"value": "top", "label": "Boven", "css": ""}, {"value": "middle", "label": "Midden", "css": ""}, {"value": "bottom", "label": "Onder", "css": ""}]  # where the side menu stands along the edge when it is lower than the screen
+HEADER_SIDE_AT = [{"value": "browser", "label": "Rand van de browser", "css": ""}, {"value": "content", "label": "Start van de inhoud (maximale breedte)", "css": ""}]  # where the side menu stands: against the edge of the browser, or against the start of the content (the maximum width of the pages)
 HEADER_STICKY_UNITS = [{"value": "pct", "label": "Procent van het scherm", "css": ""}, {"value": "px", "label": "Pixels", "css": ""}]
 FX_COLOR = _opts(("primary", "Primaire kleur"), ("secondary", "Secundaire kleur"), ("text", "Tekstkleur"), ("white", "Wit"))
 FX_CURSOR = _opts(("off", "Uit"), ("ring", "Ring die de muis volgt"), ("dot", "Punt met ring"), ("blob", "Zachte vlek die de muis volgt"))  # the mouse effects of the website (components/MouseEffects.js)
@@ -307,6 +308,7 @@ SCHEMA = [
         number("side_button_y", "Zijmenu: positie van de knop (% van de schermhoogte)", 6, "--side-btn-y", "", 0, 100, 1),
         number("side_menu_y", "Zijmenu: positie van het menu (% van de schermhoogte)", 0, "--side-menu-y", "", 0, 60, 1),
         number("side_menu_h", "Zijmenu: hoogte van het menu (% van de schermhoogte, nooit kleiner dan het menu zelf)", 100, "--side-menu-h", "", 20, 100, 5),
+        choice("header_side_anchor", "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud", "browser", None, HEADER_SIDE_AT),
         choice("header_side_v", "Zijmenu: waar staat het menu (boven, midden, onder)", "top", None, HEADER_SIDE_V),
         number("side_menu_radius", "Zijmenu: ronde hoeken van de buitenkant (px)", 0, "--side-menu-r", "", 0, 40, 2),
         number("side_menu_float", "Zijmenu: zwevend, afstand tot de rand van het scherm (px)", 0, "--side-menu-float", "", 0, 40, 2),

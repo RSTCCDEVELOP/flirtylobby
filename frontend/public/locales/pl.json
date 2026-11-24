@@ -9038,5 +9038,10 @@
   "Zijmenu: dikte van de lijnen (px)": "Menu boczne: grubość linii (px)",
   "Zijmenu: lijnen tussen de menu-items": "Menu boczne: linie między pozycjami menu",
   "Zijmenu: schaduw (%)": "Menu boczne: cień (%)",
-  "Zijmenu: ruimte tussen de menu-items (px)": "Menu boczne: odstęp między pozycjami menu (px)"
+  "Zijmenu: ruimte tussen de menu-items (px)": "Menu boczne: odstęp między pozycjami menu (px)",
+  "Menu bij de start van de inhoud": "Menu na początku treści",
+  "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Wyłączone: menu przylega do krawędzi przeglądarki. Włączone: przylega do początku treści (maksymalnej szerokości strony).",
+  "Rand van de browser": "Krawędź przeglądarki",
+  "Start van de inhoud (maximale breedte)": "Początek treści (maksymalna szerokość)",
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu boczne: przy krawędzi przeglądarki lub przy początku treści"
 }
