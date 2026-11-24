@@ -22,6 +22,7 @@ export default function MenuEditorPopup({ onClose }) {
   const [tab, setTab] = useState("menu");
   const [tree, setTree] = useState(null);    // [{p, kids:[p]}] the items in the menu
   const [off, setOff] = useState([]);        // the items that are not in the menu
+  const [dead, setDead] = useState([]);      // pages that are not live (off, or their module is off): they are not in the header menu, so not in this list
   const [orig, setOrig] = useState({});      // id -> page as loaded
   const [edits, setEdits] = useState({});    // id -> {title, url}
   const [lang, setLang] = useState({ languages: [], default: "nl" });
@@ -32,12 +33,14 @@ export default function MenuEditorPopup({ onClose }) {
   const [nw, setNw] = useState({ kind: "link", title: "", url: "" });
 
   const build = (pages) => {
-    const list = pages.filter((p) => p.scope !== "private" && p.enabled !== false);
+    const all = pages.filter((p) => p.scope !== "private");
+    const list = all.filter((p) => p.available !== false);
+    setDead(all.filter((p) => p.available === false).sort((a, b) => a.order - b.order));
     const on = list.filter((p) => p.in_menu);
     const tops = on.filter((p) => !p.parent || !on.some((x) => x.id === p.parent)).sort((a, b) => a.order - b.order);
     setTree(tops.map((p) => ({ p, kids: on.filter((c) => c.parent === p.id).sort((a, b) => a.order - b.order) })));
     setOff(list.filter((p) => !p.in_menu).sort((a, b) => a.order - b.order));
-    setOrig(Object.fromEntries(list.map((p) => [p.id, p])));
+    setOrig(Object.fromEntries(all.map((p) => [p.id, p])));
   };
   useEffect(() => {
     api("/pages/").then((d) => build(d.pages || [])).catch((e) => setErr(errorText(e)));
@@ -85,11 +88,12 @@ export default function MenuEditorPopup({ onClose }) {
     try {
       const items = [];
       tree.forEach((r) => { items.push({ id: r.p.id, parent: null }); r.kids.forEach((k) => items.push({ id: k.id, parent: r.p.id })); });
+      const onIds = new Set(items.map((i) => i.id));
       off.forEach((p) => items.push({ id: p.id, parent: null }));
-      const onIds = new Set(items.slice(0, items.length - off.length).map((i) => i.id));
+      dead.forEach((p) => items.push({ id: p.id, parent: null }));
       for (const p of Object.values(orig)) {  // on/off and the edited names and addresses
         const body = {};
-        if (!!p.in_menu !== onIds.has(p.id)) body.in_menu = onIds.has(p.id);
+        if (!dead.some((d) => d.id === p.id) && !!p.in_menu !== onIds.has(p.id)) body.in_menu = onIds.has(p.id);
         const e = edits[p.id];
         if (e?.title !== undefined && p.kind !== "content") { const main = e.title.trim() || name(p); body.title = Object.fromEntries((lang.languages.length ? lang.languages : [{ code: lang.default }]).map((l) => [l.code, main])); }
         if (e?.audience !== undefined && e.audience !== p.audience) body.audience = e.audience;
@@ -166,6 +170,13 @@ export default function MenuEditorPopup({ onClose }) {
             {off.map((p) => row({ p, isOff: true }))}
             {!off.length && <small className="muted">{tx("Sleep een item hierheen om het uit het menu te halen.")}</small>}
           </div>
+          {dead.length > 0 && (
+            <div className="mnu-offzone mnu-dead">
+              <strong>{tx("Niet live")}</strong>
+              <small className="muted">{tx("Een pagina staat pas in het menu van de header als hij live staat. Deze staan uit of hun onderdeel staat uit (zet ze live bij Admin → Pagina's).")}</small>
+              {dead.map((p) => <div key={p.id} className="mnu-row off"><span className="mnu-name">{name(p)}</span><span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span></div>)}
+            </div>
+          )}
         </>)}
         {tab === "add" && (
           <form className="form" onSubmit={create}>
