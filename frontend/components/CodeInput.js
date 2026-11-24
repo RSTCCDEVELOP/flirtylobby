@@ -35,7 +35,7 @@ function CodeTimer({ kind }) {
   const gid = `ctg-${kind}`;
   return (
     <span className={`code-timer ${state}`} role="timer" aria-label={left === 0 ? tx("De code is verlopen") : `${tx("De code is nog geldig")}: ${mm}`} title={left === 0 ? tx("De code is verlopen: vraag een nieuwe aan") : `${tx("De code is nog geldig")}: ${mm}`}>
-      <svg width="68" height="68" viewBox="0 0 68 68" aria-hidden="true">
+      <svg width="100%" height="100%" viewBox="0 0 68 68" aria-hidden="true">
         <defs>
           <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" className="ct-g1" /><stop offset="100%" className="ct-g2" /></linearGradient>
         </defs>

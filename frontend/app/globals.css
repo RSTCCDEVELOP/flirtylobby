@@ -4903,7 +4903,7 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .sugpw { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .25rem 0; } .sugpw-code { padding: .2rem .5rem; border-radius: 6px; background: color-mix(in srgb, var(--blue) 10%, transparent); font-size: .85rem; user-select: all; }
 
 /* the round timer next to a code input: how long the code is still valid */
-.code-timer { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 68px; height: 68px; flex: none; margin-left: .35rem; border-radius: 50%; background: color-mix(in srgb, var(--text) 3%, var(--card)); box-shadow: 0 2px 10px rgba(0,0,0,.08), inset 0 0 0 1px var(--line); }
+.code-timer { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 3.7rem; height: 3.7rem; flex: none; margin-left: .35rem;  /* a little smaller than the code block next to it */ border-radius: 50%; background: color-mix(in srgb, var(--text) 3%, var(--card)); box-shadow: 0 2px 10px rgba(0,0,0,.08), inset 0 0 0 1px var(--line); }
 .code-timer .ct-track { stroke: color-mix(in srgb, currentColor 10%, transparent); }
 .code-timer .ct-g1 { stop-color: #5aa9f0; } .code-timer .ct-g2 { stop-color: #2f6fd0; }
 .code-timer.low .ct-g1 { stop-color: #f2b45c; } .code-timer.low .ct-g2 { stop-color: #e08a3c; }
@@ -4911,6 +4911,6 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .code-timer .ct-ring { transition: stroke-dashoffset .5s linear; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--blue, #3b82f6) 45%, transparent)); }
 .code-timer.low .ct-ring { filter: drop-shadow(0 0 3px rgba(224,138,60,.5)); } .code-timer.gone .ct-ring { filter: none; }
 .code-timer .ct-in { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
-.code-timer .ct-text { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-.code-timer .ct-sub { font-size: .52rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; margin-top: 2px; }
+.code-timer .ct-text { font-size: .9rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.code-timer .ct-sub { font-size: .48rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; margin-top: 2px; }
 .code-timer.gone .ct-text, .code-timer.gone .ct-sub { color: var(--danger, #d64545); opacity: 1; }
