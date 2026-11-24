@@ -1207,6 +1207,8 @@ def _brief_text(b):
         lines.append("BACKGROUND PICTURES: only the hero gets a photo as background (style=\"background-image:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('img/FILE');background-size:cover;background-position:center\", a photo from the list), with a dark layer over it and light text. The other bands have a plain colour.")
     elif bgi == "none":
         lines.append("NO BACKGROUND PICTURES: the customer does not want background pictures. Photos only as <img> inside the content; the bands and the hero have a plain colour or gradient of the theme.")
+    if refs_of(b):
+        lines.append("REFERENCE WEBSITES that the customer likes: " + ", ".join(r["url"] for r in refs_of(b)) + ". " + (f"What they have in common and what to take over: {b['refs_look']} " if b.get("refs_look") else "") + "Follow that look and feel; never copy their texts, logo or photos.")
     if b.get("contact"):
         lines.append("CONTACT DETAILS of the customer (use EXACTLY these in the contact section, the call to action and the footer; never invent an address, a phone number or an e-mail address, and never use example.com): " + str(b["contact"])[:500])
     if b.get("theme_name"):
@@ -1513,6 +1515,90 @@ def _section_system(brief):
     return SECTION_SYSTEM + "\n\n" + comp
 
 
+MAX_REFS = 5
+
+
+def refs_of(b):
+    return [r for r in ((b or {}).get("refs") or []) if isinstance(r, dict) and r.get("url") and r.get("key")][:MAX_REFS]
+
+
+def refs_images(b):
+    """The pictures of the websites that the customer likes, for the AI: [(media_type, base64)] (at most five, about 100 kB each)."""
+    import base64
+
+    out = []
+    for r in refs_of(b):
+        try:
+            with default_storage.open(r["key"], "rb") as fh:
+                out.append(("image/jpeg", base64.b64encode(fh.read()).decode()))
+        except Exception:  # noqa: BLE001 - a picture that is gone is left out
+            continue
+    return out
+
+
+def refs_public(job):
+    """For the screen: [{url, thumb}] (a small data url of every picture)."""
+    import base64
+
+    out = []
+    for r in refs_of(job.brief):
+        thumb = ""
+        try:
+            with default_storage.open(r["key"], "rb") as fh:
+                from PIL import Image
+
+                im = Image.open(io.BytesIO(fh.read())).convert("RGB")
+                im.thumbnail((360, 360))
+                buf = io.BytesIO()
+                im.save(buf, "JPEG", quality=70)
+                thumb = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+        except Exception:  # noqa: BLE001
+            pass
+        out.append({"url": r["url"], "thumb": thumb})
+    return out
+
+
+def add_ref(job, url):
+    """A website that the customer likes: a picture of it is made and kept with the design (at most five). Returns the list for the screen. Raises ValueError with a readable text."""
+    from . import siteshots
+
+    b = dict(job.brief or {})
+    refs = refs_of(b)
+    if len(refs) >= MAX_REFS:
+        raise ValueError(f"Je kunt maximaal {MAX_REFS} voorbeeldwebsites toevoegen.")
+    try:
+        clean = siteshots.clean_url(url)
+        if any(r["url"].rstrip("/") == clean.rstrip("/") for r in refs):
+            raise ValueError("Deze website staat er al bij.")
+        data = siteshots.capture(clean)
+    except siteshots.ShotError as e:
+        raise ValueError(str(e))
+    key = areas.site_path("designs", f"{job.pk}/refs/{uuid.uuid4().hex[:10]}.jpg")
+    default_storage.save(key, ContentFile(data))
+    b["refs"] = [*refs, {"url": clean, "key": key}]
+    b.pop("refs_look", None)  # (the description of their look is made again with the new picture)
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    job.brief = b
+    return refs_public(job)
+
+
+def remove_ref(job, url):
+    b = dict(job.brief or {})
+    keep, gone = [], []
+    for r in refs_of(b):
+        (gone if r["url"].rstrip("/") == str(url or "").rstrip("/") else keep).append(r)
+    for r in gone:
+        try:
+            default_storage.delete(r["key"])
+        except Exception:  # noqa: BLE001
+            pass
+    b["refs"] = keep
+    b.pop("refs_look", None)
+    SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
+    job.brief = b
+    return refs_public(job)
+
+
 def _site_plan(pk, job, pages):
     """A SMALL plan: for every page the components (sections) in order, chosen from the whole set. Never fails: a standard plan is the fallback."""
     from . import componentpacks
@@ -1544,10 +1630,16 @@ def _site_plan(pk, job, pages):
               + 'Answer: {"pages": [{"file": "index.html", "title": "page title (max 60 chars)", "description": "meta description (max 155 chars)", "sections": [{"tag": "ui-hero-split", "id": "hero", "menu": "", "goal": "what this section says, in one sentence"}]}], "brand": "short brand name for the menu"}\n'
               f"Available tags:\n{lst}")
     plan = {}
+    ref_imgs = refs_images(b)
+    if ref_imgs:
+        prompt += ("\n\nREFERENCE WEBSITES: the pictures that are attached show the top of " + str(len(ref_imgs)) + " websites that the customer likes (" + ", ".join(r["url"] for r in refs_of(b)) + "). Look at their layout, rhythm of the sections, "
+                   "use of white space, typography, photos and colour, and let the plan follow that spirit. Never copy their texts, logo or photos. Add to the answer a top level field \"look\": two or three sentences (English) that describe what they have in common and what to take over.")
     try:
-        out = _ask(SECTION_JSON, prompt, max_tokens=6000, pk=pk)
+        out = _ask(SECTION_JSON, prompt, max_tokens=6000, pk=pk, images=ref_imgs or None)
         m = re.search(r"\{.*\}", out, re.S)
         plan = json.loads(m.group(0)) if m else {}
+        if ref_imgs and isinstance(plan, dict) and str(plan.get("look") or "").strip():  # the look of the reference websites is kept as text: every later piece gets it (the pictures are only sent once)
+            SiteDesignJob.objects.filter(pk=pk).update(brief={**(SiteDesignJob.objects.get(pk=pk).brief or {}), "refs_look": str(plan["look"]).strip()[:600]})
     except Stopped:
         raise
     except Exception:  # noqa: BLE001

@@ -876,6 +876,46 @@ function MediaPicker({ jobId, onJob, defaultQuery, disabled, onAnswer, topic, pi
   );
 }
 
+// The websites that the customer likes (at most five): with the + one is added, a picture of it is made on the server and goes to the designer with the next design.
+function RefSites({ jobId, disabled, onChange }) {
+  const [list, setList] = useState([]);
+  const [max, setMax] = useState(5);
+  const [can, setCan] = useState(true);
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const apply = (r) => { setList(r.refs || []); setMax(r.max || 5); setCan(r.available !== false); onChange?.((r.refs || []).map((x) => x.url)); };
+  useEffect(() => { api(`/sitecreator/${jobId}/refs/`).then(apply).catch(() => {}); }, [jobId]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const add = async () => {
+    const u = url.trim();
+    if (!u || busy || list.length >= max) return;
+    setBusy(true); setErr("");
+    try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "POST", body: { url: u } })); setUrl(""); } catch (e) { setErr(errorText(e)); }
+    setBusy(false);
+  };
+  const del = async (u) => { try { apply(await api(`/sitecreator/${jobId}/refs/`, { method: "DELETE", body: { url: u } })); } catch (e) { setErr(errorText(e)); } };
+  return (
+    <div style={{ display: "grid", gap: ".35rem" }}>
+      {list.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: ".35rem" }}>
+        {list.map((r) => (
+          <div key={r.url} style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)", background: "var(--card)" }} title={r.url}>
+            {r.thumb ? <img src={r.thumb} alt={r.url} style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", objectPosition: "top", display: "block" }} /> : <div style={{ aspectRatio: "4 / 3" }} />}
+            <small style={{ display: "block", padding: ".15rem .3rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: ".68rem" }}>{r.url.replace(/^https?:\/\//, "")}</small>
+            <button type="button" className="btn sm" disabled={disabled} onClick={() => del(r.url)} aria-label={tx("Verwijderen")} title={tx("Verwijderen")} style={{ position: "absolute", top: 3, right: 3, padding: "0 .35rem", lineHeight: 1.3 }}>×</button>
+          </div>))}
+      </div>}
+      {list.length < max && (
+        <div style={{ display: "flex", gap: ".35rem" }}>
+          <input value={url} disabled={disabled || busy || !can} maxLength={300} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} placeholder={busy ? tx("Afbeelding maken… (dit kan even duren)") : tx("https://… een website die je mooi vindt")} style={{ flex: 1, minWidth: 0 }} aria-label={tx("Website die je mooi vindt")} />
+          <button type="button" className="btn sm primary" disabled={disabled || busy || !can || !url.trim()} onClick={add} aria-label={tx("Website toevoegen")} title={tx("Website toevoegen")} style={{ minWidth: 34, fontWeight: 700 }}>+</button>
+        </div>)}
+      <small className="muted">{list.length}/{max} · {tx("Van elke website wordt een afbeelding gemaakt; de ontwerper kijkt ernaar voor de sfeer en de opbouw. Teksten, logo's en foto's worden niet overgenomen.")}</small>
+      {!can && <div className="alert" style={{ margin: 0 }}>{tx("Op de server is geen browser (Chrome of Chromium) om afbeeldingen van websites te maken.")}</div>}
+      {err && <div className="alert" style={{ margin: 0 }} role="alert">{err}</div>}
+    </div>
+  );
+}
+
 function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob, onChanged, queryHint, firstRound, saved, onSave, picked, colors, mode }) {
   // the first questionnaire always has a question for the logo and one for photos and videos (own files and iStock), also when the AI did not think of them: two separate drop zones
   const given = [...first];
@@ -885,13 +925,14 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
     if (!given.some(isName)) given.unshift({ id: "name", q: tx("Wat is de naam van het bedrijf of de organisatie?"), type: "text", options: [] });
     if (!given.some(isUrl)) given.splice(1, 0, { id: "url", q: tx("Wat is het adres (url) van je huidige website? Laat leeg als je die nog niet hebt."), type: "text", options: [] });
   }
+  if (jobId && firstRound && first.length >= 3 && !given.some((q) => q.id === "refs")) given.push({ id: "refs", q: tx("Websites die je mooi vindt (max. 5)"), type: "text", options: [] });  // the designer looks at pictures of them
   const hasColors = (q) => /colou?r|kleur|palet|theme|thema/i.test(q.id || "") && !/mode|scheme|light|dark|licht|donker|modus|display|weergave/i.test(q.id || "");
   if (jobId && firstRound && given.length >= 3 && !given.some(hasColors)) {  // the choice of the colour theme is always asked, also when the AI did not think of it
     const at = given.findIndex((q) => /layout|indeling/i.test(q.id || ""));
     const cq = { id: "colors", q: tx("Welke kleuren passen bij je bedrijf?"), type: "text", options: [] };
     if (at >= 0) given.splice(at, 0, cq); else given.push(cq);
   }
-  given.sort((x, y) => (isName(y) ? 1 : 0) - (isName(x) ? 1 : 0) || (isUrl(y) ? 1 : 0) - (isUrl(x) ? 1 : 0));  // name first, then the url
+  given.sort((x, y) => (isName(y) ? 1 : 0) - (isName(x) ? 1 : 0) || (isUrl(y) ? 1 : 0) - (isUrl(x) ? 1 : 0) || ((y.id === "refs") ? 1 : 0) - ((x.id === "refs") ? 1 : 0));  // name first, then the url, then the websites that he likes
   if (jobId && firstRound && given.length >= 3) {
     if (!given.some((q) => /logo/i.test(q.id || ""))) given.push({ id: "logo", q: tx("Heb je een logo dat ik moet gebruiken?"), type: "text", options: [] });
     if (!given.some((q) => /media|photo|foto|image|afbeeld|video|istock|beeld/i.test(q.id || "") && !/logo/i.test(q.id || ""))) given.push({ id: "media", q: tx("Wil je foto's of video's gebruiken? Zoek ze op iStock of sleep je eigen bestanden erin."), type: "text", options: [] });
@@ -911,6 +952,7 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
   saveFn.current = onSave;
   useEffect(() => { if (first1.current) { first1.current = false; return undefined; } pend.current = [ans, own]; clearTimeout(saveT.current); saveT.current = setTimeout(() => { const v = pend.current; pend.current = null; if (v) saveFn.current?.(v[0], v[1]); }, 500); return undefined; }, [ans, own]);
   useEffect(() => () => { clearTimeout(saveT.current); const v = pend.current; pend.current = null; if (v) saveFn.current?.(v[0], v[1]); }, []);  // the window is closed (or the form goes away) before the pause was over: save what was filled in now  // what the customer dropped in a drop zone, per question: goes with the answer
+  const isRefs = (q) => q.id === "refs" && !!jobId;
   const isLogo = (q) => /logo/i.test(q.id || "") && !!jobId;
   const looksColors = (q) => /colou?r|kleur|palet|theme|thema/i.test(q.id || "") && !/mode|scheme|light|dark|licht|donker|modus|display|weergave/i.test(q.id || "");  // not "color_mode" (light or dark)
   const colorQ = [...questions].reverse().find(looksColors);  // only ONE carousel of colour themes: at the last colour question
@@ -984,13 +1026,14 @@ function QuestionForm({ questions: first, onSend, disabled, accent, jobId, onJob
     sendColors({ ...patchOf("page", pc), ...patchOf("front", fc) });
   }, [chosenTheme?.key, colors?.primary]); // eslint-disable-line react-hooks/exhaustive-deps
   const compose = () => questions.map((q) => { const a = ans[q.id]; const o = own[q.id] ? ` ${own[q.id]}` : ""; const v = Array.isArray(a) ? (a.length ? a.join(", ") : tx("geen")) : (a || (o ? "" : tx("beslis zelf"))); return `${q.q} ${v}${o}`; }).join("\n") + (ans.page_bg ? `\n${tx("Achtergrondkleur van de pagina")}: ${ans.page_bg}` : "") + (ans.front_bg ? `\n${tx("Frontendkleur (hero, blokken en inhoud)")}: ${ans.front_bg}` : "");
-  const chip = (on) => ({ padding: ".25rem .7rem", borderRadius: 999, border: `1px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "color-mix(in srgb, var(--blue) 16%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".85rem" });
+  const chip = (on) => ({ padding: ".15rem .55rem", borderRadius: 999, border: `1px solid ${on ? "var(--blue)" : "var(--line)"}`, background: on ? "color-mix(in srgb, var(--blue) 16%, var(--card))" : "var(--card)", color: "inherit", cursor: "pointer", font: "inherit", fontSize: ".78rem" });
   return (
-    <div style={{ display: "grid", gap: ".7rem", marginTop: ".7rem", paddingTop: ".6rem", borderTop: "1px dashed var(--line)", whiteSpace: "normal" }}>
+    <div style={{ display: "grid", gap: ".4rem", marginTop: ".5rem", paddingTop: ".5rem", borderTop: "1px dashed var(--line)", whiteSpace: "normal" }}>
       {questions.map((q) => (
-        <div key={q.id} style={{ display: "grid", gap: ".3rem" }}>
-          <strong style={{ fontSize: ".88rem" }}>{q.q}</strong>
-          {isLogo(q) ? <><DropZone jobId={jobId} onJob={onJob} role="logo" accept="image/*" label={tx("Sleep je logo hierheen")} hint={tx("of klik om een bestand te kiezen (png, jpg, webp of svg)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} />
+        <div key={q.id} style={{ display: "grid", gap: ".25rem", padding: ".45rem .6rem .5rem", borderRadius: 10, background: "color-mix(in srgb, var(--blue) 5%, transparent)", border: "1px solid color-mix(in srgb, var(--line) 70%, transparent)" }}>
+          <strong style={{ fontSize: ".8rem", lineHeight: 1.3 }}>{q.q}</strong>
+          {isRefs(q) ? <RefSites jobId={jobId} disabled={disabled} onChange={(urls) => set(q.id, urls.join(", "))} />
+          : isLogo(q) ? <><DropZone jobId={jobId} onJob={onJob} role="logo" accept="image/*" label={tx("Sleep je logo hierheen")} hint={tx("of klik om een bestand te kiezen (png, jpg, webp of svg)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} />
             <input value={ans[q.id]} maxLength={300} disabled={disabled || filling === q.id} onKeyDown={atEnter(q)} onChange={(e) => set(q.id, e.target.value)} placeholder={filling === q.id ? tx("Bezig…") : tx("Of typ de bedrijfsnaam zoals die in de header moet staan")} /></>
           : isMedia(q) ? <><MediaPicker jobId={jobId} picked={picked} onAsk={() => askPhotos()} onJob={onJob} disabled={disabled} defaultQuery={queryHint} topic={{ name: go.name, what: go.what, go: go.n }} onAnswer={(t) => set(q.id, t)} />
             <DropZone jobId={jobId} onJob={onJob} role="media" multiple accept="image/*,video/mp4,video/webm" label={tx("Sleep je eigen foto's of video's hierheen")} hint={tx("of klik om bestanden te kiezen (jpg, png, webp, mp4, webm)")} disabled={disabled} onText={(t) => setOwn((o) => ({ ...o, [q.id]: t }))} /></>

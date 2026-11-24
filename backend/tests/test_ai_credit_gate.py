@@ -88,3 +88,21 @@ def test_users_may_be_switched_off_and_admins_stay(django_user_model):
         aiusage.gate("claude-sonnet-5-5", (), 100)  # an admin is not stopped
     finally:
         aiusage._actor.reset(t)
+
+
+@pytest.mark.django_db
+def test_the_costs_of_a_superadmin_run_up_by_default(django_user_model):
+    """The use of superadmins and of the system counts as costs of the website from the start (the live window and the reports used to stay at 0)."""
+    import time
+
+    from apps.integrations.models import AiUsage
+
+    assert AiSettings.load().bill_internal is True
+    boss = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    t = _as(boss)
+    try:
+        aiusage.record("claude-sonnet-5-5", {"input_tokens": 12000, "output_tokens": 3000}, time.time() - 2, True, "", False, 0, "")
+    finally:
+        aiusage._actor.reset(t)
+    row = AiUsage.objects.order_by("-id").first()
+    assert row.tokens_in == 12000 and float(row.charged) > 0 and row.group == "site"
