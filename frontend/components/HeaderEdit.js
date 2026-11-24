@@ -90,15 +90,34 @@ export default function HeaderEdit() {
             <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ["logo", "Logo"], ["menu", "Menu"]]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
             {tab === "look" && (!theme ? <p className="muted"><Loading /></p> : (
-              <div className="stack-sm">
-                <label className="packlay-row"><span className="switch"><input type="checkbox" checked={(theme.values.page_header || "show") !== "hide"} onChange={(e) => setLook("page_header", e.target.checked ? "show" : "hide")} /><span /></span><span><strong>{tx("Header standaard tonen")}</strong><br /><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
-                <div className="grid2">
-                  {LOOK.map(([k, l]) => { const f = fields.find((x) => x.key === k); return f ? (
-                    <label key={k}>{tx(l)}<select value={theme.values[k]} onChange={(e) => setLook(k, e.target.value)}>{f.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label>
-                  ) : null; })}
-                </div>
-                {heightField && <label>{tx("Hoogte van de header")}: <strong>{Number(theme.values.site_header_h) || 72} px</strong>
-                  <input type="range" min={heightField.min} max={heightField.max} step={2} value={Number(theme.values.site_header_h) || 72} onChange={(e) => setHeight(Number(e.target.value))} /></label>}
+              <div className="hed">
+                {(() => {
+                  const fld = (k) => fields.find((x) => x.key === k);
+                  const sel = (k, l) => { const f = fld(k); return f ? <label key={k}>{tx(l)}<select value={theme.values[k]} onChange={(e) => setLook(k, e.target.value)}>{f.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label> : null; };
+                  const sw = (k, l, hint, on, off) => <label key={k} className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values[k] || on) === on} onChange={(e) => setLook(k, e.target.checked ? on : off)} /><span /></span><span className="hed-swt"><strong>{tx(l)}</strong>{hint && <small className="muted">{tx(hint)}</small>}</span></label>;
+                  const w = fld("header_width");
+                  return (<>
+                    <section className="hed-card">
+                      <h4>{tx("Zichtbaarheid")}</h4>
+                      <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.page_header || "show") !== "hide"} onChange={(e) => setLook("page_header", e.target.checked ? "show" : "hide")} /><span /></span><span className="hed-swt"><strong>{tx("Header standaard tonen")}</strong><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
+                      {fld("header_sticky") && sw("header_sticky", "Blijft bovenaan bij scrollen", "De header blijft zichtbaar als je naar beneden scrolt.", "yes", "no")}
+                      {fld("mode_switch") && sw("mode_switch", "Schakelaar licht/donker", "Laat bezoekers wisselen tussen een lichte en donkere weergave.", "show", "hide")}
+                    </section>
+                    <section className="hed-card">
+                      <h4>{tx("Indeling en stijl")}</h4>
+                      {sel("header_layout", "Indeling")}
+                      {sel("header_style", "Uiterlijk")}
+                      {sel("menu_style", "Uiterlijk van het menu")}
+                    </section>
+                    <section className="hed-card">
+                      <h4>{tx("Afmetingen")}</h4>
+                      {w && <div className="hed-field"><span className="hed-lbl">{tx("Breedte van de header")}</span>
+                        <div className="hed-seg" role="group" aria-label={tx("Breedte van de header")}>{w.choices.map((c) => <button type="button" key={c.value} className={(theme.values.header_width || "content") === c.value ? "on" : ""} aria-pressed={(theme.values.header_width || "content") === c.value} onClick={() => setLook("header_width", c.value)}>{tx(c.value === "full" ? "Hele breedte" : "Breedte van de inhoud")}</button>)}</div></div>}
+                      {heightField && <div className="hed-field"><span className="hed-lbl">{tx("Hoogte van de header")}<b className="hed-val">{Number(theme.values.site_header_h) || 72} px</b></span>
+                        <input type="range" min={heightField.min} max={heightField.max} step={2} value={Number(theme.values.site_header_h) || 72} onChange={(e) => setHeight(Number(e.target.value))} /></div>}
+                    </section>
+                  </>);
+                })()}
                 <small className="muted">{tx("Zien hoe de varianten eruitzien kan bij Admin → Thema → Layout → Header.")}</small>
               </div>
             ))}
