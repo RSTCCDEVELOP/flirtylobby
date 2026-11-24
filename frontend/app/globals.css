@@ -5076,6 +5076,7 @@ html[data-hsidev="middle"] .side-menu { justify-content: center; } html[data-hsi
 html[data-hsidev="top"] .side-menu .side-card, html:not([data-hsidev]) .side-menu .side-card { margin-top: calc(var(--side-menu-y, 0) * 1vh); } html[data-hsidev="bottom"] .side-menu .side-card { margin-bottom: calc(var(--side-menu-y, 0) * 1vh); }  /* the distance from the edge: only when the menu stands at the top or at the bottom */
 .side-menu.left { left: 0; transform: translateX(-100%); } .side-menu.right { right: 0; transform: translateX(100%); }
 .side-menu.left .side-card { border-right: 1px solid var(--line); } .side-menu.right .side-card { border-left: 1px solid var(--line); }
+.side-menu.left.open, .side-menu.right.open { transform: none; }  /* open: slid out */
 .side-menu.open .side-card { box-shadow: 0 0 40px rgba(0, 0, 0, .25); }
 .side-menu .side-in { flex: 1; min-width: 0; overflow-y: auto; padding: 1.1rem 1rem 1.5rem; display: grid; gap: 1.1rem; align-content: start; }
 .side-menu .side-brand { display: inline-flex; max-width: 100%; }
