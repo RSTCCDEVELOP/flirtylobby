@@ -74,13 +74,33 @@ export default function FooterEdit() {
             <Tabs value={tab} onChange={setTab} tabs={[["look", "Uiterlijk"], ...(sys ? [["logo", "Logo"], ["text", "Teksten en links"]] : [])]} />
             {msg && <div className={msg.ok ? "alert ok" : "alert"}>{msg.text}</div>}
             {tab === "look" && (!theme ? <p className="muted"><Loading /></p> : (
-              <div className="stack-sm">
-                <label className="packlay-row"><span className="switch"><input type="checkbox" checked={(theme.values.page_footer || "show") !== "hide"} onChange={(e) => setLook("page_footer", e.target.checked ? "show" : "hide")} /><span /></span><span className="packlay-text"><strong>{tx("Footer standaard tonen")}</strong><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
-                <div className="grid2">
-                  {LOOK.map(([k, l]) => { const f = fields.find((x) => x.key === k); return f ? (
-                    <label key={k}>{tx(l)}<select value={theme.values[k]} onChange={(e) => setLook(k, e.target.value)}>{f.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label>
-                  ) : null; })}
-                </div>
+              <div className="hed">
+                {(() => {
+                  const fld = (k) => fields.find((x) => x.key === k);
+                  const sel = (k, l) => { const f = fld(k); return f ? <label key={k}>{tx(l)}<select value={theme.values[k]} onChange={(e) => setLook(k, e.target.value)}>{f.choices.map((c) => <option key={c.value} value={c.value}>{tx(c.label)}</option>)}</select></label> : null; };
+                  const sw = (k, l, hint, on, off) => <label key={k} className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values[k] || on) === on} onChange={(e) => setLook(k, e.target.checked ? on : off)} /><span /></span><span className="hed-swt"><strong>{tx(l)}</strong>{hint && <small className="muted">{tx(hint)}</small>}</span></label>;
+                  const w = fld("footer_width");
+                  return (<>
+                    <section className="hed-card">
+                      <h4>{tx("Zichtbaarheid")}</h4>
+                      <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.page_footer || "show") !== "hide"} onChange={(e) => setLook("page_footer", e.target.checked ? "show" : "hide")} /><span /></span><span className="hed-swt"><strong>{tx("Footer standaard tonen")}</strong><small className="muted">{tx("Een pagina kan dit zelf anders instellen (Pagina-instellingen).")}</small></span></label>
+                      {fld("footer_social") && sw("footer_social", "Sociale media", "De links naar je sociale media in de footer.", "show", "hide")}
+                      {fld("footer_meta") && sw("footer_meta", "Bedrijfsgegevens", "Naam, adres en contactgegevens van het bedrijf.", "show", "hide")}
+                    </section>
+                    <section className="hed-card">
+                      <h4>{tx("Indeling en stijl")}</h4>
+                      {sel("footer_layout", "Indeling")}
+                      {sel("footer_tone", "Kleur")}
+                      {sel("footer_brand", "Logo en naam")}
+                      {sel("footer_size", "Ruimte")}
+                    </section>
+                    {w && <section className="hed-card">
+                      <h4>{tx("Afmetingen")}</h4>
+                      <div className="hed-field"><span className="hed-lbl">{tx("Breedte van de footer")}</span>
+                        <div className="hed-seg" role="group" aria-label={tx("Breedte van de footer")}>{w.choices.map((c) => <button type="button" key={c.value} className={(theme.values.footer_width || "content") === c.value ? "on" : ""} aria-pressed={(theme.values.footer_width || "content") === c.value} onClick={() => setLook("footer_width", c.value)}>{tx(c.value === "full" ? "Hele breedte" : "Breedte van de inhoud")}</button>)}</div></div>
+                    </section>}
+                  </>);
+                })()}
                 <small className="muted">{tx("Zien hoe de varianten eruitzien kan bij Admin → Thema → Layout → Footer.")}</small>
               </div>
             ))}
