@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Kapalı: menü tarayıcının kenarına yaslanır. Açık: içeriğin başlangıcına yaslanır (sayfanın maksimum genişliği).",
   "Rand van de browser": "Tarayıcının kenarı",
   "Start van de inhoud (maximale breedte)": "İçeriğin başlangıcı (maksimum genişlik)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Yan menü: tarayıcının kenarına veya içeriğin başlangıcına yaslı"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Yan menü: tarayıcının kenarına veya içeriğin başlangıcına yaslı",
+  "Lijnen": "Çizgiler",
+  "Accent (aanwijzen en huidige pagina)": "Vurgu (üzerine gelince ve geçerli sayfa)",
+  "Knop (pijl): achtergrond": "Düğme (ok): arka plan",
+  "Knop (pijl): pijltje": "Düğme (ok): ok",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "Varsayılan olarak yan menü temanın renklerini izler. Bir tema rengi veya özel bir renk seç.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Yan menü: arka plan rengi (boş = tema gibi)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Yan menü: metin rengi (boş = tema gibi)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Yan menü: üzerine gelince ve geçerli öğe için vurgu rengi (boş = tema gibi)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Yan menü: çizgilerin rengi (boş = tema gibi)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Yan menü: düğmenin (ok) rengi (boş = tema gibi)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Yan menü: okun rengi (boş = tema gibi)"
 }

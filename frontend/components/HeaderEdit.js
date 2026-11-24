@@ -15,6 +15,7 @@ import { tx } from "../lib/t";
 import { IconEdit } from "./Icons";
 import { useSession } from "./Session";
 import Tabs from "./Tabs";
+import ColorInput, { tokenVar } from "./ColorInput";
 
 import Loading from "./Loading";
 const LOOK = [["header_layout", "Indeling"], ["header_style", "Uiterlijk"], ["header_sticky", "Blijft bovenaan bij scrollen"], ["header_width", "Breedte van de header"], ["menu_style", "Uiterlijk van het menu"], ["mode_switch", "Schakelaar licht/donker"]];
@@ -24,7 +25,8 @@ export default function HeaderEdit() {
   const { editing } = useSession();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("look");
-  const [sideTab, setSideTab] = useState("behaviour");  // the tab Zijmenu has its own tabs: Gedrag, Positie, Uiterlijk
+  const [sideTab, setSideTab] = useState("behaviour");
+  const [designTab, setDesignTab] = useState("shape");  // inside Design: Vorm, Lijnen, Kleur  // the tab Zijmenu has its own tabs: Gedrag, Positie, Uiterlijk
   const [theme, setTheme] = useState(null); // {values, schema}
   const [msg, setMsg] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -75,6 +77,15 @@ export default function HeaderEdit() {
     const values = { ...theme.values, [key]: n };
     setTheme({ ...theme, values });
     document.documentElement.dataset[attr] = String(n);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => save(values), 400);
+  };
+  const COLOR_VAR = { side_menu_bg: "--side-menu-bg", side_menu_fg: "--side-menu-fg", side_menu_accent: "--side-menu-accent", side_menu_linec: "--side-menu-linec", side_button_bg: "--side-btn-bg", side_button_fg: "--side-btn-fg" };
+  const setColor = (key, v) => {  // a colour of the side menu: a colour of the theme (kept by its name), an own colour, or "" (like the theme); the page follows at once
+    const values = { ...theme.values, [key]: v };
+    setTheme({ ...theme, values });
+    const root = document.documentElement;
+    if (!v) root.style.removeProperty(COLOR_VAR[key]); else root.style.setProperty(COLOR_VAR[key], tokenVar(v) || v);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => save(values), 400);
   };
@@ -239,9 +250,11 @@ export default function HeaderEdit() {
                   </section>
                   )}
                   {mode !== "off" && sideTab === "design" && (<>
+                    <Tabs value={designTab} onChange={setDesignTab} tabs={[["shape", "Vorm"], ["lines", "Lijnen"], ["color", "Kleur"]]} className="tabs-one-row" />
+                    {designTab === "shape" && (<>
                     <section className="hed-card">
-                      <h4>{tx("Hoeken en lijnen")}</h4>
-                      {[["side_menu_radius", "Ronde hoeken (buitenkant)", "px", "Hoe rond de hoeken aan de buitenkant van het menu zijn."], ["side_menu_line", "Dikte van de lijnen", "px", "De dikte van de lijn om het menu; 0 haalt de lijn weg."]].map(([k, l, u, d]) => {
+                      <h4>{tx("Hoeken")}</h4>
+                      {[["side_menu_radius", "Ronde hoeken (buitenkant)", "px", "Hoe rond de hoeken aan de buitenkant van het menu zijn."]].map(([k, l, u, d]) => {
                         const f = fields.find((x) => x.key === k); if (!f) return null;
                         const n = Number(theme.values[k] ?? f.default);
                         return (
@@ -251,9 +264,6 @@ export default function HeaderEdit() {
                           </div>
                         );
                       })}
-                      {fields.some((x) => x.key === "header_side_div") && (
-                        <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.header_side_div || "no") === "yes"} onChange={(e) => setLook("header_side_div", e.target.checked ? "yes" : "no")} /><span /></span><span className="hed-swt"><strong>{tx("Lijnen tussen de menu-items")}</strong><small>{tx("Een dunne lijn onder elk menu-item.")}</small></span></label>
-                      )}
                     </section>
                     <section className="hed-card">
                       <h4>{tx("Vorm en ruimte")}</h4>
@@ -268,6 +278,44 @@ export default function HeaderEdit() {
                         );
                       })}
                     </section>
+                    </>)}
+                    {designTab === "lines" && (<>
+                    <section className="hed-card">
+                      <h4>{tx("Lijnen")}</h4>
+                      {[["side_menu_line", "Dikte van de lijnen", "px", "De dikte van de lijn om het menu; 0 haalt de lijn weg."]].map(([k, l, u, d]) => {
+                        const f = fields.find((x) => x.key === k); if (!f) return null;
+                        const n = Number(theme.values[k] ?? f.default);
+                        return (
+                          <div className="hed-field" key={k}><span className="hed-lbl">{tx(l)}<b className="hed-val">{n} {u}</b></span>
+                            <input type="range" min={f.min} max={f.max} step={f.step || 1} value={n} onChange={(e) => setStart(k, Number(e.target.value))} aria-label={tx(l)} />
+                            <small className="muted">{tx(d)}</small>
+                          </div>
+                        );
+                      })}
+                      {fields.some((x) => x.key === "header_side_div") && (
+                        <label className="hed-sw"><span className="switch"><input type="checkbox" checked={(theme.values.header_side_div || "no") === "yes"} onChange={(e) => setLook("header_side_div", e.target.checked ? "yes" : "no")} /><span /></span><span className="hed-swt"><strong>{tx("Lijnen tussen de menu-items")}</strong><small>{tx("Een dunne lijn onder elk menu-item.")}</small></span></label>
+                      )}
+                    </section>
+                    </>)}
+                    {designTab === "color" && (<>
+                    <section className="hed-card">
+                      <h4>{tx("Kleuren")}</h4>
+                      <small className="muted">{tx("Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.")}</small>
+                      {[["side_menu_bg", "Achtergrond"], ["side_menu_fg", "Tekst"], ["side_menu_accent", "Accent (aanwijzen en huidige pagina)"], ["side_menu_linec", "Lijnen"], ["side_button_bg", "Knop (pijl): achtergrond"], ["side_button_fg", "Knop (pijl): pijltje"]].map(([k, l]) => {
+                        if (!fields.some((x) => x.key === k)) return null;
+                        const v = theme.values[k] || "";
+                        return (
+                          <div className="hed-field" key={k}>
+                            <span className="hed-lbl">{tx(l)}<b className="hed-val">{v ? (tokenVar(v) ? tx(({ primary: "Primair", secondary: "Secundair", card: "Kaart", page: "Pagina", text: "Tekst", muted: "Gedempt", ok: "Succes", danger: "Gevaar", white: "Wit", black: "Zwart" })[v]) : v) : tx("Zoals het thema")}</b></span>
+                            <span style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                              <ColorInput value={v} tokens allowNone onValue={(x) => setColor(k, x)} />
+                              {v && <button type="button" className="btn sm" onClick={() => setColor(k, "")}>{tx("Zoals het thema")}</button>}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </section>
+                    </>)}
                   </>)}
                   {mode !== "off" && sideTab === "position" && (
                   <section className="hed-card">

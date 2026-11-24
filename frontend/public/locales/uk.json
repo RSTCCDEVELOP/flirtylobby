@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Вимк.: меню розташоване біля краю браузера. Увімк.: воно розташоване на початку вмісту (максимальної ширини сторінки).",
   "Rand van de browser": "Край браузера",
   "Start van de inhoud (maximale breedte)": "Початок вмісту (максимальна ширина)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Бічне меню: біля краю браузера або на початку вмісту"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Бічне меню: біля краю браузера або на початку вмісту",
+  "Lijnen": "Лінії",
+  "Accent (aanwijzen en huidige pagina)": "Акцент (при наведенні та поточна сторінка)",
+  "Knop (pijl): achtergrond": "Кнопка (стрілка): тло",
+  "Knop (pijl): pijltje": "Кнопка (стрілка): стрілка",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "За замовчуванням бічне меню використовує кольори теми. Вибери колір теми або власний колір.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Бічне меню: колір тла (порожньо = як у теми)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Бічне меню: колір тексту (порожньо = як у теми)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Бічне меню: акцентний колір при наведенні та для поточного пункту (порожньо = як у теми)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Бічне меню: колір ліній (порожньо = як у теми)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Бічне меню: колір кнопки (стрілка) (порожньо = як у теми)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Бічне меню: колір стрілки (порожньо = як у теми)"
 }

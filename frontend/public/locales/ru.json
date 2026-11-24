@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Выкл.: меню располагается у края браузера. Вкл.: оно располагается у начала содержимого (максимальной ширины страницы).",
   "Rand van de browser": "Край браузера",
   "Start van de inhoud (maximale breedte)": "Начало содержимого (максимальная ширина)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Боковое меню: у края браузера или у начала содержимого"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Боковое меню: у края браузера или у начала содержимого",
+  "Lijnen": "Линии",
+  "Accent (aanwijzen en huidige pagina)": "Акцент (при наведении и текущая страница)",
+  "Knop (pijl): achtergrond": "Кнопка (стрелка): фон",
+  "Knop (pijl): pijltje": "Кнопка (стрелка): стрелка",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "По умолчанию боковое меню использует цвета темы. Выбери цвет темы или свой цвет.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Боковое меню: цвет фона (пусто = как в теме)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Боковое меню: цвет текста (пусто = как в теме)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Боковое меню: акцентный цвет при наведении и для текущего пункта (пусто = как в теме)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Боковое меню: цвет линий (пусто = как в теме)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Боковое меню: цвет кнопки (стрелка) (пусто = как в теме)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Боковое меню: цвет стрелки (пусто = как в теме)"
 }

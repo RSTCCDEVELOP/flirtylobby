@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Désactivé : le menu est placé contre le bord du navigateur. Activé : il est placé contre le début du contenu (la largeur maximale de la page).",
   "Rand van de browser": "Bord du navigateur",
   "Start van de inhoud (maximale breedte)": "Début du contenu (largeur maximale)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu latéral : contre le bord du navigateur ou contre le début du contenu"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu latéral : contre le bord du navigateur ou contre le début du contenu",
+  "Lijnen": "Lignes",
+  "Accent (aanwijzen en huidige pagina)": "Accent (survol et page actuelle)",
+  "Knop (pijl): achtergrond": "Bouton (flèche) : arrière-plan",
+  "Knop (pijl): pijltje": "Bouton (flèche) : flèche",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "Par défaut, le menu latéral suit les couleurs du thème. Choisis une couleur du thème ou une couleur personnalisée.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Menu latéral : couleur d'arrière-plan (vide = comme le thème)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Menu latéral : couleur du texte (vide = comme le thème)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu latéral : couleur d'accent au survol et pour l'élément actuel (vide = comme le thème)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu latéral : couleur des lignes (vide = comme le thème)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu latéral : couleur du bouton (flèche) (vide = comme le thème)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu latéral : couleur de la flèche (vide = comme le thème)"
 }

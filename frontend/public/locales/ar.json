@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "إيقاف: تلتصق القائمة بحافة المتصفح. تشغيل: تلتصق ببداية المحتوى (العرض الأقصى للصفحة).",
   "Rand van de browser": "حافة المتصفح",
   "Start van de inhoud (maximale breedte)": "بداية المحتوى (العرض الأقصى)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "القائمة الجانبية: عند حافة المتصفح أو عند بداية المحتوى"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "القائمة الجانبية: عند حافة المتصفح أو عند بداية المحتوى",
+  "Lijnen": "الخطوط",
+  "Accent (aanwijzen en huidige pagina)": "اللون المميز (عند التمرير والصفحة الحالية)",
+  "Knop (pijl): achtergrond": "الزر (السهم): الخلفية",
+  "Knop (pijl): pijltje": "الزر (السهم): السهم",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "افتراضيًا تتبع القائمة الجانبية ألوان القالب. اختر لونًا من القالب أو لونًا خاصًا بك.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "القائمة الجانبية: لون الخلفية (فارغ = مثل القالب)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "القائمة الجانبية: لون النص (فارغ = مثل القالب)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "القائمة الجانبية: اللون المميز عند التمرير وللعنصر الحالي (فارغ = مثل القالب)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "القائمة الجانبية: لون الخطوط (فارغ = مثل القالب)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "القائمة الجانبية: لون الزر (السهم) (فارغ = مثل القالب)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "القائمة الجانبية: لون السهم (فارغ = مثل القالب)"
 }

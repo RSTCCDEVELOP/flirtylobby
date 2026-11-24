@@ -242,6 +242,14 @@ def number(key, label, default, css, unit, lo, hi, step=1):
             "min": lo, "max": hi, "step": step, "mode": "both"}
 
 
+COLOR_TOKENS = {"primary": "var(--blue)", "secondary": "var(--orange)", "card": "var(--card)", "page": "var(--page, var(--bg))", "text": "var(--text)", "muted": "var(--muted)", "ok": "var(--ok)", "danger": "var(--danger)", "white": "#ffffff", "black": "#000000"}
+
+
+def colorref(key, label, css):
+    """A colour of the theme by its name (primary, secondary, card ...), an own colour (#rrggbb) or empty = like the theme (nothing is set)."""
+    return {"key": key, "label": label, "type": "colorref", "default": "", "css": css, "mode": "both"}
+
+
 def choice(key, label, default, css, choices):
     return {"key": key, "label": label, "type": "choice", "default": default, "css": css,
             "choices": choices, "mode": "both"}
@@ -316,6 +324,12 @@ SCHEMA = [
         choice("header_side_div", "Zijmenu: lijnen tussen de menu-items", "no", None, YESNO),
         number("side_menu_shadow", "Zijmenu: schaduw (%)", 40, "--side-menu-shadow", "", 0, 100, 5),
         number("side_menu_igap", "Zijmenu: ruimte tussen de menu-items (px)", 2, "--side-menu-igap", "", 0, 16, 1),
+        colorref("side_menu_bg", "Zijmenu: achtergrondkleur (leeg = zoals het thema)", "--side-menu-bg"),
+        colorref("side_menu_fg", "Zijmenu: tekstkleur (leeg = zoals het thema)", "--side-menu-fg"),
+        colorref("side_menu_accent", "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)", "--side-menu-accent"),
+        colorref("side_menu_linec", "Zijmenu: kleur van de lijnen (leeg = zoals het thema)", "--side-menu-linec"),
+        colorref("side_button_bg", "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)", "--side-btn-bg"),
+        colorref("side_button_fg", "Zijmenu: kleur van het pijltje (leeg = zoals het thema)", "--side-btn-fg"),
         number("side_menu_w", "Zijmenu: breedte van het menu", 300, "--side-menu-w", "px", 120, 480, 10),
         number("side_menu_size", "Zijmenu: tekstgrootte van het menu (%)", 100, "--side-menu-size", "", 80, 140, 5),
         number("side_menu_opacity", "Zijmenu: dekking van het menu (% , lager = transparanter)", 100, "--side-menu-op", "", 20, 100, 5),
@@ -457,6 +471,11 @@ def validate(values):
                 clean[key] = value.lower()
             else:
                 errors[key] = "Ongeldige kleur (gebruik #rrggbb)."
+        elif f["type"] == "colorref":
+            if value == "" or (isinstance(value, str) and (value in COLOR_TOKENS or COLOR_RE.match(value))):
+                clean[key] = value.lower() if value and value not in COLOR_TOKENS else value
+            else:
+                errors[key] = "Kies een kleur van het thema of een eigen kleur (#rrggbb)."
         elif f["type"] == "number":
             if isinstance(value, (int, float)) and not isinstance(value, bool) and f["min"] <= value <= f["max"]:
                 clean[key] = value
@@ -485,6 +504,10 @@ def build(values):
                 families[c["google"]] = c.get("wght", _W)
         elif f["type"] == "number":
             css_val, dark_val = f"{v}{f['unit']}", None
+        elif f["type"] == "colorref":
+            if not v:
+                continue  # like the theme: no value, the style sheet falls back on the colours of the theme
+            css_val, dark_val = COLOR_TOKENS.get(v, v), None
         else:
             css_val, dark_val = v, None
         if f["css"] == "--line":  # lines and borders are mixed a little towards the text colour, in every theme, light and dark: fields and cards stay clearly visible

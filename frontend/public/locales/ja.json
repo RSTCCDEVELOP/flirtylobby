@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "オフ: メニューはブラウザの端に配置されます。オン: コンテンツの開始位置(ページの最大幅)に配置されます。",
   "Rand van de browser": "ブラウザの端",
   "Start van de inhoud (maximale breedte)": "コンテンツの開始位置(最大幅)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "サイドメニュー: ブラウザの端、またはコンテンツの開始位置に配置"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "サイドメニュー: ブラウザの端、またはコンテンツの開始位置に配置",
+  "Lijnen": "線",
+  "Accent (aanwijzen en huidige pagina)": "アクセント（ホバー時と現在のページ）",
+  "Knop (pijl): achtergrond": "ボタン（矢印）：背景",
+  "Knop (pijl): pijltje": "ボタン（矢印）：矢印",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "デフォルトでは、サイドメニューはテーマの色に従います。テーマの色または独自の色を選択してください。",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "サイドメニュー：背景色（空 = テーマと同じ）",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "サイドメニュー：文字色（空 = テーマと同じ）",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "サイドメニュー：ホバー時と現在の項目のアクセント色（空 = テーマと同じ）",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "サイドメニュー：線の色（空 = テーマと同じ）",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "サイドメニュー：ボタン（矢印）の色（空 = テーマと同じ）",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "サイドメニュー：矢印の色（空 = テーマと同じ）"
 }

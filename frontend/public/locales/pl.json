@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Wyłączone: menu przylega do krawędzi przeglądarki. Włączone: przylega do początku treści (maksymalnej szerokości strony).",
   "Rand van de browser": "Krawędź przeglądarki",
   "Start van de inhoud (maximale breedte)": "Początek treści (maksymalna szerokość)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu boczne: przy krawędzi przeglądarki lub przy początku treści"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu boczne: przy krawędzi przeglądarki lub przy początku treści",
+  "Lijnen": "Linie",
+  "Accent (aanwijzen en huidige pagina)": "Akcent (po najechaniu i bieżąca strona)",
+  "Knop (pijl): achtergrond": "Przycisk (strzałka): tło",
+  "Knop (pijl): pijltje": "Przycisk (strzałka): strzałka",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "Domyślnie menu boczne korzysta z kolorów motywu. Wybierz kolor motywu lub własny kolor.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Menu boczne: kolor tła (puste = jak motyw)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Menu boczne: kolor tekstu (puste = jak motyw)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu boczne: kolor akcentu po najechaniu i dla bieżącej pozycji (puste = jak motyw)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu boczne: kolor linii (puste = jak motyw)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu boczne: kolor przycisku (strzałka) (puste = jak motyw)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu boczne: kolor strzałki (puste = jak motyw)"
 }

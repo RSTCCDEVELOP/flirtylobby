@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Desativado: o menu fica junto à margem do navegador. Ativado: fica junto ao início do conteúdo (a largura máxima da página).",
   "Rand van de browser": "Margem do navegador",
   "Start van de inhoud (maximale breedte)": "Início do conteúdo (largura máxima)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu lateral: junto à margem do navegador ou junto ao início do conteúdo"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu lateral: junto à margem do navegador ou junto ao início do conteúdo",
+  "Lijnen": "Linhas",
+  "Accent (aanwijzen en huidige pagina)": "Destaque (ao passar o rato e página atual)",
+  "Knop (pijl): achtergrond": "Botão (seta): fundo",
+  "Knop (pijl): pijltje": "Botão (seta): seta",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "Por padrão, o menu lateral segue as cores do tema. Escolha uma cor do tema ou uma cor própria.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Menu lateral: cor de fundo (vazio = como o tema)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Menu lateral: cor do texto (vazio = como o tema)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu lateral: cor de destaque ao passar o mouse e no item atual (vazio = como o tema)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu lateral: cor das linhas (vazio = como o tema)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu lateral: cor do botão (seta) (vazio = como o tema)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu lateral: cor da seta (vazio = como o tema)"
 }

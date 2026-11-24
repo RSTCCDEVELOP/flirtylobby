@@ -5070,15 +5070,15 @@ html[data-hsticky="start"][data-hstuck="1"] .site-header { transform: translateY
 /* the side menu (theme value header_side = left or right): after the amount is scrolled the header goes and a menu at the side takes its place, with an arrow at its edge to open and close it (components/SideMenu.js) */
 html[data-hside="left"][data-hsidenow="1"] .site-header, html[data-hside="right"][data-hsidenow="1"] .site-header { position: fixed; top: 0; left: 0; right: 0; margin-left: auto; margin-right: auto; transform: translateY(-100%); visibility: hidden; transition: transform .22s ease-out, visibility 0s linear .22s; }
 html[data-hside="left"][data-hsidenow="1"] body, html[data-hside="right"][data-hsidenow="1"] body { padding-top: var(--site-header-h, 64px); }
-.side-menu { position: fixed; top: 0; bottom: 0; z-index: 1000; width: min(var(--side-menu-w, 300px), 86vw); display: flex; flex-direction: column; justify-content: flex-start; box-sizing: border-box; padding-block: calc(var(--side-menu-float, 0) * 1px); pointer-events: none; color: var(--text); font-size: calc(var(--side-menu-size, 100) * 1%); transition: transform .25s ease; }
+.side-menu { position: fixed; top: 0; bottom: 0; z-index: 1000; width: min(var(--side-menu-w, 300px), 86vw); display: flex; flex-direction: column; justify-content: flex-start; box-sizing: border-box; padding-block: calc(var(--side-menu-float, 0) * 1px); pointer-events: none; color: var(--side-menu-fg, var(--text)); font-size: calc(var(--side-menu-size, 100) * 1%); transition: transform .25s ease; }
 html[data-hsidev="middle"] .side-menu { justify-content: center; } html[data-hsidev="bottom"] .side-menu { justify-content: flex-end; }
-.side-menu .side-card { pointer-events: auto; position: relative; display: flex; min-height: min(calc(var(--side-menu-h, 100) * 1vh), 100%); max-height: 100%; background: color-mix(in srgb, var(--card, #fff) calc(var(--side-menu-op, 100) * 1%), transparent); backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); -webkit-backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); transition: box-shadow .25s; }
+.side-menu .side-card { pointer-events: auto; position: relative; display: flex; min-height: min(calc(var(--side-menu-h, 100) * 1vh), 100%); max-height: 100%; background: color-mix(in srgb, var(--side-menu-bg, var(--card, #fff)) calc(var(--side-menu-op, 100) * 1%), transparent); backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); -webkit-backdrop-filter: blur(calc((100 - var(--side-menu-op, 100)) * .12px)); transition: box-shadow .25s; }
 html[data-hsidev="top"] .side-menu .side-card, html:not([data-hsidev]) .side-menu .side-card { margin-top: calc(var(--side-menu-y, 0) * 1vh); } html[data-hsidev="bottom"] .side-menu .side-card { margin-bottom: calc(var(--side-menu-y, 0) * 1vh); }  /* the distance from the edge: only when the menu stands at the top or at the bottom */
 .side-menu { --sbase: 0px; --sw: 100vw; --sgap: 0px; --sx: calc(var(--sbase) + max(calc(var(--side-menu-float, 0) * 1px), var(--sgap))); }  /* --sx: how far the menu stands from the edge: the floating distance, or the space beside the content */
 html[data-hsideanchor="content"] .side-menu { --sgap: max(0px, calc((var(--sw) - var(--content-w, 1100px)) / 2)); }  /* against the start of the content (the maximum width of the pages) instead of the edge of the browser */
 html[data-pbsb="1"] .side-menu { --sw: calc(100vw - var(--pb-sb-w, 340px)); } html[data-pbsb="1"] .side-menu.left { --sbase: var(--pb-sb-w, 340px); }  /* in the editor the page begins next to its panel */
 .side-menu.left { left: var(--sx); transform: translateX(calc(-100% - var(--sx))); } .side-menu.right { right: var(--sx); transform: translateX(calc(100% + var(--sx))); }
-.side-menu .side-card { border: calc(var(--side-menu-line, 1) * 1px) solid var(--line); }
+.side-menu .side-card { border: calc(var(--side-menu-line, 1) * 1px) solid var(--side-menu-linec, var(--line)); }
 .side-menu .side-card { --fl: min(1, var(--side-menu-float, 0)); }  /* floating (a distance from the edge of the screen): then the corners and the lines go all around, else only the side away from the edge is round */
 .side-menu.left .side-card { border-left-width: calc(var(--fl) * var(--side-menu-line, 1) * 1px); border-radius: calc(var(--side-menu-r, 0) * 1px * var(--fl)) calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px * var(--fl)); }
 .side-menu.right .side-card { border-right-width: calc(var(--fl) * var(--side-menu-line, 1) * 1px); border-radius: calc(var(--side-menu-r, 0) * 1px) calc(var(--side-menu-r, 0) * 1px * var(--fl)) calc(var(--side-menu-r, 0) * 1px * var(--fl)) calc(var(--side-menu-r, 0) * 1px); }
@@ -5088,11 +5088,12 @@ html[data-pbsb="1"] .side-menu { --sw: calc(100vw - var(--pb-sb-w, 340px)); } ht
 .side-menu .side-brand { display: inline-flex; max-width: 100%; }
 .side-menu .hmenu.f-bar { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: calc(var(--side-menu-igap, 2) * 1px); flex: none; }
 .side-menu .hmenu a, .side-menu .hmenu .hm-label { display: block; padding: .6rem .8rem; border-radius: 10px; text-align: left; }
-.side-menu .hmenu a:hover { background: color-mix(in srgb, var(--blue) 9%, transparent); }
+.side-menu .hmenu a:hover, .side-menu .hmenu a:focus-visible { background: color-mix(in srgb, var(--side-menu-accent, var(--blue)) 12%, transparent); color: var(--side-menu-accent, inherit); }
+.side-menu .hmenu a.active, .side-menu .hmenu a[aria-current="page"] { color: var(--side-menu-accent, var(--blue)); font-weight: 700; }
 .side-menu .hm-split { display: flex; align-items: center; justify-content: space-between; }
-.side-arrow { position: absolute; top: calc((100% - 54px) * var(--side-btn-y, 6) / 100); width: 34px; height: 54px; display: grid; place-items: center; padding: 0; color: var(--text); background: var(--card, #fff); border: 1px solid var(--line); cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+.side-arrow { position: absolute; top: calc((100% - 54px) * var(--side-btn-y, 6) / 100); width: 34px; height: 54px; display: grid; place-items: center; padding: 0; color: var(--side-btn-fg, var(--text)); background: var(--side-btn-bg, var(--card, #fff)); border: 1px solid var(--side-menu-linec, var(--line)); cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
 .side-menu.left .side-arrow { right: -34px; border-left: 0; border-radius: 0 14px 14px 0; } .side-menu.right .side-arrow { left: -34px; border-right: 0; border-radius: 14px 0 0 14px; }
-.side-arrow:hover { color: var(--blue); } .side-arrow:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.side-arrow:hover { color: var(--side-menu-accent, var(--blue)); } .side-arrow:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .side-menu, .side-arrow svg { transition: none !important; } }
 
 /* fine tuning where the page and the hero begin under the menu (theme values page_start and hero_start, in px; a negative value moves up, under a see-through header) */
@@ -5114,7 +5115,7 @@ html[data-pbbar="1"] .side-menu, html[data-hsidepreview="1"] .side-menu { top: v
 .side-menu .side-brand img, .side-menu .side-brand svg { max-width: 100%; width: auto; height: auto; max-height: var(--site-logo-h, 52px); object-fit: contain; }
 
 /* the design of the side menu: floating (a distance from the screen edge, all corners round and lines all around), lines between the menu items */
-html[data-hsidediv="yes"] .side-menu .hmenu.f-bar > * { border-bottom: 1px solid var(--line); border-radius: 0; }
+html[data-hsidediv="yes"] .side-menu .hmenu.f-bar > * { border-bottom: 1px solid var(--side-menu-linec, var(--line)); border-radius: 0; }
 html[data-hsidediv="yes"] .side-menu .hmenu.f-bar > *:last-child { border-bottom: 0; }
 
 /* the side menu against the start of the content: the button (arrow) stays against the content too, also when the menu is closed; the closed menu itself is not drawn (it would show in the space beside the content) */

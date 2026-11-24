@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Mati: menu berada di tepi browser. Hidup: menu berada di awal konten (lebar maksimum halaman).",
   "Rand van de browser": "Tepi browser",
   "Start van de inhoud (maximale breedte)": "Awal konten (lebar maksimum)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu samping: di tepi browser atau di awal konten"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Menu samping: di tepi browser atau di awal konten",
+  "Lijnen": "Garis",
+  "Accent (aanwijzen en huidige pagina)": "Aksen (saat disorot dan halaman saat ini)",
+  "Knop (pijl): achtergrond": "Tombol (panah): latar belakang",
+  "Knop (pijl): pijltje": "Tombol (panah): panah",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "Secara default menu samping mengikuti warna tema. Pilih warna tema atau warna sendiri.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Menu samping: warna latar belakang (kosong = seperti tema)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Menu samping: warna teks (kosong = seperti tema)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Menu samping: warna aksen saat disorot dan untuk item saat ini (kosong = seperti tema)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Menu samping: warna garis (kosong = seperti tema)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Menu samping: warna tombol (panah) (kosong = seperti tema)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Menu samping: warna panah (kosong = seperti tema)"
 }

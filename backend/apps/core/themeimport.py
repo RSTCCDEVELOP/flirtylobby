@@ -294,7 +294,7 @@ def _schema_for_ai():
     out = []
     for g in T.SCHEMA:
         for f in g["fields"]:
-            if f["key"] in skip or f["key"].startswith("chat_"):
+            if f["key"] in skip or f["key"].startswith("chat_") or f["type"] == "colorref" or f["key"].startswith(("side_", "header_side")):  # (the side menu is not for the AI that makes a theme)
                 continue
             row = {"key": f["key"], "type": f["type"], "default": f["default"]}
             if f["type"] == "number":

@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Off: the menu sits against the edge of the browser. On: it sits against the start of the content (the maximum width of the page).",
   "Rand van de browser": "Edge of the browser",
   "Start van de inhoud (maximale breedte)": "Start of the content (maximum width)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Side menu: against the edge of the browser or against the start of the content"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Side menu: against the edge of the browser or against the start of the content",
+  "Lijnen": "Lines",
+  "Accent (aanwijzen en huidige pagina)": "Accent (hover and current page)",
+  "Knop (pijl): achtergrond": "Button (arrow): background",
+  "Knop (pijl): pijltje": "Button (arrow): arrow",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "By default the side menu follows the theme colours. Choose a theme colour or a custom colour.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Side menu: background colour (empty = like the theme)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Side menu: text colour (empty = like the theme)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Side menu: accent colour on hover and the current item (empty = like the theme)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Side menu: colour of the lines (empty = like the theme)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Side menu: colour of the button (arrow) (empty = like the theme)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Side menu: colour of the arrow (empty = like the theme)"
 }

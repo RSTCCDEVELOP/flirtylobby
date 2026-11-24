@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "Aus: Das Menü liegt am Rand des Browsers. An: Es liegt am Beginn des Inhalts (die maximale Breite der Seite).",
   "Rand van de browser": "Rand des Browsers",
   "Start van de inhoud (maximale breedte)": "Beginn des Inhalts (maximale Breite)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Seitenmenü: am Rand des Browsers oder am Beginn des Inhalts"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "Seitenmenü: am Rand des Browsers oder am Beginn des Inhalts",
+  "Lijnen": "Linien",
+  "Accent (aanwijzen en huidige pagina)": "Akzent (Hover und aktuelle Seite)",
+  "Knop (pijl): achtergrond": "Button (Pfeil): Hintergrund",
+  "Knop (pijl): pijltje": "Button (Pfeil): Pfeil",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "Standardmäßig übernimmt das Seitenmenü die Farben des Themes. Wähle eine Theme-Farbe oder eine eigene Farbe.",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "Seitenmenü: Hintergrundfarbe (leer = wie das Theme)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "Seitenmenü: Textfarbe (leer = wie das Theme)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "Seitenmenü: Akzentfarbe beim Darüberfahren und beim aktuellen Eintrag (leer = wie das Theme)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "Seitenmenü: Farbe der Linien (leer = wie das Theme)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "Seitenmenü: Farbe des Buttons (Pfeil) (leer = wie das Theme)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "Seitenmenü: Farbe des Pfeils (leer = wie das Theme)"
 }

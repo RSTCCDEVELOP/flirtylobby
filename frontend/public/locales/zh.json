@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "关:菜单紧贴浏览器边缘。开:菜单紧贴内容起始处(页面的最大宽度)。",
   "Rand van de browser": "浏览器边缘",
   "Start van de inhoud (maximale breedte)": "内容起始处(最大宽度)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "侧边菜单:紧贴浏览器边缘或紧贴内容起始处"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "侧边菜单:紧贴浏览器边缘或紧贴内容起始处",
+  "Lijnen": "线条",
+  "Accent (aanwijzen en huidige pagina)": "强调色（悬停和当前页面）",
+  "Knop (pijl): achtergrond": "按钮（箭头）：背景",
+  "Knop (pijl): pijltje": "按钮（箭头）：箭头",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "默认情况下，侧边菜单跟随主题颜色。请选择主题颜色或自定义颜色。",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "侧边菜单：背景颜色（留空 = 与主题相同）",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "侧边菜单：文字颜色（留空 = 与主题相同）",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "侧边菜单：悬停和当前项的强调色（留空 = 与主题相同）",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "侧边菜单：线条颜色（留空 = 与主题相同）",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "侧边菜单：按钮（箭头）颜色（留空 = 与主题相同）",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "侧边菜单：箭头颜色（留空 = 与主题相同）"
 }

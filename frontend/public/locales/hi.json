@@ -9043,5 +9043,16 @@
   "Uit: het menu staat tegen de rand van de browser. Aan: het staat tegen het begin van de inhoud (de maximale breedte van de pagina).": "बंद: मेन्यू ब्राउज़र के किनारे से सटा रहता है। चालू: यह सामग्री की शुरुआत से सटा रहता है (पेज की अधिकतम चौड़ाई)।",
   "Rand van de browser": "ब्राउज़र का किनारा",
   "Start van de inhoud (maximale breedte)": "सामग्री की शुरुआत (अधिकतम चौड़ाई)",
-  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "साइड मेन्यू: ब्राउज़र के किनारे से सटा या सामग्री की शुरुआत से सटा"
+  "Zijmenu: tegen de rand van de browser of tegen de start van de inhoud": "साइड मेन्यू: ब्राउज़र के किनारे से सटा या सामग्री की शुरुआत से सटा",
+  "Lijnen": "रेखाएँ",
+  "Accent (aanwijzen en huidige pagina)": "एक्सेंट (होवर और वर्तमान पेज)",
+  "Knop (pijl): achtergrond": "बटन (तीर): पृष्ठभूमि",
+  "Knop (pijl): pijltje": "बटन (तीर): तीर",
+  "Standaard volgt het zijmenu de kleuren van het thema. Kies een kleur van het thema of een eigen kleur.": "डिफ़ॉल्ट रूप से साइड मेन्यू थीम के रंगों का पालन करता है। थीम का रंग या अपना रंग चुनें।",
+  "Zijmenu: achtergrondkleur (leeg = zoals het thema)": "साइड मेन्यू: पृष्ठभूमि का रंग (खाली = थीम जैसा)",
+  "Zijmenu: tekstkleur (leeg = zoals het thema)": "साइड मेन्यू: टेक्स्ट का रंग (खाली = थीम जैसा)",
+  "Zijmenu: accentkleur bij aanwijzen en het huidige item (leeg = zoals het thema)": "साइड मेन्यू: होवर पर और वर्तमान आइटम के लिए एक्सेंट रंग (खाली = थीम जैसा)",
+  "Zijmenu: kleur van de lijnen (leeg = zoals het thema)": "साइड मेन्यू: रेखाओं का रंग (खाली = थीम जैसा)",
+  "Zijmenu: kleur van de knop (pijl) (leeg = zoals het thema)": "साइड मेन्यू: बटन (तीर) का रंग (खाली = थीम जैसा)",
+  "Zijmenu: kleur van het pijltje (leeg = zoals het thema)": "साइड मेन्यू: तीर का रंग (खाली = थीम जैसा)"
 }

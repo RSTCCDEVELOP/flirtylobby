@@ -83,3 +83,19 @@ def test_the_side_menu_stands_against_the_browser_or_against_the_start_of_the_co
     assert theme.validate({"header_side_anchor": "middle"})[1]
     assert theme.FIELDS["header_side_anchor"]["default"] == "browser"  # as before: against the edge of the browser
     assert "header_side_anchor" in themepacks.COMPLETE_KEYS
+
+
+def test_the_colours_of_the_side_menu_are_a_colour_of_the_theme_an_own_colour_or_like_the_theme():
+    from apps.core import themepacks
+
+    keys = ("side_menu_bg", "side_menu_fg", "side_menu_accent", "side_menu_linec", "side_button_bg", "side_button_fg")
+    for k in keys:
+        assert theme.FIELDS[k]["type"] == "colorref" and theme.FIELDS[k]["default"] == "" and k in themepacks.COMPLETE_KEYS  # the theme is the default
+    ok, err = theme.validate({"side_menu_bg": "primary", "side_menu_fg": "#FFFFFF", "side_menu_accent": "", "side_menu_linec": "muted"})
+    assert not err and ok == {"side_menu_bg": "primary", "side_menu_fg": "#ffffff", "side_menu_accent": "", "side_menu_linec": "muted"}
+    assert theme.validate({"side_menu_bg": "pink"})[1] and theme.validate({"side_menu_bg": "#12"})[1] and theme.validate({"side_menu_bg": 5})[1]
+    base = {k: f["default"] for k, f in theme.FIELDS.items()}
+    css, _ = theme.build(base)
+    assert "--side-menu-bg" not in css  # like the theme: nothing is set, the style sheet falls back on the colours of the theme
+    css, _ = theme.build({**base, "side_menu_bg": "primary", "side_menu_fg": "#ffffff"})
+    assert "--side-menu-bg:var(--blue)" in css and "--side-menu-fg:#ffffff" in css
