@@ -4868,3 +4868,8 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .mnu-row.over-out { box-shadow: -4px 0 0 0 var(--blue); }
 .mnu-end { padding: .6rem; text-align: center; border-radius: 8px; border: 2px dashed color-mix(in srgb, currentColor 25%, transparent); font-size: .85rem; } .mnu-end.over { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, transparent); }
 .mnu-row * { user-select: none; } .mnu-row input, .mnu-row select { user-select: text; }
+.mnu-add { margin-top: .75rem; display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
+.mnu-picker { width: 100%; border-radius: 10px; padding: .5rem; background: color-mix(in srgb, var(--blue) 7%, transparent); display: flex; flex-direction: column; gap: .4rem; }
+.mnu-pick-list { display: flex; flex-direction: column; gap: .25rem; max-height: 220px; overflow: auto; }
+.mnu-pick { display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem; border-radius: 8px; border: 1px solid color-mix(in srgb, currentColor 14%, transparent); background: var(--card, #fff); color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.mnu-pick:hover { border-color: var(--blue); } .mnu-plus { font-weight: 700; color: var(--blue); }

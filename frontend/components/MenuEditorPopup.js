@@ -31,6 +31,8 @@ export default function MenuEditorPopup({ onClose }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const grab = useRef(true);
+  const [picker, setPicker] = useState(false);
+  const [q, setQ] = useState("");
   const [nw, setNw] = useState({ kind: "link", title: "", url: "" });
 
   const build = (pages) => {
@@ -174,10 +176,21 @@ export default function MenuEditorPopup({ onClose }) {
             {!tree.length && <p className="muted">{tx("Het menu is leeg.")}</p>}
             {drag && <div className={`mnu-end${over?.id === "end" ? " over" : ""}`} onDragOver={(e) => { e.preventDefault(); setOver({ id: "end", zone: "end" }); }} onDrop={(e) => { e.preventDefault(); drop(null, "end"); setDrag(null); setOver(null); }}>{tx("Hier loslaten: onderaan het hoofdmenu")}</div>}
           </div>
-          <div className={`mnu-offzone${over?.id === "off" ? " over" : ""}`} onDragOver={(e) => { if (drag) { e.preventDefault(); setOver({ id: "off", zone: "off" }); } }} onDragLeave={() => setOver(null)} onDrop={(e) => { e.preventDefault(); drop(null, "off"); setDrag(null); setOver(null); }}>
-            <strong>{tx("Niet in het menu")}</strong>
-            {off.map((p) => row({ p, isOff: true }))}
-            {!off.length && <small className="muted">{tx("Sleep een item hierheen om het uit het menu te halen.")}</small>}
+          <div className="mnu-add">
+            <button type="button" className="btn sm" onClick={() => { setPicker((v) => !v); setQ(""); }} aria-expanded={picker}>+ {tx("Pagina toevoegen aan het menu")}</button>
+            {picker && (
+              <div className="mnu-picker">
+                <input className="mnu-search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek een pagina…")} aria-label={tx("Zoeken")} />
+                <div className="mnu-pick-list">
+                  {off.filter((p) => name(p).toLowerCase().includes(q.trim().toLowerCase())).map((p) => (
+                    <button type="button" key={p.id} className="mnu-pick" onClick={() => toggle(p)}>
+                      <span className="mnu-name">{name(p)}</span><span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span><span className="mnu-plus" aria-hidden="true">+</span>
+                    </button>
+                  ))}
+                  {!off.filter((p) => name(p).toLowerCase().includes(q.trim().toLowerCase())).length && <small className="muted">{off.length ? tx("Geen pagina gevonden.") : tx("Alle pagina's staan al in het menu.")}</small>}
+                </div>
+              </div>
+            )}
           </div>
           {dead.length > 0 && (
             <div className="mnu-offzone mnu-dead">
