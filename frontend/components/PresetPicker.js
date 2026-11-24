@@ -110,11 +110,12 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
   };
   const doApply = async () => {
     const { p, demo: withDemo, shops } = ask;
+    const design = ask.design !== false, theme = ask.theme !== false;
     setAsk(null); setMsg(null);
-    const overwrite = await askOverwrite(p.key);
+    const overwrite = design ? await askOverwrite(p.key) : false;
     setRun({ title: tx("Installatie \"{0}\" instellen", p.name), steps: [{ key: "_apply", label: tx("Modules, plugins en thema instellen"), status: "busy" }], error: "", done: false, undo: p.key });
     try {
-      const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: { overwrite_pages: overwrite } });
+      const r = await api(`/system/presets/${p.key}/apply/`, { method: "POST", body: { overwrite_pages: overwrite, design, theme } });
       let note = tx("{0} is ingesteld: {1} modules en {2} plugins staan aan.", p.name, r.modules_on.length, r.plugins_on.length) + (r.payments_warning ? ` ${tx(r.payments_warning)}` : "") + (r.plugins_installed?.length ? ` ${tx("Uit de bibliotheek geïnstalleerd:")} ${r.plugins_installed.join(", ")}.` : "") + (r.plugins_missing.length ? ` ${tx("Niet geïnstalleerd:")} ${r.plugins_missing.join(", ")}.` : "");
       setRun((x) => ({ ...x, steps: x.steps.map((st) => (st.key === "_apply" ? { ...st, status: "ok" } : st)) }));
       let ok = true;
@@ -164,6 +165,16 @@ export default function PresetPicker({ manage = false, adminOnly = false, demo =
             <h2 style={{ marginTop: 0 }}>{tx("Bevestigen")}</h2>
             <p style={{ marginTop: 0 }}>{tx("De installatie \"{0}\" instellen? Alle modules, plugins en het community-thema worden zoals bij deze installatie aan of uit gezet. Je gegevens blijven bestaan.", ask.p.name)}</p>
             <p className="muted" style={{ marginTop: 0 }}>{tx("De huidige startpagina wordt vervangen door de startpagina van deze installatie (niet gecombineerd). Verwijder je de installatie, dan komt je oude startpagina terug.")}</p>
+            {(ask.p.design_pages || 0) > 0 && (
+              <label className="check sec-toggle">
+                <span className="switch"><input type="checkbox" checked={ask.design !== false} onChange={(e) => setAsk({ ...ask, design: e.target.checked })} /><span /></span>
+                <span>{tx("Pagina-design van deze installatie installeren")} <small className="muted">{tx("De pagina's van de installatie komen er precies zo op te staan, met hun afbeeldingen. Zet uit om je eigen pagina's te laten zoals ze zijn.")}</small></span>
+              </label>
+            )}
+            <label className="check sec-toggle">
+              <span className="switch"><input type="checkbox" checked={ask.theme !== false} onChange={(e) => setAsk({ ...ask, theme: e.target.checked })} /><span /></span>
+              <span>{tx("Het kleurenthema van deze installatie gebruiken")} <small className="muted">{tx("De kleuren en vormen van het thema van de installatie worden gezet. Zet uit om je huidige kleuren te houden.")}</small></span>
+            </label>
             {demo && (
               <label className="check sec-toggle">
                 <span className="switch"><input type="checkbox" checked={ask.demo} onChange={(e) => setAsk({ ...ask, demo: e.target.checked })} /><span /></span>

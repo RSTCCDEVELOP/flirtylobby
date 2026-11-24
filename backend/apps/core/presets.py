@@ -373,7 +373,7 @@ def listing():
     for base in PRESETS:
         p = get(base["key"])
         want = _wanted_modules(p)
-        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
+        out.append({"system_api": {"stripe": stripe_on}, "ai": ai_config(p["key"]), "default": p["key"] in dflt, "edited": bool(edits(p["key"])), "demo_cfg": {k: v for k, v in demo_config(p["key"]).items() if k != "drop"}, "contents": _contents(p), "price": _price(p), "demo_parts": _demo_parts(p["key"]), "active": p["key"] == act, "saved_pages": sorted(saved_pages(p["key"])), "samples": _design_samples(p["key"]), "design_pages": _design_count(p["key"]), "admin": p["key"] in allowed, "key": p["key"], "name": p["name"], "icon": p["icon"], "desc": p["desc"], "theme": p["theme"] if "profiles" in want else "normal",
                     "modules": [labels[k] for k in labels if k in want and k not in {m["key"] for m in modules.MODULES if m.get("core")} | set(ALWAYS_ON)],
                     "plugins": [{"name": n, "title": have.get(n, n), "installed": n in have} for n in p["plugins"]]})
     return out
@@ -686,6 +686,15 @@ def repair_active():
         logger.warning("Installation %s: plugins put back: %s", key, ", ".join(fixed))
     refresh_pristine_pages(key)  # pages nobody changed follow the standard of this version
     return fixed
+
+
+def _design_count(key):
+    from . import preset_design, preset_pages
+
+    try:
+        return len(set(preset_design.keys(key)) | set(preset_pages.layout_keys(key)) | set(saved_pages(key)))
+    except Exception:  # noqa: BLE001
+        return 0
 
 
 def _design_samples(key):
@@ -1031,8 +1040,9 @@ def bump_epoch():
     obj.save()
 
 
-def apply(key, preset=None, overwrite_pages=False):
+def apply(key, preset=None, overwrite_pages=False, install_design=True, use_theme=True):
     """Switch everything for this standard installation (or for a set made by the wizard: preset = {modules, plugins, theme}). Returns what happened.
+    install_design=False: the pages of the installation (designed pages, saved pages and the pages of the tab Design) are not put in; use_theme=False: the community theme (colours) is not set.
     Pages that already have content are NOT replaced (overwrite_pages=True replaces them: only when the person said so, or on a site that is reset)."""
     from apps.plugins import runtime
     from apps.plugins.models import Plugin
@@ -1085,7 +1095,7 @@ def apply(key, preset=None, overwrite_pages=False):
 
     social, themes = facade.mod("community", "service"), facade.mod("community", "themes")  # (the plugin Community)
     try:
-        if "profiles" in want and social and themes:  # the community theme: switched on for this website, with its fields and the layout of the standard pages
+        if use_theme and "profiles" in want and social and themes:  # the community theme: switched on for this website, with its fields and the layout of the standard pages
             on = set(themes.enabled()) | {theme}
             themes.set_enabled(sorted(on))
             social.save({"profiles": themes.theme_payload(theme)}, ["profiles"])
@@ -1125,17 +1135,20 @@ def apply(key, preset=None, overwrite_pages=False):
     try:  # the designed pages of this installation (start page, community pages) go in; those of another installation go out
         from . import preset_pages
 
-        preset_pages.install(key, skip=protected)
+        if install_design:
+            preset_pages.install(key, skip=protected)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: its pages could not be installed", key)
     try:
-        _apply_saved_pages(key, skip=protected)  # the pages that were saved in this installation come back as they were (except pages that have content of their own)
+        if install_design:
+            _apply_saved_pages(key, skip=protected)  # the pages that were saved in this installation come back as they were (except pages that have content of their own)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: saved pages could not be put back", key)
     try:  # the design of the installation (the pages chosen on the tab Design, with all their pictures): exactly as it was saved
         from . import preset_design
 
-        preset_design.install(key, skip=protected)
+        if install_design:
+            preset_design.install(key, skip=protected)
     except Exception:  # noqa: BLE001
         logger.exception("Preset %s: its design pages could not be installed", key)
     try:  # pages the superadmin added to or took out of this installation: on or off (they must exist; they need not be active now)

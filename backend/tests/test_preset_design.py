@@ -161,3 +161,19 @@ def test_update_of_the_installation_puts_the_design_pages_back(settings, tmp_pat
     assert preset_design.outdated(key) == []
     ContentBlock.objects.filter(key="layout.home.i3aa").update(text="Anders")  # only a text changed
     assert [o["key"] for o in preset_design.outdated(key)] == ["home"]
+
+
+@pytest.mark.django_db
+def test_apply_can_leave_out_the_design_and_the_theme(settings, tmp_path, django_user_model, monkeypatch):
+    settings.RESOURCE_DIR = tmp_path
+    key = presets.PRESETS[0]["key"]
+    seen = {"design": 0, "theme": 0}
+    monkeypatch.setattr(preset_design, "install", lambda *a, **k: seen.__setitem__("design", seen["design"] + 1) or [])
+    su = django_user_model.objects.create_user("su", "su@x.nl", "pw12345678!", is_staff=True, is_superuser=True)
+    c = APIClient(); c.force_authenticate(su)
+    assert c.post(f"/api/system/presets/{key}/apply/", {"design": False, "theme": False}, format="json").status_code == 200
+    assert seen["design"] == 0  # (the pages of the installation are not put in)
+    assert c.post(f"/api/system/presets/{key}/apply/", {}, format="json").status_code == 200
+    assert seen["design"] == 1
+    rows = c.get("/api/system/presets/").json()
+    assert "design_pages" in rows[0]

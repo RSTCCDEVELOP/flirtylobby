@@ -1702,7 +1702,7 @@ def presets_apply(request, key):
         return Response({"detail": "Deze installatie is niet vrijgegeven voor beheerders."}, status=status.HTTP_403_FORBIDDEN)
     if request.data.get("check"):  # which pages would be replaced and already have content: the screen asks before it overwrites
         return Response({"conflicts": presets.conflicts(key)})
-    return Response(presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages"))))
+    return Response(presets.apply(key, overwrite_pages=bool(request.data.get("overwrite_pages")), install_design=request.data.get("design") is not False, use_theme=request.data.get("theme") is not False))
 
 
 @api_view(["GET", "PUT", "DELETE"])
