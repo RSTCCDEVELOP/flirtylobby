@@ -59,7 +59,7 @@ export default function AdminAiBlock() {
             <div>
               <small className="muted">{tx("Mijn AI-tegoed")}</small>
               <strong style={{ fontSize: "1.6rem", display: "block" }}>{money(me.balance, me.currency)}</strong>
-              <small className="muted">{me.exempt ? tx("Superadmins hebben geen tegoed nodig; je kunt wel opwaarderen.") : me.credit_required ? tx("Tegoed is verplicht om AI te gebruiken.") : tx("Tegoed is niet verplicht; je kunt wel vooruit opwaarderen.")}</small>
+              <small className="muted">{me.exempt ? tx("Voor het systeem zelf is geen tegoed nodig; je kunt wel opwaarderen.") : me.credit_required ? tx("Tegoed is verplicht om AI te gebruiken.") : tx("Tegoed is niet verplicht; je kunt wel vooruit opwaarderen.")}</small>
             </div>
             <div className="row" style={{ gap: ".5rem", justifyContent: "flex-end" }}>
               {user.is_staff && <Link className="btn" href="/dashboard/superadmin/ai">{tx("Tegoed beheren")}</Link>}

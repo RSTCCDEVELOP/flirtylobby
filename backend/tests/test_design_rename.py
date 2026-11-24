@@ -13,6 +13,7 @@ def test_rename(django_user_model, monkeypatch):
     from apps.core import sitecreator
     monkeypatch.setattr(sitecreator.ai, "available", lambda *a, **k: True)
     u = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    __import__("apps.integrations.models", fromlist=["AiAccount"]).AiAccount.objects.update_or_create(user=u, defaults={"balance": 100})  # (a superadmin buys credit too)
     c = APIClient(); c.force_authenticate(u)
     pk = c.post("/api/sitecreator/", {"name": "x"}, format="json").json()["id"]
     assert c.patch(f"/api/sitecreator/{pk}/", {"name": "Voetbalclub Ajax"}, format="json").json()["name"] == "Voetbalclub Ajax"
@@ -27,6 +28,7 @@ def test_the_design_answer_carries_the_chat(django_user_model, monkeypatch):
 
     monkeypatch.setattr(sitecreator.ai, "available", lambda *a, **k: True)
     u = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    __import__("apps.integrations.models", fromlist=["AiAccount"]).AiAccount.objects.update_or_create(user=u, defaults={"balance": 100})  # (a superadmin buys credit too)
     c = APIClient(); c.force_authenticate(u)
     pk = c.post("/api/sitecreator/", {"name": "x"}, format="json").json()["id"]
     SiteDesignJob.objects.filter(pk=pk).update(messages=[{"role": "user", "text": "hoi"}, {"role": "ai", "text": "dag"}])
@@ -46,6 +48,7 @@ def test_the_questionnaire_asks_for_the_standard_installation(django_user_model,
     seen = []
     monkeypatch.setattr(sitecreator, "_ask", lambda system, prompt, **k: seen.append(prompt) or '{"reply": "Een paar vragen", "ready": false, "questions": [{"id": "name", "q": "Naam?", "type": "text"}, {"id": "installation", "q": "x", "type": "choice", "options": ["Iets anders"], "default": "Webwinkel"}], "brief": {"kind": "shop"}}')
     u = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    __import__("apps.integrations.models", fromlist=["AiAccount"]).AiAccount.objects.update_or_create(user=u, defaults={"balance": 100})  # (a superadmin buys credit too)
     c = APIClient(); c.force_authenticate(u)
     pk = c.post("/api/sitecreator/", {"name": "x"}, format="json").json()["id"]
     SiteDesignJob.objects.filter(pk=pk).update(brief={"chat": True, "prefill": False}, messages=[{"role": "user", "text": "webshop voor sokken"}, {"role": "ai", "text": "?", "ask": "prefill", "answered": "nee"}])
@@ -70,6 +73,7 @@ def test_the_questionnaire_asks_about_background_pictures(django_user_model, mon
     monkeypatch.setattr(sitecreator, "_spawn", lambda fn, pk, *a: fn(pk, *a))
     monkeypatch.setattr(sitecreator, "_ask", lambda *a, **k: '{"reply": "Vragen", "ready": false, "questions": [{"id": "name", "q": "Naam?", "type": "text"}]}')
     u = django_user_model.objects.create_user("bo", "bo@x.nl", "pw12345678!", is_staff=True)
+    __import__("apps.integrations.models", fromlist=["AiAccount"]).AiAccount.objects.update_or_create(user=u, defaults={"balance": 100})  # (a superadmin buys credit too)
     c = APIClient(); c.force_authenticate(u)
     pk = c.post("/api/sitecreator/", {"name": "x"}, format="json").json()["id"]
     SiteDesignJob.objects.filter(pk=pk).update(brief={"chat": True, "prefill": False}, messages=[{"role": "user", "text": "club"}, {"role": "ai", "text": "?", "ask": "prefill", "answered": "nee"}])

@@ -106,3 +106,29 @@ def test_the_costs_of_a_superadmin_run_up_by_default(django_user_model):
         aiusage._actor.reset(t)
     row = AiUsage.objects.order_by("-id").first()
     assert row.tokens_in == 12000 and float(row.charged) > 0 and row.group == "site"
+
+
+@pytest.mark.django_db
+def test_superadmins_and_superadmin_plus_must_buy_credit_too(django_user_model):
+    """Everybody who asks needs credit when it is required: also a superadmin and a superadmin+ (only the system itself is free)."""
+    sup = django_user_model.objects.create_user("su", "su@x.nl", "pw12345678!", is_staff=True, is_superuser=True)
+    plus = django_user_model.objects.create_user("pp", "pp@x.nl", "pw12345678!", is_staff=True, is_superuser=True)
+    plus.is_superadmin_plus = True
+    plus.save()
+    st = AiSettings.load()
+    assert st.credit_required
+    for u in (sup, plus):
+        assert aiusage.subject(u)
+        t = _as(u)
+        try:
+            with pytest.raises(aiusage.NoCredit):
+                aiusage.gate("claude-sonnet-5-5", ("hallo",), 100)  # no credit: no AI
+            with pytest.raises(aiusage.NoCredit):
+                aiusage.precheck()
+            AiAccount.objects.update_or_create(user=u, defaults={"balance": 50})
+            aiusage.precheck()  # with credit it passes
+            aiusage.record("claude-sonnet-5-5", {"input_tokens": 12000, "output_tokens": 3000}, __import__("time").time() - 2, True, "", False, 0, "")
+        finally:
+            aiusage._actor.reset(t)
+        assert float(AiAccount.objects.get(user=u).balance) < 50  # the use is paid from the credit
+    assert not aiusage.subject(None)  # (the system itself is free)

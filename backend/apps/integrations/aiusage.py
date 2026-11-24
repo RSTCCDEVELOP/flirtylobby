@@ -103,11 +103,11 @@ class Cfg:
 
 
 def subject(user):
-    """Who must have bought credit: users and admins (not superadmins and not the system); in the own system of an admin only his users."""
+    """Who must have bought credit: users, admins, superadmins and superadmin+ (everybody who asks; not the system itself); in the own system of an admin only his users."""
     if user is None:
         return False
     g = group_of(user)
-    return g == "user" if uses_tenant(user) else g in ("user", "admin")
+    return g == "user" if uses_tenant(user) else g in ("user", "admin", "super")
 
 
 def estimate(settings, model, texts, max_tokens, images=0, group="user", margins=None):
@@ -139,7 +139,7 @@ def gate(model="", texts=(), max_tokens=1000, images=0):
 
 
 def precheck():
-    """Before work that will use the AI starts: a user (or admin) without credit gets NoCredit at once (the work is not started, nothing is sent). Never for a superadmin or the system."""
+    """Before work that will use the AI starts: a user (or admin) without credit gets NoCredit at once (the work is not started, nothing is sent). Never for the system itself."""
     gate("claude-sonnet-5-5", (), 100, 0)
 
 
