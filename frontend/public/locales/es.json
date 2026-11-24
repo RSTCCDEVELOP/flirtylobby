@@ -8962,5 +8962,12 @@
   "Altijd": "Siempre",
   "Na scrollen": "Tras desplazar",
   "Blijft staan na": "Se queda fija tras",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Un porcentaje de la altura de la pantalla: con 100 % la cabecera se queda fija cuando el visitante ha desplazado una pantalla entera."
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Un porcentaje de la altura de la pantalla: con 100 % la cabecera se queda fija cuando el visitante ha desplazado una pantalla entera.",
+  "Procent (%)": "Porcentaje (%)",
+  "Pixels (px)": "Píxeles (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "Un número de píxeles: la cabecera se queda fija cuando el visitante ha desplazado tanto.",
+  "Blijft staan na een stuk scrollen": "Se queda fija tras desplazar un poco",
+  "Header: blijft staan na (eenheid)": "Cabecera: se queda fija tras (unidad)",
+  "Header: blijft staan na (procent van het scherm)": "Cabecera: se queda fija tras (porcentaje de la pantalla)",
+  "Header: blijft staan na (pixels)": "Cabecera: se queda fija tras (píxeles)"
 }

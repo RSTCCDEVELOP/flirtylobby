@@ -8962,5 +8962,12 @@
   "Altijd": "始终",
   "Na scrollen": "滚动后",
   "Blijft staan na": "滚动超过此比例后固定",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "屏幕高度的百分比:100% 表示访问者滚动一整屏后页眉固定。"
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "屏幕高度的百分比:100% 表示访问者滚动一整屏后页眉固定。",
+  "Procent (%)": "百分比(%)",
+  "Pixels (px)": "像素(px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "像素数:访问者滚动到该距离后页眉固定。",
+  "Blijft staan na een stuk scrollen": "滚动一段距离后固定",
+  "Header: blijft staan na (eenheid)": "页眉:滚动多少后固定(单位)",
+  "Header: blijft staan na (procent van het scherm)": "页眉:滚动多少后固定(屏幕百分比)",
+  "Header: blijft staan na (pixels)": "页眉:滚动多少后固定(像素)"
 }

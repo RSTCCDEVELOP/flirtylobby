@@ -4976,7 +4976,7 @@
   "Prijslijst bewerken": "Edit daftar harga",
   "Prijzen": "Harga",
   "Prijzen per maand, exclusief btw. Ze staan in backend/apps/core/pricing.json en gaan mee met elke implementatie: neem dat bestand mee in git, dan gelden dezelfde prijzen overal.": "Harga per bulan, belum termasuk PPN. Disimpan di backend/apps/core/pricing.json dan ikut dalam setiap deployment: sertakan berkas itu di git agar harga yang sama berlaku di mana saja.",
-  "Procent van het scherm": "Persentase layar",
+  "Procent van het scherm": "Persen dari layar",
   "Producten, formulieren, abonnementen en meer van de website": "Produk, formulir, langganan, dan lainnya dari situs web",
   "Productpagina": "Halaman produk",
   "Profiel invullen met AI": "Isi profil dengan AI",
@@ -8962,5 +8962,12 @@
   "Altijd": "Selalu",
   "Na scrollen": "Setelah menggulir",
   "Blijft staan na": "Tetap setelah",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Persentase tinggi layar: pada 100% header tetap setelah pengunjung menggulir satu layar penuh."
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Persentase tinggi layar: pada 100% header tetap setelah pengunjung menggulir satu layar penuh.",
+  "Procent (%)": "Persen (%)",
+  "Pixels (px)": "Piksel (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "Sejumlah piksel: header tetap setelah pengunjung menggulir sejauh itu.",
+  "Blijft staan na een stuk scrollen": "Tetap setelah menggulir sebentar",
+  "Header: blijft staan na (eenheid)": "Header: tetap setelah (satuan)",
+  "Header: blijft staan na (procent van het scherm)": "Header: tetap setelah (persen dari layar)",
+  "Header: blijft staan na (pixels)": "Header: tetap setelah (piksel)"
 }

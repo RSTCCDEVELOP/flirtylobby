@@ -4976,7 +4976,7 @@
   "Prijslijst bewerken": "Редагувати прайс-лист",
   "Prijzen": "Ціни",
   "Prijzen per maand, exclusief btw. Ze staan in backend/apps/core/pricing.json en gaan mee met elke implementatie: neem dat bestand mee in git, dan gelden dezelfde prijzen overal.": "Ціни за місяць, без ПДВ. Вони зберігаються в backend/apps/core/pricing.json і поширюються з кожним впровадженням: додайте цей файл до git, тоді скрізь діятимуть однакові ціни.",
-  "Procent van het scherm": "Відсоток від екрана",
+  "Procent van het scherm": "Відсоток екрана",
   "Producten, formulieren, abonnementen en meer van de website": "Товари, форми, підписки та інше з вебсайту",
   "Productpagina": "Сторінка товару",
   "Profiel invullen met AI": "Заповнити профіль за допомогою ШІ",
@@ -8962,5 +8962,12 @@
   "Altijd": "Завжди",
   "Na scrollen": "Після прокручування",
   "Blijft staan na": "Залишається після",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Відсоток висоти екрана: при 100% шапка закріплюється, коли відвідувач прокрутив цілий екран."
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Відсоток висоти екрана: при 100% шапка закріплюється, коли відвідувач прокрутив цілий екран.",
+  "Procent (%)": "Відсотки (%)",
+  "Pixels (px)": "Пікселі (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "Кількість пікселів: шапка закріплюється, коли відвідувач прокрутив на стільки.",
+  "Blijft staan na een stuk scrollen": "Закріплюється після прокручування",
+  "Header: blijft staan na (eenheid)": "Шапка: закріплюється після (одиниця)",
+  "Header: blijft staan na (procent van het scherm)": "Шапка: закріплюється після (відсоток екрана)",
+  "Header: blijft staan na (pixels)": "Шапка: закріплюється після (пікселі)"
 }

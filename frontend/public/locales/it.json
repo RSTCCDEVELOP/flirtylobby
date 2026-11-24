@@ -8962,5 +8962,12 @@
   "Altijd": "Sempre",
   "Na scrollen": "Dopo lo scorrimento",
   "Blijft staan na": "Resta fissa dopo",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Una percentuale dell'altezza dello schermo: al 100% l'intestazione resta fissa quando il visitatore ha scorso un'intera schermata."
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Una percentuale dell'altezza dello schermo: al 100% l'intestazione resta fissa quando il visitatore ha scorso un'intera schermata.",
+  "Procent (%)": "Percentuale (%)",
+  "Pixels (px)": "Pixel (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "Un numero di pixel: l'intestazione resta fissa quando il visitatore ha scorso fin lì.",
+  "Blijft staan na een stuk scrollen": "Resta fissa dopo un po' di scorrimento",
+  "Header: blijft staan na (eenheid)": "Intestazione: resta fissa dopo (unità)",
+  "Header: blijft staan na (procent van het scherm)": "Intestazione: resta fissa dopo (percentuale dello schermo)",
+  "Header: blijft staan na (pixels)": "Intestazione: resta fissa dopo (pixel)"
 }

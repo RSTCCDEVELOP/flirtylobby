@@ -8962,5 +8962,12 @@
   "Altijd": "Her zaman",
   "Na scrollen": "Kaydırdıktan sonra",
   "Blijft staan na": "Şundan sonra sabit kalır",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Ekran yüksekliğinin yüzdesi: %100'de ziyaretçi tam bir ekran kaydırdığında üst bilgi sabit kalır."
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Ekran yüksekliğinin yüzdesi: %100'de ziyaretçi tam bir ekran kaydırdığında üst bilgi sabit kalır.",
+  "Procent (%)": "Yüzde (%)",
+  "Pixels (px)": "Piksel (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "Piksel sayısı: ziyaretçi o kadar kaydırınca üst bilgi sabit kalır.",
+  "Blijft staan na een stuk scrollen": "Bir süre kaydırdıktan sonra sabit kalır",
+  "Header: blijft staan na (eenheid)": "Üst bilgi: şundan sonra sabit kalır (birim)",
+  "Header: blijft staan na (procent van het scherm)": "Üst bilgi: şundan sonra sabit kalır (ekranın yüzdesi)",
+  "Header: blijft staan na (pixels)": "Üst bilgi: şundan sonra sabit kalır (piksel)"
 }

@@ -8962,5 +8962,12 @@
   "Altijd": "常に",
   "Na scrollen": "スクロール後",
   "Blijft staan na": "固定される位置",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "画面の高さに対する割合です。100%では、訪問者が画面1つ分スクロールすると固定されます。"
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "画面の高さに対する割合です。100%では、訪問者が画面1つ分スクロールすると固定されます。",
+  "Procent (%)": "パーセント(%)",
+  "Pixels (px)": "ピクセル(px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "ピクセル数:訪問者がその分スクロールするとヘッダーが固定されます。",
+  "Blijft staan na een stuk scrollen": "少しスクロールした後に固定",
+  "Header: blijft staan na (eenheid)": "ヘッダー:固定されるまで(単位)",
+  "Header: blijft staan na (procent van het scherm)": "ヘッダー:固定されるまで(画面の割合)",
+  "Header: blijft staan na (pixels)": "ヘッダー:固定されるまで(ピクセル)"
 }

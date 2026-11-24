@@ -110,8 +110,8 @@ TRANSITIONS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("slide", "Schuiven"
 REVEALS = _opts(("none", "Geen"), ("fade", "Vervagen"), ("up", "Omhoog schuiven"), ("zoom", "Inzoomen"), ("left", "Van links"))
 YESNO = [{"value": "yes", "label": "Ja", "css": ""}, {"value": "no", "label": "Nee", "css": ""}]
 HEADER_STICKY = [{"value": "yes", "label": "Altijd bovenaan (blijft staan)", "css": ""}, {"value": "no", "label": "Nooit (scrolt weg)", "css": ""},
-                 {"value": "after10", "label": "Blijft staan na 10% scrollen", "css": ""}, {"value": "after25", "label": "Blijft staan na 25% scrollen", "css": ""},
-                 {"value": "after50", "label": "Blijft staan na 50% scrollen", "css": ""}, {"value": "after100", "label": "Blijft staan na 100% scrollen (een heel scherm)", "css": ""}]  # the percentage of the screen height that is scrolled before the header sticks (components/StickyHeader.js)
+                 {"value": "after", "label": "Blijft staan na een stuk scrollen", "css": ""}]  # "after": the header sticks after header_sticky_pct percent of the screen height or header_sticky_px pixels is scrolled (header_sticky_unit says which; components/StickyHeader.js)
+HEADER_STICKY_UNITS = [{"value": "pct", "label": "Procent van het scherm", "css": ""}, {"value": "px", "label": "Pixels", "css": ""}]
 FX_COLOR = _opts(("primary", "Primaire kleur"), ("secondary", "Secundaire kleur"), ("text", "Tekstkleur"), ("white", "Wit"))
 FX_CURSOR = _opts(("off", "Uit"), ("ring", "Ring die de muis volgt"), ("dot", "Punt met ring"), ("blob", "Zachte vlek die de muis volgt"))  # the mouse effects of the website (components/MouseEffects.js)
 HEADER_WIDTHS = [{"value": "content", "label": "Maximale breedte van de inhoud (standaard)", "css": ""}, {"value": "full", "label": "Hele breedte van het scherm (100%)", "css": ""}]  # (also for the footer: footer_width)
@@ -294,6 +294,9 @@ SCHEMA = [
         choice("header_layout", "Header: indeling", "classic", None, HEADER_LAYOUTS),
         choice("header_style", "Header: uiterlijk", "solid", None, HEADER_STYLES),
         choice("header_sticky", "Header blijft bovenaan staan bij scrollen", "yes", None, HEADER_STICKY),
+        choice("header_sticky_unit", "Header: blijft staan na (eenheid)", "pct", None, HEADER_STICKY_UNITS),
+        number("header_sticky_pct", "Header: blijft staan na (procent van het scherm)", 25, None, "%", 0, 200, 5),
+        number("header_sticky_px", "Header: blijft staan na (pixels)", 200, None, "px", 0, 1500, 10),
         choice("header_width", "Header: breedte", "content", None, HEADER_WIDTHS),
         choice("menu_style", "Menu: uiterlijk van de links", "text", None, MENU_STYLES),
         choice("menu_case", "Menu: letters", "normal", None, MENU_CASES),

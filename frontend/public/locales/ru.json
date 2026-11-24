@@ -4976,7 +4976,7 @@
   "Prijslijst bewerken": "Редактировать прайс-лист",
   "Prijzen": "Цены",
   "Prijzen per maand, exclusief btw. Ze staan in backend/apps/core/pricing.json en gaan mee met elke implementatie: neem dat bestand mee in git, dan gelden dezelfde prijzen overal.": "Цены за месяц, без НДС. Они хранятся в backend/apps/core/pricing.json и поставляются с каждым развёртыванием: добавьте этот файл в git, и везде будут действовать одинаковые цены.",
-  "Procent van het scherm": "Процент от экрана",
+  "Procent van het scherm": "Процент экрана",
   "Producten, formulieren, abonnementen en meer van de website": "Товары, формы, подписки и многое другое с сайта",
   "Productpagina": "Страница товара",
   "Profiel invullen met AI": "Заполнить профиль с помощью ИИ",
@@ -8962,5 +8962,12 @@
   "Altijd": "Всегда",
   "Na scrollen": "После прокрутки",
   "Blijft staan na": "Остаётся после",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Процент высоты экрана: при 100% шапка закрепляется, когда посетитель прокрутил целый экран."
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "Процент высоты экрана: при 100% шапка закрепляется, когда посетитель прокрутил целый экран.",
+  "Procent (%)": "Проценты (%)",
+  "Pixels (px)": "Пиксели (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "Количество пикселей: шапка закрепляется, когда посетитель прокрутил на столько.",
+  "Blijft staan na een stuk scrollen": "Закрепляется после прокрутки",
+  "Header: blijft staan na (eenheid)": "Шапка: закрепляется после (единица)",
+  "Header: blijft staan na (procent van het scherm)": "Шапка: закрепляется после (процент экрана)",
+  "Header: blijft staan na (pixels)": "Шапка: закрепляется после (пиксели)"
 }

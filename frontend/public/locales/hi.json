@@ -4945,7 +4945,7 @@
   "Per tabblad (easy2edit, OpenAI, Gemini) staan de modellen met hun inkoopprijs. De standaardprijzen zijn een schatting: controleer ze met de prijslijst van de AI-leverancier.": "हर टैब (easy2edit, OpenAI, Gemini) में मॉडल अपनी खरीद कीमत के साथ हैं। डिफ़ॉल्ट कीमतें अनुमान हैं: उन्हें AI प्रदाता की मूल्य सूची से जाँचें।",
   "Percentage tonen onder de animatie": "एनिमेशन के नीचे प्रतिशत दिखाएं",
   "Pijltje bij items met een submenu": "सबमेनू वाले आइटम के लिए तीर",
-  "Pixels": "पिक्सेल",
+  "Pixels": "पिक्सल",
   "Plaats de beheerpagina van deze plugin bij": "इस प्लगिन का प्रबंधन पृष्ठ यहाँ रखें",
   "Plaats de pagina van deze plugin in": "इस प्लगिन का पृष्ठ यहाँ रखें",
   "Plaats in het scherm": "स्क्रीन पर स्थान",
@@ -8962,5 +8962,12 @@
   "Altijd": "हमेशा",
   "Na scrollen": "स्क्रॉल के बाद",
   "Blijft staan na": "इसके बाद टिका रहता है",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "स्क्रीन की ऊँचाई का प्रतिशत: 100% पर हेडर तब टिकता है जब विज़िटर ने पूरी स्क्रीन स्क्रॉल कर ली हो।"
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "स्क्रीन की ऊँचाई का प्रतिशत: 100% पर हेडर तब टिकता है जब विज़िटर ने पूरी स्क्रीन स्क्रॉल कर ली हो।",
+  "Procent (%)": "प्रतिशत (%)",
+  "Pixels (px)": "पिक्सल (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "पिक्सल की संख्या: विज़िटर के इतना स्क्रॉल करने पर हेडर टिका रहता है।",
+  "Blijft staan na een stuk scrollen": "थोड़ा स्क्रॉल करने के बाद टिका रहता है",
+  "Header: blijft staan na (eenheid)": "हेडर: इसके बाद टिका रहता है (इकाई)",
+  "Header: blijft staan na (procent van het scherm)": "हेडर: इसके बाद टिका रहता है (स्क्रीन का प्रतिशत)",
+  "Header: blijft staan na (pixels)": "हेडर: इसके बाद टिका रहता है (पिक्सल)"
 }

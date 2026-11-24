@@ -4396,7 +4396,7 @@
   "Prijslijst bewerken": "Edit price list",
   "Prijzen": "Prices",
   "Prijzen per maand, exclusief btw. Ze staan in backend/apps/core/pricing.json en gaan mee met elke implementatie: neem dat bestand mee in git, dan gelden dezelfde prijzen overal.": "Prices per month, excluding VAT. They're stored in backend/apps/core/pricing.json and included with every deployment: include that file in git so the same prices apply everywhere.",
-  "Procent van het scherm": "Percentage of the screen",
+  "Procent van het scherm": "Percent of the screen",
   "Producten, formulieren, abonnementen en meer van de website": "Products, forms, subscriptions and more from the website",
   "Productpagina": "Product page",
   "Profiel invullen met AI": "Fill in profile with AI",
@@ -8962,5 +8962,12 @@
   "Altijd": "Always",
   "Na scrollen": "After scrolling",
   "Blijft staan na": "Stays after",
-  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "A percentage of the screen height: at 100% the header stays once the visitor has scrolled a whole screen."
+  "Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.": "A percentage of the screen height: at 100% the header stays once the visitor has scrolled a whole screen.",
+  "Procent (%)": "Percent (%)",
+  "Pixels (px)": "Pixels (px)",
+  "Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.": "A number of pixels: the header stays once the visitor has scrolled that far.",
+  "Blijft staan na een stuk scrollen": "Stays after scrolling a while",
+  "Header: blijft staan na (eenheid)": "Header: stays after (unit)",
+  "Header: blijft staan na (procent van het scherm)": "Header: stays after (percent of the screen)",
+  "Header: blijft staan na (pixels)": "Header: stays after (pixels)"
 }

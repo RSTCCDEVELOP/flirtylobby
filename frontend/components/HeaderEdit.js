@@ -58,11 +58,19 @@ export default function HeaderEdit() {
     const values = { ...theme.values, [key]: v };
     setTheme({ ...theme, values });
     setDirty(true);
+    if (key === "header_sticky_unit" && typeof document !== "undefined") { document.documentElement.dataset.hstickyunit = v; document.documentElement.dataset.hstickyat = String(values[v === "px" ? "header_sticky_px" : "header_sticky_pct"] ?? (v === "px" ? 200 : 25)); }  // the other unit has its own amount
     const a = LOOK_ATTR[key];
     if (a && typeof document !== "undefined") document.documentElement.dataset[a[0]] = key === "mode_switch" ? (v === "hide" ? "hide" : "show") : (v || a[1]);  // the switch light/dark shows or hides at once
     save(values);
   };
   // the logo follows the slider at once; it is saved a moment after the last move
+  const setStickyAt = (key, n) => {  // the slider of "stays after": the page follows at once, saved a moment after the last move
+    const values = { ...theme.values, [key]: n };
+    setTheme({ ...theme, values });
+    document.documentElement.dataset.hstickyat = String(n);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => save(values), 400);
+  };
   const setLogo = (px) => {
     const values = { ...theme.values, site_logo_h: px };
     setTheme({ ...theme, values });
@@ -123,22 +131,27 @@ export default function HeaderEdit() {
             {tab === "position" && (!theme ? <p className="muted"><Loading /></p> : (() => {
               const f = fields.find((x) => x.key === "header_sticky");
               if (!f) return null;
-              const v = theme.values.header_sticky || "yes";
-              const mode = v.startsWith("after") ? "after" : v, pct = v.startsWith("after") ? v.slice(5) : "25";
+              const mode = theme.values.header_sticky || "yes", unit = theme.values.header_sticky_unit || "pct";
+              const amountKey = unit === "px" ? "header_sticky_px" : "header_sticky_pct";
+              const af = fields.find((x) => x.key === amountKey);
+              const amount = Number(theme.values[amountKey] ?? (unit === "px" ? 200 : 25));
               const SEG = (items, cur, on) => <div className="hed-seg" role="group">{items.map(([k, l]) => <button type="button" key={k} className={cur === k ? "on" : ""} aria-pressed={cur === k} onClick={() => on(k)}>{l}</button>)}</div>;
               return (
                 <div className="hed">
                   <section className="hed-card">
                     <h4>{tx("Plakken bij scrollen")}</h4>
                     <div className="hed-field"><span className="hed-lbl">{tx("De header blijft bovenaan staan")}</span>
-                      {SEG([["yes", tx("Altijd")], ["after", tx("Na scrollen")], ["no", tx("Nooit")]], mode, (k) => setLook("header_sticky", k === "after" ? `after${pct}` : k))}
+                      {SEG([["yes", tx("Altijd")], ["after", tx("Na scrollen")], ["no", tx("Nooit")]], mode, (k) => setLook("header_sticky", k))}
                     </div>
-                    {mode === "after" && (
-                      <div className="hed-field"><span className="hed-lbl">{tx("Blijft staan na")}</span>
-                        {SEG([["10", "10%"], ["25", "25%"], ["50", "50%"], ["100", "100%"]], pct, (k) => setLook("header_sticky", `after${k}`))}
-                        <small className="muted">{tx("Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.")}</small>
+                    {mode === "after" && (<>
+                      <div className="hed-field"><span className="hed-lbl">{tx("Eenheid")}</span>
+                        {SEG([["pct", tx("Procent (%)")], ["px", tx("Pixels (px)")]], unit, (k) => setLook("header_sticky_unit", k))}
                       </div>
-                    )}
+                      <div className="hed-field"><span className="hed-lbl">{tx("Blijft staan na")}<b className="hed-val">{amount} {unit === "px" ? "px" : "%"}</b></span>
+                        <input type="range" min={af?.min ?? 0} max={af?.max ?? (unit === "px" ? 1500 : 200)} step={af?.step ?? (unit === "px" ? 10 : 5)} value={amount} onChange={(e) => setStickyAt(amountKey, Number(e.target.value))} aria-label={tx("Blijft staan na")} />
+                        <small className="muted">{unit === "px" ? tx("Een aantal pixels: de header blijft staan zodra de bezoeker zoveel heeft gescrold.") : tx("Een percentage van de schermhoogte: bij 100% blijft de header staan als de bezoeker een heel scherm heeft gescrold.")}</small>
+                      </div>
+                    </>)}
                     <small className="muted">{tx("Kies wanneer de header blijft staan: altijd, nooit, of nadat de bezoeker een deel van het scherm heeft gescrold.")}</small>
                   </section>
                 </div>
