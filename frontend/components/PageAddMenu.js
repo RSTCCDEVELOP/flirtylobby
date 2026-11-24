@@ -80,7 +80,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
   const widgetItems = (objectGroups || []).flatMap((g) => g.items).filter((o) => o.kind === "widget");  // the installed widgets: each with its example, to click or drag onto the page
   const [wView, setWView] = useWidgetView();
   const [wCat, setWCat] = useState(""); const [wSub, setWSub] = useState("");  // the chosen category and sub category of the widgets
-  const tabs = [...GROUPS.map(([k, l]) => [k, l]), ["componenten", "Componenten"], ...(widgetItems.length ? [["widgets", "Widgets"]] : []), ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
+  const tabs = [...GROUPS.map(([k, l]) => [k, l]), ["componenten", "Componenten"], ["widgets", "Widgets"], ...(objectCount !== undefined ? [["systeem", "Systeem"]] : [])];
   const tile = ([type, widget, label, desc, icon]) => (
     <button type="button" key={`${type}-${widget}`} className="pb-addtile" onClick={() => onAdd(type, widget)} {...dragProps({ kind: "basic", type, widget })}>
       <span className="pb-addico">{ICON[icon]}</span>
@@ -158,6 +158,7 @@ export default function PageAddMenu({ cols, objectCount, onAdd, onCols, onObject
               const gc = (o) => o.cat, gs = (o) => o.sub;
               const tree = widgetTree(widgetItems, gc, gs);
               const groups = widgetGroups(widgetItems, gc, gs, wCat, wSub);
+              if (!widgetItems.length) return <p className="muted" style={{ padding: ".6rem .2rem" }}>{tx("Er zijn nog geen widgets geïnstalleerd. Installeer ze in Admin → Website → Thema → Layout → Widgets; ze verschijnen daarna hier.")}</p>;
               return (
                 <div>
                   <div className="wl-top"><WidgetCategories tree={tree} total={widgetItems.length} cat={wCat} sub={wSub} onCat={setWCat} onSub={setWSub} /><ViewToggle view={wView} onChange={setWView} /></div>
