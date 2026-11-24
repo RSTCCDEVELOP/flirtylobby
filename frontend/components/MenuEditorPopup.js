@@ -49,6 +49,7 @@ export default function MenuEditorPopup({ onClose }) {
     api("/pages/").then((d) => build(d.pages || [])).catch((e) => setErr(errorText(e)));
     api("/languages/").then(setLang).catch(() => {});
   }, []);
+  const pool = [...off, ...dead];  // the pages that can be added (a page that is not live is added too, but the header shows it only when it is live)
   const name = (p) => edits[p.id]?.title ?? (p.title?.[lang.default] || Object.values(p.title || {}).find(Boolean) || p.key);
 
   // ---- moving
@@ -86,6 +87,7 @@ export default function MenuEditorPopup({ onClose }) {
     return y < .28 ? "before" : y > .72 ? "after" : "into";
   };
   const toggle = (p) => {  // on: to the end of the menu; off: it goes (with its subitems) to the list below
+    if (dead.some((x) => x.id === p.id)) { setDead(dead.filter((x) => x.id !== p.id)); setTree([...tree, { p: { ...p, in_menu: true }, kids: [] }]); return; }
     if (off.some((x) => x.id === p.id)) { setOff(off.filter((x) => x.id !== p.id)); setTree([...tree, { p: { ...p, in_menu: true }, kids: [] }]); return; }
     const { node, t, o } = take(tree, off, p.id);
     setTree(t); setOff([...o, node.p, ...node.kids]);
@@ -138,6 +140,7 @@ export default function MenuEditorPopup({ onClose }) {
   }
 
   const row = ({ p, sub, canInto, isOff, empty }) => {
+    const notLive = p.available === false;
     const free = p.kind === "link" || p.kind === "menu";  // (own pages and system pages keep their name; it is changed in their settings)
     const aud = edits[p.id]?.audience ?? p.audience ?? "all";
     return (
@@ -151,6 +154,7 @@ export default function MenuEditorPopup({ onClose }) {
           : <span className="mnu-name">{name(p)}</span>}
         {p.kind === "link" && <input className="mnu-url" value={edits[p.id]?.url ?? p.url ?? ""} placeholder="https://… of /pad" onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], url: e.target.value } })} aria-label={tx("Link")} />}
         {empty && <span className="mnu-warn" title={tx("Een menu-item zonder subitems staat niet in de header. Sleep een item op het midden van dit item om er een submenu van te maken.")}>{tx("Nog leeg: niet zichtbaar")}</span>}
+        {notLive && <span className="mnu-warn" title={tx("Deze pagina staat niet live: hij staat pas in de header als je hem live zet bij Admin → Pagina's.")}>{tx("Niet live")}</span>}
         <select className="mnu-aud" value={aud} onChange={(e) => setEdits({ ...edits, [p.id]: { ...edits[p.id], audience: e.target.value } })} aria-label={tx("Wie ziet dit item")} title={tx("Wie ziet dit item in het menu")}>{Object.entries(AUD).map(([k, v]) => <option key={k} value={k}>{tx(v)}</option>)}</select>
         <span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span>
         {free && <button type="button" className="mnu-del" onClick={() => remove(p)} title={tx("Verwijderen")} aria-label={tx("Verwijderen")}>×</button>}
@@ -182,23 +186,16 @@ export default function MenuEditorPopup({ onClose }) {
               <div className="mnu-picker">
                 <input className="mnu-search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx("Zoek een pagina…")} aria-label={tx("Zoeken")} />
                 <div className="mnu-pick-list">
-                  {off.filter((p) => name(p).toLowerCase().includes(q.trim().toLowerCase())).map((p) => (
+                  {pool.filter((p) => name(p).toLowerCase().includes(q.trim().toLowerCase())).map((p) => (
                     <button type="button" key={p.id} className="mnu-pick" onClick={() => toggle(p)}>
-                      <span className="mnu-name">{name(p)}</span><span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span><span className="mnu-plus" aria-hidden="true">+</span>
+                      <span className="mnu-name">{name(p)}</span><span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span>{p.available === false && <span className="mnu-warn">{tx("Niet live")}</span>}<span className="mnu-plus" aria-hidden="true">+</span>
                     </button>
                   ))}
-                  {!off.filter((p) => name(p).toLowerCase().includes(q.trim().toLowerCase())).length && <small className="muted">{off.length ? tx("Geen pagina gevonden.") : tx("Alle pagina's staan al in het menu.")}</small>}
+                  {!pool.filter((p) => name(p).toLowerCase().includes(q.trim().toLowerCase())).length && <small className="muted">{pool.length ? tx("Geen pagina gevonden.") : tx("Alle pagina's staan al in het menu.")}</small>}
                 </div>
               </div>
             )}
           </div>
-          {dead.length > 0 && (
-            <div className="mnu-offzone mnu-dead">
-              <strong>{tx("Niet live")}</strong>
-              <small className="muted">{tx("Een pagina staat pas in het menu van de header als hij live staat. Deze staan uit of hun onderdeel staat uit (zet ze live bij Admin → Pagina's).")}</small>
-              {dead.map((p) => <div key={p.id} className="mnu-row off"><span className="mnu-name">{name(p)}</span><span className="mnu-kind">{tx(KIND[p.kind] || "Pagina")}</span></div>)}
-            </div>
-          )}
         </>)}
         {tab === "add" && (
           <form className="form" onSubmit={create}>
