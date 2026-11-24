@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
 import MenuEditorPopup from "./MenuEditorPopup";
@@ -76,7 +76,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
         <div className="pb-tb-left">
           <button type="button" className={`pb-tb-btn${open ? " on" : ""}`} onClick={() => setOpen(!open)} title={open ? tx("Paneel verbergen") : tx("Paneel tonen")} aria-label={tx("Paneel")}>{ICON.panel}</button>
           {views.map(([k, l, ic]) => k === "page" ? (
-            <div key={k} className="pb-tb-drop">
+            <Fragment key={k}><div className="pb-tb-drop">
               <button type="button" className={`pb-tb-btn${open && view === k ? " on" : ""}`} onClick={() => setPgMenu((v) => !v)} aria-haspopup="menu" aria-expanded={pgMenu} title={tx(l)} aria-label={tx(l)}>{ic}<span>{tx(l)}</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
               {pgMenu && <>
                 <div className="pb-tb-dropbg" onClick={() => setPgMenu(false)} />
@@ -86,6 +86,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
                 </div>
               </>}
             </div>
+            <button type="button" className="pb-tb-btn" onClick={() => setMenuEd(true)} title={tx("Het menu van de website ontwerpen")} aria-label={tx("Menu")}>{ICON.menu}<span>{tx("Menu")}</span></button></Fragment>
           ) : <button type="button" key={k} className={`pb-tb-btn${open && view === k ? " on" : ""}`} onClick={() => pick(k)} title={tx(l)} aria-label={tx(l)}>{ic}<span>{tx(l)}</span></button>)}
         </div>
         <div className="pb-tb-mid"><strong>{title || tx("Pagina")}</strong></div>
@@ -94,7 +95,6 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{headerHidden ? <path d="M6 9l6 6 6-6" /> : <path d="M6 15l6-6 6 6" />}</svg>
             <span>{headerHidden ? tx("Header omlaag") : tx("Header omhoog")}</span>
           </button>
-          <button type="button" className="pb-tb-btn" onClick={() => setMenuEd(true)} title={tx("Het menu van de website ontwerpen")} aria-label={tx("Menu")}>{ICON.menu}<span>{tx("Menu")}</span></button>
           <div id="pb-tb-tools" className="pb-tb-tools" />
           <span className="pb-tb-save">{saving === "saving" ? tx("Opslaan…") : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</span>
           <div id="pb-tb-ai" className="pb-tb-ai" />
