@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "Cabeçalho: fica fixo após (píxeis)",
   "Verschijnt na": "Aparece após",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "O cabeçalho está oculto ao início e aparece quando o visitante deslocou tanto. Podes escolher entre «Fica fixo após» e «Aparece após»: só uma está ativa.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Aparece após deslocar um pouco (oculto ao início)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Aparece após deslocar um pouco (oculto ao início)",
+  "De header blijft altijd bovenaan staan.": "O cabeçalho fica sempre no topo.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Desloca-se primeiro com a página e depois fica no topo.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Oculto ao início e desliza para a vista após deslocar.",
+  "De header scrolt weg met de pagina.": "O cabeçalho desloca-se com a página."
 }

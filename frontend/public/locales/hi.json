@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "हेडर: इसके बाद टिका रहता है (पिक्सल)",
   "Verschijnt na": "इसके बाद दिखता है",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "हेडर पहले छिपा रहता है और विज़िटर के इतना स्क्रॉल करने पर दिखता है। आप «इसके बाद टिका रहता है» और «इसके बाद दिखता है» में से चुन सकते हैं: एक ही सक्रिय रहता है।",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "थोड़ा स्क्रॉल करने के बाद दिखता है (पहले छिपा)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "थोड़ा स्क्रॉल करने के बाद दिखता है (पहले छिपा)",
+  "De header blijft altijd bovenaan staan.": "हेडर हमेशा ऊपर टिका रहता है।",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "पहले पेज के साथ स्क्रॉल होता है, फिर ऊपर टिका रहता है।",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "पहले छिपा रहता है और स्क्रॉल के बाद सरककर दिखता है।",
+  "De header scrolt weg met de pagina.": "हेडर पेज के साथ स्क्रॉल होकर चला जाता है।"
 }

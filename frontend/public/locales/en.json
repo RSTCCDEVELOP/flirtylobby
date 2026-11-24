@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "Header: stays after (pixels)",
   "Verschijnt na": "Appears after",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "The header is hidden at first and appears once the visitor has scrolled that far. You can choose between Stays after and Appears after: only one is active.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Appears after scrolling a while (hidden at first)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Appears after scrolling a while (hidden at first)",
+  "De header blijft altijd bovenaan staan.": "The header always stays at the top.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Scrolls with the page first, then stays at the top.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Hidden at first and slides into view after scrolling.",
+  "De header scrolt weg met de pagina.": "The header scrolls away with the page."
 }

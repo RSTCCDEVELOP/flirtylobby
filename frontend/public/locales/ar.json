@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "الرأس: يثبت بعد (بكسل)",
   "Verschijnt na": "يظهر بعد",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "يكون الرأس مخفيًا في البداية ويظهر بعد أن يمرّر الزائر هذه المسافة. يمكنك الاختيار بين «يثبت بعد» و«يظهر بعد»: واحد فقط يكون نشطًا.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "يظهر بعد التمرير قليلًا (مخفي في البداية)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "يظهر بعد التمرير قليلًا (مخفي في البداية)",
+  "De header blijft altijd bovenaan staan.": "يبقى الرأس دائمًا في الأعلى.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "يتحرك مع الصفحة أولًا ثم يثبت في الأعلى.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "مخفي في البداية وينزلق إلى الظهور بعد التمرير.",
+  "De header scrolt weg met de pagina.": "يتحرك الرأس مع الصفحة ويختفي."
 }

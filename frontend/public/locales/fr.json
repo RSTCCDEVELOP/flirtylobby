@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "En-tête : reste fixe après (pixels)",
   "Verschijnt na": "Apparaît après",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "L'en-tête est d'abord masqué et apparaît dès que le visiteur a fait défiler autant. Tu peux choisir entre « Reste fixe après » et « Apparaît après » : une seule option est active.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Apparaît après un certain défilement (d'abord masqué)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Apparaît après un certain défilement (d'abord masqué)",
+  "De header blijft altijd bovenaan staan.": "L'en-tête reste toujours en haut.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Défile d'abord avec la page, puis reste en haut.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Masqué au départ, il apparaît en glissant après le défilement.",
+  "De header scrolt weg met de pagina.": "L'en-tête défile avec la page."
 }

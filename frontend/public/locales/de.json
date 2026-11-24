@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "Kopfzeile: bleibt stehen nach (Pixel)",
   "Verschijnt na": "Erscheint nach",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "Die Kopfzeile ist zuerst verborgen und erscheint, sobald der Besucher so weit gescrollt hat. Du kannst zwischen „Bleibt stehen nach“ und „Erscheint nach“ wählen: Nur eine ist aktiv.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Erscheint nach etwas Scrollen (zuerst verborgen)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Erscheint nach etwas Scrollen (zuerst verborgen)",
+  "De header blijft altijd bovenaan staan.": "Die Kopfzeile bleibt immer oben.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Scrollt zuerst mit der Seite und bleibt dann oben stehen.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Zuerst verborgen und schiebt sich nach dem Scrollen ins Bild.",
+  "De header scrolt weg met de pagina.": "Die Kopfzeile scrollt mit der Seite weg."
 }

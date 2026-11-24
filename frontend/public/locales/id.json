@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "Header: tetap setelah (piksel)",
   "Verschijnt na": "Muncul setelah",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "Header awalnya tersembunyi dan muncul setelah pengunjung menggulir sejauh itu. Pilih antara «Tetap setelah» dan «Muncul setelah»: hanya satu yang aktif.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Muncul setelah menggulir sebentar (awalnya tersembunyi)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Muncul setelah menggulir sebentar (awalnya tersembunyi)",
+  "De header blijft altijd bovenaan staan.": "Header selalu tetap di atas.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Bergulir bersama halaman dahulu, lalu tetap di atas.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Awalnya tersembunyi dan meluncur masuk setelah menggulir.",
+  "De header scrolt weg met de pagina.": "Header ikut bergulir bersama halaman."
 }

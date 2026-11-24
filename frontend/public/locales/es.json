@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "Cabecera: se queda fija tras (píxeles)",
   "Verschijnt na": "Aparece tras",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "La cabecera está oculta al principio y aparece cuando el visitante ha desplazado tanto. Puedes elegir entre «Se queda fija tras» y «Aparece tras»: solo una está activa.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Aparece tras desplazar un poco (oculta al principio)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Aparece tras desplazar un poco (oculta al principio)",
+  "De header blijft altijd bovenaan staan.": "La cabecera se queda siempre arriba.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Se desplaza primero con la página y luego se queda arriba.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Oculta al principio y aparece deslizándose tras desplazar.",
+  "De header scrolt weg met de pagina.": "La cabecera se desplaza con la página."
 }

@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "Шапка: закрепляется после (пиксели)",
   "Verschijnt na": "Появляется после",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "Шапка сначала скрыта и появляется, когда посетитель прокрутил на столько. Можно выбрать «Остаётся после» или «Появляется после»: активна только одна.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Появляется после прокрутки (сначала скрыта)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Появляется после прокрутки (сначала скрыта)",
+  "De header blijft altijd bovenaan staan.": "Шапка всегда остаётся вверху.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Сначала прокручивается со страницей, затем остаётся вверху.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Сначала скрыта, после прокрутки плавно появляется.",
+  "De header scrolt weg met de pagina.": "Шапка прокручивается вместе со страницей."
 }

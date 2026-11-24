@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "Intestazione: resta fissa dopo (pixel)",
   "Verschijnt na": "Appare dopo",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "L'intestazione è prima nascosta e appare quando il visitatore ha scorso fin lì. Puoi scegliere tra «Resta fissa dopo» e «Appare dopo»: ne è attiva una sola.",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "Appare dopo un po' di scorrimento (prima nascosta)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "Appare dopo un po' di scorrimento (prima nascosta)",
+  "De header blijft altijd bovenaan staan.": "L'intestazione resta sempre in alto.",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "Scorre prima con la pagina, poi resta in alto.",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "Prima nascosta, poi scivola in vista dopo lo scorrimento.",
+  "De header scrolt weg met de pagina.": "L'intestazione scorre via con la pagina."
 }

@@ -5056,3 +5056,14 @@ html[data-hsticky="start"] .site-header { position: fixed; top: 0; left: 0; righ
 html[data-hsticky="start"][data-hstuck="1"] .site-header { transform: translateY(0); visibility: visible; transition: transform .22s ease-out, visibility 0s; }
 html[data-pbbar="1"][data-hsticky="start"] .site-header { position: relative; transform: none; visibility: visible; transition: none; }
 @media (prefers-reduced-motion: reduce) { html[data-hsticky="start"] .site-header { transition: none; } }
+
+/* a choice of a few options as cards (a round dot, the name and a line of explanation): the header panel (position) */
+.hed-cards { display: grid; gap: .45rem; }
+.hed-opt { display: flex; gap: .7rem; align-items: flex-start; text-align: left; padding: .65rem .75rem; border: 1px solid var(--line); border-radius: 12px; background: var(--card, #fff); color: inherit; font: inherit; cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s; }
+.hed-opt:hover { border-color: var(--blue); }
+.hed-opt.on { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 8%, var(--card, #fff)); box-shadow: 0 0 0 1px var(--blue); }
+.hed-opt strong { display: block; font-size: .88rem; } .hed-opt small { display: block; margin-top: .1rem; font-size: .76rem; line-height: 1.35; color: var(--muted); }
+.hed-dot { flex: none; position: relative; width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; border: 2px solid var(--line); background: var(--card, #fff); }
+.hed-opt.on .hed-dot { border-color: var(--blue); } .hed-opt.on .hed-dot::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--blue); }
+.hed-opt:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.hed-seg.lg { padding: 4px; gap: 4px; border-radius: 11px; } .hed-seg.lg button { padding: .55rem .6rem; font-size: .84rem; border-radius: 8px; }

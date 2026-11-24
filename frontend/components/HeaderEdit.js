@@ -135,13 +135,19 @@ export default function HeaderEdit() {
               const amountKey = unit === "px" ? "header_sticky_px" : "header_sticky_pct";
               const af = fields.find((x) => x.key === amountKey);
               const amount = Number(theme.values[amountKey] ?? (unit === "px" ? 200 : 25));
-              const SEG = (items, cur, on) => <div className="hed-seg" role="group">{items.map(([k, l]) => <button type="button" key={k} className={cur === k ? "on" : ""} aria-pressed={cur === k} onClick={() => on(k)}>{l}</button>)}</div>;
+              const SEG = (items, cur, on) => <div className="hed-seg lg" role="group">{items.map(([k, l]) => <button type="button" key={k} className={cur === k ? "on" : ""} aria-pressed={cur === k} onClick={() => on(k)}>{l}</button>)}</div>;
               return (
                 <div className="hed">
                   <section className="hed-card">
                     <h4>{tx("Plakken bij scrollen")}</h4>
                     <div className="hed-field"><span className="hed-lbl">{tx("De header blijft bovenaan staan")}</span>
-                      {SEG([["yes", tx("Altijd")], ["after", tx("Blijft staan na")], ["start", tx("Verschijnt na")], ["no", tx("Nooit")]], mode, (k) => setLook("header_sticky", k))}
+                      <div className="hed-cards" role="radiogroup" aria-label={tx("De header blijft bovenaan staan")}>
+                        {[["yes", "Altijd", "De header blijft altijd bovenaan staan."], ["after", "Blijft staan na", "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan."], ["start", "Verschijnt na", "Is eerst verborgen en schuift in beeld na het scrollen."], ["no", "Nooit", "De header scrolt weg met de pagina."]].map(([k, l, d]) => (
+                          <button type="button" key={k} role="radio" aria-checked={mode === k} className={`hed-opt${mode === k ? " on" : ""}`} onClick={() => setLook("header_sticky", k)}>
+                            <span className="hed-dot" aria-hidden="true" /><span><strong>{tx(l)}</strong><small>{tx(d)}</small></span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     {(mode === "after" || mode === "start") && (<>
                       <div className="hed-field"><span className="hed-lbl">{tx("Eenheid")}</span>

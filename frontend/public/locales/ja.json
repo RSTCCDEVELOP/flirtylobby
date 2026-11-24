@@ -8972,5 +8972,9 @@
   "Header: blijft staan na (pixels)": "ヘッダー:固定されるまで(ピクセル)",
   "Verschijnt na": "表示されるまで",
   "De header is eerst verborgen en verschijnt zodra de bezoeker zoveel heeft gescrold. Je kunt kiezen tussen Blijft staan na en Verschijnt na: er is er één actief.": "ヘッダーは最初は非表示で、訪問者がその分スクロールすると表示されます。「固定されるまで」と「表示されるまで」のどちらか一方のみが有効です。",
-  "Verschijnt na een stuk scrollen (eerst verborgen)": "少しスクロールした後に表示(最初は非表示)"
+  "Verschijnt na een stuk scrollen (eerst verborgen)": "少しスクロールした後に表示(最初は非表示)",
+  "De header blijft altijd bovenaan staan.": "ヘッダーは常に上部に固定されます。",
+  "Scrolt eerst mee met de pagina en blijft daarna bovenaan staan.": "最初はページと一緒にスクロールし、その後上部に固定されます。",
+  "Is eerst verborgen en schuift in beeld na het scrollen.": "最初は非表示で、スクロール後にスライドして表示されます。",
+  "De header scrolt weg met de pagina.": "ヘッダーはページと一緒にスクロールして流れます。"
 }
