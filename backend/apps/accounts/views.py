@@ -67,7 +67,10 @@ def dev_login(request):
             token.delete()
             token = Token.objects.create(user=user)
         logger.info("Dev login (localhost, DEBUG): %s", user.email)
-        return Response({"configured": True, "token": token.key, "email": user.email})
+        out = {"configured": True, "token": token.key, "email": user.email}
+        if os.getenv("DEV_LOGIN_PASSWORD"):  # (the password of your own computer: for the screens that ask for it again, like the reset; only here, in DEBUG, for this computer)
+            out["password"] = os.getenv("DEV_LOGIN_PASSWORD")
+        return Response(out)
     email, password = os.getenv("DEV_LOGIN_EMAIL", ""), os.getenv("DEV_LOGIN_PASSWORD", "")
     if not (email and password):
         return Response({"configured": False})

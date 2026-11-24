@@ -34,7 +34,7 @@ export default function SystemReset() {
     if (value !== "@" || typeof window === "undefined" || !["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
     try {
       const d = await api("/auth/dev-login/");
-      if (d?.configured) setPw(d.password || "");  // (never undefined: the field stays a controlled field)
+      if (d?.configured && d.password) setPw(d.password);  // (the password comes with the token: a superadmin+ exists, so the answer holds a token and the password of DEV_LOGIN_PASSWORD)  // (never undefined: the field stays a controlled field)
     } catch {}
   };
   const [saved, setSaved] = useState(false);

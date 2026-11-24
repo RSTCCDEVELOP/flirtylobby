@@ -43,3 +43,17 @@ def test_a_reset_removes_custom_pages_and_what_installations_kept_of_them(django
     assert not Page.objects.filter(key="mijn-eigen").exists()
     data = SystemSettings.objects.get(pk=1).data
     assert "preset_pages" not in data and "pages" not in (data.get("preset_edits") or {}).get(key, {})
+
+
+@pytest.mark.django_db
+def test_dev_login_gives_the_local_password_with_the_token(django_user_model, monkeypatch, settings):
+    """On your own computer "@" fills in the password: with a superadmin+ the answer has the token AND the password of DEV_LOGIN_PASSWORD (the reset screen needs it)."""
+    from rest_framework.test import APIClient
+
+    settings.DEBUG = True
+    monkeypatch.setenv("DEV_LOGIN_PASSWORD", "lokaal-wachtwoord")
+    u = django_user_model.objects.create_user("su", "su@x.nl", "pw12345678!", is_staff=True, is_superuser=True)
+    u.is_superadmin_plus = True
+    u.save()
+    r = APIClient().get("/api/auth/dev-login/", REMOTE_ADDR="127.0.0.1", HTTP_HOST="localhost").json()
+    assert r["configured"] and r["token"] and r["password"] == "lokaal-wachtwoord"
