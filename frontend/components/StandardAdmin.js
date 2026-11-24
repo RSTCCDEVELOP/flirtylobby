@@ -14,6 +14,7 @@ import CodeInput from "./CodeInput";
 import Tabs from "./Tabs";
 import { useAuth } from "./AuthContext";
 import { IconArchive, IconKey, IconMail, IconShield } from "./Icons";
+import SuggestPassword from "./SuggestPassword";
 
 // Super admin: set the standard superadmin (name, e-mail, password). It overwrites the standard superadmin; the own password is the check, and a mail goes to the addresses involved.
 export default function StandardAdmin() {
@@ -115,6 +116,7 @@ export default function StandardAdmin() {
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: ".8rem" }}>
                       <label style={lab}><span>{tx("Nieuw wachtwoord")}</span><input type="password" value={f.password} onChange={set("password")} autoComplete="new-password" /></label>
                       <label style={lab}><span>{tx("Herhaal wachtwoord")}</span><input type="password" value={f.password2} onChange={set("password2")} autoComplete="new-password" /></label>
+                      <div style={{ gridColumn: "1 / -1" }}><SuggestPassword onPick={(p) => setF({ ...f, password: p, password2: p })} /></div>
                     </div>
                   </div>
                 )}

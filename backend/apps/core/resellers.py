@@ -218,8 +218,9 @@ def save(r, d, site_url=""):
 
 
 def new_password():
-    alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    return "".join(secrets.choice(alphabet) for _ in range(12))
+    from apps.accounts import passgen
+
+    return passgen.generate()
 
 
 OTP = ("", "email", "sms")  # the code check at login: none, by e-mail, by SMS (to the mobile number)

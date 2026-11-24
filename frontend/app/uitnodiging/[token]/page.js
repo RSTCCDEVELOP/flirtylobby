@@ -21,6 +21,7 @@ import { api, errorText, setToken } from "../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../lib/genders";
 import { checkedBirthMonth } from "../../../lib/age-check";
 import { tx } from "../../../lib/t";
+import SuggestPassword from "../../../components/SuggestPassword";
 
 const Switch = ({ checked, onChange, disabled }) => (
   <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} /><span /></span></label>
@@ -116,6 +117,7 @@ export default function Invite() {
       <label>{tx("E-mailadres")}<input value={info.email} disabled /></label>
       <label>{tx("Wachtwoord")}<input type="password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} required autoComplete="new-password" minLength={info.password_min_length || 8} /></label>
       <label>{tx("Herhaal wachtwoord")}<input type="password" value={f.password2} onChange={(e) => setF({ ...f, password2: e.target.value })} required autoComplete="new-password" /></label>
+      <SuggestPassword onPick={(p) => setF({ ...f, password: p, password2: p })} />
       {info.require_terms && (
         <label className="check"><input type="checkbox" checked={f.accept} onChange={(e) => setF({ ...f, accept: e.target.checked })} required /> <span>{tx("Ik ga akkoord met de")} <a href={info.terms_url} target="_blank" rel="noreferrer">{tx("voorwaarden")}</a></span></label>
       )}

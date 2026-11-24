@@ -32,6 +32,7 @@ import { IconBriefcase, IconShield } from "../../../../components/Icons";
 import { api, errorText, mediaUrl } from "../../../../lib/api";
 import { GENDER_LABELS, useGenders } from "../../../../lib/genders";
 import { lvl } from "../../../../lib/perms";
+import SuggestPassword from "../../../../components/SuggestPassword";
 
 const EMPTY = { twofa_required: false, user_groups: [], entity_ids: [], color: "", email: "", password: "", first_name: "", last_name: "", function: "", short: "", description: "", phone: "", mobile: "", address: "", postal_code: "", city: "", country: "", link: "", link_external: false, show_public: false, verification: "open", roles: [], is_staff: false, file: null };
 const initials = (u) => (u.first_name?.[0] || u.email?.[0] || "?").toUpperCase();
@@ -225,8 +226,9 @@ export default function Users() {
                 {(modal.domains || []).length > 0 && <label style={{ gridColumn: "1 / -1" }}>{tx("Websites")}<input value={(modal.domains || []).join(", ")} readOnly aria-readonly="true" style={{ opacity: .85 }} /></label>}
               </>}
               <label>{modal.id ? tx("Nieuw wachtwoord (optioneel)") : tx("Wachtwoord")}
-                <input type="password" value={modal.password} onChange={set("password")} required={!modal.id} autoComplete="new-password" />
+                <input type={modal.showPw ? "text" : "password"} value={modal.password} onChange={set("password")} required={!modal.id} autoComplete="new-password" />
               </label>
+              <SuggestPassword onPick={(p) => setModal({ ...modal, password: p, showPw: true })} />
               <label>{tx("Verificatiestatus")}
                 <select value={modal.verification} onChange={set("verification")} disabled={L < 2}>
                   {Object.entries(VERIFY).map(([k, v]) => <option key={k} value={k}>{tx(v.label)}: {tx(v.hint)}</option>)}

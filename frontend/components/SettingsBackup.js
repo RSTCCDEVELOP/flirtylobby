@@ -14,6 +14,7 @@ import { IconFolder, IconGrid, IconLock, IconPalette, IconSliders, IconUsers } f
 import Tabs from "./Tabs";
 import { useAuth } from "./AuthContext";
 import BackupLoadPopup from "./BackupLoadPopup";
+import SuggestPassword from "./SuggestPassword";
 
 // Super admin: export all settings to one file (complete backup) and load such a file again.
 // The list of parts comes from the server, so new applications show up here by themselves and removed ones disappear.
@@ -205,6 +206,7 @@ export default function SettingsBackup() {
                 <label style={{ flex: 1, maxWidth: 260 }}>{tx("Wachtwoord")}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" /></label>
                 <label style={{ flex: 1, maxWidth: 260 }}>{tx("Herhaal wachtwoord")}<input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" /></label>
               </div>
+              <SuggestPassword onPick={(p) => { setPw(p); setPw2(p); }} />
               <label className="check"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /><span>{tx("Wachtwoord onthouden voor mijn account")} <small className="muted">{tx("Versleuteld bewaard op de server. Bij het terugzetten wordt het automatisch geprobeerd.")}</small></span></label>
             </>
           )}

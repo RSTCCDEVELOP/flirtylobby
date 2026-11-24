@@ -4900,3 +4900,4 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 
 /* the reseller onboarding on the login screen of an empty installation */
 .rob-box { display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; max-width: 420px; margin: 1rem auto 0; padding: .9rem 1rem; border-radius: 12px; background: color-mix(in srgb, var(--blue) 8%, transparent); border: 1px solid color-mix(in srgb, var(--blue) 18%, transparent); }
+.sugpw { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .25rem 0; } .sugpw-code { padding: .2rem .5rem; border-radius: 6px; background: color-mix(in srgb, var(--blue) 10%, transparent); font-size: .85rem; user-select: all; }

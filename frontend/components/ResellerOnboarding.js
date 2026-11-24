@@ -14,6 +14,7 @@ import { api, errorText, setToken } from "../lib/api";
 import { homeAfterLogin } from "../lib/levelHome";
 import { tx } from "../lib/t";
 import CodeInput from "./CodeInput";
+import SuggestPassword from "./SuggestPassword";
 
 // An installation that is still empty (no users at all): a button starts the onboarding as a reseller of easy2edit. The master site (easy2edit) looks up the reseller by e-mail address
 // and sends a code; with the right code the person becomes the first superuser of this installation and the onboarding goes on (installation, design ...).
@@ -82,6 +83,7 @@ export default function ResellerOnboarding() {
               <p className="muted" style={{ marginTop: 0 }}>{tx("Als dit adres bij een reseller hoort, is er een code gestuurd naar")} <strong>{ch?.hint}</strong>.</p>
               <div className="code-field"><span>{tx("Code")}</span><CodeInput value={code} onChange={setCode} autoFocus invalid={!!err} /></div>
               <label>{tx("Kies een wachtwoord (minstens 10 tekens)")}<input type={show ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" minLength={10} required /></label>
+              <SuggestPassword onPick={(p) => { setPw(p); setShow(true); }} />
               <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /><span /></span><span>{tx("Toon wachtwoord")}</span></label>
               {err && <div className="alert">{err}</div>}
               <div className="row"><button type="button" className="btn" onClick={() => { setStep("email"); setErr(""); }}>{tx("Terug")}</button><button className="btn primary" disabled={busy || code.length < 6 || pw.length < 10}>{busy ? tx("Bezig…") : tx("Aanmelden en beginnen")}</button></div>

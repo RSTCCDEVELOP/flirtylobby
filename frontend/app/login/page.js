@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { api, setToken, errorText, ApiError } from "../../lib/api";
 import { EditableText } from "../../components/EditMode";
 import CodeInput from "../../components/CodeInput";
+import SuggestPassword from "../../components/SuggestPassword";
 import SsoButtons from "../../components/SsoButtons";
 import ResellerOnboarding from "../../components/ResellerOnboarding";
 
@@ -147,6 +148,7 @@ export default function Login() {
             <label>{tx("Herhaal wachtwoord")}
               <input type={show ? "text" : "password"} value={newPw2} onChange={(e) => setNewPw2(e.target.value)} required autoComplete="new-password" />
             </label>
+            <SuggestPassword onPick={(p) => { setNewPw(p); setNewPw2(p); setShow(true); }} />
             <label className="check"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /> {tx("Toon wachtwoord")}</label>
             {error && <div className="alert">{error}</div>}
             <button className="btn primary" disabled={busy || code.length < 6 || !newPw || !newPw2}>{busy ? tx("Bezig…") : tx("Wachtwoord opslaan")}</button>

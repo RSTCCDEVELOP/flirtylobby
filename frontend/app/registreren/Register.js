@@ -96,14 +96,7 @@ export default function Register() {
   }, [f.email]); // eslint-disable-line react-hooks/exhaustive-deps
   // a strong random password that follows the rules of this site; it is copied to the clipboard and shown
   async function generatePassword() {
-    const min = Math.max(16, cfg.password_min_length || 8);
-    const sets = ["abcdefghijkmnopqrstuvwxyz", "ABCDEFGHJKLMNPQRSTUVWXYZ", "23456789", "!@#$%&*?+-="];
-    const rnd = (n) => { const a = new Uint32Array(1); let x; do { crypto.getRandomValues(a); x = a[0]; } while (x >= 4294967296 - (4294967296 % n)); return x % n; };
-    const all = sets.join("");
-    const chars = sets.map((c) => c[rnd(c.length)]);   // at least one of each kind: lower, upper, digit, symbol
-    while (chars.length < min) chars.push(all[rnd(all.length)]);
-    for (let i = chars.length - 1; i > 0; i--) { const j = rnd(i + 1); [chars[i], chars[j]] = [chars[j], chars[i]]; }
-    const pw = chars.join("");
+    const pw = makePassword();  // the format of Apple: tuntod-jeznyt-6kukmY
     setF((x) => ({ ...x, password: pw, password2: pw }));
     setShowPw(true);
     try { await navigator.clipboard.writeText(pw); }
