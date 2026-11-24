@@ -31,7 +31,7 @@ export function ViewToggle({ view, onChange }) {
 export function widgetTree(items, getCat, getSub) {
   const tree = [];
   items.forEach((it) => {
-    const c = getCat(it) || "Overig", s = sub ? (getSub(it) || "") : "";  // headings per category only, so the tiles fill the rows
+    const c = getCat(it) || "Overig", s = getSub(it) || "";
     let node = tree.find((x) => x.cat === c);
     if (!node) { node = { cat: c, n: 0, subs: [] }; tree.push(node); }
     node.n += 1;
@@ -45,7 +45,7 @@ export function widgetTree(items, getCat, getSub) {
 export function widgetGroups(items, getCat, getSub, cat, sub) {
   const out = [];
   items.filter((it) => (!cat || (getCat(it) || "Overig") === cat) && (!sub || getSub(it) === sub)).forEach((it) => {
-    const c = getCat(it) || "Overig", s = getSub(it) || "";
+    const c = getCat(it) || "Overig", s = sub ? (getSub(it) || "") : "";  // headings per category only, so the tiles fill the rows
     let g = out.find((x) => x.cat === c && x.sub === s);
     if (!g) { g = { cat: c, sub: s, items: [] }; out.push(g); }
     g.items.push(it);
