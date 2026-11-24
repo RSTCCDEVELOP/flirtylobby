@@ -5089,3 +5089,7 @@ html[data-hside="left"][data-hsidenow="1"]:not([data-pbbar="1"]) body, html[data
 .pb { margin-top: calc(1.5rem + var(--page-start, 0px)); }
 .pb > .pb-rowwrap:first-child { margin-top: var(--hero-start, 0px); }
 html[data-pbbar="1"] .pb { margin-top: calc(4.4rem + var(--page-start, 0px)); }
+
+/* header up while editing: everything of it goes out of sight. The menu has its own visibility (visible, set when the screen size is known) and that overrode the hidden header: "About us" and "News" stayed on the screen. */
+html[data-hide-header="1"] .site-header, html[data-hide-header="1"] .site-header * { visibility: hidden !important; pointer-events: none !important; }
+html[data-hide-header="1"] .site-header { clip-path: inset(100% 0 0 0); }
