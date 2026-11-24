@@ -108,9 +108,21 @@ def demo_config(key):
     return {"drop": [x for x in d.get("drop", []) if x in DEMO_PARTS or str(x).startswith("plugin:")], **{k: int(d.get(k, v)) for k, v in DEMO_DEFAULT.items()}}
 
 
+def custom_page_keys(keys=None):
+    """The keys of the custom pages (own pages, kind content, made by a person or an import): they are never part of a standard installation."""
+    from apps.pages.models import Page
+
+    qs = Page.objects.filter(kind="content")
+    if keys is not None:
+        qs = qs.filter(key__in=list(keys))
+    return set(qs.exclude(source__startswith="preset:").values_list("key", flat=True))
+
+
 def page_edits(key):
     d = edits(key).get("pages") or {}
-    return {"add": list(d.get("add") or []), "remove": list(d.get("remove") or [])}
+    add = list(d.get("add") or [])
+    gone = custom_page_keys(add) if add else set()  # a custom page of the website is not put in an installation
+    return {"add": [k for k in add if k not in gone], "remove": list(d.get("remove") or [])}
 
 
 def edit_options(key):
@@ -134,8 +146,9 @@ def edit_options(key):
     contents = _contents(cur) or {}
     in_now = {x["key"] for x in contents.get("pages", [])}
     pe = page_edits(key)
+    custom = custom_page_keys()
     pages = [{"key": pg.key, "title": (pg.title or {}).get("nl") or (pg.title or {}).get("en") or pg.key, "on": pg.key in in_now, "kind": pg.kind, "module": pg.module or ""}
-             for pg in Page.objects.filter(scope="public", kind__in=("system", "content")).exclude(source="demo").order_by("order", "id")]
+             for pg in Page.objects.filter(scope="public", kind__in=("system", "content")).exclude(source="demo").order_by("order", "id") if pg.key not in custom]  # (not the custom pages: own pages and imported pages are no part of an installation)
     dc = demo_config(key)
     parts = _demo_parts(key, ignore_drop=True)
     titles = {p.name: p.title or p.name for p in Plugin.objects.all()}
@@ -671,7 +684,9 @@ def repair_active():
 
 
 def saved_pages(key):
-    return dict((_data().get("preset_pages") or {}).get(key) or {})
+    d = dict((_data().get("preset_pages") or {}).get(key) or {})
+    gone = custom_page_keys(d) if d else set()  # (a custom page that was saved in an installation earlier is not used any more)
+    return {k: v for k, v in d.items() if k not in gone}
 
 
 def save_page(key, page_key):
@@ -679,6 +694,8 @@ def save_page(key, page_key):
     from apps.core.models import ContentBlock
     from apps.pages.models import PageLayout
 
+    if page_key in custom_page_keys([page_key]):
+        raise ValueError("Een eigen pagina hoort niet bij een standaard installatie. Alleen de pagina's van het systeem kun je hier opslaan.")
     lay = PageLayout.objects.filter(key=page_key).first()
     if not lay:
         raise ValueError("Deze pagina heeft nog geen blokken om op te slaan.")

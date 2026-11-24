@@ -380,12 +380,13 @@ def perform(keep=None, ai=False, delete_admins=False, delete_superadmins=False, 
     for uid in gone_users:
         shutil.rmtree(media / "users" / str(uid), ignore_errors=True)
 
-    try:  # no standard installation is in use any more and there is no demo data: forget both (the pages saved in installations and which ones administrators see stay)
+    try:  # no standard installation is in use any more and there is no demo data: forget both (which installations administrators see stay; the pages saved in installations go too)
         from apps.core.models import SystemSettings
 
         row = SystemSettings.objects.filter(pk=1).first()
         if row:
-            row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids", "welcome_asked", "entity_contact_done", "onboarding_complete", "onboarding_started", *IDENTITY_KEYS)}  # also the name and the details of the website that was here: it is easy2edit again
+            row.data = {k: v for k, v in (row.data or {}).items() if k not in ("active_preset", "demo_presets", "demo_ids", "welcome_asked", "entity_contact_done", "onboarding_complete", "onboarding_started", "preset_pages", "applied_templates", *IDENTITY_KEYS)}  # (also the pages that were saved in an installation: custom pages are gone after a reset and are no part of an installation)
+            row.data["preset_edits"] = {pk: {ek: ev for ek, ev in (pv or {}).items() if ek != "pages"} for pk, pv in (row.data.get("preset_edits") or {}).items() if isinstance(pv, dict)}  # (the pages that were added to or taken out of an installation)  # also the name and the details of the website that was here: it is easy2edit again
             from . import sysupdate
 
             row.data["checked_build"] = sysupdate.build()  # a cleared site holds nothing from an older build: no "new version, check your site" question during the onboarding
