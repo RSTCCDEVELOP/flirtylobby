@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { tx } from "../lib/t";
+import MenuEditorPopup from "./MenuEditorPopup";
 import NewPagePopup from "./NewPagePopup";
 import PageSettingsPanel from "./PageSettingsPanel";
 import { useSession } from "./Session";
@@ -22,6 +23,7 @@ const ICON = {
   eye: I(<><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>),
   sliders: I(<><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></>),
   expand: I(<path d="M9 5l7 7-7 7" />),
+  menu: I(<path d="M4 6h16M4 12h16M4 18h10" />),
   panel: I(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></>),
 };
 
@@ -48,6 +50,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
   useEffect(() => { window.dispatchEvent(new Event("pb-bar-ready")); return () => window.dispatchEvent(new Event("pb-bar-ready")); }, []);  // the tools (save, undo, help, blocks) go in the bar
   const [pgMenu, setPgMenu] = useState(false);
   const [newPage, setNewPage] = useState(false);
+  const [menuEd, setMenuEd] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(() => { try { return localStorage.getItem("editHideHeader") === "1"; } catch { return false; } });
   useEffect(() => {  // the site header can be hidden while editing, so the top of the page (the first block, the hero) can be edited; it is always back when the editor closes
     const root = document.documentElement;
@@ -91,6 +94,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{headerHidden ? <path d="M6 9l6 6 6-6" /> : <path d="M6 15l6-6 6 6" />}</svg>
             <span>{headerHidden ? tx("Header omlaag") : tx("Header omhoog")}</span>
           </button>
+          <button type="button" className="pb-tb-btn" onClick={() => setMenuEd(true)} title={tx("Het menu van de website ontwerpen")} aria-label={tx("Menu")}>{ICON.menu}<span>{tx("Menu")}</span></button>
           <div id="pb-tb-tools" className="pb-tb-tools" />
           <span className="pb-tb-save">{saving === "saving" ? tx("Opslaan…") : saving === "error" ? tx("Opslaan mislukt") : tx("Opgeslagen")}</span>
           <div id="pb-tb-ai" className="pb-tb-ai" />
@@ -132,6 +136,7 @@ export default function EditorShell({ open, setOpen, view, setView, title, savin
           <div className="pb-sb-foot" id="pb-device-host" />
         </aside>
       )}
+      {menuEd && <MenuEditorPopup onClose={() => setMenuEd(false)} />}
       {newPage && <NewPagePopup onClose={() => setNewPage(false)} />}
     </>, document.body);
 }

@@ -4837,3 +4837,20 @@ html[data-hide-header="1"] .site-header { transform: translateY(-110%); margin-b
 .pb-tb-dropmenu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 2; min-width: 190px; padding: .3rem; border-radius: 10px; background: #232831; border: 1px solid #3a4150; box-shadow: 0 8px 24px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 2px; }
 .pb-tb-dropmenu button { display: flex; align-items: center; gap: .5rem; padding: .5rem .65rem; border: 0; border-radius: 8px; background: transparent; color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-align: left; }
 .pb-tb-dropmenu button:hover { background: #3a4150; }
+
+/* the menu editor popup */
+.mnu-modal { width: min(760px, 96vw); max-height: 92vh; overflow: auto; }
+.mnu-list, .mnu-offzone { display: flex; flex-direction: column; gap: .35rem; }
+.mnu-group { display: flex; flex-direction: column; gap: .25rem; padding: .35rem; border-radius: 10px; background: color-mix(in srgb, var(--blue) 7%, transparent); }
+.mnu-row { position: relative; display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem; border-radius: 8px; background: var(--card, #fff); border: 1px solid color-mix(in srgb, currentColor 14%, transparent); cursor: grab; }
+.mnu-row.sub { margin-left: 1.6rem; }
+.mnu-row.off { opacity: .65; }
+.mnu-row.drag { opacity: .35; }
+.mnu-row.over-before { box-shadow: 0 -3px 0 0 var(--blue); } .mnu-row.over-after { box-shadow: 0 3px 0 0 var(--blue); } .mnu-row.over-into { outline: 2px dashed var(--blue); outline-offset: 1px; }
+.mnu-grip { color: #8a93a3; letter-spacing: -2px; user-select: none; }
+.mnu-name { flex: 1; min-width: 0; font-weight: 600; } input.mnu-name, input.mnu-url { padding: .25rem .45rem; }
+.mnu-url { flex: 1.2; min-width: 0; }
+.mnu-kind { font-size: .72rem; padding: .1rem .45rem; border-radius: 999px; background: color-mix(in srgb, var(--blue) 14%, transparent); white-space: nowrap; }
+.mnu-del { border: 0; background: transparent; color: inherit; font-size: 1.2rem; cursor: pointer; line-height: 1; }
+.mnu-offzone { margin-top: .75rem; padding: .6rem; border-radius: 10px; background: color-mix(in srgb, currentColor 6%, transparent); border: 2px dashed transparent; } .mnu-offzone.over { border-color: var(--blue); }
+.mnu-hint { margin: 0 0 .5rem; }
