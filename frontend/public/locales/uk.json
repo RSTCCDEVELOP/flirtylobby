@@ -9339,5 +9339,12 @@
   "Redactioneel: grote typografie of een tekstkaart (krant of tijdschrift)": "Редакційний стиль: велика типографіка або текстова картка (газета чи журнал)",
   "Beeldrijk: een collage of een brede foto": "Багато зображень: колаж або широке фото",
   "Klassiek: tekst naast een foto": "Класика: текст поруч із фото",
-  "Donker en krachtig": "Темний і потужний"
+  "Donker en krachtig": "Темний і потужний",
+  "Maak een vragenlijst en een ontwerp op basis van de bijgevoegde bestanden.": "Склади анкету й дизайн на основі доданих файлів.",
+  "Er kunnen maximaal 6 afbeeldingen bij één bericht.": "В одному повідомленні може бути не більше 6 зображень.",
+  "Kies een afbeelding (png, jpg of webp) of een PDF-bestand.": "Виберіть зображення (png, jpg або webp) чи файл PDF.",
+  "PDF-bestanden bij je bericht": "PDF-файли до вашого повідомлення",
+  "Bestand weghalen": "Прибрати файл",
+  "Bestanden toevoegen": "Додати файли",
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Додайте зображення або PDF-файли: дизайнер складе з них анкету та пропозицію"
 }

@@ -9339,5 +9339,12 @@
   "Redactioneel: grote typografie of een tekstkaart (krant of tijdschrift)": "Editorial: big typography or a text card (newspaper or magazine)",
   "Beeldrijk: een collage of een brede foto": "Image-rich: a collage or a wide photo",
   "Klassiek: tekst naast een foto": "Classic: text next to a photo",
-  "Donker en krachtig": "Dark and powerful"
+  "Donker en krachtig": "Dark and powerful",
+  "Maak een vragenlijst en een ontwerp op basis van de bijgevoegde bestanden.": "Make a questionnaire and a design based on the attached files.",
+  "Er kunnen maximaal 6 afbeeldingen bij één bericht.": "A message can have at most 6 pictures.",
+  "Kies een afbeelding (png, jpg of webp) of een PDF-bestand.": "Choose a picture (png, jpg or webp) or a PDF file.",
+  "PDF-bestanden bij je bericht": "PDF files with your message",
+  "Bestand weghalen": "Remove file",
+  "Bestanden toevoegen": "Add files",
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Add pictures or PDF files: the designer makes a questionnaire and a proposal from them"
 }

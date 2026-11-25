@@ -3043,6 +3043,27 @@ def sitecreator_chat(request, pk):
     return Response(sitecreator.public(job))
 
 
+@api_view(["POST", "DELETE"])
+@permission_classes(DESIGN_PERM)
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def sitecreator_uploads(request, pk):
+    """The PDF files that the customer puts in the chat with the "+": POST (file) reads one, DELETE {id} removes one. Returns {uploads: [{id, name, pages}]}."""
+    from . import sitecreator
+
+    job = _design(request, pk)
+    if not job:
+        return _gone()
+    try:
+        if request.method == "DELETE":
+            return Response({"uploads": sitecreator.remove_upload(job, str(request.data.get("id") or ""))})
+        f = request.FILES.get("file")
+        if not f:
+            return _bad("Kies een PDF-bestand.")
+        return Response({"uploads": sitecreator.add_upload(job, f)}, status=status.HTTP_201_CREATED)
+    except ValueError as e:
+        return _bad(str(e))
+
+
 @api_view(["GET", "POST", "DELETE"])
 @permission_classes(DESIGN_PERM)
 @parser_classes([JSONParser, MultiPartParser, FormParser])

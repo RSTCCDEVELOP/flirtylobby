@@ -11,7 +11,7 @@ import ColorInput from "../../../../components/ColorInput";
 import AiCreditAlert from "../../../../components/AiCreditAlert";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { IconBolt, IconCamera, IconCheck, IconChat, IconEdit, IconImage, IconMenu, IconPalette, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
+import { IconBolt, IconCamera, IconCheck, IconChat, IconEdit, IconImage, IconMenu, IconPalette, IconPlus, IconSearch, IconSend, IconTrash, IconVideo } from "../../../../components/Icons";
 import Tabs from "../../../../components/Tabs";
 import { api, apiBase, apiUpload, errorText, getToken, mediaUrl } from "../../../../lib/api";
 import { useBusy } from "../../../../lib/busy";
@@ -1199,6 +1199,17 @@ function ThemeBlock({ job, onChanged }) {
 }
 
 // The workspace: the step plan while it is a draft; when the website has been made: the chat on the left, the website on the right (per page, on a computer, iPad or phone). When it is good: import it.
+// A picture that goes along with a chat message: at most 1600 px and a jpeg (a photo from a phone is several MB); a png with transparency stays a png.
+async function shrinkImage(file) {
+  const url = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(file); });
+  const im = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
+  const k = Math.min(1, 1600 / Math.max(im.width, im.height));
+  const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+  const g = c.getContext("2d"); if (file.type !== "image/png") { g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); }
+  g.drawImage(im, 0, 0, c.width, c.height);
+  return c.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.85);
+}
+
 export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const [job, setJob] = useState(null);
   useEffect(() => { setActiveDesign(jobId ? { id: jobId, name: "" } : null); return () => setActiveDesign(null); }, [jobId]);  // the cost window shows the costs of this design
@@ -1230,6 +1241,21 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
   const [refView, setRefView] = useState(null);  // an example website that is shown big in the preview on the right: {id, label}
   const [shots, setShots] = useState([]);  // screenshots of the preview that go along with the next message to the designer
   const [shooting, setShooting] = useState(false);
+  const upIn = useRef(null);
+  const [upBusy, setUpBusy] = useState(false);
+  const uploads = job?.brief?.uploads || [];  // the PDF files of this design (their text is with the designer)
+  const pickFiles = async (list) => {  // the "+" of the chat: pictures go with the next message, a PDF is read at once
+    const files = [...(list || [])]; if (!files.length) return;
+    setUpBusy(true); setErr("");
+    try {
+      for (const f of files) {
+        if (/^image\/(png|jpeg|webp)$/.test(f.type)) { if (shots.length >= 6) { setErr(tx("Er kunnen maximaal 6 afbeeldingen bij één bericht.")); break; } const d = await shrinkImage(f); setShots((x) => (x.length >= 6 ? x : [...x, d])); }
+        else if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) { const fd = new FormData(); fd.append("file", f, f.name); await api(`/sitecreator/${jobId}/uploads/`, { method: "POST", body: fd }); await reload(true); }
+        else setErr(tx("Kies een afbeelding (png, jpg of webp) of een PDF-bestand."));
+      }
+    } catch (x) { setErr(errorText(x)); } finally { setUpBusy(false); }
+  };
+  const dropUpload = async (id) => { try { await api(`/sitecreator/${jobId}/uploads/`, { method: "DELETE", body: { id } }); await reload(true); } catch (x) { setErr(errorText(x)); } };
   const shoot = async () => {
     setShooting(true); setErr("");
     try {
@@ -1308,7 +1334,8 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
     catch (x) { setErr(errorText(x)); }
     finally { setSending(false); }
   };
-  const send = (e) => { e?.preventDefault(); return sendWith(text, shots); };
+  const attached = shots.length > 0 || uploads.length > 0;
+  const send = (e) => { e?.preventDefault(); return sendWith(text.trim() ? text : attached ? tx("Maak een vragenlijst en een ontwerp op basis van de bijgevoegde bestanden.") : "", shots); };
   const filesRef = useRef({});
   filesRef.current = job?.files || {};
   // A link inside the preview never leaves it (a click on "index.html" used to load the whole back office in the frame and it hung on "Laden…"): a link to a page of the design opens that page, "#place" scrolls, everything else does nothing.
@@ -1493,10 +1520,13 @@ export function AiCreatorPopup({ jobId, onClose, onImport, onApply }) {
               </div>
               {blocksOpen && (ready || chatMode) && <ThemeBlock key={job.id + (job.brief?.theme_name || "")} job={job} onChanged={() => reload(true)} />}
               {blocksOpen && chatMode && <PhotoSlots job={job} onJob={merge} onAsk={async (t) => { try { merge(await api(`/sitecreator/${jobId}/chat/`, { method: "POST", body: { text: t, page, lang: getLanguage() } })); } catch (x) { setErr(errorText(x)); } }} onShow={(file) => { const p = pages.find((q) => String(job.files?.[q.file] || "").toLowerCase().includes(file)); if (p) setPage(p.file); return p?.title || ""; }} />}
+              {uploads.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", padding: ".5rem .7rem 0", borderTop: "1px solid var(--line)" }} aria-label={tx("PDF-bestanden bij je bericht")}>{uploads.map((u) => <span key={u.id} className="badge" style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".25rem .5rem", borderRadius: 8, border: "1px solid var(--line)", background: "color-mix(in srgb, var(--blue) 8%, var(--card))" }}>PDF · {u.name}{u.pages ? ` (${u.pages} p.)` : ""}<button type="button" className="pb-panelx" onClick={() => dropUpload(u.id)} aria-label={tx("Bestand weghalen")}>×</button></span>)}</div>}
               {shots.length > 0 && <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", padding: ".5rem .7rem 0", borderTop: "1px solid var(--line)" }} aria-label={tx("Screenshots bij je bericht")}>{shots.map((u, k) => <span key={k} style={{ position: "relative" }}><img loading="lazy" decoding="async" src={u} alt={tx("Screenshot")} style={{ display: "block", height: 54, borderRadius: 8, border: "1px solid var(--line)" }} /><button type="button" className="pb-panelx" onClick={() => setShots((s) => s.filter((_, i) => i !== k))} aria-label={tx("Screenshot weghalen")} style={{ position: "absolute", top: -6, right: -6 }}>×</button></span>)}<small className="muted" style={{ alignSelf: "center" }}>{tx("gaat mee met je volgende bericht")}</small></div>}
-              <form onSubmit={send} style={{ padding: ".7rem", borderTop: shots.length ? 0 : "1px solid var(--line)", display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
+              <form onSubmit={send} style={{ padding: ".7rem", borderTop: shots.length || uploads.length ? 0 : "1px solid var(--line)", display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
+                <input ref={upIn} type="file" accept="image/png,image/jpeg,image/webp,application/pdf,.pdf" multiple hidden onChange={(e) => { pickFiles(e.target.files); e.target.value = ""; }} />
+                <button type="button" className="btn" disabled={running || sending || upBusy} onClick={() => upIn.current?.click()} aria-label={tx("Bestanden toevoegen")} title={tx("Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van")}>{upBusy ? "…" : <IconPlus />}</button>
                 <textarea ref={inputEl} rows={3} style={{ flex: 1 }} value={text} maxLength={2000} disabled={running} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(e); }} placeholder={tx("Wat moet er anders? bv. maak de kop rustiger, voeg een prijzenblok toe")} />
-                <button className="btn primary" disabled={running || sending || !text.trim()} aria-label={tx("Aanpassen")}><IconSend /></button>
+                <button className="btn primary" disabled={running || sending || (!text.trim() && !attached)} aria-label={tx("Aanpassen")}><IconSend /></button>
               </form>
             </div>
             <div role="separator" aria-orientation="vertical" aria-label={tx("Breedte van de chat aanpassen")} title={tx("Sleep om de chat breder of smaller te maken (dubbelklik: standaard)")} onPointerDown={side.shut ? undefined : dragSide} onDoubleClick={() => saveSide({ ...side, w: 380 })}

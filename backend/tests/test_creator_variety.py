@@ -53,3 +53,42 @@ def test_the_brief_carries_the_direction_to_every_prompt():
     b = sc.clean_brief({"hero_style": "photo"}, {"name": "X"})
     assert b["hero_style"] == "photo" and sc.clean_brief({"hero_style": "nope"}, {})["hero_style"] == ""
     assert "DESIGN DIRECTION" in sc._brief_text(b) and "ui-hero-image" in sc._brief_text(b)
+
+
+def _pdf(text):
+    """A one page pdf with a line of text (made by hand, so the test needs no extra library)."""
+    stream = f"BT /F1 12 Tf 72 720 Td ({text}) Tj ET".encode()
+    objs = [b"<< /Type /Catalog /Pages 2 0 R >>", b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+            b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream", b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+    out, offs = b"%PDF-1.4\n", []
+    for i, o in enumerate(objs, 1):
+        offs.append(len(out))
+        out += f"{i} 0 obj\n".encode() + o + b"\nendobj\n"
+    x = len(out)
+    out += f"xref\n0 {len(objs) + 1}\n0000000000 65535 f \n".encode() + b"".join(f"{o:010d} 00000 n \n".encode() for o in offs)
+    return out + f"trailer\n<< /Size {len(objs) + 1} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n".encode()
+
+
+@pytest.mark.django_db
+def test_a_pdf_in_the_chat_goes_to_the_designer_and_the_questions_come_from_it(django_user_model, monkeypatch):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from apps.core.models import SiteDesignJob
+
+    u = django_user_model.objects.create_user("up", "up@x.nl", "pw12345678!", is_staff=True)
+    job = SiteDesignJob.objects.create(user=u, name="Nieuw ontwerp", status="done", brief={"name": "Nieuw ontwerp"})
+    up = sc.add_upload(job, SimpleUploadedFile("plan.pdf", _pdf("Bakkerij De Gouden Korst in Zwolle verkoopt brood en taart"), content_type="application/pdf"))
+    assert up[0]["name"] == "plan.pdf" and up[0]["pages"] == 1
+    job.refresh_from_db()
+    assert "Gouden Korst" in sc.uploads_text(job.brief) and "Gouden Korst" in sc._brief_text(job.brief)
+    assert "text" not in sc.public(job)["brief"]["uploads"][0]  # the text itself does not go to the screen
+    with pytest.raises(ValueError):
+        sc.add_upload(job, SimpleUploadedFile("x.docx", b"x"))  # only pdf (pictures go with the message)
+    monkeypatch.setattr(sc.ai, "available", lambda *a, **k: True)
+    monkeypatch.setattr(sc, "_spawn", lambda *a, **k: None)
+    sc.chat(job, "Maak een vragenlijst", None, "en")
+    job.refresh_from_db()
+    assert job.brief["prefill"] is True and job.brief["ui_lang"] == "en"  # no question about assumptions first: the questionnaire is made from the material
+    assert not any(m.get("ask") == "prefill" for m in job.messages)
+    assert sc.remove_upload(job, up[0]["id"]) == []

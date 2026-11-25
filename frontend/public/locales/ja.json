@@ -9339,5 +9339,12 @@
   "Redactioneel: grote typografie of een tekstkaart (krant of tijdschrift)": "エディトリアル：大きなタイポグラフィまたはテキストカード（新聞や雑誌）",
   "Beeldrijk: een collage of een brede foto": "ビジュアル重視：コラージュまたはワイド写真",
   "Klassiek: tekst naast een foto": "クラシック：写真の横にテキスト",
-  "Donker en krachtig": "ダークで力強い"
+  "Donker en krachtig": "ダークで力強い",
+  "Maak een vragenlijst en een ontwerp op basis van de bijgevoegde bestanden.": "添付ファイルをもとに、質問票とデザインを作ってください。",
+  "Er kunnen maximaal 6 afbeeldingen bij één bericht.": "1つのメッセージに付けられる画像は最大6枚です。",
+  "Kies een afbeelding (png, jpg of webp) of een PDF-bestand.": "画像（png、jpg、webp）またはPDFファイルを選んでください。",
+  "PDF-bestanden bij je bericht": "メッセージに付けたPDFファイル",
+  "Bestand weghalen": "ファイルを外す",
+  "Bestanden toevoegen": "ファイルを追加",
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "画像やPDFファイルを追加：デザイナーがそこから質問票と提案を作ります"
 }
