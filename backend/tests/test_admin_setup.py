@@ -146,3 +146,20 @@ def test_header_and_footer_settings():
     assert adminsetup.validate({"header_height": "huge"})[1]
     assert adminsetup.validate({"header_items": {"nope": True}})[1]
     assert adminsetup.DEFAULTS["header_items"]["chat"] is True
+
+
+@pytest.mark.django_db
+def test_update_step_for_widgets_brings_options_up_to_date():
+    from apps.core import sysupdate
+    from apps.sysobjects import widgets
+    from apps.sysobjects.models import InstalledWidget
+
+    assert "widgets" in [k for k, _ in sysupdate.STEPS]
+    key = widgets.library()[0]["key"]
+    widgets.install(key)
+    InstalledWidget.objects.filter(key=key).update(options={"verdwenen_optie": "x"})
+    r = sysupdate.run("widgets", None)
+    assert r["ok"] and "gecontroleerd" in r["message"]
+    assert "verdwenen_optie" not in InstalledWidget.objects.get(key=key).options
+    InstalledWidget.objects.create(key="bestaat-niet")
+    assert sysupdate.run("widgets", None)["ok"] is False

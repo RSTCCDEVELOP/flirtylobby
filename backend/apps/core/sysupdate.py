@@ -7,7 +7,7 @@
 
 """After an update of easy2edit (a new build): the site is checked and brought up to date, step by step, with a window that shows the progress.
 
-The steps never remove content: first a copy of the pages, designs and texts is kept (in the site folder), then the database, the plugins, the themes, the languages and the pages are checked."""
+The steps never remove content: first a copy of the pages, designs and texts is kept (in the site folder), then the database, the plugins, the themes, the widgets, the languages and the pages are checked."""
 import logging
 
 from django.conf import settings
@@ -19,6 +19,7 @@ STEPS = [
     ("database", "Database controleren en bijwerken"),
     ("plugins", "Plugins controleren en bijwerken"),
     ("themas", "Thema's controleren en bijwerken"),
+    ("widgets", "Widgets controleren en bijwerken"),
     ("languages", "Talen controleren"),
     ("pages", "Pagina's en menu controleren"),
     ("links", "API-koppelingen van de easy2edit-server bijwerken (sleutels versleuteld)"),
@@ -100,6 +101,28 @@ def run(step, user):
                     r["message"] += " Teruggezet voor de installatie: " + ", ".join(back) + "."
                 runtime.ensure_loaded(True)  # (the plugins that were updated run again)
             return r
+        if step == "widgets":  # the installed widgets follow the library: new options come with their default, options that are gone are dropped, the registry of system objects is refreshed
+            from apps.sysobjects import service as objects_service
+            from apps.sysobjects import widgets
+
+            have = widgets.installed()
+            updated, missing = [], []
+            for key, w in have.items():
+                m = widgets.manifest(key)
+                if not m:
+                    missing.append(key)
+                    continue
+                now = widgets.clean_options(m, w.options or {})
+                if now != (w.options or {}):
+                    w.options = now
+                    w.save(update_fields=["options"])
+                    updated.append(m["name"])
+            if have:
+                objects_service.sync()
+            msg = f"{len(have)} widgets op deze website gecontroleerd" + (f", {len(updated)} bijgewerkt ({', '.join(updated)})" if updated else "") + f"; {len(widgets.library())} in de bibliotheek."
+            if missing:
+                return {"ok": False, "message": msg + " Niet meer in de bibliotheek: " + ", ".join(missing[:5])}
+            return {"ok": True, "message": msg}
         if step == "links":  # the superadmin+ API links: the keys follow the easy2edit server when they changed there (they arrive encrypted and are opened here)
             from apps.integrations import default_links
 
