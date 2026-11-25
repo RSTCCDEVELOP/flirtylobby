@@ -237,6 +237,7 @@ export default function DashboardShell({ children }) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
   const setup = useAdminSetup();  // easy2edit admin setup: starting state of the sidebar and the search field
+  const hi = (k) => setup.header_items?.[k] !== false;  // an item of the header of the dashboard (tab Header en footer)
   const [summary, setSummary] = useState(null); // default: collapsed, until the user opens it once
 
   // remember where the user was, for "Laatste pagina" in the user menu
@@ -371,7 +372,7 @@ export default function DashboardShell({ children }) {
         <Link href="/dashboard" className="brand">
           <Logo header />
         </Link>
-        <nav className="topnav">
+        {hi("homepage") && <nav className="topnav">
           {(() => {
             // the private pages (Mijn community, Mijn abonnementen, Mijn bestellingen, Mijn donaties ...) hang under "Homepage" as a drop-down
             const flat = privMenu.flatMap((it) => (it.kind === "menu" ? [{ ...it, heading: true }, ...(it.children || []).map((c) => ({ ...c, sub: true }))] : [it, ...(it.children || [])]));
@@ -388,17 +389,17 @@ export default function DashboardShell({ children }) {
               </span>
             );
           })()}
-        </nav>
+        </nav>}
         <div className="topbar-user">
           <SandboxPill />
-          <ShortcutStar title={pageTitle(pathname)} pathname={pathname} />
+          {hi("shortcuts") && <ShortcutStar title={pageTitle(pathname)} pathname={pathname} />}
           <DirectIndicator />
-          <NotificationBell />
-          <ChatButton />
-          <LanguageSwitcher />
-          <FaqDrawer dashboard />
+          {hi("notifications") && <NotificationBell />}
+          {hi("chat") && <ChatButton />}
+          {hi("language") && <LanguageSwitcher />}
+          {hi("help") && <FaqDrawer dashboard />}
           <EditModeSwitch />
-          <ThemeToggle />
+          {hi("theme") && <ThemeToggle />}
           <UserMenu user={user} onLogout={logout} showDashboard={false} />
         </div>
       </header>

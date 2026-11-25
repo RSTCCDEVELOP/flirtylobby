@@ -136,3 +136,13 @@ def test_page_header_footer_flags():
     assert "header_off" not in out and "footer_off" not in out
     out = layout.clean({"rows": [], "header_off": True, "footer_off": True})
     assert out["header_off"] is True and out["footer_off"] is True
+
+
+def test_header_and_footer_settings():
+    from apps.core import adminsetup
+
+    clean, errors = adminsetup.validate({"header_height": "large", "header_items": {"chat": False}, "footer_credit": False})
+    assert not errors and clean["header_height"] == "large" and clean["header_items"]["chat"] is False and clean["footer_credit"] is False
+    assert adminsetup.validate({"header_height": "huge"})[1]
+    assert adminsetup.validate({"header_items": {"nope": True}})[1]
+    assert adminsetup.DEFAULTS["header_items"]["chat"] is True

@@ -27,6 +27,15 @@ const STYLES = [
   ["site", "Zoals de website", "Even breed als de pagina's van de website, met donkere zijkanten.", { width: "site", density: "normal", tile_size: "normal", font: "normal", sidebar_width: "normal", reduce_motion: false, frame: "dark" }],
   ["comfort", "Rustig en groot", "Ruim, grote letters en tegels, zonder bewegingen.", { width: "wide", density: "roomy", tile_size: "large", font: "large", sidebar_width: "wide", reduce_motion: true, frame: "light" }],
 ];
+const HEADER_ITEMS = [
+  ["homepage", "Homepage-menu", "Het menu Homepage met je eigen pagina's, links in de header."],
+  ["shortcuts", "Favorieten (ster)", "De ster om de pagina als snelkoppeling te bewaren."],
+  ["notifications", "Meldingen (bel)", "De bel met meldingen."],
+  ["chat", "Chat", "De chatknop."],
+  ["language", "Taalkeuze", "De taalkiezer."],
+  ["help", "Help", "De help- en veelgestelde-vragenknop."],
+  ["theme", "Licht en donker", "De knop om tussen licht en donker te wisselen."],
+];
 const BLOCKS = [
   ["ai", "AI-gebruik", "Het blok met het AI-gebruik en de kosten (alleen voor wie AI beheert)."],
   ["presets", "Standaard installaties", "Het blok om in één keer een soort website in te stellen."],
@@ -163,7 +172,7 @@ export default function AdminSetup() {
       {!can && !err && <div className="alert">{tx("Je kunt de instellingen bekijken, maar alleen een beheerder kan ze wijzigen.")}</div>}
       {err && <div className="alert">{err}</div>}
       {msg && <div className="alert ok" role="status">{msg}</div>}
-      <Tabs value={tab} onChange={setTab} tabs={[["tiles", "Tegels", <IconGrid key="i" />], ["dashboards", "Dashboards", <IconHome key="i" />], ["menu", "Menu", <IconMenu key="i" />], ["look", "Uiterlijk", <IconPalette key="i" />], ["licence", "Licentie", <IconKey key="i" />]]} />
+      <Tabs value={tab} onChange={setTab} tabs={[["tiles", "Tegels", <IconGrid key="i" />], ["dashboards", "Dashboards", <IconHome key="i" />], ["menu", "Menu", <IconMenu key="i" />], ["header", "Header en footer", <IconMenu key="i" />], ["look", "Uiterlijk", <IconPalette key="i" />], ["licence", "Licentie", <IconKey key="i" />]]} />
 
       {tab === "tiles" && (
         <div className="as-wrap">
@@ -206,6 +215,24 @@ export default function AdminSetup() {
             </div>
             <p>{tx("Wie de zijbalk zelf opent of sluit (de pijl), houdt die keuze.")}</p>
             <div className="as-grid"><Switch checked={s.menu_search !== false} disabled={!can} onChange={(v) => save({ menu_search: v })} label="Zoekveld in het menu" hint="Het veld bovenaan de zijbalk om snel een beheeronderdeel te vinden." /></div>
+          </section>
+        </div>
+      )}
+
+      {tab === "header" && (
+        <div className="as-cols">
+          <section className="as-block">
+            <h3>{tx("Header")}</h3>
+            <div className="as-segs"><Seg label="Hoogte van de header" value={s.header_height || "normal"} onChange={(v) => can && save({ header_height: v })} rows={[["compact", "Compact"], ["normal", "Normaal"], ["large", "Ruim"]]} /></div>
+            <p>{tx("Wat er in de header van het dashboard staat. Het bewerk-knopje en het gebruikersmenu blijven altijd staan.")}</p>
+            <div className="as-grid">
+              {HEADER_ITEMS.map(([k, label, hint]) => <Switch key={k} checked={s.header_items?.[k] !== false} disabled={!can} onChange={(v) => save({ header_items: { ...s.header_items, [k]: v } })} label={label} hint={hint} />)}
+            </div>
+          </section>
+          <section className="as-block">
+            <h3>{tx("Footer")}</h3>
+            <p>{tx("De onderkant van het dashboard.")}</p>
+            <div className="as-grid"><Switch checked={s.footer_credit !== false} disabled={!can} onChange={(v) => save({ footer_credit: v })} label="Powered by easy2edit" hint="Het balkje onderaan de pagina met de naam easy2edit (en het energielabel)." /></div>
           </section>
         </div>
       )}
