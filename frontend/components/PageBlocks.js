@@ -153,6 +153,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   );
   const [itemTab, setItemTab] = useState({}); // the tab of the settings of a text (text, colour, space)
   const [itemOpen, setItemOpen] = useState({}); // texts whose settings (text style, size, colour, font) are open
+  const [pgTab, setPgTab] = useState("layout"); // tab of the page settings: layout | banner | back
   const [pageOpen, setPageOpen] = useState(false); // the page settings (space, items per page, width, hero, layout) are folded away until the gear is clicked
   // The editor shell (top bar and left panel): one per page (the first block of the page that is in edit mode owns it)
   const [sbOpen, setSbOpen] = useState(true);
@@ -794,9 +795,16 @@ export default function PageBlocks({ pageKey, title = "" }) {
       )}
       {editing && (pageOpen || (shell && pageTarget)) && sbPage(
         <div className="pb-layout pb-pgset">
+          <div className="pb-pgtabs" role="tablist">{[["layout", "Indeling"], ["banner", "Banner en opmaak"], ["back", "Terug-knop"]].map(([k, l]) => <button type="button" role="tab" aria-selected={pgTab === k} key={k} className={pgTab === k ? "on" : ""} onClick={() => setPgTab(k)}>{tx(l)}{k === "back" && layout.back?.on ? <i className="pb-dot" aria-hidden="true" /> : null}</button>)}</div>
+          {pgTab === "layout" && <>
           <section className="pb-pgsec"><h4>{tx("Ruimte en breedte")}</h4><div className="pb-listopts"><span className="muted">{tx("Ruimte (padding)")}:</span><select value={layout.pad || "md"} aria-label={tx("Ruimte (padding)")} onChange={(e) => change((x) => { if (e.target.value === "md") delete x.pad; else x.pad = e.target.value; return x; })}>{PAD_OPTS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
 <span className="muted">{tx("Items per pagina")}:</span><select value={pageSize} aria-label={tx("Items per pagina")} onChange={(e) => change((x) => { if (e.target.value === "all") delete x.page_size; else x.page_size = e.target.value; return x; })}>{["5", "10", "25", "100", "all"].map((v) => <option key={v} value={v}>{v === "all" ? tx("Alles") : v}</option>)}</select>
 <span className="muted">{tx("Breedte van de pagina")}:</span><span className="pb-seg">{[["column", "In de kolom"], ["full", "Paginabreed"]].map(([k, l]) => <button type="button" key={k} className={(pageWide ? "full" : "column") === k ? "on" : ""} onClick={() => change((x) => { if (k === "full") x.page_width = "full"; else delete x.page_width; return x; })}>{tx(l)}</button>)}</span></div></section>
+          <section className="pb-pgsec"><h4>{tx("Lijsten")}</h4><div className="pb-listopts"><span className="muted">{tx("Items zoals spelletjes en producten")}:</span>
+          <span className="pb-seg">{[["grid", "Raster"], ["rows", "Rijen"]].map(([k, l]) => <button type="button" key={k} className={listView === k ? "on" : ""} onClick={() => change((x) => { x.list = { view: k, center: !!x.list?.center }; return x; })}>{tx(l)}</button>)}</span>
+<label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={listCenter} onChange={(e) => change((x) => { x.list = { view: x.list?.view || "grid", center: e.target.checked }; return x; })} /><span /></span><span>{tx("Centreren")}</span></label></div></section>
+          </>}
+          {pgTab === "back" && <>
           <section className="pb-pgsec"><h4>{tx("Terug-knop")}</h4>
             <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!!layout.back?.on} onChange={(e) => change((x) => { if (e.target.checked) x.back = { on: true, pos: x.back?.pos || "left", place: x.back?.place || "page", size: x.back?.size || "md" }; else delete x.back; return x; })} /><span /></span><span>{tx("Terug-knop tonen")} <small className="muted">{tx("Een knop naar de vorige pagina. Standaard staat hij uit.")}</small></span></label>
             {layout.back?.on && <div className="pb-listopts">
@@ -805,16 +813,15 @@ export default function PageBlocks({ pageKey, title = "" }) {
               <span className="muted">{tx("Maximale grootte")}:</span><span className="pb-seg">{[["sm", "Klein"], ["md", "Normaal"], ["lg", "Groot"]].map(([k, l]) => <button type="button" key={k} className={(layout.back.size || "md") === k ? "on" : ""} onClick={() => change((x) => { x.back = { ...x.back, size: k }; return x; })}>{tx(l)}</button>)}</span>
             </div>}
           </section>
-          <section className="pb-pgsec"><h4>{tx("Lijsten")}</h4><div className="pb-listopts"><span className="muted">{tx("Items zoals spelletjes en producten")}:</span>
-          <span className="pb-seg">{[["grid", "Raster"], ["rows", "Rijen"]].map(([k, l]) => <button type="button" key={k} className={listView === k ? "on" : ""} onClick={() => change((x) => { x.list = { view: k, center: !!x.list?.center }; return x; })}>{tx(l)}</button>)}</span>
-<label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={listCenter} onChange={(e) => change((x) => { x.list = { view: x.list?.view || "grid", center: e.target.checked }; return x; })} /><span /></span><span>{tx("Centreren")}</span></label></div></section>
+          </>}
+          {pgTab === "banner" && <>
           <section className="pb-pgsec"><h4>{tx("Banner")}</h4><label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!layout.hero_off} disabled={NO_HERO.includes(pageKey)} onChange={(e) => change((l) => { if (e.target.checked) delete l.hero_off; else l.hero_off = true; return l; })} /><span /></span><span>{tx("Hero tonen")} <small className="muted">{tx("De banner met de titel bovenaan de pagina.")}</small></span></label></section>
           <section className="pb-pgsec"><h4>{tx("Opmaak")}</h4><LayoutPresets pageKey={pageKey} current={layout.preset || (layout.auto ? "auto" : "")} standard={!!layout.auto || ["community", "search", "payment", "members", "products", "product", "cart", "checkout", "subscriptions", "donations", "games"].includes(pageKey)} onApplied={(d) => setLayout(d)} /></section>
           {["product", "products"].includes(pageKey) && ( // the layout of the webshop for this page: the same options as Webshop > Layout, here at the page
             <div className="pb-shoplayout"><strong>{pageKey === "product" ? tx("Webshop: productpagina") : tx("Webshop: productoverzicht")}</strong>
               <PluginFrame name="webshop" file="web/admin.html" bare keep route={{ params: {}, query: { layout: pageKey === "product" ? "page" : "list" } }} onWrite={() => { clearTimeout(shopTimer.current); shopTimer.current = setTimeout(softRefresh, 700); }} />
             </div>
-          )}</div>
+          )}</>}</div>
       )}
       {layout?.back?.on && <SiteBack cfg={layout.back} />}
       {heroTheme && !heroRow && (title || h1) && (

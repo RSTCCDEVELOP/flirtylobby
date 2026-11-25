@@ -5209,3 +5209,10 @@ html[data-adm-motion="off"] .shell *, html[data-adm-motion="off"] .shell *::befo
 /* "Content niet beschikbaar" en "Pagina niet gevonden": de tekst staat op een kaart, dus altijd leesbaar, wat de achtergrond van het thema ook is */
 .notfound { width: min(100% - 2rem, 44rem); margin: 3rem auto; padding: 3rem 2rem; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, .12); box-sizing: border-box; min-height: 0; }
 .notfound p, .notfound p.muted { color: var(--muted); }
+
+/* tabs in het paneel Pagina van de editor */
+.pb-pgtabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: -.1rem 0 .1rem; }
+.pb-pgtabs button { flex: 1; position: relative; padding: .5rem .3rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.pb-pgtabs button:hover { color: var(--text); }
+.pb-pgtabs button.on { color: var(--text); border-bottom-color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, transparent); }
+.pb-pgtabs .pb-dot { display: inline-block; width: 6px; height: 6px; margin-left: .35rem; border-radius: 50%; background: var(--blue); vertical-align: middle; }
