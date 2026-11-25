@@ -45,6 +45,7 @@ import { IconEdit, IconLock, IconTrash, IconUnlock } from "./Icons";
 import { linkProps } from "../lib/linkopen";
 import { createPortal } from "react-dom";
 import SiteBack from "./SiteBack";
+import FloatingUser from "./FloatingUser";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
 const newCell = () => ({ id: uid(), width: "auto", halign: "left", valign: "top", items: [] });
@@ -834,6 +835,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
           )}</>}</div>
       )}
       {layout?.back?.on && <SiteBack cfg={layout.back} />}
+      {layout?.header_off && <FloatingUser />}
       {heroTheme && !heroRow && (title || h1) && (
         <div className="pb-rowwrap hero" data-t={heroTheme}><h1 className="pb-hero-title">{title || h1}</h1></div>
       )}
