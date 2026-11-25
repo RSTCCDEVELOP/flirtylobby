@@ -5169,8 +5169,10 @@ html[data-adm-width="site"] .shell { --adm-area: var(--content-w, 1100px); }
   html[data-adm-width][data-adm-frame="none"] .shell { background: var(--bg); }
   html[data-adm-width] .shell .content { background: var(--bg); min-height: calc(100vh - var(--header-h)); box-sizing: border-box; }  /* the page runs on to the bottom of the screen */
   html[data-adm-width] .shell { --adm-gap: max(0px, calc((100vw - var(--adm-area) - var(--sidebar-w) - 2 * var(--pad)) / 2)); }
-  html[data-adm-width] .shell .sidebar { left: var(--adm-gap); border-left: 1px solid var(--line); }
-  html[data-adm-width] .shell .content { margin-left: calc(var(--sidebar-w) + var(--adm-gap)); margin-right: var(--adm-gap); border-right: 1px solid var(--line); }  /* a line on the right side too: the edge of the width */
+  /* the menu belongs to the page: it starts at the left edge of the page and stops where the page stops (sticky inside the shell, not fixed to the screen) */
+  html[data-adm-width] .shell { display: flex; align-items: flex-start; padding-left: var(--adm-gap); padding-right: var(--adm-gap); box-sizing: border-box; }
+  html[data-adm-width] .shell .sidebar { position: sticky; top: var(--header-h); bottom: auto; left: auto; flex: none; align-self: flex-start; margin-top: var(--header-h); height: calc(100vh - var(--header-h)); max-height: calc(100vh - var(--header-h)); border-left: 1px solid var(--line); }
+  html[data-adm-width] .shell .content { flex: 1; min-width: 0; margin: var(--header-h) 0 0 0; border-right: 1px solid var(--line); }  /* a line on the right side too: the edge of the width */
 }
 html[data-adm-density="compact"] .shell { --pad: 1rem; }
 html[data-adm-density="compact"] .shell .cards { gap: .6rem; }
