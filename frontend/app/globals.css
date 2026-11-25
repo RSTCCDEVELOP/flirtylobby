@@ -5241,5 +5241,11 @@ html[data-adm-credit="off"] .site-credit { display: none; }
 @media (min-width: 861px) { /* de footer van het dashboard (het balkje onderaan) is even breed als de pagina, met de zijbalk */
   html[data-adm-width="wide"] { --adm-area: 1500px; } html[data-adm-width="normal"] { --adm-area: 1200px; } html[data-adm-width="site"] { --adm-area: var(--content-w, 1100px); }
   html[data-adm-width] { --adm-gap: max(0px, calc((100vw - var(--adm-area) - var(--sidebar-w) - 2 * var(--pad)) / 2)); }
-  html[data-adm-width]:not([data-adm-footw="full"]) .site-credit { margin-inline: var(--adm-gap); background: var(--card); border: 1px solid var(--line); border-top-width: 1px; box-sizing: border-box; }
+  html[data-adm-width] { --adm-frame: color-mix(in srgb, var(--blue) 16%, color-mix(in srgb, var(--bg), #000 62%)); }  /* the colour of the sides: from the theme */
+  html[data-adm-width][data-adm-frame="login"] { --adm-frame: var(--login-bg); }
+  html[data-adm-width][data-adm-frame="light"] { --adm-frame: color-mix(in srgb, var(--bg) 90%, var(--text)); }
+  html[data-adm-width][data-adm-frame="none"] { --adm-frame: var(--bg); }
+  html[data-adm-width] body { background: var(--adm-frame); }  /* no black areas: everything round the page has the colour of the theme */
+  html[data-adm-width]:not([data-adm-footw="full"]) .site-credit { background: linear-gradient(var(--card), var(--card)) center / calc(100% - 2 * var(--adm-gap)) 100% no-repeat, var(--adm-frame); box-sizing: border-box; }
+  html[data-adm-width][data-adm-footw="full"] .site-credit { background: var(--card); }
 }
