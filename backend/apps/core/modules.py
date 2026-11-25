@@ -127,6 +127,8 @@ MODULES = [
      "desc": "Componenten die een ontwerp van de creator nodig heeft en de component set niet heeft: verzoeken beoordelen (alleen superadmin+), de bouwinstructie en de ontwerpen die erop wachten opnieuw controleren."},
     {"key": "tags", "group": "Kern", "label": "Tags",
      "desc": "Tags met een kleur die je aan alle onderdelen van easy2edit kunt hangen (gebruikers, groepen, entiteiten, pagina's, media, modules, plugins). Een tag geldt overal, voor één of meer modules of voor één of meer plugins.", "core": True},
+    {"key": "admin_setup", "group": "Kern", "label": "easy2edit admin setup", "core": True, "acl": False,
+     "desc": "De instellingen van de admin en de dashboards: tegels of lijst, aantal per pagina, verborgen tegels, welke blokken het dashboard toont, de zijbalk en het zoekveld. Staat altijd aan, ook bij elke standaard installatie."},
     {"key": "dashboard", "group": "Kern", "label": "Dashboard & profiel", "desc": "Inloggen, dashboard en eigen profiel.", "core": True, "acl": False},
     {"key": "security_basic", "group": "Kern", "label": "Algemene beveiliging",
      "desc": "Inlogslot, sessieduur, wachtwoordregels en beveiligingsheaders.", "core": True},
@@ -152,7 +154,7 @@ BY_KEY = {m["key"]: m for m in MODULES}
 
 _cache = {"t": 0, "v": None}
 TTL = 10
-ALWAYS_ON = ("system", "plugins", "storage", "backups", "log", "sysobjects", "templates", "integrations", "theme", "twofa", "communication")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible). "twofa" + "communication" (the e-mail addresses the code is sent from) keep two-step verification possible in every implementation: it is ON by default (setting Beveiliging -> Twee-staps verificatie, admins), only a superadmin can switch the setting off
+ALWAYS_ON = ("admin_setup", "system", "plugins", "storage", "backups", "log", "sysobjects", "templates", "integrations", "theme", "twofa", "communication")  # the base of the system: these can always be used (plugins must be switchable, a backup must always be possible). "twofa" + "communication" (the e-mail addresses the code is sent from) keep two-step verification possible in every implementation: it is ON by default (setting Beveiliging -> Twee-staps verificatie, admins), only a superadmin can switch the setting off
 
 
 def states():

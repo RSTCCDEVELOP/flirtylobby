@@ -21,6 +21,7 @@ import SettingsBackup from "../../../components/SettingsBackup";
 import ManualButtons from "../../../components/ManualButtons";
 import { useModules } from "../../../components/Modules";
 import { can } from "../../../lib/perms";
+import { useAdminSetup } from "../../../lib/adminsetup";
 
 // Admin dashboard: only the modules this user has access to (with their access level)
 export default function AdminHome() {
@@ -28,6 +29,7 @@ export default function AdminHome() {
   const canSet = lvl(user, "system") >= 3;
   const mods = useModules();
   const aiOn = mods.ai !== false && !!user && (user.is_staff || can(user, "ai.manage"));
+  const setup = useAdminSetup();  // easy2edit admin setup: which blocks the dashboard shows
   const presets = usePresets(true);  // only the installations the superadmin released
   const [credit, setCredit] = useState(null); // show "© easy2edit <year>" at the bottom of every page
   useEffect(() => { if (canSet) api("/system/").then((d) => setCredit(d.settings.show_credit !== false)).catch(() => {}); }, [canSet]);
@@ -44,24 +46,25 @@ export default function AdminHome() {
         <AdminTiles />
       </Collapsible>
 
-      {aiOn && (
+      {aiOn && setup.blocks.ai && (
         <Collapsible id="admin-ai" title={tx("AI-gebruik")}>
           <AdminAiBlock />
         </Collapsible>
       )}
 
-      {canSet && presets && presets.length > 0 && (
+      {canSet && setup.blocks.presets && presets && presets.length > 0 && (
         <Collapsible id="admin-presets" title={tx("Standaard installaties")}>
           <PresetPicker adminOnly demo={!!user?.is_staff} />
         </Collapsible>
       )}
 
-      {user?.is_staff && (
+      {user?.is_staff && setup.blocks.backup && (
         <Collapsible id="admin-settings-backup" title={tx("Instellingen back-up")}>
           <SettingsBackup />
         </Collapsible>
       )}
 
+      {setup.blocks.about && (
       <Collapsible id="admin-about" title={tx("Over easy2edit")}>
         <div className="about-logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -89,6 +92,7 @@ export default function AdminHome() {
           <p style={{ margin: 0 }}>{tx("Meer informatie:")} <a href="https://easy2edit.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 600 }}>easy2edit.com</a></p>
         </div>
       </Collapsible>
+      )}
     </>
   );
 }

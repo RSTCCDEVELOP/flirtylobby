@@ -9,6 +9,7 @@
 const SEC = ["security_basic", "geo", "age_gate", "gambling", "cookies", "word_filter", "twofa"];
 
 export const TILES = [
+  { href: "/dashboard/admin/admin-setup", title: "easy2edit admin setup", big: "De admin en de dashboards naar je hand", small: "Tegels of lijst, aantal per pagina, verborgen tegels, blokken van het dashboard, zijbalk en zoekveld", find: "admin setup instellingen dashboard tegels lijst zijbalk menu zoeken verbergen weergave", modules: ["system"], always: true },
   { href: "/dashboard/admin/entity", title: "Bedrijven", big: "Over je bedrijven", small: "Naam, adres, contact en registratie; ook als variabele in je teksten", modules: ["entities"] },  // the title follows the standard installation (see components/AdminTiles.js)
   { href: "/dashboard/admin/component-requests", title: "Componentverzoeken", big: "Componenten op verzoek", small: "Wat ontwerpen nodig hebben en de component set niet heeft: beoordelen en bouwen", modules: ["component_requests"] },
   { href: "/dashboard/admin/tags", title: "Tags", big: "Tags met een kleur", small: "Voor alle onderdelen: overal, per module of per plugin", modules: ["tags"] },

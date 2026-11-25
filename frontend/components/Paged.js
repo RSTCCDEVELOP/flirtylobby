@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { tx } from "../lib/t";
+import { useAdminSetup } from "../lib/adminsetup";
 
 // Paging for any list or table: 5, 10, 25, 100 or all items per page. The choice is remembered per list (view:<id>:size, kept on the server for a logged-in person);
 // a page can bring its own default (set in the layout of the page: data-pagesize on the page). It works on the DOM of the list it wraps, so every list can use it:
@@ -22,7 +23,8 @@ export default function Paged({ id, selector = "", defaultSize = "all", query = 
   const [theirs, setTheirs] = useState(""); // the default of the page
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
-  const size = own || theirs || defaultSize;
+  const siteSize = useAdminSetup().page_size;  // starting size of the tiles of the admin (easy2edit admin setup)
+  const size = own || theirs || (id.startsWith("admin-tiles") && SIZES.includes(siteSize) ? siteSize : "") || defaultSize;
 
   useEffect(() => { setOwn(read(id)); }, [id]);
   useEffect(() => { const d = root.current?.closest("[data-pagesize]")?.dataset.pagesize; setTheirs(SIZES.includes(d) ? d : ""); });

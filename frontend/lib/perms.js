@@ -12,6 +12,7 @@ export const can = (user, perm) => !!user && (user.is_staff || (user.permissions
 
 // Admin pages: module whose access level decides, or superadmin-only
 export const ADMIN_PAGES = [
+  { href: "/dashboard/admin/admin-setup", module: "system", always: true },
   { href: "/dashboard/admin/entity", module: "entities" },
   { href: "/dashboard/admin/component-requests", module: "component_requests" },
   { href: "/dashboard/admin/rights", module: "rights" },

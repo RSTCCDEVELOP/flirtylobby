@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { tx } from "./t";
+import { useAdminSetup } from "./adminsetup";
 
 // THE matching of every search field of the system: not sensitive for capitals and accents, and every text is searched in what the person SEES (the translation) and in the Dutch source text,
 // so "sandbox" and "testomgeving" both find the tile, in every language.
@@ -21,9 +22,13 @@ export const matches = (q, ...texts) => { const words = norm(q).split(/\s+/).fil
 export function useView(id, initial = "tiles") {
   const [mode, setModeState] = useState(initial);
   const [q, setQ] = useState("");
+  const site = useAdminSetup().view;  // the starting value of the website (easy2edit admin setup); the own choice of the person wins
   useEffect(() => {
-    try { const v = localStorage.getItem(`view:${id}`); if (v === "tiles" || v === "list") setModeState(v); } catch {}
-  }, [id]);
+    let own = "";
+    try { const v = localStorage.getItem(`view:${id}`); if (v === "tiles" || v === "list") own = v; } catch {}
+    if (own) setModeState(own);
+    else if (initial === "tiles" && (site === "tiles" || site === "list")) setModeState(site);
+  }, [id, site, initial]);
   const setMode = useCallback((m) => {
     setModeState(m);
     try { localStorage.setItem(`view:${id}`, m); } catch {}

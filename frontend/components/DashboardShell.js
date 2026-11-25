@@ -20,6 +20,7 @@ import SystemUpdatePrompt from "./SystemUpdatePrompt";
 import SetupWizard from "./SetupWizard";
 import ItemHelp from "./ItemHelp";
 import SidebarSearch from "./SidebarSearch";
+import { useAdminSetup } from "../lib/adminsetup";
 import LicenseChangePrompt from "./LicenseChangePrompt";
 import OnboardingNag from "./OnboardingNag";
 import WizardLoader from "./WizardLoader";
@@ -232,6 +233,7 @@ export default function DashboardShell({ children }) {
   const lic = useLicencePhase();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
+  const setup = useAdminSetup();  // easy2edit admin setup: starting state of the sidebar and the search field
   const [summary, setSummary] = useState(null); // default: collapsed, until the user opens it once
 
   // remember where the user was, for "Laatste pagina" in the user menu
@@ -253,6 +255,10 @@ export default function DashboardShell({ children }) {
       } catch {}
     }).catch(() => {});
   }, []);
+
+  useEffect(() => { // the website says open or closed; a person who chose for himself (the arrow) keeps that
+    try { if (localStorage.getItem("sidebar") === null && (setup.sidebar === "open" || setup.sidebar === "collapsed")) setCollapsed(setup.sidebar === "collapsed"); } catch {}
+  }, [setup.sidebar]);
 
   function toggleCollapsed() {
     const next = !collapsed;
@@ -421,7 +427,7 @@ export default function DashboardShell({ children }) {
         )}
         {(canAdmin(user, mods) || user.is_staff) && (
           <div className="side-bottom">
-            <SidebarSearch onNavigate={() => setOpen(false)} />
+            {setup.menu_search !== false && <SidebarSearch onNavigate={() => setOpen(false)} />}
             <NavGroup id="a-manage" title="Beheer" active={inAdmin || inSuper} badge={0}>
               {canAdmin(user, mods) && <NavLink n={ADMIN_LINKS[0]} />}
               {user.is_staff && <NavLink n={ADMIN_LINKS[1]} />}

@@ -8,9 +8,10 @@
 from django.urls import path
 
 from . import invoice_views, component_views, backup_views, terms_views, dashboard, marketing, resource_views, sales, views, template_views
-from . import entity_views, manual, note_views, sitemanager_views, speedtest, tag_views
+from . import adminsetup_views, entity_views, manual, note_views, sitemanager_views, speedtest, tag_views
 
 urlpatterns = [
+    path("admin-setup/", adminsetup_views.admin_setup),
     path("components/", component_views.active),
     path("components/sets/", component_views.sets),
     path("templates/", template_views.templates),

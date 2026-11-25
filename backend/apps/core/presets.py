@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 BASE = ["pages", "edit_mode", "media", "branding", "theme", "languages", "privacy_pages", "cookies", "communication", "registration", "notifications", "help"]
 
 # the parts of the admin itself (system settings, licence, plugins, storage, back-ups, and with them the page Standaard installaties): never switched off by an installation
-ALWAYS_ON = ["system", "plugins", "storage", "backups", "templates", "integrations", "twofa", "communication"]  # two-step verification (OTP) must be possible in every installation, so its module and the communication module (the code goes by e-mail) never go off; "integrations" = the API links module: the links of the superadmin (AI, Stripe, mail, storage) must keep working in every installation
+ALWAYS_ON = ["admin_setup", "system", "plugins", "storage", "backups", "templates", "integrations", "twofa", "communication"]  # two-step verification (OTP) must be possible in every installation, so its module and the communication module (the code goes by e-mail) never go off; "integrations" = the API links module: the links of the superadmin (AI, Stripe, mail, storage) must keep working in every installation
 
 DEFAULT_PLUGINS = ["siteimport"]  # in every standard installation from the start: Website ontwerpen (design a website, import one) is how a new website gets its pages; a superadmin can still take it out of an installation
 
