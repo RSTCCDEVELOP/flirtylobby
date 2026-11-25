@@ -55,6 +55,7 @@ class AiSettings(models.Model):
     margin_out = models.DecimalField(max_digits=7, decimal_places=2, default=0)  # percent on top of the price of an output token
     bill_internal = models.BooleanField(default=True)  # the AI use of superadmins and of the system is also for the account of the customer (booked on the group of the site): ON by default, so the costs of what is designed on a website run up (live window, reports)
     credit_required = models.BooleanField(default=True)  # users and admins can only use AI with a credit they bought (the superadmin manages this)
+    superadmin_bypass = models.BooleanField(default=False)  # a superadmin (or higher) may use AI without having bought credit (the superadmin manages this)
     users_may_use = models.BooleanField(default=True)  # plain users (not admins) may use the AI at all: off = nothing is sent to the AI for them (the superadmin manages this)
     topup_min = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("5"))
     topup_max = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("100"))

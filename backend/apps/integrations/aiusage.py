@@ -102,11 +102,19 @@ class Cfg:
         self.currency = st.currency
 
 
+def _bypass():
+    from .models import AiSettings
+
+    return bool(AiSettings.load().superadmin_bypass)
+
+
 def subject(user):
     """Who must have bought credit: users, admins, superadmins and superadmin+ (everybody who asks; not the system itself); in the own system of an admin only his users."""
     if user is None:
         return False
     g = group_of(user)
+    if g == "super" and _bypass():  # the option "superadmins may bypass the credit"
+        return False
     return g == "user" if uses_tenant(user) else g in ("user", "admin", "super")
 
 

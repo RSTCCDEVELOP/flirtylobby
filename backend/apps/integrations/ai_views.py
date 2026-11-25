@@ -727,6 +727,9 @@ def credit(request):
         if "users_may_use" in d:
             st.users_may_use = bool(d["users_may_use"])
             st.save()
+        if "superadmin_bypass" in d:
+            st.superadmin_bypass = bool(d["superadmin_bypass"])
+            st.save()
         if "credit_required" in d or "topup_min" in d:
             try:
                 if "credit_required" in d:
@@ -757,7 +760,7 @@ def credit(request):
     for u in User.objects.filter(is_active=True).order_by("email"):
         g = aiusage.group_of(u)
         users.append({"id": u.id, "user": u.email, "group": g, "balance": F(bal.get(u.id)), "month_calls": used.get(u.id, {}).get("n", 0), "month_charged": F(used.get(u.id, {}).get("c")), "subject": g in ("user", "admin")})
-    return Response({"users_may_use": st.users_may_use, "credit_required": st.credit_required, "topup_min": F(st.topup_min), "topup_max": F(st.topup_max), "topup_step": F(st.topup_step), "currency": st.currency, "users": users,
+    return Response({"users_may_use": st.users_may_use, "superadmin_bypass": st.superadmin_bypass, "credit_required": st.credit_required, "topup_min": F(st.topup_min), "topup_max": F(st.topup_max), "topup_step": F(st.topup_step), "currency": st.currency, "users": users,
                      "ledger": [{"at": r.created_at.isoformat(), "user": r.user.email, "kind": r.kind, "amount": F(r.amount), "balance": F(r.balance_after), "note": r.note, "by": r.by} for r in AiLedger.objects.exclude(kind="usage").select_related("user")[:50]]})
 
 

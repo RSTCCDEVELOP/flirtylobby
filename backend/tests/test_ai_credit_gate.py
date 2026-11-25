@@ -132,3 +132,20 @@ def test_superadmins_and_superadmin_plus_must_buy_credit_too(django_user_model):
             aiusage._actor.reset(t)
         assert float(AiAccount.objects.get(user=u).balance) < 50  # the use is paid from the credit
     assert not aiusage.subject(None)  # (the system itself is free)
+
+
+@pytest.mark.django_db
+def test_superadmin_may_bypass_the_credit_when_the_option_is_on(django_user_model):
+    sa = django_user_model.objects.create_user("sa", "sa@x.nl", "pw12345678!", is_staff=True)
+    st = AiSettings.load()
+    st.credit_required = True
+    st.save()
+    token = _as(sa)
+    try:
+        with pytest.raises(aiusage.NoCredit):
+            aiusage.gate("claude-sonnet-5-5", ("hallo",), 100)  # option off: a superadmin needs credit too
+        st.superadmin_bypass = True
+        st.save()
+        aiusage.gate("claude-sonnet-5-5", ("hallo",), 100)  # option on: passes without credit
+    finally:
+        aiusage._actor.reset(token)
