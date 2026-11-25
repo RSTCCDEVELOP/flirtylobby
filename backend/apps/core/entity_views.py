@@ -27,6 +27,9 @@ def entity_admin(request):
             entity.save(request.data)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        from . import siteowners
+
+        siteowners.push_async(force=True)  # the changed company also goes to the easy2edit master site
     else:
         entity.ensure_from_licence()  # an older licence: the company of the licence becomes the entity
     return Response(entity.public())

@@ -47,3 +47,73 @@ def test_an_administrator_saves_and_resets_and_a_person_only_reads():
 @pytest.mark.django_db
 def test_not_logged_in_gets_nothing():
     assert APIClient().get("/api/admin-setup/").status_code in (401, 403)
+
+
+# ── tab Licentie: the company and the person linked to the licence, changes also go to the master ──
+@pytest.fixture
+def licensed(db, monkeypatch):
+    from apps.core import entity, siteowners, system
+    from apps.core.models import License
+
+    system.save({"contact_email": "owner@example.com", "company_name": "Acme", "frontend_url": "https://acme.example.com"})
+    License.objects.update_or_create(pk=1, defaults={"number": "L-1", "client": "Acme"})
+    system.license_changed()
+    owner = get_user_model().objects.create(username="owner@example.com", email="owner@example.com", first_name="Olga", last_name="Owner")
+    e = entity.own()
+    e.name = "Acme"
+    e.save()
+    sent = []
+    monkeypatch.setattr(siteowners, "push", lambda force=False, fresh=False: sent.append(force) or {"ok": True, "skipped": "", "error": ""})
+    return owner, e, sent
+
+
+def test_the_licence_tab_shows_licence_company_and_person(licensed):
+    from apps.core import licence_link
+
+    o = licence_link.overview()
+    assert o["licence"]["number"] == "L-1" and o["company"]["name"] == "Acme" and o["owner"]["email"] == "owner@example.com"
+    assert [p["email"] for p in o["persons"]] == ["owner@example.com"] and o["persons"][0]["owner"]
+
+
+def test_a_change_is_saved_everywhere_and_sent_to_the_master(licensed):
+    from apps.core import licence_link, system
+    from apps.core.models import License
+
+    owner, e, sent = licensed
+    r = _client(True).put("/api/admin-setup/licence/", {"company": {"name": "Acme BV", "city": "Utrecht", "email": "info@acme.nl"}, "owner": {"first_name": "Ola", "mobile": "+31612345678"}}, format="json")
+    assert r.status_code == 200 and r.json()["sync"]["ok"] and sent == [True]
+    e.refresh_from_db(); owner.refresh_from_db()
+    assert e.name == "Acme BV" and e.city == "Utrecht" and owner.first_name == "Ola" and owner.mobile == "+31612345678"
+    assert system.get()["company_name"] == "Acme BV" and system.get()["city"] == "Utrecht" and License.objects.get(pk=1).client == "Acme BV"
+    assert licence_link.overview()["company"]["name"] == "Acme BV"
+
+
+def test_wrong_data_is_refused_and_a_person_may_not_change(licensed):
+    admin = _client(True)
+    assert admin.put("/api/admin-setup/licence/", {"company": {"name": ""}}, format="json").status_code == 400
+    assert admin.put("/api/admin-setup/licence/", {"owner": {"email": "no"}}, format="json").status_code == 400
+    assert admin.put("/api/admin-setup/licence/", {"company": {"email": "x"}}, format="json").status_code == 400
+    p = _client(False)
+    assert p.get("/api/admin-setup/licence/").status_code == 403
+    assert p.put("/api/admin-setup/licence/", {"company": {"name": "X"}}, format="json").status_code == 403
+    assert admin.put("/api/admin-setup/licence/", {"resend": True}, format="json").json()["sync"]["ok"]
+
+
+def test_changing_the_company_in_its_own_screen_also_goes_to_the_master(licensed, monkeypatch):
+    from apps.core import siteowners
+
+    calls = []
+    monkeypatch.setattr(siteowners, "push_async", lambda fresh=False, force=False: calls.append(force))
+    from apps.core import entity
+
+    body = {**entity.get(), "name": "Acme Nieuw"}
+    r = _client(True).put("/api/entity/", body, format="json")
+    assert r.status_code == 200 and calls == [True]
+
+
+def test_the_look_of_the_admin_has_choices_that_are_checked():
+    ok, err = adminsetup.validate({"width": "site", "density": "roomy", "tile_size": "large", "font": "large", "sidebar_width": "wide", "reduce_motion": True})
+    assert not err and ok == {"width": "site", "density": "roomy", "tile_size": "large", "font": "large", "sidebar_width": "wide", "reduce_motion": True}
+    for bad in ({"width": "x"}, {"density": "x"}, {"tile_size": "x"}, {"font": "x"}, {"sidebar_width": "x"}):
+        assert adminsetup.validate(bad)[1], bad
+    assert adminsetup.DEFAULTS["width"] == "full" and adminsetup.DEFAULTS["density"] == "normal"  # nothing changes until the setup says so

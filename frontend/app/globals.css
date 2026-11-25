@@ -5123,3 +5123,57 @@ html[data-hsideanchor="content"] .side-menu.left { transform: translateX(-100%);
 html[data-hsideanchor="content"] .side-menu.left.open, html[data-hsideanchor="content"] .side-menu.right.open { transform: none; }
 html[data-hsideanchor="content"] .side-menu:not(.open) .side-card { background: transparent; border-color: transparent; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 html[data-hsideanchor="content"] .side-menu:not(.open) .side-in { visibility: hidden; transition: visibility 0s linear .25s; }
+
+/* easy2edit admin setup: sections as tinted blocks, rows with the switch on the right, a clear segmented choice, forms in columns */
+.as-wrap { display: grid; gap: 1.1rem; margin-top: 1rem; max-width: 1100px; }
+.as-block { border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--primary, var(--blue)) 5%, var(--card)); padding: 1rem 1.15rem; display: grid; gap: .8rem; align-content: start; }
+.as-block > h3 { margin: 0; font-size: 1rem; display: flex; align-items: center; gap: .5rem; }
+.as-block > p { margin: 0; color: var(--muted); font-size: .88rem; }
+.as-cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.1rem; align-items: start; }
+.as-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: .55rem; }
+.as-row { display: flex; align-items: center; justify-content: space-between; gap: .9rem; padding: .6rem .85rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); min-width: 0; }
+.as-row > span:first-child { display: grid; min-width: 0; }
+.as-row strong { font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.as-row small { color: var(--muted); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.as-row .switch { flex: none; }
+.as-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--card); width: fit-content; max-width: 100%; }
+.as-seg button { border: 0; background: transparent; padding: .5rem 1rem; font-size: .9rem; cursor: pointer; color: var(--muted); border-right: 1px solid var(--line); }
+.as-seg button:last-child { border-right: 0; }
+.as-seg button.on { background: color-mix(in srgb, var(--blue) 16%, var(--card)); color: var(--blue); font-weight: 700; }
+.as-label { font-weight: 600; font-size: .88rem; }
+.as-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem .9rem; }
+.as-form .wide { grid-column: 1 / -1; }
+.as-form label { display: grid; gap: .25rem; font-size: .8rem; color: var(--muted); min-width: 0; }
+.as-form input { width: 100%; }
+@media (max-width: 560px) { .as-form { grid-template-columns: 1fr; } }
+.as-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem 1rem; margin: 0; }
+.as-facts dt { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.as-facts dd { margin: .1rem 0 0; font-weight: 600; word-break: break-word; }
+.as-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.as-list li { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .45rem .7rem; border: 1px solid var(--line); border-radius: 9px; background: var(--card); }
+.as-list small { color: var(--muted); }
+.as-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.as-status { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; }
+.as-dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--muted); }
+.as-dot.ok { background: var(--ok-fg, #1a7f4b); } .as-dot.bad { background: var(--danger, #c0392b); }
+
+/* easy2edit admin setup, tab Uiterlijk: the look of the dashboard (set as data-adm-* on <html> by the shell) */
+/* the width: the menu moves along, so the whole page (menu + content) is that wide and sits in the middle; the content area is 1500px, 1200px or the content width of the website */
+html[data-adm-width="wide"] .shell { --adm-area: 1500px; }
+html[data-adm-width="normal"] .shell { --adm-area: 1200px; }
+html[data-adm-width="site"] .shell { --adm-area: var(--content-w, 1100px); }
+@media (min-width: 861px) {
+  html[data-adm-width] .shell { --adm-gap: max(0px, calc((100vw - var(--adm-area) - var(--sidebar-w) - 2 * var(--pad)) / 2)); }
+  html[data-adm-width] .shell .sidebar { left: var(--adm-gap); border-left: 1px solid var(--line); }
+  html[data-adm-width] .shell .content { margin-left: calc(var(--sidebar-w) + var(--adm-gap)); margin-right: var(--adm-gap); }
+}
+html[data-adm-density="compact"] .shell { --pad: 1rem; }
+html[data-adm-density="compact"] .shell .cards { gap: .6rem; }
+html[data-adm-density="roomy"] .shell { --pad: 3rem; }
+html[data-adm-density="roomy"] .shell .cards { gap: 1.5rem; }
+html[data-adm-tile="small"] .shell .content .cards { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+html[data-adm-tile="large"] .shell .content .cards { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+html[data-adm-font="large"] .shell { font-size: 112%; }
+html[data-adm-sbw="narrow"] .shell:not(.collapsed) { --sidebar-w: 200px; }
+html[data-adm-sbw="wide"] .shell:not(.collapsed) { --sidebar-w: 290px; }
+html[data-adm-motion="off"] .shell *, html[data-adm-motion="off"] .shell *::before, html[data-adm-motion="off"] .shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

@@ -142,10 +142,10 @@ def _own_ids_here():
     return {"ok": True, "skipped": "", "error": ""}
 
 
-def push_async(fresh=False):
+def push_async(fresh=False, force=False):
     import threading
 
-    threading.Thread(target=push, kwargs={"fresh": fresh}, name="siteowner-push", daemon=True).start()
+    threading.Thread(target=push, kwargs={"fresh": fresh, "force": force}, name="siteowner-push", daemon=True).start()
 
 
 def remove_remote():

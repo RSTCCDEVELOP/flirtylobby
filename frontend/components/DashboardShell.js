@@ -20,7 +20,7 @@ import SystemUpdatePrompt from "./SystemUpdatePrompt";
 import SetupWizard from "./SetupWizard";
 import ItemHelp from "./ItemHelp";
 import SidebarSearch from "./SidebarSearch";
-import { useAdminSetup } from "../lib/adminsetup";
+import { useAdminSetup, applyAdminLook, clearAdminLook } from "../lib/adminsetup";
 import LicenseChangePrompt from "./LicenseChangePrompt";
 import OnboardingNag from "./OnboardingNag";
 import WizardLoader from "./WizardLoader";
@@ -255,6 +255,8 @@ export default function DashboardShell({ children }) {
       } catch {}
     }).catch(() => {});
   }, []);
+
+  useEffect(() => { applyAdminLook(setup); return clearAdminLook; }, [setup]);  // the look of the admin (width, density, tiles, letters, motion, sidebar) from easy2edit admin setup
 
   useEffect(() => { // the website says open or closed; a person who chose for himself (the arrow) keeps that
     try { if (localStorage.getItem("sidebar") === null && (setup.sidebar === "open" || setup.sidebar === "collapsed")) setCollapsed(setup.sidebar === "collapsed"); } catch {}

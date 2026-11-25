@@ -12,6 +12,7 @@ from . import adminsetup_views, entity_views, manual, note_views, sitemanager_vi
 
 urlpatterns = [
     path("admin-setup/", adminsetup_views.admin_setup),
+    path("admin-setup/licence/", adminsetup_views.admin_setup_licence),
     path("components/", component_views.active),
     path("components/sets/", component_views.sets),
     path("templates/", template_views.templates),
