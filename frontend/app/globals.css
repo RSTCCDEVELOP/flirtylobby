@@ -5189,3 +5189,8 @@ html[data-adm-motion="off"] .shell *, html[data-adm-motion="off"] .shell *::befo
 .as-style:hover { border-color: var(--blue); }
 .as-style.on { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 12%, var(--card)); }
 .as-style:disabled { opacity: .6; cursor: default; }
+/* admin setup: choices side by side in columns, so less height is needed */
+.as-segs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .9rem 1.4rem; align-items: start; }
+.as-grid-s { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.as-seg { max-width: 100%; }
+.as-seg button { padding: .42rem .85rem; }

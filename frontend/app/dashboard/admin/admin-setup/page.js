@@ -200,9 +200,11 @@ export default function AdminSetup() {
         <div className="as-wrap">
           <section className="as-block">
             <h3>{tx("Zijbalk")}</h3>
+            <div className="as-segs">
             <Seg label="Zijbalk bij de eerste keer" value={s.sidebar} onChange={(v) => can && save({ sidebar: v })} rows={[["open", "Open"], ["collapsed", "Dicht"], ["remember", "Zoals de gebruiker het laatst deed"]]} />
-            <p>{tx("Wie de zijbalk zelf opent of sluit (de pijl), houdt die keuze.")}</p>
             <Seg label="Breedte van de zijbalk" value={s.sidebar_width} onChange={(v) => can && save({ sidebar_width: v })} rows={[["narrow", "Smal"], ["normal", "Normaal"], ["wide", "Breed"]]} />
+            </div>
+            <p>{tx("Wie de zijbalk zelf opent of sluit (de pijl), houdt die keuze.")}</p>
             <div className="as-grid"><Switch checked={s.menu_search !== false} disabled={!can} onChange={(v) => save({ menu_search: v })} label="Zoekveld in het menu" hint="Het veld bovenaan de zijbalk om snel een beheeronderdeel te vinden." /></div>
           </section>
         </div>
@@ -213,7 +215,7 @@ export default function AdminSetup() {
           <section className="as-block">
             <h3>{tx("Kies een stijl")}</h3>
             <p>{tx("Een klik zet meerdere keuzes tegelijk. Daarna kun je alles nog los aanpassen.")}</p>
-            <div className="as-grid">
+            <div className="as-grid as-grid-s">
               {STYLES.map(([k, label, hint, vals]) => {
                 const on = Object.entries(vals).every(([a, b]) => s[a] === b);
                 return (
@@ -224,20 +226,25 @@ export default function AdminSetup() {
               })}
             </div>
           </section>
-          <section className="as-block">
-            <h3>{tx("Breedte en ruimte")}</h3>
-            <p>{tx("De wijziging is meteen te zien. Dit geldt voor het hele dashboard van iedereen.")}</p>
-            <Seg label="Breedte van de inhoud" value={s.width} onChange={(v) => can && save({ width: v })} rows={[["full", "Hele scherm"], ["wide", "Breed"], ["normal", "Normaal"], ["site", "Zoals de website"]]} />
-            <p style={{ margin: 0 }}>{tx("\"Zoals de website\" gebruikt de breedte van de inhoud van de pagina's uit het thema, zodat de admin even breed is als de website.")}</p>
-            <Seg label="Kleur van de zijkanten" value={s.frame} onChange={(v) => can && save({ frame: v })} rows={[["dark", "Donkerder"], ["login", "Zoals het inlogscherm"], ["light", "Licht"], ["none", "Paginakleur"]]} />
-            <Seg label="Ruimte (dichtheid)" value={s.density} onChange={(v) => can && save({ density: v })} rows={[["compact", "Compact"], ["normal", "Normaal"], ["roomy", "Ruim"]]} />
-            <Seg label="Grootte van de tegels" value={s.tile_size} onChange={(v) => can && save({ tile_size: v })} rows={[["small", "Klein"], ["normal", "Normaal"], ["large", "Groot"]]} />
-          </section>
-          <section className="as-block">
-            <h3>{tx("Leesgemak")}</h3>
-            <Seg label="Grootte van de letters" value={s.font} onChange={(v) => can && save({ font: v })} rows={[["normal", "Normaal"], ["large", "Groot"]]} />
-            <div className="as-grid"><Switch checked={!!s.reduce_motion} disabled={!can} onChange={(v) => save({ reduce_motion: v })} label="Minder bewegingen" hint="Zet animaties en overgangen in het dashboard uit." /></div>
-          </section>
+          <div className="as-cols">
+            <section className="as-block">
+              <h3>{tx("Breedte en zijkanten")}</h3>
+              <div className="as-segs">
+                <Seg label="Breedte van de inhoud" value={s.width} onChange={(v) => can && save({ width: v })} rows={[["full", "Hele scherm"], ["wide", "Breed"], ["normal", "Normaal"], ["site", "Zoals de website"]]} />
+                <Seg label="Kleur van de zijkanten" value={s.frame} onChange={(v) => can && save({ frame: v })} rows={[["dark", "Donkerder"], ["login", "Zoals het inlogscherm"], ["light", "Licht"], ["none", "Paginakleur"]]} />
+              </div>
+              <p>{tx("\"Zoals de website\" gebruikt de breedte van de inhoud van de pagina's uit het thema. De zijkanten tonen alleen als de breedte beperkt is. De wijziging is meteen te zien en geldt voor iedereen.")}</p>
+            </section>
+            <section className="as-block">
+              <h3>{tx("Ruimte en leesgemak")}</h3>
+              <div className="as-segs">
+                <Seg label="Ruimte (dichtheid)" value={s.density} onChange={(v) => can && save({ density: v })} rows={[["compact", "Compact"], ["normal", "Normaal"], ["roomy", "Ruim"]]} />
+                <Seg label="Grootte van de tegels" value={s.tile_size} onChange={(v) => can && save({ tile_size: v })} rows={[["small", "Klein"], ["normal", "Normaal"], ["large", "Groot"]]} />
+                <Seg label="Grootte van de letters" value={s.font} onChange={(v) => can && save({ font: v })} rows={[["normal", "Normaal"], ["large", "Groot"]]} />
+              </div>
+              <Switch checked={!!s.reduce_motion} disabled={!can} onChange={(v) => save({ reduce_motion: v })} label="Minder bewegingen" hint="Zet animaties en overgangen in het dashboard uit." />
+            </section>
+          </div>
         </div>
       )}
 
