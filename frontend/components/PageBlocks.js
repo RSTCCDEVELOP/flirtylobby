@@ -45,7 +45,6 @@ import { IconEdit, IconLock, IconTrash, IconUnlock } from "./Icons";
 import { linkProps } from "../lib/linkopen";
 import { createPortal } from "react-dom";
 import SiteBack from "./SiteBack";
-import FloatingUser from "./FloatingUser";
 
 const uid = () => Math.random().toString(16).slice(2, 10).padEnd(8, "0");
 const newCell = () => ({ id: uid(), width: "auto", halign: "left", valign: "top", items: [] });
@@ -540,7 +539,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
   const PasteIcon = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 11h6M9 15h6" /></svg>;
 
   if (!layout) return null;
-  if (!editing && !layout.rows.some((r) => r.cells.some((c) => c.items.length))) return (layout.back?.on || layout.header_off) ? <>{layout.back?.on && <SiteBack cfg={layout.back} />}{layout.header_off && <FloatingUser />}</> : null;  // no blocks: still the back button and the floating edit button
+  if (!editing && !layout.rows.some((r) => r.cells.some((c) => c.items.length))) return layout.back?.on ? <SiteBack cfg={layout.back} /> : null;  // no blocks: still the back button
 
   const renderItem = (c, it) => {
     const key = it.ref && it.type !== "object" ? it.ref : `layout.${pageKey}.${it.id}`; // a fixed element that was dragged in keeps its own content key
@@ -835,7 +834,6 @@ export default function PageBlocks({ pageKey, title = "" }) {
           )}</>}</div>
       )}
       {layout?.back?.on && <SiteBack cfg={layout.back} />}
-      {layout?.header_off && <FloatingUser />}
       {heroTheme && !heroRow && (title || h1) && (
         <div className="pb-rowwrap hero" data-t={heroTheme}><h1 className="pb-hero-title">{title || h1}</h1></div>
       )}

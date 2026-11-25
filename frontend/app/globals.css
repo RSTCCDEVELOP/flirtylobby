@@ -5220,4 +5220,9 @@ html[data-adm-motion="off"] .shell *, html[data-adm-motion="off"] .shell *::befo
 /* header en footer per pagina uit (pagina-editor); in de editor blijven ze zichtbaar maar gedimd, zodat je ze weer aan kunt zetten */
 html[data-pb-nohead]:not([data-pbbar="1"]) .site-header, html[data-pb-nofoot]:not([data-pbbar="1"]) .site-footer { display: none; }
 html[data-pb-nohead][data-pbbar="1"] .site-header, html[data-pb-nofoot][data-pbbar="1"] .site-footer { opacity: .35; }
-html[data-pbbar="1"] .floating-user { display: none; } /* in the editor the dimmed header is there */
+/* edit button in the "powered by" pill: only on a page whose header is off, and not while the page is being edited */
+.site-credit-edit { display: none; align-items: center; justify-content: center; width: 24px; height: 24px; margin-left: .3rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.site-credit-edit:hover, .site-credit-edit[aria-pressed="true"] { background: color-mix(in srgb, var(--blue) 25%, transparent); }
+html[data-pb-nohead]:not([data-pbbar="1"]) .site-credit-edit { display: inline-flex; }
+.site-credit.only-edit { display: none; }
+html[data-pb-nohead]:not([data-pbbar="1"]) .site-credit.only-edit { display: flex; }
