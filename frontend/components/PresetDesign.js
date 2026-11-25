@@ -25,6 +25,7 @@ export default function PresetDesign({ preset }) {
   const [msg, setMsg] = useState(null);
   const [stamp, setStamp] = useState(() => Date.now());  // (a new picture: the browser loads it again)
   const [big, setBig] = useState(null);
+  const [addW, setAddW] = useState(false), [qw, setQw] = useState("");  // the "+ Widget toevoegen" list with a search field
   const timer = useRef(null);
   const load = (d) => { setData(d); return d; };
   useEffect(() => { api(`/system/presets/${preset}/design/`).then(load).catch((e) => setMsg({ ok: false, text: errorText(e) })); return () => clearTimeout(timer.current); }, [preset]);
@@ -100,17 +101,31 @@ export default function PresetDesign({ preset }) {
       </section>
       <section className="pdz-theme">
         <h4>{tx("Widgets van de installatie")}</h4>
-        <p className="muted" style={{ margin: 0, fontSize: ".82rem" }}>{tx("Kies welke widgets bij het instellen van de installatie worden geïnstalleerd en actief gezet. De keuze blijft staan; wijzigingen van de pagina's passen hem niet aan.")}</p>
+        <p className="muted" style={{ margin: 0, fontSize: ".82rem" }}>{tx("Voeg met + de widgets toe die bij het instellen en bij het bijwerken van de site worden geïnstalleerd en actief gezet. De keuze blijft staan; wijzigingen van de pagina's passen hem niet aan.")}</p>
         <div className="pdz-widgets">
-          {(data.widget_library || []).map((w) => {
-            const on = (data.widgets || []).includes(w.key);
+          {(data.widgets || []).map((k) => {
+            const w = (data.widget_library || []).find((x) => x.key === k) || { key: k, name: k, category: "" };
             return (
-              <label key={w.key} className="hed-sw pdz-widget">
-                <span className="switch"><input type="checkbox" checked={on} disabled={busy} onChange={(e) => setWidgets(e.target.checked ? [...(data.widgets || []), w.key] : (data.widgets || []).filter((x) => x !== w.key))} /><span /></span>
+              <div key={k} className="pdz-widget pdz-widget-row">
                 <span className="hed-swt"><strong>{tx(w.name)}</strong><small>{[w.category, w.subcategory].filter(Boolean).map((x) => tx(x)).join(" › ")}</small></span>
-              </label>
+                <button type="button" className="icon-btn" disabled={busy} onClick={() => setWidgets((data.widgets || []).filter((x) => x !== k))} aria-label={tx("Verwijderen")} title={tx("Uit de installatie halen")}>×</button>
+              </div>
             );
           })}
+          {!(data.widgets || []).length && <small className="muted">{tx("Nog geen widgets gekozen.")}</small>}
+          <button type="button" className="btn sm" disabled={busy} onClick={() => { setAddW(!addW); setQw(""); }} aria-expanded={addW}>+ {tx("Widget toevoegen")}</button>
+          {addW && (
+            <div className="pdz-wpick">
+              <input type="search" autoFocus value={qw} onChange={(e) => setQw(e.target.value)} placeholder={tx("Zoek een widget…")} aria-label={tx("Zoek een widget…")} />
+              <div className="pdz-wlist">
+                {(data.widget_library || []).filter((w) => !(data.widgets || []).includes(w.key) && `${w.name} ${w.description} ${w.category} ${w.subcategory}`.toLowerCase().includes(qw.trim().toLowerCase())).map((w) => (
+                  <button type="button" key={w.key} className="pdz-wopt" disabled={busy} onClick={() => { setWidgets([...(data.widgets || []), w.key]); setAddW(false); setQw(""); }}>
+                    <strong>{tx(w.name)}</strong><small>{[w.category, w.subcategory].filter(Boolean).map((x) => tx(x)).join(" › ")}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
       <small className="muted">{tx("{0} pagina's gekozen", chosen.length)}{data.saved_at ? ` · ${tx("laatst opgeslagen")} ${new Date(data.saved_at).toLocaleString()}` : ""}</small>

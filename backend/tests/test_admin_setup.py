@@ -163,3 +163,16 @@ def test_update_step_for_widgets_brings_options_up_to_date():
     assert "verdwenen_optie" not in InstalledWidget.objects.get(key=key).options
     InstalledWidget.objects.create(key="bestaat-niet")
     assert sysupdate.run("widgets", None)["ok"] is False
+
+
+@pytest.mark.django_db
+def test_update_installs_the_widgets_of_the_active_installation(monkeypatch):
+    from apps.core import preset_design, sysupdate
+    from apps.sysobjects import widgets
+
+    key = widgets.library()[0]["key"]
+    monkeypatch.setattr(presets, "active", lambda: "kenwie" if "kenwie" in presets.BY_KEY else next(iter(presets.BY_KEY)))
+    monkeypatch.setattr(preset_design, "widget_keys", lambda k: [key, "bestaat-niet"])
+    assert key not in widgets.installed()
+    r = sysupdate.run("widgets", None)
+    assert key in widgets.installed() and key in r["message"]

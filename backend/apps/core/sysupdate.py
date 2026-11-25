@@ -105,6 +105,23 @@ def run(step, user):
             from apps.sysobjects import service as objects_service
             from apps.sysobjects import widgets
 
+            added = []
+            try:  # the widgets of the active installation that are not on this website yet come with it (a widget that is already there is not touched)
+                from . import preset_design, presets
+
+                act = presets.active()
+                key_act = act if isinstance(act, str) else (act or {}).get("key") if act else None
+                if key_act:
+                    now_have = set(widgets.installed())
+                    for k in preset_design.widget_keys(key_act):
+                        if k not in now_have:
+                            try:
+                                widgets.install(k)
+                                added.append(k)
+                            except ValueError:
+                                pass
+            except Exception:  # noqa: BLE001
+                logger.exception("Update: the widgets of the installation could not be installed")
             have = widgets.installed()
             updated, missing = [], []
             for key, w in have.items():
@@ -119,7 +136,7 @@ def run(step, user):
                     updated.append(m["name"])
             if have:
                 objects_service.sync()
-            msg = f"{len(have)} widgets op deze website gecontroleerd" + (f", {len(updated)} bijgewerkt ({', '.join(updated)})" if updated else "") + f"; {len(widgets.library())} in de bibliotheek."
+            msg = f"{len(have)} widgets op deze website gecontroleerd" + (f", {len(updated)} bijgewerkt ({', '.join(updated)})" if updated else "") + (f"; {len(added)} van de installatie erbij ({', '.join(added)})" if added else "") + f"; {len(widgets.library())} in de bibliotheek."
             if missing:
                 return {"ok": False, "message": msg + " Niet meer in de bibliotheek: " + ", ".join(missing[:5])}
             return {"ok": True, "message": msg}

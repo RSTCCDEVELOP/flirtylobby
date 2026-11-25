@@ -5249,3 +5249,12 @@ html[data-adm-credit="off"] .site-credit { display: none; }
   html[data-adm-width]:not([data-adm-footw="full"]) .site-credit { background: linear-gradient(var(--card), var(--card)) center / calc(100% - 2 * var(--adm-gap)) 100% no-repeat, var(--adm-frame); box-sizing: border-box; }
   html[data-adm-width][data-adm-footw="full"] .site-credit { background: var(--card); }
 }
+
+/* widgets van de installatie: gekozen widgets als rijen, + om er een toe te voegen uit een lijst met zoeken */
+.pdz-widgets { display: grid; grid-template-columns: 1fr; gap: .5rem; }
+.pdz-widget-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: color-mix(in srgb, var(--blue) 6%, var(--card)); }
+.pdz-widgets > .btn { justify-self: start; }
+.pdz-wpick { display: grid; gap: .5rem; padding: .6rem; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--blue) 6%, var(--card)); }
+.pdz-wlist { display: grid; gap: .35rem; max-height: 280px; overflow: auto; }
+.pdz-wopt { display: grid; gap: .1rem; text-align: left; padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: inherit; cursor: pointer; }
+.pdz-wopt:hover { border-color: var(--blue); } .pdz-wopt small { color: var(--muted); }
