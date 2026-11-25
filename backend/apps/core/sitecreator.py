@@ -3418,8 +3418,64 @@ UPLOAD_TEXT = 12000  # characters of one PDF that the designer reads
 UPLOAD_TOTAL = 24000
 
 
+UPLOAD_IMAGES = 6  # pictures taken out of one PDF
+
+
+def _pdf_images(data, limit=UPLOAD_IMAGES):
+    """The pictures in a PDF (the biggest first, as jpeg bytes of at most 1600 px): the pictures that are in its pages. A PDF that is a scan (no text) has its pages as pictures. Never raises."""
+    from PIL import Image
+    from pypdf import PdfReader
+
+    found = []
+    try:
+        r = PdfReader(io.BytesIO(data))
+        for pn, page in enumerate(r.pages[:30]):
+            try:
+                imgs = list(page.images)
+            except Exception:  # noqa: BLE001
+                continue
+            for img in imgs[:12]:
+                try:
+                    im = img.image.convert("RGB")
+                except Exception:  # noqa: BLE001
+                    continue
+                if min(im.size) < 120 or im.size[0] * im.size[1] < 30000:
+                    continue  # an icon, a line or a bullet
+                found.append((im.size[0] * im.size[1], pn, im))
+    except Exception:  # noqa: BLE001
+        return []
+    found.sort(key=lambda t: -t[0])
+    out = []
+    for _area, _pn, im in found[:limit]:
+        im.thumbnail((1600, 1600))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=82)
+        out.append(buf.getvalue())
+    return out
+
+
+def _pdf_pages_as_images(data, limit=3):
+    """The first pages of a PDF drawn as pictures, with pdftoppm when the server has it (a PDF of vector drawings has no pictures to take out). [] when it cannot."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    exe = shutil.which("pdftoppm")
+    if not exe:
+        return []
+    try:
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, "in.pdf")
+            with open(src, "wb") as f:
+                f.write(data)
+            subprocess.run([exe, "-jpeg", "-r", "100", "-f", "1", "-l", str(limit), src, os.path.join(d, "p")], check=True, timeout=60, capture_output=True)
+            return [open(os.path.join(d, n), "rb").read() for n in sorted(os.listdir(d)) if n.startswith("p") and n.endswith(".jpg")][:limit]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def add_upload(job, upload):
-    """A PDF in the chat: its text goes into the brief (the designer reads it). Pictures do not come here: they go with the message. Returns the list for the screen."""
+    """A PDF in the chat: its text goes into the brief and the pictures in it (or, for a PDF of drawings, its first pages) are kept as pictures for the designer. Pictures that are not in a PDF do not come here: they go with the message. Returns the list for the screen."""
     ext = os.path.splitext(str(getattr(upload, "name", "")))[1].lower().lstrip(".")
     if ext != "pdf":
         raise ValueError("Kies een PDF-bestand. Afbeeldingen voeg je rechtstreeks toe.")
@@ -3439,9 +3495,16 @@ def add_upload(job, upload):
     except Exception:  # noqa: BLE001
         raise ValueError("Dit PDF-bestand kan niet worden gelezen.")
     text = re.sub(r"[ \t]+", " ", re.sub(r"\n{3,}", "\n\n", text)).strip()
-    if len(text) < 20:
-        raise ValueError("In dit PDF-bestand staat geen leesbare tekst (een scan?). Maak er afbeeldingen van en voeg die toe.")
-    ups.append({"id": uuid.uuid4().hex[:8], "name": os.path.basename(str(upload.name))[:120], "pages": pages, "text": text[:UPLOAD_TEXT]})
+    pics = _pdf_images(data)
+    if not pics and len(text) < 400:  # hardly any text and no pictures in it: draw the pages (a PDF of vector drawings, a flyer)
+        pics = _pdf_pages_as_images(data)
+    if len(text) < 20 and not pics:
+        raise ValueError("In dit PDF-bestand staat geen leesbare tekst en zijn geen afbeeldingen te vinden. Maak er afbeeldingen van en voeg die toe.")
+    uid = uuid.uuid4().hex[:8]
+    keys = []
+    for n, raw in enumerate(pics):
+        keys.append(default_storage.save(areas.site_path("designs", f"{job.pk}/up-{uid}-{n}.jpg"), ContentFile(raw)))
+    ups.append({"id": uid, "name": os.path.basename(str(upload.name))[:120], "pages": pages, "text": text[:UPLOAD_TEXT], "images": keys})
     b["uploads"] = ups
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
     return uploads_public(b)
@@ -3449,13 +3512,37 @@ def add_upload(job, upload):
 
 def remove_upload(job, upload_id):
     b = dict(job.brief or {})
+    for u in b.get("uploads") or []:
+        if u.get("id") == upload_id:
+            for k in u.get("images") or []:
+                try:
+                    default_storage.delete(k)
+                except Exception:  # noqa: BLE001
+                    pass
     b["uploads"] = [u for u in b.get("uploads") or [] if u.get("id") != upload_id]
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, updated_at=timezone.now())
     return uploads_public(b)
 
 
 def uploads_public(b):
-    return [{"id": u.get("id"), "name": u.get("name"), "pages": u.get("pages")} for u in (b or {}).get("uploads") or []]
+    return [{"id": u.get("id"), "name": u.get("name"), "pages": u.get("pages"), "images": len(u.get("images") or [])} for u in (b or {}).get("uploads") or []]
+
+
+def upload_shots(b, limit=6):
+    """The pictures that were taken out of the PDF files, as [(media_type, base64)] for the designer to look at."""
+    import base64
+
+    out = []
+    for u in (b or {}).get("uploads") or []:
+        for k in u.get("images") or []:
+            if len(out) >= limit:
+                return out
+            try:
+                with default_storage.open(k, "rb") as f:
+                    out.append(("image/jpeg", base64.b64encode(f.read()).decode()))
+            except Exception:  # noqa: BLE001
+                continue
+    return out
 
 
 def uploads_text(b, limit=UPLOAD_TOTAL):
@@ -3494,7 +3581,10 @@ def chat(job, text, shots=None, ui_lang=""):
         SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, status="done", progress=100, step="", error="", messages=msgs, updated_at=timezone.now())
         return
     SiteDesignJob.objects.filter(pk=job.pk).update(brief=b, status="running", progress=5, step="Aan het denken" if not has else "De aanpassing doorvoeren", error="", messages=msgs, updated_at=timezone.now())
-    _spawn(_chat, job.pk, text, has, shots)
+    ai_shots = list(shots)
+    if not (job.messages or []):  # the first message: the designer also sees the pictures that are in the PDF files of the customer (later the brief carries what matters)
+        ai_shots = (ai_shots + upload_shots(b, 8 - len(ai_shots)))[:8] if len(ai_shots) < 8 else ai_shots
+    _spawn(_chat, job.pk, text, has, ai_shots)
 
 
 def answer_prefill(job, yes):

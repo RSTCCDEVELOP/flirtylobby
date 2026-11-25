@@ -92,3 +92,30 @@ def test_a_pdf_in_the_chat_goes_to_the_designer_and_the_questions_come_from_it(d
     assert job.brief["prefill"] is True and job.brief["ui_lang"] == "en"  # no question about assumptions first: the questionnaire is made from the material
     assert not any(m.get("ask") == "prefill" for m in job.messages)
     assert sc.remove_upload(job, up[0]["id"]) == []
+
+
+@pytest.mark.django_db
+def test_the_pictures_in_a_pdf_go_to_the_designer_too(django_user_model, monkeypatch):
+    import io
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    from apps.core.models import SiteDesignJob
+
+    buf = io.BytesIO()
+    Image.effect_noise((600, 400), 80).convert("RGB").save(buf, "PDF")  # a scan: a PDF that is only a picture, no text
+    u = django_user_model.objects.create_user("up2", "up2@x.nl", "pw12345678!", is_staff=True)
+    job = SiteDesignJob.objects.create(user=u, name="Nieuw ontwerp", status="done", brief={"name": "Nieuw ontwerp"})
+    up = sc.add_upload(job, SimpleUploadedFile("scan.pdf", buf.getvalue(), content_type="application/pdf"))
+    assert up[0]["images"] == 1  # accepted although it has no text: the picture is what the designer reads
+    job.refresh_from_db()
+    assert len(sc.upload_shots(job.brief)) == 1
+    seen = {}
+    monkeypatch.setattr(sc.ai, "available", lambda *a, **k: True)
+    monkeypatch.setattr(sc, "_spawn", lambda fn, *a, **k: seen.update(args=a))
+    sc.chat(job, "Maak een vragenlijst", None, "nl")
+    assert len(seen["args"][3]) == 1 and seen["args"][3][0][0] == "image/jpeg"  # (pk, text, has, shots)
+    sc.remove_upload(job, up[0]["id"])
+    job.refresh_from_db()
+    assert not job.brief["uploads"]
