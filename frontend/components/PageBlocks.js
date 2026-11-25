@@ -257,7 +257,7 @@ export default function PageBlocks({ pageKey, title = "" }) {
     document.documentElement.dataset.list = listView; document.documentElement.dataset.center = listCenter ? "1" : "0";
     return () => { delete par.dataset.list; delete par.dataset.center; delete par.dataset.width; delete par.dataset.pagesize; delete document.documentElement.dataset.pagesize; delete document.documentElement.dataset.list; delete document.documentElement.dataset.center; };
   }, [layout, listView, listCenter, pageWide, pageSize]);
-  const NO_HERO = ["home", "hero-games"];
+  const NO_HERO = ["home", "hero-games", "notfound", "forbidden"];
   useEffect(() => { if (layout) setMoved(pageKey, layout.moved || []); }, [layout, pageKey]);
   useEffect(() => { // a setting of the webshop (Hero tonen) changed the banner of this page: only that flag is read again
     if (!["product", "products"].includes(pageKey)) return undefined;

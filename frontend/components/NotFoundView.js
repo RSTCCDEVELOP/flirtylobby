@@ -6,6 +6,8 @@
 // website https://rstcc.net
 
 import { EditableText } from "./EditMode";
+import Movable from "./Movable";
+import PageBlocks from "./PageBlocks";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
 import Link from "next/link";
@@ -28,11 +30,14 @@ export default function NotFoundView() {
   return (
     <div className="site">
       <SiteHeader />
-      <main className="doc notfound">
-        <div className="nf-code" aria-hidden="true">404</div>
-        <EditableText id="notfound.title" as="h1" fallbacks={TITLE} fallback={TITLE.nl} />
-        <EditableText id="notfound.body" as="p" fallbacks={BODY} fallback={BODY.nl} className="muted" />
-        <div><Link href="/" className="btn primary">{HOME.nl}</Link></div>
+      <main className="doc">
+        <div className="notfound">
+          <div className="nf-code" aria-hidden="true">404</div>
+          <Movable page="notfound" id="notfound.title" type="text"><EditableText id="notfound.title" as="h1" fallbacks={TITLE} fallback={TITLE.nl} /></Movable>
+          <Movable page="notfound" id="notfound.body" type="text"><EditableText id="notfound.body" as="p" fallbacks={BODY} fallback={BODY.nl} className="muted" /></Movable>
+          <div><Link href="/" className="btn primary">{HOME.nl}</Link></div>
+        </div>
+        <PageBlocks pageKey="notfound" />
       </main>
       <SiteFooter />
     </div>

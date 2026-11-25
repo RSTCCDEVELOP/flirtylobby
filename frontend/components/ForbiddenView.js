@@ -7,6 +7,8 @@
 
 import { EditableText } from "./EditMode";
 import ForbiddenActions from "./ForbiddenActions";
+import Movable from "./Movable";
+import PageBlocks from "./PageBlocks";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
 
@@ -28,11 +30,14 @@ export default function ForbiddenView() {
   return (
     <div className="site">
       <SiteHeader />
-      <main className="doc notfound">
-        <div className="nf-code" aria-hidden="true">403</div>
-        <EditableText id="forbidden.title" as="h1" fallbacks={TITLE} fallback={TITLE.nl} />
-        <EditableText id="forbidden.body" as="p" fallbacks={BODY} fallback={BODY.nl} className="muted" />
-        <ForbiddenActions />
+      <main className="doc">
+        <div className="notfound">
+          <div className="nf-code" aria-hidden="true">403</div>
+          <Movable page="forbidden" id="forbidden.title" type="text"><EditableText id="forbidden.title" as="h1" fallbacks={TITLE} fallback={TITLE.nl} /></Movable>
+          <Movable page="forbidden" id="forbidden.body" type="text"><EditableText id="forbidden.body" as="p" fallbacks={BODY} fallback={BODY.nl} className="muted" /></Movable>
+          <ForbiddenActions />
+        </div>
+        <PageBlocks pageKey="forbidden" />
       </main>
       <SiteFooter />
     </div>
