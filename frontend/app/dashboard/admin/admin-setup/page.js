@@ -233,6 +233,7 @@ export default function AdminSetup() {
           <section className="as-block">
             <h3>{tx("Footer")}</h3>
             <p>{tx("De onderkant van het dashboard.")}</p>
+            <div className="as-segs"><Seg label="Breedte van de footer" value={s.footer_width || "page"} onChange={(v) => can && save({ footer_width: v })} rows={[["page", "Zoals de pagina"], ["full", "Hele scherm"]]} /></div>
             <div className="as-grid"><Switch checked={s.footer_credit !== false} disabled={!can} onChange={(v) => save({ footer_credit: v })} label="Powered by easy2edit" hint="Het balkje onderaan de pagina met de naam easy2edit (en het energielabel)." /></div>
           </section>
         </div>

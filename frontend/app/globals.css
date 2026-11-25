@@ -5238,3 +5238,8 @@ html[data-adm-credit="off"] .site-credit { display: none; }
 @media (min-width: 861px) { /* de header is even breed als de pagina (met de zijbalk), net als op de website; "Hele scherm" laat hem over de volle breedte */
   html[data-adm-width]:not([data-adm-headw="full"]) .shell > .topbar { left: var(--adm-gap); right: var(--adm-gap); box-sizing: border-box; border-inline: 1px solid var(--line); }
 }
+@media (min-width: 861px) { /* de footer van het dashboard (het balkje onderaan) is even breed als de pagina, met de zijbalk */
+  html[data-adm-width="wide"] { --adm-area: 1500px; } html[data-adm-width="normal"] { --adm-area: 1200px; } html[data-adm-width="site"] { --adm-area: var(--content-w, 1100px); }
+  html[data-adm-width] { --adm-gap: max(0px, calc((100vw - var(--adm-area) - var(--sidebar-w) - 2 * var(--pad)) / 2)); }
+  html[data-adm-width]:not([data-adm-footw="full"]) .site-credit { margin-inline: var(--adm-gap); background: var(--card); border: 1px solid var(--line); border-top-width: 1px; box-sizing: border-box; }
+}

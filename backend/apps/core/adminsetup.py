@@ -26,14 +26,14 @@ HEADER_ITEMS = ("homepage", "shortcuts", "notifications", "chat", "language", "h
 BLOCKS = ("ai", "presets", "backup", "about")  # the blocks under the tiles of the admin dashboard
 CHOICES = {"width": (WIDTHS, "Kies een breedte uit de lijst."), "density": (DENSITIES, "Kies een dichtheid uit de lijst."), "tile_size": (TILE_SIZES, "Kies een tegelgrootte uit de lijst."),
            "frame": (FRAMES, "Kies een kleur voor de zijkanten uit de lijst."), "font": (FONTS, "Kies een lettergrootte uit de lijst."), "sidebar_width": (SIDEBAR_WIDTHS, "Kies een breedte van de zijbalk uit de lijst."),
-           "header_height": (HEADER_HEIGHTS, "Kies een hoogte van de header uit de lijst."), "header_width": (HEADER_WIDTHS, "Kies de breedte van de header uit de lijst.")}
+           "header_height": (HEADER_HEIGHTS, "Kies een hoogte van de header uit de lijst."), "header_width": (HEADER_WIDTHS, "Kies de breedte van de header uit de lijst."), "footer_width": (HEADER_WIDTHS, "Kies de breedte van de footer uit de lijst.")}
 HREF_RE = re.compile(r"^/dashboard/[a-z0-9/_-]{1,80}$")
 DEFAULTS = {
     "view": "tiles", "page_size": "all", "hidden_tiles": [],  # tab Tegels
     "blocks": {k: True for k in BLOCKS},  # tab Dashboards
     "sidebar": "remember", "menu_search": True, "sidebar_width": "normal",  # tab Menu
     "width": "full", "density": "normal", "tile_size": "normal", "font": "normal", "frame": "dark", "reduce_motion": False,  # tab Uiterlijk
-    "header_height": "normal", "header_width": "page", "header_items": {k: True for k in HEADER_ITEMS}, "footer_credit": True,  # tab Header en footer
+    "header_height": "normal", "header_width": "page", "footer_width": "page", "header_items": {k: True for k in HEADER_ITEMS}, "footer_credit": True,  # tab Header en footer
 }
 
 
