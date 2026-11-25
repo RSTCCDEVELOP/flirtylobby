@@ -258,6 +258,12 @@ export default function PageBlocks({ pageKey, title = "" }) {
     document.documentElement.dataset.list = listView; document.documentElement.dataset.center = listCenter ? "1" : "0";
     return () => { delete par.dataset.list; delete par.dataset.center; delete par.dataset.width; delete par.dataset.pagesize; delete document.documentElement.dataset.pagesize; delete document.documentElement.dataset.list; delete document.documentElement.dataset.center; };
   }, [layout, listView, listCenter, pageWide, pageSize]);
+  useEffect(() => { // header and footer of this page on or off (page editor -> Pagina -> Indeling)
+    const r = document.documentElement;
+    if (layout?.header_off) r.dataset.pbNohead = "1"; else delete r.dataset.pbNohead;
+    if (layout?.footer_off) r.dataset.pbNofoot = "1"; else delete r.dataset.pbNofoot;
+    return () => { delete r.dataset.pbNohead; delete r.dataset.pbNofoot; };
+  }, [layout?.header_off, layout?.footer_off]);
   const NO_HERO = ["home", "hero-games", "notfound", "forbidden"];
   useEffect(() => { if (layout) setMoved(pageKey, layout.moved || []); }, [layout, pageKey]);
   useEffect(() => { // a setting of the webshop (Hero tonen) changed the banner of this page: only that flag is read again
@@ -800,6 +806,10 @@ export default function PageBlocks({ pageKey, title = "" }) {
           <section className="pb-pgsec"><h4>{tx("Ruimte en breedte")}</h4><div className="pb-listopts"><span className="muted">{tx("Ruimte (padding)")}:</span><select value={layout.pad || "md"} aria-label={tx("Ruimte (padding)")} onChange={(e) => change((x) => { if (e.target.value === "md") delete x.pad; else x.pad = e.target.value; return x; })}>{PAD_OPTS.map(([k, l]) => <option key={k} value={k}>{tx(l)}</option>)}</select>
 <span className="muted">{tx("Items per pagina")}:</span><select value={pageSize} aria-label={tx("Items per pagina")} onChange={(e) => change((x) => { if (e.target.value === "all") delete x.page_size; else x.page_size = e.target.value; return x; })}>{["5", "10", "25", "100", "all"].map((v) => <option key={v} value={v}>{v === "all" ? tx("Alles") : v}</option>)}</select>
 <span className="muted">{tx("Breedte van de pagina")}:</span><span className="pb-seg">{[["column", "In de kolom"], ["full", "Paginabreed"]].map(([k, l]) => <button type="button" key={k} className={(pageWide ? "full" : "column") === k ? "on" : ""} onClick={() => change((x) => { if (k === "full") x.page_width = "full"; else delete x.page_width; return x; })}>{tx(l)}</button>)}</span></div></section>
+          <section className="pb-pgsec"><h4>{tx("Header en footer")}</h4>
+            <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!layout.header_off} onChange={(e) => change((x) => { if (e.target.checked) delete x.header_off; else x.header_off = true; return x; })} /><span /></span><span>{tx("Header tonen")} <small className="muted">{tx("Het menu bovenaan de pagina.")}</small></span></label>
+            <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={!layout.footer_off} onChange={(e) => change((x) => { if (e.target.checked) delete x.footer_off; else x.footer_off = true; return x; })} /><span /></span><span>{tx("Footer tonen")} <small className="muted">{tx("De voet onderaan de pagina.")}</small></span></label>
+          </section>
           <section className="pb-pgsec"><h4>{tx("Lijsten")}</h4><div className="pb-listopts"><span className="muted">{tx("Items zoals spelletjes en producten")}:</span>
           <span className="pb-seg">{[["grid", "Raster"], ["rows", "Rijen"]].map(([k, l]) => <button type="button" key={k} className={listView === k ? "on" : ""} onClick={() => change((x) => { x.list = { view: k, center: !!x.list?.center }; return x; })}>{tx(l)}</button>)}</span>
 <label className="check sec-toggle"><span className="switch"><input type="checkbox" checked={listCenter} onChange={(e) => change((x) => { x.list = { view: x.list?.view || "grid", center: e.target.checked }; return x; })} /><span /></span><span>{tx("Centreren")}</span></label></div></section>

@@ -127,3 +127,12 @@ def test_page_back_button_is_off_unless_chosen():
     out = layout.clean({"rows": [], "back": {"on": True, "pos": "middle", "place": "float", "size": "xl"}})
     assert out["back"] == {"on": True, "pos": "left", "place": "float", "size": "md"}
     assert layout.clean({"rows": [], "back": {"on": True, "pos": "right", "size": "lg"}})["back"] == {"on": True, "pos": "right", "place": "page", "size": "lg"}
+
+
+def test_page_header_footer_flags():
+    from apps.pages import layout
+
+    out = layout.clean({"rows": []})
+    assert "header_off" not in out and "footer_off" not in out
+    out = layout.clean({"rows": [], "header_off": True, "footer_off": True})
+    assert out["header_off"] is True and out["footer_off"] is True
