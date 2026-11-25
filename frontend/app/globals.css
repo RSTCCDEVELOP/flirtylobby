@@ -5165,7 +5165,7 @@ html[data-adm-width="site"] .shell { --adm-area: var(--content-w, 1100px); }
 @media (min-width: 861px) {
   html[data-adm-width] .shell { --adm-gap: max(0px, calc((100vw - var(--adm-area) - var(--sidebar-w) - 2 * var(--pad)) / 2)); }
   html[data-adm-width] .shell .sidebar { left: var(--adm-gap); border-left: 1px solid var(--line); }
-  html[data-adm-width] .shell .content { margin-left: calc(var(--sidebar-w) + var(--adm-gap)); margin-right: var(--adm-gap); }
+  html[data-adm-width] .shell .content { margin-left: calc(var(--sidebar-w) + var(--adm-gap)); margin-right: var(--adm-gap); border-right: 1px solid var(--line); }  /* a line on the right side too: the edge of the width */
 }
 html[data-adm-density="compact"] .shell { --pad: 1rem; }
 html[data-adm-density="compact"] .shell .cards { gap: .6rem; }
