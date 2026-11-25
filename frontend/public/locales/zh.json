@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "随消息附带的 PDF 文件",
   "Bestand weghalen": "移除文件",
   "Bestanden toevoegen": "添加文件",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "添加图片或 PDF 文件：设计师会据此制作问卷和方案"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "添加图片或 PDF 文件：设计师会据此制作问卷和方案",
+  "Ik heb {0} afbeeldingen ingevuld.": "我已填入 {0} 张图片。",
+  "Er zijn nog {0} afbeeldingen leeg.": "还有 {0} 张图片是空的。",
+  "Automatisch zoeken lukte niet": "自动搜索未成功",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "请再搜索图库照片：在“照片和视频”中为每个空位选一张照片，我会帮你填入。",
+  "Foto's zoeken": "搜索照片",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "照片来源中没有找到适合这些位置的内容。",
+  "De fotobron gaf geen antwoord.": "照片来源没有响应。"
 }

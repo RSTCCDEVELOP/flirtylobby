@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "メッセージに付けたPDFファイル",
   "Bestand weghalen": "ファイルを外す",
   "Bestanden toevoegen": "ファイルを追加",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "画像やPDFファイルを追加：デザイナーがそこから質問票と提案を作ります"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "画像やPDFファイルを追加：デザイナーがそこから質問票と提案を作ります",
+  "Ik heb {0} afbeeldingen ingevuld.": "画像を{0}枚入れました。",
+  "Er zijn nog {0} afbeeldingen leeg.": "まだ{0}枚の画像が空です。",
+  "Automatisch zoeken lukte niet": "自動検索がうまくいきませんでした",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "ストックフォトをさらに探してください：写真と動画で空いている場所ごとに写真を選べば、私が入れます。",
+  "Foto's zoeken": "写真を探す",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "これらの場所に合うものが写真ソースで見つかりませんでした。",
+  "De fotobron gaf geen antwoord.": "写真ソースから応答がありませんでした。"
 }

@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "Fichiers PDF joints à votre message",
   "Bestand weghalen": "Retirer le fichier",
   "Bestanden toevoegen": "Ajouter des fichiers",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Ajouter des images ou des fichiers PDF : le concepteur en tire un questionnaire et une proposition"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Ajouter des images ou des fichiers PDF : le concepteur en tire un questionnaire et une proposition",
+  "Ik heb {0} afbeeldingen ingevuld.": "J’ai rempli {0} images.",
+  "Er zijn nog {0} afbeeldingen leeg.": "Il reste {0} images vides.",
+  "Automatisch zoeken lukte niet": "La recherche automatique n’a pas fonctionné",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "Cherchez d’autres photos de stock : sous Photos et vidéos, choisissez une photo pour chaque emplacement vide et je les mets en place.",
+  "Foto's zoeken": "Chercher des photos",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "Rien n’a été trouvé pour ces emplacements dans la source de photos.",
+  "De fotobron gaf geen antwoord.": "La source de photos n’a pas répondu."
 }

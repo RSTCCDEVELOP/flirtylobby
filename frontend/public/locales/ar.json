@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "ملفات PDF المرفقة برسالتك",
   "Bestand weghalen": "إزالة الملف",
   "Bestanden toevoegen": "إضافة ملفات",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "أضف صورًا أو ملفات PDF: يُعدّ المصمم منها استبيانًا واقتراحًا"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "أضف صورًا أو ملفات PDF: يُعدّ المصمم منها استبيانًا واقتراحًا",
+  "Ik heb {0} afbeeldingen ingevuld.": "لقد ملأت {0} صور.",
+  "Er zijn nog {0} afbeeldingen leeg.": "لا تزال {0} صور فارغة.",
+  "Automatisch zoeken lukte niet": "لم ينجح البحث التلقائي",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "ابحث عن مزيد من صور المخزون: اختر في «الصور والفيديو» صورة لكل مكان فارغ وسأملؤها.",
+  "Foto's zoeken": "ابحث عن الصور",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "لم يُعثر على شيء لهذه الأماكن في مصدر الصور.",
+  "De fotobron gaf geen antwoord.": "لم يستجب مصدر الصور."
 }

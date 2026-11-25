@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "PDF files with your message",
   "Bestand weghalen": "Remove file",
   "Bestanden toevoegen": "Add files",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Add pictures or PDF files: the designer makes a questionnaire and a proposal from them"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Add pictures or PDF files: the designer makes a questionnaire and a proposal from them",
+  "Ik heb {0} afbeeldingen ingevuld.": "I filled in {0} pictures.",
+  "Er zijn nog {0} afbeeldingen leeg.": "{0} pictures are still empty.",
+  "Automatisch zoeken lukte niet": "Searching automatically did not work",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "Search for more stock photos: under Photos and videos choose a photo for every empty place, and I will fill them in.",
+  "Foto's zoeken": "Search photos",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "Nothing was found for these places on the photo source.",
+  "De fotobron gaf geen antwoord.": "The photo source did not answer."
 }

@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "आपके संदेश की PDF फ़ाइलें",
   "Bestand weghalen": "फ़ाइल हटाएँ",
   "Bestanden toevoegen": "फ़ाइलें जोड़ें",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "चित्र या PDF फ़ाइलें जोड़ें: डिज़ाइनर उनसे प्रश्नावली और प्रस्ताव बनाता है"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "चित्र या PDF फ़ाइलें जोड़ें: डिज़ाइनर उनसे प्रश्नावली और प्रस्ताव बनाता है",
+  "Ik heb {0} afbeeldingen ingevuld.": "मैंने {0} चित्र भर दिए।",
+  "Er zijn nog {0} afbeeldingen leeg.": "अभी {0} चित्र खाली हैं।",
+  "Automatisch zoeken lukte niet": "स्वचालित खोज काम नहीं आई",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "और स्टॉक फ़ोटो खोजें: फ़ोटो और वीडियो में हर खाली जगह के लिए एक फ़ोटो चुनें, फिर मैं उन्हें भर दूँगा।",
+  "Foto's zoeken": "फ़ोटो खोजें",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "फ़ोटो स्रोत में इन जगहों के लिए कुछ नहीं मिला।",
+  "De fotobron gaf geen antwoord.": "फ़ोटो स्रोत ने उत्तर नहीं दिया।"
 }

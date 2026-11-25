@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "Mesajınızdaki PDF dosyaları",
   "Bestand weghalen": "Dosyayı kaldır",
   "Bestanden toevoegen": "Dosya ekle",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Resim veya PDF dosyaları ekle: tasarımcı bunlardan bir anket ve bir öneri hazırlar"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Resim veya PDF dosyaları ekle: tasarımcı bunlardan bir anket ve bir öneri hazırlar",
+  "Ik heb {0} afbeeldingen ingevuld.": "{0} resmi doldurdum.",
+  "Er zijn nog {0} afbeeldingen leeg.": "Hâlâ {0} resim boş.",
+  "Automatisch zoeken lukte niet": "Otomatik arama çalışmadı",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "Daha fazla stok fotoğraf ara: Fotoğraflar ve videolar bölümünde her boş yer için bir fotoğraf seç, ben de yerleştireyim.",
+  "Foto's zoeken": "Fotoğraf ara",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "Bu yerler için fotoğraf kaynağında bir şey bulunamadı.",
+  "De fotobron gaf geen antwoord.": "Fotoğraf kaynağı yanıt vermedi."
 }

@@ -2543,6 +2543,26 @@ def search_photos(job, query, skip=(), video=False):
         return []
 
 
+def search_photos_checked(job, query, skip=()):
+    """Like search_photos, but with the reason when the search itself failed (no key, the source did not answer): (hits, reason)."""
+    try:
+        src = photo_source(job)
+        return (search_pexels if src == "pexels" else search_unsplash if src == "unsplash" else search_istock)(query, skip=skip), ""
+    except ValueError as e:
+        return [], str(e)
+    except Exception:  # noqa: BLE001
+        return [], "De fotobron gaf geen antwoord."
+
+
+def _photos_note(pk, remaining, placed, why=""):
+    """After the search for pictures: what is still empty. The customer is asked to look for more photos himself (the search field of Foto's en video's); an earlier note is replaced."""
+    job = SiteDesignJob.objects.get(pk=pk)
+    msgs = [m for m in (job.messages or []) if m.get("ask") != "photos"]
+    if remaining > 0:
+        msgs.append({"role": "ai", "ask": "photos", "text": "Foto's zoeken", "n": remaining, "placed": placed, "why": str(why or "")[:200]})
+    SiteDesignJob.objects.filter(pk=pk).update(messages=msgs)
+
+
 def _pick_from(hit, title=""):
     """What is stored for a found item (with source and full size for Pexels), with a title."""
     e = {k: hit.get(k, "") for k in ("id", "url", "preview", "video")}
@@ -3082,6 +3102,8 @@ def _more_photos(pk):
     try:
         job = SiteDesignJob.objects.get(pk=pk)
         job, placed = assign_unused_picked(job)  # first the photos that were chosen and are not used yet, only then a new search
+        placed = int(placed) if isinstance(placed, int) else len(placed or [])
+        why = ""
         if placed:
             _set(pk, step="De gekozen foto's plaatsen", progress=20)
         for x in [x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and x["istock"] and not x.get("preview") and "logo" not in x["file"]]:
@@ -3096,18 +3118,23 @@ def _more_photos(pk):
         used = {str(x.get("istock") or "") for x in photo_slots(job)}
         for n, x in enumerate(empty):
             _set(pk, progress=5 + int(80 * n / max(1, len(empty))), step=f"Afbeeldingen zoeken op {FREE_SOURCES.get(photo_source(job), 'iStock')} ({n + 1} van {len(empty)})")
-            try:
-                hit = next(iter(search_photos(job, x["query"] or x["alt"] or x["file"], skip=used)), None)
-            except Exception:  # noqa: BLE001
-                hit = None
+            hits, err = search_photos_checked(job, x["query"] or x["alt"] or x["file"], skip=used)
+            why = why or err
+            hit = next(iter(hits), None)
             if hit:
                 try:
                     set_istock_pick(SiteDesignJob.objects.get(pk=pk), x["file"], _pick_from(hit, x["alt"] or x["query"]))
                     used.add(str(hit["id"]))
+                    placed += 1
                 except ValueError:
                     continue
         _set(pk, step="Voorbeeldfoto's ophalen", progress=90)
         auto_previews(pk)
+        job = SiteDesignJob.objects.get(pk=pk)
+        left = len([x for x in photo_slots(job) if x["kind"] == "photo" and not x["done"] and "logo" not in x["file"]])
+        if left and not why and empty:
+            why = "Er is voor deze plekken niets gevonden op de fotobron."
+        _photos_note(pk, left, placed, why)
     except Exception:  # noqa: BLE001
         logger.warning("more photos failed", exc_info=True)
     finally:

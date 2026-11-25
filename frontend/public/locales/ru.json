@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "PDF-файлы к вашему сообщению",
   "Bestand weghalen": "Убрать файл",
   "Bestanden toevoegen": "Добавить файлы",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Добавьте изображения или PDF-файлы: дизайнер составит по ним анкету и предложение"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Добавьте изображения или PDF-файлы: дизайнер составит по ним анкету и предложение",
+  "Ik heb {0} afbeeldingen ingevuld.": "Я заполнил изображений: {0}.",
+  "Er zijn nog {0} afbeeldingen leeg.": "Пустых изображений осталось: {0}.",
+  "Automatisch zoeken lukte niet": "Автоматический поиск не удался",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "Найдите ещё стоковых фото: в разделе «Фото и видео» выберите фото для каждого пустого места, и я их вставлю.",
+  "Foto's zoeken": "Искать фото",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "Для этих мест в источнике фото ничего не найдено.",
+  "De fotobron gaf geen antwoord.": "Источник фото не ответил."
 }

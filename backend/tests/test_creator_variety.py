@@ -143,3 +143,27 @@ def test_the_planner_knows_the_widgets_and_installs_the_ones_it_uses(django_user
     assert "WIDGETS" in seen["prompt"] and "widget-opening-hours" in seen["prompt"] and "widget-countdown" in seen["prompt"]
     assert any(x.get("sysobject") == "widget-opening-hours" for x in plan["pages"][0]["sections"])
     assert "opening-hours" in widgets.installed()  # installed by the system because the planner used it
+
+
+@pytest.mark.django_db
+def test_when_no_more_photos_can_be_found_the_customer_is_asked_to_search_stock_photos(django_user_model, monkeypatch):
+    from apps.core.models import SiteDesignJob
+
+    u = django_user_model.objects.create_user("ph", "ph@x.nl", "pw12345678!", is_staff=True)
+    job = SiteDesignJob.objects.create(user=u, name="Kleding", status="running", brief={"name": "Kleding"})
+    slot = lambda n: {"kind": "photo", "done": False, "istock": "", "preview": "", "file": f"foto-{n}.jpg", "alt": "a shop", "query": "clothing shop"}  # noqa: E731
+    monkeypatch.setattr(sc, "photo_slots", lambda j: [slot(1), slot(2)])
+    monkeypatch.setattr(sc, "assign_unused_picked", lambda j: (j, 0))
+    monkeypatch.setattr(sc, "auto_previews", lambda pk: None)
+    monkeypatch.setattr(sc, "search_photos_checked", lambda j, q, skip=(): ([], "Koppel Pexels eerst bij Admin → API keys."))
+    sc._more_photos(job.pk)
+    job.refresh_from_db()
+    note = [m for m in job.messages if m.get("ask") == "photos"]
+    assert len(note) == 1 and note[0]["n"] == 2 and "Pexels" in note[0]["why"] and job.status == "done"
+    sc._more_photos(job.pk)  # again: the note is replaced, not doubled
+    job.refresh_from_db()
+    assert len([m for m in job.messages if m.get("ask") == "photos"]) == 1
+    monkeypatch.setattr(sc, "photo_slots", lambda j: [])  # everything is filled in: no note
+    sc._more_photos(job.pk)
+    job.refresh_from_db()
+    assert not [m for m in job.messages if m.get("ask") == "photos"]

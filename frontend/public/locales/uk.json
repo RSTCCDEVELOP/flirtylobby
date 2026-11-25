@@ -9346,5 +9346,12 @@
   "PDF-bestanden bij je bericht": "PDF-файли до вашого повідомлення",
   "Bestand weghalen": "Прибрати файл",
   "Bestanden toevoegen": "Додати файли",
-  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Додайте зображення або PDF-файли: дизайнер складе з них анкету та пропозицію"
+  "Afbeeldingen of PDF-bestanden toevoegen: de ontwerper maakt er een vragenlijst en een voorstel van": "Додайте зображення або PDF-файли: дизайнер складе з них анкету та пропозицію",
+  "Ik heb {0} afbeeldingen ingevuld.": "Я заповнив зображень: {0}.",
+  "Er zijn nog {0} afbeeldingen leeg.": "Порожніх зображень лишилося: {0}.",
+  "Automatisch zoeken lukte niet": "Автоматичний пошук не вдався",
+  "Zoek er meer via stockfoto's: kies bij Foto's en video's voor elke lege plek een foto, en ik vul ze dan in.": "Знайдіть більше стокових фото: у розділі «Фото й відео» виберіть фото для кожного порожнього місця, і я їх вставлю.",
+  "Foto's zoeken": "Шукати фото",
+  "Er is voor deze plekken niets gevonden op de fotobron.": "Для цих місць у джерелі фото нічого не знайдено.",
+  "De fotobron gaf geen antwoord.": "Джерело фото не відповіло."
 }
