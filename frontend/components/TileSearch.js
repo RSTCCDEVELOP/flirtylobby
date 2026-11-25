@@ -15,6 +15,9 @@ import { matches, norm } from "../lib/useView";
 
 // What can be found besides the tiles: the settings inside a screen (where they are, in plain words). staff: only for a superadmin.
 const INDEX = [
+  { href: "/dashboard/admin/admin-setup", label: "easy2edit admin setup", where: "Admin", words: "easy2edit admin setup instellingen dashboard dashboards tegels lijst aantal per pagina verbergen zijbalk menu zoekveld weergave" },
+  { href: "/dashboard/admin/admin-setup", label: "Uiterlijk van het dashboard", where: "Admin → easy2edit admin setup → Uiterlijk", words: "uiterlijk breedte zijkanten donker ruimte dichtheid compact tegels groot letters stijl minder bewegingen thema" },
+  { href: "/dashboard/admin/admin-setup", label: "Licentie, bedrijf en persoon", where: "Admin → easy2edit admin setup → Licentie", words: "licentie bedrijf persoon eigenaar master koppelen gekoppeld gegevens wijzigen" },
   { href: "/dashboard/admin/onboarding", label: "Onboarding", where: "Admin → Systeem", words: "onboarding licentie upgraden hosting wijzigen gegevens naam adres opnieuw starten" },
   { href: "/dashboard/admin/cache", label: "Cache en snelheid", where: "Admin → Systeem", words: "cache snelheid sneller groener zuinig bewaren wissen systeemcache" },
   { href: "/dashboard/admin/system", label: "Welke cache de server gebruikt (database, geheugen, Redis)", where: "Admin → Basisgegevens → Cache", words: "cache database redis geheugen opslag server herstart basisgegevens", staff: true },
